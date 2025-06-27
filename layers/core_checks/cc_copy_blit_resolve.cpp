@@ -1887,140 +1887,6 @@ bool CoreChecks::PreCallValidateCmdCopyImage2(VkCommandBuffer commandBuffer, con
                                 error_obj.location.dot(Field::pCopyImageInfo));
 }
 
-void CoreChecks::PostCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                            VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                            const VkImageCopy *pRegions, const RecordObject &record_obj) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    auto src_image_state = Get<vvl::Image>(srcImage);
-    auto dst_image_state = Get<vvl::Image>(dstImage);
-    ASSERT_AND_RETURN(src_image_state && dst_image_state);
-
-    for (const VkImageCopy &region : vvl::make_span(pRegions, regionCount)) {
-        cb_state->TrackImageFirstLayout(*src_image_state, RangeFromLayers(region.srcSubresource), region.srcOffset.z,
-                                        region.extent.depth, srcImageLayout);
-        cb_state->TrackImageFirstLayout(*dst_image_state, RangeFromLayers(region.dstSubresource), region.dstOffset.z,
-                                        region.extent.depth, dstImageLayout);
-    }
-}
-
-void CoreChecks::PostCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR *pCopyImageInfo,
-                                                const RecordObject &record_obj) {
-    PostCallRecordCmdCopyImage2(commandBuffer, pCopyImageInfo, record_obj);
-}
-
-void CoreChecks::PostCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyImageInfo,
-                                             const RecordObject &record_obj) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    auto src_image_state = Get<vvl::Image>(pCopyImageInfo->srcImage);
-    auto dst_image_state = Get<vvl::Image>(pCopyImageInfo->dstImage);
-    ASSERT_AND_RETURN(src_image_state && dst_image_state);
-
-    for (const VkImageCopy2 &region : vvl::make_span(pCopyImageInfo->pRegions, pCopyImageInfo->regionCount)) {
-        cb_state->TrackImageFirstLayout(*src_image_state, RangeFromLayers(region.srcSubresource), region.srcOffset.z,
-                                        region.extent.depth, pCopyImageInfo->srcImageLayout);
-        cb_state->TrackImageFirstLayout(*dst_image_state, RangeFromLayers(region.dstSubresource), region.dstOffset.z,
-                                        region.extent.depth, pCopyImageInfo->dstImageLayout);
-    }
-}
-
-template <typename RegionType>
-void CoreChecks::RecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
-                                     const RegionType *pRegions, const Location &loc) {
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    auto &cb_sub_state = core::SubState(*cb_state);
-    auto src_buffer_state = Get<vvl::Buffer>(srcBuffer);
-    auto dst_buffer_state = Get<vvl::Buffer>(dstBuffer);
-    ASSERT_AND_RETURN(src_buffer_state && dst_buffer_state);
-    if (regionCount == 0 || (!src_buffer_state->sparse && !dst_buffer_state->sparse)) {
-        return;
-    }
-
-    using BufferRange = vvl::BindableMemoryTracker::BufferRange;
-
-    std::vector<BufferRange> src_ranges(regionCount);
-    std::vector<BufferRange> dst_ranges(regionCount);
-    BufferRange src_ranges_bounds(pRegions[0].srcOffset, pRegions[0].srcOffset + pRegions[0].size);
-    BufferRange dst_ranges_bounds(pRegions[0].dstOffset, pRegions[0].dstOffset + pRegions[0].size);
-
-    for (uint32_t i = 0; i < regionCount; ++i) {
-        const RegionType &region = pRegions[i];
-        src_ranges[i] = vvl::range<VkDeviceSize>{region.srcOffset, region.srcOffset + region.size};
-        dst_ranges[i] = vvl::range<VkDeviceSize>{region.dstOffset, region.dstOffset + region.size};
-
-        src_ranges_bounds.begin = std::min(src_ranges_bounds.begin, region.srcOffset);
-        src_ranges_bounds.end = std::max(src_ranges_bounds.end, region.srcOffset + region.size);
-
-        dst_ranges_bounds.begin = std::min(dst_ranges_bounds.begin, region.dstOffset);
-        dst_ranges_bounds.end = std::max(dst_ranges_bounds.end, region.dstOffset + region.size);
-    }
-
-    auto queue_submit_validation = [this, src_buffer_state, dst_buffer_state, src_ranges = std::move(src_ranges),
-                                    dst_ranges = std::move(dst_ranges), src_ranges_bounds, dst_ranges_bounds,
-                                    loc](const class vvl::Queue &queue_state, const vvl::CommandBuffer &cb_state) -> bool {
-        bool skip = false;
-
-        auto src_vk_memory_to_ranges_map = src_buffer_state->GetBoundRanges(src_ranges_bounds, src_ranges);
-        auto dst_vk_memory_to_ranges_map = dst_buffer_state->GetBoundRanges(dst_ranges_bounds, dst_ranges);
-
-        for (const auto &[vk_memory, src_ranges] : src_vk_memory_to_ranges_map) {
-            const auto find_mem_it = dst_vk_memory_to_ranges_map.find(vk_memory);
-            if (find_mem_it == dst_vk_memory_to_ranges_map.end()) {
-                continue;
-            }
-            // Some source and destination ranges are bound to the same VkDeviceMemory, look for overlaps.
-            // Memory ranges are sorted, so looking for overlaps can be done in linear time
-
-            auto &dst_ranges_vec = find_mem_it->second;
-            auto src_ranges_it = src_ranges.cbegin();
-            auto dst_ranges_it = dst_ranges_vec.cbegin();
-
-            while (src_ranges_it != src_ranges.cend() && dst_ranges_it != dst_ranges_vec.cend()) {
-                if (src_ranges_it->first.intersects(dst_ranges_it->first)) {
-                    auto memory_range_overlap = src_ranges_it->first & dst_ranges_it->first;
-
-                    const LogObjectList objlist(cb_state.Handle(), src_buffer_state->Handle(), dst_buffer_state->Handle(),
-                                                vk_memory);
-                    const bool is_2 = loc.function == Func::vkCmdCopyBuffer2 || loc.function == Func::vkCmdCopyBuffer2KHR;
-                    const char *vuid = is_2 ? "VUID-VkCopyBufferInfo2-pRegions-00117" : "VUID-vkCmdCopyBuffer-pRegions-00117";
-                    skip |= this->LogError(
-                        vuid, objlist, loc,
-                        "Copy source buffer range %s (from buffer %s) and destination buffer range %s (from buffer %s) are "
-                        "bound to the same memory (%s), "
-                        "and end up overlapping on memory range %s.",
-                        vvl::string_range(src_ranges_it->second).c_str(), FormatHandle(src_buffer_state->VkHandle()).c_str(),
-                        vvl::string_range(dst_ranges_it->second).c_str(), FormatHandle(dst_buffer_state->VkHandle()).c_str(),
-                        FormatHandle(vk_memory).c_str(), vvl::string_range(memory_range_overlap).c_str());
-                }
-
-                if (src_ranges_it->first < dst_ranges_it->first) {
-                    ++src_ranges_it;
-                } else {
-                    ++dst_ranges_it;
-                }
-            }
-        }
-        return skip;
-    };
-
-    cb_sub_state.queue_submit_functions.emplace_back(queue_submit_validation);
-}
-
-void CoreChecks::PostCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
-                                             uint32_t regionCount, const VkBufferCopy *pRegions, const RecordObject &record_obj) {
-    RecordCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions, record_obj.location);
-}
-
-void CoreChecks::PostCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR *pCopyBufferInfo,
-                                                 const RecordObject &record_obj) {
-    return PostCallRecordCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, record_obj);
-}
-
-void CoreChecks::PostCallRecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCopyBufferInfo,
-                                              const RecordObject &record_obj) {
-    RecordCmdCopyBuffer(commandBuffer, pCopyBufferInfo->srcBuffer, pCopyBufferInfo->dstBuffer, pCopyBufferInfo->regionCount,
-                        pCopyBufferInfo->pRegions, record_obj.location);
-}
-
 template <typename RegionType>
 bool CoreChecks::ValidateBufferBounds(const vvl::CommandBuffer &cb_state, const vvl::Image &image_state,
                                       const vvl::Buffer &buffer_state, const RegionType &region, const Location &region_loc) const {
@@ -2275,38 +2141,6 @@ bool CoreChecks::PreCallValidateCmdCopyImageToBuffer2(VkCommandBuffer commandBuf
                                         pCopyImageToBufferInfo->pRegions, error_obj.location.dot(Field::pCopyImageToBufferInfo));
 }
 
-void CoreChecks::PostCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                                    VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions,
-                                                    const RecordObject &record_obj) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    auto src_image_state = Get<vvl::Image>(srcImage);
-    ASSERT_AND_RETURN(src_image_state);
-
-    for (const VkBufferImageCopy &region : vvl::make_span(pRegions, regionCount)) {
-        cb_state->TrackImageFirstLayout(*src_image_state, RangeFromLayers(region.imageSubresource), region.imageOffset.z,
-                                        region.imageExtent.depth, srcImageLayout);
-    }
-}
-
-void CoreChecks::PostCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
-                                                        const VkCopyImageToBufferInfo2KHR *pCopyImageToBufferInfo,
-                                                        const RecordObject &record_obj) {
-    PostCallRecordCmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo, record_obj);
-}
-
-void CoreChecks::PostCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
-                                                     const VkCopyImageToBufferInfo2 *pCopyImageToBufferInfo,
-                                                     const RecordObject &record_obj) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    auto src_image_state = Get<vvl::Image>(pCopyImageToBufferInfo->srcImage);
-    ASSERT_AND_RETURN(src_image_state);
-
-    for (const VkBufferImageCopy2 &region : vvl::make_span(pCopyImageToBufferInfo->pRegions, pCopyImageToBufferInfo->regionCount)) {
-        cb_state->TrackImageFirstLayout(*src_image_state, RangeFromLayers(region.imageSubresource), region.imageOffset.z,
-                                        region.imageExtent.depth, pCopyImageToBufferInfo->srcImageLayout);
-    }
-}
-
 template <typename RegionType>
 bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
                                               VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType *pRegions,
@@ -2420,38 +2254,6 @@ bool CoreChecks::PreCallValidateCmdCopyBufferToImage2(VkCommandBuffer commandBuf
     return ValidateCmdCopyBufferToImage(commandBuffer, pCopyBufferToImageInfo->srcBuffer, pCopyBufferToImageInfo->dstImage,
                                         pCopyBufferToImageInfo->dstImageLayout, pCopyBufferToImageInfo->regionCount,
                                         pCopyBufferToImageInfo->pRegions, error_obj.location.dot(Field::pCopyBufferToImageInfo));
-}
-
-void CoreChecks::PostCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                                    VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                    const VkBufferImageCopy *pRegions, const RecordObject &record_obj) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    auto dst_image_state = Get<vvl::Image>(dstImage);
-    ASSERT_AND_RETURN(dst_image_state);
-
-    for (const VkBufferImageCopy &region : vvl::make_span(pRegions, regionCount)) {
-        cb_state->TrackImageFirstLayout(*dst_image_state, RangeFromLayers(region.imageSubresource), region.imageOffset.z,
-                                        region.imageExtent.depth, dstImageLayout);
-    }
-}
-
-void CoreChecks::PostCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
-                                                        const VkCopyBufferToImageInfo2KHR *pCopyBufferToImageInfo2KHR,
-                                                        const RecordObject &record_obj) {
-    PostCallRecordCmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo2KHR, record_obj);
-}
-
-void CoreChecks::PostCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
-                                                     const VkCopyBufferToImageInfo2 *pCopyBufferToImageInfo,
-                                                     const RecordObject &record_obj) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    auto dst_image_state = Get<vvl::Image>(pCopyBufferToImageInfo->dstImage);
-    ASSERT_AND_RETURN(dst_image_state);
-
-    for (const VkBufferImageCopy2 &region : vvl::make_span(pCopyBufferToImageInfo->pRegions, pCopyBufferToImageInfo->regionCount)) {
-        cb_state->TrackImageFirstLayout(*dst_image_state, RangeFromLayers(region.imageSubresource), region.imageOffset.z,
-                                        region.imageExtent.depth, pCopyBufferToImageInfo->dstImageLayout);
-    }
 }
 
 bool CoreChecks::UsageHostTransferCheck(const vvl::Image &image_state, const VkImageAspectFlags aspect_mask, const char *vuid_09111,
@@ -3325,46 +3127,6 @@ bool CoreChecks::PreCallValidateCmdBlitImage2(VkCommandBuffer commandBuffer, con
     return ValidateCmdBlitImage(commandBuffer, pBlitImageInfo->srcImage, pBlitImageInfo->srcImageLayout, pBlitImageInfo->dstImage,
                                 pBlitImageInfo->dstImageLayout, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions,
                                 pBlitImageInfo->filter, error_obj.location.dot(Field::pBlitImageInfo));
-}
-
-template <typename RegionType>
-void CoreChecks::RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                                    VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType *pRegions,
-                                    VkFilter filter) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    auto src_image_state = Get<vvl::Image>(srcImage);
-    auto dst_image_state = Get<vvl::Image>(dstImage);
-    ASSERT_AND_RETURN(src_image_state && dst_image_state);
-
-    for (const auto& region : vvl::make_span(pRegions, regionCount)) {
-        const int32_t src_depth_offset = (int32_t)std::min(region.srcOffsets[0].z, region.srcOffsets[1].z);
-        const uint32_t src_depth_extent = (uint32_t)std::abs(region.srcOffsets[1].z - region.srcOffsets[0].z);
-        cb_state->TrackImageFirstLayout(*src_image_state, RangeFromLayers(region.srcSubresource), src_depth_offset,
-                                        src_depth_extent, srcImageLayout);
-
-        const int32_t dst_depth_offset = (int32_t)std::min(region.dstOffsets[0].z, region.dstOffsets[1].z);
-        const uint32_t dst_depth_extent = (uint32_t)std::abs(region.dstOffsets[1].z - region.dstOffsets[0].z);
-        cb_state->TrackImageFirstLayout(*dst_image_state, RangeFromLayers(region.dstSubresource), dst_depth_offset,
-                                        dst_depth_extent, dstImageLayout);
-    }
-}
-
-void CoreChecks::PostCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                            VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                            const VkImageBlit *pRegions, VkFilter filter, const RecordObject &record_obj) {
-    RecordCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter);
-}
-
-void CoreChecks::PostCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo,
-                                                const RecordObject &record_obj) {
-    PostCallRecordCmdBlitImage2(commandBuffer, pBlitImageInfo, record_obj);
-}
-
-void CoreChecks::PostCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo,
-                                             const RecordObject &record_obj) {
-    RecordCmdBlitImage(commandBuffer, pBlitImageInfo->srcImage, pBlitImageInfo->srcImageLayout, pBlitImageInfo->dstImage,
-                       pBlitImageInfo->dstImageLayout, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions,
-                       pBlitImageInfo->filter);
 }
 
 template <typename RegionType>

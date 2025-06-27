@@ -579,9 +579,8 @@ void CommandBuffer::UpdateAttachmentsView(const VkRenderPassBeginInfo *pRenderPa
     UpdateSubpassAttachments();
 }
 
-void CommandBuffer::RecordBeginRenderPass(Func command, const VkRenderPassBeginInfo &render_pass_begin,
-                                          const VkSubpassContents contents) {
-    RecordCmd(command);
+void CommandBuffer::RecordBeginRenderPass(const VkRenderPassBeginInfo &render_pass_begin, const VkSubpassContents contents) {
+    command_count++;
     active_framebuffer = dev_data.Get<vvl::Framebuffer>(render_pass_begin.framebuffer);
     active_render_pass = dev_data.Get<vvl::RenderPass>(render_pass_begin.renderPass);
     render_area = render_pass_begin.renderArea;
@@ -627,8 +626,8 @@ void CommandBuffer::RecordBeginRenderPass(Func command, const VkRenderPassBeginI
     }
 }
 
-void CommandBuffer::RecordNextSubpass(Func command, VkSubpassContents contents) {
-    RecordCmd(command);
+void CommandBuffer::RecordNextSubpass(VkSubpassContents contents) {
+    command_count++;
     SetActiveSubpass(GetActiveSubpass() + 1);
     active_subpass_contents = contents;
     ASSERT_AND_RETURN(active_render_pass);
@@ -652,13 +651,13 @@ void CommandBuffer::RecordNextSubpass(Func command, VkSubpassContents contents) 
     }
 }
 
-void CommandBuffer::RecordEndRenderPass(Func command) {
+void CommandBuffer::RecordEndRenderPass() {
     // Call first so SubState can use render pass object before we destroy it
     for (auto &item : sub_states_) {
         item.second->RecordEndRenderPass();
     }
 
-    RecordCmd(command);
+    command_count++;
     active_render_pass = nullptr;
     attachment_source = AttachmentSource::Empty;
     active_attachments.clear();
@@ -669,8 +668,8 @@ void CommandBuffer::RecordEndRenderPass(Func command) {
     sample_locations_begin_info = nullptr;
 }
 
-void CommandBuffer::RecordBeginRendering(Func command, const VkRenderingInfo &rendering_info) {
-    RecordCmd(command);
+void CommandBuffer::RecordBeginRendering(const VkRenderingInfo &rendering_info) {
+    command_count++;
     active_render_pass = std::make_shared<vvl::RenderPass>(&rendering_info, true);
     render_area = rendering_info.renderArea;
     render_pass_queries.clear();
@@ -765,19 +764,19 @@ void CommandBuffer::RecordBeginRendering(Func command, const VkRenderingInfo &re
     }
 }
 
-void CommandBuffer::RecordEndRendering(Func command, const VkRenderingEndInfoEXT *pRenderingEndInfo) {
+void CommandBuffer::RecordEndRendering(const VkRenderingEndInfoEXT *pRenderingEndInfo) {
     // Call first so SubState can use render pass object before we destroy it
     for (auto &item : sub_states_) {
         item.second->RecordEndRendering(pRenderingEndInfo);
     }
 
-    RecordCmd(command);
+    command_count++;
     active_render_pass = nullptr;
     active_color_attachments_index.clear();
 }
 
 void CommandBuffer::BeginVideoCoding(const VkVideoBeginCodingInfoKHR *pBeginInfo) {
-    RecordCmd(Func::vkCmdBeginVideoCodingKHR);
+    command_count++;
     bound_video_session = dev_data.Get<vvl::VideoSession>(pBeginInfo->videoSession);
     bound_video_session_parameters = dev_data.Get<vvl::VideoSessionParameters>(pBeginInfo->videoSessionParameters);
 
@@ -838,7 +837,7 @@ void CommandBuffer::BeginVideoCoding(const VkVideoBeginCodingInfoKHR *pBeginInfo
 }
 
 void CommandBuffer::EndVideoCoding(const VkVideoEndCodingInfoKHR *pEndCodingInfo) {
-    RecordCmd(Func::vkCmdEndVideoCodingKHR);
+    command_count++;
     bound_video_session = nullptr;
     bound_video_session_parameters = nullptr;
     bound_video_picture_resources.clear();
@@ -846,7 +845,7 @@ void CommandBuffer::EndVideoCoding(const VkVideoEndCodingInfoKHR *pEndCodingInfo
 }
 
 void CommandBuffer::ControlVideoCoding(const VkVideoCodingControlInfoKHR *pControlInfo) {
-    RecordCmd(Func::vkCmdControlVideoCodingKHR);
+    command_count++;
 
     if (pControlInfo && bound_video_session) {
         if (pControlInfo->flags & VK_VIDEO_CODING_CONTROL_RESET_BIT_KHR) {
@@ -905,7 +904,7 @@ void vvl::CommandBuffer::EnqueueUpdateVideoInlineQueries(const VkVideoInlineQuer
 }
 
 void CommandBuffer::DecodeVideo(const VkVideoDecodeInfoKHR *pDecodeInfo) {
-    RecordCmd(Func::vkCmdDecodeVideoKHR);
+    command_count++;
 
     if (bound_video_session && pDecodeInfo) {
         if (pDecodeInfo->pSetupReferenceSlot && pDecodeInfo->pSetupReferenceSlot->pPictureResource) {
@@ -945,7 +944,7 @@ void CommandBuffer::DecodeVideo(const VkVideoDecodeInfoKHR *pDecodeInfo) {
 }
 
 void vvl::CommandBuffer::EncodeVideo(const VkVideoEncodeInfoKHR *pEncodeInfo) {
-    RecordCmd(Func::vkCmdEncodeVideoKHR);
+    command_count++;
 
     if (bound_video_session && pEncodeInfo) {
         if (pEncodeInfo->pSetupReferenceSlot && pEncodeInfo->pSetupReferenceSlot->pPictureResource) {
@@ -1055,7 +1054,7 @@ void CommandBuffer::End(VkResult result) {
 }
 
 void CommandBuffer::RecordExecuteCommands(vvl::span<const VkCommandBuffer> secondary_command_buffers) {
-    RecordCmd(Func::vkCmdExecuteCommands);
+    command_count++;
     for (const VkCommandBuffer sub_command_buffer : secondary_command_buffers) {
         auto secondary_cb_state = dev_data.GetWrite<CommandBuffer>(sub_command_buffer);
         ASSERT_AND_RETURN(secondary_cb_state);
@@ -1147,7 +1146,7 @@ void CommandBuffer::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint
 
 // Generic function to handle state update for all CmdDraw* type functions
 void CommandBuffer::RecordDraw(const Location &loc) {
-    RecordCmd(loc.function);
+    command_count++;
     LastBound &last_bound = lastBound[vvl::BindPointGraphics];
     for (auto &item : sub_states_) {
         item.second->RecordActionCommand(last_bound, loc);
@@ -1156,7 +1155,7 @@ void CommandBuffer::RecordDraw(const Location &loc) {
 
 // Generic function to handle state update for all CmdDispatch* type functions
 void CommandBuffer::RecordDispatch(const Location &loc) {
-    RecordCmd(loc.function);
+    command_count++;
     LastBound &last_bound = lastBound[vvl::BindPointCompute];
     for (auto &item : sub_states_) {
         item.second->RecordActionCommand(last_bound, loc);
@@ -1165,7 +1164,7 @@ void CommandBuffer::RecordDispatch(const Location &loc) {
 
 // Generic function to handle state update for all CmdTraceRay* type functions
 void CommandBuffer::RecordTraceRay(const Location &loc) {
-    RecordCmd(loc.function);
+    command_count++;
     LastBound &last_bound = lastBound[vvl::BindPointRayTracing];
     for (auto &item : sub_states_) {
         item.second->RecordActionCommand(last_bound, loc);
@@ -1464,14 +1463,8 @@ void CommandBuffer::SetImageViewLayout(const vvl::ImageView &view_state, VkImage
     }
 }
 
-void CommandBuffer::RecordCmd(Func command) {
-    // This is currently only used to track if VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR queries are the vkCmdBeginQuery/vkCmdEndQuery are
-    // the first and last command in the command buffer recording
+void CommandBuffer::RecordStateCmd(CBDynamicState state) {
     command_count++;
-}
-
-void CommandBuffer::RecordStateCmd(Func command, CBDynamicState state) {
-    RecordCmd(command);
     RecordDynamicState(state);
 
     vvl::Pipeline *pipeline = GetLastBoundGraphics().pipeline_state;
@@ -1523,19 +1516,131 @@ void CommandBuffer::RecordSetScissorWithCount(uint32_t scissor_count) {
     }
 }
 
-void CommandBuffer::RecordTransferCmd(Func command, std::shared_ptr<Bindable> &&buf1, std::shared_ptr<Bindable> &&buf2) {
-    RecordCmd(command);
-    if (buf1) {
-        AddChild(buf1);
+void CommandBuffer::RecordCopyBuffer(vvl::Buffer &src_buffer_state, vvl::Buffer &dst_buffer_state, uint32_t region_count,
+                                     const VkBufferCopy *regions, const Location &loc) {
+    command_count++;
+    for (auto &item : sub_states_) {
+        item.second->RecordCopyBuffer(src_buffer_state, dst_buffer_state, region_count, regions, loc);
     }
-    if (buf2) {
-        AddChild(buf2);
+}
+
+void CommandBuffer::RecordCopyBuffer2(vvl::Buffer &src_buffer_state, vvl::Buffer &dst_buffer_state, uint32_t region_count,
+                                      const VkBufferCopy2 *regions, const Location &loc) {
+    command_count++;
+    for (auto &item : sub_states_) {
+        item.second->RecordCopyBuffer2(src_buffer_state, dst_buffer_state, region_count, regions, loc);
+    }
+}
+
+void CommandBuffer::RecordCopyImage(vvl::Image &src_image_state, vvl::Image &dst_image_state, VkImageLayout src_image_layout,
+                                    VkImageLayout dst_image_layout, uint32_t region_count, const VkImageCopy *regions,
+                                    const Location &loc) {
+    command_count++;
+    for (auto &item : sub_states_) {
+        item.second->RecordCopyImage(src_image_state, dst_image_state, src_image_layout, dst_image_layout, region_count, regions,
+                                     loc);
+    }
+}
+
+void CommandBuffer::RecordCopyImage2(vvl::Image &src_image_state, vvl::Image &dst_image_state, VkImageLayout src_image_layout,
+                                     VkImageLayout dst_image_layout, uint32_t region_count, const VkImageCopy2 *regions,
+                                     const Location &loc) {
+    command_count++;
+    for (auto &item : sub_states_) {
+        item.second->RecordCopyImage2(src_image_state, dst_image_state, src_image_layout, dst_image_layout, region_count, regions,
+                                      loc);
+    }
+}
+
+void CommandBuffer::RecordCopyBufferToImage(vvl::Image &dst_image_state, VkImageLayout dst_image_layout, uint32_t region_count,
+                                            const VkBufferImageCopy *regions, const Location &loc) {
+    command_count++;
+    for (auto &item : sub_states_) {
+        item.second->RecordCopyBufferToImage(dst_image_state, dst_image_layout, region_count, regions, loc);
+    }
+}
+
+void CommandBuffer::RecordCopyBufferToImage2(vvl::Image &dst_image_state, VkImageLayout dst_image_layout, uint32_t region_count,
+                                             const VkBufferImageCopy2 *regions, const Location &loc) {
+    command_count++;
+    for (auto &item : sub_states_) {
+        item.second->RecordCopyBufferToImage2(dst_image_state, dst_image_layout, region_count, regions, loc);
+    }
+}
+
+void CommandBuffer::RecordCopyImageToBuffer(vvl::Image &src_image_state, VkImageLayout src_image_layout, uint32_t region_count,
+                                            const VkBufferImageCopy *regions, const Location &loc) {
+    command_count++;
+    for (auto &item : sub_states_) {
+        item.second->RecordCopyImageToBuffer(src_image_state, src_image_layout, region_count, regions, loc);
+    }
+}
+
+void CommandBuffer::RecordCopyImageToBuffer2(vvl::Image &src_image_state, VkImageLayout src_image_layout, uint32_t region_count,
+                                             const VkBufferImageCopy2 *regions, const Location &loc) {
+    command_count++;
+    for (auto &item : sub_states_) {
+        item.second->RecordCopyImageToBuffer2(src_image_state, src_image_layout, region_count, regions, loc);
+    }
+}
+
+void CommandBuffer::RecordBlitImage(vvl::Image &src_image_state, vvl::Image &dst_image_state, VkImageLayout src_image_layout,
+                                    VkImageLayout dst_image_layout, uint32_t region_count, const VkImageBlit *regions,
+                                    const Location &loc) {
+    command_count++;
+    for (auto &item : sub_states_) {
+        item.second->RecordBlitImage(src_image_state, dst_image_state, src_image_layout, dst_image_layout, region_count, regions,
+                                     loc);
+    }
+}
+
+void CommandBuffer::RecordBlitImage2(vvl::Image &src_image_state, vvl::Image &dst_image_state, VkImageLayout src_image_layout,
+                                     VkImageLayout dst_image_layout, uint32_t region_count, const VkImageBlit2 *regions,
+                                     const Location &loc) {
+    command_count++;
+    for (auto &item : sub_states_) {
+        item.second->RecordBlitImage2(src_image_state, dst_image_state, src_image_layout, dst_image_layout, region_count, regions,
+                                      loc);
+    }
+}
+
+void CommandBuffer::RecordResolveImage(vvl::Image &src_image_state, vvl::Image &dst_image_state, uint32_t region_count,
+                                       const VkImageResolve *regions, const Location &loc) {
+    command_count++;
+    for (auto &item : sub_states_) {
+        item.second->RecordResolveImage(src_image_state, dst_image_state, region_count, regions, loc);
+    }
+}
+
+void CommandBuffer::RecordResolveImage2(vvl::Image &src_image_state, vvl::Image &dst_image_state, uint32_t region_count,
+                                        const VkImageResolve2 *regions, const Location &loc) {
+    command_count++;
+    for (auto &item : sub_states_) {
+        item.second->RecordResolveImage2(src_image_state, dst_image_state, region_count, regions, loc);
+    }
+}
+
+void CommandBuffer::RecordClearColorImage(vvl::Image &image_state, VkImageLayout image_layout,
+                                          const VkClearColorValue *color_values, uint32_t range_count,
+                                          const VkImageSubresourceRange *ranges, const Location &loc) {
+    command_count++;
+    for (auto &item : sub_states_) {
+        item.second->RecordClearColorImage(image_state, image_layout, color_values, range_count, ranges, loc);
+    }
+}
+
+void CommandBuffer::RecordClearDepthStencilImage(vvl::Image &image_state, VkImageLayout image_layout,
+                                                 const VkClearDepthStencilValue *depth_stencil_values, uint32_t range_count,
+                                                 const VkImageSubresourceRange *ranges, const Location &loc) {
+    command_count++;
+    for (auto &item : sub_states_) {
+        item.second->RecordClearDepthStencilImage(image_state, image_layout, depth_stencil_values, range_count, ranges, loc);
     }
 }
 
 void CommandBuffer::RecordClearAttachments(uint32_t attachment_count, const VkClearAttachment *pAttachments, uint32_t rect_count,
                                            const VkClearRect *pRects, const Location &loc) {
-    RecordCmd(loc.function);
+    command_count++;
     for (auto &item : sub_states_) {
         item.second->RecordClearAttachments(attachment_count, pAttachments, rect_count, pRects, loc);
     }
@@ -1543,7 +1648,7 @@ void CommandBuffer::RecordClearAttachments(uint32_t attachment_count, const VkCl
 
 void CommandBuffer::RecordSetEvent(Func command, VkEvent event, VkPipelineStageFlags2 stage_mask,
                                    const VkDependencyInfo *dependency_info) {
-    RecordCmd(command);
+    command_count++;
     for (auto &item : sub_states_) {
         item.second->RecordSetEvent(command, event, stage_mask, dependency_info);
     }
@@ -1561,7 +1666,7 @@ void CommandBuffer::RecordSetEvent(Func command, VkEvent event, VkPipelineStageF
 }
 
 void CommandBuffer::RecordResetEvent(Func command, VkEvent event, VkPipelineStageFlags2 stage_mask) {
-    RecordCmd(command);
+    command_count++;
     for (auto &item : sub_states_) {
         item.second->RecordResetEvent(command, event, stage_mask);
     }
@@ -1580,7 +1685,7 @@ void CommandBuffer::RecordResetEvent(Func command, VkEvent event, VkPipelineStag
 
 void CommandBuffer::RecordWaitEvents(Func command, uint32_t eventCount, const VkEvent *pEvents,
                                      VkPipelineStageFlags2 src_stage_mask, const VkDependencyInfo *dependency_info) {
-    RecordCmd(command);
+    command_count++;
     for (auto &item : sub_states_) {
         item.second->RecordWaitEvents(command, eventCount, pEvents, src_stage_mask, dependency_info);
     }
@@ -1634,7 +1739,7 @@ void CommandBuffer::RecordBarriers(const VkDependencyInfo &dep_info) {
 
 void CommandBuffer::RecordWriteTimestamp(Func command, VkPipelineStageFlags2KHR pipelineStage, VkQueryPool queryPool,
                                          uint32_t slot) {
-    RecordCmd(command);
+    command_count++;
     if (dev_data.disabled[query_validation]) {
         return;
     }
@@ -1670,23 +1775,22 @@ void CommandBuffer::RecordPushConstants(const vvl::PipelineLayout &pipeline_layo
     }
 }
 
-void CommandBuffer::RecordBeginConditionalRendering(Func command) {
-    RecordCmd(command);
+void CommandBuffer::RecordBeginConditionalRendering() {
+    command_count++;
     conditional_rendering_active = true;
     conditional_rendering_inside_render_pass = active_render_pass != nullptr;
     conditional_rendering_subpass = GetActiveSubpass();
 }
 
-void CommandBuffer::RecordEndConditionalRendering(Func command) {
-    RecordCmd(command);
+void CommandBuffer::RecordEndConditionalRendering() {
+    command_count++;
     conditional_rendering_active = false;
     conditional_rendering_inside_render_pass = false;
     conditional_rendering_subpass = 0;
 }
 
-void CommandBuffer::RecordSetRenderingInputAttachmentIndices(Func command,
-                                                             const VkRenderingInputAttachmentIndexInfo *pLocationInfo) {
-    RecordCmd(command);
+void CommandBuffer::RecordSetRenderingInputAttachmentIndices(const VkRenderingInputAttachmentIndexInfo *pLocationInfo) {
+    command_count++;
     rendering_attachments.set_color_indexes = true;
     rendering_attachments.color_indexes.resize(pLocationInfo->colorAttachmentCount);
     for (uint32_t i = 0; i < pLocationInfo->colorAttachmentCount; ++i) {

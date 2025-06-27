@@ -1055,10 +1055,6 @@ class CoreChecks : public vvl::DeviceProxy {
                                            const VkClearColorValue* pColor, uint32_t rangeCount,
                                            const VkImageSubresourceRange* pRanges, const ErrorObject& error_obj) const override;
 
-    void PostCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                          const VkClearColorValue* pColor, uint32_t rangeCount,
-                                          const VkImageSubresourceRange* pRanges, const RecordObject& record_obj) override;
-
     bool ValidateClearDepthStencilValue(VkCommandBuffer commandBuffer, VkClearDepthStencilValue clearValue,
                                         const Location& loc) const;
 
@@ -1066,10 +1062,6 @@ class CoreChecks : public vvl::DeviceProxy {
                                                   const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
                                                   const VkImageSubresourceRange* pRanges,
                                                   const ErrorObject& error_obj) const override;
-
-    void PostCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                                 const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
-                                                 const VkImageSubresourceRange* pRanges, const RecordObject& record_obj) override;
 
     bool VerifyFramebufferAndRenderPassLayouts(const vvl::CommandBuffer& cb_state, const VkRenderPassBeginInfo& begin_info,
                                                const vvl::RenderPass& render_pass_state, const vvl::Framebuffer& framebuffer_state,
@@ -1161,20 +1153,6 @@ class CoreChecks : public vvl::DeviceProxy {
     bool PreCallValidateCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo,
                                       const ErrorObject& error_obj) const override;
 
-    template <typename RegionType>
-    void RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                            VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType* pRegions, VkFilter filter);
-
-    void PostCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                                    VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit* pRegions,
-                                    VkFilter filter, const RecordObject& record_obj) override;
-
-    void PostCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR* pBlitImageInfo,
-                                        const RecordObject& record_obj) override;
-
-    void PostCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo,
-                                     const RecordObject& record_obj) override;
-
     bool ValidateCmdBufImageLayouts(const Location& loc, const vvl::CommandBuffer& cb_state,
                                     vvl::unordered_map<const vvl::Image*, ImageLayoutMap>& local_image_layout_state) const;
 
@@ -1258,16 +1236,6 @@ class CoreChecks : public vvl::DeviceProxy {
                                                                 const RegionType& region, const LogObjectList& objlist,
                                                                 const Location& region_loc) const;
 
-    void PostCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                                    VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageCopy* pRegions,
-                                    const RecordObject& record_obj) override;
-
-    void RecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo);
-    void PostCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR* pCopyImageInf,
-                                        const RecordObject& record_objo) override;
-    void PostCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo,
-                                     const RecordObject& record_obj) override;
-
     template <typename RegionType>
     bool ValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
                                const RegionType* pRegions, const Location& loc) const;
@@ -1280,16 +1248,6 @@ class CoreChecks : public vvl::DeviceProxy {
 
     bool PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo,
                                        const ErrorObject& error_obj) const override;
-
-    template <typename RegionType>
-    void RecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
-                             const RegionType* pRegions, const Location& loc);
-    void PostCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
-                                     const VkBufferCopy* pRegions, const RecordObject& record_obj) override;
-    void PostCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR* pCopyBufferInfo,
-                                         const RecordObject& record_obj) override;
-    void PostCallRecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo,
-                                      const RecordObject& record_obj) override;
 
     bool PreCallValidateDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks* pAllocator,
                                          const ErrorObject& error_obj) const override;
@@ -1312,23 +1270,12 @@ class CoreChecks : public vvl::DeviceProxy {
                                              VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions,
                                              const ErrorObject& error_obj) const override;
 
-    void PostCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                            VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions,
-                                            const RecordObject& record_obj) override;
-
     bool PreCallValidateCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
                                                  const VkCopyImageToBufferInfo2KHR* pCopyImageToBufferInfo,
                                                  const ErrorObject& error_obj) const override;
 
     bool PreCallValidateCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo,
                                               const ErrorObject& error_obj) const override;
-
-    void PostCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
-                                                const VkCopyImageToBufferInfo2KHR* pCopyImageToBufferInfo,
-                                                const RecordObject& record_obj) override;
-
-    void PostCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo,
-                                             const RecordObject& record_obj) override;
 
     template <typename RegionType>
     bool ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
@@ -1339,10 +1286,6 @@ class CoreChecks : public vvl::DeviceProxy {
                                              VkImageLayout dstImageLayout, uint32_t regionCount, const VkBufferImageCopy* pRegions,
                                              const ErrorObject& error_obj) const override;
 
-    void PostCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                            VkImageLayout dstImageLayout, uint32_t regionCount, const VkBufferImageCopy* pRegions,
-                                            const RecordObject& record_obj) override;
-
     bool PreCallValidateCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
                                                  const VkCopyBufferToImageInfo2KHR* pCopyBufferToImageInfo,
                                                  const ErrorObject& error_obj) const override;
@@ -1350,12 +1293,6 @@ class CoreChecks : public vvl::DeviceProxy {
     bool PreCallValidateCmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo,
                                               const ErrorObject& error_obj) const override;
 
-    void PostCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
-                                                const VkCopyBufferToImageInfo2KHR* pCopyBufferToImageInfo,
-                                                const RecordObject& record_obj) override;
-
-    void PostCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo,
-                                             const RecordObject& record_obj) override;
     bool PreCallValidateCopyMemoryToImage(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo,
                                           const ErrorObject& error_obj) const override;
     bool PreCallValidateCopyMemoryToImageEXT(VkDevice device, const VkCopyMemoryToImageInfoEXT* pCopyMemoryToImageInfo,

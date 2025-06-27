@@ -962,18 +962,6 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
     return skip;
 }
 
-void CoreChecks::PostCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                                  const VkClearColorValue *pColor, uint32_t rangeCount,
-                                                  const VkImageSubresourceRange *pRanges, const RecordObject &record_obj) {
-    auto cb_state_ptr = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    auto image_state = Get<vvl::Image>(image);
-    if (cb_state_ptr && image_state) {
-        for (uint32_t i = 0; i < rangeCount; ++i) {
-            cb_state_ptr->TrackImageFirstLayout(*image_state, pRanges[i], 0, 0, imageLayout);
-        }
-    }
-}
-
 bool CoreChecks::ValidateClearDepthStencilValue(VkCommandBuffer commandBuffer, VkClearDepthStencilValue clearValue,
                                                 const Location &loc) const {
     bool skip = false;
@@ -1078,18 +1066,6 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
                          FormatHandle(image).c_str());
     }
     return skip;
-}
-
-void CoreChecks::PostCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                                         const VkClearDepthStencilValue *pDepthStencil, uint32_t rangeCount,
-                                                         const VkImageSubresourceRange *pRanges, const RecordObject &record_obj) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    auto image_state = Get<vvl::Image>(image);
-    ASSERT_AND_RETURN(image_state);
-
-    for (uint32_t i = 0; i < rangeCount; ++i) {
-        cb_state->TrackImageFirstLayout(*image_state, pRanges[i], 0, 0, imageLayout);
-    }
 }
 
 // Returns true if sub_rect is entirely contained within rect

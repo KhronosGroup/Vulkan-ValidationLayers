@@ -23,6 +23,7 @@
 #include "core_validation.h"
 #include "cc_sync_vuid_maps.h"
 #include "error_message/error_strings.h"
+#include "state_tracker/buffer_state.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/event_map.h"
@@ -214,6 +215,197 @@ void CommandBufferSubState::RecordEndRendering(const VkRenderingEndInfoEXT* pRen
 }
 
 void CommandBufferSubState::RecordEndRenderPass() { validator.TransitionFinalSubpassLayouts(base); }
+
+template <typename RegionType>
+void CommandBufferSubState::RecordCopyBufferCommon(vvl::Buffer& src_buffer_state, vvl::Buffer& dst_buffer_state,
+                                                   uint32_t region_count, const RegionType* regions, const Location& loc) {
+    if (region_count == 0 || (!src_buffer_state.sparse && !dst_buffer_state.sparse)) {
+        return;
+    }
+
+    using BufferRange = vvl::BindableMemoryTracker::BufferRange;
+
+    std::vector<BufferRange> src_ranges(region_count);
+    std::vector<BufferRange> dst_ranges(region_count);
+    BufferRange src_ranges_bounds(regions[0].srcOffset, regions[0].srcOffset + regions[0].size);
+    BufferRange dst_ranges_bounds(regions[0].dstOffset, regions[0].dstOffset + regions[0].size);
+
+    for (uint32_t i = 0; i < region_count; ++i) {
+        const RegionType& region = regions[i];
+        src_ranges[i] = vvl::range<VkDeviceSize>{region.srcOffset, region.srcOffset + region.size};
+        dst_ranges[i] = vvl::range<VkDeviceSize>{region.dstOffset, region.dstOffset + region.size};
+
+        src_ranges_bounds.begin = std::min(src_ranges_bounds.begin, region.srcOffset);
+        src_ranges_bounds.end = std::max(src_ranges_bounds.end, region.srcOffset + region.size);
+
+        dst_ranges_bounds.begin = std::min(dst_ranges_bounds.begin, region.dstOffset);
+        dst_ranges_bounds.end = std::max(dst_ranges_bounds.end, region.dstOffset + region.size);
+    }
+
+    auto queue_submit_validation = [this, &src_buffer_state, &dst_buffer_state, src_ranges = std::move(src_ranges),
+                                    dst_ranges = std::move(dst_ranges), src_ranges_bounds, dst_ranges_bounds,
+                                    loc](const class vvl::Queue& queue_state, const vvl::CommandBuffer& cb_state) -> bool {
+        bool skip = false;
+
+        auto src_vk_memory_to_ranges_map = src_buffer_state.GetBoundRanges(src_ranges_bounds, src_ranges);
+        auto dst_vk_memory_to_ranges_map = dst_buffer_state.GetBoundRanges(dst_ranges_bounds, dst_ranges);
+
+        for (const auto& [vk_memory, src_ranges] : src_vk_memory_to_ranges_map) {
+            const auto find_mem_it = dst_vk_memory_to_ranges_map.find(vk_memory);
+            if (find_mem_it == dst_vk_memory_to_ranges_map.end()) {
+                continue;
+            }
+            // Some source and destination ranges are bound to the same VkDeviceMemory, look for overlaps.
+            // Memory ranges are sorted, so looking for overlaps can be done in linear time
+
+            auto& dst_ranges_vec = find_mem_it->second;
+            auto src_ranges_it = src_ranges.cbegin();
+            auto dst_ranges_it = dst_ranges_vec.cbegin();
+
+            while (src_ranges_it != src_ranges.cend() && dst_ranges_it != dst_ranges_vec.cend()) {
+                if (src_ranges_it->first.intersects(dst_ranges_it->first)) {
+                    auto memory_range_overlap = src_ranges_it->first & dst_ranges_it->first;
+
+                    const LogObjectList objlist(cb_state.Handle(), src_buffer_state.Handle(), dst_buffer_state.Handle(), vk_memory);
+                    const bool is_2 = loc.function == vvl::Func::vkCmdCopyBuffer2 || loc.function == vvl::Func::vkCmdCopyBuffer2KHR;
+                    const char* vuid = is_2 ? "VUID-VkCopyBufferInfo2-pRegions-00117" : "VUID-vkCmdCopyBuffer-pRegions-00117";
+                    skip |= validator.LogError(
+                        vuid, objlist, loc,
+                        "Copy source buffer range %s (from buffer %s) and destination buffer range %s (from buffer %s) are "
+                        "bound to the same memory (%s), "
+                        "and end up overlapping on memory range %s.",
+                        vvl::string_range(src_ranges_it->second).c_str(),
+                        validator.FormatHandle(src_buffer_state.VkHandle()).c_str(),
+                        vvl::string_range(dst_ranges_it->second).c_str(),
+                        validator.FormatHandle(dst_buffer_state.VkHandle()).c_str(), validator.FormatHandle(vk_memory).c_str(),
+                        vvl::string_range(memory_range_overlap).c_str());
+                }
+
+                if (src_ranges_it->first < dst_ranges_it->first) {
+                    ++src_ranges_it;
+                } else {
+                    ++dst_ranges_it;
+                }
+            }
+        }
+        return skip;
+    };
+
+    queue_submit_functions.emplace_back(queue_submit_validation);
+}
+
+void CommandBufferSubState::RecordCopyBuffer(vvl::Buffer& src_buffer_state, vvl::Buffer& dst_buffer_state, uint32_t region_count,
+                                             const VkBufferCopy* regions, const Location& loc) {
+    RecordCopyBufferCommon(src_buffer_state, dst_buffer_state, region_count, regions, loc);
+}
+
+void CommandBufferSubState::RecordCopyBuffer2(vvl::Buffer& src_buffer_state, vvl::Buffer& dst_buffer_state, uint32_t region_count,
+                                              const VkBufferCopy2* regions, const Location& loc) {
+    RecordCopyBufferCommon(src_buffer_state, dst_buffer_state, region_count, regions, loc);
+}
+
+void CommandBufferSubState::RecordCopyImage(vvl::Image& src_image_state, vvl::Image& dst_image_state,
+                                            VkImageLayout src_image_layout, VkImageLayout dst_image_layout, uint32_t region_count,
+                                            const VkImageCopy* regions, const Location& loc) {
+    for (const VkImageCopy& region : vvl::make_span(regions, region_count)) {
+        base.TrackImageFirstLayout(src_image_state, RangeFromLayers(region.srcSubresource), region.srcOffset.z, region.extent.depth,
+                                   src_image_layout);
+        base.TrackImageFirstLayout(dst_image_state, RangeFromLayers(region.dstSubresource), region.dstOffset.z, region.extent.depth,
+                                   dst_image_layout);
+    }
+}
+
+void CommandBufferSubState::RecordCopyImage2(vvl::Image& src_image_state, vvl::Image& dst_image_state,
+                                             VkImageLayout src_image_layout, VkImageLayout dst_image_layout, uint32_t region_count,
+                                             const VkImageCopy2* regions, const Location& loc) {
+    for (const VkImageCopy2& region : vvl::make_span(regions, region_count)) {
+        base.TrackImageFirstLayout(src_image_state, RangeFromLayers(region.srcSubresource), region.srcOffset.z, region.extent.depth,
+                                   src_image_layout);
+        base.TrackImageFirstLayout(dst_image_state, RangeFromLayers(region.dstSubresource), region.dstOffset.z, region.extent.depth,
+                                   dst_image_layout);
+    }
+}
+
+void CommandBufferSubState::RecordCopyBufferToImage(vvl::Image& dst_image_state, VkImageLayout dst_image_layout,
+                                                    uint32_t region_count, const VkBufferImageCopy* regions, const Location& loc) {
+    for (const VkBufferImageCopy& region : vvl::make_span(regions, region_count)) {
+        base.TrackImageFirstLayout(dst_image_state, RangeFromLayers(region.imageSubresource), region.imageOffset.z,
+                                   region.imageExtent.depth, dst_image_layout);
+    }
+}
+
+void CommandBufferSubState::RecordCopyBufferToImage2(vvl::Image& dst_image_state, VkImageLayout dst_image_layout,
+                                                     uint32_t region_count, const VkBufferImageCopy2* regions,
+                                                     const Location& loc) {
+    for (const VkBufferImageCopy2& region : vvl::make_span(regions, region_count)) {
+        base.TrackImageFirstLayout(dst_image_state, RangeFromLayers(region.imageSubresource), region.imageOffset.z,
+                                   region.imageExtent.depth, dst_image_layout);
+    }
+}
+
+void CommandBufferSubState::RecordCopyImageToBuffer(vvl::Image& src_image_state, VkImageLayout src_image_layout,
+                                                    uint32_t region_count, const VkBufferImageCopy* regions, const Location& loc) {
+    for (const VkBufferImageCopy& region : vvl::make_span(regions, region_count)) {
+        base.TrackImageFirstLayout(src_image_state, RangeFromLayers(region.imageSubresource), region.imageOffset.z,
+                                   region.imageExtent.depth, src_image_layout);
+    }
+}
+
+void CommandBufferSubState::RecordCopyImageToBuffer2(vvl::Image& src_image_state, VkImageLayout src_image_layout,
+                                                     uint32_t region_count, const VkBufferImageCopy2* regions,
+                                                     const Location& loc) {
+    for (const VkBufferImageCopy2& region : vvl::make_span(regions, region_count)) {
+        base.TrackImageFirstLayout(src_image_state, RangeFromLayers(region.imageSubresource), region.imageOffset.z,
+                                   region.imageExtent.depth, src_image_layout);
+    }
+}
+
+void CommandBufferSubState::RecordBlitImage(vvl::Image& src_image_state, vvl::Image& dst_image_state,
+                                            VkImageLayout src_image_layout, VkImageLayout dst_image_layout, uint32_t region_count,
+                                            const VkImageBlit* regions, const Location& loc) {
+    for (const VkImageBlit& region : vvl::make_span(regions, region_count)) {
+        const int32_t src_depth_offset = (int32_t)std::min(region.srcOffsets[0].z, region.srcOffsets[1].z);
+        const uint32_t src_depth_extent = (uint32_t)std::abs(region.srcOffsets[1].z - region.srcOffsets[0].z);
+        base.TrackImageFirstLayout(src_image_state, RangeFromLayers(region.srcSubresource), src_depth_offset, src_depth_extent,
+                                   src_image_layout);
+
+        const int32_t dst_depth_offset = (int32_t)std::min(region.dstOffsets[0].z, region.dstOffsets[1].z);
+        const uint32_t dst_depth_extent = (uint32_t)std::abs(region.dstOffsets[1].z - region.dstOffsets[0].z);
+        base.TrackImageFirstLayout(dst_image_state, RangeFromLayers(region.dstSubresource), dst_depth_offset, dst_depth_extent,
+                                   dst_image_layout);
+    }
+}
+
+void CommandBufferSubState::RecordBlitImage2(vvl::Image& src_image_state, vvl::Image& dst_image_state,
+                                             VkImageLayout src_image_layout, VkImageLayout dst_image_layout, uint32_t region_count,
+                                             const VkImageBlit2* regions, const Location& loc) {
+    for (const VkImageBlit2& region : vvl::make_span(regions, region_count)) {
+        const int32_t src_depth_offset = (int32_t)std::min(region.srcOffsets[0].z, region.srcOffsets[1].z);
+        const uint32_t src_depth_extent = (uint32_t)std::abs(region.srcOffsets[1].z - region.srcOffsets[0].z);
+        base.TrackImageFirstLayout(src_image_state, RangeFromLayers(region.srcSubresource), src_depth_offset, src_depth_extent,
+                                   src_image_layout);
+
+        const int32_t dst_depth_offset = (int32_t)std::min(region.dstOffsets[0].z, region.dstOffsets[1].z);
+        const uint32_t dst_depth_extent = (uint32_t)std::abs(region.dstOffsets[1].z - region.dstOffsets[0].z);
+        base.TrackImageFirstLayout(dst_image_state, RangeFromLayers(region.dstSubresource), dst_depth_offset, dst_depth_extent,
+                                   dst_image_layout);
+    }
+}
+
+void CommandBufferSubState::RecordClearColorImage(vvl::Image& image_state, VkImageLayout image_layout, const VkClearColorValue*,
+                                                  uint32_t range_count, const VkImageSubresourceRange* ranges, const Location&) {
+    for (uint32_t i = 0; i < range_count; ++i) {
+        base.TrackImageFirstLayout(image_state, ranges[i], 0, 0, image_layout);
+    }
+}
+
+void CommandBufferSubState::RecordClearDepthStencilImage(vvl::Image& image_state, VkImageLayout image_layout,
+                                                         const VkClearDepthStencilValue*, uint32_t range_count,
+                                                         const VkImageSubresourceRange* ranges, const Location&) {
+    for (uint32_t i = 0; i < range_count; ++i) {
+        base.TrackImageFirstLayout(image_state, ranges[i], 0, 0, image_layout);
+    }
+}
 
 void CommandBufferSubState::RecordClearAttachments(uint32_t attachment_count, const VkClearAttachment* pAttachments,
                                                    uint32_t rect_count, const VkClearRect* pRects, const Location& loc) {
