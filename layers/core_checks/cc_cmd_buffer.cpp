@@ -1066,7 +1066,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsRenderPass(const vvl::CommandBuffer &
                 skip |= LogError("VUID-vkCmdExecuteCommands-contents-09680", objlist, loc,
                                  "contents of the vkCmdBeginRenderPass() call was %s but must be "
                                  "VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS or "
-                                 "VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_KHR"
+                                 "VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_KHR "
                                  "when calling vkCmdExecuteCommands() within the first subpass.",
                                  string_VkSubpassContents(cb_state.active_subpass_contents));
             } else {
@@ -1074,7 +1074,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsRenderPass(const vvl::CommandBuffer &
                 skip |= LogError("VUID-vkCmdExecuteCommands-None-09681", objlist, loc,
                                  "contents of the last vkCmdNextSubpass() call was %s but must be "
                                  "VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS or "
-                                 "VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_KHR"
+                                 "VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_KHR "
                                  "when calling vkCmdExecuteCommands() within a non-first subpass (currently subpass %" PRIu32 ").",
                                  string_VkSubpassContents(cb_state.active_subpass_contents), cb_state.GetActiveSubpass());
             }
