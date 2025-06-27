@@ -17,6 +17,7 @@
 
 #include <vulkan/vulkan_core.h>
 #include "gpuav/resources/gpuav_state_trackers.h"
+#include "gpuav/descriptor_validation/gpuav_descriptor_validation.h"
 #include "gpuav/instrumentation/gpuav_instrumentation.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "gpuav/core/gpuav.h"
@@ -94,6 +95,10 @@ void CommandBufferSubState::RecordActionCommand(LastBound &last_bound, const Loc
     }
     PostCallSetupShaderInstrumentationResources(gpuav_, *this, last_bound, loc);
     IncrementCommandCount(last_bound.bind_point, loc);
+}
+
+void CommandBufferSubState::UpdateLastBoundDescriptorSets(VkPipelineBindPoint bind_point, const Location &loc) {
+    descriptor::UpdateBoundDescriptors(gpuav_, *this, bind_point, loc);
 }
 
 void CommandBufferSubState::Destroy() { ResetCBState(true); }
