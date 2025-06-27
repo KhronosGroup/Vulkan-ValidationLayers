@@ -1509,11 +1509,14 @@ bool CoreChecks::ValidateImageSubresourceRange(const uint32_t image_mip_count, c
     }
 
     if (image_layer_count_var == Field::depth && subresourceRange.levelCount != 1u) {
-        if (subresource_loc.function != Func::vkCmdClearColorImage &&
-            subresource_loc.function != Func::vkCmdClearDepthStencilImage && subresource_loc.function != Func::vkCreateImageView) {
+        const bool check_function = subresource_loc.function != Func::vkCmdClearColorImage &&
+                                    subresource_loc.function != Func::vkCmdClearDepthStencilImage &&
+                                    subresource_loc.function != Func::vkCreateImageView;
+        if (check_function && (subresourceRange.baseArrayLayer != 0 || subresourceRange.layerCount != VK_REMAINING_ARRAY_LAYERS)) {
             const auto vuid = GetSubresourceRangeVUID(subresource_loc, vvl::SubresourceRangeError::LevelCount_10799);
-            skip |=
-                LogError(vuid, objlist, subresource_loc.dot(Field::levelCount), "is (%" PRIu32 ").", subresourceRange.levelCount);
+            skip |= LogError(vuid, objlist, subresource_loc.dot(Field::levelCount),
+                             "is %" PRIu32 ", baseArrayLayer is %" PRIu32 ", and layerCount is %" PRIu32 ".",
+                             subresourceRange.levelCount, subresourceRange.baseArrayLayer, subresourceRange.layerCount);
         }
     }
 
