@@ -1229,7 +1229,7 @@ bool CoreChecks::ValidateDrawDynamicStateFragment(const LastBound& last_bound_st
     if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT) &&
             cb_state.dynamic_state_value.sample_locations_enable) {
-            if (rp_state && rp_state->UsesDepthStencilAttachment(cb_state.GetActiveSubpass())) {
+            if (cb_state.HasValidDepthAttachment()) {
                 for (uint32_t i = 0; i < cb_state.active_attachments.size(); i++) {
                     const auto* attachment = cb_state.active_attachments[i].image_view;
                     if (attachment && attachment->create_info.subresourceRange.aspectMask &
