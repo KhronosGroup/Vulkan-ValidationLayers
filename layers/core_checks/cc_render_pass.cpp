@@ -633,34 +633,6 @@ bool CoreChecks::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffe
     return ValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, pSubpassBeginInfo->contents, error_obj);
 }
 
-void CoreChecks::RecordCmdBeginRenderPassLayouts(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                 const VkSubpassContents contents) {
-    if (!pRenderPassBegin) {
-        return;
-    }
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    auto render_pass_state = Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
-    if (cb_state && render_pass_state) {
-        // transition attachments to the correct layouts for beginning of renderPass and first subpass
-        TransitionBeginRenderPassLayouts(*cb_state, *render_pass_state);
-    }
-}
-
-void CoreChecks::PostCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                  VkSubpassContents contents, const RecordObject &record_obj) {
-    RecordCmdBeginRenderPassLayouts(commandBuffer, pRenderPassBegin, contents);
-}
-
-void CoreChecks::PostCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                      const VkSubpassBeginInfo *pSubpassBeginInfo, const RecordObject &record_obj) {
-    PostCallRecordCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, record_obj);
-}
-
-void CoreChecks::PostCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                   const VkSubpassBeginInfo *pSubpassBeginInfo, const RecordObject &record_obj) {
-    RecordCmdBeginRenderPassLayouts(commandBuffer, pRenderPassBegin, pSubpassBeginInfo->contents);
-}
-
 bool CoreChecks::ValidateCmdEndRenderPass(const vvl::CommandBuffer& cb_state, const ErrorObject &error_obj) const {
     bool skip = false;
     const bool use_rp2 = error_obj.location.function != Func::vkCmdEndRenderPass;
@@ -4310,27 +4282,6 @@ bool CoreChecks::PreCallValidateCmdNextSubpass2KHR(VkCommandBuffer commandBuffer
 bool CoreChecks::PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
                                                 const VkSubpassEndInfo *pSubpassEndInfo, const ErrorObject &error_obj) const {
     return ValidateCmdNextSubpass(commandBuffer, error_obj);
-}
-
-void CoreChecks::RecordCmdNextSubpassLayouts(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    ASSERT_AND_RETURN(cb_state->active_render_pass);
-    TransitionSubpassLayouts(*cb_state, *cb_state->active_render_pass, cb_state->GetActiveSubpass());
-}
-
-void CoreChecks::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
-                                              const RecordObject &record_obj) {
-    RecordCmdNextSubpassLayouts(commandBuffer, contents);
-}
-
-void CoreChecks::PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                                  const VkSubpassEndInfo *pSubpassEndInfo, const RecordObject &record_obj) {
-    PostCallRecordCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, record_obj);
-}
-
-void CoreChecks::PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                               const VkSubpassEndInfo *pSubpassEndInfo, const RecordObject &record_obj) {
-    RecordCmdNextSubpassLayouts(commandBuffer, pSubpassBeginInfo->contents);
 }
 
 bool CoreChecks::MatchUsage(uint32_t count, const VkAttachmentReference2 *attachments, const VkFramebufferCreateInfo &fbci,

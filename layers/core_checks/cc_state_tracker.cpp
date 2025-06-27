@@ -184,6 +184,17 @@ void CommandBufferSubState::RecordSetScissorWithCount(uint32_t scissor_count) {
     scissor.trashed_count = false;
 }
 
+void CommandBufferSubState::RecordNextSubpass() {
+    ASSERT_AND_RETURN(base.active_render_pass);
+    validator.TransitionSubpassLayouts(base, *base.active_render_pass, base.GetActiveSubpass());
+}
+
+void CommandBufferSubState::RecordBeginRenderPass(const VkRenderPassBeginInfo& render_pass_begin) {
+    ASSERT_AND_RETURN(base.active_render_pass);
+    // transition attachments to the correct layouts for beginning of renderPass and first subpass
+    validator.TransitionBeginRenderPassLayouts(base, *base.active_render_pass);
+}
+
 void CommandBufferSubState::RecordEndRendering(const VkRenderingEndInfoEXT* pRenderingEndInfo) {
     // Only track the first call to vkCmdEndRendering2EXT for pFragmentDensityOffsets, because they must match due to VU 10730
     if (fragment_density_offsets.empty()) {
