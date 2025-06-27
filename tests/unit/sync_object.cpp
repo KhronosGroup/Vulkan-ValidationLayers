@@ -5208,7 +5208,7 @@ TEST_F(NegativeSyncObject, Transition3dImageWithMipLevels) {
     image_memory_barrier.subresourceRange.baseMipLevel = 0u;
     image_memory_barrier.subresourceRange.levelCount = 2u;
     image_memory_barrier.subresourceRange.baseArrayLayer = 0u;
-    image_memory_barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+    image_memory_barrier.subresourceRange.layerCount = 1u;
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier-maintenance9-10799");
