@@ -1,6 +1,6 @@
 ## Introduction
 
-The Vulkan-ValidationLayers project has had its architecture evolve several times since it was started. Initially, validation was implemented as independent layers, which could be enabled using the vulkan loader.  This design had high overhead and was difficult to test since the layers could be enabled in any order, which could cause very different behaviors. 
+The Vulkan-ValidationLayers project has had its architecture evolve several times since it was started. Initially, validation was implemented as independent layers, which could be enabled using the vulkan loader.  This design had high overhead and was difficult to test since the layers could be enabled in any order, which could cause very different behaviors.
 
 So all of the separate layers were combined into a single layer. The original layers were now called validation objects. A component called the chassis was made which intercepts vulkan commands and let validation objects do validation and track state. Several of the validation objects used common code to do state tracking, but since state tracking was implemented in a base class, each validation object had its own copy of the state data. This was redundant both for memory and CPU overhead.
 
@@ -36,7 +36,7 @@ The dispatch objects also store cached copies of device properties, enabled feat
 
 ### Handle wrapping
 
-Validation has an option to replace ICD handles with generated handles which are not pointers and should be consistent run to run. Unfortunately this requires some state tracking to properly substitute in the correct handles when calling down to the ICD. This state is a separate subset of what is done by the state tracker. 
+Validation has an option to replace ICD handles with generated handles which are not pointers and should be consistent run to run. Unfortunately this requires some state tracking to properly substitute in the correct handles when calling down to the ICD. This state is a separate subset of what is done by the state tracker.
 
 ## Base validation objects
 
@@ -56,3 +56,52 @@ The diagram above shows the class hierarchy used for validation objects.
 
 Some validations objects require additional state to be tracked for various state objects, such as command buffers, images and queues.  When each validation type had its own state tracker, this was implemented using derived classes and factory methods for creating state objects. With the shared state tracker, specialization by inheritance is not possible. Instead, some state objects implement sub states, which can be used to store additional data. Some sub state types also provide virtual methods which can be overridden to perform actions when something happens to the state object. When this happens, the substates are called in the same order used by the dispatch objects.
 
+## Command Buffers
+
+`VkCommandBuffer` objects is where most of the state tracking occurs. Currently the `vvl::CommandBuffer` object is easily 3 or 4x larger then the next state object. From profiling, a lot of wall clock time is spend in `vkCmd*` calls not because they are slow, but because they will get called millions of times in real world applications.
+
+We adopt a slightly different strategy with them, instead of using the chassis `PreCallRecord`/`PostCallRecord`, for as many spots as possible we want to funnel things through the `vvl::CommanBuffer` state object itself for recording.
+
+What was once
+
+```c++
+// state_tracker.cpp
+void DeviceState::PostCallRecordCmdXXX() {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->state_a = 1;
+    cb_state->state_b = 2;
+}
+
+// cc_xxx.cpp
+void CoreCheck::PostCallRecordCmdXXX() {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    const auto &cb_sub_state = core::SubState(*cb_state);
+    cb_state->state_c = 3;
+    cb_sub_state->state_d = 4;
+}
+```
+
+Now turned into
+
+```c++
+void DeviceState::PostCallRecordCmdXXX() {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer); // one state lookup for command buffer
+    cb_state->RecordXXX();
+}
+
+// cmd_buffer_state.cpp
+void CommandBuffer::RecordXX() {
+    state_a = 1;
+    state_b = 2;
+
+    for (auto &item : sub_states_) {
+        item.second->RecordXX();
+    }
+}
+
+// cc_state_tracker.cpp, gpuav_state_tracker.cpp, bp_state.cpp, etc
+void CommandBufferSubState::RecordXX() {
+    base.state_c = 3;
+    state_d = 4;
+}
+```
