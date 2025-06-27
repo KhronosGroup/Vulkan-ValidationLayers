@@ -588,6 +588,182 @@ void CommandBufferSubState::EnqueueUpdateVideoInlineQueries(const VkVideoInlineQ
     });
 }
 
+void CommandBufferSubState::RecordBeginVideoCoding(vvl::VideoSession& vs_state, const VkVideoBeginCodingInfoKHR& begin_info,
+                                                   const Location& loc) {
+    if (begin_info.referenceSlotCount > 0) {
+        std::vector<vvl::VideoReferenceSlot> expected_slots{};
+        expected_slots.reserve(begin_info.referenceSlotCount);
+
+        for (uint32_t i = 0; i < begin_info.referenceSlotCount; ++i) {
+            if (begin_info.pReferenceSlots[i].slotIndex >= 0) {
+                expected_slots.emplace_back(*validator.device_state, *vs_state.profile, begin_info.pReferenceSlots[i], false);
+            }
+        }
+
+        // Enqueue submission time validation of DPB slots
+        base.video_session_updates[vs_state.VkHandle()].emplace_back(
+            [this, expected_slots, loc](const vvl::VideoSession* vs_state, vvl::VideoSessionDeviceState& dev_state,
+                                        bool do_validate) {
+                if (!do_validate) return false;
+                bool skip = false;
+                for (const auto& slot : expected_slots) {
+                    if (!dev_state.IsSlotActive(slot.index)) {
+                        skip |= validator.LogError("VUID-vkCmdBeginVideoCodingKHR-slotIndex-07239", vs_state->Handle(), loc,
+                                                   "DPB slot index %d is not active in %s.", slot.index,
+                                                   validator.FormatHandle(*vs_state).c_str());
+                    } else if (slot.resource && !dev_state.IsSlotPicture(slot.index, slot.resource)) {
+                        skip |= validator.LogError("VUID-vkCmdBeginVideoCodingKHR-pPictureResource-07265", vs_state->Handle(), loc,
+                                                   "DPB slot index %d of %s is not currently associated with the specified "
+                                                   "video picture resource: %s, layer %u, offset (%s), extent (%s).",
+                                                   slot.index, validator.FormatHandle(*vs_state).c_str(),
+                                                   validator.FormatHandle(slot.resource.image_state->Handle()).c_str(),
+                                                   slot.resource.range.baseArrayLayer,
+                                                   string_VkOffset2D(slot.resource.coded_offset).c_str(),
+                                                   string_VkExtent2D(slot.resource.coded_extent).c_str());
+                    }
+                }
+                return skip;
+            });
+    }
+
+    if (vs_state.IsEncode()) {
+        vku::safe_VkVideoBeginCodingInfoKHR safe_begin_info(&begin_info);
+
+        // Enqueue submission time validation of rate control state
+        base.video_session_updates[vs_state.VkHandle()].emplace_back(
+            [this, safe_begin_info, loc](const vvl::VideoSession* vs_state, vvl::VideoSessionDeviceState& dev_state,
+                                         bool do_validate) {
+                if (!do_validate) return false;
+                return dev_state.ValidateRateControlState(validator, vs_state, safe_begin_info, loc);
+            });
+    }
+}
+
+void CommandBufferSubState::EnqueueVerifyVideoSessionInitialized(vvl::VideoSession& vs_state, const Location& loc,
+                                                                 const char* vuid) {
+    base.video_session_updates[vs_state.VkHandle()].emplace_back(
+        [this, loc, vuid](const vvl::VideoSession* vs_state, vvl::VideoSessionDeviceState& dev_state, bool do_validate) {
+            bool skip = false;
+            if (!dev_state.IsInitialized()) {
+                skip |= validator.LogError(vuid, vs_state->Handle(), loc, "Bound video session %s is uninitialized.",
+                                           validator.FormatHandle(*vs_state).c_str());
+            }
+            return skip;
+        });
+}
+
+void CommandBufferSubState::EnqueueVerifyVideoInlineQueryUnavailable(const VkVideoInlineQueryInfoKHR& query_info,
+                                                                     vvl::Func command) {
+    if (validator.disabled[query_validation]) return;
+    query_updates.emplace_back([this, query_info, command](vvl::CommandBuffer& cb_state_arg, bool do_validate, VkQueryPool&,
+                                                           uint32_t perf_query_pass, QueryMap* local_query_to_state_map) {
+        if (!do_validate) return false;
+        bool skip = false;
+        for (uint32_t i = 0; i < query_info.queryCount; i++) {
+            QueryObject query_obj = {query_info.queryPool, query_info.firstQuery + i, perf_query_pass};
+            skip |= validator.VerifyQueryIsReset(cb_state_arg, query_obj, command, perf_query_pass, local_query_to_state_map);
+        }
+        return skip;
+    });
+}
+
+void CommandBufferSubState::RecordControlVideoCoding(vvl::VideoSession& vs_state, const VkVideoCodingControlInfoKHR& control_info,
+                                                     const Location& loc) {
+    if ((control_info.flags & VK_VIDEO_CODING_CONTROL_RESET_BIT_KHR) == 0) {
+        EnqueueVerifyVideoSessionInitialized(vs_state, loc, "VUID-vkCmdControlVideoCodingKHR-flags-07017");
+    }
+}
+
+void CommandBufferSubState::RecordDecodeVideo(vvl::VideoSession& vs_state, const VkVideoDecodeInfoKHR& decode_info,
+                                              const Location& loc) {
+    EnqueueVerifyVideoSessionInitialized(vs_state, loc, "VUID-vkCmdDecodeVideoKHR-None-07011");
+
+    if (vs_state.GetCodecOp() == VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR) {
+        std::vector<vvl::VideoReferenceSlot> reference_slots{};
+        reference_slots.reserve(decode_info.referenceSlotCount);
+        for (uint32_t i = 0; i < decode_info.referenceSlotCount; ++i) {
+            reference_slots.emplace_back(*validator.device_state, *vs_state.profile, decode_info.pReferenceSlots[i]);
+        }
+
+        // Enqueue submission time validation of picture kind (frame, top field, bottom field) for H.264
+        base.video_session_updates[vs_state.VkHandle()].emplace_back(
+            [this, reference_slots, loc](const vvl::VideoSession* vs_state, vvl::VideoSessionDeviceState& dev_state,
+                                         bool do_validate) {
+                if (!do_validate) return false;
+                bool skip = false;
+                const auto log_picture_kind_error = [&](const vvl::VideoReferenceSlot& slot, const char* vuid,
+                                                        const char* picture_kind) -> bool {
+                    return validator.LogError(vuid, vs_state->Handle(), loc,
+                                              "DPB slot index %d of %s does not currently contain a %s with the specified "
+                                              "video picture resource: %s, layer %u, offset (%s), extent (%s).",
+                                              slot.index, validator.FormatHandle(*vs_state).c_str(), picture_kind,
+                                              validator.FormatHandle(slot.resource.image_state->Handle()).c_str(),
+                                              slot.resource.range.baseArrayLayer,
+                                              string_VkOffset2D(slot.resource.coded_offset).c_str(),
+                                              string_VkExtent2D(slot.resource.coded_extent).c_str());
+                };
+                for (const auto& slot : reference_slots) {
+                    if (slot.picture_id.IsFrame() &&
+                        !dev_state.IsSlotPicture(slot.index, vvl::VideoPictureID::Frame(), slot.resource)) {
+                        skip |= log_picture_kind_error(slot, "VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07266", "frame");
+                    }
+                    if (slot.picture_id.ContainsTopField() &&
+                        !dev_state.IsSlotPicture(slot.index, vvl::VideoPictureID::TopField(), slot.resource)) {
+                        skip |= log_picture_kind_error(slot, "VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07267", "top field");
+                    }
+                    if (slot.picture_id.ContainsBottomField() &&
+                        !dev_state.IsSlotPicture(slot.index, vvl::VideoPictureID::BottomField(), slot.resource)) {
+                        skip |= log_picture_kind_error(slot, "VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07268", "bottom field");
+                    }
+                }
+                return skip;
+            });
+    }
+
+    if (vs_state.create_info.flags & VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR) {
+        const auto inline_query_info = vku::FindStructInPNextChain<VkVideoInlineQueryInfoKHR>(decode_info.pNext);
+        if (inline_query_info != nullptr && inline_query_info->queryPool != VK_NULL_HANDLE) {
+            EnqueueVerifyVideoInlineQueryUnavailable(*inline_query_info, loc.function);
+        }
+    }
+}
+
+void CommandBufferSubState::RecordEncodeVideo(vvl::VideoSession& vs_state, const VkVideoEncodeInfoKHR& encode_info,
+                                              const Location& loc) {
+    EnqueueVerifyVideoSessionInitialized(vs_state, loc, "VUID-vkCmdEncodeVideoKHR-None-07012");
+
+    // For encode sessions also verify encode quality level match for the bound parameters object
+    if (vs_state.IsEncode() && base.bound_video_session_parameters) {
+        if (!base.video_encode_quality_level.has_value()) {
+            // If we already know the current encode quality level already at command buffer recording
+            // time, because it was set in this command buffer, then that was already checked outside
+            // so we only have to do submit-time validation if that's not the case
+            base.video_session_updates[vs_state.VkHandle()].emplace_back(
+                [this, vsp_state = base.bound_video_session_parameters, loc](
+                    const vvl::VideoSession* vs_state, vvl::VideoSessionDeviceState& dev_state, bool do_validate) {
+                    if (!do_validate) return false;
+                    bool skip = false;
+                    if (vsp_state->GetEncodeQualityLevel() != dev_state.GetEncodeQualityLevel()) {
+                        const LogObjectList objlist(vs_state->Handle(), vsp_state->Handle());
+                        skip |= validator.LogError("VUID-vkCmdEncodeVideoKHR-None-08318", objlist, loc,
+                                                   "The currently configured encode quality level (%u) for %s "
+                                                   "does not match the encode quality level (%u) %s was created with.",
+                                                   dev_state.GetEncodeQualityLevel(), validator.FormatHandle(*vs_state).c_str(),
+                                                   vsp_state->GetEncodeQualityLevel(), validator.FormatHandle(*vsp_state).c_str());
+                    }
+                    return skip;
+                });
+        }
+    }
+
+    if (vs_state.create_info.flags & VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR) {
+        const auto inline_query_info = vku::FindStructInPNextChain<VkVideoInlineQueryInfoKHR>(encode_info.pNext);
+        if (inline_query_info != nullptr && inline_query_info->queryPool != VK_NULL_HANDLE) {
+            EnqueueVerifyVideoInlineQueryUnavailable(*inline_query_info, loc.function);
+        }
+    }
+}
+
 void CommandBufferSubState::Retire(uint32_t perf_submit_pass,
                                    const std::function<bool(const QueryObject&)>& is_query_updated_after) {
     QueryMap local_query_to_state_map;

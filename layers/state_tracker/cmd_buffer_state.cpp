@@ -775,16 +775,15 @@ void CommandBuffer::RecordEndRendering(const VkRenderingEndInfoEXT *pRenderingEn
     active_color_attachments_index.clear();
 }
 
-void CommandBuffer::BeginVideoCoding(const VkVideoBeginCodingInfoKHR *pBeginInfo) {
+void CommandBuffer::RecordBeginVideoCoding(const VkVideoBeginCodingInfoKHR &begin_info, const Location &loc) {
     command_count++;
-    bound_video_session = dev_data.Get<vvl::VideoSession>(pBeginInfo->videoSession);
-    bound_video_session_parameters = dev_data.Get<vvl::VideoSessionParameters>(pBeginInfo->videoSessionParameters);
+    bound_video_session = dev_data.Get<vvl::VideoSession>(begin_info.videoSession);
+    ASSERT_AND_RETURN(bound_video_session);
+    bound_video_session_parameters = dev_data.Get<vvl::VideoSessionParameters>(begin_info.videoSessionParameters);
 
-    if (bound_video_session) {
-        // Connect this video session to cmdBuffer
-        if (!dev_data.disabled[command_buffer_state]) {
-            AddChild(bound_video_session);
-        }
+    // Connect this video session to cmdBuffer
+    if (!dev_data.disabled[command_buffer_state]) {
+        AddChild(bound_video_session);
     }
 
     if (bound_video_session_parameters) {
@@ -794,23 +793,28 @@ void CommandBuffer::BeginVideoCoding(const VkVideoBeginCodingInfoKHR *pBeginInfo
         }
     }
 
+    // Need to record substate first
+    for (auto &item : sub_states_) {
+        item.second->RecordBeginVideoCoding(*bound_video_session, begin_info, loc);
+    }
+
     if (bound_video_session->IsEncode()) {
-        video_encode_rate_control_state = VideoEncodeRateControlState(bound_video_session->GetCodecOp(), pBeginInfo);
+        video_encode_rate_control_state = VideoEncodeRateControlState(bound_video_session->GetCodecOp(), &begin_info);
         video_encode_quality_level.reset();
     }
 
-    if (pBeginInfo->referenceSlotCount > 0) {
+    if (begin_info.referenceSlotCount > 0) {
         size_t deactivated_slot_count = 0;
 
-        for (uint32_t i = 0; i < pBeginInfo->referenceSlotCount; ++i) {
+        for (uint32_t i = 0; i < begin_info.referenceSlotCount; ++i) {
             // Initialize the set of bound video picture resources
-            if (pBeginInfo->pReferenceSlots[i].pPictureResource != nullptr) {
-                int32_t slot_index = pBeginInfo->pReferenceSlots[i].slotIndex;
-                vvl::VideoPictureResource res(dev_data, *pBeginInfo->pReferenceSlots[i].pPictureResource);
+            if (begin_info.pReferenceSlots[i].pPictureResource != nullptr) {
+                int32_t slot_index = begin_info.pReferenceSlots[i].slotIndex;
+                vvl::VideoPictureResource res(dev_data, *begin_info.pReferenceSlots[i].pPictureResource);
                 bound_video_picture_resources.emplace(std::make_pair(res, slot_index));
             }
 
-            if (pBeginInfo->pReferenceSlots[i].slotIndex >= 0 && pBeginInfo->pReferenceSlots[i].pPictureResource == nullptr) {
+            if (begin_info.pReferenceSlots[i].slotIndex >= 0 && begin_info.pReferenceSlots[i].pPictureResource == nullptr) {
                 deactivated_slot_count++;
             }
         }
@@ -818,9 +822,9 @@ void CommandBuffer::BeginVideoCoding(const VkVideoBeginCodingInfoKHR *pBeginInfo
         if (deactivated_slot_count > 0) {
             std::vector<int32_t> deactivated_slots{};
             deactivated_slots.reserve(deactivated_slot_count);
-            for (uint32_t i = 0; i < pBeginInfo->referenceSlotCount; ++i) {
-                if (pBeginInfo->pReferenceSlots[i].slotIndex >= 0 && pBeginInfo->pReferenceSlots[i].pPictureResource == nullptr) {
-                    deactivated_slots.emplace_back(pBeginInfo->pReferenceSlots[i].slotIndex);
+            for (uint32_t i = 0; i < begin_info.referenceSlotCount; ++i) {
+                if (begin_info.pReferenceSlots[i].slotIndex >= 0 && begin_info.pReferenceSlots[i].pPictureResource == nullptr) {
+                    deactivated_slots.emplace_back(begin_info.pReferenceSlots[i].slotIndex);
                 }
             }
 
@@ -836,7 +840,7 @@ void CommandBuffer::BeginVideoCoding(const VkVideoBeginCodingInfoKHR *pBeginInfo
     }
 }
 
-void CommandBuffer::EndVideoCoding(const VkVideoEndCodingInfoKHR *pEndCodingInfo) {
+void CommandBuffer::RecordEndVideoCoding() {
     command_count++;
     bound_video_session = nullptr;
     bound_video_session_parameters = nullptr;
@@ -844,51 +848,57 @@ void CommandBuffer::EndVideoCoding(const VkVideoEndCodingInfoKHR *pEndCodingInfo
     video_encode_quality_level.reset();
 }
 
-void CommandBuffer::ControlVideoCoding(const VkVideoCodingControlInfoKHR *pControlInfo) {
+void CommandBuffer::RecordControlVideoCoding(const VkVideoCodingControlInfoKHR &control_info, const Location &loc) {
     command_count++;
+    if (!bound_video_session) {
+        return;
+    }
 
-    if (pControlInfo && bound_video_session) {
-        if (pControlInfo->flags & VK_VIDEO_CODING_CONTROL_RESET_BIT_KHR) {
-            // Remove DPB slot index association for bound video picture resources
-            for (auto &binding : bound_video_picture_resources) {
-                binding.second = -1;
-            }
+    // Need to record substate first
+    for (auto &item : sub_states_) {
+        item.second->RecordControlVideoCoding(*bound_video_session, control_info, loc);
+    }
 
-            // Enqueue submission time video session state reset/initialization
+    if (control_info.flags & VK_VIDEO_CODING_CONTROL_RESET_BIT_KHR) {
+        // Remove DPB slot index association for bound video picture resources
+        for (auto &binding : bound_video_picture_resources) {
+            binding.second = -1;
+        }
+
+        // Enqueue submission time video session state reset/initialization
+        video_session_updates[bound_video_session->VkHandle()].emplace_back(
+            [](const vvl::VideoSession *vs_state, vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
+                dev_state.Reset();
+                return false;
+            });
+    }
+
+    if (bound_video_session->IsEncode() && control_info.flags & VK_VIDEO_CODING_CONTROL_ENCODE_RATE_CONTROL_BIT_KHR) {
+        auto state = VideoEncodeRateControlState(bound_video_session->GetCodecOp(), &control_info);
+        if (state) {
+            video_encode_rate_control_state = state;
+
+            // Enqueue rate control specific device state changes
             video_session_updates[bound_video_session->VkHandle()].emplace_back(
-                [](const vvl::VideoSession *vs_state, vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
-                    dev_state.Reset();
+                [state](const vvl::VideoSession *vs_state, vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
+                    dev_state.SetRateControlState(state);
                     return false;
                 });
         }
+    }
 
-        if (bound_video_session->IsEncode() && pControlInfo->flags & VK_VIDEO_CODING_CONTROL_ENCODE_RATE_CONTROL_BIT_KHR) {
-            auto state = VideoEncodeRateControlState(bound_video_session->GetCodecOp(), pControlInfo);
-            if (state) {
-                video_encode_rate_control_state = state;
+    if (bound_video_session->IsEncode() && control_info.flags & VK_VIDEO_CODING_CONTROL_ENCODE_QUALITY_LEVEL_BIT_KHR) {
+        auto quality_level_info = vku::FindStructInPNextChain<VkVideoEncodeQualityLevelInfoKHR>(control_info.pNext);
+        if (quality_level_info != nullptr) {
+            uint32_t quality_level = quality_level_info->qualityLevel;
+            video_encode_quality_level = quality_level;
 
-                // Enqueue rate control specific device state changes
-                video_session_updates[bound_video_session->VkHandle()].emplace_back(
-                    [state](const vvl::VideoSession *vs_state, vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
-                        dev_state.SetRateControlState(state);
-                        return false;
-                    });
-            }
-        }
-
-        if (bound_video_session->IsEncode() && pControlInfo->flags & VK_VIDEO_CODING_CONTROL_ENCODE_QUALITY_LEVEL_BIT_KHR) {
-            auto quality_level_info = vku::FindStructInPNextChain<VkVideoEncodeQualityLevelInfoKHR>(pControlInfo->pNext);
-            if (quality_level_info != nullptr) {
-                uint32_t quality_level = quality_level_info->qualityLevel;
-                video_encode_quality_level = quality_level;
-
-                // Enqueue encode quality level device state change
-                video_session_updates[bound_video_session->VkHandle()].emplace_back(
-                    [quality_level](const vvl::VideoSession *vs_state, vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
-                        dev_state.SetEncodeQualityLevel(quality_level);
-                        return false;
-                    });
-            }
+            // Enqueue encode quality level device state change
+            video_session_updates[bound_video_session->VkHandle()].emplace_back(
+                [quality_level](const vvl::VideoSession *vs_state, vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
+                    dev_state.SetEncodeQualityLevel(quality_level);
+                    return false;
+                });
         }
     }
 }
@@ -903,82 +913,94 @@ void vvl::CommandBuffer::EnqueueUpdateVideoInlineQueries(const VkVideoInlineQuer
     }
 }
 
-void CommandBuffer::DecodeVideo(const VkVideoDecodeInfoKHR *pDecodeInfo) {
+void CommandBuffer::RecordDecodeVideo(const VkVideoDecodeInfoKHR &decode_info, const Location &loc) {
     command_count++;
+    if (!bound_video_session) {
+        return;
+    }
 
-    if (bound_video_session && pDecodeInfo) {
-        if (pDecodeInfo->pSetupReferenceSlot && pDecodeInfo->pSetupReferenceSlot->pPictureResource) {
-            vvl::VideoReferenceSlot setup_slot(dev_data, *bound_video_session->profile, *pDecodeInfo->pSetupReferenceSlot);
+    // Need to record substate first
+    for (auto &item : sub_states_) {
+        item.second->RecordDecodeVideo(*bound_video_session, decode_info, loc);
+    }
 
-            // Update bound video picture resource DPB slot index association
-            bound_video_picture_resources[setup_slot.resource] = setup_slot.index;
+    if (decode_info.pSetupReferenceSlot && decode_info.pSetupReferenceSlot->pPictureResource) {
+        vvl::VideoReferenceSlot setup_slot(dev_data, *bound_video_session->profile, *decode_info.pSetupReferenceSlot);
 
-            // Enqueue submission time reference slot setup or invalidation
-            bool reference_setup_requested = bound_video_session->ReferenceSetupRequested(*pDecodeInfo);
-            video_session_updates[bound_video_session->VkHandle()].emplace_back(
-                [setup_slot, reference_setup_requested](const vvl::VideoSession *vs_state, vvl::VideoSessionDeviceState &dev_state,
-                                                        bool do_validate) {
-                    if (reference_setup_requested) {
-                        dev_state.Activate(setup_slot.index, setup_slot.picture_id, setup_slot.resource);
-                    } else {
-                        dev_state.Invalidate(setup_slot.index, setup_slot.picture_id);
-                    }
-                    return false;
-                });
-        }
+        // Update bound video picture resource DPB slot index association
+        bound_video_picture_resources[setup_slot.resource] = setup_slot.index;
 
-        // Update active query indices
-        for (auto &query : active_queries) {
-            uint32_t op_count = bound_video_session->GetVideoDecodeOperationCount(pDecodeInfo);
-            query.active_query_index += op_count;
-        }
+        // Enqueue submission time reference slot setup or invalidation
+        bool reference_setup_requested = bound_video_session->ReferenceSetupRequested(decode_info);
+        video_session_updates[bound_video_session->VkHandle()].emplace_back(
+            [setup_slot, reference_setup_requested](const vvl::VideoSession *vs_state, vvl::VideoSessionDeviceState &dev_state,
+                                                    bool do_validate) {
+                if (reference_setup_requested) {
+                    dev_state.Activate(setup_slot.index, setup_slot.picture_id, setup_slot.resource);
+                } else {
+                    dev_state.Invalidate(setup_slot.index, setup_slot.picture_id);
+                }
+                return false;
+            });
+    }
 
-        // Update inline queries
-        if (bound_video_session->create_info.flags & VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR) {
-            const auto inline_query_info = vku::FindStructInPNextChain<VkVideoInlineQueryInfoKHR>(pDecodeInfo->pNext);
-            if (inline_query_info != nullptr && inline_query_info->queryPool != VK_NULL_HANDLE) {
-                EnqueueUpdateVideoInlineQueries(*inline_query_info);
-            }
+    // Update active query indices
+    for (auto &query : active_queries) {
+        uint32_t op_count = bound_video_session->GetVideoDecodeOperationCount(&decode_info);
+        query.active_query_index += op_count;
+    }
+
+    // Update inline queries
+    if (bound_video_session->create_info.flags & VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR) {
+        const auto inline_query_info = vku::FindStructInPNextChain<VkVideoInlineQueryInfoKHR>(decode_info.pNext);
+        if (inline_query_info != nullptr && inline_query_info->queryPool != VK_NULL_HANDLE) {
+            EnqueueUpdateVideoInlineQueries(*inline_query_info);
         }
     }
 }
 
-void vvl::CommandBuffer::EncodeVideo(const VkVideoEncodeInfoKHR *pEncodeInfo) {
+void vvl::CommandBuffer::RecordEncodeVideo(const VkVideoEncodeInfoKHR &encode_info, const Location &loc) {
     command_count++;
+    if (!bound_video_session) {
+        return;
+    }
 
-    if (bound_video_session && pEncodeInfo) {
-        if (pEncodeInfo->pSetupReferenceSlot && pEncodeInfo->pSetupReferenceSlot->pPictureResource) {
-            vvl::VideoReferenceSlot setup_slot(dev_data, *bound_video_session->profile, *pEncodeInfo->pSetupReferenceSlot);
+    // Need to record substate first
+    for (auto &item : sub_states_) {
+        item.second->RecordEncodeVideo(*bound_video_session, encode_info, loc);
+    }
 
-            // Update bound video picture resource DPB slot index association
-            bound_video_picture_resources[setup_slot.resource] = setup_slot.index;
+    if (encode_info.pSetupReferenceSlot && encode_info.pSetupReferenceSlot->pPictureResource) {
+        vvl::VideoReferenceSlot setup_slot(dev_data, *bound_video_session->profile, *encode_info.pSetupReferenceSlot);
 
-            // Enqueue submission time reference slot setup or invalidation
-            bool reference_setup_requested = bound_video_session->ReferenceSetupRequested(*pEncodeInfo);
-            video_session_updates[bound_video_session->VkHandle()].emplace_back(
-                [setup_slot, reference_setup_requested](const vvl::VideoSession *vs_state, vvl::VideoSessionDeviceState &dev_state,
-                                                        bool do_validate) {
-                    if (reference_setup_requested) {
-                        dev_state.Activate(setup_slot.index, setup_slot.picture_id, setup_slot.resource);
-                    } else {
-                        dev_state.Invalidate(setup_slot.index, setup_slot.picture_id);
-                    }
-                    return false;
-                });
-        }
+        // Update bound video picture resource DPB slot index association
+        bound_video_picture_resources[setup_slot.resource] = setup_slot.index;
 
-        // Update active query indices
-        for (auto &query : active_queries) {
-            uint32_t op_count = bound_video_session->GetVideoEncodeOperationCount(pEncodeInfo);
-            query.active_query_index += op_count;
-        }
+        // Enqueue submission time reference slot setup or invalidation
+        bool reference_setup_requested = bound_video_session->ReferenceSetupRequested(encode_info);
+        video_session_updates[bound_video_session->VkHandle()].emplace_back(
+            [setup_slot, reference_setup_requested](const vvl::VideoSession *vs_state, vvl::VideoSessionDeviceState &dev_state,
+                                                    bool do_validate) {
+                if (reference_setup_requested) {
+                    dev_state.Activate(setup_slot.index, setup_slot.picture_id, setup_slot.resource);
+                } else {
+                    dev_state.Invalidate(setup_slot.index, setup_slot.picture_id);
+                }
+                return false;
+            });
+    }
 
-        // Update inline queries
-        if (bound_video_session->create_info.flags & VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR) {
-            const auto inline_query_info = vku::FindStructInPNextChain<VkVideoInlineQueryInfoKHR>(pEncodeInfo->pNext);
-            if (inline_query_info != nullptr && inline_query_info->queryPool != VK_NULL_HANDLE) {
-                EnqueueUpdateVideoInlineQueries(*inline_query_info);
-            }
+    // Update active query indices
+    for (auto &query : active_queries) {
+        uint32_t op_count = bound_video_session->GetVideoEncodeOperationCount(&encode_info);
+        query.active_query_index += op_count;
+    }
+
+    // Update inline queries
+    if (bound_video_session->create_info.flags & VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR) {
+        const auto inline_query_info = vku::FindStructInPNextChain<VkVideoInlineQueryInfoKHR>(encode_info.pNext);
+        if (inline_query_info != nullptr && inline_query_info->queryPool != VK_NULL_HANDLE) {
+            EnqueueUpdateVideoInlineQueries(*inline_query_info);
         }
     }
 }

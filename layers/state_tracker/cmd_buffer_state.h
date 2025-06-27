@@ -556,11 +556,11 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordEndRendering(const VkRenderingEndInfoEXT *pRenderingEndInfo);
     void RecordEndRenderPass();
 
-    void BeginVideoCoding(const VkVideoBeginCodingInfoKHR *pBeginInfo);
-    void EndVideoCoding(const VkVideoEndCodingInfoKHR *pEndCodingInfo);
-    void ControlVideoCoding(const VkVideoCodingControlInfoKHR *pControlInfo);
-    void DecodeVideo(const VkVideoDecodeInfoKHR *pDecodeInfo);
-    void EncodeVideo(const VkVideoEncodeInfoKHR *pEncodeInfo);
+    void RecordBeginVideoCoding(const VkVideoBeginCodingInfoKHR &begin_info, const Location &loc);
+    void RecordEndVideoCoding();
+    void RecordControlVideoCoding(const VkVideoCodingControlInfoKHR &control_info, const Location &loc);
+    void RecordDecodeVideo(const VkVideoDecodeInfoKHR &decode_info, const Location &loc);
+    void RecordEncodeVideo(const VkVideoEncodeInfoKHR &encode_info, const Location &loc);
 
     void RecordExecuteCommands(vvl::span<const VkCommandBuffer> secondary_command_buffers);
 
@@ -791,6 +791,13 @@ class CommandBufferSubState {
     virtual void EndQueries(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {}
     virtual void ResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {}
     virtual void EnqueueUpdateVideoInlineQueries(const VkVideoInlineQueryInfoKHR &query_info) {}
+
+    virtual void RecordBeginVideoCoding(vvl::VideoSession &vs_state, const VkVideoBeginCodingInfoKHR &begin_info,
+                                        const Location &loc) {}
+    virtual void RecordControlVideoCoding(vvl::VideoSession &vs_state, const VkVideoCodingControlInfoKHR &control_info,
+                                          const Location &loc) {}
+    virtual void RecordDecodeVideo(vvl::VideoSession &vs_state, const VkVideoDecodeInfoKHR &decode_info, const Location &loc) {}
+    virtual void RecordEncodeVideo(vvl::VideoSession &vs_state, const VkVideoEncodeInfoKHR &encode_info, const Location &loc) {}
 
     virtual void ClearPushConstants() {}
     virtual void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {}

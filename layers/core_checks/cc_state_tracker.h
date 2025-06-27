@@ -94,6 +94,13 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void ResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) final;
     void EnqueueUpdateVideoInlineQueries(const VkVideoInlineQueryInfoKHR &query_info) final;
 
+    void RecordBeginVideoCoding(vvl::VideoSession &vs_state, const VkVideoBeginCodingInfoKHR &begin_info,
+                                const Location &loc) final;
+    void RecordControlVideoCoding(vvl::VideoSession &vs_state, const VkVideoCodingControlInfoKHR &control_info,
+                                  const Location &loc) final;
+    void RecordDecodeVideo(vvl::VideoSession &vs_state, const VkVideoDecodeInfoKHR &decode_info, const Location &loc) final;
+    void RecordEncodeVideo(vvl::VideoSession &vs_state, const VkVideoEncodeInfoKHR &encode_info, const Location &loc) final;
+
     // Only need to retire for core checks to track queries
     void Retire(uint32_t perf_submit_pass, const std::function<bool(const QueryObject &)> &is_query_updated_after);
 
@@ -181,6 +188,9 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     template <typename RegionType>
     void RecordCopyBufferCommon(vvl::Buffer &src_buffer_state, vvl::Buffer &dst_buffer_state, uint32_t region_count,
                                 const RegionType *regions, const Location &loc);
+
+    void EnqueueVerifyVideoSessionInitialized(vvl::VideoSession &vs_state, const Location &loc, const char *vuid);
+    void EnqueueVerifyVideoInlineQueryUnavailable(const VkVideoInlineQueryInfoKHR &query_info, vvl::Func command);
 };
 
 static inline CommandBufferSubState &SubState(vvl::CommandBuffer &cb) {
