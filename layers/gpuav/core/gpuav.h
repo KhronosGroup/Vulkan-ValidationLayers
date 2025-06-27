@@ -88,51 +88,6 @@ class Validator : public GpuShaderInstrumentor {
     void PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo,
                                          const RecordObject& record_obj) final;
 
-    void PostCallRecordCmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
-                                              const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo,
-                                              const RecordObject& record_obj) final;
-    void PostCallRecordCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
-                                                 const VkBindDescriptorSetsInfoKHR* pBindDescriptorSetsInfo,
-                                                 const RecordObject& record_obj) final;
-    void PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                             VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
-                                             const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,
-                                             const uint32_t* pDynamicOffsets, const RecordObject& record_obj) final;
-    void PreCallRecordCmdPushDescriptorSet(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                           VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
-                                           const VkWriteDescriptorSet* pDescriptorWrites, const RecordObject&) final;
-    void PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                              VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
-                                              const VkWriteDescriptorSet* pDescriptorWrites, const RecordObject&) final;
-    void PreCallRecordCmdPushDescriptorSet2(VkCommandBuffer commandBuffer, const VkPushDescriptorSetInfo* pPushDescriptorSetInfo,
-                                            const RecordObject& record_obj) final;
-    void PreCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
-                                               const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo,
-                                               const RecordObject& record_obj) final;
-    void PreCallRecordCmdPushDescriptorSetWithTemplate2(
-        VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR* pPushDescriptorSetWithTemplateInfo,
-        const RecordObject& record_obj) final;
-    void PreCallRecordCmdPushDescriptorSetWithTemplate2KHR(
-        VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR* pPushDescriptorSetWithTemplateInfo,
-        const RecordObject& record_obj) final;
-    void PreCallRecordCmdPushDescriptorSetWithTemplate(VkCommandBuffer commandBuffer,
-                                                       VkDescriptorUpdateTemplate descriptorUpdateTemplate, VkPipelineLayout layout,
-                                                       uint32_t set, const void* pData, const RecordObject& record_obj) final;
-    void PreCallRecordCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
-                                                          VkDescriptorUpdateTemplate descriptorUpdateTemplate,
-                                                          VkPipelineLayout layout, uint32_t set, const void* pData,
-                                                          const RecordObject& record_obj) final;
-    void PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
-                                                  const VkDescriptorBufferBindingInfoEXT* pBindingInfos,
-                                                  const RecordObject& record_obj) final;
-    void PreCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommandBuffer commandBuffer,
-                                                                 VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout,
-                                                                 uint32_t set, const RecordObject& record_obj) final;
-    void PreCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(
-        VkCommandBuffer commandBuffer,
-        const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo,
-        const RecordObject& record_obj) final;
-
     void PreCallActionCommand(Validator& gpuav, CommandBufferSubState& cb_state, VkPipelineBindPoint bind_point,
                               const Location& loc);
 

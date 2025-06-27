@@ -1141,9 +1141,9 @@ void CommandBuffer::RecordExecuteCommands(vvl::span<const VkCommandBuffer> secon
 }
 
 void CommandBuffer::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint,
-                                           std::shared_ptr<const vvl::PipelineLayout> pipeline_layout, vvl::Func bound_command,
-                                           uint32_t set, uint32_t descriptorWriteCount,
-                                           const VkWriteDescriptorSet *pDescriptorWrites) {
+                                           std::shared_ptr<const vvl::PipelineLayout> pipeline_layout, uint32_t set,
+                                           uint32_t descriptorWriteCount, const VkWriteDescriptorSet *pDescriptorWrites,
+                                           const Location &loc) {
     // Short circuit invalid updates
     if ((set >= pipeline_layout->set_layouts.size()) || !pipeline_layout->set_layouts[set] ||
         !pipeline_layout->set_layouts[set]->IsPushDescriptor()) {
@@ -1159,8 +1159,7 @@ void CommandBuffer::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint
         last_bound.UnbindAndResetPushDescriptorSet(dev_data.CreatePushDescriptorSet(dsl));
     }
 
-    UpdateLastBoundDescriptorSets(pipelineBindPoint, pipeline_layout, bound_command, set, 1, nullptr, push_descriptor_set, 0,
-                                  nullptr);
+    UpdateLastBoundDescriptorSets(pipelineBindPoint, pipeline_layout, set, 1, nullptr, push_descriptor_set, 0, nullptr, loc);
 
     // Now that we have either the new or extant push_descriptor set ... do the write updates against it
     push_descriptor_set->PerformPushDescriptorsUpdate(descriptorWriteCount, pDescriptorWrites);
@@ -1277,11 +1276,11 @@ static bool PushDescriptorCleanup(LastBound &last_bound, uint32_t set_idx) {
 // One of pDescriptorSets or push_descriptor_set should be nullptr, indicating whether this
 // is called for CmdBindDescriptorSets or CmdPushDescriptorSet.
 void CommandBuffer::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_bind_point,
-                                                  std::shared_ptr<const vvl::PipelineLayout> pipeline_layout,
-                                                  vvl::Func bound_command, uint32_t first_set, uint32_t set_count,
-                                                  const VkDescriptorSet *pDescriptorSets,
+                                                  std::shared_ptr<const vvl::PipelineLayout> pipeline_layout, uint32_t first_set,
+                                                  uint32_t set_count, const VkDescriptorSet *pDescriptorSets,
                                                   std::shared_ptr<vvl::DescriptorSet> &push_descriptor_set,
-                                                  uint32_t dynamic_offset_count, const uint32_t *p_dynamic_offsets) {
+                                                  uint32_t dynamic_offset_count, const uint32_t *p_dynamic_offsets,
+                                                  const Location &loc) {
     ASSERT_AND_RETURN((pDescriptorSets == nullptr) ^ (push_descriptor_set == nullptr));
 
     uint32_t required_size = first_set + set_count;
@@ -1290,7 +1289,7 @@ void CommandBuffer::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_b
 
     auto &last_bound = lastBound[ConvertToVvlBindPoint(pipeline_bind_point)];
     last_bound.desc_set_pipeline_layout = pipeline_layout;
-    last_bound.desc_set_bound_command = bound_command;
+    last_bound.desc_set_bound_command = loc.function;
     auto &pipe_compat_ids = pipeline_layout->set_compat_ids;
     // Resize binding arrays
     if (last_binding_index >= last_bound.ds_slots.size()) {
@@ -1357,6 +1356,10 @@ void CommandBuffer::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_b
                 ds_slot.dynamic_offsets.clear();
             }
         }
+    }
+
+    for (auto &item : sub_states_) {
+        item.second->UpdateLastBoundDescriptorSets(pipeline_bind_point, loc);
     }
 }
 

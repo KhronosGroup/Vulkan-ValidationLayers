@@ -109,6 +109,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void Reset(const Location &loc) final;
 
     void RecordActionCommand(LastBound &last_bound, const Location &loc) final;
+    void UpdateLastBoundDescriptorSets(VkPipelineBindPoint bind_point, const Location &loc) final;
 
     void RecordPushConstants(VkPipelineLayout layout, VkShaderStageFlags stage_flags, uint32_t offset, uint32_t size,
                              const void *values) final;

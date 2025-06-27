@@ -565,18 +565,18 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordExecuteCommands(vvl::span<const VkCommandBuffer> secondary_command_buffers);
 
     void UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_bind_point,
-                                       std::shared_ptr<const vvl::PipelineLayout> pipeline_layout, vvl::Func bound_command,
-                                       uint32_t first_set, uint32_t set_count, const VkDescriptorSet *pDescriptorSets,
+                                       std::shared_ptr<const vvl::PipelineLayout> pipeline_layout, uint32_t first_set,
+                                       uint32_t set_count, const VkDescriptorSet *pDescriptorSets,
                                        std::shared_ptr<vvl::DescriptorSet> &push_descriptor_set, uint32_t dynamic_offset_count,
-                                       const uint32_t *p_dynamic_offsets);
+                                       const uint32_t *p_dynamic_offsets, const Location &loc);
 
     void UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipeline_bind_point,
                                           std::shared_ptr<const vvl::PipelineLayout> pipeline_layout, uint32_t first_set,
                                           uint32_t set_count, const uint32_t *buffer_indicies, const VkDeviceSize *buffer_offsets);
 
     void PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint, std::shared_ptr<const vvl::PipelineLayout> pipeline_layout,
-                                vvl::Func bound_command, uint32_t set, uint32_t descriptorWriteCount,
-                                const VkWriteDescriptorSet *pDescriptorWrites);
+                                uint32_t set, uint32_t descriptorWriteCount, const VkWriteDescriptorSet *pDescriptorWrites,
+                                const Location &loc);
 
     void RecordDraw(const Location &loc);
     void RecordDispatch(const Location &loc);
@@ -729,6 +729,7 @@ class CommandBufferSubState {
 
     virtual void RecordActionCommand(LastBound &last_bound, const Location &loc) {}
     virtual void RecordBindPipeline(VkPipelineBindPoint bind_point, vvl::Pipeline &pipeline) {}
+    virtual void UpdateLastBoundDescriptorSets(VkPipelineBindPoint bind_point, const Location &loc) {}
 
     virtual void RecordSetViewport(uint32_t first_viewport, uint32_t viewport_count) {}
     virtual void RecordSetViewportWithCount(uint32_t viewport_count) {}
