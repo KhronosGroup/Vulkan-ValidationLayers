@@ -557,7 +557,7 @@ std::shared_ptr<ImageView> DeviceState::CreateImageViewState(const std::shared_p
                                                              const VkImageViewCreateInfo *create_info,
                                                              VkFormatFeatureFlags2KHR format_features,
                                                              const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props) {
-    return std::make_shared<ImageView>(image_state, handle, create_info, format_features, cubic_props);
+    return std::make_shared<ImageView>(*this, image_state, handle, create_info, format_features, cubic_props);
 }
 
 void DeviceState::PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
