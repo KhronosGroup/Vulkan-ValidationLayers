@@ -533,8 +533,9 @@ static bool GetMetalExport(const VkImageViewCreateInfo *info) {
 
 namespace vvl {
 
-ImageView::ImageView(const std::shared_ptr<vvl::Image> &image_state, VkImageView handle, const VkImageViewCreateInfo *ci,
-                     VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props)
+ImageView::ImageView(const DeviceState &device_state, const std::shared_ptr<vvl::Image> &image_state, VkImageView handle,
+                     const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2KHR ff,
+                     const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props)
     : StateObject(handle, kVulkanObjectTypeImageView),
       safe_create_info(ci),
       create_info(*safe_create_info.ptr()),
@@ -543,7 +544,7 @@ ImageView::ImageView(const std::shared_ptr<vvl::Image> &image_state, VkImageView
       metal_imageview_export(GetMetalExport(ci)),
 #endif
       is_depth_sliced(IsDepthSliced()),
-      normalized_subresource_range(NormalizeSubresourceRange()),
+      normalized_subresource_range(NormalizeSubresourceRange(device_state.extensions.vk_khr_maintenance9)),
       range_generator(image_state->subresource_encoder, normalized_subresource_range),
       samples(image_state->create_info.samples),
       samplerConversion(GetSamplerConversion(ci)),
@@ -577,21 +578,20 @@ bool ImageView::IsDepthSliced() {
            (create_info.viewType == VK_IMAGE_VIEW_TYPE_2D || create_info.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 }
 
-VkImageSubresourceRange ImageView::NormalizeSubresourceRange() const {
-    auto subres_range = create_info.subresourceRange;
+VkImageSubresourceRange ImageView::NormalizeSubresourceRange(bool is_3d_slice_transition_allowed) const {
+    VkImageSubresourceRange subres_range = create_info.subresourceRange;
 
     // if we're mapping a 3D image to a 2d image view, convert the view's subresource range to be compatible with the
     // image's understanding of the world. From the VkImageSubresourceRange section of the Vulkan spec:
     //
-    //     When the VkImageSubresourceRange structure is used to select a subset of the slices of a 3D image’s mip level in
-    //     order to create a 2D or 2D array image view of a 3D image created with VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT,
-    //     baseArrayLayer and layerCount specify the first slice index and the number of slices to include in the created
-    //     image view. Such an image view can be used as a framebuffer attachment that refers only to the specified range
-    //     of slices of the selected mip level. However, any layout transitions performed on such an attachment view during
-    //     a render pass instance still apply to the entire subresource referenced which includes all the slices of the
-    //     selected mip level.
+    //     When the VkImageSubresourceRange structure is used to select a subset of the slices of a 3D image’s mip level in order to
+    //     create a 2D or 2D array image view of a 3D image created with VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT, baseArrayLayer and
+    //     layerCount specify the first slice index and the number of slices to include in the created image view. Such an image
+    //     view can be used as a framebuffer attachment that refers only to the specified range of slices of the selected mip level.
+    //     If the maintenance9 feature is not enabled, any layout transitions performed on such an attachment view during a render
+    //     pass instance still apply to the entire subresource referenced which includes all the slices of the selected mip level.
     //
-    if (is_depth_sliced) {
+    if (is_depth_sliced && !is_3d_slice_transition_allowed) {
         subres_range.baseArrayLayer = 0;
         subres_range.layerCount = 1;
     }

@@ -286,8 +286,9 @@ class ImageView : public StateObject, public SubStateManager<ImageViewSubState> 
     const VkFormatFeatureFlags2KHR format_features;
     const VkImageUsageFlags inherited_usage;  // from spec #resources-image-inherited-usage
 
-    ImageView(const std::shared_ptr<vvl::Image> &image_state, VkImageView handle, const VkImageViewCreateInfo *ci,
-              VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props);
+    ImageView(const DeviceState &device_state, const std::shared_ptr<vvl::Image> &image_state, VkImageView handle,
+              const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2KHR ff,
+              const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props);
     ImageView(const ImageView &rh_obj) = delete;
     VkImageView VkHandle() const { return handle_.Cast<VkImageView>(); }
 
@@ -312,7 +313,7 @@ class ImageView : public StateObject, public SubStateManager<ImageViewSubState> 
     bool Invalid() const override { return Destroyed() || !image_state || image_state->Invalid(); }
 
   private:
-    VkImageSubresourceRange NormalizeSubresourceRange() const;
+    VkImageSubresourceRange NormalizeSubresourceRange(bool is_3d_slice_transition_allowed) const;
     bool IsDepthSliced();
 };
 
