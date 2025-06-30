@@ -115,7 +115,7 @@ class CommandValidationOutputGenerator(BaseGenerator):
             queue_flags.extend(["VK_QUEUE_VIDEO_DECODE_BIT_KHR"] if Queues.DECODE & command.queues else [])
             queue_flags.extend(["VK_QUEUE_VIDEO_ENCODE_BIT_KHR"] if Queues.ENCODE & command.queues else [])
             queue_flags.extend(["VK_QUEUE_OPTICAL_FLOW_BIT_NV"] if Queues.OPTICAL_FLOW & command.queues else [])
-            # TODO: queue_flags.extend(["VK_QUEUE_DATA_GRAPH_BIT_ARM"] if Queues.DATA_GRAPH & command.queues else [])
+            queue_flags.extend(["VK_QUEUE_DATA_GRAPH_BIT_ARM"] if Queues.DATA_GRAPH & command.queues else [])
             queue_flags = ' | '.join(queue_flags)
 
             if not queue_flags:
