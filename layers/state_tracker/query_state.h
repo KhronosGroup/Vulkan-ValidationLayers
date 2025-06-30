@@ -30,6 +30,14 @@ enum QueryState {
     QUERYSTATE_AVAILABLE,  // Results available.
 };
 
+enum QueryResultType {
+    QUERYRESULT_UNKNOWN,
+    QUERYRESULT_NO_DATA,
+    QUERYRESULT_SOME_DATA,
+    QUERYRESULT_WAIT_ON_RESET,
+    QUERYRESULT_WAIT_ON_RUNNING,
+};
+
 namespace vvl {
 
 class VideoProfileDesc;
@@ -45,6 +53,7 @@ class QueryPool : public StateObject {
 
     void SetQueryState(uint32_t query, uint32_t perf_pass, QueryState state);
     QueryState GetQueryState(uint32_t query, uint32_t perf_pass) const;
+    QueryResultType GetQueryResultType(QueryState state, VkQueryResultFlags flags);
 
     const vku::safe_VkQueryPoolCreateInfo safe_create_info;
     const VkQueryPoolCreateInfo &create_info;
@@ -97,7 +106,7 @@ struct QueryObject {
           index(index_),
           indexed(indexed_) {}
 
-    // This is needed because vvl::CommandBuffer::BeginQuery() and EndQuery() need to make a copy to update
+    // This is needed because vvl::CommandBuffer::RecordBeginQuery() and RecordEndQuery() need to make a copy to update
     QueryObject(const QueryObject &obj, uint32_t perf_pass_)
         : pool(obj.pool),
           slot(obj.slot),
@@ -117,14 +126,6 @@ inline bool operator==(const QueryObject &query1, const QueryObject &query2) {
 }
 
 using QueryMap = vvl::unordered_map<QueryObject, QueryState>;
-
-enum QueryResultType {
-    QUERYRESULT_UNKNOWN,
-    QUERYRESULT_NO_DATA,
-    QUERYRESULT_SOME_DATA,
-    QUERYRESULT_WAIT_ON_RESET,
-    QUERYRESULT_WAIT_ON_RUNNING,
-};
 
 struct QueryCount {
     uint32_t count;

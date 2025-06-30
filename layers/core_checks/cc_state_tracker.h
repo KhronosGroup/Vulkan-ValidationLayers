@@ -88,11 +88,15 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void RecordWaitEvents(vvl::Func command, uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags2 src_stage_mask,
                           const VkDependencyInfo *dependency_info) final;
 
-    void BeginQuery(const QueryObject &query_obj) final;
-    void EndQuery(const QueryObject &query_obj) final;
-    void EndQueries(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) final;
-    void ResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) final;
-    void EnqueueUpdateVideoInlineQueries(const VkVideoInlineQueryInfoKHR &query_info) final;
+    void RecordBeginQuery(const QueryObject &query_obj, const Location &loc) final;
+    void RecordEndQuery(const QueryObject &query_obj, const Location &loc) final;
+    void RecordEndQueries(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) final;
+    void RecordWriteTimestamp(const QueryObject &query_obj, const Location &loc) final;
+    void RecordResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, bool is_perf_query,
+                              const Location &loc) final;
+    void RecordCopyQueryPoolResults(vvl::QueryPool &pool_state, uint32_t firstQuery, uint32_t queryCount, VkQueryResultFlags flags,
+                                    const Location &loc) final;
+    void RecordVideoInlineQueries(const VkVideoInlineQueryInfoKHR &query_info) final;
 
     void RecordBeginVideoCoding(vvl::VideoSession &vs_state, const VkVideoBeginCodingInfoKHR &begin_info,
                                 const Location &loc) final;

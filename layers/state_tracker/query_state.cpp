@@ -71,6 +71,33 @@ QueryState QueryPool::GetQueryState(uint32_t query, uint32_t perf_pass) const {
     return QUERYSTATE_UNKNOWN;
 }
 
+QueryResultType QueryPool::GetQueryResultType(QueryState state, VkQueryResultFlags flags) {
+    switch (state) {
+        case QUERYSTATE_UNKNOWN:
+            return QUERYRESULT_UNKNOWN;
+        case QUERYSTATE_RESET:
+        case QUERYSTATE_RUNNING:
+            if (flags & VK_QUERY_RESULT_WAIT_BIT) {
+                return ((state == QUERYSTATE_RESET) ? QUERYRESULT_WAIT_ON_RESET : QUERYRESULT_WAIT_ON_RUNNING);
+            } else if ((flags & VK_QUERY_RESULT_PARTIAL_BIT) || (flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT)) {
+                return QUERYRESULT_SOME_DATA;
+            } else {
+                return QUERYRESULT_NO_DATA;
+            }
+        case QUERYSTATE_ENDED:
+            if ((flags & VK_QUERY_RESULT_WAIT_BIT) || (flags & VK_QUERY_RESULT_PARTIAL_BIT) ||
+                (flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT)) {
+                return QUERYRESULT_SOME_DATA;
+            } else {
+                return QUERYRESULT_UNKNOWN;
+            }
+        case QUERYSTATE_AVAILABLE:
+            return QUERYRESULT_SOME_DATA;
+    }
+    assert(false);
+    return QUERYRESULT_UNKNOWN;
+}
+
 }  // namespace vvl
 
 QueryCount::QueryCount(vvl::CommandBuffer &cb_state) {

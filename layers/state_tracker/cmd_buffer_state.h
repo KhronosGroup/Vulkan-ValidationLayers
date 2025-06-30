@@ -543,10 +543,13 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void Begin(const VkCommandBufferBeginInfo *pBeginInfo);
     void End(VkResult result);
 
-    void BeginQuery(const QueryObject &query_obj);
-    void EndQuery(const QueryObject &query_obj);
-    void EndQueries(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount);
-    void ResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount);
+    void RecordBeginQuery(const QueryObject &query_obj, const Location &loc);
+    void RecordEndQuery(const QueryObject &query_obj, const Location &loc);
+    void RecordEndQueries(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount);
+    void RecordWriteTimestamp(VkQueryPool queryPool, uint32_t slot, const Location &loc);
+    void RecordResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, const Location &loc);
+    void RecordCopyQueryPoolResults(VkQueryPool queryPool, VkBuffer dstBuffer, uint32_t firstQuery, uint32_t queryCount,
+                                    VkQueryResultFlags flags, const Location &loc);
     bool UpdatesQuery(const QueryObject &query_obj) const;
 
     void RecordBeginRendering(const VkRenderingInfo &rendering_info);
@@ -626,7 +629,6 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordResetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask);
     void RecordWaitEvents(Func command, uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags2KHR src_stage_mask,
                           const VkDependencyInfo *dependency_info);
-    void RecordWriteTimestamp(Func command, VkPipelineStageFlags2KHR pipelineStage, VkQueryPool queryPool, uint32_t slot);
     void RecordPushConstants(const vvl::PipelineLayout &pipeline_layout_state, VkShaderStageFlags stage_flags, uint32_t offset,
                              uint32_t size, const void *values);
 
@@ -710,7 +712,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
   protected:
     void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) override;
     void UpdateAttachmentsView(const VkRenderPassBeginInfo *pRenderPassBegin);
-    void EnqueueUpdateVideoInlineQueries(const VkVideoInlineQueryInfoKHR &query_info);
+    void RecordVideoInlineQueries(const VkVideoInlineQueryInfoKHR &query_info);
     void UnbindResources();
 };
 
@@ -787,11 +789,15 @@ class CommandBufferSubState {
     virtual void RecordEndRendering(const VkRenderingEndInfoEXT *pRenderingEndInfo) {}
     virtual void RecordEndRenderPass() {}
 
-    virtual void BeginQuery(const QueryObject &query_obj) {}
-    virtual void EndQuery(const QueryObject &query_obj) {}
-    virtual void EndQueries(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {}
-    virtual void ResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {}
-    virtual void EnqueueUpdateVideoInlineQueries(const VkVideoInlineQueryInfoKHR &query_info) {}
+    virtual void RecordBeginQuery(const QueryObject &query_obj, const Location &loc) {}
+    virtual void RecordEndQuery(const QueryObject &query_obj, const Location &loc) {}
+    virtual void RecordEndQueries(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {}
+    virtual void RecordWriteTimestamp(const QueryObject &query_obj, const Location &loc) {}
+    virtual void RecordResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, bool is_perf_query,
+                                      const Location &loc) {}
+    virtual void RecordCopyQueryPoolResults(vvl::QueryPool &pool_state, uint32_t firstQuery, uint32_t queryCount,
+                                            VkQueryResultFlags flags, const Location &loc) {}
+    virtual void RecordVideoInlineQueries(const VkVideoInlineQueryInfoKHR &query_info) {}
 
     virtual void RecordBeginVideoCoding(vvl::VideoSession &vs_state, const VkVideoBeginCodingInfoKHR &begin_info,
                                         const Location &loc) {}

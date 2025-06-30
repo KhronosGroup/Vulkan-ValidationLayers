@@ -20,6 +20,7 @@
 #include "state_tracker/cmd_buffer_state.h"
 #include <vulkan/vulkan_core.h>
 #include <vulkan/utility/vk_format_utils.h>
+#include "error_message/error_location.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/last_bound_state.h"
 #include "state_tracker/render_pass_state.h"
@@ -27,6 +28,7 @@
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/queue_state.h"
+#include "utils/assert_utils.h"
 
 using RangeGenerator = subresource_adapter::RangeGenerator;
 
@@ -422,7 +424,7 @@ std::shared_ptr<CommandBufferImageLayoutMap> CommandBuffer::GetOrCreateImageLayo
     return image_layout_map;
 }
 
-void CommandBuffer::BeginQuery(const QueryObject &query_obj) {
+void CommandBuffer::RecordBeginQuery(const QueryObject &query_obj, const Location &loc) {
     active_queries.insert(query_obj);
     started_queries.insert(query_obj);
 
@@ -432,11 +434,11 @@ void CommandBuffer::BeginQuery(const QueryObject &query_obj) {
     }
 
     for (auto &item : sub_states_) {
-        item.second->BeginQuery(query_obj);
+        item.second->RecordBeginQuery(query_obj, loc);
     }
 }
 
-void CommandBuffer::EndQuery(const QueryObject &query_obj) {
+void CommandBuffer::RecordEndQuery(const QueryObject &query_obj, const Location &loc) {
     active_queries.erase(query_obj);
     updated_queries.insert(query_obj);
     if (query_obj.inside_render_pass) {
@@ -444,7 +446,7 @@ void CommandBuffer::EndQuery(const QueryObject &query_obj) {
     }
 
     for (auto &item : sub_states_) {
-        item.second->EndQuery(query_obj);
+        item.second->RecordEndQuery(query_obj, loc);
     }
 }
 
@@ -460,7 +462,7 @@ bool CommandBuffer::UpdatesQuery(const QueryObject &query_obj) const {
     return updated_queries.find(key) != updated_queries.end();
 }
 
-void CommandBuffer::EndQueries(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
+void CommandBuffer::RecordEndQueries(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
     for (uint32_t slot = firstQuery; slot < (firstQuery + queryCount); slot++) {
         QueryObject query_obj = {queryPool, slot};
         active_queries.erase(query_obj);
@@ -468,18 +470,74 @@ void CommandBuffer::EndQueries(VkQueryPool queryPool, uint32_t firstQuery, uint3
     }
 
     for (auto &item : sub_states_) {
-        item.second->EndQueries(queryPool, firstQuery, queryCount);
+        item.second->RecordEndQueries(queryPool, firstQuery, queryCount);
     }
 }
 
-void CommandBuffer::ResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
+void CommandBuffer::RecordWriteTimestamp(VkQueryPool queryPool, uint32_t slot, const Location &loc) {
+    command_count++;
+    if (dev_data.disabled[query_validation]) {
+        return;
+    }
+
+    if (!dev_data.disabled[command_buffer_state]) {
+        auto pool_state = dev_data.Get<vvl::QueryPool>(queryPool);
+        AddChild(pool_state);
+    }
+
+    QueryObject query_obj = {queryPool, slot};
+    for (auto &item : sub_states_) {
+        item.second->RecordWriteTimestamp(query_obj, loc);
+    }
+
+    // Acts like an end query
+    active_queries.erase(query_obj);
+    updated_queries.insert(query_obj);
+    if (query_obj.inside_render_pass) {
+        render_pass_queries.erase(query_obj);
+    }
+}
+
+void CommandBuffer::RecordResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, const Location &loc) {
+    command_count++;
+    if (dev_data.disabled[query_validation]) {
+        return;
+    }
+
+    auto pool_state = dev_data.Get<QueryPool>(queryPool);
+    ASSERT_AND_RETURN(pool_state);
+    if (!dev_data.disabled[command_buffer_state]) {
+        AddChild(pool_state);
+    }
+
     for (uint32_t slot = firstQuery; slot < (firstQuery + queryCount); slot++) {
         QueryObject query_obj = {queryPool, slot};
         updated_queries.insert(query_obj);
     }
 
+    const bool is_perf_query = pool_state->create_info.queryType == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR;
     for (auto &item : sub_states_) {
-        item.second->ResetQueryPool(queryPool, firstQuery, queryCount);
+        item.second->RecordResetQueryPool(queryPool, firstQuery, queryCount, is_perf_query, loc);
+    }
+}
+
+void CommandBuffer::RecordCopyQueryPoolResults(VkQueryPool queryPool, VkBuffer dstBuffer, uint32_t firstQuery, uint32_t queryCount,
+                                               VkQueryResultFlags flags, const Location &loc) {
+    command_count++;
+    if (dev_data.disabled[query_validation]) {
+        return;
+    }
+
+    auto buffer_state = dev_data.Get<Buffer>(dstBuffer);
+    auto pool_state = dev_data.Get<QueryPool>(queryPool);
+    ASSERT_AND_RETURN(buffer_state && pool_state);
+    if (!dev_data.disabled[command_buffer_state]) {
+        AddChild(buffer_state);
+        AddChild(pool_state);
+    }
+
+    for (auto &item : sub_states_) {
+        item.second->RecordCopyQueryPoolResults(*pool_state, firstQuery, queryCount, flags, loc);
     }
 }
 
@@ -903,9 +961,9 @@ void CommandBuffer::RecordControlVideoCoding(const VkVideoCodingControlInfoKHR &
     }
 }
 
-void vvl::CommandBuffer::EnqueueUpdateVideoInlineQueries(const VkVideoInlineQueryInfoKHR &query_info) {
+void vvl::CommandBuffer::RecordVideoInlineQueries(const VkVideoInlineQueryInfoKHR &query_info) {
     for (auto &item : sub_states_) {
-        item.second->EnqueueUpdateVideoInlineQueries(query_info);
+        item.second->RecordVideoInlineQueries(query_info);
     }
 
     for (uint32_t i = 0; i < query_info.queryCount; i++) {
@@ -954,7 +1012,7 @@ void CommandBuffer::RecordDecodeVideo(const VkVideoDecodeInfoKHR &decode_info, c
     if (bound_video_session->create_info.flags & VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR) {
         const auto inline_query_info = vku::FindStructInPNextChain<VkVideoInlineQueryInfoKHR>(decode_info.pNext);
         if (inline_query_info != nullptr && inline_query_info->queryPool != VK_NULL_HANDLE) {
-            EnqueueUpdateVideoInlineQueries(*inline_query_info);
+            RecordVideoInlineQueries(*inline_query_info);
         }
     }
 }
@@ -1000,7 +1058,7 @@ void vvl::CommandBuffer::RecordEncodeVideo(const VkVideoEncodeInfoKHR &encode_in
     if (bound_video_session->create_info.flags & VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR) {
         const auto inline_query_info = vku::FindStructInPNextChain<VkVideoInlineQueryInfoKHR>(encode_info.pNext);
         if (inline_query_info != nullptr && inline_query_info->queryPool != VK_NULL_HANDLE) {
-            EnqueueUpdateVideoInlineQueries(*inline_query_info);
+            RecordVideoInlineQueries(*inline_query_info);
         }
     }
 }
@@ -1760,21 +1818,6 @@ void CommandBuffer::RecordBarriers(const VkDependencyInfo &dep_info) {
             AddChild(image_state);
         }
     }
-}
-
-void CommandBuffer::RecordWriteTimestamp(Func command, VkPipelineStageFlags2KHR pipelineStage, VkQueryPool queryPool,
-                                         uint32_t slot) {
-    command_count++;
-    if (dev_data.disabled[query_validation]) {
-        return;
-    }
-
-    if (!dev_data.disabled[command_buffer_state]) {
-        auto pool_state = dev_data.Get<vvl::QueryPool>(queryPool);
-        AddChild(pool_state);
-    }
-    QueryObject query_obj = {queryPool, slot};
-    EndQuery(query_obj);
 }
 
 void CommandBuffer::RecordPushConstants(const vvl::PipelineLayout &pipeline_layout_state, VkShaderStageFlags stage_flags,
