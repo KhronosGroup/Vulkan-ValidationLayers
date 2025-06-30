@@ -671,6 +671,24 @@ void CommandBufferSubState::RecordCopyQueryPoolResults(vvl::QueryPool& pool_stat
     });
 }
 
+void CommandBufferSubState::RecordWriteAccelerationStructuresProperties(VkQueryPool queryPool, uint32_t firstQuery,
+                                                                        uint32_t accelerationStructureCount, const Location& loc) {
+    query_updates.emplace_back([this, accelerationStructureCount, firstQuery, queryPool, loc](
+                                   vvl::CommandBuffer& cb_state_arg, bool do_validate, VkQueryPool&, uint32_t perf_query_pass,
+                                   QueryMap* local_query_to_state_map) {
+        bool skip = false;
+        if (do_validate) {
+            for (uint32_t i = 0; i < accelerationStructureCount; i++) {
+                QueryObject query_obj = {queryPool, firstQuery + i, perf_query_pass};
+                skip |= validator.VerifyQueryIsReset(cb_state_arg, query_obj, loc, perf_query_pass, local_query_to_state_map);
+            }
+        }
+        SetQueryStateMulti(queryPool, firstQuery, accelerationStructureCount, perf_query_pass, QUERYSTATE_ENDED,
+                           local_query_to_state_map);
+        return skip;
+    });
+}
+
 void CommandBufferSubState::RecordVideoInlineQueries(const VkVideoInlineQueryInfoKHR& query_info) {
     query_updates.emplace_back([query_info](vvl::CommandBuffer& cb_state_arg, bool do_validate, VkQueryPool&,
                                             uint32_t perf_query_pass, QueryMap* local_query_to_state_map) {

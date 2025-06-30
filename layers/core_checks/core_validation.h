@@ -1856,11 +1856,6 @@ class CoreChecks : public vvl::DeviceProxy {
                                               uint32_t query, const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkQueryPool queryPool,
                                            uint32_t query, const ErrorObject& error_obj) const override;
-    void PreCallRecordCmdWriteAccelerationStructuresPropertiesKHR(VkCommandBuffer commandBuffer,
-                                                                  uint32_t accelerationStructureCount,
-                                                                  const VkAccelerationStructureKHR* pAccelerationStructures,
-                                                                  VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery,
-                                                                  const RecordObject& record_obj) override;
     bool ValidateFrameBufferAttachments(const VkFramebufferCreateInfo& create_info, const Location& create_info_loc,
                                         const vvl::RenderPass& rp_state, const VkRenderPassCreateInfo2& rpci) const;
     bool ValidateFrameBufferAttachmentsImageless(

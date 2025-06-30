@@ -550,6 +550,8 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, const Location &loc);
     void RecordCopyQueryPoolResults(VkQueryPool queryPool, VkBuffer dstBuffer, uint32_t firstQuery, uint32_t queryCount,
                                     VkQueryResultFlags flags, const Location &loc);
+    void RecordWriteAccelerationStructuresProperties(VkQueryPool queryPool, uint32_t firstQuery,
+                                                     uint32_t accelerationStructureCount, const Location &loc);
     bool UpdatesQuery(const QueryObject &query_obj) const;
 
     void RecordBeginRendering(const VkRenderingInfo &rendering_info);
@@ -796,6 +798,8 @@ class CommandBufferSubState {
                                       const Location &loc) {}
     virtual void RecordCopyQueryPoolResults(vvl::QueryPool &pool_state, uint32_t firstQuery, uint32_t queryCount,
                                             VkQueryResultFlags flags, const Location &loc) {}
+    virtual void RecordWriteAccelerationStructuresProperties(VkQueryPool queryPool, uint32_t firstQuery,
+                                                             uint32_t accelerationStructureCount, const Location &loc) {}
     virtual void RecordVideoInlineQueries(const VkVideoInlineQueryInfoKHR &query_info) {}
 
     virtual void RecordBeginVideoCoding(vvl::VideoSession &vs_state, const VkVideoBeginCodingInfoKHR &begin_info,
