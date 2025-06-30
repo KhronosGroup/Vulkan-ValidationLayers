@@ -591,6 +591,8 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordSetViewportWithCount(uint32_t viewport_count, const VkViewport *viewports);
     void RecordSetScissor(uint32_t first_scissor, uint32_t scissor_count);
     void RecordSetScissorWithCount(uint32_t scissor_count);
+    void RecordSetDepthCompareOp(VkCompareOp depth_compare_op);
+    void RecordSetDepthTestEnable(VkBool32 depth_test_enable);
     void RecordBindPipeline(VkPipelineBindPoint bind_point, vvl::Pipeline &pipeline);
 
     void RecordCopyBuffer(vvl::Buffer &src_buffer_state, vvl::Buffer &dst_buffer_state, uint32_t region_count,
@@ -736,6 +738,8 @@ class CommandBufferSubState {
     virtual void RecordSetViewportWithCount(uint32_t viewport_count) {}
     virtual void RecordSetScissor(uint32_t first_scissor, uint32_t scissor_count) {}
     virtual void RecordSetScissorWithCount(uint32_t scissor_count) {}
+    virtual void RecordSetDepthCompareOp(VkCompareOp depth_compare_op) {}
+    virtual void RecordSetDepthTestEnable(VkBool32 depth_test_enable) {}
 
     virtual void RecordCopyBuffer(vvl::Buffer &src_buffer_state, vvl::Buffer &dst_buffer_state, uint32_t region_count,
                                   const VkBufferCopy *regions, const Location &loc) {}

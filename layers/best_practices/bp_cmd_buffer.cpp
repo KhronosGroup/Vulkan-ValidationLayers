@@ -113,35 +113,6 @@ bool BestPractices::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryP
     return skip;
 }
 
-void BestPractices::PostCallRecordCmdSetDepthCompareOp(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp,
-                                                       const RecordObject& record_obj) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    auto& sub_state = bp_state::SubState(*cb_state);
-
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        sub_state.RecordSetDepthTestStateNV(depthCompareOp, sub_state.nv.depth_test_enable);
-    }
-}
-
-void BestPractices::PostCallRecordCmdSetDepthCompareOpEXT(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp,
-                                                          const RecordObject& record_obj) {
-    PostCallRecordCmdSetDepthCompareOp(commandBuffer, depthCompareOp, record_obj);
-}
-
-void BestPractices::PostCallRecordCmdSetDepthTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable,
-                                                        const RecordObject& record_obj) {
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-        auto& sub_state = bp_state::SubState(*cb_state);
-        sub_state.RecordSetDepthTestStateNV(sub_state.nv.depth_compare_op, depthTestEnable != VK_FALSE);
-    }
-}
-
-void BestPractices::PostCallRecordCmdSetDepthTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable,
-                                                           const RecordObject& record_obj) {
-    PostCallRecordCmdSetDepthTestEnable(commandBuffer, depthTestEnable, record_obj);
-}
-
 namespace {
 struct EventValidator {
     const Logger& log;

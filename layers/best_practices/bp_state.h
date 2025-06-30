@@ -215,6 +215,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
                         const VkDependencyInfo* dependency_info) final;
     void RecordResetEvent(vvl::Func command, VkEvent event, VkPipelineStageFlags2 stageMask) final;
 
+    void RecordSetDepthCompareOp(VkCompareOp depth_compare_op) final;
+    void RecordSetDepthTestEnable(VkBool32 depth_test_enable) final;
     void RecordBindPipeline(VkPipelineBindPoint bind_point, vvl::Pipeline& pipeline) final;
 
     void Submit(vvl::Queue& queue_state, uint32_t perf_submit_pass, const Location& loc) final;
