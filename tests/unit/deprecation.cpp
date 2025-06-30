@@ -40,7 +40,7 @@ TEST_F(NegativeDeprecation, MultipleDifferentWarnings) {
     RETURN_IF_SKIP(InitFramework(&kDeprecationLayerSettingCreateInfo));
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
-    if (!DeviceExtensionSupported(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME) ||
+    if (!DeviceExtensionSupported(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME) &&
         !DeviceExtensionSupported(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME)) {
         GTEST_SKIP() << "required extension not supported";
     }
@@ -72,7 +72,7 @@ TEST_F(NegativeDeprecation, MuteSingleWarning) {
     RETURN_IF_SKIP(InitFramework(&layer_setting_ci));
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
-    if (!DeviceExtensionSupported(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME) ||
+    if (!DeviceExtensionSupported(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME) &&
         !DeviceExtensionSupported(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME)) {
         GTEST_SKIP() << "required extension not supported";
     }
@@ -88,5 +88,46 @@ TEST_F(NegativeDeprecation, MuteSingleWarning) {
 
     m_errorMonitor->SetDesiredWarning("WARNING-deprecation-dynamicrendering");
     vkt::Framebuffer framebuffer(*m_device, render_pass, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDeprecation, GetPhysicalDeviceProperties2Extension) {
+    RETURN_IF_SKIP(InitFramework(&kDeprecationLayerSettingCreateInfo));
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD - currently doesn't pass vkEnumerateInstanceExtensionProperties through";
+    }
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
+    if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        GTEST_SKIP() << "required extension not supported";
+    }
+
+    m_errorMonitor->SetDesiredWarning("WARNING-deprecation-gpdp2");
+    VkPhysicalDeviceFeatures features{};
+    vk::GetPhysicalDeviceFeatures(Gpu(), &features);
+    m_errorMonitor->VerifyFound();
+
+    VkFormatProperties format_properties{};
+    m_errorMonitor->SetDesiredWarning("WARNING-deprecation-gpdp2");
+    vk::GetPhysicalDeviceFormatProperties(Gpu(), VK_FORMAT_R8G8B8A8_UNORM, &format_properties);
+    m_errorMonitor->VerifyFound();
+
+    // Only report the first time
+    vk::GetPhysicalDeviceFeatures(Gpu(), &features);
+    vk::GetPhysicalDeviceFormatProperties(Gpu(), VK_FORMAT_R8G8B8A8_UNORM, &format_properties);
+}
+
+TEST_F(NegativeDeprecation, GetPhysicalDeviceProperties2Version) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(InitFramework(&kDeprecationLayerSettingCreateInfo));
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
+
+    m_errorMonitor->SetDesiredWarning("WARNING-deprecation-gpdp2");
+    VkPhysicalDeviceFeatures features{};
+    vk::GetPhysicalDeviceFeatures(Gpu(), &features);
+    m_errorMonitor->VerifyFound();
+
+    VkFormatProperties format_properties{};
+    m_errorMonitor->SetDesiredWarning("WARNING-deprecation-gpdp2");
+    vk::GetPhysicalDeviceFormatProperties(Gpu(), VK_FORMAT_R8G8B8A8_UNORM, &format_properties);
     m_errorMonitor->VerifyFound();
 }

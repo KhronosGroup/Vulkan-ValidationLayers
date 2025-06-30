@@ -26,6 +26,27 @@
 #include "generated/dispatch_functions.h"
 
 namespace deprecation {
+
+void Instance::PostCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+                                            VkInstance* pInstance, const RecordObject& record_obj) {
+    if (record_obj.result != VK_SUCCESS) {
+        return;
+    }
+
+    std::vector<VkExtensionProperties> ext_props{};
+    uint32_t ext_count = 0;
+    DispatchEnumerateInstanceExtensionProperties(instance, nullptr, &ext_count, nullptr);
+    ext_props.resize(ext_count);
+    DispatchEnumerateInstanceExtensionProperties(instance, nullptr, &ext_count, ext_props.data());
+    for (const auto& prop : ext_props) {
+        vvl::Extension extension = GetExtension(prop.extensionName);
+
+        if (extension == vvl::Extension::_VK_KHR_get_physical_device_properties2) {
+            supported_vk_khr_get_physical_device_properties2 = true;
+        }
+    }
+}
+
 void Device::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) {
     std::vector<VkExtensionProperties> ext_props{};
     uint32_t ext_count = 0;
@@ -35,14 +56,172 @@ void Device::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const Loca
     for (const auto& prop : ext_props) {
         vvl::Extension extension = GetExtension(prop.extensionName);
 
-        if (extension == vvl::Extension::_VK_KHR_dynamic_rendering_local_read) {
-            supported_vk_khr_dynamic_rendering_local_read = true;
-        }
-
         if (extension == vvl::Extension::_VK_KHR_create_renderpass2) {
             supported_vk_khr_create_renderpass2 = true;
         }
+
+        if (extension == vvl::Extension::_VK_KHR_dynamic_rendering_local_read) {
+            supported_vk_khr_dynamic_rendering_local_read = true;
+        }
     }
+}
+
+bool Instance::PreCallValidateGetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* pFeatures,
+                                                        const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (api_version >= VK_API_VERSION_1_1) {
+        reported = true;
+        LogWarning("WARNING-deprecation-gpdp2", physicalDevice, error_obj.location,
+                   "vkGetPhysicalDeviceFeatures is deprecated and this physicalDevice supports VK_VERSION_1_1\nSee more "
+                   "information about this deprecation in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
+    } else if (supported_vk_khr_get_physical_device_properties2) {
+        reported = true;
+        LogWarning("WARNING-deprecation-gpdp2", physicalDevice, error_obj.location,
+                   "vkGetPhysicalDeviceFeatures is deprecated and this physicalDevice supports "
+                   "VK_KHR_get_physical_device_properties2\nSee more information about this deprecation in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
+    }
+    return false;
+}
+
+bool Instance::PreCallValidateGetPhysicalDeviceFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
+                                                                VkFormatProperties* pFormatProperties,
+                                                                const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (api_version >= VK_API_VERSION_1_1) {
+        reported = true;
+        LogWarning("WARNING-deprecation-gpdp2", physicalDevice, error_obj.location,
+                   "vkGetPhysicalDeviceFormatProperties is deprecated and this physicalDevice supports VK_VERSION_1_1\nSee more "
+                   "information about this deprecation in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
+    } else if (supported_vk_khr_get_physical_device_properties2) {
+        reported = true;
+        LogWarning("WARNING-deprecation-gpdp2", physicalDevice, error_obj.location,
+                   "vkGetPhysicalDeviceFormatProperties is deprecated and this physicalDevice supports "
+                   "VK_KHR_get_physical_device_properties2\nSee more information about this deprecation in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
+    }
+    return false;
+}
+
+bool Instance::PreCallValidateGetPhysicalDeviceImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
+                                                                     VkImageType type, VkImageTiling tiling,
+                                                                     VkImageUsageFlags usage, VkImageCreateFlags flags,
+                                                                     VkImageFormatProperties* pImageFormatProperties,
+                                                                     const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (api_version >= VK_API_VERSION_1_1) {
+        reported = true;
+        LogWarning("WARNING-deprecation-gpdp2", physicalDevice, error_obj.location,
+                   "vkGetPhysicalDeviceImageFormatProperties is deprecated and this physicalDevice supports VK_VERSION_1_1\nSee "
+                   "more information about this deprecation in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
+    } else if (supported_vk_khr_get_physical_device_properties2) {
+        reported = true;
+        LogWarning("WARNING-deprecation-gpdp2", physicalDevice, error_obj.location,
+                   "vkGetPhysicalDeviceImageFormatProperties is deprecated and this physicalDevice supports "
+                   "VK_KHR_get_physical_device_properties2\nSee more information about this deprecation in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
+    }
+    return false;
+}
+
+bool Instance::PreCallValidateGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties* pProperties,
+                                                          const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (api_version >= VK_API_VERSION_1_1) {
+        reported = true;
+        LogWarning("WARNING-deprecation-gpdp2", physicalDevice, error_obj.location,
+                   "vkGetPhysicalDeviceProperties is deprecated and this physicalDevice supports VK_VERSION_1_1\nSee more "
+                   "information about this deprecation in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
+    } else if (supported_vk_khr_get_physical_device_properties2) {
+        reported = true;
+        LogWarning("WARNING-deprecation-gpdp2", physicalDevice, error_obj.location,
+                   "vkGetPhysicalDeviceProperties is deprecated and this physicalDevice supports "
+                   "VK_KHR_get_physical_device_properties2\nSee more information about this deprecation in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
+    }
+    return false;
+}
+
+bool Instance::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
+                                                                     uint32_t* pQueueFamilyPropertyCount,
+                                                                     VkQueueFamilyProperties* pQueueFamilyProperties,
+                                                                     const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (api_version >= VK_API_VERSION_1_1) {
+        reported = true;
+        LogWarning("WARNING-deprecation-gpdp2", physicalDevice, error_obj.location,
+                   "vkGetPhysicalDeviceQueueFamilyProperties is deprecated and this physicalDevice supports VK_VERSION_1_1\nSee "
+                   "more information about this deprecation in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
+    } else if (supported_vk_khr_get_physical_device_properties2) {
+        reported = true;
+        LogWarning("WARNING-deprecation-gpdp2", physicalDevice, error_obj.location,
+                   "vkGetPhysicalDeviceQueueFamilyProperties is deprecated and this physicalDevice supports "
+                   "VK_KHR_get_physical_device_properties2\nSee more information about this deprecation in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
+    }
+    return false;
+}
+
+bool Instance::PreCallValidateGetPhysicalDeviceMemoryProperties(VkPhysicalDevice physicalDevice,
+                                                                VkPhysicalDeviceMemoryProperties* pMemoryProperties,
+                                                                const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (api_version >= VK_API_VERSION_1_1) {
+        reported = true;
+        LogWarning("WARNING-deprecation-gpdp2", physicalDevice, error_obj.location,
+                   "vkGetPhysicalDeviceMemoryProperties is deprecated and this physicalDevice supports VK_VERSION_1_1\nSee more "
+                   "information about this deprecation in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
+    } else if (supported_vk_khr_get_physical_device_properties2) {
+        reported = true;
+        LogWarning("WARNING-deprecation-gpdp2", physicalDevice, error_obj.location,
+                   "vkGetPhysicalDeviceMemoryProperties is deprecated and this physicalDevice supports "
+                   "VK_KHR_get_physical_device_properties2\nSee more information about this deprecation in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
+    }
+    return false;
+}
+
+bool Instance::PreCallValidateGetPhysicalDeviceSparseImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
+                                                                           VkImageType type, VkSampleCountFlagBits samples,
+                                                                           VkImageUsageFlags usage, VkImageTiling tiling,
+                                                                           uint32_t* pPropertyCount,
+                                                                           VkSparseImageFormatProperties* pProperties,
+                                                                           const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    if (api_version >= VK_API_VERSION_1_1) {
+        reported = true;
+        LogWarning("WARNING-deprecation-gpdp2", physicalDevice, error_obj.location,
+                   "vkGetPhysicalDeviceSparseImageFormatProperties is deprecated and this physicalDevice supports "
+                   "VK_VERSION_1_1\nSee more information about this deprecation in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
+    } else if (supported_vk_khr_get_physical_device_properties2) {
+        reported = true;
+        LogWarning("WARNING-deprecation-gpdp2", physicalDevice, error_obj.location,
+                   "vkGetPhysicalDeviceSparseImageFormatProperties is deprecated and this physicalDevice supports "
+                   "VK_KHR_get_physical_device_properties2\nSee more information about this deprecation in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
+    }
+    return false;
 }
 
 bool Device::PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,

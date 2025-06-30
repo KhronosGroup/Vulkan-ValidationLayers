@@ -119,6 +119,7 @@ const std::vector<std::string> &GetEnableFlagNameHelper() {
         "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_NVIDIA",                      // vendor_specific_nvidia,
         "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT",                       // debug_printf,
         "VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT",         // sync_validation,
+        "VK_VALIDATION_DEPRECATION_CHECKS",                                    // deprecation_checks,
     };
     return enable_flag_name_helper;
 }
