@@ -3052,7 +3052,7 @@ void DeviceState::PostCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
         QueryObject query_obj = {queryPool, slot + i, flags};
         query_obj.inside_render_pass = query_count.inside_render_pass;
         query_obj.subpass = query_count.subpass;
-        cb_state->BeginQuery(query_obj);
+        cb_state->RecordBeginQuery(query_obj, record_obj.location);
     }
 
     if (!disabled[command_buffer_state]) {
@@ -3075,7 +3075,8 @@ void DeviceState::PostCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQue
         QueryObject query_obj = {queryPool, slot + i};
         query_obj.inside_render_pass = query_count.inside_render_pass;
         query_obj.subpass = query_count.subpass;
-        cb_state->EndQuery(query_obj);
+        query_obj.end_command_index = cb_state->command_count;  // counting this command
+        cb_state->RecordEndQuery(query_obj, record_obj.location);
     }
 
     if (!disabled[command_buffer_state]) {
@@ -3087,17 +3088,7 @@ void DeviceState::PostCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQue
 void DeviceState::PostCallRecordCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                                   uint32_t queryCount, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->command_count++;
-
-    if (disabled[query_validation]) {
-        return;
-    }
-    cb_state->ResetQueryPool(queryPool, firstQuery, queryCount);
-
-    if (!disabled[command_buffer_state]) {
-        auto pool_state = Get<QueryPool>(queryPool);
-        cb_state->AddChild(pool_state);
-    }
+    cb_state->RecordResetQueryPool(queryPool, firstQuery, queryCount, record_obj.location);
 }
 
 void DeviceState::PostCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
@@ -3105,24 +3096,13 @@ void DeviceState::PostCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandB
                                                         VkDeviceSize stride, VkQueryResultFlags flags,
                                                         const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->command_count++;
-
-    if (disabled[query_validation]) {
-        return;
-    }
-
-    if (!disabled[command_buffer_state]) {
-        auto dst_buff_state = Get<Buffer>(dstBuffer);
-        cb_state->AddChild(dst_buff_state);
-        auto pool_state = Get<QueryPool>(queryPool);
-        cb_state->AddChild(pool_state);
-    }
+    cb_state->RecordCopyQueryPoolResults(queryPool, dstBuffer, firstQuery, queryCount, flags, record_obj.location);
 }
 
 void DeviceState::PostCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                                   VkQueryPool queryPool, uint32_t slot, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->RecordWriteTimestamp(record_obj.location.function, pipelineStage, queryPool, slot);
+    cb_state->RecordWriteTimestamp(queryPool, slot, record_obj.location);
 }
 
 void DeviceState::PostCallRecordCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR pipelineStage,
@@ -3133,7 +3113,7 @@ void DeviceState::PostCallRecordCmdWriteTimestamp2KHR(VkCommandBuffer commandBuf
 void DeviceState::PostCallRecordCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 pipelineStage,
                                                    VkQueryPool queryPool, uint32_t slot, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->RecordWriteTimestamp(record_obj.location.function, pipelineStage, queryPool, slot);
+    cb_state->RecordWriteTimestamp(queryPool, slot, record_obj.location);
 }
 
 void DeviceState::PostCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
@@ -3146,7 +3126,7 @@ void DeviceState::PostCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
         return;
     }
 
-    cb_state->EndQueries(queryPool, firstQuery, accelerationStructureCount);
+    cb_state->RecordEndQueries(queryPool, firstQuery, accelerationStructureCount);
 
     if (!disabled[command_buffer_state]) {
         auto pool_state = Get<QueryPool>(queryPool);
@@ -4587,7 +4567,7 @@ void DeviceState::PostCallRecordCmdBeginQueryIndexedEXT(VkCommandBuffer commandB
         QueryObject query_obj = {queryPool, slot, flags, 0, true, index + i};
         query_obj.inside_render_pass = query_count.inside_render_pass;
         query_obj.subpass = query_count.subpass;
-        cb_state->BeginQuery(query_obj);
+        cb_state->RecordBeginQuery(query_obj, record_obj.location);
     }
 
     if (!disabled[command_buffer_state]) {
@@ -4610,7 +4590,8 @@ void DeviceState::PostCallRecordCmdEndQueryIndexedEXT(VkCommandBuffer commandBuf
         QueryObject query_obj = {queryPool, slot, 0, 0, true, index + i};
         query_obj.inside_render_pass = query_count.inside_render_pass;
         query_obj.subpass = query_count.subpass;
-        cb_state->EndQuery(query_obj);
+        query_obj.end_command_index = cb_state->command_count;  // counting this command
+        cb_state->RecordEndQuery(query_obj, record_obj.location);
     }
 
     if (!disabled[command_buffer_state]) {
