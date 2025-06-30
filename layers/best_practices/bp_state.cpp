@@ -701,6 +701,18 @@ void CommandBufferSubState::RecordSetDepthTestStateNV(VkCompareOp new_depth_comp
     nv.depth_test_enable = new_depth_test_enable;
 }
 
+void CommandBufferSubState::RecordSetDepthCompareOp(VkCompareOp depth_compare_op) {
+    if (validator.VendorCheckEnabled(kBPVendorNVIDIA)) {
+        RecordSetDepthTestStateNV(depth_compare_op, nv.depth_test_enable);
+    }
+}
+
+void CommandBufferSubState::RecordSetDepthTestEnable(VkBool32 depth_test_enable) {
+    if (validator.VendorCheckEnabled(kBPVendorNVIDIA)) {
+        RecordSetDepthTestStateNV(nv.depth_compare_op, depth_test_enable);
+    }
+}
+
 void CommandBufferSubState::RecordBindPipeline(VkPipelineBindPoint bind_point, vvl::Pipeline& pipeline) {
     // AMD best practice
     validator.PipelineUsedInFrame(pipeline.VkHandle());

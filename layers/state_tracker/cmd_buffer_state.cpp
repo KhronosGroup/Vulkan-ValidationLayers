@@ -1587,6 +1587,7 @@ void CommandBuffer::RecordDynamicState(CBDynamicState state) {
 }
 
 void CommandBuffer::RecordSetViewport(uint32_t first_viewport, uint32_t viewport_count, const VkViewport *viewports) {
+    RecordStateCmd(CB_DYNAMIC_STATE_VIEWPORT);
     if (dynamic_state_value.viewports.size() < first_viewport + viewport_count) {
         dynamic_state_value.viewports.resize(first_viewport + viewport_count);
     }
@@ -1599,6 +1600,7 @@ void CommandBuffer::RecordSetViewport(uint32_t first_viewport, uint32_t viewport
 }
 
 void CommandBuffer::RecordSetViewportWithCount(uint32_t viewport_count, const VkViewport *viewports) {
+    RecordStateCmd(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
     dynamic_state_value.viewport_count = viewport_count;
     dynamic_state_value.viewports.resize(viewport_count);
     for (size_t i = 0; i < viewport_count; ++i) {
@@ -1611,15 +1613,31 @@ void CommandBuffer::RecordSetViewportWithCount(uint32_t viewport_count, const Vk
 }
 
 void CommandBuffer::RecordSetScissor(uint32_t first_scissor, uint32_t scissor_count) {
+    RecordStateCmd(CB_DYNAMIC_STATE_SCISSOR);
     for (auto &item : sub_states_) {
         item.second->RecordSetScissor(first_scissor, scissor_count);
     }
 }
 
 void CommandBuffer::RecordSetScissorWithCount(uint32_t scissor_count) {
+    RecordStateCmd(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
     dynamic_state_value.scissor_count = scissor_count;
     for (auto &item : sub_states_) {
         item.second->RecordSetScissorWithCount(scissor_count);
+    }
+}
+
+void CommandBuffer::RecordSetDepthCompareOp(VkCompareOp depth_compare_op) {
+    RecordStateCmd(CB_DYNAMIC_STATE_DEPTH_COMPARE_OP);
+    for (auto &item : sub_states_) {
+        item.second->RecordSetDepthCompareOp(depth_compare_op);
+    }
+}
+void CommandBuffer::RecordSetDepthTestEnable(VkBool32 depth_test_enable) {
+    RecordStateCmd(CB_DYNAMIC_STATE_DEPTH_TEST_ENABLE);
+    dynamic_state_value.depth_test_enable = depth_test_enable;
+    for (auto &item : sub_states_) {
+        item.second->RecordSetDepthTestEnable(depth_test_enable);
     }
 }
 

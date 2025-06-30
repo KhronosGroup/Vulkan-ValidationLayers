@@ -2309,7 +2309,6 @@ void DeviceState::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, V
 void DeviceState::PostCallRecordCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
                                                const VkViewport *pViewports, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->RecordStateCmd(CB_DYNAMIC_STATE_VIEWPORT);
     cb_state->RecordSetViewport(firstViewport, viewportCount, pViewports);
 }
 
@@ -2654,7 +2653,6 @@ void DeviceState::PostCallRecordCmdSetDepthBias2EXT(VkCommandBuffer commandBuffe
 void DeviceState::PostCallRecordCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount,
                                               const VkRect2D *pScissors, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->RecordStateCmd(CB_DYNAMIC_STATE_SCISSOR);
     cb_state->RecordSetScissor(firstScissor, scissorCount);
 }
 
@@ -5089,7 +5087,6 @@ void DeviceState::PostCallRecordCmdSetViewportWithCountEXT(VkCommandBuffer comma
 void DeviceState::PostCallRecordCmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount,
                                                         const VkViewport *pViewports, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->RecordStateCmd(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
     cb_state->RecordSetViewportWithCount(viewportCount, pViewports);
 }
 
@@ -5101,7 +5098,6 @@ void DeviceState::PostCallRecordCmdSetScissorWithCountEXT(VkCommandBuffer comman
 void DeviceState::PostCallRecordCmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount,
                                                        const VkRect2D *pScissors, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->RecordStateCmd(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
     cb_state->RecordSetScissorWithCount(scissorCount);
 }
 
@@ -5149,8 +5145,7 @@ void DeviceState::PostCallRecordCmdSetDepthTestEnableEXT(VkCommandBuffer command
 void DeviceState::PostCallRecordCmdSetDepthTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable,
                                                       const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->RecordStateCmd(CB_DYNAMIC_STATE_DEPTH_TEST_ENABLE);
-    cb_state->dynamic_state_value.depth_test_enable = depthTestEnable;
+    cb_state->RecordSetDepthTestEnable(depthTestEnable);
 }
 
 void DeviceState::PostCallRecordCmdSetDepthWriteEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable,
@@ -5173,7 +5168,7 @@ void DeviceState::PostCallRecordCmdSetDepthCompareOpEXT(VkCommandBuffer commandB
 void DeviceState::PostCallRecordCmdSetDepthCompareOp(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp,
                                                      const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->RecordStateCmd(CB_DYNAMIC_STATE_DEPTH_COMPARE_OP);
+    cb_state->RecordSetDepthCompareOp(depthCompareOp);
 }
 
 void DeviceState::PostCallRecordCmdSetDepthBoundsTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBoundsTestEnable,
