@@ -96,6 +96,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
                               const Location &loc) final;
     void RecordCopyQueryPoolResults(vvl::QueryPool &pool_state, uint32_t firstQuery, uint32_t queryCount, VkQueryResultFlags flags,
                                     const Location &loc) final;
+    void RecordWriteAccelerationStructuresProperties(VkQueryPool queryPool, uint32_t firstQuery,
+                                                     uint32_t accelerationStructureCount, const Location &loc) final;
     void RecordVideoInlineQueries(const VkVideoInlineQueryInfoKHR &query_info) final;
 
     void RecordBeginVideoCoding(vvl::VideoSession &vs_state, const VkVideoBeginCodingInfoKHR &begin_info,

@@ -3120,18 +3120,7 @@ void DeviceState::PostCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
     VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount, const VkAccelerationStructureKHR *pAccelerationStructures,
     VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->command_count++;
-
-    if (disabled[query_validation]) {
-        return;
-    }
-
-    cb_state->RecordEndQueries(queryPool, firstQuery, accelerationStructureCount);
-
-    if (!disabled[command_buffer_state]) {
-        auto pool_state = Get<QueryPool>(queryPool);
-        cb_state->AddChild(pool_state);
-    }
+    cb_state->RecordWriteAccelerationStructuresProperties(queryPool, firstQuery, accelerationStructureCount, record_obj.location);
 }
 
 void DeviceState::PostCallRecordCreateVideoSessionKHR(VkDevice device, const VkVideoSessionCreateInfoKHR *pCreateInfo,

@@ -1548,30 +1548,6 @@ bool CoreChecks::PreCallValidateDestroyAccelerationStructureKHR(VkDevice device,
     return skip;
 }
 
-void CoreChecks::PreCallRecordCmdWriteAccelerationStructuresPropertiesKHR(VkCommandBuffer commandBuffer,
-                                                                          uint32_t accelerationStructureCount,
-                                                                          const VkAccelerationStructureKHR *pAccelerationStructures,
-                                                                          VkQueryType queryType, VkQueryPool queryPool,
-                                                                          uint32_t firstQuery, const RecordObject &record_obj) {
-    if (disabled[query_validation]) return;
-    // Enqueue the submit time validation check here, before the submit time state update in StateTracker::PostCall
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    auto &cb_sub_state = core::SubState(*cb_state);
-    cb_sub_state.query_updates.emplace_back(
-        [accelerationStructureCount, firstQuery, queryPool](vvl::CommandBuffer &cb_state_arg, bool do_validate, VkQueryPool &,
-                                                            uint32_t perf_query_pass, QueryMap *local_query_to_state_map) {
-            if (!do_validate) return false;
-            bool skip = false;
-            for (uint32_t i = 0; i < accelerationStructureCount; i++) {
-                QueryObject query_obj = {queryPool, firstQuery + i, perf_query_pass};
-                skip |= VerifyQueryIsReset(cb_state_arg, query_obj, Func::vkCmdWriteAccelerationStructuresPropertiesKHR,
-                                           perf_query_pass, local_query_to_state_map);
-                (*local_query_to_state_map)[query_obj] = QUERYSTATE_ENDED;
-            }
-            return skip;
-        });
-}
-
 bool CoreChecks::PreCallValidateWriteAccelerationStructuresPropertiesKHR(VkDevice device, uint32_t accelerationStructureCount,
                                                                          const VkAccelerationStructureKHR *pAccelerationStructures,
                                                                          VkQueryType queryType, size_t dataSize, void *pData,

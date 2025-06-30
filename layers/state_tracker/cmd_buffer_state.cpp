@@ -541,6 +541,30 @@ void CommandBuffer::RecordCopyQueryPoolResults(VkQueryPool queryPool, VkBuffer d
     }
 }
 
+void CommandBuffer::RecordWriteAccelerationStructuresProperties(VkQueryPool queryPool, uint32_t firstQuery,
+                                                                uint32_t accelerationStructureCount, const Location &loc) {
+    command_count++;
+    if (dev_data.disabled[query_validation]) {
+        return;
+    }
+
+    if (!dev_data.disabled[command_buffer_state]) {
+        auto pool_state = dev_data.Get<QueryPool>(queryPool);
+        AddChild(pool_state);
+    }
+
+    for (auto &item : sub_states_) {
+        item.second->RecordWriteAccelerationStructuresProperties(queryPool, firstQuery, accelerationStructureCount, loc);
+    }
+
+    // Same idea as RecordEndQueries
+    for (uint32_t slot = firstQuery; slot < (firstQuery + accelerationStructureCount); slot++) {
+        QueryObject query_obj = {queryPool, slot};
+        active_queries.erase(query_obj);
+        updated_queries.insert(query_obj);
+    }
+}
+
 void CommandBuffer::UpdateSubpassAttachments() {
     ASSERT_AND_RETURN(active_render_pass);
     const auto &subpass = active_render_pass->create_info.pSubpasses[GetActiveSubpass()];
