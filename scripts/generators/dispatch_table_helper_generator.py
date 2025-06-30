@@ -197,7 +197,6 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
               'vkCreateInstance',
               'vkCreateDevice',
               'vkGetPhysicalDeviceProcAddr',
-              'vkEnumerateInstanceExtensionProperties',
               'vkEnumerateInstanceLayerProperties',
               'vkEnumerateInstanceVersion',
               'vkGetInstanceProcAddr',

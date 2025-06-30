@@ -17,6 +17,7 @@
  * limitations under the License.
  */
 #include <string.h>
+#include <vulkan/vulkan_core.h>
 #include <cassert>
 #include <mutex>
 #include <unordered_map>
@@ -48,6 +49,8 @@ struct layer_data {
 };
 
 static std::unordered_map<void *, layer_data *> device_profile_api_dev_data_map;
+// Used as way to call vkEnumerateInstanceExtensionProperties for deprecation tests
+static VkInstance last_instance = VK_NULL_HANDLE;
 
 // For the given data key, look up the layer_data instance from given layer_data_map
 template <typename DATA_T>
@@ -226,6 +229,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
         instance_data->dispatch_table.GetPhysicalDeviceFeatures(physical_device, &phy_dev_data->phy_device_features);
         phy_dev_data->instance = *pInstance;
     }
+    last_instance = *pInstance;
     return result;
 }
 
@@ -347,9 +351,12 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceLayerProperties(uint32_t *pCount
 
 VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceExtensionProperties(const char *pLayerName, uint32_t *pCount,
                                                                     VkExtensionProperties *pProperties) {
-    if (pLayerName && !strcmp(pLayerName, device_profile_api_LayerProps.layerName))
+    if (pLayerName && !strcmp(pLayerName, device_profile_api_LayerProps.layerName)) {
         return EnumerateProperties<VkExtensionProperties>(0, NULL, pCount, pProperties);
-
+    } else if (!pLayerName && last_instance) {
+        layer_data *instance_data = GetLayerDataPtr(last_instance, device_profile_api_dev_data_map);
+        instance_data->dispatch_table.EnumerateInstanceExtensionProperties(pLayerName, pCount, pProperties);
+    }
     return VK_ERROR_LAYER_NOT_PRESENT;
 }
 

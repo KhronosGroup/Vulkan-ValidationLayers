@@ -666,6 +666,13 @@ PFN_vkVoidFunction Device::GetDeviceProcAddr(VkDevice device, const char* pName)
     return result;
 }
 
+VkResult Instance::EnumerateInstanceExtensionProperties(const char* pLayerName, uint32_t* pPropertyCount,
+                                                        VkExtensionProperties* pProperties) {
+    VkResult result = instance_dispatch_table.EnumerateInstanceExtensionProperties(pLayerName, pPropertyCount, pProperties);
+
+    return result;
+}
+
 VkResult Instance::EnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice, const char* pLayerName,
                                                       uint32_t* pPropertyCount, VkExtensionProperties* pProperties) {
     VkResult result =

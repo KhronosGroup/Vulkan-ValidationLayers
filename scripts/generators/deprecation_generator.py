@@ -23,7 +23,8 @@ class DeprecationGenerator(BaseGenerator):
     def __init__(self):
         BaseGenerator.__init__(self)
 
-        self.all_extensions = set()
+        self.all_device_extensions = set()
+        self.all_instance_extensions = set()
 
     def generate(self):
         self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
@@ -49,8 +50,10 @@ class DeprecationGenerator(BaseGenerator):
             ****************************************************************************/\n''')
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
-        for extensions in [x.deprecate.extensions for x in self.vk.commands.values() if x.deprecate and x.deprecate.extensions]:
-            self.all_extensions.update(extensions)
+        for extensions in [x.deprecate.extensions for x in self.vk.commands.values() if x.deprecate and x.deprecate.extensions and x.instance]:
+            self.all_instance_extensions.update(extensions)
+        for extensions in [x.deprecate.extensions for x in self.vk.commands.values() if x.deprecate and x.deprecate.extensions and x.device]:
+            self.all_device_extensions.update(extensions)
 
         if self.filename == 'deprecation.h':
             self.generateHeader()
@@ -76,6 +79,22 @@ class DeprecationGenerator(BaseGenerator):
 
             public:
                 Instance(vvl::dispatch::Instance *dispatch) : BaseClass(dispatch, LayerObjectTypeDeprecation) {}
+
+                void PostCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+                                                  VkInstance* pInstance, const RecordObject& record_obj) override;
+
+        ''')
+
+        for extension in sorted(self.all_instance_extensions):
+            out.append(f'bool supported_{extension.lower()} = false;')
+        out.append('\n')
+
+        for command in [x for x in self.vk.commands.values() if x.deprecate and x.instance]:
+            prototype = (command.cPrototype.split('VKAPI_CALL ')[1])[2:-1]
+            prePrototype = prototype.replace(')', ', const ErrorObject& error_obj)')
+            out.append(f'bool PreCallValidate{prePrototype} const override;\n')
+
+        out.append('''
             };
 
             class Device : public vvl::base::Device {
@@ -90,11 +109,11 @@ class DeprecationGenerator(BaseGenerator):
                 void FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) override;
         ''')
 
-        for extension in self.all_extensions:
+        for extension in sorted(self.all_device_extensions):
             out.append(f'bool supported_{extension.lower()} = false;')
         out.append('\n')
 
-        for command in [x for x in self.vk.commands.values() if x.deprecate]:
+        for command in [x for x in self.vk.commands.values() if x.deprecate and x.device]:
             # There is really no good use to warn developer both the create and destroy are deprecated
             if command.name.startswith('vkDestroy'):
                 continue
@@ -114,6 +133,34 @@ class DeprecationGenerator(BaseGenerator):
             #include "generated/dispatch_functions.h"
 
             namespace deprecation {
+
+            void Instance::PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
+                                                            VkInstance *pInstance, const RecordObject &record_obj) {
+                if (record_obj.result != VK_SUCCESS) {
+                    return;
+                }
+
+                std::vector<VkExtensionProperties> ext_props{};
+                uint32_t ext_count = 0;
+                DispatchEnumerateInstanceExtensionProperties(instance, nullptr, &ext_count, nullptr);
+                ext_props.resize(ext_count);
+                DispatchEnumerateInstanceExtensionProperties(instance, nullptr, &ext_count, ext_props.data());
+                for (const auto& prop : ext_props) {
+                    vvl::Extension extension = GetExtension(prop.extensionName);
+        ''')
+        for extension in sorted(self.all_instance_extensions):
+            out.append(f'''
+                if (extension == vvl::Extension::_{extension}) {{
+                    supported_{extension.lower()} = true;
+                }}
+            ''')
+        out.append('''
+                }
+            }
+            ''')
+
+        out.append('''
+
             void Device::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) {
                 std::vector<VkExtensionProperties> ext_props{};
                 uint32_t ext_count = 0;
@@ -123,7 +170,7 @@ class DeprecationGenerator(BaseGenerator):
                 for (const auto& prop : ext_props) {
                     vvl::Extension extension = GetExtension(prop.extensionName);
         ''')
-        for extension in self.all_extensions:
+        for extension in sorted(self.all_device_extensions):
             out.append(f'''
                 if (extension == vvl::Extension::_{extension}) {{
                     supported_{extension.lower()} = true;
@@ -140,10 +187,13 @@ class DeprecationGenerator(BaseGenerator):
             if command.name.startswith('vkDestroy'):
                 continue
 
+            className = 'Device' if command.device else 'Instance'
+            objName = 'device' if command.device else 'physicalDevice'
+
             prototype = (command.cPrototype.split('VKAPI_CALL ')[1])[2:-1]
             prePrototype = prototype.replace(')', ', const ErrorObject& error_obj)')
             out.append(f'''
-                bool Device::PreCallValidate{prePrototype} const {{
+                bool {className}::PreCallValidate{prePrototype} const {{
                     static bool reported = false;
                     if (reported) return false;
                 ''')
@@ -157,8 +207,8 @@ class DeprecationGenerator(BaseGenerator):
                 out.append(f'''
                     {logic} (api_version >= {command.deprecate.version.nameApi}) {{
                         reported = true;
-                        LogWarning("WARNING-{command.deprecate.link}", device, error_obj.location,
-                            "{command.name} is deprecated and this device supports {command.deprecate.version.name}\\nSee more information about this deprecation in the specification: https://docs.vulkan.org/spec/latest/appendices/deprecation.html#{command.deprecate.link}");
+                        LogWarning("WARNING-{command.deprecate.link}", {objName}, error_obj.location,
+                            "{command.name} is deprecated and this {objName} supports {command.deprecate.version.name}\\nSee more information about this deprecation in the specification: https://docs.vulkan.org/spec/latest/appendices/deprecation.html#{command.deprecate.link}");
                     }}''')
 
             for extension in command.deprecate.extensions:
@@ -169,8 +219,8 @@ class DeprecationGenerator(BaseGenerator):
                 out.append(f'''
                     {logic} (supported_{extension.lower()}) {{
                         reported = true;
-                        LogWarning("WARNING-{command.deprecate.link}", device, error_obj.location,
-                            "{command.name} is deprecated and this device supports {extension}\\nSee more information about this deprecation in the specification: https://docs.vulkan.org/spec/latest/appendices/deprecation.html#{command.deprecate.link}");
+                        LogWarning("WARNING-{command.deprecate.link}", {objName}, error_obj.location,
+                            "{command.name} is deprecated and this {objName} supports {extension}\\nSee more information about this deprecation in the specification: https://docs.vulkan.org/spec/latest/appendices/deprecation.html#{command.deprecate.link}");
                     }}''')
 
             out.append('''
