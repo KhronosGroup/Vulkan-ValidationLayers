@@ -489,7 +489,7 @@ void CommandBufferSubState::RecordClearAttachments(uint32_t attachment_count, co
     }
 }
 
-void CommandBufferSubState::RecordSetEvent(vvl::Func, VkEvent event, VkPipelineStageFlags2 stage_mask,
+void CommandBufferSubState::RecordSetEvent(VkEvent event, VkPipelineStageFlags2 stage_mask,
                                            const VkDependencyInfo* dependency_info) {
     vku::safe_VkDependencyInfo safe_dependency_info = {};
     if (dependency_info) {
@@ -506,7 +506,7 @@ void CommandBufferSubState::RecordSetEvent(vvl::Func, VkEvent event, VkPipelineS
     });
 }
 
-void CommandBufferSubState::RecordResetEvent(vvl::Func, VkEvent event, VkPipelineStageFlags2) {
+void CommandBufferSubState::RecordResetEvent(VkEvent event, VkPipelineStageFlags2) {
     event_updates.emplace_back(
         [event](vvl::CommandBuffer&, bool do_validate, EventMap& local_event_signal_info, VkQueue, const Location& loc) {
             local_event_signal_info[event] = EventInfo{VK_PIPELINE_STAGE_2_NONE, false};
@@ -514,8 +514,8 @@ void CommandBufferSubState::RecordResetEvent(vvl::Func, VkEvent event, VkPipelin
         });
 }
 
-void CommandBufferSubState::RecordWaitEvents(vvl::Func command, uint32_t eventCount, const VkEvent* pEvents,
-                                             VkPipelineStageFlags2 src_stage_mask, const VkDependencyInfo* dependency_info) {
+void CommandBufferSubState::RecordWaitEvents(uint32_t eventCount, const VkEvent* pEvents, VkPipelineStageFlags2 src_stage_mask,
+                                             const VkDependencyInfo* dependency_info, const Location& loc) {
     // vvl::CommandBuffer will add to the events vector. TODO this is now incorrect
     auto first_event_index = base.events.size();
     auto event_added_count = eventCount;
@@ -529,12 +529,57 @@ void CommandBufferSubState::RecordWaitEvents(vvl::Func command, uint32_t eventCo
     }
 
     event_updates.emplace_back(
-        [command, event_added_count, first_event_index, src_stage_mask, safe_dependency_info](
+        [event_added_count, first_event_index, src_stage_mask, safe_dependency_info](
             vvl::CommandBuffer& cb_state, bool do_validate, EventMap& local_event_signal_info, VkQueue queue, const Location& loc) {
             if (!do_validate) return false;
-            return CoreChecks::ValidateWaitEventsAtSubmit(command, cb_state, event_added_count, first_event_index, src_stage_mask,
+            return CoreChecks::ValidateWaitEventsAtSubmit(cb_state, event_added_count, first_event_index, src_stage_mask,
                                                           safe_dependency_info, local_event_signal_info, queue, loc);
         });
+}
+
+void CommandBufferSubState::RecordBarriers(uint32_t buffer_barrier_count, const VkBufferMemoryBarrier* buffer_barriers,
+                                           uint32_t image_barrier_count, const VkImageMemoryBarrier* image_barriers,
+                                           VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
+                                           const Location& loc) {
+    for (uint32_t i = 0; i < buffer_barrier_count; i++) {
+        Location barrier_loc(loc.function, vvl::Struct::VkBufferMemoryBarrier, vvl::Field::pBufferMemoryBarriers, i);
+        const BufferBarrier barrier(buffer_barriers[i], src_stage_mask, dst_stage_mask);
+        validator.RecordBarrierValidationInfo(barrier_loc, base, barrier, qfo_transfer_buffer_barriers);
+    }
+    for (uint32_t i = 0; i < image_barrier_count; i++) {
+        auto image_state = base.dev_data.Get<vvl::Image>(image_barriers[i].image);
+        ASSERT_AND_CONTINUE(image_state);
+
+        Location barrier_loc(loc.function, vvl::Struct::VkImageMemoryBarrier, vvl::Field::pImageMemoryBarriers, i);
+        const ImageBarrier img_barrier(image_barriers[i], src_stage_mask, dst_stage_mask);
+        validator.RecordBarrierValidationInfo(barrier_loc, base, img_barrier, *image_state, qfo_transfer_image_barriers);
+        validator.EnqueueValidateImageBarrierAttachment(barrier_loc, *this, img_barrier);
+        validator.EnqueueValidateDynamicRenderingImageBarrierLayouts(barrier_loc, base, img_barrier);
+
+        // Update layouts at the end. Submit time enqueuing logic above needs pre-update layout map.
+        validator.RecordTransitionImageLayout(base, img_barrier, *image_state);
+    }
+}
+
+void CommandBufferSubState::RecordBarriers2(const VkDependencyInfo& dep_info, const Location& loc) {
+    for (uint32_t i = 0; i < dep_info.bufferMemoryBarrierCount; i++) {
+        Location barrier_loc(loc.function, vvl::Struct::VkBufferMemoryBarrier2, vvl::Field::pBufferMemoryBarriers, i);
+        const BufferBarrier barrier(dep_info.pBufferMemoryBarriers[i]);
+        validator.RecordBarrierValidationInfo(barrier_loc, base, barrier, qfo_transfer_buffer_barriers);
+    }
+    for (uint32_t i = 0; i < dep_info.imageMemoryBarrierCount; i++) {
+        auto image_state = base.dev_data.Get<vvl::Image>(dep_info.pImageMemoryBarriers[i].image);
+        ASSERT_AND_CONTINUE(image_state);
+
+        Location barrier_loc(loc.function, vvl::Struct::VkImageMemoryBarrier2, vvl::Field::pImageMemoryBarriers, i);
+        const ImageBarrier img_barrier(dep_info.pImageMemoryBarriers[i]);
+        validator.RecordBarrierValidationInfo(barrier_loc, base, img_barrier, *image_state, qfo_transfer_image_barriers);
+        validator.EnqueueValidateImageBarrierAttachment(barrier_loc, *this, img_barrier);
+        validator.EnqueueValidateDynamicRenderingImageBarrierLayouts(barrier_loc, base, img_barrier);
+
+        // Update layouts at the end. Submit time enqueuing logic above needs pre-update layout map.
+        validator.RecordTransitionImageLayout(base, img_barrier, *image_state);
+    }
 }
 
 static void SetQueryState(const QueryObject& object, QueryState value, QueryMap* local_query_to_state_map) {

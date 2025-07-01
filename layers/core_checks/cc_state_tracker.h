@@ -82,11 +82,14 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void RecordClearAttachments(uint32_t attachment_count, const VkClearAttachment *pAttachments, uint32_t rect_count,
                                 const VkClearRect *pRects, const Location &loc) final;
 
-    void RecordSetEvent(vvl::Func command, VkEvent event, VkPipelineStageFlags2 stageMask,
-                        const VkDependencyInfo *dependency_info) final;
-    void RecordResetEvent(vvl::Func command, VkEvent event, VkPipelineStageFlags2 stageMask) final;
-    void RecordWaitEvents(vvl::Func command, uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags2 src_stage_mask,
-                          const VkDependencyInfo *dependency_info) final;
+    void RecordSetEvent(VkEvent event, VkPipelineStageFlags2 stageMask, const VkDependencyInfo *dependency_info) final;
+    void RecordResetEvent(VkEvent event, VkPipelineStageFlags2 stageMask) final;
+    void RecordWaitEvents(uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags2 src_stage_mask,
+                          const VkDependencyInfo *dependency_info, const Location &loc) final;
+    void RecordBarriers(uint32_t buffer_barrier_count, const VkBufferMemoryBarrier *buffer_barriers, uint32_t image_barrier_count,
+                        const VkImageMemoryBarrier *image_barriers, VkPipelineStageFlags src_stage_mask,
+                        VkPipelineStageFlags dst_stage_mask, const Location &loc) final;
+    void RecordBarriers2(const VkDependencyInfo &dep_info, const Location &loc) final;
 
     void RecordBeginQuery(const QueryObject &query_obj, const Location &loc) final;
     void RecordEndQuery(const QueryObject &query_obj, const Location &loc) final;

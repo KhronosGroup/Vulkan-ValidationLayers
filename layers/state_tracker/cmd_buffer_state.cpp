@@ -1771,16 +1771,14 @@ void CommandBuffer::RecordClearAttachments(uint32_t attachment_count, const VkCl
     }
 }
 
-void CommandBuffer::RecordSetEvent(Func command, VkEvent event, VkPipelineStageFlags2 stage_mask,
-                                   const VkDependencyInfo *dependency_info) {
+void CommandBuffer::RecordSetEvent(VkEvent event, VkPipelineStageFlags2 stage_mask, const VkDependencyInfo *dependency_info) {
     command_count++;
     for (auto &item : sub_states_) {
-        item.second->RecordSetEvent(command, event, stage_mask, dependency_info);
+        item.second->RecordSetEvent(event, stage_mask, dependency_info);
     }
 
     if (!dev_data.disabled[command_buffer_state]) {
-        auto event_state = dev_data.Get<vvl::Event>(event);
-        if (event_state) {
+        if (auto event_state = dev_data.Get<vvl::Event>(event)) {
             AddChild(event_state);
         }
     }
@@ -1790,15 +1788,14 @@ void CommandBuffer::RecordSetEvent(Func command, VkEvent event, VkPipelineStageF
     }
 }
 
-void CommandBuffer::RecordResetEvent(Func command, VkEvent event, VkPipelineStageFlags2 stage_mask) {
+void CommandBuffer::RecordResetEvent(VkEvent event, VkPipelineStageFlags2 stage_mask) {
     command_count++;
     for (auto &item : sub_states_) {
-        item.second->RecordResetEvent(command, event, stage_mask);
+        item.second->RecordResetEvent(event, stage_mask);
     }
 
     if (!dev_data.disabled[command_buffer_state]) {
-        auto event_state = dev_data.Get<vvl::Event>(event);
-        if (event_state) {
+        if (auto event_state = dev_data.Get<vvl::Event>(event)) {
             AddChild(event_state);
         }
     }
@@ -1808,56 +1805,65 @@ void CommandBuffer::RecordResetEvent(Func command, VkEvent event, VkPipelineStag
     }
 }
 
-void CommandBuffer::RecordWaitEvents(Func command, uint32_t eventCount, const VkEvent *pEvents,
-                                     VkPipelineStageFlags2 src_stage_mask, const VkDependencyInfo *dependency_info) {
-    command_count++;
+void CommandBuffer::RecordWaitEvents(uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags2 src_stage_mask,
+                                     const VkDependencyInfo *dependency_info, const Location &loc) {
     for (auto &item : sub_states_) {
-        item.second->RecordWaitEvents(command, eventCount, pEvents, src_stage_mask, dependency_info);
+        item.second->RecordWaitEvents(eventCount, pEvents, src_stage_mask, dependency_info, loc);
     }
     for (uint32_t i = 0; i < eventCount; ++i) {
+        const VkEvent event_hanle = pEvents[i];
         if (!dev_data.disabled[command_buffer_state]) {
-            auto event_state = dev_data.Get<vvl::Event>(pEvents[i]);
-            if (event_state) {
+            if (auto event_state = dev_data.Get<vvl::Event>(event_hanle)) {
                 AddChild(event_state);
             }
         }
-        waited_events.insert(pEvents[i]);
-        events.push_back(pEvents[i]);
+        waited_events.insert(event_hanle);
+        events.push_back(event_hanle);
     }
 }
 
-void CommandBuffer::RecordBarriers(uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
-                                   uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
-                                   uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
-    if (dev_data.disabled[command_buffer_state]) return;
-
-    for (uint32_t i = 0; i < bufferMemoryBarrierCount; i++) {
-        auto buffer_state = dev_data.Get<vvl::Buffer>(pBufferMemoryBarriers[i].buffer);
-        if (buffer_state) {
-            AddChild(buffer_state);
+void CommandBuffer::RecordBarrierObjects(uint32_t buffer_barrier_count, const VkBufferMemoryBarrier *buffer_barriers,
+                                         uint32_t image_barrier_count, const VkImageMemoryBarrier *image_barriers,
+                                         VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
+                                         const Location &loc) {
+    if (!dev_data.disabled[command_buffer_state]) {
+        for (uint32_t i = 0; i < buffer_barrier_count; i++) {
+            if (auto buffer_state = dev_data.Get<vvl::Buffer>(buffer_barriers[i].buffer)) {
+                AddChild(buffer_state);
+            }
+        }
+        for (uint32_t i = 0; i < image_barrier_count; i++) {
+            if (auto image_state = dev_data.Get<vvl::Image>(image_barriers[i].image)) {
+                AddChild(image_state);
+            }
         }
     }
-    for (uint32_t i = 0; i < imageMemoryBarrierCount; i++) {
-        auto image_state = dev_data.Get<vvl::Image>(pImageMemoryBarriers[i].image);
-        if (image_state) {
-            AddChild(image_state);
-        }
+
+    for (auto &item : sub_states_) {
+        item.second->RecordBarriers(buffer_barrier_count, buffer_barriers, image_barrier_count, image_barriers, src_stage_mask,
+                                    dst_stage_mask, loc);
     }
 }
 
-void CommandBuffer::RecordBarriers(const VkDependencyInfo &dep_info) {
-    if (dev_data.disabled[command_buffer_state]) return;
-
-    for (uint32_t i = 0; i < dep_info.bufferMemoryBarrierCount; i++) {
-        auto buffer_state = dev_data.Get<vvl::Buffer>(dep_info.pBufferMemoryBarriers[i].buffer);
-        if (buffer_state) {
-            AddChild(buffer_state);
+void CommandBuffer::RecordBarrierObjects(const VkDependencyInfo &dep_info, const Location &loc) {
+    if (!dev_data.disabled[command_buffer_state]) {
+        for (uint32_t i = 0; i < dep_info.bufferMemoryBarrierCount; i++) {
+            if (auto buffer_state = dev_data.Get<vvl::Buffer>(dep_info.pBufferMemoryBarriers[i].buffer)) {
+                AddChild(buffer_state);
+            }
+        }
+        for (uint32_t i = 0; i < dep_info.imageMemoryBarrierCount; i++) {
+            if (auto image_state = dev_data.Get<vvl::Image>(dep_info.pImageMemoryBarriers[i].image)) {
+                AddChild(image_state);
+            }
         }
     }
-    for (uint32_t i = 0; i < dep_info.imageMemoryBarrierCount; i++) {
-        auto image_state = dev_data.Get<vvl::Image>(dep_info.pImageMemoryBarriers[i].image);
-        if (image_state) {
-            AddChild(image_state);
+
+    // TODO - When moving here, these were not in CoreCheck, need to understand if we want SetEvents or not to validate the same
+    // things as WaitEvent/PipelineBarriers
+    if (loc.function != vvl::Func::vkCmdSetEvent2 && loc.function != vvl::Func::vkCmdSetEvent2KHR) {
+        for (auto &item : sub_states_) {
+            item.second->RecordBarriers2(dep_info, loc);
         }
     }
 }

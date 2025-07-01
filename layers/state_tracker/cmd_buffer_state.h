@@ -629,10 +629,10 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordClearAttachments(uint32_t attachment_count, const VkClearAttachment *pAttachments, uint32_t rect_count,
                                 const VkClearRect *pRects, const Location &loc);
 
-    void RecordSetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask, const VkDependencyInfo *dependency_info);
-    void RecordResetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask);
-    void RecordWaitEvents(Func command, uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags2KHR src_stage_mask,
-                          const VkDependencyInfo *dependency_info);
+    void RecordSetEvent(VkEvent event, VkPipelineStageFlags2KHR stageMask, const VkDependencyInfo *dependency_info);
+    void RecordResetEvent(VkEvent event, VkPipelineStageFlags2KHR stageMask);
+    void RecordWaitEvents(uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags2KHR src_stage_mask,
+                          const VkDependencyInfo *dependency_info, const Location &loc);
     void RecordPushConstants(const vvl::PipelineLayout &pipeline_layout_state, VkShaderStageFlags stage_flags, uint32_t offset,
                              uint32_t size, const void *values);
 
@@ -641,10 +641,10 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
 
     void RecordSetRenderingInputAttachmentIndices(const VkRenderingInputAttachmentIndexInfo *pLocationInfo);
 
-    void RecordBarriers(uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
-                        const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-                        const VkImageMemoryBarrier *pImageMemoryBarriers);
-    void RecordBarriers(const VkDependencyInfo &dep_info);
+    void RecordBarrierObjects(uint32_t buffer_barrier_count, const VkBufferMemoryBarrier *buffer_barriers,
+                              uint32_t image_barrier_count, const VkImageMemoryBarrier *image_barriers,
+                              VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask, const Location &loc);
+    void RecordBarrierObjects(const VkDependencyInfo &dep_info, const Location &loc);
 
     void SetImageViewLayout(const vvl::ImageView &view_state, VkImageLayout layout, VkImageLayout layoutStencil);
     void TrackImageViewFirstLayout(const vvl::ImageView &view_state, VkImageLayout layout);
@@ -779,11 +779,15 @@ class CommandBufferSubState {
     virtual void RecordClearAttachments(uint32_t attachment_count, const VkClearAttachment *pAttachments, uint32_t rect_count,
                                         const VkClearRect *pRects, const Location &loc) {}
 
-    virtual void RecordSetEvent(Func command, VkEvent event, VkPipelineStageFlags2 stage_mask,
-                                const VkDependencyInfo *dependency_info) {}
-    virtual void RecordResetEvent(Func command, VkEvent event, VkPipelineStageFlags2 stage_mask) {}
-    virtual void RecordWaitEvents(Func command, uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags2 src_stage_mask,
-                                  const VkDependencyInfo *dependency_info) {}
+    virtual void RecordSetEvent(VkEvent event, VkPipelineStageFlags2 stage_mask, const VkDependencyInfo *dependency_info) {}
+    virtual void RecordResetEvent(VkEvent event, VkPipelineStageFlags2 stage_mask) {}
+    virtual void RecordWaitEvents(uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags2 src_stage_mask,
+                                  const VkDependencyInfo *dependency_info, const Location &loc) {}
+    virtual void RecordBarriers(uint32_t buffer_barrier_count, const VkBufferMemoryBarrier *buffer_barriers,
+                                uint32_t image_barrier_count, const VkImageMemoryBarrier *image_barriers,
+                                VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask, const Location &loc) {}
+    virtual void RecordBarriers2(const VkDependencyInfo &dep_info, const Location &loc) {}
+
     virtual void RecordPushConstants(VkPipelineLayout layout, VkShaderStageFlags stage_flags, uint32_t offset, uint32_t size,
                                      const void *values) {}
 
