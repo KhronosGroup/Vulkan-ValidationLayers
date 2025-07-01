@@ -621,7 +621,7 @@ void CommandBufferSubState::RecordActionCommand(LastBound& last_bound, const Loc
     validator.UpdateBoundDescriptorSets(*this, last_bound, loc);
 }
 
-void CommandBufferSubState::RecordSetEvent(vvl::Func, VkEvent event, VkPipelineStageFlags2, const VkDependencyInfo*) {
+void CommandBufferSubState::RecordSetEvent(VkEvent event, VkPipelineStageFlags2, const VkDependencyInfo*) {
     if (auto* signaling_info = vvl::Find(event_signaling_state, event)) {
         signaling_info->signaled = true;
     } else {
@@ -629,7 +629,7 @@ void CommandBufferSubState::RecordSetEvent(vvl::Func, VkEvent event, VkPipelineS
     }
 }
 
-void CommandBufferSubState::RecordResetEvent(vvl::Func, VkEvent event, VkPipelineStageFlags2) {
+void CommandBufferSubState::RecordResetEvent(VkEvent event, VkPipelineStageFlags2) {
     if (auto* signaling_info = vvl::Find(event_signaling_state, event)) {
         signaling_info->signaled = false;
     } else {

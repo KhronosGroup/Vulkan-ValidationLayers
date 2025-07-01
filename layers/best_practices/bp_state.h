@@ -211,9 +211,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void RecordClearAttachments(uint32_t attachment_count, const VkClearAttachment* pAttachments, uint32_t rect_count,
                                 const VkClearRect* pRects, const Location& loc) final;
 
-    void RecordSetEvent(vvl::Func command, VkEvent event, VkPipelineStageFlags2 stageMask,
-                        const VkDependencyInfo* dependency_info) final;
-    void RecordResetEvent(vvl::Func command, VkEvent event, VkPipelineStageFlags2 stageMask) final;
+    void RecordSetEvent(VkEvent event, VkPipelineStageFlags2 stageMask, const VkDependencyInfo* dependency_info) final;
+    void RecordResetEvent(VkEvent event, VkPipelineStageFlags2 stageMask) final;
 
     void RecordSetDepthCompareOp(VkCompareOp depth_compare_op) final;
     void RecordSetDepthTestEnable(VkBool32 depth_test_enable) final;

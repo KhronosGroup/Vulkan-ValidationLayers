@@ -1296,10 +1296,9 @@ bool CoreChecks::ValidateAccessMask(const LogObjectList &objlist, const Location
     return skip;
 }
 
-bool CoreChecks::ValidateWaitEventsAtSubmit(vvl::Func command, const vvl::CommandBuffer &cb_state, size_t eventCount,
-                                            size_t firstEventIndex, VkPipelineStageFlags2 sourceStageMask,
-                                            vku::safe_VkDependencyInfo dependency_info, const EventMap &local_event_signal_info,
-                                            VkQueue waiting_queue, const Location &loc) {
+bool CoreChecks::ValidateWaitEventsAtSubmit(const vvl::CommandBuffer &cb_state, size_t eventCount, size_t firstEventIndex,
+                                            VkPipelineStageFlags2 sourceStageMask, vku::safe_VkDependencyInfo dependency_info,
+                                            const EventMap &local_event_signal_info, VkQueue waiting_queue, const Location &loc) {
     bool skip = false;
     const vvl::DeviceState &state_data = cb_state.dev_data;
     VkPipelineStageFlags2KHR stage_mask = 0;
@@ -1328,7 +1327,7 @@ bool CoreChecks::ValidateWaitEventsAtSubmit(vvl::Func command, const vvl::Comman
 
             if (event_state->signaling_queue != VK_NULL_HANDLE && event_state->signaling_queue != waiting_queue) {
                 const LogObjectList objlist(cb_state.Handle(), event, event_state->signaling_queue, waiting_queue);
-                skip |= state_data.LogError("UNASSIGNED-SubmitValidation-WaitEvents-WrongQueue", objlist, Location(command),
+                skip |= state_data.LogError("UNASSIGNED-SubmitValidation-WaitEvents-WrongQueue", objlist, loc,
                                             "waits for event %s on the queue %s but the event was signaled on a different queue %s",
                                             state_data.FormatHandle(event).c_str(), state_data.FormatHandle(waiting_queue).c_str(),
                                             state_data.FormatHandle(event_state->signaling_queue).c_str());
@@ -1343,7 +1342,7 @@ bool CoreChecks::ValidateWaitEventsAtSubmit(vvl::Func command, const vvl::Comman
                 const LogObjectList objlist(cb_state.Handle(), event);
                 // This could be moved to record time, if both vkCmdWaitEvents2 and vkSetEvents2 are in the same command buffer
                 skip |= state_data.LogError(
-                    "VUID-vkCmdWaitEvents2-pEvents-10788", objlist, Location(command),
+                    "VUID-vkCmdWaitEvents2-pEvents-10788", objlist, loc,
                     "event %s is being waited on without VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR and was "
                     "signaled by vkCmdSetEvent2, but %s.",
                     state_data.FormatHandle(event).c_str(),
@@ -1353,7 +1352,7 @@ bool CoreChecks::ValidateWaitEventsAtSubmit(vvl::Func command, const vvl::Comman
             if ((set_dependency_info.dependencyFlags & VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR) == 0) {
                 const LogObjectList objlist(cb_state.Handle(), event);
                 skip |= state_data.LogError(
-                    "VUID-vkCmdWaitEvents2-pEvents-10789", objlist, Location(command),
+                    "VUID-vkCmdWaitEvents2-pEvents-10789", objlist, loc,
                     "event %s is being waited on with VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR, but was signaled without it.",
                     state_data.FormatHandle(event).c_str());
             }
@@ -1370,7 +1369,7 @@ bool CoreChecks::ValidateWaitEventsAtSubmit(vvl::Func command, const vvl::Comman
             if (union_src_stage_mask != set_dependency_info.pMemoryBarriers[0].srcStageMask) {
                 const LogObjectList objlist(cb_state.Handle(), event);
                 skip |=
-                    state_data.LogError("VUID-vkCmdWaitEvents2-pEvents-10790", objlist, Location(command),
+                    state_data.LogError("VUID-vkCmdWaitEvents2-pEvents-10790", objlist, loc,
                                         "union of all srcStageMask members is %s, but event was set with "
                                         "pDependencyInfos->pMemoryBarriers[0].srcStageMask %s.",
                                         string_VkPipelineStageFlags2(union_src_stage_mask).c_str(),
@@ -1479,30 +1478,6 @@ bool CoreChecks::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer,
     return PreCallValidateCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, error_obj);
 }
 
-void CoreChecks::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                             VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
-                                             uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
-                                             uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
-                                             uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers,
-                                             const RecordObject &record_obj) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    RecordBarriers(record_obj.location.function, *cb_state, sourceStageMask, dstStageMask, bufferMemoryBarrierCount,
-                   pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
-}
-
-void CoreChecks::PostCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                                 const VkDependencyInfoKHR *pDependencyInfos, const RecordObject &record_obj) {
-    PostCallRecordCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, record_obj);
-}
-
-void CoreChecks::PostCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                              const VkDependencyInfo *pDependencyInfos, const RecordObject &record_obj) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    for (const VkDependencyInfo &dep_info : vvl::make_span(pDependencyInfos, eventCount)) {
-        RecordBarriers(record_obj.location.function, *cb_state, dep_info);
-    }
-}
-
 bool CoreChecks::PreCallValidateCmdPipelineBarrier(
     VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
     VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
@@ -1576,28 +1551,6 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffe
 bool CoreChecks::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR *pDependencyInfo,
                                                        const ErrorObject &error_obj) const {
     return PreCallValidateCmdPipelineBarrier2(commandBuffer, pDependencyInfo, error_obj);
-}
-
-void CoreChecks::PostCallRecordCmdPipelineBarrier(
-    VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-    VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
-    uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-    const VkImageMemoryBarrier *pImageMemoryBarriers, const RecordObject &record_obj) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-
-    RecordBarriers(record_obj.location.function, *cb_state, srcStageMask, dstStageMask, bufferMemoryBarrierCount,
-                   pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
-}
-
-void CoreChecks::PostCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR *pDependencyInfo,
-                                                      const RecordObject &record_obj) {
-    PostCallRecordCmdPipelineBarrier2(commandBuffer, pDependencyInfo, record_obj);
-}
-
-void CoreChecks::PostCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo *pDependencyInfo,
-                                                   const RecordObject &record_obj) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    RecordBarriers(record_obj.location.function, *cb_state, *pDependencyInfo);
 }
 
 bool CoreChecks::PreCallValidateSetEvent(VkDevice device, VkEvent event, const ErrorObject &error_obj) const {
@@ -2210,53 +2163,6 @@ void CoreChecks::RecordBarrierValidationInfo(const Location &barrier_loc, vvl::C
         } else if (cb_state.IsAcquireOp(barrier) && !IsQueueFamilyExternal(barrier.srcQueueFamilyIndex)) {
             barrier_sets.acquire.emplace(adjusted_barrier);
         }
-    }
-}
-
-void CoreChecks::RecordBarriers(Func func_name, vvl::CommandBuffer &cb_state, VkPipelineStageFlags src_stage_mask,
-                                VkPipelineStageFlags dst_stage_mask, uint32_t bufferBarrierCount,
-                                const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-                                const VkImageMemoryBarrier *pImageMemoryBarriers) {
-    auto &cb_sub_state = core::SubState(cb_state);
-    for (uint32_t i = 0; i < bufferBarrierCount; i++) {
-        Location barrier_loc(func_name, Struct::VkBufferMemoryBarrier, Field::pBufferMemoryBarriers, i);
-        const BufferBarrier barrier(pBufferMemoryBarriers[i], src_stage_mask, dst_stage_mask);
-        RecordBarrierValidationInfo(barrier_loc, cb_state, barrier, cb_sub_state.qfo_transfer_buffer_barriers);
-    }
-    for (uint32_t i = 0; i < imageMemoryBarrierCount; i++) {
-        auto image_state = Get<vvl::Image>(pImageMemoryBarriers[i].image);
-        ASSERT_AND_CONTINUE(image_state);
-
-        Location barrier_loc(func_name, Struct::VkImageMemoryBarrier, Field::pImageMemoryBarriers, i);
-        const ImageBarrier img_barrier(pImageMemoryBarriers[i], src_stage_mask, dst_stage_mask);
-        RecordBarrierValidationInfo(barrier_loc, cb_state, img_barrier, *image_state, cb_sub_state.qfo_transfer_image_barriers);
-        EnqueueValidateImageBarrierAttachment(barrier_loc, cb_sub_state, img_barrier);
-        EnqueueValidateDynamicRenderingImageBarrierLayouts(barrier_loc, cb_state, img_barrier);
-
-        // Update layouts at the end. Submit time enqueuing logic above needs pre-update layout map.
-        RecordTransitionImageLayout(cb_state, img_barrier, *image_state);
-    }
-}
-
-void CoreChecks::RecordBarriers(Func func_name, vvl::CommandBuffer &cb_state, const VkDependencyInfo &dep_info) {
-    auto &cb_sub_state = core::SubState(cb_state);
-    for (uint32_t i = 0; i < dep_info.bufferMemoryBarrierCount; i++) {
-        Location barrier_loc(func_name, Struct::VkBufferMemoryBarrier2, Field::pBufferMemoryBarriers, i);
-        const BufferBarrier barrier(dep_info.pBufferMemoryBarriers[i]);
-        RecordBarrierValidationInfo(barrier_loc, cb_state, barrier, cb_sub_state.qfo_transfer_buffer_barriers);
-    }
-    for (uint32_t i = 0; i < dep_info.imageMemoryBarrierCount; i++) {
-        auto image_state = Get<vvl::Image>(dep_info.pImageMemoryBarriers[i].image);
-        ASSERT_AND_CONTINUE(image_state);
-
-        Location barrier_loc(func_name, Struct::VkImageMemoryBarrier2, Field::pImageMemoryBarriers, i);
-        const ImageBarrier img_barrier(dep_info.pImageMemoryBarriers[i]);
-        RecordBarrierValidationInfo(barrier_loc, cb_state, img_barrier, *image_state, cb_sub_state.qfo_transfer_image_barriers);
-        EnqueueValidateImageBarrierAttachment(barrier_loc, cb_sub_state, img_barrier);
-        EnqueueValidateDynamicRenderingImageBarrierLayouts(barrier_loc, cb_state, img_barrier);
-
-        // Update layouts at the end. Submit time enqueuing logic above needs pre-update layout map.
-        RecordTransitionImageLayout(cb_state, img_barrier, *image_state);
     }
 }
 
