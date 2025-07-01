@@ -205,6 +205,11 @@ class DispatchVectorGenerator(BaseGenerator):
                 /* Chassis codegen needs to be updated for unknown validation object type */
                 assert(0);
                 break;
+
+            default:
+                /* Handle unsupported layer types (e.g. Vulkan SC does not support GPU AV or best practices) */
+                assert(0);
+                break;
             }
         }
         if (state_tracker) {
