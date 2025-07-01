@@ -1517,7 +1517,8 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
                                  "%s uses set %" PRIu32
                                  " but that set is not bound. (Need to use a command like vkCmdBindDescriptorSets to bind the set)",
                                  FormatHandle(pipeline).c_str(), set_index);
-            } else if (!VerifyDescriptorSetIsCompatibile(*ds_slot.ds_state, pipeline_layout->set_layouts, set_index,
+            } else if (pipeline_layout->set_layouts[set_index] &&
+                       !VerifyDescriptorSetIsCompatibile(*ds_slot.ds_state, *pipeline_layout->set_layouts[set_index],
                                                          error_string)) {
                 // Set is bound but not compatible w/ corresponding VkPipelineLayoutCreateInfo::pSetLayouts
                 VkDescriptorSet set_handle = ds_slot.ds_state->VkHandle();
@@ -1590,7 +1591,8 @@ bool CoreChecks::ValidateActionStateDescriptorsShaderObject(const LastBound &las
                     skip |= LogError(vuid.compatible_pipeline_08600, objlist, vuid.loc(),
                                      "%s uses set %" PRIu32 " but that set is not bound.",
                                      FormatHandle(shader_state->Handle()).c_str(), set_index);
-                } else if (!VerifyDescriptorSetIsCompatibile(*ds_slot.ds_state, shader_state->set_layouts, set_index,
+                } else if (shader_state->set_layouts[set_index] &&
+                           !VerifyDescriptorSetIsCompatibile(*ds_slot.ds_state, *shader_state->set_layouts[set_index],
                                                              error_string)) {
                     // Set is bound but not compatible w/ corresponding VkShaderCreateInfoEXT::pSetLayouts
                     VkDescriptorSet set_handle = ds_slot.ds_state->VkHandle();

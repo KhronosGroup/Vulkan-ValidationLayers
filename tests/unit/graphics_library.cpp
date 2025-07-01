@@ -220,34 +220,6 @@ TEST_F(NegativeGraphicsLibrary, DescriptorSets) {
 
     RETURN_IF_SKIP(Init());
 
-    // Prepare descriptors
-    OneOffDescriptorSet ds(m_device, {
-                                         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                     });
-    OneOffDescriptorSet ds2(m_device, {
-                                          {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                      });
-    std::array<VkDescriptorSet, 2> sets = {
-        ds.set_,
-        VK_NULL_HANDLE,  // Triggers 06754
-    };
-
-    vkt::PipelineLayout pipeline_layout(*m_device, {&ds.layout_, &ds2.layout_});
-
-    m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-06563");
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0,
-                              static_cast<uint32_t>(sets.size()), sets.data(), 0, nullptr);
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeGraphicsLibrary, DescriptorSetsGPL) {
-    TEST_DESCRIPTION("Attempt to bind invalid descriptor sets with and with VK_EXT_graphics_pipeline_library");
-
-    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init());
-
-    // Prepare descriptors
     OneOffDescriptorSet ds(m_device, {
                                          {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                      });
@@ -262,8 +234,6 @@ TEST_F(NegativeGraphicsLibrary, DescriptorSetsGPL) {
     vkt::PipelineLayout pipeline_layout(*m_device, {&ds.layout_, &ds2.layout_});
 
     m_command_buffer.Begin();
-
-    // Now bind with a layout that was _not_ created with independent sets, which should trigger 06754
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-06563");
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0,
                               static_cast<uint32_t>(sets.size()), sets.data(), 0, nullptr);

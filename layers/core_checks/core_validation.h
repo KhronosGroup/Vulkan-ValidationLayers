@@ -746,10 +746,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                    bool& out_exception) const;
     bool VerifyDescriptorSetLayoutIsCompatibile(const vvl::DescriptorSetLayout& reference_dsl,
                                                 const vvl::DescriptorSetLayout& to_bind_dsl, std::string& error_msg) const;
-    bool VerifyDescriptorSetIsCompatibile(
-        const vvl::DescriptorSet& to_bind_descriptor_set,
-        const std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>>& descriptor_set_layouts, const uint32_t index,
-        std::string& error_msg) const;
+    bool VerifyDescriptorSetIsCompatibile(const vvl::DescriptorSet& to_bind_descriptor_set,
+                                          const vvl::DescriptorSetLayout& descriptor_set_layouts, std::string& error_msg) const;
 
     bool VerifyPipelineLayoutCompatibility(const vvl::PipelineLayout& layout_a, const vvl::PipelineLayout& layout_b,
                                            std::string& error_msg) const;
