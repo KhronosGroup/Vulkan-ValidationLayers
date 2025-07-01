@@ -213,6 +213,10 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
     void RecordSetEvent(VkEvent event, VkPipelineStageFlags2 stageMask, const VkDependencyInfo* dependency_info) final;
     void RecordResetEvent(VkEvent event, VkPipelineStageFlags2 stageMask) final;
+    void RecordBarriers(uint32_t buffer_barrier_count, const VkBufferMemoryBarrier* buffer_barriers, uint32_t image_barrier_count,
+                        const VkImageMemoryBarrier* image_barriers, VkPipelineStageFlags src_stage_mask,
+                        VkPipelineStageFlags dst_stage_mask, const Location& loc) final;
+    void RecordBarriers2(const VkDependencyInfo& dep_info, const Location& loc) final;
 
     void RecordSetDepthCompareOp(VkCompareOp depth_compare_op) final;
     void RecordSetDepthTestEnable(VkBool32 depth_test_enable) final;
@@ -249,8 +253,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void RecordBindZcullScopeNV(VkImage depth_attachment, const VkImageSubresourceRange& subresource_range);
     void RecordUnbindZcullScopeNV();
     void RecordResetScopeZcullDirectionNV();
-    void RecordResetZcullDirectionNV(VkImage depth_image, const VkImageSubresourceRange& subresource_range);
-    void RecordSetZcullDirectionNV(VkImage depth_image, const VkImageSubresourceRange& subresource_range, ZcullDirection mode);
+    void RecordResetZcullDirectionNV(vvl::Image& depth_image, const VkImageSubresourceRange& subresource_range);
+    void RecordSetZcullDirectionNV(vvl::Image& depth_image, const VkImageSubresourceRange& subresource_range, ZcullDirection mode);
     void RecordSetScopeZcullDirectionNV(ZcullDirection mode);
     void RecordZcullDrawNV();
     void RecordCmdDrawTypeNVIDIA();
