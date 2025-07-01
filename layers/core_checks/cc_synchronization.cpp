@@ -45,6 +45,7 @@
 #include "state_tracker/event_map.h"
 #include "generated/dispatch_functions.h"
 #include "generated/sync_validation_types.h"
+#include "utils/assert_utils.h"
 #include "utils/math_utils.h"
 #include "utils/sync_utils.h"
 #include "utils/vk_struct_compare.h"
@@ -2189,52 +2190,51 @@ void CoreChecks::RecordBarrierValidationInfo(const Location &barrier_loc, vvl::C
                                              const BufferBarrier &barrier,
                                              QFOTransferBarrierSets<QFOBufferTransferBarrier> &barrier_sets) {
     if (IsOwnershipTransfer(barrier)) {
-        if (auto buffer = Get<vvl::Buffer>(barrier.buffer)) {
-            if (cb_state.IsReleaseOp(barrier) && !IsQueueFamilyExternal(barrier.dstQueueFamilyIndex)) {
-                barrier_sets.release.emplace(barrier);
-            } else if (cb_state.IsAcquireOp(barrier) && !IsQueueFamilyExternal(barrier.srcQueueFamilyIndex)) {
-                barrier_sets.acquire.emplace(barrier);
-            }
+        if (cb_state.IsReleaseOp(barrier) && !IsQueueFamilyExternal(barrier.dstQueueFamilyIndex)) {
+            barrier_sets.release.emplace(barrier);
+        } else if (cb_state.IsAcquireOp(barrier) && !IsQueueFamilyExternal(barrier.srcQueueFamilyIndex)) {
+            barrier_sets.acquire.emplace(barrier);
         }
     }
 }
 
-void CoreChecks::RecordBarrierValidationInfo(const Location &barrier_loc, vvl::CommandBuffer &cb_state,
-                                             const ImageBarrier &image_barrier,
+void CoreChecks::RecordBarrierValidationInfo(const Location &barrier_loc, vvl::CommandBuffer &cb_state, const ImageBarrier &barrier,
+                                             const vvl::Image &image_state,
                                              QFOTransferBarrierSets<QFOImageTransferBarrier> &barrier_sets) {
-    if (IsOwnershipTransfer(image_barrier)) {
-        if (auto image = Get<vvl::Image>(image_barrier.image)) {
-            ImageBarrier barrier = image_barrier;
-            barrier.subresourceRange = image->NormalizeSubresourceRange(image_barrier.subresourceRange);
+    if (IsOwnershipTransfer(barrier)) {
+        ImageBarrier adjusted_barrier = barrier;
+        adjusted_barrier.subresourceRange = image_state.NormalizeSubresourceRange(barrier.subresourceRange);
 
-            if (cb_state.IsReleaseOp(barrier) && !IsQueueFamilyExternal(barrier.dstQueueFamilyIndex)) {
-                barrier_sets.release.emplace(barrier);
-            } else if (cb_state.IsAcquireOp(barrier) && !IsQueueFamilyExternal(barrier.srcQueueFamilyIndex)) {
-                barrier_sets.acquire.emplace(barrier);
-            }
+        if (cb_state.IsReleaseOp(barrier) && !IsQueueFamilyExternal(barrier.dstQueueFamilyIndex)) {
+            barrier_sets.release.emplace(adjusted_barrier);
+        } else if (cb_state.IsAcquireOp(barrier) && !IsQueueFamilyExternal(barrier.srcQueueFamilyIndex)) {
+            barrier_sets.acquire.emplace(adjusted_barrier);
         }
     }
 }
 
 void CoreChecks::RecordBarriers(Func func_name, vvl::CommandBuffer &cb_state, VkPipelineStageFlags src_stage_mask,
                                 VkPipelineStageFlags dst_stage_mask, uint32_t bufferBarrierCount,
-                                const VkBufferMemoryBarrier *pBufferMemBarriers, uint32_t imageMemBarrierCount,
-                                const VkImageMemoryBarrier *pImageMemBarriers) {
+                                const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
+                                const VkImageMemoryBarrier *pImageMemoryBarriers) {
     auto &cb_sub_state = core::SubState(cb_state);
     for (uint32_t i = 0; i < bufferBarrierCount; i++) {
         Location barrier_loc(func_name, Struct::VkBufferMemoryBarrier, Field::pBufferMemoryBarriers, i);
-        const BufferBarrier barrier(pBufferMemBarriers[i], src_stage_mask, dst_stage_mask);
+        const BufferBarrier barrier(pBufferMemoryBarriers[i], src_stage_mask, dst_stage_mask);
         RecordBarrierValidationInfo(barrier_loc, cb_state, barrier, cb_sub_state.qfo_transfer_buffer_barriers);
     }
-    for (uint32_t i = 0; i < imageMemBarrierCount; i++) {
+    for (uint32_t i = 0; i < imageMemoryBarrierCount; i++) {
+        auto image_state = Get<vvl::Image>(pImageMemoryBarriers[i].image);
+        ASSERT_AND_CONTINUE(image_state);
+
         Location barrier_loc(func_name, Struct::VkImageMemoryBarrier, Field::pImageMemoryBarriers, i);
-        const ImageBarrier img_barrier(pImageMemBarriers[i], src_stage_mask, dst_stage_mask);
-        RecordBarrierValidationInfo(barrier_loc, cb_state, img_barrier, cb_sub_state.qfo_transfer_image_barriers);
+        const ImageBarrier img_barrier(pImageMemoryBarriers[i], src_stage_mask, dst_stage_mask);
+        RecordBarrierValidationInfo(barrier_loc, cb_state, img_barrier, *image_state, cb_sub_state.qfo_transfer_image_barriers);
         EnqueueValidateImageBarrierAttachment(barrier_loc, cb_sub_state, img_barrier);
         EnqueueValidateDynamicRenderingImageBarrierLayouts(barrier_loc, cb_state, img_barrier);
 
         // Update layouts at the end. Submit time enqueuing logic above needs pre-update layout map.
-        RecordTransitionImageLayout(cb_state, img_barrier);
+        RecordTransitionImageLayout(cb_state, img_barrier, *image_state);
     }
 }
 
@@ -2246,14 +2246,17 @@ void CoreChecks::RecordBarriers(Func func_name, vvl::CommandBuffer &cb_state, co
         RecordBarrierValidationInfo(barrier_loc, cb_state, barrier, cb_sub_state.qfo_transfer_buffer_barriers);
     }
     for (uint32_t i = 0; i < dep_info.imageMemoryBarrierCount; i++) {
+        auto image_state = Get<vvl::Image>(dep_info.pImageMemoryBarriers[i].image);
+        ASSERT_AND_CONTINUE(image_state);
+
         Location barrier_loc(func_name, Struct::VkImageMemoryBarrier2, Field::pImageMemoryBarriers, i);
         const ImageBarrier img_barrier(dep_info.pImageMemoryBarriers[i]);
-        RecordBarrierValidationInfo(barrier_loc, cb_state, img_barrier, cb_sub_state.qfo_transfer_image_barriers);
+        RecordBarrierValidationInfo(barrier_loc, cb_state, img_barrier, *image_state, cb_sub_state.qfo_transfer_image_barriers);
         EnqueueValidateImageBarrierAttachment(barrier_loc, cb_sub_state, img_barrier);
         EnqueueValidateDynamicRenderingImageBarrierLayouts(barrier_loc, cb_state, img_barrier);
 
         // Update layouts at the end. Submit time enqueuing logic above needs pre-update layout map.
-        RecordTransitionImageLayout(cb_state, img_barrier);
+        RecordTransitionImageLayout(cb_state, img_barrier, *image_state);
     }
 }
 
@@ -2525,9 +2528,9 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objlist, const vvl::C
 
 bool CoreChecks::ValidateBarriers(const Location &outer_loc, const vvl::CommandBuffer &cb_state,
                                   VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
-                                  uint32_t memBarrierCount, const VkMemoryBarrier *pMemBarriers, uint32_t bufferBarrierCount,
-                                  const VkBufferMemoryBarrier *pBufferMemBarriers, uint32_t imageMemBarrierCount,
-                                  const VkImageMemoryBarrier *pImageMemBarriers) const {
+                                  uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferBarrierCount,
+                                  const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
+                                  const VkImageMemoryBarrier *pImageMemoryBarriers) const {
     bool skip = false;
     LogObjectList objects(cb_state.Handle());
 
@@ -2535,21 +2538,21 @@ bool CoreChecks::ValidateBarriers(const Location &outer_loc, const vvl::CommandB
     // Keeps state between ValidateImageBarrier calls.
     ImageLayoutRegistry local_layout_registry;
 
-    for (uint32_t i = 0; i < memBarrierCount; ++i) {
+    for (uint32_t i = 0; i < memoryBarrierCount; ++i) {
         const Location barrier_loc = outer_loc.dot(Struct::VkMemoryBarrier, Field::pMemoryBarriers, i);
-        const SyncMemoryBarrier barrier(pMemBarriers[i], src_stage_mask, dst_stage_mask);
+        const SyncMemoryBarrier barrier(pMemoryBarriers[i], src_stage_mask, dst_stage_mask);
         skip |= ValidateMemoryBarrier(objects, barrier_loc, cb_state, barrier);
     }
-    for (uint32_t i = 0; i < imageMemBarrierCount; ++i) {
+    for (uint32_t i = 0; i < imageMemoryBarrierCount; ++i) {
         const Location barrier_loc = outer_loc.dot(Struct::VkImageMemoryBarrier, Field::pImageMemoryBarriers, i);
-        const ImageBarrier barrier(pImageMemBarriers[i], src_stage_mask, dst_stage_mask);
+        const ImageBarrier barrier(pImageMemoryBarriers[i], src_stage_mask, dst_stage_mask);
         const OwnershipTransferOp transfer_op = barrier.TransferOp(cb_state.command_pool->queueFamilyIndex);
         skip |= ValidateMemoryBarrier(objects, barrier_loc, cb_state, barrier, transfer_op);
         skip |= ValidateImageBarrier(objects, cb_state, barrier, barrier_loc, local_layout_registry);
     }
     for (uint32_t i = 0; i < bufferBarrierCount; ++i) {
         const Location barrier_loc = outer_loc.dot(Struct::VkBufferMemoryBarrier, Field::pBufferMemoryBarriers, i);
-        const BufferBarrier barrier(pBufferMemBarriers[i], src_stage_mask, dst_stage_mask);
+        const BufferBarrier barrier(pBufferMemoryBarriers[i], src_stage_mask, dst_stage_mask);
         const OwnershipTransferOp transfer_op = barrier.TransferOp(cb_state.command_pool->queueFamilyIndex);
         skip |= ValidateMemoryBarrier(objects, barrier_loc, cb_state, barrier, transfer_op);
         skip |= ValidateBufferBarrier(objects, barrier_loc, cb_state, barrier);

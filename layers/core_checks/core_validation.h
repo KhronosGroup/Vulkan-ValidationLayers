@@ -341,9 +341,9 @@ class CoreChecks : public vvl::DeviceProxy {
                               const Location& barrier_loc, ImageLayoutRegistry& local_layout_registry) const;
 
     bool ValidateBarriers(const Location& loc, const vvl::CommandBuffer& cb_state, VkPipelineStageFlags src_stage_mask,
-                          VkPipelineStageFlags dst_stage_mask, uint32_t memBarrierCount, const VkMemoryBarrier* pMemBarriers,
-                          uint32_t bufferBarrierCount, const VkBufferMemoryBarrier* pBufferMemBarriers,
-                          uint32_t imageMemBarrierCount, const VkImageMemoryBarrier* pImageMemBarriers) const;
+                          VkPipelineStageFlags dst_stage_mask, uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+                          uint32_t bufferBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+                          uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers) const;
 
     bool IsDynamicRenderingImageUsageValid(VkImageUsageFlags image_usage) const;
 
@@ -678,7 +678,7 @@ class CoreChecks : public vvl::DeviceProxy {
     void RecordBarrierValidationInfo(const Location& loc, vvl::CommandBuffer& cb_state, const BufferBarrier& barrier,
                                      QFOTransferBarrierSets<QFOBufferTransferBarrier>& barrier_sets);
     void RecordBarrierValidationInfo(const Location& loc, vvl::CommandBuffer& cb_state, const ImageBarrier& barrier,
-                                     QFOTransferBarrierSets<QFOImageTransferBarrier>& barrier_sets);
+                                     const vvl::Image& image_state, QFOTransferBarrierSets<QFOImageTransferBarrier>& barrier_sets);
 
     bool ValidatePrimaryCommandBufferState(const Location& loc, const vvl::CommandBuffer& cb_state, uint32_t current_submit_count,
                                            QFOTransferCBScoreboards<QFOImageTransferBarrier>* qfo_image_scoreboards,
@@ -1084,11 +1084,12 @@ class CoreChecks : public vvl::DeviceProxy {
                                                              const vvl::Image& image_state, const Location& barrier_loc) const;
 
     void RecordQueuedQFOTransfers(vvl::CommandBuffer& cb_state);
-    void RecordTransitionImageLayout(vvl::CommandBuffer& cb_state, const ImageBarrier& image_barrier);
+    void RecordTransitionImageLayout(vvl::CommandBuffer& cb_state, const ImageBarrier& image_barrier,
+                                     const vvl::Image& image_state);
     void RecordBarriers(Func func_name, vvl::CommandBuffer& cb_state, VkPipelineStageFlags src_stage_mask,
                         VkPipelineStageFlags dst_stage_mask, uint32_t bufferBarrierCount,
-                        const VkBufferMemoryBarrier* pBufferMemBarriers, uint32_t imageMemBarrierCount,
-                        const VkImageMemoryBarrier* pImageMemBarriers);
+                        const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
+                        const VkImageMemoryBarrier* pImageMemoryBarriers);
     void RecordBarriers(Func func_name, vvl::CommandBuffer& cb_state, const VkDependencyInfo& dep_info);
 
     void TransitionFinalSubpassLayouts(vvl::CommandBuffer& cb_state);
