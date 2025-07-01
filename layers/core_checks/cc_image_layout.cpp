@@ -1069,17 +1069,16 @@ void CoreChecks::EnqueueValidateDynamicRenderingImageBarrierLayouts(const Locati
     }
 }
 
-void CoreChecks::RecordTransitionImageLayout(vvl::CommandBuffer &cb_state, const ImageBarrier &mem_barrier) {
+void CoreChecks::RecordTransitionImageLayout(vvl::CommandBuffer &cb_state, const ImageBarrier &mem_barrier,
+                                             const vvl::Image &image_state) {
     if (enabled_features.synchronization2) {
         if (mem_barrier.oldLayout == mem_barrier.newLayout) {
             return;
         }
     }
-    auto image_state = Get<vvl::Image>(mem_barrier.image);
-    ASSERT_AND_RETURN(image_state);
 
     const VkImageSubresourceRange normalized_subresource_range =
-        image_state->NormalizeSubresourceRange(mem_barrier.subresourceRange);
+        image_state.NormalizeSubresourceRange(mem_barrier.subresourceRange);
 
     VkImageLayout old_layout = mem_barrier.oldLayout;
     if (IsQueueFamilyExternal(mem_barrier.srcQueueFamilyIndex)) {
@@ -1097,9 +1096,9 @@ void CoreChecks::RecordTransitionImageLayout(vvl::CommandBuffer &cb_state, const
     //
     // However, we still need to record initial layout for the "initial layout" validation
     if (cb_state.IsReleaseOp(mem_barrier)) {
-        cb_state.TrackImageFirstLayout(*image_state, normalized_subresource_range, 0, 0, old_layout);
+        cb_state.TrackImageFirstLayout(image_state, normalized_subresource_range, 0, 0, old_layout);
     } else {
-        cb_state.SetImageLayout(*image_state, normalized_subresource_range, mem_barrier.newLayout, old_layout);
+        cb_state.SetImageLayout(image_state, normalized_subresource_range, mem_barrier.newLayout, old_layout);
     }
 }
 
