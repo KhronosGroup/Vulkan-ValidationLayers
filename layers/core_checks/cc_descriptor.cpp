@@ -40,6 +40,7 @@
 #include "cc_buffer_address.h"
 #include "drawdispatch/descriptor_validator.h"
 #include "drawdispatch/drawdispatch_vuids.h"
+#include "utils/assert_utils.h"
 #include "utils/vk_struct_compare.h"
 #include "utils/math_utils.h"
 #include "error_message/error_strings.h"
@@ -175,26 +176,14 @@ bool CoreChecks::VerifyDescriptorSetLayoutIsCompatibile(const vvl::DescriptorSet
 
 // For a given vkDescriptorSet, we take the list of DescriptorSetLayouts (ex, from a pipeline layout) and check if the DSL at
 // |index| is compatibile
-bool CoreChecks::VerifyDescriptorSetIsCompatibile(
-    const vvl::DescriptorSet &to_bind_descriptor_set,
-    const std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>> &descriptor_set_layouts, const uint32_t index,
-    std::string &error_msg) const {
+bool CoreChecks::VerifyDescriptorSetIsCompatibile(const vvl::DescriptorSet &to_bind_descriptor_set,
+                                                  const vvl::DescriptorSetLayout &descriptor_set_layouts,
+                                                  std::string &error_msg) const {
     if (to_bind_descriptor_set.IsPushDescriptor()) {
         return true;
     }
 
-    if (index >= descriptor_set_layouts.size()) {
-        // This means there is an active set in the SPIR-V that was not in
-        // VkPipelineLayoutCreateInfo/VkShaderCreateInfoEXT::pSetLayouts which would have broke way before
-        assert(false);
-        return true;
-    } else if (const auto *layout_node = descriptor_set_layouts[index].get()) {
-        return VerifyDescriptorSetLayoutIsCompatibile(*layout_node, *to_bind_descriptor_set.GetLayout(), error_msg);
-    } else {
-        // It's possible the DSL is null when creating a graphics pipeline library, in which case we can't verify compatibility
-        // here.
-        return true;
-    }
+    return VerifyDescriptorSetLayoutIsCompatibile(descriptor_set_layouts, *to_bind_descriptor_set.GetLayout(), error_msg);
 }
 
 bool CoreChecks::VerifyPipelineLayoutCompatibility(const vvl::PipelineLayout &layout_a, const vvl::PipelineLayout &layout_b,
@@ -267,16 +256,32 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer &cb_stat
         if (auto descriptor_set = Get<vvl::DescriptorSet>(set_handle)) {
             // Verify that set being bound is compatible with overlapping setLayout of pipelineLayout
             std::string error_string = "";
-            if (!VerifyDescriptorSetIsCompatibile(*descriptor_set, pipeline_layout->set_layouts, set_idx + firstSet,
-                                                  error_string)) {
+
+            // This means there is an active set in the SPIR-V that was not in
+            // VkPipelineLayoutCreateInfo/VkShaderCreateInfoEXT::pSetLayouts which would have broke way before
+            ASSERT_AND_CONTINUE((set_idx + firstSet) < pipeline_layout->set_layouts.size());
+
+            auto pipeline_layout_node = pipeline_layout->set_layouts[set_idx + firstSet];
+            if (!pipeline_layout_node) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline_layout->Handle(), set_handle);
                 const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfo-pDescriptorSets-00358"
                                         : "VUID-vkCmdBindDescriptorSets-pDescriptorSets-00358";
                 skip |= LogError(vuid, objlist, set_loc,
-                                 "(%s) being bound is not compatible with the corresponding "
-                                 "VkPipelineLayoutCreateInfo::pSetLayouts[%" PRIu32 "] of %s due to:\n%s.",
-                                 FormatHandle(set_handle).c_str(), set_idx + firstSet, FormatHandle(layout).c_str(),
-                                 error_string.c_str());
+                                 "(%s) being bound is not compatible with the corresponding %s"
+                                 " created with pSetLayouts[%" PRIu32 "] (VK_NULL_HANDLE).%s",
+                                 FormatHandle(set_handle).c_str(), FormatHandle(layout).c_str(), set_idx + firstSet,
+                                 (descriptor_set->GetBindingCount() == 0)
+                                     ? " A bindingCount of zero is not considered a null descriptor set and is incompatible."
+                                     : "");
+            } else if (!VerifyDescriptorSetIsCompatibile(*descriptor_set, *pipeline_layout_node, error_string)) {
+                const LogObjectList objlist(cb_state.Handle(), pipeline_layout->Handle(), set_handle);
+                const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfo-pDescriptorSets-00358"
+                                        : "VUID-vkCmdBindDescriptorSets-pDescriptorSets-00358";
+                skip |= LogError(vuid, objlist, set_loc,
+                                 "(%s) being bound is not compatible with the corresponding %s"
+                                 " created with pSetLayouts[%" PRIu32 "] (%s) due to:\n%s.",
+                                 FormatHandle(set_handle).c_str(), FormatHandle(layout).c_str(), set_idx + firstSet,
+                                 FormatHandle(pipeline_layout_node->Handle()).c_str(), error_string.c_str());
             }
 
             const auto &dsl = descriptor_set->GetLayout();
@@ -417,8 +422,7 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer &cb_stat
             const char *vuid =
                 is_2 ? "VUID-VkBindDescriptorSetsInfo-pDescriptorSets-06563" : "VUID-vkCmdBindDescriptorSets-pDescriptorSets-06563";
             skip |= LogError(vuid, objlist, set_loc,
-                             "(%s) does not exist, and the pipeline layout was not created "
-                             "VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT.",
+                             "(%s) is not a valid VkDescriptorSet.",
                              FormatHandle(set_handle).c_str());
         }
     }

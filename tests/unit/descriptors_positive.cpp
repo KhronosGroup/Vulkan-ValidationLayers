@@ -1715,3 +1715,60 @@ TEST_F(PositiveDescriptors, ConsecutiveBindingUpdatesStartOver) {
     descriptor_write.pBufferInfo = buffer_infos;
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
 }
+
+TEST_F(PositiveDescriptors, NullDescriptorSetGPL) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10312");
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    RETURN_IF_SKIP(Init());
+
+    VkDescriptorSetLayoutBinding dsl_binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
+    ds_layout_ci.bindingCount = 1;
+    ds_layout_ci.pBindings = &dsl_binding;
+    vkt::DescriptorSetLayout ds_layout_a(*m_device, ds_layout_ci);
+    ds_layout_ci.bindingCount = 0;
+    ds_layout_ci.pBindings = nullptr;
+    vkt::DescriptorSetLayout ds_layout_empty(*m_device, ds_layout_ci);
+
+    VkDescriptorPoolSize pool_size = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2};
+    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
+    ds_pool_ci.maxSets = 2;
+    ds_pool_ci.poolSizeCount = 1;
+    ds_pool_ci.pPoolSizes = &pool_size;
+    vkt::DescriptorPool pool(*m_device, ds_pool_ci);
+
+    VkDescriptorSetAllocateInfo allocate_info = vku::InitStructHelper();
+    allocate_info.descriptorPool = pool;
+    allocate_info.descriptorSetCount = 1;
+
+    allocate_info.pSetLayouts = &ds_layout_a.handle();
+    VkDescriptorSet descriptor_set_a = VK_NULL_HANDLE;
+    vk::AllocateDescriptorSets(device(), &allocate_info, &descriptor_set_a);
+
+    allocate_info.pSetLayouts = &ds_layout_empty.handle();
+    VkDescriptorSet descriptor_set_empty = VK_NULL_HANDLE;
+    vk::AllocateDescriptorSets(device(), &allocate_info, &descriptor_set_empty);
+
+    VkDescriptorSetLayout dsl_handles[2] = {ds_layout_empty, ds_layout_a};
+    VkPipelineLayoutCreateInfo pipe_layout_ci = vku::InitStructHelper();
+    pipe_layout_ci.setLayoutCount = 2;
+    pipe_layout_ci.pSetLayouts = dsl_handles;
+    vkt::PipelineLayout pipeline_layout_empty(*m_device, pipe_layout_ci);
+
+    dsl_handles[0] = VK_NULL_HANDLE;
+    vkt::PipelineLayout pipeline_layout_null(*m_device, pipe_layout_ci);
+
+    m_command_buffer.Begin();
+    VkDescriptorSet descriptor_set_handles[2] = {descriptor_set_empty, descriptor_set_a};
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_empty, 0u, 2u,
+                              descriptor_set_handles, 0u, nullptr);
+
+    descriptor_set_handles[0] = VK_NULL_HANDLE;
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_empty, 0u, 2u,
+                              descriptor_set_handles, 0u, nullptr);
+
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_null, 0u, 2u,
+                              descriptor_set_handles, 0u, nullptr);
+    m_command_buffer.End();
+}
