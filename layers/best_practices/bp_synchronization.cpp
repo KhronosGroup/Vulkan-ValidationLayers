@@ -414,55 +414,12 @@ static void ForEachSubresource(const vvl::Image& image, const VkImageSubresource
     }
 }
 
-template <typename ImageMemoryBarrier>
-void BestPractices::RecordCmdPipelineBarrierImageBarrier(VkCommandBuffer commandBuffer, const ImageMemoryBarrier& barrier) {
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    auto& sub_state = bp_state::SubState(*cb_state);
-
-    // Is a queue ownership acquisition barrier
-    if (barrier.srcQueueFamilyIndex != barrier.dstQueueFamilyIndex &&
-        barrier.dstQueueFamilyIndex == cb_state->command_pool->queueFamilyIndex) {
-        auto image = Get<vvl::Image>(barrier.image);
-        ASSERT_AND_RETURN(image);
-        auto subresource_range = barrier.subresourceRange;
-        sub_state.queue_submit_functions.emplace_back(
-            [image, subresource_range](const vvl::Queue& qs, const vvl::CommandBuffer& cbs) -> bool {
-                ForEachSubresource(*image, subresource_range, [&](uint32_t layer, uint32_t level) {
-                    // Update queue family index without changing usage, signifying a correct queue family transfer
-                    auto& sub_state = bp_state::SubState(*image);
-                    sub_state.UpdateUsage(layer, level, sub_state.GetUsageType(layer, level), qs.queue_family_index);
-                });
-                return false;
-            });
-    }
-
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        sub_state.RecordResetZcullDirectionNV(barrier.image, barrier.subresourceRange);
-    }
-}
-
 void BestPractices::PostCallRecordCmdPipelineBarrier(
     VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
     VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
     uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
     const VkImageMemoryBarrier* pImageMemoryBarriers, const RecordObject& record_obj) {
     num_barriers_objects_ += (memoryBarrierCount + imageMemoryBarrierCount + bufferMemoryBarrierCount);
-
-    for (uint32_t i = 0; i < imageMemoryBarrierCount; ++i) {
-        RecordCmdPipelineBarrierImageBarrier(commandBuffer, pImageMemoryBarriers[i]);
-    }
-}
-
-void BestPractices::PostCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo,
-                                                      const RecordObject& record_obj) {
-    for (uint32_t i = 0; i < pDependencyInfo->imageMemoryBarrierCount; ++i) {
-        RecordCmdPipelineBarrierImageBarrier(commandBuffer, pDependencyInfo->pImageMemoryBarriers[i]);
-    }
-}
-
-void BestPractices::PostCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo,
-                                                         const RecordObject& record_obj) {
-    PostCallRecordCmdPipelineBarrier2(commandBuffer, pDependencyInfo, record_obj);
 }
 
 bool BestPractices::PreCallValidateCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo* pCreateInfo,

@@ -19,6 +19,9 @@
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vulkan_core.h>
 #include "best_practices/best_practices_validation.h"
+#include "containers/container_utils.h"
+#include "generated/error_location_helper.h"
+#include "state_tracker/queue_state.h"
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "utils/action_command_utils.h"
@@ -507,8 +510,7 @@ void CommandBufferSubState::RecordClearDepthStencilImage(vvl::Image& image_state
     }
     if (validator.VendorCheckEnabled(kBPVendorNVIDIA)) {
         for (uint32_t i = 0; i < range_count; i++) {
-            // TODO - use state object
-            RecordResetZcullDirectionNV(image_state.VkHandle(), ranges[i]);
+            RecordResetZcullDirectionNV(image_state, ranges[i]);
         }
     }
 }
@@ -634,6 +636,86 @@ void CommandBufferSubState::RecordResetEvent(VkEvent event, VkPipelineStageFlags
         signaling_info->signaled = false;
     } else {
         event_signaling_state.emplace(event, bp_state::CommandBufferSubState::SignalingInfo(false));
+    }
+}
+
+template <typename Func>
+static void ForEachSubresource(const vvl::Image& image, const VkImageSubresourceRange& range, Func&& func) {
+    const uint32_t layer_count =
+        (range.layerCount == VK_REMAINING_ARRAY_LAYERS) ? (image.full_range.layerCount - range.baseArrayLayer) : range.layerCount;
+    const uint32_t level_count =
+        (range.levelCount == VK_REMAINING_MIP_LEVELS) ? (image.full_range.levelCount - range.baseMipLevel) : range.levelCount;
+
+    for (uint32_t i = 0; i < layer_count; ++i) {
+        const uint32_t layer = range.baseArrayLayer + i;
+        for (uint32_t j = 0; j < level_count; ++j) {
+            const uint32_t level = range.baseMipLevel + j;
+            func(layer, level);
+        }
+    }
+}
+
+void CommandBufferSubState::RecordBarriers(uint32_t, const VkBufferMemoryBarrier*, uint32_t image_barrier_count,
+                                           const VkImageMemoryBarrier* image_barriers, VkPipelineStageFlags, VkPipelineStageFlags,
+                                           const Location& loc) {
+    if (loc.function != vvl::Func::vkCmdPipelineBarrier) {
+        return;  // TODO - This has only been tested with pipeline barriers, need to try Events
+    }
+
+    for (uint32_t i = 0; i < image_barrier_count; ++i) {
+        const VkImageMemoryBarrier barrier = image_barriers[i];
+        auto image_state = base.dev_data.Get<vvl::Image>(barrier.image);
+        ASSERT_AND_RETURN(image_state);
+
+        // Is a queue ownership acquisition barrier
+        if (barrier.srcQueueFamilyIndex != barrier.dstQueueFamilyIndex &&
+            barrier.dstQueueFamilyIndex == base.command_pool->queueFamilyIndex) {
+            auto subresource_range = barrier.subresourceRange;
+            queue_submit_functions.emplace_back(
+                [image_state, subresource_range](const vvl::Queue& qs, const vvl::CommandBuffer& cbs) -> bool {
+                    ForEachSubresource(*image_state, subresource_range, [&](uint32_t layer, uint32_t level) {
+                        // Update queue family index without changing usage, signifying a correct queue family transfer
+                        auto& sub_state = bp_state::SubState(*image_state);
+                        sub_state.UpdateUsage(layer, level, sub_state.GetUsageType(layer, level), qs.queue_family_index);
+                    });
+                    return false;
+                });
+        }
+
+        if (validator.VendorCheckEnabled(kBPVendorNVIDIA)) {
+            RecordResetZcullDirectionNV(*image_state, barrier.subresourceRange);
+        }
+    }
+}
+
+void CommandBufferSubState::RecordBarriers2(const VkDependencyInfo& dep_info, const Location& loc) {
+    if (!IsValueIn(loc.function, {vvl::Func::vkCmdPipelineBarrier2, vvl::Func::vkCmdPipelineBarrier2KHR})) {
+        return;  // TODO - This has only been tested with pipeline barriers, need to try Events
+    }
+
+    for (uint32_t i = 0; i < dep_info.imageMemoryBarrierCount; ++i) {
+        const VkImageMemoryBarrier2 barrier = dep_info.pImageMemoryBarriers[i];
+        auto image_state = base.dev_data.Get<vvl::Image>(barrier.image);
+        ASSERT_AND_RETURN(image_state);
+
+        // Is a queue ownership acquisition barrier
+        if (barrier.srcQueueFamilyIndex != barrier.dstQueueFamilyIndex &&
+            barrier.dstQueueFamilyIndex == base.command_pool->queueFamilyIndex) {
+            auto subresource_range = barrier.subresourceRange;
+            queue_submit_functions.emplace_back(
+                [image_state, subresource_range](const vvl::Queue& qs, const vvl::CommandBuffer& cbs) -> bool {
+                    ForEachSubresource(*image_state, subresource_range, [&](uint32_t layer, uint32_t level) {
+                        // Update queue family index without changing usage, signifying a correct queue family transfer
+                        auto& sub_state = bp_state::SubState(*image_state);
+                        sub_state.UpdateUsage(layer, level, sub_state.GetUsageType(layer, level), qs.queue_family_index);
+                    });
+                    return false;
+                });
+        }
+
+        if (validator.VendorCheckEnabled(kBPVendorNVIDIA)) {
+            RecordResetZcullDirectionNV(*image_state, barrier.subresourceRange);
+        }
     }
 }
 
@@ -875,60 +957,39 @@ void CommandBufferSubState::RecordResetScopeZcullDirectionNV() {
     assert(validator.VendorCheckEnabled(kBPVendorNVIDIA));
 
     auto& scope = nv.zcull_scope;
-    RecordResetZcullDirectionNV(scope.image, scope.range);
+    auto image_state = base.dev_data.Get<vvl::Image>(scope.image);
+    RecordResetZcullDirectionNV(*image_state, scope.range);
 }
 
-template <typename Func>
-static void ForEachSubresource(const vvl::Image& image, const VkImageSubresourceRange& range, Func&& func) {
-    const uint32_t layer_count =
-        (range.layerCount == VK_REMAINING_ARRAY_LAYERS) ? (image.full_range.layerCount - range.baseArrayLayer) : range.layerCount;
-    const uint32_t level_count =
-        (range.levelCount == VK_REMAINING_MIP_LEVELS) ? (image.full_range.levelCount - range.baseMipLevel) : range.levelCount;
-
-    for (uint32_t i = 0; i < layer_count; ++i) {
-        const uint32_t layer = range.baseArrayLayer + i;
-        for (uint32_t j = 0; j < level_count; ++j) {
-            const uint32_t level = range.baseMipLevel + j;
-            func(layer, level);
-        }
-    }
-}
-
-void CommandBufferSubState::RecordResetZcullDirectionNV(VkImage depth_image, const VkImageSubresourceRange& subresource_range) {
+void CommandBufferSubState::RecordResetZcullDirectionNV(vvl::Image& depth_image, const VkImageSubresourceRange& subresource_range) {
     assert(validator.VendorCheckEnabled(kBPVendorNVIDIA));
 
     RecordSetZcullDirectionNV(depth_image, subresource_range, ZcullDirection::Unknown);
 
-    const auto image_it = nv.zcull_per_image.find(depth_image);
+    const auto image_it = nv.zcull_per_image.find(depth_image.VkHandle());
     if (image_it == nv.zcull_per_image.end()) {
         return;
     }
     auto& tree = image_it->second;
 
-    auto image = base.dev_data.Get<vvl::Image>(depth_image);
-    ASSERT_AND_RETURN(image);
-
-    ForEachSubresource(*image, subresource_range, [&tree](uint32_t layer, uint32_t level) {
+    ForEachSubresource(depth_image, subresource_range, [&tree](uint32_t layer, uint32_t level) {
         auto& subresource = tree.GetState(layer, level);
         subresource.num_less_draws = 0;
         subresource.num_greater_draws = 0;
     });
 }
 
-void CommandBufferSubState::RecordSetZcullDirectionNV(VkImage depth_image, const VkImageSubresourceRange& subresource_range,
+void CommandBufferSubState::RecordSetZcullDirectionNV(vvl::Image& depth_image, const VkImageSubresourceRange& subresource_range,
                                                       ZcullDirection mode) {
     assert(validator.VendorCheckEnabled(kBPVendorNVIDIA));
 
-    const auto image_it = nv.zcull_per_image.find(depth_image);
+    const auto image_it = nv.zcull_per_image.find(depth_image.VkHandle());
     if (image_it == nv.zcull_per_image.end()) {
         return;
     }
     auto& tree = image_it->second;
 
-    auto image = base.dev_data.Get<vvl::Image>(depth_image);
-    ASSERT_AND_RETURN(image);
-
-    ForEachSubresource(*image, subresource_range, [&tree, this](uint32_t layer, uint32_t level) {
+    ForEachSubresource(depth_image, subresource_range, [&tree, this](uint32_t layer, uint32_t level) {
         tree.GetState(layer, level).direction = nv.zcull_direction;
     });
 }
@@ -937,7 +998,8 @@ void CommandBufferSubState::RecordSetScopeZcullDirectionNV(ZcullDirection mode) 
     assert(validator.VendorCheckEnabled(kBPVendorNVIDIA));
 
     auto& scope = nv.zcull_scope;
-    RecordSetZcullDirectionNV(scope.image, scope.range, mode);
+    auto image_state = base.dev_data.Get<vvl::Image>(scope.image);
+    RecordSetZcullDirectionNV(*image_state, scope.range, mode);
 }
 
 void CommandBufferSubState::RecordZcullDrawNV() {
