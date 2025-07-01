@@ -1,6 +1,6 @@
-/* Copyright (c) 2024 The Khronos Group Inc.
- * Copyright (c) 2024 Valve Corporation
- * Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2025 The Khronos Group Inc.
+ * Copyright (c) 2025 Valve Corporation
+ * Copyright (c) 2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,17 @@
 
 #if VVL_ENABLE_SYNCVAL_STATS != 0
 #include <atomic>
+
+// NOTE: mimalloc should be built with MI_STAT=1 to enable stats module
+#if defined(USE_MIMALLOC)
+#include <mimalloc.h>
+#if MI_MALLOC_VERSION >= 300
+#define USE_MIMALLOC_STATS
+#include "mimalloc-stats.h"
 #endif
+#endif  // defined(USE_MIMALLOC)
+
+#endif  // VVL_ENABLE_SYNCVAL_STATS != 0
 
 namespace syncval_stats {
 #if VVL_ENABLE_SYNCVAL_STATS != 0
@@ -38,6 +48,13 @@ struct Value32 {
     uint32_t Sub(uint32_t n);  // Returns new counter value
 };
 
+struct Value64 {
+    std::atomic_uint64_t u64;
+    void Update(uint64_t new_value);
+    uint64_t Add(uint64_t n);  // Returns new counter value
+    uint64_t Sub(uint64_t n);  // Returns new counter value
+};
+
 struct ValueMax32 {
     Value32 value;
     Value32 max_value;
@@ -46,9 +63,23 @@ struct ValueMax32 {
     void Sub(uint32_t n);
 };
 
+struct ValueMax64 {
+    Value64 value;
+    Value64 max_value;
+    void Update(uint64_t new_value);
+    void Add(uint64_t n);
+    void Sub(uint64_t n);
+};
+
 struct Stats {
     ~Stats();
     bool report_on_destruction = false;
+
+#if defined(USE_MIMALLOC_STATS)
+    mi_stats_t mi_stats;
+#endif
+
+    ValueMax64 total_allocated_memory;
 
     ValueMax32 command_buffer_context_counter;
     void AddCommandBufferContext();
@@ -70,6 +101,7 @@ struct Stats {
     void AddHandleRecord(uint32_t count = 1);
     void RemoveHandleRecord(uint32_t count = 1);
 
+    void UpdateMemoryStats();
     void ReportOnDestruction();
     std::string CreateReport();
 };
@@ -86,6 +118,8 @@ struct Stats {
     void RemoveTimelineSignals(uint32_t count) {}
     void AddUnresolvedBatch() {}
     void RemoveUnresolvedBatch() {}
+
+    void UpdateMemoryStats() {}
     void ReportOnDestruction() {}
     std::string CreateReport() { return "SyncVal stats are disabled in the current build configuration\n"; }
 };

@@ -3141,7 +3141,11 @@ uint32_t SyncValidator::SetupPresentInfo(const VkPresentInfoKHR &present_info, Q
 
 void SyncValidator::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo,
                                                   const RecordObject &record_obj) {
-    if (!syncval_settings.submit_time_validation) return;
+    stats.UpdateMemoryStats();
+
+    if (!syncval_settings.submit_time_validation) {
+        return;
+    }
 
     // The earliest return (when enabled), must be *after* the TlsGuard, as it is the TlsGuard that cleans up the cmd_state
     // static payload
@@ -3452,10 +3456,16 @@ bool SyncValidator::ProcessUnresolvedBatch(UnresolvedBatch &unresolved_batch, Si
 }
 
 void SyncValidator::RecordQueueSubmit(VkQueue queue, VkFence fence, QueueSubmitCmdState *cmd_state) {
-    // If this return is above the TlsGuard, then the Validate phase return must also be.
-    if (!syncval_settings.submit_time_validation) return;  // Queue submit validation disabled
+    stats.UpdateMemoryStats();
 
-    if (!cmd_state->queue) return;  // Validation couldn't find a valid queue object
+    // If this return is above the TlsGuard, then the Validate phase return must also be.
+    if (!syncval_settings.submit_time_validation) {
+        return;
+    }
+
+    if (!cmd_state->queue) {
+        return;
+    }
 
     // Don't need to look up the queue state again, but we need a non-const version
     std::shared_ptr<QueueSyncState> queue_state = std::const_pointer_cast<QueueSyncState>(std::move(cmd_state->queue));

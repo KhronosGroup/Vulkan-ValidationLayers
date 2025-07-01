@@ -37,29 +37,37 @@ inline T atomic_fetch_max(std::atomic<T> &current_max, const T &value) noexcept 
 
 namespace syncval_stats {
 
+// NOTE: fetch_add/fetch_sub return value before increment/decrement.
+// Our Add/Sub functions return new counter values, so they need to
+// adjust result of the atomic function by adding/subtracting one.
+
 void Value32::Update(uint32_t new_value) { u32.store(new_value); }
+uint32_t Value32::Add(uint32_t n) { return u32.fetch_add(n) + 1; }
+uint32_t Value32::Sub(uint32_t n) { return u32.fetch_sub(n) - 1; }
 
-uint32_t Value32::Add(uint32_t n) {
-    // fetch_add returns value before increment; add one to get new value
-    return u32.fetch_add(n) + 1;
-}
-
-uint32_t Value32::Sub(uint32_t n) {
-    // fetch_sub returns value before decrement; subtract one to get new value
-    return u32.fetch_sub(n) - 1;
-}
+void Value64::Update(uint64_t new_value) { u64.store(new_value); }
+uint64_t Value64::Add(uint64_t n) { return u64.fetch_add(n) + 1; }
+uint64_t Value64::Sub(uint64_t n) { return u64.fetch_sub(n) - 1; }
 
 void ValueMax32::Update(uint32_t new_value) {
     value.Update(new_value);
     vvl::atomic_fetch_max(max_value.u32, new_value);
 }
-
 void ValueMax32::Add(uint32_t n) {
     uint32_t new_value = value.Add(n);
     vvl::atomic_fetch_max(max_value.u32, new_value);
 }
-
 void ValueMax32::Sub(uint32_t n) { value.Sub(n); }
+
+void ValueMax64::Update(uint64_t new_value) {
+    value.Update(new_value);
+    vvl::atomic_fetch_max(max_value.u64, new_value);
+}
+void ValueMax64::Add(uint64_t n) {
+    uint64_t new_value = value.Add(n);
+    vvl::atomic_fetch_max(max_value.u64, new_value);
+}
+void ValueMax64::Sub(uint64_t n) { value.Sub(n); }
 
 Stats::~Stats() {
     if (report_on_destruction) {
@@ -83,10 +91,34 @@ void Stats::RemoveUnresolvedBatch() { unresolved_batch_counter.Sub(1); }
 void Stats::AddHandleRecord(uint32_t count) { handle_record_counter.Add(count); }
 void Stats::RemoveHandleRecord(uint32_t count) { handle_record_counter.Sub(count); }
 
+void Stats::UpdateMemoryStats() {
+#if defined(USE_MIMALLOC_STATS)
+    mi_stats_merge();
+    mi_stats_get(sizeof(mi_stats), &mi_stats);
+
+    const int64_t current_bytes = mi_stats.malloc_normal.current + mi_stats.malloc_huge.current;
+    assert(current_bytes >= 0);
+    total_allocated_memory.value.Update((uint64_t)current_bytes);
+
+    const int64_t peak_bytes = mi_stats.malloc_normal.peak + mi_stats.malloc_huge.peak;
+    assert(peak_bytes >= 0);
+    total_allocated_memory.max_value.Update((uint64_t)peak_bytes);
+#endif
+}
+
 void Stats::ReportOnDestruction() { report_on_destruction = true; }
 
 std::string Stats::CreateReport() {
+    UpdateMemoryStats();
+
     std::ostringstream str;
+    {
+        uint64_t allocated_bytes = total_allocated_memory.value.u64;
+        uint64_t allocated_bytes_max = total_allocated_memory.max_value.u64;
+        str << "Allocated memory:\n";
+        str << "\tcurrent = " << allocated_bytes << " bytes\n";
+        str << "\tmax = " << allocated_bytes_max << " bytes\n";
+    }
     {
         uint32_t cb_contex = command_buffer_context_counter.value.u32;
         uint32_t cb_context_max = command_buffer_context_counter.max_value.u32;
