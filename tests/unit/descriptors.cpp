@@ -5199,6 +5199,52 @@ TEST_F(NegativeDescriptors, DispatchWithUnboundSet) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDescriptors, CompatiblePushConstantRanges) {
+    RETURN_IF_SKIP(Init());
+
+    char const *shader_source = R"glsl(
+        #version 460
+
+        layout(push_constant, std430) uniform PC {
+            uint b;
+        } pc;
+
+        layout(set = 0, binding = 0) buffer SSBO {
+            uint x;
+        } ssbo;
+
+        void main() {
+            ssbo.x = pc.b;
+        }
+    )glsl";
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    vkt::Buffer ssbo_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    descriptor_set.WriteDescriptorBufferInfo(0, ssbo_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    const vkt::PipelineLayout pipeline_layout_a(*m_device, {&descriptor_set.layout_});
+
+    VkPushConstantRange pc_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, 16};
+    const vkt::PipelineLayout pipeline_layout_b(*m_device, {&descriptor_set.layout_}, {pc_range});
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.layout = pipeline_layout_b;
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_a, 0u, 1u, &descriptor_set.set_, 0u,
+                              nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    uint32_t data = 0;
+    vk::CmdPushConstants(m_command_buffer, pipeline_layout_b, VK_SHADER_STAGE_COMPUTE_BIT, 0, 4, &data);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08600");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeDescriptors, InvalidDescriptorSetLayoutFlags) {
     TEST_DESCRIPTION("Create descriptor set layout with invalid flags.");
 
