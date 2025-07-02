@@ -77,15 +77,15 @@ std::string PipelineLayoutCompatDef::DescribeDifference(const PipelineLayoutComp
             ss << "Empty\n";
         } else {
             for (const auto [pcr_i, pcr] : vvl::enumerate(push_constant_ranges->data(), push_constant_ranges->size())) {
-                ss << "VkPushConstantRange[ " << pcr_i << " ]: " << string_VkPushConstantRange(pcr) << '\n';
+                ss << "VkPushConstantRange[" << pcr_i << "]: " << string_VkPushConstantRange(pcr) << '\n';
             }
         }
         ss << "But pipeline layout of last bound pipeline or last bound shaders has following push constant ranges:\n";
-        if (push_constant_ranges->empty()) {
+        if (other.push_constant_ranges->empty()) {
             ss << "Empty\n";
         } else {
             for (const auto [pcr_i, pcr] : vvl::enumerate(other.push_constant_ranges->data(), other.push_constant_ranges->size())) {
-                ss << "VkPushConstantRange[ " << pcr_i << " ]: " << string_VkPushConstantRange(pcr) << '\n';
+                ss << "VkPushConstantRange[" << pcr_i << "]: " << string_VkPushConstantRange(pcr) << '\n';
             }
         }
     } else if (is_independent_sets != other.is_independent_sets) {

@@ -1889,6 +1889,10 @@ TEST_F(PositiveRayTracing, MultipleGeometries) {
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD: sometimes falil to get valid buffer device address";
+    }
+
     m_command_buffer.Begin();
     auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
     blas.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
