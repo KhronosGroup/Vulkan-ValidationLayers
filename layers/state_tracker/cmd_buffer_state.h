@@ -414,6 +414,8 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     // There is no concept of "attachment index" with dynamic rendering, we use this for both dynamic/non-dynamic rendering though.
     // The attachments are packed the following: | color | color resolve | depth | depth resolve | stencil | stencil resolve |
     std::vector<AttachmentInfo> active_attachments;
+    // Used for checking all color attachments, values will be [0, colorAttachmentCount - 1] from either VkRenderingInfo or the
+    // current subpass. The "active" part means the imageView was not VK_NULL_HANDLE/VK_ATTACHMENT_UNUSED
     vvl::unordered_set<uint32_t> active_color_attachments_index;
     bool has_render_pass_striped;
     uint32_t striped_count;
@@ -669,9 +671,6 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     }
     // used for non-color types
     uint32_t GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type type) const;
-    // For dynamic rendering, get count from vkCmdBeginRendering
-    // For non-dynamic rendering, get count from current subpass
-    uint32_t GetColorAttachmentCount() const;
 
     bool HasValidDepthAttachment() const;
     bool HasExternalFormatResolveAttachment() const;

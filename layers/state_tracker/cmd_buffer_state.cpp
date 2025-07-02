@@ -1963,18 +1963,6 @@ uint32_t CommandBuffer::GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type 
     return 0;
 }
 
-uint32_t CommandBuffer::GetColorAttachmentCount() const {
-    if (active_render_pass) {
-        if (active_render_pass->UsesDynamicRendering()) {
-            return GetDynamicRenderingColorAttachmentCount();
-        } else {
-            const auto *subpass_desc = &active_render_pass->create_info.pSubpasses[GetActiveSubpass()];
-            return subpass_desc->colorAttachmentCount;
-        }
-    }
-    return 0;
-}
-
 bool CommandBuffer::HasValidDepthAttachment() const {
     if (active_render_pass) {
         if (active_render_pass->use_dynamic_rendering_inherited) {

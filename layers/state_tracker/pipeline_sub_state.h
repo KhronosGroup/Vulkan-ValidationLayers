@@ -209,12 +209,9 @@ struct FragmentOutputState : public PipelineSubState {
             const auto &cbci = *create_info.pColorBlendState;
             color_blend_state = ToSafeColorBlendState(cbci);
             // In case of being dynamic state
-            if (cbci.pAttachments) {
-                if (cbci.attachmentCount) {
-                    attachment_states.reserve(cbci.attachmentCount);
-                    std::copy(cbci.pAttachments, cbci.pAttachments + cbci.attachmentCount, std::back_inserter(attachment_states));
-                }
-                blend_constants_enabled = IsBlendConstantsEnabled(attachment_states);
+            if (cbci.pAttachments && cbci.attachmentCount) {
+                attachment_states.reserve(cbci.attachmentCount);
+                std::copy(cbci.pAttachments, cbci.pAttachments + cbci.attachmentCount, std::back_inserter(attachment_states));
             }
         }
 
@@ -232,8 +229,6 @@ struct FragmentOutputState : public PipelineSubState {
         // auto format_ci = vku::FindStructInPNextChain<VkPipelineRenderingFormatCreateInfoKHR>(gpci->pNext);
     }
 
-    static bool IsBlendConstantsEnabled(const AttachmentStateVector &attachment_states);
-
     std::shared_ptr<const vvl::RenderPass> rp_state;
     uint32_t subpass = 0;
 
@@ -243,6 +238,5 @@ struct FragmentOutputState : public PipelineSubState {
     AttachmentStateVector attachment_states;
 
     bool legacy_dithering_enabled = false;
-    bool blend_constants_enabled = false;  // Blend constants enabled for any attachments
     bool sample_location_enabled = false;
 };

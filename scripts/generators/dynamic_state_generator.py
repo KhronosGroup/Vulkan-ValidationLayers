@@ -34,7 +34,8 @@ dynamic_state_map = {
         "dependency" : ["rasterizerDiscardEnable", "depthBiasEnable"]
     },
     "VK_DYNAMIC_STATE_BLEND_CONSTANTS" : {
-        "command" : ["vkCmdSetBlendConstants"]
+        "command" : ["vkCmdSetBlendConstants"],
+        "dependency" : ["rasterizerDiscardEnable"]
     },
     "VK_DYNAMIC_STATE_DEPTH_BOUNDS" : {
         "command" : ["vkCmdSetDepthBounds"],

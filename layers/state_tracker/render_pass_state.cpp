@@ -359,7 +359,7 @@ bool RenderPass::UsesDepthStencilAttachment(uint32_t subpass_num) const {
 // vkspec.html#renderpass-noattachments
 bool RenderPass::UsesNoAttachment(uint32_t subpass) const {
     // If using dynamic rendering, there is no subpass, so return 'false'
-    return !UsesColorAttachment(subpass) && !UsesDepthStencilAttachment(subpass) && !UsesDynamicRendering();
+    return !UsesDynamicRendering() && !UsesColorAttachment(subpass) && !UsesDepthStencilAttachment(subpass);
 }
 
 uint32_t RenderPass::GetDynamicRenderingViewMask() const {
