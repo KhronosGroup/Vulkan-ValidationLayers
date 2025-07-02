@@ -650,6 +650,14 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
             }
             current = reinterpret_cast<const VkBaseOutStructure *>(current->pNext);
         }
+        if (vulkan_14_features->pushDescriptor == VK_FALSE &&
+            enabled_extensions.find(vvl::Extension::_VK_KHR_push_descriptor) != enabled_extensions.end()) {
+            // VUID being created in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7497
+            skip |=
+                LogError("UNASSIGNED-VkDeviceCreateInfo-ppEnabledExtensionNames-pushDescriptor", physicalDevice, error_obj.location,
+                         "%s is enabled but VkPhysicalDeviceVulkan14Features::pushDescriptor is not VK_TRUE.",
+                         VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+        }
     }
 
     // Validate pCreateInfo->pQueueCreateInfos

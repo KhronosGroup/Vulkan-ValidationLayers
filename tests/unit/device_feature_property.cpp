@@ -231,6 +231,27 @@ TEST_F(NegativeDeviceFeatureProperty, PromotedFeaturesExtensions12) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDeviceFeatureProperty, PromotedFeaturesExtensions14) {
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    RETURN_IF_SKIP(InitDeviceFeatureProperty());
+    if (!DeviceExtensionSupported(Gpu(), nullptr, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_push_descriptor not supported";
+    }
+
+    VkPhysicalDeviceVulkan14Features features14 = vku::InitStructHelper();
+    features14.pushDescriptor = VK_FALSE;
+    m_second_device_ci.pNext = &features14;
+
+    std::array<const char *, 1> extension_list = {VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME};
+    m_second_device_ci.ppEnabledExtensionNames = extension_list.data();
+    m_second_device_ci.enabledExtensionCount = extension_list.size();
+
+    m_errorMonitor->SetUnexpectedError("Failed to create device chain");  // for android loader
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDeviceCreateInfo-ppEnabledExtensionNames-pushDescriptor");
+    vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDeviceFeatureProperty, PhysicalDeviceVulkan11Features) {
     TEST_DESCRIPTION("Use both VkPhysicalDeviceVulkan11Features mixed with the old struct");
     SetTargetApiVersion(VK_API_VERSION_1_2);
