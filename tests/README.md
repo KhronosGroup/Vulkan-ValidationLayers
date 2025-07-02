@@ -50,10 +50,37 @@ cd build
 ./tests/vk_layer_validation_tests --device-index 1
 
 # Run a single test
-./tests/vk_layer_validation_tests --gtest_filter=VkLayerTest.BufferExtents
+./tests/vk_layer_validation_tests --gtest_filter=PositiveBuffer.OwnershipTranfers
 
-# Run a multiple tests with a patter
+# Run a multiple tests with a pattern
 ./tests/vk_layer_validation_tests --gtest_filter=*Buffer*
+```
+
+## Running Test on Windows
+
+For Visual Studio users, the tests can be run directly from the IDE. `vk_layer_validation_tests` should be set as the startup project.
+
+Running the tests from the command line works the same as on Linux, with corresponding syntax differences. The `VK_LAYER_PATH` is also set automatically by the tests. When the Visual Studio generator is used, the location of the test executable follows this pattern (example for a Debug build):
+```
+<path-to-build-dir>\Debug\tests\Debug\vk_layer_validation_tests.exe
+```
+
+To run the tests:
+```cmd
+cd \to\test\exe\location\
+
+REM Run all the test
+vk_layer_validation_tests
+
+REM Run with certain VkPhysicalDevice
+REM see --help for more options
+vk_layer_validation_tests --device-index 1
+
+REM Run a single test
+vk_layer_validation_tests --gtest_filter=PositiveBuffer.OwnershipTranfers
+
+REM Run a multiple tests with a pattern
+vk_layer_validation_tests --gtest_filter=*Buffer*
 ```
 
 ## Running Test on Android
