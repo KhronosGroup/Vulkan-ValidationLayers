@@ -3244,7 +3244,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetBlendConstantsEXT) {
     color_blend_advanced.clampResults = VK_FALSE;
     vk::CmdSetColorBlendAdvancedEXT(m_command_buffer, 0u, 1u, &color_blend_advanced);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08621");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07835");
     vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 

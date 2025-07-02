@@ -141,6 +141,9 @@ bool CoreChecks::ValidateDynamicStateIsSet(const LastBound& last_bound_state, co
             case CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT:
                 vuid_str = vuid.color_write_mask_07629;
                 break;
+            case CB_DYNAMIC_STATE_BLEND_CONSTANTS:
+                vuid_str = vuid.dynamic_blend_constants_07835;
+                break;
             case CB_DYNAMIC_STATE_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT:
                 vuid_str = vuid.dynamic_depth_clip_negative_one_to_one_07639;
                 break;
@@ -487,10 +490,26 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
                 skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT, vuid);
             }
 
-            const uint32_t color_attachment_count = cb_state.GetColorAttachmentCount();
-            if (color_attachment_count > 0) {
+            if (!cb_state.active_color_attachments_index.empty()) {
                 skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT, vuid);
                 skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT, vuid);
+            }
+
+            for (const uint32_t color_index : cb_state.active_color_attachments_index) {
+                if (!last_bound_state.IsColorBlendEnabled(color_index)) {
+                    continue;
+                }
+
+                // This is validated already if false, but skip for extra errors
+                const bool blend_equation_set = !last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT) ||
+                                                cb_state.dynamic_state_value.color_blend_equation_attachments[color_index];
+                if (!blend_equation_set) {
+                    continue;
+                }
+
+                if (last_bound_state.IsBlendConstantsEnabled(color_index)) {
+                    skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_BLEND_CONSTANTS, vuid);
+                }
             }
         }
     }  // !IsRasterizationDisabled()
@@ -613,11 +632,6 @@ bool CoreChecks::ValidateGraphicsDynamicStatePipelineSetStatus(const LastBound& 
         }
     }
 
-    if (pipeline.BlendConstantsEnabled()) {
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_BLEND_CONSTANTS, cb_state, objlist, loc,
-                                          vuid.dynamic_blend_constants_07835);
-    }
-
     return skip;
 }
 
@@ -670,7 +684,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipelineValue(const LastBound& last_bou
     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
 
     // must set the state for all active color attachments in the current subpass
-    for (const uint32_t& color_index : cb_state.active_color_attachments_index) {
+    for (const uint32_t color_index : cb_state.active_color_attachments_index) {
         if (pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
             !cb_state.dynamic_state_value.color_blend_enable_attachments.test(color_index)) {
             skip |= LogError(vuid.dynamic_color_blend_enable_07476, objlist, vuid.loc(),
@@ -699,30 +713,21 @@ bool CoreChecks::ValidateDrawDynamicStatePipelineValue(const LastBound& last_bou
                              " for this command buffer.%s",
                              color_index, cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT).c_str());
         }
-    }
 
-    if (pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT)) {
-        const uint32_t attachment_count = static_cast<uint32_t>(cb_state.active_attachments.size());
-        for (uint32_t i = 0; i < attachment_count; ++i) {
-            const auto& attachment_info = cb_state.active_attachments[i];
-            const auto* attachment = attachment_info.image_view;
-            if (!cb_state.dynamic_state_value.color_blend_enabled[i] || !attachment_info.IsColor() || !attachment) {
-                continue;
-            }
-
-            // TODO - When this is moved, move to VUID-vkCmdDraw-blendEnable-04727 location
-            if (cb_state.dynamic_state_value.color_blend_advanced_attachments[i]) {
-                if (pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT) &&
-                    cb_state.active_color_attachments_index.size() >
-                        phys_dev_ext_props.blend_operation_advanced_props.advancedBlendMaxColorAttachments) {
+        if (pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
+            pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT)) {
+            if (cb_state.dynamic_state_value.color_blend_enabled.test(color_index) &&
+                cb_state.dynamic_state_value.color_blend_advanced_attachments.test(color_index)) {
+                if (cb_state.active_color_attachments_index.size() >
+                    phys_dev_ext_props.blend_operation_advanced_props.advancedBlendMaxColorAttachments) {
+                    // TODO - When this is moved, move to VUID-vkCmdDraw-blendEnable-04727 location
                     skip |= LogError(vuid.blend_advanced_07480, objlist, vuid.loc(),
                                      "Color Attachment %" PRIu32
                                      " blending is enabled, but the total active color attachment count (%zu) is greater than "
                                      "advancedBlendMaxColorAttachments (%" PRIu32 ").%s",
-                                     i, cb_state.active_color_attachments_index.size(),
+                                     color_index, cb_state.active_color_attachments_index.size(),
                                      phys_dev_ext_props.blend_operation_advanced_props.advancedBlendMaxColorAttachments,
                                      cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT).c_str());
-                    break;
                 }
             }
         }
@@ -1669,42 +1674,24 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
 
     if (fragment_shader_bound) {
         if (!cb_state.dynamic_state_value.rasterizer_discard_enable) {
-            // Shader Object only works with dynamic rendering
-            const uint32_t color_attachment_count = cb_state.GetDynamicRenderingColorAttachmentCount();
-
-            const std::array<VkBlendFactor, 4> const_factors = {
-                VK_BLEND_FACTOR_CONSTANT_COLOR, VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR, VK_BLEND_FACTOR_CONSTANT_ALPHA,
-                VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA};
-            for (uint32_t i = 0; i < color_attachment_count; ++i) {
-                if (!cb_state.dynamic_state_value.color_blend_enable_attachments[i]) {
+            for (const uint32_t color_index : cb_state.active_color_attachments_index) {
+                if (!cb_state.dynamic_state_value.color_blend_enable_attachments[color_index]) {
                     skip |= LogError(vuid.set_blend_advanced_09417, objlist, loc,
                                      "%s state not set for this command buffer for attachment %" PRIu32 ".",
-                                     DynamicStateToString(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT), i);
-                } else if (cb_state.dynamic_state_value.color_blend_enabled[i]) {
-                    if (!cb_state.dynamic_state_value.color_blend_equation_attachments[i]) {
+                                     DynamicStateToString(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT), color_index);
+                } else if (cb_state.dynamic_state_value.color_blend_enabled[color_index]) {
+                    if (!cb_state.dynamic_state_value.color_blend_equation_attachments[color_index]) {
                         skip |= LogError(vuid.set_color_blend_equation_08658, objlist, loc,
                                          "%s state not set for this command buffer for attachment %" PRIu32 ".",
-                                         DynamicStateToString(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT), i);
-                    } else if (cb_state.dynamic_state_value.color_blend_equation_attachments[i]) {
-                        const auto& eq = cb_state.dynamic_state_value.color_blend_equations[i];
-                        if (std::find(const_factors.begin(), const_factors.end(), eq.srcColorBlendFactor) != const_factors.end() ||
-                            std::find(const_factors.begin(), const_factors.end(), eq.dstColorBlendFactor) != const_factors.end() ||
-                            std::find(const_factors.begin(), const_factors.end(), eq.srcAlphaBlendFactor) != const_factors.end() ||
-                            std::find(const_factors.begin(), const_factors.end(), eq.dstAlphaBlendFactor) != const_factors.end()) {
-                            if (!cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_BLEND_CONSTANTS)) {
-                                skip |= LogError(vuid.set_blend_constants_08621, objlist, loc,
-                                                 "%s state not set for this command buffer for attachment %" PRIu32 ".",
-                                                 DynamicStateToString(CB_DYNAMIC_STATE_BLEND_CONSTANTS), i);
-                            }
-                        }
+                                         DynamicStateToString(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT), color_index);
                     }
                     skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT,
                                                       cb_state, objlist, loc, vuid.set_blend_equation_09418);
                 }
-                if (!cb_state.dynamic_state_value.color_write_mask_attachments[i]) {
+                if (!cb_state.dynamic_state_value.color_write_mask_attachments[color_index]) {
                     skip |= LogError(vuid.set_color_write_09419, objlist, loc,
                                      "%s state not set for this command buffer for attachment %" PRIu32 ".",
-                                     DynamicStateToString(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT), i);
+                                     DynamicStateToString(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT), color_index);
                 }
             }
             if (IsExtEnabled(extensions.vk_ext_blend_operation_advanced)) {
@@ -1718,11 +1705,13 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
             }
             if (enabled_features.colorWriteEnable) {
                 if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT) &&
-                    cb_state.dynamic_state_value.color_write_enable_attachment_count < color_attachment_count) {
+                    cb_state.dynamic_state_value.color_write_enable_attachment_count <
+                        cb_state.active_color_attachments_index.size()) {
                     skip |= LogError(vuid.set_color_write_enable_08647, cb_state.Handle(), loc,
                                      "vkCmdSetColorWriteEnableEXT() was called with attachmentCount %" PRIu32
-                                     ", but current render pass color attachmnet count is %" PRIu32 ".",
-                                     cb_state.dynamic_state_value.color_write_enable_attachment_count, color_attachment_count);
+                                     ", but current render pass color attachmnet count is %zu.",
+                                     cb_state.dynamic_state_value.color_write_enable_attachment_count,
+                                     cb_state.active_color_attachments_index.size());
                 }
             }
         }

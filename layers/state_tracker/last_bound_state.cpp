@@ -18,6 +18,7 @@
  */
 
 #include "last_bound_state.h"
+#include "containers/container_utils.h"
 #include "state_tracker/pipeline_state.h"
 #include "generated/dynamic_state_helper.h"
 #include "state_tracker/descriptor_sets.h"
@@ -241,6 +242,26 @@ bool LastBound::IsColorBlendEnabled(uint32_t i) const {
         }
     }
     return true;
+}
+
+bool LastBound::IsBlendConstantsEnabled(uint32_t i) const {
+    static constexpr std::array<VkBlendFactor, 4> const_factors = {
+        VK_BLEND_FACTOR_CONSTANT_COLOR, VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR, VK_BLEND_FACTOR_CONSTANT_ALPHA,
+        VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA};
+    if (IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT)) {
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT)) {
+            const VkColorBlendEquationEXT &eq = cb_state.dynamic_state_value.color_blend_equations[i];
+            return IsValueIn(eq.srcColorBlendFactor, const_factors) || IsValueIn(eq.dstColorBlendFactor, const_factors) ||
+                   IsValueIn(eq.srcAlphaBlendFactor, const_factors) || IsValueIn(eq.dstAlphaBlendFactor, const_factors);
+        }
+    } else {
+        if (pipeline_state->ColorBlendState()) {
+            const VkPipelineColorBlendAttachmentState &eq = pipeline_state->ColorBlendState()->pAttachments[i];
+            return IsValueIn(eq.srcColorBlendFactor, const_factors) || IsValueIn(eq.dstColorBlendFactor, const_factors) ||
+                   IsValueIn(eq.srcAlphaBlendFactor, const_factors) || IsValueIn(eq.dstAlphaBlendFactor, const_factors);
+        }
+    }
+    return false;
 }
 
 VkPrimitiveTopology LastBound::GetPrimitiveTopology() const {

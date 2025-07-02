@@ -270,24 +270,3 @@ FragmentShaderState::FragmentShaderState(const vvl::Pipeline &p, const vvl::Devi
 
 FragmentOutputState::FragmentOutputState(const vvl::Pipeline &p, std::shared_ptr<const vvl::RenderPass> rp, uint32_t sp)
     : PipelineSubState(p), rp_state(rp), subpass(sp) {}
-
-// static
-bool FragmentOutputState::IsBlendConstantsEnabled(const AttachmentStateVector &attachment_states) {
-    bool result = false;
-    for (const auto &attachment : attachment_states) {
-        if (VK_TRUE == attachment.blendEnable) {
-            if (((attachment.dstAlphaBlendFactor >= VK_BLEND_FACTOR_CONSTANT_COLOR) &&
-                 (attachment.dstAlphaBlendFactor <= VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA)) ||
-                ((attachment.dstColorBlendFactor >= VK_BLEND_FACTOR_CONSTANT_COLOR) &&
-                 (attachment.dstColorBlendFactor <= VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA)) ||
-                ((attachment.srcAlphaBlendFactor >= VK_BLEND_FACTOR_CONSTANT_COLOR) &&
-                 (attachment.srcAlphaBlendFactor <= VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA)) ||
-                ((attachment.srcColorBlendFactor >= VK_BLEND_FACTOR_CONSTANT_COLOR) &&
-                 (attachment.srcColorBlendFactor <= VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA))) {
-                result = true;
-                break;
-            }
-        }
-    }
-    return result;
-}

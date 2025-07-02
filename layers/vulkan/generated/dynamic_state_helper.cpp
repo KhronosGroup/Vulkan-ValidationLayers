@@ -624,6 +624,13 @@ std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const v
                 ss << "VkPipelineRasterizationStateCreateInfo::depthTestEnable was VK_TRUE in the last bound graphics pipeline.\n";
             }
             break;
+        case CB_DYNAMIC_STATE_BLEND_CONSTANTS:
+            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
+                ss << rasterizer_discard_enable_dynamic;
+            } else {
+                ss << rasterizer_discard_enable_static;
+            }
+            break;
         case CB_DYNAMIC_STATE_DEPTH_BOUNDS:
             if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
                 ss << rasterizer_discard_enable_dynamic;
