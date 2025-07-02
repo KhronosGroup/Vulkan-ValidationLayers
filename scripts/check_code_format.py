@@ -278,8 +278,8 @@ def main():
         commit = c.decode('utf-8')
         diff_range = f'{commit}^...{commit}'
 
-        commit_message = check_output(['git', 'log', '--pretty="%h %s"', diff_range])
-        CPrint('CONTENT', "\nChecking commit: " + commit_message.decode('utf-8'))
+        commit_message = check_output(['git', 'log', '--pretty="%h %s"', diff_range]).decode('utf-8')
+        CPrint('CONTENT', "\nChecking commit: " + commit_message)
 
         subprocess.run(['git', 'checkout', '-q', commit])
 
@@ -295,6 +295,10 @@ def main():
         # Skip checking dependabot commits
         authors = subprocess.check_output(['git', 'log', '-n' , '1', '--format=%ae', commit]).decode('utf-8')
         if "dependabot" in authors:
+            continue
+
+        # Skip anything tryingt do a git revert
+        if commit_message.lower().startswith("revert"):
             continue
 
         failure |= VerifyClangFormatSource(commit, target_files)
