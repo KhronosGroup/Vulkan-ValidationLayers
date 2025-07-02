@@ -1308,6 +1308,65 @@ TEST_F(PositiveDynamicState, DynamicAdvancedBlendMaxAttachments) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveDynamicState, DynamicBlendMix) {
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEquation);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendAdvanced);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Image image_0(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image_1(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view_0 = image_0.CreateView();
+    vkt::ImageView image_view_1 = image_1.CreateView();
+
+    VkRenderingAttachmentInfo color_attachments[2];
+    color_attachments[0] = vku::InitStructHelper();
+    color_attachments[0].imageView = image_view_0;
+    color_attachments[0].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachments[1] = vku::InitStructHelper();
+    color_attachments[1].imageView = image_view_1;
+    color_attachments[1].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkPipelineColorBlendAttachmentState color_blend[2] = {};
+    color_blend[0] = DefaultColorBlendAttachmentState();
+    color_blend[1] = DefaultColorBlendAttachmentState();
+
+    VkFormat color_formats[2] = {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM};
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 2;
+    pipeline_rendering_info.pColorAttachmentFormats = color_formats;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT);
+    pipe.cb_ci_.attachmentCount = 2;
+    pipe.cb_ci_.pAttachments = color_blend;
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32, 32}};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 2;
+    rendering_info.pColorAttachments = color_attachments;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+
+    VkColorBlendEquationEXT equation = {VK_BLEND_FACTOR_SRC_COLOR, VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR, VK_BLEND_OP_ADD,
+                                        VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_ADD};
+    VkColorBlendAdvancedEXT advanced = {VK_BLEND_OP_ADD, VK_FALSE, VK_FALSE, VK_BLEND_OVERLAP_UNCORRELATED_EXT, VK_FALSE};
+    vk::CmdSetColorBlendEquationEXT(m_command_buffer, 0, 1, &equation);
+    vk::CmdSetColorBlendAdvancedEXT(m_command_buffer, 1, 1, &advanced);
+    vk::CmdDraw(m_command_buffer, 4u, 1u, 0u, 0u);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveDynamicState, DynamicSampleLocationsRasterizationSamplesMismatch) {
     TEST_DESCRIPTION("Dynamically set sample locations and rasterizationSamples that dont match");
 

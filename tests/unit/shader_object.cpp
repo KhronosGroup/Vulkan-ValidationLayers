@@ -1852,8 +1852,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetColorBlendEquationEXT) {
     VkBool32 colorBlendEnable = VK_TRUE;
     vk::CmdSetColorBlendEnableEXT(m_command_buffer, 0u, 1u, &colorBlendEnable);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08658");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-rasterizerDiscardEnable-09418");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Draw-DynamicState-EquationAndAdvanced");
     vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -1879,46 +1878,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetColorBlendEquationEXTActiveAttachments
     };
     vk::CmdSetColorBlendEquationEXT(m_command_buffer, 1u, 1u, &colorBlendEquation);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08658");
-    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
-    m_errorMonitor->VerifyFound();
-
-    m_command_buffer.EndRendering();
-    m_command_buffer.End();
-}
-
-TEST_F(NegativeShaderObject, MissingCmdSetColorBlendAdvancedEXT) {
-    TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetColorBlendAdvancedEXT.");
-
-    AddRequiredExtensions(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitBasicShaderObject());
-    InitDynamicRenderTarget();
-    CreateMinimalShaders();
-
-    m_command_buffer.Begin();
-    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
-    SetDefaultDynamicStatesExclude({VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT});
-    VkBool32 colorBlendEnable = VK_TRUE;
-    vk::CmdSetColorBlendEnableEXT(m_command_buffer, 0u, 1u, &colorBlendEnable);
-    VkColorBlendAdvancedEXT colorBlendAdvanced;
-    colorBlendAdvanced.advancedBlendOp = VK_BLEND_OP_ADD;
-    colorBlendAdvanced.srcPremultiplied = VK_FALSE;
-    colorBlendAdvanced.dstPremultiplied = VK_FALSE;
-    colorBlendAdvanced.blendOverlap = VK_BLEND_OVERLAP_UNCORRELATED_EXT;
-    colorBlendAdvanced.clampResults = VK_FALSE;
-    vk::CmdSetColorBlendAdvancedEXT(m_command_buffer, 0u, 1u, &colorBlendAdvanced);
-    VkColorBlendEquationEXT colorBlendEquation = {
-        VK_BLEND_FACTOR_CONSTANT_COLOR,
-        VK_BLEND_FACTOR_ONE,
-        VK_BLEND_OP_ADD,
-        VK_BLEND_FACTOR_ONE,
-        VK_BLEND_FACTOR_ONE,
-        VK_BLEND_OP_ADD,
-    };
-    vk::CmdSetColorBlendEquationEXT(m_command_buffer, 1u, 1u, &colorBlendEquation);
-    m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
-
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08658");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Draw-DynamicState-EquationAndAdvanced");
     vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
