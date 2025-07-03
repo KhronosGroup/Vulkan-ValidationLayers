@@ -1428,37 +1428,32 @@ bool CoreChecks::ValidateGraphicsPipelineInputAssemblyState(const vvl::Pipeline 
     const auto *ia_state = pipeline.InputAssemblyState();
     if (ia_state) {
         const VkPrimitiveTopology topology = ia_state->topology;
-        if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE) && (ia_state->primitiveRestartEnable == VK_TRUE) &&
-            IsValueIn(topology, {VK_PRIMITIVE_TOPOLOGY_POINT_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
-                                 VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY,
-                                 VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_PATCH_LIST})) {
-            if (topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
-                if (!enabled_features.primitiveTopologyPatchListRestart) {
-                    skip |= LogError("VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06253", device, ia_loc,
-                                     "topology is %s and primitiveRestartEnable is VK_TRUE and the "
-                                     "primitiveTopologyPatchListRestart feature was not enabled.",
-                                     string_VkPrimitiveTopology(topology));
-                }
-            } else if (!enabled_features.primitiveTopologyListRestart) {
-                skip |=
-                    LogError("VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06252", device, ia_loc,
-                             "topology is %s and primitiveRestartEnable is VK_TRUE and the primitiveTopologyListRestart feature "
-                             "was not enabled.",
-                             string_VkPrimitiveTopology(topology));
+        if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE) && ia_state->primitiveRestartEnable) {
+            if (!enabled_features.primitiveTopologyPatchListRestart && topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
+                skip |= LogError("VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06253", device, ia_loc.dot(Field::topology),
+                                 "is VK_PRIMITIVE_TOPOLOGY_PATCH_LIST and primitiveRestartEnable is VK_TRUE, but the "
+                                 "primitiveTopologyPatchListRestart feature was not enabled.");
+            } else if (!enabled_features.primitiveTopologyListRestart &&
+                       IsValueIn(topology, {VK_PRIMITIVE_TOPOLOGY_POINT_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
+                                            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY,
+                                            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY})) {
+                skip |= LogError("VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06252", device, ia_loc.dot(Field::topology),
+                                 "is %s and primitiveRestartEnable is VK_TRUE, but the primitiveTopologyListRestart feature "
+                                 "was not enabled.",
+                                 string_VkPrimitiveTopology(topology));
             }
         }
-        if ((enabled_features.geometryShader == VK_FALSE) &&
+
+        if (!enabled_features.geometryShader &&
             IsValueIn(topology,
                       {VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY,
                        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY})) {
-            skip |= LogError( "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429", device, ia_loc,
-                             "topology is %s and geometryShader feature was not enabled.",
-                             string_VkPrimitiveTopology(topology));
+            skip |= LogError("VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429", device, ia_loc.dot(Field::topology),
+                             "is %s but the geometryShader feature was not enabled.", string_VkPrimitiveTopology(topology));
         }
-        if ((enabled_features.tessellationShader == VK_FALSE) && (topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST)) {
-            skip |= LogError( "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00430", device, ia_loc,
-                             "topology is %s and tessellationShader feature was not enabled.",
-                             string_VkPrimitiveTopology(topology));
+        if (!enabled_features.tessellationShader && topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
+            skip |= LogError("VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00430", device, ia_loc.dot(Field::topology),
+                             "is VK_PRIMITIVE_TOPOLOGY_PATCH_LIST but the tessellationShader feature was not enabled.");
         }
 
         if (!phys_dev_ext_props.conservative_rasterization_props.conservativePointAndLineRasterization &&

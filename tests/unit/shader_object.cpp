@@ -3102,6 +3102,25 @@ TEST_F(NegativeShaderObject, MissingCmdSetPrimitiveRestartEnableEXT) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeShaderObject, PrimitiveRestartEnable) {
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitDynamicRenderTarget();
+    CreateMinimalShaders();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude();
+    m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
+    vk::CmdSetPrimitiveRestartEnableEXT(m_command_buffer, VK_TRUE);
+    vk::CmdSetPrimitiveTopologyEXT(m_command_buffer, VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09637");
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeShaderObject, MissingCmdSetVertexInput) {
     AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
