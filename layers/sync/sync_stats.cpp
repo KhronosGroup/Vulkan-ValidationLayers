@@ -94,31 +94,17 @@ void Stats::RemoveHandleRecord(uint32_t count) { handle_record_counter.Sub(count
 void Stats::UpdateMemoryStats() {
 #if defined(USE_MIMALLOC_STATS)
     mi_stats_merge();
-    mi_stats_get(sizeof(mi_stats), &mi_stats);
-
-    const int64_t current_bytes = mi_stats.malloc_normal.current + mi_stats.malloc_huge.current;
-    assert(current_bytes >= 0);
-    total_allocated_memory.value.Update((uint64_t)current_bytes);
-
-    const int64_t peak_bytes = mi_stats.malloc_normal.peak + mi_stats.malloc_huge.peak;
-    assert(peak_bytes >= 0);
-    total_allocated_memory.max_value.Update((uint64_t)peak_bytes);
+    {
+        std::unique_lock<std::mutex> lock(mi_stats_mutex);
+        mi_stats_get(sizeof(mi_stats), &mi_stats);
+    }
 #endif
 }
 
 void Stats::ReportOnDestruction() { report_on_destruction = true; }
 
 std::string Stats::CreateReport() {
-    UpdateMemoryStats();
-
     std::ostringstream str;
-    {
-        uint64_t allocated_bytes = total_allocated_memory.value.u64;
-        uint64_t allocated_bytes_max = total_allocated_memory.max_value.u64;
-        str << "Allocated memory:\n";
-        str << "\tcurrent = " << allocated_bytes << " bytes\n";
-        str << "\tmax = " << allocated_bytes_max << " bytes\n";
-    }
     {
         uint32_t cb_contex = command_buffer_context_counter.value.u32;
         uint32_t cb_context_max = command_buffer_context_counter.max_value.u32;
@@ -158,6 +144,13 @@ std::string Stats::CreateReport() {
         str << "\tmax_count = " << handle_record_max << '\n';
         str << "\tmax_memory = " << handle_record_max_memory << " bytes\n";
     }
+
+#if defined(USE_MIMALLOC_STATS)
+    mi_stats_print_out([](const char* msg, void* arg) { *static_cast<std::ostringstream*>(arg) << msg; }, &str);
+    // Print allocation counts (these are not reported by mi_stats_print_out)
+    str << "malloc_normal_count: " << mi_stats.malloc_normal_count.total << "\n";
+    str << "malloc_huge_count: " << mi_stats.malloc_huge_count.total << "\n";
+#endif
     return str.str();
 }
 

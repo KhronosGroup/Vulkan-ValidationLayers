@@ -1365,6 +1365,12 @@ syncval_state::CommandBufferSubState::CommandBufferSubState(SyncValidator &dev, 
     access_context.SetSelfReference();
 }
 
+void syncval_state::CommandBufferSubState::End() {
+    // For threads that are dedicated to recording command buffers but do not submit themsevles,
+    // the end of recording is a logical point to update memory stats
+    access_context.GetSyncState().stats.UpdateMemoryStats();
+}
+
 void syncval_state::CommandBufferSubState::Destroy() {
     access_context.Destroy();  // must be first to clean up self references correctly.
 }
