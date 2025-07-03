@@ -392,6 +392,10 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void RecordDecodeVideo(vvl::VideoSession &vs_state, const VkVideoDecodeInfoKHR &decode_info, const Location &loc) override;
     void RecordEncodeVideo(vvl::VideoSession &vs_state, const VkVideoEncodeInfoKHR &encode_info, const Location &loc) override;
 
+    void RecordCopyQueryPoolResults(vvl::QueryPool &pool_state, vvl::Buffer &dst_buffer_state, uint32_t first_query,
+                                    uint32_t query_count, VkDeviceSize dst_offset, VkDeviceSize stride, VkQueryResultFlags flags,
+                                    const Location &loc) override;
+
     void RecordBeginRenderPass(const VkRenderPassBeginInfo &render_pass_begin, const VkSubpassBeginInfo &subpass_begin_info,
                                const Location &loc) override;
     void RecordNextSubpass(const VkSubpassBeginInfo &subpass_begin_info, const VkSubpassEndInfo *subpass_end_info,

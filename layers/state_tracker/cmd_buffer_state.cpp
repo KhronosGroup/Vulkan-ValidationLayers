@@ -522,7 +522,8 @@ void CommandBuffer::RecordResetQueryPool(VkQueryPool queryPool, uint32_t firstQu
 }
 
 void CommandBuffer::RecordCopyQueryPoolResults(VkQueryPool queryPool, VkBuffer dstBuffer, uint32_t firstQuery, uint32_t queryCount,
-                                               VkQueryResultFlags flags, const Location &loc) {
+                                               VkDeviceSize dstOffset, VkDeviceSize stride, VkQueryResultFlags flags,
+                                               const Location &loc) {
     command_count++;
     if (dev_data.disabled[query_validation]) {
         return;
@@ -537,7 +538,7 @@ void CommandBuffer::RecordCopyQueryPoolResults(VkQueryPool queryPool, VkBuffer d
     }
 
     for (auto &item : sub_states_) {
-        item.second->RecordCopyQueryPoolResults(*pool_state, firstQuery, queryCount, flags, loc);
+        item.second->RecordCopyQueryPoolResults(*pool_state, *buffer_state, firstQuery, queryCount, dstOffset, stride, flags, loc);
     }
 }
 

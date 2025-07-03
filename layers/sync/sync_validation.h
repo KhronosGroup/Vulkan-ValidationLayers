@@ -387,9 +387,6 @@ class SyncValidator : public vvl::DeviceProxy {
                                                 uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                                 VkDeviceSize stride, VkQueryResultFlags flags,
                                                 const ErrorObject &error_obj) const override;
-    void PreCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
-                                              uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize stride,
-                                              VkQueryResultFlags flags, const RecordObject &record_obj) override;
 
     bool PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size,
                                       uint32_t data, const ErrorObject &error_obj) const override;
