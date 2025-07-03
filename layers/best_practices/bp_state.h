@@ -173,11 +173,13 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
                              const void* values) final;
     void ClearPushConstants() final;
 
-    void RecordBeginRendering(const VkRenderingInfo& rendering_info) final;
-    void RecordBeginRenderPass(const VkRenderPassBeginInfo& render_pass_begin) final;
-    void RecordNextSubpass() final;
+    void RecordBeginRendering(const VkRenderingInfo& rendering_info, const Location& loc) final;
+    void RecordBeginRenderPass(const VkRenderPassBeginInfo& render_pass_begin, const VkSubpassBeginInfo& subpass_begin_info,
+                               const Location& loc) final;
+    void RecordNextSubpass(const VkSubpassBeginInfo& subpass_begin_info, const VkSubpassEndInfo* subpass_end_info,
+                           const Location& loc) final;
     void RecordEndRendering(const VkRenderingEndInfoEXT* pRenderingEndInfo) final;
-    void RecordEndRenderPass() final;
+    void RecordEndRenderPass(const VkSubpassEndInfo* subpass_end_info, const Location& loc) final;
 
     void RecordCopyImage(vvl::Image& src_image_state, vvl::Image& dst_image_state, VkImageLayout src_image_layout,
                          VkImageLayout dst_image_layout, uint32_t region_count, const VkImageCopy* regions,

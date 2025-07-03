@@ -556,12 +556,14 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
                                                      uint32_t accelerationStructureCount, const Location &loc);
     bool UpdatesQuery(const QueryObject &query_obj) const;
 
-    void RecordBeginRendering(const VkRenderingInfo &rendering_info);
-    void RecordBeginRenderPass(const VkRenderPassBeginInfo &render_pass_begin, VkSubpassContents contents);
-    void RecordNextSubpass(VkSubpassContents contents);
+    void RecordBeginRendering(const VkRenderingInfo &rendering_info, const Location &loc);
+    void RecordBeginRenderPass(const VkRenderPassBeginInfo &render_pass_begin, const VkSubpassBeginInfo &subpass_begin_info,
+                               const Location &loc);
+    void RecordNextSubpass(const VkSubpassBeginInfo &subpass_begin_info, const VkSubpassEndInfo *subpass_end_info,
+                           const Location &loc);
     void UpdateSubpassAttachments();
     void RecordEndRendering(const VkRenderingEndInfoEXT *pRenderingEndInfo);
-    void RecordEndRenderPass();
+    void RecordEndRenderPass(const VkSubpassEndInfo *subpass_end_info, const Location &loc);
 
     void RecordBeginVideoCoding(const VkVideoBeginCodingInfoKHR &begin_info, const Location &loc);
     void RecordEndVideoCoding();
@@ -797,12 +799,14 @@ class CommandBufferSubState {
     virtual void RecordPushConstants(VkPipelineLayout layout, VkShaderStageFlags stage_flags, uint32_t offset, uint32_t size,
                                      const void *values) {}
 
-    virtual void RecordBeginRendering(const VkRenderingInfo &rendering_info) {}
-    virtual void RecordBeginRenderPass(const VkRenderPassBeginInfo &render_pass_begin) {}
-    virtual void RecordNextSubpass() {}
+    virtual void RecordBeginRendering(const VkRenderingInfo &rendering_info, const Location &loc) {}
+    virtual void RecordBeginRenderPass(const VkRenderPassBeginInfo &render_pass_begin, const VkSubpassBeginInfo &subpass_begin_info,
+                                       const Location &loc) {}
+    virtual void RecordNextSubpass(const VkSubpassBeginInfo &subpass_begin_info, const VkSubpassEndInfo *subpass_end_info,
+                                   const Location &loc) {}
     // Note - these are called prior to the renderPass object being destroyed
     virtual void RecordEndRendering(const VkRenderingEndInfoEXT *pRenderingEndInfo) {}
-    virtual void RecordEndRenderPass() {}
+    virtual void RecordEndRenderPass(const VkSubpassEndInfo *subpass_end_info, const Location &loc) {}
 
     virtual void RecordBeginQuery(const QueryObject &query_obj, const Location &loc) {}
     virtual void RecordEndQuery(const QueryObject &query_obj, const Location &loc) {}

@@ -116,7 +116,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void ClearPushConstants() final;
 
     void RecordEndRendering(const VkRenderingEndInfoEXT *pRenderingEndInfo) final;
-    void RecordEndRenderPass() final;
+    void RecordEndRenderPass(const VkSubpassEndInfo *subpass_end_info, const Location &loc) final;
 
     vko::GpuResourcesManager gpu_resources_manager;
     // Using stdext::inplace_function over std::function to allocate memory in place

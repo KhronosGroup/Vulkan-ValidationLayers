@@ -17,6 +17,7 @@
 
 #include <vulkan/utility/vk_format_utils.h>
 #include "sync/sync_commandbuffer.h"
+#include "error_message/error_location.h"
 #include "sync/sync_op.h"
 #include "sync/sync_reporting.h"
 #include "sync/sync_validation.h"
@@ -322,11 +323,10 @@ bool CommandBufferAccessContext::ValidateBeginRendering(const ErrorObject &error
     return skip;
 }
 
-void CommandBufferAccessContext::RecordBeginRendering(syncval_state::BeginRenderingCmdState &cmd_state,
-                                                      const RecordObject &record_obj) {
+void CommandBufferAccessContext::RecordBeginRendering(syncval_state::BeginRenderingCmdState &cmd_state, const Location &loc) {
     using Attachment = syncval_state::DynamicRenderingInfo::Attachment;
     const syncval_state::DynamicRenderingInfo &info = cmd_state.GetRenderingInfo();
-    const auto tag = NextCommandTag(record_obj.location.function);
+    const auto tag = NextCommandTag(loc.function);
 
     // Only load if not resuming
     if (0 == (info.info.flags & VK_RENDERING_RESUMING_BIT)) {
@@ -1784,6 +1784,32 @@ void CommandBufferSubState::RecordEncodeVideo(vvl::VideoSession &vs_state, const
             }
         }
     }
+}
+
+void CommandBufferSubState::RecordBeginRenderPass(const VkRenderPassBeginInfo &render_pass_begin,
+                                                  const VkSubpassBeginInfo &subpass_begin_info, const Location &loc) {
+    if (!base.IsPrimary()) {
+        return;  // [core validation check]: only primary command buffer can begin render pass
+    }
+    access_context.RecordSyncOp<SyncOpBeginRenderPass>(loc.function, access_context.GetSyncState(), &render_pass_begin,
+                                                       &subpass_begin_info);
+}
+
+void CommandBufferSubState::RecordNextSubpass(const VkSubpassBeginInfo &subpass_begin_info,
+                                              const VkSubpassEndInfo *subpass_end_info, const Location &loc) {
+    if (!base.IsPrimary()) {
+        return;  // [core validation check]: only primary command buffer can start next subpass
+    }
+    access_context.RecordSyncOp<SyncOpNextSubpass>(loc.function, access_context.GetSyncState(), &subpass_begin_info,
+                                                   subpass_end_info);
+}
+
+void CommandBufferSubState::RecordEndRenderPass(const VkSubpassEndInfo *subpass_end_info, const Location &loc) {
+    if (!base.IsPrimary()) {
+        return;  // [core validation check]: only primary command buffer can end render pass
+    }
+    // Resolve the all subpass contexts to the command buffer contexts
+    access_context.RecordSyncOp<SyncOpEndRenderPass>(loc.function, access_context.GetSyncState(), subpass_end_info);
 }
 
 }  // namespace syncval_state

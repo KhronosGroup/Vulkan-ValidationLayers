@@ -3251,7 +3251,9 @@ void DeviceState::PostCallRecordCreateRenderPass2(VkDevice device, const VkRende
 void DeviceState::PostCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                    VkSubpassContents contents, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->RecordBeginRenderPass(*pRenderPassBegin, contents);
+    VkSubpassBeginInfo subpass_begin_info = vku::InitStructHelper();
+    subpass_begin_info.contents = contents;
+    cb_state->RecordBeginRenderPass(*pRenderPassBegin, subpass_begin_info, record_obj.location);
 }
 
 void DeviceState::PostCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
@@ -3306,7 +3308,7 @@ void DeviceState::PostCallRecordCmdBeginRenderingKHR(VkCommandBuffer commandBuff
 void DeviceState::PostCallRecordCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo,
                                                   const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->RecordBeginRendering(*pRenderingInfo);
+    cb_state->RecordBeginRendering(*pRenderingInfo, record_obj.location);
 }
 
 void DeviceState::PostCallRecordCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
@@ -3327,13 +3329,15 @@ void DeviceState::PostCallRecordCmdEndRendering2EXT(VkCommandBuffer commandBuffe
 void DeviceState::PostCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                     const VkSubpassBeginInfo *pSubpassBeginInfo, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->RecordBeginRenderPass(*pRenderPassBegin, pSubpassBeginInfo->contents);
+    cb_state->RecordBeginRenderPass(*pRenderPassBegin, *pSubpassBeginInfo, record_obj.location);
 }
 
 void DeviceState::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
                                                const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->RecordNextSubpass(contents);
+    VkSubpassBeginInfo subpass_begin_info = vku::InitStructHelper();
+    subpass_begin_info.contents = contents;
+    cb_state->RecordNextSubpass(subpass_begin_info, nullptr, record_obj.location);
 }
 
 void DeviceState::PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
@@ -3344,12 +3348,12 @@ void DeviceState::PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer
 void DeviceState::PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
                                                 const VkSubpassEndInfo *pSubpassEndInfo, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->RecordNextSubpass(pSubpassBeginInfo->contents);
+    cb_state->RecordNextSubpass(*pSubpassBeginInfo, pSubpassEndInfo, record_obj.location);
 }
 
 void DeviceState::PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->RecordEndRenderPass();
+    cb_state->RecordEndRenderPass(nullptr, record_obj.location);
 }
 
 void DeviceState::PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
@@ -3360,7 +3364,7 @@ void DeviceState::PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuff
 void DeviceState::PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
                                                   const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->RecordEndRenderPass();
+    cb_state->RecordEndRenderPass(pSubpassEndInfo, record_obj.location);
 }
 
 void DeviceState::PostCallRecordCmdEndVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoEndCodingInfoKHR *pEndCodingInfo,

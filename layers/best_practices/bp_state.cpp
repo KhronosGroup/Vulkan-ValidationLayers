@@ -193,11 +193,12 @@ void CommandBufferSubState::RecordBeginRenderingCommon(const VkRenderPassBeginIn
     }
 }
 
-void CommandBufferSubState::RecordBeginRendering(const VkRenderingInfo& rendering_info) {
+void CommandBufferSubState::RecordBeginRendering(const VkRenderingInfo& rendering_info, const Location&) {
     RecordBeginRenderingCommon(nullptr, &rendering_info);
 }
 
-void CommandBufferSubState::RecordBeginRenderPass(const VkRenderPassBeginInfo& render_pass_begin) {
+void CommandBufferSubState::RecordBeginRenderPass(const VkRenderPassBeginInfo& render_pass_begin, const VkSubpassBeginInfo&,
+                                                  const Location&) {
     RecordBeginRenderingCommon(&render_pass_begin, nullptr);
 
     auto rp_state = base.active_render_pass.get();
@@ -317,7 +318,7 @@ void CommandBufferSubState::RecordBeginRenderPass(const VkRenderPassBeginInfo& r
     }
 }
 
-void CommandBufferSubState::RecordNextSubpass() {
+void CommandBufferSubState::RecordNextSubpass(const VkSubpassBeginInfo&, const VkSubpassEndInfo*, const Location&) {
     if (!base.active_render_pass) {
         return;
     }
@@ -386,7 +387,7 @@ void CommandBufferSubState::RecordEndRendering(const VkRenderingEndInfoEXT*) {
     RecordEndRenderingCommon(*base.active_render_pass);
 }
 
-void CommandBufferSubState::RecordEndRenderPass() {
+void CommandBufferSubState::RecordEndRenderPass(const VkSubpassEndInfo*, const Location&) {
     if (!base.active_render_pass) {
         return;
     }
