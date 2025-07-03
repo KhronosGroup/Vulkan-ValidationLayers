@@ -1109,67 +1109,6 @@ bool SyncValidator::PreCallValidateCmdBlitImage2(VkCommandBuffer commandBuffer, 
                                 pBlitImageInfo->filter, error_obj.location.dot(Field::pBlitImageInfo));
 }
 
-template <typename RegionType>
-void SyncValidator::RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                       VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                       const RegionType *pRegions, VkFilter filter, Func command) {
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
-    auto *cb_context = syncval_state::AccessContext(*cb_state);
-    const auto tag = cb_context->NextCommandTag(command);
-    auto *context = cb_context->GetCurrentAccessContext();
-    assert(context);
-
-    auto src_image = Get<vvl::Image>(srcImage);
-    auto src_tag_ex = src_image ? cb_context->AddCommandHandle(tag, src_image->Handle()) : ResourceUsageTagEx{tag};
-
-    auto dst_image = Get<vvl::Image>(dstImage);
-    auto dst_tag_ex = dst_image ? cb_context->AddCommandHandle(tag, dst_image->Handle()) : ResourceUsageTagEx{tag};
-
-    for (uint32_t region = 0; region < regionCount; region++) {
-        const auto &blit_region = pRegions[region];
-        if (src_image) {
-            VkOffset3D offset = {std::min(blit_region.srcOffsets[0].x, blit_region.srcOffsets[1].x),
-                                 std::min(blit_region.srcOffsets[0].y, blit_region.srcOffsets[1].y),
-                                 std::min(blit_region.srcOffsets[0].z, blit_region.srcOffsets[1].z)};
-            VkExtent3D extent = {static_cast<uint32_t>(abs(blit_region.srcOffsets[1].x - blit_region.srcOffsets[0].x)),
-                                 static_cast<uint32_t>(abs(blit_region.srcOffsets[1].y - blit_region.srcOffsets[0].y)),
-                                 static_cast<uint32_t>(abs(blit_region.srcOffsets[1].z - blit_region.srcOffsets[0].z))};
-            context->UpdateAccessState(*src_image, SYNC_BLIT_TRANSFER_READ, SyncOrdering::kNonAttachment,
-                                       RangeFromLayers(blit_region.srcSubresource), offset, extent, src_tag_ex);
-        }
-        if (dst_image) {
-            VkOffset3D offset = {std::min(blit_region.dstOffsets[0].x, blit_region.dstOffsets[1].x),
-                                 std::min(blit_region.dstOffsets[0].y, blit_region.dstOffsets[1].y),
-                                 std::min(blit_region.dstOffsets[0].z, blit_region.dstOffsets[1].z)};
-            VkExtent3D extent = {static_cast<uint32_t>(abs(blit_region.dstOffsets[1].x - blit_region.dstOffsets[0].x)),
-                                 static_cast<uint32_t>(abs(blit_region.dstOffsets[1].y - blit_region.dstOffsets[0].y)),
-                                 static_cast<uint32_t>(abs(blit_region.dstOffsets[1].z - blit_region.dstOffsets[0].z))};
-            context->UpdateAccessState(*dst_image, SYNC_BLIT_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
-                                       RangeFromLayers(blit_region.dstSubresource), offset, extent, dst_tag_ex);
-        }
-    }
-}
-
-void SyncValidator::PostCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                               VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                               const VkImageBlit *pRegions, VkFilter filter, const RecordObject &record_obj) {
-    RecordCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter,
-                       record_obj.location.function);
-}
-
-void SyncValidator::PostCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo,
-                                                   const RecordObject &record_obj) {
-    PostCallRecordCmdBlitImage2(commandBuffer, pBlitImageInfo, record_obj);
-}
-
-void SyncValidator::PostCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2 *pBlitImageInfo,
-                                                const RecordObject &record_obj) {
-    RecordCmdBlitImage(commandBuffer, pBlitImageInfo->srcImage, pBlitImageInfo->srcImageLayout, pBlitImageInfo->dstImage,
-                       pBlitImageInfo->dstImageLayout, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions,
-                       pBlitImageInfo->filter, record_obj.location.function);
-}
-
 bool SyncValidator::ValidateIndirectBuffer(const CommandBufferAccessContext &cb_context, const AccessContext &context,
                                            const VkDeviceSize struct_size, const VkBuffer buffer, const VkDeviceSize offset,
                                            const uint32_t drawCount, const uint32_t stride, const Location &loc) const {
@@ -1832,38 +1771,6 @@ bool SyncValidator::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer
     return skip;
 }
 
-void SyncValidator::PostCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                                  VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                  const VkImageResolve *pRegions, const RecordObject &record_obj) {
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
-    if (!cb_state) return;
-    auto *cb_access_context = syncval_state::AccessContext(*cb_state);
-    const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
-    auto *context = cb_access_context->GetCurrentAccessContext();
-    assert(context);
-
-    auto src_image = Get<vvl::Image>(srcImage);
-    auto src_tag_ex = src_image ? cb_access_context->AddCommandHandle(tag, src_image->Handle()) : ResourceUsageTagEx{tag};
-
-    auto dst_image = Get<vvl::Image>(dstImage);
-    auto dst_tag_ex = dst_image ? cb_access_context->AddCommandHandle(tag, dst_image->Handle()) : ResourceUsageTagEx{tag};
-
-    for (uint32_t region = 0; region < regionCount; region++) {
-        const auto &resolve_region = pRegions[region];
-        if (src_image) {
-            context->UpdateAccessState(*src_image, SYNC_RESOLVE_TRANSFER_READ, SyncOrdering::kNonAttachment,
-                                       RangeFromLayers(resolve_region.srcSubresource), resolve_region.srcOffset,
-                                       resolve_region.extent, src_tag_ex);
-        }
-        if (dst_image) {
-            context->UpdateAccessState(*dst_image, SYNC_RESOLVE_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
-                                       RangeFromLayers(resolve_region.dstSubresource), resolve_region.dstOffset,
-                                       resolve_region.extent, dst_tag_ex);
-        }
-    }
-}
-
 bool SyncValidator::PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2 *pResolveImageInfo,
                                                     const ErrorObject &error_obj) const {
     bool skip = false;
@@ -1918,43 +1825,6 @@ bool SyncValidator::PreCallValidateCmdResolveImage2KHR(VkCommandBuffer commandBu
                                                        const VkResolveImageInfo2KHR *pResolveImageInfo,
                                                        const ErrorObject &error_obj) const {
     return PreCallValidateCmdResolveImage2(commandBuffer, pResolveImageInfo, error_obj);
-}
-
-void SyncValidator::PostCallRecordCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2 *pResolveImageInfo,
-                                                   const RecordObject &record_obj) {
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
-    if (!cb_state) return;
-    auto *cb_access_context = syncval_state::AccessContext(*cb_state);
-    const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
-    auto *context = cb_access_context->GetCurrentAccessContext();
-    assert(context);
-
-    auto src_image = Get<vvl::Image>(pResolveImageInfo->srcImage);
-    auto src_tag_ex = src_image ? cb_access_context->AddCommandHandle(tag, src_image->Handle()) : ResourceUsageTagEx{tag};
-
-    auto dst_image = Get<vvl::Image>(pResolveImageInfo->dstImage);
-    auto dst_tag_ex = dst_image ? cb_access_context->AddCommandHandle(tag, dst_image->Handle()) : ResourceUsageTagEx{tag};
-
-    for (uint32_t region = 0; region < pResolveImageInfo->regionCount; region++) {
-        const auto &resolve_region = pResolveImageInfo->pRegions[region];
-        if (src_image) {
-            context->UpdateAccessState(*src_image, SYNC_RESOLVE_TRANSFER_READ, SyncOrdering::kNonAttachment,
-                                       RangeFromLayers(resolve_region.srcSubresource), resolve_region.srcOffset,
-                                       resolve_region.extent, src_tag_ex);
-        }
-        if (dst_image) {
-            context->UpdateAccessState(*dst_image, SYNC_RESOLVE_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
-                                       RangeFromLayers(resolve_region.dstSubresource), resolve_region.dstOffset,
-                                       resolve_region.extent, dst_tag_ex);
-        }
-    }
-}
-
-void SyncValidator::PostCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuffer,
-                                                      const VkResolveImageInfo2KHR *pResolveImageInfo,
-                                                      const RecordObject &record_obj) {
-    PostCallRecordCmdResolveImage2(commandBuffer, pResolveImageInfo, record_obj);
 }
 
 bool SyncValidator::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
