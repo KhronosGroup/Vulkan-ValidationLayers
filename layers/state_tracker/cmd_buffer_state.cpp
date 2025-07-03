@@ -1774,6 +1774,20 @@ void CommandBuffer::RecordClearAttachments(uint32_t attachment_count, const VkCl
     }
 }
 
+void CommandBuffer::RecordFillBuffer(vvl::Buffer &buffer_state, VkDeviceSize offset, VkDeviceSize size, const Location &loc) {
+    command_count++;
+    for (auto &item : sub_states_) {
+        item.second->RecordFillBuffer(buffer_state, offset, size, loc);
+    }
+}
+
+void CommandBuffer::RecordUpdateBuffer(vvl::Buffer &buffer_state, VkDeviceSize offset, VkDeviceSize size, const Location &loc) {
+    command_count++;
+    for (auto &item : sub_states_) {
+        item.second->RecordUpdateBuffer(buffer_state, offset, size, loc);
+    }
+}
+
 void CommandBuffer::RecordSetEvent(VkEvent event, VkPipelineStageFlags2 stage_mask, const VkDependencyInfo *dependency_info) {
     command_count++;
     for (auto &item : sub_states_) {

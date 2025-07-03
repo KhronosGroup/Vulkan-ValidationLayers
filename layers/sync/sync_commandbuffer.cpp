@@ -1432,4 +1432,27 @@ void CommandBufferSubState::RecordClearAttachments(uint32_t attachment_count, co
     }
 }
 
+void CommandBufferSubState::RecordFillBuffer(vvl::Buffer &buffer_state, VkDeviceSize offset, VkDeviceSize size,
+                                             const Location &loc) {
+    const auto tag = access_context.NextCommandTag(loc.function);
+    auto *context = access_context.GetCurrentAccessContext();
+    assert(context);
+
+    const ResourceAccessRange range = MakeRange(buffer_state, offset, size);
+    const ResourceUsageTagEx tag_ex = access_context.AddCommandHandle(tag, buffer_state.Handle());
+    context->UpdateAccessState(buffer_state, SYNC_CLEAR_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag_ex);
+}
+
+void CommandBufferSubState::RecordUpdateBuffer(vvl::Buffer &buffer_state, VkDeviceSize offset, VkDeviceSize size,
+                                               const Location &loc) {
+    const auto tag = access_context.NextCommandTag(loc.function);
+    auto *context = access_context.GetCurrentAccessContext();
+    assert(context);
+
+    // VK_WHOLE_SIZE not allowed
+    const ResourceAccessRange range = MakeRange(offset, size);
+    const ResourceUsageTagEx tag_ex = access_context.AddCommandHandle(tag, buffer_state.Handle());
+    context->UpdateAccessState(buffer_state, SYNC_CLEAR_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag_ex);
+}
+
 }  // namespace syncval_state
