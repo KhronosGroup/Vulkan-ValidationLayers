@@ -108,6 +108,8 @@ struct LastBound {
     bool IsColorBlendEnabled(uint32_t i) const;
     bool IsBlendConstantsEnabled(uint32_t i) const;
     VkPrimitiveTopology GetPrimitiveTopology() const;
+    VkPrimitiveTopology GetVertexInputAssemblerTopology() const;
+    std::string DescribeVertexInputAssemblerTopology() const;
     VkCullModeFlags GetCullMode() const;
     VkConservativeRasterizationModeEXT GetConservativeRasterizationMode() const;
     bool IsSampleLocationsEnable() const;

@@ -272,6 +272,27 @@ VkPrimitiveTopology LastBound::GetPrimitiveTopology() const {
     }
 }
 
+// vkspec.html#drawing-vertex-input-assembler-topology
+// When calling, we don't have to worry about Mesh shading because either VUs like 07065/07066 prevent these dynamic state being set
+// and the VkPipelineInputAssemblyStateCreateInfo is ignored
+VkPrimitiveTopology LastBound::GetVertexInputAssemblerTopology() const {
+    if (IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY)) {
+        return cb_state.dynamic_state_value.primitive_topology;
+    } else {
+        if (auto ia_state = pipeline_state->InputAssemblyState()) {
+            return ia_state->topology;
+        }
+    }
+    return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
+}
+
+std::string LastBound::DescribeVertexInputAssemblerTopology() const {
+    if (IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY)) {
+        return "the last call to vkCmdSetPrimitiveTopology";
+    }
+    return "VkPipelineInputAssemblyStateCreateInfo::topology";
+}
+
 VkCullModeFlags LastBound::GetCullMode() const {
     if (IsDynamic(CB_DYNAMIC_STATE_CULL_MODE)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_CULL_MODE)) {

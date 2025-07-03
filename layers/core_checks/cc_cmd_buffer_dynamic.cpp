@@ -35,6 +35,7 @@
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "utils/math_utils.h"
+#include "utils/vk_api_utils.h"
 
 bool CoreChecks::ValidateDynamicStateIsSet(const LastBound& last_bound_state, const CBDynamicFlags& state_status_cb,
                                            CBDynamicState dynamic_state, const vvl::DrawDispatchVuid& vuid,
@@ -531,13 +532,7 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
     }
 
     if (tesc_shader_bound) {
-        // Don't call GetPrimitiveTopology() because want to view the Topology from the dynamic state for ShaderObjects
-        const VkPrimitiveTopology topology = (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY))
-                                                 ? cb_state.dynamic_state_value.primitive_topology
-                                             : last_bound_state.pipeline_state->InputAssemblyState()
-                                                 ? last_bound_state.pipeline_state->InputAssemblyState()->topology
-                                                 : VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
-        if (topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
+        if (last_bound_state.GetVertexInputAssemblerTopology() == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
             skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT, vuid);
         }
     }
@@ -913,60 +908,16 @@ bool CoreChecks::ValidateDrawDynamicStatePipelineValue(const LastBound& last_bou
         bool compatible_topology = false;
         const VkPrimitiveTopology pipeline_topology = pipeline.InputAssemblyState()->topology;
         const VkPrimitiveTopology dynamic_topology = cb_state.dynamic_state_value.primitive_topology;
-        switch (pipeline_topology) {
-            case VK_PRIMITIVE_TOPOLOGY_POINT_LIST:
-                switch (dynamic_topology) {
-                    case VK_PRIMITIVE_TOPOLOGY_POINT_LIST:
-                        compatible_topology = true;
-                        break;
-                    default:
-                        break;
-                }
-                break;
-            case VK_PRIMITIVE_TOPOLOGY_LINE_LIST:
-            case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP:
-            case VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY:
-            case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY:
-                switch (dynamic_topology) {
-                    case VK_PRIMITIVE_TOPOLOGY_LINE_LIST:
-                    case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP:
-                    case VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY:
-                    case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY:
-                        compatible_topology = true;
-                        break;
-                    default:
-                        break;
-                }
-                break;
-            case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST:
-            case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP:
-            case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN:
-            case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY:
-            case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY:
-                switch (dynamic_topology) {
-                    case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST:
-                    case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP:
-                    case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN:
-                    case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY:
-                    case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY:
-                        compatible_topology = true;
-                        break;
-                    default:
-                        break;
-                }
-                break;
-            case VK_PRIMITIVE_TOPOLOGY_PATCH_LIST:
-                switch (dynamic_topology) {
-                    case VK_PRIMITIVE_TOPOLOGY_PATCH_LIST:
-                        compatible_topology = true;
-                        break;
-                    default:
-                        break;
-                }
-                break;
-            default:
-                break;
+        if (pipeline_topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
+            compatible_topology = dynamic_topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+        } else if (IsLineTopology(pipeline_topology)) {
+            compatible_topology = IsLineTopology(dynamic_topology);
+        } else if (IsTriangleTopology(pipeline_topology)) {
+            compatible_topology = IsTriangleTopology(dynamic_topology);
+        } else if (pipeline_topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
+            compatible_topology = dynamic_topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
         }
+
         if (!compatible_topology) {
             skip |= LogError(vuid.primitive_topology_class_07500, objlist, vuid.loc(),
                              "the last primitive topology %s state set by vkCmdSetPrimitiveTopology is "
@@ -1162,18 +1113,28 @@ bool CoreChecks::ValidateDrawDynamicStateVertex(const LastBound& last_bound_stat
         }
     }
 
-    // "a shader object bound to the VK_SHADER_STAGE_VERTEX_BIT stage or the bound graphics pipeline state was created with the
-    // VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE"
-    if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE)) {
-        if (!enabled_features.primitiveTopologyListRestart && cb_state.dynamic_state_value.primitive_restart_enable) {
-            const VkPrimitiveTopology topology = last_bound_state.GetPrimitiveTopology();
-            if (IsValueIn(topology, {VK_PRIMITIVE_TOPOLOGY_POINT_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
-                                     VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY,
-                                     VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_PATCH_LIST})) {
-                skip |= LogError(vuid.primitive_restart_list_09637, cb_state.Handle(), vuid.loc(),
-                                 "the topology set is %s, the primitiveTopologyListRestart feature was not enabled, but "
-                                 "vkCmdSetPrimitiveRestartEnable last set primitiveRestartEnable to VK_TRUE.",
-                                 string_VkPrimitiveTopology(topology));
+    if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE) &&
+        cb_state.dynamic_state_value.primitive_restart_enable) {
+        const VkPrimitiveTopology topology = last_bound_state.GetVertexInputAssemblerTopology();
+        if (!enabled_features.primitiveTopologyListRestart) {
+            if (IsValueIn(topology,
+                          {VK_PRIMITIVE_TOPOLOGY_POINT_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+                           VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY})) {
+                skip |=
+                    LogError(vuid.primitive_restart_list_09637, cb_state.Handle(), vuid.loc(),
+                             "%s is %s, the primitiveTopologyListRestart feature was not enabled, but "
+                             "vkCmdSetPrimitiveRestartEnable last set primitiveRestartEnable to VK_TRUE.",
+                             last_bound_state.DescribeVertexInputAssemblerTopology().c_str(), string_VkPrimitiveTopology(topology));
+            }
+        }
+        if (!enabled_features.primitiveTopologyPatchListRestart) {
+            if (topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
+                // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7501
+                skip |= LogError(
+                    "UNASSIGNED-Draw-primitiveTopologyPatchListRestart", cb_state.Handle(), vuid.loc(),
+                    "%s is VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, the primitiveTopologyListRestart feature was not enabled, but "
+                    "vkCmdSetPrimitiveRestartEnable last set primitiveRestartEnable to VK_TRUE.",
+                    last_bound_state.DescribeVertexInputAssemblerTopology().c_str());
             }
         }
     }
@@ -1182,7 +1143,7 @@ bool CoreChecks::ValidateDrawDynamicStateVertex(const LastBound& last_bound_stat
     // the topology makes sense
     if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY)) {
         const VkShaderStageFlags bound_stages = last_bound_state.GetAllActiveBoundStages();
-        // Use over GetPrimitiveTopology() because we care what vkCmdSetPrimitiveTopology() explicitly set
+        // This is the Vertex Input Assembler Topology
         const VkPrimitiveTopology topology = cb_state.dynamic_state_value.primitive_topology;
 
         if (((bound_stages & (VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)) == 0) &&
