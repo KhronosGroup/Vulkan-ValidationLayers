@@ -3095,7 +3095,8 @@ void DeviceState::PostCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandB
                                                         VkDeviceSize stride, VkQueryResultFlags flags,
                                                         const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->RecordCopyQueryPoolResults(queryPool, dstBuffer, firstQuery, queryCount, flags, record_obj.location);
+    cb_state->RecordCopyQueryPoolResults(queryPool, dstBuffer, firstQuery, queryCount, dstOffset, stride, flags,
+                                         record_obj.location);
 }
 
 void DeviceState::PostCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,

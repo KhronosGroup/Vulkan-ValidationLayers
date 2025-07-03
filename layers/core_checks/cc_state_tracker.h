@@ -99,7 +99,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void RecordWriteTimestamp(const QueryObject &query_obj, const Location &loc) final;
     void RecordResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, bool is_perf_query,
                               const Location &loc) final;
-    void RecordCopyQueryPoolResults(vvl::QueryPool &pool_state, uint32_t firstQuery, uint32_t queryCount, VkQueryResultFlags flags,
+    void RecordCopyQueryPoolResults(vvl::QueryPool &pool_state, vvl::Buffer &dst_buffer_state, uint32_t first_query,
+                                    uint32_t query_count, VkDeviceSize dst_offset, VkDeviceSize stride, VkQueryResultFlags flags,
                                     const Location &loc) final;
     void RecordWriteAccelerationStructuresProperties(VkQueryPool queryPool, uint32_t firstQuery,
                                                      uint32_t accelerationStructureCount, const Location &loc) final;

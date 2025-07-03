@@ -551,7 +551,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordWriteTimestamp(VkQueryPool queryPool, uint32_t slot, const Location &loc);
     void RecordResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, const Location &loc);
     void RecordCopyQueryPoolResults(VkQueryPool queryPool, VkBuffer dstBuffer, uint32_t firstQuery, uint32_t queryCount,
-                                    VkQueryResultFlags flags, const Location &loc);
+                                    VkDeviceSize dstOffset, VkDeviceSize stride, VkQueryResultFlags flags, const Location &loc);
     void RecordWriteAccelerationStructuresProperties(VkQueryPool queryPool, uint32_t firstQuery,
                                                      uint32_t accelerationStructureCount, const Location &loc);
     bool UpdatesQuery(const QueryObject &query_obj) const;
@@ -814,7 +814,8 @@ class CommandBufferSubState {
     virtual void RecordWriteTimestamp(const QueryObject &query_obj, const Location &loc) {}
     virtual void RecordResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, bool is_perf_query,
                                       const Location &loc) {}
-    virtual void RecordCopyQueryPoolResults(vvl::QueryPool &pool_state, uint32_t firstQuery, uint32_t queryCount,
+    virtual void RecordCopyQueryPoolResults(vvl::QueryPool &pool_state, vvl::Buffer &dst_buffer_state, uint32_t first_query,
+                                            uint32_t query_count, VkDeviceSize dst_offset, VkDeviceSize stride,
                                             VkQueryResultFlags flags, const Location &loc) {}
     virtual void RecordWriteAccelerationStructuresProperties(VkQueryPool queryPool, uint32_t firstQuery,
                                                              uint32_t accelerationStructureCount, const Location &loc) {}
