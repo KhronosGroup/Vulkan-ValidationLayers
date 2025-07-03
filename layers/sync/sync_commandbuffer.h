@@ -369,6 +369,16 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
                                  uint32_t region_count, const VkBufferImageCopy *regions, const Location &loc) override;
     void RecordCopyImageToBuffer2(vvl::Image &src_image_state, vvl::Buffer &dst_buffer_state, VkImageLayout src_image_layout,
                                   uint32_t region_count, const VkBufferImageCopy2 *regions, const Location &loc) override;
+    void RecordBlitImage(vvl::Image &src_image_state, vvl::Image &dst_image_state, VkImageLayout src_image_layout,
+                         VkImageLayout dst_image_layout, uint32_t region_count, const VkImageBlit *regions,
+                         const Location &loc) override;
+    void RecordBlitImage2(vvl::Image &src_image_state, vvl::Image &dst_image_state, VkImageLayout src_image_layout,
+                          VkImageLayout dst_image_layout, uint32_t region_count, const VkImageBlit2 *regions,
+                          const Location &loc) override;
+    void RecordResolveImage(vvl::Image &src_image_state, vvl::Image &dst_image_state, uint32_t region_count,
+                            const VkImageResolve *regions, const Location &loc) override;
+    void RecordResolveImage2(vvl::Image &src_image_state, vvl::Image &dst_image_state, uint32_t region_count,
+                             const VkImageResolve2 *regions, const Location &loc) override;
     void RecordClearColorImage(vvl::Image &image_state, VkImageLayout image_layout, const VkClearColorValue *color_values,
                                uint32_t range_count, const VkImageSubresourceRange *ranges, const Location &loc) override;
     void RecordClearDepthStencilImage(vvl::Image &image_state, VkImageLayout image_layout,

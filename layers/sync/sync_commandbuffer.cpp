@@ -1542,6 +1542,102 @@ void CommandBufferSubState::RecordCopyImageToBuffer2(vvl::Image &src_image_state
     }
 }
 
+void CommandBufferSubState::RecordBlitImage(vvl::Image &src_image_state, vvl::Image &dst_image_state,
+                                            VkImageLayout src_image_layout, VkImageLayout dst_image_layout, uint32_t region_count,
+                                            const VkImageBlit *regions, const Location &loc) {
+    const auto tag = access_context.NextCommandTag(loc.function);
+    auto *context = access_context.GetCurrentAccessContext();
+
+    auto src_tag_ex = access_context.AddCommandHandle(tag, src_image_state.Handle());
+    auto dst_tag_ex = access_context.AddCommandHandle(tag, dst_image_state.Handle());
+
+    for (const auto &blit_region : vvl::make_span(regions, region_count)) {
+        VkOffset3D offset = {std::min(blit_region.srcOffsets[0].x, blit_region.srcOffsets[1].x),
+                             std::min(blit_region.srcOffsets[0].y, blit_region.srcOffsets[1].y),
+                             std::min(blit_region.srcOffsets[0].z, blit_region.srcOffsets[1].z)};
+        VkExtent3D extent = {static_cast<uint32_t>(abs(blit_region.srcOffsets[1].x - blit_region.srcOffsets[0].x)),
+                             static_cast<uint32_t>(abs(blit_region.srcOffsets[1].y - blit_region.srcOffsets[0].y)),
+                             static_cast<uint32_t>(abs(blit_region.srcOffsets[1].z - blit_region.srcOffsets[0].z))};
+        context->UpdateAccessState(src_image_state, SYNC_BLIT_TRANSFER_READ, SyncOrdering::kNonAttachment,
+                                   RangeFromLayers(blit_region.srcSubresource), offset, extent, src_tag_ex);
+
+        offset = {std::min(blit_region.dstOffsets[0].x, blit_region.dstOffsets[1].x),
+                  std::min(blit_region.dstOffsets[0].y, blit_region.dstOffsets[1].y),
+                  std::min(blit_region.dstOffsets[0].z, blit_region.dstOffsets[1].z)};
+        extent = {static_cast<uint32_t>(abs(blit_region.dstOffsets[1].x - blit_region.dstOffsets[0].x)),
+                  static_cast<uint32_t>(abs(blit_region.dstOffsets[1].y - blit_region.dstOffsets[0].y)),
+                  static_cast<uint32_t>(abs(blit_region.dstOffsets[1].z - blit_region.dstOffsets[0].z))};
+        context->UpdateAccessState(dst_image_state, SYNC_BLIT_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
+                                   RangeFromLayers(blit_region.dstSubresource), offset, extent, dst_tag_ex);
+    }
+}
+
+void CommandBufferSubState::RecordBlitImage2(vvl::Image &src_image_state, vvl::Image &dst_image_state,
+                                             VkImageLayout src_image_layout, VkImageLayout dst_image_layout, uint32_t region_count,
+                                             const VkImageBlit2 *regions, const Location &loc) {
+    const auto tag = access_context.NextCommandTag(loc.function);
+    auto *context = access_context.GetCurrentAccessContext();
+
+    auto src_tag_ex = access_context.AddCommandHandle(tag, src_image_state.Handle());
+    auto dst_tag_ex = access_context.AddCommandHandle(tag, dst_image_state.Handle());
+
+    for (const auto &blit_region : vvl::make_span(regions, region_count)) {
+        VkOffset3D offset = {std::min(blit_region.srcOffsets[0].x, blit_region.srcOffsets[1].x),
+                             std::min(blit_region.srcOffsets[0].y, blit_region.srcOffsets[1].y),
+                             std::min(blit_region.srcOffsets[0].z, blit_region.srcOffsets[1].z)};
+        VkExtent3D extent = {static_cast<uint32_t>(abs(blit_region.srcOffsets[1].x - blit_region.srcOffsets[0].x)),
+                             static_cast<uint32_t>(abs(blit_region.srcOffsets[1].y - blit_region.srcOffsets[0].y)),
+                             static_cast<uint32_t>(abs(blit_region.srcOffsets[1].z - blit_region.srcOffsets[0].z))};
+        context->UpdateAccessState(src_image_state, SYNC_BLIT_TRANSFER_READ, SyncOrdering::kNonAttachment,
+                                   RangeFromLayers(blit_region.srcSubresource), offset, extent, src_tag_ex);
+
+        offset = {std::min(blit_region.dstOffsets[0].x, blit_region.dstOffsets[1].x),
+                  std::min(blit_region.dstOffsets[0].y, blit_region.dstOffsets[1].y),
+                  std::min(blit_region.dstOffsets[0].z, blit_region.dstOffsets[1].z)};
+        extent = {static_cast<uint32_t>(abs(blit_region.dstOffsets[1].x - blit_region.dstOffsets[0].x)),
+                  static_cast<uint32_t>(abs(blit_region.dstOffsets[1].y - blit_region.dstOffsets[0].y)),
+                  static_cast<uint32_t>(abs(blit_region.dstOffsets[1].z - blit_region.dstOffsets[0].z))};
+        context->UpdateAccessState(dst_image_state, SYNC_BLIT_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
+                                   RangeFromLayers(blit_region.dstSubresource), offset, extent, dst_tag_ex);
+    }
+}
+
+void CommandBufferSubState::RecordResolveImage(vvl::Image &src_image_state, vvl::Image &dst_image_state, uint32_t region_count,
+                                               const VkImageResolve *regions, const Location &loc) {
+    const auto tag = access_context.NextCommandTag(loc.function);
+    auto *context = access_context.GetCurrentAccessContext();
+
+    auto src_tag_ex = access_context.AddCommandHandle(tag, src_image_state.Handle());
+    auto dst_tag_ex = access_context.AddCommandHandle(tag, dst_image_state.Handle());
+
+    for (const auto &resolve_region : vvl::make_span(regions, region_count)) {
+        context->UpdateAccessState(src_image_state, SYNC_RESOLVE_TRANSFER_READ, SyncOrdering::kNonAttachment,
+                                   RangeFromLayers(resolve_region.srcSubresource), resolve_region.srcOffset, resolve_region.extent,
+                                   src_tag_ex);
+        context->UpdateAccessState(dst_image_state, SYNC_RESOLVE_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
+                                   RangeFromLayers(resolve_region.dstSubresource), resolve_region.dstOffset, resolve_region.extent,
+                                   dst_tag_ex);
+    }
+}
+
+void CommandBufferSubState::RecordResolveImage2(vvl::Image &src_image_state, vvl::Image &dst_image_state, uint32_t region_count,
+                                                const VkImageResolve2 *regions, const Location &loc) {
+    const auto tag = access_context.NextCommandTag(loc.function);
+    auto *context = access_context.GetCurrentAccessContext();
+
+    auto src_tag_ex = access_context.AddCommandHandle(tag, src_image_state.Handle());
+    auto dst_tag_ex = access_context.AddCommandHandle(tag, dst_image_state.Handle());
+
+    for (const auto &resolve_region : vvl::make_span(regions, region_count)) {
+        context->UpdateAccessState(src_image_state, SYNC_RESOLVE_TRANSFER_READ, SyncOrdering::kNonAttachment,
+                                   RangeFromLayers(resolve_region.srcSubresource), resolve_region.srcOffset, resolve_region.extent,
+                                   src_tag_ex);
+        context->UpdateAccessState(dst_image_state, SYNC_RESOLVE_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
+                                   RangeFromLayers(resolve_region.dstSubresource), resolve_region.dstOffset, resolve_region.extent,
+                                   dst_tag_ex);
+    }
+}
+
 void CommandBufferSubState::RecordClearColorImage(vvl::Image &image_state, VkImageLayout, const VkClearColorValue *,
                                                   uint32_t range_count, const VkImageSubresourceRange *ranges,
                                                   const Location &loc) {
