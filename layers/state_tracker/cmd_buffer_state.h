@@ -630,6 +630,8 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
                                       const VkImageSubresourceRange *ranges, const Location &loc);
     void RecordClearAttachments(uint32_t attachment_count, const VkClearAttachment *pAttachments, uint32_t rect_count,
                                 const VkClearRect *pRects, const Location &loc);
+    void RecordFillBuffer(vvl::Buffer &buffer_state, VkDeviceSize offset, VkDeviceSize size, const Location &loc);
+    void RecordUpdateBuffer(vvl::Buffer &buffer_state, VkDeviceSize offset, VkDeviceSize size, const Location &loc);
 
     void RecordSetEvent(VkEvent event, VkPipelineStageFlags2KHR stageMask, const VkDependencyInfo *dependency_info);
     void RecordResetEvent(VkEvent event, VkPipelineStageFlags2KHR stageMask);
@@ -778,6 +780,8 @@ class CommandBufferSubState {
                                               const VkImageSubresourceRange *ranges, const Location &loc) {}
     virtual void RecordClearAttachments(uint32_t attachment_count, const VkClearAttachment *pAttachments, uint32_t rect_count,
                                         const VkClearRect *pRects, const Location &loc) {}
+    virtual void RecordFillBuffer(vvl::Buffer &buffer_state, VkDeviceSize offset, VkDeviceSize size, const Location &loc) {}
+    virtual void RecordUpdateBuffer(vvl::Buffer &buffer_state, VkDeviceSize offset, VkDeviceSize size, const Location &loc) {}
 
     virtual void RecordSetEvent(VkEvent event, VkPipelineStageFlags2 stage_mask, const VkDependencyInfo *dependency_info) {}
     virtual void RecordResetEvent(VkEvent event, VkPipelineStageFlags2 stage_mask) {}

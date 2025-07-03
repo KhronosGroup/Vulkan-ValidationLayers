@@ -701,8 +701,7 @@ void DeviceState::PostCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
     auto buffer_state = Get<Buffer>(dstBuffer);
     ASSERT_AND_RETURN(buffer_state);
     cb_state->AddChild(buffer_state);
-
-    cb_state->command_count++;
+    cb_state->RecordFillBuffer(*buffer_state, dstOffset, size, record_obj.location);
 }
 
 void DeviceState::PostCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
@@ -2944,8 +2943,7 @@ void DeviceState::PostCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, V
     auto buffer_state = Get<Buffer>(dstBuffer);
     ASSERT_AND_RETURN(buffer_state);
     cb_state->AddChild(buffer_state);
-
-    cb_state->command_count++;
+    cb_state->RecordUpdateBuffer(*buffer_state, dstOffset, dataSize, record_obj.location);
 }
 
 void DeviceState::PostCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
