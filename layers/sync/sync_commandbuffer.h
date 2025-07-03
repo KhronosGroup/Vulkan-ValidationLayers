@@ -216,7 +216,7 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
                                            const std::vector<const vvl::ImageView *> &attachment_views);
 
     bool ValidateBeginRendering(const ErrorObject &error_obj, syncval_state::BeginRenderingCmdState &cmd_state) const;
-    void RecordBeginRendering(syncval_state::BeginRenderingCmdState &cmd_state, const RecordObject &record_obj);
+    void RecordBeginRendering(syncval_state::BeginRenderingCmdState &cmd_state, const Location &loc);
     bool ValidateEndRendering(const ErrorObject &error_obj) const;
     void RecordEndRendering(const RecordObject &record_obj);
     bool ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, const Location &loc) const;
@@ -391,6 +391,12 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
     void RecordDecodeVideo(vvl::VideoSession &vs_state, const VkVideoDecodeInfoKHR &decode_info, const Location &loc) override;
     void RecordEncodeVideo(vvl::VideoSession &vs_state, const VkVideoEncodeInfoKHR &encode_info, const Location &loc) override;
+
+    void RecordBeginRenderPass(const VkRenderPassBeginInfo &render_pass_begin, const VkSubpassBeginInfo &subpass_begin_info,
+                               const Location &loc) override;
+    void RecordNextSubpass(const VkSubpassBeginInfo &subpass_begin_info, const VkSubpassEndInfo *subpass_end_info,
+                           const Location &loc) override;
+    void RecordEndRenderPass(const VkSubpassEndInfo *subpass_end_info, const Location &loc) override;
 };
 
 static inline CommandBufferSubState &SubState(vvl::CommandBuffer &cb) {

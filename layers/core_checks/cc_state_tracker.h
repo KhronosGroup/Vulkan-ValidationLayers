@@ -45,10 +45,12 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void RecordSetScissor(uint32_t first_scissor, uint32_t scissor_count) final;
     void RecordSetScissorWithCount(uint32_t scissor_count) final;
 
-    void RecordBeginRenderPass(const VkRenderPassBeginInfo &render_pass_begin) final;
-    void RecordNextSubpass() final;
+    void RecordBeginRenderPass(const VkRenderPassBeginInfo &render_pass_begin, const VkSubpassBeginInfo &subpass_begin_info,
+                               const Location &loc) final;
+    void RecordNextSubpass(const VkSubpassBeginInfo &subpass_begin_info, const VkSubpassEndInfo *subpass_end_info,
+                           const Location &loc) final;
     void RecordEndRendering(const VkRenderingEndInfoEXT *pRenderingEndInfo) final;
-    void RecordEndRenderPass() final;
+    void RecordEndRenderPass(const VkSubpassEndInfo *subpass_end_info, const Location &loc) final;
 
     void RecordCopyBuffer(vvl::Buffer &src_buffer_state, vvl::Buffer &dst_buffer_state, uint32_t region_count,
                           const VkBufferCopy *regions, const Location &loc) final;

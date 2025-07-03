@@ -136,11 +136,6 @@ class SyncValidator : public vvl::DeviceProxy {
     void PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator,
                                    const RecordObject &record_obj) override;
 
-    void RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                  const VkSubpassBeginInfo *pSubpassBeginInfo, Func command);
-    void RecordCmdNextSubpass(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                              const VkSubpassEndInfo *pSubpassEndInfo, Func command);
-    void RecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo, Func command);
     bool SuppressedBoundDescriptorWAW(const HazardResult &hazard) const;
 
     void FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) override;
@@ -208,13 +203,6 @@ class SyncValidator : public vvl::DeviceProxy {
     void PostCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo *pDependencyInfo,
                                            const RecordObject &record_obj) override;
 
-    void PostCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                          VkSubpassContents contents, const RecordObject &record_obj) override;
-    void PostCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                           const VkSubpassBeginInfo *pSubpassBeginInfo, const RecordObject &record_obj) override;
-    void PostCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                              const VkSubpassBeginInfo *pSubpassBeginInfo, const RecordObject &record_obj) override;
-
     bool ValidateCmdNextSubpass(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
                                 const VkSubpassEndInfo *pSubpassEndInfo, const ErrorObject &error_obj) const;
     bool PreCallValidateCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
@@ -224,13 +212,6 @@ class SyncValidator : public vvl::DeviceProxy {
     bool PreCallValidateCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
                                            const VkSubpassEndInfo *pSubpassEndInfo, const ErrorObject &error_obj) const override;
 
-    void PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
-                                      const RecordObject &record_obj) override;
-    void PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                       const VkSubpassEndInfo *pSubpassEndInfo, const RecordObject &record_obj) override;
-    void PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                          const VkSubpassEndInfo *pSubpassEndInfo, const RecordObject &record_obj) override;
-
     bool ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
                                   const ErrorObject &error_obj) const;
     bool PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const ErrorObject &error_obj) const override;
@@ -238,12 +219,6 @@ class SyncValidator : public vvl::DeviceProxy {
                                              const ErrorObject &error_obj) const override;
     bool PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
                                           const ErrorObject &error_obj) const override;
-
-    void PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const RecordObject &record_obj) override;
-    void PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
-                                         const RecordObject &record_obj) override;
-    void PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
-                                            const RecordObject &record_obj) override;
 
     bool PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfoKHR *pRenderingInfo,
                                              const ErrorObject &error_obj) const override;

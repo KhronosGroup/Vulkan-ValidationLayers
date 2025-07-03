@@ -661,13 +661,14 @@ void CommandBuffer::UpdateAttachmentsView(const VkRenderPassBeginInfo *pRenderPa
     UpdateSubpassAttachments();
 }
 
-void CommandBuffer::RecordBeginRenderPass(const VkRenderPassBeginInfo &render_pass_begin, const VkSubpassContents contents) {
+void CommandBuffer::RecordBeginRenderPass(const VkRenderPassBeginInfo &render_pass_begin,
+                                          const VkSubpassBeginInfo &subpass_begin_info, const Location &loc) {
     command_count++;
     active_framebuffer = dev_data.Get<vvl::Framebuffer>(render_pass_begin.framebuffer);
     active_render_pass = dev_data.Get<vvl::RenderPass>(render_pass_begin.renderPass);
     render_area = render_pass_begin.renderArea;
     SetActiveSubpass(0);
-    active_subpass_contents = contents;
+    active_subpass_contents = subpass_begin_info.contents;
     render_pass_queries.clear();
 
     // Connect this RP to cmdBuffer
@@ -704,14 +705,15 @@ void CommandBuffer::RecordBeginRenderPass(const VkRenderPassBeginInfo &render_pa
     }
 
     for (auto &item : sub_states_) {
-        item.second->RecordBeginRenderPass(render_pass_begin);
+        item.second->RecordBeginRenderPass(render_pass_begin, subpass_begin_info, loc);
     }
 }
 
-void CommandBuffer::RecordNextSubpass(VkSubpassContents contents) {
+void CommandBuffer::RecordNextSubpass(const VkSubpassBeginInfo &subpass_begin_info, const VkSubpassEndInfo *subpass_end_info,
+                                      const Location &loc) {
     command_count++;
     SetActiveSubpass(GetActiveSubpass() + 1);
-    active_subpass_contents = contents;
+    active_subpass_contents = subpass_begin_info.contents;
     ASSERT_AND_RETURN(active_render_pass);
 
     if (active_framebuffer) {
@@ -729,14 +731,14 @@ void CommandBuffer::RecordNextSubpass(VkSubpassContents contents) {
     }
 
     for (auto &item : sub_states_) {
-        item.second->RecordNextSubpass();
+        item.second->RecordNextSubpass(subpass_begin_info, subpass_end_info, loc);
     }
 }
 
-void CommandBuffer::RecordEndRenderPass() {
+void CommandBuffer::RecordEndRenderPass(const VkSubpassEndInfo *subpass_end_info, const Location &loc) {
     // Call first so SubState can use render pass object before we destroy it
     for (auto &item : sub_states_) {
-        item.second->RecordEndRenderPass();
+        item.second->RecordEndRenderPass(subpass_end_info, loc);
     }
 
     command_count++;
@@ -750,7 +752,7 @@ void CommandBuffer::RecordEndRenderPass() {
     sample_locations_begin_info = nullptr;
 }
 
-void CommandBuffer::RecordBeginRendering(const VkRenderingInfo &rendering_info) {
+void CommandBuffer::RecordBeginRendering(const VkRenderingInfo &rendering_info, const Location &loc) {
     command_count++;
     active_render_pass = std::make_shared<vvl::RenderPass>(&rendering_info, true);
     render_area = rendering_info.renderArea;
@@ -842,7 +844,7 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo &rendering_info) 
     }
 
     for (auto &item : sub_states_) {
-        item.second->RecordBeginRendering(rendering_info);
+        item.second->RecordBeginRendering(rendering_info, loc);
     }
 }
 

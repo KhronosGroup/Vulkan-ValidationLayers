@@ -678,37 +678,6 @@ bool SyncValidator::PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer comman
     return PreCallValidateCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, error_obj);
 }
 
-void SyncValidator::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                             const VkSubpassBeginInfo *pSubpassBeginInfo, Func command) {
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    if (cb_state) {
-        if (!cb_state->IsPrimary()) {
-            return;  // [core validation check]: only primary command buffer can begin render pass
-        }
-        syncval_state::AccessContext(*cb_state)->RecordSyncOp<SyncOpBeginRenderPass>(command, *this, pRenderPassBegin,
-                                                                                     pSubpassBeginInfo);
-    }
-}
-
-void SyncValidator::PostCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                     VkSubpassContents contents, const RecordObject &record_obj) {
-    VkSubpassBeginInfo subpass_begin_info = vku::InitStructHelper();
-    subpass_begin_info.contents = contents;
-    RecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, &subpass_begin_info, record_obj.location.function);
-}
-
-void SyncValidator::PostCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                      const VkSubpassBeginInfo *pSubpassBeginInfo, const RecordObject &record_obj) {
-    RecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, record_obj.location.function);
-}
-
-void SyncValidator::PostCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer,
-                                                         const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                         const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                                         const RecordObject &record_obj) {
-    PostCallRecordCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, record_obj);
-}
-
 bool SyncValidator::ValidateCmdNextSubpass(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
                                            const VkSubpassEndInfo *pSubpassEndInfo, const ErrorObject &error_obj) const {
     bool skip = false;
@@ -740,36 +709,6 @@ bool SyncValidator::PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer
     return ValidateCmdNextSubpass(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, error_obj);
 }
 
-void SyncValidator::RecordCmdNextSubpass(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                         const VkSubpassEndInfo *pSubpassEndInfo, Func command) {
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
-    if (!cb_state) return;
-    auto *cb_context = syncval_state::AccessContext(*cb_state);
-
-    if (!cb_state->IsPrimary()) {
-        return;  // [core validation check]: only primary command buffer can start next subpass
-    }
-    cb_context->RecordSyncOp<SyncOpNextSubpass>(command, *this, pSubpassBeginInfo, pSubpassEndInfo);
-}
-
-void SyncValidator::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
-                                                 const RecordObject &record_obj) {
-    VkSubpassBeginInfo subpass_begin_info = vku::InitStructHelper();
-    subpass_begin_info.contents = contents;
-    RecordCmdNextSubpass(commandBuffer, &subpass_begin_info, nullptr, record_obj.location.function);
-}
-
-void SyncValidator::PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                                  const VkSubpassEndInfo *pSubpassEndInfo, const RecordObject &record_obj) {
-    RecordCmdNextSubpass(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, record_obj.location.function);
-}
-
-void SyncValidator::PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                                     const VkSubpassEndInfo *pSubpassEndInfo, const RecordObject &record_obj) {
-    PostCallRecordCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, record_obj);
-}
-
 bool SyncValidator::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
                                              const ErrorObject &error_obj) const {
     bool skip = false;
@@ -798,19 +737,6 @@ bool SyncValidator::PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandB
     return PreCallValidateCmdEndRenderPass2(commandBuffer, pSubpassEndInfo, error_obj);
 }
 
-void SyncValidator::RecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo, Func command) {
-    // Resolve the all subpass contexts to the command buffer contexts
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
-    if (!cb_state) return;
-    auto *cb_context = syncval_state::AccessContext(*cb_state);
-
-    if (!cb_state->IsPrimary()) {
-        return;  // [core validation check]: only primary command buffer can end render pass
-    }
-    cb_context->RecordSyncOp<SyncOpEndRenderPass>(command, *this, pSubpassEndInfo);
-}
-
 // Simple heuristic rule to detect WAW operations representing algorithmically safe or increment
 // updates to a resource which do not conflict at the byte level.
 // TODO: Revisit this rule to see if it needs to be tighter or looser
@@ -818,20 +744,6 @@ void SyncValidator::RecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const 
 bool SyncValidator::SuppressedBoundDescriptorWAW(const HazardResult &hazard) const {
     assert(hazard.IsHazard());
     return hazard.IsWAWHazard();
-}
-
-void SyncValidator::PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
-    RecordCmdEndRenderPass(commandBuffer, nullptr, record_obj.location.function);
-}
-
-void SyncValidator::PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
-                                                    const RecordObject &record_obj) {
-    RecordCmdEndRenderPass(commandBuffer, pSubpassEndInfo, record_obj.location.function);
-}
-
-void SyncValidator::PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
-                                                       const RecordObject &record_obj) {
-    PostCallRecordCmdEndRenderPass2(commandBuffer, pSubpassEndInfo, record_obj);
 }
 
 bool SyncValidator::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfoKHR *pRenderingInfo,
@@ -866,7 +778,7 @@ void SyncValidator::PostCallRecordCmdBeginRendering(VkCommandBuffer commandBuffe
     assert(cmd_state && cmd_state->cb_state && (cmd_state->cb_state->VkHandle() == commandBuffer));
     // Note: for fine grain locking need to to something other than cast.
     auto cb_state = std::const_pointer_cast<vvl::CommandBuffer>(cmd_state->cb_state);
-    syncval_state::AccessContext(*cb_state)->RecordBeginRendering(*cmd_state, record_obj);
+    syncval_state::AccessContext(*cb_state)->RecordBeginRendering(*cmd_state, record_obj.location);
 }
 
 bool SyncValidator::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const ErrorObject &error_obj) const {

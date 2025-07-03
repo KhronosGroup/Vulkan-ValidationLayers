@@ -147,7 +147,9 @@ void CommandBufferSubState::ClearPushConstants() {
 
 void CommandBufferSubState::RecordEndRendering(const VkRenderingEndInfoEXT *) { valcmd::FlushValidationCmds(gpuav_, *this); }
 
-void CommandBufferSubState::RecordEndRenderPass() { valcmd::FlushValidationCmds(gpuav_, *this); }
+void CommandBufferSubState::RecordEndRenderPass(const VkSubpassEndInfo *, const Location &) {
+    valcmd::FlushValidationCmds(gpuav_, *this);
+}
 
 void CommandBufferSubState::ResetCBState(bool should_destroy) {
     // Free or return to cache GPU resources

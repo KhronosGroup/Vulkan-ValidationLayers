@@ -187,12 +187,13 @@ void CommandBufferSubState::RecordSetScissorWithCount(uint32_t scissor_count) {
     scissor.trashed_count = false;
 }
 
-void CommandBufferSubState::RecordNextSubpass() {
+void CommandBufferSubState::RecordNextSubpass(const VkSubpassBeginInfo&, const VkSubpassEndInfo*, const Location&) {
     ASSERT_AND_RETURN(base.active_render_pass);
     validator.TransitionSubpassLayouts(base, *base.active_render_pass, base.GetActiveSubpass());
 }
 
-void CommandBufferSubState::RecordBeginRenderPass(const VkRenderPassBeginInfo& render_pass_begin) {
+void CommandBufferSubState::RecordBeginRenderPass(const VkRenderPassBeginInfo& render_pass_begin, const VkSubpassBeginInfo&,
+                                                  const Location&) {
     ASSERT_AND_RETURN(base.active_render_pass);
     // transition attachments to the correct layouts for beginning of renderPass and first subpass
     validator.TransitionBeginRenderPassLayouts(base, *base.active_render_pass);
@@ -216,7 +217,9 @@ void CommandBufferSubState::RecordEndRendering(const VkRenderingEndInfoEXT* pRen
     }
 }
 
-void CommandBufferSubState::RecordEndRenderPass() { validator.TransitionFinalSubpassLayouts(base); }
+void CommandBufferSubState::RecordEndRenderPass(const VkSubpassEndInfo*, const Location&) {
+    validator.TransitionFinalSubpassLayouts(base);
+}
 
 template <typename RegionType>
 void CommandBufferSubState::RecordCopyBufferCommon(vvl::Buffer& src_buffer_state, vvl::Buffer& dst_buffer_state,
