@@ -328,7 +328,7 @@ void CommandBufferSubState::RecordCopyImage2(vvl::Image& src_image_state, vvl::I
     }
 }
 
-void CommandBufferSubState::RecordCopyBufferToImage(vvl::Image& dst_image_state, VkImageLayout dst_image_layout,
+void CommandBufferSubState::RecordCopyBufferToImage(vvl::Buffer&, vvl::Image& dst_image_state, VkImageLayout dst_image_layout,
                                                     uint32_t region_count, const VkBufferImageCopy* regions, const Location& loc) {
     for (const VkBufferImageCopy& region : vvl::make_span(regions, region_count)) {
         base.TrackImageFirstLayout(dst_image_state, RangeFromLayers(region.imageSubresource), region.imageOffset.z,
@@ -336,7 +336,7 @@ void CommandBufferSubState::RecordCopyBufferToImage(vvl::Image& dst_image_state,
     }
 }
 
-void CommandBufferSubState::RecordCopyBufferToImage2(vvl::Image& dst_image_state, VkImageLayout dst_image_layout,
+void CommandBufferSubState::RecordCopyBufferToImage2(vvl::Buffer&, vvl::Image& dst_image_state, VkImageLayout dst_image_layout,
                                                      uint32_t region_count, const VkBufferImageCopy2* regions,
                                                      const Location& loc) {
     for (const VkBufferImageCopy2& region : vvl::make_span(regions, region_count)) {
@@ -345,7 +345,7 @@ void CommandBufferSubState::RecordCopyBufferToImage2(vvl::Image& dst_image_state
     }
 }
 
-void CommandBufferSubState::RecordCopyImageToBuffer(vvl::Image& src_image_state, VkImageLayout src_image_layout,
+void CommandBufferSubState::RecordCopyImageToBuffer(vvl::Image& src_image_state, vvl::Buffer&, VkImageLayout src_image_layout,
                                                     uint32_t region_count, const VkBufferImageCopy* regions, const Location& loc) {
     for (const VkBufferImageCopy& region : vvl::make_span(regions, region_count)) {
         base.TrackImageFirstLayout(src_image_state, RangeFromLayers(region.imageSubresource), region.imageOffset.z,
@@ -353,7 +353,7 @@ void CommandBufferSubState::RecordCopyImageToBuffer(vvl::Image& src_image_state,
     }
 }
 
-void CommandBufferSubState::RecordCopyImageToBuffer2(vvl::Image& src_image_state, VkImageLayout src_image_layout,
+void CommandBufferSubState::RecordCopyImageToBuffer2(vvl::Image& src_image_state, vvl::Buffer&, VkImageLayout src_image_layout,
                                                      uint32_t region_count, const VkBufferImageCopy2* regions,
                                                      const Location& loc) {
     for (const VkBufferImageCopy2& region : vvl::make_span(regions, region_count)) {

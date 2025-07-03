@@ -373,35 +373,6 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, 
     return skip;
 }
 
-void SyncValidator::PostCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
-                                                uint32_t regionCount, const VkBufferCopy *pRegions,
-                                                const RecordObject &record_obj) {
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
-    if (!cb_state) return;
-    auto *cb_context = syncval_state::AccessContext(*cb_state);
-    const auto tag = cb_context->NextCommandTag(record_obj.location.function);
-    auto *context = cb_context->GetCurrentAccessContext();
-
-    auto src_buffer = Get<vvl::Buffer>(srcBuffer);
-    auto src_tag_ex = src_buffer ? cb_context->AddCommandHandle(tag, src_buffer->Handle()) : ResourceUsageTagEx{tag};
-
-    auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
-    auto dst_tag_ex = dst_buffer ? cb_context->AddCommandHandle(tag, dst_buffer->Handle()) : ResourceUsageTagEx{tag};
-
-    for (uint32_t region = 0; region < regionCount; region++) {
-        const auto &copy_region = pRegions[region];
-        if (src_buffer) {
-            const ResourceAccessRange src_range = MakeRange(*src_buffer, copy_region.srcOffset, copy_region.size);
-            context->UpdateAccessState(*src_buffer, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment, src_range, src_tag_ex);
-        }
-        if (dst_buffer) {
-            const ResourceAccessRange dst_range = MakeRange(*dst_buffer, copy_region.dstOffset, copy_region.size);
-            context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, dst_range, dst_tag_ex);
-        }
-    }
-}
-
 bool SyncValidator::PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCopyBufferInfo,
                                                   const ErrorObject &error_obj) const {
     bool skip = false;
@@ -451,43 +422,6 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuff
     return PreCallValidateCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, error_obj);
 }
 
-void SyncValidator::RecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCopyBufferInfo, Func command) {
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
-    if (!cb_state) return;
-    auto *cb_context = syncval_state::AccessContext(*cb_state);
-    const auto tag = cb_context->NextCommandTag(command);
-    auto *context = cb_context->GetCurrentAccessContext();
-
-    auto src_buffer = Get<vvl::Buffer>(pCopyBufferInfo->srcBuffer);
-    auto src_tag_ex = src_buffer ? cb_context->AddCommandHandle(tag, src_buffer->Handle()) : ResourceUsageTagEx{tag};
-
-    auto dst_buffer = Get<vvl::Buffer>(pCopyBufferInfo->dstBuffer);
-    auto dst_tag_ex = dst_buffer ? cb_context->AddCommandHandle(tag, dst_buffer->Handle()) : ResourceUsageTagEx{tag};
-
-    for (uint32_t region = 0; region < pCopyBufferInfo->regionCount; region++) {
-        const auto &copy_region = pCopyBufferInfo->pRegions[region];
-        if (src_buffer) {
-            const ResourceAccessRange src_range = MakeRange(*src_buffer, copy_region.srcOffset, copy_region.size);
-            context->UpdateAccessState(*src_buffer, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment, src_range, src_tag_ex);
-        }
-        if (dst_buffer) {
-            const ResourceAccessRange dst_range = MakeRange(*dst_buffer, copy_region.dstOffset, copy_region.size);
-            context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, dst_range, dst_tag_ex);
-        }
-    }
-}
-
-void SyncValidator::PostCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR *pCopyBufferInfo,
-                                                    const RecordObject &record_obj) {
-    RecordCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, record_obj.location.function);
-}
-
-void SyncValidator::PostCallRecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCopyBufferInfo,
-                                                 const RecordObject &record_obj) {
-    RecordCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, record_obj.location.function);
-}
-
 bool SyncValidator::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                 VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                                 const VkImageCopy *pRegions, const ErrorObject &error_obj) const {
@@ -531,38 +465,6 @@ bool SyncValidator::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, V
     }
 
     return skip;
-}
-
-void SyncValidator::PostCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                               VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                               const VkImageCopy *pRegions, const RecordObject &record_obj) {
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
-    if (!cb_state) return;
-    auto *cb_access_context = syncval_state::AccessContext(*cb_state);
-    const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
-    auto *context = cb_access_context->GetCurrentAccessContext();
-    assert(context);
-
-    auto src_image = Get<vvl::Image>(srcImage);
-    auto src_tag_ex = src_image ? cb_access_context->AddCommandHandle(tag, src_image->Handle()) : ResourceUsageTagEx{tag};
-
-    auto dst_image = Get<vvl::Image>(dstImage);
-    auto dst_tag_ex = dst_image ? cb_access_context->AddCommandHandle(tag, dst_image->Handle()) : ResourceUsageTagEx{tag};
-
-    for (uint32_t region = 0; region < regionCount; region++) {
-        const auto &copy_region = pRegions[region];
-        if (src_image) {
-            context->UpdateAccessState(*src_image, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment,
-                                       RangeFromLayers(copy_region.srcSubresource), copy_region.srcOffset, copy_region.extent,
-                                       src_tag_ex);
-        }
-        if (dst_image) {
-            context->UpdateAccessState(*dst_image, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
-                                       RangeFromLayers(copy_region.dstSubresource), copy_region.dstOffset, copy_region.extent,
-                                       dst_tag_ex);
-        }
-    }
 }
 
 bool SyncValidator::PreCallValidateCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyImageInfo,
@@ -614,46 +516,6 @@ bool SyncValidator::PreCallValidateCmdCopyImage2(VkCommandBuffer commandBuffer, 
 bool SyncValidator::PreCallValidateCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR *pCopyImageInfo,
                                                     const ErrorObject &error_obj) const {
     return PreCallValidateCmdCopyImage2(commandBuffer, pCopyImageInfo, error_obj);
-}
-
-void SyncValidator::RecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyImageInfo, Func command) {
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
-    if (!cb_state) return;
-    auto *cb_access_context = syncval_state::AccessContext(*cb_state);
-    const auto tag = cb_access_context->NextCommandTag(command);
-    auto *context = cb_access_context->GetCurrentAccessContext();
-    assert(context);
-
-    auto src_image = Get<vvl::Image>(pCopyImageInfo->srcImage);
-    auto src_tag_ex = src_image ? cb_access_context->AddCommandHandle(tag, src_image->Handle()) : ResourceUsageTagEx{tag};
-
-    auto dst_image = Get<vvl::Image>(pCopyImageInfo->dstImage);
-    auto dst_tag_ex = dst_image ? cb_access_context->AddCommandHandle(tag, dst_image->Handle()) : ResourceUsageTagEx{tag};
-
-    for (uint32_t region = 0; region < pCopyImageInfo->regionCount; region++) {
-        const auto &copy_region = pCopyImageInfo->pRegions[region];
-        if (src_image) {
-            context->UpdateAccessState(*src_image, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment,
-                                       RangeFromLayers(copy_region.srcSubresource), copy_region.srcOffset, copy_region.extent,
-                                       src_tag_ex);
-        }
-        if (dst_image) {
-            context->UpdateAccessState(*dst_image, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
-                                       RangeFromLayers(copy_region.dstSubresource), copy_region.dstOffset, copy_region.extent,
-                                       dst_tag_ex);
-        }
-    }
-}
-
-void SyncValidator::PostCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR *pCopyImageInfo,
-                                                   const RecordObject &record_obj) {
-    RecordCmdCopyImage2(commandBuffer, pCopyImageInfo, record_obj.location.function);
-}
-
-void SyncValidator::PostCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyImageInfo,
-                                                const RecordObject &record_obj) {
-    RecordCmdCopyImage2(commandBuffer, pCopyImageInfo, record_obj.location.function);
 }
 
 bool SyncValidator::PreCallValidateCmdPipelineBarrier(
@@ -1104,62 +966,6 @@ bool SyncValidator::PreCallValidateCmdCopyBufferToImage2(VkCommandBuffer command
 }
 
 template <typename RegionType>
-void SyncValidator::RecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                               VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType *pRegions,
-                                               Func command) {
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
-    if (!cb_state) return;
-    auto *cb_access_context = syncval_state::AccessContext(*cb_state);
-
-    const auto tag = cb_access_context->NextCommandTag(command);
-    auto *context = cb_access_context->GetCurrentAccessContext();
-    assert(context);
-
-    auto src_buffer = Get<vvl::Buffer>(srcBuffer);
-    auto src_tag_ex = src_buffer ? cb_access_context->AddCommandHandle(tag, src_buffer->Handle()) : ResourceUsageTagEx{tag};
-
-    auto dst_image = Get<vvl::Image>(dstImage);
-    auto dst_tag_ex = dst_image ? cb_access_context->AddCommandHandle(tag, dst_image->Handle()) : ResourceUsageTagEx{tag};
-
-    for (uint32_t region = 0; region < regionCount; region++) {
-        const auto &copy_region = pRegions[region];
-        if (dst_image) {
-            if (src_buffer) {
-                ResourceAccessRange src_range =
-                    MakeRange(copy_region.bufferOffset, dst_image->GetBufferSizeFromCopyImage(copy_region));
-                context->UpdateAccessState(*src_buffer, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment, src_range,
-                                           src_tag_ex);
-            }
-            context->UpdateAccessState(*dst_image, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
-                                       RangeFromLayers(copy_region.imageSubresource), copy_region.imageOffset,
-                                       copy_region.imageExtent, dst_tag_ex);
-        }
-    }
-}
-
-void SyncValidator::PostCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                                       VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                       const VkBufferImageCopy *pRegions, const RecordObject &record_obj) {
-    RecordCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions,
-                               record_obj.location.function);
-}
-
-void SyncValidator::PostCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
-                                                           const VkCopyBufferToImageInfo2KHR *pCopyBufferToImageInfo,
-                                                           const RecordObject &record_obj) {
-    PostCallRecordCmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo, record_obj);
-}
-
-void SyncValidator::PostCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
-                                                        const VkCopyBufferToImageInfo2 *pCopyBufferToImageInfo,
-                                                        const RecordObject &record_obj) {
-    RecordCmdCopyBufferToImage(commandBuffer, pCopyBufferToImageInfo->srcBuffer, pCopyBufferToImageInfo->dstImage,
-                               pCopyBufferToImageInfo->dstImageLayout, pCopyBufferToImageInfo->regionCount,
-                               pCopyBufferToImageInfo->pRegions, record_obj.location.function);
-}
-
-template <typename RegionType>
 bool SyncValidator::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                  VkBuffer dstBuffer, uint32_t regionCount, const RegionType *pRegions,
                                                  const Location &loc) const {
@@ -1223,61 +1029,6 @@ bool SyncValidator::PreCallValidateCmdCopyImageToBuffer2(VkCommandBuffer command
     return ValidateCmdCopyImageToBuffer(commandBuffer, pCopyImageToBufferInfo->srcImage, pCopyImageToBufferInfo->srcImageLayout,
                                         pCopyImageToBufferInfo->dstBuffer, pCopyImageToBufferInfo->regionCount,
                                         pCopyImageToBufferInfo->pRegions, error_obj.location.dot(Field::pCopyImageToBufferInfo));
-}
-
-template <typename RegionType>
-void SyncValidator::RecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                               VkBuffer dstBuffer, uint32_t regionCount, const RegionType *pRegions, Func command) {
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
-    if (!cb_state) return;
-    auto *cb_access_context = syncval_state::AccessContext(*cb_state);
-
-    const auto tag = cb_access_context->NextCommandTag(command);
-    auto *context = cb_access_context->GetCurrentAccessContext();
-    assert(context);
-
-    auto src_image = Get<vvl::Image>(srcImage);
-    auto src_tag_ex = src_image ? cb_access_context->AddCommandHandle(tag, src_image->Handle()) : ResourceUsageTagEx{tag};
-
-    auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
-    auto dst_tag_ex = dst_buffer ? cb_access_context->AddCommandHandle(tag, dst_buffer->Handle()) : ResourceUsageTagEx{tag};
-
-    for (uint32_t region = 0; region < regionCount; region++) {
-        const auto &copy_region = pRegions[region];
-        if (src_image) {
-            context->UpdateAccessState(*src_image, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment,
-                                       RangeFromLayers(copy_region.imageSubresource), copy_region.imageOffset,
-                                       copy_region.imageExtent, src_tag_ex);
-            if (dst_buffer) {
-                ResourceAccessRange dst_range =
-                    MakeRange(copy_region.bufferOffset, src_image->GetBufferSizeFromCopyImage(copy_region));
-                context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, dst_range,
-                                           dst_tag_ex);
-            }
-        }
-    }
-}
-
-void SyncValidator::PostCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage,
-                                                       VkImageLayout srcImageLayout, VkBuffer dstBuffer, uint32_t regionCount,
-                                                       const VkBufferImageCopy *pRegions, const RecordObject &record_obj) {
-    RecordCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions,
-                               record_obj.location.function);
-}
-
-void SyncValidator::PostCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
-                                                           const VkCopyImageToBufferInfo2KHR *pCopyImageToBufferInfo,
-                                                           const RecordObject &record_obj) {
-    PostCallRecordCmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo, record_obj);
-}
-
-void SyncValidator::PostCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
-                                                        const VkCopyImageToBufferInfo2 *pCopyImageToBufferInfo,
-                                                        const RecordObject &record_obj) {
-    RecordCmdCopyImageToBuffer(commandBuffer, pCopyImageToBufferInfo->srcImage, pCopyImageToBufferInfo->srcImageLayout,
-                               pCopyImageToBufferInfo->dstBuffer, pCopyImageToBufferInfo->regionCount,
-                               pCopyImageToBufferInfo->pRegions, record_obj.location.function);
 }
 
 template <typename RegionType>

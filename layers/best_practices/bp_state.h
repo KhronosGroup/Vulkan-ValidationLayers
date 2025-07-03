@@ -185,14 +185,14 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void RecordCopyImage2(vvl::Image& src_image_state, vvl::Image& dst_image_state, VkImageLayout src_image_layout,
                           VkImageLayout dst_image_layout, uint32_t region_count, const VkImageCopy2* regions,
                           const Location& loc) final;
-    void RecordCopyBufferToImage(vvl::Image& dst_image_state, VkImageLayout dst_image_layout, uint32_t region_count,
-                                 const VkBufferImageCopy* regions, const Location& loc) final;
-    void RecordCopyBufferToImage2(vvl::Image& dst_image_state, VkImageLayout dst_image_layout, uint32_t region_count,
-                                  const VkBufferImageCopy2* regions, const Location& loc) final;
-    void RecordCopyImageToBuffer(vvl::Image& src_image_state, VkImageLayout src_image_layout, uint32_t region_count,
-                                 const VkBufferImageCopy* regions, const Location& loc) final;
-    void RecordCopyImageToBuffer2(vvl::Image& src_image_state, VkImageLayout src_image_layout, uint32_t region_count,
-                                  const VkBufferImageCopy2* regions, const Location& loc) final;
+    void RecordCopyBufferToImage(vvl::Buffer& src_buffer_state, vvl::Image& dst_image_state, VkImageLayout dst_image_layout,
+                                 uint32_t region_count, const VkBufferImageCopy* regions, const Location& loc) final;
+    void RecordCopyBufferToImage2(vvl::Buffer& src_buffer_state, vvl::Image& dst_image_state, VkImageLayout dst_image_layout,
+                                  uint32_t region_count, const VkBufferImageCopy2* regions, const Location& loc) final;
+    void RecordCopyImageToBuffer(vvl::Image& src_image_state, vvl::Buffer& dst_buffer_state, VkImageLayout src_image_layout,
+                                 uint32_t region_count, const VkBufferImageCopy* regions, const Location& loc) final;
+    void RecordCopyImageToBuffer2(vvl::Image& src_image_state, vvl::Buffer& dst_buffer_state, VkImageLayout src_image_layout,
+                                  uint32_t region_count, const VkBufferImageCopy2* regions, const Location& loc) final;
     void RecordBlitImage(vvl::Image& src_image_state, vvl::Image& dst_image_state, VkImageLayout src_image_layout,
                          VkImageLayout dst_image_layout, uint32_t region_count, const VkImageBlit* regions,
                          const Location& loc) final;

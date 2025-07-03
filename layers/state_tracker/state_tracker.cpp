@@ -716,8 +716,8 @@ void DeviceState::PostCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuff
     cb_state->AddChild(src_image_state);
     cb_state->AddChild(dst_buffer_state);
 
-    cb_state->RecordCopyImageToBuffer(*src_image_state, srcImageLayout, regionCount, pRegions, record_obj.location);
-    ;
+    cb_state->RecordCopyImageToBuffer(*src_image_state, *dst_buffer_state, srcImageLayout, regionCount, pRegions,
+                                      record_obj.location);
 }
 
 void DeviceState::PostCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
@@ -738,9 +738,8 @@ void DeviceState::PostCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuf
     cb_state->AddChild(src_image_state);
     cb_state->AddChild(dst_buffer_state);
 
-    cb_state->RecordCopyImageToBuffer2(*src_image_state, pCopyImageToBufferInfo->srcImageLayout,
+    cb_state->RecordCopyImageToBuffer2(*src_image_state, *dst_buffer_state, pCopyImageToBufferInfo->srcImageLayout,
                                        pCopyImageToBufferInfo->regionCount, pCopyImageToBufferInfo->pRegions, record_obj.location);
-    ;
 }
 
 void DeviceState::PostCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
@@ -755,7 +754,8 @@ void DeviceState::PostCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuff
     cb_state->AddChild(src_buffer_state);
     cb_state->AddChild(dst_image_state);
 
-    cb_state->RecordCopyBufferToImage(*dst_image_state, dstImageLayout, regionCount, pRegions, record_obj.location);
+    cb_state->RecordCopyBufferToImage(*src_buffer_state, *dst_image_state, dstImageLayout, regionCount, pRegions,
+                                      record_obj.location);
 }
 
 void DeviceState::PostCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
@@ -776,7 +776,7 @@ void DeviceState::PostCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuf
     cb_state->AddChild(src_buffer_state);
     cb_state->AddChild(dst_image_state);
 
-    cb_state->RecordCopyBufferToImage2(*dst_image_state, pCopyBufferToImageInfo->dstImageLayout,
+    cb_state->RecordCopyBufferToImage2(*src_buffer_state, *dst_image_state, pCopyBufferToImageInfo->dstImageLayout,
                                        pCopyBufferToImageInfo->regionCount, pCopyBufferToImageInfo->pRegions, record_obj.location);
 }
 
