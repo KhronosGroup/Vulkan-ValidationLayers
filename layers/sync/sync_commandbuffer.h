@@ -388,6 +388,9 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
                                 const VkClearRect *pRects, const Location &loc) override;
     void RecordFillBuffer(vvl::Buffer &buffer_state, VkDeviceSize offset, VkDeviceSize size, const Location &loc) override;
     void RecordUpdateBuffer(vvl::Buffer &buffer_state, VkDeviceSize offset, VkDeviceSize size, const Location &loc) override;
+
+    void RecordDecodeVideo(vvl::VideoSession &vs_state, const VkVideoDecodeInfoKHR &decode_info, const Location &loc) override;
+    void RecordEncodeVideo(vvl::VideoSession &vs_state, const VkVideoEncodeInfoKHR &encode_info, const Location &loc) override;
 };
 
 static inline CommandBufferSubState &SubState(vvl::CommandBuffer &cb) {
