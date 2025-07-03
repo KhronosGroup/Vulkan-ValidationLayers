@@ -1680,35 +1680,39 @@ void CommandBuffer::RecordCopyImage2(vvl::Image &src_image_state, vvl::Image &ds
     }
 }
 
-void CommandBuffer::RecordCopyBufferToImage(vvl::Image &dst_image_state, VkImageLayout dst_image_layout, uint32_t region_count,
-                                            const VkBufferImageCopy *regions, const Location &loc) {
+void CommandBuffer::RecordCopyBufferToImage(vvl::Buffer &src_buffer_state, vvl::Image &dst_image_state,
+                                            VkImageLayout dst_image_layout, uint32_t region_count, const VkBufferImageCopy *regions,
+                                            const Location &loc) {
     command_count++;
     for (auto &item : sub_states_) {
-        item.second->RecordCopyBufferToImage(dst_image_state, dst_image_layout, region_count, regions, loc);
+        item.second->RecordCopyBufferToImage(src_buffer_state, dst_image_state, dst_image_layout, region_count, regions, loc);
     }
 }
 
-void CommandBuffer::RecordCopyBufferToImage2(vvl::Image &dst_image_state, VkImageLayout dst_image_layout, uint32_t region_count,
+void CommandBuffer::RecordCopyBufferToImage2(vvl::Buffer &src_buffer_state, vvl::Image &dst_image_state,
+                                             VkImageLayout dst_image_layout, uint32_t region_count,
                                              const VkBufferImageCopy2 *regions, const Location &loc) {
     command_count++;
     for (auto &item : sub_states_) {
-        item.second->RecordCopyBufferToImage2(dst_image_state, dst_image_layout, region_count, regions, loc);
+        item.second->RecordCopyBufferToImage2(src_buffer_state, dst_image_state, dst_image_layout, region_count, regions, loc);
     }
 }
 
-void CommandBuffer::RecordCopyImageToBuffer(vvl::Image &src_image_state, VkImageLayout src_image_layout, uint32_t region_count,
-                                            const VkBufferImageCopy *regions, const Location &loc) {
+void CommandBuffer::RecordCopyImageToBuffer(vvl::Image &src_image_state, vvl::Buffer &dst_buffer_state,
+                                            VkImageLayout src_image_layout, uint32_t region_count, const VkBufferImageCopy *regions,
+                                            const Location &loc) {
     command_count++;
     for (auto &item : sub_states_) {
-        item.second->RecordCopyImageToBuffer(src_image_state, src_image_layout, region_count, regions, loc);
+        item.second->RecordCopyImageToBuffer(src_image_state, dst_buffer_state, src_image_layout, region_count, regions, loc);
     }
 }
 
-void CommandBuffer::RecordCopyImageToBuffer2(vvl::Image &src_image_state, VkImageLayout src_image_layout, uint32_t region_count,
+void CommandBuffer::RecordCopyImageToBuffer2(vvl::Image &src_image_state, vvl::Buffer &dst_buffer_state,
+                                             VkImageLayout src_image_layout, uint32_t region_count,
                                              const VkBufferImageCopy2 *regions, const Location &loc) {
     command_count++;
     for (auto &item : sub_states_) {
-        item.second->RecordCopyImageToBuffer2(src_image_state, src_image_layout, region_count, regions, loc);
+        item.second->RecordCopyImageToBuffer2(src_image_state, dst_buffer_state, src_image_layout, region_count, regions, loc);
     }
 }
 
