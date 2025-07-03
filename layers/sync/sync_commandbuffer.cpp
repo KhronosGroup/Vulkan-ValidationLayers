@@ -1360,24 +1360,26 @@ void CommandBufferAccessContext::CheckCommandTagDebugCheckpoint() {
     }
 }
 
-syncval_state::CommandBufferSubState::CommandBufferSubState(SyncValidator &dev, vvl::CommandBuffer &cb)
+namespace syncval_state {
+
+CommandBufferSubState::CommandBufferSubState(SyncValidator &dev, vvl::CommandBuffer &cb)
     : vvl::CommandBufferSubState(cb), access_context(dev, &cb) {
     access_context.SetSelfReference();
 }
 
-void syncval_state::CommandBufferSubState::End() {
+void CommandBufferSubState::End() {
     // For threads that are dedicated to recording command buffers but do not submit themsevles,
     // the end of recording is a logical point to update memory stats
     access_context.GetSyncState().stats.UpdateMemoryStats();
 }
 
-void syncval_state::CommandBufferSubState::Destroy() {
+void CommandBufferSubState::Destroy() {
     access_context.Destroy();  // must be first to clean up self references correctly.
 }
 
-void syncval_state::CommandBufferSubState::Reset(const Location &loc) { access_context.Reset(); }
+void CommandBufferSubState::Reset(const Location &loc) { access_context.Reset(); }
 
-void syncval_state::CommandBufferSubState::NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) {
+void CommandBufferSubState::NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) {
     for (auto &obj : invalid_nodes) {
         switch (obj->Type()) {
             case kVulkanObjectTypeEvent:
@@ -1388,3 +1390,46 @@ void syncval_state::CommandBufferSubState::NotifyInvalidate(const vvl::StateObje
         }
     }
 }
+
+void CommandBufferSubState::RecordClearColorImage(vvl::Image &image_state, VkImageLayout, const VkClearColorValue *,
+                                                  uint32_t range_count, const VkImageSubresourceRange *ranges,
+                                                  const Location &loc) {
+    const auto tag = access_context.NextCommandTag(loc.function);
+    auto *context = access_context.GetCurrentAccessContext();
+    assert(context);
+
+    access_context.AddCommandHandle(tag, image_state.Handle());
+
+    for (uint32_t index = 0; index < range_count; index++) {
+        const auto &range = ranges[index];
+        context->UpdateAccessState(image_state, SYNC_CLEAR_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
+    }
+}
+
+void CommandBufferSubState::RecordClearDepthStencilImage(vvl::Image &image_state, VkImageLayout, const VkClearDepthStencilValue *,
+                                                         uint32_t range_count, const VkImageSubresourceRange *ranges,
+                                                         const Location &loc) {
+    const auto tag = access_context.NextCommandTag(loc.function);
+    auto *context = access_context.GetCurrentAccessContext();
+    assert(context);
+
+    access_context.AddCommandHandle(tag, image_state.Handle());
+
+    for (uint32_t index = 0; index < range_count; index++) {
+        const auto &range = ranges[index];
+        context->UpdateAccessState(image_state, SYNC_CLEAR_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
+    }
+}
+
+void CommandBufferSubState::RecordClearAttachments(uint32_t attachment_count, const VkClearAttachment *pAttachments,
+                                                   uint32_t rect_count, const VkClearRect *pRects, const Location &loc) {
+    const auto tag = access_context.NextCommandTag(loc.function);
+
+    for (const auto &attachment : vvl::make_span(pAttachments, attachment_count)) {
+        for (const auto &rect : vvl::make_span(pRects, rect_count)) {
+            access_context.RecordClearAttachment(tag, attachment, rect);
+        }
+    }
+}
+
+}  // namespace syncval_state

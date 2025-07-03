@@ -1906,30 +1906,6 @@ bool SyncValidator::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuf
     return skip;
 }
 
-void SyncValidator::PostCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                                     const VkClearColorValue *pColor, uint32_t rangeCount,
-                                                     const VkImageSubresourceRange *pRanges, const RecordObject &record_obj) {
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
-    if (!cb_state) return;
-    auto *cb_access_context = syncval_state::AccessContext(*cb_state);
-    const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
-    auto *context = cb_access_context->GetCurrentAccessContext();
-    assert(context);
-
-    auto image_state = Get<vvl::Image>(image);
-    if (image_state) {
-        cb_access_context->AddCommandHandle(tag, image_state->Handle());
-    }
-
-    for (uint32_t index = 0; index < rangeCount; index++) {
-        const auto &range = pRanges[index];
-        if (image_state) {
-            context->UpdateAccessState(*image_state, SYNC_CLEAR_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
-        }
-    }
-}
-
 bool SyncValidator::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image,
                                                              VkImageLayout imageLayout,
                                                              const VkClearDepthStencilValue *pDepthStencil, uint32_t rangeCount,
@@ -1959,31 +1935,6 @@ bool SyncValidator::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer com
     return skip;
 }
 
-void SyncValidator::PostCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                                            const VkClearDepthStencilValue *pDepthStencil, uint32_t rangeCount,
-                                                            const VkImageSubresourceRange *pRanges,
-                                                            const RecordObject &record_obj) {
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
-    if (!cb_state) return;
-    auto *cb_access_context = syncval_state::AccessContext(*cb_state);
-    const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
-    auto *context = cb_access_context->GetCurrentAccessContext();
-    assert(context);
-
-    auto image_state = Get<vvl::Image>(image);
-    if (image_state) {
-        cb_access_context->AddCommandHandle(tag, image_state->Handle());
-    }
-
-    for (uint32_t index = 0; index < rangeCount; index++) {
-        const auto &range = pRanges[index];
-        if (image_state) {
-            context->UpdateAccessState(*image_state, SYNC_CLEAR_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
-        }
-    }
-}
-
 bool SyncValidator::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                        const VkClearAttachment *pAttachments, uint32_t rectCount,
                                                        const VkClearRect *pRects, const ErrorObject &error_obj) const {
@@ -1998,20 +1949,6 @@ bool SyncValidator::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
         }
     }
     return skip;
-}
-
-void SyncValidator::PostCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
-                                                      const VkClearAttachment *pAttachments, uint32_t rectCount,
-                                                      const VkClearRect *pRects, const RecordObject &record_obj) {
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    auto cb_access_context = syncval_state::AccessContext(*cb_state);
-    const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
-
-    for (const auto &attachment : vvl::make_span(pAttachments, attachmentCount)) {
-        for (const auto &rect : vvl::make_span(pRects, rectCount)) {
-            cb_access_context->RecordClearAttachment(tag, attachment, rect);
-        }
-    }
 }
 
 bool SyncValidator::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool,

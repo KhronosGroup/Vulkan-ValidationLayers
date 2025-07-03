@@ -453,24 +453,14 @@ class SyncValidator : public vvl::DeviceProxy {
     bool PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                            const VkClearColorValue *pColor, uint32_t rangeCount,
                                            const VkImageSubresourceRange *pRanges, const ErrorObject &error_obj) const override;
-    void PostCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                          const VkClearColorValue *pColor, uint32_t rangeCount,
-                                          const VkImageSubresourceRange *pRanges, const RecordObject &record_obj) override;
-
     bool PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                   const VkClearDepthStencilValue *pDepthStencil, uint32_t rangeCount,
                                                   const VkImageSubresourceRange *pRanges,
                                                   const ErrorObject &error_obj) const override;
-    void PostCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                                 const VkClearDepthStencilValue *pDepthStencil, uint32_t rangeCount,
-                                                 const VkImageSubresourceRange *pRanges, const RecordObject &record_obj) override;
 
     bool PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                             const VkClearAttachment *pAttachments, uint32_t rectCount, const VkClearRect *pRects,
                                             const ErrorObject &error_obj) const override;
-    void PostCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
-                                           const VkClearAttachment *pAttachments, uint32_t rectCount, const VkClearRect *pRects,
-                                           const RecordObject &record_obj) override;
 
     bool PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                                 uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
