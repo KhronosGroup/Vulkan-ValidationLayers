@@ -1368,7 +1368,7 @@ CommandBufferSubState::CommandBufferSubState(SyncValidator &dev, vvl::CommandBuf
 }
 
 void CommandBufferSubState::End() {
-    // For threads that are dedicated to recording command buffers but do not submit themsevles,
+    // For threads that are dedicated to recording command buffers but do not submit themselves,
     // the end of recording is a logical point to update memory stats
     access_context.GetSyncState().stats.UpdateMemoryStats();
 }
