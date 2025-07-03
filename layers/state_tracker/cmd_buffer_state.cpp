@@ -1155,6 +1155,9 @@ void CommandBuffer::End(VkResult result) {
     if (result == VK_SUCCESS) {
         state = CbState::Recorded;
     }
+    for (auto &item : sub_states_) {
+        item.second->End();
+    }
 }
 
 void CommandBuffer::RecordExecuteCommands(vvl::span<const VkCommandBuffer> secondary_command_buffers) {

@@ -726,6 +726,7 @@ class CommandBufferSubState {
     virtual ~CommandBufferSubState() {}
 
     virtual void Begin(const VkCommandBufferBeginInfo &begin_info) {}
+    virtual void End() {}
     virtual void Reset(const Location &loc) {}
     virtual void Destroy() {}
 

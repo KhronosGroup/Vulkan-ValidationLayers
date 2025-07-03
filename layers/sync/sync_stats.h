@@ -33,6 +33,7 @@
 #if MI_MALLOC_VERSION >= 300
 #define USE_MIMALLOC_STATS
 #include "mimalloc-stats.h"
+#include <mutex>
 #endif
 #endif  // defined(USE_MIMALLOC)
 
@@ -77,9 +78,8 @@ struct Stats {
 
 #if defined(USE_MIMALLOC_STATS)
     mi_stats_t mi_stats;
+    std::mutex mi_stats_mutex;
 #endif
-
-    ValueMax64 total_allocated_memory;
 
     ValueMax32 command_buffer_context_counter;
     void AddCommandBufferContext();
