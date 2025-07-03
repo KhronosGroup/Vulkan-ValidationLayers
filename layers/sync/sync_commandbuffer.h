@@ -401,6 +401,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void RecordNextSubpass(const VkSubpassBeginInfo &subpass_begin_info, const VkSubpassEndInfo *subpass_end_info,
                            const Location &loc) override;
     void RecordEndRenderPass(const VkSubpassEndInfo *subpass_end_info, const Location &loc) override;
+
+    void RecordExecuteCommand(vvl::CommandBuffer &secondary_command_buffer, uint32_t cmd_index, const Location &loc) override;
 };
 
 static inline CommandBufferSubState &SubState(vvl::CommandBuffer &cb) {

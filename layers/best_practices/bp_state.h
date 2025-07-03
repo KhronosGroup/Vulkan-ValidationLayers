@@ -166,7 +166,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void Destroy() final;
     void Reset(const Location& loc) final;
 
-    void RecordExecuteCommand(vvl::CommandBuffer& secondary_command_buffer) final;
+    void RecordExecuteCommand(vvl::CommandBuffer& secondary_command_buffer, uint32_t cmd_index, const Location& loc) final;
     void RecordActionCommand(LastBound& last_bound, const Location& loc) final;
 
     void RecordPushConstants(VkPipelineLayout layout, VkShaderStageFlags stage_flags, uint32_t offset, uint32_t size,

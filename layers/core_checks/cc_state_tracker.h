@@ -119,7 +119,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void Reset(const Location &loc) final;
     void Destroy() final;
 
-    void RecordExecuteCommand(vvl::CommandBuffer &secondary_command_buffer) final;
+    void RecordExecuteCommand(vvl::CommandBuffer &secondary_command_buffer, uint32_t cmd_index, const Location &loc) final;
 
     // Called from the Queue state
     void SubmitTimeValidate();
