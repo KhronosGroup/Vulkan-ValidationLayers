@@ -1827,4 +1827,17 @@ void CommandBufferSubState::RecordEndRenderPass(const VkSubpassEndInfo *subpass_
     access_context.RecordSyncOp<SyncOpEndRenderPass>(loc.function, access_context.GetSyncState(), subpass_end_info);
 }
 
+void CommandBufferSubState::RecordExecuteCommand(vvl::CommandBuffer &secondary_command_buffer, uint32_t cmd_index,
+                                                 const Location &loc) {
+    const auto subcommand = ResourceUsageRecord::SubcommandType::kIndex;
+    if (cmd_index == 0) {
+        ResourceUsageTag cb_tag = access_context.NextCommandTag(loc.function, subcommand);
+        access_context.AddCommandHandleIndexed(cb_tag, secondary_command_buffer.Handle(), cmd_index);
+    } else {
+        ResourceUsageTag cb_tag = access_context.NextSubcommandTag(loc.function, subcommand);
+        access_context.AddSubcommandHandleIndexed(cb_tag, secondary_command_buffer.Handle(), cmd_index);
+    }
+    access_context.RecordExecutedCommandBuffer(*syncval_state::AccessContext(secondary_command_buffer));
+}
+
 }  // namespace syncval_state

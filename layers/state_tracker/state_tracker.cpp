@@ -3377,7 +3377,7 @@ void DeviceState::PostCallRecordCmdEndVideoCodingKHR(VkCommandBuffer commandBuff
 void DeviceState::PostCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,
                                                    const VkCommandBuffer *pCommandBuffers, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->RecordExecuteCommands({pCommandBuffers, commandBuffersCount});
+    cb_state->RecordExecuteCommands({pCommandBuffers, commandBuffersCount}, record_obj.location);
 }
 
 void DeviceState::PostCallRecordMapMemory(VkDevice device, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size,

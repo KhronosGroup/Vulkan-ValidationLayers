@@ -1163,8 +1163,9 @@ void CommandBuffer::End(VkResult result) {
     }
 }
 
-void CommandBuffer::RecordExecuteCommands(vvl::span<const VkCommandBuffer> secondary_command_buffers) {
+void CommandBuffer::RecordExecuteCommands(vvl::span<const VkCommandBuffer> secondary_command_buffers, const Location &loc) {
     command_count++;
+    uint32_t cmd_index = 0;
     for (const VkCommandBuffer sub_command_buffer : secondary_command_buffers) {
         auto secondary_cb_state = dev_data.GetWrite<CommandBuffer>(sub_command_buffer);
         ASSERT_AND_RETURN(secondary_cb_state);
@@ -1223,8 +1224,10 @@ void CommandBuffer::RecordExecuteCommands(vvl::span<const VkCommandBuffer> secon
                                secondary_cb_state->label_commands_.end());
 
         for (auto &item : sub_states_) {
-            item.second->RecordExecuteCommand(*secondary_cb_state);
+            item.second->RecordExecuteCommand(*secondary_cb_state, cmd_index, loc);
         }
+
+        cmd_index++;
     }
 }
 

@@ -571,7 +571,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordDecodeVideo(const VkVideoDecodeInfoKHR &decode_info, const Location &loc);
     void RecordEncodeVideo(const VkVideoEncodeInfoKHR &encode_info, const Location &loc);
 
-    void RecordExecuteCommands(vvl::span<const VkCommandBuffer> secondary_command_buffers);
+    void RecordExecuteCommands(vvl::span<const VkCommandBuffer> secondary_command_buffers, const Location &loc);
 
     void UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_bind_point,
                                        std::shared_ptr<const vvl::PipelineLayout> pipeline_layout, uint32_t first_set,
@@ -734,7 +734,7 @@ class CommandBufferSubState {
     virtual void Reset(const Location &loc) {}
     virtual void Destroy() {}
 
-    virtual void RecordExecuteCommand(vvl::CommandBuffer &secondary_command_buffer) {}
+    virtual void RecordExecuteCommand(vvl::CommandBuffer &secondary_command_buffer, uint32_t cmd_index, const Location &loc) {}
 
     virtual void RecordActionCommand(LastBound &last_bound, const Location &loc) {}
     virtual void RecordBindPipeline(VkPipelineBindPoint bind_point, vvl::Pipeline &pipeline) {}

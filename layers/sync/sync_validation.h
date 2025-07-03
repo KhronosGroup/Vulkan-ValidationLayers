@@ -470,8 +470,6 @@ class SyncValidator : public vvl::DeviceProxy {
                                                 VkDeviceSize dstOffset, uint32_t marker, const RecordObject &record_obj) override;
     bool PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
                                            const VkCommandBuffer *pCommandBuffers, const ErrorObject &error_obj) const override;
-    void PostCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
-                                          const VkCommandBuffer *pCommandBuffers, const RecordObject &record_obj) override;
     void PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset,
                                        const RecordObject &record_obj) override;
     void PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo *pBindInfos,

@@ -75,7 +75,7 @@ void ImageSubState::SetupUsages() {
 CommandBufferSubState::CommandBufferSubState(vvl::CommandBuffer& cb, BestPractices& validator)
     : vvl::CommandBufferSubState(cb), validator(validator) {}
 
-void CommandBufferSubState::RecordExecuteCommand(vvl::CommandBuffer& secondary_command_buffer) {
+void CommandBufferSubState::RecordExecuteCommand(vvl::CommandBuffer& secondary_command_buffer, uint32_t, const Location&) {
     auto& secondary_sub_state = SubState(secondary_command_buffer);
     if (secondary_command_buffer.IsSecondary()) {
         render_pass_state.has_draw_cmd |= secondary_sub_state.render_pass_state.has_draw_cmd;

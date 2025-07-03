@@ -2290,27 +2290,6 @@ bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
     return skip;
 }
 
-void SyncValidator::PostCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
-                                                     const VkCommandBuffer *pCommandBuffers, const RecordObject &record_obj) {
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
-    if (!cb_state) return;
-    auto *cb_context = syncval_state::AccessContext(*cb_state);
-    for (uint32_t cb_index = 0; cb_index < commandBufferCount; ++cb_index) {
-        if (const auto recorded_cb = Get<vvl::CommandBuffer>(pCommandBuffers[cb_index])) {
-            const auto subcommand = ResourceUsageRecord::SubcommandType::kIndex;
-            if (cb_index == 0) {
-                ResourceUsageTag cb_tag = cb_context->NextCommandTag(record_obj.location.function, subcommand);
-                cb_context->AddCommandHandleIndexed(cb_tag, recorded_cb->Handle(), cb_index);
-            } else {
-                ResourceUsageTag cb_tag = cb_context->NextSubcommandTag(record_obj.location.function, subcommand);
-                cb_context->AddSubcommandHandleIndexed(cb_tag, recorded_cb->Handle(), cb_index);
-            }
-            cb_context->RecordExecutedCommandBuffer(*syncval_state::AccessContext(*recorded_cb));
-        }
-    }
-}
-
 void SyncValidator::PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory memory, VkDeviceSize memoryOffset,
                                                   const RecordObject &record_obj) {
     if (record_obj.result != VK_SUCCESS) {

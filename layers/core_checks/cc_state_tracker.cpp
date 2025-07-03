@@ -976,7 +976,7 @@ void CommandBufferSubState::ResetCBState() {
     scissor.used_dynamic_count = false;
 }
 
-void CommandBufferSubState::RecordExecuteCommand(vvl::CommandBuffer& secondary_command_buffer) {
+void CommandBufferSubState::RecordExecuteCommand(vvl::CommandBuffer& secondary_command_buffer, uint32_t, const Location&) {
     auto& secondary_sub_state = SubState(secondary_command_buffer);
     if (secondary_command_buffer.IsSecondary()) {
         nesting_level = std::max(nesting_level, secondary_sub_state.nesting_level + 1);
