@@ -1997,50 +1997,6 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
     return skip;
 }
 
-void SyncValidator::PreCallRecordCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR *pDecodeInfo,
-                                                   const RecordObject &record_obj) {
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
-    if (!cb_state) return;
-    auto *cb_access_context = syncval_state::AccessContext(*cb_state);
-
-    const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
-    auto *context = cb_access_context->GetCurrentAccessContext();
-    assert(context);
-
-    const auto vs_state = cb_state->bound_video_session.get();
-    if (!vs_state) return;
-
-    auto src_buffer = Get<vvl::Buffer>(pDecodeInfo->srcBuffer);
-    if (src_buffer) {
-        const ResourceAccessRange src_range = MakeRange(*src_buffer, pDecodeInfo->srcBufferOffset, pDecodeInfo->srcBufferRange);
-        const ResourceUsageTagEx src_tag_ex = cb_access_context->AddCommandHandle(tag, src_buffer->Handle());
-        context->UpdateAccessState(*src_buffer, SYNC_VIDEO_DECODE_VIDEO_DECODE_READ, SyncOrdering::kNonAttachment, src_range,
-                                   src_tag_ex);
-    }
-
-    auto dst_resource = vvl::VideoPictureResource(*device_state, pDecodeInfo->dstPictureResource);
-    if (dst_resource) {
-        context->UpdateAccessState(*vs_state, dst_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE, tag);
-    }
-
-    if (pDecodeInfo->pSetupReferenceSlot != nullptr && pDecodeInfo->pSetupReferenceSlot->pPictureResource != nullptr) {
-        auto setup_resource = vvl::VideoPictureResource(*device_state, *pDecodeInfo->pSetupReferenceSlot->pPictureResource);
-        if (setup_resource && (setup_resource != dst_resource)) {
-            context->UpdateAccessState(*vs_state, setup_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE, tag);
-        }
-    }
-
-    for (uint32_t i = 0; i < pDecodeInfo->referenceSlotCount; ++i) {
-        if (pDecodeInfo->pReferenceSlots[i].pPictureResource != nullptr) {
-            auto reference_resource = vvl::VideoPictureResource(*device_state, *pDecodeInfo->pReferenceSlots[i].pPictureResource);
-            if (reference_resource) {
-                context->UpdateAccessState(*vs_state, reference_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_READ, tag);
-            }
-        }
-    }
-}
-
 bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR *pEncodeInfo,
                                                      const ErrorObject &error_obj) const {
     bool skip = false;
@@ -2131,7 +2087,7 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
     }
 
     if (pEncodeInfo->flags & (VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR | VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR)) {
-        auto quantization_map_info = vku::FindStructInPNextChain<VkVideoEncodeQuantizationMapInfoKHR>(pEncodeInfo);
+        auto quantization_map_info = vku::FindStructInPNextChain<VkVideoEncodeQuantizationMapInfoKHR>(pEncodeInfo->pNext);
         if (quantization_map_info) {
             auto image_view_state = Get<vvl::ImageView>(quantization_map_info->quantizationMap);
             if (image_view_state) {
@@ -2156,64 +2112,6 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
     }
 
     return skip;
-}
-
-void SyncValidator::PreCallRecordCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR *pEncodeInfo,
-                                                   const RecordObject &record_obj) {
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
-    if (!cb_state) return;
-    auto *cb_access_context = syncval_state::AccessContext(*cb_state);
-
-    const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
-    auto *context = cb_access_context->GetCurrentAccessContext();
-    assert(context);
-
-    const auto vs_state = cb_state->bound_video_session.get();
-    if (!vs_state) return;
-
-    auto src_buffer = Get<vvl::Buffer>(pEncodeInfo->dstBuffer);
-    if (src_buffer) {
-        const ResourceAccessRange src_range = MakeRange(*src_buffer, pEncodeInfo->dstBufferOffset, pEncodeInfo->dstBufferRange);
-        const ResourceUsageTagEx src_tag_ex = cb_access_context->AddCommandHandle(tag, src_buffer->Handle());
-        context->UpdateAccessState(*src_buffer, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE, SyncOrdering::kNonAttachment, src_range,
-                                   src_tag_ex);
-    }
-
-    auto src_resource = vvl::VideoPictureResource(*device_state, pEncodeInfo->srcPictureResource);
-    if (src_resource) {
-        context->UpdateAccessState(*vs_state, src_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ, tag);
-    }
-
-    if (pEncodeInfo->pSetupReferenceSlot != nullptr && pEncodeInfo->pSetupReferenceSlot->pPictureResource != nullptr) {
-        auto setup_resource = vvl::VideoPictureResource(*device_state, *pEncodeInfo->pSetupReferenceSlot->pPictureResource);
-        if (setup_resource) {
-            context->UpdateAccessState(*vs_state, setup_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE, tag);
-        }
-    }
-
-    for (uint32_t i = 0; i < pEncodeInfo->referenceSlotCount; ++i) {
-        if (pEncodeInfo->pReferenceSlots[i].pPictureResource != nullptr) {
-            auto reference_resource = vvl::VideoPictureResource(*device_state, *pEncodeInfo->pReferenceSlots[i].pPictureResource);
-            if (reference_resource) {
-                context->UpdateAccessState(*vs_state, reference_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ, tag);
-            }
-        }
-    }
-
-    if (pEncodeInfo->flags & (VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR | VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR)) {
-        auto quantization_map_info = vku::FindStructInPNextChain<VkVideoEncodeQuantizationMapInfoKHR>(pEncodeInfo);
-        if (quantization_map_info) {
-            auto image_view_state = Get<vvl::ImageView>(quantization_map_info->quantizationMap);
-            if (image_view_state) {
-                VkOffset3D offset = {0, 0, 0};
-                VkExtent3D extent = {quantization_map_info->quantizationMapExtent.width,
-                                     quantization_map_info->quantizationMapExtent.height, 1};
-                context->UpdateAccessState(*image_view_state, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ, SyncOrdering::kOrderingNone,
-                                           offset, extent, ResourceUsageTagEx{tag});
-            }
-        }
-    }
 }
 
 bool SyncValidator::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,

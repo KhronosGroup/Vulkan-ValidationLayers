@@ -1702,4 +1702,88 @@ void CommandBufferSubState::RecordUpdateBuffer(vvl::Buffer &buffer_state, VkDevi
     context->UpdateAccessState(buffer_state, SYNC_CLEAR_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag_ex);
 }
 
+void CommandBufferSubState::RecordDecodeVideo(vvl::VideoSession &vs_state, const VkVideoDecodeInfoKHR &decode_info,
+                                              const Location &loc) {
+    const auto tag = access_context.NextCommandTag(loc.function);
+    auto *context = access_context.GetCurrentAccessContext();
+
+    if (auto src_buffer = base.dev_data.Get<vvl::Buffer>(decode_info.srcBuffer)) {
+        const ResourceAccessRange src_range = MakeRange(*src_buffer, decode_info.srcBufferOffset, decode_info.srcBufferRange);
+        const ResourceUsageTagEx src_tag_ex = access_context.AddCommandHandle(tag, src_buffer->Handle());
+        context->UpdateAccessState(*src_buffer, SYNC_VIDEO_DECODE_VIDEO_DECODE_READ, SyncOrdering::kNonAttachment, src_range,
+                                   src_tag_ex);
+    }
+
+    const auto *device_state = access_context.GetSyncState().device_state;
+    auto dst_resource = vvl::VideoPictureResource(*device_state, decode_info.dstPictureResource);
+    if (dst_resource) {
+        context->UpdateAccessState(vs_state, dst_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE, tag);
+    }
+
+    if (decode_info.pSetupReferenceSlot != nullptr && decode_info.pSetupReferenceSlot->pPictureResource != nullptr) {
+        auto setup_resource = vvl::VideoPictureResource(*device_state, *decode_info.pSetupReferenceSlot->pPictureResource);
+        if (setup_resource && (setup_resource != dst_resource)) {
+            context->UpdateAccessState(vs_state, setup_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE, tag);
+        }
+    }
+
+    for (uint32_t i = 0; i < decode_info.referenceSlotCount; ++i) {
+        if (decode_info.pReferenceSlots[i].pPictureResource != nullptr) {
+            auto reference_resource = vvl::VideoPictureResource(*device_state, *decode_info.pReferenceSlots[i].pPictureResource);
+            if (reference_resource) {
+                context->UpdateAccessState(vs_state, reference_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_READ, tag);
+            }
+        }
+    }
+}
+
+void CommandBufferSubState::RecordEncodeVideo(vvl::VideoSession &vs_state, const VkVideoEncodeInfoKHR &encode_info,
+                                              const Location &loc) {
+    const auto tag = access_context.NextCommandTag(loc.function);
+    auto *context = access_context.GetCurrentAccessContext();
+
+    if (auto src_buffer = base.dev_data.Get<vvl::Buffer>(encode_info.dstBuffer)) {
+        const ResourceAccessRange src_range = MakeRange(*src_buffer, encode_info.dstBufferOffset, encode_info.dstBufferRange);
+        const ResourceUsageTagEx src_tag_ex = access_context.AddCommandHandle(tag, src_buffer->Handle());
+        context->UpdateAccessState(*src_buffer, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE, SyncOrdering::kNonAttachment, src_range,
+                                   src_tag_ex);
+    }
+
+    const auto *device_state = access_context.GetSyncState().device_state;
+    auto src_resource = vvl::VideoPictureResource(*device_state, encode_info.srcPictureResource);
+    if (src_resource) {
+        context->UpdateAccessState(vs_state, src_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ, tag);
+    }
+
+    if (encode_info.pSetupReferenceSlot != nullptr && encode_info.pSetupReferenceSlot->pPictureResource != nullptr) {
+        auto setup_resource = vvl::VideoPictureResource(*device_state, *encode_info.pSetupReferenceSlot->pPictureResource);
+        if (setup_resource) {
+            context->UpdateAccessState(vs_state, setup_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE, tag);
+        }
+    }
+
+    for (uint32_t i = 0; i < encode_info.referenceSlotCount; ++i) {
+        if (encode_info.pReferenceSlots[i].pPictureResource != nullptr) {
+            auto reference_resource = vvl::VideoPictureResource(*device_state, *encode_info.pReferenceSlots[i].pPictureResource);
+            if (reference_resource) {
+                context->UpdateAccessState(vs_state, reference_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ, tag);
+            }
+        }
+    }
+
+    if (encode_info.flags & (VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR | VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR)) {
+        auto quantization_map_info = vku::FindStructInPNextChain<VkVideoEncodeQuantizationMapInfoKHR>(encode_info.pNext);
+        if (quantization_map_info) {
+            auto image_view_state = base.dev_data.Get<vvl::ImageView>(quantization_map_info->quantizationMap);
+            if (image_view_state) {
+                VkOffset3D offset = {0, 0, 0};
+                VkExtent3D extent = {quantization_map_info->quantizationMapExtent.width,
+                                     quantization_map_info->quantizationMapExtent.height, 1};
+                context->UpdateAccessState(*image_view_state, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ, SyncOrdering::kOrderingNone,
+                                           offset, extent, ResourceUsageTagEx{tag});
+            }
+        }
+    }
+}
+
 }  // namespace syncval_state
