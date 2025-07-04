@@ -2841,3 +2841,28 @@ TEST_F(PositiveSyncVal, TwoExternalDependenciesSyncLayoutTransitions) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveSyncVal, SingleQueryCopyIgnoresStride) {
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
+    vkt::Buffer buffer8(*m_device, 8, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer16(*m_device, 16, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    m_command_buffer.Begin();
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
+    vk::CmdWriteTimestamp(m_command_buffer, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, query_pool, 0);
+
+    // Write 32-bit query into offset 0.
+    // Use 8-byte stride which should be ignored when copying single query
+    vk::CmdCopyQueryPoolResults(m_command_buffer, query_pool, 0, 1, buffer8, 0 /*offset*/, 8 /*stride*/, 0);
+    // Write into [4,8) range, this does not overlap with query result
+    vk::CmdFillBuffer(m_command_buffer, buffer8, 4, 4, 0x42);
+
+    // Write 64 bit query into offset 0.
+    // Use 16-byte stride which should be ignored when copying single query
+    vk::CmdCopyQueryPoolResults(m_command_buffer, query_pool, 0, 1, buffer16, 0 /*offset*/, 16 /*stride*/, VK_QUERY_RESULT_64_BIT);
+    // Write into [8,16) range, this does not overlap with query result
+    vk::CmdFillBuffer(m_command_buffer, buffer16, 8, 8, 0x42);
+    m_command_buffer.End();
+}
