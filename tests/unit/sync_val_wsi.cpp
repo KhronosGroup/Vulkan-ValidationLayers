@@ -285,3 +285,38 @@ TEST_F(NegativeSyncValWsi, PresentDoesNotWaitForSubmit) {
     m_errorMonitor->VerifyFound();
     m_device->Wait();
 }
+
+TEST_F(NegativeSyncValWsi, LayoutTransitionDoesNotWaitForAcquire) {
+    TEST_DESCRIPTION("Ensure error message does not suggest to synchronize with VK_PIPELINE_STAGE_2_NONE");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddSurfaceExtension();
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    const vkt::Semaphore acquire_semaphore(*m_device);
+    const auto swapchain_images = m_swapchain.GetImages();
+    const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+
+    VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
+    layout_transition.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
+    layout_transition.srcAccessMask = VK_ACCESS_2_NONE;
+    layout_transition.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    layout_transition.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
+    layout_transition.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    layout_transition.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    layout_transition.image = swapchain_images[image_index];
+    layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+    m_command_buffer.Barrier(layout_transition);
+    m_command_buffer.End();
+
+    // NOTE: Currently c++ regex does not support well checking absense of substring.
+    // Instead check that new version of message is used (that we know does not have VK_PIPELINE_STAGE_2_NONE);
+    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-READ",
+                                         "but layout transition does not synchronize with these stages");
+    m_default_queue->Submit(m_command_buffer, vkt::Wait(acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT));
+    m_errorMonitor->VerifyFound();
+    m_device->Wait();
+}
