@@ -747,6 +747,7 @@ const char* String(Func func) {
     {"vkReleasePerformanceConfigurationINTEL", 39},
     {"vkReleaseProfilingLockKHR", 26},
     {"vkReleaseSwapchainImagesEXT", 28},
+    {"vkReleaseSwapchainImagesKHR", 28},
     {"vkResetCommandBuffer", 21},
     {"vkResetCommandPool", 19},
     {"vkResetDescriptorPool", 22},
@@ -1527,6 +1528,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDevicePerformanceQueryPropertiesKHR", 46},
     {"VkPhysicalDevicePipelineBinaryFeaturesKHR", 42},
     {"VkPhysicalDevicePipelineBinaryPropertiesKHR", 44},
+    {"VkPhysicalDevicePipelineCacheIncrementalModeFeaturesSEC", 56},
     {"VkPhysicalDevicePipelineCreationCacheControlFeatures", 53},
     {"VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR", 56},
     {"VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT", 55},
@@ -1542,7 +1544,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDevicePresentId2FeaturesKHR", 38},
     {"VkPhysicalDevicePresentIdFeaturesKHR", 37},
     {"VkPhysicalDevicePresentMeteringFeaturesNV", 42},
-    {"VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT", 54},
+    {"VkPhysicalDevicePresentModeFifoLatestReadyFeaturesKHR", 54},
     {"VkPhysicalDevicePresentWait2FeaturesKHR", 40},
     {"VkPhysicalDevicePresentWaitFeaturesKHR", 39},
     {"VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT", 56},
@@ -1635,7 +1637,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceSubpassShadingFeaturesHUAWEI", 45},
     {"VkPhysicalDeviceSubpassShadingPropertiesHUAWEI", 47},
     {"VkPhysicalDeviceSurfaceInfo2KHR", 32},
-    {"VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT", 49},
+    {"VkPhysicalDeviceSwapchainMaintenance1FeaturesKHR", 49},
     {"VkPhysicalDeviceSynchronization2Features", 41},
     {"VkPhysicalDeviceTensorFeaturesARM", 34},
     {"VkPhysicalDeviceTensorPropertiesARM", 36},
@@ -1662,6 +1664,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT", 51},
     {"VkPhysicalDeviceVideoDecodeVP9FeaturesKHR", 42},
     {"VkPhysicalDeviceVideoEncodeAV1FeaturesKHR", 42},
+    {"VkPhysicalDeviceVideoEncodeIntraRefreshFeaturesKHR", 51},
     {"VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR", 47},
     {"VkPhysicalDeviceVideoEncodeQuantizationMapFeaturesKHR", 54},
     {"VkPhysicalDeviceVideoFormatInfoKHR", 35},
@@ -1788,7 +1791,7 @@ const char* String(Struct structure) {
     {"VkRectLayerKHR", 15},
     {"VkRefreshCycleDurationGOOGLE", 29},
     {"VkReleaseCapturedPipelineDataInfoKHR", 37},
-    {"VkReleaseSwapchainImagesInfoEXT", 32},
+    {"VkReleaseSwapchainImagesInfoKHR", 32},
     {"VkRenderPassAttachmentBeginInfo", 32},
     {"VkRenderPassBeginInfo", 22},
     {"VkRenderPassCreateInfo", 23},
@@ -1895,19 +1898,19 @@ const char* String(Struct structure) {
     {"VkSurfaceFormatKHR", 19},
     {"VkSurfaceFullScreenExclusiveInfoEXT", 36},
     {"VkSurfaceFullScreenExclusiveWin32InfoEXT", 41},
-    {"VkSurfacePresentModeCompatibilityEXT", 37},
-    {"VkSurfacePresentModeEXT", 24},
-    {"VkSurfacePresentScalingCapabilitiesEXT", 39},
+    {"VkSurfacePresentModeCompatibilityKHR", 37},
+    {"VkSurfacePresentModeKHR", 24},
+    {"VkSurfacePresentScalingCapabilitiesKHR", 39},
     {"VkSurfaceProtectedCapabilitiesKHR", 34},
     {"VkSwapchainCounterCreateInfoEXT", 32},
     {"VkSwapchainCreateInfoKHR", 25},
     {"VkSwapchainDisplayNativeHdrCreateInfoAMD", 41},
     {"VkSwapchainLatencyCreateInfoNV", 31},
     {"VkSwapchainPresentBarrierCreateInfoNV", 38},
-    {"VkSwapchainPresentFenceInfoEXT", 31},
-    {"VkSwapchainPresentModeInfoEXT", 30},
-    {"VkSwapchainPresentModesCreateInfoEXT", 37},
-    {"VkSwapchainPresentScalingCreateInfoEXT", 39},
+    {"VkSwapchainPresentFenceInfoKHR", 31},
+    {"VkSwapchainPresentModeInfoKHR", 30},
+    {"VkSwapchainPresentModesCreateInfoKHR", 37},
+    {"VkSwapchainPresentScalingCreateInfoKHR", 39},
     {"VkSysmemColorSpaceFUCHSIA", 26},
     {"VkTensorCaptureDescriptorDataInfoARM", 37},
     {"VkTensorCopyARM", 16},
@@ -2015,6 +2018,8 @@ const char* String(Struct structure) {
     {"VkVideoEncodeH265SessionParametersFeedbackInfoKHR", 50},
     {"VkVideoEncodeH265SessionParametersGetInfoKHR", 45},
     {"VkVideoEncodeInfoKHR", 21},
+    {"VkVideoEncodeIntraRefreshCapabilitiesKHR", 41},
+    {"VkVideoEncodeIntraRefreshInfoKHR", 33},
     {"VkVideoEncodeQualityLevelInfoKHR", 33},
     {"VkVideoEncodeQualityLevelPropertiesKHR", 39},
     {"VkVideoEncodeQuantizationMapCapabilitiesKHR", 44},
@@ -2022,6 +2027,7 @@ const char* String(Struct structure) {
     {"VkVideoEncodeQuantizationMapSessionParametersCreateInfoKHR", 59},
     {"VkVideoEncodeRateControlInfoKHR", 32},
     {"VkVideoEncodeRateControlLayerInfoKHR", 37},
+    {"VkVideoEncodeSessionIntraRefreshCreateInfoKHR", 46},
     {"VkVideoEncodeSessionParametersFeedbackInfoKHR", 46},
     {"VkVideoEncodeSessionParametersGetInfoKHR", 41},
     {"VkVideoEncodeUsageInfoKHR", 26},
@@ -2034,6 +2040,7 @@ const char* String(Struct structure) {
     {"VkVideoPictureResourceInfoKHR", 30},
     {"VkVideoProfileInfoKHR", 22},
     {"VkVideoProfileListInfoKHR", 26},
+    {"VkVideoReferenceIntraRefreshInfoKHR", 36},
     {"VkVideoReferenceSlotInfoKHR", 28},
     {"VkVideoSessionCreateInfoKHR", 28},
     {"VkVideoSessionMemoryRequirementsKHR", 36},
@@ -2489,6 +2496,7 @@ const char* String(Field field) {
     {"diagnosticsConfig", 18},
     {"dimension", 10},
     {"dimensionCount", 15},
+    {"dirtyIntraRefreshRegions", 25},
     {"disableInternalCache", 21},
     {"disabledValidationCheckCount", 29},
     {"disabledValidationFeatureCount", 31},
@@ -2994,6 +3002,10 @@ const char* String(Field field) {
     {"intersectionShader", 19},
     {"intraFrameSize", 15},
     {"intraQIndex", 12},
+    {"intraRefreshCycleDuration", 26},
+    {"intraRefreshIndex", 18},
+    {"intraRefreshMode", 17},
+    {"intraRefreshModes", 18},
     {"invocationMask", 15},
     {"ioSurface", 10},
     {"isForeign", 10},
@@ -3197,6 +3209,8 @@ const char* String(Field field) {
     {"maxInstancePerPartitionCount", 29},
     {"maxInstances", 13},
     {"maxInterpolationOffset", 23},
+    {"maxIntraRefreshActiveReferencePictures", 39},
+    {"maxIntraRefreshCycleDuration", 29},
     {"maxL1ReferenceCount", 20},
     {"maxLevel", 9},
     {"maxLevelIdc", 12},
@@ -3515,6 +3529,7 @@ const char* String(Field field) {
     {"noMoveOverlap", 14},
     {"nodeIndex", 10},
     {"nonCoherentAtomSize", 20},
+    {"nonRectangularIntraRefreshRegions", 34},
     {"nonSeamlessCubeMap", 19},
     {"nonStrictSinglePixelWideLinesUseParallelogram", 46},
     {"nonStrictWideLinesUseParallelogram", 35},
@@ -4137,6 +4152,7 @@ const char* String(Field field) {
     {"parameters", 11},
     {"params", 7},
     {"partitionCount", 15},
+    {"partitionIndependentIntraRefreshRegions", 40},
     {"partitionIndex", 15},
     {"partitionTranslation", 21},
     {"partitionedAccelerationStructure", 33},
@@ -4189,6 +4205,7 @@ const char* String(Field field) {
     {"pipelineBinaryPrefersInternalCache", 35},
     {"pipelineBindPoint", 18},
     {"pipelineCache", 14},
+    {"pipelineCacheIncrementalMode", 29},
     {"pipelineCacheUUID", 18},
     {"pipelineCount", 14},
     {"pipelineCreationCacheControl", 29},
@@ -5058,6 +5075,7 @@ const char* String(Field field) {
     {"videoContentHints", 18},
     {"videoDecodeVP9", 15},
     {"videoEncodeAV1", 15},
+    {"videoEncodeIntraRefresh", 24},
     {"videoEncodeQuantizationMap", 27},
     {"videoMaintenance1", 18},
     {"videoMaintenance2", 18},
@@ -5379,8 +5397,8 @@ const char* String(FlagBitmask value) {
     {"VkPipelineShaderStageCreateFlagBits", 36},
     {"VkPipelineStageFlagBits", 24},
     {"VkPipelineStageFlagBits2", 25},
-    {"VkPresentGravityFlagBitsEXT", 28},
-    {"VkPresentScalingFlagBitsEXT", 28},
+    {"VkPresentGravityFlagBitsKHR", 28},
+    {"VkPresentScalingFlagBitsKHR", 28},
     {"VkQueryControlFlagBits", 23},
     {"VkQueryPipelineStatisticFlagBits", 33},
     {"VkQueryPoolCreateFlagBits", 26},
@@ -5434,6 +5452,7 @@ const char* String(FlagBitmask value) {
     {"VkVideoEncodeH265RateControlFlagBitsKHR", 40},
     {"VkVideoEncodeH265StdFlagBitsKHR", 32},
     {"VkVideoEncodeH265TransformBlockSizeFlagBitsKHR", 47},
+    {"VkVideoEncodeIntraRefreshModeFlagBitsKHR", 41},
     {"VkVideoEncodeRateControlModeFlagBitsKHR", 40},
     {"VkVideoEncodeUsageFlagBitsKHR", 30},
     {"VkVideoSessionCreateFlagBitsKHR", 32},
@@ -5705,6 +5724,7 @@ const char* String(Extension extension) {
     {"VK_KHR_portability_subset", 26},
     {"VK_KHR_present_id", 18},
     {"VK_KHR_present_id2", 19},
+    {"VK_KHR_present_mode_fifo_latest_ready", 38},
     {"VK_KHR_present_wait", 20},
     {"VK_KHR_present_wait2", 21},
     {"VK_KHR_push_descriptor", 23},
@@ -5738,8 +5758,10 @@ const char* String(Extension extension) {
     {"VK_KHR_spirv_1_4", 17},
     {"VK_KHR_storage_buffer_storage_class", 36},
     {"VK_KHR_surface", 15},
+    {"VK_KHR_surface_maintenance1", 28},
     {"VK_KHR_surface_protected_capabilities", 38},
     {"VK_KHR_swapchain", 17},
+    {"VK_KHR_swapchain_maintenance1", 30},
     {"VK_KHR_swapchain_mutable_format", 32},
     {"VK_KHR_synchronization2", 24},
     {"VK_KHR_timeline_semaphore", 26},
@@ -5755,6 +5777,7 @@ const char* String(Extension extension) {
     {"VK_KHR_video_encode_av1", 24},
     {"VK_KHR_video_encode_h264", 25},
     {"VK_KHR_video_encode_h265", 25},
+    {"VK_KHR_video_encode_intra_refresh", 34},
     {"VK_KHR_video_encode_quantization_map", 37},
     {"VK_KHR_video_encode_queue", 26},
     {"VK_KHR_video_maintenance1", 26},
@@ -5858,6 +5881,7 @@ const char* String(Extension extension) {
     {"VK_QNX_external_memory_screen_buffer", 37},
     {"VK_QNX_screen_surface", 22},
     {"VK_SEC_amigo_profiling", 23},
+    {"VK_SEC_pipeline_cache_incremental_mode", 39},
     {"VK_VALVE_descriptor_set_host_mapping", 37},
     {"VK_VALVE_fragment_density_map_layered", 38},
     {"VK_VALVE_mutable_descriptor_type", 33},
@@ -7328,6 +7352,24 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPipelineBinaryDataInfoKHR;
     case VK_STRUCTURE_TYPE_PIPELINE_BINARY_HANDLES_INFO_KHR:
        return Struct::VkPipelineBinaryHandlesInfoKHR;
+    case VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_KHR:
+       return Struct::VkSurfacePresentModeKHR;
+    case VK_STRUCTURE_TYPE_SURFACE_PRESENT_SCALING_CAPABILITIES_KHR:
+       return Struct::VkSurfacePresentScalingCapabilitiesKHR;
+    case VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_COMPATIBILITY_KHR:
+       return Struct::VkSurfacePresentModeCompatibilityKHR;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SWAPCHAIN_MAINTENANCE_1_FEATURES_KHR:
+       return Struct::VkPhysicalDeviceSwapchainMaintenance1FeaturesKHR;
+    case VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_FENCE_INFO_KHR:
+       return Struct::VkSwapchainPresentFenceInfoKHR;
+    case VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODES_CREATE_INFO_KHR:
+       return Struct::VkSwapchainPresentModesCreateInfoKHR;
+    case VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODE_INFO_KHR:
+       return Struct::VkSwapchainPresentModeInfoKHR;
+    case VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_SCALING_CREATE_INFO_KHR:
+       return Struct::VkSwapchainPresentScalingCreateInfoKHR;
+    case VK_STRUCTURE_TYPE_RELEASE_SWAPCHAIN_IMAGES_INFO_KHR:
+       return Struct::VkReleaseSwapchainImagesInfoKHR;
     case VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_KHR:
        return Struct::VkCooperativeMatrixPropertiesKHR;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_KHR:
@@ -7392,6 +7434,16 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkSetDescriptorBufferOffsetsInfoEXT;
     case VK_STRUCTURE_TYPE_BIND_DESCRIPTOR_BUFFER_EMBEDDED_SAMPLERS_INFO_EXT:
        return Struct::VkBindDescriptorBufferEmbeddedSamplersInfoEXT;
+    case VK_STRUCTURE_TYPE_VIDEO_ENCODE_INTRA_REFRESH_CAPABILITIES_KHR:
+       return Struct::VkVideoEncodeIntraRefreshCapabilitiesKHR;
+    case VK_STRUCTURE_TYPE_VIDEO_ENCODE_SESSION_INTRA_REFRESH_CREATE_INFO_KHR:
+       return Struct::VkVideoEncodeSessionIntraRefreshCreateInfoKHR;
+    case VK_STRUCTURE_TYPE_VIDEO_ENCODE_INTRA_REFRESH_INFO_KHR:
+       return Struct::VkVideoEncodeIntraRefreshInfoKHR;
+    case VK_STRUCTURE_TYPE_VIDEO_REFERENCE_INTRA_REFRESH_INFO_KHR:
+       return Struct::VkVideoReferenceIntraRefreshInfoKHR;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_ENCODE_INTRA_REFRESH_FEATURES_KHR:
+       return Struct::VkPhysicalDeviceVideoEncodeIntraRefreshFeaturesKHR;
     case VK_STRUCTURE_TYPE_VIDEO_ENCODE_QUANTIZATION_MAP_CAPABILITIES_KHR:
        return Struct::VkVideoEncodeQuantizationMapCapabilitiesKHR;
     case VK_STRUCTURE_TYPE_VIDEO_FORMAT_QUANTIZATION_MAP_PROPERTIES_KHR:
@@ -7448,6 +7500,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceRobustness2FeaturesKHR;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_PROPERTIES_KHR:
        return Struct::VkPhysicalDeviceRobustness2PropertiesKHR;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_MODE_FIFO_LATEST_READY_FEATURES_KHR:
+       return Struct::VkPhysicalDevicePresentModeFifoLatestReadyFeaturesKHR;
     case VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT:
        return Struct::VkDebugReportCallbackCreateInfoEXT;
     case VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_RASTERIZATION_ORDER_AMD:
@@ -7794,24 +7848,6 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkMemoryMapPlacedInfoEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_2_FEATURES_EXT:
        return Struct::VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT;
-    case VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_EXT:
-       return Struct::VkSurfacePresentModeEXT;
-    case VK_STRUCTURE_TYPE_SURFACE_PRESENT_SCALING_CAPABILITIES_EXT:
-       return Struct::VkSurfacePresentScalingCapabilitiesEXT;
-    case VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_COMPATIBILITY_EXT:
-       return Struct::VkSurfacePresentModeCompatibilityEXT;
-    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SWAPCHAIN_MAINTENANCE_1_FEATURES_EXT:
-       return Struct::VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT;
-    case VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_FENCE_INFO_EXT:
-       return Struct::VkSwapchainPresentFenceInfoEXT;
-    case VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODES_CREATE_INFO_EXT:
-       return Struct::VkSwapchainPresentModesCreateInfoEXT;
-    case VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODE_INFO_EXT:
-       return Struct::VkSwapchainPresentModeInfoEXT;
-    case VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_SCALING_CREATE_INFO_EXT:
-       return Struct::VkSwapchainPresentScalingCreateInfoEXT;
-    case VK_STRUCTURE_TYPE_RELEASE_SWAPCHAIN_IMAGES_INFO_EXT:
-       return Struct::VkReleaseSwapchainImagesInfoEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_PROPERTIES_NV:
        return Struct::VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_FEATURES_NV:
@@ -8012,8 +8048,6 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPipelineViewportDepthClipControlCreateInfoEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_TOPOLOGY_LIST_RESTART_FEATURES_EXT:
        return Struct::VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT;
-    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_MODE_FIFO_LATEST_READY_FEATURES_EXT:
-       return Struct::VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT;
     case VK_STRUCTURE_TYPE_IMPORT_MEMORY_ZIRCON_HANDLE_INFO_FUCHSIA:
        return Struct::VkImportMemoryZirconHandleInfoFUCHSIA;
     case VK_STRUCTURE_TYPE_MEMORY_ZIRCON_HANDLE_PROPERTIES_FUCHSIA:
@@ -8588,6 +8622,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkRenderingEndInfoEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_DEVICE_MEMORY_FEATURES_EXT:
        return Struct::VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CACHE_INCREMENTAL_MODE_FEATURES_SEC:
+       return Struct::VkPhysicalDevicePipelineCacheIncrementalModeFeaturesSEC;
     case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR:
        return Struct::VkAccelerationStructureGeometryTrianglesDataKHR;
     case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR:
@@ -8833,6 +8869,8 @@ Func FindAlias(Func func) {
        return Func::vkTransitionImageLayout;
     case Func::vkGetImageSubresourceLayout2EXT:
        return Func::vkGetImageSubresourceLayout2;
+    case Func::vkReleaseSwapchainImagesEXT:
+       return Func::vkReleaseSwapchainImagesKHR;
     case Func::vkCreatePrivateDataSlotEXT:
        return Func::vkCreatePrivateDataSlot;
     case Func::vkDestroyPrivateDataSlotEXT:

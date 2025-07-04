@@ -614,6 +614,8 @@ enum class Feature {
     performanceCounterQueryPools,
     // VkPhysicalDevicePipelineBinaryFeaturesKHR
     pipelineBinaries,
+    // VkPhysicalDevicePipelineCacheIncrementalModeFeaturesSEC
+    pipelineCacheIncrementalMode,
     // VkPhysicalDevicePipelineCreationCacheControlFeatures, VkPhysicalDeviceVulkan13Features
     pipelineCreationCacheControl,
     // VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR
@@ -666,7 +668,7 @@ enum class Feature {
     presentId,
     // VkPhysicalDevicePresentMeteringFeaturesNV
     presentMetering,
-    // VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT
+    // VkPhysicalDevicePresentModeFifoLatestReadyFeaturesKHR
     presentModeFifoLatestReady,
     // VkPhysicalDevicePresentWait2FeaturesKHR
     presentWait2,
@@ -890,7 +892,7 @@ enum class Feature {
     subpassMergeFeedback,
     // VkPhysicalDeviceSubpassShadingFeaturesHUAWEI
     subpassShading,
-    // VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT
+    // VkPhysicalDeviceSwapchainMaintenance1FeaturesKHR
     swapchainMaintenance1,
     // VkPhysicalDeviceSynchronization2Features, VkPhysicalDeviceVulkan13Features
     synchronization2,
@@ -970,6 +972,8 @@ enum class Feature {
     videoDecodeVP9,
     // VkPhysicalDeviceVideoEncodeAV1FeaturesKHR
     videoEncodeAV1,
+    // VkPhysicalDeviceVideoEncodeIntraRefreshFeaturesKHR
+    videoEncodeIntraRefresh,
     // VkPhysicalDeviceVideoEncodeQuantizationMapFeaturesKHR
     videoEncodeQuantizationMap,
     // VkPhysicalDeviceVideoMaintenance1FeaturesKHR

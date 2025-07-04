@@ -17371,6 +17371,53 @@ VKAPI_ATTR VkResult VKAPI_CALL ReleaseCapturedPipelineDataKHR(VkDevice device, c
     return result;
 }
 
+VKAPI_ATTR VkResult VKAPI_CALL ReleaseSwapchainImagesKHR(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkReleaseSwapchainImagesKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkReleaseSwapchainImagesKHR");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateReleaseSwapchainImagesKHR]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateReleaseSwapchainImagesKHR(device, pReleaseInfo, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkReleaseSwapchainImagesKHR);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkReleaseSwapchainImagesKHR");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordReleaseSwapchainImagesKHR]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordReleaseSwapchainImagesKHR(device, pReleaseInfo, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch_vkReleaseSwapchainImagesKHR");
+        result = device_dispatch->ReleaseSwapchainImagesKHR(device, pReleaseInfo);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkReleaseSwapchainImagesKHR");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordReleaseSwapchainImagesKHR]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordReleaseSwapchainImagesKHR(device, pReleaseInfo, record_obj);
+        }
+    }
+    return result;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDevice physicalDevice,
                                                                                uint32_t* pPropertyCount,
                                                                                VkCooperativeMatrixPropertiesKHR* pProperties) {
@@ -24402,7 +24449,7 @@ VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2EXT(VkDevice device, VkImag
     }
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL ReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo) {
+VKAPI_ATTR VkResult VKAPI_CALL ReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo) {
     VVL_ZoneScoped;
 
     auto device_dispatch = vvl::dispatch::GetData(device);
@@ -34989,6 +35036,7 @@ const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap() {
         {"vkGetPipelineKeyKHR", {kFuncTypeDev, (void*)GetPipelineKeyKHR}},
         {"vkGetPipelineBinaryDataKHR", {kFuncTypeDev, (void*)GetPipelineBinaryDataKHR}},
         {"vkReleaseCapturedPipelineDataKHR", {kFuncTypeDev, (void*)ReleaseCapturedPipelineDataKHR}},
+        {"vkReleaseSwapchainImagesKHR", {kFuncTypeDev, (void*)ReleaseSwapchainImagesKHR}},
         {"vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR",
          {kFuncTypePdev, (void*)GetPhysicalDeviceCooperativeMatrixPropertiesKHR}},
         {"vkCmdSetLineStippleKHR", {kFuncTypeDev, (void*)CmdSetLineStippleKHR}},

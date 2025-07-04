@@ -624,6 +624,8 @@ struct DeviceFeatures {
     bool performanceCounterQueryPools;
     // VkPhysicalDevicePipelineBinaryFeaturesKHR
     bool pipelineBinaries;
+    // VkPhysicalDevicePipelineCacheIncrementalModeFeaturesSEC
+    bool pipelineCacheIncrementalMode;
     // VkPhysicalDevicePipelineCreationCacheControlFeatures, VkPhysicalDeviceVulkan13Features
     bool pipelineCreationCacheControl;
     // VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR
@@ -676,7 +678,7 @@ struct DeviceFeatures {
     bool presentId;
     // VkPhysicalDevicePresentMeteringFeaturesNV
     bool presentMetering;
-    // VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT
+    // VkPhysicalDevicePresentModeFifoLatestReadyFeaturesKHR
     bool presentModeFifoLatestReady;
     // VkPhysicalDevicePresentWait2FeaturesKHR
     bool presentWait2;
@@ -900,7 +902,7 @@ struct DeviceFeatures {
     bool subpassMergeFeedback;
     // VkPhysicalDeviceSubpassShadingFeaturesHUAWEI
     bool subpassShading;
-    // VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT
+    // VkPhysicalDeviceSwapchainMaintenance1FeaturesKHR
     bool swapchainMaintenance1;
     // VkPhysicalDeviceSynchronization2Features, VkPhysicalDeviceVulkan13Features
     bool synchronization2;
@@ -980,6 +982,8 @@ struct DeviceFeatures {
     bool videoDecodeVP9;
     // VkPhysicalDeviceVideoEncodeAV1FeaturesKHR
     bool videoEncodeAV1;
+    // VkPhysicalDeviceVideoEncodeIntraRefreshFeaturesKHR
+    bool videoEncodeIntraRefresh;
     // VkPhysicalDeviceVideoEncodeQuantizationMapFeaturesKHR
     bool videoEncodeQuantizationMap;
     // VkPhysicalDeviceVideoMaintenance1FeaturesKHR

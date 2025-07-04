@@ -505,6 +505,7 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetPipelineKeyKHR GetPipelineKeyKHR;
     PFN_vkGetPipelineBinaryDataKHR GetPipelineBinaryDataKHR;
     PFN_vkReleaseCapturedPipelineDataKHR ReleaseCapturedPipelineDataKHR;
+    PFN_vkReleaseSwapchainImagesKHR ReleaseSwapchainImagesKHR;
     PFN_vkCmdSetLineStippleKHR CmdSetLineStippleKHR;
     PFN_vkGetCalibratedTimestampsKHR GetCalibratedTimestampsKHR;
     PFN_vkCmdBindDescriptorSets2KHR CmdBindDescriptorSets2KHR;

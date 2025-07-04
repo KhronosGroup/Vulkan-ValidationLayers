@@ -696,6 +696,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->pipelineBinaries |= enabled->pipelineBinaries == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SWAPCHAIN_MAINTENANCE_1_FEATURES_KHR: {
+                const VkPhysicalDeviceSwapchainMaintenance1FeaturesKHR *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceSwapchainMaintenance1FeaturesKHR *>(pNext);
+                features->swapchainMaintenance1 |= enabled->swapchainMaintenance1 == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_KHR: {
                 const VkPhysicalDeviceCooperativeMatrixFeaturesKHR *enabled =
                     reinterpret_cast<const VkPhysicalDeviceCooperativeMatrixFeaturesKHR *>(pNext);
@@ -733,6 +739,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                     reinterpret_cast<const VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR *>(pNext);
                 features->unifiedImageLayouts |= enabled->unifiedImageLayouts == VK_TRUE;
                 features->unifiedImageLayoutsVideo |= enabled->unifiedImageLayoutsVideo == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_ENCODE_INTRA_REFRESH_FEATURES_KHR: {
+                const VkPhysicalDeviceVideoEncodeIntraRefreshFeaturesKHR *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceVideoEncodeIntraRefreshFeaturesKHR *>(pNext);
+                features->videoEncodeIntraRefresh |= enabled->videoEncodeIntraRefresh == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_ENCODE_QUANTIZATION_MAP_FEATURES_KHR: {
@@ -783,6 +795,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->robustBufferAccess2 |= enabled->robustBufferAccess2 == VK_TRUE;
                 features->robustImageAccess2 |= enabled->robustImageAccess2 == VK_TRUE;
                 features->nullDescriptor |= enabled->nullDescriptor == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_MODE_FIFO_LATEST_READY_FEATURES_KHR: {
+                const VkPhysicalDevicePresentModeFifoLatestReadyFeaturesKHR *enabled =
+                    reinterpret_cast<const VkPhysicalDevicePresentModeFifoLatestReadyFeaturesKHR *>(pNext);
+                features->presentModeFifoLatestReady |= enabled->presentModeFifoLatestReady == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_FEATURES_EXT: {
@@ -1006,12 +1024,6 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->sparseImageFloat32AtomicMinMax |= enabled->sparseImageFloat32AtomicMinMax == VK_TRUE;
                 break;
             }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SWAPCHAIN_MAINTENANCE_1_FEATURES_EXT: {
-                const VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT *enabled =
-                    reinterpret_cast<const VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT *>(pNext);
-                features->swapchainMaintenance1 |= enabled->swapchainMaintenance1 == VK_TRUE;
-                break;
-            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_FEATURES_NV: {
                 const VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV *enabled =
                     reinterpret_cast<const VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV *>(pNext);
@@ -1210,12 +1222,6 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                     reinterpret_cast<const VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT *>(pNext);
                 features->primitiveTopologyListRestart |= enabled->primitiveTopologyListRestart == VK_TRUE;
                 features->primitiveTopologyPatchListRestart |= enabled->primitiveTopologyPatchListRestart == VK_TRUE;
-                break;
-            }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_MODE_FIFO_LATEST_READY_FEATURES_EXT: {
-                const VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT *enabled =
-                    reinterpret_cast<const VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT *>(pNext);
-                features->presentModeFifoLatestReady |= enabled->presentModeFifoLatestReady == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBPASS_SHADING_FEATURES_HUAWEI: {
@@ -1810,6 +1816,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 const VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT *enabled =
                     reinterpret_cast<const VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT *>(pNext);
                 features->zeroInitializeDeviceMemory |= enabled->zeroInitializeDeviceMemory == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CACHE_INCREMENTAL_MODE_FEATURES_SEC: {
+                const VkPhysicalDevicePipelineCacheIncrementalModeFeaturesSEC *enabled =
+                    reinterpret_cast<const VkPhysicalDevicePipelineCacheIncrementalModeFeaturesSEC *>(pNext);
+                features->pipelineCacheIncrementalMode |= enabled->pipelineCacheIncrementalMode == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR: {

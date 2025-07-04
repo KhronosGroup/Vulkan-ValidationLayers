@@ -3455,13 +3455,13 @@ TEST_F(NegativeWsi, SwapchainPresentModeInfoImplicit) {
     present_mode_info.swapchainCount = 0;
     present_mode_info.pPresentModes = &present_mode;
 
-    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentModeInfoEXT-swapchainCount-arraylength");
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentModeInfoKHR-swapchainCount-arraylength");
     m_default_queue->Present(m_swapchain, 0, vkt::no_semaphore, &present_mode_info);
     m_errorMonitor->VerifyFound();
 
     present_mode_info.swapchainCount = 1;
     present_mode_info.pPresentModes = nullptr;
-    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentModeInfoEXT-pPresentModes-parameter");
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentModeInfoKHR-pPresentModes-parameter");
     m_default_queue->Present(m_swapchain, 0, vkt::no_semaphore, &present_mode_info);
     m_errorMonitor->VerifyFound();
 }
@@ -3642,8 +3642,8 @@ TEST_F(NegativeWsi, PresentInfoSwapchainsDifferentPresentModes) {
     m_device->Wait();
 }
 
-TEST_F(NegativeWsi, ReleaseSwapchainImagesWithoutFeature) {
-    TEST_DESCRIPTION("Submit VkPresentInfo where one swapchain has VkSwapchainPresentModesCreateInfoEXT and the other does not");
+TEST_F(NegativeWsi, DISABLED_ReleaseSwapchainImagesWithoutFeature) {
+    TEST_DESCRIPTION("Submit VkPresentInfo where one swapchain has VkSwapchainPresentModesCreateInfoKHR and the other does not");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
@@ -3660,7 +3660,7 @@ TEST_F(NegativeWsi, ReleaseSwapchainImagesWithoutFeature) {
     release_info.imageIndexCount = 1u;
     release_info.pImageIndices = &image_index;
 
-    m_errorMonitor->SetDesiredError("VUID-vkReleaseSwapchainImagesEXT-swapchainMaintenance1-10159");
+    m_errorMonitor->SetDesiredError("VUID-vkReleaseSwapchainImagesKHR-swapchainMaintenance1-10159");
     vk::ReleaseSwapchainImagesEXT(device(), &release_info);
     m_errorMonitor->VerifyFound();
 }

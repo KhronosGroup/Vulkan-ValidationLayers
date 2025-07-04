@@ -880,11 +880,6 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
                     return {vvl::Extension::_VK_KHR_swapchain_mutable_format};
                 }
             }
-            if (value & (VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_EXT)) {
-                if (!IsExtEnabled(extensions.vk_ext_swapchain_maintenance1)) {
-                    return {vvl::Extension::_VK_EXT_swapchain_maintenance1};
-                }
-            }
             if (value & (VK_SWAPCHAIN_CREATE_PRESENT_ID_2_BIT_KHR)) {
                 if (!IsExtEnabled(extensions.vk_khr_present_id2)) {
                     return {vvl::Extension::_VK_KHR_present_id2};
@@ -893,6 +888,12 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
             if (value & (VK_SWAPCHAIN_CREATE_PRESENT_WAIT_2_BIT_KHR)) {
                 if (!IsExtEnabled(extensions.vk_khr_present_wait2)) {
                     return {vvl::Extension::_VK_KHR_present_wait2};
+                }
+            }
+            if (value & (VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_KHR)) {
+                if (!IsExtEnabled(extensions.vk_khr_swapchain_maintenance1) &&
+                    !IsExtEnabled(extensions.vk_ext_swapchain_maintenance1)) {
+                    return {vvl::Extension::_VK_KHR_swapchain_maintenance1, vvl::Extension::_VK_EXT_swapchain_maintenance1};
                 }
             }
             return {};
@@ -935,6 +936,11 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
             }
             return {};
         case vvl::FlagBitmask::VkVideoEncodeFlagBitsKHR:
+            if (value & (VK_VIDEO_ENCODE_INTRA_REFRESH_BIT_KHR)) {
+                if (!IsExtEnabled(extensions.vk_khr_video_encode_intra_refresh)) {
+                    return {vvl::Extension::_VK_KHR_video_encode_intra_refresh};
+                }
+            }
             if (value & (VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR | VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR)) {
                 if (!IsExtEnabled(extensions.vk_khr_video_encode_quantization_map)) {
                     return {vvl::Extension::_VK_KHR_video_encode_quantization_map};
@@ -1331,8 +1337,14 @@ std::string stateless::Context::DescribeFlagBitmaskValue(vvl::FlagBitmask flag_b
             return string_VkVideoEncodeUsageFlagsKHR(value);
         case vvl::FlagBitmask::VkVideoEncodeContentFlagBitsKHR:
             return string_VkVideoEncodeContentFlagsKHR(value);
+        case vvl::FlagBitmask::VkPresentScalingFlagBitsKHR:
+            return string_VkPresentScalingFlagsKHR(value);
+        case vvl::FlagBitmask::VkPresentGravityFlagBitsKHR:
+            return string_VkPresentGravityFlagsKHR(value);
         case vvl::FlagBitmask::VkVideoEncodeAV1RateControlFlagBitsKHR:
             return string_VkVideoEncodeAV1RateControlFlagsKHR(value);
+        case vvl::FlagBitmask::VkVideoEncodeIntraRefreshModeFlagBitsKHR:
+            return string_VkVideoEncodeIntraRefreshModeFlagsKHR(value);
         case vvl::FlagBitmask::VkDebugReportFlagBitsEXT:
             return string_VkDebugReportFlagsEXT(value);
         case vvl::FlagBitmask::VkExternalMemoryHandleTypeFlagBitsNV:
@@ -1351,10 +1363,6 @@ std::string stateless::Context::DescribeFlagBitmaskValue(vvl::FlagBitmask flag_b
             return string_VkGeometryInstanceFlagsKHR(value);
         case vvl::FlagBitmask::VkBuildAccelerationStructureFlagBitsKHR:
             return string_VkBuildAccelerationStructureFlagsKHR(value);
-        case vvl::FlagBitmask::VkPresentScalingFlagBitsEXT:
-            return string_VkPresentScalingFlagsEXT(value);
-        case vvl::FlagBitmask::VkPresentGravityFlagBitsEXT:
-            return string_VkPresentGravityFlagsEXT(value);
         case vvl::FlagBitmask::VkIndirectStateFlagBitsNV:
             return string_VkIndirectStateFlagsNV(value);
         case vvl::FlagBitmask::VkIndirectCommandsLayoutUsageFlagBitsNV:

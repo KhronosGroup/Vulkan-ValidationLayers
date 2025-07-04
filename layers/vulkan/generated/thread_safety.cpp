@@ -4202,6 +4202,16 @@ void Device::PostCallRecordReleaseCapturedPipelineDataKHR(VkDevice device, const
     FinishReadObjectParentInstance(device, record_obj.location);
 }
 
+void Device::PreCallRecordReleaseSwapchainImagesKHR(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo,
+                                                    const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordReleaseSwapchainImagesKHR(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo,
+                                                     const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
+
 void Device::PreCallRecordCmdSetLineStippleKHR(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
                                                uint16_t lineStipplePattern, const RecordObject& record_obj) {
     PreCallRecordCmdSetLineStipple(commandBuffer, lineStippleFactor, lineStipplePattern, record_obj);
@@ -6104,14 +6114,14 @@ void Device::PostCallRecordGetImageSubresourceLayout2EXT(VkDevice device, VkImag
     PostCallRecordGetImageSubresourceLayout2(device, image, pSubresource, pLayout, record_obj);
 }
 
-void Device::PreCallRecordReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo,
+void Device::PreCallRecordReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo,
                                                     const RecordObject& record_obj) {
-    StartReadObjectParentInstance(device, record_obj.location);
+    PreCallRecordReleaseSwapchainImagesKHR(device, pReleaseInfo, record_obj);
 }
 
-void Device::PostCallRecordReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo,
+void Device::PostCallRecordReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo,
                                                      const RecordObject& record_obj) {
-    FinishReadObjectParentInstance(device, record_obj.location);
+    PostCallRecordReleaseSwapchainImagesKHR(device, pReleaseInfo, record_obj);
 }
 
 void Device::PreCallRecordGetGeneratedCommandsMemoryRequirementsNV(VkDevice device,

@@ -141,6 +141,10 @@ DeprecationData GetDeprecatedData(vvl::Extension extension_name) {
         {vvl::Extension::_VK_EXT_index_type_uint8, {DeprecationReason::Promoted, {vvl::Extension::_VK_KHR_index_type_uint8}}},
         {vvl::Extension::_VK_EXT_extended_dynamic_state, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
         {vvl::Extension::_VK_EXT_host_image_copy, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_4}}},
+        {vvl::Extension::_VK_EXT_surface_maintenance1,
+         {DeprecationReason::Promoted, {vvl::Extension::_VK_KHR_surface_maintenance1}}},
+        {vvl::Extension::_VK_EXT_swapchain_maintenance1,
+         {DeprecationReason::Promoted, {vvl::Extension::_VK_KHR_swapchain_maintenance1}}},
         {vvl::Extension::_VK_EXT_shader_demote_to_helper_invocation,
          {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
         {vvl::Extension::_VK_EXT_texel_buffer_alignment, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
@@ -154,6 +158,8 @@ DeprecationData GetDeprecatedData(vvl::Extension extension_name) {
          {DeprecationReason::Promoted, {vvl::Extension::_VK_EXT_rasterization_order_attachment_access}}},
         {vvl::Extension::_VK_VALVE_mutable_descriptor_type,
          {DeprecationReason::Promoted, {vvl::Extension::_VK_EXT_mutable_descriptor_type}}},
+        {vvl::Extension::_VK_EXT_present_mode_fifo_latest_ready,
+         {DeprecationReason::Promoted, {vvl::Extension::_VK_KHR_present_mode_fifo_latest_ready}}},
         {vvl::Extension::_VK_EXT_extended_dynamic_state2, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
         {vvl::Extension::_VK_EXT_global_priority_query, {DeprecationReason::Promoted, {vvl::Extension::_VK_KHR_global_priority}}},
         {vvl::Extension::_VK_NV_displacement_micromap,
@@ -1133,6 +1139,11 @@ void BestPractices::PostCallRecordGetPipelineBinaryDataKHR(VkDevice device, cons
     bp_state::LogResult(*this, device, record_obj);
 }
 
+void BestPractices::PostCallRecordReleaseSwapchainImagesKHR(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo,
+                                                            const RecordObject& record_obj) {
+    bp_state::LogResult(*this, device, record_obj);
+}
+
 void bp_state::Instance::PostCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesKHR(
     VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixPropertiesKHR* pProperties,
     const RecordObject& record_obj) {
@@ -1564,9 +1575,9 @@ void BestPractices::PostCallRecordTransitionImageLayoutEXT(VkDevice device, uint
     PostCallRecordTransitionImageLayout(device, transitionCount, pTransitions, record_obj);
 }
 
-void BestPractices::PostCallRecordReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo,
+void BestPractices::PostCallRecordReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo,
                                                             const RecordObject& record_obj) {
-    bp_state::LogResult(*this, device, record_obj);
+    PostCallRecordReleaseSwapchainImagesKHR(device, pReleaseInfo, record_obj);
 }
 
 void BestPractices::PostCallRecordCreateIndirectCommandsLayoutNV(VkDevice device,

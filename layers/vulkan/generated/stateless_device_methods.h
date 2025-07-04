@@ -765,6 +765,8 @@ bool PreCallValidateGetPipelineBinaryDataKHR(VkDevice device, const VkPipelineBi
 bool PreCallValidateReleaseCapturedPipelineDataKHR(VkDevice device, const VkReleaseCapturedPipelineDataInfoKHR* pInfo,
                                                    const VkAllocationCallbacks* pAllocator,
                                                    const ErrorObject& error_obj) const override;
+bool PreCallValidateReleaseSwapchainImagesKHR(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo,
+                                              const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdSetLineStippleKHR(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern,
                                          const ErrorObject& error_obj) const override;
 bool PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
@@ -1094,7 +1096,7 @@ bool PreCallValidateTransitionImageLayoutEXT(VkDevice device, uint32_t transitio
                                              const ErrorObject& error_obj) const override;
 bool PreCallValidateGetImageSubresourceLayout2EXT(VkDevice device, VkImage image, const VkImageSubresource2* pSubresource,
                                                   VkSubresourceLayout2* pLayout, const ErrorObject& error_obj) const override;
-bool PreCallValidateReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo,
+bool PreCallValidateReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo,
                                               const ErrorObject& error_obj) const override;
 bool PreCallValidateGetGeneratedCommandsMemoryRequirementsNV(VkDevice device,
                                                              const VkGeneratedCommandsMemoryRequirementsInfoNV* pInfo,

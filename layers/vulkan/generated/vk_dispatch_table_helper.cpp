@@ -589,6 +589,9 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubReleaseCapturedPipelineDataKHR(VkDevic
                                                                          const VkAllocationCallbacks*) {
     return VK_SUCCESS;
 }
+static VKAPI_ATTR VkResult VKAPI_CALL StubReleaseSwapchainImagesKHR(VkDevice, const VkReleaseSwapchainImagesInfoKHR*) {
+    return VK_SUCCESS;
+}
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDevice, uint32_t*,
                                                                                           VkCooperativeMatrixPropertiesKHR*) {
     return VK_SUCCESS;
@@ -982,7 +985,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubTransitionImageLayoutEXT(VkDevice, uin
 }
 static VKAPI_ATTR void VKAPI_CALL StubGetImageSubresourceLayout2EXT(VkDevice, VkImage, const VkImageSubresource2*,
                                                                     VkSubresourceLayout2*) {}
-static VKAPI_ATTR VkResult VKAPI_CALL StubReleaseSwapchainImagesEXT(VkDevice, const VkReleaseSwapchainImagesInfoEXT*) {
+static VKAPI_ATTR VkResult VKAPI_CALL StubReleaseSwapchainImagesEXT(VkDevice, const VkReleaseSwapchainImagesInfoKHR*) {
     return VK_SUCCESS;
 }
 static VKAPI_ATTR void VKAPI_CALL StubGetGeneratedCommandsMemoryRequirementsNV(VkDevice,
@@ -1722,6 +1725,7 @@ const auto& GetApiExtensionMap() {
         {"vkGetPipelineKeyKHR", {vvl::Extension::_VK_KHR_pipeline_binary}},
         {"vkGetPipelineBinaryDataKHR", {vvl::Extension::_VK_KHR_pipeline_binary}},
         {"vkReleaseCapturedPipelineDataKHR", {vvl::Extension::_VK_KHR_pipeline_binary}},
+        {"vkReleaseSwapchainImagesKHR", {vvl::Extension::_VK_KHR_swapchain_maintenance1}},
         {"vkCmdSetLineStippleKHR", {vvl::Extension::_VK_KHR_line_rasterization}},
         {"vkGetCalibratedTimestampsKHR", {vvl::Extension::_VK_KHR_calibrated_timestamps}},
         {"vkCmdBindDescriptorSets2KHR", {vvl::Extension::_VK_KHR_maintenance6}},
@@ -3086,6 +3090,10 @@ void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* tab
     table->ReleaseCapturedPipelineDataKHR = (PFN_vkReleaseCapturedPipelineDataKHR)gpa(device, "vkReleaseCapturedPipelineDataKHR");
     if (table->ReleaseCapturedPipelineDataKHR == nullptr) {
         table->ReleaseCapturedPipelineDataKHR = (PFN_vkReleaseCapturedPipelineDataKHR)StubReleaseCapturedPipelineDataKHR;
+    }
+    table->ReleaseSwapchainImagesKHR = (PFN_vkReleaseSwapchainImagesKHR)gpa(device, "vkReleaseSwapchainImagesKHR");
+    if (table->ReleaseSwapchainImagesKHR == nullptr) {
+        table->ReleaseSwapchainImagesKHR = (PFN_vkReleaseSwapchainImagesKHR)StubReleaseSwapchainImagesKHR;
     }
     table->CmdSetLineStippleKHR = (PFN_vkCmdSetLineStippleKHR)gpa(device, "vkCmdSetLineStippleKHR");
     if (table->CmdSetLineStippleKHR == nullptr) {

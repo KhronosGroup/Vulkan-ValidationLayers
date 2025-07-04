@@ -66,19 +66,19 @@ bool Device::ValidateSwapchainCreateInfoMaintenance1(const VkSwapchainCreateInfo
             vku::FindStructInPNextChain<VkSwapchainPresentScalingCreateInfoEXT>(create_info.pNext)) {
         if (present_scaling_create_info->scalingBehavior != 0) {
             skip |= LogError("VUID-VkSwapchainPresentScalingCreateInfoEXT-swapchainMaintenance1-10154", device,
-                             loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoEXT, Field::scalingBehavior),
+                             loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoKHR, Field::scalingBehavior),
                              " is %s, but swapchainMaintenance1 is not enabled",
-                             string_VkPresentScalingFlagsEXT(present_scaling_create_info->scalingBehavior).c_str());
+                             string_VkPresentScalingFlagsKHR(present_scaling_create_info->scalingBehavior).c_str());
         } else if (present_scaling_create_info->presentGravityX != 0) {
             skip |= LogError("VUID-VkSwapchainPresentScalingCreateInfoEXT-swapchainMaintenance1-10154", device,
-                             loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoEXT, Field::presentGravityX),
+                             loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoKHR, Field::presentGravityX),
                              " is %s, but swapchainMaintenance1 is not enabled",
-                             string_VkPresentGravityFlagsEXT(present_scaling_create_info->presentGravityX).c_str());
+                             string_VkPresentGravityFlagsKHR(present_scaling_create_info->presentGravityX).c_str());
         } else if (present_scaling_create_info->presentGravityY != 0) {
             skip |= LogError("VUID-VkSwapchainPresentScalingCreateInfoEXT-swapchainMaintenance1-10154", device,
-                             loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoEXT, Field::presentGravityY),
+                             loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoKHR, Field::presentGravityY),
                              " is %s, but swapchainMaintenance1 is not enabled",
-                             string_VkPresentGravityFlagsEXT(present_scaling_create_info->presentGravityY).c_str());
+                             string_VkPresentGravityFlagsKHR(present_scaling_create_info->presentGravityY).c_str());
         }
     }
 

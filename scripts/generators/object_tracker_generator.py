@@ -681,6 +681,8 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
             return '"UNASSIGNED-VkDescriptorBufferBindingPushDescriptorBufferHandleEXT-buffer-parent"'
         if commandName == 'vkReleaseSwapchainImagesEXT' and memberName == 'swapchain':
             return '"UNASSIGNED-VkReleaseSwapchainImagesInfoEXT-swapchain-parent"'
+        if commandName == 'vkReleaseSwapchainImagesKHR' and memberName == 'swapchain':
+            return '"UNASSIGNED-VkReleaseSwapchainImagesInfoKHR-swapchain-parent"'
         if commandName == 'vkCmdBeginConditionalRenderingEXT' and memberName == 'buffer':
             return '"UNASSIGNED-VkConditionalRenderingBeginInfoEXT-buffer-parent"'
         if (commandName == 'vkMapMemory2' or commandName == 'vkMapMemory2KHR') and memberName == 'memory':
