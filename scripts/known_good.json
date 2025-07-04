@@ -99,7 +99,7 @@
             "sub_dir": "Vulkan-Loader",
             "build_dir": "Vulkan-Loader/build",
             "install_dir": "Vulkan-Loader/build/install",
-            "commit": "v1.4.320",
+            "commit": "v1.4.321",
             "build_step": "skip",
             "optional": [
                 "tests"
