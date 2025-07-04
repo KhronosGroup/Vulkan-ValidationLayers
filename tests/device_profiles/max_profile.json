@@ -909,6 +909,9 @@
                 "VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT": {
                     "swapchainMaintenance1": true
                 },
+                "VkPhysicalDeviceSwapchainMaintenance1FeaturesKHR": {
+                    "swapchainMaintenance1": true
+                },
                 "VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV": {
                     "rayTracingInvocationReorder": true
                 },
@@ -2230,7 +2233,6 @@
                 "VK_EXT_validation_features": 1,
                 "VK_EXT_validation_flags": 1,
                 "VK_EXT_vertex_attribute_divisor": 1,
-                "VK_KHR_vertex_attribute_divisor": 1,
                 "VK_EXT_vertex_input_dynamic_state": 1,
                 "VK_EXT_vertex_attribute_robustness": 1,
                 "VK_EXT_video_encode_h264": 1,
@@ -2355,12 +2357,14 @@
                 "VK_KHR_surface_maintenance1": 1,
                 "VK_KHR_surface_protected_capabilities": 1,
                 "VK_KHR_swapchain": 1,
+                "VK_KHR_swapchain_maintenance1": 1,
                 "VK_KHR_swapchain_mutable_format": 1,
                 "VK_KHR_synchronization2": 1,
                 "VK_KHR_timeline_semaphore": 1,
                 "VK_KHR_unified_image_layouts": 1,
                 "VK_KHR_uniform_buffer_standard_layout": 1,
                 "VK_KHR_variable_pointers": 1,
+                "VK_KHR_vertex_attribute_divisor": 1,
                 "VK_KHR_video_decode_av1": 1,
                 "VK_KHR_video_decode_h264": 1,
                 "VK_KHR_video_decode_h265": 1,

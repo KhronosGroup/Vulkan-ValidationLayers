@@ -1533,7 +1533,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilities2KHR(V
     GetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, pSurfaceInfo->surface, &pSurfaceCapabilities->surfaceCapabilities);
 
     if (auto* present_mode_compatibility =
-            vku::FindStructInPNextChain<VkSurfacePresentModeCompatibilityEXT>(pSurfaceCapabilities->pNext)) {
+            vku::FindStructInPNextChain<VkSurfacePresentModeCompatibilityKHR>(pSurfaceCapabilities->pNext)) {
         if (!present_mode_compatibility->pPresentModes) {
             present_mode_compatibility->presentModeCount = 3;
         } else {
