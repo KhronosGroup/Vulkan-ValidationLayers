@@ -253,7 +253,6 @@ struct DrawDispatchVuid {
     const char* draw_shaders_no_task_mesh_08885 = kVUIDUndefined;
     const char* set_line_width_08617 = kVUIDUndefined;
     const char* set_line_width_08618 = kVUIDUndefined;
-    const char* set_blend_constants_08621 = kVUIDUndefined;
     const char* set_line_width_08619 = kVUIDUndefined;
     const char* set_viewport_with_count_08642 = kVUIDUndefined;
     const char* alpha_component_word_08920 = kVUIDUndefined;
