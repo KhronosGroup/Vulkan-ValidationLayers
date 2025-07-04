@@ -370,11 +370,11 @@ void Surface::UpdateCapabilitiesCache(VkPhysicalDevice phys_dev, const VkSurface
 
     // Update entry
     info->surface_capabilities = surface_caps.surfaceCapabilities;
-    const auto *present_scaling_caps = vku::FindStructInPNextChain<VkSurfacePresentScalingCapabilitiesEXT>(surface_caps.pNext);
+    const auto *present_scaling_caps = vku::FindStructInPNextChain<VkSurfacePresentScalingCapabilitiesKHR>(surface_caps.pNext);
     if (present_scaling_caps) {
         info->scaling_capabilities = *present_scaling_caps;
     }
-    const auto *compat_modes = vku::FindStructInPNextChain<VkSurfacePresentModeCompatibilityEXT>(surface_caps.pNext);
+    const auto *compat_modes = vku::FindStructInPNextChain<VkSurfacePresentModeCompatibilityKHR>(surface_caps.pNext);
     if (compat_modes && compat_modes->pPresentModes) {
         info->compatible_present_modes.emplace(compat_modes->pPresentModes,
                                                compat_modes->pPresentModes + compat_modes->presentModeCount);
@@ -401,8 +401,8 @@ VkSurfaceCapabilitiesKHR Surface::GetSurfaceCapabilities(VkPhysicalDevice phys_d
         return surface_caps;
     }
 
-    // Per present mode caching is supported for a common case when pNext chain is a single VkSurfacePresentModeEXT structure.
-    const auto *surface_present_mode = vku::FindStructInPNextChain<VkSurfacePresentModeEXT>(surface_info_pnext);
+    // Per present mode caching is supported for a common case when pNext chain is a single VkSurfacePresentModeKHR structure.
+    const auto *surface_present_mode = vku::FindStructInPNextChain<VkSurfacePresentModeKHR>(surface_info_pnext);
     const bool single_pnext_element = static_cast<const VkBaseInStructure *>(surface_info_pnext)->pNext == nullptr;
     if (surface_present_mode && single_pnext_element) {
         if (auto guard = Lock(); auto cache = GetPhysDevCache(phys_dev)) {
@@ -422,12 +422,12 @@ VkSurfaceCapabilitiesKHR Surface::GetSurfaceCapabilities(VkPhysicalDevice phys_d
 
 VkSurfaceCapabilitiesKHR Surface::GetPresentModeSurfaceCapabilities(VkPhysicalDevice phys_dev,
                                                                     VkPresentModeKHR present_mode) const {
-    VkSurfacePresentModeEXT surface_present_mode = vku::InitStructHelper();
+    VkSurfacePresentModeKHR surface_present_mode = vku::InitStructHelper();
     surface_present_mode.presentMode = present_mode;
     return GetSurfaceCapabilities(phys_dev, &surface_present_mode);
 }
 
-VkSurfacePresentScalingCapabilitiesEXT Surface::GetPresentModeScalingCapabilities(VkPhysicalDevice phys_dev,
+VkSurfacePresentScalingCapabilitiesKHR Surface::GetPresentModeScalingCapabilities(VkPhysicalDevice phys_dev,
                                                                                   VkPresentModeKHR present_mode) const {
     if (auto guard = Lock(); auto cache = GetPhysDevCache(phys_dev)) {
         const PresentModeInfo *info = cache->GetPresentModeInfo(present_mode);
@@ -435,11 +435,11 @@ VkSurfacePresentScalingCapabilitiesEXT Surface::GetPresentModeScalingCapabilitie
             return info->scaling_capabilities.value();
         }
     }
-    VkSurfacePresentModeEXT surface_present_mode = vku::InitStructHelper();
+    VkSurfacePresentModeKHR surface_present_mode = vku::InitStructHelper();
     surface_present_mode.presentMode = present_mode;
     VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper(&surface_present_mode);
     surface_info.surface = VkHandle();
-    VkSurfacePresentScalingCapabilitiesEXT scaling_caps = vku::InitStructHelper();
+    VkSurfacePresentScalingCapabilitiesKHR scaling_caps = vku::InitStructHelper();
     VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper(&scaling_caps);
     DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(phys_dev, &surface_info, &surface_caps);
     return scaling_caps;
@@ -452,11 +452,11 @@ std::vector<VkPresentModeKHR> Surface::GetCompatibleModes(VkPhysicalDevice phys_
             return info->compatible_present_modes.value();
         }
     }
-    VkSurfacePresentModeEXT surface_present_mode = vku::InitStructHelper();
+    VkSurfacePresentModeKHR surface_present_mode = vku::InitStructHelper();
     surface_present_mode.presentMode = present_mode;
     VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper(&surface_present_mode);
     surface_info.surface = VkHandle();
-    VkSurfacePresentModeCompatibilityEXT present_mode_compat = vku::InitStructHelper();
+    VkSurfacePresentModeCompatibilityKHR present_mode_compat = vku::InitStructHelper();
     VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper(&present_mode_compat);
     DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(phys_dev, &surface_info, &surface_caps);
     std::vector<VkPresentModeKHR> present_modes(present_mode_compat.presentModeCount);

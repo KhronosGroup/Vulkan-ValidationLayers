@@ -263,7 +263,7 @@ static std::string GetSemaphoreInUseBySwapchainMessage(const vvl::Semaphore::Swa
             // Describe problem details
             ss << "Swapchain image " << swapchain_info.image_index << " was presented but was ";
             if (swapchain_fence_supported) {
-                ss << "neither re-acquired nor waited on using a VK_EXT_swapchain_maintenance1 fence";
+                ss << "neither re-acquired nor waited on using a VK_KHR_swapchain_maintenance1 fence";
             } else {
                 ss << "not re-acquired";
             }
@@ -295,7 +295,7 @@ static std::string GetSemaphoreInUseBySwapchainMessage(const vvl::Semaphore::Swa
           "safely reused:\n"
           "\ta) Use a separate semaphore per swapchain image. Index these semaphores using the index of the "
           "acquired image.\n"
-          "\tb) Consider the VK_EXT_swapchain_maintenance1 extension. It allows using a VkFence with the "
+          "\tb) Consider the VK_KHR_swapchain_maintenance1 extension. It allows using a VkFence with the "
           "presentation operation.";
 
     return ss.str();
@@ -316,7 +316,8 @@ bool SemaphoreSubmitState::ValidateSignalSemaphore(const Location &signal_semaph
         }
         // When maintenance1 is enabled, the app can use fence to safely re-use present semaphore.
         // Shared present mode is not an excuse in this case.
-        if (IsExtEnabled(core.extensions.vk_ext_swapchain_maintenance1)) {
+        if (IsExtEnabled(core.extensions.vk_khr_swapchain_maintenance1) ||
+            IsExtEnabled(core.extensions.vk_ext_swapchain_maintenance1)) {
             return false;
         }
         // Without maintenance1 and with shared present mode, which often means AcquireNextImage
@@ -352,7 +353,8 @@ bool SemaphoreSubmitState::ValidateSignalSemaphore(const Location &signal_semaph
                         core.FormatHandle(handle).c_str(), core.FormatHandle(queue).c_str(), initiator.str().c_str());
                 } else if (const auto swapchain_info = semaphore_state.GetSwapchainWaitInfo();
                            swapchain_info.has_value() && !is_shared_present_pre_maintenance1(*swapchain_info)) {
-                    const bool present_fence_supported = IsExtEnabled(core.extensions.vk_ext_swapchain_maintenance1);
+                    const bool present_fence_supported = IsExtEnabled(core.extensions.vk_khr_swapchain_maintenance1) ||
+                                                         IsExtEnabled(core.extensions.vk_ext_swapchain_maintenance1);
                     const std::string error_message =
                         GetSemaphoreInUseBySwapchainMessage(*swapchain_info, semaphore_state, queue, present_fence_supported, core);
                     const std::string &vuid = GetQueueSubmitVUID(signal_semaphore_loc, vvl::SubmitError::kSemAlreadySignalled);

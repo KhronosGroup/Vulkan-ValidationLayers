@@ -57,25 +57,25 @@ bool Device::ValidateSwapchainCreateInfoMaintenance1(const VkSwapchainCreateInfo
         return skip;
     }
 
-    if (vku::FindStructInPNextChain<VkSwapchainPresentModesCreateInfoEXT>(create_info.pNext)) {
+    if (vku::FindStructInPNextChain<VkSwapchainPresentModesCreateInfoKHR>(create_info.pNext)) {
         skip |= LogError("VUID-VkSwapchainCreateInfoKHR-swapchainMaintenance1-10155", device, loc.dot(Field::pNext),
-                         "contains VkSwapchainPresentModesCreateInfoEXT, but swapchainMaintenance1 is not enabled");
+                         "contains VkSwapchainPresentModesCreateInfoKHR, but swapchainMaintenance1 is not enabled");
     }
 
     if (const auto *present_scaling_create_info =
-            vku::FindStructInPNextChain<VkSwapchainPresentScalingCreateInfoEXT>(create_info.pNext)) {
+            vku::FindStructInPNextChain<VkSwapchainPresentScalingCreateInfoKHR>(create_info.pNext)) {
         if (present_scaling_create_info->scalingBehavior != 0) {
-            skip |= LogError("VUID-VkSwapchainPresentScalingCreateInfoEXT-swapchainMaintenance1-10154", device,
+            skip |= LogError("VUID-VkSwapchainPresentScalingCreateInfoKHR-swapchainMaintenance1-10154", device,
                              loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoKHR, Field::scalingBehavior),
                              " is %s, but swapchainMaintenance1 is not enabled",
                              string_VkPresentScalingFlagsKHR(present_scaling_create_info->scalingBehavior).c_str());
         } else if (present_scaling_create_info->presentGravityX != 0) {
-            skip |= LogError("VUID-VkSwapchainPresentScalingCreateInfoEXT-swapchainMaintenance1-10154", device,
+            skip |= LogError("VUID-VkSwapchainPresentScalingCreateInfoKHR-swapchainMaintenance1-10154", device,
                              loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoKHR, Field::presentGravityX),
                              " is %s, but swapchainMaintenance1 is not enabled",
                              string_VkPresentGravityFlagsKHR(present_scaling_create_info->presentGravityX).c_str());
         } else if (present_scaling_create_info->presentGravityY != 0) {
-            skip |= LogError("VUID-VkSwapchainPresentScalingCreateInfoEXT-swapchainMaintenance1-10154", device,
+            skip |= LogError("VUID-VkSwapchainPresentScalingCreateInfoKHR-swapchainMaintenance1-10154", device,
                              loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoKHR, Field::presentGravityY),
                              " is %s, but swapchainMaintenance1 is not enabled",
                              string_VkPresentGravityFlagsKHR(present_scaling_create_info->presentGravityY).c_str());
@@ -205,16 +205,21 @@ bool Device::ValidateSwapchainCreateInfo(const Context &context, const VkSwapcha
     return skip;
 }
 
-bool Device::manual_PreCallValidateReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT *pReleaseInfo,
-                                                             const Context &context) const {
+bool Device::manual_PreCallValidateReleaseSwapchainImagesKHR(VkDevice device, const VkReleaseSwapchainImagesInfoKHR *pReleaseInfo,
+                                                     const Context &context) const {
     bool skip = false;
 
     if (!enabled_features.swapchainMaintenance1) {
-        skip |= LogError("VUID-vkReleaseSwapchainImagesEXT-swapchainMaintenance1-10159", device, context.error_obj.location,
+        skip |= LogError("VUID-vkReleaseSwapchainImagesKHR-swapchainMaintenance1-10159", device, context.error_obj.location,
                          "swapchainMaintenance1 is not enabled");
     }
 
     return skip;
+}
+
+bool Device::manual_PreCallValidateReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT *pReleaseInfo,
+                                                             const Context &context) const {
+    return manual_PreCallValidateReleaseSwapchainImagesKHR(device, pReleaseInfo, context);
 }
 
 bool Device::manual_PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pCreateInfo,
@@ -257,10 +262,10 @@ bool Device::manual_PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
         }
     }
 
-    if (vku::FindStructInPNextChain<VkSwapchainPresentFenceInfoEXT>(pPresentInfo->pNext) &&
+    if (vku::FindStructInPNextChain<VkSwapchainPresentFenceInfoKHR>(pPresentInfo->pNext) &&
         !enabled_features.swapchainMaintenance1) {
         skip |= LogError("VUID-VkPresentInfoKHR-swapchainMaintenance1-10158", device, error_obj.location.dot(Field::pNext),
-                         "contains VkSwapchainPresentFenceInfoEXT, but swapchainMaintenance1 is not enabled");
+                         "contains VkSwapchainPresentFenceInfoKHR, but swapchainMaintenance1 is not enabled");
     }
 
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
@@ -354,24 +359,24 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(Vk
 #endif
 
     const auto *surface_present_mode_compatibility =
-        vku::FindStructInPNextChain<VkSurfacePresentModeCompatibilityEXT>(pSurfaceCapabilities->pNext);
+        vku::FindStructInPNextChain<VkSurfacePresentModeCompatibilityKHR>(pSurfaceCapabilities->pNext);
     const auto *surface_present_scaling_compatibilities =
-        vku::FindStructInPNextChain<VkSurfacePresentScalingCapabilitiesEXT>(pSurfaceCapabilities->pNext);
+        vku::FindStructInPNextChain<VkSurfacePresentScalingCapabilitiesKHR>(pSurfaceCapabilities->pNext);
 
-    if (!(vku::FindStructInPNextChain<VkSurfacePresentModeEXT>(pSurfaceInfo->pNext))) {
+    if (!(vku::FindStructInPNextChain<VkSurfacePresentModeKHR>(pSurfaceInfo->pNext))) {
         if (surface_present_mode_compatibility) {
             skip |= LogError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07776", physicalDevice,
                              error_obj.location.dot(Field::pSurfaceCapabilities).dot(Field::pNext),
-                             "contains VkSurfacePresentModeCompatibilityEXT, but "
-                             "pSurfaceInfo->pNext does not contain a VkSurfacePresentModeEXT structure.\n%s",
+                             "contains VkSurfacePresentModeCompatibilityKHR, but "
+                             "pSurfaceInfo->pNext does not contain a VkSurfacePresentModeKHR structure.\n%s",
                              PrintPNextChain(Struct::VkSurfaceCapabilities2KHR, pSurfaceCapabilities->pNext).c_str());
         }
 
         if (surface_present_scaling_compatibilities) {
             skip |= LogError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07777", physicalDevice,
                              error_obj.location.dot(Field::pSurfaceCapabilities).dot(Field::pNext),
-                             "contains VkSurfacePresentScalingCapabilitiesEXT, but "
-                             "pSurfaceInfo->pNext does not contain a VkSurfacePresentModeEXT structure.\n%s",
+                             "contains VkSurfacePresentScalingCapabilitiesKHR, but "
+                             "pSurfaceInfo->pNext does not contain a VkSurfacePresentModeKHR structure.\n%s",
                              PrintPNextChain(Struct::VkSurfaceCapabilities2KHR, pSurfaceCapabilities->pNext).c_str());
         }
     }
@@ -381,7 +386,7 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(Vk
             skip |= LogError(
                 "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07778", physicalDevice,
                 error_obj.location.dot(Field::pSurfaceCapabilities).dot(Field::pNext),
-                "contains a VkSurfacePresentModeCompatibilityEXT structure, but pSurfaceInfo->surface is VK_NULL_HANDLE.\n%s",
+                "contains a VkSurfacePresentModeCompatibilityKHR structure, but pSurfaceInfo->surface is VK_NULL_HANDLE.\n%s",
                 PrintPNextChain(Struct::VkSurfaceCapabilities2KHR, pSurfaceCapabilities->pNext).c_str());
         }
 
@@ -389,7 +394,7 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(Vk
             skip |= LogError(
                 "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07779", physicalDevice,
                 error_obj.location.dot(Field::pSurfaceCapabilities).dot(Field::pNext),
-                "contains a VkSurfacePresentScalingCapabilitiesEXT structure, but pSurfaceInfo->surface is VK_NULL_HANDLE.\n%s",
+                "contains a VkSurfacePresentScalingCapabilitiesKHR structure, but pSurfaceInfo->surface is VK_NULL_HANDLE.\n%s",
                 PrintPNextChain(Struct::VkSurfaceCapabilities2KHR, pSurfaceCapabilities->pNext).c_str());
         }
     }

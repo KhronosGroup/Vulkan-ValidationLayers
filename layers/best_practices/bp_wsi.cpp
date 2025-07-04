@@ -118,12 +118,12 @@ bool BestPractices::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkS
             pCreateInfo->minImageCount);
     }
 
-    if (IsExtEnabled(extensions.vk_ext_swapchain_maintenance1) &&
-        !vku::FindStructInPNextChain<VkSwapchainPresentModesCreateInfoEXT>(pCreateInfo->pNext)) {
-        skip |= LogWarning("BestPractices-vkCreateSwapchainKHR-no-VkSwapchainPresentModesCreateInfoEXT-provided", device,
+    if ((IsExtEnabled(extensions.vk_khr_swapchain_maintenance1) || IsExtEnabled(extensions.vk_ext_swapchain_maintenance1)) &&
+        !vku::FindStructInPNextChain<VkSwapchainPresentModesCreateInfoKHR>(pCreateInfo->pNext)) {
+        skip |= LogWarning("BestPractices-vkCreateSwapchainKHR-no-VkSwapchainPresentModesCreateInfoKHR-provided", device,
                            error_obj.location,
-                           "No VkSwapchainPresentModesCreateInfoEXT was provided to VkCreateSwapchainKHR. "
-                           "When VK_EXT_swapchain_maintenance1 is enabled, a VkSwapchainPresentModesCreateInfoEXT should "
+                           "No VkSwapchainPresentModesCreateInfoKHR was provided to VkCreateSwapchainKHR. "
+                           "When VK_KHR_swapchain_maintenance1 is enabled, a VkSwapchainPresentModesCreateInfoKHR should "
                            "be provided to inform the implementation that the application is aware of the new features "
                            "in a backward compatible way.");
     }
