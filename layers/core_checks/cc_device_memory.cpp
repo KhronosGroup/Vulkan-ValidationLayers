@@ -2051,7 +2051,8 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                          swapchain_info->imageIndex, FormatHandle(swapchain_info->swapchain).c_str(),
                                          swapchain_state->images.size());
                     }
-                    if (IsExtEnabled(extensions.vk_ext_swapchain_maintenance1) &&
+                    if ((IsExtEnabled(extensions.vk_khr_swapchain_maintenance1) ||
+                         IsExtEnabled(extensions.vk_ext_swapchain_maintenance1)) &&
                         (swapchain_state->create_info.flags & VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_EXT)) {
                         if (swapchain_state->images[swapchain_info->imageIndex].acquired == false) {
                             const LogObjectList objlist(bind_info.image, bind_info.memory);

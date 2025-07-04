@@ -1993,6 +1993,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                         const ErrorObject& error_obj) const override;
     bool ValidateImageAcquireWait(const vvl::SwapchainImage& swapchain_image, uint32_t image_index,
                                   const VkPresentInfoKHR& present_info, const Location present_info_loc) const;
+    bool PreCallValidateReleaseSwapchainImagesKHR(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo,
+                                                  const ErrorObject& error_obj) const override;
     bool PreCallValidateReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo,
                                                   const ErrorObject& error_obj) const override;
     bool PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,

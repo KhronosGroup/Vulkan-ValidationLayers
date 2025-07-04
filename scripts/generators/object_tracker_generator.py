@@ -702,7 +702,7 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
         if commandName == 'vkCreateImage' and memberName == 'swapchain':
             return '"UNASSIGNED-VkImageSwapchainCreateInfoKHR-swapchain-parent"'
         if commandName == 'vkQueuePresentKHR' and memberName == 'pFences':
-            return '"UNASSIGNED-VkSwapchainPresentFenceInfoEXT-pFences-parent"'
+            return '"UNASSIGNED-VkSwapchainPresentFenceInfoKHR-pFences-parent"'
         if commandName == 'vkGetAccelerationStructureDeviceAddressKHR' and memberName == 'accelerationStructure':
             return '"UNASSIGNED-VkAccelerationStructureDeviceAddressInfoKHR-accelerationStructure-parent"'
         if commandName == 'vkCreatePipelineBinariesKHR' and memberName == 'pipeline':

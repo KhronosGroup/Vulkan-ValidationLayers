@@ -212,6 +212,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkGetMicromapBuildSizesEXT',
             'vkWriteMicromapsPropertiesEXT',
             'vkReleaseSwapchainImagesEXT',
+            'vkReleaseSwapchainImagesKHR',
             'vkConvertCooperativeVectorMatrixNV',
             'vkCmdConvertCooperativeVectorMatrixNV',
         ]

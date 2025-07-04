@@ -70,7 +70,7 @@ class Fence : public RefcountedStateObject {
     // Called on AcquireNextImage fence
     void SetPresentSubmissionRef(const SubmissionReference &present_submission_ref);
 
-    // Called on VkSwapchainPresentFenceInfoEXT fence
+    // Called on VkSwapchainPresentFenceInfoKHR fence
     void SetPresentWaitSemaphores(vvl::span<std::shared_ptr<vvl::Semaphore>> present_wait_semaphores);
 
     const VkFenceCreateFlags flags;
