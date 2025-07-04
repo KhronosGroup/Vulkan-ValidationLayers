@@ -763,7 +763,7 @@ void Device::PreCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR*
             StartWriteObject(pPresentInfo->pSwapchains[index], record_obj.location);
         }
     }
-    if (const auto* present_fence_info = vku::FindStructInPNextChain<VkSwapchainPresentFenceInfoEXT>(pPresentInfo->pNext)) {
+    if (const auto* present_fence_info = vku::FindStructInPNextChain<VkSwapchainPresentFenceInfoKHR>(pPresentInfo->pNext)) {
         for (uint32_t index = 0; index < present_fence_info->swapchainCount; index++) {
             StartWriteObject(present_fence_info->pFences[index], record_obj.location);
         }
@@ -783,7 +783,7 @@ void Device::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR
             FinishWriteObject(pPresentInfo->pSwapchains[index], record_obj.location);
         }
     }
-    if (const auto* present_fence_info = vku::FindStructInPNextChain<VkSwapchainPresentFenceInfoEXT>(pPresentInfo->pNext)) {
+    if (const auto* present_fence_info = vku::FindStructInPNextChain<VkSwapchainPresentFenceInfoKHR>(pPresentInfo->pNext)) {
         for (uint32_t index = 0; index < present_fence_info->swapchainCount; index++) {
             FinishWriteObject(present_fence_info->pFences[index], record_obj.location);
         }
