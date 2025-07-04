@@ -1789,12 +1789,15 @@ void CommandBufferSubState::RecordEncodeVideo(vvl::VideoSession &vs_state, const
 void CommandBufferSubState::RecordCopyQueryPoolResults(vvl::QueryPool &pool_state, vvl::Buffer &dst_buffer_state,
                                                        uint32_t first_query, uint32_t query_count, VkDeviceSize dst_offset,
                                                        VkDeviceSize stride, VkQueryResultFlags flags, const Location &loc) {
+    if (query_count == 0) {
+        return;
+    }
     const auto tag = access_context.NextCommandTag(loc.function);
     auto *context = access_context.GetCurrentAccessContext();
 
-    // TODO - Stride can be anything if query_count is 1
-    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10354
-    const ResourceAccessRange range = MakeRange(dst_offset, stride * query_count);
+    const uint32_t query_size = (flags & VK_QUERY_RESULT_64_BIT) ? 8 : 4;
+    const VkDeviceSize range_size = (query_count - 1) * stride + query_size;
+    const ResourceAccessRange range = MakeRange(dst_offset, range_size);
     const ResourceUsageTagEx tag_ex = access_context.AddCommandHandle(tag, dst_buffer_state.Handle());
     context->UpdateAccessState(dst_buffer_state, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag_ex);
 

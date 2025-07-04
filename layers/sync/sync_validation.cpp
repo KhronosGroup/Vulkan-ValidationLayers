@@ -1569,10 +1569,10 @@ bool SyncValidator::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer comma
 
     auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
 
-    if (dst_buffer) {
-        // TODO - Stride can be anything if query_count is 1
-        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10354
-        const ResourceAccessRange range = MakeRange(dstOffset, stride * queryCount);
+    if (dst_buffer && queryCount > 0) {
+        const uint32_t query_size = (flags & VK_QUERY_RESULT_64_BIT) ? 8 : 4;
+        const VkDeviceSize range_size = (queryCount - 1) * stride + query_size;
+        const ResourceAccessRange range = MakeRange(dstOffset, range_size);
         auto hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, range);
         if (hazard.IsHazard()) {
             const LogObjectList objlist(commandBuffer, queryPool, dstBuffer);
