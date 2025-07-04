@@ -2316,6 +2316,11 @@ static inline VkResult DispatchReleaseCapturedPipelineDataKHR(VkDevice device, c
     return dispatch->ReleaseCapturedPipelineDataKHR(device, pInfo, pAllocator);
 }
 
+static inline VkResult DispatchReleaseSwapchainImagesKHR(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->ReleaseSwapchainImagesKHR(device, pReleaseInfo);
+}
+
 static inline VkResult DispatchGetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDevice physicalDevice,
                                                                                uint32_t* pPropertyCount,
                                                                                VkCooperativeMatrixPropertiesKHR* pProperties) {
@@ -3284,7 +3289,7 @@ static inline void DispatchGetImageSubresourceLayout2EXT(VkDevice device, VkImag
     dispatch->GetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout);
 }
 
-static inline VkResult DispatchReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo) {
+static inline VkResult DispatchReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo) {
     auto dispatch = vvl::dispatch::GetData(device);
     return dispatch->ReleaseSwapchainImagesEXT(device, pReleaseInfo);
 }

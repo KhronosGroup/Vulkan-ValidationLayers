@@ -479,6 +479,7 @@ PFN_vkDestroyPipelineBinaryKHR DestroyPipelineBinaryKHR;
 PFN_vkGetPipelineKeyKHR GetPipelineKeyKHR;
 PFN_vkGetPipelineBinaryDataKHR GetPipelineBinaryDataKHR;
 PFN_vkReleaseCapturedPipelineDataKHR ReleaseCapturedPipelineDataKHR;
+PFN_vkReleaseSwapchainImagesKHR ReleaseSwapchainImagesKHR;
 PFN_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR GetPhysicalDeviceCooperativeMatrixPropertiesKHR;
 PFN_vkCmdSetLineStippleKHR CmdSetLineStippleKHR;
 PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsKHR GetPhysicalDeviceCalibrateableTimeDomainsKHR;
@@ -1379,6 +1380,10 @@ void InitExtensionFromCore(const char* extension_name) {
             }
         },
         {
+            "VK_EXT_swapchain_maintenance1", []() {
+            }
+        },
+        {
             "VK_EXT_private_data", []() {
                 CreatePrivateDataSlotEXT = CreatePrivateDataSlot;
                 DestroyPrivateDataSlotEXT = DestroyPrivateDataSlot;
@@ -1917,6 +1922,11 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 GetPipelineKeyKHR = reinterpret_cast<PFN_vkGetPipelineKeyKHR>(GetDeviceProcAddr(device, "vkGetPipelineKeyKHR"));
                 GetPipelineBinaryDataKHR = reinterpret_cast<PFN_vkGetPipelineBinaryDataKHR>(GetDeviceProcAddr(device, "vkGetPipelineBinaryDataKHR"));
                 ReleaseCapturedPipelineDataKHR = reinterpret_cast<PFN_vkReleaseCapturedPipelineDataKHR>(GetDeviceProcAddr(device, "vkReleaseCapturedPipelineDataKHR"));
+            }
+        },
+        {
+            "VK_KHR_swapchain_maintenance1", [](VkInstance , VkDevice device) {
+                ReleaseSwapchainImagesKHR = reinterpret_cast<PFN_vkReleaseSwapchainImagesKHR>(GetDeviceProcAddr(device, "vkReleaseSwapchainImagesKHR"));
             }
         },
         {
@@ -2884,6 +2894,7 @@ void ResetAllExtensions() {
     GetPipelineKeyKHR = nullptr;
     GetPipelineBinaryDataKHR = nullptr;
     ReleaseCapturedPipelineDataKHR = nullptr;
+    ReleaseSwapchainImagesKHR = nullptr;
     GetPhysicalDeviceCooperativeMatrixPropertiesKHR = nullptr;
     CmdSetLineStippleKHR = nullptr;
     GetPhysicalDeviceCalibrateableTimeDomainsKHR = nullptr;

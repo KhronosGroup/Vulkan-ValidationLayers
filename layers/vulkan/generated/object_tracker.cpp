@@ -3294,13 +3294,13 @@ bool Device::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKH
                 }
             }
         }
-        if ([[maybe_unused]] auto pNext = vku::FindStructInPNextChain<VkSwapchainPresentFenceInfoEXT>(pPresentInfo->pNext)) {
-            [[maybe_unused]] const Location pNext_loc = pPresentInfo_loc.pNext(Struct::VkSwapchainPresentFenceInfoEXT);
+        if ([[maybe_unused]] auto pNext = vku::FindStructInPNextChain<VkSwapchainPresentFenceInfoKHR>(pPresentInfo->pNext)) {
+            [[maybe_unused]] const Location pNext_loc = pPresentInfo_loc.pNext(Struct::VkSwapchainPresentFenceInfoKHR);
 
             if ((pNext->swapchainCount > 0) && (pNext->pFences)) {
                 for (uint32_t index2 = 0; index2 < pNext->swapchainCount; ++index2) {
                     skip |= ValidateObject(pNext->pFences[index2], kVulkanObjectTypeFence, true,
-                                           "VUID-VkSwapchainPresentFenceInfoEXT-pFences-parameter",
+                                           "VUID-VkSwapchainPresentFenceInfoKHR-pFences-parameter",
                                            "UNASSIGNED-VkSwapchainPresentFenceInfoEXT-pFences-parent",
                                            pNext_loc.dot(Field::pFences, index2));
                 }
@@ -4626,6 +4626,21 @@ bool Device::PreCallValidateGetPipelineBinaryDataKHR(VkDevice device, const VkPi
             ValidateObject(pInfo->pipelineBinary, kVulkanObjectTypePipelineBinaryKHR, false,
                            "VUID-VkPipelineBinaryDataInfoKHR-pipelineBinary-parameter",
                            "UNASSIGNED-VkPipelineBinaryDataInfoKHR-pipelineBinary-parent", pInfo_loc.dot(Field::pipelineBinary));
+    }
+
+    return skip;
+}
+
+bool Device::PreCallValidateReleaseSwapchainImagesKHR(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo,
+                                                      const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkReleaseSwapchainImagesKHR-device-parameter"
+    if (pReleaseInfo) {
+        [[maybe_unused]] const Location pReleaseInfo_loc = error_obj.location.dot(Field::pReleaseInfo);
+        skip |=
+            ValidateObject(pReleaseInfo->swapchain, kVulkanObjectTypeSwapchainKHR, false,
+                           "VUID-VkReleaseSwapchainImagesInfoKHR-swapchain-parameter",
+                           "UNASSIGNED-VkReleaseSwapchainImagesInfoKHR-swapchain-parent", pReleaseInfo_loc.dot(Field::swapchain));
     }
 
     return skip;
@@ -6185,19 +6200,9 @@ bool Device::PreCallValidateGetImageSubresourceLayout2EXT(VkDevice device, VkIma
     return PreCallValidateGetImageSubresourceLayout2(device, image, pSubresource, pLayout, error_obj);
 }
 
-bool Device::PreCallValidateReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo,
+bool Device::PreCallValidateReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo,
                                                       const ErrorObject& error_obj) const {
-    bool skip = false;
-    // Checked by chassis: device: "VUID-vkReleaseSwapchainImagesEXT-device-parameter"
-    if (pReleaseInfo) {
-        [[maybe_unused]] const Location pReleaseInfo_loc = error_obj.location.dot(Field::pReleaseInfo);
-        skip |=
-            ValidateObject(pReleaseInfo->swapchain, kVulkanObjectTypeSwapchainKHR, false,
-                           "VUID-VkReleaseSwapchainImagesInfoEXT-swapchain-parameter",
-                           "UNASSIGNED-VkReleaseSwapchainImagesInfoEXT-swapchain-parent", pReleaseInfo_loc.dot(Field::swapchain));
-    }
-
-    return skip;
+    return PreCallValidateReleaseSwapchainImagesKHR(device, pReleaseInfo, error_obj);
 }
 
 bool Device::PreCallValidateGetGeneratedCommandsMemoryRequirementsNV(VkDevice device,

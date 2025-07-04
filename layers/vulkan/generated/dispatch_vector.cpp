@@ -1049,6 +1049,9 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateReleaseCapturedPipelineDataKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordReleaseCapturedPipelineDataKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordReleaseCapturedPipelineDataKHR);
+    BUILD_DISPATCH_VECTOR(PreCallValidateReleaseSwapchainImagesKHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordReleaseSwapchainImagesKHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordReleaseSwapchainImagesKHR);
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetLineStippleKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetLineStippleKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetLineStippleKHR);

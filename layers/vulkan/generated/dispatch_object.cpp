@@ -469,8 +469,8 @@ void HandleWrapper::UnwrapPnextChainHandles(const void* pNext) {
                     }
                 }
             } break;
-            case VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_FENCE_INFO_EXT: {
-                auto* safe_struct = reinterpret_cast<vku::safe_VkSwapchainPresentFenceInfoEXT*>(cur_pnext);
+            case VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_FENCE_INFO_KHR: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkSwapchainPresentFenceInfoKHR*>(cur_pnext);
                 if (safe_struct->pFences) {
                     for (uint32_t index0 = 0; index0 < safe_struct->swapchainCount; ++index0) {
                         safe_struct->pFences[index0] = Unwrap(safe_struct->pFences[index0]);
@@ -4984,6 +4984,26 @@ VkResult Device::ReleaseCapturedPipelineDataKHR(VkDevice device, const VkRelease
     return result;
 }
 
+VkResult Device::ReleaseSwapchainImagesKHR(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo) {
+    if (!wrap_handles) return device_dispatch_table.ReleaseSwapchainImagesKHR(device, pReleaseInfo);
+    vku::safe_VkReleaseSwapchainImagesInfoKHR var_local_pReleaseInfo;
+    vku::safe_VkReleaseSwapchainImagesInfoKHR* local_pReleaseInfo = nullptr;
+    {
+        if (pReleaseInfo) {
+            local_pReleaseInfo = &var_local_pReleaseInfo;
+            local_pReleaseInfo->initialize(pReleaseInfo);
+
+            if (pReleaseInfo->swapchain) {
+                local_pReleaseInfo->swapchain = Unwrap(pReleaseInfo->swapchain);
+            }
+        }
+    }
+    VkResult result =
+        device_dispatch_table.ReleaseSwapchainImagesKHR(device, (const VkReleaseSwapchainImagesInfoKHR*)local_pReleaseInfo);
+
+    return result;
+}
+
 VkResult Instance::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                                    VkCooperativeMatrixPropertiesKHR* pProperties) {
     VkResult result =
@@ -6605,10 +6625,10 @@ void Device::GetImageSubresourceLayout2EXT(VkDevice device, VkImage image, const
     device_dispatch_table.GetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout);
 }
 
-VkResult Device::ReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo) {
+VkResult Device::ReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo) {
     if (!wrap_handles) return device_dispatch_table.ReleaseSwapchainImagesEXT(device, pReleaseInfo);
-    vku::safe_VkReleaseSwapchainImagesInfoEXT var_local_pReleaseInfo;
-    vku::safe_VkReleaseSwapchainImagesInfoEXT* local_pReleaseInfo = nullptr;
+    vku::safe_VkReleaseSwapchainImagesInfoKHR var_local_pReleaseInfo;
+    vku::safe_VkReleaseSwapchainImagesInfoKHR* local_pReleaseInfo = nullptr;
     {
         if (pReleaseInfo) {
             local_pReleaseInfo = &var_local_pReleaseInfo;
@@ -6620,7 +6640,7 @@ VkResult Device::ReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapc
         }
     }
     VkResult result =
-        device_dispatch_table.ReleaseSwapchainImagesEXT(device, (const VkReleaseSwapchainImagesInfoEXT*)local_pReleaseInfo);
+        device_dispatch_table.ReleaseSwapchainImagesEXT(device, (const VkReleaseSwapchainImagesInfoKHR*)local_pReleaseInfo);
 
     return result;
 }

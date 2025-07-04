@@ -101,6 +101,7 @@ struct InstanceExtensions {
     ExtEnabled vk_khr_get_display_properties2{kNotEnabled};
     ExtEnabled vk_khr_surface_protected_capabilities{kNotEnabled};
     ExtEnabled vk_khr_portability_enumeration{kNotEnabled};
+    ExtEnabled vk_khr_surface_maintenance1{kNotEnabled};
     ExtEnabled vk_ext_debug_report{kNotEnabled};
     ExtEnabled vk_ggp_stream_descriptor_surface{kNotEnabled};
     ExtEnabled vk_nv_external_memory_capabilities{kNotEnabled};
@@ -240,6 +241,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_present_wait2{kNotEnabled};
     ExtEnabled vk_khr_ray_tracing_position_fetch{kNotEnabled};
     ExtEnabled vk_khr_pipeline_binary{kNotEnabled};
+    ExtEnabled vk_khr_swapchain_maintenance1{kNotEnabled};
     ExtEnabled vk_khr_cooperative_matrix{kNotEnabled};
     ExtEnabled vk_khr_compute_shader_derivatives{kNotEnabled};
     ExtEnabled vk_khr_video_decode_av1{kNotEnabled};
@@ -255,6 +257,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_calibrated_timestamps{kNotEnabled};
     ExtEnabled vk_khr_shader_expect_assume{kNotEnabled};
     ExtEnabled vk_khr_maintenance6{kNotEnabled};
+    ExtEnabled vk_khr_video_encode_intra_refresh{kNotEnabled};
     ExtEnabled vk_khr_video_encode_quantization_map{kNotEnabled};
     ExtEnabled vk_khr_shader_relaxed_extended_instruction{kNotEnabled};
     ExtEnabled vk_khr_maintenance7{kNotEnabled};
@@ -263,6 +266,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_video_maintenance2{kNotEnabled};
     ExtEnabled vk_khr_depth_clamp_zero_one{kNotEnabled};
     ExtEnabled vk_khr_robustness2{kNotEnabled};
+    ExtEnabled vk_khr_present_mode_fifo_latest_ready{kNotEnabled};
     ExtEnabled vk_nv_glsl_shader{kNotEnabled};
     ExtEnabled vk_ext_depth_range_unrestricted{kNotEnabled};
     ExtEnabled vk_img_filter_cubic{kNotEnabled};
@@ -521,6 +525,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_present_metering{kNotEnabled};
     ExtEnabled vk_ext_fragment_density_map_offset{kNotEnabled};
     ExtEnabled vk_ext_zero_initialize_device_memory{kNotEnabled};
+    ExtEnabled vk_sec_pipeline_cache_incremental_mode{kNotEnabled};
     ExtEnabled vk_khr_acceleration_structure{kNotEnabled};
     ExtEnabled vk_khr_ray_tracing_pipeline{kNotEnabled};
     ExtEnabled vk_khr_ray_query{kNotEnabled};
@@ -570,6 +575,7 @@ constexpr bool IsInstanceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_KHR_get_display_properties2:
         case vvl::Extension::_VK_KHR_surface_protected_capabilities:
         case vvl::Extension::_VK_KHR_portability_enumeration:
+        case vvl::Extension::_VK_KHR_surface_maintenance1:
         case vvl::Extension::_VK_EXT_debug_report:
         case vvl::Extension::_VK_GGP_stream_descriptor_surface:
         case vvl::Extension::_VK_NV_external_memory_capabilities:
@@ -693,6 +699,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_KHR_present_wait2:
         case vvl::Extension::_VK_KHR_ray_tracing_position_fetch:
         case vvl::Extension::_VK_KHR_pipeline_binary:
+        case vvl::Extension::_VK_KHR_swapchain_maintenance1:
         case vvl::Extension::_VK_KHR_cooperative_matrix:
         case vvl::Extension::_VK_KHR_compute_shader_derivatives:
         case vvl::Extension::_VK_KHR_video_decode_av1:
@@ -708,6 +715,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_KHR_calibrated_timestamps:
         case vvl::Extension::_VK_KHR_shader_expect_assume:
         case vvl::Extension::_VK_KHR_maintenance6:
+        case vvl::Extension::_VK_KHR_video_encode_intra_refresh:
         case vvl::Extension::_VK_KHR_video_encode_quantization_map:
         case vvl::Extension::_VK_KHR_shader_relaxed_extended_instruction:
         case vvl::Extension::_VK_KHR_maintenance7:
@@ -716,6 +724,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_KHR_video_maintenance2:
         case vvl::Extension::_VK_KHR_depth_clamp_zero_one:
         case vvl::Extension::_VK_KHR_robustness2:
+        case vvl::Extension::_VK_KHR_present_mode_fifo_latest_ready:
         case vvl::Extension::_VK_NV_glsl_shader:
         case vvl::Extension::_VK_EXT_depth_range_unrestricted:
         case vvl::Extension::_VK_IMG_filter_cubic:
@@ -974,6 +983,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_NV_present_metering:
         case vvl::Extension::_VK_EXT_fragment_density_map_offset:
         case vvl::Extension::_VK_EXT_zero_initialize_device_memory:
+        case vvl::Extension::_VK_SEC_pipeline_cache_incremental_mode:
         case vvl::Extension::_VK_KHR_acceleration_structure:
         case vvl::Extension::_VK_KHR_ray_tracing_pipeline:
         case vvl::Extension::_VK_KHR_ray_query:

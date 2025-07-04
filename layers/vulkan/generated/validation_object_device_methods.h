@@ -2892,6 +2892,14 @@ virtual void PreCallRecordReleaseCapturedPipelineDataKHR(VkDevice device, const 
 virtual void PostCallRecordReleaseCapturedPipelineDataKHR(VkDevice device, const VkReleaseCapturedPipelineDataInfoKHR* pInfo,
                                                           const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
 }
+virtual bool PreCallValidateReleaseSwapchainImagesKHR(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo,
+                                                      const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordReleaseSwapchainImagesKHR(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo,
+                                                    const RecordObject& record_obj) {}
+virtual void PostCallRecordReleaseSwapchainImagesKHR(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo,
+                                                     const RecordObject& record_obj) {}
 virtual bool PreCallValidateCmdSetLineStippleKHR(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
                                                  uint16_t lineStipplePattern, const ErrorObject& error_obj) const {
     return false;
@@ -4137,13 +4145,13 @@ virtual void PreCallRecordGetImageSubresourceLayout2EXT(VkDevice device, VkImage
                                                         VkSubresourceLayout2* pLayout, const RecordObject& record_obj) {}
 virtual void PostCallRecordGetImageSubresourceLayout2EXT(VkDevice device, VkImage image, const VkImageSubresource2* pSubresource,
                                                          VkSubresourceLayout2* pLayout, const RecordObject& record_obj) {}
-virtual bool PreCallValidateReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo,
+virtual bool PreCallValidateReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo,
                                                       const ErrorObject& error_obj) const {
     return false;
 }
-virtual void PreCallRecordReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo,
+virtual void PreCallRecordReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo,
                                                     const RecordObject& record_obj) {}
-virtual void PostCallRecordReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo,
+virtual void PostCallRecordReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo,
                                                      const RecordObject& record_obj) {}
 virtual bool PreCallValidateGetGeneratedCommandsMemoryRequirementsNV(VkDevice device,
                                                                      const VkGeneratedCommandsMemoryRequirementsInfoNV* pInfo,
