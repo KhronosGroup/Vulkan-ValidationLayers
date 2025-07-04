@@ -1729,7 +1729,7 @@ TEST_F(VkBestPracticesLayerTest, NoCreateSwapchainPresentModes) {
     RETURN_IF_SKIP(InitState());
     RETURN_IF_SKIP(InitSurface());
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCreateInfoKHR-presentMode-02839");
-    m_errorMonitor->SetDesiredWarning("BestPractices-vkCreateSwapchainKHR-no-VkSwapchainPresentModesCreateInfoEXT-provided");
+    m_errorMonitor->SetDesiredWarning("BestPractices-vkCreateSwapchainKHR-no-VkSwapchainPresentModesCreateInfoKHR-provided");
     m_swapchain = CreateSwapchain(m_surface.Handle(), VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
     m_errorMonitor->VerifyFound();
 }

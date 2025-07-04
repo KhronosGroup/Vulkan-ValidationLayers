@@ -1970,7 +1970,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper();
     surface_info.surface = surface;
 
-    // Set a present_mode in VkSurfacePresentModeEXT that's NOT returned by GetPhsyicalDeviceSurfaceCapabilities2KHR
+    // Set a present_mode in VkSurfacePresentModeKHR that's NOT returned by GetPhsyicalDeviceSurfaceCapabilities2KHR
     VkPresentModeKHR mismatched_present_mode = VK_PRESENT_MODE_MAX_ENUM_KHR;
     for (auto item : defined_present_modes) {
         if (std::find(pdev_surface_present_modes.begin(), pdev_surface_present_modes.end(), item) ==
@@ -1980,12 +1980,12 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
         }
     }
 
-    VkSurfacePresentModeEXT present_mode = vku::InitStructHelper();
+    VkSurfacePresentModeKHR present_mode = vku::InitStructHelper();
     present_mode.presentMode = mismatched_present_mode;
 
     surface_info.pNext = &present_mode;
-    m_errorMonitor->SetDesiredError("VUID-VkSurfacePresentModeEXT-presentMode-07780");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSurfacePresentModeEXT-presentMode-parameter");
+    m_errorMonitor->SetDesiredError("VUID-VkSurfacePresentModeKHR-presentMode-07780");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSurfacePresentModeKHR-presentMode-parameter");
     vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
     m_errorMonitor->VerifyFound();
 
@@ -2020,15 +2020,15 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     if (mismatched_present_mode != VK_PRESENT_MODE_MAX_ENUM_KHR) {
         // Each entry in QueuePresent->vkPresentInfoKHR->pNext->SwapchainPresentModesCreateInfo->pPresentModes must be one of the
         // VkPresentModeKHR values returned by vkGetPhysicalDeviceSurfacePresentModesKHR for the surface
-        m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentModesCreateInfoEXT-None-07762");
-        m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentModesCreateInfoEXT-pPresentModes-07763");
-        m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentModesCreateInfoEXT-presentMode-07764");
+        m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentModesCreateInfoKHR-None-07762");
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentModesCreateInfoKHR-pPresentModes-07763");
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentModesCreateInfoKHR-presentMode-07764");
         m_swapchain.Init(*m_device, swapchain_create_info);
         m_errorMonitor->VerifyFound();
     }
 
     // The entries in pPresentModes must be a subset of the present modes returned in
-    // VkSurfacePresentModeCompatibilityEXT::pPresentModes, given vkSwapchainCreateInfoKHR::presentMode in VkSurfacePresentModeEXT
+    // VkSurfacePresentModeCompatibilityEXT::pPresentModes, given vkSwapchainCreateInfoKHR::presentMode in VkSurfacePresentModeKHR
     mismatched_present_mode = VK_PRESENT_MODE_MAX_ENUM_KHR;
     for (auto item : defined_present_modes) {
         if (std::find(compatible_present_modes.begin(), compatible_present_modes.end(), item) == compatible_present_modes.end()) {
@@ -2037,9 +2037,9 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
         }
     }
     if (mismatched_present_mode != VK_PRESENT_MODE_MAX_ENUM_KHR) {
-        m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentModesCreateInfoEXT-pPresentModes-07763");
-        m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentModesCreateInfoEXT-None-07762");
-        m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentModesCreateInfoEXT-presentMode-07764");
+        m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentModesCreateInfoKHR-pPresentModes-07763");
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentModesCreateInfoKHR-None-07762");
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentModesCreateInfoKHR-presentMode-07764");
         present_modes_ci.pPresentModes = &mismatched_present_mode;
         m_swapchain.Init(*m_device, swapchain_create_info);
         m_errorMonitor->VerifyFound();
@@ -2062,7 +2062,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
         vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info2, &surface_caps2);
 
         swapchain_create_info.minImageCount = surface_caps2.surfaceCapabilities.minImageCount;
-        m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentModesCreateInfoEXT-presentMode-07764");
+        m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentModesCreateInfoKHR-presentMode-07764");
         m_swapchain.Init(*m_device, swapchain_create_info);
         m_errorMonitor->VerifyFound();
     }
@@ -2073,27 +2073,27 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     present_scaling_info.pNext = swapchain_create_info.pNext;
     swapchain_create_info.pNext = &present_scaling_info;
 
-    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoEXT-presentGravityX-07765");
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityX-07765");
     // Disable validation that prevents testing zero gravity value on platforms that provide support for gravity values.
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentScalingCreateInfoEXT-presentGravityX-07772");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentScalingCreateInfoEXT-presentGravityX-07773");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityX-07772");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityX-07773");
     present_scaling_info.scalingBehavior = VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT;
     present_scaling_info.presentGravityX = 0;
     present_scaling_info.presentGravityY = VK_PRESENT_GRAVITY_MIN_BIT_EXT;
     m_swapchain.Init(*m_device, swapchain_create_info);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoEXT-presentGravityX-07766");
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityX-07766");
     // Disable validation that prevents testing zero gravity value on platforms that provide support for gravity values.
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentScalingCreateInfoEXT-presentGravityY-07774");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentScalingCreateInfoEXT-presentGravityY-07775");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityY-07774");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityY-07775");
     present_scaling_info.scalingBehavior = VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT;
     present_scaling_info.presentGravityX = VK_PRESENT_GRAVITY_MIN_BIT_EXT;
     present_scaling_info.presentGravityY = 0;
     m_swapchain.Init(*m_device, swapchain_create_info);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoEXT-scalingBehavior-07767");
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-scalingBehavior-07767");
     present_scaling_info.scalingBehavior = VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT | VK_PRESENT_SCALING_ASPECT_RATIO_STRETCH_BIT_EXT;
     present_scaling_info.presentGravityX = VK_PRESENT_GRAVITY_MIN_BIT_EXT;
     present_scaling_info.presentGravityY = VK_PRESENT_GRAVITY_MIN_BIT_EXT;
@@ -2101,14 +2101,14 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     m_swapchain.Init(*m_device, swapchain_create_info);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoEXT-presentGravityX-07768");
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityX-07768");
     present_scaling_info.scalingBehavior = VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT;
     present_scaling_info.presentGravityX = VK_PRESENT_GRAVITY_MIN_BIT_EXT | VK_PRESENT_GRAVITY_MAX_BIT_EXT;
     present_scaling_info.presentGravityY = VK_PRESENT_GRAVITY_MIN_BIT_EXT;
     m_swapchain.Init(*m_device, swapchain_create_info);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoEXT-presentGravityY-07769");
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityY-07769");
     present_scaling_info.presentGravityX = VK_PRESENT_GRAVITY_MIN_BIT_EXT;
     present_scaling_info.presentGravityY = VK_PRESENT_GRAVITY_MIN_BIT_EXT | VK_PRESENT_GRAVITY_MAX_BIT_EXT;
     m_swapchain.Init(*m_device, swapchain_create_info);
@@ -2124,7 +2124,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
         for (auto scaling_flag : defined_scaling_flag_bits) {
             if ((scaling_capabilities.supportedPresentScaling & scaling_flag) == 0) {
                 present_scaling_info.scalingBehavior = scaling_flag;
-                m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoEXT-scalingBehavior-07770");
+                m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-scalingBehavior-07770");
                 m_swapchain.Init(*m_device, swapchain_create_info);
                 m_errorMonitor->VerifyFound();
                 break;
@@ -2138,7 +2138,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
         for (auto gravity_flag : defined_gravity_flag_bits) {
             if ((scaling_capabilities.supportedPresentGravityX & gravity_flag) == 0) {
                 present_scaling_info.presentGravityX = gravity_flag;
-                m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoEXT-presentGravityX-07772");
+                m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityX-07772");
                 m_swapchain.Init(*m_device, swapchain_create_info);
                 m_errorMonitor->VerifyFound();
                 break;
@@ -2149,7 +2149,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
         for (auto gravity_flag : defined_gravity_flag_bits) {
             if ((scaling_capabilities.supportedPresentGravityY & gravity_flag) == 0) {
                 present_scaling_info.presentGravityY = gravity_flag;
-                m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoEXT-presentGravityY-07774");
+                m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityY-07774");
                 m_swapchain.Init(*m_device, swapchain_create_info);
                 m_errorMonitor->VerifyFound();
                 break;
@@ -2157,14 +2157,14 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
         }
     }
 
-    // If the swapchain is created with VkSwapchainPresentModesCreateInfoEXT,
+    // If the swapchain is created with VkSwapchainPresentModesCreateInfoKHR,
     present_mode.presentMode = present_modes_ci.pPresentModes[0];
     surface_caps.pNext = &scaling_capabilities;
     vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
 
     // presentScaling must be a valid scaling method for the surface
-    // as returned in VkSurfacePresentScalingCapabilitiesEXT::supportedPresentScaling,
-    // given each present mode in VkSwapchainPresentModesCreateInfoEXT::pPresentModes in VkSurfacePresentModeEXT
+    // as returned in VkSurfacePresentScalingCapabilitiesKHR::supportedPresentScaling,
+    // given each present mode in VkSwapchainPresentModesCreateInfoKHR::pPresentModes in VkSurfacePresentModeKHR
     if (scaling_capabilities.supportedPresentScaling != 0) {
         const std::array defined_scaling_flag_bits = {VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT,
                                                       VK_PRESENT_SCALING_ASPECT_RATIO_STRETCH_BIT_EXT,
@@ -2172,7 +2172,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
         for (auto scaling_flag : defined_scaling_flag_bits) {
             if ((scaling_capabilities.supportedPresentScaling & scaling_flag) == 0) {
                 present_scaling_info.scalingBehavior = scaling_flag;
-                m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoEXT-scalingBehavior-07771");
+                m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-scalingBehavior-07771");
                 m_swapchain.Init(*m_device, swapchain_create_info);
                 m_errorMonitor->VerifyFound();
                 break;
@@ -2181,13 +2181,13 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     }
 
     // presentGravityX must be a valid x-axis present gravity for the surface
-    // as returned in VkSurfacePresentScalingCapabilitiesEXT::supportedPresentGravityX,
-    // given each present mode in VkSwapchainPresentModesCreateInfoEXT::pPresentModes in VkSurfacePresentModeEXT
+    // as returned in VkSurfacePresentScalingCapabilitiesKHR::supportedPresentGravityX,
+    // given each present mode in VkSwapchainPresentModesCreateInfoKHR::pPresentModes in VkSurfacePresentModeKHR
     if (scaling_capabilities.supportedPresentGravityX != 0) {
         for (auto gravity_flag : defined_gravity_flag_bits) {
             if ((scaling_capabilities.supportedPresentGravityX & gravity_flag) == 0) {
                 present_scaling_info.presentGravityX = gravity_flag;
-                m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoEXT-presentGravityX-07773");
+                m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityX-07773");
                 m_swapchain.Init(*m_device, swapchain_create_info);
                 m_errorMonitor->VerifyFound();
                 break;
@@ -2196,13 +2196,13 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     }
 
     // presentGravityY must be a valid y-axis present gravity for the surface
-    // as returned in VkSurfacePresentScalingCapabilitiesEXT::supportedPresentGravityY,
-    // given each present mode in VkSwapchainPresentModesCreateInfoEXT::pPresentModes in VkSurfacePresentModeEXT
+    // as returned in VkSurfacePresentScalingCapabilitiesKHR::supportedPresentGravityY,
+    // given each present mode in VkSwapchainPresentModesCreateInfoKHR::pPresentModes in VkSurfacePresentModeKHR
     if (scaling_capabilities.supportedPresentGravityY != 0) {
         for (auto gravity_flag : defined_gravity_flag_bits) {
             if ((scaling_capabilities.supportedPresentGravityY & gravity_flag) == 0) {
                 present_scaling_info.presentGravityY = gravity_flag;
-                m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoEXT-presentGravityY-07775");
+                m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-presentGravityY-07775");
                 m_swapchain.Init(*m_device, swapchain_create_info);
                 m_errorMonitor->VerifyFound();
                 break;
@@ -2227,7 +2227,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     release_info.swapchain = m_swapchain;
     release_info.imageIndexCount = 1;
     release_info.pImageIndices = &release_index;
-    m_errorMonitor->SetDesiredError("VUID-VkReleaseSwapchainImagesInfoEXT-pImageIndices-07785");
+    m_errorMonitor->SetDesiredError("VUID-VkReleaseSwapchainImagesInfoKHR-pImageIndices-07785");
     vk::ReleaseSwapchainImagesEXT(device(), &release_info);
     m_errorMonitor->VerifyFound();
 }
@@ -2444,7 +2444,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionRelease) {
     fence_info.swapchainCount = 1 /* swapchain count */ + 1;
     fence_info.pFences = fences;
 
-    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentFenceInfoEXT-swapchainCount-07757");
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentFenceInfoKHR-swapchainCount-07757");
     m_default_queue->Present(m_swapchain, image_index, submit_semaphore, &fence_info);
     m_errorMonitor->VerifyFound();
 
@@ -2470,7 +2470,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionRelease) {
     VkSwapchainPresentModeInfoEXT present_mode_info = vku::InitStructHelper();
     present_mode_info.swapchainCount = 1;
     present_mode_info.pPresentModes = &mismatched_present_mode;
-    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentModeInfoEXT-pPresentModes-07761");
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentModeInfoKHR-pPresentModes-07761");
     m_default_queue->Present(m_swapchain, image_index, submit_semaphore, &present_mode_info);
     m_errorMonitor->VerifyFound();
 
@@ -2484,8 +2484,8 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionRelease) {
     release_info.swapchain = m_swapchain;
     release_info.imageIndexCount = 1;
     release_info.pImageIndices = &release_index;
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkReleaseSwapchainImagesInfoEXT-pImageIndices-07785");
-    m_errorMonitor->SetDesiredError("VUID-VkReleaseSwapchainImagesInfoEXT-pImageIndices-07786");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkReleaseSwapchainImagesInfoKHR-pImageIndices-07785");
+    m_errorMonitor->SetDesiredError("VUID-VkReleaseSwapchainImagesInfoKHR-pImageIndices-07786");
     vk::ReleaseSwapchainImagesEXT(device(), &release_info);
     m_errorMonitor->VerifyFound();
 
@@ -3642,7 +3642,7 @@ TEST_F(NegativeWsi, PresentInfoSwapchainsDifferentPresentModes) {
     m_device->Wait();
 }
 
-TEST_F(NegativeWsi, DISABLED_ReleaseSwapchainImagesWithoutFeature) {
+TEST_F(NegativeWsi, ReleaseSwapchainImagesWithoutFeature) {
     TEST_DESCRIPTION("Submit VkPresentInfo where one swapchain has VkSwapchainPresentModesCreateInfoKHR and the other does not");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -3702,7 +3702,7 @@ TEST_F(NegativeWsi, SwapchainCreateMissingMaintenanc1Feature) {
     VkSwapchainPresentScalingCreateInfoEXT present_scaling_ci = vku::InitStructHelper();
     present_scaling_ci.scalingBehavior = VK_PRESENT_SCALING_ASPECT_RATIO_STRETCH_BIT_EXT;
     swapchain_ci.pNext = &present_scaling_ci;
-    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoEXT-swapchainMaintenance1-10154");
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoKHR-swapchainMaintenance1-10154");
     m_swapchain.Init(*m_device, swapchain_ci);
     m_errorMonitor->VerifyFound();
 
@@ -3821,7 +3821,7 @@ TEST_F(NegativeWsi, MissingPresentModesCreateInfoFifoLatestReadyFeature) {
     swapchain_ci.oldSwapchain = 0;
 
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCreateInfoKHR-presentModeFifoLatestReady-10161");
-    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentModesCreateInfoEXT-presentModeFifoLatestReady-10160");
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentModesCreateInfoKHR-presentModeFifoLatestReady-10160");
     vkt::Swapchain swapchain(*m_device, swapchain_ci);
     m_errorMonitor->VerifyFound();
 }
@@ -3888,7 +3888,7 @@ TEST_F(NegativeWsi, InitSwapchainPresentScalingInvalidExtent) {
                                                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 0u, &image_format_properties);
 
     if (present_scaling_capabilities.maxScaledImageExtent.width > image_format_properties.maxExtent.width) {
-        GTEST_SKIP() << "VkSurfacePresentScalingCapabilitiesEXT::maxScaledImageExtent.width is higher than "
+        GTEST_SKIP() << "VkSurfacePresentScalingCapabilitiesKHR::maxScaledImageExtent.width is higher than "
                         "VkImageFormatProperties::maxExtent.width";
     }
 
@@ -4153,7 +4153,7 @@ TEST_F(NegativeWsi, PresentSignaledFence) {
     present_fence_info.swapchainCount = 1;
     present_fence_info.pFences = &present_fence.handle();
 
-    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentFenceInfoEXT-pFences-07758");
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentFenceInfoKHR-pFences-07758");
     m_default_queue->Present(m_swapchain, image_index, acquire_semaphore, &present_fence_info);
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
@@ -4180,7 +4180,7 @@ TEST_F(NegativeWsi, PresentFenceInUse) {
 
     m_default_queue->Submit(vkt::no_cmd, present_fence);
 
-    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentFenceInfoEXT-pFences-07759");
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentFenceInfoKHR-pFences-07759");
     m_default_queue->Present(m_swapchain, image_index, acquire_semaphore, &present_fence_info);
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
@@ -4230,7 +4230,7 @@ TEST_F(NegativeWsi, PresentMismatchedSwapchainCount) {
     present_mode_info.swapchainCount = 2u;
     present_mode_info.pPresentModes = present_modes;
 
-    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentModeInfoEXT-swapchainCount-07760");
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentModeInfoKHR-swapchainCount-07760");
     m_default_queue->Present(swapchain, image_index, acquire_semaphore, &present_mode_info);
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
