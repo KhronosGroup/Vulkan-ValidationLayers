@@ -18002,6 +18002,7 @@ bool Device::PreCallValidateReleaseSwapchainImagesKHR(VkDevice device, const VkR
                                       "VUID-VkReleaseSwapchainImagesInfoKHR-imageIndexCount-arraylength",
                                       "VUID-VkReleaseSwapchainImagesInfoKHR-pImageIndices-parameter");
     }
+    if (!skip) skip |= manual_PreCallValidateReleaseSwapchainImagesKHR(device, pReleaseInfo, context);
     return skip;
 }
 
