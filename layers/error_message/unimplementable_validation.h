@@ -228,7 +228,7 @@ const char* unimplementable_validation[] = {
     "VUID-VkBindDescriptorSetsInfo-pDynamicOffsets-parameter",
     "VUID-VkPhysicalDeviceHostImageCopyProperties-pCopySrcLayouts-parameter",
     "VUID-VkPhysicalDeviceHostImageCopyProperties-pCopyDstLayouts-parameter",
-    "VUID-VkSurfacePresentModeCompatibilityEXT-pPresentModes-parameter",
+    "VUID-VkSurfacePresentModeCompatibilityKHR-pPresentModes-parameter",
     "VUID-VkFrameBoundaryEXT-pImages-parameter",
     "VUID-VkFrameBoundaryEXT-pBuffers-parameter",
     "VUID-VkFrameBoundaryEXT-pTag-parameter",

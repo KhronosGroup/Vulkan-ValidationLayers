@@ -3301,7 +3301,7 @@ bool Device::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKH
                 for (uint32_t index2 = 0; index2 < pNext->swapchainCount; ++index2) {
                     skip |= ValidateObject(pNext->pFences[index2], kVulkanObjectTypeFence, true,
                                            "VUID-VkSwapchainPresentFenceInfoKHR-pFences-parameter",
-                                           "UNASSIGNED-VkSwapchainPresentFenceInfoEXT-pFences-parent",
+                                           "UNASSIGNED-VkSwapchainPresentFenceInfoKHR-pFences-parent",
                                            pNext_loc.dot(Field::pFences, index2));
                 }
             }

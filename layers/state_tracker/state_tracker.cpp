@@ -1545,7 +1545,7 @@ void DeviceState::PostCallRecordQueueWaitIdle(VkQueue queue, const RecordObject 
 
         // Reset semaphore's in-use-by-swapchain state.
         // Only for pre-swapchain-maintenance1 code. New code should realy on presentation fence.
-        if (!IsExtEnabled(extensions.vk_ext_swapchain_maintenance1)) {
+        if (!IsExtEnabled(extensions.vk_khr_swapchain_maintenance1) && !IsExtEnabled(extensions.vk_ext_swapchain_maintenance1)) {
             if (queue_state->is_used_for_presentation) {
                 for (const auto &entry : semaphore_map_.snapshot()) {
                     const std::shared_ptr<vvl::Semaphore> &semaphore_state = entry.second;
@@ -1583,7 +1583,7 @@ void DeviceState::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordObje
     }
     // Reset semaphore's in-use-by-swapchain state.
     // Only for pre-swapchain-maintenance1 code. New code should rely on the presentation fence.
-    if (!IsExtEnabled(extensions.vk_ext_swapchain_maintenance1)) {
+    if (!IsExtEnabled(extensions.vk_khr_swapchain_maintenance1) && !IsExtEnabled(extensions.vk_ext_swapchain_maintenance1)) {
         for (const auto &entry : semaphore_map_.snapshot()) {
             const std::shared_ptr<vvl::Semaphore> &semaphore_state = entry.second;
             semaphore_state->ClearSwapchainWaitInfo();
@@ -3686,7 +3686,7 @@ void DeviceState::RecordCreateSwapchainState(VkResult result, const VkSwapchainC
         surface_state->AddParent(swapchain.get());
         surface_state->swapchain = swapchain.get();
         swapchain->surface = std::move(surface_state);
-        auto swapchain_present_modes_ci = vku::FindStructInPNextChain<VkSwapchainPresentModesCreateInfoEXT>(pCreateInfo->pNext);
+        auto swapchain_present_modes_ci = vku::FindStructInPNextChain<VkSwapchainPresentModesCreateInfoKHR>(pCreateInfo->pNext);
         if (swapchain_present_modes_ci) {
             const uint32_t present_mode_count = swapchain_present_modes_ci->presentModeCount;
             swapchain->present_modes.reserve(present_mode_count);
@@ -3775,7 +3775,7 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
     }
 
     const Location present_loc = record_obj.location.dot(Field::pPresentInfo);
-    const auto *present_fence_info = vku::FindStructInPNextChain<VkSwapchainPresentFenceInfoEXT>(pPresentInfo->pNext);
+    const auto *present_fence_info = vku::FindStructInPNextChain<VkSwapchainPresentFenceInfoKHR>(pPresentInfo->pNext);
 
     std::vector<QueueSubmission> present_submissions;  // TODO: use small_vector. Update interfaces to use span
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
@@ -3879,13 +3879,18 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
     }
 }
 
-void DeviceState::PostCallRecordReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT *pReleaseInfo,
+void DeviceState::PostCallRecordReleaseSwapchainImagesKHR(VkDevice device, const VkReleaseSwapchainImagesInfoKHR *pReleaseInfo,
                                                           const RecordObject &record_obj) {
     if (auto swapchain_data = Get<Swapchain>(pReleaseInfo->swapchain)) {
         for (uint32_t i = 0; i < pReleaseInfo->imageIndexCount; ++i) {
             swapchain_data->ReleaseImage(pReleaseInfo->pImageIndices[i]);
         }
     }
+}
+
+void DeviceState::PostCallRecordReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT *pReleaseInfo,
+                                                          const RecordObject &record_obj) {
+    PostCallRecordReleaseSwapchainImagesKHR(device, pReleaseInfo, record_obj);
 }
 
 void DeviceState::PostCallRecordCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
@@ -4224,12 +4229,12 @@ void InstanceState::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhy
         ASSERT_AND_RETURN(surface_state);
         if (!pSurfaceInfo->pNext) {
             surface_state->UpdateCapabilitiesCache(physicalDevice, pSurfaceCapabilities->surfaceCapabilities);
-        } else if (IsExtEnabled(extensions.vk_ext_surface_maintenance1)) {
-            const auto *surface_present_mode = vku::FindStructInPNextChain<VkSurfacePresentModeEXT>(pSurfaceInfo->pNext);
+        } else if (IsExtEnabled(extensions.vk_khr_surface_maintenance1) || IsExtEnabled(extensions.vk_ext_surface_maintenance1)) {
+            const auto *surface_present_mode = vku::FindStructInPNextChain<VkSurfacePresentModeKHR>(pSurfaceInfo->pNext);
             if (surface_present_mode) {
                 // The surface caps caching should take into account pSurfaceInfo->pNext chain structure,
                 // because each pNext element can affect query result. Here we support caching for a common
-                // case when pNext chain is a single VkSurfacePresentModeEXT structure.
+                // case when pNext chain is a single VkSurfacePresentModeKHR structure.
                 const bool single_pnext_element = (pSurfaceInfo->pNext == surface_present_mode) && !surface_present_mode->pNext;
                 if (single_pnext_element) {
                     surface_state->UpdateCapabilitiesCache(physicalDevice, *pSurfaceCapabilities,

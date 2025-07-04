@@ -179,7 +179,7 @@ class Surface : public StateObject {
     bool IsLastCapabilityQueryUsedPresentMode(VkPhysicalDevice phys_dev) const;
     VkSurfaceCapabilitiesKHR GetSurfaceCapabilities(VkPhysicalDevice phys_dev, const void *surface_info_pnext) const;
     VkSurfaceCapabilitiesKHR GetPresentModeSurfaceCapabilities(VkPhysicalDevice phys_dev, VkPresentModeKHR present_mode) const;
-    VkSurfacePresentScalingCapabilitiesEXT GetPresentModeScalingCapabilities(VkPhysicalDevice phys_dev,
+    VkSurfacePresentScalingCapabilitiesKHR GetPresentModeScalingCapabilities(VkPhysicalDevice phys_dev,
                                                                              VkPresentModeKHR present_mode) const;
     std::vector<VkPresentModeKHR> GetCompatibleModes(VkPhysicalDevice phys_dev, VkPresentModeKHR present_mode) const;
 
@@ -190,7 +190,7 @@ class Surface : public StateObject {
     struct PresentModeInfo {
         VkPresentModeKHR present_mode;
         VkSurfaceCapabilitiesKHR surface_capabilities;
-        std::optional<VkSurfacePresentScalingCapabilitiesEXT> scaling_capabilities;
+        std::optional<VkSurfacePresentScalingCapabilitiesKHR> scaling_capabilities;
         std::optional<std::vector<VkPresentModeKHR>> compatible_present_modes;
     };
     // Cached information per physical device. Optional indicates if element is in the cache.
