@@ -61,38 +61,40 @@ bool CoreChecks::ValidateRayTracingPipeline(const vvl::Pipeline &pipeline,
         const auto &group = groups[group_index];
         const Location &group_loc = create_info_loc.dot(Field::pGroups, group_index);
 
-        if (group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV) {
-            if (!GroupHasValidIndex(
+        if (group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR) {
+            if (group.generalShader == VK_SHADER_UNUSED_KHR ||
+                !GroupHasValidIndex(
                     pipeline, group.generalShader,
-                    VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_MISS_BIT_NV | VK_SHADER_STAGE_CALLABLE_BIT_NV)) {
+                    VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR | VK_SHADER_STAGE_CALLABLE_BIT_KHR)) {
                 skip |= LogError(isKHR ? "VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03474"
                                        : "VUID-VkRayTracingShaderGroupCreateInfoNV-type-02413",
                                  device, group_loc.dot(Field::generalShader), "is %" PRIu32 ".", group.generalShader);
             }
-            if (group.anyHitShader != VK_SHADER_UNUSED_NV || group.closestHitShader != VK_SHADER_UNUSED_NV ||
-                group.intersectionShader != VK_SHADER_UNUSED_NV) {
+            if (group.anyHitShader != VK_SHADER_UNUSED_KHR || group.closestHitShader != VK_SHADER_UNUSED_KHR ||
+                group.intersectionShader != VK_SHADER_UNUSED_KHR) {
                 skip |= LogError(isKHR ? "VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03475"
                                        : "VUID-VkRayTracingShaderGroupCreateInfoNV-type-02414",
                                  device, group_loc,
                                  "anyHitShader is %" PRIu32 ", closestHitShader is %" PRIu32 ", intersectionShader is %" PRIu32 ".",
                                  group.anyHitShader, group.closestHitShader, group.intersectionShader);
             }
-        } else if (group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_NV) {
-            if (!GroupHasValidIndex(pipeline, group.intersectionShader, VK_SHADER_STAGE_INTERSECTION_BIT_NV)) {
+        } else if (group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR) {
+            if (group.intersectionShader == VK_SHADER_UNUSED_KHR ||
+                !GroupHasValidIndex(pipeline, group.intersectionShader, VK_SHADER_STAGE_INTERSECTION_BIT_KHR)) {
                 skip |= LogError(isKHR ? "VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03476"
                                        : "VUID-VkRayTracingShaderGroupCreateInfoNV-type-02415",
                                  device, group_loc.dot(Field::intersectionShader), "is %" PRIu32 ".", group.intersectionShader);
             }
-        } else if (group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV) {
-            if (group.intersectionShader != VK_SHADER_UNUSED_NV) {
+        } else if (group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR) {
+            if (group.intersectionShader != VK_SHADER_UNUSED_KHR) {
                 skip |= LogError(isKHR ? "VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03477"
                                        : "VUID-VkRayTracingShaderGroupCreateInfoNV-type-02416",
                                  device, group_loc.dot(Field::intersectionShader), "is %" PRIu32 ".", group.intersectionShader);
             }
         }
 
-        if (group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_NV ||
-            group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV) {
+        if (group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR ||
+            group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR) {
             if (!GroupHasValidIndex(pipeline, group.anyHitShader, VK_SHADER_STAGE_ANY_HIT_BIT_KHR)) {
                 skip |= LogError(isKHR ? "VUID-VkRayTracingShaderGroupCreateInfoKHR-anyHitShader-03479"
                                        : "VUID-VkRayTracingShaderGroupCreateInfoNV-anyHitShader-02418",
