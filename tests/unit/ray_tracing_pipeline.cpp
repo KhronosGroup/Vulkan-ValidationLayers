@@ -266,6 +266,33 @@ TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
         m_errorMonitor->VerifyFound();
     }
 
+    // General shader index is VK_SHADER_UNUSED_KHR
+    {
+        VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
+        stage_create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+        stage_create_info.module = rgen_shader;
+        stage_create_info.pName = "main";
+
+        VkRayTracingShaderGroupCreateInfoKHR group_create_info = vku::InitStructHelper();
+        group_create_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+        group_create_info.generalShader = VK_SHADER_UNUSED_KHR;  // Should be a valid index
+        group_create_info.closestHitShader = VK_SHADER_UNUSED_KHR;
+        group_create_info.anyHitShader = VK_SHADER_UNUSED_KHR;
+        group_create_info.intersectionShader = VK_SHADER_UNUSED_KHR;
+
+        VkRayTracingPipelineCreateInfoKHR pipeline_ci = vku::InitStructHelper();
+        pipeline_ci.pLibraryInfo = &library_info;
+        pipeline_ci.stageCount = 1;
+        pipeline_ci.pStages = &stage_create_info;
+        pipeline_ci.groupCount = 1;
+        pipeline_ci.pGroups = &group_create_info;
+        pipeline_ci.layout = empty_pipeline_layout;
+
+        m_errorMonitor->SetDesiredError("VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03474");
+        vk::CreateRayTracingPipelinesKHR(*m_device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        m_errorMonitor->VerifyFound();
+    }
+
     // General shader index doesn't exist
     {
         VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
@@ -371,6 +398,47 @@ TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
         pipeline_ci.layout = empty_pipeline_layout;
 
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03475");
+        vk::CreateRayTracingPipelinesKHR(*m_device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Intersection shader invalid index
+    {
+        VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
+        stage_create_infos[0] = vku::InitStructHelper();
+        stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+        stage_create_infos[0].module = rgen_shader;
+        stage_create_infos[0].pName = "main";
+
+        stage_create_infos[1] = vku::InitStructHelper();
+        stage_create_infos[1].stage = VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
+        stage_create_infos[1].module = intr_shader;
+        stage_create_infos[1].pName = "main";
+
+        VkRayTracingShaderGroupCreateInfoKHR group_create_infos[2] = {};
+        group_create_infos[0] = vku::InitStructHelper();
+        group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+        group_create_infos[0].generalShader = 0;
+        group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_KHR;
+        group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_KHR;
+        group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_KHR;
+
+        group_create_infos[1] = vku::InitStructHelper();
+        group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR;
+        group_create_infos[1].generalShader = VK_SHADER_UNUSED_KHR;
+        group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_KHR;
+        group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_KHR;
+        group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_KHR;  // Should be a valid index
+
+        VkRayTracingPipelineCreateInfoKHR pipeline_ci = vku::InitStructHelper();
+        pipeline_ci.pLibraryInfo = &library_info;
+        pipeline_ci.stageCount = 2;
+        pipeline_ci.pStages = stage_create_infos;
+        pipeline_ci.groupCount = 2;
+        pipeline_ci.pGroups = group_create_infos;
+        pipeline_ci.layout = empty_pipeline_layout;
+
+        m_errorMonitor->SetDesiredError("VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03476");
         vk::CreateRayTracingPipelinesKHR(*m_device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
