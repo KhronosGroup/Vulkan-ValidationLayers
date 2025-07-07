@@ -317,6 +317,7 @@ vvl::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescriptorSetLayoutC
         const auto binding_num = input_binding.layout_binding->binding;
         binding_to_index_map_[binding_num] = index++;
         bindings_.emplace_back(input_binding.layout_binding);
+        // safe_VkDescriptorSetLayoutBinding will do some extra "cleanup" logic, so want to use it
         auto &binding_info = bindings_.back();
         binding_flags_.emplace_back(input_binding.binding_flags);
 

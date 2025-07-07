@@ -65,9 +65,9 @@ bool CoreChecks::ImmutableSamplersAreEqual(const VkDescriptorSetLayoutBinding &b
                 auto sampler_state_1 = Get<vvl::Sampler>(b1.pImmutableSamplers[i]);
                 auto sampler_state_2 = Get<vvl::Sampler>(b2.pImmutableSamplers[i]);
                 if (!sampler_state_1 || !sampler_state_2) {
-                    if (!CompareSamplerCreateInfo(sampler_state_1->create_info, sampler_state_2->create_info)) {
-                        return false;
-                    }
+                    return false;  // vkDestroySampler was called
+                } else if (!CompareSamplerCreateInfo(sampler_state_1->create_info, sampler_state_2->create_info)) {
+                    return false;
                 }
             }
             return true;

@@ -5876,7 +5876,9 @@ TEST_F(NegativeDescriptors, DuplicateLayoutDifferentSampler) {
                              {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, &sampler_1.handle()}});
 
     m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-00358");
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_0, 0, 1, &ds_1.set_, 0, nullptr);
+    m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
 
@@ -5898,7 +5900,9 @@ TEST_F(NegativeDescriptors, DuplicateLayoutDifferentSamplerArray) {
                              {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, VK_SHADER_STAGE_COMPUTE_BIT, sampler_array_1}});
 
     m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-00358");
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_0, 0, 1, &ds_1.set_, 0, nullptr);
+    m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
 
