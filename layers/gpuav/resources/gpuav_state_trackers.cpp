@@ -353,6 +353,7 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, const std::vector<std::s
 
     bool success = true;
     LabelLogging label_logging = {initial_label_stack, action_cmd_i_to_label_cmd_i_map};
+    gpu_resources_manager.InvalidateBufferAllocations();
     for (auto &on_cb_completion_func : on_cb_completion_functions) {
         success = on_cb_completion_func(gpuav_, *this, label_logging, loc);
         if (!success) {

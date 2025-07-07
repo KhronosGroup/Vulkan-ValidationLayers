@@ -109,6 +109,7 @@ class GpuResourcesManager {
     vko::BufferRange GetDeviceLocalIndirectBufferRange(VkDeviceSize size);
     vko::BufferRange GetStagingBufferRange(VkDeviceSize size);
 
+    void InvalidateBufferAllocations();
     void ReturnResources();
     void DestroyResources();
 
@@ -129,10 +130,11 @@ class GpuResourcesManager {
     class BufferCache {
       public:
         BufferCache() = default;
+        ~BufferCache();
         void Create(VkBufferUsageFlags buffer_usage_flags, const VmaAllocationCreateInfo allocation_ci);
         vko::BufferRange GetBufferRange(Validator &gpuav, VkDeviceSize byte_size, VkDeviceSize alignment,
                                         VkDeviceSize min_buffer_block_byte_size = 0);
-        ~BufferCache();
+        void InvalidateAllocations(Validator &gpuav);
         void ReturnBufferRange(const vko::BufferRange &buffer_range);
         void ReturnBuffers();
         void DestroyBuffers();

@@ -374,6 +374,14 @@ vko::BufferRange GpuResourcesManager::GetStagingBufferRange(VkDeviceSize size) {
     return staging_buffer_cache_.GetBufferRange(gpuav_, size, alignment, min_buffer_block_size);
 }
 
+void GpuResourcesManager::InvalidateBufferAllocations() {
+    host_visible_buffer_cache_.InvalidateAllocations(gpuav_);
+    host_cached_buffer_cache_.InvalidateAllocations(gpuav_);
+    device_local_buffer_cache_.InvalidateAllocations(gpuav_);
+    device_local_indirect_buffer_cache_.InvalidateAllocations(gpuav_);
+    staging_buffer_cache_.InvalidateAllocations(gpuav_);
+}
+
 void GpuResourcesManager::ReturnResources() {
     for (LayoutToSets &layout_to_set : cache_layouts_to_sets_) {
         layout_to_set.first_available_desc_set = 0;
@@ -478,6 +486,12 @@ vko::BufferRange GpuResourcesManager::BufferCache::GetBufferRange(Validator &gpu
             cached_buffer_block.buffer.GetMappedPtr(),
             cached_buffer_block.buffer.Address(),
             cached_buffer_block.buffer.Allocation()};
+}
+
+void GpuResourcesManager::BufferCache::InvalidateAllocations(Validator &gpuav) {
+    for (CachedBufferBlock &block : cached_buffers_blocks_) {
+        vmaInvalidateAllocation(gpuav.vma_allocator_, block.buffer.Allocation(), 0, VK_WHOLE_SIZE);
+    }
 }
 
 void GpuResourcesManager::BufferCache::ReturnBuffers() {
