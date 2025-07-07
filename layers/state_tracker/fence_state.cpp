@@ -97,9 +97,8 @@ void vvl::Fence::NotifyAndWait(const Location &loc) {
     if (waiter.valid()) {
         auto result = waiter.wait_until(GetCondWaitTimeout());
         if (result != std::future_status::ready) {
-            logger_.LogError(
-                "INTERNAL-ERROR-VkFence-state-timeout", Handle(), loc,
-                "The Validation Layers hit a timeout waiting for fence state to update (this is most likely a validation bug).");
+            logger_.LogError("INTERNAL-ERROR-VkFence-state-timeout", Handle(), loc,
+                             "The Validation Layers hit a timeout waiting for fence state to update.");
         }
     }
     if (present_submission_ref.has_value()) {

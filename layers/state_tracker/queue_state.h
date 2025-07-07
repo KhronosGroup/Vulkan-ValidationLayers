@@ -28,6 +28,7 @@
 #include <string>
 #include "error_message/error_location.h"
 #include "chassis/dispatch_object.h"
+#include "vk_layer_config.h"
 
 namespace vvl {
 
@@ -97,10 +98,35 @@ struct QueueSubmission {
 };
 
 // This timeout is for all queue threads to update their state after we know
-// (via being in a PostRecord call) that a fence, semaphore or wait for idle has
-// completed. Hitting it is almost a certainly a bug in this code.
+// (via being in a PostRecord call) that a fence, semaphore or wait for idle has completed.
+//
+// NOTE 2025-07-07: we did not have bugs related to timeouts for quite some time.
+// At the same time low timeout value (10 seconds) was the source of confusion during
+// debugging when the program was waiting on breakpoint longer than timeout value.
+//
+// Set infinite value for debug builds. For release builds stay on the safe side and use
+// a larger but still waitable value. In the future, after more testing, we might want use
+// infinite timeout in all cases (or it's possible that non-threaded solution will happen first,
+// as part of imporving submit time validation).
+//
+// Timeout can be overwritten with VK_QUEUE_THREAD_DEFAULT_TIMEOUT environment variable.
 static inline std::chrono::time_point<std::chrono::steady_clock> GetCondWaitTimeout() {
-    return std::chrono::steady_clock::now() + std::chrono::seconds(10);
+    const std::string envvar_timeout_str = GetEnvironment("VK_QUEUE_THREAD_DEFAULT_TIMEOUT");
+    const uint64_t envvar_timeout_value = !envvar_timeout_str.empty() ? std::atoi(envvar_timeout_str.c_str()) : 0;
+
+    uint64_t timeout_seconds = 0;
+    if (envvar_timeout_value) {
+        timeout_seconds = envvar_timeout_value;
+    } else {
+#ifndef NDEBUG
+        // infinite value for debug builds
+        timeout_seconds = vvl::kU32Max;
+#else
+        // large timeout for release builds but still waitable in case of issue
+        timeout_seconds = 120;
+#endif
+    }
+    return std::chrono::steady_clock::now() + std::chrono::seconds(timeout_seconds);
 }
 
 struct PreSubmitResult {
