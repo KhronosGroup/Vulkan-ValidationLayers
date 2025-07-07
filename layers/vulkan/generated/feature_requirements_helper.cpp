@@ -4607,7 +4607,7 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             }
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
-            case Feature::constantAlphaColorBlendFactors : {
+        case Feature::constantAlphaColorBlendFactors: {
             auto vk_struct = const_cast<VkPhysicalDevicePortabilitySubsetFeaturesKHR *>(
                 vku::FindStructInPNextChain<VkPhysicalDevicePortabilitySubsetFeaturesKHR>(*inout_pnext_chain));
             if (!vk_struct) {

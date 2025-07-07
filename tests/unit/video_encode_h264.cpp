@@ -616,7 +616,7 @@ TEST_F(NegativeVideoEncodeH264, RateControlConstantQpNonZero) {
     cb.ControlVideoCoding(context.Control().RateControl(rc_info));
 
     VideoEncodeInfo encode_info = context.EncodeFrame();
-    encode_info.CodecInfo().encode_h264.slice_info.constantQp = 1;
+    encode_info.CodecInfo().encode_h264.slice_info[0].constantQp = 1;
 
     if (config.EncodeCapsH264()->maxQp < 1) {
         m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdEncodeVideoKHR-constantQp-08270");
@@ -655,13 +655,13 @@ TEST_F(NegativeVideoEncodeH264, RateControlConstantQpNotInCapRange) {
 
     VideoEncodeInfo encode_info = context.EncodeFrame();
 
-    encode_info.CodecInfo().encode_h264.slice_info.constantQp = config.EncodeCapsH264()->minQp - 1;
+    encode_info.CodecInfo().encode_h264.slice_info[0].constantQp = config.EncodeCapsH264()->minQp - 1;
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdEncodeVideoKHR-constantQp-08270");
     cb.EncodeVideo(encode_info);
     m_errorMonitor->VerifyFound();
 
-    encode_info.CodecInfo().encode_h264.slice_info.constantQp = config.EncodeCapsH264()->maxQp + 1;
+    encode_info.CodecInfo().encode_h264.slice_info[0].constantQp = config.EncodeCapsH264()->maxQp + 1;
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdEncodeVideoKHR-constantQp-08270");
     cb.EncodeVideo(encode_info);
@@ -702,16 +702,14 @@ TEST_F(NegativeVideoEncodeH264, RateControlConstantQpPerSliceMismatch) {
     cb.BeginVideoCoding(context.Begin());
     cb.ControlVideoCoding(context.Control().RateControl(rc_info));
 
-    VideoEncodeInfo encode_info = context.EncodeFrame();
-    std::vector<VkVideoEncodeH264NaluSliceInfoKHR> slices(2, encode_info.CodecInfo().encode_h264.slice_info);
-    encode_info.CodecInfo().encode_h264.picture_info.naluSliceEntryCount = 2;
-    encode_info.CodecInfo().encode_h264.picture_info.pNaluSliceEntries = slices.data();
+    VideoEncodeInfo encode_info = context.EncodeFrame().SetPartitionCount(2);
+    auto& slice_info = encode_info.CodecInfo().encode_h264.slice_info;
 
-    slices[0].constantQp = config.EncodeCapsH264()->minQp;
-    slices[1].constantQp = config.EncodeCapsH264()->maxQp;
+    slice_info[0].constantQp = config.EncodeCapsH264()->minQp;
+    slice_info[1].constantQp = config.EncodeCapsH264()->maxQp;
 
-    if (slices[0].constantQp == slices[1].constantQp) {
-        slices[1].constantQp += 1;
+    if (slice_info[0].constantQp == slice_info[1].constantQp) {
+        slice_info[1].constantQp += 1;
         m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdEncodeVideoKHR-constantQp-08270");
     }
 
@@ -1346,17 +1344,10 @@ TEST_F(NegativeVideoEncodeH264, EncodeCapsMaxSliceCount) {
     cb.Begin();
     cb.BeginVideoCoding(context.Begin());
 
-    VideoEncodeInfo encode_info = context.EncodeFrame();
-
-    const uint32_t slice_count = max_slice_count + 1;
-    std::vector<VkVideoEncodeH264NaluSliceInfoKHR> slices(slice_count, encode_info.CodecInfo().encode_h264.slice_info);
-    encode_info.CodecInfo().encode_h264.picture_info.naluSliceEntryCount = slice_count;
-    encode_info.CodecInfo().encode_h264.picture_info.pNaluSliceEntries = slices.data();
-
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdEncodeVideoKHR-naluSliceEntryCount-08302");
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdEncodeVideoKHR-naluSliceEntryCount-08312");
     m_errorMonitor->SetDesiredError("VUID-VkVideoEncodeH264PictureInfoKHR-naluSliceEntryCount-08301");
-    cb.EncodeVideo(encode_info);
+    cb.EncodeVideo(context.EncodeFrame().SetPartitionCount(max_slice_count + 1));
     m_errorMonitor->VerifyFound();
 
     cb.EndVideoCoding(context.End());
@@ -1395,18 +1386,13 @@ TEST_F(NegativeVideoEncodeH264, EncodeCapsMoreSlicesThanMBs) {
     cb.Begin();
     cb.BeginVideoCoding(context.Begin());
 
-    VideoEncodeInfo encode_info = context.EncodeFrame();
-
     const uint32_t slice_count = config.MaxEncodeH264MBCount() + 1;
-    std::vector<VkVideoEncodeH264NaluSliceInfoKHR> slices(slice_count, encode_info.CodecInfo().encode_h264.slice_info);
-    encode_info.CodecInfo().encode_h264.picture_info.naluSliceEntryCount = slice_count;
-    encode_info.CodecInfo().encode_h264.picture_info.pNaluSliceEntries = slices.data();
 
     if (slice_count > config.EncodeCapsH264()->maxSliceCount) {
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkVideoEncodeH264PictureInfoKHR-naluSliceEntryCount-08301");
     }
     m_errorMonitor->SetDesiredError("VUID-vkCmdEncodeVideoKHR-naluSliceEntryCount-08302");
-    cb.EncodeVideo(encode_info);
+    cb.EncodeVideo(context.EncodeFrame().SetPartitionCount(slice_count));
     m_errorMonitor->VerifyFound();
 
     cb.EndVideoCoding(context.End());
@@ -1445,18 +1431,13 @@ TEST_F(NegativeVideoEncodeH264, EncodeCapsMoreSlicesThanMBRows) {
     cb.Begin();
     cb.BeginVideoCoding(context.Begin());
 
-    VideoEncodeInfo encode_info = context.EncodeFrame();
-
     const uint32_t slice_count = config.MaxEncodeH264MBRowCount() + 1;
-    std::vector<VkVideoEncodeH264NaluSliceInfoKHR> slices(slice_count, encode_info.CodecInfo().encode_h264.slice_info);
-    encode_info.CodecInfo().encode_h264.picture_info.naluSliceEntryCount = slice_count;
-    encode_info.CodecInfo().encode_h264.picture_info.pNaluSliceEntries = slices.data();
 
     if (slice_count > config.EncodeCapsH264()->maxSliceCount) {
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkVideoEncodeH264PictureInfoKHR-naluSliceEntryCount-08301");
     }
     m_errorMonitor->SetDesiredError("VUID-vkCmdEncodeVideoKHR-naluSliceEntryCount-08312");
-    cb.EncodeVideo(encode_info);
+    cb.EncodeVideo(context.EncodeFrame().SetPartitionCount(slice_count));
     m_errorMonitor->VerifyFound();
 
     cb.EndVideoCoding(context.End());
@@ -1485,21 +1466,13 @@ TEST_F(NegativeVideoEncodeH264, EncodeCapsDifferentSliceTypes) {
     cb.Begin();
     cb.BeginVideoCoding(context.Begin());
 
-    VideoEncodeInfo encode_info = context.EncodeFrame();
-
-    const uint32_t slice_count = 2;
-    std::vector<VkVideoEncodeH264NaluSliceInfoKHR> slices(slice_count, encode_info.CodecInfo().encode_h264.slice_info);
-    std::vector<StdVideoEncodeH264SliceHeader> slice_headers(slice_count, encode_info.CodecInfo().encode_h264.std_slice_header);
-    encode_info.CodecInfo().encode_h264.picture_info.naluSliceEntryCount = slice_count;
-    encode_info.CodecInfo().encode_h264.picture_info.pNaluSliceEntries = slices.data();
-
-    slices[0].pStdSliceHeader = &slice_headers[0];
-    slices[1].pStdSliceHeader = &slice_headers[1];
+    VideoEncodeInfo encode_info = context.EncodeFrame().SetPartitionCount(2);
+    auto& slice_headers = encode_info.CodecInfo().encode_h264.std_slice_headers;
 
     slice_headers[0].slice_type = STD_VIDEO_H264_SLICE_TYPE_I;
     slice_headers[1].slice_type = STD_VIDEO_H264_SLICE_TYPE_P;
 
-    m_errorMonitor->SetDesiredError("VUID-VkVideoEncodeH264PictureInfoKHR-flags-08315");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdEncodeVideoKHR-flags-10850");
     cb.EncodeVideo(encode_info);
     m_errorMonitor->VerifyFound();
 
