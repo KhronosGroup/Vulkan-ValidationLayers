@@ -527,6 +527,8 @@ class CoreChecks : public vvl::DeviceProxy {
     bool IsImageCompatibleWithVideoSession(const vvl::Image& image_state, const vvl::VideoSession& vs_state) const;
     bool ValidateVideoInlineQueryInfo(const vvl::QueryPool& query_pool_state, const VkVideoInlineQueryInfoKHR& query_info,
                                       const Location& loc) const;
+    bool ValidateVideoEncodeIntraRefreshInfo(const vvl::CommandBuffer& cb_state, const vvl::VideoSession& vs_state,
+                                             const VkVideoEncodeInfoKHR& encode_info, const Location& encode_info_loc) const;
     bool ValidateVideoEncodeRateControlInfo(const VkVideoEncodeRateControlInfoKHR& rc_info, const void* pNext,
                                             VkCommandBuffer cmdbuf, const vvl::VideoSession& vs_state, const Location& loc) const;
     bool ValidateVideoEncodeRateControlInfoH264(const VkVideoEncodeRateControlInfoKHR& rc_info, const void* pNext,

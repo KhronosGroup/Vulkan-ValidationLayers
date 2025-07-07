@@ -100,6 +100,7 @@ class VideoProfileDesc : public std::enable_shared_from_this<VideoProfileDesc> {
             } decode_ext;
             struct {
                 VkVideoEncodeQuantizationMapCapabilitiesKHR quantization_map;
+                VkVideoEncodeIntraRefreshCapabilitiesKHR intra_refresh;
             } encode_ext;
         };
     };
@@ -620,11 +621,15 @@ class VideoSession : public StateObject {
     bool ReferenceSetupRequested(VkVideoDecodeInfoKHR const &decode_info) const;
     bool ReferenceSetupRequested(VkVideoEncodeInfoKHR const &encode_info) const;
 
+    VkVideoEncodeIntraRefreshModeFlagBitsKHR GetIntraRefreshMode() const { return intra_refresh_mode_; }
+
   private:
     MemoryBindingMap GetMemoryBindings(const DeviceState &dev_data, VkVideoSessionKHR vs);
 
     MemoryBindingMap memory_bindings_;
     uint32_t unbound_memory_binding_count_;
+
+    const VkVideoEncodeIntraRefreshModeFlagBitsKHR intra_refresh_mode_;
 
     mutable std::mutex device_state_mutex_;
     VideoSessionDeviceState device_state_;

@@ -611,9 +611,7 @@ TEST_F(NegativeVideoEncode, RateControlUnsupportedMode) {
     RETURN_IF_SKIP(Init());
 
     // Try to find a config that does not support all rate control modes
-    VkVideoEncodeRateControlModeFlagsKHR all_rc_modes = VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DISABLED_BIT_KHR |
-                                                        VK_VIDEO_ENCODE_RATE_CONTROL_MODE_CBR_BIT_KHR |
-                                                        VK_VIDEO_ENCODE_RATE_CONTROL_MODE_VBR_BIT_KHR;
+    VkVideoEncodeRateControlModeFlagsKHR all_rc_modes = AllVkVideoEncodeRateControlModeFlagBitsKHR;
     VideoConfig config = GetConfig(FilterConfigs(GetConfigsEncode(), [all_rc_modes](const VideoConfig& config) {
         return (config.EncodeCaps()->rateControlModes & all_rc_modes) < all_rc_modes;
     }));

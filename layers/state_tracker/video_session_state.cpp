@@ -219,8 +219,6 @@ void VideoProfileDesc::InitCapabilities(VkPhysicalDevice physical_device) {
             capabilities_.encode = vku::InitStructHelper();
             capabilities_.encode.pNext = &capabilities_.encode_h264;
             capabilities_.encode_h264 = vku::InitStructHelper();
-            capabilities_.encode_h264.pNext = &capabilities_.encode_ext.quantization_map;
-            capabilities_.encode_ext.quantization_map = vku::InitStructHelper();
             break;
 
         case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR:
@@ -228,8 +226,6 @@ void VideoProfileDesc::InitCapabilities(VkPhysicalDevice physical_device) {
             capabilities_.encode = vku::InitStructHelper();
             capabilities_.encode.pNext = &capabilities_.encode_h265;
             capabilities_.encode_h265 = vku::InitStructHelper();
-            capabilities_.encode_h265.pNext = &capabilities_.encode_ext.quantization_map;
-            capabilities_.encode_ext.quantization_map = vku::InitStructHelper();
             break;
 
         case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR:
@@ -237,12 +233,18 @@ void VideoProfileDesc::InitCapabilities(VkPhysicalDevice physical_device) {
             capabilities_.encode = vku::InitStructHelper();
             capabilities_.encode.pNext = &capabilities_.encode_av1;
             capabilities_.encode_av1 = vku::InitStructHelper();
-            capabilities_.encode_av1.pNext = &capabilities_.encode_ext.quantization_map;
-            capabilities_.encode_ext.quantization_map = vku::InitStructHelper();
             break;
 
         default:
             return;
+    }
+
+    if (IsEncode()) {
+        capabilities_.encode_ext.quantization_map = vku::InitStructHelper(capabilities_.base.pNext);
+        capabilities_.base.pNext = &capabilities_.encode_ext.quantization_map;
+
+        capabilities_.encode_ext.intra_refresh = vku::InitStructHelper(capabilities_.base.pNext);
+        capabilities_.base.pNext = &capabilities_.encode_ext.intra_refresh;
     }
 
     VkResult result = DispatchGetPhysicalDeviceVideoCapabilitiesKHR(physical_device, &profile_.base, &capabilities_.base);
@@ -733,6 +735,11 @@ bool VideoSessionDeviceState::ValidateRateControlState(const Logger &log, const 
     return skip;
 }
 
+static VkVideoEncodeIntraRefreshModeFlagBitsKHR InitIntraRefreshMode(const VkVideoSessionCreateInfoKHR *ci) {
+    auto intra_refresh_info = vku::FindStructInPNextChain<VkVideoEncodeSessionIntraRefreshCreateInfoKHR>(ci->pNext);
+    return (intra_refresh_info) ? intra_refresh_info->intraRefreshMode : VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_NONE_KHR;
+}
+
 VideoSession::VideoSession(const DeviceState &dev_data, VkVideoSessionKHR handle, VkVideoSessionCreateInfoKHR const *pCreateInfo,
                            std::shared_ptr<const VideoProfileDesc> &&profile_desc)
     : StateObject(handle, kVulkanObjectTypeVideoSessionKHR),
@@ -743,6 +750,7 @@ VideoSession::VideoSession(const DeviceState &dev_data, VkVideoSessionKHR handle
       memory_bindings_queried(0),
       memory_bindings_(GetMemoryBindings(dev_data, handle)),
       unbound_memory_binding_count_(static_cast<uint32_t>(memory_bindings_.size())),
+      intra_refresh_mode_(InitIntraRefreshMode(pCreateInfo)),
       device_state_mutex_(),
       device_state_(pCreateInfo->maxDpbSlots) {}
 

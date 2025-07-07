@@ -990,6 +990,9 @@
                 "VkPhysicalDeviceVideoEncodeQuantizationMapFeaturesKHR": {
                     "videoEncodeQuantizationMap": true
                 },
+                "VkPhysicalDeviceVideoEncodeIntraRefreshFeaturesKHR": {
+                    "videoEncodeIntraRefresh": true
+                },
                 "VkPhysicalDeviceVideoEncodeAV1FeaturesKHR": {
                     "videoEncodeAV1": true
                 },
@@ -2375,6 +2378,7 @@
                 "VK_KHR_video_encode_h265": 1,
                 "VK_KHR_video_encode_queue": 1,
                 "VK_KHR_video_encode_quantization_map": 1,
+                "VK_KHR_video_encode_intra_refresh": 1,
                 "VK_KHR_video_maintenance1": 1,
                 "VK_KHR_video_maintenance2": 1,
                 "VK_KHR_video_queue": 1,
@@ -9065,6 +9069,17 @@
                         "VkVideoEncodeH264QuantizationMapCapabilitiesKHR": {
                             "minQpDelta": -26,
                             "maxQpDelta": 25
+                        },
+                        "VkVideoEncodeIntraRefreshCapabilitiesKHR": {
+                            "intraRefreshModes": [
+                                "VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_PER_PICTURE_PARTITION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_BLOCK_BASED_BIT_KHR",
+                                "VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_BLOCK_COLUMN_BASED_BIT_KHR"
+                            ],
+                            "maxIntraRefreshCycleDuration": 9,
+                            "maxIntraRefreshActiveReferencePictures": 2,
+                            "partitionIndependentIntraRefreshRegions": true,
+                            "nonRectangularIntraRefreshRegions": false
                         }
                     }
                 },
@@ -9126,6 +9141,17 @@
                         "VkVideoEncodeH264QuantizationMapCapabilitiesKHR": {
                             "minQpDelta": 0,
                             "maxQpDelta": 0
+                        },
+                        "VkVideoEncodeIntraRefreshCapabilitiesKHR": {
+                            "intraRefreshModes": [
+                                "VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_PER_PICTURE_PARTITION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_BLOCK_BASED_BIT_KHR",
+                                "VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_BLOCK_ROW_BASED_BIT_KHR"
+                            ],
+                            "maxIntraRefreshCycleDuration": 6,
+                            "maxIntraRefreshActiveReferencePictures": 1,
+                            "partitionIndependentIntraRefreshRegions": false,
+                            "nonRectangularIntraRefreshRegions": true
                         }
                     }
                 },
@@ -9183,6 +9209,13 @@
                         "VkVideoEncodeH264QuantizationMapCapabilitiesKHR": {
                             "minQpDelta": 0,
                             "maxQpDelta": 0
+                        },
+                        "VkVideoEncodeIntraRefreshCapabilitiesKHR": {
+                            "intraRefreshModes": [],
+                            "maxIntraRefreshCycleDuration": 0,
+                            "maxIntraRefreshActiveReferencePictures": 0,
+                            "partitionIndependentIntraRefreshRegions": false,
+                            "nonRectangularIntraRefreshRegions": false
                         }
                     }
                 },
@@ -9349,6 +9382,17 @@
                         "VkVideoEncodeH265QuantizationMapCapabilitiesKHR": {
                             "minQpDelta": 0,
                             "maxQpDelta": 0
+                        },
+                        "VkVideoEncodeIntraRefreshCapabilitiesKHR": {
+                            "intraRefreshModes": [
+                                "VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_PER_PICTURE_PARTITION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_BLOCK_BASED_BIT_KHR",
+                                "VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_BLOCK_COLUMN_BASED_BIT_KHR"
+                            ],
+                            "maxIntraRefreshCycleDuration": 9,
+                            "maxIntraRefreshActiveReferencePictures": 2,
+                            "partitionIndependentIntraRefreshRegions": true,
+                            "nonRectangularIntraRefreshRegions": false
                         }
                     }
                 },
@@ -9419,6 +9463,17 @@
                         "VkVideoEncodeH265QuantizationMapCapabilitiesKHR": {
                             "minQpDelta": -16,
                             "maxQpDelta": 15
+                        },
+                        "VkVideoEncodeIntraRefreshCapabilitiesKHR": {
+                            "intraRefreshModes": [
+                                "VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_PER_PICTURE_PARTITION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_BLOCK_BASED_BIT_KHR",
+                                "VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_BLOCK_ROW_BASED_BIT_KHR"
+                            ],
+                            "maxIntraRefreshCycleDuration": 6,
+                            "maxIntraRefreshActiveReferencePictures": 1,
+                            "partitionIndependentIntraRefreshRegions": false,
+                            "nonRectangularIntraRefreshRegions": true
                         }
                     }
                 },
@@ -9491,6 +9546,13 @@
                         "VkVideoEncodeH265QuantizationMapCapabilitiesKHR": {
                             "minQpDelta": 0,
                             "maxQpDelta": 0
+                        },
+                        "VkVideoEncodeIntraRefreshCapabilitiesKHR": {
+                            "intraRefreshModes": [],
+                            "maxIntraRefreshCycleDuration": 0,
+                            "maxIntraRefreshActiveReferencePictures": 0,
+                            "partitionIndependentIntraRefreshRegions": false,
+                            "nonRectangularIntraRefreshRegions": false
                         }
                     }
                 },
@@ -9661,6 +9723,16 @@
                         "VkVideoEncodeAV1QuantizationMapCapabilitiesKHR": {
                             "minQIndexDelta": -64,
                             "maxQIndexDelta": 64
+                        },
+                        "VkVideoEncodeIntraRefreshCapabilitiesKHR": {
+                            "intraRefreshModes": [
+                                "VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_BLOCK_BASED_BIT_KHR",
+                                "VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_BLOCK_ROW_BASED_BIT_KHR"
+                            ],
+                            "maxIntraRefreshCycleDuration": 9,
+                            "maxIntraRefreshActiveReferencePictures": 2,
+                            "partitionIndependentIntraRefreshRegions": true,
+                            "nonRectangularIntraRefreshRegions": false
                         }
                     }
                 },
@@ -9742,6 +9814,18 @@
                         "VkVideoEncodeAV1QuantizationMapCapabilitiesKHR": {
                             "minQIndexDelta": -255,
                             "maxQIndexDelta": 255
+                        },
+                        "VkVideoEncodeIntraRefreshCapabilitiesKHR": {
+                            "intraRefreshModes": [
+                                "VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_PER_PICTURE_PARTITION_BIT_KHR",
+                                "VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_BLOCK_BASED_BIT_KHR",
+                                "VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_BLOCK_ROW_BASED_BIT_KHR",
+                                "VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_BLOCK_COLUMN_BASED_BIT_KHR"
+                            ],
+                            "maxIntraRefreshCycleDuration": 6,
+                            "maxIntraRefreshActiveReferencePictures": 1,
+                            "partitionIndependentIntraRefreshRegions": false,
+                            "nonRectangularIntraRefreshRegions": false
                         }
                     }
                 },
@@ -9826,6 +9910,13 @@
                         "VkVideoEncodeAV1QuantizationMapCapabilitiesKHR": {
                             "minQIndexDelta": -64,
                             "maxQIndexDelta": 63
+                        },
+                        "VkVideoEncodeIntraRefreshCapabilitiesKHR": {
+                            "intraRefreshModes": [],
+                            "maxIntraRefreshCycleDuration": 0,
+                            "maxIntraRefreshActiveReferencePictures": 0,
+                            "partitionIndependentIntraRefreshRegions": false,
+                            "nonRectangularIntraRefreshRegions": false
                         }
                     }
                 },

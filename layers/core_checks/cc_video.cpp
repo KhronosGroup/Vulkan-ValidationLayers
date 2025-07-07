@@ -138,6 +138,97 @@ bool CoreChecks::ValidateVideoInlineQueryInfo(const vvl::QueryPool &query_pool_s
     return skip;
 }
 
+bool CoreChecks::ValidateVideoEncodeIntraRefreshInfo(const vvl::CommandBuffer &cb_state, const vvl::VideoSession &vs_state,
+                                                     const VkVideoEncodeInfoKHR &encode_info,
+                                                     const Location &encode_info_loc) const {
+    bool skip = false;
+
+    const auto &profile_caps = vs_state.profile->GetCapabilities();
+
+    const auto intra_refresh_mode = vs_state.GetIntraRefreshMode();
+    const auto intra_refresh_info = vku::FindStructInPNextChain<VkVideoEncodeIntraRefreshInfoKHR>(encode_info.pNext);
+
+    if (encode_info.flags & VK_VIDEO_ENCODE_INTRA_REFRESH_BIT_KHR) {
+        if (intra_refresh_mode == VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_NONE_KHR) {
+            skip |= LogError(
+                "VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10837", cb_state.Handle(), encode_info_loc.dot(Field::flags),
+                "contains VK_VIDEO_ENCODE_INTRA_REFRESH_BIT_KHR but the bound video session was not created with intra refresh.");
+        }
+
+        if (encode_info.referenceSlotCount > profile_caps.encode_ext.intra_refresh.maxIntraRefreshActiveReferencePictures) {
+            const LogObjectList objlist(cb_state.Handle(), vs_state.Handle());
+            skip |= LogError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10838", objlist, encode_info_loc.dot(Field::referenceSlotCount),
+                             "(%u) exceeds the maxIntraRefreshActiveReferencePictures (%u) supported by the video profile (%s).",
+                             encode_info.referenceSlotCount,
+                             profile_caps.encode_ext.intra_refresh.maxIntraRefreshActiveReferencePictures,
+                             string_VideoProfileDesc(*vs_state.profile).c_str());
+        }
+
+        if (intra_refresh_info) {
+            if (intra_refresh_info->intraRefreshCycleDuration == 0) {
+                skip |= LogError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10840", cb_state.Handle(), encode_info_loc.dot(Field::flags),
+                                 "contains VK_VIDEO_ENCODE_INTRA_REFRESH_BIT_KHR but %s is zero.",
+                                 encode_info_loc.dot(Struct::VkVideoEncodeIntraRefreshInfoKHR, Field::intraRefreshCycleDuration)
+                                     .Fields()
+                                     .c_str());
+            } else {
+                if (intra_refresh_info->intraRefreshCycleDuration < 2 ||
+                    intra_refresh_info->intraRefreshCycleDuration >
+                        profile_caps.encode_ext.intra_refresh.maxIntraRefreshCycleDuration) {
+                    const LogObjectList objlist(cb_state.Handle(), vs_state.Handle());
+                    skip |= LogError(
+                        "VUID-vkCmdEncodeVideoKHR-pNext-10844", objlist,
+                        encode_info_loc.pNext(Struct::VkVideoEncodeIntraRefreshInfoKHR, Field::intraRefreshCycleDuration),
+                        "(%u) is not between 2 and the maxIntraRefreshCycleDuration (%u) supported by the video profile (%s).",
+                        intra_refresh_info->intraRefreshCycleDuration,
+                        profile_caps.encode_ext.intra_refresh.maxIntraRefreshCycleDuration,
+                        string_VideoProfileDesc(*vs_state.profile).c_str());
+                }
+
+                if (intra_refresh_info->intraRefreshIndex >= intra_refresh_info->intraRefreshCycleDuration) {
+                    skip |= LogError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10841", cb_state.Handle(),
+                                     encode_info_loc.pNext(Struct::VkVideoEncodeIntraRefreshInfoKHR, Field::intraRefreshIndex),
+                                     "(%u) is greater than or equal to intraRefreshCycleDuration (%u).",
+                                     intra_refresh_info->intraRefreshIndex, intra_refresh_info->intraRefreshCycleDuration);
+                }
+            }
+        } else {
+            skip |= LogError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10839", cb_state.Handle(), encode_info_loc.dot(Field::pNext),
+                             "chain does not contain a VkVideoEncodeIntraRefreshInfoKHR structure.");
+        }
+    }
+
+    for (uint32_t i = 0; i < encode_info.referenceSlotCount; ++i) {
+        const auto reference_info_loc = encode_info_loc.dot(Field::pReferenceSlots, i);
+        const auto dirty_intra_refresh_regions_loc =
+            reference_info_loc.pNext(Struct::VkVideoReferenceIntraRefreshInfoKHR, Field::dirtyIntraRefreshRegions);
+        const auto intra_refresh_reference_info =
+            vku::FindStructInPNextChain<VkVideoReferenceIntraRefreshInfoKHR>(encode_info.pReferenceSlots[i].pNext);
+        if (intra_refresh_reference_info && intra_refresh_reference_info->dirtyIntraRefreshRegions > 0) {
+            if (encode_info.flags & VK_VIDEO_ENCODE_INTRA_REFRESH_BIT_KHR) {
+                if (intra_refresh_info &&
+                    intra_refresh_reference_info->dirtyIntraRefreshRegions !=
+                        intra_refresh_info->intraRefreshCycleDuration - intra_refresh_info->intraRefreshIndex) {
+                    skip |= LogError(
+                        "VUID-vkCmdEncodeVideoKHR-pNext-10843", cb_state.Handle(), reference_info_loc,
+                        "specifies dirty intra refresh regions but does not refer to the previously intra refreshed frame, "
+                        "i.e. %s (%u) does not equal intraRefreshCycleDuration (%u) minus intraRefreshIndex (%u) specified in %s.",
+                        dirty_intra_refresh_regions_loc.Fields().c_str(), intra_refresh_reference_info->dirtyIntraRefreshRegions,
+                        intra_refresh_info->intraRefreshCycleDuration, intra_refresh_info->intraRefreshIndex,
+                        encode_info_loc.pNext(Struct::VkVideoEncodeIntraRefreshInfoKHR).Fields().c_str());
+                }
+            } else {
+                skip |= LogError("VUID-vkCmdEncodeVideoKHR-pNext-10842", cb_state.Handle(), dirty_intra_refresh_regions_loc,
+                                 "(%u) is greater than zero, but %s does not include VK_VIDEO_ENCODE_INTRA_REFRESH_BIT_KHR.",
+                                 intra_refresh_reference_info->dirtyIntraRefreshRegions,
+                                 encode_info_loc.dot(Field::flags).Fields().c_str());
+            }
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidateVideoEncodeRateControlInfo(const VkVideoEncodeRateControlInfoKHR &rc_info, const void *pNext,
                                                     VkCommandBuffer cmdbuf, const vvl::VideoSession &vs_state,
                                                     const Location &loc) const {
@@ -2169,14 +2260,26 @@ bool CoreChecks::ValidateVideoEncodeInfoH264(const vvl::CommandBuffer &cb_state,
             }
         }
 
+        const auto intra_refresh_mode = vs_state.GetIntraRefreshMode();
+        const auto intra_refresh_info = vku::FindStructInPNextChain<VkVideoEncodeIntraRefreshInfoKHR>(encode_info.pNext);
+        const bool has_intra_refresh_h264_slice_idx =
+            (intra_refresh_mode == VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_PER_PICTURE_PARTITION_BIT_KHR) &&
+            (encode_info.flags & VK_VIDEO_ENCODE_INTRA_REFRESH_BIT_KHR) != 0 && intra_refresh_info;
+        const uint32_t intra_refresh_h264_slice_idx =
+            has_intra_refresh_h264_slice_idx ? intra_refresh_info->intraRefreshIndex : UINT32_MAX;
+
         bool different_slice_types = false;
         bool different_constant_qp_per_slice = false;
+        // Either match all slice types to 0th index, or if that happened to be intra refreshed, then the 1st index
+        const uint32_t slice_type_compare_idx = (intra_refresh_h264_slice_idx == 0) ? 1 : 0;
         for (uint32_t slice_idx = 0; slice_idx < picture_info->naluSliceEntryCount; ++slice_idx) {
             const auto &slice_info = picture_info->pNaluSliceEntries[slice_idx];
             const auto *std_slice_header = slice_info.pStdSliceHeader;
             const Location slice_info_loc = loc.pNext(Struct::VkVideoEncodeH264PictureInfoKHR, Field::pNaluSliceEntries, slice_idx);
 
-            if (std_slice_header->slice_type != picture_info->pNaluSliceEntries[0].pStdSliceHeader->slice_type) {
+            if (slice_idx != intra_refresh_h264_slice_idx &&
+                std_slice_header->slice_type !=
+                    picture_info->pNaluSliceEntries[slice_type_compare_idx].pStdSliceHeader->slice_type) {
                 different_slice_types = true;
             }
 
@@ -2234,7 +2337,7 @@ bool CoreChecks::ValidateVideoEncodeInfoH264(const vvl::CommandBuffer &cb_state,
         if ((profile_caps.encode_h264.flags & VK_VIDEO_ENCODE_H264_CAPABILITY_DIFFERENT_SLICE_TYPE_BIT_KHR) == 0 &&
             different_slice_types) {
             const LogObjectList objlist(cb_state.Handle(), vs_state.Handle());
-            skip |= LogError("VUID-VkVideoEncodeH264PictureInfoKHR-flags-08315", objlist, loc.function,
+            skip |= LogError("VUID-vkCmdEncodeVideoKHR-flags-10850", objlist, loc.function,
                              "pStdSliceHeader->slice_type does not match across the elements "
                              "of %s but different slice types in a picture are not supported by the video "
                              "profile (%s) %s was created with.",
@@ -2355,6 +2458,69 @@ bool CoreChecks::ValidateVideoEncodeInfoH264(const vvl::CommandBuffer &cb_state,
                              "is not supported by the video profile (%s) %s was created with.",
                              string_VideoProfileDesc(*vs_state.profile).c_str(), FormatHandle(vs_state).c_str());
         }
+
+        if (encode_info.flags & VK_VIDEO_ENCODE_INTRA_REFRESH_BIT_KHR) {
+            if (intra_refresh_mode != VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_PER_PICTURE_PARTITION_BIT_KHR &&
+                profile_caps.encode_ext.intra_refresh.partitionIndependentIntraRefreshRegions == VK_FALSE &&
+                picture_info->naluSliceEntryCount != 1) {
+                skip |=
+                    LogError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10845", cb_state.Handle(),
+                             loc.pNext(Struct::VkVideoEncodeH264PictureInfoKHR, Field::naluSliceEntryCount),
+                             "(%u) is not 1 but the intra refresh mode (%s) is not "
+                             "VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_PER_PICTURE_PARTITION_BIT_KHR and the video profile (%s) %s was "
+                             "created with does not support partition independent intra refresh regions.",
+                             picture_info->naluSliceEntryCount, string_VkVideoEncodeIntraRefreshModeFlagBitsKHR(intra_refresh_mode),
+                             string_VideoProfileDesc(*vs_state.profile).c_str(), FormatHandle(vs_state).c_str());
+            }
+
+            if (intra_refresh_mode == VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_PER_PICTURE_PARTITION_BIT_KHR && intra_refresh_info &&
+                picture_info->naluSliceEntryCount != intra_refresh_info->intraRefreshCycleDuration) {
+                skip |=
+                    LogError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10846", cb_state.Handle(),
+                             loc.pNext(Struct::VkVideoEncodeH264PictureInfoKHR, Field::naluSliceEntryCount),
+                             "(%u) does not match %s (%u) but the intra refresh mode is "
+                             "VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_PER_PICTURE_PARTITION_BIT_KHR.",
+                             picture_info->naluSliceEntryCount,
+                             loc.pNext(Struct::VkVideoEncodeIntraRefreshInfoKHR, Field::intraRefreshCycleDuration).Fields().c_str(),
+                             intra_refresh_info->intraRefreshCycleDuration);
+            }
+
+            if (has_intra_refresh_h264_slice_idx && intra_refresh_h264_slice_idx < picture_info->naluSliceEntryCount &&
+                picture_info->pNaluSliceEntries[intra_refresh_h264_slice_idx].pStdSliceHeader->slice_type !=
+                    STD_VIDEO_H264_SLICE_TYPE_I) {
+                skip |= LogError("VUID-vkCmdEncodeVideoKHR-intraRefreshH264SliceIndex-10847", cb_state.Handle(),
+                                 loc.pNext(Struct::VkVideoEncodeH264PictureInfoKHR, Field::pNaluSliceEntries),
+                                 "does not specify STD_VIDEO_H264_SLICE_TYPE_I slice_type for the intra refreshed slice (%s = %u).",
+                                 loc.pNext(Struct::VkVideoEncodeIntraRefreshInfoKHR, Field::intraRefreshIndex).Fields().c_str(),
+                                 intra_refresh_h264_slice_idx);
+            }
+
+            if (intra_refresh_mode == VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_PER_PICTURE_PARTITION_BIT_KHR &&
+                profile_caps.encode_ext.intra_refresh.nonRectangularIntraRefreshRegions == VK_FALSE &&
+                picture_info->naluSliceEntryCount > min_coding_block_extent.height) {
+                skip |= LogError(
+                    "VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10848", cb_state.Handle(),
+                    loc.pNext(Struct::VkVideoEncodeH264PictureInfoKHR, Field::naluSliceEntryCount),
+                    "(%u) is greater than the number of MB rows (minCodingBlockExtent.height = %u) "
+                    "that can be coded for the encode input picture specified in "
+                    "pEncodeInfo->srcPictureResource (codedExtent = {%s}) but non-rectangular intra refresh regions are not "
+                    "supported by the the video profile (%s) %s was created with.",
+                    picture_info->naluSliceEntryCount, min_coding_block_extent.height,
+                    string_VkExtent2D(encode_info.srcPictureResource.codedExtent).c_str(),
+                    string_VideoProfileDesc(*vs_state.profile).c_str(), FormatHandle(vs_state).c_str());
+            }
+
+            if ((profile_caps.encode_h264.flags & VK_VIDEO_ENCODE_H264_CAPABILITY_B_PICTURE_INTRA_REFRESH_BIT_KHR) == 0 &&
+                picture_info->pStdPictureInfo->primary_pic_type == STD_VIDEO_H264_PICTURE_TYPE_B) {
+                const LogObjectList objlist(cb_state.Handle(), vs_state.Handle());
+                skip |= LogError("VUID-vkCmdEncodeVideoKHR-h264PictureType-10849", objlist, loc.dot(Field::flags),
+                                 "contains VK_VIDEO_ENCODE_INTRA_REFRESH_BIT_KHR and %s has primary_pic_type set to "
+                                 "STD_VIDEO_H264_PICTURE_TYPE_B but the video profile (%s) %s was created with does not support "
+                                 "VK_VIDEO_ENCODE_H264_CAPABILITY_B_PICTURE_INTRA_REFRESH_BIT_KHR.",
+                                 loc.pNext(Struct::VkVideoEncodeH264PictureInfoKHR, Field::pStdPictureInfo).Fields().c_str(),
+                                 string_VideoProfileDesc(*vs_state.profile).c_str(), FormatHandle(vs_state).c_str());
+            }
+        }
     } else {
         skip |= LogError("VUID-vkCmdEncodeVideoKHR-pNext-08225", cb_state.Handle(), loc.dot(Field::pNext), pnext_msg,
                          "VkVideoEncodeH264PictureInfoKHR");
@@ -2472,8 +2638,8 @@ bool CoreChecks::ValidateVideoEncodeInfoH265(const vvl::CommandBuffer &cb_state,
 
         VkExtent2D max_coding_block_size = vs_state.profile->GetMaxCodingBlockSize();
         VkExtent2D min_coding_block_extent = {
-            encode_info.srcPictureResource.codedExtent.width / max_coding_block_size.width,
-            encode_info.srcPictureResource.codedExtent.height / max_coding_block_size.height,
+            (encode_info.srcPictureResource.codedExtent.width + max_coding_block_size.width - 1) / max_coding_block_size.width,
+            (encode_info.srcPictureResource.codedExtent.height + max_coding_block_size.height - 1) / max_coding_block_size.height,
         };
         if (profile_caps.encode_h265.flags & VK_VIDEO_ENCODE_H265_CAPABILITY_ROW_UNALIGNED_SLICE_SEGMENT_BIT_KHR) {
             if (picture_info->naluSliceSegmentEntryCount > min_coding_block_extent.width * min_coding_block_extent.height) {
@@ -2533,16 +2699,27 @@ bool CoreChecks::ValidateVideoEncodeInfoH265(const vvl::CommandBuffer &cb_state,
             }
         }
 
+        const auto intra_refresh_mode = vs_state.GetIntraRefreshMode();
+        const auto intra_refresh_info = vku::FindStructInPNextChain<VkVideoEncodeIntraRefreshInfoKHR>(encode_info.pNext);
+        const bool has_intra_refresh_h265_slice_seg_idx =
+            (intra_refresh_mode == VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_PER_PICTURE_PARTITION_BIT_KHR) &&
+            (encode_info.flags & VK_VIDEO_ENCODE_INTRA_REFRESH_BIT_KHR) != 0 && intra_refresh_info;
+        const uint32_t intra_refresh_h265_slice_seg_idx =
+            has_intra_refresh_h265_slice_seg_idx ? intra_refresh_info->intraRefreshIndex : UINT32_MAX;
+
         bool different_slice_segment_types = false;
         bool different_constant_qp_per_slice_segment = false;
+        // Either match all slice types to 0th index, or if that happened to be intra refreshed, then the 1st index
+        const uint32_t slice_type_compare_idx = (intra_refresh_h265_slice_seg_idx == 0) ? 1 : 0;
         for (uint32_t slice_seg_idx = 0; slice_seg_idx < picture_info->naluSliceSegmentEntryCount; ++slice_seg_idx) {
             const auto &slice_segment_info = picture_info->pNaluSliceSegmentEntries[slice_seg_idx];
             const auto *std_slice_segment_header = slice_segment_info.pStdSliceSegmentHeader;
             const Location slice_seg_info_loc =
                 loc.pNext(Struct::VkVideoEncodeH265PictureInfoKHR, Field::pNaluSliceSegmentEntries, slice_seg_idx);
 
-            if (std_slice_segment_header->slice_type !=
-                picture_info->pNaluSliceSegmentEntries[0].pStdSliceSegmentHeader->slice_type) {
+            if (slice_seg_idx != intra_refresh_h265_slice_seg_idx &&
+                std_slice_segment_header->slice_type !=
+                    picture_info->pNaluSliceSegmentEntries[slice_type_compare_idx].pStdSliceSegmentHeader->slice_type) {
                 different_slice_segment_types = true;
             }
 
@@ -2602,7 +2779,7 @@ bool CoreChecks::ValidateVideoEncodeInfoH265(const vvl::CommandBuffer &cb_state,
         if ((profile_caps.encode_h265.flags & VK_VIDEO_ENCODE_H265_CAPABILITY_DIFFERENT_SLICE_SEGMENT_TYPE_BIT_KHR) == 0 &&
             different_slice_segment_types) {
             const LogObjectList objlist(cb_state.Handle(), vs_state.Handle());
-            skip |= LogError("VUID-VkVideoEncodeH265PictureInfoKHR-flags-08317", objlist, loc.function,
+            skip |= LogError("VUID-vkCmdEncodeVideoKHR-flags-10856", objlist, loc.function,
                              "pStdSliceSegmentHeader->slice_type does not match across the elements "
                              "of %s but different slice segment types in a picture are not supported by the video "
                              "profile (%s) %s was created with.",
@@ -2712,6 +2889,70 @@ bool CoreChecks::ValidateVideoEncodeInfoH265(const vvl::CommandBuffer &cb_state,
                              "%s->pRefLists is NULL but pEncodeInfo->referenceSlotCount (%u) is not zero.",
                              loc.pNext(Struct::VkVideoEncodeH265PictureInfoKHR, Field::pStdPictureInfo).Fields().c_str(),
                              encode_info.referenceSlotCount);
+        }
+
+        if (encode_info.flags & VK_VIDEO_ENCODE_INTRA_REFRESH_BIT_KHR) {
+            if (intra_refresh_mode != VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_PER_PICTURE_PARTITION_BIT_KHR &&
+                profile_caps.encode_ext.intra_refresh.partitionIndependentIntraRefreshRegions == VK_FALSE &&
+                picture_info->naluSliceSegmentEntryCount != 1) {
+                skip |= LogError(
+                    "VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10851", cb_state.Handle(),
+                    loc.pNext(Struct::VkVideoEncodeH265PictureInfoKHR, Field::naluSliceSegmentEntryCount),
+                    "(%u) is not 1 but the intra refresh mode (%s) is not "
+                    "VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_PER_PICTURE_PARTITION_BIT_KHR and the video profile (%s) %s was "
+                    "created with does not support partition independent intra refresh regions.",
+                    picture_info->naluSliceSegmentEntryCount, string_VkVideoEncodeIntraRefreshModeFlagBitsKHR(intra_refresh_mode),
+                    string_VideoProfileDesc(*vs_state.profile).c_str(), FormatHandle(vs_state).c_str());
+            }
+
+            if (intra_refresh_mode == VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_PER_PICTURE_PARTITION_BIT_KHR && intra_refresh_info &&
+                picture_info->naluSliceSegmentEntryCount != intra_refresh_info->intraRefreshCycleDuration) {
+                skip |=
+                    LogError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10852", cb_state.Handle(),
+                             loc.pNext(Struct::VkVideoEncodeH265PictureInfoKHR, Field::naluSliceSegmentEntryCount),
+                             "(%u) does not match %s (%u) but the intra refresh mode is "
+                             "VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_PER_PICTURE_PARTITION_BIT_KHR.",
+                             picture_info->naluSliceSegmentEntryCount,
+                             loc.pNext(Struct::VkVideoEncodeIntraRefreshInfoKHR, Field::intraRefreshCycleDuration).Fields().c_str(),
+                             intra_refresh_info->intraRefreshCycleDuration);
+            }
+
+            if (has_intra_refresh_h265_slice_seg_idx &&
+                intra_refresh_h265_slice_seg_idx < picture_info->naluSliceSegmentEntryCount &&
+                picture_info->pNaluSliceSegmentEntries[intra_refresh_h265_slice_seg_idx].pStdSliceSegmentHeader->slice_type !=
+                    STD_VIDEO_H265_SLICE_TYPE_I) {
+                skip |= LogError("VUID-vkCmdEncodeVideoKHR-intraRefreshH265SliceSegmentIndex-10853", cb_state.Handle(),
+                                 loc.pNext(Struct::VkVideoEncodeH265PictureInfoKHR, Field::pNaluSliceSegmentEntries),
+                                 "does not specify STD_VIDEO_H265_SLICE_TYPE_I slice_type for the intra refreshed slice (%s = %u).",
+                                 loc.pNext(Struct::VkVideoEncodeIntraRefreshInfoKHR, Field::intraRefreshIndex).Fields().c_str(),
+                                 intra_refresh_h265_slice_seg_idx);
+            }
+
+            if (intra_refresh_mode == VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_PER_PICTURE_PARTITION_BIT_KHR &&
+                profile_caps.encode_ext.intra_refresh.nonRectangularIntraRefreshRegions == VK_FALSE &&
+                picture_info->naluSliceSegmentEntryCount > min_coding_block_extent.height) {
+                skip |= LogError(
+                    "VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10854", cb_state.Handle(),
+                    loc.pNext(Struct::VkVideoEncodeH265PictureInfoKHR, Field::naluSliceSegmentEntryCount),
+                    "(%u) is greater than the number of CTB rows (minCodingBlockExtent.height = %u) "
+                    "that can be coded for the encode input picture specified in "
+                    "pEncodeInfo->srcPictureResource (codedExtent = {%s}) but non-rectangular intra refresh regions are not "
+                    "supported by the the video profile (%s) %s was created with.",
+                    picture_info->naluSliceSegmentEntryCount, min_coding_block_extent.height,
+                    string_VkExtent2D(encode_info.srcPictureResource.codedExtent).c_str(),
+                    string_VideoProfileDesc(*vs_state.profile).c_str(), FormatHandle(vs_state).c_str());
+            }
+
+            if ((profile_caps.encode_h265.flags & VK_VIDEO_ENCODE_H265_CAPABILITY_B_PICTURE_INTRA_REFRESH_BIT_KHR) == 0 &&
+                picture_info->pStdPictureInfo->pic_type == STD_VIDEO_H265_PICTURE_TYPE_B) {
+                const LogObjectList objlist(cb_state.Handle(), vs_state.Handle());
+                skip |= LogError("VUID-vkCmdEncodeVideoKHR-h265PictureType-10855", objlist, loc.dot(Field::flags),
+                                 "contains VK_VIDEO_ENCODE_INTRA_REFRESH_BIT_KHR and %s has pic_type set to "
+                                 "STD_VIDEO_H265_PICTURE_TYPE_B but the video profile (%s) %s was created with does not support "
+                                 "VK_VIDEO_ENCODE_H265_CAPABILITY_B_PICTURE_INTRA_REFRESH_BIT_KHR.",
+                                 loc.pNext(Struct::VkVideoEncodeH265PictureInfoKHR, Field::pStdPictureInfo).Fields().c_str(),
+                                 string_VideoProfileDesc(*vs_state.profile).c_str(), FormatHandle(vs_state).c_str());
+            }
         }
     } else {
         skip |= LogError("VUID-vkCmdEncodeVideoKHR-pNext-08230", cb_state.Handle(), loc.dot(Field::pNext), pnext_msg,
@@ -3195,6 +3436,20 @@ bool CoreChecks::ValidateVideoEncodeInfoAV1(const vvl::CommandBuffer &cb_state, 
         if (std_picture_info->pSegmentation != nullptr) {
             skip |= LogError("VUID-vkCmdEncodeVideoKHR-pStdPictureInfo-10350", cb_state.Handle(), std_picture_info_loc,
                              "AV1 encoding with segmentation is not supported but pSegmentation is not NULL.");
+        }
+
+        if (encode_info.flags & VK_VIDEO_ENCODE_INTRA_REFRESH_BIT_KHR &&
+            (profile_caps.encode_av1.flags & VK_VIDEO_ENCODE_AV1_CAPABILITY_COMPOUND_PREDICTION_INTRA_REFRESH_BIT_KHR) == 0 &&
+            (picture_info->predictionMode == VK_VIDEO_ENCODE_AV1_PREDICTION_MODE_UNIDIRECTIONAL_COMPOUND_KHR ||
+             picture_info->predictionMode == VK_VIDEO_ENCODE_AV1_PREDICTION_MODE_BIDIRECTIONAL_COMPOUND_KHR)) {
+            const LogObjectList objlist(cb_state.Handle(), vs_state.Handle());
+            skip |=
+                LogError("VUID-vkCmdEncodeVideoKHR-predictionMode-10857", objlist, loc.dot(Field::flags),
+                         "contains VK_VIDEO_ENCODE_INTRA_REFRESH_BIT_KHR and %s is %s but the video profile (%s) %s was created "
+                         "with does not support VK_VIDEO_ENCODE_AV1_CAPABILITY_COMPOUND_PREDICTION_INTRA_REFRESH_BIT_KHR.",
+                         loc.pNext(Struct::VkVideoEncodeAV1PictureInfoKHR, Field::predictionMode).Fields().c_str(),
+                         string_VkVideoEncodeAV1PredictionModeKHR(picture_info->predictionMode),
+                         string_VideoProfileDesc(*vs_state.profile).c_str(), FormatHandle(vs_state).c_str());
         }
     } else {
         skip |= LogError("VUID-vkCmdEncodeVideoKHR-pNext-10317", cb_state.Handle(), loc.dot(Field::pNext), pnext_msg,
@@ -3801,50 +4056,74 @@ bool CoreChecks::PreCallValidateCreateVideoSessionKHR(VkDevice device, const VkV
                              "(0x%08x) is larger than the supported version (0x%08x).", pCreateInfo->pStdHeaderVersion->specVersion,
                              profile_caps.base.stdHeaderVersion.specVersion);
         }
+
+        switch (pCreateInfo->pVideoProfile->videoCodecOperation) {
+            case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR: {
+                auto h264_create_info = vku::FindStructInPNextChain<VkVideoEncodeH264SessionCreateInfoKHR>(pCreateInfo);
+                if (h264_create_info != nullptr && h264_create_info->maxLevelIdc > profile_caps.encode_h264.maxLevelIdc) {
+                    skip |= LogError("VUID-VkVideoSessionCreateInfoKHR-pVideoProfile-08251", device,
+                                     create_info_loc.pNext(Struct::VkVideoEncodeH264SessionCreateInfoKHR, Field::maxLevelIdc),
+                                     "(%u) exceeds the maxLevelIdc (%u) supported by the specified video profile (%s).",
+                                     h264_create_info->maxLevelIdc, profile_caps.encode_h264.maxLevelIdc,
+                                     string_VideoProfileDesc(profile_desc).c_str());
+                }
+                break;
+            }
+
+            case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR: {
+                auto h265_create_info = vku::FindStructInPNextChain<VkVideoEncodeH265SessionCreateInfoKHR>(pCreateInfo);
+                if (h265_create_info != nullptr && h265_create_info->maxLevelIdc > profile_caps.encode_h265.maxLevelIdc) {
+                    skip |= LogError("VUID-VkVideoSessionCreateInfoKHR-pVideoProfile-08252", device,
+                                     create_info_loc.pNext(Struct::VkVideoEncodeH265SessionCreateInfoKHR, Field::maxLevelIdc),
+                                     "(%u) exceeds the maxLevelIdc (%u) supported by the specified video profile (%s).",
+                                     h265_create_info->maxLevelIdc, profile_caps.encode_h265.maxLevelIdc,
+                                     string_VideoProfileDesc(profile_desc).c_str());
+                }
+                break;
+            }
+
+            case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR: {
+                auto av1_create_info = vku::FindStructInPNextChain<VkVideoEncodeAV1SessionCreateInfoKHR>(pCreateInfo);
+                if (av1_create_info != nullptr && av1_create_info->maxLevel > profile_caps.encode_av1.maxLevel) {
+                    skip |= LogError("VUID-VkVideoSessionCreateInfoKHR-pVideoProfile-10270", device,
+                                     create_info_loc.pNext(Struct::VkVideoEncodeAV1SessionCreateInfoKHR, Field::maxLevel),
+                                     "(%u) exceeds the maxLevel (%u) supported by the specified video profile (%s).",
+                                     av1_create_info->maxLevel, profile_caps.encode_av1.maxLevel,
+                                     string_VideoProfileDesc(profile_desc).c_str());
+                }
+                break;
+            }
+
+            default:
+                break;
+        }
+
+        if (profile_desc.IsEncode()) {
+            auto ir_create_info = vku::FindStructInPNextChain<VkVideoEncodeSessionIntraRefreshCreateInfoKHR>(pCreateInfo);
+            if (ir_create_info) {
+                if (ir_create_info->intraRefreshMode != VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_NONE_KHR) {
+                    if (!enabled_features.videoEncodeIntraRefresh) {
+                        skip |= LogError(
+                            "VUID-VkVideoSessionCreateInfoKHR-pVideoProfile-10835", device,
+                            create_info_loc.pNext(Struct::VkVideoEncodeSessionIntraRefreshCreateInfoKHR, Field::intraRefreshMode),
+                            "is %s but the videoEncodeIntraRefresh device feature is not enabled.",
+                            string_VkVideoEncodeIntraRefreshModeFlagBitsKHR(ir_create_info->intraRefreshMode));
+                    }
+
+                    if ((ir_create_info->intraRefreshMode & profile_caps.encode_ext.intra_refresh.intraRefreshModes) == 0) {
+                        skip |= LogError(
+                            "VUID-VkVideoSessionCreateInfoKHR-pVideoProfile-10836", device,
+                            create_info_loc.pNext(Struct::VkVideoEncodeSessionIntraRefreshCreateInfoKHR, Field::intraRefreshMode),
+                            "(%s) is not supported by the video profile (%s) specified in pCreateInfo->pVideoProfile.",
+                            string_VkVideoEncodeIntraRefreshModeFlagBitsKHR(ir_create_info->intraRefreshMode),
+                            string_VideoProfileDesc(profile_desc).c_str());
+                    }
+                }
+            }
+        }
     } else {
         skip |= LogError("VUID-VkVideoSessionCreateInfoKHR-pVideoProfile-04845", device, create_info_loc.dot(Field::pVideoProfile),
                          "is not supported.");
-    }
-
-    switch (pCreateInfo->pVideoProfile->videoCodecOperation) {
-        case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR: {
-            auto h264_create_info = vku::FindStructInPNextChain<VkVideoEncodeH264SessionCreateInfoKHR>(pCreateInfo);
-            if (h264_create_info != nullptr && h264_create_info->maxLevelIdc > profile_caps.encode_h264.maxLevelIdc) {
-                skip |= LogError("VUID-VkVideoSessionCreateInfoKHR-pVideoProfile-08251", device,
-                                 create_info_loc.pNext(Struct::VkVideoEncodeH264SessionCreateInfoKHR, Field::maxLevelIdc),
-                                 "(%u) exceeds the maxLevelIdc (%u) supported by the specified video profile (%s).",
-                                 h264_create_info->maxLevelIdc, profile_caps.encode_h264.maxLevelIdc,
-                                 string_VideoProfileDesc(profile_desc).c_str());
-            }
-            break;
-        }
-
-        case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR: {
-            auto h265_create_info = vku::FindStructInPNextChain<VkVideoEncodeH265SessionCreateInfoKHR>(pCreateInfo);
-            if (h265_create_info != nullptr && h265_create_info->maxLevelIdc > profile_caps.encode_h265.maxLevelIdc) {
-                skip |= LogError("VUID-VkVideoSessionCreateInfoKHR-pVideoProfile-08252", device,
-                                 create_info_loc.pNext(Struct::VkVideoEncodeH265SessionCreateInfoKHR, Field::maxLevelIdc),
-                                 "(%u) exceeds the maxLevelIdc (%u) supported by the specified video profile (%s).",
-                                 h265_create_info->maxLevelIdc, profile_caps.encode_h265.maxLevelIdc,
-                                 string_VideoProfileDesc(profile_desc).c_str());
-            }
-            break;
-        }
-
-        case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR: {
-            auto av1_create_info = vku::FindStructInPNextChain<VkVideoEncodeAV1SessionCreateInfoKHR>(pCreateInfo);
-            if (av1_create_info != nullptr && av1_create_info->maxLevel > profile_caps.encode_av1.maxLevel) {
-                skip |= LogError("VUID-VkVideoSessionCreateInfoKHR-pVideoProfile-10270", device,
-                                 create_info_loc.pNext(Struct::VkVideoEncodeAV1SessionCreateInfoKHR, Field::maxLevel),
-                                 "(%u) exceeds the maxLevel (%u) supported by the specified video profile (%s).",
-                                 av1_create_info->maxLevel, profile_caps.encode_av1.maxLevel,
-                                 string_VideoProfileDesc(profile_desc).c_str());
-            }
-            break;
-        }
-
-        default:
-            break;
     }
 
     return skip;
@@ -5524,6 +5803,8 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
     const auto &bound_resources = cb_state->bound_video_picture_resources;
 
     const auto &profile_caps = vs_state->profile->GetCapabilities();
+
+    skip |= ValidateVideoEncodeIntraRefreshInfo(*cb_state, *vs_state, *pEncodeInfo, encode_info_loc);
 
     if (auto buffer_state = Get<vvl::Buffer>(pEncodeInfo->dstBuffer)) {
         skip |= ValidateProtectedBuffer(*cb_state, *buffer_state, encode_info_loc.dot(Field::dstBuffer),

@@ -79,6 +79,20 @@ class VideoConfig {
     uint32_t DpbSlotCount() const { return session_create_info_.maxDpbSlots; }
     VkExtent2D MaxCodedExtent() const { return session_create_info_.maxCodedExtent; }
 
+    uint32_t MaxPartitionCount() const {
+        switch (profile_.videoCodecOperation) {
+            case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR:
+                return EncodeCapsH264()->maxSliceCount;
+            case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR:
+                return EncodeCapsH265()->maxSliceSegmentCount;
+            case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR:
+                return EncodeCapsAV1()->maxTiles.width * EncodeCapsAV1()->maxTiles.height;
+            default:
+                assert(false);
+                return 0;
+        }
+    }
+
     void SetQueueFamilyIndex(uint32_t queue_family_index) { session_create_info_.queueFamilyIndex = queue_family_index; }
 
     void SetCodecProfile(void* profile) {
@@ -120,6 +134,9 @@ class VideoConfig {
     }
     const VkVideoEncodeQuantizationMapCapabilitiesKHR* EncodeQuantizationMapCaps() const {
         return vku::FindStructInPNextChain<VkVideoEncodeQuantizationMapCapabilitiesKHR>(caps_.pNext);
+    }
+    const VkVideoEncodeIntraRefreshCapabilitiesKHR* EncodeIntraRefreshCaps() const {
+        return vku::FindStructInPNextChain<VkVideoEncodeIntraRefreshCapabilitiesKHR>(caps_.pNext);
     }
 
     const VkVideoEncodeAV1CapabilitiesKHR* EncodeCapsAV1() const {
@@ -216,6 +233,28 @@ class VideoConfig {
 
     void EnableProfileIndependentResources() { use_profile_independent_resources_ = true; }
     bool UseProfileIndependentResources() const { return use_profile_independent_resources_; }
+
+    VkVideoEncodeIntraRefreshModeFlagBitsKHR GetAnySupportedIntraRefreshMode() const {
+        assert(EncodeIntraRefreshCaps()->intraRefreshModes != 0);
+        return static_cast<VkVideoEncodeIntraRefreshModeFlagBitsKHR>(
+            1 << static_cast<uint32_t>(log2(EncodeIntraRefreshCaps()->intraRefreshModes)));
+    }
+
+    void SetVideoEncodeIntraRefreshMode(VkVideoEncodeIntraRefreshModeFlagBitsKHR mode) {
+        auto intra_refresh_info =
+            vku::FindStructInPNextChain<VkVideoEncodeSessionIntraRefreshCreateInfoKHR>(session_create_info_.pNext);
+        if (intra_refresh_info) {
+            const_cast<VkVideoEncodeSessionIntraRefreshCreateInfoKHR*>(intra_refresh_info)->intraRefreshMode = mode;
+        } else {
+            auto safe_intra_refresh_info = new vku::safe_VkVideoEncodeSessionIntraRefreshCreateInfoKHR();
+            safe_intra_refresh_info->intraRefreshMode = mode;
+            safe_intra_refresh_info->pNext = session_create_info_.pNext;
+            session_create_info_.pNext = safe_intra_refresh_info;
+        }
+        intra_refresh_mode_ = mode;
+    }
+
+    VkVideoEncodeIntraRefreshModeFlagBitsKHR GetVideoEncodeIntraRefreshMode() const { return intra_refresh_mode_; }
 
     void SetCodecCapsChain(void* codec_chain) {
         assert(caps_.pNext == nullptr);
@@ -459,6 +498,7 @@ class VideoConfig {
     std::vector<VkVideoFormatPropertiesKHR> dpb_format_props_{};
     std::vector<vku::safe_VkVideoFormatPropertiesKHR> quant_delta_map_format_props_{};
     std::vector<vku::safe_VkVideoFormatPropertiesKHR> emphasis_map_format_props_{};
+    VkVideoEncodeIntraRefreshModeFlagBitsKHR intra_refresh_mode_{VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_NONE_KHR};
 };
 
 class BitstreamBuffer {
@@ -1969,8 +2009,8 @@ class VideoEncodeInfo : public VideoOpParams<VkVideoEncodeInfoKHR> {
             VkVideoEncodeH264PictureInfoKHR picture_info{};
             StdVideoEncodeH264PictureInfo std_picture_info{};
             StdVideoEncodeH264ReferenceListsInfo std_ref_lists_info{};
-            VkVideoEncodeH264NaluSliceInfoKHR slice_info{};
-            StdVideoEncodeH264SliceHeader std_slice_header{};
+            std::vector<VkVideoEncodeH264NaluSliceInfoKHR> slice_info{};
+            std::vector<StdVideoEncodeH264SliceHeader> std_slice_headers{};
             VkVideoEncodeH264DpbSlotInfoKHR setup_slot_info{};
             StdVideoEncodeH264ReferenceInfo std_setup_reference_info{};
             std::vector<VkVideoEncodeH264DpbSlotInfoKHR> dpb_slot_info{};
@@ -1980,8 +2020,8 @@ class VideoEncodeInfo : public VideoOpParams<VkVideoEncodeInfoKHR> {
             VkVideoEncodeH265PictureInfoKHR picture_info{};
             StdVideoEncodeH265PictureInfo std_picture_info{};
             StdVideoEncodeH265ReferenceListsInfo std_ref_lists_info{};
-            VkVideoEncodeH265NaluSliceSegmentInfoKHR slice_segment_info{};
-            StdVideoEncodeH265SliceSegmentHeader std_slice_segment_header{};
+            std::vector<VkVideoEncodeH265NaluSliceSegmentInfoKHR> slice_segment_info{};
+            std::vector<StdVideoEncodeH265SliceSegmentHeader> std_slice_segment_headers{};
             VkVideoEncodeH265DpbSlotInfoKHR setup_slot_info{};
             StdVideoEncodeH265ReferenceInfo std_setup_reference_info{};
             std::vector<VkVideoEncodeH265DpbSlotInfoKHR> dpb_slot_info{};
@@ -2005,7 +2045,9 @@ class VideoEncodeInfo : public VideoOpParams<VkVideoEncodeInfoKHR> {
           references_(dpb ? dpb->PictureCount() : 0, vku::InitStruct<VkVideoReferenceSlotInfoKHR>()),
           codec_info_(),
           inline_query_info_(),
-          quantization_map_info_() {
+          quantization_map_info_(),
+          intra_refresh_info_(),
+          intra_refreshed_references_(dpb ? dpb->PictureCount() : 0) {
         assert(config_->IsEncode());
         assert(input != nullptr);
         info_.dstBuffer = bitstream.Buffer();
@@ -2025,12 +2067,8 @@ class VideoEncodeInfo : public VideoOpParams<VkVideoEncodeInfoKHR> {
 
         switch (config_->Profile()->videoCodecOperation) {
             case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR:
-                codec_info_.encode_h264.slice_info = vku::InitStructHelper();
-                codec_info_.encode_h264.slice_info.pStdSliceHeader = &codec_info_.encode_h264.std_slice_header;
 
                 codec_info_.encode_h264.picture_info = vku::InitStructHelper();
-                codec_info_.encode_h264.picture_info.naluSliceEntryCount = 1;
-                codec_info_.encode_h264.picture_info.pNaluSliceEntries = &codec_info_.encode_h264.slice_info;
                 codec_info_.encode_h264.picture_info.pStdPictureInfo = &codec_info_.encode_h264.std_picture_info;
 
                 codec_info_.encode_h264.std_picture_info = {};
@@ -2043,9 +2081,6 @@ class VideoEncodeInfo : public VideoOpParams<VkVideoEncodeInfoKHR> {
                     codec_info_.encode_h264.std_ref_lists_info.RefPicList0[i] = STD_VIDEO_H264_NO_REFERENCE_PICTURE;
                     codec_info_.encode_h264.std_ref_lists_info.RefPicList1[i] = STD_VIDEO_H264_NO_REFERENCE_PICTURE;
                 }
-
-                codec_info_.encode_h264.std_slice_header = {};
-                codec_info_.encode_h264.std_slice_header.slice_type = STD_VIDEO_H264_SLICE_TYPE_I;
 
                 reconstructed_.pNext = &codec_info_.encode_h264.setup_slot_info;
 
@@ -2068,13 +2103,8 @@ class VideoEncodeInfo : public VideoOpParams<VkVideoEncodeInfoKHR> {
                 break;
 
             case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR:
-                codec_info_.encode_h265.slice_segment_info = vku::InitStructHelper();
-                codec_info_.encode_h265.slice_segment_info.pStdSliceSegmentHeader =
-                    &codec_info_.encode_h265.std_slice_segment_header;
 
                 codec_info_.encode_h265.picture_info = vku::InitStructHelper();
-                codec_info_.encode_h265.picture_info.naluSliceSegmentEntryCount = 1;
-                codec_info_.encode_h265.picture_info.pNaluSliceSegmentEntries = &codec_info_.encode_h265.slice_segment_info;
                 codec_info_.encode_h265.picture_info.pStdPictureInfo = &codec_info_.encode_h265.std_picture_info;
 
                 codec_info_.encode_h265.std_picture_info = {};
@@ -2087,9 +2117,6 @@ class VideoEncodeInfo : public VideoOpParams<VkVideoEncodeInfoKHR> {
                     codec_info_.encode_h265.std_ref_lists_info.RefPicList0[i] = STD_VIDEO_H265_NO_REFERENCE_PICTURE;
                     codec_info_.encode_h265.std_ref_lists_info.RefPicList1[i] = STD_VIDEO_H265_NO_REFERENCE_PICTURE;
                 }
-
-                codec_info_.encode_h265.std_slice_segment_header = {};
-                codec_info_.encode_h265.std_slice_segment_header.slice_type = STD_VIDEO_H265_SLICE_TYPE_I;
 
                 reconstructed_.pNext = &codec_info_.encode_h265.setup_slot_info;
 
@@ -2149,6 +2176,8 @@ class VideoEncodeInfo : public VideoOpParams<VkVideoEncodeInfoKHR> {
             default:
                 break;
         }
+
+        SetPartitionCount(1);
     }
 
     VideoEncodeInfo(VideoEncodeInfo const& other) : VideoOpParams<VkVideoEncodeInfoKHR>(other) { CopyData(other); }
@@ -2180,6 +2209,47 @@ class VideoEncodeInfo : public VideoOpParams<VkVideoEncodeInfoKHR> {
 
     VideoEncodeInfo& SetEncodeInput(const VkVideoPictureResourceInfoKHR& resource) {
         info_.srcPictureResource = resource;
+        return *this;
+    }
+
+    VideoEncodeInfo& SetPartitionCount(size_t count) {
+        switch (config_->Profile()->videoCodecOperation) {
+            case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR:
+                codec_info_.encode_h264.slice_info.resize(count, vku::InitStructHelper());
+                codec_info_.encode_h264.std_slice_headers.resize(count);
+
+                for (size_t i = 0; i < codec_info_.encode_h264.slice_info.size(); ++i) {
+                    codec_info_.encode_h264.std_slice_headers[i].slice_type = STD_VIDEO_H264_SLICE_TYPE_I;
+                    codec_info_.encode_h264.slice_info[i].pStdSliceHeader = &codec_info_.encode_h264.std_slice_headers[i];
+                }
+
+                codec_info_.encode_h264.picture_info.naluSliceEntryCount = (uint32_t)codec_info_.encode_h264.slice_info.size();
+                codec_info_.encode_h264.picture_info.pNaluSliceEntries = codec_info_.encode_h264.slice_info.data();
+                break;
+
+            case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR:
+                codec_info_.encode_h265.slice_segment_info.resize(count, vku::InitStructHelper());
+                codec_info_.encode_h265.std_slice_segment_headers.resize(count);
+
+                for (size_t i = 0; i < codec_info_.encode_h265.slice_segment_info.size(); ++i) {
+                    codec_info_.encode_h265.std_slice_segment_headers[i].slice_type = STD_VIDEO_H265_SLICE_TYPE_I;
+                    codec_info_.encode_h265.slice_segment_info[i].pStdSliceSegmentHeader =
+                        &codec_info_.encode_h265.std_slice_segment_headers[i];
+                }
+
+                codec_info_.encode_h265.picture_info.naluSliceSegmentEntryCount =
+                    (uint32_t)codec_info_.encode_h265.slice_segment_info.size();
+                codec_info_.encode_h265.picture_info.pNaluSliceSegmentEntries = codec_info_.encode_h265.slice_segment_info.data();
+                break;
+
+            case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR:
+                // Nothing to do, AV1 encode does not guarantee tile count
+                break;
+
+            default:
+                assert(false);
+                break;
+        }
         return *this;
     }
 
@@ -2224,6 +2294,76 @@ class VideoEncodeInfo : public VideoOpParams<VkVideoEncodeInfoKHR> {
         return *this;
     }
 
+    VideoEncodeInfo& IntraRefresh(uint32_t intra_refresh_cycle_duration, uint32_t intra_refresh_index) {
+        assert(intra_refresh_info_.sType != VK_STRUCTURE_TYPE_VIDEO_ENCODE_INTRA_REFRESH_INFO_KHR);
+        intra_refresh_info_ = vku::InitStructHelper();
+        intra_refresh_info_.intraRefreshCycleDuration = intra_refresh_cycle_duration;
+
+        // This frame will be encoded with intra refresh
+        info_.flags |= VK_VIDEO_ENCODE_INTRA_REFRESH_BIT_KHR;
+        intra_refresh_info_.intraRefreshIndex = intra_refresh_index;
+        if (config_->GetVideoEncodeIntraRefreshMode() == VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_PER_PICTURE_PARTITION_BIT_KHR) {
+            SetPartitionCount(intra_refresh_cycle_duration);
+            switch (config_->Profile()->videoCodecOperation) {
+                case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR:
+                    // Set all slice types that are current I to P, only keep the intra-refreshed slice I
+                    for (size_t i = 0; i < codec_info_.encode_h264.std_slice_headers.size(); ++i) {
+                        if (codec_info_.encode_h264.std_slice_headers[i].slice_type == STD_VIDEO_H264_SLICE_TYPE_I) {
+                            codec_info_.encode_h264.std_slice_headers[i].slice_type = STD_VIDEO_H264_SLICE_TYPE_P;
+                        }
+                    }
+                    codec_info_.encode_h264.std_slice_headers[intra_refresh_index].slice_type = STD_VIDEO_H264_SLICE_TYPE_I;
+                    break;
+
+                case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR:
+                    // Set all slice segment types that are current I to P, only keep the intra-refreshed slice segment I
+                    for (size_t i = 0; i < codec_info_.encode_h265.std_slice_segment_headers.size(); ++i) {
+                        if (codec_info_.encode_h265.std_slice_segment_headers[i].slice_type == STD_VIDEO_H265_SLICE_TYPE_I) {
+                            codec_info_.encode_h265.std_slice_segment_headers[i].slice_type = STD_VIDEO_H265_SLICE_TYPE_P;
+                        }
+                    }
+                    codec_info_.encode_h265.std_slice_segment_headers[intra_refresh_index].slice_type = STD_VIDEO_H265_SLICE_TYPE_I;
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        ChainInfo(intra_refresh_info_);
+        return *this;
+    }
+
+    VideoEncodeInfo& AddReferenceFrameWithDirtyRegions(int32_t slot_index, const VkVideoPictureResourceInfoKHR* resource,
+                                                       uint32_t dirty_intra_refresh_regions) {
+        // IntraRefresh must have been called either because this is an intra refreshed frame or because it uses
+        // intra refreshed references and hence the cycle duration needed to be specified
+        assert(intra_refresh_info_.sType == VK_STRUCTURE_TYPE_VIDEO_ENCODE_INTRA_REFRESH_INFO_KHR);
+        AddReferenceFrameInternal(slot_index, resource, false);
+
+        auto index = info_.referenceSlotCount - 1;
+
+        assert(intra_refreshed_references_[index].sType != VK_STRUCTURE_TYPE_VIDEO_REFERENCE_INTRA_REFRESH_INFO_KHR);
+        intra_refreshed_references_[index] = vku::InitStruct<VkVideoReferenceIntraRefreshInfoKHR>();
+
+        intra_refreshed_references_[index].dirtyIntraRefreshRegions = dirty_intra_refresh_regions;
+
+        // Chain to reference info
+        intra_refreshed_references_[index].pNext = references_[index].pNext;
+        references_[index].pNext = &intra_refreshed_references_[index];
+
+        return *this;
+    }
+
+    VideoEncodeInfo& AddReferenceFrameWithDirtyRegions(int32_t slot_index, int32_t resource_index,
+                                                       uint32_t dirty_intra_refresh_regions) {
+        return AddReferenceFrameWithDirtyRegions(slot_index, &dpb_->Picture(resource_index), dirty_intra_refresh_regions);
+    }
+
+    VideoEncodeInfo& AddReferenceFrameWithDirtyRegions(int32_t slot_index, uint32_t dirty_intra_refresh_regions) {
+        return AddReferenceFrameWithDirtyRegions(slot_index, slot_index, dirty_intra_refresh_regions);
+    }
+
     VideoEncodeInfo& QuantizationMap(VkVideoEncodeFlagBitsKHR flag, VkExtent2D texel_size,
                                      VideoEncodeQuantizationMap& quantization_map) {
         return QuantizationMap(flag, texel_size, quantization_map.ImageView());
@@ -2251,17 +2391,20 @@ class VideoEncodeInfo : public VideoOpParams<VkVideoEncodeInfoKHR> {
         switch (config_->Profile()->videoCodecOperation) {
             case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR:
                 codec_info_.encode_h264.slice_info = other.codec_info_.encode_h264.slice_info;
-                codec_info_.encode_h264.slice_info.pStdSliceHeader = &codec_info_.encode_h264.std_slice_header;
+                codec_info_.encode_h264.std_slice_headers = other.codec_info_.encode_h264.std_slice_headers;
+
+                for (size_t i = 0; i < codec_info_.encode_h264.slice_info.size(); ++i) {
+                    codec_info_.encode_h264.slice_info[i].pStdSliceHeader = &codec_info_.encode_h264.std_slice_headers[i];
+                }
 
                 codec_info_.encode_h264.picture_info = other.codec_info_.encode_h264.picture_info;
-                codec_info_.encode_h264.picture_info.pNaluSliceEntries = &codec_info_.encode_h264.slice_info;
+                codec_info_.encode_h264.picture_info.pNaluSliceEntries = codec_info_.encode_h264.slice_info.data();
                 codec_info_.encode_h264.picture_info.pStdPictureInfo = &codec_info_.encode_h264.std_picture_info;
 
                 codec_info_.encode_h264.std_picture_info = other.codec_info_.encode_h264.std_picture_info;
                 codec_info_.encode_h264.std_picture_info.pRefLists = &codec_info_.encode_h264.std_ref_lists_info;
 
                 codec_info_.encode_h264.std_ref_lists_info = other.codec_info_.encode_h264.std_ref_lists_info;
-                codec_info_.encode_h264.std_slice_header = other.codec_info_.encode_h264.std_slice_header;
 
                 reconstructed_.pNext = &codec_info_.encode_h264.setup_slot_info;
 
@@ -2283,18 +2426,20 @@ class VideoEncodeInfo : public VideoOpParams<VkVideoEncodeInfoKHR> {
 
             case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR:
                 codec_info_.encode_h265.slice_segment_info = other.codec_info_.encode_h265.slice_segment_info;
-                codec_info_.encode_h265.slice_segment_info.pStdSliceSegmentHeader =
-                    &codec_info_.encode_h265.std_slice_segment_header;
+                codec_info_.encode_h265.std_slice_segment_headers = other.codec_info_.encode_h265.std_slice_segment_headers;
+                for (size_t i = 0; i < codec_info_.encode_h265.slice_segment_info.size(); ++i) {
+                    codec_info_.encode_h265.slice_segment_info[i].pStdSliceSegmentHeader =
+                        &codec_info_.encode_h265.std_slice_segment_headers[i];
+                }
 
                 codec_info_.encode_h265.picture_info = other.codec_info_.encode_h265.picture_info;
-                codec_info_.encode_h265.picture_info.pNaluSliceSegmentEntries = &codec_info_.encode_h265.slice_segment_info;
+                codec_info_.encode_h265.picture_info.pNaluSliceSegmentEntries = codec_info_.encode_h265.slice_segment_info.data();
                 codec_info_.encode_h265.picture_info.pStdPictureInfo = &codec_info_.encode_h265.std_picture_info;
 
                 codec_info_.encode_h265.std_picture_info = other.codec_info_.encode_h265.std_picture_info;
                 codec_info_.encode_h265.std_picture_info.pRefLists = &codec_info_.encode_h265.std_ref_lists_info;
 
                 codec_info_.encode_h265.std_ref_lists_info = other.codec_info_.encode_h265.std_ref_lists_info;
-                codec_info_.encode_h265.std_slice_segment_header = other.codec_info_.encode_h265.std_slice_segment_header;
 
                 reconstructed_.pNext = &codec_info_.encode_h265.setup_slot_info;
 
@@ -2351,6 +2496,20 @@ class VideoEncodeInfo : public VideoOpParams<VkVideoEncodeInfoKHR> {
             quantization_map_info_ = other.quantization_map_info_;
             ChainInfo(quantization_map_info_);
         }
+
+        if (other.intra_refresh_info_.sType == VK_STRUCTURE_TYPE_VIDEO_ENCODE_INTRA_REFRESH_INFO_KHR) {
+            intra_refresh_info_ = other.intra_refresh_info_;
+            ChainInfo(intra_refresh_info_);
+
+            intra_refreshed_references_.resize(other.intra_refreshed_references_.size());
+            for (size_t i = 0; i < other.intra_refreshed_references_.size(); ++i) {
+                if (other.intra_refreshed_references_[i].sType == VK_STRUCTURE_TYPE_VIDEO_REFERENCE_INTRA_REFRESH_INFO_KHR) {
+                    intra_refreshed_references_[i] = other.intra_refreshed_references_[i];
+                    intra_refreshed_references_[i].pNext = references_[i].pNext;
+                    references_[i].pNext = &intra_refreshed_references_[i];
+                }
+            }
+        }
     }
 
     VideoEncodeInfo& AddReferenceFrameInternal(int32_t slot_index, const VkVideoPictureResourceInfoKHR* resource,
@@ -2363,14 +2522,27 @@ class VideoEncodeInfo : public VideoOpParams<VkVideoEncodeInfoKHR> {
 
         info_.pReferenceSlots = references_.data();
 
+        // We have to skip overriding the slice (segment) type of the intra-refreshed slice (segment) if using
+        // per-picture-partition intra refresh
+        const uint32_t intra_refresh_index =
+            (config_->GetVideoEncodeIntraRefreshMode() == VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_PER_PICTURE_PARTITION_BIT_KHR) &&
+                    (intra_refresh_info_.sType == VK_STRUCTURE_TYPE_VIDEO_ENCODE_INTRA_REFRESH_INFO_KHR)
+                ? intra_refresh_info_.intraRefreshIndex
+                : UINT32_MAX;
+
         switch (config_->Profile()->videoCodecOperation) {
             case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR:
                 if (codec_info_.encode_h264.std_picture_info.primary_pic_type != STD_VIDEO_H264_PICTURE_TYPE_B) {
                     bool use_b_pic = back_reference || config_->EncodeCapsH264()->maxPPictureL0ReferenceCount == 0;
                     codec_info_.encode_h264.std_picture_info.primary_pic_type =
                         use_b_pic ? STD_VIDEO_H264_PICTURE_TYPE_B : STD_VIDEO_H264_PICTURE_TYPE_P;
-                    codec_info_.encode_h264.std_slice_header.slice_type =
-                        use_b_pic ? STD_VIDEO_H264_SLICE_TYPE_B : STD_VIDEO_H264_SLICE_TYPE_P;
+
+                    for (size_t i = 0; i < codec_info_.encode_h264.std_slice_headers.size(); ++i) {
+                        if (i != intra_refresh_index) {
+                            codec_info_.encode_h264.std_slice_headers[i].slice_type =
+                                use_b_pic ? STD_VIDEO_H264_SLICE_TYPE_B : STD_VIDEO_H264_SLICE_TYPE_P;
+                        }
+                    }
                 }
                 AddReferenceInfoH264(slot_index, !back_reference);
                 break;
@@ -2380,8 +2552,13 @@ class VideoEncodeInfo : public VideoOpParams<VkVideoEncodeInfoKHR> {
                     bool use_b_pic = back_reference || config_->EncodeCapsH265()->maxPPictureL0ReferenceCount == 0;
                     codec_info_.encode_h265.std_picture_info.pic_type =
                         use_b_pic ? STD_VIDEO_H265_PICTURE_TYPE_B : STD_VIDEO_H265_PICTURE_TYPE_P;
-                    codec_info_.encode_h265.std_slice_segment_header.slice_type =
-                        use_b_pic ? STD_VIDEO_H265_SLICE_TYPE_B : STD_VIDEO_H265_SLICE_TYPE_P;
+
+                    for (size_t i = 0; i < codec_info_.encode_h265.std_slice_segment_headers.size(); ++i) {
+                        if (i != intra_refresh_index) {
+                            codec_info_.encode_h265.std_slice_segment_headers[i].slice_type =
+                                use_b_pic ? STD_VIDEO_H265_SLICE_TYPE_B : STD_VIDEO_H265_SLICE_TYPE_P;
+                        }
+                    }
                 }
                 AddReferenceInfoH265(slot_index, !back_reference);
                 break;
@@ -2445,6 +2622,8 @@ class VideoEncodeInfo : public VideoOpParams<VkVideoEncodeInfoKHR> {
     CodecInfoType codec_info_{};
     VkVideoInlineQueryInfoKHR inline_query_info_{};
     VkVideoEncodeQuantizationMapInfoKHR quantization_map_info_{};
+    VkVideoEncodeIntraRefreshInfoKHR intra_refresh_info_{};
+    std::vector<VkVideoReferenceIntraRefreshInfoKHR> intra_refreshed_references_{};
 };
 
 class VideoContext {
@@ -3139,6 +3318,31 @@ class VkVideoLayerTest : public VkLayerTest {
         return default_config_;
     }
 
+    const std::vector<VideoConfig> GetConfigsWithIntraRefresh(const std::vector<VideoConfig>& configs, uint32_t dpb_slot_count = 2,
+                                                              uint32_t active_reference_count = 1) {
+        return FilterConfigs(GetConfigsWithReferences(GetConfigsWithDpbSlots(configs, dpb_slot_count), active_reference_count),
+                             [](const VideoConfig& config) { return config.EncodeIntraRefreshCaps()->intraRefreshModes != 0; });
+    }
+
+    const std::vector<VideoConfig> GetConfigsWithPerPartitionIntraRefresh(const std::vector<VideoConfig>& configs,
+                                                                          uint32_t dpb_slot_count = 2,
+                                                                          uint32_t active_reference_count = 1) {
+        return FilterConfigs(GetConfigsWithReferences(GetConfigsWithDpbSlots(configs, dpb_slot_count), active_reference_count),
+                             [](const VideoConfig& config) {
+                                 return (config.EncodeIntraRefreshCaps()->intraRefreshModes &
+                                         VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_PER_PICTURE_PARTITION_BIT_KHR) != 0;
+                             });
+    }
+
+    const std::vector<VideoConfig> GetConfigsWithBlockBasedIntraRefresh(
+        const std::vector<VideoConfig>& configs,
+        VkVideoEncodeIntraRefreshModeFlagBitsKHR mode = VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_BLOCK_BASED_BIT_KHR,
+        uint32_t dpb_slot_count = 2, uint32_t active_reference_count = 1) {
+        return FilterConfigs(
+            GetConfigsWithReferences(GetConfigsWithDpbSlots(configs, dpb_slot_count), active_reference_count),
+            [mode](const VideoConfig& config) { return (config.EncodeIntraRefreshCaps()->intraRefreshModes & mode) != 0; });
+    }
+
     uint32_t QueueFamilyCount() const { return (uint32_t)queue_family_video_props_.size(); }
 
     VkQueueFlags QueueFamilyFlags(uint32_t qfi) const { return queue_family_props_[qfi].queueFamilyProperties.queueFlags; }
@@ -3396,6 +3600,16 @@ class VkVideoLayerTest : public VkLayerTest {
         }
     }
 
+    void ChainAdditionalEncodeCaps(vku::safe_VkVideoEncodeCapabilitiesKHR* encode_caps) {
+        auto encode_quantization_map_caps = new vku::safe_VkVideoEncodeQuantizationMapCapabilitiesKHR();
+        encode_quantization_map_caps->pNext = encode_caps->pNext;
+        encode_caps->pNext = encode_quantization_map_caps;
+
+        auto encode_intra_refresh_caps = new vku::safe_VkVideoEncodeIntraRefreshCapabilitiesKHR();
+        encode_intra_refresh_caps->pNext = encode_caps->pNext;
+        encode_caps->pNext = encode_intra_refresh_caps;
+    }
+
     void InitDecodeH264Configs(uint32_t queueFamilyIndex) {
         const VkVideoDecodeH264PictureLayoutFlagBitsKHR picture_layouts[] = {
             VK_VIDEO_DECODE_H264_PICTURE_LAYOUT_PROGRESSIVE_KHR,
@@ -3603,9 +3817,8 @@ class VkVideoLayerTest : public VkLayerTest {
 
         auto encode_caps_h264 = new vku::safe_VkVideoEncodeH264CapabilitiesKHR();
         auto encode_caps = new vku::safe_VkVideoEncodeCapabilitiesKHR();
-        auto encode_quantization_map_caps = new vku::safe_VkVideoEncodeQuantizationMapCapabilitiesKHR();
-        encode_quantization_map_caps->pNext = encode_caps_h264;
-        encode_caps->pNext = encode_quantization_map_caps;
+        encode_caps->pNext = encode_caps_h264;
+        ChainAdditionalEncodeCaps(encode_caps);
         config.SetCodecCapsChain(encode_caps);
         config.SetCodecEncodeQualityLevelPropsChain(new vku::safe_VkVideoEncodeH264QualityLevelPropertiesKHR());
 
@@ -3659,9 +3872,8 @@ class VkVideoLayerTest : public VkLayerTest {
 
         auto encode_caps_h265 = new vku::safe_VkVideoEncodeH265CapabilitiesKHR();
         auto encode_caps = new vku::safe_VkVideoEncodeCapabilitiesKHR();
-        auto encode_quantization_map_caps = new vku::safe_VkVideoEncodeQuantizationMapCapabilitiesKHR();
-        encode_quantization_map_caps->pNext = encode_caps_h265;
-        encode_caps->pNext = encode_quantization_map_caps;
+        encode_caps->pNext = encode_caps_h265;
+        ChainAdditionalEncodeCaps(encode_caps);
         config.SetCodecCapsChain(encode_caps);
         config.SetCodecEncodeQualityLevelPropsChain(new vku::safe_VkVideoEncodeH265QualityLevelPropertiesKHR());
 
@@ -3721,9 +3933,8 @@ class VkVideoLayerTest : public VkLayerTest {
 
         auto encode_caps_av1 = new vku::safe_VkVideoEncodeAV1CapabilitiesKHR();
         auto encode_caps = new vku::safe_VkVideoEncodeCapabilitiesKHR();
-        auto encode_quantization_map_caps = new vku::safe_VkVideoEncodeQuantizationMapCapabilitiesKHR();
-        encode_quantization_map_caps->pNext = encode_caps_av1;
-        encode_caps->pNext = encode_quantization_map_caps;
+        encode_caps->pNext = encode_caps_av1;
+        ChainAdditionalEncodeCaps(encode_caps);
         config.SetCodecCapsChain(encode_caps);
         config.SetCodecEncodeQualityLevelPropsChain(new vku::safe_VkVideoEncodeAV1QualityLevelPropertiesKHR());
 
