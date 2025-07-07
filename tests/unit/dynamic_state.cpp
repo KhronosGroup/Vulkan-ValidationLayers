@@ -5455,6 +5455,8 @@ TEST_F(NegativeDynamicState, DynamicSampleLocationsEnable) {
     GetPhysicalDeviceProperties2(sample_location_properties);
     if (!sample_location_properties.variableSampleLocations) {
         GTEST_SKIP() << "variableSampleLocations not supported";
+    } else if ((sample_location_properties.sampleLocationSampleCounts & VK_SAMPLE_COUNT_1_BIT) == 0) {
+        GTEST_SKIP() << "VK_SAMPLE_COUNT_1_BIT sampleLocationSampleCounts is not supported";
     }
 
     VkFormat format = FindSupportedDepthStencilFormat(Gpu());
@@ -5514,6 +5516,8 @@ TEST_F(NegativeDynamicState, DynamicRenderingDynamicSampleLocationsEnable) {
     GetPhysicalDeviceProperties2(sample_location_properties);
     if (!sample_location_properties.variableSampleLocations) {
         GTEST_SKIP() << "variableSampleLocations not supported";
+    } else if ((sample_location_properties.sampleLocationSampleCounts & VK_SAMPLE_COUNT_1_BIT) == 0) {
+        GTEST_SKIP() << "VK_SAMPLE_COUNT_1_BIT sampleLocationSampleCounts is not supported";
     }
 
     VkFormat format = FindSupportedDepthStencilFormat(Gpu());
