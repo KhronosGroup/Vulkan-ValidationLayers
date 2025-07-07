@@ -477,6 +477,10 @@ TEST_F(NegativeAtomic, ImageInt64DrawtimeSparse) {
 
     auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R64_UINT, VK_IMAGE_USAGE_STORAGE_BIT);
     image_ci.flags = VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
+    if (ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT)) {
+        GTEST_SKIP() << "Cannot make VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT not supported.";
+    }
+
     vkt::Image image(*m_device, image_ci, vkt::no_mem);
     vkt::ImageView image_view = image.CreateView();
     pipe.descriptor_set_.WriteDescriptorImageInfo(1, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
