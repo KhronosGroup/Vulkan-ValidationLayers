@@ -517,8 +517,7 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
     }
 
     const LastBound &last_bound = cb_state.base.GetLastBoundGraphics();
-    const vvl::Pipeline *pipeline_state = last_bound.pipeline_state;
-    const VkShaderStageFlags stages = pipeline_state->create_info_shaders;
+    const VkShaderStageFlags stages = last_bound.GetAllActiveBoundStages();
     const bool is_task_shader = (stages & VK_SHADER_STAGE_TASK_BIT_EXT) == VK_SHADER_STAGE_TASK_BIT_EXT;
 
     ValidationCommandFunc validation_cmd =
