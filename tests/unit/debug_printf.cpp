@@ -5038,3 +5038,74 @@ TEST_F(NegativeDebugPrintf, DescriptorBuffer) {
     m_default_queue->SubmitAndWait(m_command_buffer);
     // m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDebugPrintf, DrawMeshTasksIndirectCountEXT) {
+    TEST_DESCRIPTION("Test debug printf in mesh shaders.");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddRequiredFeature(vkt::Feature::shaderDrawParameters);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
+    InitRenderTarget();
+
+    const char *mesh_source = R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : enable
+        #extension GL_EXT_debug_printf : enable
+        layout(triangles, max_vertices = 3, max_primitives = 1) out;
+
+        void main() {
+            debugPrintfEXT("gl_DrawID = %d\n", gl_DrawID);
+            SetMeshOutputsEXT(3, 1);
+            gl_MeshVerticesEXT[0].gl_Position = vec4(0);
+            gl_PrimitiveTriangleIndicesEXT[0] =  uvec3(0, 1, 2);
+        }
+    )glsl";
+
+    const auto mesh_code = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, mesh_source, SPV_ENV_VULKAN_1_2);
+
+    VkShaderCreateInfoEXT mesh_ci = vku::InitStructHelper();
+    mesh_ci.flags = VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT;
+    mesh_ci.stage = VK_SHADER_STAGE_MESH_BIT_EXT;
+    mesh_ci.nextStage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    mesh_ci.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+    mesh_ci.codeSize = mesh_code.size() * sizeof(mesh_code[0]);
+    mesh_ci.pCode = mesh_code.data();
+    mesh_ci.pName = "main";
+    const vkt::Shader mesh(*m_device, mesh_ci);
+    const vkt::Shader frag(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
+                           GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl, SPV_ENV_VULKAN_1_2));
+
+    vkt::Buffer count_buffer(*m_device, 64, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
+    uint32_t *count_ptr = static_cast<uint32_t *>(count_buffer.Memory().Map());
+    *count_ptr = 1;
+
+    vkt::Buffer draw_buffer(*m_device, sizeof(VkDrawMeshTasksIndirectCommandEXT), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                            kHostVisibleMemProps);
+    auto *draw_ptr = static_cast<VkDrawMeshTasksIndirectCommandEXT *>(draw_buffer.Memory().Map());
+    draw_ptr->groupCountX = 1;
+    draw_ptr->groupCountY = 1;
+    draw_ptr->groupCountZ = 1;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude();
+    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_MESH_BIT_EXT, VK_SHADER_STAGE_FRAGMENT_BIT};
+    const VkShaderEXT shaders[] = {VK_NULL_HANDLE, mesh, frag};
+    vk::CmdBindShadersEXT(m_command_buffer, 3u, stages, shaders);
+    vk::CmdDrawMeshTasksIndirectCountEXT(m_command_buffer, draw_buffer, 0u, count_buffer, 0u, 1u,
+                                         sizeof(VkDrawMeshTasksIndirectCommandEXT));
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredInfo("gl_DrawID = 0");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
