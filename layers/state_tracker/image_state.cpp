@@ -544,8 +544,9 @@ ImageView::ImageView(const DeviceState &device_state, const std::shared_ptr<vvl:
       metal_imageview_export(GetMetalExport(ci)),
 #endif
       is_depth_sliced(IsDepthSliced()),
-      normalized_subresource_range(NormalizeSubresourceRange(device_state.extensions.vk_khr_maintenance9)),
-      range_generator(image_state->subresource_encoder, normalized_subresource_range),
+      normalized_subresource_range(image_state->NormalizeSubresourceRange(create_info.subresourceRange)),
+      range_generator(image_state->subresource_encoder,
+                      NormalizeImageLayoutSubresourceRange(device_state.extensions.vk_khr_maintenance9)),
       samples(image_state->create_info.samples),
       samplerConversion(GetSamplerConversion(ci)),
       filter_cubic_props(cubic_props),
@@ -578,7 +579,7 @@ bool ImageView::IsDepthSliced() {
            (create_info.viewType == VK_IMAGE_VIEW_TYPE_2D || create_info.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 }
 
-VkImageSubresourceRange ImageView::NormalizeSubresourceRange(bool is_3d_slice_transition_allowed) const {
+VkImageSubresourceRange ImageView::NormalizeImageLayoutSubresourceRange(bool is_3d_slice_transition_allowed) const {
     VkImageSubresourceRange subres_range = create_info.subresourceRange;
 
     // if we're mapping a 3D image to a 2d image view, convert the view's subresource range to be compatible with the
