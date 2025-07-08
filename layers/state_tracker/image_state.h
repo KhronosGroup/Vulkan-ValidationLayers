@@ -313,7 +313,7 @@ class ImageView : public StateObject, public SubStateManager<ImageViewSubState> 
     bool Invalid() const override { return Destroyed() || !image_state || image_state->Invalid(); }
 
   private:
-    VkImageSubresourceRange NormalizeSubresourceRange(bool is_3d_slice_transition_allowed) const;
+    VkImageSubresourceRange NormalizeImageLayoutSubresourceRange(bool is_3d_slice_transition_allowed) const;
     bool IsDepthSliced();
 };
 
