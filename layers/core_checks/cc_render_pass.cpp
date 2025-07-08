@@ -2866,8 +2866,8 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
                                                  const Location &attachment_loc) const {
     bool skip = false;
 
-    // "If imageView is VK_NULL_HANDLE, and resolveMode is not VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID, other members of
-    // this structure are ignored"
+    // "If imageView is VK_NULL_HANDLE, and resolveMode is not VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_BIT_ANDROID, other members
+    // of this structure are ignored"
     if (attachment_info.imageView == VK_NULL_HANDLE) {
         return false;
     }
@@ -3722,17 +3722,17 @@ bool CoreChecks::ValidateBeginRenderingColorAttachment(VkCommandBuffer commandBu
             skip |= ValidateRenderingInfoAttachmentDeviceGroup(image_state, rendering_info, objlist, color_image_view);
         }
 
-        if (color_attachment.resolveMode == VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID) {
+        if (color_attachment.resolveMode == VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_BIT_ANDROID) {
             if (!enabled_features.externalFormatResolve) {
                 skip |= LogError("VUID-VkRenderingAttachmentInfo-externalFormatResolve-09323", commandBuffer,
                                  color_attachment_loc.dot(Field::resolveMode),
-                                 "is VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID.");
+                                 "is VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_BIT_ANDROID.");
             }
             if (rendering_info.colorAttachmentCount != 1) {
-                skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-09320", commandBuffer,
-                                 color_attachment_loc.dot(Field::resolveMode),
-                                 "is VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID and colorAttachmentCount is %" PRIu32 ".",
-                                 rendering_info.colorAttachmentCount);
+                skip |= LogError(
+                    "VUID-VkRenderingInfo-colorAttachmentCount-09320", commandBuffer, color_attachment_loc.dot(Field::resolveMode),
+                    "is VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_BIT_ANDROID and colorAttachmentCount is %" PRIu32 ".",
+                    rendering_info.colorAttachmentCount);
                 break;  // only print first index with error
             }
             const auto *fragment_density_info_ext =
@@ -3888,10 +3888,10 @@ bool CoreChecks::ValidateBeginRenderingDepthAttachment(VkCommandBuffer commandBu
     }
 
     if (depth_attachment.resolveMode != VK_RESOLVE_MODE_NONE) {
-        if (depth_attachment.resolveMode == VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID) {
+        if (depth_attachment.resolveMode == VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_BIT_ANDROID) {
             skip |=
                 LogError("VUID-VkRenderingInfo-pDepthAttachment-09318", commandBuffer, depth_attachment_loc.dot(Field::resolveMode),
-                         "is VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID.");
+                         "is VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_BIT_ANDROID.");
         }
         if (auto depth_resolve_view_state = Get<vvl::ImageView>(depth_attachment.resolveImageView)) {
             const VkComponentMapping components = depth_resolve_view_state->create_info.components;
@@ -3971,10 +3971,10 @@ bool CoreChecks::ValidateBeginRenderingStencilAttachment(VkCommandBuffer command
         skip |= ValidateRenderingInfoAttachmentDeviceGroup(image_state, rendering_info, objlist, stencil_image_view);
     }
     if (stencil_attachment.resolveMode != VK_RESOLVE_MODE_NONE) {
-        if (stencil_attachment.resolveMode == VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID) {
-            skip |=
-                LogError("VUID-VkRenderingInfo-pStencilAttachment-09319", commandBuffer,
-                         stencil_attachment_loc.dot(Field::resolveMode), "is VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID.");
+        if (stencil_attachment.resolveMode == VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_BIT_ANDROID) {
+            skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-09319", commandBuffer,
+                             stencil_attachment_loc.dot(Field::resolveMode),
+                             "is VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_BIT_ANDROID.");
         }
 
         if (auto stencil_resolve_view_state = Get<vvl::ImageView>(stencil_attachment.resolveImageView)) {
