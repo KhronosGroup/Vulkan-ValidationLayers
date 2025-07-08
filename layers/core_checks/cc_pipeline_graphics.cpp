@@ -3826,7 +3826,7 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassExternalFormatResolve(cons
     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
 
     if (rendering_info.colorAttachmentCount == 1 &&
-        rendering_info.pColorAttachments[0].resolveMode == VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID) {
+        rendering_info.pColorAttachments[0].resolveMode == VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_BIT_ANDROID) {
         if (auto resolve_image_view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[0].resolveImageView)) {
             if (resolve_image_view_state->image_state->ahb_format != pipeline_external_format) {
                 skip |= LogError(vuid.external_format_resolve_09362, objlist, vuid.loc(),
