@@ -1077,8 +1077,16 @@ void CoreChecks::RecordTransitionImageLayout(vvl::CommandBuffer &cb_state, const
         }
     }
 
-    const VkImageSubresourceRange normalized_subresource_range =
-        image_state.NormalizeSubresourceRange(mem_barrier.subresourceRange);
+    VkImageSubresourceRange normalized_subresource_range = image_state.NormalizeSubresourceRange(mem_barrier.subresourceRange);
+
+    // VK_REMAINING_ARRAY_LAYERS for sliced 3d image in the context of layout transition means image's depth extent.
+    if (mem_barrier.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS) {
+        if (IsExtEnabled(extensions.vk_khr_maintenance9) && image_state.create_info.imageType == VK_IMAGE_TYPE_3D &&
+            (image_state.create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) != 0) {
+            normalized_subresource_range.layerCount =
+                image_state.create_info.extent.depth - normalized_subresource_range.baseArrayLayer;
+        }
+    }
 
     VkImageLayout old_layout = mem_barrier.oldLayout;
     if (IsQueueFamilyExternal(mem_barrier.srcQueueFamilyIndex)) {
