@@ -45,8 +45,7 @@ class SyncValidator : public vvl::DeviceProxy {
     using Struct = vvl::Struct;
     using Field = vvl::Field;
 
-    SyncValidator(vvl::dispatch::Device *dev, syncval::Instance *instance_vo)
-        : BaseClass(dev, instance_vo, LayerObjectTypeSyncValidation), error_messages_(*this) {}
+    SyncValidator(vvl::dispatch::Device *dev, syncval::Instance *instance_vo);
     ~SyncValidator();
 
     syncval::ErrorMessages error_messages_;
@@ -55,6 +54,7 @@ class SyncValidator : public vvl::DeviceProxy {
     // - it is the first to be constructed: can observe all subsequent syncval stats events
     // - it is the last to be destroyed: ensures there are no unreported syncval stats events.
     mutable syncval_stats::Stats stats;  // Stats object is thread safe
+    const bool report_stats_ = false;
 
     // Global tag range for submitted command buffers resource usage logs
     // Started the global tag count at 1 s.t. zero are invalid and ResourceUsageTag normalization can just zero them.
