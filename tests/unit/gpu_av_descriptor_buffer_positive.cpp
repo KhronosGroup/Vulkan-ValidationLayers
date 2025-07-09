@@ -41,9 +41,7 @@ TEST_F(PositiveGpuAVDescriptorBuffer, Basic) {
     pipe_layout_ci.pSetLayouts = &ds_layout.handle();
     vkt::PipelineLayout pipeline_layout(*m_device, pipe_layout_ci);
 
-    VkDeviceSize ds_layout_size = 0;
-    vk::GetDescriptorSetLayoutSizeEXT(device(), ds_layout, &ds_layout_size);
-
+    VkDeviceSize ds_layout_size = ds_layout.GetDescriptorBufferSize();
     ds_layout_size = Align(ds_layout_size, descriptor_buffer_properties.descriptorBufferOffsetAlignment);
 
     vkt::Buffer descriptor_buffer(*m_device, ds_layout_size, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT,

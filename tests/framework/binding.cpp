@@ -1774,6 +1774,18 @@ void DescriptorSetLayout::Init(const Device &dev, const VkDescriptorSetLayoutCre
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateDescriptorSetLayout, dev, &info);
 }
 
+VkDeviceSize DescriptorSetLayout::GetDescriptorBufferSize() const {
+    VkDeviceSize size = 0;
+    vk::GetDescriptorSetLayoutSizeEXT(device(), handle(), &size);
+    return size;
+}
+
+VkDeviceSize DescriptorSetLayout::GetDescriptorBufferBindingOffset(uint32_t binding) const {
+    VkDeviceSize size = 0;
+    vk::GetDescriptorSetLayoutBindingOffsetEXT(device(), handle(), binding, &size);
+    return size;
+}
+
 NON_DISPATCHABLE_HANDLE_DTOR(DescriptorPool, vk::DestroyDescriptorPool)
 
 void DescriptorPool::Init(const Device &dev, const VkDescriptorPoolCreateInfo &info) {
