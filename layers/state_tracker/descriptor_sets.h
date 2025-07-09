@@ -186,6 +186,11 @@ class DescriptorSetLayoutDef {
         assert(!bindings_.empty());
         return bindings_.empty() ? 0 : bindings_[bindings_.size() - 1].binding;
     }
+    uint32_t GetLastIndex() const {
+        assert(!bindings_.empty());
+        return (uint32_t)bindings_.size() - 1;
+    }
+
     VkDescriptorSetLayoutBinding const *GetDescriptorSetLayoutBindingPtrFromIndex(const uint32_t) const;
     VkDescriptorSetLayoutBinding const *GetDescriptorSetLayoutBindingPtrFromBinding(uint32_t binding) const {
         return GetDescriptorSetLayoutBindingPtrFromIndex(GetIndexFromBinding(binding));
@@ -328,6 +333,7 @@ class DescriptorSetLayout : public StateObject {
     // Various Get functions that can either be passed a binding#, which will
     //  be automatically translated into the appropriate index, or the index# can be passed in directly
     uint32_t GetMaxBinding() const { return layout_id_->GetMaxBinding(); }
+    uint32_t GetLastIndex() const { return layout_id_->GetLastIndex(); }
     VkDescriptorSetLayoutBinding const *GetDescriptorSetLayoutBindingPtrFromIndex(const uint32_t index) const {
         return layout_id_->GetDescriptorSetLayoutBindingPtrFromIndex(index);
     }
@@ -364,12 +370,7 @@ class DescriptorSetLayout : public StateObject {
     // Helper function to get the next valid binding for a descriptor
     uint32_t GetNextValidBinding(const uint32_t binding) const { return layout_id_->GetNextValidBinding(binding); }
     bool IsPushDescriptor() const { return layout_id_->IsPushDescriptor(); }
-    bool IsVariableDescriptorCountFromIndex(uint32_t index) const {
-        return !!(GetDescriptorBindingFlagsFromIndex(index) & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT);
-    }
-    bool IsVariableDescriptorCount(uint32_t binding) const {
-        return IsVariableDescriptorCountFromIndex(GetIndexFromBinding(binding));
-    }
+
     void SetLayoutSizeInBytes(const VkDeviceSize *layout_size_in_bytes_);
     VkDeviceSize GetLayoutSizeInBytes() const;
 

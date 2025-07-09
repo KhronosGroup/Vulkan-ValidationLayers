@@ -380,3 +380,68 @@ TEST_F(NegativeDescriptorIndexing, SetLayoutBindings) {
     vk::CreateDescriptorSetLayout(*m_device, &create_info, nullptr, &setLayout);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDescriptorIndexing, VariableDescriptorCount) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10370");
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorBindingVariableDescriptorCount);
+    RETURN_IF_SKIP(Init());
+
+    OneOffDescriptorIndexingSet descriptor_set(
+        m_device, {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr,
+                    VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT}});
+
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::ImageView image_view = image.CreateView();
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler);
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-dstBinding-00316");
+    descriptor_set.UpdateDescriptorSets();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptorIndexing, DescriptorSetVariableDescriptorCountAllocateInfo) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10370");
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorBindingVariableDescriptorCount);
+    RETURN_IF_SKIP(Init());
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
+
+    VkDescriptorBindingFlags binding_flags = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT;
+    VkDescriptorSetLayoutBindingFlagsCreateInfo flags_create_info = vku::InitStructHelper();
+    flags_create_info.bindingCount = 1;
+    flags_create_info.pBindingFlags = &binding_flags;
+
+    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper(&flags_create_info);
+    ds_layout_ci.bindingCount = 1;
+    ds_layout_ci.pBindings = &binding;
+    ds_layout_ci.flags = 0;
+    vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+
+    VkDescriptorPoolSize pool_size = {binding.descriptorType, 3};
+    VkDescriptorPoolCreateInfo dspci = vku::InitStructHelper();
+    dspci.poolSizeCount = 1;
+    dspci.pPoolSizes = &pool_size;
+    dspci.maxSets = 2;
+    vkt::DescriptorPool pool(*m_device, dspci);
+
+    // forget VkDescriptorSetVariableDescriptorCountAllocateInfo
+    VkDescriptorSetAllocateInfo ds_alloc_info = vku::InitStructHelper();
+    ds_alloc_info.descriptorPool = pool;
+    ds_alloc_info.descriptorSetCount = 1;
+    ds_alloc_info.pSetLayouts = &ds_layout.handle();
+
+    VkDescriptorSet ds = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredWarning("WARNING-CoreValidation-AllocateDescriptorSets-VariableDescriptorCount");
+    vk::AllocateDescriptorSets(*m_device, &ds_alloc_info, &ds);
+    m_errorMonitor->VerifyFound();
+
+    VkDescriptorSetVariableDescriptorCountAllocateInfo count_alloc_info = vku::InitStructHelper();
+    count_alloc_info.descriptorSetCount = 1;
+    uint32_t variable_count = 0;  // explicit, no warning
+    count_alloc_info.pDescriptorCounts = &variable_count;
+    ds_alloc_info.pNext = &count_alloc_info;
+    vk::AllocateDescriptorSets(*m_device, &ds_alloc_info, &ds);
+}
