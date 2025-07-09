@@ -1088,6 +1088,12 @@ TEST_F(NegativeDescriptorBuffer, DescriptorGetInfoValidPointer) {
     uint8_t buffer[16];
     VkDescriptorGetInfoEXT dgi = vku::InitStructHelper();
 
+    dgi.type = VK_DESCRIPTOR_TYPE_SAMPLER;
+    dgi.data.pSampler = nullptr;
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorGetInfoEXT-pSampler-parameter");
+    vk::GetDescriptorEXT(device(), &dgi, 4, &buffer);
+    m_errorMonitor->VerifyFound();
+
     dgi.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     dgi.data.pCombinedImageSampler = nullptr;
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorGetInfoEXT-pCombinedImageSampler-parameter");
@@ -1401,6 +1407,12 @@ TEST_F(NegativeDescriptorBuffer, DescriptorGetInfo) {
     VkDescriptorGetInfoEXT dgi = vku::InitStructHelper();
 
     const VkDescriptorImageInfo dii = {invalid_sampler, invalid_imageview, VK_IMAGE_LAYOUT_GENERAL};
+
+    dgi.type = VK_DESCRIPTOR_TYPE_SAMPLER;
+    dgi.data.pSampler = &invalid_sampler;
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorGetInfoEXT-pSampler-parameter");
+    vk::GetDescriptorEXT(device(), &dgi, descriptor_buffer_properties.samplerDescriptorSize, &buffer);
+    m_errorMonitor->VerifyFound();
 
     dgi.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     dgi.data.pCombinedImageSampler = &dii;
