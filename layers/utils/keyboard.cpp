@@ -32,6 +32,10 @@
 #include <stdlib.h>
 #endif
 
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+#include <windows.h>
+#endif
+
 static bool previous_key_state = true;
 
 static bool GetKeyState(void* xlib_display, void* xcb_connection) {
