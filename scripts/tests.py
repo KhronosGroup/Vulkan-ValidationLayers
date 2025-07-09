@@ -181,6 +181,7 @@ def RunVVLTests(args):
         lvt_env['VK_KHRONOS_PROFILES_EMULATE_PORTABILITY'] = 'false'
 
     lvt_env['VK_KHRONOS_PROFILES_DEBUG_REPORTS'] = 'DEBUG_REPORT_ERROR_BIT'
+    lvt_env['VK_KHRONOS_PROFILES_UNKNOWN_FEATURE_VALUES'] = 'UNKNOWN_FEATURE_VALUES_DEVICE'
 
     lvt_cmd = os.path.join(CI_INSTALL_DIR, 'bin', 'vk_layer_validation_tests')
 

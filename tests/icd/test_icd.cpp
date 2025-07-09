@@ -1108,6 +1108,7 @@ GetVideoSessionMemoryRequirementsKHR(VkDevice device, VkVideoSessionKHR videoSes
     return VK_SUCCESS;
 }
 
+// VK_KHRONOS_PROFILES_UNKNOWN_FEATURE_VALUES in profiles can be used and future extensions can be put in here for testing
 static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures2(VkPhysicalDevice physicalDevice,
                                                              VkPhysicalDeviceFeatures2* pFeatures) {
     GetPhysicalDeviceFeatures(physicalDevice, &pFeatures->features);
@@ -1166,6 +1167,7 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures2(VkPhysicalDevice ph
     }
 }
 
+// VK_KHRONOS_PROFILES_UNKNOWN_FEATURE_VALUES in profiles can be used and future extensions can be put in here for testing
 static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
                                                                VkPhysicalDeviceProperties2* pProperties) {
     // The only value that need to be set are those the Profile layer can't set
