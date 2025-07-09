@@ -3181,6 +3181,13 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
 
     const Location descriptor_info_loc = error_obj.location.dot(Field::pDescriptorInfo);
     switch (pDescriptorInfo->type) {
+        case VK_DESCRIPTOR_TYPE_SAMPLER:
+            data_field = Field::pSampler;
+            if (Get<vvl::Sampler>(*pDescriptorInfo->data.pSampler).get() == nullptr) {
+                skip |= LogError("VUID-VkDescriptorGetInfoEXT-pSampler-parameter", device, descriptor_info_loc.dot(Field::type),
+                                 "is VK_DESCRIPTOR_TYPE_SAMPLER, but pSampler is not a valid sampler.");
+            }
+            break;
         case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
             data_field = Field::pCombinedImageSampler;
             if (Get<vvl::Sampler>(pDescriptorInfo->data.pCombinedImageSampler->sampler).get() == nullptr) {

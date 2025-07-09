@@ -1144,6 +1144,12 @@ bool Device::manual_PreCallValidateGetDescriptorEXT(VkDevice device, const VkDes
             skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-08018", device, descriptor_info_loc.dot(Field::type), "is %s.",
                              string_VkDescriptorType(pDescriptorInfo->type));
             break;
+        case VK_DESCRIPTOR_TYPE_SAMPLER:
+            if (!pDescriptorInfo->data.pSampler) {
+                skip |= LogError("VUID-VkDescriptorGetInfoEXT-pSampler-parameter", device, descriptor_info_loc.dot(Field::type),
+                                 "is VK_DESCRIPTOR_TYPE_SAMPLER, but pSampler is null.");
+            }
+            break;
         case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
             if (!pDescriptorInfo->data.pCombinedImageSampler) {
                 skip |= LogError("VUID-VkDescriptorGetInfoEXT-pCombinedImageSampler-parameter", device,
