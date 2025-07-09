@@ -1680,8 +1680,12 @@ bool CoreChecks::ValidateWriteUpdate(const vvl::DescriptorSet &dst_set, const Vk
         return skip;  // the rest of checks assume a valid DescriptorBinding state
     } else if (dst_binding->count == 0) {
         skip |= LogError("VUID-VkWriteDescriptorSet-dstBinding-00316", dst_layout->Handle(), dst_binding_loc,
-                         "(%" PRIu32 ") has VkDescriptorSetLayoutBinding::descriptorCount of zero in %s.\n%s", update.dstBinding,
-                         FormatHandle(dst_layout->Handle()).c_str(), dsl_error_source.PrintMessage(*this).c_str());
+                         "(%" PRIu32 ") has VkDescriptorSetLayoutBinding::descriptorCount of zero in %s.%s\n%s", update.dstBinding,
+                         FormatHandle(dst_layout->Handle()).c_str(),
+                         dst_binding->IsVariableCount()
+                             ? " (Did you forget to allocate with VkDescriptorSetVariableDescriptorCountAllocateInfo?)"
+                             : "",
+                         dsl_error_source.PrintMessage(*this).c_str());
     }
 
     if (!vvl::IsBindless(dst_binding->binding_flags)) {
@@ -1809,8 +1813,9 @@ bool CoreChecks::ValidateWriteUpdate(const vvl::DescriptorSet &dst_set, const Vk
             // Can't use Variable Count with PushDescriptors
             const LogObjectList objlist(update.dstSet, dst_layout->Handle());
             skip |= LogError("VUID-VkWriteDescriptorSet-dstArrayElement-00321", objlist, write_loc.dot(Field::dstArrayElement),
-                             "(%" PRIu32 ") + descriptorCount (%" PRIu32 ") is larger than (%" PRIu32 ") for dstBinding (%" PRIu32
-                             ") in %s (allocated with %s).",
+                             "(%" PRIu32 ") + descriptorCount (%" PRIu32
+                             ") is larger than VkDescriptorSetVariableDescriptorCountAllocateInfo::pDescriptorCounts (%" PRIu32
+                             ") for dstBinding (%" PRIu32 ") in %s (allocated with %s).",
                              update.dstArrayElement, update.descriptorCount, dst_set.GetVariableDescriptorCount(),
                              update.dstBinding, FormatHandle(dst_set.Handle()).c_str(), FormatHandle(dst_layout->Handle()).c_str());
         }
@@ -3464,11 +3469,24 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
 
     const Location allocate_info_loc = error_obj.location.dot(Field::pAllocateInfo);
 
+    const auto *count_allocate_info =
+        vku::FindStructInPNextChain<VkDescriptorSetVariableDescriptorCountAllocateInfo>(pAllocateInfo->pNext);
+    if (count_allocate_info && count_allocate_info->descriptorSetCount != 0 &&
+        count_allocate_info->descriptorSetCount != pAllocateInfo->descriptorSetCount) {
+        skip |=
+            LogError("VUID-VkDescriptorSetVariableDescriptorCountAllocateInfo-descriptorSetCount-03045", device,
+                     allocate_info_loc.pNext(Struct::VkDescriptorSetVariableDescriptorCountAllocateInfo, Field::descriptorSetCount),
+                     "(%" PRIu32 ") != pAllocateInfo->descriptorSetCount (%" PRIu32 ").", count_allocate_info->descriptorSetCount,
+                     pAllocateInfo->descriptorSetCount);
+    }
+
     for (uint32_t i = 0; i < pAllocateInfo->descriptorSetCount; i++) {
         const Location set_layout_loc = allocate_info_loc.dot(Field::pSetLayouts, i);
         auto ds_layout_state = Get<vvl::DescriptorSetLayout>(pAllocateInfo->pSetLayouts[i]);
         // nullptr layout indicates no valid layout handle for this device, validated/logged in object_tracker
-        if (!ds_layout_state) continue;
+        if (!ds_layout_state) {
+            continue;
+        }
 
         if (ds_layout_state->IsPushDescriptor()) {
             skip |= LogError("VUID-VkDescriptorSetAllocateInfo-pSetLayouts-00308", pAllocateInfo->pSetLayouts[i], set_layout_loc,
@@ -3496,6 +3514,42 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
                              "was created with %s but the descriptorPool was created with %s",
                              string_VkDescriptorSetLayoutCreateFlags(ds_layout_state->GetCreateFlags()).c_str(),
                              string_VkDescriptorPoolCreateFlags(ds_pool_state->create_info.flags).c_str());
+        }
+
+        // If not bindings (empty descriptor set layout), non of the following VUs should batter
+        if (ds_layout_state->GetBindingCount() == 0) {
+            continue;
+        }
+
+        // Variable Descriptor Count can only be in the highest binding (the last binding)
+        const uint32_t last_index = ds_layout_state->GetLastIndex();
+        const VkDescriptorBindingFlags flags = ds_layout_state->GetDescriptorBindingFlagsFromIndex(last_index);
+        if (flags & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT) {
+            if (!count_allocate_info) {
+                // Discussed in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4355
+                // This is an easy thing to trip up and the fact descriptorCount goes to zero and not the original
+                // VkDescriptorSetLayoutBinding::descriptorCount is not obvious and has caused issues. This provides a warning, if
+                // the user set pDescriptorCounts[i] to zero, then it is clear the app wanted that value and this warning is omitted
+                const LogObjectList objlist(pAllocateInfo->descriptorPool, pAllocateInfo->pSetLayouts[i]);
+                skip |=
+                    LogWarning("WARNING-CoreValidation-AllocateDescriptorSets-VariableDescriptorCount", objlist, set_layout_loc,
+                               "binding %" PRIu32
+                               " was created with VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT but no "
+                               "VkDescriptorSetVariableDescriptorCountAllocateInfo was provided and the effective descriptorCount "
+                               "for the binding is now zero, not the value passed in VkDescriptorSetLayoutBinding::descriptorCount",
+                               ds_layout_state->GetMaxBinding());
+            } else if (count_allocate_info->descriptorSetCount == pAllocateInfo->descriptorSetCount) {
+                // Spec says pDescriptorCounts[i] is ignored if no binding flags
+                if (count_allocate_info->pDescriptorCounts[i] > ds_layout_state->GetDescriptorCountFromIndex(last_index)) {
+                    const LogObjectList objlist(pAllocateInfo->descriptorPool, pAllocateInfo->pSetLayouts[i]);
+                    skip |= LogError(
+                        "VUID-VkDescriptorSetAllocateInfo-pSetLayouts-09380", objlist,
+                        allocate_info_loc.pNext(Struct::VkDescriptorSetVariableDescriptorCountAllocateInfo,
+                                                Field::pDescriptorCounts, i),
+                        "is %" PRIu32 ", but pAllocateInfo->pSetLayouts[%" PRIu32 "] binding's descriptorCount is %" PRIu32 "",
+                        count_allocate_info->pDescriptorCounts[i], i, ds_layout_state->GetDescriptorCountFromIndex(last_index));
+                }
+            }
         }
 
         if (IsExtEnabled(extensions.vk_khr_maintenance1)) {
@@ -3581,35 +3635,6 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
                         FormatHandle(*ds_pool_state).c_str(), max_available_count,
                         device_state->PrintDescriptorAllocation(*pAllocateInfo, *ds_pool_state, VkDescriptorType(it->first))
                             .c_str());
-                }
-            }
-        }
-    }
-
-    const auto *count_allocate_info =
-        vku::FindStructInPNextChain<VkDescriptorSetVariableDescriptorCountAllocateInfo>(pAllocateInfo->pNext);
-    if (count_allocate_info) {
-        if (count_allocate_info->descriptorSetCount != 0 &&
-            count_allocate_info->descriptorSetCount != pAllocateInfo->descriptorSetCount) {
-            skip |= LogError(
-                "VUID-VkDescriptorSetVariableDescriptorCountAllocateInfo-descriptorSetCount-03045", device,
-                allocate_info_loc.pNext(Struct::VkDescriptorSetVariableDescriptorCountAllocateInfo, Field::descriptorSetCount),
-                "(%" PRIu32 ") != pAllocateInfo->descriptorSetCount (%" PRIu32 ").", count_allocate_info->descriptorSetCount,
-                pAllocateInfo->descriptorSetCount);
-        }
-        if (count_allocate_info->descriptorSetCount == pAllocateInfo->descriptorSetCount) {
-            for (uint32_t i = 0; i < pAllocateInfo->descriptorSetCount; i++) {
-                auto ds_layout_state = Get<vvl::DescriptorSetLayout>(pAllocateInfo->pSetLayouts[i]);
-                ASSERT_AND_CONTINUE(ds_layout_state);
-                if (count_allocate_info->pDescriptorCounts[i] >
-                    ds_layout_state->GetDescriptorCountFromBinding(ds_layout_state->GetMaxBinding())) {
-                    skip |= LogError("VUID-VkDescriptorSetAllocateInfo-pSetLayouts-09380", device,
-                                     allocate_info_loc.pNext(Struct::VkDescriptorSetVariableDescriptorCountAllocateInfo,
-                                                             Field::pDescriptorCounts, i),
-                                     "is %" PRIu32 ", but pAllocateInfo->pSetLayouts[%" PRIu32
-                                     "] binding's descriptorCount = (%" PRIu32 ")",
-                                     count_allocate_info->pDescriptorCounts[i], i,
-                                     ds_layout_state->GetDescriptorCountFromBinding(ds_layout_state->GetMaxBinding()));
                 }
             }
         }

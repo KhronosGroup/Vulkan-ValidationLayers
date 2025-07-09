@@ -320,3 +320,38 @@ TEST_F(PositiveDescriptorIndexing, PipelineShaderMultiArrayIndexing) {
     AddRequiredFeature(vkt::Feature::shaderSampledImageArrayNonUniformIndexing);
     ComputePipelineShaderTest(csSource, bindings);
 }
+
+TEST_F(PositiveDescriptorIndexing, DescriptorSetVariableDescriptorCountAllocateInfo) {
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorBindingVariableDescriptorCount);
+    RETURN_IF_SKIP(Init());
+
+    // Don't set VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT
+    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
+    ds_layout_ci.bindingCount = 1;
+    ds_layout_ci.pBindings = &binding;
+    ds_layout_ci.flags = 0;
+    vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+
+    VkDescriptorPoolSize pool_size = {binding.descriptorType, 1};
+    VkDescriptorPoolCreateInfo dspci = vku::InitStructHelper();
+    dspci.poolSizeCount = 1;
+    dspci.pPoolSizes = &pool_size;
+    dspci.maxSets = 1;
+    vkt::DescriptorPool pool(*m_device, dspci);
+
+    // Ignored because VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT isn't set
+    VkDescriptorSetVariableDescriptorCountAllocateInfo count_alloc_info = vku::InitStructHelper();
+    count_alloc_info.descriptorSetCount = 1;
+    uint32_t variable_count = 1024;
+    count_alloc_info.pDescriptorCounts = &variable_count;
+
+    VkDescriptorSetAllocateInfo ds_alloc_info = vku::InitStructHelper(&count_alloc_info);
+    ds_alloc_info.descriptorPool = pool;
+    ds_alloc_info.descriptorSetCount = 1;
+    ds_alloc_info.pSetLayouts = &ds_layout.handle();
+
+    VkDescriptorSet ds = VK_NULL_HANDLE;
+    vk::AllocateDescriptorSets(*m_device, &ds_alloc_info, &ds);
+}
