@@ -990,6 +990,11 @@ class DescriptorSetLayout : public internal::NonDispHandle<VkDescriptorSetLayout
 
     // vkCreateDescriptorSetLayout()
     void Init(const Device &dev, const VkDescriptorSetLayoutCreateInfo &info);
+
+    // vkGetDescriptorSetLayoutSizeEXT
+    VkDeviceSize GetDescriptorBufferSize() const;
+    // vkGetDescriptorSetLayoutBindingOffsetEXT
+    VkDeviceSize GetDescriptorBufferBindingOffset(uint32_t binding) const;
 };
 
 class DescriptorPool : public internal::NonDispHandle<VkDescriptorPool> {
