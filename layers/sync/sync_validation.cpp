@@ -16,6 +16,7 @@
  */
 
 #include <algorithm>
+#include <iostream>
 #include <memory>
 #include <vector>
 
@@ -30,20 +31,34 @@
 #include "vk_layer_config.h"
 #include "containers/tls_guard.h"
 
+static bool GetShowStatsEnvVar() {
+    // Set environment variable as non zero number to enable stats reporting
+    const auto show_stats_str = GetEnvironment("VK_SYNCVAL_SHOW_STATS");
+    return !show_stats_str.empty() && std::atoi(show_stats_str.c_str()) != 0;
+}
+
+SyncValidator::SyncValidator(vvl::dispatch::Device *dev, syncval::Instance *instance_vo)
+    : BaseClass(dev, instance_vo, LayerObjectTypeSyncValidation), error_messages_(*this), report_stats_(GetShowStatsEnvVar()) {}
+
 SyncValidator::~SyncValidator() {
     // Instance level SyncValidator does not have much to say
     const bool device_validation_object = (device != nullptr);
-    // Get environment variable. Specify non-zero number to enable
-    const auto show_stats_str = GetEnvironment("VK_SYNCVAL_SHOW_STATS");
-    const bool show_stats = !show_stats_str.empty() && std::stoul(show_stats_str) != 0;
 
-    if (device_validation_object && show_stats) {
+    if (device_validation_object && report_stats_) {
         stats.ReportOnDestruction();
     }
 }
 
-// Location to add per-queue submit debug info if built with -D DEBUG_CAPTURE_KEYBOARD=ON
-void SyncValidator::DebugCapture() {}
+// Location to add per-queue submit debug info if built with -D DEBUG_CAPTURE_KEYBOARD=ON.
+void SyncValidator::DebugCapture() {
+    if (report_stats_) {
+        const std::string report = stats.CreateReport();
+        std::cout << report;
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+        OutputDebugString(report.c_str());
+#endif
+    }
+}
 
 bool SyncValidator::SyncError(SyncHazard hazard, const LogObjectList &objlist, const Location &loc,
                               const std::string &error_message) const {
