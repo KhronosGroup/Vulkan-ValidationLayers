@@ -2460,8 +2460,8 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCre
             continue;
         }
 
-        const Location ds_resolve_loc = subpass_loc.pNext(Struct::VkSubpassDescriptionDepthStencilResolve,
-                                                          Field::pDepthStencilResolveAttachment, resolve_attachment);
+        const Location ds_resolve_loc =
+            subpass_loc.pNext(Struct::VkSubpassDescriptionDepthStencilResolve, Field::pDepthStencilResolveAttachment);
         if (resolve_attachment >= pCreateInfo->attachmentCount) {
             skip |=
                 LogError("VUID-VkRenderPassCreateInfo2-pSubpasses-06473", device, ds_resolve_loc,
@@ -2484,9 +2484,10 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCre
                 skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-depthResolveMode-03183", device,
                                  subpass_loc.pNext(Struct::VkSubpassDescriptionDepthStencilResolve, Field::depthResolveMode),
                                  "(%s), must be VK_RESOLVE_MODE_NONE or a value from "
-                                 "supportedDepthResolveModes (%s).",
+                                 "supportedDepthResolveModes (%s).\npAttachments[%" PRIu32 "].format is %s",
                                  string_VkResolveModeFlagBits(resolve->depthResolveMode),
-                                 string_VkResolveModeFlags(phys_dev_props_core12.supportedDepthResolveModes).c_str());
+                                 string_VkResolveModeFlags(phys_dev_props_core12.supportedDepthResolveModes).c_str(),
+                                 resolve_attachment, string_VkFormat(resolve_attachment_format));
             }
         }
 
@@ -2496,9 +2497,10 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCre
                 skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-stencilResolveMode-03184", device,
                                  subpass_loc.pNext(Struct::VkSubpassDescriptionDepthStencilResolve, Field::stencilResolveMode),
                                  "(%s), must be VK_RESOLVE_MODE_NONE or a value from "
-                                 "supportedStencilResolveModes (%s).",
+                                 "supportedStencilResolveModes (%s).\npAttachments[%" PRIu32 "].format is %s",
                                  string_VkResolveModeFlagBits(resolve->stencilResolveMode),
-                                 string_VkResolveModeFlags(phys_dev_props_core12.supportedStencilResolveModes).c_str());
+                                 string_VkResolveModeFlags(phys_dev_props_core12.supportedStencilResolveModes).c_str(),
+                                 resolve_attachment, string_VkFormat(resolve_attachment_format));
             }
         }
 
@@ -2508,9 +2510,11 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCre
                 skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03185", device,
                                  subpass_loc,
                                  "includes a VkSubpassDescriptionDepthStencilResolve "
-                                 "structure. The values of depthResolveMode (%s) and stencilResolveMode (%s) must be identical.",
+                                 "structure. The values of depthResolveMode (%s) and stencilResolveMode (%s) must be "
+                                 "identical.\npAttachments[%" PRIu32 "].format is %s",
                                  string_VkResolveModeFlagBits(resolve->depthResolveMode),
-                                 string_VkResolveModeFlagBits(resolve->stencilResolveMode));
+                                 string_VkResolveModeFlagBits(resolve->stencilResolveMode), resolve_attachment,
+                                 string_VkFormat(resolve_attachment_format));
             }
 
             if (phys_dev_props_core12.independentResolve == VK_FALSE && phys_dev_props_core12.independentResolveNone == VK_TRUE &&
@@ -2520,9 +2524,10 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCre
                                  subpass_loc,
                                  "includes a VkSubpassDescriptionDepthStencilResolve "
                                  "structure. The values of depthResolveMode (%s) and stencilResolveMode (%s) must be identical, or "
-                                 "one of them must be VK_RESOLVE_MODE_NONE.",
+                                 "one of them must be VK_RESOLVE_MODE_NONE.\npAttachments[%" PRIu32 "].format is %s",
                                  string_VkResolveModeFlagBits(resolve->depthResolveMode),
-                                 string_VkResolveModeFlagBits(resolve->stencilResolveMode));
+                                 string_VkResolveModeFlagBits(resolve->stencilResolveMode), resolve_attachment,
+                                 string_VkFormat(resolve_attachment_format));
             }
         }
 
@@ -2531,16 +2536,21 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCre
             skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03178", device,
                              ds_resolve_loc,
                              "is not NULL, but the depth resolve mode is VK_RESOLVE_MODE_NONE (stencil resolve mode is "
-                             "ignored due to format not having stencil component).");
+                             "ignored due to format not having stencil component).\npAttachments[%" PRIu32 "].format is %s",
+                             resolve_attachment, string_VkFormat(resolve_attachment_format));
         } else if (!resolve_has_depth && resolve_has_stencil && resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE) {
             skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03178", device,
                              ds_resolve_loc,
                              "is not NULL, but the stencil resolve mode is VK_RESOLVE_MODE_NONE (depth resolve mode is "
-                             "ignored due to format not having depth component).");
+                             "ignored due to format not having depth component).\npAttachments[%" PRIu32 "].format is %s",
+                             resolve_attachment, string_VkFormat(resolve_attachment_format));
         } else if (resolve_has_depth && resolve_has_stencil && resolve->depthResolveMode == VK_RESOLVE_MODE_NONE &&
                    resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE) {
-            skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03178", device,
-                             ds_resolve_loc, "is not NULL, but both depth and stencil resolve modes are VK_RESOLVE_MODE_NONE.");
+            skip |= LogError(
+                "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03178", device, ds_resolve_loc,
+                "is not NULL, but both depth and stencil resolve modes are VK_RESOLVE_MODE_NONE.\npAttachments[%" PRIu32
+                "].format is %s",
+                resolve_attachment, string_VkFormat(resolve_attachment_format));
         }
 
         const uint32_t resolve_depth_size = vkuFormatDepthSize(resolve_attachment_format);
@@ -2551,10 +2561,11 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCre
              (vkuFormatDepthNumericalType(ds_attachment_format) != vkuFormatDepthNumericalType(ds_attachment_format)))) {
             skip |= LogError(
                 "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03181", device, ds_resolve_loc,
-                "has a depth component (size %" PRIu32
-                "). The depth component "
+                "has a depth component (size %" PRIu32 ") for pAttachments[%" PRIu32
+                "].format is %s.\nThe depth component "
                 "of pDepthStencilAttachment must have the same number of bits (currently %" PRIu32 ") and the same numerical type.",
-                resolve_depth_size, vkuFormatDepthSize(ds_attachment_format));
+                resolve_depth_size, resolve_attachment, string_VkFormat(resolve_attachment_format),
+                vkuFormatDepthSize(ds_attachment_format));
         }
 
         if (resolve_stencil_size > 0 &&
@@ -2562,16 +2573,17 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCre
              (vkuFormatStencilNumericalType(ds_attachment_format) != vkuFormatStencilNumericalType(resolve_attachment_format)))) {
             skip |= LogError(
                 "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03182", device, ds_resolve_loc,
-                "has a stencil component (size %" PRIu32
-                "). The stencil component "
+                "has a stencil component (size %" PRIu32 ") for pAttachments[%" PRIu32
+                "].format is %s.\nThe stencil component "
                 "of pDepthStencilAttachment must have the same number of bits (currently %" PRIu32 ") and the same numerical type.",
-                resolve_stencil_size, vkuFormatStencilSize(ds_attachment_format));
+                resolve_stencil_size, resolve_attachment, string_VkFormat(resolve_attachment_format),
+                vkuFormatStencilSize(ds_attachment_format));
         }
 
         if (pCreateInfo->pAttachments[ds_attachment].samples == VK_SAMPLE_COUNT_1_BIT) {
             skip |=
                 LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03179", device,
-                         ds_resolve_loc, "is not NULL, however pDepthStencilAttachment has sample count=VK_SAMPLE_COUNT_1_BIT.");
+                         ds_resolve_loc, "is not NULL, however pDepthStencilAttachment has sample count of VK_SAMPLE_COUNT_1_BIT.");
         }
 
         if (pCreateInfo->pAttachments[resolve_attachment].samples != VK_SAMPLE_COUNT_1_BIT) {
