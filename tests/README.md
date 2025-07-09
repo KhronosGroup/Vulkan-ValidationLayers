@@ -134,6 +134,7 @@ The Profile Layer can be found in the Vulkan SDK, otherwise, they will need to b
 - Allowing both adds complexity due to the order the layers must be in, while adding little over value to test coverage
 
 Here is an example of setting up and running the Profile layer with Test Driver on a Linux environment
+
 ```bash
 export VULKAN_SDK=/path/to/vulkansdk
 export VVL=/path/to/Vulkan-ValidationLayers
@@ -162,6 +163,10 @@ export VK_KHRONOS_PROFILES_PROFILE_FILE=$VVL/tests/device_profiles/max_profile.j
 
 # Expose all the parts of the profile layer
 export VK_KHRONOS_PROFILES_SIMULATE_CAPABILITIES=SIMULATE_API_VERSION_BIT,SIMULATE_FEATURES_BIT,SIMULATE_PROPERTIES_BIT,SIMULATE_EXTENSIONS_BIT,SIMULATE_FORMATS_BIT,SIMULATE_QUEUE_FAMILY_PROPERTIES_BIT,SIMULATE_VIDEO_CAPABILITIES_BIT,SIMULATE_VIDEO_FORMATS_BIT
+
+# Will allow unsupported things not detected to pass through into test_icd.cpp at
+# GetPhysicalDeviceFeatures2 and GetPhysicalDeviceProperties2
+export VK_KHRONOS_PROFILES_UNKNOWN_FEATURE_VALUES=UNKNOWN_FEATURE_VALUES_DEVICE
 
 # Test Driver exposes VK_KHR_portability_subset but most tests are not testing for it
 export VK_KHRONOS_PROFILES_EMULATE_PORTABILITY=false
