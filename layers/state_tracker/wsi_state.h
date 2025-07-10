@@ -53,6 +53,7 @@ struct hash<GpuQueue> {
 }  // namespace std
 
 namespace vvl {
+class Swapchain;
 
 struct SwapchainImage {
     vvl::Image *image_state = nullptr;
@@ -96,6 +97,17 @@ class Swapchain : public StateObject, public SubStateManager<SwapchainSubState> 
     static constexpr uint32_t acquire_history_max_length = 16;
     std::array<uint32_t, acquire_history_max_length> acquire_history;  // ring buffer contains the last acquired images
     uint32_t acquire_count = 0;                                        // total number of image acquire requests
+
+    // Old swapchain state:
+    // The new swapchain is a swapchain for which *this* swapchain is the oldSwapchain.
+    // We still can present (pre-acquired) images from the old swapchain.
+    // The new swapchain is responsible for tracking in-use status of present wait semaphores from
+    // the last few presentations (if any) of the old swapchain.
+    std::shared_ptr<Swapchain> new_swapchain;
+
+    // New swapchain state:
+    // Present wait semaphores from the the old swapchain presentations.
+    std::vector<std::shared_ptr<vvl::Semaphore>> old_swapchain_present_wait_semaphores;
 
     Swapchain(DeviceState &dev_data, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR handle);
 

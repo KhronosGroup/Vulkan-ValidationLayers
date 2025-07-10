@@ -69,10 +69,22 @@ static vku::safe_VkImageCreateInfo GetImageCreateInfo(const VkSwapchainCreateInf
 namespace vvl {
 
 void SwapchainImage::ResetPresentWaitSemaphores() {
+    const bool swapchain_has_completed_presentation = !present_wait_semaphores.empty();
     for (auto &semaphore : present_wait_semaphores) {
         semaphore->ClearSwapchainWaitInfo();
     }
     present_wait_semaphores.clear();
+
+    // If the current swapchain has completed at least one presentation then the previous
+    // presentations from the old swapchain are also finished. Mark present wait semaphores
+    // from the old swapchain as not in-use.
+    // NOTE: that's the algorithm we use to track old semaphores without swapchain maintenance1 extension.
+    if (swapchain_has_completed_presentation && image_state->bind_swapchain) {
+        for (auto &old_present_wait_semaphore : image_state->bind_swapchain->old_swapchain_present_wait_semaphores) {
+            old_present_wait_semaphore->ClearSwapchainWaitInfo();
+        }
+        image_state->bind_swapchain->old_swapchain_present_wait_semaphores.clear();
+    }
 }
 
 Swapchain::Swapchain(vvl::DeviceState &dev_data_, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR handle)
@@ -92,18 +104,19 @@ Swapchain::Swapchain(vvl::DeviceState &dev_data_, const VkSwapchainCreateInfoKHR
 
 void Swapchain::PresentImage(uint32_t image_index, uint64_t present_id, const SubmissionReference &present_submission_ref,
                              vvl::span<std::shared_ptr<vvl::Semaphore>> present_wait_semaphores) {
-    if (image_index >= images.size()) return;
-    assert(acquired_images > 0);
-    if (!shared_presentable) {
+    if (image_index >= images.size()) {
+        return;
+    }
+    if (shared_presentable) {
+        images[image_index].image_state->layout_locked = true;
+    } else if (acquired_images > 0) {
         acquired_images--;
         images[image_index].acquired = false;
         images[image_index].acquire_semaphore.reset();
         images[image_index].acquire_fence.reset();
-    } else {
-        images[image_index].image_state->layout_locked = true;
     }
-    images[image_index].present_submission_ref = present_submission_ref;
 
+    images[image_index].present_submission_ref = present_submission_ref;
     images[image_index].present_wait_semaphores.clear();
     for (const auto &semaphore : present_wait_semaphores) {
         images[image_index].present_wait_semaphores.emplace_back(semaphore);
@@ -112,16 +125,28 @@ void Swapchain::PresentImage(uint32_t image_index, uint64_t present_id, const Su
     if (present_id > max_present_id) {
         max_present_id = present_id;
     }
+
+    // If this swapchain is retired (became oldSwapchain) then register the swapchain present
+    // wait semaphores in the *new* swapchain. It will be responsible for tracking semaphores in-use status.
+    // Old swapchain can't track semaphore in-use status anymore. That functionality is part of acquire logic
+    // and old swapchain can't acquire new images.
+    if (new_swapchain) {
+        auto &old_wait_semaphores = new_swapchain->old_swapchain_present_wait_semaphores;
+        old_wait_semaphores.insert(old_wait_semaphores.end(), present_wait_semaphores.begin(), present_wait_semaphores.end());
+    }
 }
 
 void Swapchain::ReleaseImage(uint32_t image_index) {
-    if (image_index >= images.size()) return;
-    assert(acquired_images > 0);
-    acquired_images--;
-    images[image_index].acquired = false;
-    images[image_index].acquire_semaphore.reset();
-    images[image_index].acquire_fence.reset();
-    images[image_index].ResetPresentWaitSemaphores();
+    if (image_index >= images.size()) {
+        return;
+    }
+    if (acquired_images > 0) {
+        acquired_images--;
+        images[image_index].acquired = false;
+        images[image_index].acquire_semaphore.reset();
+        images[image_index].acquire_fence.reset();
+        images[image_index].ResetPresentWaitSemaphores();
+    }
 }
 
 void Swapchain::AcquireImage(uint32_t image_index, const std::shared_ptr<vvl::Semaphore> &semaphore_state,
