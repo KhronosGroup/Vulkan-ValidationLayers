@@ -88,6 +88,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkCmdPushDescriptorSet',
             'vkCmdPushDescriptorSet2',
             'vkGetDescriptorEXT',
+            'vkCmdSetDescriptorBufferOffsetsEXT',
             'vkCmdSetDescriptorBufferOffsets2EXT',
             'vkCmdBindDescriptorBufferEmbeddedSamplers2EXT',
             'vkCmdPushDescriptorSetWithTemplate2',

@@ -2325,15 +2325,11 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer 
     skip |= ValidateCmd(cb_state, loc);
 
     auto pipeline_layout = Get<vvl::PipelineLayout>(layout);
-    if (!pipeline_layout) return skip;  // dynamicPipelineLayout
+    if (!pipeline_layout) {
+        return skip;  // dynamicPipelineLayout
+    }
 
     const bool is_2 = loc.function != Func::vkCmdSetDescriptorBufferOffsetsEXT;
-
-    if (!enabled_features.descriptorBuffer) {
-        const char *vuid = is_2 ? "VUID-vkCmdSetDescriptorBufferOffsets2EXT-descriptorBuffer-09470"
-                                : "VUID-vkCmdSetDescriptorBufferOffsetsEXT-None-08060";
-        skip |= LogError(vuid, cb_state.Handle(), loc, "descriptorBuffer feature was not enabled.");
-    }
 
     if ((firstSet + setCount) > pipeline_layout->set_layouts.size()) {
         const char *vuid = is_2 ? "VUID-VkSetDescriptorBufferOffsetsInfoEXT-firstSet-08066"
@@ -2345,6 +2341,17 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer 
 
         // Clamp so that we don't attempt to access invalid stuff
         setCount = std::min(setCount, static_cast<uint32_t>(pipeline_layout->set_layouts.size()));
+    }
+
+    if (cb_state.descriptor_buffer_binding_info.empty()) {
+        const char *vuid = is_2 ? "VUID-VkSetDescriptorBufferOffsetsInfoEXT-pBufferIndices-08065"
+                                : "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pBufferIndices-08065";
+        const LogObjectList objlist(cb_state.Handle(), pipeline_layout->Handle());
+        skip |= LogError(vuid, objlist, loc,
+                         "There have been no calls to vkCmdBindDescriptorBuffersEXT and no descriptor buffers are bound. Any "
+                         "future call will vkCmdBindDescriptorBuffersEXT would invalidate these offsets anyway.");
+        // everything else won't make sense
+        return skip;
     }
 
     for (uint32_t i = 0; i < setCount; i++) {
@@ -2360,107 +2367,80 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer 
             continue;
         }
 
-        bool valid_buffer = false;
-        const VkDeviceAddress offset = pOffsets[i];
         const uint32_t buffer_index = pBufferIndices[i];
-        if (buffer_index < cb_state.descriptor_buffer_binding_info.size()) {
-            bool valid_binding = false;
-            const VkDeviceAddress start = cb_state.descriptor_buffer_binding_info[buffer_index].address;
-            const auto buffer_states = GetBuffersByAddress(start);
-
-            if (!buffer_states.empty()) {
-                const auto buffer_state_starts = GetBuffersByAddress(start + offset);
-
-                if (!buffer_state_starts.empty()) {
-                    const auto bindings = set_layout->GetBindings();
-
-                    VkDeviceSize set_layout_size = 0;
-                    if (VkDeviceSize cached_set_layout_size = set_layout->GetLayoutSizeInBytes(); cached_set_layout_size == 0) {
-                        DispatchGetDescriptorSetLayoutSizeEXT(cb_state.dev_data.device, set_layout->VkHandle(), &set_layout_size);
-                        auto set_layout_ptr = const_cast<vvl::DescriptorSetLayout *>(set_layout.get());
-                        set_layout_ptr->SetLayoutSizeInBytes(&set_layout_size);
-                    } else {
-                        set_layout_size = cached_set_layout_size;
-                    }
-
-                    if (set_layout_size > 0) {
-                        // It looks like enough to check last binding in set
-                        for (uint32_t j = 0; j < set_layout->GetBindingCount(); j++) {
-                            const VkDescriptorBindingFlags flags = set_layout->GetDescriptorBindingFlagsFromIndex(j);
-                            const bool vdc = (flags & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT) != 0;
-
-                            if (vdc) {
-                                // If a binding is VARIABLE_DESCRIPTOR_COUNT, the effective setLayoutSize we
-                                // must validate is just the offset of the last binding.
-                                const auto pool = cb_state.command_pool;
-                                uint32_t binding = set_layout->GetDescriptorSetLayoutBindingPtrFromIndex(j)->binding;
-                                DispatchGetDescriptorSetLayoutBindingOffsetEXT(pool->dev_data.device, set_layout->VkHandle(),
-                                                                               binding, &set_layout_size);
-
-                                // If the descriptor set only consists of VARIABLE_DESCRIPTOR_COUNT bindings, the
-                                // offset may be 0. In this case, treat the descriptor set layout as size 1,
-                                // so we validate that the offset is sensible.
-                                if (set_layout->GetBindingCount() == 1) {
-                                    set_layout_size = 1;
-                                }
-
-                                // There can only be one binding with VARIABLE_COUNT.
-                                break;
-                            }
-                        }
-                    }
-
-                    if (set_layout_size > 0) {
-                        const auto buffer_state_ends = GetBuffersByAddress(start + offset + set_layout_size - 1);
-                        if (!buffer_state_ends.empty()) {
-                            valid_binding = true;
-                        }
-                    }
-                }
-
-                valid_buffer = true;
-            }
-
-            if (!valid_binding) {
-                const char *vuid = is_2 ? "VUID-VkSetDescriptorBufferOffsetsInfoEXT-pOffsets-08063"
-                                        : "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pOffsets-08063";
-                skip |= LogError(vuid, cb_state.Handle(), loc.dot(Field::pOffsets, i),
-                                 "%" PRIuLEAST64
-                                 " must be small enough such that any descriptor binding"
-                                 " referenced by layout without the VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT"
-                                 " flag computes a valid address inside the underlying VkBuffer",
-                                 pOffsets[i]);
-            }
-        }
-
-        if (!valid_buffer) {
+        if (buffer_index >= cb_state.descriptor_buffer_binding_info.size()) {
             const char *vuid = is_2 ? "VUID-VkSetDescriptorBufferOffsetsInfoEXT-pBufferIndices-08065"
                                     : "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pBufferIndices-08065";
-            skip |= LogError(vuid, cb_state.Handle(), loc.dot(Field::pBufferIndices, i),
-                             "(%" PRIu32
-                             ") Each element of pBufferIndices must reference a valid descriptor buffer binding "
-                             "set by a previous call to vkCmdBindDescriptorBuffersEXT in commandBuffer",
-                             pBufferIndices[i]);
+            const LogObjectList objlist(cb_state.Handle(), set_layout->Handle(), pipeline_layout->Handle());
+            skip |= LogError(vuid, objlist, loc.dot(Field::pBufferIndices, i),
+                             "is %" PRIu32 " but the command buffer only has had %zu bound descriptor buffers", pBufferIndices[i],
+                             cb_state.descriptor_buffer_binding_info.size());
+            continue;  // the buffer is not valid
         }
 
-        if (pBufferIndices[i] >= phys_dev_ext_props.descriptor_buffer_props.maxDescriptorBufferBindings) {
-            const char *vuid = is_2 ? "VUID-VkSetDescriptorBufferOffsetsInfoEXT-pBufferIndices-08064"
-                                    : "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pBufferIndices-08064";
-            skip |= LogError(vuid, cb_state.Handle(), loc.dot(Field::pBufferIndices, i),
-                             "(%" PRIu32
-                             ") "
-                             "is greater than maxDescriptorBufferBindings (%" PRIu32 ") ",
-                             pBufferIndices[i], phys_dev_ext_props.descriptor_buffer_props.maxDescriptorBufferBindings);
+        const VkDescriptorBufferBindingInfoEXT &binding_info = cb_state.descriptor_buffer_binding_info[buffer_index];
+        const VkDeviceAddress start = binding_info.address;
+        const auto buffer_states = GetBuffersByAddress(start);
+
+        if (buffer_states.empty()) {
+            const char *vuid = is_2 ? "VUID-VkSetDescriptorBufferOffsetsInfoEXT-pBufferIndices-08065"
+                                    : "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pBufferIndices-08065";
+            const LogObjectList objlist(cb_state.Handle(), set_layout->Handle(), pipeline_layout->Handle());
+            skip |=
+                LogError(vuid, objlist, loc.dot(Field::pBufferIndices, i),
+                         "(%" PRIu32 ") points to descriptor buffer at VkDescriptorBufferBindingInfoEXT::address (0x%" PRIxLEAST64
+                         ") but no VkBuffer was found in this address",
+                         buffer_index, start);
+            continue;  // the buffer is not valid
         }
 
-        if (SafeModulo(offset, phys_dev_ext_props.descriptor_buffer_props.descriptorBufferOffsetAlignment) != 0) {
-            const char *vuid = is_2 ? "VUID-VkSetDescriptorBufferOffsetsInfoEXT-pOffsets-08061"
-                                    : "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pOffsets-08061";
-            skip |= LogError(vuid, cb_state.Handle(), loc.dot(Field::pOffsets, i),
-                             "(%" PRIuLEAST64
-                             ") is not aligned to descriptorBufferOffsetAlignment"
-                             " (%" PRIuLEAST64 ")",
-                             offset, phys_dev_ext_props.descriptor_buffer_props.descriptorBufferOffsetAlignment);
+        const VkDeviceAddress offset = pOffsets[i];
+        if (offset == 0) {
+            continue;  // is by definition small enough as it is at the start
+        }
+
+        bool valid_binding = false;
+        VkDeviceSize set_layout_size = set_layout->GetLayoutSizeInBytes();
+        const auto buffer_state_starts = GetBuffersByAddress(start + offset);
+        if (!buffer_state_starts.empty()) {
+            const auto bindings = set_layout->GetBindings();
+
+            if (set_layout_size > 0) {
+                // Variable Descriptor Count can only be in the highest binding (the last binding)
+                const uint32_t last_index = set_layout->GetLastIndex();
+                const VkDescriptorBindingFlags flags = set_layout->GetDescriptorBindingFlagsFromIndex(last_index);
+                if (flags & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT) {
+                    // If the descriptor set only consists of VARIABLE_DESCRIPTOR_COUNT bindings, the offset may be 0. In
+                    // this case, treat the descriptor set layout as size 1, so we validate that the offset is sensible.
+                    if (set_layout->GetBindingCount() == 1) {
+                        set_layout_size = 1;
+                    } else {
+                        // If a binding is VARIABLE_DESCRIPTOR_COUNT, the effective setLayoutSize we must validate is just
+                        // the offset of the last binding.
+                        const uint32_t binding = set_layout->GetDescriptorSetLayoutBindingPtrFromIndex(last_index)->binding;
+                        DispatchGetDescriptorSetLayoutBindingOffsetEXT(device, set_layout->VkHandle(), binding, &set_layout_size);
+                    }
+                }
+            }
+
+            if (set_layout_size > 0) {
+                const auto buffer_state_ends = GetBuffersByAddress(start + offset + set_layout_size - 1);
+                if (!buffer_state_ends.empty()) {
+                    valid_binding = true;
+                }
+            }
+        }
+
+        if (!valid_binding) {
+            const char *vuid = is_2 ? "VUID-VkSetDescriptorBufferOffsetsInfoEXT-pOffsets-08063"
+                                    : "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pOffsets-08063";
+            const LogObjectList objlist(cb_state.Handle(), set_layout->Handle(), pipeline_layout->Handle());
+            skip |=
+                LogError(vuid, objlist, loc.dot(Field::pBufferIndices, i),
+                         "(%" PRIu32 ") points to descriptor buffer at VkDescriptorBufferBindingInfoEXT::address (0x%" PRIxLEAST64
+                         ") and the pOffsets[%" PRIu32 "] (%" PRIu64 ") with a VkDescriptorSetLayout size %" PRIu64
+                         " is not within any VkBuffer range",
+                         buffer_index, start, i, offset, set_layout_size);
         }
     }
 

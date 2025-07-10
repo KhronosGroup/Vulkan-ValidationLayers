@@ -2089,14 +2089,7 @@ void DeviceState::PostCallRecordCreateDescriptorSetLayout(VkDevice device, const
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
-    Add(std::make_shared<DescriptorSetLayout>(pCreateInfo, *pSetLayout));
-}
-
-void DeviceState::PostCallRecordGetDescriptorSetLayoutSizeEXT(VkDevice device, VkDescriptorSetLayout layout,
-                                                              VkDeviceSize *pLayoutSizeInBytes, const RecordObject &record_obj) {
-    if (auto descriptor_set_layout = Get<DescriptorSetLayout>(layout)) {
-        descriptor_set_layout->SetLayoutSizeInBytes(pLayoutSizeInBytes);
-    }
+    Add(std::make_shared<DescriptorSetLayout>(device, pCreateInfo, *pSetLayout));
 }
 
 void DeviceState::PostCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,

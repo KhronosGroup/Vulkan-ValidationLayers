@@ -233,6 +233,8 @@ class DescriptorSetLayoutDef {
 
     std::string DescribeDifference(uint32_t index, const DescriptorSetLayoutDef &other) const;
 
+    std::string DescribeDescriptorBufferSizeAndOffests(VkDevice device, VkDescriptorSetLayout layout) const;
+
   private:
     // Only the first three data members are used for hash and equality checks, the other members are derived from them, and are
     // used to speed up the various lookups/queries/validations
@@ -311,7 +313,7 @@ static inline bool operator==(const DescriptorSetLayoutDef &lhs, const Descripto
 class DescriptorSetLayout : public StateObject {
   public:
     // Constructors and destructor
-    DescriptorSetLayout(const VkDescriptorSetLayoutCreateInfo *pCreateInfo, const VkDescriptorSetLayout handle);
+    DescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo, const VkDescriptorSetLayout handle);
     virtual ~DescriptorSetLayout() { Destroy(); }
 
     bool HasBinding(const uint32_t binding) const { return layout_id_->HasBinding(binding); }
@@ -371,15 +373,18 @@ class DescriptorSetLayout : public StateObject {
     uint32_t GetNextValidBinding(const uint32_t binding) const { return layout_id_->GetNextValidBinding(binding); }
     bool IsPushDescriptor() const { return layout_id_->IsPushDescriptor(); }
 
-    void SetLayoutSizeInBytes(const VkDeviceSize *layout_size_in_bytes_);
-    VkDeviceSize GetLayoutSizeInBytes() const;
+    VkDeviceSize GetLayoutSizeInBytes() const { return layout_size_in_bytes_; }
 
     using BindingTypeStats = DescriptorSetLayoutDef::BindingTypeStats;
     const BindingTypeStats &GetBindingTypeStats() const { return layout_id_->GetBindingTypeStats(); }
 
+    std::string DescribeDescriptorBufferSizeAndOffests(VkDevice device) const {
+        return layout_id_->DescribeDescriptorBufferSizeAndOffests(device, VkHandle());
+    }
+
   private:
     DescriptorSetLayoutId layout_id_{};
-    VkDeviceSize layout_size_in_bytes_{};
+    VkDeviceSize layout_size_in_bytes_ = 0;
 };
 
 // Slightly broader than type, each c++ "class" will has a corresponding "DescriptorClass"

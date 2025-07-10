@@ -21838,6 +21838,9 @@ bool Device::PreCallValidateCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer com
     skip |= context.ValidateArray(loc.dot(Field::setCount), loc.dot(Field::pOffsets), setCount, &pOffsets, true, true,
                                   "VUID-vkCmdSetDescriptorBufferOffsetsEXT-setCount-arraylength",
                                   "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pOffsets-parameter");
+    if (!skip)
+        skip |= manual_PreCallValidateCmdSetDescriptorBufferOffsetsEXT(commandBuffer, pipelineBindPoint, layout, firstSet, setCount,
+                                                                       pBufferIndices, pOffsets, context);
     return skip;
 }
 
