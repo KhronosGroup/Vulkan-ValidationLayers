@@ -1208,11 +1208,62 @@ bool Device::manual_PreCallValidateGetDescriptorEXT(VkDevice device, const VkDes
     return skip;
 }
 
+bool Device::ValidateCmdSetDescriptorBufferOffsets(VkCommandBuffer commandBuffer, VkPipelineLayout layout, uint32_t setCount,
+                                                   const uint32_t *pBufferIndices, const VkDeviceSize *pOffsets,
+                                                   const Location &loc) const {
+    bool skip = false;
+    const bool is_2 = loc.function != Func::vkCmdSetDescriptorBufferOffsetsEXT;
+
+    if (!enabled_features.descriptorBuffer) {
+        const char *vuid = is_2 ? "VUID-vkCmdSetDescriptorBufferOffsets2EXT-descriptorBuffer-09470"
+                                : "VUID-vkCmdSetDescriptorBufferOffsetsEXT-None-08060";
+        skip |= LogError(vuid, commandBuffer, loc, "descriptorBuffer feature was not enabled.");
+    }
+
+    for (uint32_t i = 0; i < setCount; i++) {
+        const uint32_t buffer_index = pBufferIndices[i];
+        if (buffer_index >= phys_dev_ext_props.descriptor_buffer_props.maxDescriptorBufferBindings) {
+            const char *vuid = is_2 ? "VUID-VkSetDescriptorBufferOffsetsInfoEXT-pBufferIndices-08064"
+                                    : "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pBufferIndices-08064";
+            const LogObjectList objlist(commandBuffer, layout);
+            skip |= LogError(vuid, objlist, loc.dot(Field::pBufferIndices, i),
+                             "(%" PRIu32 ") is greater than maxDescriptorBufferBindings (%" PRIu32 ") ", buffer_index,
+                             phys_dev_ext_props.descriptor_buffer_props.maxDescriptorBufferBindings);
+        }
+
+        const VkDeviceAddress offset = pOffsets[i];
+        if (SafeModulo(offset, phys_dev_ext_props.descriptor_buffer_props.descriptorBufferOffsetAlignment) != 0) {
+            const char *vuid = is_2 ? "VUID-VkSetDescriptorBufferOffsetsInfoEXT-pOffsets-08061"
+                                    : "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pOffsets-08061";
+            const LogObjectList objlist(commandBuffer, layout);
+            skip |= LogError(vuid, objlist, loc.dot(Field::pOffsets, i),
+                             "(%" PRIuLEAST64
+                             ") is not aligned to descriptorBufferOffsetAlignment"
+                             " (%" PRIuLEAST64 ")",
+                             offset, phys_dev_ext_props.descriptor_buffer_props.descriptorBufferOffsetAlignment);
+        }
+    }
+
+    return skip;
+}
+
+bool Device::manual_PreCallValidateCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer commandBuffer,
+                                                                    VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout,
+                                                                    uint32_t firstSet, uint32_t setCount,
+                                                                    const uint32_t *pBufferIndices, const VkDeviceSize *pOffsets,
+                                                                    const Context &context) const {
+    return ValidateCmdSetDescriptorBufferOffsets(commandBuffer, layout, setCount, pBufferIndices, pOffsets,
+                                                 context.error_obj.location);
+}
+
 bool Device::manual_PreCallValidateCmdSetDescriptorBufferOffsets2EXT(
     VkCommandBuffer commandBuffer, const VkSetDescriptorBufferOffsetsInfoEXT *pSetDescriptorBufferOffsetsInfo,
     const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
+    skip |= ValidateCmdSetDescriptorBufferOffsets(
+        commandBuffer, pSetDescriptorBufferOffsetsInfo->layout, pSetDescriptorBufferOffsetsInfo->setCount,
+        pSetDescriptorBufferOffsetsInfo->pBufferIndices, pSetDescriptorBufferOffsetsInfo->pOffsets, error_obj.location);
 
     if (pSetDescriptorBufferOffsetsInfo->layout == VK_NULL_HANDLE) {
         if (!enabled_features.dynamicPipelineLayout) {

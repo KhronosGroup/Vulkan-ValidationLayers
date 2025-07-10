@@ -803,6 +803,16 @@ class Device : public vvl::base::Device {
 
     bool manual_PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescriptorGetInfoEXT *pDescriptorInfo, size_t dataSize,
                                                 void *pDescriptor, const Context &context) const;
+
+    bool ValidateCmdSetDescriptorBufferOffsets(VkCommandBuffer commandBuffer, VkPipelineLayout layout, uint32_t setCount,
+                                               const uint32_t *pBufferIndices, const VkDeviceSize *pOffsets,
+                                               const Location &loc) const;
+
+    bool manual_PreCallValidateCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer commandBuffer,
+                                                                VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout,
+                                                                uint32_t firstSet, uint32_t setCount,
+                                                                const uint32_t *pBufferIndices, const VkDeviceSize *pOffsets,
+                                                                const Context &context) const;
     bool manual_PreCallValidateCmdSetDescriptorBufferOffsets2EXT(
         VkCommandBuffer commandBuffer, const VkSetDescriptorBufferOffsetsInfoEXT *pSetDescriptorBufferOffsetsInfo,
         const Context &context) const;

@@ -466,11 +466,25 @@ const std::vector<VkDescriptorType> &vvl::DescriptorSetLayoutDef::GetMutableType
     return mutable_types_[binding];
 }
 
-void vvl::DescriptorSetLayout::SetLayoutSizeInBytes(const VkDeviceSize *layout_size_in_bytes) {
-    layout_size_in_bytes_ = layout_size_in_bytes ? *layout_size_in_bytes : 0;
+std::string vvl::DescriptorSetLayoutDef::DescribeDescriptorBufferSizeAndOffests(VkDevice device,
+                                                                                VkDescriptorSetLayout layout) const {
+    std::ostringstream ss;
+    if (flags_ & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
+        VkDeviceSize size;
+        DispatchGetDescriptorSetLayoutSizeEXT(device, layout, &size);
+        ss << "layout total size = " << size << '\n';
+        for (auto binding : bindings_) {
+            DispatchGetDescriptorSetLayoutBindingOffsetEXT(device, layout, binding.binding, &size);
+            ss << "  binding " << binding.binding << " offset = " << size << " (" << string_VkDescriptorType(binding.descriptorType)
+               << ", descriptorCount = " << binding.descriptorCount;
+            if (binding.pImmutableSamplers) {
+                ss << ", embedded sampler";
+            }
+            ss << ")\n";
+        }
+    }
+    return ss.str();
 }
-
-VkDeviceSize vvl::DescriptorSetLayout::GetLayoutSizeInBytes() const { return layout_size_in_bytes_; }
 
 // If our layout is compatible with rh_ds_layout, return true.
 bool vvl::DescriptorSetLayout::IsCompatible(DescriptorSetLayout const *rh_ds_layout) const {
@@ -479,9 +493,13 @@ bool vvl::DescriptorSetLayout::IsCompatible(DescriptorSetLayout const *rh_ds_lay
 
 // The DescriptorSetLayout stores the per handle data for a descriptor set layout, and references the common defintion for the
 // handle invariant portion
-vvl::DescriptorSetLayout::DescriptorSetLayout(const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
+vvl::DescriptorSetLayout::DescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
                                               const VkDescriptorSetLayout handle)
-    : StateObject(handle, kVulkanObjectTypeDescriptorSetLayout), layout_id_(GetCanonicalId(pCreateInfo)) {}
+    : StateObject(handle, kVulkanObjectTypeDescriptorSetLayout), layout_id_(GetCanonicalId(pCreateInfo)) {
+    if (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
+        DispatchGetDescriptorSetLayoutSizeEXT(device, handle, &layout_size_in_bytes_);
+    }
+}
 
 vvl::DescriptorSet::DescriptorSet(const VkDescriptorSet handle, vvl::DescriptorPool *pool_state,
                                   const std::shared_ptr<DescriptorSetLayout const> &layout, uint32_t variable_count,
