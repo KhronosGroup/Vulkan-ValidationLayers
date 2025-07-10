@@ -3707,6 +3707,9 @@ void DeviceState::RecordCreateSwapchainState(VkResult result, const VkSwapchainC
                 Add(std::move(image_state));
             }
         }
+        if (old_swapchain_state) {
+            old_swapchain_state->new_swapchain = swapchain;
+        }
         Add(std::move(swapchain));
     } else {
         surface_state->swapchain = nullptr;
@@ -3757,11 +3760,6 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
     // VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT, or VK_ERROR_SURFACE_LOST_KHR, the set of queue operations are still considered
     // to be enqueued and thus any semaphore wait operation specified in VkPresentInfoKHR will execute when the corresponding queue
     // operation is complete.
-    //
-    // NOTE: This is the only queue submit-like call that has its state updated in PostCallRecord(). In part that is because of
-    // these non-fatal error cases. Also we need a place to handle the swapchain image bookkeeping, which really should be happening
-    // once all the wait semaphores have completed. Since most of the PostCall queue submit race conditions are related to timeline
-    // semaphores, and acquire sempaphores are always binary, this seems ok-ish.
     if (record_obj.result == VK_ERROR_OUT_OF_HOST_MEMORY || record_obj.result == VK_ERROR_OUT_OF_DEVICE_MEMORY ||
         record_obj.result == VK_ERROR_DEVICE_LOST) {
         return;
@@ -3847,23 +3845,34 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
     const auto *present_id_info = vku::FindStructInPNextChain<VkPresentIdKHR>(pPresentInfo->pNext);
     const auto *present_id_info_2 = vku::FindStructInPNextChain<VkPresentId2KHR>(pPresentInfo->pNext);
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
+        auto swapchain_data = Get<Swapchain>(pPresentInfo->pSwapchains[i]);
+        if (!swapchain_data) {
+            continue;
+        }
+
         // For multi-swapchain present pResults are always available (chassis adds pResults if necessary)
         assert(pPresentInfo->swapchainCount < 2 || pPresentInfo->pResults);
         auto local_result = pPresentInfo->pResults ? pPresentInfo->pResults[i] : record_obj.result;
-        if (local_result != VK_SUCCESS && local_result != VK_SUBOPTIMAL_KHR) continue;  // this present didn't actually happen.
-        // Mark the image as having been released to the WSI
-        if (auto swapchain_data = Get<Swapchain>(pPresentInfo->pSwapchains[i])) {
-            uint64_t present_id = 0;
-            // TODO - need to know what happens if both are included
-            // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4317
-            if (present_id_info_2 && i < present_id_info_2->swapchainCount) {
-                present_id = present_id_info_2->pPresentIds[i];
-            } else if (present_id_info && i < present_id_info->swapchainCount) {
-                present_id = present_id_info->pPresentIds[i];
-            }
-            swapchain_data->PresentImage(pPresentInfo->pImageIndices[i], present_id, present_submission_ref,
-                                         present_wait_semaphores);
+
+        // spec: "However, if the presentation request is rejected by the presentation engine with an error
+        // VK_ERROR_OUT_OF_DATE_KHR, VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT, or VK_ERROR_SURFACE_LOST_KHR, the set of queue
+        // operations are still considered to be enqueued and thus any semaphore wait operation specified in VkPresentInfoKHR will
+        // execute when the corresponding queue operation is complete."
+        if (!IsValueIn(local_result, {VK_SUCCESS, VK_SUBOPTIMAL_KHR, VK_ERROR_OUT_OF_DATE_KHR,
+                                      VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT, VK_ERROR_SURFACE_LOST_KHR})) {
+            continue;
         }
+
+        // Mark the image as having been released to the WSI
+        uint64_t present_id = 0;
+        // TODO - need to know what happens if both are included
+        // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4317
+        if (present_id_info_2 && i < present_id_info_2->swapchainCount) {
+            present_id = present_id_info_2->pPresentIds[i];
+        } else if (present_id_info && i < present_id_info->swapchainCount) {
+            present_id = present_id_info->pPresentIds[i];
+        }
+        swapchain_data->PresentImage(pPresentInfo->pImageIndices[i], present_id, present_submission_ref, present_wait_semaphores);
     }
 
     // wait on fence as we don't know when it will be signaled if external
