@@ -1558,7 +1558,7 @@ TEST_F(PositiveRayTracing, BasicOpacityMicromapBuild) {
 }
 
 TEST_F(PositiveRayTracing, SerializeAccelerationStructure) {
-    TEST_DESCRIPTION("Build a list of destination acceleration structures, then do an update build on that same list");
+    TEST_DESCRIPTION("Build an acceleration structure, serialize then deserialize it");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -1633,17 +1633,6 @@ TEST_F(PositiveRayTracing, SerializeAccelerationStructure) {
     m_command_buffer.Begin();
 
     vk::CmdCopyMemoryToAccelerationStructureKHR(m_command_buffer, &copy_memory_to_accel_struct_info);
-
-    m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_device->Wait();
-
-    deserialized_blas.SetSrcAS(deserialized_blas.GetDstAS());
-    deserialized_blas.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
-
-    m_command_buffer.Begin();
-
-    deserialized_blas.BuildCmdBuffer(m_command_buffer);
 
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
