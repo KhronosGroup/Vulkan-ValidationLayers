@@ -41,7 +41,7 @@ bool CreateComputePipelineHelper(Validator &gpuav, const Location &loc,
     push_constant_range.size = push_constants_byte_size;
 
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
-
+    // #ARNO_TODO specific_bindings is not needed anymore, remove it
     ds_layout_ci.bindingCount = static_cast<uint32_t>(specific_bindings.size());
     ds_layout_ci.pBindings = specific_bindings.data();
     VkResult result = DispatchCreateDescriptorSetLayout(gpuav.device, &ds_layout_ci, nullptr, &out_specific_descriptor_set_layout);

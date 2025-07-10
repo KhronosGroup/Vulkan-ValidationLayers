@@ -78,14 +78,10 @@ VkResult DescriptorSetManager::GetDescriptorSets(uint32_t count, VkDescriptorPoo
         // hardcoded like so, should be dynamic depending on the descriptor sets
         // to be created. Not too dramatic as Vulkan will gracefully fail if there is a
         // mismatch between this and created descriptor sets.
-        const std::array<VkDescriptorPoolSize, 2> pool_sizes = {{{
-                                                                     VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                                                     max_sets * num_bindings_in_set,
-                                                                 },
-                                                                 {
-                                                                     VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC,
-                                                                     max_sets * num_bindings_in_set,
-                                                                 }}};
+        const std::array<VkDescriptorPoolSize, 1> pool_sizes = {{{
+            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            max_sets * num_bindings_in_set,
+        }}};
 
         VkDescriptorPoolCreateInfo desc_pool_info = vku::InitStructHelper();
         desc_pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
@@ -276,8 +272,9 @@ GpuResourcesManager::GpuResourcesManager(Validator &gpuav) : gpuav_(gpuav) {
     {
         VmaAllocationCreateInfo alloc_ci = {};
         alloc_ci.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
-        device_local_indirect_buffer_cache_.Create(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-                                                   alloc_ci);
+        device_local_indirect_buffer_cache_.Create(
+            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+            alloc_ci);
     }
 
     {
@@ -322,7 +319,7 @@ VkDescriptorSet GpuResourcesManager::GetManagedDescriptorSet(VkDescriptorSetLayo
 }
 
 // Arbitrary, big enough
-constexpr VkDeviceSize buffer_address_alignment = 128;
+constexpr VkDeviceSize buffer_address_alignment = 256;
 
 vko::BufferRange GpuResourcesManager::GetHostVisibleBufferRange(VkDeviceSize size) {
     // Kind of arbitrary, considered "big enough"
@@ -375,6 +372,14 @@ vko::BufferRange GpuResourcesManager::GetStagingBufferRange(VkDeviceSize size) {
     const VkDeviceSize alignment =
         std::max<VkDeviceSize>(gpuav_.phys_dev_props.limits.minStorageBufferOffsetAlignment, buffer_address_alignment);
     return staging_buffer_cache_.GetBufferRange(gpuav_, size, alignment, min_buffer_block_size);
+}
+
+void GpuResourcesManager::InvalidateBufferAllocations() {
+    host_visible_buffer_cache_.InvalidateAllocations(gpuav_);
+    host_cached_buffer_cache_.InvalidateAllocations(gpuav_);
+    device_local_buffer_cache_.InvalidateAllocations(gpuav_);
+    device_local_indirect_buffer_cache_.InvalidateAllocations(gpuav_);
+    staging_buffer_cache_.InvalidateAllocations(gpuav_);
 }
 
 void GpuResourcesManager::ReturnResources() {
@@ -481,6 +486,12 @@ vko::BufferRange GpuResourcesManager::BufferCache::GetBufferRange(Validator &gpu
             cached_buffer_block.buffer.GetMappedPtr(),
             cached_buffer_block.buffer.Address(),
             cached_buffer_block.buffer.Allocation()};
+}
+
+void GpuResourcesManager::BufferCache::InvalidateAllocations(Validator &gpuav) {
+    for (CachedBufferBlock &block : cached_buffers_blocks_) {
+        vmaInvalidateAllocation(gpuav.vma_allocator_, block.buffer.Allocation(), 0, VK_WHOLE_SIZE);
+    }
 }
 
 void GpuResourcesManager::BufferCache::ReturnBuffers() {

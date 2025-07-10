@@ -54,8 +54,6 @@ class ValidationCommandsCommon {
     ~ValidationCommandsCommon();
 
     VkDescriptorSetLayout error_logging_desc_set_layout_ = VK_NULL_HANDLE;
-    VkDescriptorSet error_logging_desc_set_ = VK_NULL_HANDLE;
-    VkDescriptorPool validation_cmd_desc_pool_ = VK_NULL_HANDLE;
 
   private:
     Validator& gpuav_;
