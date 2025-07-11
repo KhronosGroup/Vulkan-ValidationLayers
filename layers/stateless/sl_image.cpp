@@ -38,17 +38,13 @@ bool Device::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCre
         return skip;
     }
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-    // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT) {
-        // If sharingMode is VK_SHARING_MODE_CONCURRENT, queueFamilyIndexCount must be greater than 1
         auto const queue_family_index_count = pCreateInfo->queueFamilyIndexCount;
         if (queue_family_index_count <= 1) {
             skip |= LogError("VUID-VkImageCreateInfo-sharingMode-00942", device, create_info_loc.dot(Field::queueFamilyIndexCount),
                              "is %" PRIu32 ".", queue_family_index_count);
         }
 
-        // If sharingMode is VK_SHARING_MODE_CONCURRENT, pQueueFamilyIndices must be a pointer to an array of
-        // queueFamilyIndexCount uint32_t values
         if (pCreateInfo->pQueueFamilyIndices == nullptr) {
             skip |= LogError("VUID-VkImageCreateInfo-sharingMode-00941", device, create_info_loc.dot(Field::pQueueFamilyIndices),
                              "is NULL.");
@@ -113,7 +109,6 @@ bool Device::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCre
         }
     }
 
-    // 3D image may have only 1 layer
     if ((pCreateInfo->imageType == VK_IMAGE_TYPE_3D) && (pCreateInfo->arrayLayers != 1)) {
         skip |= LogError("VUID-VkImageCreateInfo-imageType-00961", device, create_info_loc.dot(Field::imageType),
                          "is VK_IMAGE_TYPE_3D but arrayLayers (%" PRIu32 ") must be 1.", pCreateInfo->arrayLayers);
@@ -122,13 +117,11 @@ bool Device::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCre
     if (0 != (pCreateInfo->usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT)) {
         VkImageUsageFlags legal_flags = (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
                                          VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
-        // At least one of the legal attachment bits must be set
         if (0 == (pCreateInfo->usage & legal_flags)) {
             skip |= LogError("VUID-VkImageCreateInfo-usage-00966", device, create_info_loc.dot(Field::usage),
                              "(%s) includes VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT but is missing one of %s.",
                              string_VkImageUsageFlags(pCreateInfo->usage).c_str(), string_VkImageUsageFlags(legal_flags).c_str());
         }
-        // No flags other than the legal attachment bits may be set
         legal_flags |= VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
         if (0 != (pCreateInfo->usage & ~legal_flags)) {
             skip |= LogError("VUID-VkImageCreateInfo-usage-00963", device, create_info_loc,
@@ -400,8 +393,6 @@ bool Device::ValidateCreateImageSparse(const VkImageCreateInfo &create_info, con
                          "includes VK_IMAGE_CREATE_SPARSE_ALIASED_BIT but the sparseResidencyAliased feature was not enabled.");
     }
 
-    // If flags contains VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT or VK_IMAGE_CREATE_SPARSE_ALIASED_BIT, it must also contain
-    // VK_IMAGE_CREATE_SPARSE_BINDING_BIT
     if (((image_flags & (VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_IMAGE_CREATE_SPARSE_ALIASED_BIT)) != 0) &&
         ((image_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != VK_IMAGE_CREATE_SPARSE_BINDING_BIT)) {
         skip |= LogError("VUID-VkImageCreateInfo-flags-00987", device, create_info_loc.dot(Field::flags), "is %s.",
@@ -410,33 +401,28 @@ bool Device::ValidateCreateImageSparse(const VkImageCreateInfo &create_info, con
 
     // Check for combinations of attributes that are incompatible with having VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT set
     if ((image_flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) != 0) {
-        // Linear tiling is unsupported
         if (VK_IMAGE_TILING_LINEAR == create_info.tiling) {
             skip |= LogError("VUID-VkImageCreateInfo-tiling-04121", device, create_info_loc.dot(Field::flags),
                              "includes VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT but tiling is VK_IMAGE_TILING_LINEAR.");
         }
 
-        // Sparse 1D image isn't valid
         if (VK_IMAGE_TYPE_1D == create_info.imageType) {
             skip |= LogError("VUID-VkImageCreateInfo-imageType-00970", device, create_info_loc.dot(Field::flags),
                              "includes VK_IMAGE_CREATE_SPARSE_BINDING_BIT but imageType is VK_IMAGE_TYPE_1D.");
         }
 
-        // Sparse 2D image when device doesn't support it
         if ((!enabled_features.sparseResidencyImage2D) && (VK_IMAGE_TYPE_2D == create_info.imageType)) {
             skip |= LogError("VUID-VkImageCreateInfo-imageType-00971", device, create_info_loc.dot(Field::flags),
                              "includes VK_IMAGE_CREATE_SPARSE_BINDING_BIT and imageType is VK_IMAGE_TYPE_2D, but "
                              "sparseResidencyImage2D feature was not enabled.");
         }
 
-        // Sparse 3D image when device doesn't support it
         if ((!enabled_features.sparseResidencyImage3D) && (VK_IMAGE_TYPE_3D == create_info.imageType)) {
             skip |= LogError("VUID-VkImageCreateInfo-imageType-00972", device, create_info_loc.dot(Field::flags),
                              "includes VK_IMAGE_CREATE_SPARSE_BINDING_BIT and imageType is VK_IMAGE_TYPE_3D, but "
                              "sparseResidencyImage3D feature was not enabled.");
         }
 
-        // Multi-sample 2D image when device doesn't support it
         if (VK_IMAGE_TYPE_2D == create_info.imageType) {
             if ((!enabled_features.sparseResidency2Samples) && (VK_SAMPLE_COUNT_2_BIT == create_info.samples)) {
                 skip |= LogError("VUID-VkImageCreateInfo-imageType-00973", device, create_info_loc.dot(Field::flags),
@@ -527,7 +513,6 @@ bool Device::ValidateCreateImageStencilUsage(const VkImageCreateInfo &create_inf
 
     if ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) != 0) {
         VkImageUsageFlags legal_flags = (VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
-        // No flags other than the legal attachment bits may be set
         legal_flags |= VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
         if ((image_stencil_struct->stencilUsage & ~legal_flags) != 0) {
             skip |= LogError("VUID-VkImageStencilUsageCreateInfo-stencilUsage-02539", device,
@@ -899,7 +884,6 @@ bool Device::ValidateCreateImageDrmFormatModifiers(const VkImageCreateInfo &crea
 bool Device::ValidateImageViewCreateInfo(const VkImageViewCreateInfo &create_info, const Location &create_info_loc) const {
     bool skip = false;
 
-    // Validate feature set if using CUBE_ARRAY
     if ((create_info.viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) && (!enabled_features.imageCubeArray)) {
         skip |= LogError("VUID-VkImageViewCreateInfo-viewType-01004", create_info.image, create_info_loc.dot(Field::viewType),
                          "is VK_IMAGE_VIEW_TYPE_CUBE_ARRAY but the imageCubeArray feature is not enabled.");
