@@ -134,7 +134,7 @@ class NonDispHandle : public Handle<T> {
 
     void SetDevice(VkDevice device) { dev_handle_ = device; }
 
-    void destroy() noexcept { dev_handle_ = VK_NULL_HANDLE; }
+    void Destroy() noexcept { dev_handle_ = VK_NULL_HANDLE; }
 
   public:
     void SetName(VkObjectType object_type, const char *name) { Handle<T>::SetName(dev_handle_, object_type, name); }
@@ -322,7 +322,7 @@ class DeviceMemory : public internal::NonDispHandle<VkDeviceMemory> {
     DeviceMemory() = default;
     DeviceMemory(const Device &dev, const VkMemoryAllocateInfo &info) { Init(dev, info); }
     ~DeviceMemory() noexcept;
-    void destroy() noexcept;
+    void Destroy() noexcept;
     DeviceMemory &operator=(DeviceMemory &&) = default;
 
     // vkAllocateMemory()
@@ -356,7 +356,7 @@ class Fence : public internal::NonDispHandle<VkFence> {
     Fence(Fence &&rhs) noexcept : NonDispHandle(std::move(rhs)) {}
     Fence &operator=(Fence &&) noexcept;
     ~Fence() noexcept;
-    void destroy() noexcept;
+    void Destroy() noexcept;
 
     // vkCreateFence()
     void Init(const Device &dev, const VkFenceCreateInfo &info);
@@ -387,7 +387,7 @@ class Semaphore : public internal::NonDispHandle<VkSemaphore> {
     Semaphore(Semaphore &&rhs) noexcept : NonDispHandle(std::move(rhs)) {}
     Semaphore &operator=(Semaphore &&) noexcept;
     ~Semaphore() noexcept;
-    void destroy() noexcept;
+    void Destroy() noexcept;
 
     // vkCreateSemaphore()
     void Init(const Device &dev, const VkSemaphoreCreateInfo &info);
@@ -415,7 +415,7 @@ class Event : public internal::NonDispHandle<VkEvent> {
     Event(const Device &dev) { Init(dev, CreateInfo(0)); }
     Event(const Device &dev, const VkEventCreateInfo &info) { Init(dev, info); }
     ~Event() noexcept;
-    void destroy() noexcept;
+    void Destroy() noexcept;
 
     // vkCreateEvent()
     void Init(const Device &dev, const VkEventCreateInfo &info);
@@ -532,7 +532,7 @@ class QueryPool : public internal::NonDispHandle<VkQueryPool> {
         Init(dev, info);
     }
     ~QueryPool() noexcept;
-    void destroy() noexcept;
+    void Destroy() noexcept;
 
     // vkCreateQueryPool()
     void Init(const Device &dev, const VkQueryPoolCreateInfo &info);
@@ -581,7 +581,7 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
     Buffer(Buffer &&rhs) noexcept;
     Buffer &operator=(Buffer &&rhs) noexcept;
     ~Buffer() noexcept;
-    void destroy() noexcept;
+    void Destroy() noexcept;
 
     // vkCreateBuffer()
     void Init(const Device &dev, const VkBufferCreateInfo &info, VkMemoryPropertyFlags mem_props = 0,
@@ -663,7 +663,7 @@ class BufferView : public internal::NonDispHandle<VkBufferView> {
         Init(dev, buffer_view_ci);
     }
     ~BufferView() noexcept;
-    void destroy() noexcept;
+    void Destroy() noexcept;
 
     // vkCreateBufferView()
     void Init(const Device &dev, const VkBufferViewCreateInfo &info);
@@ -695,7 +695,7 @@ class Image : public internal::NonDispHandle<VkImage> {
     Image &operator=(Image &&rhs) noexcept;
 
     ~Image() noexcept;
-    void destroy() noexcept;
+    void Destroy() noexcept;
 
     void Init(const Device &dev, const VkImageCreateInfo &info, VkMemoryPropertyFlags mem_props = 0,
               void *alloc_info_pnext = nullptr);
@@ -793,7 +793,7 @@ class ImageView : public internal::NonDispHandle<VkImageView> {
         return *this;
     }
     ~ImageView() noexcept;
-    void destroy() noexcept;
+    void Destroy() noexcept;
 
     // vkCreateImageView()
     void Init(const Device &dev, const VkImageViewCreateInfo &info);
@@ -806,7 +806,7 @@ class AccelerationStructureNV : public internal::NonDispHandle<VkAccelerationStr
         Init(dev, info, init_memory);
     }
     ~AccelerationStructureNV() noexcept;
-    void destroy() noexcept;
+    void Destroy() noexcept;
 
     // vkCreateAccelerationStructureNV
     void Init(const Device &dev, const VkAccelerationStructureCreateInfoNV &info, bool init_memory = true);
@@ -837,7 +837,7 @@ class ShaderModule : public internal::NonDispHandle<VkShaderModule> {
     ShaderModule(ShaderModule &&rhs) noexcept : NonDispHandle(std::move(rhs)) {}
     ShaderModule &operator=(ShaderModule &&rhs) noexcept;
     ~ShaderModule() noexcept;
-    void destroy() noexcept;
+    void Destroy() noexcept;
 
     // vkCreateShaderModule()
     void Init(const Device &dev, const VkShaderModuleCreateInfo &info);
@@ -859,7 +859,7 @@ class Shader : public internal::NonDispHandle<VkShaderEXT> {
     Shader(const Device &dev, const VkShaderStageFlagBits stage, const std::vector<uint8_t> &binary,
            const VkDescriptorSetLayout *descriptorSetLayout = nullptr, const VkPushConstantRange *pushConstRange = nullptr);
     ~Shader() noexcept;
-    void destroy() noexcept;
+    void Destroy() noexcept;
 
     // vkCreateShaderModule()
     void Init(const Device &dev, const VkShaderCreateInfoEXT &info);
@@ -872,7 +872,7 @@ class PipelineCache : public internal::NonDispHandle<VkPipelineCache> {
     PipelineCache() = default;
     PipelineCache(const Device &dev, const VkPipelineCacheCreateInfo &info) { Init(dev, info); }
     ~PipelineCache() noexcept;
-    void destroy() noexcept;
+    void Destroy() noexcept;
 
     void Init(const Device &dev, const VkPipelineCacheCreateInfo &info);
     void SetName(const char *name) { NonDispHandle<VkPipelineCache>::SetName(VK_OBJECT_TYPE_PIPELINE_CACHE, name); }
@@ -888,7 +888,7 @@ class Pipeline : public internal::NonDispHandle<VkPipeline> {
     Pipeline(const Device &dev, const VkComputePipelineCreateInfo &info) { Init(dev, info); }
     Pipeline(const Device &dev, const VkRayTracingPipelineCreateInfoKHR &info) { Init(dev, info); }
     ~Pipeline() noexcept;
-    void destroy() noexcept;
+    void Destroy() noexcept;
 
     // vkCreateGraphicsPipeline()
     void Init(const Device &dev, const VkGraphicsPipelineCreateInfo &info);
@@ -928,7 +928,7 @@ class PipelineLayout : public internal::NonDispHandle<VkPipelineLayout> {
         Init(dev, info, layouts);
     }
     ~PipelineLayout() noexcept;
-    void destroy() noexcept;
+    void Destroy() noexcept;
 
     // Move constructor for Visual Studio 2013
     PipelineLayout(PipelineLayout &&src) noexcept : NonDispHandle(std::move(src)){};
@@ -950,7 +950,7 @@ class Sampler : public internal::NonDispHandle<VkSampler> {
     Sampler() = default;
     Sampler(const Device &dev, const VkSamplerCreateInfo &info) { Init(dev, info); }
     ~Sampler() noexcept;
-    void destroy() noexcept;
+    void Destroy() noexcept;
 
     // vkCreateSampler()
     void Init(const Device &dev, const VkSamplerCreateInfo &info);
@@ -978,12 +978,12 @@ class DescriptorSetLayout : public internal::NonDispHandle<VkDescriptorSetLayout
         Init(dev, info);
     }
     ~DescriptorSetLayout() noexcept;
-    void destroy() noexcept;
+    void Destroy() noexcept;
 
     DescriptorSetLayout(DescriptorSetLayout &&src) noexcept : NonDispHandle(std::move(src)){};
 
     DescriptorSetLayout &operator=(DescriptorSetLayout &&src) noexcept {
-        destroy();
+        Destroy();
         this->NonDispHandle::operator=(std::move(src));
         return *this;
     }
@@ -1002,7 +1002,7 @@ class DescriptorPool : public internal::NonDispHandle<VkDescriptorPool> {
     DescriptorPool() = default;
     DescriptorPool(const Device &dev, const VkDescriptorPoolCreateInfo &info) { Init(dev, info); }
     ~DescriptorPool() noexcept;
-    void destroy() noexcept;
+    void Destroy() noexcept;
 
     // vkCreateDescriptorPool()
     void Init(const Device &dev, const VkDescriptorPoolCreateInfo &info);
@@ -1035,7 +1035,7 @@ inline VkDescriptorPoolCreateInfo DescriptorPool::CreateInfo(VkDescriptorPoolCre
 class DescriptorSet : public internal::NonDispHandle<VkDescriptorSet> {
   public:
     ~DescriptorSet() noexcept;
-    void destroy() noexcept;
+    void Destroy() noexcept;
 
     explicit DescriptorSet() : NonDispHandle() {}
     explicit DescriptorSet(const Device &dev, DescriptorPool *pool, VkDescriptorSet set) : NonDispHandle(dev.handle(), set) {
@@ -1050,7 +1050,7 @@ class DescriptorSet : public internal::NonDispHandle<VkDescriptorSet> {
 class DescriptorUpdateTemplate : public internal::NonDispHandle<VkDescriptorUpdateTemplate> {
   public:
     ~DescriptorUpdateTemplate() noexcept;
-    void destroy() noexcept;
+    void Destroy() noexcept;
 
     explicit DescriptorUpdateTemplate() : NonDispHandle() {}
     explicit DescriptorUpdateTemplate(const Device &dev, const VkDescriptorUpdateTemplateCreateInfo &info) { Init(dev, info); }
@@ -1063,7 +1063,7 @@ class DescriptorUpdateTemplate : public internal::NonDispHandle<VkDescriptorUpda
 class CommandPool : public internal::NonDispHandle<VkCommandPool> {
   public:
     ~CommandPool() noexcept;
-    void destroy() noexcept;
+    void Destroy() noexcept;
 
     explicit CommandPool() : NonDispHandle() {}
     explicit CommandPool(const Device &dev, const VkCommandPoolCreateInfo &info) { Init(dev, info); }
@@ -1076,7 +1076,7 @@ class CommandPool : public internal::NonDispHandle<VkCommandPool> {
 class CommandBuffer : public internal::Handle<VkCommandBuffer> {
   public:
     ~CommandBuffer() noexcept;
-    void destroy() noexcept;
+    void Destroy() noexcept;
 
     explicit CommandBuffer() : Handle() {}
     explicit CommandBuffer(const Device &dev, const VkCommandBufferAllocateInfo &info) { Init(dev, info); }
@@ -1177,7 +1177,7 @@ class RenderPass : public internal::NonDispHandle<VkRenderPass> {
     // vkCreateRenderPass2()
     RenderPass(const Device &dev, const VkRenderPassCreateInfo2 &info) { Init(dev, info); }
     ~RenderPass() noexcept;
-    void destroy() noexcept;
+    void Destroy() noexcept;
 
     // vkCreateRenderPass()
     void Init(const Device &dev, const VkRenderPassCreateInfo &info);
@@ -1203,7 +1203,7 @@ class Framebuffer : public internal::NonDispHandle<VkFramebuffer> {
         Init(dev, info);
     }
     ~Framebuffer() noexcept;
-    void destroy() noexcept;
+    void Destroy() noexcept;
 
     // vkCreateFramebuffer()
     void Init(const Device &dev, const VkFramebufferCreateInfo &info);
@@ -1216,7 +1216,7 @@ class SamplerYcbcrConversion : public internal::NonDispHandle<VkSamplerYcbcrConv
     SamplerYcbcrConversion(const Device &dev, VkFormat format) { Init(dev, DefaultConversionInfo(format)); }
     SamplerYcbcrConversion(const Device &dev, const VkSamplerYcbcrConversionCreateInfo &info) { Init(dev, info); }
     ~SamplerYcbcrConversion() noexcept;
-    void destroy() noexcept;
+    void Destroy() noexcept;
 
     void Init(const Device &dev, const VkSamplerYcbcrConversionCreateInfo &info);
     void SetName(const char *name) {
@@ -1326,7 +1326,7 @@ class Swapchain : public internal::NonDispHandle<VkSwapchainKHR> {
     Swapchain(Swapchain &&rhs) noexcept : NonDispHandle(std::move(rhs)) {}
     Swapchain &operator=(Swapchain &&) = default;
     ~Swapchain() noexcept;
-    void destroy() noexcept;
+    void Destroy() noexcept;
 
     void Init(const Device &dev, const VkSwapchainCreateInfoKHR &info);
     void SetName(const char *name) { NonDispHandle<VkSwapchainKHR>::SetName(VK_OBJECT_TYPE_SWAPCHAIN_KHR, name); }
@@ -1341,7 +1341,7 @@ class Swapchain : public internal::NonDispHandle<VkSwapchainKHR> {
 class IndirectCommandsLayout : public internal::NonDispHandle<VkIndirectCommandsLayoutEXT> {
   public:
     ~IndirectCommandsLayout() noexcept;
-    void destroy() noexcept;
+    void Destroy() noexcept;
 
     explicit IndirectCommandsLayout() : NonDispHandle() {}
     explicit IndirectCommandsLayout(const Device &dev, const VkIndirectCommandsLayoutCreateInfoEXT &info) { Init(dev, info); }
@@ -1351,7 +1351,7 @@ class IndirectCommandsLayout : public internal::NonDispHandle<VkIndirectCommands
 class IndirectExecutionSet : public internal::NonDispHandle<VkIndirectExecutionSetEXT> {
   public:
     ~IndirectExecutionSet() noexcept;
-    void destroy() noexcept;
+    void Destroy() noexcept;
 
     explicit IndirectExecutionSet() : NonDispHandle() {}
     explicit IndirectExecutionSet(const Device &dev, const VkIndirectExecutionSetCreateInfoEXT &info) { Init(dev, info); }

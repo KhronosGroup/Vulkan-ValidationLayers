@@ -147,7 +147,7 @@ TEST_F(PositiveObjectLifetime, DescriptorBufferInfoCopy) {
 
     descriptor_set_0.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     descriptor_set_0.UpdateDescriptorSets();
-    buffer.destroy();
+    buffer.Destroy();
 
     VkCopyDescriptorSet copy_ds_update = vku::InitStructHelper();
     copy_ds_update.srcSet = descriptor_set_0.set_;
@@ -204,7 +204,7 @@ TEST_F(PositiveObjectLifetime, DescriptorSetMutableBufferDestroyed) {
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
-    // uniform_buffer.destroy();  // Destroy the UNUSED buffer before it's bound to the cmd buffer
+    // uniform_buffer.Destroy();  // Destroy the UNUSED buffer before it's bound to the cmd buffer
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);

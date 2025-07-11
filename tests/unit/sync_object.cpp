@@ -4109,7 +4109,7 @@ TEST_F(NegativeSyncObject, TimelineHostSignalAndInUseTracking) {
     std::this_thread::sleep_for(std::chrono::milliseconds{50});
 
     m_errorMonitor->SetDesiredError("VUID-vkDestroySemaphore-semaphore-05149");
-    semaphore.destroy();
+    semaphore.Destroy();
     m_errorMonitor->VerifyFound();
 
     m_default_queue->Wait();
@@ -4142,7 +4142,7 @@ TEST_F(NegativeSyncObject, TimelineSubmitSignalAndInUseTracking) {
     std::this_thread::sleep_for(std::chrono::milliseconds{50});
 
     m_errorMonitor->SetDesiredError("VUID-vkDestroySemaphore-semaphore-05149");
-    semaphore.destroy();
+    semaphore.Destroy();
     m_errorMonitor->VerifyFound();
 
     m_default_queue->Wait();

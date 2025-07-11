@@ -158,7 +158,7 @@ TEST_F(NegativeTooling, PrivateDataGetDestroyedHandle) {
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
     uint64_t bad_handle = (uint64_t)sampler.handle();
-    sampler.destroy();
+    sampler.Destroy();
 
     uint64_t data;
     m_errorMonitor->SetDesiredError("VUID-vkGetPrivateData-objectHandle-09498");

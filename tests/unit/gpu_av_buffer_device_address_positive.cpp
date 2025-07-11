@@ -2625,8 +2625,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, DualShaderLibraryDestroyModule) {
     link_info.pLibraries = libraries;
 
     // Destroy VkShaderModule as not required to have when linking
-    vs.destroy();
-    fs.destroy();
+    vs.Destroy();
+    fs.Destroy();
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = pipeline_layout;

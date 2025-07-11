@@ -802,7 +802,7 @@ TEST_F(NegativeQuery, HostResetQueryPool) {
     // Create and destroy a query pool.
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
     VkQueryPool bad_pool = query_pool;
-    query_pool.destroy();
+    query_pool.Destroy();
 
     // Attempt to reuse the query pool handle.
     m_errorMonitor->SetDesiredError("VUID-vkResetQueryPool-queryPool-parameter");
@@ -856,7 +856,7 @@ TEST_F(NegativeQuery, CmdBufferQueryPoolDestroyed) {
 
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
     // Destroy query pool dependency prior to submit to cause ERROR
-    query_pool.destroy();
+    query_pool.Destroy();
     m_default_queue->Submit(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }

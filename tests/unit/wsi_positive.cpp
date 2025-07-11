@@ -485,7 +485,7 @@ TEST_F(PositiveWsi, RetireSubmissionUsingAcquireFence2) {
     m_default_queue->Present(m_swapchain, image_index, submit_semaphores[image_index]);
 
     // Here the application decides to destroy swapchain (e.g. resize event)
-    m_swapchain.destroy();
+    m_swapchain.Destroy();
 
     // At this point there's a pending frame we need to sync with.
     // WaitForFences(acquire_fence) logic can't be used, because swapchain was destroyed and its acquire
@@ -2115,7 +2115,7 @@ TEST_F(PositiveWsi, UseAcquireFenceToDeletePresentSemaphore) {
     acquire_fence2.Wait(kWaitTimeout);
 
     // This test checks that destroying present semaphore from frame 0 does not generate in-use error.
-    present_semaphore0.destroy();
+    present_semaphore0.Destroy();
 
     m_default_queue->Wait();
 }
@@ -2437,7 +2437,7 @@ TEST_F(PositiveWsi, SharedPresentReuseSemaphoreAfterDestroy) {
     fence.Reset();
 
     // Destroy swapchain!
-    swapchain.destroy();
+    swapchain.Destroy();
 
     // Transition layout manually, because SetPresentImageLayout calls QueueWaitIdle which
     // resets semaphore swapchain state and this is not what we want for this test.

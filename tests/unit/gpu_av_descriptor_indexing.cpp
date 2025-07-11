@@ -1144,7 +1144,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayEarlyDelete) {
     // destroying before submit still needs to be caught by GPU-AV. Once GPU-AV no
     // longer does QueueWaitIdle() in each submit call, we should also be able to detect
     // resource destruction while a submission is blocked on a semaphore as well.
-    image.destroy();
+    image.Destroy();
 
     // UNASSIGNED-Descriptor destroyed
     m_errorMonitor->SetDesiredError("(set = 0, binding = 1) Descriptor index 1 references a resource that was destroyed.",
@@ -1264,7 +1264,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayEarlySamplerDelete) {
     // destroying before submit still needs to be caught by GPU-AV. Once GPU-AV no
     // longer does QueueWaitIdle() in each submit call, we should also be able to detect
     // resource destruction while a submission is blocked on a semaphore as well.
-    sampler.destroy();
+    sampler.Destroy();
 
     // UNASSIGNED-Descriptor destroyed
     m_errorMonitor->SetDesiredError("(set = 0, binding = 1) Descriptor index 1 references a resource that was destroyed.",
@@ -4385,8 +4385,8 @@ TEST_F(NegativeGpuAVDescriptorIndexing, DualShaderLibrary) {
     link_info.pLibraries = libraries;
 
     // Destroy VkShaderModule as not required to have when linking
-    vs.destroy();
-    fs.destroy();
+    vs.Destroy();
+    fs.Destroy();
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = pipeline_layout;

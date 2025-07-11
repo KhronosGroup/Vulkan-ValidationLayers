@@ -101,7 +101,7 @@ TEST_F(NegativeCommand, IndexBufferDestroyed) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
-    index_buffer.destroy();
+    index_buffer.Destroy();
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexed-commandBuffer-recording");
     // Use DrawIndexed w/o an index buffer bound
     vk::CmdDrawIndexed(m_command_buffer, 3, 1, 0, 0, 0);
