@@ -282,7 +282,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
         m_command_buffer.End();
         m_default_queue->SubmitAndWait(m_command_buffer);
 
-        pl_layout.destroy();
+        pl_layout.Destroy();
 
         uint32_t *data = (uint32_t *)buffer.Memory().Map();
         if (*data != test_data)
@@ -1986,8 +1986,8 @@ TEST_F(PositiveGpuAV, DualShaderLibraryInline) {
     link_info.pLibraries = libraries;
 
     // Destroy VkShaderModule as not required to have when linking
-    vs.destroy();
-    fs.destroy();
+    vs.Destroy();
+    fs.Destroy();
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = pipeline_layout;

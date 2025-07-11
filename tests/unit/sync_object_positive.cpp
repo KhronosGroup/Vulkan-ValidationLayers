@@ -1269,12 +1269,12 @@ TEST_F(PositiveSyncObject, QueueSubmitTimelineSemaphore2Queue) {
 
     semaphore.SignalKHR(kQ0Begin);  // initiate forward progress on q0
     semaphore.WaitKHR(kQ0End, kWaitTimeout);
-    buffer_a.destroy();  // buffer_a is only used by the q0 commands
+    buffer_a.Destroy();  // buffer_a is only used by the q0 commands
 
     semaphore.SignalKHR(kQ1Begin);  // initiate forward progress on q1
     semaphore.WaitKHR(kQ1End, kWaitTimeout);
-    buffer_b.destroy();  // buffer_b is used by both q0 and q1
-    buffer_c.destroy();  // buffer_c is used by q1
+    buffer_b.Destroy();  // buffer_b is used by both q0 and q1
+    buffer_c.Destroy();  // buffer_c is used by q1
 
     m_device->Wait();
 }

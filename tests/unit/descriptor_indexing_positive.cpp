@@ -147,7 +147,7 @@ TEST_F(PositiveDescriptorIndexing, UpdateAfterBind) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    buffer1.destroy();
+    buffer1.Destroy();
     descriptor_set.WriteDescriptorBufferInfo(0, buffer2, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
@@ -216,7 +216,7 @@ TEST_F(PositiveDescriptorIndexing, PartiallyBoundDescriptors) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    buffer1.destroy();
+    buffer1.Destroy();
 
     VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
     cb_info.commandBuffer = m_command_buffer;

@@ -44,15 +44,15 @@
     } while (0)
 
 #define NON_DISPATCHABLE_HANDLE_DTOR(cls, destroy_func)        \
-    void cls::destroy() noexcept {                             \
+    void cls::Destroy() noexcept {                             \
         if (!initialized()) {                                  \
             return;                                            \
         }                                                      \
         destroy_func(device(), handle(), NULL);                \
         handle_ = VK_NULL_HANDLE;                              \
-        internal::NonDispHandle<decltype(handle_)>::destroy(); \
+        internal::NonDispHandle<decltype(handle_)>::Destroy(); \
     }                                                          \
-    cls::~cls() noexcept { destroy(); }
+    cls::~cls() noexcept { Destroy(); }
 
 namespace vkt {
 
@@ -834,7 +834,7 @@ VkResult Queue::Wait() {
     return result;
 }
 
-void DeviceMemory::destroy() noexcept {
+void DeviceMemory::Destroy() noexcept {
     if (!initialized()) {
         return;
     }
@@ -843,7 +843,7 @@ void DeviceMemory::destroy() noexcept {
     handle_ = VK_NULL_HANDLE;
 }
 
-DeviceMemory::~DeviceMemory() noexcept { destroy(); }
+DeviceMemory::~DeviceMemory() noexcept { Destroy(); }
 
 void DeviceMemory::Init(const Device &dev, const VkMemoryAllocateInfo &info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::AllocateMemory, dev, &info);
@@ -890,7 +890,7 @@ VkMemoryAllocateInfo DeviceMemory::GetResourceAllocInfo(const Device &dev, const
 NON_DISPATCHABLE_HANDLE_DTOR(Fence, vk::DestroyFence)
 
 Fence &Fence::operator=(Fence &&rhs) noexcept {
-    destroy();
+    Destroy();
     NonDispHandle<VkFence>::operator=(std::move(rhs));
     return *this;
 }
@@ -956,7 +956,7 @@ Semaphore::Semaphore(const Device &dev, VkSemaphoreType type, uint64_t initial_v
 }
 
 Semaphore &Semaphore::operator=(Semaphore &&rhs) noexcept {
-    destroy();
+    Destroy();
     NonDispHandle<VkSemaphore>::operator=(std::move(rhs));
     return *this;
 }
@@ -1096,8 +1096,8 @@ Buffer &Buffer::operator=(Buffer &&rhs) noexcept {
     if (&rhs == this) {
         return *this;
     }
-    destroy();
-    internal_mem_.destroy();
+    Destroy();
+    internal_mem_.Destroy();
     NonDispHandle::operator=(std::move(rhs));
     create_info_ = std::move(rhs.create_info_);
     internal_mem_ = std::move(rhs.internal_mem_);
@@ -1218,8 +1218,8 @@ Image &Image::operator=(Image &&rhs) noexcept {
     if (&rhs == this) {
         return *this;
     }
-    destroy();
-    internal_mem_.destroy();
+    Destroy();
+    internal_mem_.Destroy();
     NonDispHandle::operator=(std::move(rhs));
 
     device_ = std::move(rhs.device_);
@@ -1486,7 +1486,7 @@ void ImageView::Init(const Device &dev, const VkImageViewCreateInfo &info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateImageView, dev, &info);
 }
 
-void AccelerationStructureNV::destroy() noexcept {
+void AccelerationStructureNV::Destroy() noexcept {
     if (!initialized()) {
         return;
     }
@@ -1497,7 +1497,7 @@ void AccelerationStructureNV::destroy() noexcept {
     vkDestroyAccelerationStructureNV(device(), handle(), nullptr);
     handle_ = VK_NULL_HANDLE;
 }
-AccelerationStructureNV::~AccelerationStructureNV() noexcept { destroy(); }
+AccelerationStructureNV::~AccelerationStructureNV() noexcept { Destroy(); }
 
 VkMemoryRequirements2 AccelerationStructureNV::MemoryRequirements() const {
     PFN_vkGetAccelerationStructureMemoryRequirementsNV vkGetAccelerationStructureMemoryRequirementsNV =
@@ -1583,7 +1583,7 @@ Buffer AccelerationStructureNV::CreateScratchBuffer(const Device &device, VkBuff
 NON_DISPATCHABLE_HANDLE_DTOR(ShaderModule, vk::DestroyShaderModule)
 
 ShaderModule &ShaderModule::operator=(ShaderModule &&rhs) noexcept {
-    destroy();
+    Destroy();
     NonDispHandle<VkShaderModule>::operator=(std::move(rhs));
     return *this;
 }
@@ -1795,7 +1795,7 @@ void DescriptorPool::Init(const Device &dev, const VkDescriptorPoolCreateInfo &i
 
 void DescriptorPool::Reset() { ASSERT_EQ(VK_SUCCESS, vk::ResetDescriptorPool(device(), handle(), 0)); }
 
-void DescriptorSet::destroy() noexcept {
+void DescriptorSet::Destroy() noexcept {
     if (!initialized()) {
         return;
     }
@@ -1806,7 +1806,7 @@ void DescriptorSet::destroy() noexcept {
     }
     handle_ = VK_NULL_HANDLE;
 }
-DescriptorSet::~DescriptorSet() noexcept { destroy(); }
+DescriptorSet::~DescriptorSet() noexcept { Destroy(); }
 
 void DescriptorUpdateTemplate::Init(const Device &dev, const VkDescriptorUpdateTemplateCreateInfo &info) {
     if (vk::CreateDescriptorUpdateTemplateKHR) {
@@ -1816,7 +1816,7 @@ void DescriptorUpdateTemplate::Init(const Device &dev, const VkDescriptorUpdateT
     }
 }
 
-void DescriptorUpdateTemplate::destroy() noexcept {
+void DescriptorUpdateTemplate::Destroy() noexcept {
     if (!initialized()) {
         return;
     }
@@ -1826,10 +1826,10 @@ void DescriptorUpdateTemplate::destroy() noexcept {
         vk::DestroyDescriptorUpdateTemplate(device(), handle(), nullptr);
     }
     handle_ = VK_NULL_HANDLE;
-    internal::NonDispHandle<decltype(handle_)>::destroy();
+    internal::NonDispHandle<decltype(handle_)>::Destroy();
 }
 
-DescriptorUpdateTemplate::~DescriptorUpdateTemplate() noexcept { destroy(); }
+DescriptorUpdateTemplate::~DescriptorUpdateTemplate() noexcept { Destroy(); }
 
 NON_DISPATCHABLE_HANDLE_DTOR(CommandPool, vk::DestroyCommandPool)
 
@@ -1848,7 +1848,7 @@ CommandPool::CommandPool(const Device &dev, uint32_t queue_family_index, VkComma
     Init(dev, queue_family_index, flags);
 }
 
-void CommandBuffer::destroy() noexcept {
+void CommandBuffer::Destroy() noexcept {
     if (!initialized()) {
         return;
     }
@@ -1856,7 +1856,7 @@ void CommandBuffer::destroy() noexcept {
     vk::FreeCommandBuffers(dev_handle_, cmd_pool_, 1, cmds);
     handle_ = VK_NULL_HANDLE;
 }
-CommandBuffer::~CommandBuffer() noexcept { destroy(); }
+CommandBuffer::~CommandBuffer() noexcept { Destroy(); }
 
 void CommandBuffer::Init(const Device &dev, const VkCommandBufferAllocateInfo &info) {
     VkCommandBuffer cmd;
@@ -2136,7 +2136,7 @@ VkSamplerYcbcrConversionCreateInfo SamplerYcbcrConversion::DefaultConversionInfo
     return ycbcr_create_info;
 }
 
-void SamplerYcbcrConversion::destroy() noexcept {
+void SamplerYcbcrConversion::Destroy() noexcept {
     if (!initialized()) {
         return;
     }
@@ -2146,10 +2146,10 @@ void SamplerYcbcrConversion::destroy() noexcept {
         vk::DestroySamplerYcbcrConversion(device(), handle(), nullptr);
     }
     handle_ = VK_NULL_HANDLE;
-    internal::NonDispHandle<decltype(handle_)>::destroy();
+    internal::NonDispHandle<decltype(handle_)>::Destroy();
 }
 
-SamplerYcbcrConversion::~SamplerYcbcrConversion() noexcept { destroy(); }
+SamplerYcbcrConversion::~SamplerYcbcrConversion() noexcept { Destroy(); }
 
 NON_DISPATCHABLE_HANDLE_DTOR(Swapchain, vk::DestroySwapchainKHR)
 

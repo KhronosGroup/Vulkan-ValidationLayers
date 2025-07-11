@@ -232,8 +232,8 @@ TEST_F(NegativeGpuAV, SelectInstrumentedShadersRegexDestroyedShaders) {
     m_errorMonitor->SetDesiredInfo("fragment_bar");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
-    vs.destroy();
-    fs.destroy();
+    vs.Destroy();
+    fs.Destroy();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);

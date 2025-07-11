@@ -438,7 +438,7 @@ TEST_F(NegativeDebugExtensions, SetDebugUtilsObjectDestroyedHandle) {
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
     uint64_t bad_handle = (uint64_t)sampler.handle();
-    sampler.destroy();
+    sampler.Destroy();
     const char *object_name = "sampler_object";
 
     VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();

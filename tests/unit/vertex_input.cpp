@@ -1744,7 +1744,7 @@ TEST_F(NegativeVertexInput, VertexBufferDestroyed) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     VkDeviceSize offset = 0;
     vk::CmdBindVertexBuffers(m_command_buffer, 1, 1, &buffer.handle(), &offset);
-    buffer.destroy();
+    buffer.Destroy();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-commandBuffer-recording");
     vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
