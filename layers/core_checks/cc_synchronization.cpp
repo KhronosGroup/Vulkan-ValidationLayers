@@ -1674,20 +1674,19 @@ static inline VkQueueFlags SubpassToQueueFlags(uint32_t subpass) {
     return subpass == VK_SUBPASS_EXTERNAL ? kAllQueueTypes : static_cast<VkQueueFlags>(VK_QUEUE_GRAPHICS_BIT);
 }
 
-bool CoreChecks::ValidateSubpassDependency(const ErrorObject &error_obj, const Location &in_loc,
-                                           const VkSubpassDependency2 &dependency) const {
+bool CoreChecks::ValidateSubpassDependency(const Location &loc, const VkSubpassDependency2 &dependency) const {
     bool skip = false;
 
     if (dependency.dependencyFlags & VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR) {
-        const bool use_rp2 = error_obj.location.function != Func::vkCreateRenderPass;
+        const bool use_rp2 = loc.function != Func::vkCreateRenderPass;
         auto vuid = use_rp2 ? "VUID-VkSubpassDependency2-dependencyFlags-10204" : "VUID-VkSubpassDependency-dependencyFlags-10203";
-        skip |= LogError(vuid, device, in_loc.dot(Field::dependencyFlags),
+        skip |= LogError(vuid, device, loc.dot(Field::dependencyFlags),
                          "contains VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR");
     }
 
     VkMemoryBarrier2 converted_barrier;
     const auto *mem_barrier = vku::FindStructInPNextChain<VkMemoryBarrier2>(dependency.pNext);
-    const Location loc = mem_barrier ? in_loc.dot(Field::pNext) : in_loc;
+    const Location barrier_loc = mem_barrier ? loc.dot(Field::pNext) : loc;
 
     if (mem_barrier) {
         converted_barrier = *mem_barrier;
@@ -1698,15 +1697,16 @@ bool CoreChecks::ValidateSubpassDependency(const ErrorObject &error_obj, const L
         converted_barrier.srcAccessMask = dependency.srcAccessMask;
         converted_barrier.dstAccessMask = dependency.dstAccessMask;
     }
+    const LogObjectList objlist(device);
     auto src_queue_flags = SubpassToQueueFlags(dependency.srcSubpass);
-    skip |= ValidatePipelineStage(error_obj.objlist, loc.dot(Field::srcStageMask), src_queue_flags, converted_barrier.srcStageMask);
-    skip |= ValidateAccessMask(error_obj.objlist, loc.dot(Field::srcAccessMask), loc.dot(Field::srcStageMask), src_queue_flags,
-                               converted_barrier.srcAccessMask, converted_barrier.srcStageMask);
+    skip |= ValidatePipelineStage(objlist, barrier_loc.dot(Field::srcStageMask), src_queue_flags, converted_barrier.srcStageMask);
+    skip |= ValidateAccessMask(objlist, barrier_loc.dot(Field::srcAccessMask), barrier_loc.dot(Field::srcStageMask),
+                               src_queue_flags, converted_barrier.srcAccessMask, converted_barrier.srcStageMask);
 
     auto dst_queue_flags = SubpassToQueueFlags(dependency.dstSubpass);
-    skip |= ValidatePipelineStage(error_obj.objlist, loc.dot(Field::dstStageMask), dst_queue_flags, converted_barrier.dstStageMask);
-    skip |= ValidateAccessMask(error_obj.objlist, loc.dot(Field::dstAccessMask), loc.dot(Field::dstStageMask), dst_queue_flags,
-                               converted_barrier.dstAccessMask, converted_barrier.dstStageMask);
+    skip |= ValidatePipelineStage(objlist, barrier_loc.dot(Field::dstStageMask), dst_queue_flags, converted_barrier.dstStageMask);
+    skip |= ValidateAccessMask(objlist, barrier_loc.dot(Field::dstAccessMask), barrier_loc.dot(Field::dstStageMask),
+                               dst_queue_flags, converted_barrier.dstAccessMask, converted_barrier.dstStageMask);
     return skip;
 }
 

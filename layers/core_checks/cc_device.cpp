@@ -118,7 +118,7 @@ bool CoreChecks::GetPhysicalDeviceImageFormatProperties(vvl::Image &image_state,
     return skip;
 }
 
-bool CoreChecks::ValidateDeviceMaskToPhysicalDeviceCount(uint32_t deviceMask, const LogObjectList &objlist, const Location loc,
+bool CoreChecks::ValidateDeviceMaskToPhysicalDeviceCount(uint32_t deviceMask, const LogObjectList &objlist, const Location &loc,
                                                          const char *vuid) const {
     bool skip = false;
     uint32_t count = 1 << device_state->physical_device_count;
@@ -129,7 +129,7 @@ bool CoreChecks::ValidateDeviceMaskToPhysicalDeviceCount(uint32_t deviceMask, co
     return skip;
 }
 
-bool CoreChecks::ValidateDeviceMaskToZero(uint32_t deviceMask, const LogObjectList &objlist, const Location loc,
+bool CoreChecks::ValidateDeviceMaskToZero(uint32_t deviceMask, const LogObjectList &objlist, const Location &loc,
                                           const char *vuid) const {
     bool skip = false;
     if (deviceMask == 0) {
@@ -139,7 +139,7 @@ bool CoreChecks::ValidateDeviceMaskToZero(uint32_t deviceMask, const LogObjectLi
 }
 
 bool CoreChecks::ValidateDeviceMaskToCommandBuffer(const vvl::CommandBuffer &cb_state, uint32_t deviceMask,
-                                                   const LogObjectList &objlist, const Location loc, const char *vuid) const {
+                                                   const LogObjectList &objlist, const Location &loc, const char *vuid) const {
     bool skip = false;
     if ((deviceMask & cb_state.initial_device_mask) != deviceMask) {
         skip |= LogError(vuid, objlist, loc, "(0x%" PRIx32 ") is not a subset of %s initial device mask (0x%" PRIx32 ").",
@@ -148,7 +148,7 @@ bool CoreChecks::ValidateDeviceMaskToCommandBuffer(const vvl::CommandBuffer &cb_
     return skip;
 }
 
-bool CoreChecks::ValidateDeviceMaskToRenderPass(const vvl::CommandBuffer &cb_state, uint32_t deviceMask, const Location loc,
+bool CoreChecks::ValidateDeviceMaskToRenderPass(const vvl::CommandBuffer &cb_state, uint32_t deviceMask, const Location &loc,
                                                 const char *vuid) const {
     bool skip = false;
     if (cb_state.active_render_pass && ((deviceMask & cb_state.render_pass_device_mask) != deviceMask)) {

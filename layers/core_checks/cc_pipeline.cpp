@@ -463,7 +463,9 @@ bool CoreChecks::ValidatePipelineBindPoint(const vvl::CommandBuffer &cb_state, V
     bool skip = false;
     const auto *pool = cb_state.command_pool;
     // The loss of a pool in a recording cmd is reported in DestroyCommandPool
-    if (!pool) return skip;
+    if (!pool) {
+        return skip;
+    }
 
     const VkQueueFlags required_mask = (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point)  ? VK_QUEUE_GRAPHICS_BIT
                                        : (VK_PIPELINE_BIND_POINT_COMPUTE == bind_point) ? VK_QUEUE_COMPUTE_BIT
@@ -473,7 +475,7 @@ bool CoreChecks::ValidatePipelineBindPoint(const vvl::CommandBuffer &cb_state, V
 
     const auto &qfp = physical_device_state->queue_family_properties[pool->queueFamilyIndex];
     if (0 == (qfp.queueFlags & required_mask)) {
-        const LogObjectList objlist(cb_state.Handle(), cb_state.allocate_info.commandPool);
+        const LogObjectList objlist(cb_state.Handle(), pool->Handle());
         const char *vuid = kVUIDUndefined;
         switch (loc.function) {
             case Func::vkCmdBindDescriptorSets:
@@ -524,7 +526,7 @@ bool CoreChecks::ValidatePipelineBindPoint(const vvl::CommandBuffer &cb_state, V
                 break;
         }
         skip |= LogError(vuid, objlist, loc, "%s was allocated from %s that does not support bindpoint %s.",
-                         FormatHandle(cb_state.Handle()).c_str(), FormatHandle(cb_state.allocate_info.commandPool).c_str(),
+                         FormatHandle(cb_state.Handle()).c_str(), FormatHandle(pool->Handle()).c_str(),
                          string_VkPipelineBindPoint(bind_point));
     }
     return skip;

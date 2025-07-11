@@ -291,7 +291,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                VkPipelineStageFlags2KHR stageMask) const;
     bool ValidateMapMemory(const vvl::DeviceMemory& mem_info, VkDeviceSize offset, VkDeviceSize size, const Location& offset_loc,
                            const Location& size_loc) const;
-    bool ValidateRenderPassDAG(const VkRenderPassCreateInfo2* pCreateInfo, const ErrorObject& error_obj) const;
+    bool ValidateRenderPassDAG(const VkRenderPassCreateInfo2& create_info, const Location& create_info_loc) const;
     bool ValidateAttachmentCompatibility(const VulkanTypedHandle& rp1_object, const vvl::RenderPass& rp1_state,
                                          const VulkanTypedHandle& rp2_object, const vvl::RenderPass& rp2_state,
                                          uint32_t primary_attachment, uint32_t secondary_attachment, const Location& caller_loc,
@@ -377,7 +377,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                OwnershipTransferOp ownership_transfer_op = OwnershipTransferOp::none,
                                VkDependencyFlags dependency_flags = 0) const;
 
-    bool ValidateSubpassDependency(const ErrorObject& error_obj, const Location& loc, const VkSubpassDependency2& barrier) const;
+    bool ValidateSubpassDependency(const Location& loc, const VkSubpassDependency2& barrier) const;
 
     bool ValidateDependencyInfo(const LogObjectList& objlist, const Location& dep_info_loc, const vvl::CommandBuffer& cb_state,
                                 const VkDependencyInfo& dep_info) const;
@@ -461,11 +461,11 @@ class CoreChecks : public vvl::DeviceProxy {
                                               int current_submit_count) const;
     bool ValidateAttachmentReference(VkAttachmentReference2 reference, const VkFormat attachment_format, bool input,
                                      const Location& loc) const;
-    bool ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2* pCreateInfo, const ErrorObject& error_obj) const;
+    bool ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2& create_info, const Location& create_info_loc) const;
     bool AddAttachmentUse(std::vector<uint8_t>& attachment_uses, std::vector<VkImageLayout>& attachment_layouts,
-                          uint32_t attachment, uint8_t new_use, VkImageLayout new_layout, const Location loc) const;
+                          uint32_t attachment, uint8_t new_use, VkImageLayout new_layout, const Location& loc) const;
     bool ValidateAttachmentIndex(uint32_t attachment, uint32_t attachment_count, const Location& loc) const;
-    bool ValidateCreateRenderPass(const VkRenderPassCreateInfo2* pCreateInfo, const ErrorObject& error_obj) const;
+    bool ValidateCreateRenderPass(const VkRenderPassCreateInfo2& create_info, const Location& create_info_loc) const;
 
     bool ValidateRenderPassPipelineStage(VkRenderPass render_pass, const Location& barrier_loc,
                                          VkPipelineStageFlags2 src_stage_mask, VkPipelineStageFlags2 dst_stage_mask) const;
@@ -648,15 +648,15 @@ class CoreChecks : public vvl::DeviceProxy {
                                                       const VkMultisampledRenderToSingleSampledInfoEXT& msrtss_info,
                                                       const Location& attachment_loc, const Location& rendering_info_loc) const;
 
-    bool ValidateDeviceMaskToPhysicalDeviceCount(uint32_t deviceMask, const LogObjectList& objlist, const Location loc,
+    bool ValidateDeviceMaskToPhysicalDeviceCount(uint32_t deviceMask, const LogObjectList& objlist, const Location& loc,
                                                  const char* vuid) const;
-    bool ValidateDeviceMaskToZero(uint32_t deviceMask, const LogObjectList& objlist, const Location loc, const char* vuid) const;
+    bool ValidateDeviceMaskToZero(uint32_t deviceMask, const LogObjectList& objlist, const Location& loc, const char* vuid) const;
     bool ValidateDeviceMaskToCommandBuffer(const vvl::CommandBuffer& cb_state, uint32_t deviceMask, const LogObjectList& objlist,
-                                           const Location loc, const char* vuid) const;
-    bool ValidateDeviceMaskToRenderPass(const vvl::CommandBuffer& cb_state, uint32_t deviceMask, const Location loc,
+                                           const Location& loc, const char* vuid) const;
+    bool ValidateDeviceMaskToRenderPass(const vvl::CommandBuffer& cb_state, uint32_t deviceMask, const Location& loc,
                                         const char* vuid) const;
 
-    bool ValidateDepthStencilResolve(const VkRenderPassCreateInfo2* pCreateInfo, const ErrorObject& error_obj) const;
+    bool ValidateDepthStencilResolve(const VkRenderPassCreateInfo2& create_info, const Location& create_info_loc) const;
 
     // Prototypes for CoreChecks accessor functions
     VkFormatProperties3KHR GetPDFormatProperties(const VkFormat format) const;
@@ -1850,7 +1850,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                                         const VkFramebufferCreateInfo& fbci, const VkRenderPassCreateInfo2& rpci,
                                                         uint32_t subpass, VkSampleCountFlagBits sample_count,
                                                         const Location& create_info_loc) const;
-    bool ValidateFragmentShadingRateAttachments(const VkRenderPassCreateInfo2* pCreateInfo, const ErrorObject& error_obj) const;
+    bool ValidateFragmentShadingRateAttachments(const VkRenderPassCreateInfo2& create_info, const Location& create_info_loc) const;
     bool PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2* pCreateInfo,
                                              const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
                                              const ErrorObject& error_obj) const override;
@@ -2561,7 +2561,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                                                const vvl::CommandBuffer& state_command_buffer,
                                                                const vvl::IndirectCommandsLayout& indirect_commands_layout,
                                                                const VkGeneratedCommandsInfoEXT& generated_commands_info,
-                                                               const Location loc) const;
+                                                               const Location& loc) const;
     bool PreCallValidateCmdPreprocessGeneratedCommandsEXT(VkCommandBuffer commandBuffer,
                                                           const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo,
                                                           VkCommandBuffer stateCommandBuffer,

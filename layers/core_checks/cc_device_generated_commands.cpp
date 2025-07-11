@@ -671,7 +671,7 @@ bool CoreChecks::ValidatePreprocessGeneratedCommandsStateCommandBuffer(const vvl
                                                                        const vvl::CommandBuffer& state_command_buffer,
                                                                        const vvl::IndirectCommandsLayout& indirect_commands_layout,
                                                                        const VkGeneratedCommandsInfoEXT& generated_commands_info,
-                                                                       const Location loc) const {
+                                                                       const Location& loc) const {
     bool skip = false;
 
     if (state_command_buffer.state == CbState::InvalidComplete || state_command_buffer.state == CbState::InvalidIncomplete) {
