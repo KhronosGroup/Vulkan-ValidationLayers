@@ -1788,6 +1788,9 @@ TEST_F(PositiveWsi, MultiSwapchainPresentWithOneBadSwapchain) {
         const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, vvl::kU64Max);
 
         // Do not try to acquire images from the second swapchain, it is broken.
+        // Suppress error that we present not acquired image.
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkPresentInfoKHR-pImageIndices-01430");
+
         // image_index presentation should succeed, image_index2 should fail.
         const uint32_t image_indices[2] = {image_index, image_index2};
 
@@ -2525,4 +2528,156 @@ TEST_F(PositiveWsi, PresentIdWait2) {
 
         ++present_id_value;
     }
+}
+
+TEST_F(PositiveWsi, DestroySemaphoreUsedByOldSwapchain) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10364
+    TEST_DESCRIPTION("Safely destroy semaphores used by the old swapchain");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    const SurfaceInformation info = GetSwapchainInfo(m_surface.Handle());
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
+    swapchain_ci.surface = m_surface.Handle();
+    swapchain_ci.minImageCount = info.surface_capabilities.minImageCount;
+    swapchain_ci.imageFormat = info.surface_formats[0].format;
+    swapchain_ci.imageColorSpace = info.surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = info.surface_capabilities.minImageExtent;
+    swapchain_ci.imageArrayLayers = 1;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = info.surface_composite_alpha;
+    swapchain_ci.presentMode = VK_PRESENT_MODE_FIFO_KHR;
+
+    // Create swapchain and acquire the image (but do not present it yet)
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+    const auto swapchain_images = swapchain.GetImages();
+    for (auto image : swapchain_images) {
+        SetPresentImageLayout(image);
+    }
+    vkt::Semaphore semaphore(*m_device);
+    uint32_t image_index = swapchain.AcquireNextImage(semaphore, kWaitTimeout);
+
+    // Create new_swapchain that specifies oldSwapchain
+    swapchain_ci.oldSwapchain = swapchain;
+    vkt::Swapchain new_swapchain(*m_device, swapchain_ci);
+    const auto new_swapchain_images = new_swapchain.GetImages();
+    if (new_swapchain_images.size() != 2) {
+        GTEST_SKIP() << "The test requires swapchain with 2 images";
+    }
+    for (auto image : new_swapchain_images) {
+        SetPresentImageLayout(image);
+    }
+
+    // Present already acquired image from the old swapchain.
+    // This operation might succeed or not (VkResult status), but it is allowed to do this.
+    m_default_queue->Present(swapchain, image_index, semaphore);
+
+    // Acquire present images from the new swapchain until we reacquire some image the second time.
+    // a) Get image 0
+    vkt::Semaphore semaphore0(*m_device);
+    image_index = new_swapchain.AcquireNextImage(semaphore0, kWaitTimeout);
+    if (image_index != 0) {
+        GTEST_SKIP() << "This test requires specific sequence of swapchain image indices. The first image index needs to be 0";
+    }
+    m_default_queue->Present(new_swapchain, image_index, semaphore0);
+
+    // b) Get image 1
+    vkt::Semaphore semaphore1(*m_device);
+    image_index = new_swapchain.AcquireNextImage(semaphore1, kWaitTimeout);
+    if (image_index != 1) {
+        GTEST_SKIP() << "This test requires specific sequence of swapchain image indices. The second image index needs to be 1";
+    }
+    m_default_queue->Present(new_swapchain, image_index, semaphore1);
+
+    // c) Get Image 0 again
+    vkt::Fence fence(*m_device);
+    image_index = new_swapchain.AcquireNextImage(fence, kWaitTimeout);
+    if (image_index != 0) {
+        GTEST_SKIP() << "This test requires specific sequence of swapchain image indices. The third image index needs to be 0";
+    }
+    fence.Wait(kWaitTimeout);
+
+    // The image 0 from the new swapchain was reacquired and its fence was waited on.
+    // It means that the previous (first) presentation of image 0 from new swapchain has completed.
+    // Then it also means that the old swapchain presentation is also completed,
+    // so we can reuse semaphore used with the old swapchain.
+    m_default_queue->Submit(vkt::no_cmd, vkt::Signal(semaphore));
+
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveWsi, DestroySemaphoreUsedByOldSwapchain2) {
+    // NOTE: this test is similar to DestroySemaphoreUsedByOldSwapchain.
+    // The only difference it pairs Present with Submit and uses Fence to wait for Acquire.
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    const SurfaceInformation info = GetSwapchainInfo(m_surface.Handle());
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
+    swapchain_ci.surface = m_surface.Handle();
+    swapchain_ci.minImageCount = info.surface_capabilities.minImageCount;
+    swapchain_ci.imageFormat = info.surface_formats[0].format;
+    swapchain_ci.imageColorSpace = info.surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = info.surface_capabilities.minImageExtent;
+    swapchain_ci.imageArrayLayers = 1;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = info.surface_composite_alpha;
+    swapchain_ci.presentMode = VK_PRESENT_MODE_FIFO_KHR;
+
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+    const auto swapchain_images = swapchain.GetImages();
+    for (auto image : swapchain_images) {
+        SetPresentImageLayout(image);
+    }
+    vkt::Fence fence(*m_device);
+    uint32_t image_index = swapchain.AcquireNextImage(fence, kWaitTimeout);
+    fence.Wait(kWaitTimeout);
+
+    swapchain_ci.oldSwapchain = swapchain;
+    vkt::Swapchain new_swapchain(*m_device, swapchain_ci);
+    const auto new_swapchain_images = new_swapchain.GetImages();
+    if (new_swapchain_images.size() != 2) {
+        GTEST_SKIP() << "The test requires swapchain with 2 images";
+    }
+    for (auto image : new_swapchain_images) {
+        SetPresentImageLayout(image);
+    }
+
+    vkt::Semaphore semaphore(*m_device);
+    m_default_queue->Submit(vkt::no_cmd, vkt::Signal(semaphore));
+    m_default_queue->Present(swapchain, image_index, semaphore);
+
+    vkt::Fence fence0(*m_device);
+    image_index = new_swapchain.AcquireNextImage(fence0, kWaitTimeout);
+    if (image_index != 0) {
+        GTEST_SKIP() << "This test requires specific sequence of swapchain image indices. The first image index needs to be 0";
+    }
+    fence0.Wait(kWaitTimeout);
+    vkt::Semaphore semaphore0(*m_device);
+    m_default_queue->Submit(vkt::no_cmd, vkt::Signal(semaphore0));
+    m_default_queue->Present(new_swapchain, image_index, semaphore0);
+
+    vkt::Fence fence1(*m_device);
+    image_index = new_swapchain.AcquireNextImage(fence1, kWaitTimeout);
+    if (image_index != 1) {
+        GTEST_SKIP() << "This test requires specific sequence of swapchain image indices. The second image index needs to be 1";
+    }
+    fence1.Wait(kWaitTimeout);
+    vkt::Semaphore semaphore1(*m_device);
+    m_default_queue->Submit(vkt::no_cmd, vkt::Signal(semaphore1));
+    m_default_queue->Present(new_swapchain, image_index, semaphore1);
+
+    vkt::Fence fence2(*m_device);
+    image_index = new_swapchain.AcquireNextImage(fence2, kWaitTimeout);
+    if (image_index != 0) {
+        GTEST_SKIP() << "This test requires specific sequence of swapchain image indices. The third image index needs to be 0";
+    }
+    fence2.Wait(kWaitTimeout);
+
+    m_default_queue->Submit(vkt::no_cmd, vkt::Signal(semaphore));
+    m_default_queue->Wait();
 }
