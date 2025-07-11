@@ -23,6 +23,7 @@
 #include <sstream>
 #include <valarray>
 
+#include "containers/range.h"
 #include "core_validation.h"
 #include "error_message/error_location.h"
 #include "error_message/logging.h"
@@ -2432,6 +2433,7 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer 
         }
 
         if (!valid_binding) {
+            const vvl::range<VkDeviceAddress> access_range = {start + offset, start + offset + set_layout_size};
             const char *vuid = is_2 ? "VUID-VkSetDescriptorBufferOffsetsInfoEXT-pOffsets-08063"
                                     : "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pOffsets-08063";
             const LogObjectList objlist(cb_state.Handle(), set_layout->Handle(), pipeline_layout->Handle());
@@ -2439,8 +2441,10 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer 
                 LogError(vuid, objlist, loc.dot(Field::pBufferIndices, i),
                          "(%" PRIu32 ") points to descriptor buffer at VkDescriptorBufferBindingInfoEXT::address (0x%" PRIxLEAST64
                          ") and the pOffsets[%" PRIu32 "] (%" PRIu64 ") with a VkDescriptorSetLayout size %" PRIu64
-                         " is not within any VkBuffer range",
-                         buffer_index, start, i, offset, set_layout_size);
+                         " is not within any VkBuffer range.\nThe invalid access is at %s\nThe following are the possible buffer "
+                         "ranges it could be at:\n%s",
+                         buffer_index, start, i, offset, set_layout_size, vvl::string_range_hex(access_range).c_str(),
+                         PrintBufferRanges(*this, buffer_states).c_str());
         }
     }
 
@@ -2603,8 +2607,8 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                      return true;
                  },
                  [buffer_usage, i]() {
-                     return "The following buffers have a usage that does not match pBindingInfos[" + std::to_string(i) +
-                            "].usage (" + string_VkBufferUsageFlags2(buffer_usage) + "):";
+                     return "pBindingInfos[" + std::to_string(i) + "].usage is " + string_VkBufferUsageFlags2(buffer_usage) +
+                            " but none of the following buffers contain it:";
                  }},
 
                 {"VUID-VkDescriptorBufferBindingInfoEXT-usage-08122",

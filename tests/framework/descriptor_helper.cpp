@@ -11,6 +11,8 @@
  */
 
 #include "descriptor_helper.h"
+#include <vulkan/utility/vk_struct_helper.hpp>
+#include "binding.h"
 
 OneOffDescriptorSet::OneOffDescriptorSet(vkt::Device *device, const std::vector<VkDescriptorSetLayoutBinding> &bindings,
                                          VkDescriptorSetLayoutCreateFlags layout_flags, void *layout_pnext,
@@ -196,3 +198,53 @@ void OneOffDescriptorSet::UpdateDescriptorSets() {
     }
     vk::UpdateDescriptorSets(device_->handle(), descriptor_writes.size(), descriptor_writes.data(), 0, NULL);
 }
+
+namespace vkt {
+DescriptorGetInfo::DescriptorGetInfo(VkSampler *sampler) {
+    get_info.type = VK_DESCRIPTOR_TYPE_SAMPLER;
+    get_info.data.pSampler = sampler;
+}
+
+DescriptorGetInfo::DescriptorGetInfo(VkDeviceAddress address) {
+    get_info.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+    get_info.data.accelerationStructure = address;
+}
+
+DescriptorGetInfo::DescriptorGetInfo(VkDescriptorType type, VkSampler sampler, VkImageView image_view, VkImageLayout image_layout) {
+    image_info = {sampler, image_view, image_layout};
+    get_info.type = type;
+    if (type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+        get_info.data.pCombinedImageSampler = &image_info;
+    } else if (type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
+        get_info.data.pInputAttachmentImage = &image_info;
+    } else if (type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) {
+        get_info.data.pSampledImage = &image_info;
+    } else if (type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
+        get_info.data.pStorageImage = &image_info;
+    } else {
+        assert(false);
+    }
+}
+
+DescriptorGetInfo::DescriptorGetInfo(VkDescriptorType type, VkDeviceAddress address, VkDeviceSize range, VkFormat format) {
+    address_info = vku::InitStructHelper();
+    address_info.address = address;
+    address_info.range = range;
+    address_info.format = format;
+    get_info.type = type;
+    if (type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) {
+        get_info.data.pUniformTexelBuffer = &address_info;
+    } else if (type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) {
+        get_info.data.pStorageTexelBuffer = &address_info;
+    } else if (type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+        get_info.data.pUniformBuffer = &address_info;
+    } else if (type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
+        get_info.data.pStorageBuffer = &address_info;
+    } else {
+        assert(false);
+    }
+}
+
+DescriptorGetInfo::DescriptorGetInfo(VkDescriptorType type, const vkt::Buffer &buffer, VkDeviceSize range, VkFormat format)
+    : DescriptorGetInfo(type, buffer.Address(), range, format) {}
+}  // namespace vkt

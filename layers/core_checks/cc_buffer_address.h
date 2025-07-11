@@ -22,6 +22,7 @@
 
 #include <array>
 #include <functional>
+#include <sstream>
 #include <string>
 #include <string_view>
 
@@ -75,25 +76,25 @@ class BufferAddressValidation {
     [[nodiscard]] bool HasInvalidBuffer(vvl::span<vvl::Buffer* const> buffer_list) const noexcept;
     // For every vuid, build an error mentioning every buffer from buffer_list that violates it, then log this error
     // using details provided by the other parameters.
-    [[nodiscard]] bool LogInvalidBuffers(const CoreChecks& checker, vvl::span<vvl::Buffer* const> buffer_list,
+    [[nodiscard]] bool LogInvalidBuffers(const CoreChecks& validator, vvl::span<vvl::Buffer* const> buffer_list,
                                          const Location& device_address_loc, const LogObjectList& objlist,
                                          VkDeviceAddress device_address) const noexcept;
 
-    [[nodiscard]] bool LogErrorsIfNoValidBuffer(const CoreChecks& checker, vvl::span<vvl::Buffer* const> buffer_list,
+    [[nodiscard]] bool LogErrorsIfNoValidBuffer(const CoreChecks& validator, vvl::span<vvl::Buffer* const> buffer_list,
                                                 const Location& device_address_loc, const LogObjectList& objlist,
                                                 VkDeviceAddress device_address) const noexcept {
         bool skip = false;
         if (!HasValidBuffer(buffer_list)) {
-            skip |= LogInvalidBuffers(checker, buffer_list, device_address_loc, objlist, device_address);
+            skip |= LogInvalidBuffers(validator, buffer_list, device_address_loc, objlist, device_address);
         }
         return skip;
     }
-    [[nodiscard]] bool LogErrorsIfInvalidBufferFound(const CoreChecks& checker, vvl::span<vvl::Buffer* const> buffer_list,
+    [[nodiscard]] bool LogErrorsIfInvalidBufferFound(const CoreChecks& validator, vvl::span<vvl::Buffer* const> buffer_list,
                                                      const Location& device_address_loc, const LogObjectList& objlist,
                                                      VkDeviceAddress device_address) const noexcept {
         bool skip = false;
         if (HasInvalidBuffer(buffer_list)) {
-            skip |= LogInvalidBuffers(checker, buffer_list, device_address_loc, objlist, device_address);
+            skip |= LogInvalidBuffers(validator, buffer_list, device_address_loc, objlist, device_address);
         }
         return skip;
     }
@@ -175,7 +176,7 @@ bool BufferAddressValidation<ChecksCount>::HasInvalidBuffer(vvl::span<vvl::Buffe
 }
 
 template <size_t ChecksCount>
-bool BufferAddressValidation<ChecksCount>::LogInvalidBuffers(const CoreChecks& checker, vvl::span<vvl::Buffer* const> buffer_list,
+bool BufferAddressValidation<ChecksCount>::LogInvalidBuffers(const CoreChecks& validator, vvl::span<vvl::Buffer* const> buffer_list,
                                                              const Location& device_address_loc, const LogObjectList& objlist,
                                                              VkDeviceAddress device_address) const noexcept {
     std::array<Error, ChecksCount> errors;
@@ -190,9 +191,7 @@ bool BufferAddressValidation<ChecksCount>::LogInvalidBuffers(const CoreChecks& c
         }();
         error_msg_beginning += "(";
         error_msg_beginning += address_string;
-        error_msg_beginning +=
-            ") has no buffer(s) associated to it such that valid usage passes. "
-            "At least one buffer associated to this device address must be valid.\n";
+        error_msg_beginning += ") has no buffer(s) associated that are valid.\n";
     }
 
     // For each buffer, and for each violated VUID, build an error message
@@ -223,7 +222,8 @@ bool BufferAddressValidation<ChecksCount>::LogInvalidBuffers(const CoreChecks& c
                     error_msg += '\n';
                 }
 
-                error_msg += checker.FormatHandle(buffer->Handle());
+                error_msg += "  ";  // small indent help to visualize
+                error_msg += validator.FormatHandle(buffer->Handle());
                 error_msg += ": ";
                 error_msg += buffer_error;
             }
@@ -236,10 +236,19 @@ bool BufferAddressValidation<ChecksCount>::LogInvalidBuffers(const CoreChecks& c
         const auto& vuidAndValidation = vuidsAndValidationFunctions[i];
         const auto& error = errors[i];
         if (!error.Empty()) {
-            skip |=
-                checker.LogError(vuidAndValidation.vuid.data(), error.objlist, device_address_loc, "%s\n", error.error_msg.c_str());
+            skip |= validator.LogError(vuidAndValidation.vuid.data(), error.objlist, device_address_loc, "%s\n",
+                                       error.error_msg.c_str());
         }
     }
 
     return skip;
+}
+
+[[maybe_unused]] static std::string PrintBufferRanges(const CoreChecks& validator, vvl::span<vvl::Buffer* const> buffers) {
+    std::ostringstream ss;
+    for (const auto& buffer : buffers) {
+        ss << "  " << validator.FormatHandle(buffer->Handle()) << " : range " << string_range_hex(buffer->DeviceAddressRange())
+           << '\n';
+    }
+    return ss.str();
 }
