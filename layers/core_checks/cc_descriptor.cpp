@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2025 Valve Corporation
  * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (C) 2015-2025 Google Inc.
+ * Copyright (c) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1843,6 +1844,8 @@ bool CoreChecks::ValidateWriteUpdateDescriptorType(const VkWriteDescriptorSet &u
         skip |= ValidateWriteUpdateAccelerationStructureKHR(update, write_loc);
     } else if (descriptor_type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV) {
         skip |= ValidateWriteUpdateAccelerationStructureNV(update, write_loc);
+    } else if (descriptor_type == VK_DESCRIPTOR_TYPE_TENSOR_ARM) {
+        skip |= ValidateWriteUpdateTensor(update, write_loc);
     } else if (IsValueIn(descriptor_type, {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC})) {
         skip |= ValidateWriteUpdateBufferInfo(update, write_loc);
@@ -2027,6 +2030,22 @@ bool CoreChecks::ValidateWriteUpdateAccelerationStructureNV(const VkWriteDescrip
                 LogError("VUID-VkWriteDescriptorSetAccelerationStructureNV-pAccelerationStructures-03748", as_state->Handle(),
                          write_loc.pNext(Struct::VkWriteDescriptorSetAccelerationStructureNV, Field::pAccelerationStructures, j),
                          "was created with %s.", string_VkAccelerationStructureTypeKHR(as_state->create_info.info.type));
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateWriteUpdateTensor(const VkWriteDescriptorSet &update, const Location &write_loc) const {
+    bool skip = false;
+
+    const auto *pnext_struct = vku::FindStructInPNextChain<VkWriteDescriptorSetTensorARM>(update.pNext);
+    if (pnext_struct) {
+        if (pnext_struct->tensorViewCount != update.descriptorCount) {
+            skip |= LogError("VUID-VkWriteDescriptorSetTensorARM-tensorViewCount-09700", device,
+                             write_loc.pNext(Struct::VkWriteDescriptorSetTensorARM, Field::tensorViewCount),
+                             "(%" PRIu32 ") does not equal %s (%" PRIu32 ").", pnext_struct->tensorViewCount,
+                             write_loc.dot(Field::descriptorCount).Fields().c_str(), update.descriptorCount);
         }
     }
 

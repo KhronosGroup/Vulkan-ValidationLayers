@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2023-2025 LunarG, Inc.
  * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,6 +74,8 @@ const char* unimplementable_validation[] = {
     "VUID-vkGetImageViewOpaqueCaptureDescriptorDataEXT-pData-08081",
     "VUID-vkGetSamplerOpaqueCaptureDescriptorDataEXT-pData-08085",
     "VUID-vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT-pData-08089",
+    "VUID-vkGetTensorOpaqueCaptureDescriptorDataARM-pData-09703",
+    "VUID-vkGetTensorViewOpaqueCaptureDescriptorDataARM-pData-09707",
 
     // These would need to be checked by the loader as it uses these to call into the layers/drivers
     "VUID-vkEnumerateInstanceVersion-pApiVersion-parameter",

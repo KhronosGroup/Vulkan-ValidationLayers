@@ -1,6 +1,7 @@
 # ~~~
 # Copyright (c) 2014-2025 Valve Corporation
 # Copyright (c) 2014-2025 LunarG, Inc.
+# Copyright (C) 2025 Arm Limited.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -243,6 +244,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/sync_val_video_positive.cpp
     unit/sync_val_wsi.cpp
     unit/sync_val_wsi_positive.cpp
+    unit/tensor.cpp
     unit/threading.cpp
     unit/threading_positive.cpp
     unit/tooling.cpp
@@ -366,7 +368,11 @@ endif()
 install(TARGETS vk_layer_validation_tests)
 
 include(GoogleTest)
-gtest_discover_tests(vk_layer_validation_tests DISCOVERY_TIMEOUT 100)
+# If cross-compiling, discovery will use an executable with the wrong architecture and stop execution here.
+# Set env. variable VVL_SKIP_GTEST_DISCOVERY to skip discovery.
+if(NOT if(NOT VVL_SKIP_GTEST_DISCOVERY))
+    gtest_discover_tests(vk_layer_validation_tests DISCOVERY_TIMEOUT 100)
+endif()
 
 add_subdirectory(layers)
 add_subdirectory(icd)

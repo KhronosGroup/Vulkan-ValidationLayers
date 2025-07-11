@@ -2,6 +2,7 @@
  * Copyright (c) 2023-2025 The Khronos Group Inc.
  * Copyright (c) 2023-2025 Valve Corporation
  * Copyright (c) 2023-2025 LunarG, Inc.
+ * Copyright (C) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +31,7 @@ class OneOffDescriptorSet {
         std::optional<VkDescriptorBufferInfo> buffer_info;
         std::optional<VkBufferView> buffer_view;
         std::optional<VkWriteDescriptorSetAccelerationStructureKHR> accel_struct_info;
+        std::optional<VkWriteDescriptorSetTensorARM> tensor_info;
     };
     std::vector<ResourceInfo> resource_infos;
     std::vector<VkWriteDescriptorSet> descriptor_writes;
@@ -55,6 +57,7 @@ class OneOffDescriptorSet {
                                   VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, uint32_t arrayElement = 0);
     void WriteDescriptorAccelStruct(int binding, uint32_t accelerationStructureCount,
                                     const VkAccelerationStructureKHR *pAccelerationStructures, uint32_t arrayElement = 0);
+    void WriteDescriptorTensorInfo(int binding, const VkTensorViewARM *view, uint32_t arrayElement = 0);
     void UpdateDescriptorSets();
 
   private:

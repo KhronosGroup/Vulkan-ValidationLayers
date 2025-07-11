@@ -439,6 +439,7 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
                                              &phys_dev_ext_props.external_memory_host_props);
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_maintenance9,
                                              &phys_dev_ext_props.maintenance9_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_arm_tensors, &phys_dev_ext_props.tensor_properties);
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_android_external_format_resolve,
                                              &phys_dev_ext_props.android_format_resolve_props);

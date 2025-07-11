@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2025 Valve Corporation
  * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (C) 2015-2025 Google Inc.
+ * Copyright (c) 2025 Arm Limited.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -275,6 +276,11 @@ static void TypeToDescriptorTypeSet(const spirv::Module &module_state, uint32_t 
                 descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR);
             }
             return;
+
+        case spv::OpTypeTensorARM: {
+            descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_TENSOR_ARM);
+            return;
+        }
 
         default:
             // We shouldn't really see any other junk types -- but if we do, they're a mismatch.
