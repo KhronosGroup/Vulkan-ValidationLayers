@@ -1,6 +1,7 @@
 /* Copyright (c) 2019-2025 The Khronos Group Inc.
  * Copyright (c) 2019-2025 Valve Corporation
  * Copyright (c) 2019-2025 LunarG, Inc.
+ * Copyright (C) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +50,11 @@ struct SyncMemoryBarrier {
           srcAccessMask(barrier.srcAccessMask),
           dstStageMask(barrier.dstStageMask),
           dstAccessMask(barrier.dstAccessMask) {}
+    explicit SyncMemoryBarrier(const VkTensorMemoryBarrierARM& barrier)
+        : srcStageMask(barrier.srcStageMask),
+          srcAccessMask(barrier.srcAccessMask),
+          dstStageMask(barrier.dstStageMask),
+          dstAccessMask(barrier.dstAccessMask) {}
     SyncMemoryBarrier(const VkMemoryBarrier& barrier, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask)
         : srcStageMask(src_stage_mask),
           srcAccessMask(barrier.srcAccessMask),
@@ -61,6 +67,12 @@ struct SyncMemoryBarrier {
           dstStageMask(dst_stage_mask),
           dstAccessMask(barrier.dstAccessMask) {}
     SyncMemoryBarrier(const VkImageMemoryBarrier& barrier, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask)
+        : srcStageMask(src_stage_mask),
+          srcAccessMask(barrier.srcAccessMask),
+          dstStageMask(dst_stage_mask),
+          dstAccessMask(barrier.dstAccessMask) {}
+    SyncMemoryBarrier(const VkTensorMemoryBarrierARM& barrier, VkPipelineStageFlags src_stage_mask,
+                      VkPipelineStageFlags dst_stage_mask)
         : srcStageMask(src_stage_mask),
           srcAccessMask(barrier.srcAccessMask),
           dstStageMask(dst_stage_mask),
@@ -91,6 +103,10 @@ struct OwnershipTransferBarrier : SyncMemoryBarrier {
     OwnershipTransferBarrier(const VkImageMemoryBarrier& barrier, VkPipelineStageFlags src_stage_mask,
                              VkPipelineStageFlags dst_stage_mask)
         : SyncMemoryBarrier(barrier, src_stage_mask, dst_stage_mask),
+          srcQueueFamilyIndex(barrier.srcQueueFamilyIndex),
+          dstQueueFamilyIndex(barrier.dstQueueFamilyIndex) {}
+    OwnershipTransferBarrier(const VkTensorMemoryBarrierARM& barrier)
+        : SyncMemoryBarrier(barrier),
           srcQueueFamilyIndex(barrier.srcQueueFamilyIndex),
           dstQueueFamilyIndex(barrier.dstQueueFamilyIndex) {}
 
@@ -138,6 +154,11 @@ struct ImageBarrier : OwnershipTransferBarrier {
           newLayout(barrier.newLayout),
           image(barrier.image),
           subresourceRange(barrier.subresourceRange) {}
+};
+
+struct TensorBarrier : OwnershipTransferBarrier {
+    VkTensorARM tensor;
+    explicit TensorBarrier(const VkTensorMemoryBarrierARM& barrier) : OwnershipTransferBarrier(barrier), tensor(barrier.tensor) {}
 };
 
 struct ExecScopes {

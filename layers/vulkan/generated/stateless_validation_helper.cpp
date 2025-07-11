@@ -23915,6 +23915,7 @@ bool Device::PreCallValidateCreateTensorARM(VkDevice device, const VkTensorCreat
         skip |= context.ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pTensor), pTensor, "VUID-vkCreateTensorARM-pTensor-parameter");
+    if (!skip) skip |= manual_PreCallValidateCreateTensorARM(device, pCreateInfo, pAllocator, pTensor, context);
     return skip;
 }
 
