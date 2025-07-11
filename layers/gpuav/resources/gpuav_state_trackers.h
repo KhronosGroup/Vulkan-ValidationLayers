@@ -1,6 +1,7 @@
 /* Copyright (c) 2018-2025 The Khronos Group Inc.
  * Copyright (c) 2018-2025 Valve Corporation
  * Copyright (c) 2018-2025 LunarG, Inc.
+ * Copyright (c) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +28,7 @@
 // gpuav_state_trackers.h should NOT be included by any other header file
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/image_state.h"
+#include "state_tracker/tensor_state.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/queue_state.h"
 #include "state_tracker/sampler_state.h"
@@ -317,5 +319,27 @@ static inline ShaderObjectSubState &SubState(vvl::ShaderObject &obj) {
 static inline const ShaderObjectSubState &SubState(const vvl::ShaderObject &obj) {
     return *static_cast<const ShaderObjectSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));
 }
+
+class Tensor : public vvl::Tensor {
+  public:
+    Tensor(const std::shared_ptr<vvl::Tensor> &tensor_state, VkTensorARM t, const VkTensorCreateInfoARM *ci);
+
+    void Destroy() final;
+    void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) final;
+
+    DescriptorHeap &desc_heap;
+    const DescriptorId id;
+};
+
+class TensorView : public vvl::TensorView {
+  public:
+    TensorView(const std::shared_ptr<vvl::Tensor> &tensor_state, VkTensorViewARM tv, const VkTensorViewCreateInfoARM *ci);
+
+    void Destroy() final;
+    void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) final;
+
+    DescriptorHeap &desc_heap;
+    const DescriptorId id;
+};
 
 }  // namespace gpuav

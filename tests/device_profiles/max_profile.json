@@ -2107,6 +2107,7 @@
                 "VK_ARM_scheduling_controls": 1,
                 "VK_ARM_shader_core_builtins": 1,
                 "VK_ARM_shader_core_properties": 1,
+                "VK_ARM_tensors": 1,
                 "VK_EXT_4444_formats": 1,
                 "VK_EXT_acquire_drm_display": 1,
                 "VK_EXT_acquire_xlib_display": 1,

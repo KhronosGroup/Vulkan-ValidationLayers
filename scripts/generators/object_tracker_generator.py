@@ -5,6 +5,7 @@
 # Copyright (c) 2015-2025 LunarG, Inc.
 # Copyright (c) 2015-2025 Google Inc.
 # Copyright (c) 2023-2025 RasterGrid Kft.
+# Copyright (C) 2025 Arm Limited.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -218,6 +219,10 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
             "pipelineBinary-nullalloc": '"VUID-vkDestroyPipelineBinaryKHR-pipelineBinary-09615"',
             "VkIndirectCommandsLayoutEXT-indirectCommandsLayout-compatalloc": '"VUID-vkDestroyIndirectCommandsLayoutEXT-indirectCommandsLayout-11115"',
             "VkIndirectCommandsLayoutEXT-indirectCommandsLayout-nullalloc": '"VUID-vkDestroyIndirectCommandsLayoutEXT-indirectCommandsLayout-11116"',
+            "tensor-compatalloc": '"VUID-vkDestroyTensorARM-tensor-09731"',
+            "tensor-nullalloc": '"VUID-vkDestroyTensorARM-tensor-09732"',
+            "tensorView-compatalloc": '"VUID-vkDestroyTensorViewARM-tensorView-09751"',
+            "tensorView-nullalloc": '"VUID-vkDestroyTensorViewARM-tensorView-09752"',
            }
 
         # Structures that do not define parent/commonparent VUIDs for vulkan handles.

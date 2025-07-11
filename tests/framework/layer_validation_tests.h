@@ -3,6 +3,7 @@
  * Copyright (c) 2015-2025 Valve Corporation
  * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (C) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -367,6 +368,7 @@ class SyncObjectTest : public VkLayerTest {
 #endif
 };
 
+class TensorTest : public VkLayerTest {};
 class WsiTest : public VkLayerTest {
   protected:
     // Find physical device group that contains physical device selected by the test framework

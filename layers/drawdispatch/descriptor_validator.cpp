@@ -1,6 +1,7 @@
 /* Copyright (c) 2023-2025 The Khronos Group Inc.
  * Copyright (c) 2023-2025 Valve Corporation
  * Copyright (c) 2023-2025 LunarG, Inc.
+ * Copyright (c) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +32,7 @@
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/ray_tracing_state.h"
 #include "state_tracker/shader_module.h"
+#include "state_tracker/tensor_state.h"
 #include "drawdispatch/drawdispatch_vuids.h"
 #include "utils/action_command_utils.h"
 
@@ -165,6 +167,9 @@ bool DescriptorValidator::ValidateBindingStatic(const spirv::ResourceInterfaceVa
         case DescriptorClass::AccelerationStructure:
             skip |= ValidateDescriptorsStatic(resource_variable, static_cast<const AccelerationStructureBinding &>(binding));
             break;
+        case DescriptorClass::Tensor:
+            skip |= ValidateDescriptorsStatic(resource_variable, static_cast<const TensorBinding &>(binding));
+            break;
         case DescriptorClass::InlineUniform:
             break;  // Can't validate the descriptor because it may not have been updated.
         case DescriptorClass::Mutable:
@@ -229,6 +234,9 @@ bool DescriptorValidator::ValidateBindingDynamic(const spirv::ResourceInterfaceV
         case DescriptorClass::AccelerationStructure:
             skip |=
                 ValidateDescriptorsDynamic(resource_variable, static_cast<const AccelerationStructureBinding &>(binding), index);
+            break;
+        case DescriptorClass::Tensor:
+            skip |= ValidateDescriptorsDynamic(resource_variable, static_cast<const TensorBinding &>(binding), index);
             break;
         case DescriptorClass::InlineUniform:
             break;  // TODO - Can give warning if reading uninitialized data
@@ -1137,6 +1145,21 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                                              VkDescriptorType descriptor_type, const SamplerDescriptor &descriptor) const {
     return ValidateSamplerDescriptor(resource_variable, index, descriptor.GetSampler(), descriptor.IsImmutableSampler(),
                                      descriptor.GetSamplerState());
+}
+
+bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVariable &resource_variable, uint32_t index,
+                                             VkDescriptorType descriptor_type, const vvl::TensorDescriptor &descriptor) const {
+    const auto tensor_state = descriptor.GetTensorViewState()->tensor_state;
+    {
+        if (tensor_state->unprotected) {
+            return dev_proxy.ValidateUnprotectedTensor(cb_state, *tensor_state, loc.Get(), vuids.protected_command_buffer_02712,
+                                                       " (Tensor is in a descriptorSet)");
+        } else {
+            return dev_proxy.ValidateProtectedTensor(cb_state, *tensor_state, loc.Get(), vuids.unprotected_command_buffer_02707,
+                                                     " (Tensor is in a descriptorSet)");
+        }
+    }
+    return false;
 }
 
 }  // namespace vvl
