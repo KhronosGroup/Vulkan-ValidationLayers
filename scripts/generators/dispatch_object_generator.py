@@ -53,6 +53,13 @@ class APISpecific:
                         'enabled': '!settings.disabled[stateless_checks]'
                     },
                     {
+                        'include': 'generated/deprecation.h',
+                        'device': 'deprecation::Device',
+                        'instance': 'deprecation::Instance',
+                        'type': 'LayerObjectTypeDeprecation',
+                        'enabled': 'settings.enabled[deprecation_checks]'
+                    },
+                    {
                         'include': 'object_tracker/object_lifetime_validation.h',
                         'device': 'object_lifetimes::Device',
                         'instance': 'object_lifetimes::Instance',
@@ -150,7 +157,6 @@ class DispatchObjectGenerator(BaseGenerator):
             'vkSetDebugUtilsObjectNameEXT',
             'vkSetDebugUtilsObjectTagEXT',
             # TODO - These have no manual source, but we still produce the headers
-            'vkEnumerateInstanceExtensionProperties',
             'vkEnumerateInstanceLayerProperties',
             'vkEnumerateDeviceLayerProperties',
             'vkEnumerateInstanceVersion',
@@ -340,6 +346,15 @@ class DispatchObjectGenerator(BaseGenerator):
             out.append(f'{returnResult}{command.name.replace("vk", "dispatch->")}({paramsList}{call_extra});\n')
             out.append('}\n')
         out.extend(guard_helper.add_guard(None))
+
+        out.append('''
+            // Exception for things like deprecation layer to be able to query instance extension support
+            static inline VkResult DispatchEnumerateInstanceExtensionProperties(VkInstance instance, const char* pLayerName, uint32_t* pPropertyCount, VkExtensionProperties* pProperties) {
+                auto dispatch = vvl::dispatch::GetData(instance);
+                return dispatch->EnumerateInstanceExtensionProperties(pLayerName, pPropertyCount, pProperties);
+            }\n
+        ''')
+
         out.append('// We make many internal dispatch calls to extended query functions which can depend on the API version\n')
         for extended_query_ext in self.extended_query_exts:
             for command in self.vk.extensions[extended_query_ext].commands:

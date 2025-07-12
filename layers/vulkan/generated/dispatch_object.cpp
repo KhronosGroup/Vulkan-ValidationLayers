@@ -30,6 +30,7 @@
 
 #include "thread_tracker/thread_safety_validation.h"
 #include "stateless/stateless_validation.h"
+#include "generated/deprecation.h"
 #include "object_tracker/object_lifetime_validation.h"
 #include "state_tracker/state_tracker.h"
 #include "core_checks/core_validation.h"
@@ -50,6 +51,9 @@ void Instance::InitValidationObjects() {
     }
     if (!settings.disabled[stateless_checks]) {
         object_dispatch.emplace_back(new stateless::Instance(this));
+    }
+    if (settings.enabled[deprecation_checks]) {
+        object_dispatch.emplace_back(new deprecation::Instance(this));
     }
     if (!settings.disabled[object_tracking]) {
         object_dispatch.emplace_back(new object_lifetimes::Instance(this));
@@ -82,6 +86,10 @@ void Device::InitValidationObjects() {
     if (!settings.disabled[stateless_checks]) {
         object_dispatch.emplace_back(new stateless::Device(
             this, static_cast<stateless::Instance*>(dispatch_instance->GetValidationObject(LayerObjectTypeParameterValidation))));
+    }
+    if (settings.enabled[deprecation_checks]) {
+        object_dispatch.emplace_back(new deprecation::Device(
+            this, static_cast<deprecation::Instance*>(dispatch_instance->GetValidationObject(LayerObjectTypeDeprecation))));
     }
     if (!settings.disabled[object_tracking]) {
         object_dispatch.emplace_back(new object_lifetimes::Device(
@@ -654,6 +662,13 @@ PFN_vkVoidFunction Instance::GetInstanceProcAddr(VkInstance instance, const char
 
 PFN_vkVoidFunction Device::GetDeviceProcAddr(VkDevice device, const char* pName) {
     PFN_vkVoidFunction result = device_dispatch_table.GetDeviceProcAddr(device, pName);
+
+    return result;
+}
+
+VkResult Instance::EnumerateInstanceExtensionProperties(const char* pLayerName, uint32_t* pPropertyCount,
+                                                        VkExtensionProperties* pProperties) {
+    VkResult result = instance_dispatch_table.EnumerateInstanceExtensionProperties(pLayerName, pPropertyCount, pProperties);
 
     return result;
 }

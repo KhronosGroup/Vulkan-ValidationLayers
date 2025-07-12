@@ -4662,6 +4662,14 @@ static inline void DispatchCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer comm
     auto dispatch = vvl::dispatch::GetData(commandBuffer);
     dispatch->CmdDrawMeshTasksIndirectCountEXT(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
 }
+
+// Exception for things like deprecation layer to be able to query instance extension support
+static inline VkResult DispatchEnumerateInstanceExtensionProperties(VkInstance instance, const char* pLayerName,
+                                                                    uint32_t* pPropertyCount, VkExtensionProperties* pProperties) {
+    auto dispatch = vvl::dispatch::GetData(instance);
+    return dispatch->EnumerateInstanceExtensionProperties(pLayerName, pPropertyCount, pProperties);
+}
+
 // We make many internal dispatch calls to extended query functions which can depend on the API version
 
 static inline void DispatchGetPhysicalDeviceFeatures2Helper(APIVersion api_version, VkPhysicalDevice physicalDevice,

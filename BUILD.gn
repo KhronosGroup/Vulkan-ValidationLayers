@@ -396,6 +396,8 @@ vvl_sources = [
   "layers/vulkan/generated/best_practices_instance_methods.h",
   "layers/vulkan/generated/chassis.cpp",
   "layers/vulkan/generated/command_validation.cpp",
+  "layers/vulkan/generated/deprecation.cpp",
+  "layers/vulkan/generated/deprecation.h",
   "layers/vulkan/generated/device_features.cpp",
   "layers/vulkan/generated/device_features.h",
   "layers/vulkan/generated/dispatch_functions.h",
