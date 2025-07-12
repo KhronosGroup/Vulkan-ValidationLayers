@@ -437,7 +437,7 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy3) {
     if (buffer_mem_reqs.alignment <= 1) {
         GTEST_SKIP() << "Buffer copy will not work as intended if VkMemoryRequirements::alignment is not superior to 1";
     }
-    buffer_sparse.destroy();
+    buffer_sparse.Destroy();
     buffer_ci.size = 2 * buffer_mem_reqs.alignment;
     buffer_sparse.InitNoMemory(*m_device, buffer_ci);
     VkMemoryAllocateInfo buffer_mem_alloc =

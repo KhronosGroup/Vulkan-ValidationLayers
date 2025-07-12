@@ -3704,8 +3704,8 @@ TEST_F(NegativeGraphicsLibrary, DestroyImmutableSampler) {
     }
 
     // This is allowed with maintenance4
-    pipeline_layout1.destroy();
-    sampler1.destroy();
+    pipeline_layout1.Destroy();
+    sampler1.Destroy();
 
     CreatePipelineHelper frag_shader_lib(*this);
     {

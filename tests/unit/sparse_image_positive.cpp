@@ -49,7 +49,7 @@ TEST_F(PositiveSparseImage, MultipleBinds) {
     // size of the required alignment, to ensure we can bind both
     // allocated memory blocks to the image on aligned offsets.
     while (memory_reqs.size < (memory_reqs.alignment * 2)) {
-        image.destroy();
+        image.Destroy();
         image_create_info.extent.width *= 2;
         image_create_info.extent.height *= 2;
         image.InitNoMemory(*m_device, image_create_info);
@@ -151,7 +151,7 @@ TEST_F(PositiveSparseImage, BindFreeMemory) {
     m_default_queue->Wait();
 
     // Free the memory, then use the image in a new command buffer
-    memory.destroy();
+    memory.Destroy();
 
     m_command_buffer.Begin();
 

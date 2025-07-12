@@ -333,11 +333,11 @@ TEST_F(PositiveSyncValWsi, RecreateBuffer) {
         current_fence.Reset();
 
         auto &src_buffer = src_buffers[image_index];
-        src_buffer.destroy();
+        src_buffer.Destroy();
         src_buffer = vkt::Buffer(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
         auto &dst_buffer = dst_buffers[image_index];
-        dst_buffer.destroy();
+        dst_buffer.Destroy();
         dst_buffer = vkt::Buffer(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
         auto &command_buffer = command_buffers[image_index];
@@ -395,7 +395,7 @@ TEST_F(PositiveSyncValWsi, RecreateImage) {
         current_fence.Reset();
 
         auto &dst_image = dst_images[image_index];
-        dst_image.destroy();
+        dst_image.Destroy();
         dst_image = vkt::Image(*m_device, width, height, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
         VkBufferImageCopy region = {};

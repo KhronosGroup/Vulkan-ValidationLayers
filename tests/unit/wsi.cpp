@@ -1730,8 +1730,8 @@ TEST_F(NegativeWsi, PresentIdWait) {
     vk::WaitForPresentKHR(device(), swapchain2, 5, kWaitTimeout);
     m_errorMonitor->VerifyFound();
 
-    swapchain2.destroy();
-    swapchain3.destroy();
+    swapchain2.Destroy();
+    swapchain3.Destroy();
 }
 
 TEST_F(NegativeWsi, PresentIdWaitFeatures) {
@@ -3297,7 +3297,7 @@ TEST_F(NegativeWsi, UseDestroyedSwapchain) {
     vkt::Swapchain oldSwapchain = std::move(swapchain);
     swapchain_create_info.oldSwapchain = oldSwapchain;
     swapchain.Init(*m_device, swapchain_create_info);
-    oldSwapchain.destroy();
+    oldSwapchain.Destroy();
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-framebuffer-parameter");
@@ -4400,12 +4400,12 @@ TEST_F(NegativeWsi, SwapchainUseAfterDestroy) {
         vkt::Swapchain swapchain2;
         if (i == 0) {
             vk::DeviceWaitIdle(*m_device);
-            swapchain1.destroy();
+            swapchain1.Destroy();
             swapchain2.Init(*m_device, swapchain_ci);
         } else {
             swapchain_ci.oldSwapchain = swapchain_1_handle;
             swapchain2.Init(*m_device, swapchain_ci);
-            swapchain1.destroy();
+            swapchain1.Destroy();
         }
 
         VkPresentInfoKHR present = vku::InitStructHelper();
@@ -4424,7 +4424,7 @@ TEST_F(NegativeWsi, SwapchainUseAfterDestroy) {
 
         std::vector<VkImage> images2 = swapchain2.GetImages();
         VkSwapchainKHR swapchain_2_handle = swapchain2.handle();
-        swapchain2.destroy();
+        swapchain2.Destroy();
 
         vkt::Fence fence2(*m_device);
         uint32_t image_index = 0;

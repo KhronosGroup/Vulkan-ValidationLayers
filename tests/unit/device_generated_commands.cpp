@@ -2184,7 +2184,7 @@ TEST_F(NegativeDeviceGeneratedCommands, ExecutePreprocessBufferUsage) {
         vkt::Buffer bad_buffer(*m_device, buffer_ci, 0, &allocate_flag_info);
 
         generated_commands_info.preprocessAddress = bad_buffer.Address();
-        bad_buffer.Memory().destroy();
+        bad_buffer.Memory().Destroy();
         m_errorMonitor->SetDesiredError("VUID-VkGeneratedCommandsInfoEXT-preprocessAddress-11070");
         vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer, false, &generated_commands_info);
         m_errorMonitor->VerifyFound();
@@ -2253,7 +2253,7 @@ TEST_F(NegativeDeviceGeneratedCommands, ExecuteSequenceCountBufferUsage) {
         vkt::Buffer bad_buffer(*m_device, buffer_ci, 0, &allocate_flag_info);
 
         generated_commands_info.sequenceCountAddress = bad_buffer.Address();
-        bad_buffer.Memory().destroy();
+        bad_buffer.Memory().Destroy();
         m_errorMonitor->SetDesiredError("VUID-VkGeneratedCommandsInfoEXT-sequenceCountAddress-11075");
         vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer, false, &generated_commands_info);
         m_errorMonitor->VerifyFound();

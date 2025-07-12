@@ -1140,7 +1140,7 @@ TEST_F(NegativeRayTracing, GetAccelerationStructureAddressBabBuffer) {
     blas->SetBufferUsageFlags(VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
     blas->Create();
 
-    blas->GetBuffer().Memory().destroy();
+    blas->GetBuffer().Memory().Destroy();
     m_errorMonitor->SetDesiredError("VUID-vkGetAccelerationStructureDeviceAddressKHR-pInfo-09541");
     m_errorMonitor->SetDesiredError("VUID-vkGetAccelerationStructureDeviceAddressKHR-pInfo-09542");
     (void)blas->GetAccelerationStructureDeviceAddress();
@@ -2495,7 +2495,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesAccelStructDestr
 
     m_device->Wait();
 
-    blas.GetDstAS()->GetBuffer().Memory().destroy();
+    blas.GetDstAS()->GetBuffer().Memory().Destroy();
 
     m_command_buffer.Begin();
 
@@ -3230,7 +3230,7 @@ TEST_F(NegativeRayTracing, TransformBufferInvalid) {
 
     m_command_buffer.Begin();
     blas.SetupBuild(*m_device, true);
-    transform_buffer.Memory().destroy();
+    transform_buffer.Memory().Destroy();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03809");
     blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
     m_errorMonitor->VerifyFound();
@@ -3314,7 +3314,7 @@ TEST_F(NegativeRayTracing, InstanceBufferBadMemory) {
     m_command_buffer.Begin();
     tlas.SetupBuild(*m_device, true);
 
-    tlas.GetGeometries()[0].GetInstance().buffer.Memory().destroy();
+    tlas.GetGeometries()[0].GetInstance().buffer.Memory().Destroy();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03814");
     tlas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
@@ -3508,7 +3508,7 @@ TEST_F(NegativeRayTracing, ScratchBufferBadMemory) {
     blas.SetScratchBuffer(scratch_buffer);
     blas.SetupBuild(*m_device, true);
 
-    buffer_memory.destroy();
+    buffer_memory.Destroy();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03803");
     blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);

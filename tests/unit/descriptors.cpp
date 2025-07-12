@@ -1018,7 +1018,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 
     // Now destroy imageview and reset cmdBuffer
-    tmp_view.destroy();
+    tmp_view.Destroy();
 
     m_command_buffer.Reset(0);
     m_command_buffer.Begin();
@@ -1045,7 +1045,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
     // Destroy sampler invalidates the cmd buffer, causing error on submit
-    tmp_sampler.destroy();
+    tmp_sampler.Destroy();
     // Attempt to submit cmd buffer
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
     m_default_queue->Submit(m_command_buffer);
@@ -1067,7 +1067,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
     // Destroy image invalidates the cmd buffer, causing error on submit
-    tmp_image.destroy();
+    tmp_image.Destroy();
 
     // Attempt to submit cmd buffer
     m_default_queue->Submit(m_command_buffer);
@@ -1198,7 +1198,7 @@ TEST_F(NegativeDescriptors, DescriptorSetSamplerDestroyed) {
     descriptor_set.UpdateDescriptorSets();
 
     // Destroy the sampler before it's bound to the cmd buffer
-    sampler1.destroy();
+    sampler1.Destroy();
 
     // Create PSO to be used for draw-time errors below
     char const *fsSource = R"glsl(
@@ -1437,7 +1437,7 @@ TEST_F(NegativeDescriptors, DescriptorImageUpdateNoMemoryBound) {
     // Update descriptor with image and sampler
     descriptor_set.WriteDescriptorImageInfo(0, view, sampler);
     // Break memory binding and attempt update
-    image.Memory().destroy();
+    image.Memory().Destroy();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-VkDescriptorImageInfo-BoundResourceFreedMemoryAccess");
     descriptor_set.UpdateDescriptorSets();
@@ -2209,7 +2209,7 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibility) {
     // Now that we're done actively using the pipelineLayout that gfx pipeline
     //  was created with, we should be able to delete it. Do that now to verify
     //  that validation obeys pipelineLayout lifetime
-    pipe_layout_fs_only.destroy();
+    pipe_layout_fs_only.Destroy();
 
     // Cause draw-time errors due to PSO incompatibilities
     // 1. Error due to not binding required set (we actually use same code as
@@ -4318,7 +4318,7 @@ TEST_F(NegativeDescriptors, MutableDescriptorSetLayout) {
     m_errorMonitor->VerifyFound();
 
     binding.pImmutableSamplers = nullptr;
-    sampler.destroy();
+    sampler.Destroy();
 }
 
 TEST_F(NegativeDescriptors, MutableDescriptorSetLayoutMissingFeature) {

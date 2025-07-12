@@ -1458,7 +1458,7 @@ TEST_F(NegativeMemory, DedicatedAllocationImageAliasing) {
     // Bind correctly (depends on the "skip" above)
     vk::BindImageMemory(*m_device, image, dedicated_image_memory, 0);
 
-    image.destroy();  // destroy the original image
+    image.Destroy();  // destroy the original image
     vk::BindImageMemory(*m_device, post_delete_image, dedicated_image_memory, 0);
 }
 

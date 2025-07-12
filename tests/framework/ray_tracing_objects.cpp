@@ -362,7 +362,7 @@ void AccelerationStructureKHR::Destroy() {
     assert(handle() != VK_NULL_HANDLE);
     vk::DestroyAccelerationStructureKHR(device_->handle(), handle(), nullptr);
     handle_ = VK_NULL_HANDLE;
-    device_buffer_.destroy();
+    device_buffer_.Destroy();
 }
 
 BuildGeometryInfoKHR::BuildGeometryInfoKHR(const vkt::Device *device)

@@ -256,7 +256,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabledBufferDeviceAddress) {
     dbbi.address = d_buffer.Address();
     dbbi.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
 
-    d_buffer.Memory().destroy();
+    d_buffer.Memory().Destroy();
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorBuffersEXT-None-08047");
@@ -851,7 +851,7 @@ TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
     const VkDeviceSize offset = small_buffer_size;
     vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &index, &offset);
 
-    large_buffer.destroy();
+    large_buffer.Destroy();
     // Large buffer has been deleted, its entry in the address to buffers map must have been as well.
     // Since offset is too large to fit in small buffer, vkCmdSetDescriptorBufferOffsetsEXT should fail
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetDescriptorBufferOffsetsEXT-pOffsets-08063");
@@ -922,7 +922,7 @@ TEST_F(NegativeDescriptorBuffer, DescriptorBufferAddress) {
     descriptor_buffer_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
     vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &descriptor_buffer_binding_info);
 
-    descriptor_buffer.destroy();
+    descriptor_buffer.Destroy();
 
     uint32_t buffer_index = 0;
     VkDeviceSize buffer_offset = 0;
@@ -1263,7 +1263,7 @@ TEST_F(NegativeDescriptorBuffer, DescriptorGetInfoAddressRange) {
         m_errorMonitor->VerifyFound();
     }
 
-    mem.destroy();
+    mem.Destroy();
 
     dai.range = 4;
 

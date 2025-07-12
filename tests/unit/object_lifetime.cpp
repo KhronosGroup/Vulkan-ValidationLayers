@@ -368,7 +368,7 @@ TEST_F(NegativeObjectLifetime, DescriptorSetStorageBufferDestroyed) {
     pipe.CreateComputePipeline();
 
     // Destroy the buffer before it's bound to the cmd buffer
-    buffer.destroy();
+    buffer.Destroy();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
@@ -420,7 +420,7 @@ TEST_F(NegativeObjectLifetime, DISABLED_DescriptorSetMutableBufferDestroyed) {
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
-    buffer.destroy();  // Destroy the buffer before it's bound to the cmd buffer
+    buffer.Destroy();  // Destroy the buffer before it's bound to the cmd buffer
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
@@ -474,7 +474,7 @@ TEST_F(NegativeObjectLifetime, DISABLED_DescriptorSetMutableBufferArrayDestroyed
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
-    uniform_buffer.destroy();  // Destroy the buffer before it's bound to the cmd buffer
+    uniform_buffer.Destroy();  // Destroy the buffer before it's bound to the cmd buffer
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
@@ -632,7 +632,7 @@ TEST_F(NegativeObjectLifetime, FramebufferAttachmentMemoryFreed) {
 
     // Introduce error:
     // Free the attachment image memory, then create framebuffer.
-    image_memory.destroy();
+    image_memory.Destroy();
     m_errorMonitor->SetDesiredError("UNASSIGNED-VkFramebufferCreateInfo-BoundResourceFreedMemoryAccess");
     vk::CreateFramebuffer(device(), &fci, nullptr, &fb);
     m_errorMonitor->VerifyFound();
@@ -810,7 +810,7 @@ TEST_F(NegativeObjectLifetime, FramebufferImageInUseDestroyedSignaled) {
     m_default_queue->Wait();
     m_errorMonitor->SetUnexpectedError("If image is not VK_NULL_HANDLE, image must be a valid VkImage handle");
     m_errorMonitor->SetUnexpectedError("Unable to remove Image obj");
-    fb.destroy();
+    fb.Destroy();
 }
 
 TEST_F(NegativeObjectLifetime, EventInUseDestroyedSignaled) {
@@ -1355,7 +1355,7 @@ TEST_F(NegativeObjectLifetime, DescriptorBufferInfoUpdate) {
     descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     descriptor_set.WriteDescriptorBufferInfo(1, invalid_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
 
-    buffer.destroy();
+    buffer.Destroy();
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferInfo-buffer-parameter");  // destroyed
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferInfo-buffer-parameter");  // invalid
     descriptor_set.UpdateDescriptorSets();

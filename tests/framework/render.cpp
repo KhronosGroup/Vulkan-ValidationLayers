@@ -507,12 +507,12 @@ void VkRenderFramework::ShutdownFramework() {
         m_device->Wait();
     }
 
-    m_command_buffer.destroy();
-    m_command_pool.destroy();
+    m_command_buffer.Destroy();
+    m_command_pool.Destroy();
 
     if (m_second_queue) {
-        m_second_command_buffer.destroy();
-        m_second_command_pool.destroy();
+        m_second_command_buffer.Destroy();
+        m_second_command_pool.Destroy();
     }
 
     delete m_vertex_buffer;
@@ -952,7 +952,7 @@ void VkRenderFramework::DestroySwapchain() {
     if (m_device && m_device->handle() != VK_NULL_HANDLE) {
         m_device->Wait();
         if (m_swapchain.initialized()) {
-            m_swapchain.destroy();
+            m_swapchain.Destroy();
         }
     }
 }

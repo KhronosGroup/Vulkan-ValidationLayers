@@ -264,7 +264,7 @@ TEST_F(PositiveDescriptors, ImmutableSamplerOnlyDescriptor) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    sampler.destroy();
+    sampler.Destroy();
 }
 
 TEST_F(PositiveDescriptors, EmptyDescriptorUpdate) {
@@ -1416,7 +1416,7 @@ TEST_F(PositiveDescriptors, CopyDestroyDescriptor) {
                                                      });
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     src_descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE);
-    buffer.destroy();
+    buffer.Destroy();
 
     VkCopyDescriptorSet copy_ds = vku::InitStructHelper();
     copy_ds.srcSet = src_descriptor_set.set_;

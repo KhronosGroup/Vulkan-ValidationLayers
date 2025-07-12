@@ -1112,7 +1112,7 @@ TEST_F(NegativeTransformFeedback, InvalidCounterBuffers) {
 
     vkt::Buffer buffer(*m_device, 4, VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT);
     VkBuffer buffer_handle = buffer;
-    buffer.destroy();
+    buffer.Destroy();
 
     CreatePipelineHelper pipe(*this);
     auto vs = VkShaderObj::CreateFromASM(this, kXfbVsSource, VK_SHADER_STAGE_VERTEX_BIT);
