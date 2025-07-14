@@ -22,7 +22,7 @@ from generators.generator_utils import PlatformGuardHelper
 
 # If there is another success code other than VK_SUCCESS
 def hasNonVkSuccess(successCodes: list[str]) -> bool:
-    if successCodes is None or len(successCodes) == 0:
+    if len(successCodes) == 0:
         return False
     return len(successCodes) > 1 or 'VK_SUCCESS' not in successCodes
 
@@ -97,7 +97,7 @@ class BestPracticesOutputGenerator(BaseGenerator):
                 self.no_autogen_list.append(name)
             # This is just to remove un-used commands from be generated
             # This can be removed if another use for these commands are needed
-            elif (command.errorCodes is None and not hasNonVkSuccess(command.successCodes)):
+            elif (len(command.errorCodes) == 0 and not hasNonVkSuccess(command.successCodes)):
                 self.no_autogen_list.append(name)
 
         if self.filename == 'best_practices_instance_methods.h':
@@ -177,9 +177,8 @@ class BestPracticesOutputGenerator(BaseGenerator):
             std::string GetSpecialUse(vvl::Extension extension_name) {
                 const vvl::unordered_map<vvl::Extension, std::string> special_use_extensions = {
             ''')
-        for extension in self.vk.extensions.values():
-            if extension.specialUse is not None:
-                out.append(f'    {{vvl::Extension::_{extension.name}, "{", ".join(extension.specialUse)}"}},\n')
+        for extension in [x for x in self.vk.extensions.values() if len(x.specialUse) > 0]:
+            out.append(f'    {{vvl::Extension::_{extension.name}, "{", ".join(extension.specialUse)}"}},\n')
         out.append('''    };
 
                 auto it = special_use_extensions.find(extension_name);
@@ -219,7 +218,7 @@ class BestPracticesOutputGenerator(BaseGenerator):
                 if command.name in self.manual_postcallrecord_list:
                     out.append(f'ManualPostCallRecord{command.name[2:]}({params});\n')
 
-                if (command.errorCodes is not None or hasNonVkSuccess(command.successCodes)):
+                if (len(command.errorCodes) > 0 or hasNonVkSuccess(command.successCodes)):
                     if command.name == 'vkCreateInstance':
                         handle = '*pInstance'
                     elif command.name.startswith('vkEnumerateInstance'):
