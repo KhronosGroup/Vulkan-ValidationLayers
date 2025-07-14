@@ -170,10 +170,10 @@ void Stats::OnBarrierCommand(uint32_t memory_barrier_count, uint32_t buffer_barr
 
 void Stats::UpdateMemoryStats() {
 #if defined(USE_MIMALLOC_STATS)
-    mi_stats_merge();
     {
         std::unique_lock<std::mutex> lock(mi_stats_mutex);
-        mi_stats_get(sizeof(mi_stats), &mi_stats);
+        mi_stats_init(&mi_stats);
+        mi_stats_get(&mi_stats);
     }
 #endif
 }

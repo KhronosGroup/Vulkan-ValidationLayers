@@ -28,7 +28,7 @@
 #include <atomic>
 #include <mutex>
 
-// NOTE: mimalloc should be built with MI_STAT=1 to enable stats module
+// NOTE: mimalloc should be built with MI_STAT=2 to enable stats module
 #if defined(USE_MIMALLOC)
 #include <mimalloc.h>
 #if MI_MALLOC_VERSION >= 300

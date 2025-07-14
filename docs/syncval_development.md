@@ -27,7 +27,7 @@ Build the project with `VVL_ENABLE_SYNCVAL_STATS=1` preprocessor definition to e
 
 If `VVL_ENABLE_SYNCVAL_STATS=1` environment variable is also set, statistics will be printed to console when the application exits. During development, statistics can be printed at any time by calling `Stats::CreateReport()`. The statistics tracking object is a member of the syncval validator (`SyncValidator::stats`) and can be inspected directly during development.
 
-If the *mimalloc* allocator is used, syncval statistics can also collect allocation information using the mimalloc stats system. The mimalloc dependency must be build with `MI_STAT=1` preprocessor definition. The total amount of allocated memory is tracked in `Stats::total_allocated_memory`, and all mimalloc stats are stored in `Stats::mi_stats`.
+If the *mimalloc* allocator is used, syncval statistics can also collect allocation information using the mimalloc stats system. The mimalloc dependency must be build with `MI_STAT=2` preprocessor definition. The total amount of allocated memory is tracked in `Stats::total_allocated_memory`, and all mimalloc stats are stored in `Stats::mi_stats`.
 
 The mimalloc statistics are updated at fixed points: `vkQueueSubmit`, `vkQueuePresent`, and when generating a report via `Stats::CreateReport()`. To update mimalloc stats manually at arbitrary point, call `Stats::UpdateMemoryStats`.
 
