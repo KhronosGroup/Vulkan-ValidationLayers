@@ -478,49 +478,54 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateDisabled) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
-    vkt::CommandBuffer commandBuffer(*m_device, m_command_pool);
-    commandBuffer.Begin();
+    m_command_buffer.Begin();
 
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer, vk::CmdSetCullModeEXT, "VUID-vkCmdSetCullMode-None-08971",
-                          VK_CULL_MODE_NONE);
-
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer, vk::CmdSetDepthBoundsTestEnableEXT,
-                          "VUID-vkCmdSetDepthBoundsTestEnable-None-08971", VK_FALSE);
-
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer, vk::CmdSetDepthCompareOpEXT, "VUID-vkCmdSetDepthCompareOp-None-08971",
-                          VK_COMPARE_OP_NEVER);
-
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer, vk::CmdSetDepthTestEnableEXT, "VUID-vkCmdSetDepthTestEnable-None-08971",
-                          VK_FALSE);
-
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer, vk::CmdSetDepthWriteEnableEXT, "VUID-vkCmdSetDepthWriteEnable-None-08971",
-                          VK_FALSE);
-
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer, vk::CmdSetFrontFaceEXT, "VUID-vkCmdSetFrontFace-None-08971",
-                          VK_FRONT_FACE_CLOCKWISE);
-
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer, vk::CmdSetPrimitiveTopologyEXT,
-                          "VUID-vkCmdSetPrimitiveTopology-None-08971", VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetCullMode-None-08971");
+    vk::CmdSetCullModeEXT(m_command_buffer, VK_CULL_MODE_NONE);
+    m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetDepthBoundsTestEnable-None-08971");
+    vk::CmdSetDepthBoundsTestEnableEXT(m_command_buffer, VK_FALSE);
+    m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetDepthCompareOp-None-08971");
+    vk::CmdSetDepthCompareOpEXT(m_command_buffer, VK_COMPARE_OP_NEVER);
+    m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetDepthTestEnable-None-08971");
+    vk::CmdSetDepthTestEnableEXT(m_command_buffer, VK_FALSE);
+    m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetDepthWriteEnable-None-08971");
+    vk::CmdSetDepthWriteEnableEXT(m_command_buffer, VK_FALSE);
+    m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetFrontFace-None-08971");
+    vk::CmdSetFrontFaceEXT(m_command_buffer, VK_FRONT_FACE_CLOCKWISE);
+    m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetPrimitiveTopology-None-08971");
+    vk::CmdSetPrimitiveTopologyEXT(m_command_buffer, VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
+    m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetScissorWithCount-None-08971");
     VkRect2D scissor = {{0, 0}, {1, 1}};
-    vk::CmdSetScissorWithCountEXT(commandBuffer, 1, &scissor);
+    vk::CmdSetScissorWithCountEXT(m_command_buffer, 1, &scissor);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetStencilOp-None-08971");
-    vk::CmdSetStencilOpEXT(commandBuffer, VK_STENCIL_FACE_BACK_BIT, VK_STENCIL_OP_ZERO, VK_STENCIL_OP_ZERO, VK_STENCIL_OP_ZERO,
+    vk::CmdSetStencilOpEXT(m_command_buffer, VK_STENCIL_FACE_BACK_BIT, VK_STENCIL_OP_ZERO, VK_STENCIL_OP_ZERO, VK_STENCIL_OP_ZERO,
                            VK_COMPARE_OP_NEVER);
     m_errorMonitor->VerifyFound();
 
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer, vk::CmdSetStencilTestEnableEXT,
-                          "VUID-vkCmdSetStencilTestEnable-None-08971", VK_FALSE);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetStencilTestEnable-None-08971");
+    vk::CmdSetStencilTestEnableEXT(m_command_buffer, VK_FALSE);
+    m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetViewportWithCount-None-08971");
     VkViewport viewport = {0, 0, 1, 1, 0.0f, 0.0f};
-    vk::CmdSetViewportWithCountEXT(commandBuffer, 1, &viewport);
+    vk::CmdSetViewportWithCountEXT(m_command_buffer, 1, &viewport);
     m_errorMonitor->VerifyFound();
 
-    commandBuffer.End();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindVertexBuffers2-None-08971");
+    vk::CmdBindVertexBuffers2EXT(m_command_buffer, 0, 0, nullptr, nullptr, nullptr, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeDynamicState, ExtendedDynamicStateViewportScissorPipeline) {

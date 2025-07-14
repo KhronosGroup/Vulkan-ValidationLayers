@@ -3718,9 +3718,7 @@ bool CoreChecks::ValidateBeginRenderingColorAttachment(VkCommandBuffer commandBu
 
             if (rendering_info.viewMask == 0 &&
                 rendering_info.layerCount > image_view_state->normalized_subresource_range.layerCount) {
-                // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7446/diffs
-                skip |= LogError("UNASSIGNED-VkRenderingInfo-colorAttachment-layerCount", objlist,
-                                 color_attachment_loc.dot(Field::layerCount),
+                skip |= LogError("VUID-VkRenderingInfo-viewMask-10859", objlist, color_attachment_loc.dot(Field::layerCount),
                                  "(%" PRIu32 ") is greater than the imageView which was created with a layerCount of %" PRIu32 ".",
                                  rendering_info.layerCount, image_view_state->normalized_subresource_range.layerCount);
             }
@@ -3785,10 +3783,8 @@ bool CoreChecks::ValidateBeginRenderingColorAttachment(VkCommandBuffer commandBu
 
                 if (rendering_info.viewMask == 0 &&
                     rendering_info.layerCount > resolve_view_state->normalized_subresource_range.layerCount) {
-                    // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7446/diffs
                     const LogObjectList objlist(commandBuffer, color_attachment.resolveImageView);
-                    skip |= LogError("UNASSIGNED-VkRenderingInfo-colorAttachment-layerCount", objlist,
-                                     color_attachment_loc.dot(Field::layerCount),
+                    skip |= LogError("VUID-VkRenderingInfo-viewMask-10859", objlist, color_attachment_loc.dot(Field::layerCount),
                                      "(%" PRIu32
                                      ") is greater than the resolveImageView which was created with a layerCount of %" PRIu32 ".",
                                      rendering_info.layerCount, resolve_view_state->normalized_subresource_range.layerCount);
@@ -3883,9 +3879,7 @@ bool CoreChecks::ValidateBeginRenderingDepthAttachment(VkCommandBuffer commandBu
         }
 
         if (rendering_info.viewMask == 0 && rendering_info.layerCount > depth_view_state->normalized_subresource_range.layerCount) {
-            // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7446/diffs
-            skip |= LogError("UNASSIGNED-VkRenderingInfo-depthAttachment-layerCount", objlist,
-                             depth_attachment_loc.dot(Field::layerCount),
+            skip |= LogError("VUID-VkRenderingInfo-viewMask-10860", objlist, depth_attachment_loc.dot(Field::layerCount),
                              "(%" PRIu32 ") is greater than the imageView which was created with a layerCount of %" PRIu32 ".",
                              rendering_info.layerCount, depth_view_state->normalized_subresource_range.layerCount);
         }
@@ -3919,12 +3913,11 @@ bool CoreChecks::ValidateBeginRenderingDepthAttachment(VkCommandBuffer commandBu
 
             if (rendering_info.viewMask == 0 &&
                 rendering_info.layerCount > depth_resolve_view_state->normalized_subresource_range.layerCount) {
-                // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7446/diffs
                 const LogObjectList objlist(commandBuffer, depth_resolve_view_state->Handle());
-                skip |= LogError(
-                    "UNASSIGNED-VkRenderingInfo-depthAttachment-layerCount", objlist, depth_attachment_loc.dot(Field::layerCount),
-                    "(%" PRIu32 ") is greater than the resolveImageView which was created with a layerCount of %" PRIu32 ".",
-                    rendering_info.layerCount, depth_resolve_view_state->normalized_subresource_range.layerCount);
+                skip |= LogError("VUID-VkRenderingInfo-viewMask-10860", objlist, depth_attachment_loc.dot(Field::layerCount),
+                                 "(%" PRIu32
+                                 ") is greater than the resolveImageView which was created with a layerCount of %" PRIu32 ".",
+                                 rendering_info.layerCount, depth_resolve_view_state->normalized_subresource_range.layerCount);
             }
         }
     }
@@ -3967,9 +3960,7 @@ bool CoreChecks::ValidateBeginRenderingStencilAttachment(VkCommandBuffer command
 
         if (rendering_info.viewMask == 0 &&
             rendering_info.layerCount > stencil_view_state->normalized_subresource_range.layerCount) {
-            // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7446/diffs
-            skip |= LogError("UNASSIGNED-VkRenderingInfo-stencilAttachment-layerCount", objlist,
-                             stencil_attachment_loc.dot(Field::layerCount),
+            skip |= LogError("VUID-VkRenderingInfo-viewMask-10861", objlist, stencil_attachment_loc.dot(Field::layerCount),
                              "(%" PRIu32 ") is greater than the imageView which was created with a layerCount of %" PRIu32 ".",
                              rendering_info.layerCount, stencil_view_state->normalized_subresource_range.layerCount);
         }
@@ -4003,10 +3994,8 @@ bool CoreChecks::ValidateBeginRenderingStencilAttachment(VkCommandBuffer command
 
             if (rendering_info.viewMask == 0 &&
                 rendering_info.layerCount > stencil_resolve_view_state->normalized_subresource_range.layerCount) {
-                // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7446/diffs
                 const LogObjectList objlist(commandBuffer, stencil_resolve_view_state->Handle());
-                skip |= LogError("UNASSIGNED-VkRenderingInfo-stencilAttachment-layerCount", objlist,
-                                 stencil_attachment_loc.dot(Field::layerCount),
+                skip |= LogError("VUID-VkRenderingInfo-viewMask-10861", objlist, stencil_attachment_loc.dot(Field::layerCount),
                                  "(%" PRIu32
                                  ") is greater than the resolveImageView which was created with a layerCount of %" PRIu32 ".",
                                  rendering_info.layerCount, stencil_resolve_view_state->normalized_subresource_range.layerCount);
