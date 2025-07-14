@@ -477,21 +477,14 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateStageMasksAgainstQueueCapabilities(const LogObjectList& objlist, const Location& stage_mask_loc,
                                                     VkQueueFlags queue_flags, VkPipelineStageFlags2KHR stage_mask) const;
 
+    bool ValidateDeviceAddress(const Location& device_address_loc, const LogObjectList& objlist,
+                               VkDeviceAddress device_address) const;
     bool ValidateMemoryIsBoundToBuffer(LogObjectList objlist, const vvl::Buffer& buffer_state, const Location& buffer_loc,
                                        const char* vuid) const;
     bool ValidateAccelStructsMemoryDoNotOverlap(const Location& function_loc, LogObjectList objlist,
                                                 const vvl::AccelerationStructureKHR& accel_struct_a, const Location& loc_a,
                                                 const vvl::AccelerationStructureKHR& accel_struct_b, const Location& loc_b,
                                                 const char* vuid) const;
-    // Look for a buffer in scratches_a that does not overlap with src_accel_struct, dst_accel_struct, and at least one buffer from
-    // scratches_b
-    bool ValidateScratchMemoryNoOverlap(const Location& function_loc, LogObjectList objlist,
-                                        const vvl::span<vvl::Buffer* const>& scratches_a, VkDeviceAddress scratch_a_address,
-                                        VkDeviceSize scratch_a_size, const Location& loc_scratches_a,
-                                        const vvl::AccelerationStructureKHR* src_accel_struct, const Location& loc_src_accel_struct,
-                                        const vvl::AccelerationStructureKHR& dst_accel_struct, const Location& loc_dst_accel_struct,
-                                        const vvl::span<vvl::Buffer* const>& scratches_b, VkDeviceAddress scratch_b_address,
-                                        VkDeviceSize scratch_b_size, const Location* loc_scratches_b) const;
     bool ValidateAccelStructBufferMemoryIsHostVisible(const vvl::AccelerationStructureKHR& accel_struct, const Location& buffer_loc,
                                                       const char* vuid) const;
     bool ValidateAccelStructBufferMemoryIsNotMultiInstance(const vvl::AccelerationStructureKHR& accel_struct,
@@ -1358,7 +1351,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                        uint32_t width, uint32_t height, uint32_t depth,
                                        const ErrorObject& error_obj) const override;
     bool ValidateRaytracingShaderBindingTable(const vvl::CommandBuffer& cb_state, const Location& table_loc,
-                                              const char* vuid_single_device_memory, const char* vuid_binding_table_flag,
+                                              const char* vuid_binding_table_flag,
                                               const VkStridedDeviceAddressRegionKHR& binding_table) const;
     bool ValidateCmdTraceRaysKHR(const Location& loc, const LastBound& last_bound_state,
                                  const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable,

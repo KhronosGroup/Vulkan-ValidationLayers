@@ -478,57 +478,37 @@ bool CoreChecks::ValidateGeneratedCommandsInfo(const vvl::CommandBuffer& cb_stat
             phys_dev_ext_props.device_generated_commands_props.maxIndirectSequenceCount);
     }
 
-    const auto preprocess_buffer_states = GetBuffersByAddress(generated_commands_info.preprocessAddress);
-    if (!preprocess_buffer_states.empty()) {
-        BufferAddressValidation<2> buffer_address_validator = {{{
-            {"VUID-VkGeneratedCommandsInfoEXT-preprocessAddress-11069",
-             [](vvl::Buffer* const buffer_state, std::string* out_error_msg) {
-                 if ((buffer_state->usage & VK_BUFFER_USAGE_2_PREPROCESS_BUFFER_BIT_EXT) == 0) {
-                     if (out_error_msg) {
-                         *out_error_msg += "buffer has usage " + string_VkBufferUsageFlags2(buffer_state->usage);
-                     }
-                     return false;
-                 }
-                 return true;
-             },
-             []() { return "The following buffers are missing VK_BUFFER_USAGE_2_PREPROCESS_BUFFER_BIT_EXT"; }},
-            {"VUID-VkGeneratedCommandsInfoEXT-preprocessAddress-11070",
-             [this](vvl::Buffer* const buffer_state, std::string* out_error_msg) {
-                 return BufferAddressValidation<1>::ValidateMemoryBoundToBuffer(*this, buffer_state, out_error_msg);
-             },
-             []() { return BufferAddressValidation<1>::ValidateMemoryBoundToBufferErrorMsgHeader(); }},
-        }}};
+    {
+        BufferAddressValidation<1> buffer_address_validator = {
+            {{{"VUID-VkGeneratedCommandsInfoEXT-preprocessAddress-11069",
+               [](const vvl::Buffer& buffer_state) {
+                   return (buffer_state.usage & VK_BUFFER_USAGE_2_PREPROCESS_BUFFER_BIT_EXT) == 0;
+               },
+               []() { return "The following buffers are missing VK_BUFFER_USAGE_2_PREPROCESS_BUFFER_BIT_EXT"; },
+               [](const vvl::Buffer& buffer_state) {
+                   return "buffer has usage " + string_VkBufferUsageFlags2(buffer_state.usage);
+               }}}}};
 
-        skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(
-            *this, preprocess_buffer_states, info_loc.dot(Field::preprocessAddress), LogObjectList(cb_state.Handle()),
-            generated_commands_info.preprocessAddress);
+        skip |= buffer_address_validator.ValidateDeviceAddress(*this, info_loc.dot(Field::preprocessAddress),
+                                                               LogObjectList(cb_state.Handle()),
+                                                               generated_commands_info.preprocessAddress);
     }
 
-    const auto sequence_buffer_states = GetBuffersByAddress(generated_commands_info.sequenceCountAddress);
-    if (!sequence_buffer_states.empty()) {
-        BufferAddressValidation<2> buffer_address_validator = {{{
-            {"VUID-VkGeneratedCommandsInfoEXT-sequenceCountAddress-11072",
-             [](vvl::Buffer* const buffer_state, std::string* out_error_msg) {
-                 if ((buffer_state->usage & VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT) == 0) {
-                     if (out_error_msg) {
-                         *out_error_msg += "buffer has usage " + string_VkBufferUsageFlags2(buffer_state->usage);
-                     }
-                     return false;
-                 }
-                 return true;
-             },
-             []() { return "The following buffers are missing VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT"; }},
-            {"VUID-VkGeneratedCommandsInfoEXT-sequenceCountAddress-11075",
-             [this](vvl::Buffer* const buffer_state, std::string* out_error_msg) {
-                 return BufferAddressValidation<1>::ValidateMemoryBoundToBuffer(*this, buffer_state, out_error_msg);
-             },
-             []() { return BufferAddressValidation<1>::ValidateMemoryBoundToBufferErrorMsgHeader(); }},
-        }}};
+    {
+        BufferAddressValidation<1> buffer_address_validator = {{{{
+            "VUID-VkGeneratedCommandsInfoEXT-sequenceCountAddress-11072",
+            [](const vvl::Buffer& buffer_state) { return (buffer_state.usage & VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT) == 0; },
+            []() { return "The following buffers are missing VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT"; },
+            [](const vvl::Buffer& buffer_state) { return "buffer has usage " + string_VkBufferUsageFlags2(buffer_state.usage); },
+        }}}};
 
-        skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(
-            *this, sequence_buffer_states, info_loc.dot(Field::sequenceCountAddress), LogObjectList(cb_state.Handle()),
-            generated_commands_info.sequenceCountAddress);
+        skip |= buffer_address_validator.ValidateDeviceAddress(*this, info_loc.dot(Field::sequenceCountAddress),
+                                                               LogObjectList(cb_state.Handle()),
+                                                               generated_commands_info.sequenceCountAddress);
     }
+
+    skip |= ValidateDeviceAddress(info_loc.dot(Field::indirectAddress), LogObjectList(cb_state.Handle()),
+                                  generated_commands_info.indirectAddress);
 
     return skip;
 }

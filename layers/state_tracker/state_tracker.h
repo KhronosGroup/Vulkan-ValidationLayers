@@ -673,15 +673,6 @@ class DeviceState : public vvl::base::Device {
     // more efficient to store them using raw pointers. It is safe to do so (at time of writing) because those raw pointers come
     // from shared ones created when the buffer is first recorded, and they are removed from buffer_address_map_ at BufferDestroy
     // time
-    vvl::span<vvl::Buffer*> GetBuffersByAddress(VkDeviceAddress address) {
-        ReadLockGuard guard(buffer_address_lock_);
-        auto found_it = buffer_address_map_.find(address);
-        if (found_it == buffer_address_map_.end()) {
-            return vvl::make_span<vvl::Buffer*>(nullptr, static_cast<size_t>(0));
-        }
-        return found_it->second;
-    }
-
     vvl::span<vvl::Buffer* const> GetBuffersByAddress(VkDeviceAddress address) const {
         ReadLockGuard guard(buffer_address_lock_);
         auto found_it = buffer_address_map_.find(address);
@@ -2091,8 +2082,6 @@ class DeviceProxy : public vvl::base::Device {
     bool AnyOf(std::function<bool(const State& s)> fn) const {
         return device_state->AnyOf<State>(fn);
     }
-
-    vvl::span<vvl::Buffer*> GetBuffersByAddress(VkDeviceAddress address) { return device_state->GetBuffersByAddress(address); }
 
     vvl::span<vvl::Buffer* const> GetBuffersByAddress(VkDeviceAddress address) const {
         return const_cast<const vvl::DeviceState*>(device_state)->GetBuffersByAddress(address);

@@ -958,18 +958,13 @@ bool CoreChecks::ValidateCmdTraceRaysKHR(const Location &loc, const LastBound &l
             }
         }
 
-        const char *vuid_single_device_memory = is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-pHitShaderBindingTable-03687"
-                                                            : "VUID-vkCmdTraceRaysKHR-pHitShaderBindingTable-03687";
         const char *vuid_binding_table_flag = is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-pHitShaderBindingTable-03688"
                                                           : "VUID-vkCmdTraceRaysKHR-pHitShaderBindingTable-03688";
-        skip |= ValidateRaytracingShaderBindingTable(cb_state, table_loc, vuid_single_device_memory, vuid_binding_table_flag,
-                                                     *pHitShaderBindingTable);
+        skip |= ValidateRaytracingShaderBindingTable(cb_state, table_loc, vuid_binding_table_flag, *pHitShaderBindingTable);
     }
 
     if (pRaygenShaderBindingTable) {
         const Location table_loc = loc.dot(Field::pRaygenShaderBindingTable);
-        const char *vuid_single_device_memory = is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-pRayGenShaderBindingTable-03680"
-                                                            : "VUID-vkCmdTraceRaysKHR-pRayGenShaderBindingTable-03680";
         const char *vuid_binding_table_flag = is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-pRayGenShaderBindingTable-03681"
                                                           : "VUID-vkCmdTraceRaysKHR-pRayGenShaderBindingTable-03681";
         // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9368
@@ -979,18 +974,14 @@ bool CoreChecks::ValidateCmdTraceRaysKHR(const Location &loc, const LastBound &l
                              cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR), table_loc.dot(Field::deviceAddress),
                              "(0x%" PRIx64 ") does not belong to a valid VkBuffer.", pRaygenShaderBindingTable->deviceAddress);
         }
-        skip |= ValidateRaytracingShaderBindingTable(cb_state, table_loc, vuid_single_device_memory, vuid_binding_table_flag,
-                                                     *pRaygenShaderBindingTable);
+        skip |= ValidateRaytracingShaderBindingTable(cb_state, table_loc, vuid_binding_table_flag, *pRaygenShaderBindingTable);
     }
 
     if (pMissShaderBindingTable) {
         const Location table_loc = loc.dot(Field::pMissShaderBindingTable);
-        const char *vuid_single_device_memory = is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-pMissShaderBindingTable-03683"
-                                                            : "VUID-vkCmdTraceRaysKHR-pMissShaderBindingTable-03683";
         const char *vuid_binding_table_flag = is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-pMissShaderBindingTable-03684"
                                                           : "VUID-vkCmdTraceRaysKHR-pMissShaderBindingTable-03684";
-        skip |= ValidateRaytracingShaderBindingTable(cb_state, table_loc, vuid_single_device_memory, vuid_binding_table_flag,
-                                                     *pMissShaderBindingTable);
+        skip |= ValidateRaytracingShaderBindingTable(cb_state, table_loc, vuid_binding_table_flag, *pMissShaderBindingTable);
         if (pMissShaderBindingTable->deviceAddress == 0) {
             if (pipeline_state->create_flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR) {
                 const char *vuid =
@@ -1006,12 +997,9 @@ bool CoreChecks::ValidateCmdTraceRaysKHR(const Location &loc, const LastBound &l
 
     if (pCallableShaderBindingTable) {
         const Location table_loc = loc.dot(Field::pCallableShaderBindingTable);
-        const char *vuid_single_device_memory = is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-pCallableShaderBindingTable-03691"
-                                                            : "VUID-vkCmdTraceRaysKHR-pCallableShaderBindingTable-03691";
         const char *vuid_binding_table_flag = is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-pCallableShaderBindingTable-03692"
                                                           : "VUID-vkCmdTraceRaysKHR-pCallableShaderBindingTable-03692";
-        skip |= ValidateRaytracingShaderBindingTable(cb_state, table_loc, vuid_single_device_memory, vuid_binding_table_flag,
-                                                     *pCallableShaderBindingTable);
+        skip |= ValidateRaytracingShaderBindingTable(cb_state, table_loc, vuid_binding_table_flag, *pCallableShaderBindingTable);
     }
     return skip;
 }
@@ -1698,6 +1686,8 @@ bool CoreChecks::ValidateActionStateProtectedMemory(const LastBound &last_bound_
     return skip;
 }
 
+// Note, these don't include the RTX Indirect commands (vkCmdTraceRaysIndirectKHR) because
+// they use a VkDeviceAddress instead of a VkBuffer
 bool CoreChecks::ValidateIndirectCmd(const vvl::CommandBuffer &cb_state, const vvl::Buffer &buffer_state,
                                      const DrawDispatchVuid &vuid) const {
     bool skip = false;

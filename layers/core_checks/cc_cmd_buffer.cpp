@@ -23,6 +23,7 @@
 
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/utility/vk_format_utils.h>
+#include "core_checks/cc_buffer_address.h"
 #include "core_checks/cc_state_tracker.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/buffer_state.h"
@@ -2003,21 +2004,11 @@ bool CoreChecks::PreCallValidateCmdConvertCooperativeVectorMatrixNV(VkCommandBuf
 
     for (uint32_t i = 0; i < infoCount; ++i) {
         auto const &info = pInfos[i];
-        auto src_buffers = GetBuffersByAddress(info.srcData.deviceAddress);
-        auto dst_buffers = GetBuffersByAddress(info.dstData.deviceAddress);
-
         const Location info_loc = error_obj.location.dot(Field::pInfos, i);
 
-        if (src_buffers.empty()) {
-            skip |= LogError("VUID-vkCmdConvertCooperativeVectorMatrixNV-pInfo-10083", commandBuffer,
-                             info_loc.dot(Field::srcData).dot(Field::deviceAddress), "(0x%" PRIx64 ") does not belong to a buffer",
-                             info.srcData.deviceAddress);
-        }
-        if (dst_buffers.empty()) {
-            skip |= LogError("VUID-vkCmdConvertCooperativeVectorMatrixNV-pInfo-10083", commandBuffer,
-                             info_loc.dot(Field::dstData).dot(Field::deviceAddress), "(0x%" PRIx64 ") does not belong to a buffer",
-                             info.dstData.deviceAddress);
-        }
+        const LogObjectList objlist(commandBuffer);
+        skip |= ValidateDeviceAddress(info_loc.dot(Field::srcData).dot(Field::deviceAddress), objlist, info.srcData.deviceAddress);
+        skip |= ValidateDeviceAddress(info_loc.dot(Field::dstData).dot(Field::deviceAddress), objlist, info.dstData.deviceAddress);
 
         skip |= ValidateVkConvertCooperativeVectorMatrixInfoNV(commandBuffer, info, info_loc);
     }

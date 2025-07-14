@@ -2003,7 +2003,7 @@ TEST_F(NegativeDeviceGeneratedCommands, GeneratedCommandsInfoAddresses) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredError("VUID-VkGeneratedCommandsInfoEXT-sequenceCountAddress-11073");
     m_errorMonitor->SetDesiredError("VUID-VkGeneratedCommandsInfoEXT-maxSequenceCount-10246");
-    m_errorMonitor->SetDesiredError("VUID-VkGeneratedCommandsInfoEXT-indirectAddress-11076");
+    m_errorMonitor->SetDesiredError("VUID-VkGeneratedCommandsInfoEXT-indirectAddress-parameter");
     m_errorMonitor->SetDesiredError("VUID-VkGeneratedCommandsInfoEXT-indirectAddressSize-11077");
     vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer, false, &generated_commands_info);
     m_errorMonitor->VerifyFound();
@@ -2185,7 +2185,7 @@ TEST_F(NegativeDeviceGeneratedCommands, ExecutePreprocessBufferUsage) {
 
         generated_commands_info.preprocessAddress = bad_buffer.Address();
         bad_buffer.Memory().Destroy();
-        m_errorMonitor->SetDesiredError("VUID-VkGeneratedCommandsInfoEXT-preprocessAddress-11070");
+        m_errorMonitor->SetDesiredError("UNASSIGNED-VkDeviceAddress-no-memory");
         vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer, false, &generated_commands_info);
         m_errorMonitor->VerifyFound();
     }
@@ -2254,7 +2254,7 @@ TEST_F(NegativeDeviceGeneratedCommands, ExecuteSequenceCountBufferUsage) {
 
         generated_commands_info.sequenceCountAddress = bad_buffer.Address();
         bad_buffer.Memory().Destroy();
-        m_errorMonitor->SetDesiredError("VUID-VkGeneratedCommandsInfoEXT-sequenceCountAddress-11075");
+        m_errorMonitor->SetDesiredError("UNASSIGNED-VkDeviceAddress-no-memory");
         vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer, false, &generated_commands_info);
         m_errorMonitor->VerifyFound();
     }
@@ -2397,4 +2397,57 @@ TEST_F(NegativeDeviceGeneratedCommands, InitialShaderObject) {
     m_errorMonitor->SetDesiredError("VUID-VkIndirectExecutionSetShaderInfoEXT-pInitialShaders-parameter");
     vk::CreateIndirectExecutionSetEXT(device(), &exe_set_ci, nullptr, &exe_set);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDeviceGeneratedCommands, IndirectAddress) {
+    RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
+
+    VkIndirectCommandsExecutionSetTokenEXT exe_set_token = {VK_INDIRECT_EXECUTION_SET_INFO_TYPE_PIPELINES_EXT,
+                                                            VK_SHADER_STAGE_COMPUTE_BIT};
+    VkIndirectCommandsLayoutTokenEXT tokens[2];
+    tokens[0] = vku::InitStructHelper();
+    tokens[0].type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_EXECUTION_SET_EXT;
+    tokens[0].data.pExecutionSet = &exe_set_token;
+    tokens[0].offset = 0;
+
+    tokens[1] = vku::InitStructHelper();
+    tokens[1].type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DISPATCH_EXT;
+    tokens[1].offset = 8;
+
+    VkIndirectCommandsLayoutCreateInfoEXT command_layout_ci = vku::InitStructHelper();
+    command_layout_ci.shaderStages = VK_SHADER_STAGE_COMPUTE_BIT;
+    command_layout_ci.pipelineLayout = VK_NULL_HANDLE;
+    command_layout_ci.tokenCount = 2;
+    command_layout_ci.pTokens = tokens;
+    vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
+
+    VkPipelineCreateFlags2CreateInfo pipe_flags2 = vku::InitStructHelper();
+    pipe_flags2.flags = VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT;
+    CreateComputePipelineHelper pipe(*this, &pipe_flags2);
+    pipe.CreateComputePipeline();
+    vkt::IndirectExecutionSet exe_set(*m_device, pipe, 1);
+
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    vkt::Buffer block_buffer(*m_device, 64, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, kHostVisibleMemProps, &allocate_flag_info);
+
+    VkDeviceAddress invalid_buffer = CastToHandle<VkDeviceAddress, uintptr_t>(0xbaadbee0);
+
+    VkGeneratedCommandsInfoEXT generated_commands_info = vku::InitStructHelper();
+    generated_commands_info.shaderStages = VK_SHADER_STAGE_COMPUTE_BIT;
+    generated_commands_info.indirectExecutionSet = exe_set;
+    generated_commands_info.indirectCommandsLayout = command_layout;
+    generated_commands_info.indirectAddressSize = 64;
+    generated_commands_info.indirectAddress = invalid_buffer;
+    generated_commands_info.sequenceCountAddress = 0;
+    generated_commands_info.maxSequenceCount = 1;
+    generated_commands_info.maxDrawCount = 1;
+    SetPreProcessBuffer(generated_commands_info);
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-size-11364");
+    vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer, false, &generated_commands_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
 }

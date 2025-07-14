@@ -502,8 +502,8 @@ bool Device::ValidateGeneratedCommandsInfo(VkCommandBuffer command_buffer,
     }
 
     if (generated_commands_info.indirectAddress == 0) {
-        skip |= LogError("VUID-VkGeneratedCommandsInfoEXT-indirectAddress-11076", command_buffer,
-                         info_loc.dot(Field::indirectAddress), "is NULL.");
+        skip |= LogError("VUID-VkGeneratedCommandsInfoEXT-indirectAddress-parameter", command_buffer,
+                         info_loc.dot(Field::indirectAddress), "is zero.");
     } else if (SafeModulo(generated_commands_info.indirectAddress, 4) != 0) {
         skip |=
             LogError("VUID-VkGeneratedCommandsInfoEXT-indirectAddress-11074", command_buffer, info_loc.dot(Field::indirectAddress),
