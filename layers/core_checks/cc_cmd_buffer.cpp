@@ -1807,8 +1807,14 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers2EXT(VkCommandBuffer command
                                                          uint32_t bindingCount, const VkBuffer *pBuffers,
                                                          const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes,
                                                          const VkDeviceSize *pStrides, const ErrorObject &error_obj) const {
-    return PreCallValidateCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides,
-                                                error_obj);
+    bool skip = false;
+    if (!enabled_features.extendedDynamicState && !enabled_features.shaderObject) {
+        skip |= LogError("VUID-vkCmdBindVertexBuffers2-None-08971", commandBuffer, error_obj.location,
+                         "extendedDynamicState and shaderObject features were not enabled.");
+    }
+    skip |= PreCallValidateCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides,
+                                                 error_obj);
+    return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdBeginConditionalRenderingEXT(

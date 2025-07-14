@@ -1904,7 +1904,7 @@ TEST_F(NegativeDynamicRendering, ColorAttachmentLayerCount) {
 
     m_command_buffer.Begin();
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkRenderingInfo-colorAttachment-layerCount");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-viewMask-10859");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
@@ -1942,7 +1942,7 @@ TEST_F(NegativeDynamicRendering, ColorAttachmentLayerCount2DArray) {
     begin_rendering_info.pColorAttachments = &color_attachment;
 
     m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkRenderingInfo-colorAttachment-layerCount");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-viewMask-10859");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();

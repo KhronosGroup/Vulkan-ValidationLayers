@@ -247,7 +247,7 @@ TEST_F(NegativeDeviceFeatureProperty, PromotedFeaturesExtensions14) {
     m_second_device_ci.enabledExtensionCount = extension_list.size();
 
     m_errorMonitor->SetUnexpectedError("Failed to create device chain");  // for android loader
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDeviceCreateInfo-ppEnabledExtensionNames-pushDescriptor");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-10858");
     vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
     m_errorMonitor->VerifyFound();
 }
