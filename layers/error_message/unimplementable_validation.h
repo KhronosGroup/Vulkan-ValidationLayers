@@ -554,7 +554,6 @@ const char* unimplementable_validation[] = {
     "VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-09488"
     "VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-09489"
     "VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-09490"
-    "VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-10393"
 };
 
 // VUs from deprecated extensions that would require complex codegen to get working

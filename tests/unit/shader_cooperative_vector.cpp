@@ -263,7 +263,7 @@ TEST_F(NegativeShaderCooperativeVector, DeviceConvertSrcAddressInvalid) {
     RETURN_IF_SKIP(SetupCmdConvertCooperativeVectorMatrixNVTest());
 
     info.srcData.deviceAddress = 64;
-    m_errorMonitor->SetDesiredError("VUID-vkCmdConvertCooperativeVectorMatrixNV-pInfo-10083");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-size-11364");
     vk::CmdConvertCooperativeVectorMatrixNV(m_command_buffer, 1, &info);
     m_errorMonitor->VerifyFound();
 }
@@ -273,7 +273,7 @@ TEST_F(NegativeShaderCooperativeVector, DeviceConvertDstAddressInvalid) {
     RETURN_IF_SKIP(SetupCmdConvertCooperativeVectorMatrixNVTest());
 
     info.dstData.deviceAddress = 64;
-    m_errorMonitor->SetDesiredError("VUID-vkCmdConvertCooperativeVectorMatrixNV-pInfo-10083");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-size-11364");
     vk::CmdConvertCooperativeVectorMatrixNV(m_command_buffer, 1, &info);
     m_errorMonitor->VerifyFound();
 }

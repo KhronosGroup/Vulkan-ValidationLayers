@@ -2196,7 +2196,7 @@ TEST_F(NegativeRayTracing, CmdCopyAccelerationStructureToMemoryKHR) {
 
     m_command_buffer.Begin();
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyAccelerationStructureToMemoryKHR-pInfo-03739");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-size-11364");
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyAccelerationStructureToMemoryKHR-None-03559");
     m_errorMonitor->SetDesiredError("VUID-VkCopyAccelerationStructureToMemoryInfoKHR-src-04959");
     vk::CmdCopyAccelerationStructureToMemoryKHR(m_command_buffer, &copy_info);
@@ -2270,7 +2270,7 @@ TEST_F(NegativeRayTracing, CmdCopyMemoryToAccelerationStructureKHRInvalidSrcBuff
 
     m_command_buffer.Begin();
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyMemoryToAccelerationStructureKHR-pInfo-03742");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-size-11364");
     vk::CmdCopyMemoryToAccelerationStructureKHR(m_command_buffer, &copy_info);
     m_errorMonitor->VerifyFound();
 
@@ -2909,8 +2909,7 @@ TEST_F(NegativeRayTracing, TrianglesMisalignedVertexBufferAddress) {
     auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
     blas.GetGeometries()[0].SetTrianglesVertexBufferDeviceAddress(1);
 
-    m_errorMonitor->SetDesiredError(
-        "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03804");  // device address does not belong to a buffer
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-size-11364");  // device address does not belong to a buffer
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03711");  // misaligned device address
     blas.BuildCmdBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
@@ -3034,7 +3033,7 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryTr
     blas.GetGeometries()[0].SetTrianglesTransformatData(666 * 16);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03766");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03808");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-size-11364");
     blas.BuildCmdBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -3096,7 +3095,7 @@ TEST_F(NegativeRayTracing, TrianglesIndexBufferInvalidAddress) {
     blas.GetGeometries()[0].SetTrianglesIndexBufferDeviceAddress(32);
 
     m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03806");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-size-11364");
     blas.BuildCmdBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -3117,7 +3116,7 @@ TEST_F(NegativeRayTracing, AabbBufferInvalidAddress) {
     blas.GetGeometries()[0].SetAABBsDeviceAddress(32);
 
     m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03811");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-size-11364");
     blas.BuildCmdBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -3202,7 +3201,7 @@ TEST_F(NegativeRayTracing, TransformBufferInvalidDeviceAddress) {
     blas.GetGeometries()[0].SetTrianglesTransformatData(16);
 
     m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03808");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-size-11364");
     blas.BuildCmdBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -3231,7 +3230,7 @@ TEST_F(NegativeRayTracing, TransformBufferInvalid) {
     m_command_buffer.Begin();
     blas.SetupBuild(*m_device, true);
     transform_buffer.Memory().Destroy();
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03809");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDeviceAddress-no-memory");
     blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -3316,7 +3315,7 @@ TEST_F(NegativeRayTracing, InstanceBufferBadMemory) {
 
     tlas.GetGeometries()[0].GetInstance().buffer.Memory().Destroy();
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03814");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDeviceAddress-no-memory");
     tlas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -3510,7 +3509,7 @@ TEST_F(NegativeRayTracing, ScratchBufferBadMemory) {
 
     buffer_memory.Destroy();
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03803");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDeviceAddress-no-memory");
     blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
