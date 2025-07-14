@@ -1364,7 +1364,7 @@ bool CoreChecks::ValidateActionState(const LastBound &last_bound_state, const Dr
         skip |= ValidateDrawProtectedMemory(last_bound_state, vuid);
         skip |= ValidateDrawDualSourceBlend(last_bound_state, vuid);
         skip |= ValidateDrawFragmentShadingRate(last_bound_state, vuid);
-        skip |= ValidateDrawAttachments(last_bound_state, vuid);
+        skip |= ValidateDrawAttachmentColorBlend(last_bound_state, vuid);
 
         if (cb_state.active_render_pass && cb_state.active_render_pass->UsesDynamicRendering()) {
             skip |= ValidateDrawDynamicRenderingFsOutputs(last_bound_state, pipeline, *cb_state.active_render_pass, loc);
@@ -1942,20 +1942,23 @@ bool CoreChecks::ValidateDrawFragmentShadingRate(const LastBound &last_bound_sta
     return skip;
 }
 
-bool CoreChecks::ValidateDrawAttachments(const LastBound &last_bound_state, const vvl::DrawDispatchVuid &vuid) const {
+bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_state, const vvl::DrawDispatchVuid &vuid) const {
     bool skip = false;
 
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
-    const auto pipeline = last_bound_state.pipeline_state;
-    if (pipeline && !pipeline->ColorBlendState()) {
+    const bool has_pipeline = last_bound_state.pipeline_state != nullptr;
+    if (has_pipeline && !last_bound_state.pipeline_state->ColorBlendState()) {
         return skip;
     }
-    const bool has_pipeline = last_bound_state.pipeline_state != nullptr;
     const bool fragment_shader_bound = has_pipeline || last_bound_state.IsValidShaderBound(ShaderObjectStage::FRAGMENT);
 
     if (last_bound_state.IsRasterizationDisabled() || !fragment_shader_bound) {
         return skip;
     }
+
+    const bool dynamic_equation = last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT);
+    const bool dynamic_advanced = last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT);
+    const bool dynamic_blend_enable = last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
 
     for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
         const auto &attachment_info = cb_state.active_attachments[i];
@@ -1963,11 +1966,15 @@ bool CoreChecks::ValidateDrawAttachments(const LastBound &last_bound_state, cons
         if (!attachment || !attachment_info.IsColor()) {
             continue;
         }
-        const bool has_blend_bit = attachment->format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT;
-        const bool blend_enable = last_bound_state.IsColorBlendEnabled(attachment_info.color_index);
+        const uint32_t color_index = attachment_info.color_index;
+        if (!last_bound_state.IsColorBlendEnabled(color_index)) {
+            continue;
+        }
 
-        if (!has_blend_bit && blend_enable) {
-            const LogObjectList objlist(cb_state.Handle(), attachment->VkHandle());
+        const bool has_blend_bit = attachment->format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT;
+        if (!has_blend_bit) {
+            LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
+            objlist.add(attachment->Handle());
             skip |= LogError(vuid.blend_enable_04727, objlist, vuid.loc(),
                              "%s was created with %s which does not have VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT, but "
                              "%s[%" PRIu32
@@ -1975,10 +1982,76 @@ bool CoreChecks::ValidateDrawAttachments(const LastBound &last_bound_state, cons
                              "(supported features: %s)",
                              attachment_info.Describe(cb_state.attachment_source, i).c_str(),
                              string_VkFormat(attachment->create_info.format),
-                             last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT)
-                                 ? "vkCmdSetColorBlendEnableEXT::pColorBlendEnables"
-                                 : "VkPipelineColorBlendStateCreateInfo::pAttachments",
-                             attachment_info.color_index, string_VkFormatFeatureFlags2(attachment->format_features).c_str());
+                             dynamic_blend_enable ? "vkCmdSetColorBlendEnableEXT::pColorBlendEnables"
+                                                  : "VkPipelineColorBlendStateCreateInfo::pAttachments",
+                             color_index, string_VkFormatFeatureFlags2(attachment->format_features).c_str());
+        }
+
+        // These checks "could" be done in ValidateGraphicsDynamicStateSetStatus, but are exceptions/complex and better done here
+        // where we also need to check for other things related to the color attachments
+        if (dynamic_equation && dynamic_advanced) {
+            // always the case for shader object, can also be done with pipeline
+            if (!cb_state.dynamic_state_value.color_blend_equation_attachments[color_index] &&
+                !cb_state.dynamic_state_value.color_blend_advanced_attachments[color_index]) {
+                LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
+                objlist.add(attachment->Handle());
+                skip |= LogError(vuid.dynamic_color_blend_equation_10864, objlist, vuid.loc(),
+                                 "%s needs to set color attachment index %" PRIu32 ".",
+                                 IsExtEnabled(extensions.vk_ext_blend_operation_advanced)
+                                     ? "Either vkCmdSetColorBlendEquationEXT or vkCmdSetColorBlendAdvancedEXT"
+                                     : "vkCmdSetColorBlendEquationEXT",
+                                 color_index);
+            }
+        } else if (dynamic_equation) {
+            // Only possible with pipelines
+            if (!cb_state.dynamic_state_value.color_blend_equation_attachments[color_index]) {
+                const LogObjectList objlist(cb_state.Handle(), attachment->VkHandle(), last_bound_state.pipeline_state->Handle());
+                skip |= LogError(vuid.dynamic_color_blend_equation_10862, objlist, vuid.loc(),
+                                 "The pipeline was created with VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT, but "
+                                 "vkCmdSetColorBlendEquationEXT was never set for color attachment index %" PRIu32 ".%s",
+                                 color_index, cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT).c_str());
+            }
+        } else if (dynamic_advanced) {
+            // Only possible with pipelines
+            if (!cb_state.dynamic_state_value.color_blend_advanced_attachments[color_index]) {
+                const LogObjectList objlist(cb_state.Handle(), attachment->VkHandle(), last_bound_state.pipeline_state->Handle());
+                skip |= LogError(vuid.dynamic_color_blend_equation_10863, objlist, vuid.loc(),
+                                 "The pipeline was created with VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT, but "
+                                 "vkCmdSetColorBlendAdvancedEXT was never set for color attachment index %" PRIu32 ".%s",
+                                 color_index, cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT).c_str());
+            }
+        }
+
+        if (dynamic_advanced && cb_state.dynamic_state_value.color_blend_advanced_attachments[color_index]) {
+            if (cb_state.active_color_attachments_index.size() >
+                phys_dev_ext_props.blend_operation_advanced_props.advancedBlendMaxColorAttachments) {
+                LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
+                objlist.add(attachment->Handle());
+                skip |= LogError(vuid.blend_advanced_07480, objlist, vuid.loc(),
+                                 "Color Attachment index %" PRIu32
+                                 " has blending enabled, but the total active color attachment count (%zu) is greater than "
+                                 "advancedBlendMaxColorAttachments (%" PRIu32 ").%s",
+                                 color_index, cb_state.active_color_attachments_index.size(),
+                                 phys_dev_ext_props.blend_operation_advanced_props.advancedBlendMaxColorAttachments,
+                                 cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT).c_str());
+            }
+        }
+
+        if (!dynamic_equation || cb_state.dynamic_state_value.color_blend_equation_attachments[color_index]) {
+            if (!cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_BLEND_CONSTANTS) &&
+                last_bound_state.IsBlendConstantsEnabled(color_index)) {
+                LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
+                objlist.add(attachment->Handle());
+                skip |= LogError(
+                    vuid.dynamic_blend_constants_07835, objlist, vuid.loc(),
+                    "color attachment index %" PRIu32
+                    " has blending enabled (from %s), the blend factor is constant, %sbut vkCmdSetBlendConstants was never "
+                    "called.%s",
+                    color_index,
+                    dynamic_blend_enable ? "vkCmdSetColorBlendEnableEXT" : "VkPipelineColorBlendAttachmentState::blendEnable",
+                    has_pipeline ? "VK_DYNAMIC_STATE_BLEND_CONSTANT was state is dynamic, " : "",
+                    cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_BLEND_CONSTANTS).c_str());
+            }
         }
     }
 

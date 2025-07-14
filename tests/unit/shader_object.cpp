@@ -1852,8 +1852,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetColorBlendEquationEXT) {
     VkBool32 colorBlendEnable = VK_TRUE;
     vk::CmdSetColorBlendEnableEXT(m_command_buffer, 0u, 1u, &colorBlendEnable);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08658");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-rasterizerDiscardEnable-09418");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10864");
     vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -1879,46 +1878,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetColorBlendEquationEXTActiveAttachments
     };
     vk::CmdSetColorBlendEquationEXT(m_command_buffer, 1u, 1u, &colorBlendEquation);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08658");
-    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
-    m_errorMonitor->VerifyFound();
-
-    m_command_buffer.EndRendering();
-    m_command_buffer.End();
-}
-
-TEST_F(NegativeShaderObject, MissingCmdSetColorBlendAdvancedEXT) {
-    TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetColorBlendAdvancedEXT.");
-
-    AddRequiredExtensions(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitBasicShaderObject());
-    InitDynamicRenderTarget();
-    CreateMinimalShaders();
-
-    m_command_buffer.Begin();
-    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
-    SetDefaultDynamicStatesExclude({VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT});
-    VkBool32 colorBlendEnable = VK_TRUE;
-    vk::CmdSetColorBlendEnableEXT(m_command_buffer, 0u, 1u, &colorBlendEnable);
-    VkColorBlendAdvancedEXT colorBlendAdvanced;
-    colorBlendAdvanced.advancedBlendOp = VK_BLEND_OP_ADD;
-    colorBlendAdvanced.srcPremultiplied = VK_FALSE;
-    colorBlendAdvanced.dstPremultiplied = VK_FALSE;
-    colorBlendAdvanced.blendOverlap = VK_BLEND_OVERLAP_UNCORRELATED_EXT;
-    colorBlendAdvanced.clampResults = VK_FALSE;
-    vk::CmdSetColorBlendAdvancedEXT(m_command_buffer, 0u, 1u, &colorBlendAdvanced);
-    VkColorBlendEquationEXT colorBlendEquation = {
-        VK_BLEND_FACTOR_CONSTANT_COLOR,
-        VK_BLEND_FACTOR_ONE,
-        VK_BLEND_OP_ADD,
-        VK_BLEND_FACTOR_ONE,
-        VK_BLEND_FACTOR_ONE,
-        VK_BLEND_OP_ADD,
-    };
-    vk::CmdSetColorBlendEquationEXT(m_command_buffer, 1u, 1u, &colorBlendEquation);
-    m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
-
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08658");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10864");
     vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -7212,4 +7172,81 @@ TEST_F(NegativeShaderObject, CommandBufferRecording) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindShadersEXT-commandBuffer-recording");
     vk::CmdBindShadersEXT(m_command_buffer, 1u, &stage, &vert_shader.handle());
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderObject, AdvancedBlendMaxAttachments) {
+    TEST_DESCRIPTION("Attempt to use more than maximum attachments in subpass when advanced blend is enabled");
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEnable);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendAdvanced);
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    CreateMinimalShaders();
+
+    VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT blend_advanced_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(blend_advanced_props);
+    uint32_t attachment_count = blend_advanced_props.advancedBlendMaxColorAttachments + 1;
+
+    if (attachment_count > m_device->Physical().limits_.maxColorAttachments) {
+        GTEST_SKIP() << "advancedBlendMaxColorAttachments is equal to maxColorAttachments";
+    }
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.extent = {32, 32, 1};
+    image_ci.mipLevels = 1u;
+    image_ci.arrayLayers = 1u;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    std::vector<std::unique_ptr<vkt::Image>> images(attachment_count);
+    std::vector<vkt::ImageView> image_views(attachment_count);
+    std::vector<VkRenderingAttachmentInfo> rendering_attachment_info(attachment_count);
+    for (uint32_t i = 0; i < attachment_count; ++i) {
+        images[i] = std::make_unique<vkt::Image>(*m_device, image_ci);
+        image_views[i] = images[i]->CreateView();
+        rendering_attachment_info[i] = vku::InitStructHelper();
+        rendering_attachment_info[i].imageView = image_views[i];
+        rendering_attachment_info[i].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        rendering_attachment_info[i].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        rendering_attachment_info[i].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        rendering_attachment_info[i].clearValue.color = m_clear_color;
+    }
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32, 32}};
+    rendering_info.layerCount = 1u;
+    rendering_info.colorAttachmentCount = attachment_count;
+    rendering_info.pColorAttachments = rendering_attachment_info.data();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
+    SetDefaultDynamicStatesExclude({}, false, m_command_buffer);
+
+    VkColorComponentFlags color_write_mask =
+        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+
+    for (uint32_t i = 0; i < attachment_count; ++i) {
+        VkBool32 color_blend_enable = i == 0;
+        vk::CmdSetColorBlendEnableEXT(m_command_buffer, i, 1u, &color_blend_enable);
+        vk::CmdSetColorWriteMaskEXT(m_command_buffer, i, 1u, &color_write_mask);
+        VkColorBlendAdvancedEXT color_blend_advanced;
+        color_blend_advanced.advancedBlendOp = VK_BLEND_OP_ADD;
+        color_blend_advanced.srcPremultiplied = VK_FALSE;
+        color_blend_advanced.dstPremultiplied = VK_FALSE;
+        color_blend_advanced.blendOverlap = VK_BLEND_OVERLAP_UNCORRELATED_EXT;
+        color_blend_advanced.clampResults = VK_FALSE;
+        vk::CmdSetColorBlendAdvancedEXT(m_command_buffer, i, 1u, &color_blend_advanced);
+    }
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-advancedBlendMaxColorAttachments-07480");
+    vk::CmdDraw(m_command_buffer, 4u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
 }
