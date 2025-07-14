@@ -1815,11 +1815,12 @@ TEST_F(NegativeDynamicState, DrawNotSetColorBlendEquation) {
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT);
+    pipe.cb_attachments_.blendEnable = VK_TRUE;
     pipe.CreateGraphicsPipeline();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07628");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10862");
     vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_errorMonitor->SetDesiredError("VUID-VkColorBlendEquationEXT-dualSrcBlend-07357");
@@ -1862,7 +1863,7 @@ TEST_F(NegativeDynamicState, ColorBlendEquationMultipleAttachments) {
     vk::CmdSetColorBlendEquationEXT(m_command_buffer, 1, 1, &equation);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-firstAttachment-07477");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10862");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -1905,7 +1906,7 @@ TEST_F(NegativeDynamicState, ColorBlendEquationInvalidateStaticPipeline) {
     vk::CmdSetColorBlendEquationEXT(m_command_buffer, 0, 1, &equation);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-firstAttachment-07477");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10862");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -2007,13 +2008,14 @@ TEST_F(NegativeDynamicState, DrawNotSetColorBlendAdvanced) {
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT);
+    pipe.cb_attachments_.blendEnable = VK_TRUE;
     pipe.CreateGraphicsPipeline();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     VkColorBlendAdvancedEXT second = {VK_BLEND_OP_ADD, VK_FALSE, VK_FALSE, VK_BLEND_OVERLAP_UNCORRELATED_EXT, VK_FALSE};
     vk::CmdSetColorBlendAdvancedEXT(m_command_buffer, 1u, 1u, &second);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-firstAttachment-07479");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10863");
     vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     if (!blend_operation_advanced.advancedBlendNonPremultipliedSrcColor) {
@@ -5000,7 +5002,6 @@ TEST_F(NegativeDynamicState, CmdBindVertexBuffers2NullOffset) {
 
 TEST_F(NegativeDynamicState, AdvancedBlendMaxAttachments) {
     TEST_DESCRIPTION("Attempt to use more than maximum attachments in subpass when advanced blend is enabled");
-
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
@@ -5030,10 +5031,14 @@ TEST_F(NegativeDynamicState, AdvancedBlendMaxAttachments) {
 
     std::vector<std::unique_ptr<vkt::Image>> images(attachment_count);
     std::vector<vkt::ImageView> image_views(attachment_count);
+    std::vector<VkFormat> formats(attachment_count);
+    std::vector<VkPipelineColorBlendAttachmentState> pipeline_color_blends(attachment_count);
     std::vector<VkRenderingAttachmentInfo> rendering_attachment_info(attachment_count);
     for (uint32_t i = 0; i < attachment_count; ++i) {
         images[i] = std::make_unique<vkt::Image>(*m_device, image_ci);
         image_views[i] = images[i]->CreateView();
+        formats[i] = VK_FORMAT_R8G8B8A8_UNORM;
+        pipeline_color_blends[i] = DefaultColorBlendAttachmentState();
         rendering_attachment_info[i] = vku::InitStructHelper();
         rendering_attachment_info[i].imageView = image_views[i];
         rendering_attachment_info[i].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -5042,10 +5047,15 @@ TEST_F(NegativeDynamicState, AdvancedBlendMaxAttachments) {
         rendering_attachment_info[i].clearValue.color = m_clear_color;
     }
 
-    CreatePipelineHelper pipe(*this);
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = attachment_count;
+    pipeline_rendering_info.pColorAttachmentFormats = formats.data();
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT);
-    pipe.cb_ci_.attachmentCount = 0;
+    pipe.cb_ci_.attachmentCount = attachment_count;
+    pipe.cb_ci_.pAttachments = pipeline_color_blends.data();
     pipe.CreateGraphicsPipeline();
 
     VkRenderingInfo rendering_info = vku::InitStructHelper();
@@ -5903,26 +5913,17 @@ TEST_F(NegativeDynamicState, ColorBlendEquationNotSet) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEquation);
     RETURN_IF_SKIP(Init());
-
-    VkSubpassDescription subpass = {};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-
-    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper();
-    render_pass_ci.subpassCount = 1u;
-    render_pass_ci.pSubpasses = &subpass;
-
-    vkt::RenderPass render_pass(*m_device, render_pass_ci);
-    vkt::Framebuffer framebuffer(*m_device, render_pass, 0, nullptr);
+    InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT);
-    pipe.gp_ci_.renderPass = render_pass;
+    pipe.cb_attachments_.blendEnable = VK_TRUE;
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 32u, 32u);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07628");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10862");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();
@@ -5965,26 +5966,17 @@ TEST_F(NegativeDynamicState, ColorBlendAdvancedNotSet) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendAdvanced);
     RETURN_IF_SKIP(Init());
-
-    VkSubpassDescription subpass = {};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-
-    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper();
-    render_pass_ci.subpassCount = 1u;
-    render_pass_ci.pSubpasses = &subpass;
-
-    vkt::RenderPass render_pass(*m_device, render_pass_ci);
-    vkt::Framebuffer framebuffer(*m_device, render_pass, 0, nullptr);
+    InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT);
-    pipe.gp_ci_.renderPass = render_pass;
+    pipe.cb_attachments_.blendEnable = VK_TRUE;
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 32u, 32u);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07635");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10863");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();

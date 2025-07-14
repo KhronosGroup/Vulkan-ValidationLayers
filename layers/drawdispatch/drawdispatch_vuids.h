@@ -151,14 +151,15 @@ struct DrawDispatchVuid {
     const char* dynamic_alpha_to_one_enable_07625 = kVUIDUndefined;
     const char* dynamic_logic_op_enable_07626 = kVUIDUndefined;
     const char* dynamic_color_blend_enable_07476 = kVUIDUndefined;
-    const char* dynamic_color_blend_equation_07477 = kVUIDUndefined;
     const char* dynamic_color_write_mask_07478 = kVUIDUndefined;
+    const char* dynamic_color_blend_equation_10862 = kVUIDUndefined;
+    const char* dynamic_color_blend_equation_10863 = kVUIDUndefined;
+    const char* dynamic_color_blend_equation_10864 = kVUIDUndefined;
     const char* dynamic_rasterization_stream_07630 = kVUIDUndefined;
     const char* dynamic_conservative_rasterization_mode_07631 = kVUIDUndefined;
     const char* dynamic_extra_primitive_overestimation_size_07632 = kVUIDUndefined;
     const char* dynamic_depth_clip_enable_07633 = kVUIDUndefined;
     const char* dynamic_sample_locations_enable_07634 = kVUIDUndefined;
-    const char* dynamic_color_blend_advanced_07479 = kVUIDUndefined;
     const char* dynamic_provoking_vertex_mode_07636 = kVUIDUndefined;
     const char* dynamic_depth_clip_negative_one_to_one_07639 = kVUIDUndefined;
     const char* dynamic_viewport_w_scaling_enable_07640 = kVUIDUndefined;
@@ -225,8 +226,6 @@ struct DrawDispatchVuid {
     const char* external_format_resolve_09371 = kVUIDUndefined;
     const char* set_rasterization_samples_08644 = kVUIDUndefined;
     const char* set_color_write_enable_08647 = kVUIDUndefined;
-    const char* set_color_blend_equation_08658 = kVUIDUndefined;
-    const char* set_blend_operation_advance_09416 = kVUIDUndefined;
     const char* set_line_rasterization_mode_08666 = kVUIDUndefined;
     const char* set_line_rasterization_mode_08667 = kVUIDUndefined;
     const char* set_line_rasterization_mode_08668 = kVUIDUndefined;
@@ -280,7 +279,6 @@ struct DrawDispatchVuid {
     const char* sample_locations_enable_07937 = kVUIDUndefined;
     const char* sample_locations_enable_07938 = kVUIDUndefined;
     const char* set_blend_advanced_09417 = kVUIDUndefined;
-    const char* set_blend_equation_09418 = kVUIDUndefined;
     const char* set_color_write_09419 = kVUIDUndefined;
     const char* set_coverage_to_color_location_09420 = kVUIDUndefined;
     const char* set_coverage_to_color_location_07490 = kVUIDUndefined;
@@ -301,9 +299,7 @@ struct DrawDispatchVuid {
     const char* vertex_input_09461 = kVUIDUndefined;
     const char* vertex_input_09462 = kVUIDUndefined;
     const char* color_blend_enable_07627 = kVUIDUndefined;
-    const char* color_blend_equation_07628 = kVUIDUndefined;
     const char* color_write_mask_07629 = kVUIDUndefined;
-    const char* color_blend_advanced_07635 = kVUIDUndefined;
     const char* image_layout_09600 = kVUIDUndefined;
     const char* rendering_contents_10582 = kVUIDUndefined;
     const char* line_rasterization_10608 = kVUIDUndefined;
