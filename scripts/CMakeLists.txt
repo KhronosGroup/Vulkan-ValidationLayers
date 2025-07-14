@@ -131,10 +131,10 @@ if (UPDATE_DEPS)
         list(APPEND cmake_var "--cmake_var" "VUL_MOCK_ANDROID=ON")
     endif()
 
-    # Enable mimalloc statistics level 1. This is useful for release builds.
-    # Default value for release builds is MI_STAT=0, for debug builds it is MI_STAT=2.
+    # Enable mimalloc statistics level 2. It is required for allocation counts and size-bin statistic.
+    # Default value for release builds is MI_STAT=0.
     if (VVL_ENABLE_MI_STAT)
-         list(APPEND cmake_var "--cmake_var" "MI_EXTRA_CPPDEFS=\"MI_STAT=1\"")
+         list(APPEND cmake_var "--cmake_var" "MI_EXTRA_CPPDEFS=\"MI_STAT=2\"")
     endif()
 
     if (cmake_var)
