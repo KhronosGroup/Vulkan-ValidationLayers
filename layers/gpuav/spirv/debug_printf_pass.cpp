@@ -454,7 +454,7 @@ void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_
 
         const uint32_t load_printf_addr_id = module->TakeNextId();
         block.CreateInstruction(spv::OpLoad, {printf_struct_pointer_type_->Id(), load_printf_addr_id, printf_addr_access_chaind_id,
-                                              0x2 /*Memory operand: Aligned*/, 16});
+                                              0x2 /*Memory operand: Aligned*/, 64});
 
         const uint32_t printf_buffer_member_access_chain_id = module->TakeNextId();
         const uint32_t member_id = module->type_manager_.GetConstantUInt32(member).Id();
@@ -485,7 +485,7 @@ void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_
             add_printf_buffer_access_chain(check_block, gpuav::kDebugPrintfOutputBufferSize);
         const uint32_t load_printf_buffer_size_id = module_.TakeNextId();
         check_block.CreateInstruction(spv::OpLoad, {uint32_type_id, load_printf_buffer_size_id, printf_buffer_size_access_chain_id,
-                                                    0x2 /*Memory operand: Aligned*/, 0x4});
+                                                    0x2 /*Memory operand: Aligned*/, 64});
 
         const uint32_t less_than_equal_id = module_.TakeNextId();
         const uint32_t bool_type_id = module_.type_manager_.GetTypeBool().Id();
@@ -507,7 +507,7 @@ void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_
         const uint32_t printf_buffer_access_chain_id =
             add_printf_buffer_access_chain(store_block, gpuav::kDebugPrintfOutputBufferData, int_add_id);
         store_block.CreateInstruction(spv::OpStore,
-                                      {printf_buffer_access_chain_id, byte_written_id, 0x2 /*Memory operand: Aligned*/, 0x4});
+                                      {printf_buffer_access_chain_id, byte_written_id, 0x2 /*Memory operand: Aligned*/, 64});
     }
 
     // Store Shader Stage ID
@@ -520,7 +520,7 @@ void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_
 
         const uint32_t shader_id = module_.type_manager_.GetConstantUInt32(module_.settings_.shader_id).Id();
         store_block.CreateInstruction(spv::OpStore,
-                                      {printf_buffer_access_chain_id, shader_id, 0x2 /*Memory operand: Aligned*/, 0x4});
+                                      {printf_buffer_access_chain_id, shader_id, 0x2 /*Memory operand: Aligned*/, 64});
     }
 
     // Write a 32-bit word to the output buffer for each argument
@@ -534,7 +534,7 @@ void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_
             add_printf_buffer_access_chain(store_block, gpuav::kDebugPrintfOutputBufferData, int_add_id);
 
         store_block.CreateInstruction(spv::OpStore,
-                                      {printf_buffer_access_chain_id, function_param_ids[i], 0x2 /*Memory operand: Aligned*/, 0x4});
+                                      {printf_buffer_access_chain_id, function_param_ids[i], 0x2 /*Memory operand: Aligned*/, 64});
     }
 
     // merge block of the above if() check

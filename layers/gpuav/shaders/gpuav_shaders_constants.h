@@ -44,17 +44,13 @@ const uint kMaxErrorsPerCmd = 6;
 const uint kLinkShaderId = 0x0DEAD001;
 
 // #ARNO_TODO will be 0, once I get rid of validation pipeline specific descriptor set
-const int kInstDefaultDescriptorSet = 1;
+const int kInstDefaultDescriptorSet = 0;
 
 const int kBindingInstRootNode = 0;
 
 // Validation pipelines
 // ---
 const int kValPipeDescSet = 0;
-
-// Diagnostic calls
-// ---
-const int kDiagCommonDescriptorSet = kValPipeDescSet + 1;
 
 // Diagnostic calls bindings in common descriptor set
 const int kBindingDiagErrorBuffer = 0;

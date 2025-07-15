@@ -21,7 +21,7 @@
 #include "root_node.h"
 #include "error_payload.h"
 
-layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorSetType {
+layout(buffer_reference, buffer_reference_align = 64, std430) buffer DescriptorSetType {
     // struct glsl::DescriptorState {
     //   x: id
     //   y: extra data depending on the descriptor type
@@ -29,9 +29,9 @@ layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorSe
     uvec2 data[];
 };
 
-layout(buffer_reference, buffer_reference_align = 8, std430) buffer UnusedInitializedStatus;
+layout(buffer_reference, buffer_reference_align = 64, std430) buffer UnusedInitializedStatus;
 
-layout(buffer_reference) buffer BoundDescriptorSetsStateSSBO {
+layout(buffer_reference, buffer_reference_align = 64, std430) buffer BoundDescriptorSetsStateSSBO {
     UnusedInitializedStatus unused_initialized_status;
     DescriptorSetType descriptor_set_types[kDebugInputBindlessMaxDescSets];
 };

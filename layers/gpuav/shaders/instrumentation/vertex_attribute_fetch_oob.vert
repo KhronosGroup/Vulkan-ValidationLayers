@@ -20,7 +20,7 @@
 #extension GL_GOOGLE_include_directive : enable
 #include "root_node.h"
 
-layout(buffer_reference) buffer VertexAttributeFetchLimits {
+layout(buffer_reference, buffer_reference_align = 64, std430) buffer VertexAttributeFetchLimits {
     uint has_max_vbb_vertex_input_rate;
     uint vertex_attribute_fetch_limit_vertex_input_rate;
 

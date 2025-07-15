@@ -19,8 +19,8 @@
 
 #include "common.h"
 #include "push_data.h"
-
-layout(buffer_reference) buffer CountBufferAddr {
+// #ARNO_TODO address comes from user land, not sure it is aligned to 64
+layout(buffer_reference, buffer_reference_align = 64, std430) buffer CountBufferAddr {
     uint data[];
 };
 
