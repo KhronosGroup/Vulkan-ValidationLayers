@@ -2015,7 +2015,7 @@ TEST_F(NegativeDynamicState, DrawNotSetColorBlendAdvanced) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     VkColorBlendAdvancedEXT second = {VK_BLEND_OP_ADD, VK_FALSE, VK_FALSE, VK_BLEND_OVERLAP_UNCORRELATED_EXT, VK_FALSE};
     vk::CmdSetColorBlendAdvancedEXT(m_command_buffer, 1u, 1u, &second);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10863");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-rasterizerDiscardEnable-10863");
     vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     if (!blend_operation_advanced.advancedBlendNonPremultipliedSrcColor) {
@@ -5976,7 +5976,7 @@ TEST_F(NegativeDynamicState, ColorBlendAdvancedNotSet) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10863");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-rasterizerDiscardEnable-10863");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();
