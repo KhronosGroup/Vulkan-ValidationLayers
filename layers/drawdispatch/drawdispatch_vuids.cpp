@@ -134,7 +134,7 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         dynamic_color_blend_enable_07476         = "VUID-vkCmdDraw-firstAttachment-07476";
         dynamic_color_write_mask_07478           = "VUID-vkCmdDraw-firstAttachment-07478";
         dynamic_color_blend_equation_10862       = "VUID-vkCmdDraw-None-10862";
-        dynamic_color_blend_equation_10863       = "VUID-vkCmdDraw-None-10863";
+        dynamic_color_blend_equation_10863       = "VUID-vkCmdDraw-rasterizerDiscardEnable-10863";
         dynamic_color_blend_equation_10864       = "VUID-vkCmdDraw-None-10864";
         dynamic_rasterization_stream_07630       = "VUID-vkCmdDraw-None-07630";
         dynamic_conservative_rasterization_mode_07631 = "VUID-vkCmdDraw-None-07631";
@@ -393,7 +393,7 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         dynamic_color_blend_enable_07476         = "VUID-vkCmdDrawMultiEXT-firstAttachment-07476";
         dynamic_color_write_mask_07478           = "VUID-vkCmdDrawMultiEXT-firstAttachment-07478";
         dynamic_color_blend_equation_10862       = "VUID-vkCmdDrawMultiEXT-None-10862";
-        dynamic_color_blend_equation_10863       = "VUID-vkCmdDrawMultiEXT-None-10863";
+        dynamic_color_blend_equation_10863       = "VUID-vkCmdDrawMultiEXT-rasterizerDiscardEnable-10863";
         dynamic_color_blend_equation_10864       = "VUID-vkCmdDrawMultiEXT-None-10864";
         dynamic_rasterization_stream_07630       = "VUID-vkCmdDrawMultiEXT-None-07630";
         dynamic_conservative_rasterization_mode_07631 = "VUID-vkCmdDrawMultiEXT-None-07631";
@@ -653,7 +653,7 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         dynamic_color_blend_enable_07476         = "VUID-vkCmdDrawIndexed-firstAttachment-07476";
         dynamic_color_write_mask_07478           = "VUID-vkCmdDrawIndexed-firstAttachment-07478";
         dynamic_color_blend_equation_10862       = "VUID-vkCmdDrawIndexed-None-10862";
-        dynamic_color_blend_equation_10863       = "VUID-vkCmdDrawIndexed-None-10863";
+        dynamic_color_blend_equation_10863       = "VUID-vkCmdDrawIndexed-rasterizerDiscardEnable-10863";
         dynamic_color_blend_equation_10864       = "VUID-vkCmdDrawIndexed-None-10864";
         dynamic_rasterization_stream_07630       = "VUID-vkCmdDrawIndexed-None-07630";
         dynamic_conservative_rasterization_mode_07631 = "VUID-vkCmdDrawIndexed-None-07631";
@@ -913,7 +913,7 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         dynamic_color_blend_enable_07476         = "VUID-vkCmdDrawMultiIndexedEXT-firstAttachment-07476";
         dynamic_color_write_mask_07478           = "VUID-vkCmdDrawMultiIndexedEXT-firstAttachment-07478";
         dynamic_color_blend_equation_10862       = "VUID-vkCmdDrawMultiIndexedEXT-None-10862";
-        dynamic_color_blend_equation_10863       = "VUID-vkCmdDrawMultiIndexedEXT-None-10863";
+        dynamic_color_blend_equation_10863       = "VUID-vkCmdDrawMultiIndexedEXT-rasterizerDiscardEnable-10863";
         dynamic_color_blend_equation_10864       = "VUID-vkCmdDrawMultiIndexedEXT-None-10864";
         dynamic_rasterization_stream_07630       = "VUID-vkCmdDrawMultiIndexedEXT-None-07630";
         dynamic_conservative_rasterization_mode_07631 = "VUID-vkCmdDrawMultiIndexedEXT-None-07631";
@@ -1173,7 +1173,7 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         dynamic_color_blend_enable_07476         = "VUID-vkCmdDrawIndirect-firstAttachment-07476";
         dynamic_color_write_mask_07478           = "VUID-vkCmdDrawIndirect-firstAttachment-07478";
         dynamic_color_blend_equation_10862       = "VUID-vkCmdDrawIndirect-None-10862";
-        dynamic_color_blend_equation_10863       = "VUID-vkCmdDrawIndirect-None-10863";
+        dynamic_color_blend_equation_10863       = "VUID-vkCmdDrawIndirect-rasterizerDiscardEnable-10863";
         dynamic_color_blend_equation_10864       = "VUID-vkCmdDrawIndirect-None-10864";
         dynamic_rasterization_stream_07630       = "VUID-vkCmdDrawIndirect-None-07630";
         dynamic_conservative_rasterization_mode_07631 = "VUID-vkCmdDrawIndirect-None-07631";
@@ -1432,7 +1432,7 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         dynamic_color_blend_enable_07476         = "VUID-vkCmdDrawIndexedIndirect-firstAttachment-07476";
         dynamic_color_write_mask_07478           = "VUID-vkCmdDrawIndexedIndirect-firstAttachment-07478";
         dynamic_color_blend_equation_10862       = "VUID-vkCmdDrawIndexedIndirect-None-10862";
-        dynamic_color_blend_equation_10863       = "VUID-vkCmdDrawIndexedIndirect-None-10863";
+        dynamic_color_blend_equation_10863       = "VUID-vkCmdDrawIndexedIndirect-rasterizerDiscardEnable-10863";
         dynamic_color_blend_equation_10864       = "VUID-vkCmdDrawIndexedIndirect-None-10864";
         dynamic_rasterization_stream_07630       = "VUID-vkCmdDrawIndexedIndirect-None-07630";
         dynamic_conservative_rasterization_mode_07631 = "VUID-vkCmdDrawIndexedIndirect-None-07631";
@@ -1790,7 +1790,7 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         dynamic_color_blend_enable_07476         = "VUID-vkCmdDrawIndirectCount-firstAttachment-07476";
         dynamic_color_write_mask_07478           = "VUID-vkCmdDrawIndirectCount-firstAttachment-07478";
         dynamic_color_blend_equation_10862       = "VUID-vkCmdDrawIndirectCount-None-10862";
-        dynamic_color_blend_equation_10863       = "VUID-vkCmdDrawIndirectCount-None-10863";
+        dynamic_color_blend_equation_10863       = "VUID-vkCmdDrawIndirectCount-rasterizerDiscardEnable-10863";
         dynamic_color_blend_equation_10864       = "VUID-vkCmdDrawIndirectCount-None-10864";
         dynamic_rasterization_stream_07630       = "VUID-vkCmdDrawIndirectCount-None-07630";
         dynamic_conservative_rasterization_mode_07631 = "VUID-vkCmdDrawIndirectCount-None-07631";
@@ -2052,7 +2052,7 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         dynamic_color_blend_enable_07476         = "VUID-vkCmdDrawIndexedIndirectCount-firstAttachment-07476";
         dynamic_color_write_mask_07478           = "VUID-vkCmdDrawIndexedIndirectCount-firstAttachment-07478";
         dynamic_color_blend_equation_10862       = "VUID-vkCmdDrawIndexedIndirectCount-None-10862";
-        dynamic_color_blend_equation_10863       = "VUID-vkCmdDrawIndexedIndirectCount-None-10863";
+        dynamic_color_blend_equation_10863       = "VUID-vkCmdDrawIndexedIndirectCount-rasterizerDiscardEnable-10863";
         dynamic_color_blend_equation_10864       = "VUID-vkCmdDrawIndexedIndirectCount-None-10864";
         dynamic_rasterization_stream_07630       = "VUID-vkCmdDrawIndexedIndirectCount-None-07630";
         dynamic_conservative_rasterization_mode_07631 = "VUID-vkCmdDrawIndexedIndirectCount-None-07631";
@@ -2481,7 +2481,7 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         dynamic_color_blend_enable_07476         = "VUID-vkCmdDrawMeshTasksNV-firstAttachment-07476";
         dynamic_color_write_mask_07478           = "VUID-vkCmdDrawMeshTasksNV-firstAttachment-07478";
         dynamic_color_blend_equation_10862       = "VUID-vkCmdDrawMeshTasksNV-None-10862";
-        dynamic_color_blend_equation_10863       = "VUID-vkCmdDrawMeshTasksNV-None-10863";
+        dynamic_color_blend_equation_10863       = "VUID-vkCmdDrawMeshTasksNV-rasterizerDiscardEnable-10863";
         dynamic_color_blend_equation_10864       = "VUID-vkCmdDrawMeshTasksNV-None-10864";
         dynamic_rasterization_stream_07630       = "VUID-vkCmdDrawMeshTasksNV-None-07630";
         dynamic_conservative_rasterization_mode_07631 = "VUID-vkCmdDrawMeshTasksNV-None-07631";
@@ -2725,7 +2725,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         dynamic_color_blend_enable_07476         = "VUID-vkCmdDrawMeshTasksIndirectNV-firstAttachment-07476";
         dynamic_color_write_mask_07478           = "VUID-vkCmdDrawMeshTasksIndirectNV-firstAttachment-07478";
         dynamic_color_blend_equation_10862       = "VUID-vkCmdDrawMeshTasksIndirectNV-None-10862";
-        dynamic_color_blend_equation_10863       = "VUID-vkCmdDrawMeshTasksIndirectNV-None-10863";
+        dynamic_color_blend_equation_10863       = "VUID-vkCmdDrawMeshTasksIndirectNV-rasterizerDiscardEnable-10863";
         dynamic_color_blend_equation_10864       = "VUID-vkCmdDrawMeshTasksIndirectNV-None-10864";
         dynamic_rasterization_stream_07630       = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07630";
         dynamic_conservative_rasterization_mode_07631 = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07631";
@@ -2972,7 +2972,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         dynamic_color_blend_enable_07476         = "VUID-vkCmdDrawMeshTasksIndirectCountNV-firstAttachment-07476";
         dynamic_color_write_mask_07478           = "VUID-vkCmdDrawMeshTasksIndirectCountNV-firstAttachment-07478";
         dynamic_color_blend_equation_10862       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-10862";
-        dynamic_color_blend_equation_10863       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-10863";
+        dynamic_color_blend_equation_10863       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-rasterizerDiscardEnable-10863";
         dynamic_color_blend_equation_10864       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-10864";
         dynamic_rasterization_stream_07630       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07630";
         dynamic_conservative_rasterization_mode_07631 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07631";
@@ -3213,7 +3213,7 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         dynamic_color_blend_enable_07476         = "VUID-vkCmdDrawMeshTasksEXT-firstAttachment-07476";
         dynamic_color_write_mask_07478           = "VUID-vkCmdDrawMeshTasksEXT-firstAttachment-07478";
         dynamic_color_blend_equation_10862       = "VUID-vkCmdDrawMeshTasksEXT-None-10862";
-        dynamic_color_blend_equation_10863       = "VUID-vkCmdDrawMeshTasksEXT-None-10863";
+        dynamic_color_blend_equation_10863       = "VUID-vkCmdDrawMeshTasksEXT-rasterizerDiscardEnable-10863";
         dynamic_color_blend_equation_10864       = "VUID-vkCmdDrawMeshTasksEXT-None-10864";
         dynamic_rasterization_stream_07630       = "VUID-vkCmdDrawMeshTasksEXT-None-07630";
         dynamic_conservative_rasterization_mode_07631 = "VUID-vkCmdDrawMeshTasksEXT-None-07631";
@@ -3457,7 +3457,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         dynamic_color_blend_enable_07476         = "VUID-vkCmdDrawMeshTasksIndirectEXT-firstAttachment-07476";
         dynamic_color_write_mask_07478           = "VUID-vkCmdDrawMeshTasksIndirectEXT-firstAttachment-07478";
         dynamic_color_blend_equation_10862       = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-10862";
-        dynamic_color_blend_equation_10863       = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-10863";
+        dynamic_color_blend_equation_10863       = "VUID-vkCmdDrawMeshTasksIndirectEXT-rasterizerDiscardEnable-10863";
         dynamic_color_blend_equation_10864       = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-10864";
         dynamic_rasterization_stream_07630       = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-07630";
         dynamic_conservative_rasterization_mode_07631 = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-07631";
@@ -3704,7 +3704,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         dynamic_color_blend_enable_07476         = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-firstAttachment-07476";
         dynamic_color_write_mask_07478           = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-firstAttachment-07478";
         dynamic_color_blend_equation_10862       = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-10862";
-        dynamic_color_blend_equation_10863       = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-10863";
+        dynamic_color_blend_equation_10863       = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-rasterizerDiscardEnable-10863";
         dynamic_color_blend_equation_10864       = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-10864";
         dynamic_rasterization_stream_07630       = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-07630";
         dynamic_conservative_rasterization_mode_07631 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-07631";
@@ -3962,7 +3962,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         dynamic_color_blend_enable_07476         = "VUID-vkCmdDrawIndirectByteCountEXT-firstAttachment-07476";
         dynamic_color_write_mask_07478           = "VUID-vkCmdDrawIndirectByteCountEXT-firstAttachment-07478";
         dynamic_color_blend_equation_10862       = "VUID-vkCmdDrawIndirectByteCountEXT-None-10862";
-        dynamic_color_blend_equation_10863       = "VUID-vkCmdDrawIndirectByteCountEXT-None-10863";
+        dynamic_color_blend_equation_10863       = "VUID-vkCmdDrawIndirectByteCountEXT-rasterizerDiscardEnable-10863";
         dynamic_color_blend_equation_10864       = "VUID-vkCmdDrawIndirectByteCountEXT-None-10864";
         dynamic_rasterization_stream_07630       = "VUID-vkCmdDrawIndirectByteCountEXT-None-07630";
         dynamic_conservative_rasterization_mode_07631 = "VUID-vkCmdDrawIndirectByteCountEXT-None-07631";
