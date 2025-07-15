@@ -30,7 +30,7 @@ namespace gpuav {
 namespace glsl {
 using uint = uint32_t;
 #else
-#define BUFFER_ADDR_FWD_DECL(TypeName) layout(buffer_reference) buffer TypeName;
+#define BUFFER_ADDR_FWD_DECL(TypeName) layout(buffer_reference, buffer_reference_align = 64, std430) buffer TypeName;
 #define BUFFER_ADDR_DECL(TypeName) TypeName
 
 #if defined(GL_ARB_gpu_shader_int64)
@@ -123,8 +123,10 @@ struct VkTraceRaysIndirectCommandKHR {
     uint height;
     uint depth;
 };
-
-layout(buffer_reference, std430) buffer IndirectCommandReference { VkTraceRaysIndirectCommandKHR trace_rays_dimensions; };
+// #ARNO_TODO address comes from user land, not sure it is aligned to 64
+layout(buffer_reference, buffer_reference_align = 64, std430) buffer IndirectCommandReference {
+    VkTraceRaysIndirectCommandKHR trace_rays_dimensions;
+};
 #endif
 
 struct TraceRaysPushData {

@@ -48,9 +48,9 @@ layout(constant_id = 0) const uint SpecConstantLinkShaderId = kLinkShaderId;
 #define BUFFER_ADDR_DECL(TypeName) VkDeviceAddress
 #define BUFFER_ADDR_STRUCT(StructName) struct StructName
 #else
-#define BUFFER_ADDR_FWD_DECL(TypeName) layout(buffer_reference) buffer TypeName;
+#define BUFFER_ADDR_FWD_DECL(TypeName) layout(buffer_reference, buffer_reference_align = 64, std430) buffer TypeName;
 #define BUFFER_ADDR_DECL(TypeName) TypeName
-#define BUFFER_ADDR_STRUCT(StructName) layout(buffer_reference) buffer StructName
+#define BUFFER_ADDR_STRUCT(StructName) layout(buffer_reference, buffer_reference_align = 64, std430) buffer StructName
 #endif
 
 BUFFER_ADDR_FWD_DECL(OutputBuffer)
@@ -59,17 +59,17 @@ BUFFER_ADDR_FWD_DECL(CmdResourceIndexBuffer)
 BUFFER_ADDR_FWD_DECL(CmdErrorsCountBuffer)
 
 #ifndef __cplusplus
-layout(buffer_reference) buffer OutputBuffer {
+layout(buffer_reference, buffer_reference_align = 64, std430) buffer OutputBuffer {
     uint size;
     uint written_count;
     uint data[];
 };
 
-layout(buffer_reference) buffer ActionIndexBuffer { uint index[]; };
+layout(buffer_reference, buffer_reference_align = 64, std430) buffer ActionIndexBuffer { uint index[]; };
 
-layout(buffer_reference) buffer CmdResourceIndexBuffer { uint index[]; };
+layout(buffer_reference, buffer_reference_align = 64, std430) buffer CmdResourceIndexBuffer { uint index[]; };
 
-layout(buffer_reference) buffer CmdErrorsCountBuffer { uint errors_count[]; };
+layout(buffer_reference, buffer_reference_align = 64, std430) buffer CmdErrorsCountBuffer { uint errors_count[]; };
 #endif
 
 BUFFER_ADDR_FWD_DECL(DebugPrintfBuffer)

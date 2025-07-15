@@ -74,7 +74,7 @@ static void BindErrorLoggingDescSet(Validator &gpuav, CommandBufferSubState &cb_
 
     DispatchUpdateDescriptorSets(gpuav.device, 1, &wds, 0, nullptr);
 
-    DispatchCmdBindDescriptorSets(cb_state.VkHandle(), bind_point, pipeline_layout, glsl::kDiagCommonDescriptorSet, 1,
+    DispatchCmdBindDescriptorSets(cb_state.VkHandle(), bind_point, pipeline_layout, glsl::kValPipeDescSet, 1,
                                   &val_cmd_common_desc_set, 0, nullptr);
 }
 

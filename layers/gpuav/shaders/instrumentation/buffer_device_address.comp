@@ -27,7 +27,7 @@ struct Range {
     uint64_t end;
 };
 
-layout(buffer_reference) buffer BDARanges {
+layout(buffer_reference, buffer_reference_align = 64, std430) buffer BDARanges {
     uint ranges_count;
     uint padding_unused;
     Range ranges[];
@@ -36,7 +36,7 @@ layout(buffer_reference) buffer BDARanges {
 // Ranges are supposed to:
 // 1) be stored from low to high
 // 2) not overlap
-layout(buffer_reference) buffer BDAInputBuffer {
+layout(buffer_reference, buffer_reference_align = 64, std430) buffer BDAInputBuffer {
     BDARanges bda_ranges_ptr;
 };
 
