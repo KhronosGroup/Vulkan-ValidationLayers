@@ -20,7 +20,7 @@
 #include "common.h"
 #include "push_data.h"
 
-layout(buffer_reference) buffer CountBufferAddr {
+layout(buffer_reference, buffer_reference_align = 1, std430) buffer CountBufferAddr {
     uint data[];
 };
 

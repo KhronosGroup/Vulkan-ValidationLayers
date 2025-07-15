@@ -49,9 +49,9 @@ static void BindErrorLoggingDescSet(Validator &gpuav, CommandBufferSubState &cb_
     assert(root_node_ptr->inst_action_index_buffer);
 
     // Buffer holding a resource index from the per command buffer command resources list
-    root_node_ptr->inst_cmd_resource_index_buffer =
+    root_node_ptr->inst_error_logger_index_buffer =
         gpuav.indices_buffer_.Address() + error_logger_index * gpuav.indices_buffer_alignment_;
-    assert(root_node_ptr->inst_cmd_resource_index_buffer);
+    assert(root_node_ptr->inst_error_logger_index_buffer);
 
     // Errors count buffer
     root_node_ptr->inst_cmd_errors_count_buffer = cb_state.GetCmdErrorsCountsBuffer().Address();
@@ -74,7 +74,7 @@ static void BindErrorLoggingDescSet(Validator &gpuav, CommandBufferSubState &cb_
 
     DispatchUpdateDescriptorSets(gpuav.device, 1, &wds, 0, nullptr);
 
-    DispatchCmdBindDescriptorSets(cb_state.VkHandle(), bind_point, pipeline_layout, glsl::kDiagCommonDescriptorSet, 1,
+    DispatchCmdBindDescriptorSets(cb_state.VkHandle(), bind_point, pipeline_layout, glsl::kValPipeDescSet, 1,
                                   &val_cmd_common_desc_set, 0, nullptr);
 }
 

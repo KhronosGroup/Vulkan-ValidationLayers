@@ -264,11 +264,7 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const L
 
     // Create command indices buffer
     {
-        indices_buffer_alignment_ =
-            sizeof(uint32_t) *
-            static_cast<uint32_t>(
-                phys_dev_props.limits.minStorageBufferOffsetAlignment);  // #ARNO_TODO need to find correct alignment, we align
-                                                                         // buffer device addresses
+        indices_buffer_alignment_ = sizeof(uint32_t) * static_cast<uint32_t>(phys_dev_props.limits.minStorageBufferOffsetAlignment);
         VkBufferCreateInfo buffer_info = vku::InitStructHelper();
         buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         buffer_info.size = cst::indices_count * indices_buffer_alignment_;

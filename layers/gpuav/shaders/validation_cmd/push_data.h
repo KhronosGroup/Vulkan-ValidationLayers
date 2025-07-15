@@ -20,9 +20,7 @@
 #define GPU_SHADERS_PUSH_DATA_H
 
 #ifdef __cplusplus
-
-#define BUFFER_ADDR_FWD_DECL(TypeName)
-#define BUFFER_ADDR_DECL(TypeName) VkDeviceAddress
+#include "gpuav/shaders/shader_defines.h"
 
 #include <cstdint>
 
@@ -30,8 +28,7 @@ namespace gpuav {
 namespace glsl {
 using uint = uint32_t;
 #else
-#define BUFFER_ADDR_FWD_DECL(TypeName) layout(buffer_reference) buffer TypeName;
-#define BUFFER_ADDR_DECL(TypeName) TypeName
+#include "shader_defines.h"
 
 #if defined(GL_ARB_gpu_shader_int64)
 #extension GL_ARB_gpu_shader_int64 : require
@@ -43,11 +40,11 @@ using uint = uint32_t;
 
 BUFFER_ADDR_FWD_DECL(CountBufferAddr)
 
-BUFFER_ADDR_FWD_DECL(DrawIndexedIndirectCmdsBufferAddr)
-BUFFER_ADDR_FWD_DECL(DipatchIndirectBufferAddr)
 const uint kIndexedIndirectDrawFlags_DrawCountFromBuffer = uint(1) << 0;
 // Most implementations have wave sizes of 32 or 64, so 64 is a good default
 const uint DrawIndexedIndirect_LocalWorkGroupSizeX = 64;
+BUFFER_ADDR_FWD_DECL(DrawIndexedIndirectCmdsBufferAddr)
+BUFFER_ADDR_FWD_DECL(DipatchIndirectBufferAddr)
 struct DrawIndexedIndirectIndexBufferPushData {
     BUFFER_ADDR_DECL(DrawIndexedIndirectCmdsBufferAddr) draw_indexed_indirect_cmds_addr;
     BUFFER_ADDR_DECL(CountBufferAddr) count_buffer_addr;
@@ -123,8 +120,10 @@ struct VkTraceRaysIndirectCommandKHR {
     uint height;
     uint depth;
 };
-
-layout(buffer_reference, std430) buffer IndirectCommandReference { VkTraceRaysIndirectCommandKHR trace_rays_dimensions; };
+// #ARNO_TODO address comes from user land, not sure it is aligned to 64
+layout(buffer_reference, buffer_reference_align = 4, std430) buffer IndirectCommandReference {
+    VkTraceRaysIndirectCommandKHR trace_rays_dimensions;
+};
 #endif
 
 struct TraceRaysPushData {

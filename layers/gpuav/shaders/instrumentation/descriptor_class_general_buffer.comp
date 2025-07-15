@@ -29,9 +29,9 @@ layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorSe
     uvec2 data[];
 };
 
-layout(buffer_reference, buffer_reference_align = 8, std430) buffer UnusedInitializedStatus;
+layout(buffer_reference) buffer UnusedInitializedStatus;
 
-layout(buffer_reference) buffer BoundDescriptorSetsStateSSBO {
+layout(buffer_reference, buffer_reference_align = 8, std430) buffer BoundDescriptorSetsStateSSBO {
     UnusedInitializedStatus unused_initialized_status;
     DescriptorSetType descriptor_set_types[kDebugInputBindlessMaxDescSets];
 };

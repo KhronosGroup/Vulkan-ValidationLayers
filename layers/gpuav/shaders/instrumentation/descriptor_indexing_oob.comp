@@ -35,7 +35,7 @@ layout(buffer_reference, buffer_reference_align = 8, std430) buffer InitializedS
     uint data[];
 };
 
-layout(buffer_reference) buffer BoundDescriptorSetsStateSSBO {
+layout(buffer_reference, buffer_reference_align = 8, std430) buffer BoundDescriptorSetsStateSSBO {
     InitializedStatus descriptor_init_status;
     DescriptorSetType descriptor_set_types[kDebugInputBindlessMaxDescSets];
 };

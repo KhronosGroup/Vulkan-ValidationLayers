@@ -24,7 +24,7 @@ layout(push_constant) uniform UniformInfo {
     DispatchPushData pc;
 };
 
-layout(buffer_reference) buffer DispatchIndirectBufferAddr {
+layout(buffer_reference, buffer_reference_align = 1, std430) buffer DispatchIndirectBufferAddr {
     uint data[];
 };
 

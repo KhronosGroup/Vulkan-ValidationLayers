@@ -39,8 +39,6 @@
 #include "state_tracker/shader_module.h"
 #include "utils/action_command_utils.h"
 
-#include <iostream>
-
 namespace gpuav {
 
 // If application is using shader objects, bindings count will be computed from bound shaders
@@ -304,9 +302,9 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBufferSubState &cb_st
         assert(root_node_ptr->inst_action_index_buffer);
 
         // Buffer holding a resource index from the per command buffer command resources list
-        root_node_ptr->inst_cmd_resource_index_buffer =
+        root_node_ptr->inst_error_logger_index_buffer =
             gpuav.indices_buffer_.Address() + error_logger_i * gpuav.indices_buffer_alignment_;
-        assert(root_node_ptr->inst_cmd_resource_index_buffer);
+        assert(root_node_ptr->inst_error_logger_index_buffer);
 
         // Errors count buffer
         root_node_ptr->inst_cmd_errors_count_buffer = cb_state.GetCmdErrorsCountsBuffer().Address();
@@ -379,24 +377,6 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBufferSubState &cb_st
     wds.pBufferInfo = &dbi;
 
     DispatchUpdateDescriptorSets(gpuav.device, 1, &wds, 0, nullptr);
-#if 0
-    std::cout << "root_node_ptr:\n---\n";
-    std::cout << "root_node_ptr: " << std::hex << "0x" << root_node_ptr_buffer_range.offset_address << std::endl;
-    std::cout << "root_node_ptr->debug_printf_buffer: " << std::hex << "0x" << root_node_ptr->debug_printf_buffer << std::endl;
-    std::cout << "root_node_ptr->inst_errors_buffer: " << std::hex << "0x" << root_node_ptr->inst_errors_buffer << std::endl;
-    std::cout << "root_node_ptr->inst_action_index_buffer: " << std::hex << "0x" << root_node_ptr->inst_action_index_buffer
-              << std::endl;
-    std::cout << "root_node_ptr->inst_cmd_resource_index_buffer: " << std::hex << "0x"
-              << root_node_ptr->inst_cmd_resource_index_buffer << std::endl;
-    std::cout << "root_node_ptr->inst_cmd_errors_count_buffer: " << std::hex << "0x" << root_node_ptr->inst_cmd_errors_count_buffer
-              << std::endl;
-    std::cout << "root_node_ptr->vertex_attribute_fetch_limits_buffer: " << std::hex << "0x"
-              << root_node_ptr->vertex_attribute_fetch_limits_buffer << std::endl;
-    std::cout << "root_node_ptr->bda_input_buffer: " << std::hex << "0x" << root_node_ptr->bda_input_buffer << std::endl;
-    std::cout << "root_node_ptr->post_process_ssbo: " << std::hex << "0x" << root_node_ptr->post_process_ssbo << std::endl;
-    std::cout << "root_node_ptr->bound_desc_sets_state_ssbo: " << std::hex << "0x" << root_node_ptr->bound_desc_sets_state_ssbo
-              << std::endl;
-#endif
 }
 
 static bool WasInstrumented(const LastBound &last_bound) {
@@ -456,11 +436,11 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
     assert(gpuav.instrumentation_bindings_.size() == 1);
 
     InstrumentationErrorBlob instrumentation_error_blob;
-    instrumentation_error_blob.operation_index = (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS)  ? cb_state.draw_index
-                                                 : (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) ? cb_state.compute_index
-                                                 : (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)
-                                                     ? cb_state.trace_rays_index
-                                                     : 0;
+    instrumentation_error_blob.action_command_i = (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS)  ? cb_state.draw_index
+                                                  : (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) ? cb_state.compute_index
+                                                  : (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)
+                                                      ? cb_state.trace_rays_index
+                                                      : 0;
 
     instrumentation_error_blob.pipeline_bind_point = bind_point;
     instrumentation_error_blob.uses_shader_object = last_bound.pipeline_state == nullptr;
@@ -507,13 +487,14 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
 
     // TODO: Using cb_state.per_command_resources.size() is kind of a hack? Worth considering passing the resource index as a
     // parameter
-    const uint32_t error_logger_i = static_cast<uint32_t>(cb_state.per_command_error_loggers.size());
+    const uint32_t error_logger_i = static_cast<uint32_t>(cb_state.command_error_loggers.size());
 
     UpdateInstrumentationDescSet(gpuav, cb_state, bind_point, instrumentation_desc_set, loc,
-                                 instrumentation_error_blob.operation_index, error_logger_i, instrumentation_error_blob);
+                                 instrumentation_error_blob.action_command_i, error_logger_i, instrumentation_error_blob);
 
-    if (inst_binding_pipe_layout_state) {
-        if ((uint32_t)inst_binding_pipe_layout_state->set_layouts.size() > gpuav.instrumentation_desc_set_bind_index_) {
+    if (inst_binding_pipe_layout) {
+        if (inst_binding_pipe_layout_state &&
+            (uint32_t)inst_binding_pipe_layout_state->set_layouts.size() > gpuav.instrumentation_desc_set_bind_index_) {
             gpuav.InternalWarning(cb_state.Handle(), loc,
                                   "Unable to bind instrumentation descriptor set, it would override application's bound set");
             return;
@@ -525,7 +506,7 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
                 assert(false);
                 break;
             case PipelineLayoutSource::LastBoundPipeline:
-                DispatchCmdBindDescriptorSets(cb_state.VkHandle(), bind_point, inst_binding_pipe_layout_state->VkHandle(),
+                DispatchCmdBindDescriptorSets(cb_state.VkHandle(), bind_point, inst_binding_pipe_layout,
                                               gpuav.instrumentation_desc_set_bind_index_, 1, &instrumentation_desc_set, 0, nullptr);
                 break;
             case PipelineLayoutSource::LastBoundDescriptorSet:
