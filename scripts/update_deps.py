@@ -222,6 +222,12 @@ Legal options include:
 
 Builds on all platforms by default.
 
+- repo_binaries_url (optional)
+
+URL to a GitHub releases page for downloading precompiled binaries.
+If this field is present, the dependency will be downloaded as a binary
+instead of being built from source.
+
 Note
 ----
 
@@ -244,6 +250,9 @@ import shlex
 import shutil
 import stat
 import time
+import urllib.request
+import zipfile
+import struct
 
 KNOWN_GOOD_FILE_NAME = 'known_good.json'
 
@@ -333,9 +342,20 @@ class GoodRepo(object):
         self._args = args
         # Required JSON elements
         self.name = json['name']
-        self.url = json['url']
-        self.sub_dir = json['sub_dir']
-        self.commit = json['commit']
+
+        # Check if this is a binary dependency
+        # For binary dependencies, url and commit are optional
+        self.repo_binaries_url = json.get('repo_binaries_url')
+        self.is_binary_dependency = self.repo_binaries_url is not None
+        if not self.is_binary_dependency:
+            self.url = json['url']
+            self.commit = json['commit']
+        else:
+            self.url = json.get('url')
+            self.commit = json.get('commit')
+
+        self.sub_dir = json.get('sub_dir', '')
+
         # Optional JSON elements
         self.build_dir = None
         self.install_dir = None
@@ -357,9 +377,10 @@ class GoodRepo(object):
         self.build_platforms = json['build_platforms'] if ('build_platforms' in json) else []
         self.optional = set(json.get('optional', []))
         self.api = json['api'] if ('api' in json) else None
+
         # Absolute paths for a repo's directories
         dir_top = os.path.abspath(args.dir)
-        self.repo_dir = os.path.join(dir_top, self.sub_dir)
+        self.repo_dir = os.path.join(dir_top, self.sub_dir) if self.sub_dir else None
         if self.build_dir:
             self.build_dir = os.path.join(dir_top, self.build_dir)
         if self.install_dir:
@@ -442,6 +463,71 @@ class GoodRepo(object):
 
         if VERBOSE:
             print(command_output(['git', 'status'], self.repo_dir))
+
+    def GetPlatformSuffix(self):
+        """Get the platform suffix for binary downloads based on current platform."""
+        system = platform.system().lower()
+        machine = platform.machine().lower()
+        
+        # No Android support
+        for cmake_var in self._args.cmake_var:
+            if "android.toolchain.cmake" in cmake_var:
+                return None
+        
+        # No 32 bits architecture support
+        if self._args.pointer_size == 4:
+            return None
+        if self._args.arch.lower() == '32' or self._args.arch == 'x86' or self._args.arch == 'win32':
+            return None
+        
+        platform_suffix = None
+        if system == 'windows':
+            if machine in ['aarch64', 'arm64']:
+                platform_suffix = 'windows-aarch64'
+            else:
+                platform_suffix = 'windows-x86_64'
+        elif system == 'linux':
+            if machine in ['aarch64', 'arm64']:
+                platform_suffix = 'linux-aarch64'
+            else:
+                platform_suffix = 'linux-x86_64'
+        return platform_suffix
+
+    def DownloadAndExtractBinary(self):
+        """Download and extract binary dependency."""
+        platform_suffix = self.GetPlatformSuffix()
+        if not platform_suffix:
+            if VERBOSE:
+                print(f"Skipping binary download for {self.name} - unsupported platform")
+            self.on_build_platform = False
+            return False
+
+        # Extract version from the URL (assuming format like /tag/v2025.12.1)
+        if '/tag/v' in self.repo_binaries_url:
+            version = self.repo_binaries_url.split('/tag/v')[-1]
+        else:
+            version = self.repo_binaries_url.split('/')[-1].lstrip('v')
+
+        download_url = f"{self.repo_binaries_url.replace('/tag/', '/download/')}/{self.name}-{version}-{platform_suffix}.zip"
+        make_or_exist_dirs(self.build_dir)
+
+        zip_path = os.path.join(self.build_dir, f"{self.name}-{version}-{platform_suffix}.zip")
+        # Dependency already downloaded
+        if not os.path.isfile(zip_path):
+            if VERBOSE:
+                print(f"Downloading {self.name} from {download_url}")
+            try:
+                urllib.request.urlretrieve(download_url, zip_path)
+            except Exception as e:
+                print(f"Failed to download {self.name}: {e}")
+                return False
+
+        make_or_exist_dirs(self.install_dir)
+
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(self.install_dir)
+        
+        return True
 
     def CustomPreProcess(self, cmd_str, repo_dict):
         return cmd_str.format(repo_dict, self._args, CONFIG_MAP[self._args.config])
@@ -580,6 +666,23 @@ class GoodRepo(object):
 
         print(f"Installed {self.name} ({self.commit}) in {total_time:.3f} seconds", flush=True)
 
+    def ProcessBinary(self):
+        """Process binary dependency and time how long it took"""
+        if VERBOSE:
+            print('Processing binary {n}'.format(n=self.name))
+            print('Build dir = {b}'.format(b=self.build_dir))
+            print('Install dir = {i}\n'.format(i=self.install_dir))
+
+        start = time.time()
+
+        success = self.DownloadAndExtractBinary()
+        if not success:
+            return
+
+        total_time = time.time() - start
+
+        print(f"Downloaded and extracted {self.name} in {total_time:.3f} seconds", flush=True)
+
     def IsOptional(self, opts):
         return len(self.optional.intersection(opts)) > 0
 
@@ -623,22 +726,6 @@ def GetInstallNames(args):
         else:
             return None
 
-def GetRepoBinaries(args):
-    """Returns the repo binaries version list.       
-    """
-    if args.known_good_dir:
-        known_good_file = os.path.join(os.path.abspath(args.known_good_dir),
-            KNOWN_GOOD_FILE_NAME)
-    else:
-        known_good_file = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), KNOWN_GOOD_FILE_NAME)
-    with open(known_good_file) as known_good:
-        json_data = json.loads(known_good.read())
-        if json_data.get('repo_binaries_version'):
-            return json_data['repo_binaries_version']
-        else:
-            return []
-
 def CreateHelper(args, repos, filename):
     """Create a CMake config helper file.
 
@@ -662,13 +749,6 @@ def CreateHelper(args, repos, filename):
                                   .format(
                                       var=install_names[repo.name],
                                       dir=escape(repo.install_dir)))
-
-        repo_binaries_version = GetRepoBinaries(args)
-        for binary_entry in repo_binaries_version:
-            for binary_name, binary_version in binary_entry.items():
-                helper_file.write(f'set({binary_name.upper()}_VERSION "{binary_version}" CACHE STRING "{binary_name} version to use")\n')
-                if VERBOSE:
-                    print(f'Added {binary_name} version {binary_version} to helper.cmake')
 
 def GetDefaultArch():
     machine = platform.machine().lower()
@@ -782,6 +862,12 @@ def main():
         action='store_true',
         help="Build dependencies with UBSAN enabled",
         default=False)
+    parser.add_argument(
+        '--pointer_size',
+        type=int,
+        dest='pointer_size',
+        help="pointer size in the produced executables",
+        default=8)
 
     args = parser.parse_args()
     save_cwd = os.getcwd()
@@ -848,12 +934,17 @@ def main():
             if not do_build:
                 continue
 
-        # Clone/update the repository
-        repo.Checkout()
+        # Handle binary dependencies differently
+        if repo.is_binary_dependency:
+            if args.do_build:
+                repo.ProcessBinary()
+        else:
+            # Clone/update the repository
+            repo.Checkout()
 
-        # Build the repository
-        if args.do_build and repo.build_step != 'skip':
-            repo.Build(repos, repo_dict)
+            # Build the repository
+            if args.do_build and repo.build_step != 'skip':
+                repo.Build(repos, repo_dict)
 
     # Need to restore original cwd in order for CreateHelper to find json file
     os.chdir(save_cwd)
@@ -864,4 +955,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

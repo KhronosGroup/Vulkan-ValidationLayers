@@ -117,10 +117,13 @@
             "optional": [
                 "tests"
             ]
+        },
+        {
+            "name": "slang",
+            "repo_binaries_url": "https://github.com/shader-slang/slang/releases/tag/v2025.12.1",
+            "build_dir": "slang/download",
+            "install_dir": "slang/install"
         }
-    ],
-    "repo_binaries_version": [
-       { "slang": "2025.12.1" }
     ],
     "install_names": {
         "glslang": "GLSLANG_INSTALL_DIR",
@@ -129,6 +132,7 @@
         "SPIRV-Headers": "SPIRV_HEADERS_INSTALL_DIR",
         "SPIRV-Tools": "SPIRV_TOOLS_INSTALL_DIR",
         "googletest": "GOOGLETEST_INSTALL_DIR",
-        "mimalloc": "MIMALLOC_INSTALL_DIR"
+        "mimalloc": "MIMALLOC_INSTALL_DIR",
+        "slang": "SLANG_INSTALL_DIR"
     }
 }
