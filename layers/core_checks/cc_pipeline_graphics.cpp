@@ -3450,7 +3450,6 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpass(const LastBound &last_bou
     const VkPipelineRenderingCreateInfo &pipeline_rendering_ci = *(pipeline_rp_state->dynamic_pipeline_rendering_create_info.ptr());
 
     skip |= ValidateDrawPipelineDynamicRenderpassSampleCount(last_bound_state, pipeline, rendering_info, vuid);
-    skip |= ValidateDrawPipelineDynamicRenderpassExternalFormatResolve(last_bound_state, pipeline, rendering_info, vuid);
     skip |= ValidateDrawPipelineDynamicRenderpassLegacyDithering(last_bound_state, pipeline, rendering_info, vuid);
     skip |= ValidateDrawPipelineDynamicRenderpassFragmentShadingRate(last_bound_state, pipeline, rendering_info, vuid);
     skip |= ValidateDrawPipelineDynamicRenderpassUnusedAttachments(last_bound_state, pipeline, rendering_info,
@@ -3769,79 +3768,6 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassLegacyDithering(const Last
     return skip;
 }
 
-bool CoreChecks::ValidateDrawPipelineDynamicRenderpassExternalFormatResolve(const LastBound &last_bound_state,
-                                                                            const vvl::Pipeline &pipeline,
-                                                                            const VkRenderingInfo &rendering_info,
-                                                                            const vvl::DrawDispatchVuid &vuid) const {
-    bool skip = false;
-
-    const uint64_t pipeline_external_format = GetExternalFormat(pipeline.GetCreateInfoPNext());
-    if (pipeline_external_format == 0) return skip;
-
-    const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
-    const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-
-    if (rendering_info.colorAttachmentCount == 1 &&
-        rendering_info.pColorAttachments[0].resolveMode == VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_BIT_ANDROID) {
-        if (auto resolve_image_view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[0].resolveImageView)) {
-            if (resolve_image_view_state->image_state->ahb_format != pipeline_external_format) {
-                skip |= LogError(vuid.external_format_resolve_09362, objlist, vuid.loc(),
-                                 "pipeline externalFormat is %" PRIu64
-                                 " but the resolveImageView's image was created with externalFormat %" PRIu64 "",
-                                 pipeline_external_format, resolve_image_view_state->image_state->ahb_format);
-            }
-        }
-
-        if (auto color_image_view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[0].imageView)) {
-            if (color_image_view_state->image_state->ahb_format != pipeline_external_format) {
-                skip |= LogError(vuid.external_format_resolve_09363, objlist, vuid.loc(),
-                                 "pipeline externalFormat is %" PRIu64
-                                 " but the imageView's image was created with externalFormat %" PRIu64 "",
-                                 pipeline_external_format, color_image_view_state->image_state->ahb_format);
-            }
-        }
-    }
-
-    if (pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
-        cb_state.dynamic_state_value.color_blend_enable_attachments.test(0)) {
-        skip |= LogError(vuid.external_format_resolve_09364, objlist, vuid.loc(),
-                         "pipeline externalFormat is %" PRIu64 ", but dynamic blend enable for attachment zero was set to VK_TRUE.",
-                         pipeline_external_format);
-    }
-    if (pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) &&
-        cb_state.dynamic_state_value.rasterization_samples != VK_SAMPLE_COUNT_1_BIT) {
-        skip |=
-            LogError(vuid.external_format_resolve_09365, objlist, vuid.loc(),
-                     "pipeline externalFormat is %" PRIu64 ", but dynamic rasterization samples set to %s.",
-                     pipeline_external_format, string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples));
-    }
-    if (pipeline.IsDynamic(CB_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR)) {
-        if (cb_state.dynamic_state_value.fragment_size.width != 1) {
-            skip |= LogError(vuid.external_format_resolve_09368, objlist, vuid.loc(),
-                             "pipeline externalFormat is %" PRIu64 ", but dynamic fragment size width is %" PRIu32 ".",
-                             pipeline_external_format, cb_state.dynamic_state_value.fragment_size.width);
-        }
-        if (cb_state.dynamic_state_value.fragment_size.height != 1) {
-            skip |= LogError(vuid.external_format_resolve_09369, objlist, vuid.loc(),
-                             "pipeline externalFormat is %" PRIu64 ", but dynamic fragment size height is %" PRIu32 ".",
-                             pipeline_external_format, cb_state.dynamic_state_value.fragment_size.height);
-        }
-    }
-
-    if (auto fragment_entry_point = last_bound_state.GetFragmentEntryPoint()) {
-        if (fragment_entry_point->execution_mode.Has(spirv::ExecutionModeSet::depth_replacing_bit)) {
-            skip |= LogError(vuid.external_format_resolve_09372, objlist, vuid.loc(),
-                             "pipeline externalFormat is %" PRIu64 " but the fragment shader declares DepthReplacing.",
-                             pipeline_external_format);
-        } else if (fragment_entry_point->execution_mode.Has(spirv::ExecutionModeSet::stencil_ref_replacing_bit)) {
-            skip |= LogError(vuid.external_format_resolve_09372, objlist, vuid.loc(),
-                             "pipeline externalFormat is %" PRIu64 " but the fragment shader declares StencilRefReplacingEXT.",
-                             pipeline_external_format);
-        }
-    }
-
-    return skip;
-}
 bool CoreChecks::ValidateDrawPipelineDynamicRenderpassSampleCount(const LastBound &last_bound_state, const vvl::Pipeline &pipeline,
                                                                   const VkRenderingInfo &rendering_info,
                                                                   const vvl::DrawDispatchVuid &vuid) const {
