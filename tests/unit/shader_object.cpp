@@ -1530,7 +1530,7 @@ TEST_F(NegativeShaderObject, ColorWriteEnableAttachmentCount) {
     VkBool32 colorBlendEnable = VK_FALSE;
     vk::CmdSetColorBlendEnableEXT(m_command_buffer, 1u, 1u, &colorBlendEnable);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08647");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-attachmentCount-07750");
     vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -1830,7 +1830,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetColorBlendEnableEXTForActiveAttachment
     VkBool32 enable = VK_TRUE;
     vk::CmdSetColorBlendEnableEXT(m_command_buffer, 1u, 1u, &enable);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-rasterizerDiscardEnable-09417");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-firstAttachment-07476");
     vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -1942,7 +1942,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetColorWriteMaskEXTActiveAttachments) {
     VkColorComponentFlags colorWriteMask = VK_COLOR_COMPONENT_R_BIT;
     vk::CmdSetColorWriteMaskEXT(m_command_buffer, 1u, 1u, &colorWriteMask);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-rasterizerDiscardEnable-09419");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-firstAttachment-07478");
     vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
