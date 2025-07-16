@@ -548,14 +548,18 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module &module_
 }
 
 // This is validated at draw time unlike the VkRenderPass version
-bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bound_state, const vvl::Pipeline *pipeline,
-                                                       const vvl::RenderPass &rp_state, const Location &loc) const {
+bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bound_state, const vvl::RenderPass &rp_state,
+                                                       const Location &loc) const {
     bool skip = false;
 
     const spirv::EntryPoint *entrypoint = last_bound_state.GetFragmentEntryPoint();
-    if (!entrypoint) return skip;
-
-    if (rp_state.use_dynamic_rendering_inherited) return skip;
+    if (!entrypoint) {
+        return skip;
+    }
+    if (rp_state.use_dynamic_rendering_inherited) {
+        return skip;
+    }
+    vvl::Pipeline *pipeline = last_bound_state.pipeline_state;
 
     struct Attachment {
         const VkRenderingAttachmentInfo *rendering_attachment_info = nullptr;

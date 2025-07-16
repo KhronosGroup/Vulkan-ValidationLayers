@@ -660,10 +660,17 @@ bool CoreChecks::ValidateDrawShaderObject(const LastBound& last_bound_state, con
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
 
-    if (cb_state.active_render_pass && !cb_state.active_render_pass->UsesDynamicRendering()) {
-        skip |= LogError(vuid.render_pass_began_08876, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
-                         "Shader objects must be used with dynamic rendering, but VkRenderPass %s is active.",
-                         FormatHandle(cb_state.active_render_pass->Handle()).c_str());
+    if (const vvl::RenderPass* rp_state = cb_state.active_render_pass.get()) {
+        if (!rp_state->UsesDynamicRendering()) {
+            skip |= LogError(vuid.render_pass_began_08876, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
+                             "Shader objects must be used with dynamic rendering, but VkRenderPass %s is active.",
+                             FormatHandle(rp_state->Handle()).c_str());
+        }
+        if (rp_state->has_multiview_enabled) {
+            const LogObjectList objlist(cb_state.Handle(), rp_state->Handle());
+            skip |= LogError(vuid.shader_object_multiview_10772, objlist, vuid.loc(),
+                             "render pass instance has multiview enabled, which is not allowed when using shader objects.");
+        }
     }
 
     skip |= ValidateDrawShaderObjectNextStage(last_bound_state, vuid);

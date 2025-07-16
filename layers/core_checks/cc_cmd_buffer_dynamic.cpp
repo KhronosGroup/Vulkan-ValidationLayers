@@ -260,8 +260,6 @@ bool CoreChecks::ValidateDynamicStateIsSet(const LastBound& last_bound_state, co
     return false;
 }
 
-// Goal to move all of ValidateGraphicsDynamicStatePipelineSetStatus() and ValidateDrawDynamicStateShaderObject() here and remove
-// them
 bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
@@ -514,42 +512,6 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
             skip |=
                 ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE, vuid);
         }
-    }
-
-    return skip;
-}
-
-// This is the old/original way to check. We are slowly moving to combine all the dynamic state VUs for Pipeline and Shader Object
-// and this should not be used, and hopefully one day just removed
-bool CoreChecks::ValidateDynamicStateIsSet(const CBDynamicFlags& state_status_cb, CBDynamicState dynamic_state,
-                                           const vvl::CommandBuffer& cb_state, const LogObjectList& objlist, const Location& loc,
-                                           const char* vuid) const {
-    if (!state_status_cb[dynamic_state]) {
-        return LogError(vuid, objlist, loc, "%s state is dynamic, but the command buffer never called %s.%s",
-                        DynamicStateToString(dynamic_state), DescribeDynamicStateCommand(dynamic_state).c_str(),
-                        cb_state.DescribeInvalidatedState(dynamic_state).c_str());
-    }
-    return false;
-}
-
-// Makes sure the vkCmdSet* call was called correctly prior to a draw
-// deprecated for ValidateGraphicsDynamicStateSetStatus()
-bool CoreChecks::ValidateGraphicsDynamicStatePipelineSetStatus(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
-                                                               const vvl::DrawDispatchVuid& vuid) const {
-    bool skip = false;
-    const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
-    const Location loc = vuid.loc();  // because we need to pass it around a lot
-    const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-
-    // Verify vkCmdSet* calls since last bound pipeline
-    const CBDynamicFlags unset_status_pipeline =
-        (cb_state.dynamic_state_status.pipeline ^ pipeline.dynamic_state) & cb_state.dynamic_state_status.pipeline;
-    if (unset_status_pipeline.any()) {
-        skip |= LogError(vuid.dynamic_state_setting_commands_08608, objlist, loc,
-                         "%s doesn't set up %s, but since the vkCmdBindPipeline, the related dynamic state commands (%s) have been "
-                         "called in this command buffer.",
-                         FormatHandle(pipeline).c_str(), DynamicStatesToString(unset_status_pipeline).c_str(),
-                         DynamicStatesCommandsToString(unset_status_pipeline).c_str());
     }
 
     return skip;
@@ -834,8 +796,6 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
     const auto pipeline_state = last_bound_state.pipeline_state;
     if (pipeline_state) {
         skip |= ValidateDrawDynamicStatePipeline(last_bound_state, *pipeline_state, vuid);
-    } else {
-        skip |= ValidateDrawDynamicStateShaderObject(last_bound_state, vuid);
     }
 
     skip |= ValidateDrawDynamicStateVertex(last_bound_state, vuid);
@@ -850,9 +810,23 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
 bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
                                                   const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
-    skip |= ValidateGraphicsDynamicStatePipelineSetStatus(last_bound_state, pipeline, vuid);
-    // Dynamic state was not set, will produce garbage when trying to read to values
-    if (skip) return skip;
+
+    const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
+
+    // Verify vkCmdSet* calls since last bound pipeline
+    const CBDynamicFlags unset_status_pipeline =
+        (cb_state.dynamic_state_status.pipeline ^ pipeline.dynamic_state) & cb_state.dynamic_state_status.pipeline;
+    if (unset_status_pipeline.any()) {
+        const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
+        skip |= LogError(vuid.dynamic_state_setting_commands_08608, objlist, vuid.loc(),
+                         "%s doesn't set up %s, but since the vkCmdBindPipeline, the related dynamic state commands (%s) have been "
+                         "called in this command buffer.",
+                         FormatHandle(pipeline).c_str(), DynamicStatesToString(unset_status_pipeline).c_str(),
+                         DynamicStatesCommandsToString(unset_status_pipeline).c_str());
+        // Dynamic state was not set, will produce garbage when trying to read to values
+        return skip;
+    }
+
     // Once we know for sure state was set, check value is valid
     skip |= ValidateDrawDynamicStatePipelineValue(last_bound_state, pipeline, vuid);
     skip |= ValidateDrawDynamicStatePipelineViewportScissor(last_bound_state, pipeline, vuid);
@@ -1439,64 +1413,6 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
                         " but vkCmdSetRenderingInputAttachmentIndices last set pStencilInputAttachmentIndex value to %" PRIu32 "",
                         *pipeline_stencil_index, *cb_state.rendering_attachments.stencil_index);
     }
-    return skip;
-}
-
-// deprecated for ValidateGraphicsDynamicStateSetStatus()
-bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const {
-    bool skip = false;
-    const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
-    const Location loc = vuid.loc();  // because we need to pass it around a lot
-    const LogObjectList objlist(cb_state.Handle());
-
-    bool graphics_shader_bound = false;
-    graphics_shader_bound |= last_bound_state.IsValidShaderBound(ShaderObjectStage::VERTEX);
-    graphics_shader_bound |= last_bound_state.IsValidShaderBound(ShaderObjectStage::TESSELLATION_CONTROL);
-    graphics_shader_bound |= last_bound_state.IsValidShaderBound(ShaderObjectStage::TESSELLATION_EVALUATION);
-    graphics_shader_bound |= last_bound_state.IsValidShaderBound(ShaderObjectStage::GEOMETRY);
-    graphics_shader_bound |= last_bound_state.IsValidShaderBound(ShaderObjectStage::FRAGMENT);
-    graphics_shader_bound |= last_bound_state.IsValidShaderBound(ShaderObjectStage::TASK);
-    graphics_shader_bound |= last_bound_state.IsValidShaderBound(ShaderObjectStage::MESH);
-
-    if (!graphics_shader_bound) {
-        return skip;
-    }
-
-    // Resolve mode only for dynamic rendering
-    const vvl::RenderPass* rp_state = cb_state.active_render_pass.get();
-    if (rp_state && rp_state->UsesDynamicRendering() && cb_state.HasExternalFormatResolveAttachment()) {
-        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
-            cb_state.dynamic_state_value.color_blend_enable_attachments.test(0)) {
-            const LogObjectList rp_objlist(cb_state.Handle(), rp_state->Handle());
-            skip |= LogError(vuid.external_format_resolve_09366, rp_objlist, loc,
-                             "blend enable for attachment zero was set to VK_TRUE.");
-        }
-        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) &&
-            cb_state.dynamic_state_value.rasterization_samples != VK_SAMPLE_COUNT_1_BIT) {
-            const LogObjectList rp_objlist(cb_state.Handle(), rp_state->Handle());
-            skip |= LogError(vuid.external_format_resolve_09367, rp_objlist, loc, "rasterization samples set to %s.",
-                             string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples));
-        }
-        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR)) {
-            if (cb_state.dynamic_state_value.fragment_size.width != 1) {
-                const LogObjectList rp_objlist(cb_state.Handle(), rp_state->Handle());
-                skip |= LogError(vuid.external_format_resolve_09370, rp_objlist, loc, "fragment size width is %" PRIu32 ".",
-                                 cb_state.dynamic_state_value.fragment_size.width);
-            }
-            if (cb_state.dynamic_state_value.fragment_size.height != 1) {
-                const LogObjectList rp_objlist(cb_state.Handle(), rp_state->Handle());
-                skip |= LogError(vuid.external_format_resolve_09371, rp_objlist, loc, "fragment size height is %" PRIu32 ".",
-                                 cb_state.dynamic_state_value.fragment_size.height);
-            }
-        }
-    }
-
-    if (rp_state && rp_state->has_multiview_enabled) {
-        const LogObjectList rp_objlist(cb_state.Handle(), rp_state->Handle());
-        skip |= LogError(vuid.shader_object_multiview_10772, rp_objlist, loc,
-                         "render pass instance has multiview enabled, which is not allowed when using shader objects.");
-    }
-
     return skip;
 }
 
