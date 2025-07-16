@@ -1697,22 +1697,6 @@ bool CoreChecks::ValidateActionStateProtectedMemory(const LastBound &last_bound_
     return skip;
 }
 
-bool CoreChecks::MatchSampleLocationsInfo(const VkSampleLocationsInfoEXT &info_1, const VkSampleLocationsInfoEXT &info_2) const {
-    if (info_1.sampleLocationsPerPixel != info_2.sampleLocationsPerPixel ||
-        info_1.sampleLocationGridSize.width != info_2.sampleLocationGridSize.width ||
-        info_1.sampleLocationGridSize.height != info_2.sampleLocationGridSize.height ||
-        info_1.sampleLocationsCount != info_2.sampleLocationsCount) {
-        return false;
-    }
-    for (uint32_t i = 0; i < info_1.sampleLocationsCount; ++i) {
-        if (info_1.pSampleLocations[i].x != info_2.pSampleLocations[i].x ||
-            info_1.pSampleLocations[i].y != info_2.pSampleLocations[i].y) {
-            return false;
-        }
-    }
-    return true;
-}
-
 bool CoreChecks::ValidateIndirectCmd(const vvl::CommandBuffer &cb_state, const vvl::Buffer &buffer_state,
                                      const DrawDispatchVuid &vuid) const {
     bool skip = false;

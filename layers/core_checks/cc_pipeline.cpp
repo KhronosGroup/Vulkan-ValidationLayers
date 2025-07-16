@@ -301,6 +301,22 @@ bool CoreChecks::PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipe
     return skip;
 }
 
+static bool MatchSampleLocationsInfo(const vku::safe_VkSampleLocationsInfoEXT &info_1, const VkSampleLocationsInfoEXT &info_2) {
+    if (info_1.sampleLocationsPerPixel != info_2.sampleLocationsPerPixel ||
+        info_1.sampleLocationGridSize.width != info_2.sampleLocationGridSize.width ||
+        info_1.sampleLocationGridSize.height != info_2.sampleLocationGridSize.height ||
+        info_1.sampleLocationsCount != info_2.sampleLocationsCount) {
+        return false;
+    }
+    for (uint32_t i = 0; i < info_1.sampleLocationsCount; ++i) {
+        if (info_1.pSampleLocations[i].x != info_2.pSampleLocations[i].x ||
+            info_1.pSampleLocations[i].y != info_2.pSampleLocations[i].y) {
+            return false;
+        }
+    }
+    return true;
+}
+
 bool CoreChecks::ValidateCmdBindPipelineRenderPassMultisample(const vvl::CommandBuffer &cb_state,
                                                               const vvl::Pipeline &pipeline_state, const vvl::RenderPass &rp_state,
                                                               const Location &loc) const {
@@ -313,15 +329,12 @@ bool CoreChecks::ValidateCmdBindPipelineRenderPassMultisample(const vvl::Command
         if (sample_locations && sample_locations->sampleLocationsEnable == VK_TRUE &&
             !pipeline_state.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT)) {
             bool found = false;
-            if (cb_state.sample_locations_begin_info) {
-                for (uint32_t i = 0; i < cb_state.sample_locations_begin_info->postSubpassSampleLocationsCount; ++i) {
-                    if (cb_state.sample_locations_begin_info->pPostSubpassSampleLocations[i].subpassIndex ==
-                        cb_state.GetActiveSubpass()) {
-                        if (MatchSampleLocationsInfo(
-                                cb_state.sample_locations_begin_info->pPostSubpassSampleLocations[i].sampleLocationsInfo,
-                                sample_locations->sampleLocationsInfo)) {
-                            found = true;
-                        }
+            for (uint32_t i = 0; i < cb_state.sample_locations_begin_info.postSubpassSampleLocationsCount; ++i) {
+                const auto &post_subpass_sample_location = cb_state.sample_locations_begin_info.pPostSubpassSampleLocations[i];
+                if (post_subpass_sample_location.subpassIndex == cb_state.GetActiveSubpass()) {
+                    if (MatchSampleLocationsInfo(post_subpass_sample_location.sampleLocationsInfo,
+                                                 sample_locations->sampleLocationsInfo)) {
+                        found = true;
                     }
                 }
             }

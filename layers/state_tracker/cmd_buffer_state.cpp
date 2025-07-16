@@ -253,7 +253,7 @@ void CommandBuffer::ResetCBState() {
     dirty_static_state = false;
 
     active_render_pass = nullptr;
-    sample_locations_begin_info = nullptr;
+    sample_locations_begin_info = {};
     attachment_source = AttachmentSource::Empty;
     active_attachments.clear();
     active_subpasses.clear();
@@ -677,7 +677,10 @@ void CommandBuffer::RecordBeginRenderPass(const VkRenderPassBeginInfo &render_pa
         AddChild(active_render_pass);
     }
 
-    sample_locations_begin_info = vku::FindStructInPNextChain<VkRenderPassSampleLocationsBeginInfoEXT>(render_pass_begin.pNext);
+    if (auto sample_locations_begin =
+            vku::FindStructInPNextChain<VkRenderPassSampleLocationsBeginInfoEXT>(render_pass_begin.pNext)) {
+        sample_locations_begin_info = sample_locations_begin;
+    }
 
     if (auto rp_striped_begin = vku::FindStructInPNextChain<VkRenderPassStripeBeginInfoARM>(render_pass_begin.pNext)) {
         has_render_pass_striped = true;
@@ -750,7 +753,7 @@ void CommandBuffer::RecordEndRenderPass(const VkSubpassEndInfo *subpass_end_info
     active_color_attachments_index.clear();
     SetActiveSubpass(0);
     active_framebuffer = VK_NULL_HANDLE;
-    sample_locations_begin_info = nullptr;
+    sample_locations_begin_info = {};
 }
 
 void CommandBuffer::RecordBeginRendering(const VkRenderingInfo &rendering_info, const Location &loc) {

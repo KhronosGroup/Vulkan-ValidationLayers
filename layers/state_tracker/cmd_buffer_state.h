@@ -421,7 +421,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     uint32_t striped_count;
     VkRect2D render_area;
     // only when not using dynamic rendering
-    const VkRenderPassSampleLocationsBeginInfoEXT *sample_locations_begin_info;
+    vku::safe_VkRenderPassSampleLocationsBeginInfoEXT sample_locations_begin_info;
     std::vector<SubpassInfo> active_subpasses;
 
     VkSubpassContents active_subpass_contents;
