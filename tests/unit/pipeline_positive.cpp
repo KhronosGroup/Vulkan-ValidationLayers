@@ -1951,3 +1951,105 @@ TEST_F(PositivePipeline, ColorWriteMaskE5B9G9R9) {
         pipe.Destroy();
     }
 }
+
+TEST_F(PositivePipeline, SampleLocations) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    VkMultisamplePropertiesEXT multisample_prop = vku::InitStructHelper();
+    vk::GetPhysicalDeviceMultisamplePropertiesEXT(Gpu(), VK_SAMPLE_COUNT_4_BIT, &multisample_prop);
+
+    if (multisample_prop.maxSampleLocationGridSize.width == 0 || multisample_prop.maxSampleLocationGridSize.height == 0) {
+        GTEST_SKIP() << "multisample properties are not supported";
+    }
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.extent = {32u, 32u, 1u};
+    image_ci.mipLevels = 1u;
+    image_ci.arrayLayers = 1u;
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    vkt::Image ms_image(*m_device, image_ci);
+    vkt::ImageView ms_image_view = ms_image.CreateView();
+
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    vkt::Image resolve_image(*m_device, image_ci);
+    vkt::ImageView resolve_image_view = resolve_image.CreateView();
+
+    VkClearValue clear_value = {m_clear_color};
+
+    RenderPassSingleSubpass render_pass(*this);
+    render_pass.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
+                                         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    render_pass.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
+                                         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    render_pass.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+    render_pass.AddAttachmentReference({1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+    render_pass.AddColorAttachment(0);
+    render_pass.AddResolveAttachment(1);
+    render_pass.CreateRenderPass();
+
+    VkImageView image_views[2] = {ms_image_view.handle(), resolve_image_view.handle()};
+    vkt::Framebuffer framebuffer(*m_device, render_pass, 2u, image_views);
+
+    std::vector<VkSampleLocationEXT> sample_location(4u, {0.5f, 0.5f});
+    VkSampleLocationsInfoEXT sample_locations_info = vku::InitStructHelper();
+    sample_locations_info.sampleLocationsPerPixel = VK_SAMPLE_COUNT_4_BIT;
+    sample_locations_info.sampleLocationGridSize = {1u, 1u};
+    sample_locations_info.sampleLocationsCount = 4u;
+    sample_locations_info.pSampleLocations = sample_location.data();
+
+    VkPipelineSampleLocationsStateCreateInfoEXT sample_locations_state = vku::InitStructHelper();
+    sample_locations_state.sampleLocationsEnable = VK_TRUE;
+    sample_locations_state.sampleLocationsInfo = sample_locations_info;
+
+    VkPipelineMultisampleStateCreateInfo multi_sample_state = vku::InitStructHelper(&sample_locations_state);
+    multi_sample_state.rasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
+    multi_sample_state.sampleShadingEnable = VK_FALSE;
+    multi_sample_state.minSampleShading = 1.0f;
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_ci = vku::InitStructHelper();
+    pipeline_rendering_ci.colorAttachmentCount = 1u;
+    pipeline_rendering_ci.pColorAttachmentFormats = &image_ci.format;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_ci);
+    pipe.gp_ci_.pMultisampleState = &multi_sample_state;
+    pipe.gp_ci_.renderPass = render_pass;
+    pipe.CreateGraphicsPipeline();
+
+    VkAttachmentSampleLocationsEXT initial_location;
+    initial_location.attachmentIndex = 0u;
+    initial_location.sampleLocationsInfo = sample_locations_info;
+
+    VkSubpassSampleLocationsEXT subpass_sample_locations;
+    subpass_sample_locations.subpassIndex = 0u;
+    subpass_sample_locations.sampleLocationsInfo = sample_locations_info;
+
+    m_command_buffer.Begin();
+
+    VkRenderPassSampleLocationsBeginInfoEXT sample_locations_begin_info = vku::InitStructHelper();
+    sample_locations_begin_info.attachmentInitialSampleLocationsCount = 1u;
+    sample_locations_begin_info.pAttachmentInitialSampleLocations = &initial_location;
+    sample_locations_begin_info.postSubpassSampleLocationsCount = 1u;
+    sample_locations_begin_info.pPostSubpassSampleLocations = &subpass_sample_locations;
+
+    VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper(&sample_locations_begin_info);
+    render_pass_begin_info.renderPass = render_pass;
+    render_pass_begin_info.framebuffer = framebuffer;
+    render_pass_begin_info.renderArea = {{0, 0}, {32u, 32u}};
+    render_pass_begin_info.clearValueCount = 1u;
+    render_pass_begin_info.pClearValues = &clear_value;
+
+    vk::CmdBeginRenderPass(m_command_buffer, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    sample_locations_begin_info = {};
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDraw(m_command_buffer, 4u, 1u, 0u, 0u);
+    vk::CmdEndRenderPass(m_command_buffer);
+    m_command_buffer.End();
+}
