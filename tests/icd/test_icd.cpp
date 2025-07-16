@@ -713,6 +713,13 @@ static VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements(VkDevice devi
     }
 }
 
+static VKAPI_ATTR void VKAPI_CALL GetTensorMemoryRequirementsARM(VkDevice device, VkTensorARM tensor,
+                                                                 VkMemoryRequirements* pMemoryRequirements) {
+    pMemoryRequirements->size = 1024;
+    pMemoryRequirements->alignment = 1;
+    pMemoryRequirements->memoryTypeBits = 0xFFFF;
+}
+
 static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
                                                                                VkImageType type, VkSampleCountFlagBits samples,
                                                                                VkImageUsageFlags usage, VkImageTiling tiling,
@@ -848,6 +855,12 @@ static VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceVersion(uint32_t* pApiVer
 static VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements2(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
                                                               VkMemoryRequirements2* pMemoryRequirements) {
     GetImageMemoryRequirements(device, pInfo->image, &pMemoryRequirements->memoryRequirements);
+}
+
+static VKAPI_ATTR void VKAPI_CALL GetTensorMemoryRequirementsARM(VkDevice device, const VkTensorMemoryRequirementsInfoARM* pInfo,
+                                                                 VkMemoryRequirements2* pMemoryRequirements)
+{
+    GetTensorMemoryRequirementsARM(device, pInfo->tensor, &pMemoryRequirements->memoryRequirements);
 }
 
 static VKAPI_ATTR void VKAPI_CALL GetBufferMemoryRequirements2(VkDevice device, const VkBufferMemoryRequirementsInfo2* pInfo,
