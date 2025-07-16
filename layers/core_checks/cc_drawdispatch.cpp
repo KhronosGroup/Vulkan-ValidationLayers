@@ -1956,9 +1956,29 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
         return skip;
     }
 
+    if (enabled_features.colorWriteEnable && last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT) &&
+        cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT)) {
+        // Found in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4116 that not setting all attachment can invalidate previous
+        // calls, so the last call needs to have set them all
+        const uint32_t blend_attachment_count = (uint32_t)cb_state.active_color_attachments_index.size();
+        const uint32_t dynamic_attachment_count = cb_state.dynamic_state_value.color_write_enable_attachment_count;
+        if (dynamic_attachment_count < blend_attachment_count) {
+            LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
+            skip |= LogError(vuid.dynamic_color_write_enable_count_07750, objlist, vuid.loc(),
+                             "There are currently (%" PRIu32
+                             ") active color attachments, but the last call to vkCmdSetColorWriteEnableEXT() only had an "
+                             "attachmentCount value of %" PRIu32
+                             " and the remaining attachments color write enable state is undefined.%s\nUnfortunately there was no "
+                             "firstAttachment in vkCmdSetColorWriteEnableEXT so all attachment need to be set.",
+                             blend_attachment_count, dynamic_attachment_count,
+                             cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT).c_str());
+        }
+    }
+
     const bool dynamic_equation = last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT);
     const bool dynamic_advanced = last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT);
     const bool dynamic_blend_enable = last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
+    const bool dynamic_write_mask = last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT);
 
     for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
         const auto &attachment_info = cb_state.active_attachments[i];
@@ -1967,6 +1987,28 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
             continue;
         }
         const uint32_t color_index = attachment_info.color_index;
+
+        if (dynamic_write_mask && cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT) &&
+            !cb_state.dynamic_state_value.color_write_mask_attachments[color_index]) {
+            LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
+            objlist.add(attachment->Handle());
+            skip |=
+                LogError(vuid.dynamic_color_write_mask_07478, objlist, vuid.loc(),
+                         "vkCmdSetColorWriteMaskEXT was not set for color attachment index %" PRIu32 " for this command buffer.%s",
+                         color_index, cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT).c_str());
+        }
+
+        if (dynamic_blend_enable && cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
+            !cb_state.dynamic_state_value.color_blend_enable_attachments[color_index]) {
+            LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
+            objlist.add(attachment->Handle());
+            skip |= LogError(vuid.dynamic_color_blend_enable_07476, objlist, vuid.loc(),
+                             "vkCmdSetColorBlendEnableEXT was not set for color attachment index %" PRIu32
+                             " for this command buffer.%s",
+                             color_index, cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT).c_str());
+            continue;  // If no value is set, IsColorBlendEnabled will give garbage
+        }
+        // The following all rely on color blend
         if (!last_bound_state.IsColorBlendEnabled(color_index)) {
             continue;
         }

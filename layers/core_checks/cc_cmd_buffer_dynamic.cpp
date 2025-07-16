@@ -603,25 +603,6 @@ bool CoreChecks::ValidateDrawDynamicStatePipelineValue(const LastBound& last_bou
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
 
-    // must set the state for all active color attachments in the current subpass
-    for (const uint32_t color_index : cb_state.active_color_attachments_index) {
-        // TODO - when moving, move to ValidateDrawAttachmentColorBlend
-        if (pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
-            !cb_state.dynamic_state_value.color_blend_enable_attachments.test(color_index)) {
-            skip |= LogError(vuid.dynamic_color_blend_enable_07476, objlist, vuid.loc(),
-                             "vkCmdSetColorBlendEnableEXT was not set for color attachment index %" PRIu32
-                             " for this command buffer.%s",
-                             color_index, cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT).c_str());
-        }
-        if (pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT) &&
-            !cb_state.dynamic_state_value.color_write_mask_attachments.test(color_index)) {
-            skip |=
-                LogError(vuid.dynamic_color_write_mask_07478, objlist, vuid.loc(),
-                         "vkCmdSetColorWriteMaskEXT was not set for color attachment index %" PRIu32 " for this command buffer.%s",
-                         color_index, cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT).c_str());
-        }
-    }
-
     if (pipeline.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT) && last_bound_state.IsSampleLocationsEnable()) {
         if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
             if (cb_state.dynamic_state_value.sample_locations_info.sampleLocationsPerPixel !=
@@ -683,24 +664,6 @@ bool CoreChecks::ValidateDrawDynamicStatePipelineValue(const LastBound& last_bou
                                  "which does not match rasterization samples (%s) set with vkCmdSetRasterizationSamplesEXT().",
                                  string_VkSampleCountFlagBits(sample_locations->sampleLocationsInfo.sampleLocationsPerPixel),
                                  string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples));
-            }
-        }
-    }
-
-    if (pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT)) {
-        // Found in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4116 that not setting all attachment can invalidate previous
-        // calls, so the last call needs to have set them all
-        if (const auto color_blend_state = pipeline.ColorBlendState()) {
-            uint32_t blend_attachment_count = color_blend_state->attachmentCount;
-            uint32_t dynamic_attachment_count = cb_state.dynamic_state_value.color_write_enable_attachment_count;
-            if (dynamic_attachment_count < blend_attachment_count) {
-                skip |= LogError(
-                    vuid.dynamic_color_write_enable_count_07750, objlist, vuid.loc(),
-                    "Currently bound pipeline was created with VkPipelineColorBlendStateCreateInfo::attachmentCount (%" PRIu32
-                    ") and VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT, but the last call to vkCmdSetColorWriteEnableEXT() only had an "
-                    "attachmentCount value of %" PRIu32 " and the remaining attachments color write enable state is undefined.%s",
-                    blend_attachment_count, dynamic_attachment_count,
-                    cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT).c_str());
             }
         }
     }
@@ -1494,38 +1457,9 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
     graphics_shader_bound |= last_bound_state.IsValidShaderBound(ShaderObjectStage::FRAGMENT);
     graphics_shader_bound |= last_bound_state.IsValidShaderBound(ShaderObjectStage::TASK);
     graphics_shader_bound |= last_bound_state.IsValidShaderBound(ShaderObjectStage::MESH);
-    bool fragment_shader_bound = last_bound_state.IsValidShaderBound(ShaderObjectStage::FRAGMENT);
 
     if (!graphics_shader_bound) {
         return skip;
-    }
-
-    if (fragment_shader_bound) {
-        if (!cb_state.dynamic_state_value.rasterizer_discard_enable) {
-            for (const uint32_t color_index : cb_state.active_color_attachments_index) {
-                if (!cb_state.dynamic_state_value.color_blend_enable_attachments[color_index]) {
-                    skip |= LogError(vuid.set_blend_advanced_09417, objlist, loc,
-                                     "%s state not set for this command buffer for attachment %" PRIu32 ".",
-                                     DynamicStateToString(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT), color_index);
-                }
-                if (!cb_state.dynamic_state_value.color_write_mask_attachments[color_index]) {
-                    skip |= LogError(vuid.set_color_write_09419, objlist, loc,
-                                     "%s state not set for this command buffer for attachment %" PRIu32 ".",
-                                     DynamicStateToString(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT), color_index);
-                }
-            }
-            if (enabled_features.colorWriteEnable) {
-                if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT) &&
-                    cb_state.dynamic_state_value.color_write_enable_attachment_count <
-                        cb_state.active_color_attachments_index.size()) {
-                    skip |= LogError(vuid.set_color_write_enable_08647, cb_state.Handle(), loc,
-                                     "vkCmdSetColorWriteEnableEXT() was called with attachmentCount %" PRIu32
-                                     ", but current render pass color attachmnet count is %zu.",
-                                     cb_state.dynamic_state_value.color_write_enable_attachment_count,
-                                     cb_state.active_color_attachments_index.size());
-                }
-            }
-        }
     }
 
     // Resolve mode only for dynamic rendering

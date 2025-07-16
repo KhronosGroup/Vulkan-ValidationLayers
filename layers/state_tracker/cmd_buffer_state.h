@@ -204,7 +204,10 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     std::string DescribeInvalidatedState(CBDynamicState dynamic_state) const;
 
     // Return true if the corresponding vkCmdSet* call has occured in the command buffer.
-    // Used to know if the DynamicStateValue will be valid or not to read.
+    // Used for calls like vkCmdSetColorBlendEnableEXT where we have both a VU for
+    //   - it was called it at all
+    //   - it was called for every attachment
+    // And this is used to not give double error
     bool IsDynamicStateSet(CBDynamicState state) const { return dynamic_state_status.cb[state]; }
 
     // These are values that are being set with vkCmdSet* tied to a command buffer

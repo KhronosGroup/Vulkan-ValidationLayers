@@ -224,7 +224,6 @@ struct DrawDispatchVuid {
     const char* external_format_resolve_09370 = kVUIDUndefined;
     const char* external_format_resolve_09371 = kVUIDUndefined;
     const char* set_rasterization_samples_08644 = kVUIDUndefined;
-    const char* set_color_write_enable_08647 = kVUIDUndefined;
     const char* set_line_rasterization_mode_08666 = kVUIDUndefined;
     const char* set_line_stipple_enable_08669 = kVUIDUndefined;
     const char* next_stage_10745 = kVUIDUndefined;
@@ -271,8 +270,6 @@ struct DrawDispatchVuid {
     const char* sample_locations_enable_07936 = kVUIDUndefined;
     const char* sample_locations_enable_07937 = kVUIDUndefined;
     const char* sample_locations_enable_07938 = kVUIDUndefined;
-    const char* set_blend_advanced_09417 = kVUIDUndefined;
-    const char* set_color_write_09419 = kVUIDUndefined;
     const char* set_coverage_to_color_location_09420 = kVUIDUndefined;
     const char* set_coverage_to_color_location_07490 = kVUIDUndefined;
     const char* set_viewport_swizzle_09421 = kVUIDUndefined;
