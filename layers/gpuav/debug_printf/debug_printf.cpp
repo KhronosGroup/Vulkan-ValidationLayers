@@ -20,6 +20,7 @@
 #include "chassis/dispatch_object.h"
 #include "gpuav/shaders/gpuav_error_header.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
+#include "gpuav/shaders/root_node.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/core/gpuav.h"
 #include "state_tracker/shader_instruction.h"
@@ -202,7 +203,9 @@ struct DebugPrintfCbState {
 void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer, DebugPrintfBufferInfo &buffer_info,
                                uint32_t *const debug_output_buffer, const Location &loc) {
     uint32_t output_buffer_dwords_counts = debug_output_buffer[gpuav::kDebugPrintfOutputBufferDWordsCount];
-    if (!output_buffer_dwords_counts) return;
+    if (!output_buffer_dwords_counts) {
+        return;
+    }
 
     uint32_t output_record_i = gpuav::kDebugPrintfOutputBufferData;  // get first OutputRecord index
     while (debug_output_buffer[output_record_i]) {
@@ -383,13 +386,6 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
                 << ") being too small for the messages. (This can be adjusted with VK_LAYER_PRINTF_BUFFER_SIZE or vkconfig)";
         gpuav.InternalWarning(command_buffer, loc, message.str().c_str());
     }
-
-    // Only memset what is needed, in case we are only using a small portion of a large buffer_size.
-    // At the same time we want to make sure we don't memset past the actual VkBuffer allocation
-    uint32_t clear_size =
-        sizeof(uint32_t) * (debug_output_buffer[gpuav::kDebugPrintfOutputBufferDWordsCount] + gpuav::kDebugPrintfOutputBufferData);
-    clear_size = std::min(gpuav.gpuav_settings.debug_printf_buffer_size, clear_size);
-    memset(debug_output_buffer, 0, clear_size);
 }
 
 #if defined(__GNUC__)
@@ -401,22 +397,34 @@ void RegisterDebugPrintf(Validator &gpuav, CommandBufferSubState &cb_state) {
         return;
     }
 
+    std::shared_ptr<vko::BufferRange> debug_printf_output_buffer = std::make_shared<vko::BufferRange>();
     cb_state.on_instrumentation_desc_set_update_functions.emplace_back(
-        [debug_printf_buffer_size = gpuav.gpuav_settings.debug_printf_buffer_size](
-            CommandBufferSubState &cb, VkPipelineBindPoint bind_point, VkDescriptorBufferInfo &out_buffer_info,
-            uint32_t &out_dst_binding) {
-            vko::BufferRange debug_printf_output_buffer =
-                cb.gpu_resources_manager.GetHostVisibleBufferRange(debug_printf_buffer_size);
-            std::memset(debug_printf_output_buffer.offset_mapped_ptr, 0, (size_t)debug_printf_buffer_size);
+        [debug_printf_output_buffer, debug_printf_buffer_size = gpuav.gpuav_settings.debug_printf_buffer_size](
+            CommandBufferSubState &cb, VkPipelineBindPoint bind_point, glsl::RootNode *root_node) {
+            *debug_printf_output_buffer = cb.gpu_resources_manager.GetHostVisibleBufferRange(debug_printf_buffer_size);
+            debug_printf_output_buffer->Clear();
+            auto ptr = (uint32_t *)debug_printf_output_buffer->offset_mapped_ptr;
+            assert(debug_printf_buffer_size > 8);
+            ptr[gpuav::kDebugPrintfOutputBufferSize] = debug_printf_buffer_size - 8;
 
-            out_buffer_info.buffer = debug_printf_output_buffer.buffer;
-            out_buffer_info.offset = debug_printf_output_buffer.offset;
-            out_buffer_info.range = debug_printf_output_buffer.size;
-
-            out_dst_binding = glsl::kBindingInstDebugPrintf;
+            root_node->debug_printf_buffer = debug_printf_output_buffer->offset_address;
+            assert(root_node->debug_printf_buffer);
 
             DebugPrintfCbState &debug_printf_cb_state = cb.shared_resources_cache.GetOrCreate<DebugPrintfCbState>();
-            debug_printf_cb_state.buffer_infos.emplace_back(debug_printf_output_buffer, bind_point, cb.action_command_count);
+            debug_printf_cb_state.buffer_infos.emplace_back(*debug_printf_output_buffer, bind_point, cb.action_command_count);
+        });
+
+    cb_state.on_pre_cb_submission_functions.emplace_back(
+        [debug_printf_output_buffer](Validator &gpuav, CommandBufferSubState &cb, VkCommandBuffer per_pre_submission_cb) {
+            // Can happen in command buffers with no action commands.
+            // In this case, nothing to clear, return
+            if (debug_printf_output_buffer->size == 0) {
+                return;
+            }
+            auto ptr = (uint32_t *)debug_printf_output_buffer->offset_mapped_ptr;
+            uint32_t clear_size = sizeof(uint32_t) * ptr[gpuav::kDebugPrintfOutputBufferDWordsCount];
+            clear_size = std::min(gpuav.gpuav_settings.debug_printf_buffer_size - 8, clear_size) + 4;
+            memset(ptr + gpuav::kDebugPrintfOutputBufferDWordsCount, 0, clear_size);
         });
 
     cb_state.on_cb_completion_functions.emplace_back([](Validator &gpuav, CommandBufferSubState &cb,

@@ -16,6 +16,7 @@
 #include "gpuav/core/gpuav.h"
 #include "gpuav/resources/gpuav_shader_resources.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
+#include "gpuav/shaders/root_node.h"
 
 namespace gpuav {
 
@@ -144,12 +145,10 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
 
     cb.on_instrumentation_desc_set_update_functions.emplace_back(
         [dummy_buffer_range = vko::BufferRange{}](CommandBufferSubState& cb, VkPipelineBindPoint,
-                                                  VkDescriptorBufferInfo& out_buffer_info, uint32_t& out_dst_binding) mutable {
+                                                  glsl::RootNode* root_node) mutable {
             DescriptorChecksCbState* dc_cb_state = cb.shared_resources_cache.TryGet<DescriptorChecksCbState>();
             if (dc_cb_state) {
-                out_buffer_info.buffer = dc_cb_state->last_bound_desc_sets_state_ssbo.buffer;
-                out_buffer_info.offset = dc_cb_state->last_bound_desc_sets_state_ssbo.offset;
-                out_buffer_info.range = dc_cb_state->last_bound_desc_sets_state_ssbo.size;
+                root_node->bound_desc_sets_state_ssbo = dc_cb_state->last_bound_desc_sets_state_ssbo.offset_address;
             } else {
                 // Eventually, no descriptor set was bound in command buffer.
                 // Instrumenation descriptor set is already defined at this point and needs a binding,
@@ -157,12 +156,10 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
                 if (dummy_buffer_range.buffer == VK_NULL_HANDLE) {
                     dummy_buffer_range = cb.gpu_resources_manager.GetDeviceLocalBufferRange(64);
                 }
-                out_buffer_info.buffer = dummy_buffer_range.buffer;
-                out_buffer_info.offset = dummy_buffer_range.offset;
-                out_buffer_info.range = dummy_buffer_range.size;
+                // #ARNO_TODO in this case, no access should be done in shader, it should be ok to have this be NULL
+                root_node->bound_desc_sets_state_ssbo = dummy_buffer_range.offset_address;
             }
-
-            out_dst_binding = glsl::kBindingInstDescriptorIndexingOOB;
+            assert(root_node->bound_desc_sets_state_ssbo);
         });
 
     // For every descriptor binding command, update a GPU buffer holding the type of each bound descriptor set
