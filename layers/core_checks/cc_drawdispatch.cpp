@@ -1967,10 +1967,9 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
             LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
             skip |= LogError(vuid.dynamic_color_write_enable_count_07750, objlist, vuid.loc(),
                              "There are currently (%" PRIu32
-                             ") active color attachments, but the last call to vkCmdSetColorWriteEnableEXT() only had an "
-                             "attachmentCount value of %" PRIu32
-                             " and the remaining attachments color write enable state is undefined.%s\nUnfortunately there was no "
-                             "firstAttachment in vkCmdSetColorWriteEnableEXT so all attachment need to be set.",
+                             ") active color attachments, but the last call to vkCmdSetColorWriteEnableEXT() only set the color "
+                             "write enables for attachments 0 to %" PRIu32
+                             " and the color write enable state of the remaining attachments is undefined.%s",
                              blend_attachment_count, dynamic_attachment_count,
                              cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT).c_str());
         }
