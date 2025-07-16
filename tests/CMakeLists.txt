@@ -330,70 +330,26 @@ find_package(SPIRV-Tools CONFIG)
 
 # Slang
 # ---
-# Due to issues Slang in tests is not supported on Apple,
-# and not 32 bits platforms for lack of pre-built 32 bit binaries
-if(NOT APPLE AND NOT ANDROID AND CMAKE_SIZEOF_VOID_P EQUAL 8)
-    if(NOT DEFINED SLANG_VERSION)
-        message(FATAL_ERROR "Could not retrieve Slang version from helper.cmake")
-    endif()
-
-    set(SLANG_BINARY_DIR "${CMAKE_BINARY_DIR}/slang")
-    set(SLANG_DOWNLOAD_DIR "${SLANG_BINARY_DIR}/download")
-    set(SLANG_EXTRACT_DIR "${SLANG_BINARY_DIR}/extract")
-
-    # Function to determine the correct binary URL based on platform
-    function(get_slang_binary_url RESULT_VAR)
-        if(WIN32 AND CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64|ARM64")
-            set(${RESULT_VAR} "https://github.com/shader-slang/slang/releases/download/v${SLANG_VERSION}/slang-${SLANG_VERSION}-windows-aarch64.zip" PARENT_SCOPE)
-        elseif(WIN32)
-            set(${RESULT_VAR} "https://github.com/shader-slang/slang/releases/download/v${SLANG_VERSION}/slang-${SLANG_VERSION}-windows-x86_64.zip" PARENT_SCOPE)
-        elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|aarch64linux|arm64|ARM64")
-            set(${RESULT_VAR} "https://github.com/shader-slang/slang/releases/download/v${SLANG_VERSION}/slang-${SLANG_VERSION}-linux-aarch64.zip" PARENT_SCOPE)
-        elseif(UNIX)
-            set(${RESULT_VAR} "https://github.com/shader-slang/slang/releases/download/v${SLANG_VERSION}/slang-${SLANG_VERSION}-linux-x86_64.zip" PARENT_SCOPE)
-        else()
-            message(FATAL_ERROR "Unsupported platform for Slang prebuilt binaries")
-        endif()
-    endfunction()
-
-    get_slang_binary_url(SLANG_URL)
-    message(STATUS "Using Slang version: ${SLANG_VERSION}")
-    message(STATUS "Downloading from: ${SLANG_URL}")
-
-    # Download and extract the ZIP file
-    file(DOWNLOAD "${SLANG_URL}" "${SLANG_DOWNLOAD_DIR}/slang-${SLANG_VERSION}.zip"
-         STATUS DOWNLOAD_STATUS
-    )
-    list(GET DOWNLOAD_STATUS 0 STATUS_CODE)
-    if(NOT STATUS_CODE EQUAL 0)
-        list(GET DOWNLOAD_STATUS 1 ERROR_MESSAGE)
-        message(FATAL_ERROR "Failed to download Slang: ${ERROR_MESSAGE}")
-    endif()
-    file(MAKE_DIRECTORY "${SLANG_EXTRACT_DIR}")
-    file(ARCHIVE_EXTRACT 
-         INPUT "${SLANG_DOWNLOAD_DIR}/slang-${SLANG_VERSION}.zip"
-         DESTINATION "${SLANG_EXTRACT_DIR}"
-    )
-
+if(DEFINED SLANG_INSTALL_DIR)
     # Define paths based on actual structure
     if(WIN32)
-        if(EXISTS "${SLANG_EXTRACT_DIR}/bin")
-            set(SLANG_BIN_DIR "${SLANG_EXTRACT_DIR}/bin")
+        if(EXISTS "${SLANG_INSTALL_DIR}/bin")
+            set(SLANG_BIN_DIR "${SLANG_INSTALL_DIR}/bin")
         endif()
 
-        if(EXISTS "${SLANG_EXTRACT_DIR}/lib")
-            set(SLANG_LIB_DIR "${SLANG_EXTRACT_DIR}/lib")
+        if(EXISTS "${SLANG_INSTALL_DIR}/lib")
+            set(SLANG_LIB_DIR "${SLANG_INSTALL_DIR}/lib")
         else()
-            set(SLANG_LIB_DIR "${SLANG_EXTRACT_DIR}/bin")
+            set(SLANG_LIB_DIR "${SLANG_INSTALL_DIR}/bin")
         endif()
 
-        set(SLANG_INCLUDE_DIR "${SLANG_EXTRACT_DIR}/include")
+        set(SLANG_INCLUDE_DIR "${SLANG_INSTALL_DIR}/include")
 
         # Find slang.lib
         if(EXISTS "${SLANG_LIB_DIR}/slang.lib")
             set(SLANG_LIBRARY "${SLANG_LIB_DIR}/slang.lib")
         else()
-            file(GLOB SLANG_LIB_FILES "${SLANG_EXTRACT_DIR}/**/slang.lib")
+            file(GLOB SLANG_LIB_FILES "${SLANG_INSTALL_DIR}/**/slang.lib")
             if(SLANG_LIB_FILES)
                 list(GET SLANG_LIB_FILES 0 SLANG_LIBRARY)
             else()
@@ -402,7 +358,7 @@ if(NOT APPLE AND NOT ANDROID AND CMAKE_SIZEOF_VOID_P EQUAL 8)
         endif()
 
         # Find slang.dll
-        file(GLOB SLANG_DLL_FILES "${SLANG_EXTRACT_DIR}/**/slang.dll")
+        file(GLOB SLANG_DLL_FILES "${SLANG_INSTALL_DIR}/**/slang.dll")
         if(SLANG_DLL_FILES)
             list(GET SLANG_DLL_FILES 0 SLANG_DLL)
         elseif(EXISTS "${SLANG_BIN_DIR}/slang.dll")
@@ -422,17 +378,17 @@ if(NOT APPLE AND NOT ANDROID AND CMAKE_SIZEOF_VOID_P EQUAL 8)
         endforeach()
 
     else()
-        set(SLANG_INCLUDE_DIR "${SLANG_EXTRACT_DIR}/include")
+        set(SLANG_INCLUDE_DIR "${SLANG_INSTALL_DIR}/include")
 
-        if(EXISTS "${SLANG_EXTRACT_DIR}/lib")
-            set(SLANG_LIB_DIR "${SLANG_EXTRACT_DIR}/lib")
+        if(EXISTS "${SLANG_INSTALL_DIR}/lib")
+            set(SLANG_LIB_DIR "${SLANG_INSTALL_DIR}/lib")
         else()
             # Some releases might put libraries in a different location
-            file(GLOB LIB_DIRS "${SLANG_EXTRACT_DIR}/**/lib")
+            file(GLOB LIB_DIRS "${SLANG_INSTALL_DIR}/**/lib")
             if(LIB_DIRS)
                 list(GET LIB_DIRS 0 SLANG_LIB_DIR)
             else()
-                set(SLANG_LIB_DIR "${SLANG_EXTRACT_DIR}")
+                set(SLANG_LIB_DIR "${SLANG_INSTALL_DIR}")
             endif()
         endif()
 
@@ -441,7 +397,7 @@ if(NOT APPLE AND NOT ANDROID AND CMAKE_SIZEOF_VOID_P EQUAL 8)
             set(SLANG_LIBRARY "${SLANG_LIB_DIR}/libslang.so")
             message(STATUS "Found libslang.so at: ${SLANG_LIBRARY}")
         else()
-            file(GLOB SLANG_LIB_FILES "${SLANG_EXTRACT_DIR}/**/libslang.so")
+            file(GLOB SLANG_LIB_FILES "${SLANG_INSTALL_DIR}/**/libslang.so")
             if(SLANG_LIB_FILES)
                 list(GET SLANG_LIB_FILES 0 SLANG_LIBRARY)
                 message(STATUS "Found libslang.so via glob at: ${SLANG_LIBRARY}")
