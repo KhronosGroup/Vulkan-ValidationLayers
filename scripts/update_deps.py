@@ -477,6 +477,7 @@ class GoodRepo(object):
         # No 32 bits architecture support
         if struct.calcsize("P") * 8 == 32:
             return None
+        print("self._args.arch: {}".format(self._args.arch))
         if self._args.arch.lower() == '32' or self._args.arch == 'x86' or self._args.arch == 'win32':
             return None
         
