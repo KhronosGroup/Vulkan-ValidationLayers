@@ -1275,9 +1275,6 @@ bool CoreChecks::ValidateAccessMask(const LogObjectList &objlist, const Location
         }
     }
 
-    // Early out if all commands set
-    if ((stage_mask & VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT) != 0) return skip;
-
     // or if only generic memory accesses are specified (or we got a 0 mask)
     access_mask &= ~(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT);
     if (access_mask == 0) return skip;
