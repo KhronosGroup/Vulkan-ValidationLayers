@@ -1024,6 +1024,14 @@
                 },
                 "VkPhysicalDevicePipelineBinaryFeaturesKHR": {
                     "pipelineBinaries": true
+                },
+                "VkPhysicalDeviceTensorFeaturesARM": {
+                    "tensorNonPacked": true,
+                    "shaderTensorAccess": true,
+                    "shaderStorageTensorArrayDynamicIndexing": true,
+                    "shaderStorageTensorArrayNonUniformIndexing": true,
+                    "descriptorBindingStorageTensorUpdateAfterBind": true,
+                    "tensors": true
                 }
             },
             "properties": {
@@ -2076,6 +2084,21 @@
                     "pipelineBinaryPrefersInternalCache": true,
                     "pipelineBinaryPrecompiledInternalCache": true,
                     "pipelineBinaryCompressedData": true
+                },
+                "VkPhysicalDeviceTensorPropertiesARM": {
+                    "maxTensorDimensionCount": 4,
+                    "maxTensorElements": 65536,
+                    "maxPerDimensionTensorElements": 65536,
+                    "maxTensorStride": 65536,
+                    "maxTensorSize": 524288,
+                    "maxTensorShaderAccessArrayLength": 16,
+                    "maxTensorShaderAccessSize": 16,
+                    "maxDescriptorSetStorageTensors": 500000,
+                    "maxPerStageDescriptorSetStorageTensors": 500000,
+                    "maxDescriptorSetUpdateAfterBindStorageTensors": 500000,
+                    "maxPerStageDescriptorUpdateAfterBindStorageTensors": 500000,
+                    "shaderStorageTensorArrayNonUniformIndexingNative": 0,
+                    "shaderTensorSupportedStages": 49
                 }
             },
             "extensions": {
@@ -2107,6 +2130,7 @@
                 "VK_ARM_scheduling_controls": 1,
                 "VK_ARM_shader_core_builtins": 1,
                 "VK_ARM_shader_core_properties": 1,
+                "VK_ARM_tensors": 1,
                 "VK_EXT_4444_formats": 1,
                 "VK_EXT_acquire_drm_display": 1,
                 "VK_EXT_acquire_xlib_display": 1,

@@ -1,6 +1,7 @@
 /* Copyright (c) 2023-2025 The Khronos Group Inc.
  * Copyright (c) 2023-2025 Valve Corporation
  * Copyright (c) 2023-2025 LunarG, Inc.
+ * Copyright (c) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +37,7 @@ class SamplerDescriptor;
 class CommandBuffer;
 class Sampler;
 class DescriptorSet;
+class TensorDescriptor;
 
 class DescriptorValidator : public Logger {
   public:
@@ -71,6 +73,8 @@ class DescriptorValidator : public Logger {
                             VkDescriptorType descriptor_type, const vvl::AccelerationStructureDescriptor& descriptor) const;
     bool ValidateDescriptor(const spirv::ResourceInterfaceVariable& binding_info, const uint32_t index,
                             VkDescriptorType descriptor_type, const vvl::SamplerDescriptor& descriptor) const;
+    bool ValidateDescriptor(const spirv::ResourceInterfaceVariable& binding_info, uint32_t index, VkDescriptorType descriptor_type,
+                            const vvl::TensorDescriptor& descriptor) const;
 
     // helper for the common parts of ImageSamplerDescriptor and SamplerDescriptor validation
     bool ValidateSamplerDescriptor(const spirv::ResourceInterfaceVariable& binding_info, uint32_t index, VkSampler sampler,

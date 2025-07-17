@@ -7439,8 +7439,8 @@ bool Device::PreCallValidateDestroyTensorARM(VkDevice device, VkTensorARM tensor
     // Checked by chassis: device: "VUID-vkDestroyTensorARM-device-parameter"
     skip |= ValidateObject(tensor, kVulkanObjectTypeTensorARM, true, "VUID-vkDestroyTensorARM-tensor-parameter",
                            "VUID-vkDestroyTensorARM-tensor-parent", error_obj.location.dot(Field::tensor));
-    skip |=
-        ValidateDestroyObject(tensor, kVulkanObjectTypeTensorARM, pAllocator, kVUIDUndefined, kVUIDUndefined, error_obj.location);
+    skip |= ValidateDestroyObject(tensor, kVulkanObjectTypeTensorARM, pAllocator, "VUID-vkDestroyTensorARM-tensor-09731",
+                                  "VUID-vkDestroyTensorARM-tensor-09732", error_obj.location);
 
     return skip;
 }
@@ -7478,7 +7478,8 @@ bool Device::PreCallValidateDestroyTensorViewARM(VkDevice device, VkTensorViewAR
     // Checked by chassis: device: "VUID-vkDestroyTensorViewARM-device-parameter"
     skip |= ValidateObject(tensorView, kVulkanObjectTypeTensorViewARM, true, "VUID-vkDestroyTensorViewARM-tensorView-parameter",
                            "VUID-vkDestroyTensorViewARM-tensorView-parent", error_obj.location.dot(Field::tensorView));
-    skip |= ValidateDestroyObject(tensorView, kVulkanObjectTypeTensorViewARM, pAllocator, kVUIDUndefined, kVUIDUndefined,
+    skip |= ValidateDestroyObject(tensorView, kVulkanObjectTypeTensorViewARM, pAllocator,
+                                  "VUID-vkDestroyTensorViewARM-tensorView-09751", "VUID-vkDestroyTensorViewARM-tensorView-09752",
                                   error_obj.location);
 
     return skip;
