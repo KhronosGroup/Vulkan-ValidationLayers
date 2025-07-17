@@ -331,11 +331,12 @@ const vvl::unordered_map<VkPipelineStageFlagBits2, VkPipelineStageFlags2>& syncL
             'VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT',
             'VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT',
             'VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT',
+            'VK_PIPELINE_STAGE_2_HOST_BIT', # TODO: Remove when we get headers with https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7538
         ]
         for queue in [x for x in self.vk.queueBits.keys()]:
-            stages = [x.flag.name for x in self.vk.syncStage if x.support.queues & queue and x.flag.name not in ignoreQueueFlag and x.equivalent.max]
+            stages = [x.flag.name for x in self.vk.syncStage if x.support.queues is not None and (x.support.queues & queue) and x.flag.name not in ignoreQueueFlag and x.equivalent.max]
             # These are possible for every queue
-            for s in ['VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT', 'VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT', 'VK_PIPELINE_STAGE_2_HOST_BIT']:
+            for s in ['VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT', 'VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT']:
                 if s not in stages:
                     stages.append(s)
             out.append(f'    {{ {self.vk.queueBits[queue]}, (\n        {separator.join(stages)}\n    )}},\n')

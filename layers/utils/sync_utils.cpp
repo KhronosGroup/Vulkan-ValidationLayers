@@ -135,11 +135,7 @@ VkPipelineStageFlags2 ExpandPipelineStages(VkPipelineStageFlags2 stage_mask, VkQ
     }
     if (VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT & stage_mask) {
         expanded &= ~VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
-        // Make sure we don't pull in the HOST stage from expansion, but keep it if set by the caller.
-        // The syncAllCommandStagesByQueueFlags table includes HOST for all queue types since it is
-        // allowed but it shouldn't be part of ALL_GRAPHICS
-        expanded |=
-            syncAllCommandStagesByQueueFlags().at(VK_QUEUE_GRAPHICS_BIT) & ~disabled_feature_mask & ~VK_PIPELINE_STAGE_HOST_BIT;
+        expanded |= syncAllCommandStagesByQueueFlags().at(VK_QUEUE_GRAPHICS_BIT) & ~disabled_feature_mask;
     }
     if (VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT & stage_mask) {
         expanded &= ~VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT;
