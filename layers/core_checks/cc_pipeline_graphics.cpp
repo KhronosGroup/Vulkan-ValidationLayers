@@ -1586,32 +1586,26 @@ bool CoreChecks::ValidateGraphicsPipelineColorBlendAttachmentState(const vvl::Pi
     for (size_t i = 0; i < attachment_states.size(); i++) {
         const VkPipelineColorBlendAttachmentState &attachment_state = attachment_states[i];
         const Location &attachment_loc = color_loc.dot(Field::pAttachments, (uint32_t)i);
-        if (IsSecondaryColorInputBlendFactor(attachment_state.srcColorBlendFactor)) {
-            if (!enabled_features.dualSrcBlend) {
+        if (!enabled_features.dualSrcBlend) {
+            if (IsSecondaryColorInputBlendFactor(attachment_state.srcColorBlendFactor)) {
                 skip |= LogError("VUID-VkPipelineColorBlendAttachmentState-srcColorBlendFactor-00608", device,
                                  attachment_loc.dot(Field::srcColorBlendFactor),
                                  "(%s) is a dual-source blend factor, but dualSrcBlend feature was not enabled.",
                                  string_VkBlendFactor(attachment_state.srcColorBlendFactor));
             }
-        }
-        if (IsSecondaryColorInputBlendFactor(attachment_state.dstColorBlendFactor)) {
-            if (!enabled_features.dualSrcBlend) {
+            if (IsSecondaryColorInputBlendFactor(attachment_state.dstColorBlendFactor)) {
                 skip |= LogError("VUID-VkPipelineColorBlendAttachmentState-dstColorBlendFactor-00609", device,
                                  attachment_loc.dot(Field::dstColorBlendFactor),
                                  "(%s) is a dual-source blend factor, but dualSrcBlend feature was not enabled.",
                                  string_VkBlendFactor(attachment_state.dstColorBlendFactor));
             }
-        }
-        if (IsSecondaryColorInputBlendFactor(attachment_state.srcAlphaBlendFactor)) {
-            if (!enabled_features.dualSrcBlend) {
+            if (IsSecondaryColorInputBlendFactor(attachment_state.srcAlphaBlendFactor)) {
                 skip |= LogError("VUID-VkPipelineColorBlendAttachmentState-srcAlphaBlendFactor-00610", device,
                                  attachment_loc.dot(Field::srcAlphaBlendFactor),
                                  "(%s) is a dual-source blend factor, but dualSrcBlend feature was not enabled.",
                                  string_VkBlendFactor(attachment_state.srcAlphaBlendFactor));
             }
-        }
-        if (IsSecondaryColorInputBlendFactor(attachment_state.dstAlphaBlendFactor)) {
-            if (!enabled_features.dualSrcBlend) {
+            if (IsSecondaryColorInputBlendFactor(attachment_state.dstAlphaBlendFactor)) {
                 skip |= LogError("VUID-VkPipelineColorBlendAttachmentState-dstAlphaBlendFactor-00611", device,
                                  attachment_loc.dot(Field::dstAlphaBlendFactor),
                                  "(%s) is a dual-source blend factor, but dualSrcBlend feature was not enabled.",

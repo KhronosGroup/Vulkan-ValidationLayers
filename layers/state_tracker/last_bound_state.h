@@ -106,7 +106,10 @@ struct LastBound {
     VkColorComponentFlags GetColorWriteMask(uint32_t i) const;
     bool IsColorWriteEnabled(uint32_t i) const;
     bool IsColorBlendEnabled(uint32_t i) const;
+    std::string DescribeColorBlendEnabled(uint32_t i) const;
     bool IsBlendConstantsEnabled(uint32_t i) const;
+    bool IsDualBlending(uint32_t i) const;
+    std::string DescribeBlendFactorEquation(uint32_t i) const;
     VkCullModeFlags GetCullMode() const;
     VkConservativeRasterizationModeEXT GetConservativeRasterizationMode() const;
     bool IsSampleLocationsEnable() const;
