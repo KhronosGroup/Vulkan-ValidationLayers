@@ -221,7 +221,6 @@ and see the Debug Printf output.
 ### Limitations
 * Debug Printf consumes a descriptor set. If your application uses every last
 descriptor set on the GPU, Debug Printf will not work.
-  * Suggest using `VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT`
 * Debug Printf consumes device memory on the GPU. Large or numerous Debug Printf
 messages can exhaust device memory. See settings above to control
 buffer size.

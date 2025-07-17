@@ -1053,9 +1053,9 @@ static std::string GetGpuAvSettingsCombinationTestName(const testing::TestParamI
 INSTANTIATE_TEST_SUITE_P(GpuAvShaderInstrumentationMainSettings, PositiveGpuAVParameterized,
 
                          ::testing::Combine(::testing::Values(std::vector<const char *>(
-                                                {"gpuav_descriptor_checks", "gpuav_buffer_address_oob", "gpuav_vma_linear_output",
-                                                 "gpuav_validate_ray_query", "gpuav_select_instrumented_shaders"})),
-                                            ::testing::Range(uint32_t(0), uint32_t(1) << 5)),
+                                                {"gpuav_descriptor_checks", "gpuav_buffer_address_oob", "gpuav_validate_ray_query",
+                                                 "gpuav_select_instrumented_shaders"})),
+                                            ::testing::Range(uint32_t(0), uint32_t(1) << 4)),
 
                          [](const testing::TestParamInfo<PositiveGpuAVParameterized::ParamType> &info) {
                              return GetGpuAvSettingsCombinationTestName(info);
@@ -1064,9 +1064,8 @@ INSTANTIATE_TEST_SUITE_P(GpuAvShaderInstrumentationMainSettings, PositiveGpuAVPa
 INSTANTIATE_TEST_SUITE_P(GpuAvMainSettings, PositiveGpuAVParameterized,
 
                          ::testing::Combine(::testing::Values(std::vector<const char *>({"gpuav_shader_instrumentation",
-                                                                                         "gpuav_buffers_validation",
-                                                                                         "gpuav_vma_linear_output"})),
-                                            ::testing::Range(uint32_t(0), uint32_t(1) << 3)),
+                                                                                         "gpuav_buffers_validation"})),
+                                            ::testing::Range(uint32_t(0), uint32_t(1) << 2)),
 
                          [](const testing::TestParamInfo<PositiveGpuAVParameterized::ParamType> &info) {
                              return GetGpuAvSettingsCombinationTestName(info);

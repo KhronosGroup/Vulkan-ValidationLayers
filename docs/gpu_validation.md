@@ -29,7 +29,7 @@ There are several limitations that may impede the operation of GPU Assisted Vali
 - Vulkan 1.1+ required
 - A Descriptor Slot
     - GPU-AV requires one descriptor set, which means if an application is using all sets in `VkPhysicalDeviceLimits::maxBoundDescriptorSets`, GPU-AV will not work.
-    - There is a `VK_LAYER_GPUAV_RESERVE_BINDING_SLOT` that will reduce `maxBoundDescriptorSets` by one if the app uses that value to determine its logic.
+    - GPU-AV will reduce the returned value of `maxBoundDescriptorSets` by one.
 - `fragmentStoresAndAtomics` and `vertexPipelineStoresAndAtomics` so we can write out information from those stages.
 - `timelineSemaphore` so we don't have a big `vkQueueWaitIdle` after each submission.
 
