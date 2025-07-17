@@ -247,12 +247,31 @@ bool LastBound::IsColorBlendEnabled(uint32_t i) const {
     return true;
 }
 
+std::string LastBound::DescribeColorBlendEnabled(uint32_t i) const {
+    std::stringstream ss;
+    if (IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT)) {
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT)) {
+            ss << "vkCmdSetColorBlendEnableEXT::pColorBlendEnables[" << i << "] is ";
+            ss << (cb_state.dynamic_state_value.color_blend_enabled[i] ? "VK_TRUE" : "VK_FALSE");
+        }
+    } else {
+        if (pipeline_state->ColorBlendState()) {
+            ss << "VkPipelineColorBlendStateCreateInfo::pAttachments[" << i << "].blendEnable is ";
+            ss << (pipeline_state->ColorBlendState()->pAttachments[i].blendEnable ? "VK_TRUE" : "VK_FALSE");
+        }
+    }
+    return ss.str();
+}
+
 bool LastBound::IsBlendConstantsEnabled(uint32_t i) const {
     static constexpr std::array<VkBlendFactor, 4> const_factors = {
         VK_BLEND_FACTOR_CONSTANT_COLOR, VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR, VK_BLEND_FACTOR_CONSTANT_ALPHA,
         VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA};
     if (IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT)) {
+            if (i >= cb_state.dynamic_state_value.color_blend_equations.size()) {
+                return false;  // this color attachment was set with vkCmdSetColorBlendAdvancedEXT instead
+            }
             const VkColorBlendEquationEXT &eq = cb_state.dynamic_state_value.color_blend_equations[i];
             return IsValueIn(eq.srcColorBlendFactor, const_factors) || IsValueIn(eq.dstColorBlendFactor, const_factors) ||
                    IsValueIn(eq.srcAlphaBlendFactor, const_factors) || IsValueIn(eq.dstAlphaBlendFactor, const_factors);
@@ -265,6 +284,54 @@ bool LastBound::IsBlendConstantsEnabled(uint32_t i) const {
         }
     }
     return false;
+}
+
+bool LastBound::IsDualBlending(uint32_t i) const {
+    if (IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT)) {
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT)) {
+            if (i >= cb_state.dynamic_state_value.color_blend_equations.size()) {
+                return false;  // this color attachment was set with vkCmdSetColorBlendAdvancedEXT instead
+            }
+            const VkColorBlendEquationEXT &eq = cb_state.dynamic_state_value.color_blend_equations[i];
+            return IsSecondaryColorInputBlendFactor(eq.srcColorBlendFactor) ||
+                   IsSecondaryColorInputBlendFactor(eq.dstColorBlendFactor) ||
+                   IsSecondaryColorInputBlendFactor(eq.srcAlphaBlendFactor) ||
+                   IsSecondaryColorInputBlendFactor(eq.dstAlphaBlendFactor);
+        }
+    } else {
+        if (pipeline_state->ColorBlendState()) {
+            const VkPipelineColorBlendAttachmentState &eq = pipeline_state->ColorBlendState()->pAttachments[i];
+            return IsSecondaryColorInputBlendFactor(eq.srcColorBlendFactor) ||
+                   IsSecondaryColorInputBlendFactor(eq.dstColorBlendFactor) ||
+                   IsSecondaryColorInputBlendFactor(eq.srcAlphaBlendFactor) ||
+                   IsSecondaryColorInputBlendFactor(eq.dstAlphaBlendFactor);
+        }
+    }
+    return false;
+}
+
+std::string LastBound::DescribeBlendFactorEquation(uint32_t i) const {
+    std::stringstream ss;
+    if (IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT)) {
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT)) {
+            const VkColorBlendEquationEXT &eq = cb_state.dynamic_state_value.color_blend_equations[i];
+            ss << "The following are set by vkCmdSetColorBlendEquationEXT::pColorBlendEquations[" << i << "]\n";
+            ss << "  srcColorBlendFactor = " << string_VkBlendFactor(eq.srcColorBlendFactor) << "\n";
+            ss << "  dstColorBlendFactor = " << string_VkBlendFactor(eq.dstColorBlendFactor) << "\n";
+            ss << "  srcAlphaBlendFactor = " << string_VkBlendFactor(eq.srcAlphaBlendFactor) << "\n";
+            ss << "  dstAlphaBlendFactor = " << string_VkBlendFactor(eq.dstAlphaBlendFactor) << "\n";
+        }
+    } else {
+        if (pipeline_state->ColorBlendState()) {
+            const VkPipelineColorBlendAttachmentState &eq = pipeline_state->ColorBlendState()->pAttachments[i];
+            ss << "The following are set by VkPipelineColorBlendStateCreateInfo::pAttachments[" << i << "]\n";
+            ss << "  srcColorBlendFactor = " << string_VkBlendFactor(eq.srcColorBlendFactor) << "\n";
+            ss << "  dstColorBlendFactor = " << string_VkBlendFactor(eq.dstColorBlendFactor) << "\n";
+            ss << "  srcAlphaBlendFactor = " << string_VkBlendFactor(eq.srcAlphaBlendFactor) << "\n";
+            ss << "  dstAlphaBlendFactor = " << string_VkBlendFactor(eq.dstAlphaBlendFactor) << "\n";
+        }
+    }
+    return ss.str();
 }
 
 VkCullModeFlags LastBound::GetCullMode() const {
