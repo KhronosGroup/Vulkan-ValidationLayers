@@ -58,11 +58,11 @@ TEST_F(NegativeSyncObject, ImageBarrierSubpassConflicts) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(rp_noselfdep, fb_noselfdep, 32, 32);
     VkMemoryBarrier mem_barrier = vku::InitStructHelper();
-    mem_barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+    mem_barrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
     mem_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-None-07889");
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 1, &mem_barrier, 0,
-                           nullptr, 0, nullptr);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 1,
+                           &mem_barrier, 0, nullptr, 0, nullptr);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();
 
@@ -83,13 +83,13 @@ TEST_F(NegativeSyncObject, ImageBarrierSubpassConflicts) {
     img_barrier.subresourceRange.levelCount = 1;
     // Mis-match src stage mask
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-None-07889");
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                            VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &img_barrier);
     m_errorMonitor->VerifyFound();
 
     // // Now mis-match dst stage mask
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-None-07889");
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_HOST_BIT,
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                            VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &img_barrier);
     m_errorMonitor->VerifyFound();
 
@@ -2041,6 +2041,11 @@ TEST_F(NegativeSyncObject, BarrierAccessSync2) {
     m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-srcAccessMask-03916");
     m_command_buffer.BarrierKHR(mem_barrier);
 
+    mem_barrier.srcAccessMask = VK_ACCESS_2_HOST_READ_BIT;
+    mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-srcAccessMask-03916");
+    m_command_buffer.BarrierKHR(mem_barrier);
+
     mem_barrier.srcAccessMask = VK_ACCESS_2_HOST_WRITE_BIT;
     mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
     m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-srcAccessMask-03917");
@@ -2126,6 +2131,30 @@ TEST_F(NegativeSyncObject, BarrierAccessSync2) {
 
     m_command_buffer.End();
 
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSyncObject, BarrierAccessSync1) {
+    TEST_DESCRIPTION("Special cases for sync1 that worth to check. Sync2 testing is enough for other checks");
+    RETURN_IF_SKIP(Init());
+
+    m_command_buffer.Begin();
+
+    VkMemoryBarrier mem_barrier = vku::InitStructHelper();
+    mem_barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-srcAccessMask-02815");
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 1,
+                           &mem_barrier, 0, nullptr, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    mem_barrier = vku::InitStructHelper();
+    mem_barrier.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-dstAccessMask-02816");
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 1,
+                           &mem_barrier, 0, nullptr, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
     m_errorMonitor->VerifyFound();
 }
 
