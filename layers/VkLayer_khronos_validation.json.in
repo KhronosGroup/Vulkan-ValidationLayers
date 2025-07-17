@@ -193,7 +193,6 @@
                         { "key": "gpuav_shader_instrumentation", "value": true },
                         { "key": "gpuav_select_instrumented_shaders", "value": false },
                         { "key": "gpuav_buffers_validation", "value": true },
-                        { "key": "gpuav_reserve_binding_slot", "value": true },
                         { "key": "validate_best_practices", "value": false },
                         { "key": "report_flags", "value": [ "error" ] },
                         { "key": "debug_action", "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG" ] },
@@ -738,29 +737,7 @@
                                                     { "key": "gpuav_enable", "value": true },
                                                     { "key": "gpuav_shader_instrumentation", "value": true }
                                                 ]
-                                            },
-                                            "settings": [
-                                                {
-                                                    "key": "gpuav_max_buffer_device_addresses",
-                                                    "label": "Deprecated and disabled setting",
-                                                    "description": "",
-                                                    "type": "INT",
-                                                    "status": "DEPRECATED",
-                                                    "default": 10000,
-                                                    "range": {
-                                                        "min": 100,
-                                                        "max": 10000000
-                                                    },
-                                                    "dependence": {
-                                                        "mode": "ALL",
-                                                        "settings": [
-                                                            { "key": "gpuav_enable", "value": true },
-                                                            { "key": "gpuav_shader_instrumentation", "value": true },
-                                                            { "key": "gpuav_buffer_address_oob", "value": true }
-                                                        ]
-                                                    }
-                                                }
-                                            ]
+                                            }
                                         },
                                         {
                                             "key": "gpuav_validate_ray_query",
@@ -875,48 +852,6 @@
                                                 "settings": [
                                                     { "key": "gpuav_enable", "value": true },
                                                     { "key": "gpuav_buffers_validation", "value": true }
-                                                ]
-                                            }
-                                        }
-                                    ]
-                                },
-                                {
-                                    "key": "gpuav_advanced_settings",
-                                    "label": "Advanced Settings",
-                                    "description": "GPU-AV advanced settings",
-                                    "type": "GROUP",
-                                    "status": "DEPRECATED",
-                                    "view": "ADVANCED",
-                                    "dependence": {
-                                        "mode": "ALL",
-                                        "settings": [
-                                            { "key": "gpuav_enable", "value": true }
-                                        ]
-                                    },
-                                    "settings": [
-                                        {
-                                            "key": "gpuav_reserve_binding_slot",
-                                            "label": "Reserve Descriptor Set Binding Slot",
-                                            "type": "BOOL",
-                                            "default": true,
-                                            "description": "Specifies that the validation layers reserve a descriptor set binding slot for their own use. The layer reports a value for VkPhysicalDeviceLimits::maxBoundDescriptorSets that is one less than the value reported by the device. If the device supports the binding of only one descriptor set, the validation layer does not perform GPU-assisted validation.",
-                                            "dependence": {
-                                                "mode": "ALL",
-                                                "settings": [
-                                                    { "key": "gpuav_enable", "value": true }
-                                                ]
-                                            }
-                                        },
-                                        {
-                                            "key": "gpuav_vma_linear_output",
-                                            "label": "Linear Memory Allocation Mode",
-                                            "description": "Use VMA linear memory allocations for GPU-AV output buffers instead of finding best place for new allocations among free regions to optimize memory usage. Enabling this setting reduces performance cost but disabling this method minimizes memory usage.",
-                                            "type": "BOOL",
-                                            "default": true,
-                                            "dependence": {
-                                                "mode": "ALL",
-                                                "settings": [
-                                                    { "key": "gpuav_enable", "value": true }
                                                 ]
                                             }
                                         }
@@ -1397,7 +1332,7 @@
                             "label": "Reserve Descriptor Set Binding Slot",
                             "description": "Specifies that the validation layers reserve a descriptor set binding slot for their own use. The layer reports a value for VkPhysicalDeviceLimits::maxBoundDescriptorSets that is one less than the value reported by the device. If the device supports the binding of only one descriptor set, the validation layer does not perform GPU-assisted validation.",
                             "platforms": [ "WINDOWS", "LINUX" ],
-                            "deprecated_by_key": "gpuav_reserve_binding_slot"
+                            "deprecated_by_key": "gpuav_enable"
                         },
                         {
                             "key": "VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT",

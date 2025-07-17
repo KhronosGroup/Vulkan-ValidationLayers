@@ -90,11 +90,6 @@ khronos_validation.enables =
 # Check for invalid access using buffer device address
 #khronos_validation.gpuav_buffer_address_oob = true
 
-# Specify the maximum number of buffer device addresses in simultaneous use
-# =====================
-# Specify the maximum number of buffer device addresses to allow GPU-AV allocate resources
-#khronos_validation.gpuav_max_buffer_device_addresses = 10000
-
 # Validate RayQuery SPIR-V Instructions
 # =====================
 # Enable shader instrumentation on SPV_KHR_ray_query
@@ -141,11 +136,6 @@ khronos_validation.enables =
 # Validate that indexed draws do not fetch indices outside of the bounds of the index buffer
 # Also validates that those indices are not out of the bounds of the fetched vertex buffers
 #khronos_validation.gpuav_index_buffers = true
-
-# Use linear vma allocator for GPU-AV output buffers
-# =====================
-# Use VMA linear memory allocations for GPU-AV output buffers
-#khronos_validation.gpuav_vma_linear_output = true
 
 # Fine Grained Locking
 # =====================
