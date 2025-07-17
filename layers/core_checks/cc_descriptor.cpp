@@ -66,7 +66,11 @@ bool CoreChecks::ImmutableSamplersAreEqual(const VkDescriptorSetLayoutBinding &b
                 auto sampler_state_1 = Get<vvl::Sampler>(b1.pImmutableSamplers[i]);
                 auto sampler_state_2 = Get<vvl::Sampler>(b2.pImmutableSamplers[i]);
                 if (!sampler_state_1 || !sampler_state_2) {
-                    return false;  // vkDestroySampler was called
+                    // vkDestroySampler was called, which is valid when using maintenance4 and GPL
+                    // (details in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4348)
+                    // TODO - What we really need to do is hash the create info and compare the embedded samplers were created with
+                    // identical create info. This will involve having to add this as part of the DescriptorSetLayoutDef hash
+                    return true;
                 } else if (!CompareSamplerCreateInfo(sampler_state_1->create_info, sampler_state_2->create_info)) {
                     return false;
                 }
