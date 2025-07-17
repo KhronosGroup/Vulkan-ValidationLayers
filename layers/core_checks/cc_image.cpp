@@ -1543,9 +1543,7 @@ bool CoreChecks::ValidateCreateImageViewSubresourceRange(const vvl::Image &image
                                                          const VkImageSubresourceRange &subresourceRange,
                                                          const Location &loc) const {
     const bool is_khr_maintenance1 = IsExtEnabled(extensions.vk_khr_maintenance1);
-    const bool is_2d_compatible =
-        image_state.create_info.flags & (VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT | VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT);
-    const bool is_image_slicable = (image_state.create_info.imageType == VK_IMAGE_TYPE_3D) && is_2d_compatible;
+    const bool is_image_slicable = image_state.IsDepthSliceable();
     const bool is_3d_to_2d_map = is_khr_maintenance1 && is_image_slicable && is_imageview_2d_type;
 
     uint32_t image_layer_count;

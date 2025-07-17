@@ -329,6 +329,12 @@ bool Image::IsCompatibleAliasing(const Image *other_image_state) const {
     return false;
 }
 
+bool Image::IsDepthSliceable() const {
+    const VkImageCreateFlags sliceable_depth_flags =
+        VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT | VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT;
+    return (create_info.imageType == VK_IMAGE_TYPE_3D) && (create_info.flags & sliceable_depth_flags) != 0;
+}
+
 VkExtent3D Image::GetEffectiveSubresourceExtent(const VkImageSubresourceLayers &sub) const {
     return GetEffectiveExtent(create_info, sub.aspectMask, sub.mipLevel);
 }
@@ -411,8 +417,7 @@ VkImageSubresourceRange Image::MakeImageFullRange() {
 VkImageSubresourceRange Image::GetSubresourceEncoderRange(const DeviceState &device_state,
                                                           const VkImageSubresourceRange &full_range) {
     VkImageSubresourceRange encoder_range = full_range;
-    if (device_state.extensions.vk_khr_maintenance9 && create_info.imageType == VK_IMAGE_TYPE_3D &&
-        (create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) != 0) {
+    if (device_state.extensions.vk_khr_maintenance9 && IsDepthSliceable()) {
         encoder_range.layerCount = create_info.extent.depth;
     }
     return encoder_range;
@@ -574,8 +579,7 @@ void ImageView::Destroy() {
 }
 
 bool ImageView::IsDepthSliced() {
-    auto depth_slice_flag = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT | VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT;
-    return ((image_state->create_info.flags & depth_slice_flag) != 0) &&
+    return image_state->IsDepthSliceable() &&
            (create_info.viewType == VK_IMAGE_VIEW_TYPE_2D || create_info.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 }
 
