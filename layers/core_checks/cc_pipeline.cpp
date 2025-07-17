@@ -322,16 +322,23 @@ bool CoreChecks::ValidateCmdBindPipelineRenderPassMultisample(const vvl::Command
                                                               const Location &loc) const {
     bool skip = false;
     const auto *multisample_state = pipeline_state.MultisampleState();
-    if (!multisample_state) return skip;
+    if (!multisample_state) {
+        return skip;
+    } else if (rp_state.UsesDynamicRendering()) {
+        // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4372
+        // Currently seems to be no valid way to use VK_EXT_sample_locations with dynamic rendering
+        return skip;
+    }
 
-    if (phys_dev_ext_props.sample_locations_props.variableSampleLocations == VK_FALSE) {
+    const uint32_t subpass = cb_state.GetActiveSubpass();
+    if (!phys_dev_ext_props.sample_locations_props.variableSampleLocations) {
         const auto *sample_locations = vku::FindStructInPNextChain<VkPipelineSampleLocationsStateCreateInfoEXT>(multisample_state);
         if (sample_locations && sample_locations->sampleLocationsEnable == VK_TRUE &&
             !pipeline_state.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT)) {
             bool found = false;
             for (uint32_t i = 0; i < cb_state.sample_locations_begin_info.postSubpassSampleLocationsCount; ++i) {
                 const auto &post_subpass_sample_location = cb_state.sample_locations_begin_info.pPostSubpassSampleLocations[i];
-                if (post_subpass_sample_location.subpassIndex == cb_state.GetActiveSubpass()) {
+                if (post_subpass_sample_location.subpassIndex == subpass) {
                     if (MatchSampleLocationsInfo(post_subpass_sample_location.sampleLocationsInfo,
                                                  sample_locations->sampleLocationsInfo)) {
                         found = true;
@@ -350,8 +357,7 @@ bool CoreChecks::ValidateCmdBindPipelineRenderPassMultisample(const vvl::Command
         }
     }
 
-    if (enabled_features.variableMultisampleRate == VK_FALSE) {
-        const uint32_t subpass = cb_state.GetActiveSubpass();
+    if (!enabled_features.variableMultisampleRate) {
         // if render pass uses no attachment, verify that all bound pipelines referencing this subpass have the same
         // pMultisampleState->rasterizationSamples.
         if (rp_state.UsesNoAttachment(subpass)) {
