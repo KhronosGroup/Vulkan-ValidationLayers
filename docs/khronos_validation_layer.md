@@ -14,6 +14,8 @@ Any errors in Vulkan usage can result in unexpected behavior or even a crash.  T
 can be used to to assist developers in isolating incorrect usage, and in verifying that applications
 correctly use the API.
 
+It is important to acknowledge there are a few [limitations](./limitations.md) for what the Validation Layers can do.
+
 ## Configuring the Validation Layer
 
 There are 4 ways to configure the settings: *Vulkan Configurator*, `application defined`, `vk_layer_settings.txt`, `environment variables` as described in the [layers configuration](https://vulkan.lunarg.com/doc/view/latest/windows/layer_configuration.html) documentation and described in the [Configuring Vulkan Layers](https://www.lunarg.com/wp-content/uploads/2024/04/Configuring-Vulkan-Layers-LunarG-Christophe-Riccio-04-11-2024.pdf) whitepaper.

@@ -564,6 +564,19 @@ static Device *GetDeviceFromKey(void *key) {
     ReadLockGuard lock(device_mutex);
     last_device = device_data[key].get();
     last_used_device.store(last_device);
+    if (!last_device) {
+        // If this occurs from atexit() using the layer, it would be better to provide a location where this happened, but
+        // everything is tore down and there is not much to do. Also this is the single location where can detect this, so having it
+        // here makes sure we don't miss a spot.
+        const char *error =
+            "\n\nVALIDATION ERROR - The VkDevice dispatch handle was not found and Validation will crash. If you are using exit() "
+            "you need to make sure to not call any Vulkan calls in your atexit() function as the layer static memory will be "
+            "destroyed prior to atexit()\n\n";
+        printf("%s", error);
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+        OutputDebugString(error);
+#endif
+    }
     return last_device;
 }
 
