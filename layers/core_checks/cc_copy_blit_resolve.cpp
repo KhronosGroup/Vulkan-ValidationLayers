@@ -338,6 +338,7 @@ struct ImageCopyRegion {
 
     bool is_adjusted_extent = false;
     VkExtent3D dst_adjusted_extent;  // extent that is adjusted if copying compressed<-->uncompressed
+    bool src_dst_both_compressed = false;
 
     void Init() {
         src_subresource_extent = src_state.GetEffectiveSubresourceExtent(src_subresource);
@@ -369,7 +370,11 @@ struct ImageCopyRegion {
                 dst_adjusted_extent.depth = 1;
             }
             is_adjusted_extent = true;
+        } else if (src_is_compressed && dst_is_compressed) {
+            src_dst_both_compressed = true;
+            dst_adjusted_extent = extent;
         } else {
+            // both uncompressed
             dst_adjusted_extent = extent;
         }
     }
@@ -1378,7 +1383,7 @@ bool CoreChecks::ValidateCopyImageRegionCommon(HandleT handle, const ImageCopyRe
         }
 
         if (region.dst_state.create_info.imageType == VK_IMAGE_TYPE_1D) {
-            if (region.dst_offset.y != 0 || region.dst_adjusted_extent.height != 1) {
+            if ((region.dst_offset.y != 0 || region.dst_adjusted_extent.height != 1) && !region.src_dst_both_compressed) {
                 skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::DstImage1D_00152), dst_objlist,
                                  region_loc.dot(Field::dstOffset).dot(Field::y),
                                  "is %" PRId32 " and extent.height is %" PRIu32
@@ -1388,16 +1393,17 @@ bool CoreChecks::ValidateCopyImageRegionCommon(HandleT handle, const ImageCopyRe
             }
         }
 
-        if (((region.dst_state.create_info.imageType == VK_IMAGE_TYPE_1D) ||
-             ((region.dst_state.create_info.imageType == VK_IMAGE_TYPE_2D) && is_host)) &&
-            ((region.dst_offset.z != 0) || (region.dst_adjusted_extent.depth != 1))) {
-            const char *image_type = is_host ? "1D or 2D" : "1D";
-            skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::DstImage1D_01786), dst_objlist,
-                             region_loc.dot(Field::dstOffset).dot(Field::z),
-                             "is %" PRId32 " and extent.depth is %" PRIu32
-                             " For %s images the dstOffset.z must be 0 and extent.depth must be 1.\n%s%s",
-                             region.dst_offset.z, region.dst_adjusted_extent.depth, image_type,
-                             region.DescribeAdjustedExtent().c_str(), region.DescribeSrcAndDstImage().c_str());
+        if (region.dst_state.create_info.imageType == VK_IMAGE_TYPE_1D ||
+            (region.dst_state.create_info.imageType == VK_IMAGE_TYPE_2D && is_host)) {
+            if ((region.dst_offset.z != 0 || region.dst_adjusted_extent.depth != 1) && !region.src_dst_both_compressed) {
+                const char *image_type = is_host ? "1D or 2D" : "1D";
+                skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::DstImage1D_01786), dst_objlist,
+                                 region_loc.dot(Field::dstOffset).dot(Field::z),
+                                 "is %" PRId32 " and extent.depth is %" PRIu32
+                                 " For %s images the dstOffset.z must be 0 and extent.depth must be 1.\n%s%s",
+                                 region.dst_offset.z, region.dst_adjusted_extent.depth, image_type,
+                                 region.DescribeAdjustedExtent().c_str(), region.DescribeSrcAndDstImage().c_str());
+            }
         }
 
         if ((region.dst_state.create_info.imageType == VK_IMAGE_TYPE_2D) && (region.dst_offset.z != 0) && !is_host) {
