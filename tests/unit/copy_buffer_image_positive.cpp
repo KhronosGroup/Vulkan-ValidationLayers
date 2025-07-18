@@ -815,8 +815,7 @@ TEST_F(PositiveCopyBufferImage, Compressed2DToUncompressed1D) {
     m_command_buffer.End();
 }
 
-// TODO - Need WG agreement how this works still
-TEST_F(PositiveCopyBufferImage, DISABLED_CopyCompress1DTo2D) {
+TEST_F(PositiveCopyBufferImage, CopyCompress1DTo2D) {
     TEST_DESCRIPTION("Copy a 1D compressed format to a 2D compressed format");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
@@ -901,25 +900,14 @@ TEST_F(PositiveCopyBufferImage, CopyBufferTo1DCompressedImage) {
     m_command_buffer.End();
 }
 
-// TODO - Need WG agreement how this works still
-TEST_F(PositiveCopyBufferImage, DISABLED_CopyCompress2DTo1D) {
+TEST_F(PositiveCopyBufferImage, CopyCompress2DTo1D) {
     TEST_DESCRIPTION("Copy a compressed 2D image to a compressed 1D image");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
 
-    VkImageCreateInfo image_ci = vku::InitStructHelper();
-    image_ci.flags = 0u;
-    image_ci.imageType = VK_IMAGE_TYPE_2D;
-    image_ci.format = VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
-    image_ci.extent = {64u, 64u, 1u};
-    image_ci.mipLevels = 1u;
-    image_ci.arrayLayers = 1u;
-    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_BC1_RGBA_UNORM_BLOCK, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)) {
         GTEST_SKIP() << "image format not supported";
     }
