@@ -576,6 +576,9 @@ static Device *GetDeviceFromKey(void *key) {
 #ifdef VK_USE_PLATFORM_WIN32_KHR
         OutputDebugString(error);
 #endif
+        // last_device is later dereferenced and the user **will** crash soon. We purposefully crash here to ensure that the warning
+        // is printed (and a stacktrace points them here first).
+        std::abort();
     }
     return last_device;
 }
