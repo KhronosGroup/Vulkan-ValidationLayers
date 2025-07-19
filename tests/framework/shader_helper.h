@@ -31,14 +31,18 @@ class VkRenderFramework;
 typedef enum {
     SPV_SOURCE_GLSL,
     SPV_SOURCE_ASM,
+    SPV_SOURCE_SLANG,
     // TRY == Won't try in contructor as need to be called as function that can return the VkResult
     SPV_SOURCE_GLSL_TRY,
     SPV_SOURCE_ASM_TRY,
 } SpvSourceType;
 
 bool GLSLtoSPV(const VkPhysicalDeviceLimits &device_limits, const VkShaderStageFlagBits shader_type, const char *p_shader,
-               std::vector<uint32_t> &spv, const spv_target_env spv_env = SPV_ENV_VULKAN_1_0);
-bool ASMtoSPV(const spv_target_env target_env, const uint32_t options, const char *p_asm, std::vector<uint32_t> &spv);
+               std::vector<uint32_t> &out_spv, const spv_target_env spv_env = SPV_ENV_VULKAN_1_0);
+bool ASMtoSPV(const spv_target_env target_env, const uint32_t options, const char *p_asm, std::vector<uint32_t> &out_spv);
+// We don't support installation of Slang on some platforms
+void CheckSlangSupport();
+bool SlangToSPV(const char *slang_shader, const char *entry_point_name, std::vector<uint8_t> &out_bytes);
 
 // VkShaderObj is really just the Shader Module, but we named before VK_EXT_shader_object
 // TODO - move all of VkShaderObj to vkt::ShaderModule
@@ -64,6 +68,7 @@ class VkShaderObj : public vkt::ShaderModule {
     VkResult InitFromGLSLTry(const vkt::Device *custom_device = nullptr);
     bool InitFromASM();
     VkResult InitFromASMTry();
+    bool InitFromSlang();
 
     // These functions return a pointer to a newly created _and initialized_ VkShaderObj if initialization was successful.
     // Otherwise, {} is returned.
