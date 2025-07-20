@@ -238,9 +238,9 @@ bool Device::manual_PreCallValidateCreateAccelerationStructureKHR(VkDevice devic
         !(pCreateInfo->createFlags & VK_ACCELERATION_STRUCTURE_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR)) {
         skip |= LogError(
             "VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-03612", device, create_info_loc.dot(Field::createFlags),
-            "includes VK_ACCELERATION_STRUCTURE_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR but the deviceAddress (%" PRIu64
-            ") is not zero.",
-            pCreateInfo->deviceAddress);
+            "(%s) does not include VK_ACCELERATION_STRUCTURE_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR and the deviceAddress "
+            "(%" PRIu64 ") is not zero.",
+            string_VkAccelerationStructureCreateFlagsKHR(pCreateInfo->createFlags).c_str(), pCreateInfo->deviceAddress);
     }
     if (pCreateInfo->deviceAddress && !enabled_features.accelerationStructureCaptureReplay) {
         skip |=
