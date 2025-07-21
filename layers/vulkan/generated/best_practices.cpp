@@ -472,9 +472,19 @@ void BestPractices::PostCallRecordCreateDescriptorPool(VkDevice device, const Vk
     bp_state::LogResult(*this, device, record_obj);
 }
 
+void BestPractices::PostCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
+                                                      VkDescriptorPoolResetFlags flags, const RecordObject& record_obj) {
+    bp_state::LogResult(*this, device, record_obj);
+}
+
 void BestPractices::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
                                                          VkDescriptorSet* pDescriptorSets, const RecordObject& record_obj,
                                                          vvl::AllocateDescriptorSetsData& chassis_state) {
+    bp_state::LogResult(*this, device, record_obj);
+}
+
+void BestPractices::PostCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
+                                                     const VkDescriptorSet* pDescriptorSets, const RecordObject& record_obj) {
     bp_state::LogResult(*this, device, record_obj);
 }
 
@@ -1139,6 +1149,12 @@ void BestPractices::PostCallRecordGetPipelineBinaryDataKHR(VkDevice device, cons
     bp_state::LogResult(*this, device, record_obj);
 }
 
+void BestPractices::PostCallRecordReleaseCapturedPipelineDataKHR(VkDevice device, const VkReleaseCapturedPipelineDataInfoKHR* pInfo,
+                                                                 const VkAllocationCallbacks* pAllocator,
+                                                                 const RecordObject& record_obj) {
+    bp_state::LogResult(*this, device, record_obj);
+}
+
 void BestPractices::PostCallRecordReleaseSwapchainImagesKHR(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo,
                                                             const RecordObject& record_obj) {
     bp_state::LogResult(*this, device, record_obj);
@@ -1237,6 +1253,11 @@ void bp_state::Instance::PostCallRecordCreateViSurfaceNN(VkInstance instance, co
     bp_state::LogResult(*this, instance, record_obj);
 }
 #endif  // VK_USE_PLATFORM_VI_NN
+
+void bp_state::Instance::PostCallRecordReleaseDisplayEXT(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
+                                                         const RecordObject& record_obj) {
+    bp_state::LogResult(*this, physicalDevice, record_obj);
+}
 
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
 void bp_state::Instance::PostCallRecordAcquireXlibDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, VkDisplayKHR display,
@@ -1863,6 +1884,12 @@ void BestPractices::PostCallRecordGetFramebufferTilePropertiesQCOM(VkDevice devi
     bp_state::LogResult(*this, device, record_obj);
 }
 
+void BestPractices::PostCallRecordGetDynamicRenderingTilePropertiesQCOM(VkDevice device, const VkRenderingInfo* pRenderingInfo,
+                                                                        VkTilePropertiesQCOM* pProperties,
+                                                                        const RecordObject& record_obj) {
+    bp_state::LogResult(*this, device, record_obj);
+}
+
 void bp_state::Instance::PostCallRecordGetPhysicalDeviceCooperativeVectorPropertiesNV(VkPhysicalDevice physicalDevice,
                                                                                       uint32_t* pPropertyCount,
                                                                                       VkCooperativeVectorPropertiesNV* pProperties,
@@ -1879,6 +1906,11 @@ void BestPractices::PostCallRecordConvertCooperativeVectorMatrixNV(VkDevice devi
 void BestPractices::PostCallRecordSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain,
                                                         const VkLatencySleepModeInfoNV* pSleepModeInfo,
                                                         const RecordObject& record_obj) {
+    bp_state::LogResult(*this, device, record_obj);
+}
+
+void BestPractices::PostCallRecordLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepInfoNV* pSleepInfo,
+                                                 const RecordObject& record_obj) {
     bp_state::LogResult(*this, device, record_obj);
 }
 

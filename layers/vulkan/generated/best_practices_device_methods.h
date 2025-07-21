@@ -136,9 +136,15 @@ void PostCallRecordCreateDescriptorPool(VkDevice device, const VkDescriptorPoolC
                                         const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool,
                                         const RecordObject& record_obj) override;
 
+void PostCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorPoolResetFlags flags,
+                                       const RecordObject& record_obj) override;
+
 void PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
                                           VkDescriptorSet* pDescriptorSets, const RecordObject& record_obj,
                                           vvl::AllocateDescriptorSetsData& chassis_state) override;
+
+void PostCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
+                                      const VkDescriptorSet* pDescriptorSets, const RecordObject& record_obj) override;
 
 void PostCallRecordCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
                                      const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer,
@@ -401,6 +407,9 @@ void PostCallRecordGetPipelineKeyKHR(VkDevice device, const VkPipelineCreateInfo
 void PostCallRecordGetPipelineBinaryDataKHR(VkDevice device, const VkPipelineBinaryDataInfoKHR* pInfo,
                                             VkPipelineBinaryKeyKHR* pPipelineBinaryKey, size_t* pPipelineBinaryDataSize,
                                             void* pPipelineBinaryData, const RecordObject& record_obj) override;
+
+void PostCallRecordReleaseCapturedPipelineDataKHR(VkDevice device, const VkReleaseCapturedPipelineDataInfoKHR* pInfo,
+                                                  const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) override;
 
 void PostCallRecordReleaseSwapchainImagesKHR(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo,
                                              const RecordObject& record_obj) override;
@@ -727,11 +736,18 @@ void PostCallRecordGetShaderBinaryDataEXT(VkDevice device, VkShaderEXT shader, s
 void PostCallRecordGetFramebufferTilePropertiesQCOM(VkDevice device, VkFramebuffer framebuffer, uint32_t* pPropertiesCount,
                                                     VkTilePropertiesQCOM* pProperties, const RecordObject& record_obj) override;
 
+void PostCallRecordGetDynamicRenderingTilePropertiesQCOM(VkDevice device, const VkRenderingInfo* pRenderingInfo,
+                                                         VkTilePropertiesQCOM* pProperties,
+                                                         const RecordObject& record_obj) override;
+
 void PostCallRecordConvertCooperativeVectorMatrixNV(VkDevice device, const VkConvertCooperativeVectorMatrixInfoNV* pInfo,
                                                     const RecordObject& record_obj) override;
 
 void PostCallRecordSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepModeInfoNV* pSleepModeInfo,
                                          const RecordObject& record_obj) override;
+
+void PostCallRecordLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepInfoNV* pSleepInfo,
+                                  const RecordObject& record_obj) override;
 
 void PostCallRecordCreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                VkPipelineCache pipelineCache, uint32_t createInfoCount,
