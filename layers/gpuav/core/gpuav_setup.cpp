@@ -74,6 +74,14 @@ void Validator::Created(vvl::AccelerationStructureKHR &obj) {
     DescriptorHeap &desc_heap = shared_resources_manager.Get<DescriptorHeap>();
     obj.SetSubState(container_type, std::make_unique<AccelerationStructureKHRSubState>(obj, desc_heap));
 }
+void Validator::Created(vvl::Tensor &obj) {
+    DescriptorHeap &desc_heap = shared_resources_manager.Get<DescriptorHeap>();
+    obj.SetSubState(container_type, std::make_unique<TensorSubState>(obj, desc_heap));
+}
+void Validator::Created(vvl::TensorView &obj) {
+    DescriptorHeap &desc_heap = shared_resources_manager.Get<DescriptorHeap>();
+    obj.SetSubState(container_type, std::make_unique<TensorViewSubState>(obj, desc_heap));
+}
 void Validator::Created(vvl::ShaderObject &obj) { obj.SetSubState(container_type, std::make_unique<ShaderObjectSubState>(obj)); }
 
 // Trampolines to make VMA call Dispatch for Vulkan calls

@@ -3,6 +3,7 @@
  * Copyright (c) 2015-2025 Valve Corporation
  * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (C) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -375,6 +376,31 @@ class SyncObjectTest : public VkLayerTest {
 #else
     using ExternalHandle = int;
 #endif
+};
+
+class TensorTest : public VkLayerTest {
+  public:
+    static VkTensorDescriptionARM DefaultDesc();
+    static VkTensorCreateInfoARM DefaultCreateInfo(VkTensorDescriptionARM *desc = nullptr);
+
+    const char *tensor_shader_source = R"glsl(
+      #version 450
+      #extension GL_ARM_tensors : require
+      #extension GL_EXT_shader_explicit_arithmetic_types : require
+      layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+      layout(set=0, binding=0) uniform tensorARM<int32_t, 1> tens;
+      layout(set=0, binding=1, std430) buffer asd {
+        int32_t out_data[];
+      };
+      void main()
+      {
+        const uint size_x = tensorSizeARM(tens, 0);
+        const uint x = gl_GlobalInvocationID.x % size_x;
+        const uint out_index = gl_GlobalInvocationID.x;
+
+        tensorReadARM(tens, uint[](x), out_data[out_index]);
+      }
+    )glsl";
 };
 
 class WsiTest : public VkLayerTest {

@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2025 Valve Corporation
  * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (C) 2015-2025 Google Inc.
+ * Copyright (C) 2025 Arm Limited.
  * Modifications Copyright (C) 2020-2025 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022-2025 RasterGrid Kft.
  *
@@ -309,6 +310,10 @@ class CoreChecks : public vvl::DeviceProxy {
                                  const char* vuid, const char* more_message = "") const override;
     bool ValidateUnprotectedBuffer(const vvl::CommandBuffer& cb_state, const vvl::Buffer& buffer_state, const Location& buffer_loc,
                                    const char* vuid, const char* more_message = "") const override;
+    bool ValidateProtectedTensor(const vvl::CommandBuffer& cb_state, const vvl::Tensor& tensor_state, const Location& tensor_loc,
+                                 const char* vuid, const char* more_message = "") const override;
+    bool ValidateUnprotectedTensor(const vvl::CommandBuffer& cb_state, const vvl::Tensor& tensor_state, const Location& tensor_loc,
+                                   const char* vuid, const char* more_message = "") const override;
 
     bool ValidateImageViewSampleWeightQCOM(const VkImageViewCreateInfo& create_info, const vvl::Image& image_state,
                                            const Location& create_info_loc) const;
@@ -371,6 +376,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                const SyncMemoryBarrier& barrier,
                                OwnershipTransferOp ownership_transfer_op = OwnershipTransferOp::none,
                                VkDependencyFlags dependency_flags = 0) const;
+    bool ValidateTensorBarrier(const LogObjectList& objlist, const Location& barrier_loc, const vvl::CommandBuffer& cb_state,
+                               const TensorBarrier& barrier) const;
 
     bool ValidateSubpassDependency(const Location& loc, const VkSubpassDependency2& barrier) const;
 
@@ -429,6 +436,12 @@ class CoreChecks : public vvl::DeviceProxy {
     static bool ValidatePerformanceQuery(const vvl::CommandBuffer& cb_state, const QueryObject& query_obj, const Location& loc,
                                          VkQueryPool& first_perf_query_pool, uint32_t perf_query_pass,
                                          QueryMap* local_query_to_state_map);
+    bool ValidateBindTensorMemoryARM(uint32_t bindInfoCount, const VkBindTensorMemoryInfoARM* pBindInfos,
+                                     const ErrorObject& error_obj) const;
+    static bool VerifyQueryIsReset(const vvl::CommandBuffer& cb_state, const QueryObject& query_obj, Func command,
+                                   VkQueryPool& firstPerfQueryPool, uint32_t perfPass, QueryMap* localQueryToStateMap);
+    static bool ValidatePerformanceQuery(const vvl::CommandBuffer& cb_state, const QueryObject& query_obj, Func command,
+                                         VkQueryPool& firstPerfQueryPool, uint32_t perfPass, QueryMap* localQueryToStateMap);
     bool ValidateBeginQuery(const vvl::CommandBuffer& cb_state, const QueryObject& query_obj, VkQueryControlFlags flags,
                             uint32_t index, const Location& loc) const;
     bool ValidateCmdEndQuery(const vvl::CommandBuffer& cb_state, VkQueryPool queryPool, uint32_t slot, uint32_t index,
@@ -491,6 +504,10 @@ class CoreChecks : public vvl::DeviceProxy {
                                                            const Location& accel_struct_loc, const char* vuid) const;
     bool ValidateMemoryIsBoundToImage(const LogObjectList& objlist, const vvl::Image& image_state, const Location& loc,
                                       const char* vuid) const;
+    bool ValidateMemoryIsBoundToTensor(const LogObjectList& objlist, const vvl::Tensor& tensor_state, const Location& loc,
+                                       const char* vuid) const;
+    bool ValidateTensorQueueFamilyIndex(uint32_t src_q, uint32_t dst_q, const LogObjectList& objlist,
+                                        const vvl::Tensor& tensor_state, const Location& loc) const;
 
     bool ValidateObjectNotInUse(const vvl::StateObject* obj_node, const Location& loc, const char* error_code) const;
     bool ValidateDeviceQueueSupport(const Location& loc) const;
@@ -760,6 +777,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateWriteUpdateInlineUniformBlock(const VkWriteDescriptorSet& update, const Location& write_loc) const;
     bool ValidateWriteUpdateAccelerationStructureKHR(const VkWriteDescriptorSet& update, const Location& write_loc) const;
     bool ValidateWriteUpdateAccelerationStructureNV(const VkWriteDescriptorSet& update, const Location& write_loc) const;
+    bool ValidateWriteUpdateTensor(const VkWriteDescriptorSet& update, const Location& write_loc) const;
     bool VerifyWriteUpdateContents(const vvl::DescriptorSet& dst_set, const VkWriteDescriptorSet& update,
                                    const Location& write_loc) const;
     // Shared helper functions - These are useful because the shared sampler image descriptor type
@@ -984,6 +1002,17 @@ class CoreChecks : public vvl::DeviceProxy {
     bool PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                     VkImage* pImage, const ErrorObject& error_obj) const override;
 
+    bool PreCallValidateCreateTensorARM(VkDevice device, const VkTensorCreateInfoARM* pCreateInfo,
+                                        const VkAllocationCallbacks* pAllocator, VkTensorARM* pTensor,
+                                        const ErrorObject& error_obj) const override;
+    bool ValidateTensorCreateInfo(const VkTensorCreateInfoARM& create_info, const Location& create_info_loc) const;
+
+    bool PreCallValidateBindTensorMemoryARM(VkDevice device, uint32_t bindInfoCount, const VkBindTensorMemoryInfoARM* pBindInfos,
+                                            const ErrorObject& error_obj) const override;
+
+    bool PreCallValidateDestroyTensorARM(VkDevice device, VkTensorARM tensor, const VkAllocationCallbacks* pAllocator,
+                                         const ErrorObject& error_obj) const override;
+
     void PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                    VkImage* pImage, const RecordObject& record_obj) override;
 
@@ -1193,6 +1222,25 @@ class CoreChecks : public vvl::DeviceProxy {
     bool PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkImageView* pView,
                                         const ErrorObject& error_obj) const override;
+    bool PreCallValidateCreateTensorViewARM(VkDevice device, const VkTensorViewCreateInfoARM* pCreateInfo,
+                                            const VkAllocationCallbacks* pAllocator, VkTensorViewARM* pView,
+                                            const ErrorObject& error_obj) const override;
+    bool PreCallValidateDestroyTensorViewARM(VkDevice device, VkTensorViewARM tensorView, const VkAllocationCallbacks* pAllocator,
+                                             const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdCopyTensorARM(VkCommandBuffer cb, const VkCopyTensorInfoARM* pCopyTensorInfo,
+                                         const ErrorObject& error_obj) const override;
+    bool ValidateTensorUsageFlags(VkCommandBuffer cb, vvl::Tensor const& tensor_state, VkTensorUsageFlagsARM desired,
+                                  const char* vuid, const Location& tensor_loc) const;
+    bool ValidateTensorFormatUsage(VkFormat format, VkTensorUsageFlagsARM usage, VkTensorTilingARM tiling, const char* vuid,
+                                   const Location& tensor_loc) const;
+    bool PreCallValidateGetTensorOpaqueCaptureDescriptorDataARM(VkDevice device, const VkTensorCaptureDescriptorDataInfoARM* pInfo,
+                                                                void* pData, const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetTensorViewOpaqueCaptureDescriptorDataARM(VkDevice device,
+                                                                    const VkTensorViewCaptureDescriptorDataInfoARM* pInfo,
+                                                                    void* pData, const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetDeviceTensorMemoryRequirementsARM(VkDevice device, const VkDeviceTensorMemoryRequirementsARM* pInfo,
+                                                             VkMemoryRequirements2* pMemoryRequirements,
+                                                             const ErrorObject& error_obj) const override;
     template <typename RegionType>
     bool ValidateCmdCopyBufferBounds(VkCommandBuffer cb, const vvl::Buffer& src_buffer_state, const vvl::Buffer& dst_buffer_state,
                                      uint32_t regionCount, const RegionType* pRegions, const Location& loc) const;

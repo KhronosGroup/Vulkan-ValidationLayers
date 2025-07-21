@@ -610,6 +610,20 @@ void AccelerationStructureKHRSubState::NotifyInvalidate(const vvl::StateObject::
     id_tracker.reset();
 }
 
+TensorSubState::TensorSubState(vvl::Tensor &obj, DescriptorHeap &heap)
+    : vvl::TensorSubState(obj), id_tracker(std::in_place, heap, obj.Handle()) {}
+
+void TensorSubState::Destroy() { id_tracker.reset(); }
+
+void TensorSubState::NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) { id_tracker.reset(); }
+
+TensorViewSubState::TensorViewSubState(vvl::TensorView &obj, DescriptorHeap &heap)
+    : vvl::TensorViewSubState(obj), id_tracker(std::in_place, heap, obj.Handle()) {}
+
+void TensorViewSubState::Destroy() { id_tracker.reset(); }
+
+void TensorViewSubState::NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) { id_tracker.reset(); }
+
 ShaderObjectSubState::ShaderObjectSubState(vvl::ShaderObject &obj) : vvl::ShaderObjectSubState(obj) {}
 
 }  // namespace gpuav

@@ -1,6 +1,7 @@
 /* Copyright (c) 2023-2025 The Khronos Group Inc.
  * Copyright (c) 2023-2025 Valve Corporation
  * Copyright (c) 2023-2025 LunarG, Inc.
+ * Copyright (c) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,6 +83,11 @@ static glsl::DescriptorState GetInData(const vvl::ImageDescriptor &desc) {
     return glsl::DescriptorState(DescriptorClass::Image, GetId(desc.GetImageViewState()));
 }
 
+static glsl::DescriptorState GetInData(const vvl::TensorDescriptor &desc) {
+    auto tensor_view_state = static_cast<const vvl::TensorView *>(desc.GetTensorViewState());
+    return glsl::DescriptorState(DescriptorClass::Tensor, tensor_view_state ? tensor_view_state->GetId() : glsl::kNullDescriptor);
+}
+
 static glsl::DescriptorState GetInData(const vvl::SamplerDescriptor &desc) {
     return glsl::DescriptorState(DescriptorClass::PlainSampler, GetId(desc.GetSamplerState()));
 }
@@ -124,6 +130,10 @@ static glsl::DescriptorState GetInData(const vvl::MutableDescriptor &desc) {
         }
         case DescriptorClass::Image: {
             return glsl::DescriptorState(DescriptorClass::Image, GetId(desc.GetSharedImageViewState().get()));
+        }
+        case DescriptorClass::Tensor: {
+            auto tensor_state = std::static_pointer_cast<const vvl::Tensor>(desc.GetSharedTensor());
+            return glsl::DescriptorState(desc_class, tensor_state ? tensor_state->GetId() : glsl::kNullDescriptor);
         }
         case DescriptorClass::AccelerationStructure: {
             uint32_t id =
@@ -220,6 +230,9 @@ VkDeviceAddress DescriptorSetSubState::GetTypeAddress(Validator &gpuav) {
                 break;
             case DescriptorClass::AccelerationStructure:
                 FillBindingInData(static_cast<const vvl::AccelerationStructureBinding &>(*binding), data, index);
+                break;
+            case DescriptorClass::Tensor:
+                FillBindingInData(static_cast<const vvl::TensorBinding &>(*binding), data, index);
                 break;
             case DescriptorClass::Invalid:
                 gpuav.InternalError(gpuav.device, Location(vvl::Func::Empty), "Unknown DescriptorClass");

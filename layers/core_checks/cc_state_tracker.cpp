@@ -583,6 +583,14 @@ void CommandBufferSubState::RecordBarriers2(const VkDependencyInfo& dep_info, co
         // Update layouts at the end. Submit time enqueuing logic above needs pre-update layout map.
         validator.RecordTransitionImageLayout(base, img_barrier, *image_state);
     }
+    if (const auto tensor_barrier_dep_info = vku::FindStructInPNextChain<VkTensorDependencyInfoARM>(dep_info.pNext)) {
+        const Location tensor_dep_info_loc(loc.function, vvl::Struct::VkTensorDependencyInfoARM, vvl::Field::pNext);
+        for (uint32_t i = 0; i < tensor_barrier_dep_info->tensorMemoryBarrierCount; ++i) {
+            const TensorBarrier barrier(tensor_barrier_dep_info->pTensorMemoryBarriers[i]);
+            base.tensor_barriers.emplace_back(barrier);
+        }
+    }
+
 }
 
 static void SetQueryState(const QueryObject& object, QueryState value, QueryMap* local_query_to_state_map) {

@@ -2,6 +2,7 @@
 # Copyright (c) 2014-2025 Valve Corporation
 # Copyright (c) 2014-2025 LunarG, Inc.
 # Copyright (c) 2023-2025 RasterGrid Kft.
+# Copyright (C) 2025 Arm Limited.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -241,6 +242,7 @@ target_sources(vvl PRIVATE
     core_checks/cc_sync_vuid_maps.cpp
     core_checks/cc_synchronization.h
     core_checks/cc_synchronization.cpp
+    core_checks/cc_tensor.cpp
     core_checks/cc_video.cpp
     core_checks/cc_vuid_maps.cpp
     core_checks/cc_vuid_maps.h
@@ -370,6 +372,8 @@ target_sources(vvl PRIVATE
     state_tracker/state_object.h
     state_tracker/query_state.cpp
     state_tracker/query_state.h
+    state_tracker/tensor_state.cpp
+    state_tracker/tensor_state.h
     state_tracker/queue_state.cpp
     state_tracker/queue_state.h
     state_tracker/ray_tracing_state.h
@@ -409,6 +413,7 @@ target_sources(vvl PRIVATE
     stateless/sl_spirv.cpp
     stateless/sl_spirv.h
     stateless/sl_synchronization.cpp
+    stateless/sl_tensor.cpp
     stateless/sl_utils.cpp
     stateless/sl_vuid_maps.cpp
     stateless/sl_vuid_maps.h

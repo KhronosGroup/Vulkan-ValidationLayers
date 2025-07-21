@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2025 Valve Corporation
  * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (C) 2015-2025 Google Inc.
+ * Copyright (c) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +40,8 @@ class CommandBuffer;
 class ImageView;
 class Buffer;
 class BufferView;
+class Tensor;
+class TensorView;
 class Pipeline;
 class AccelerationStructureNV;
 class AccelerationStructureKHR;
@@ -397,6 +400,7 @@ enum class DescriptorClass {
     InlineUniform,          // INLINE_UNIFORM_BLOCK
     AccelerationStructure,  // ACCELERATION_STRUCTURE
     Mutable,                // MUTABLE
+    Tensor,                 // TENSOR
     Invalid
 };
 
@@ -497,6 +501,26 @@ class ImageDescriptor : public Descriptor {
     std::shared_ptr<vvl::ImageView> image_view_state_;
     VkImageLayout image_layout_{VK_IMAGE_LAYOUT_UNDEFINED};
     bool known_valid_view_ = false;
+};
+
+class TensorDescriptor : public Descriptor {
+  public:
+    TensorDescriptor() = default;
+    DescriptorClass GetClass() const override { return DescriptorClass::Tensor; }
+    void WriteUpdate(DescriptorSet &set_state, const DeviceState &dev_data, const VkWriteDescriptorSet &update,
+                     const uint32_t index, bool is_bindless) override;
+    void CopyUpdate(DescriptorSet &set_state, const DeviceState &dev_data, const Descriptor &src, bool is_bindless,
+                    VkDescriptorType type) override;
+    uint32_t GetTensorViewCount() const { return tensor_view_count_; }
+    const VkTensorViewARM *GetTensorViews() const { return tensor_views_; }
+    const vvl::TensorView *GetTensorViewState() const { return tensor_view_state_.get(); }
+    const vvl::Tensor *GetTensorState() const { return tensor_state_.get(); }
+
+  private:
+    uint32_t tensor_view_count_{0};
+    const VkTensorViewARM *tensor_views_{VK_NULL_HANDLE};
+    std::shared_ptr<vvl::Tensor> tensor_state_;
+    std::shared_ptr<vvl::TensorView> tensor_view_state_;
 };
 
 class ImageSamplerDescriptor : public ImageDescriptor {
@@ -628,6 +652,8 @@ class MutableDescriptor : public Descriptor {
     VkDeviceSize GetRange() const { return range_; }
     VkDeviceSize GetEffectiveRange() const;
     std::shared_ptr<vvl::BufferView> GetSharedBufferViewState() const { return buffer_view_state_; }
+    std::shared_ptr<vvl::Tensor> GetSharedTensor() const { return tensor_state_; }
+    std::shared_ptr<vvl::TensorView> GetSharedTensorView() const { return tensor_view_state_; }
     VkAccelerationStructureKHR GetAccelerationStructureKHR() const { return acc_; }
     const vvl::AccelerationStructureKHR *GetAccelerationStructureStateKHR() const { return acc_state_.get(); }
     vvl::AccelerationStructureKHR *GetAccelerationStructureStateKHR() { return acc_state_.get(); }
@@ -643,6 +669,8 @@ class MutableDescriptor : public Descriptor {
     }
 
     void UpdateImageLayoutDrawState(vvl::CommandBuffer &cb_state) override;
+    uint32_t GetTensorViewCount() const { return tensor_view_count_; }
+    const VkTensorViewARM *GetTensorViews() const { return tensor_views_; }
 
     bool AddParent(StateObject *state_object) override;
     void RemoveParent(StateObject *state_object) override;
@@ -675,6 +703,11 @@ class MutableDescriptor : public Descriptor {
     std::shared_ptr<vvl::AccelerationStructureKHR> acc_state_;
     VkAccelerationStructureNV acc_nv_{VK_NULL_HANDLE};
     std::shared_ptr<vvl::AccelerationStructureNV> acc_state_nv_;
+    // Tensor Descriptor
+    uint32_t tensor_view_count_{0};
+    const VkTensorViewARM *tensor_views_{VK_NULL_HANDLE};
+    std::shared_ptr<vvl::TensorView> tensor_view_state_;
+    std::shared_ptr<vvl::Tensor> tensor_state_;
 };
 
 // We will want to build this map and list of layouts once in order to record in the state tracker at PostCallRecord time.
@@ -783,6 +816,7 @@ using BufferBinding = DescriptorBindingImpl<BufferDescriptor>;
 using InlineUniformBinding = DescriptorBindingImpl<InlineUniformDescriptor>;
 using AccelerationStructureBinding = DescriptorBindingImpl<AccelerationStructureDescriptor>;
 using MutableBinding = DescriptorBindingImpl<MutableDescriptor>;
+using TensorBinding = DescriptorBindingImpl<TensorDescriptor>;
 
 // Helper class to encapsulate the descriptor update template decoding logic
 struct DecodedTemplateUpdate {
@@ -1068,6 +1102,7 @@ class DescriptorSet : public StateObject, public SubStateManager<DescriptorSetSu
         InlineUniformBinding inline_uniform;
         AccelerationStructureBinding accelerator_structure;
         MutableBinding mutable_binding;
+        TensorBinding tensor_binding;
         ~AnyBinding() = delete;
     };
 

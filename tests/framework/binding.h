@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2016, 2020-2025 The Khronos Group Inc.
  * Copyright (c) 2015-2016, 2020-2025 Valve Corporation
  * Copyright (c) 2015-2016, 2020-2025 LunarG, Inc.
+ * Copyright (C) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +57,7 @@ class CommandPool;
 class Swapchain;
 class IndirectCommandsLayout;
 class IndirectExecutionSet;
+class Tensor;
 
 std::vector<VkLayerProperties> GetGlobalLayers();
 std::vector<VkExtensionProperties> GetGlobalExtensions();
@@ -1242,6 +1244,51 @@ inline VkBufferCreateInfo Buffer::CreateInfo(VkDeviceSize size, VkFlags usage, c
     return info;
 }
 
+class Tensor : public internal::NonDispHandle<VkTensorARM> {
+  public:
+    explicit Tensor();
+    explicit Tensor(const Device &dev, const bool is_copy_tensor = false);
+    explicit Tensor(const Device &dev, const VkTensorDescriptionARM &desc);
+    explicit Tensor(const Device &dev, const VkTensorCreateInfoARM &info);
+    ~Tensor() noexcept;
+    void Destroy() noexcept;
+
+    // vkCreateTensor()
+    void InitNoMem(const Device &dev);
+
+    const VkMemoryRequirements2 &GetMemoryReqs();
+    void BindToMem(VkFlags required_flags = 0, VkFlags forbidden_flags = 0);
+    VkFormat Format() const { return description_.format; }
+    uint32_t DimensionCount() const { return description_.dimensionCount; }
+    VkTensorDescriptionARM &Description() { return description_; }
+    const VkTensorDescriptionARM &Description() const { return description_; }
+
+  private:
+    const Device *device_ = nullptr;
+    VkTensorCreateInfoARM create_info_;
+    VkTensorDescriptionARM description_;
+    VkTensorMemoryRequirementsInfoARM mem_req_info_;
+    VkMemoryRequirements2 mem_reqs_;
+    std::vector<int64_t> dimensions_;
+    std::vector<int64_t> strides_;
+    vkt::DeviceMemory memory_;
+};
+
+class TensorView : public internal::NonDispHandle<VkTensorViewARM> {
+  public:
+    TensorView() = default;
+    explicit TensorView(const Device &dev, const VkTensorViewCreateInfoARM &info);
+    ~TensorView() noexcept;
+    void Destroy() noexcept;
+
+    // vkCreateTensorViewARM
+    void Init(const Device &dev, const VkTensorViewCreateInfoARM &info);
+
+  private:
+    const Device *device_ = nullptr;
+    VkTensorViewCreateInfoARM create_info_;
+};
+
 inline VkEventCreateInfo Event::CreateInfo(VkFlags flags) {
     VkEventCreateInfo info = vku::InitStructHelper();
     info.flags = flags;
@@ -1414,4 +1461,7 @@ class Surface {
     VkInstance instance_ = VK_NULL_HANDLE;
     VkSurfaceKHR handle_ = VK_NULL_HANDLE;
 };
+
+const VkAllocationCallbacks *DefaultAllocator();
+
 }  // namespace vkt

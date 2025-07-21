@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2025 Valve Corporation
  * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (C) 2015-2025 Google Inc.
+ * Copyright (c) 2025 Arm Limited.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,20 +20,17 @@
 
 #include <assert.h>
 
-#include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vulkan_core.h>
 #include "generated/pnext_chain_extraction.h"
 #include "core_validation.h"
 #include "cc_buffer_address.h"
 #include "state_tracker/image_state.h"
+#include "state_tracker/tensor_state.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/ray_tracing_state.h"
 #include "state_tracker/wsi_state.h"
 #include "error_message/error_strings.h"
-#include "containers/limits.h"
-#include "containers/container_utils.h"
-#include "generated/dispatch_functions.h"
 #include "utils/image_utils.h"
 #include "utils/math_utils.h"
 
@@ -98,6 +96,25 @@ bool CoreChecks::ValidateMemoryIsBoundToImage(const LogObjectList &objlist, cons
         } else {
             for (const auto &state : memory_states) {
                 result |= VerifyBoundMemoryIsValid(state.get(), objlist, image_state.Handle(), loc, vuid);
+            }
+        }
+    }
+    return result;
+}
+
+bool CoreChecks::ValidateMemoryIsBoundToTensor(const LogObjectList &objlist, const vvl::Tensor &tensor_state, const Location &loc,
+                                               const char *vuid) const {
+    bool result = false;
+    const auto &memory_states = tensor_state.GetBoundMemoryStates();
+    if (memory_states.empty()) {
+        result |= LogError(vuid, objlist, loc, "has no memory bound. Memory should be bound by calling vkBindTensorMemory().");
+    } else {
+        for (const auto &state : memory_states) {
+            result |= VerifyBoundMemoryIsValid(state.get(), objlist, tensor_state.Handle(), loc, vuid);
+        }
+        if (!tensor_state.sparse) {
+            if (memory_states.size() > 1) {
+                result |= LogError(vuid, objlist, loc, "is non-sparse and bound to %zu memory allocations.", memory_states.size());
             }
         }
     }
@@ -176,14 +193,19 @@ bool CoreChecks::ValidateSetMemBinding(const vvl::DeviceMemory &memory_state, co
     const bool bind_2 = (loc.function != Func::vkBindBufferMemory) && (loc.function != Func::vkBindImageMemory);
     auto typed_handle = mem_binding.Handle();
     const bool is_buffer = typed_handle.type == kVulkanObjectTypeBuffer;
+    const bool is_image = typed_handle.type == kVulkanObjectTypeImage;
+    const bool is_tensor = typed_handle.type == kVulkanObjectTypeTensorARM;
 
     if (mem_binding.sparse) {
         const char *vuid = kVUIDUndefined;
-        const char *handle_type = is_buffer ? "BUFFER" : "IMAGE";
+        const char *handle_type = is_buffer ? "BUFFER" : is_image ? "IMAGE" : "TENSOR";
         if (is_buffer) {
             vuid = bind_2 ? "VUID-VkBindBufferMemoryInfo-buffer-01030" : "VUID-vkBindBufferMemory-buffer-01030";
-        } else {
+        } else if (is_image) {
             vuid = bind_2 ? "VUID-VkBindImageMemoryInfo-image-01045" : "VUID-vkBindImageMemory-image-01045";
+        } else {
+            /* only buffer and image can be sparse */
+            assert(false);
         }
 
         const LogObjectList objlist(memory_state.Handle(), typed_handle);
@@ -198,13 +220,17 @@ bool CoreChecks::ValidateSetMemBinding(const vvl::DeviceMemory &memory_state, co
         const char *vuid = kVUIDUndefined;
         if (is_buffer) {
             vuid = bind_2 ? "VUID-VkBindBufferMemoryInfo-buffer-07459" : "VUID-vkBindBufferMemory-buffer-07459";
-        } else {
+        } else if (is_image) {
             vuid = bind_2 ? "VUID-VkBindImageMemoryInfo-image-07460" : "VUID-vkBindImageMemory-image-07460";
+        } else if (is_tensor) {
+            vuid = "VUID-VkBindTensorMemoryInfoARM-tensor-09712";
         }
 
         if (mem_binding.indeterminate_state) {
-            Func bind_call = is_buffer ? Func::vkBindBufferMemory2 : Func::vkBindImageMemory2;
-            const char *handle_type = is_buffer ? "buffer" : "image";
+            Func bind_call = is_buffer  ? Func::vkBindBufferMemory2
+                             : is_image ? Func::vkBindImageMemory2
+                                        : Func::vkBindTensorMemoryARM;
+            const char *handle_type = is_buffer ? "buffer" : is_image ? "image" : "tensor";
             const LogObjectList objlist(memory_state.Handle(), typed_handle);
             skip |= LogError(
                 vuid, objlist, loc,
@@ -492,6 +518,25 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
         }
     }
 
+    const auto dedicated_allocate_info_tensor =
+        vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfoTensorARM>(pAllocateInfo->pNext);
+    if (dedicated_allocate_info_tensor) {
+        const VkTensorARM dedicated_tensor = dedicated_allocate_info_tensor->tensor;
+        const auto tensor_state = Get<vvl::Tensor>(dedicated_tensor);
+        auto mem_reqs = tensor_state->MemReqs()->memoryRequirements;
+        ASSERT_AND_RETURN_SKIP(tensor_state);
+        const LogObjectList objlist(device, dedicated_tensor);
+        const Location tensor_loc = allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfoTensorARM, Field::tensor);
+        if (!IgnoreAllocationSize(*pAllocateInfo) &&
+            (pAllocateInfo->allocationSize != mem_reqs.size)) {
+            skip |= LogError("VUID-VkMemoryDedicatedAllocateInfoTensorARM-allocationSize-09710", objlist,
+                                allocate_info_loc.dot(Field::allocationSize),
+                                "(%" PRIu64 ") needs to be equal to %s (%s) VkMemoryRequirements::size (%" PRIu64 ").",
+                                pAllocateInfo->allocationSize, tensor_loc.Fields().c_str(), FormatHandle(dedicated_tensor).c_str(),
+                                mem_reqs.size);
+        }
+    }
+
     const auto import_memory_fd_info = vku::FindStructInPNextChain<VkImportMemoryFdInfoKHR>(pAllocateInfo->pNext);
     const bool imported_opaque_fd =
         import_memory_fd_info && import_memory_fd_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
@@ -732,6 +777,8 @@ bool CoreChecks::ValidateInsertMemoryRange(const VulkanTypedHandle &typed_handle
             vuid = bind_2 ? "VUID-VkBindImageMemoryInfo-memoryOffset-01046" : "VUID-vkBindImageMemory-memoryOffset-01046";
         } else if (typed_handle.type == kVulkanObjectTypeAccelerationStructureNV) {
             vuid = "VUID-VkBindAccelerationStructureMemoryInfoNV-memoryOffset-03621";
+        } else if (typed_handle.type == kVulkanObjectTypeTensorARM) {
+            vuid = "VUID-VkBindTensorMemoryInfoARM-memoryOffset-09713";
         } else {
             assert(false);  // Unsupported object type
         }
@@ -762,8 +809,10 @@ bool CoreChecks::ValidateMemoryTypes(const vvl::DeviceMemory &mem_info, const ui
     bool skip = false;
     if (((1 << mem_info.allocate_info.memoryTypeIndex) & memory_type_bits) == 0) {
         skip |= LogError(vuid, mem_info.Handle(), resource_loc,
-                         "require memoryTypeBits (0x%x) but %s was allocated with memoryTypeIndex (%" PRIu32 ").", memory_type_bits,
-                         FormatHandle(mem_info.Handle()).c_str(), mem_info.allocate_info.memoryTypeIndex);
+                         "require memoryTypeBits (0x%x) but (%s) was allocated with memoryTypeIndex (%" PRIu32
+                         ") with memoryTypeBits (0x%x).",
+                         memory_type_bits, FormatHandle(mem_info.Handle()).c_str(), mem_info.allocate_info.memoryTypeIndex,
+                         phys_dev_mem_props.memoryTypes[mem_info.allocate_info.memoryTypeIndex].propertyFlags);
     }
     return skip;
 }
@@ -1475,6 +1524,73 @@ bool CoreChecks::PreCallValidateGetDeviceMemoryCommitment(VkDevice device, VkDev
                              "Querying commitment for memory without "
                              "VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT set: %s.",
                              FormatHandle(memory).c_str());
+        }
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateBindTensorMemoryARM(uint32_t bindInfoCount, const VkBindTensorMemoryInfoARM *pBindInfos,
+                                             const ErrorObject &error_obj) const {
+    bool skip = false;
+    for (uint32_t i = 0; i < bindInfoCount; i++) {
+        auto bind_info = pBindInfos[i];
+        auto tensor_state = Get<vvl::Tensor>(bind_info.tensor);
+        ASSERT_AND_RETURN_SKIP(tensor_state);
+        auto mem_reqs = tensor_state->MemReqs()->memoryRequirements;
+        // Track objects tied to memory
+        auto loc = error_obj.location.dot(Field::pBindInfos, i);
+        auto mem_info = Get<vvl::DeviceMemory>(bind_info.memory);
+        ASSERT_AND_RETURN_SKIP(mem_info);
+        skip |= ValidateSetMemBinding(*mem_info, *tensor_state, loc);
+        skip |= ValidateInsertMemoryRange(VulkanTypedHandle(bind_info.tensor, kVulkanObjectTypeTensorARM), *mem_info,
+                                          bind_info.memoryOffset, loc);
+        skip |= ValidateMemoryTypes(*mem_info, mem_reqs.memoryTypeBits, loc,
+                                    "VUID-VkBindTensorMemoryInfoARM-memory-09714");
+        if (SafeModulo(bind_info.memoryOffset, mem_reqs.alignment) != 0) {
+            const LogObjectList objlist(bind_info.tensor, bind_info.memory);
+            skip |= LogError("VUID-VkBindTensorMemoryInfoARM-memoryOffset-09715", objlist, loc.dot(Field::memoryOffset),
+                             "(%" PRIu64 ") is not a multiple of the the tensor alignment requirement (%" PRIu64 ")",
+                             bind_info.memoryOffset, mem_reqs.alignment);
+        }
+        if (mem_reqs.size >
+            (mem_info->allocate_info.allocationSize - bind_info.memoryOffset)) {
+            const LogObjectList objlist(bind_info.tensor, bind_info.memory);
+            skip |= LogError(
+                "VUID-VkBindTensorMemoryInfoARM-size-09716", objlist, loc.dot(Field::tensor),
+                "size requirement (%" PRIu64 ") is greater than allocationSize (%" PRIu64 ") - memoryOffset (%" PRIu64 ").",
+                mem_reqs.size, mem_info->allocate_info.allocationSize, bind_info.memoryOffset);
+        }
+        // Validate mix of protected tensor and memory
+        if ((tensor_state->unprotected == false) && (mem_info->unprotected == true)) {
+            const char *vuid = "VUID-VkBindTensorMemoryInfoARM-tensor-09718";
+            const LogObjectList objlist(bind_info.tensor, bind_info.memory);
+            skip |= LogError(vuid, objlist, loc.dot(Field::memory),
+                             "(%s) was not created with protected memory but the VkTensorARM (%s) was "
+                             "set to use protected memory.",
+                             FormatHandle(bind_info.memory).c_str(), FormatHandle(bind_info.tensor).c_str());
+        } else if ((tensor_state->unprotected == true) && (mem_info->unprotected == false)) {
+            const char *vuid = "VUID-VkBindTensorMemoryInfoARM-tensor-09719";
+            const LogObjectList objlist(bind_info.tensor, bind_info.memory);
+            skip |= LogError(vuid, objlist, loc.dot(Field::memory),
+                             "(%s) was created with protected memory but the VkTensorARM (%s) was not "
+                             "set to use protected memory.",
+                             FormatHandle(bind_info.memory).c_str(), FormatHandle(bind_info.tensor).c_str());
+        }
+        // Validate dedicated allocation if present
+        const VkTensorARM dedicated_tensor = mem_info->GetDedicatedTensor();
+        if (dedicated_tensor != VK_NULL_HANDLE) {
+            if (dedicated_tensor != bind_info.tensor) {
+                const char *vuid = "VUID-VkBindTensorMemoryInfoARM-tensor-09717";
+                const LogObjectList objlist(bind_info.tensor, bind_info.memory, dedicated_tensor);
+                skip |= LogError(vuid, objlist, loc.dot(Field::tensor), "(%s) (dedicated) is different from bound tensor (%s).",
+                                 FormatHandle(dedicated_tensor).c_str(), FormatHandle(bind_info.tensor).c_str());
+            }
+            if (bind_info.memoryOffset != 0) {
+                const char *vuid = "VUID-VkBindTensorMemoryInfoARM-memory-09806";
+                const LogObjectList objlist(bind_info.tensor, bind_info.memory, dedicated_tensor);
+                skip |= LogError(vuid, objlist, loc.dot(Field::memoryOffset), "(%" PRIu64 ") for memory (%s) not zero.",
+                                 bind_info.memoryOffset, FormatHandle(bind_info.memory).c_str());
+            }
         }
     }
     return skip;
@@ -2554,4 +2670,12 @@ bool CoreChecks::ValidateDeviceAddress(const Location &device_address_loc, const
                                        VkDeviceAddress device_address) const {
     BufferAddressValidation<0> buffer_address_validator = {};
     return buffer_address_validator.ValidateDeviceAddress(*this, device_address_loc, objlist, device_address);
+}
+
+bool CoreChecks::PreCallValidateBindTensorMemoryARM(VkDevice device, uint32_t bindInfoCount,
+                                                    const VkBindTensorMemoryInfoARM *pBindInfos,
+                                                    const ErrorObject &error_obj) const {
+    bool skip = false;
+    skip |= ValidateBindTensorMemoryARM(bindInfoCount, pBindInfos, error_obj);
+    return skip;
 }

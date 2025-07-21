@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2025 Valve Corporation
  * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (C) 2015-2025 Google Inc.
+ * Copyright (c) 2025 Arm Limited.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -27,6 +28,7 @@
 #include "state_tracker/shader_stage_state.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/buffer_state.h"
+#include "state_tracker/tensor_state.h"
 #include "state_tracker/device_state.h"
 #include "state_tracker/queue_state.h"
 #include "state_tracker/descriptor_sets.h"
@@ -488,6 +490,31 @@ void DeviceState::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreat
     }
 }
 
+std::shared_ptr<vvl::Tensor> DeviceState::CreateTensorState(VkTensorARM handle, const VkTensorCreateInfoARM *create_info) {
+    return std::make_shared<vvl::Tensor>(*this, handle, create_info);
+}
+
+void DeviceState::PostCallRecordCreateTensorARM(VkDevice device, const VkTensorCreateInfoARM *pCreateInfo,
+                                                const VkAllocationCallbacks *pAllocator, VkTensorARM *pTensor,
+                                                const RecordObject &record_obj) {
+    if (record_obj.result != VK_SUCCESS) return;
+    std::shared_ptr<vvl::Tensor> tensor_state = CreateTensorState(*pTensor, pCreateInfo);
+    Add(std::move(tensor_state));
+}
+
+void DeviceState::PostCallRecordBindTensorMemoryARM(VkDevice device, uint32_t bindInfoCount,
+                                                    const VkBindTensorMemoryInfoARM *pBindInfos, const RecordObject &record_obj) {
+    if (VK_SUCCESS != record_obj.result) return;
+    for (uint32_t i = 0; i < bindInfoCount; i++) {
+        auto tensor_state = Get<vvl::Tensor>(pBindInfos[i].tensor);
+        ASSERT_AND_RETURN(tensor_state);
+        auto mem_info = Get<vvl::DeviceMemory>(pBindInfos[i].memory);
+        ASSERT_AND_RETURN(mem_info);
+        tensor_state->BindMemory(tensor_state.get(), mem_info, pBindInfos[i].memoryOffset, 0u,
+                                    tensor_state->MemReqs()->memoryRequirements.size);
+    }
+}
+
 void DeviceState::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
                                              const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
                                              const RecordObject &record_obj) {
@@ -613,6 +640,34 @@ void DeviceState::PostCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkB
     cb_state->AddChild(src_buffer_state);
     cb_state->AddChild(dst_buffer_state);
     cb_state->RecordCopyBuffer(*src_buffer_state, *dst_buffer_state, regionCount, pRegions, record_obj.location);
+}
+
+void DeviceState::PostCallRecordCmdCopyTensorARM(VkCommandBuffer commandBuffer, const VkCopyTensorInfoARM *pCopyTensorInfo,
+                                                 const RecordObject &record_obj) {
+    if (disabled[command_buffer_state]) return;
+
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    auto src_tensor_state = Get<Tensor>(pCopyTensorInfo->srcTensor);
+    auto dst_tensor_state = Get<Tensor>(pCopyTensorInfo->dstTensor);
+    ASSERT_AND_RETURN(src_tensor_state && dst_tensor_state);
+    cb_state->AddChild(src_tensor_state);
+    cb_state->AddChild(dst_tensor_state);
+}
+
+std::shared_ptr<vvl::TensorView> DeviceState::CreateTensorViewState(const std::shared_ptr<vvl::Tensor> &tensor,
+                                                                    VkTensorViewARM handle,
+                                                                    const VkTensorViewCreateInfoARM *pCreateInfo) {
+    return std::make_shared<vvl::TensorView>(tensor, handle, pCreateInfo);
+}
+
+void DeviceState::PostCallRecordCreateTensorViewARM(VkDevice device, const VkTensorViewCreateInfoARM *pCreateInfo,
+                                                    const VkAllocationCallbacks *pAllocator, VkTensorViewARM *pView,
+                                                    const RecordObject &record_obj) {
+    if (record_obj.result != VK_SUCCESS) return;
+
+    auto tensor_state = Get<vvl::Tensor>(pCreateInfo->tensor);
+    ASSERT_AND_RETURN(tensor_state);
+    Add(CreateTensorViewState(tensor_state, *pView, pCreateInfo));
 }
 
 void DeviceState::PostCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR *pCopyBufferInfo,
@@ -1255,6 +1310,12 @@ void DeviceState::PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAl
             ASSERT_AND_RETURN(image_state);
 
             dedicated_binding.emplace(dedicated->image, image_state->create_info);
+        }
+        if (const auto dedicated_tensor =
+                vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfoTensorARM>(pAllocateInfo->pNext)) {
+            auto tensor_state = Get<vvl::Tensor>(dedicated_tensor->tensor);
+            ASSERT_AND_RETURN(tensor_state);
+            dedicated_binding.emplace(dedicated_tensor->tensor, tensor_state->create_info);
         }
     }
     if (const auto import_memory_fd_info = vku::FindStructInPNextChain<VkImportMemoryFdInfoKHR>(pAllocateInfo->pNext)) {
@@ -2041,7 +2102,7 @@ void DeviceState::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, Vk
             Add(std::move(pipeline_states[i]));
         }
     } else {
-        // Deferred creation: pipelines will be considered created once the defferedOperation object
+        // Deferred creation: pipelines will be considered created once the deferredOperation object
         // signals it, via usage of vkDeferredOperationJoinKHR and then vkGetDeferredOperationResultKHR
         // Hence pipeline state tracking needs to be deferred to the corresponding call to
         // vkGetDeferredOperationResultKHR => Store the deferred logic to do that in

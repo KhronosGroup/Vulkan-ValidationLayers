@@ -1,6 +1,7 @@
 /* Copyright (c) 2018-2025 The Khronos Group Inc.
  * Copyright (c) 2018-2025 Valve Corporation
  * Copyright (c) 2018-2025 LunarG, Inc.
+ * Copyright (c) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +28,7 @@
 // gpuav_state_trackers.h should NOT be included by any other header file
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/image_state.h"
+#include "state_tracker/tensor_state.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/queue_state.h"
 #include "state_tracker/sampler_state.h"
@@ -298,6 +300,38 @@ static inline AccelerationStructureKHRSubState &SubState(vvl::AccelerationStruct
 }
 static inline const AccelerationStructureKHRSubState &SubState(const vvl::AccelerationStructureKHR &obj) {
     return *static_cast<const AccelerationStructureKHRSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));
+}
+
+class TensorSubState : public vvl::TensorSubState {
+  public:
+    TensorSubState(vvl::Tensor &obj, DescriptorHeap &heap);
+    void Destroy() override;
+    void NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) override;
+
+    DescriptorId Id() const { return id_tracker ? id_tracker->id : 0; }
+    std::optional<DescriptorIdTracker> id_tracker;
+};
+static inline TensorSubState &SubState(vvl::Tensor &obj) {
+    return *static_cast<TensorSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));
+}
+static inline const TensorSubState &SubState(const vvl::Tensor &obj) {
+    return *static_cast<const TensorSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));
+}
+
+class TensorViewSubState : public vvl::TensorViewSubState {
+  public:
+    TensorViewSubState(vvl::TensorView &obj, DescriptorHeap &heap);
+    void Destroy() override;
+    void NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) override;
+
+    DescriptorId Id() const { return id_tracker ? id_tracker->id : 0; }
+    std::optional<DescriptorIdTracker> id_tracker;
+};
+static inline TensorViewSubState &SubState(vvl::TensorView &obj) {
+    return *static_cast<TensorViewSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));
+}
+static inline const TensorViewSubState &SubState(const vvl::TensorView &obj) {
+    return *static_cast<const TensorViewSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));
 }
 
 class ShaderObjectSubState : public vvl::ShaderObjectSubState {

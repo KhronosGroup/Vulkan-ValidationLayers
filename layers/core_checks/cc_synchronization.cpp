@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2025 Valve Corporation
  * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (C) 2015-2025 Google Inc.
+ * Copyright (c) 2025 Arm Limited.
  * Modifications Copyright (C) 2020-2024 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,6 +38,7 @@
 #include "state_tracker/semaphore_state.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/buffer_state.h"
+#include "state_tracker/tensor_state.h"
 #include "state_tracker/device_state.h"
 #include "state_tracker/sampler_state.h"
 #include "state_tracker/render_pass_state.h"
@@ -2495,6 +2497,14 @@ bool CoreChecks::ValidateDependencyInfo(const LogObjectList &objects, const Loca
         skip |= ValidateMemoryBarrier(objects, barrier_loc, cb_state, barrier, transfer_op, dep_info.dependencyFlags);
         skip |= ValidateBufferBarrier(objects, barrier_loc, cb_state, barrier);
     }
+    if (const auto tensor_barrier_dep_info = vku::FindStructInPNextChain<VkTensorDependencyInfoARM>(dep_info.pNext)) {
+        const Location tensor_dep_info_loc = dep_info_loc.dot(Struct::VkTensorDependencyInfoARM, Field::pNext);
+        for (uint32_t i = 0; i < tensor_barrier_dep_info->tensorMemoryBarrierCount; ++i) {
+            const Location barrier_loc = tensor_dep_info_loc.dot(Struct::VkTensorMemoryBarrierARM, Field::pTensorMemoryBarriers, i);
+            const TensorBarrier barrier(tensor_barrier_dep_info->pTensorMemoryBarriers[i]);
+            skip |= ValidateTensorBarrier(objects, barrier_loc, cb_state, barrier);
+        }
+    }
 
     return skip;
 }
@@ -2706,5 +2716,40 @@ bool CoreChecks::ValidateMemoryBarrier(const LogObjectList &objects, const Locat
                              "is VK_PIPELINE_STAGE_2_HOST_BIT inside the render pass.");
         }
     }
+    return skip;
+}
+
+bool CoreChecks::ValidateTensorQueueFamilyIndex(uint32_t src_q, uint32_t dst_q, const LogObjectList &objlist,
+                                                const vvl::Tensor &tensor_state, const Location &loc) const {
+    bool skip = false;
+    if (VK_SHARING_MODE_EXCLUSIVE == tensor_state.create_info.sharingMode) {
+        if (VK_QUEUE_FAMILY_IGNORED != src_q) {
+            skip |= ValidateDeviceQueueFamily(src_q, loc, "VUID-VkTensorMemoryBarrierARM-tensor-09756", true);
+        }
+        if (VK_QUEUE_FAMILY_IGNORED != dst_q) {
+            skip |= ValidateDeviceQueueFamily(dst_q, loc, "VUID-VkTensorMemoryBarrierARM-tensor-09756", true);
+        }
+    } else if (VK_SHARING_MODE_CONCURRENT == tensor_state.create_info.sharingMode) {
+        if (src_q != VK_QUEUE_FAMILY_IGNORED || dst_q != VK_QUEUE_FAMILY_IGNORED) {
+            skip = LogError(
+                "VUID-VkTensorMemoryBarrierARM-tensor-09755", objlist, loc,
+                "Tensor (%s) was created with a sharing mode VK_SHARING_MODE_CONCURRENT but either/or srcQueueFamilyIndex (%" PRIu32
+                ") and "
+                "dstQueueFamilyIndex (%" PRIu32 ") are not VK_QUEUE_FAMILY_IGNORED",
+                FormatHandle(tensor_state.Handle()).c_str(), src_q, dst_q);
+        }
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateTensorBarrier(const LogObjectList &objlist, const Location &barrier_loc,
+                                       const vvl::CommandBuffer &cb_state, const TensorBarrier &barrier) const {
+    bool skip = false;
+    auto tensor_state_ptr = Get<vvl::Tensor>(barrier.tensor);
+    ASSERT_AND_RETURN_SKIP(tensor_state_ptr);
+    const auto &tensor_state = *tensor_state_ptr;
+    skip |= ValidateMemoryIsBoundToTensor(objlist, tensor_state, barrier_loc, "VUID-VkTensorMemoryBarrierARM-tensor-09758");
+    skip |= ValidateTensorQueueFamilyIndex(barrier.srcQueueFamilyIndex, barrier.dstQueueFamilyIndex, objlist, tensor_state,
+                                           barrier_loc);
     return skip;
 }

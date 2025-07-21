@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2025 Valve Corporation
  * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
+ * Copyright (c) 2025 Arm Limited.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,6 +32,7 @@
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/event_map.h"
 #include "state_tracker/cmd_buffer_state.h"
+#include "state_tracker/tensor_state.h"
 
 // Holds common information between all command buffers being submitted
 struct CommandBufferSubmitState {
@@ -92,6 +94,25 @@ struct CommandBufferSubmitState {
             }
             for (const auto &function : it.second) {
                 skip |= function(video_session_state.get(), local_state_it->second, /*do_validate*/ true);
+            }
+        }
+
+        // Validate TensorMemoryBarrierARM
+        for (auto &barrier : cb_state.tensor_barriers) {
+            auto tensor_state_ptr = core.Get<vvl::Tensor>(barrier.tensor);
+            ASSERT_AND_RETURN_SKIP(tensor_state_ptr);
+            auto &tensor_state = *tensor_state_ptr;
+            if (VK_SHARING_MODE_EXCLUSIVE == tensor_state.create_info.sharingMode &&
+                barrier.srcQueueFamilyIndex != VK_QUEUE_FAMILY_IGNORED &&
+                barrier.dstQueueFamilyIndex != VK_QUEUE_FAMILY_IGNORED &&
+                barrier.srcQueueFamilyIndex != queue_state.queue_family_index &&
+                barrier.dstQueueFamilyIndex != queue_state.queue_family_index) {
+                skip |= core.LogError("VUID-VkTensorMemoryBarrierARM-tensor-09757", cb_state.Handle(), loc,
+                                      "Tensor (%s) used in barrier has sharing mode VK_SHARING_MODE_EXCLUSIVE but neither "
+                                      "srcQueueFamilyIndex (%d) or dstQueueFamilyIndex (%d) are VK_QUEUE_FAMILY_IGNORED or "
+                                      "the same queue family as this queue which is executing the barrier (%d)",
+                                      core.FormatHandle(barrier.tensor).c_str(), barrier.srcQueueFamilyIndex,
+                                      barrier.dstQueueFamilyIndex, queue_state.queue_family_index);
             }
         }
         return skip;
