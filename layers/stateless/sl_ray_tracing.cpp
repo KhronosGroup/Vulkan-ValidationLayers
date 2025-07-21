@@ -1599,16 +1599,9 @@ bool Device::manual_PreCallValidateGetAccelerationStructureBuildSizesKHR(
     VkDevice device, VkAccelerationStructureBuildTypeKHR buildType, const VkAccelerationStructureBuildGeometryInfoKHR *pBuildInfo,
     const uint32_t *pMaxPrimitiveCounts, VkAccelerationStructureBuildSizesInfoKHR *pSizeInfo, const Context &context) const {
     bool skip = false;
+
     const auto &error_obj = context.error_obj;
 
-    uint64_t total_triangles_count = 0;
-    uint64_t total_aabbs_count = 0;
-    ComputeTotalPrimitiveCountWithMaxPrimitivesCount(1, pBuildInfo, &pMaxPrimitiveCounts, &total_triangles_count,
-                                                     &total_aabbs_count);
-    skip |= ValidateTotalPrimitivesCount(total_triangles_count, total_aabbs_count, error_obj.handle, error_obj.location);
-
-    skip |= ValidateAccelerationStructureBuildGeometryInfoKHR(context, *pBuildInfo, error_obj.handle,
-                                                              error_obj.location.dot(Field::pBuildInfo, 0));
     if (!enabled_features.accelerationStructure) {
         skip |= LogError("VUID-vkGetAccelerationStructureBuildSizesKHR-accelerationStructure-08933", device, error_obj.location,
                          "accelerationStructure feature was not enabled.");
@@ -1643,6 +1636,17 @@ bool Device::manual_PreCallValidateGetAccelerationStructureBuildSizesKHR(
                 }
             }
         }
+
+        if (pMaxPrimitiveCounts) {
+            uint64_t total_triangles_count = 0;
+            uint64_t total_aabbs_count = 0;
+            ComputeTotalPrimitiveCountWithMaxPrimitivesCount(1, pBuildInfo, &pMaxPrimitiveCounts, &total_triangles_count,
+                                                             &total_aabbs_count);
+            skip |= ValidateTotalPrimitivesCount(total_triangles_count, total_aabbs_count, error_obj.handle, error_obj.location);
+        }
+
+        skip |= ValidateAccelerationStructureBuildGeometryInfoKHR(context, *pBuildInfo, error_obj.handle,
+                                                                  error_obj.location.dot(Field::pBuildInfo, 0));
     }
 
     return skip;

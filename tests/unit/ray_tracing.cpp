@@ -4140,3 +4140,40 @@ TEST_F(NegativeRayTracing, CmdTraceRays) {
 
     m_device->Wait();
 }
+
+TEST_F(NegativeRayTracing, GetAccelerationStructureBuildSizesNullMaxPrimitiveCount) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    VkAccelerationStructureGeometryKHR geometry = vku::InitStructHelper();
+    geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+    geometry.geometry.triangles = vku::InitStructHelper();
+    geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
+    geometry.geometry.triangles.vertexStride = sizeof(float) * 3u;
+    geometry.geometry.triangles.maxVertex = 3u;
+    geometry.geometry.triangles.indexType = VK_INDEX_TYPE_NONE_KHR;
+    geometry.geometry.triangles.indexData.deviceAddress = 0;
+    geometry.geometry.triangles.transformData.deviceAddress = 0;
+    geometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
+
+    VkAccelerationStructureBuildGeometryInfoKHR build_info = vku::InitStructHelper();
+    build_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    build_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    build_info.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+    build_info.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+    build_info.srcAccelerationStructure = VK_NULL_HANDLE;
+    build_info.dstAccelerationStructure = VK_NULL_HANDLE;
+    build_info.geometryCount = 1;
+    build_info.pGeometries = &geometry;
+    build_info.ppGeometries = NULL;
+    build_info.scratchData.deviceAddress = 0;
+    VkAccelerationStructureBuildSizesInfoKHR build_sizes_info = vku::InitStructHelper();
+    m_errorMonitor->SetDesiredError("VUID-vkGetAccelerationStructureBuildSizesKHR-pBuildInfo-03619");
+    vk::GetAccelerationStructureBuildSizesKHR(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_HOST_OR_DEVICE_KHR, &build_info,
+                                              nullptr, &build_sizes_info);
+    m_errorMonitor->VerifyFound();
+}
