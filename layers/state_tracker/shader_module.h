@@ -23,7 +23,6 @@
 #include <cstring>
 #include <string>
 #include <vector>
-#include <optional>
 
 #include "containers/custom_containers.h"
 #include "state_tracker/shader_instruction.h"
@@ -514,6 +513,13 @@ struct PushConstantVariable : public VariableBase {
                          const VariableAccessMap &variable_access_map, const DebugNameMap &debug_name_map);
 };
 
+struct TaskPayloadVariable : public VariableBase {
+    uint32_t size;
+
+    TaskPayloadVariable(const Module &module_state, const Instruction &insn, VkShaderStageFlagBits stage,
+                        const VariableAccessMap &variable_access_map, const DebugNameMap &debug_name_map);
+};
+
 // Represents a single Entrypoint into a Shader Module
 struct EntryPoint {
     // "A module must not have two OpEntryPoint instructions with the same Execution Model and the same Name string."
@@ -535,6 +541,8 @@ struct EntryPoint {
 
     // only one Push Constant block is allowed per entry point
     std::shared_ptr<const PushConstantVariable> push_constant_variable;
+    // For both Task and Mesh entry point, there can be one TaskPayloadWorkgroupEXT variable
+    std::shared_ptr<const TaskPayloadVariable> task_payload_variable;
     const std::vector<ResourceInterfaceVariable> resource_interface_variables;
     const std::vector<StageInterfaceVariable> stage_interface_variables;
     // Easier to lookup without having to check for the is_builtin bool
@@ -577,7 +585,7 @@ struct EntryPoint {
 
   protected:
     static vvl::unordered_set<uint32_t> GetAccessibleIds(const Module &module_state, EntryPoint &entrypoint);
-    static std::vector<StageInterfaceVariable> GetStageInterfaceVariables(const Module &module_state, const EntryPoint &entrypoint,
+    static std::vector<StageInterfaceVariable> GetStageInterfaceVariables(const Module &module_state, EntryPoint &entrypoint,
                                                                           const VariableAccessMap &variable_access_map,
                                                                           const DebugNameMap &debug_name_map);
     static std::vector<ResourceInterfaceVariable> GetResourceInterfaceVariables(const Module &module_state, EntryPoint &entrypoint,
@@ -657,8 +665,8 @@ struct Module {
         uint32_t builtin_workgroup_size_id = 0;
 
         std::vector<const Instruction *> cooperative_matrix_inst;
-
         std::vector<const Instruction *> cooperative_vector_inst;
+        std::vector<const Instruction *> emit_mesh_tasks_inst;
 
         std::vector<spv::Capability> capability_list;
         // Code on the hot path can cache capabilities for fast access.
@@ -742,7 +750,6 @@ struct Module {
     LocalSize FindLocalSize(const EntryPoint &entrypoint) const;
 
     uint32_t CalculateWorkgroupSharedMemory() const;
-    uint32_t CalculateTaskPayloadMemory() const;
 
     const Instruction *GetConstantDef(uint32_t id) const;
     uint32_t GetConstantValueById(uint32_t id) const;
