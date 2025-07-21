@@ -985,6 +985,11 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
                     return {vvl::Extension::_VK_KHR_ray_tracing_position_fetch};
                 }
             }
+            if (value & (VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_CLUSTER_OPACITY_MICROMAPS_BIT_NV)) {
+                if (!IsExtEnabled(extensions.vk_nv_cluster_acceleration_structure)) {
+                    return {vvl::Extension::_VK_NV_cluster_acceleration_structure};
+                }
+            }
             return {};
         case vvl::FlagBitmask::VkShaderCreateFlagBitsEXT:
             if (value & (VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT)) {

@@ -226,6 +226,9 @@ void PostCallRecordCreateViSurfaceNN(VkInstance instance, const VkViSurfaceCreat
                                      const RecordObject& record_obj) override;
 
 #endif  // VK_USE_PLATFORM_VI_NN
+void PostCallRecordReleaseDisplayEXT(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
+                                     const RecordObject& record_obj) override;
+
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
 void PostCallRecordAcquireXlibDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, VkDisplayKHR display,
                                          const RecordObject& record_obj) override;

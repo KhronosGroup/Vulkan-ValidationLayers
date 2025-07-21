@@ -1734,15 +1734,15 @@ const vvl::unordered_map<VkPipelineStageFlagBits2, VkAccessFlags2>& syncDirectSt
 const vvl::unordered_map<VkQueueFlagBits, VkPipelineStageFlags2>& syncAllCommandStagesByQueueFlags() {
     static const vvl::unordered_map<VkQueueFlagBits, VkPipelineStageFlags2> variable = {
     { VK_QUEUE_TRANSFER_BIT, (
-        VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT |
-        VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT |
-        VK_PIPELINE_STAGE_2_HOST_BIT |
         VK_PIPELINE_STAGE_2_COPY_BIT |
         VK_PIPELINE_STAGE_2_RESOLVE_BIT |
         VK_PIPELINE_STAGE_2_BLIT_BIT |
         VK_PIPELINE_STAGE_2_CLEAR_BIT |
         VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR |
-        VK_PIPELINE_STAGE_2_CONVERT_COOPERATIVE_VECTOR_MATRIX_BIT_NV
+        VK_PIPELINE_STAGE_2_CONVERT_COOPERATIVE_VECTOR_MATRIX_BIT_NV |
+        VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT |
+        VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT |
+        VK_PIPELINE_STAGE_2_HOST_BIT
     )},
     { VK_QUEUE_GRAPHICS_BIT, (
         VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT |
