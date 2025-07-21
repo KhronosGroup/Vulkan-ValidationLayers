@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2025 Valve Corporation
  * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (C) 2015-2025 Google Inc.
+ * Copyright (c) 2025 Arm Limited.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -281,6 +282,8 @@ void CommandBuffer::ResetCBState() {
     }
     active_framebuffer = VK_NULL_HANDLE;
     index_buffer_binding.reset();
+
+    tensor_barriers.clear();
 
     // Clean up video specific states
     bound_video_session = nullptr;

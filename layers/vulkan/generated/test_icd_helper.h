@@ -5597,9 +5597,6 @@ static VKAPI_ATTR VkResult VKAPI_CALL CreateTensorViewARM(VkDevice device, const
 static VKAPI_ATTR void VKAPI_CALL DestroyTensorViewARM(VkDevice device, VkTensorViewARM tensorView,
                                                        const VkAllocationCallbacks* pAllocator) {}
 
-static VKAPI_ATTR void VKAPI_CALL GetTensorMemoryRequirementsARM(VkDevice device, const VkTensorMemoryRequirementsInfoARM* pInfo,
-                                                                 VkMemoryRequirements2* pMemoryRequirements) {}
-
 static VKAPI_ATTR VkResult VKAPI_CALL BindTensorMemoryARM(VkDevice device, uint32_t bindInfoCount,
                                                           const VkBindTensorMemoryInfoARM* pBindInfos) {
     return VK_SUCCESS;

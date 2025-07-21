@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2025 The Khronos Group Inc.
  * Copyright (c) 2015-2025 Valve Corporation
  * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1119,7 +1120,7 @@ void Buffer::InitHostVisibleWithData(const Device &dev, VkBufferUsageFlags usage
     InitNoMemory(dev, create_info);
 
     // According to the specification there is always a host visible coherent memory type.
-    // It can always be bound to a buffer created without SPARSE_BIDNING/PROTECTED flags.
+    // It can always be bound to a buffer created without SPARSE_BINDING/PROTECTED flags.
     const VkMemoryPropertyFlags memory_properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     const VkMemoryRequirements memory_requirements = MemoryRequirements();
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
@@ -1173,6 +1174,102 @@ NON_DISPATCHABLE_HANDLE_DTOR(BufferView, vk::DestroyBufferView)
 
 void BufferView::Init(const Device &dev, const VkBufferViewCreateInfo &info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateBufferView, dev, &info);
+}
+
+NON_DISPATCHABLE_HANDLE_DTOR(Tensor, vk::DestroyTensorARM)
+
+Tensor::Tensor() {
+    dimensions_ = std::vector<int64_t>{1, 8, 8, 8};
+    description_ = vku::InitStructHelper();
+    description_.tiling = VK_TENSOR_TILING_LINEAR_ARM;
+    description_.format = VK_FORMAT_R32_SINT;
+    description_.dimensionCount = dimensions_.size();
+    description_.pDimensions = dimensions_.data();
+    description_.pStrides = nullptr;
+    description_.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
+
+    create_info_.sType = VK_STRUCTURE_TYPE_TENSOR_CREATE_INFO_ARM;
+    create_info_.pNext = nullptr;
+    create_info_.flags = 0;
+    create_info_.pDescription = &description_;
+    create_info_.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    create_info_.queueFamilyIndexCount = 0;
+    create_info_.pQueueFamilyIndices = nullptr;
+}
+
+Tensor::Tensor(const Device &dev, const bool is_copy_tensor) {
+    dimensions_ = std::vector<int64_t>{1, 8, 8, 8};
+    description_.sType = VK_STRUCTURE_TYPE_TENSOR_DESCRIPTION_ARM;
+    description_.pNext = nullptr;
+    description_.tiling = VK_TENSOR_TILING_LINEAR_ARM;
+    description_.format = VK_FORMAT_R32_SINT;
+    description_.dimensionCount = dimensions_.size();
+    description_.pDimensions = dimensions_.data();
+    description_.pStrides = nullptr;
+    description_.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
+
+    if (is_copy_tensor) {
+        description_.usage |= VK_TENSOR_USAGE_TRANSFER_SRC_BIT_ARM | VK_TENSOR_USAGE_TRANSFER_DST_BIT_ARM;
+    }
+
+    create_info_.sType = VK_STRUCTURE_TYPE_TENSOR_CREATE_INFO_ARM;
+    create_info_.pNext = nullptr;
+    create_info_.flags = 0;
+    create_info_.pDescription = &description_;
+    create_info_.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    create_info_.queueFamilyIndexCount = 0;
+    create_info_.pQueueFamilyIndices = nullptr;
+
+    InitNoMem(dev);
+}
+
+Tensor::Tensor(const Device &dev, const VkTensorDescriptionARM &desc) : Tensor() {
+    description_ = desc;
+    create_info_.pDescription = &description_;
+
+    InitNoMem(dev);
+}
+
+Tensor::Tensor(const Device &dev, const VkTensorCreateInfoARM &info) {
+    create_info_ = info;
+    description_ = *info.pDescription;
+
+    InitNoMem(dev);
+}
+
+void Tensor::BindToMem(VkFlags required_flags, VkFlags forbidden_flags) {
+    VkMemoryRequirements2 mem_reqs = this->GetMemoryReqs();
+
+    VkMemoryAllocateInfo tensor_alloc_info = vku::InitStructHelper();
+    tensor_alloc_info.allocationSize = mem_reqs.memoryRequirements.size;
+    device_->Physical().SetMemoryType(mem_reqs.memoryRequirements.memoryTypeBits, &tensor_alloc_info, required_flags, forbidden_flags);
+    memory_ = vkt::DeviceMemory(*device_, tensor_alloc_info);
+    VkBindTensorMemoryInfoARM bind_info = vku::InitStructHelper();
+    bind_info.tensor = *this;
+    bind_info.memory = memory_.handle();
+    vk::BindTensorMemoryARM(*device_, 1, &bind_info);
+}
+
+void Tensor::InitNoMem(const Device &dev) {
+    device_ = &dev;
+    NON_DISPATCHABLE_HANDLE_INIT(vk::CreateTensorARM, dev, &create_info_);
+}
+
+const VkMemoryRequirements2 &Tensor::GetMemoryReqs() {
+    mem_req_info_ = vku::InitStructHelper();
+    mem_req_info_.tensor = *this;
+    mem_reqs_ = vku::InitStructHelper();
+    vk::GetTensorMemoryRequirementsARM(*device_, &mem_req_info_, &mem_reqs_);
+    return mem_reqs_;
+}
+
+NON_DISPATCHABLE_HANDLE_DTOR(TensorView, vk::DestroyTensorViewARM)
+TensorView::TensorView(const Device &dev, const VkTensorViewCreateInfoARM &info) { Init(dev, info); }
+
+void TensorView::Init(const Device &dev, const VkTensorViewCreateInfoARM &info) {
+    device_ = &dev;
+    create_info_ = info;
+    NON_DISPATCHABLE_HANDLE_INIT(vk::CreateTensorViewARM, dev, &create_info_);
 }
 
 NON_DISPATCHABLE_HANDLE_DTOR(Image, vk::DestroyImage)
@@ -2267,4 +2364,24 @@ VkResult Surface::Init(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR 
     return result;
 }
 #endif
+
+struct DummyAlloc {
+    static VKAPI_ATTR void *VKAPI_CALL allocFunction(void *, size_t size, size_t, VkSystemAllocationScope) { return malloc(size); };
+    static VKAPI_ATTR void *VKAPI_CALL realloc(void *, void *, size_t, size_t, VkSystemAllocationScope) { return nullptr; };
+    static VKAPI_ATTR void VKAPI_CALL freeFunction(void *, void *pMemory) { free(pMemory); };
+    static VKAPI_ATTR void VKAPI_CALL internalAlloc(void *, size_t, VkInternalAllocationType, VkSystemAllocationScope){};
+    static VKAPI_ATTR void VKAPI_CALL internalFree(void *, size_t, VkInternalAllocationType, VkSystemAllocationScope){};
+};
+
+const VkAllocationCallbacks *DefaultAllocator() {
+    static const VkAllocationCallbacks alloc = {nullptr,
+                                                DummyAlloc::allocFunction,
+                                                DummyAlloc::realloc,
+                                                DummyAlloc::freeFunction,
+                                                DummyAlloc::internalAlloc,
+                                                DummyAlloc::internalFree};
+
+    return &alloc;
+}
+
 }  // namespace vkt

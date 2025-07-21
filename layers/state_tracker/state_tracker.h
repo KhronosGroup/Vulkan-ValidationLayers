@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2025 Valve Corporation
  * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (C) 2015-2025 Google Inc.
+ * Copyright (C) 2025 Arm Limited.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -72,6 +73,8 @@ class AccelerationStructureKHR;
 class IndirectExecutionSet;
 class IndirectCommandsLayout;
 class QueryPool;
+class Tensor;
+class TensorView;
 struct DedicatedBinding;
 struct ShaderModule;
 struct ShaderObject;
@@ -148,6 +151,8 @@ VALSTATETRACK_STATE_OBJECT(VkDescriptorSetLayout, vvl::DescriptorSetLayout)
 VALSTATETRACK_STATE_OBJECT(VkSampler, vvl::Sampler)
 VALSTATETRACK_STATE_OBJECT(VkImageView, vvl::ImageView)
 VALSTATETRACK_STATE_OBJECT(VkImage, vvl::Image)
+VALSTATETRACK_STATE_OBJECT(VkTensorARM, vvl::Tensor)
+VALSTATETRACK_STATE_OBJECT(VkTensorViewARM, vvl::TensorView)
 VALSTATETRACK_STATE_OBJECT(VkBufferView, vvl::BufferView)
 VALSTATETRACK_STATE_OBJECT(VkBuffer, vvl::Buffer)
 VALSTATETRACK_STATE_OBJECT(VkPipelineCache, vvl::PipelineCache)
@@ -827,6 +832,18 @@ class DeviceState : public vvl::base::Device {
                                                       const VkAllocationCallbacks* pAllocator,
                                                       const RecordObject& record_obj) override;
 
+    virtual std::shared_ptr<vvl::Tensor> CreateTensorState(VkTensorARM handle, const VkTensorCreateInfoARM* create_info);
+    void PostCallRecordCreateTensorARM(VkDevice device, const VkTensorCreateInfoARM* pCreateInfo,
+                                       const VkAllocationCallbacks* pAllocator, VkTensorARM* pTensor,
+                                       const RecordObject& record_obj) override;
+    void PostCallRecordBindTensorMemoryARM(VkDevice device, uint32_t bindInfoCount, const VkBindTensorMemoryInfoARM* pBindInfos,
+                                           const RecordObject& record_obj) override;
+    virtual std::shared_ptr<vvl::TensorView> CreateTensorViewState(const std::shared_ptr<vvl::Tensor>& tensor,
+                                                                   VkTensorViewARM handle,
+                                                                   const VkTensorViewCreateInfoARM* pCreateInfo);
+    void PostCallRecordCreateTensorViewARM(VkDevice device, const VkTensorViewCreateInfoARM* pCreateInfo,
+                                           const VkAllocationCallbacks* pAllocator, VkTensorViewARM* pView,
+                                           const RecordObject& record_obj) override;
     virtual std::shared_ptr<vvl::Buffer> CreateBufferState(VkBuffer handle, const VkBufferCreateInfo* create_info);
     void PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                    VkBuffer* pBuffer, const RecordObject& record_obj,
@@ -1299,6 +1316,8 @@ class DeviceState : public vvl::base::Device {
                                                 const RecordObject& record_obj) override;
     void PostCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo,
                                              const RecordObject& record_obj) override;
+    void PostCallRecordCmdCopyTensorARM(VkCommandBuffer commandBuffer, const VkCopyTensorInfoARM* pCopyTensorInfo,
+                                        const RecordObject& record_obj) override;
     void PostCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                                uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize stride,
                                                VkQueryResultFlags flags, const RecordObject& record_obj) override;
@@ -1974,6 +1993,8 @@ class DeviceState : public vvl::base::Device {
     VALSTATETRACK_MAP_AND_TRAITS(VkSampler, vvl::Sampler, sampler_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkImageView, vvl::ImageView, image_view_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkImage, vvl::Image, image_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkTensorARM, vvl::Tensor, tensor_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkTensorViewARM, vvl::TensorView, tensor_view_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkBufferView, vvl::BufferView, buffer_view_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkBuffer, vvl::Buffer, buffer_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkPipelineCache, vvl::PipelineCache, pipeline_cache_map_)
@@ -2100,6 +2121,8 @@ class DeviceProxy : public vvl::base::Device {
     virtual void Created(vvl::BufferView& state) {}
     virtual void Created(vvl::Image& state) {}
     virtual void Created(vvl::ImageView& state) {}
+    virtual void Created(vvl::Tensor& state) {}
+    virtual void Created(vvl::TensorView& state) {}
     virtual void Created(vvl::Sampler& state) {}
     virtual void Created(vvl::Swapchain& state) {}
     virtual void Created(vvl::DescriptorSet& state) {}
@@ -2121,6 +2144,14 @@ class DeviceProxy : public vvl::base::Device {
     }
     virtual bool ValidateUnprotectedBuffer(const vvl::CommandBuffer& cb_state, const vvl::Buffer& buffer_state,
                                            const Location& buffer_loc, const char* vuid, const char* more_message = "") const {
+        return false;
+    }
+    virtual bool ValidateProtectedTensor(const vvl::CommandBuffer& cb_state, const vvl::Tensor& tensor_state,
+                                         const Location& tensor_loc, const char* vuid, const char* more_message = "") const {
+        return false;
+    }
+    virtual bool ValidateUnprotectedTensor(const vvl::CommandBuffer& cb_state, const vvl::Tensor& tensor_state,
+                                           const Location& tensor_loc, const char* vuid, const char* more_message = "") const {
         return false;
     }
 

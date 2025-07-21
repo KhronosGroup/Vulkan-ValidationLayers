@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2025 The Khronos Group Inc.
 // Copyright (c) 2021-2025 Valve Corporation
 // Copyright (c) 2021-2025 LunarG, Inc.
+// Copyright (c) 2025 Arm Limited.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -101,6 +102,7 @@ const uint kTexelDesc = 4;
 const uint kBufferDesc = 5;
 const uint kInlineUniformDesc = 6;
 const uint kAccelDesc = 7;
+const uint kTensorDesc = 8;
 
 // Buffer Device Address Input Buffer Format
 //

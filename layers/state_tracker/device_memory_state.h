@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2025 Valve Corporation
  * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (C) 2015-2025 Google Inc.
+ * Copyright (c) 2025 Arm Limited.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,8 +36,10 @@ struct DedicatedBinding {
     union CreateInfo {
         CreateInfo(const VkBufferCreateInfo &b) : buffer(b) {}
         CreateInfo(const VkImageCreateInfo &i) : image(i) {}
+        CreateInfo(const VkTensorCreateInfoARM &t) : tensor(t) {}
         VkBufferCreateInfo buffer;
         VkImageCreateInfo image;
+        VkTensorCreateInfoARM tensor;
     } create_info;
 
     DedicatedBinding(VkBuffer buffer, const VkBufferCreateInfo &buffer_create_info)
@@ -44,6 +47,9 @@ struct DedicatedBinding {
 
     DedicatedBinding(VkImage image, const VkImageCreateInfo &image_create_info)
         : handle(image, kVulkanObjectTypeImage), create_info(image_create_info) {}
+
+    DedicatedBinding(VkTensorARM tensor, const VkTensorCreateInfoARM &tensor_create_info)
+        : handle(tensor, kVulkanObjectTypeTensorARM), create_info(tensor_create_info) {}
 };
 
 // Data struct for tracking memory object
@@ -86,6 +92,12 @@ class DeviceMemory : public StateObject {
         return (dedicated && dedicated->handle.type == kVulkanObjectTypeImage) ? dedicated->handle.Cast<VkImage>() : VK_NULL_HANDLE;
     }
     bool IsDedicatedImage() const { return GetDedicatedImage() != VK_NULL_HANDLE; }
+
+    VkTensorARM GetDedicatedTensor() const {
+        return (dedicated && dedicated->handle.type == kVulkanObjectTypeTensorARM) ? dedicated->handle.Cast<VkTensorARM>()
+                                                                                   : VK_NULL_HANDLE;
+    }
+    bool IsDedicatedTensor() const { return GetDedicatedTensor() != VK_NULL_HANDLE; }
 
     VkDeviceMemory VkHandle() const { return handle_.Cast<VkDeviceMemory>(); }
 };
@@ -233,7 +245,7 @@ class BindableMultiplanarMemoryTracker : public BindableMemoryTracker {
     std::vector<Plane> planes_;
 };
 
-// Superclass for bindable object state (currently images, buffers and acceleration structures)
+// Superclass for bindable object state (currently images, buffers, acceleration structures and tensors)
 class Bindable : public StateObject {
   public:
     template <typename Handle>

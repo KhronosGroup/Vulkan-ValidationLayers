@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2025 Valve Corporation
  * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (C) 2015-2025 Google Inc.
+ * Copyright (C) 2025 Arm Limited.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -440,6 +441,8 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     //  dependencies that have been broken : either destroyed objects, or updated descriptor sets
     vvl::unordered_set<std::shared_ptr<StateObject>> object_bindings;
     vvl::unordered_map<VulkanTypedHandle, LogObjectList> broken_bindings;
+
+    std::vector<TensorBarrier> tensor_barriers;
 
     // VK_KHR_dynamic_rendering_local_read works like dynamic state, but lives for the rendering lifetime only
     struct RenderingAttachment {

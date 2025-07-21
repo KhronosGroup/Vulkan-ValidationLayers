@@ -1,4 +1,5 @@
 /* Copyright (c) 2021-2025 The Khronos Group Inc.
+ * Copyright (c) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -486,6 +487,7 @@ struct ResourceInterfaceVariable : public VariableBase {
     bool is_storage_texel_buffer{false};
     const bool is_storage_buffer;
     bool is_input_attachment{false};
+    bool is_storage_tensor{false};
 
     ResourceInterfaceVariable(const Module &module_state, const EntryPoint &entrypoint, const Instruction &insn,
                               const ImageAccessMap &image_access_map, const AccessChainVariableMap &access_chain_map,

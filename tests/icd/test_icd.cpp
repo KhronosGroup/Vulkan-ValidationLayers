@@ -850,6 +850,17 @@ static VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements2(VkDevice device, c
     GetImageMemoryRequirements(device, pInfo->image, &pMemoryRequirements->memoryRequirements);
 }
 
+static VKAPI_ATTR void VKAPI_CALL GetTensorMemoryRequirementsARM(VkDevice device, const VkTensorMemoryRequirementsInfoARM* pInfo,
+                                                                 VkMemoryRequirements2* pMemoryRequirements)
+{
+    VkMemoryRequirements& memReq = pMemoryRequirements->memoryRequirements;
+    memReq.size = 1024;
+    memReq.alignment = 32;
+    // Hard-code an unsupported memory type for negative tests.
+    // 3 is arbitrary, any value in [0,5] is acceptable, see GetPhysicalDeviceMemoryProperties.
+    memReq.memoryTypeBits = 0xFFFF & ~(0x1 << 3);
+}
+
 static VKAPI_ATTR void VKAPI_CALL GetBufferMemoryRequirements2(VkDevice device, const VkBufferMemoryRequirementsInfo2* pInfo,
                                                                VkMemoryRequirements2* pMemoryRequirements) {
     GetBufferMemoryRequirements(device, pInfo->buffer, &pMemoryRequirements->memoryRequirements);
@@ -1349,6 +1360,18 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties2(VkPhysicalD
             default:
                 break;
         }
+    }
+
+    if (auto* tensor_props = vku::FindStructInPNextChain<VkTensorFormatPropertiesARM>(pFormatProperties->pNext)) {
+        constexpr VkFormatFeatureFlagBits2 tensor_flags =
+            VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT |
+            VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT |
+            VK_FORMAT_FEATURE_2_TENSOR_SHADER_BIT_ARM |
+            VK_FORMAT_FEATURE_2_TENSOR_SHADER_BIT_ARM |
+            VK_FORMAT_FEATURE_2_TENSOR_IMAGE_ALIASING_BIT_ARM |
+            VK_FORMAT_FEATURE_2_TENSOR_DATA_GRAPH_BIT_ARM;
+        tensor_props->linearTilingTensorFeatures = tensor_flags;
+        tensor_props->optimalTilingTensorFeatures = tensor_flags;
     }
 }
 

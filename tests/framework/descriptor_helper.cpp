@@ -2,6 +2,7 @@
  * Copyright (c) 2023-2025 The Khronos Group Inc.
  * Copyright (c) 2023-2025 Valve Corporation
  * Copyright (c) 2023-2025 LunarG, Inc.
+ * Copyright (C) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -181,6 +182,17 @@ void OneOffDescriptorSet::WriteDescriptorAccelStruct(int binding, uint32_t accel
     AddDescriptorWrite(binding, arrayElement, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, accelerationStructureCount);
 }
 
+void OneOffDescriptorSet::WriteDescriptorTensorInfo(int binding, const VkTensorViewARM *view, uint32_t arrayElement) {
+    VkWriteDescriptorSetTensorARM tensor_desc_write_info = vku::InitStructHelper();
+    tensor_desc_write_info.tensorViewCount = 1;
+    tensor_desc_write_info.pTensorViews = view;
+
+    ResourceInfo resource_info;
+    resource_info.tensor_info = tensor_desc_write_info;
+    resource_infos.emplace_back(resource_info);
+    AddDescriptorWrite(binding, arrayElement, VK_DESCRIPTOR_TYPE_TENSOR_ARM);
+}
+
 void OneOffDescriptorSet::UpdateDescriptorSets() {
     assert(resource_infos.size() == descriptor_writes.size());
     for (size_t i = 0; i < resource_infos.size(); i++) {
@@ -191,6 +203,8 @@ void OneOffDescriptorSet::UpdateDescriptorSets() {
             descriptor_writes[i].pBufferInfo = &info.buffer_info.value();
         } else if (info.buffer_view.has_value()) {
             descriptor_writes[i].pTexelBufferView = &info.buffer_view.value();
+        } else if (info.tensor_info.has_value()) {
+            descriptor_writes[i].pNext = &info.tensor_info.value();
         } else {
             assert(info.accel_struct_info.has_value());
             descriptor_writes[i].pNext = &info.accel_struct_info.value();

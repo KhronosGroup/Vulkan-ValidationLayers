@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2025 Valve Corporation
  * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (C) 2015-2025 Google Inc.
+ * Copyright (c) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +23,7 @@
 #include <cstdint>
 #include "state_tracker/image_state.h"
 #include "state_tracker/buffer_state.h"
+#include "state_tracker/tensor_state.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/ray_tracing_state.h"
 #include "state_tracker/sampler_state.h"
@@ -181,10 +183,9 @@ vvl::DescriptorClass vvl::DescriptorTypeToClass(VkDescriptorType type) {
             return DescriptorClass::AccelerationStructure;
         case VK_DESCRIPTOR_TYPE_MUTABLE_EXT:
             return DescriptorClass::Mutable;
-        case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
         case VK_DESCRIPTOR_TYPE_TENSOR_ARM:
-            // TODO
-            break;
+            return DescriptorClass::Tensor;
+        case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
         case VK_DESCRIPTOR_TYPE_MAX_ENUM:
             break;
     }
@@ -588,6 +589,10 @@ vvl::DescriptorSet::DescriptorSet(const VkDescriptorSet handle, vvl::DescriptorP
             }
             case DescriptorClass::Mutable: {
                 bindings_.push_back(MakeBinding<MutableBinding>(free_binding++, *create_info, descriptor_count, flags));
+                break;
+            }
+            case DescriptorClass::Tensor: {
+                bindings_.push_back(MakeBinding<TensorBinding>(free_binding++, *create_info, descriptor_count, flags));
                 break;
             }
             case DescriptorClass::Invalid:
@@ -1193,6 +1198,15 @@ void vvl::MutableDescriptor::WriteUpdate(DescriptorSet &set_state, const vvl::De
             }
             break;
         }
+        case DescriptorClass::Tensor: {
+            const auto *tensor_info = vku::FindStructInPNextChain<VkWriteDescriptorSetTensorARM>(update.pNext);
+            assert(tensor_info);
+            assert(index < tensor_info->tensorViewCount);
+            const auto tensor_view_state = dev_data.GetConstCastShared<vvl::TensorView>(tensor_info->pTensorViews[index]);
+            const auto &tensor_state = tensor_view_state->tensor_state;
+            ReplaceStatePtr(set_state, tensor_state_, tensor_state, is_bindless);
+            break;
+        }
         case DescriptorClass::TexelBuffer: {
             if (update.pTexelBufferView) {
                 // can be null if using nullDescriptors
@@ -1312,6 +1326,9 @@ void vvl::MutableDescriptor::CopyUpdate(DescriptorSet &set_state, const vvl::Dev
                 case DescriptorClass::TexelBuffer: {
                     ReplaceStatePtr(set_state, buffer_view_state_, mutable_src.GetSharedBufferViewState(), is_bindless);
                 } break;
+                case DescriptorClass::Tensor: {
+                    ReplaceStatePtr(set_state, tensor_state_, mutable_src.GetSharedTensor(), is_bindless);
+                } break;
                 case DescriptorClass::AccelerationStructure: {
                     if (mutable_src.IsKHR()) {
                         acc_ = mutable_src.GetAccelerationStructureKHR();
@@ -1332,6 +1349,12 @@ void vvl::MutableDescriptor::CopyUpdate(DescriptorSet &set_state, const vvl::Dev
             buffer_size = mutable_src.GetBufferSize();
             break;
         }
+        case vvl::DescriptorClass::Tensor: {
+            const auto tensor_desc = static_cast<const MutableDescriptor *>(&src);
+            tensor_view_count_ = tensor_desc->GetTensorViewCount();
+            tensor_views_ = tensor_desc->GetTensorViews();
+            ReplaceStatePtr(set_state, tensor_state_, std::shared_ptr<vvl::Tensor>(), is_bindless);
+        } break;
         case vvl::DescriptorClass::InlineUniform:
         case vvl::DescriptorClass::Invalid:
             break;
@@ -1404,6 +1427,11 @@ bool vvl::MutableDescriptor::AddParent(StateObject *state_object) {
                 result |= acc_state_nv_->AddParent(state_object);
             }
             break;
+        case DescriptorClass::Tensor:
+            if (tensor_state_) {
+                result |= tensor_state_->AddParent(state_object);
+            }
+            break;
         case DescriptorClass::InlineUniform:
         case DescriptorClass::Mutable:
         case DescriptorClass::Invalid:
@@ -1430,6 +1458,9 @@ void vvl::MutableDescriptor::RemoveParent(StateObject *state_object) {
     if (acc_state_nv_) {
         acc_state_nv_->RemoveParent(state_object);
     }
+    if (tensor_state_) {
+        tensor_state_->RemoveParent(state_object);
+    }
 }
 
 bool vvl::MutableDescriptor::Invalid() const {
@@ -1455,6 +1486,9 @@ bool vvl::MutableDescriptor::Invalid() const {
             } else {
                 return !acc_state_nv_ || acc_state_nv_->Invalid();
             }
+        case DescriptorClass::Tensor:
+            return !tensor_state_ || tensor_state_->Invalid();
+
         case DescriptorClass::InlineUniform:
         case DescriptorClass::Mutable:
         case DescriptorClass::Invalid:
@@ -1473,4 +1507,27 @@ std::string vvl::DslErrorSource::PrintMessage(const Logger &error_logger) const 
     }
     msg << "";
     return msg.str();
+}
+void vvl::TensorDescriptor::WriteUpdate(DescriptorSet &set_state, const DeviceState &dev_data, const VkWriteDescriptorSet &update,
+                                        const uint32_t index, bool is_bindless) {
+    const auto tensor_info = reinterpret_cast<const VkWriteDescriptorSetTensorARM *>(update.pNext);
+    tensor_view_count_ = tensor_info->tensorViewCount;
+    tensor_views_ = tensor_info->pTensorViews;
+    auto tensor_view = dev_data.GetConstCastShared<vvl::TensorView>(tensor_views_[index]);
+    ReplaceStatePtr(set_state, tensor_view_state_, tensor_view, is_bindless);
+}
+
+void vvl::TensorDescriptor::CopyUpdate(DescriptorSet &set_state, const DeviceState &dev_data, const Descriptor &src,
+                                       bool is_bindless, VkDescriptorType type) {
+    if (src.GetClass() == vvl::DescriptorClass::Mutable) {
+        const auto tensor_desc = static_cast<const MutableDescriptor *>(&src);
+        tensor_view_count_ = tensor_desc->GetTensorViewCount();
+        tensor_views_ = tensor_desc->GetTensorViews();
+        ReplaceStatePtr(set_state, tensor_state_, std::shared_ptr<vvl::Tensor>(), is_bindless);
+        return;
+    }
+    const auto tensor_desc = static_cast<const TensorDescriptor *>(&src);
+    tensor_view_count_ = tensor_desc->tensor_view_count_;
+    tensor_views_ = tensor_desc->tensor_views_;
+    ReplaceStatePtr(set_state, tensor_state_, std::shared_ptr<vvl::Tensor>(), is_bindless);
 }
