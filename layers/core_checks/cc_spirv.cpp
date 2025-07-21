@@ -1945,8 +1945,8 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
 
             total_workgroup_shared_memory = spec_mod.CalculateWorkgroupSharedMemory();
 
-            if ((stage == VK_SHADER_STAGE_TASK_BIT_EXT || stage == VK_SHADER_STAGE_MESH_BIT_EXT)) {
-                total_task_payload_memory = spec_mod.CalculateTaskPayloadMemory();
+            if (spec_entrypoint->task_payload_variable) {
+                total_task_payload_memory = spec_entrypoint->task_payload_variable->size;
             }
 
             spvDiagnosticDestroy(diag);
@@ -1968,8 +1968,8 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
 
         total_workgroup_shared_memory = module_state.CalculateWorkgroupSharedMemory();
 
-        if ((stage == VK_SHADER_STAGE_TASK_BIT_EXT || stage == VK_SHADER_STAGE_MESH_BIT_EXT)) {
-            total_task_payload_memory = module_state.CalculateTaskPayloadMemory();
+        if (entrypoint.task_payload_variable) {
+            total_task_payload_memory = entrypoint.task_payload_variable->size;
         }
     }
 
@@ -2586,6 +2586,57 @@ bool CoreChecks::ValidateMeshMemorySize(const spirv::Module &module_state, uint3
                 total_task_payload_memory, total_workgroup_shared_memory, total_task_payload_memory + total_workgroup_shared_memory,
                 phys_dev_ext_props.mesh_shader_props_ext.maxMeshPayloadAndSharedMemorySize);
         }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateTaskPayload(const spirv::Module &task_state, const spirv::EntryPoint &mesh_entrypoint,
+                                     const Location &loc) const {
+    bool skip = false;
+    uint32_t task_payload_size = 0;
+    uint32_t mesh_payload_size = 0;
+
+    if (task_state.static_data_.emit_mesh_tasks_inst.size() > 1) {
+        // If there are multiple OpEmitMeshTasksEXT we will need GPU-AV to know which was actually called
+        return skip;
+    }
+
+    if (!task_state.static_data_.emit_mesh_tasks_inst.empty()) {
+        const auto emit_mesh_task = task_state.static_data_.emit_mesh_tasks_inst.front();
+        // Payload is optional
+        if (emit_mesh_task->Length() == 5) {
+            if (task_state.static_data_.has_specialization_constants) {
+                // There is a chance this is not resolvable here to match exact size
+                return skip;
+            }
+            const auto *payload_variable = task_state.FindDef(emit_mesh_task->Word(4));
+            const spirv::Instruction *type = task_state.GetVariablePointerType(*payload_variable);
+            task_payload_size = task_state.GetTypeBytesSize(type);
+        }
+    }
+
+    if (mesh_entrypoint.task_payload_variable) {
+        mesh_payload_size = mesh_entrypoint.task_payload_variable->size;
+    }
+
+    // If task and mesh are both set and just matter of trying to resolve spec constant values, skip possibly reporting false
+    // positives
+    if (mesh_payload_size == spirv::kInvalidValue && task_payload_size != 0) {
+        return skip;
+    }
+
+    // It is valid to have the Task use the payload, but the mesh to ignore it
+    if (mesh_payload_size != 0 && task_payload_size != mesh_payload_size) {
+        std::stringstream ss;
+        ss << "The Mesh Shader has a TaskPayloadWorkgroupEXT variable, but the Task Shader ";
+        if (task_payload_size == 0) {
+            ss << "never sets a TaskPayloadWorkgroupEXT variable in the call to OpEmitMeshTasksEXT";
+        } else {
+            ss << "sets a TaskPayloadWorkgroupEXT variable that is " << task_payload_size << " bytes but needs to match the "
+               << mesh_payload_size << " bytes payload in the Mesh Shader.";
+        }
+        skip |= LogError("VUID-RuntimeSpirv-MeshEXT-10883", device, loc, "%s", ss.str().c_str());
     }
 
     return skip;

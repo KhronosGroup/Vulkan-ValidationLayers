@@ -885,8 +885,8 @@ bool CoreChecks::ValidateDrawShaderObjectMesh(const LastBound& last_bound_state,
     }
 
     if (enabled_features.taskShader && enabled_features.meshShader && is_mesh_command && has_mesh_shader) {
-        if (const auto shader_object = last_bound_state.GetShaderState(ShaderObjectStage::MESH)) {
-            const bool no_task_shader_flag = (shader_object->create_info.flags & VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT) != 0;
+        if (const auto mesh_state = last_bound_state.GetShaderState(ShaderObjectStage::MESH)) {
+            const bool no_task_shader_flag = (mesh_state->create_info.flags & VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT) != 0;
 
             if (!no_task_shader_flag && !has_task_shader) {
                 skip |= LogError(
@@ -898,6 +898,12 @@ bool CoreChecks::ValidateDrawShaderObjectMesh(const LastBound& last_bound_state,
                     vuid.task_mesh_shader_08695, cb_state.Handle(), vuid.loc(),
                     "Mesh shader (%s) was created with VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT, but a task shader (%s) is bound.",
                     FormatHandle(mesh_shader_handle).c_str(), FormatHandle(task_shader_handle).c_str());
+            }
+
+            if (const vvl::ShaderObject* task_state = last_bound_state.GetShaderState(ShaderObjectStage::TASK)) {
+                if (task_state->spirv && mesh_state->entrypoint) {
+                    skip |= ValidateTaskPayload(*task_state->spirv, *mesh_state->entrypoint, vuid.loc());
+                }
             }
         }
     }

@@ -344,8 +344,7 @@ TEST_F(NegativeShaderMesh, MeshShaderPayloadSpecConstantSet) {
     const uint32_t max_mesh_payload_and_shared_memory_size = mesh_shader_properties.maxMeshPayloadAndSharedMemorySize;
     const uint32_t max_mesh_payload_and_shared_ints = max_mesh_payload_and_shared_memory_size / 4;
 
-    std::stringstream mesh_source;
-    mesh_source << R"glsl(
+    const char *mesh_source = R"glsl(
             #version 460
             #extension GL_EXT_mesh_shader : require
             layout(max_vertices = 3, max_primitives=1) out;
@@ -358,7 +357,7 @@ TEST_F(NegativeShaderMesh, MeshShaderPayloadSpecConstantSet) {
             shared int a[SIZE];
             void main(){}
         )glsl";
-    
+
     uint32_t size = max_mesh_payload_and_shared_ints / 2 + 1;
 
     VkSpecializationMapEntry map_entry;
@@ -372,7 +371,7 @@ TEST_F(NegativeShaderMesh, MeshShaderPayloadSpecConstantSet) {
     spec_info.dataSize = sizeof(uint32_t);
     spec_info.pData = &size;
 
-    VkShaderObj mesh(this, mesh_source.str().c_str(), VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_GLSL, &spec_info);
+    VkShaderObj mesh(this, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_GLSL, &spec_info);
     const auto set_info = [&](CreatePipelineHelper &helper) { helper.shader_stages_ = {mesh.GetStageCreateInfo()};};
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-maxMeshPayloadAndSharedMemorySize-08755");
 }

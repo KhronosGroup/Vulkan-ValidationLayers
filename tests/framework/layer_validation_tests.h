@@ -337,6 +337,11 @@ class ImageDrmTest : public VkLayerTest {
     std::vector<uint64_t> GetFormatModifier(VkFormat format, VkFormatFeatureFlags2 features, uint32_t plane_count = 1);
 };
 
+class MeshTest : public virtual VkLayerTest {
+  public:
+    void InitBasicMeshAndTask();
+};
+
 class QueryTest : public VkLayerTest {
   public:
     bool HasZeroTimestampValidBits();

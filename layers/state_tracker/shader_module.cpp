@@ -584,7 +584,7 @@ vvl::unordered_set<uint32_t> EntryPoint::GetAccessibleIds(const Module& module_s
     return result_ids;
 }
 
-std::vector<StageInterfaceVariable> EntryPoint::GetStageInterfaceVariables(const Module& module_state, const EntryPoint& entrypoint,
+std::vector<StageInterfaceVariable> EntryPoint::GetStageInterfaceVariables(const Module& module_state, EntryPoint& entrypoint,
                                                                            const VariableAccessMap& variable_access_map,
                                                                            const DebugNameMap& debug_name_map) {
     std::vector<StageInterfaceVariable> variables;
@@ -607,11 +607,15 @@ std::vector<StageInterfaceVariable> EntryPoint::GetStageInterfaceVariables(const
         };
         // guaranteed by spirv-val to be a OpVariable
         const Instruction& insn = *module_state.FindDef(interface_id);
+        const spv::StorageClass storage_class = (spv::StorageClass)insn.Word(3);
 
-        if (insn.Word(3) != spv::StorageClassInput && insn.Word(3) != spv::StorageClassOutput) {
-            continue;  // Only checking for input/output here
+        if (storage_class == spv::StorageClassInput || storage_class == spv::StorageClassOutput) {
+            variables.emplace_back(module_state, insn, entrypoint.stage, variable_access_map, debug_name_map);
+        } else if (storage_class == spv::StorageClassTaskPayloadWorkgroupEXT) {
+            // Payload are not quite "stage interface" as they have enough different rules how they work
+            entrypoint.task_payload_variable =
+                std::make_shared<TaskPayloadVariable>(module_state, insn, entrypoint.stage, variable_access_map, debug_name_map);
         }
-        variables.emplace_back(module_state, insn, entrypoint.stage, variable_access_map, debug_name_map);
     }
     return variables;
 }
@@ -1175,6 +1179,10 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
                 cooperative_vector_inst.push_back(&insn);
                 break;
             }
+            case spv::OpEmitMeshTasksEXT: {
+                emit_mesh_tasks_inst.push_back(&insn);
+                break;
+            }
 
             case spv::OpExtInst: {
                 if (insn.Word(4) == GLSLstd450InterpolateAtSample) {
@@ -1580,20 +1588,6 @@ uint32_t Module::CalculateWorkgroupSharedMemory() const {
             } else {
                 total_size += variable_shared_size;
             }
-        }
-    }
-    return total_size;
-}
-
-uint32_t Module::CalculateTaskPayloadMemory() const {
-    uint32_t total_size = 0;
-
-    for (const Instruction* insn : static_data_.variable_inst) {
-        if (insn->StorageClass() == spv::StorageClassTaskPayloadWorkgroupEXT) {
-            const Instruction* type = GetVariablePointerType(*insn);
-            const uint32_t variable_shared_size = GetTypeBytesSize(type);
-
-            total_size += variable_shared_size;
         }
     }
     return total_size;
@@ -2220,6 +2214,17 @@ PushConstantVariable::PushConstantVariable(const Module& module_state, const Ins
     auto struct_size = type_struct_info->GetSize(module_state);
     offset = struct_size.offset;
     size = struct_size.size;
+}
+
+TaskPayloadVariable::TaskPayloadVariable(const Module& module_state, const Instruction& insn, VkShaderStageFlagBits stage,
+                                         const VariableAccessMap& variable_access_map, const DebugNameMap& debug_name_map)
+    : VariableBase(module_state, insn, stage, variable_access_map, debug_name_map), size(0) {
+    if (module_state.static_data_.has_specialization_constants) {
+        size = kInvalidValue;
+    } else {
+        const Instruction* type = module_state.GetVariablePointerType(insn);
+        size = module_state.GetTypeBytesSize(type);
+    }
 }
 
 TypeStructInfo::TypeStructInfo(const Module& module_state, const Instruction& struct_insn)

@@ -1263,18 +1263,33 @@ bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const vvl::Pipeline &pipeli
 
 bool CoreChecks::ValidateGraphicsPipelineMeshTask(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
     bool skip = false;
-    const bool has_mesh = (pipeline.active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT) != 0;
-    const bool has_task = (pipeline.active_shaders & VK_SHADER_STAGE_TASK_BIT_EXT) != 0;
-    if (has_mesh && has_task) {
-        for (const auto &stage : pipeline.stage_states) {
-            if (stage.GetStage() == VK_SHADER_STAGE_MESH_BIT_EXT && stage.spirv_state &&
-                stage.spirv_state->static_data_.has_builtin_draw_index) {
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-09631", device, create_info_loc,
-                                 "The pipeline is being created with a Task and Mesh shader bound, but the Mesh Shader "
-                                 "uses DrawIndex (gl_DrawID) which will be an undefined value when reading.");
-            }
+
+    const ShaderStageState *task_state = nullptr;
+    const ShaderStageState *mesh_state = nullptr;
+    for (const auto &stage_state : pipeline.stage_states) {
+        const VkShaderStageFlagBits stage = stage_state.GetStage();
+        if (stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
+            mesh_state = &stage_state;
+        } else if (stage == VK_SHADER_STAGE_TASK_BIT_EXT) {
+            task_state = &stage_state;
         }
     }
+
+    if (!mesh_state || !task_state) {
+        return skip;  // checks require optional task shader
+    }
+
+    if (mesh_state->spirv_state && mesh_state->spirv_state->static_data_.has_builtin_draw_index) {
+        // There is a dedicated equivalent for shader object
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-09631", device, create_info_loc,
+                         "The pipeline is being created with a Task and Mesh shader bound, but the Mesh Shader "
+                         "uses DrawIndex (gl_DrawID) which will be an undefined value when reading.");
+    }
+
+    if (task_state->spirv_state && mesh_state->entrypoint) {
+        skip |= ValidateTaskPayload(*task_state->spirv_state, *mesh_state->entrypoint, create_info_loc);
+    }
+
     return skip;
 }
 
