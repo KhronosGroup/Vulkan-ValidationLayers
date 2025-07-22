@@ -470,7 +470,7 @@ TEST_F(NegativeLayerSettings, NotRealSetting) {
     VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
     Monitor().ExpectSuccess(kErrorBit | kWarningBit);
     Monitor().SetDesiredWarning(
-        "The setting not_a_real_setting in VkLayerSettingsCreateInfoEXT was not recognize by the Validation Layers.");
+        "The setting \"not_a_real_setting\" in VkLayerSettingsCreateInfoEXT was not recognize by the Validation Layers.");
     RETURN_IF_SKIP(InitFramework(&create_info));
     RETURN_IF_SKIP(InitState());
     Monitor().VerifyFound();
@@ -483,7 +483,7 @@ TEST_F(NegativeLayerSettings, WrongSettingType) {
     VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
     Monitor().ExpectSuccess(kErrorBit | kWarningBit);
     Monitor().SetDesiredWarning(
-        "The setting enable_message_limit in VkLayerSettingsCreateInfoEXT was set to type VK_LAYER_SETTING_TYPE_UINT32_EXT but "
+        "The setting \"enable_message_limit\" in VkLayerSettingsCreateInfoEXT was set to type VK_LAYER_SETTING_TYPE_UINT32_EXT but "
         "requires type VK_LAYER_SETTING_TYPE_BOOL32_EXT and the value may be parsed incorrectly.");
     RETURN_IF_SKIP(InitFramework(&create_info));
     RETURN_IF_SKIP(InitState());
@@ -497,7 +497,8 @@ TEST_F(NegativeLayerSettings, WrongSettingType2) {
     VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
     Monitor().ExpectSuccess(kErrorBit | kWarningBit);
     Monitor().SetDesiredWarning(
-        "The setting thread_safety in VkLayerSettingsCreateInfoEXT was set to type VK_LAYER_SETTING_TYPE_UINT32_EXT but requires "
+        "The setting \"thread_safety\" in VkLayerSettingsCreateInfoEXT was set to type VK_LAYER_SETTING_TYPE_UINT32_EXT but "
+        "requires "
         "type VK_LAYER_SETTING_TYPE_BOOL32_EXT and the value may be parsed incorrectly.");
     RETURN_IF_SKIP(InitFramework(&create_info));
     RETURN_IF_SKIP(InitState());
@@ -513,7 +514,8 @@ TEST_F(NegativeLayerSettings, DuplicateSettings) {
     VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 2, settings};
     Monitor().ExpectSuccess(kErrorBit | kWarningBit);
     Monitor().SetDesiredWarning(
-        "The setting enable_message_limit in VkLayerSettingsCreateInfoEXT was listed twice and only the first one listed will be "
+        "The setting \"enable_message_limit\" in VkLayerSettingsCreateInfoEXT was listed twice and only the first one listed will "
+        "be "
         "recognized");
     RETURN_IF_SKIP(InitFramework(&create_info));
     RETURN_IF_SKIP(InitState());

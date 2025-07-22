@@ -1228,6 +1228,14 @@
                     ]
                 },
                 {
+                    "key": "custom_stype_list",
+                    "label": "Provide Custom SType",
+                    "type": "LIST",
+                    "description": "specify custom pNext structs using a vector of strings",
+                    "view": "HIDDEN",
+                    "default": []
+                },
+                {
                     "key": "disables",
                     "label": "Disables",
                     "description": "Specify areas of validation to be disabled",

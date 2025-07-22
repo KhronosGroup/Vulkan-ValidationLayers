@@ -445,6 +445,7 @@ target_sources(vvl PRIVATE
     utils/shader_utils.h
     layer_options.cpp
     layer_options.h
+    layer_options_validation.h
     profiling/profiling.h
 )
 get_target_property(LAYER_SOURCES vvl SOURCES)
