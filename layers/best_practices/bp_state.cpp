@@ -961,6 +961,9 @@ void CommandBufferSubState::RecordResetScopeZcullDirectionNV() {
 
     auto& scope = nv.zcull_scope;
     auto image_state = base.dev_data.Get<vvl::Image>(scope.image);
+    if (!image_state) {
+        return;
+    }
     RecordResetZcullDirectionNV(*image_state, scope.range);
 }
 
@@ -1002,6 +1005,9 @@ void CommandBufferSubState::RecordSetScopeZcullDirectionNV(ZcullDirection mode) 
 
     auto& scope = nv.zcull_scope;
     auto image_state = base.dev_data.Get<vvl::Image>(scope.image);
+    if (!image_state) {
+        return;
+    }
     RecordSetZcullDirectionNV(*image_state, scope.range, mode);
 }
 
@@ -1012,7 +1018,9 @@ void CommandBufferSubState::RecordZcullDrawNV() {
     auto& scope = nv.zcull_scope;
 
     auto image = base.dev_data.Get<vvl::Image>(scope.image);
-    if (!image) return;
+    if (!image) {
+        return;
+    }
 
     ForEachSubresource(*image, scope.range, [&scope](uint32_t layer, uint32_t level) {
         auto& subresource = scope.tree->GetState(layer, level);
