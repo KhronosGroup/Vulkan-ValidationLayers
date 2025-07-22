@@ -36,10 +36,10 @@ inst_errors_buffer;
 layout(set = kInstDefaultDescriptorSet, binding = kBindingInstActionIndex, std430) buffer ActionIndexBuffer { uint index[]; }
 inst_action_index_buffer;
 
-layout(set = kInstDefaultDescriptorSet, binding = kBindingInstCmdResourceIndex, std430) buffer CmdResourceIndexBuffer {
+layout(set = kInstDefaultDescriptorSet, binding = kBindingInstCmdResourceIndex, std430) buffer ErrorLoggerIndexBuffer {
     uint index[];
 }
-inst_cmd_resource_index_buffer;
+inst_error_logger_index_buffer;
 
 layout(set = kInstDefaultDescriptorSet, binding = kBindingInstCmdErrorsCount, std430) buffer CmdErrorsCountBuffer {
     uint errors_count[];

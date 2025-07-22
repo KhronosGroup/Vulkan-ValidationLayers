@@ -69,7 +69,7 @@ struct InstrumentationErrorBlob {
     // indexing into the VkDebugUtilsLabelEXT
     uint32_t label_command_i;
     // used to know which action command this occured at
-    uint32_t operation_index;
+    uint32_t action_command_i;
 
     // Used to know if from draw, dispatch, or traceRays
     VkPipelineBindPoint pipeline_bind_point;
