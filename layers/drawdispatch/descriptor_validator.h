@@ -52,7 +52,7 @@ class DescriptorValidator : public Logger {
                                 const uint32_t index);
     void SetSetIndexForGpuAv(uint32_t set_index) { this->set_index = set_index; }
     void SetShaderHandleForGpuAv(const VulkanTypedHandle* shader_handle) { this->shader_handle = shader_handle; }
-    void SetLocationForGpuAv(const Location& loc) { this->loc = LocationCapture(loc); }
+    void SetLocationForGpuAv(const Location& gpuav_loc);
 
   private:
     template <typename T>
@@ -88,7 +88,7 @@ class DescriptorValidator : public Logger {
     vvl::DescriptorSet& descriptor_set;
     const VkFramebuffer framebuffer;
     LocationCapture loc;
-    const DrawDispatchVuid& vuids;
+    const DrawDispatchVuid* vuids;
 
     // For GPU-AV, these can become aliased and need to be mutable between descriptor accesses
     uint32_t set_index;

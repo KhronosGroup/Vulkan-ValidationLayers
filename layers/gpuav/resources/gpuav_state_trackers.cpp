@@ -167,7 +167,7 @@ void CommandBufferSubState::ResetCBState(bool should_destroy) {
     } else {
         gpu_resources_manager.ReturnResources();
     }
-    per_command_error_loggers.clear();
+    command_error_loggers.clear();
 
     if (should_destroy && instrumentation_desc_set_layout_ != VK_NULL_HANDLE) {
         DispatchDestroyDescriptorSetLayout(gpuav_.device, instrumentation_desc_set_layout_, nullptr);
@@ -329,11 +329,12 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, const std::vector<std::s
             assert(record_size == glsl::kErrorRecordSize);
 
             while (record_size > 0 && (error_record_ptr + record_size) <= error_records_end) {
-                const uint32_t error_logger_i = error_record_ptr[glsl::kHeaderActionIdOffset] & glsl::kCommandResourceIdMask;
-                assert(error_logger_i < per_command_error_loggers.size());
-                auto &error_logger = per_command_error_loggers[error_logger_i];
+                const uint32_t error_logger_i =
+                    error_record_ptr[glsl::kHeaderActionIdErrorLoggerIdOffset] & glsl::kErrorLoggerIdMask;
+                assert(error_logger_i < command_error_loggers.size());
+                CommandErrorLogger &error_logger = command_error_loggers[error_logger_i];
                 const LogObjectList objlist(queue, VkHandle());
-                error_logger(error_record_ptr, objlist, initial_label_stack);
+                error_logger.error_logger_func(error_record_ptr, error_logger.loc, objlist, initial_label_stack);
 
                 // Next record
                 error_record_ptr += record_size;
@@ -356,7 +357,7 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, const std::vector<std::s
     }
 
     bool success = true;
-    LabelLogging label_logging = {initial_label_stack, action_cmd_i_to_label_cmd_i_map};
+    LabelLogging label_logging = {initial_label_stack};
     for (auto &on_cb_completion_func : on_cb_completion_functions) {
         success = on_cb_completion_func(gpuav_, *this, label_logging, loc);
         if (!success) {

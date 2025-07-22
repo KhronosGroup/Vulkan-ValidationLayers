@@ -92,7 +92,7 @@ void DispatchIndirect(Validator &gpuav, const Location &loc, CommandBufferSubSta
         shader_resources.indirect_buffer_binding.info = {indirect_buffer, 0, VK_WHOLE_SIZE};
 
         if (!BindShaderResources(validation_pipeline, gpuav, cb_state, cb_state.compute_index,
-                                 uint32_t(cb_state.per_command_error_loggers.size()), shader_resources)) {
+                                 uint32_t(cb_state.command_error_loggers.size()), shader_resources)) {
             return;
         }
     }
@@ -105,8 +105,8 @@ void DispatchIndirect(Validator &gpuav, const Location &loc, CommandBufferSubSta
         DispatchCmdDispatch(cb_state.VkHandle(), 1, 1, 1);
     }
 
-    CommandBufferSubState::ErrorLoggerFunc error_logger = [&gpuav, loc](const uint32_t *error_record, const LogObjectList &objlist,
-                                                                        const std::vector<std::string> &) {
+    CommandBufferSubState::ErrorLoggerFunc error_logger = [&gpuav](const uint32_t *error_record, const Location &loc,
+                                                                   const LogObjectList &objlist, const std::vector<std::string> &) {
         bool skip = false;
         using namespace glsl;
 
@@ -148,7 +148,7 @@ void DispatchIndirect(Validator &gpuav, const Location &loc, CommandBufferSubSta
         return skip;
     };
 
-    cb_state.per_command_error_loggers.emplace_back(std::move(error_logger));
+    cb_state.command_error_loggers.emplace_back(CommandBufferSubState::CommandErrorLogger{loc, std::move(error_logger)});
 }
 }  // namespace valcmd
 }  // namespace gpuav
