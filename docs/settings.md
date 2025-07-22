@@ -1,6 +1,12 @@
 # Settings
 
-[documentation has been moved](./khronos_validation_layer.md#configuring-the-validation-layer)
+[documentation for users has been moved](./khronos_validation_layer.md#configuring-the-validation-layer)
+
+## Developers
+
+For those dealing with settings while developing, it can be hard as adding a setting will involve remembering many random spots to update.
+
+To try and help relieve the pain, there is a [generate_settings.py](../scripts/generate_settings.py) file that will take the [VkLayer_khronos_validation.json.in](../layers/VkLayer_khronos_validation.json.in) and parse the settings from it and generate the other files to be checked in
 
 ## Legacy
 
