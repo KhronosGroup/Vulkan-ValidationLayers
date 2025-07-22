@@ -445,7 +445,7 @@ inline bool CoversAllLayers(const VkImageSubresourceRange& full_range, VkImageSu
 static bool SubresourceRangeIsEmpty(const VkImageSubresourceRange& range) {
     return (0 == range.aspectMask) || (0 == range.levelCount) || (0 == range.layerCount);
 }
-static bool ExtentIsEmpty(const VkExtent3D& extent) { return (0 == extent.width) || (0 == extent.height) || (0 == extent.width); }
+static bool ExtentIsEmpty(const VkExtent3D& extent) { return (0 == extent.width) || (0 == extent.height) || (0 == extent.depth); }
 
 VkOffset3D ImageRangeGenerator::GetOffset(uint32_t aspect_index) const {
     // Return the effective offset taking into account the multiplane extent divisor
