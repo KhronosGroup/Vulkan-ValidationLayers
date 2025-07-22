@@ -50,7 +50,7 @@ void GpuavLogError4(uint error_group, uint error_sub_code, uint param_0, uint pa
 
     errors_buffer[vo_idx + kHeaderShaderIdErrorOffset] = (error_group << kErrorGroupShift) | (error_sub_code << kErrorSubCodeShift);
     errors_buffer[vo_idx + kHeaderErrorRecordSizeOffset] = kErrorRecordSize;
-    errors_buffer[vo_idx + kHeaderActionIdOffset] = (action_index[0] << kActionIdShift) | resource_index[0];
+    errors_buffer[vo_idx + kHeaderActionIdErrorLoggerIdOffset] = (action_index[0] << kActionIdShift) | resource_index[0];
 
     errors_buffer[vo_idx + kPreActionParamOffset_0] = param_0;
     errors_buffer[vo_idx + kPreActionParamOffset_1] = param_1;

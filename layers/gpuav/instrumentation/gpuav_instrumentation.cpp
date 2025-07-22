@@ -476,11 +476,11 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
     InstrumentationErrorBlob instrumentation_error_blob;
     UpdateInstrumentationDescSet(gpuav, cb_state, bind_point, instrumentation_desc_set, loc, instrumentation_error_blob);
 
-    instrumentation_error_blob.operation_index = (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS)  ? cb_state.draw_index
-                                                 : (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) ? cb_state.compute_index
-                                                 : (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)
-                                                     ? cb_state.trace_rays_index
-                                                     : 0;
+    instrumentation_error_blob.action_command_i = (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS)  ? cb_state.draw_index
+                                                  : (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) ? cb_state.compute_index
+                                                  : (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)
+                                                      ? cb_state.trace_rays_index
+                                                      : 0;
 
     instrumentation_error_blob.pipeline_bind_point = bind_point;
     instrumentation_error_blob.uses_shader_object = last_bound.pipeline_state == nullptr;
@@ -517,8 +517,8 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
 
     // TODO: Using cb_state.per_command_resources.size() is kind of a hack? Worth considering passing the resource index as a
     // parameter
-    const uint32_t error_logger_i = static_cast<uint32_t>(cb_state.per_command_error_loggers.size());
-    const std::array<uint32_t, 2> dynamic_offsets = {{instrumentation_error_blob.operation_index * gpuav.indices_buffer_alignment_,
+    const uint32_t error_logger_i = static_cast<uint32_t>(cb_state.command_error_loggers.size());
+    const std::array<uint32_t, 2> dynamic_offsets = {{instrumentation_error_blob.action_command_i * gpuav.indices_buffer_alignment_,
                                                       error_logger_i * gpuav.indices_buffer_alignment_}};
     if (inst_binding_pipe_layout_state) {
         if ((uint32_t)inst_binding_pipe_layout_state->set_layouts.size() > gpuav.instrumentation_desc_set_bind_index_) {
@@ -586,7 +586,7 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
                                       static_cast<uint32_t>(dynamic_offsets.size()), dynamic_offsets.data());
     }
 
-    // We want to grab the last (current) element in descriptor_binding_commands, but as a std::vector, the refernce might be
+    // We want to grab the last (current) element in descriptor_binding_commands, but as a std::vector, the reference might be
     // garbage later, so just hold the index for later. It is possible to have no descriptor sets bound, for example if using push
     // constants.
     instrumentation_error_blob.descriptor_binding_index = vvl::kU32Max;
@@ -599,8 +599,9 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
     instrumentation_error_blob.label_command_i =
         !cb_state.base.GetLabelCommands().empty() ? uint32_t(cb_state.base.GetLabelCommands().size() - 1) : vvl::kU32Max;
 
-    CommandBufferSubState::ErrorLoggerFunc error_logger = [&gpuav, &cb_state, loc, instrumentation_error_blob](
-                                                              const uint32_t *error_record, const LogObjectList &objlist,
+    CommandBufferSubState::ErrorLoggerFunc error_logger = [&gpuav, &cb_state, instrumentation_error_blob](
+                                                              const uint32_t *error_record, const Location &loc,
+                                                              const LogObjectList &objlist,
                                                               const std::vector<std::string> &initial_label_stack) {
         bool skip = false;
         skip |=
@@ -608,8 +609,8 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
         return skip;
     };
 
-    cb_state.action_cmd_i_to_label_cmd_i_map[cb_state.action_command_count] = instrumentation_error_blob.label_command_i;
-    cb_state.per_command_error_loggers.emplace_back(error_logger);
+    cb_state.command_error_loggers.emplace_back(CommandBufferSubState::CommandErrorLogger{
+        loc, std::move(error_logger), int32_t(instrumentation_error_blob.label_command_i)});
 }
 
 void PostCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferSubState &cb_state, const LastBound &last_bound,
@@ -1142,7 +1143,7 @@ bool LogInstrumentationError(Validator &gpuav, const CommandBufferSubState &cb_s
                                                              shader_id};
         std::string debug_info_message = gpuav.GenerateDebugInfoMessage(cb_state.VkHandle(), shader_info, instrumented_shader,
                                                                         instrumentation_error_blob.pipeline_bind_point,
-                                                                        instrumentation_error_blob.operation_index);
+                                                                        instrumentation_error_blob.action_command_i);
 
         gpuav.LogError(vuid_msg.c_str(), objlist, loc_with_debug_region, "%s\n%s", error_msg.c_str(), debug_info_message.c_str());
     }

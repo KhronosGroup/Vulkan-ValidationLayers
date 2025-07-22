@@ -142,8 +142,8 @@ const uint kShaderIdMask = 0x3FFFF;
 const uint kMaxActionsPerCommandBuffer = 1u << 13;  // 8,192
 // We use a single bit mark if this descriptor was accessed or not
 const uint kPostProcessMetaMaskAccessed = 1u << 31;
-const uint kPostProcessMetaShiftActionIndex = 18;
-const uint kPostProcessMetaMaskActionIndex = 0x1FFF << kPostProcessMetaShiftActionIndex;
+const uint kPostProcessMetaShiftErrorLoggerIndex = 18;
+const uint kPostProcessMetaMaskErrorLoggerIndex = 0x1FFF << kPostProcessMetaShiftErrorLoggerIndex;
 
 #ifdef __cplusplus
 }  // namespace glsl
