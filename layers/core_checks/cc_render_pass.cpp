@@ -725,52 +725,52 @@ bool CoreChecks::ValidateFragmentDensityMapOffsetEnd(const vvl::CommandBuffer &c
 
         if (attachment_info.IsDepthOrStencil()) {
             const LogObjectList objlist(cb_state.Handle(), attachment->Handle());
-            skip |= LogError(
-                "VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pDepthStencilAttachment-06505", objlist,
-                end_info_loc.dot(Field::fragmentDensityOffsetCount),
-                "is %" PRIu32 " but %s underlying %s was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT",
-                fdm_offset_end_info.fragmentDensityOffsetCount, attachment_info.Describe(cb_state.attachment_source, i).c_str(),
-                FormatHandle(*attachment->image_state).c_str());
+            skip |= LogError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pDepthStencilAttachment-06505", objlist,
+                             end_info_loc.dot(Field::fragmentDensityOffsetCount),
+                             "is %" PRIu32
+                             " but %s underlying %s was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT",
+                             fdm_offset_end_info.fragmentDensityOffsetCount, attachment_info.Describe(cb_state, i).c_str(),
+                             FormatHandle(*attachment->image_state).c_str());
         }
 
         if (attachment_info.IsInput()) {
             const LogObjectList objlist(cb_state.Handle(), attachment->Handle());
-            skip |= LogError(
-                "VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pInputAttachments-06506", objlist,
-                end_info_loc.dot(Field::fragmentDensityOffsetCount),
-                "is %" PRIu32 " but %s underlying %s was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT",
-                fdm_offset_end_info.fragmentDensityOffsetCount, attachment_info.Describe(cb_state.attachment_source, i).c_str(),
-                FormatHandle(*attachment->image_state).c_str());
+            skip |= LogError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pInputAttachments-06506", objlist,
+                             end_info_loc.dot(Field::fragmentDensityOffsetCount),
+                             "is %" PRIu32
+                             " but %s underlying %s was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT",
+                             fdm_offset_end_info.fragmentDensityOffsetCount, attachment_info.Describe(cb_state, i).c_str(),
+                             FormatHandle(*attachment->image_state).c_str());
         }
 
         if (attachment_info.IsColor()) {
             const LogObjectList objlist(cb_state.Handle(), attachment->Handle());
-            skip |= LogError(
-                "VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pColorAttachments-06507", objlist,
-                end_info_loc.dot(Field::fragmentDensityOffsetCount),
-                "is %" PRIu32 " but %s underlying %s was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT",
-                fdm_offset_end_info.fragmentDensityOffsetCount, attachment_info.Describe(cb_state.attachment_source, i).c_str(),
-                FormatHandle(*attachment->image_state).c_str());
+            skip |= LogError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pColorAttachments-06507", objlist,
+                             end_info_loc.dot(Field::fragmentDensityOffsetCount),
+                             "is %" PRIu32
+                             " but %s underlying %s was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT",
+                             fdm_offset_end_info.fragmentDensityOffsetCount, attachment_info.Describe(cb_state, i).c_str(),
+                             FormatHandle(*attachment->image_state).c_str());
         }
 
         if (attachment_info.IsResolve()) {
             const LogObjectList objlist(cb_state.Handle(), attachment->Handle());
-            skip |= LogError(
-                "VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pResolveAttachments-06508", objlist,
-                end_info_loc.dot(Field::fragmentDensityOffsetCount),
-                "is %" PRIu32 " but %s underlying %s was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT",
-                fdm_offset_end_info.fragmentDensityOffsetCount, attachment_info.Describe(cb_state.attachment_source, i).c_str(),
-                FormatHandle(*attachment->image_state).c_str());
+            skip |= LogError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pResolveAttachments-06508", objlist,
+                             end_info_loc.dot(Field::fragmentDensityOffsetCount),
+                             "is %" PRIu32
+                             " but %s underlying %s was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT",
+                             fdm_offset_end_info.fragmentDensityOffsetCount, attachment_info.Describe(cb_state, i).c_str(),
+                             FormatHandle(*attachment->image_state).c_str());
         }
 
         if (attachment_info.IsFragmentDensityMap()) {
             const LogObjectList objlist(cb_state.Handle(), attachment->Handle());
-            skip |= LogError(
-                "VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-fragmentDensityMapAttachment-06504", objlist,
-                end_info_loc.dot(Field::fragmentDensityOffsetCount),
-                "is %" PRIu32 " but %s underlying %s was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT",
-                fdm_offset_end_info.fragmentDensityOffsetCount, attachment_info.Describe(cb_state.attachment_source, i).c_str(),
-                FormatHandle(*attachment->image_state).c_str());
+            skip |= LogError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-fragmentDensityMapAttachment-06504", objlist,
+                             end_info_loc.dot(Field::fragmentDensityOffsetCount),
+                             "is %" PRIu32
+                             " but %s underlying %s was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT",
+                             fdm_offset_end_info.fragmentDensityOffsetCount, attachment_info.Describe(cb_state, i).c_str(),
+                             FormatHandle(*attachment->image_state).c_str());
         }
     }
 

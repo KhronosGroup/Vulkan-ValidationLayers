@@ -1007,26 +1007,6 @@ bool CoreChecks::ValidateDrawDynamicStateFragment(const LastBound& last_bound_st
     if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT) &&
             cb_state.dynamic_state_value.sample_locations_enable) {
-            if (cb_state.HasValidDepthAttachment()) {
-                for (uint32_t i = 0; i < cb_state.active_attachments.size(); i++) {
-                    const auto& attachment_info = cb_state.active_attachments[i];
-                    const auto* attachment = attachment_info.image_view;
-                    if (attachment && attachment->create_info.subresourceRange.aspectMask &
-                                          (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
-                        if ((attachment->image_state->create_info.flags &
-                             VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT) == 0) {
-                            const LogObjectList objlist(cb_state.Handle(), frag_spirv_state->handle());
-                            skip |= LogError(vuid.sample_locations_enable_07484, objlist, vuid.loc(),
-                                             "Sample locations are enabled, but %s (%s created with %s) was not created with "
-                                             "VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT.",
-                                             attachment_info.Describe(cb_state.attachment_source, i).c_str(),
-                                             FormatHandle(attachment->Handle()).c_str(),
-                                             FormatHandle(attachment->image_state->Handle()).c_str());
-                        }
-                        break;
-                    }
-                }
-            }
             if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT) &&
                 cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT)) {
                 const VkSampleCountFlagBits rasterization_samples = last_bound_state.GetRasterizationSamples();
@@ -1157,11 +1137,11 @@ bool CoreChecks::ValidateDrawDynamicStateValue(const LastBound& last_bound_state
                 const auto* attachment = attachment_info.image_view;
                 if (attachment && (attachment_info.IsColor() || attachment_info.IsDepthOrStencil()) &&
                     rasterization_samples != attachment->samples) {
-                    skip |= LogError(vuid.set_rasterization_samples_08644, cb_state.Handle(), vuid.loc(),
-                                     "%s was created with %s but the last call to vkCmdSetRasterizationSamplesEXT was set to %s.",
-                                     attachment_info.Describe(cb_state.attachment_source, i).c_str(),
-                                     string_VkSampleCountFlagBits(attachment->samples),
-                                     string_VkSampleCountFlagBits(rasterization_samples));
+                    skip |=
+                        LogError(vuid.set_rasterization_samples_08644, cb_state.Handle(), vuid.loc(),
+                                 "%s was created with %s but the last call to vkCmdSetRasterizationSamplesEXT was set to %s.",
+                                 attachment_info.Describe(cb_state, i).c_str(), string_VkSampleCountFlagBits(attachment->samples),
+                                 string_VkSampleCountFlagBits(rasterization_samples));
                 }
             }
         }
@@ -1195,7 +1175,7 @@ bool CoreChecks::ValidateDrawDynamicStateValue(const LastBound& last_bound_state
                         vuid.color_write_mask_09116, cb_state.Handle(), vuid.loc(),
                         "%s has format VK_FORMAT_E5B9G9R9_UFLOAT_PACK32, but vkCmdSetColorWriteMaskEXT::pColorWriteMasks[%" PRIu32
                         "] is %s.",
-                        attachment_info.Describe(cb_state.attachment_source, i).c_str(), attachment_info.color_index,
+                        attachment_info.Describe(cb_state, i).c_str(), attachment_info.color_index,
                         string_VkColorComponentFlags(color_write_mask).c_str());
                 }
             }

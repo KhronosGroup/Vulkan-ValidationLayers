@@ -769,10 +769,22 @@ std::vector<vvl::ShaderObject *> LastBound::GetAllBoundGraphicsShaders() {
 }
 
 bool LastBound::IsAnyGraphicsShaderBound() const {
-    return IsValidShaderBound(ShaderObjectStage::VERTEX) || IsValidShaderBound(ShaderObjectStage::TESSELLATION_CONTROL) ||
-           IsValidShaderBound(ShaderObjectStage::TESSELLATION_EVALUATION) || IsValidShaderBound(ShaderObjectStage::GEOMETRY) ||
-           IsValidShaderBound(ShaderObjectStage::FRAGMENT) || IsValidShaderBound(ShaderObjectStage::TASK) ||
-           IsValidShaderBound(ShaderObjectStage::MESH);
+    if (pipeline_state) {
+        return (pipeline_state->active_shaders & kShaderStageAllGraphics) != 0;
+    } else {
+        return IsValidShaderBound(ShaderObjectStage::VERTEX) || IsValidShaderBound(ShaderObjectStage::TESSELLATION_CONTROL) ||
+               IsValidShaderBound(ShaderObjectStage::TESSELLATION_EVALUATION) || IsValidShaderBound(ShaderObjectStage::GEOMETRY) ||
+               IsValidShaderBound(ShaderObjectStage::FRAGMENT) || IsValidShaderBound(ShaderObjectStage::TASK) ||
+               IsValidShaderBound(ShaderObjectStage::MESH);
+    }
+}
+
+bool LastBound::IsFragmentBound() const {
+    if (pipeline_state) {
+        return (pipeline_state->active_shaders & VK_SHADER_STAGE_FRAGMENT_BIT) != 0;
+    } else {
+        return IsValidShaderBound(ShaderObjectStage::FRAGMENT);
+    }
 }
 
 VkShaderStageFlags LastBound::GetAllActiveBoundStages() const {

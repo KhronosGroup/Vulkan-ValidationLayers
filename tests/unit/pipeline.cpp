@@ -3934,3 +3934,95 @@ TEST_F(NegativePipeline, Viewport) {
         CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit, test_case.vuids);
     }
 }
+
+TEST_F(NegativePipeline, SampleLocationsDynamicRendering) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceSampleLocationsPropertiesEXT sample_locations_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(sample_locations_props);
+
+    if ((sample_locations_props.sampleLocationSampleCounts & VK_SAMPLE_COUNT_1_BIT) == 0) {
+        GTEST_SKIP() << "VK_SAMPLE_COUNT_1_BIT sampleLocationSampleCounts is not supported";
+    }
+
+    const VkFormat depth_format = FindSupportedDepthStencilFormat(Gpu());
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::Image depth_image(*m_device, image_ci, vkt::set_layout);
+
+    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+    vkt::Image color_image(*m_device, 128, 128, color_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+
+    vkt::ImageView color_view = color_image.CreateView();
+    vkt::ImageView depth_view = depth_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    VkMultisamplePropertiesEXT multisample_prop = vku::InitStructHelper();
+    vk::GetPhysicalDeviceMultisamplePropertiesEXT(Gpu(), VK_SAMPLE_COUNT_1_BIT, &multisample_prop);
+    // 1 from VK_SAMPLE_COUNT_1_BIT
+    const uint32_t valid_count =
+        multisample_prop.maxSampleLocationGridSize.width * multisample_prop.maxSampleLocationGridSize.height * 1;
+
+    if (valid_count <= 1) {
+        GTEST_SKIP() << "Need a maxSampleLocationGridSize width x height greater than 1";
+    }
+
+    std::vector<VkSampleLocationEXT> sample_location(valid_count, {0.5, 0.5});
+    VkSampleLocationsInfoEXT sample_locations_info = vku::InitStructHelper();
+    sample_locations_info.sampleLocationsPerPixel = VK_SAMPLE_COUNT_1_BIT;
+    sample_locations_info.sampleLocationGridSize = multisample_prop.maxSampleLocationGridSize;
+    sample_locations_info.sampleLocationsCount = valid_count;
+    sample_locations_info.pSampleLocations = sample_location.data();
+
+    VkPipelineSampleLocationsStateCreateInfoEXT sample_location_state = vku::InitStructHelper();
+    sample_location_state.sampleLocationsEnable = VK_TRUE;
+    sample_location_state.sampleLocationsInfo = sample_locations_info;
+
+    VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = vku::InitStructHelper(&sample_location_state);
+    pipe_ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    pipe_ms_state_ci.sampleShadingEnable = 0;
+    pipe_ms_state_ci.minSampleShading = 1.0;
+    pipe_ms_state_ci.pSampleMask = nullptr;
+
+    VkPipelineDepthStencilStateCreateInfo pipe_ds_state_ci = vku::InitStructHelper();
+    pipe_ds_state_ci.depthTestEnable = VK_TRUE;
+    pipe_ds_state_ci.stencilTestEnable = VK_FALSE;
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+    pipeline_rendering_info.depthAttachmentFormat = depth_format;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.ms_ci_ = pipe_ms_state_ci;
+    pipe.gp_ci_.pDepthStencilState = &pipe_ds_state_ci;
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.imageView = color_view;
+    VkRenderingAttachmentInfo depth_attachment = vku::InitStructHelper();
+    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    depth_attachment.imageView = depth_view;
+
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+    begin_rendering_info.pDepthAttachment = &depth_attachment;
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(begin_rendering_info);
+    vkt::Buffer vbo(*m_device, sizeof(float) * 3, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    vk::CmdBindVertexBuffers(m_command_buffer, 1, 1, &vbo.handle(), &kZeroDeviceSize);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-sampleLocationsEnable-02689");
+    vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
