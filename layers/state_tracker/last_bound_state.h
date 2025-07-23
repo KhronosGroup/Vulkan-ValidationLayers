@@ -142,6 +142,7 @@ struct LastBound {
     bool IsValidShaderOrNullBound(ShaderObjectStage stage) const;
     std::vector<vvl::ShaderObject *> GetAllBoundGraphicsShaders();
     bool IsAnyGraphicsShaderBound() const;
+    bool IsFragmentBound() const;
     VkShaderStageFlags GetAllActiveBoundStages() const;
     bool IsBoundSetCompatible(uint32_t set, const vvl::PipelineLayout &pipeline_layout) const;
     bool IsBoundSetCompatible(uint32_t set, const vvl::ShaderObject &shader_object_state) const;

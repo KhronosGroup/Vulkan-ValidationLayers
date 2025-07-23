@@ -1352,6 +1352,7 @@ bool CoreChecks::ValidateActionState(const LastBound &last_bound_state, const Dr
         skip |= ValidateDrawProtectedMemory(last_bound_state, vuid);
         skip |= ValidateDrawFragmentShadingRate(last_bound_state, vuid);
         skip |= ValidateDrawAttachmentColorBlend(last_bound_state, vuid);
+        skip |= ValidateDrawAttachmentSampleLocation(last_bound_state, vuid);
 
         if (cb_state.active_render_pass && cb_state.active_render_pass->UsesDynamicRendering()) {
             skip |= ValidateDrawDynamicRenderingFsOutputs(last_bound_state, *cb_state.active_render_pass, loc);
@@ -1927,8 +1928,7 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
             skip |= LogError(vuid.blend_enable_04727, objlist, vuid.loc(),
                              "%s was created with %s which does not have VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT, but %s\n"
                              "(supported features: %s)",
-                             attachment_info.Describe(cb_state.attachment_source, i).c_str(),
-                             string_VkFormat(attachment->create_info.format),
+                             attachment_info.Describe(cb_state, i).c_str(), string_VkFormat(attachment->create_info.format),
                              last_bound_state.DescribeColorBlendEnabled(color_index).c_str(),
                              string_VkFormatFeatureFlags2(attachment->format_features).c_str());
         }
@@ -1946,7 +1946,7 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
                                  IsExtEnabled(extensions.vk_ext_blend_operation_advanced)
                                      ? "Either vkCmdSetColorBlendEquationEXT or vkCmdSetColorBlendAdvancedEXT"
                                      : "vkCmdSetColorBlendEquationEXT",
-                                 color_index, attachment_info.Describe(cb_state.attachment_source, i).c_str(),
+                                 color_index, attachment_info.Describe(cb_state, i).c_str(),
                                  last_bound_state.DescribeColorBlendEnabled(color_index).c_str());
             }
         } else if (dynamic_equation) {
@@ -1956,7 +1956,7 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
                 skip |= LogError(vuid.dynamic_color_blend_equation_10862, objlist, vuid.loc(),
                                  "The pipeline was created with VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT, but "
                                  "vkCmdSetColorBlendEquationEXT was never set for color attachment index %" PRIu32 " (%s).%s\n%s",
-                                 color_index, attachment_info.Describe(cb_state.attachment_source, i).c_str(),
+                                 color_index, attachment_info.Describe(cb_state, i).c_str(),
                                  cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT).c_str(),
                                  last_bound_state.DescribeColorBlendEnabled(color_index).c_str());
             }
@@ -1967,7 +1967,7 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
                 skip |= LogError(vuid.dynamic_color_blend_equation_10863, objlist, vuid.loc(),
                                  "The pipeline was created with VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT, but "
                                  "vkCmdSetColorBlendAdvancedEXT was never set for color attachment index %" PRIu32 " (%s).%s\n%s",
-                                 color_index, attachment_info.Describe(cb_state.attachment_source, i).c_str(),
+                                 color_index, attachment_info.Describe(cb_state, i).c_str(),
                                  cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT).c_str(),
                                  last_bound_state.DescribeColorBlendEnabled(color_index).c_str());
             }
@@ -1982,7 +1982,7 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
                                  "vkCmdSetColorBlendAdvancedEXT has set color attachment index %" PRIu32
                                  " (%s) to advanced blending, but the total active color attachment count (%zu) is greater than "
                                  "advancedBlendMaxColorAttachments (%" PRIu32 ").%s\n%s",
-                                 color_index, attachment_info.Describe(cb_state.attachment_source, i).c_str(),
+                                 color_index, attachment_info.Describe(cb_state, i).c_str(),
                                  cb_state.active_color_attachments_index.size(),
                                  phys_dev_ext_props.blend_operation_advanced_props.advancedBlendMaxColorAttachments,
                                  cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT).c_str(),
@@ -1999,7 +1999,7 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
                                  "%svkCmdSetBlendConstants was never called, but color attachment index %" PRIu32
                                  " (%s) has blending enabled (%s), and the blend factor is constant.\n%s\n%s",
                                  has_pipeline ? "VK_DYNAMIC_STATE_BLEND_CONSTANT state is dynamic, " : "", color_index,
-                                 attachment_info.Describe(cb_state.attachment_source, i).c_str(),
+                                 attachment_info.Describe(cb_state, i).c_str(),
                                  last_bound_state.DescribeColorBlendEnabled(color_index).c_str(),
                                  last_bound_state.DescribeBlendFactorEquation(color_index).c_str(),
                                  cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_BLEND_CONSTANTS).c_str());
@@ -2013,11 +2013,42 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
                                  "color attachment index %" PRIu32
                                  " (%s) is using Dual-Source Blending, but the largest output fragment Location (%" PRIu32
                                  ") is not less than maxFragmentDualSrcAttachments (%" PRIu32 ").\n%s\n%s",
-                                 color_index, attachment_info.Describe(cb_state.attachment_source, i).c_str(),
-                                 max_fragment_location, phys_dev_props.limits.maxFragmentDualSrcAttachments,
+                                 color_index, attachment_info.Describe(cb_state, i).c_str(), max_fragment_location,
+                                 phys_dev_props.limits.maxFragmentDualSrcAttachments,
                                  last_bound_state.DescribeColorBlendEnabled(color_index).c_str(),
                                  last_bound_state.DescribeBlendFactorEquation(color_index).c_str());
                 break;
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateDrawAttachmentSampleLocation(const LastBound &last_bound_state, const vvl::DrawDispatchVuid &vuid) const {
+    bool skip = false;
+    if (!last_bound_state.IsFragmentBound()) {
+        return skip;
+    }
+
+    const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
+    if (last_bound_state.IsSampleLocationsEnable()) {
+        for (uint32_t i = 0; i < cb_state.active_attachments.size(); i++) {
+            const auto &attachment_info = cb_state.active_attachments[i];
+            const auto *attachment = attachment_info.image_view;
+            if (!attachment || !attachment_info.IsDepth()) {
+                continue;
+            }
+            if ((attachment->image_state->create_info.flags & VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT) == 0) {
+                const LogObjectList objlist(cb_state.Handle(), attachment->Handle());
+                const char *err = last_bound_state.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT)
+                                      ? vuid.sample_locations_enable_07484
+                                      : vuid.sample_location_02689;
+                skip |= LogError(err, objlist, vuid.loc(),
+                                 "sampleLocationsEnable is true, but %s (%s created with %s) was not created with "
+                                 "VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT.",
+                                 attachment_info.Describe(cb_state, i).c_str(), FormatHandle(attachment->Handle()).c_str(),
+                                 FormatHandle(attachment->image_state->Handle()).c_str());
             }
         }
     }

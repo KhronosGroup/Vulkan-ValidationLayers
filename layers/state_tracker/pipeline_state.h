@@ -419,8 +419,6 @@ class Pipeline : public StateObject {
 
     const Location GetCreateFlagsLoc(const Location &create_info_loc) const;
 
-    bool SampleLocationEnabled() const { return fragment_output_state && fragment_output_state->sample_location_enabled; }
-
     static std::vector<ShaderStageState> GetStageStates(const DeviceState &state_data, const Pipeline &pipe_state,
                                                         spirv::StatelessData *stateless_data);
 

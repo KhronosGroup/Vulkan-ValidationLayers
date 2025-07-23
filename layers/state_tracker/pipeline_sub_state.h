@@ -182,19 +182,6 @@ struct FragmentShaderState : public PipelineSubState {
                                       spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]);
 };
 
-template <typename CreateInfo>
-static bool IsSampleLocationEnabled(const CreateInfo &create_info) {
-    bool result = false;
-    if (create_info.pMultisampleState) {
-        const auto *sample_location_state =
-            vku::FindStructInPNextChain<VkPipelineSampleLocationsStateCreateInfoEXT>(create_info.pMultisampleState->pNext);
-        if (sample_location_state != nullptr) {
-            result = (sample_location_state->sampleLocationsEnable != 0);
-        }
-    }
-    return result;
-}
-
 struct FragmentOutputState : public PipelineSubState {
     using AttachmentStateVector = std::vector<VkPipelineColorBlendAttachmentState>;
 
@@ -217,7 +204,6 @@ struct FragmentOutputState : public PipelineSubState {
 
         if (create_info.pMultisampleState) {
             ms_state = ToSafeMultisampleState(*create_info.pMultisampleState);
-            sample_location_enabled = IsSampleLocationEnabled(create_info);
         }
 
         const auto flags2 = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfoKHR>(create_info.pNext);
@@ -238,5 +224,4 @@ struct FragmentOutputState : public PipelineSubState {
     AttachmentStateVector attachment_states;
 
     bool legacy_dithering_enabled = false;
-    bool sample_location_enabled = false;
 };

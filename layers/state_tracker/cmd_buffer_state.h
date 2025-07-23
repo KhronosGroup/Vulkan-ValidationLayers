@@ -86,6 +86,7 @@ struct AttachmentInfo {
     bool IsResolve() const { return type == Type::ColorResolve || type == Type::DepthResolve || type == Type::StencilResolve; }
     bool IsInput() const { return type == Type::Input; }
     bool IsColor() const { return type == Type::Color; }
+    bool IsDepth() const { return type == Type::Depth || type == Type::DepthStencil; }
     bool IsDepthOrStencil() const {
         return type == Type::DepthStencil || type == Type::Depth || type == Type::DepthResolve || type == Type::Stencil ||
                type == Type::StencilResolve;
@@ -93,7 +94,7 @@ struct AttachmentInfo {
     bool IsFragmentDensityMap() const { return type == Type::FragmentDensityMap; }
     bool IsFragmentShadingRate() const { return type == Type::FragmentShadingRate; }
 
-    std::string Describe(AttachmentSource source, uint32_t index) const;
+    std::string Describe(const vvl::CommandBuffer &cb_state, uint32_t index) const;
 };
 
 struct SubpassInfo {
@@ -679,7 +680,6 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     // used for non-color types
     uint32_t GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type type) const;
 
-    bool HasValidDepthAttachment() const;
     bool HasExternalFormatResolveAttachment() const;
 
     inline void BindLastBoundPipeline(vvl::BindPoint bind_point, vvl::Pipeline *pipe_state) {

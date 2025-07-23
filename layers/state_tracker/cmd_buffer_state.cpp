@@ -50,7 +50,7 @@ static ShaderObjectStage inline ConvertToShaderObjectStage(VkShaderStageFlagBits
 // For Traditional RenderPasses, the index is simply the index into the VkRenderPassCreateInfo::pAttachments,
 // but for dynamic rendering, there is no "standard" way to map the index, instead we have our own custom indexing and it is not
 // obvious at all to the user where it came from
-std::string AttachmentInfo::Describe(AttachmentSource source, uint32_t index) const {
+std::string AttachmentInfo::Describe(const vvl::CommandBuffer &cb_state, uint32_t index) const {
     std::ostringstream ss;
     auto type_string = [](Type type) {
         switch (type) {
@@ -80,7 +80,7 @@ std::string AttachmentInfo::Describe(AttachmentSource source, uint32_t index) co
         return "Unknown Type";
     };
 
-    if (source == AttachmentSource::DynamicRendering) {
+    if (cb_state.attachment_source == AttachmentSource::DynamicRendering) {
         ss << "VkRenderingInfo::";
         if (type == Type::Color) {
             ss << "pColorAttachments[" << index << "].imageView";
@@ -101,7 +101,8 @@ std::string AttachmentInfo::Describe(AttachmentSource source, uint32_t index) co
             ss << "pNext<VkRenderingFragmentShadingRateAttachmentInfoKHR>.imageView";
         }
     } else {
-        ss << "VkRenderPassCreateInfo::pAttachments[" << index << "] (" << type_string(type) << ")";
+        ss << "VkRenderPassCreateInfo::pAttachments[" << index << "] (" << type_string(type) << ") (Subpass "
+           << cb_state.GetActiveSubpass() << ")";
     }
     return ss.str();
 }
@@ -1991,19 +1992,6 @@ uint32_t CommandBuffer::GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type 
             assert(false);
     }
     return 0;
-}
-
-bool CommandBuffer::HasValidDepthAttachment() const {
-    if (active_render_pass) {
-        if (active_render_pass->use_dynamic_rendering_inherited) {
-            return active_render_pass->inheritance_rendering_info.depthAttachmentFormat != VK_FORMAT_UNDEFINED;
-        } else if (active_render_pass->use_dynamic_rendering) {
-            return active_render_pass->dynamic_rendering_begin_rendering_info.pDepthAttachment != nullptr;
-        } else {
-            return active_render_pass->UsesDepthStencilAttachment(GetActiveSubpass());
-        }
-    }
-    return false;
 }
 
 bool CommandBuffer::HasExternalFormatResolveAttachment() const {
