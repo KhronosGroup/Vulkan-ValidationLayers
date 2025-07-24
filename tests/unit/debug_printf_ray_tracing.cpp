@@ -43,95 +43,6 @@ class NegativeDebugPrintfRayTracing : public DebugPrintfTests {
             GTEST_SKIP() << "Currently disabled for Portability";
         }
     }
-
-    // Build Top Level Acceleration Structure:
-    // 2 instances of the cube, at different positions
-    // clang-format off
-    /*
-        cube instance 2, translation (x = 0, y = 0, z = 50)
-        +----+
-        |  2 |
-        +----+
-
-           Z
-           ^
-           |            +----+
-           +---> X      |  1 | cube instance 1, translation (x = 50, y = 0, z = 0)
-                        +----+
-     */
-    // clang-format on
-    vkt::as::BuildGeometryInfoKHR GetCubesTLAS(std::shared_ptr<vkt::as::BuildGeometryInfoKHR>& out_cube_blas) {
-        vkt::as::GeometryKHR cube(vkt::as::blueprint::GeometryCubeOnDeviceInfo(*m_device));
-        out_cube_blas = std::make_shared<vkt::as::BuildGeometryInfoKHR>(
-            vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(cube)));
-
-        // Build Bottom Level Acceleration Structure
-        m_command_buffer.Begin();
-        out_cube_blas->BuildCmdBuffer(m_command_buffer);
-        m_command_buffer.End();
-
-        m_default_queue->Submit(m_command_buffer);
-        m_device->Wait();
-
-        vkt::as::BuildGeometryInfoKHR tlas(m_device);
-
-        tlas.SetType(VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR);
-        tlas.SetBuildType(VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR);
-        tlas.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR);
-
-        std::vector<vkt::as::GeometryKHR> cube_instances(1);
-        cube_instances[0].SetType(vkt::as::GeometryKHR::Type::Instance);
-
-        VkAccelerationStructureInstanceKHR cube_instance_1{};
-        cube_instance_1.transform.matrix[0][0] = 1.0f;
-        cube_instance_1.transform.matrix[1][1] = 1.0f;
-        cube_instance_1.transform.matrix[2][2] = 1.0f;
-        cube_instance_1.transform.matrix[0][3] = 50.0f;
-        cube_instance_1.transform.matrix[1][3] = 0.0f;
-        cube_instance_1.transform.matrix[2][3] = 0.0f;
-        cube_instance_1.mask = 0xff;
-        cube_instance_1.instanceCustomIndex = 0;
-        // Cube instance 1 will be associated to closest hit shader 1
-        cube_instance_1.instanceShaderBindingTableRecordOffset = 0;
-        cube_instances[0].AddInstanceDeviceAccelStructRef(*m_device, out_cube_blas->GetDstAS()->handle(), cube_instance_1);
-
-        VkAccelerationStructureInstanceKHR cube_instance_2{};
-        cube_instance_2.transform.matrix[0][0] = 1.0f;
-        cube_instance_2.transform.matrix[1][1] = 1.0f;
-        cube_instance_2.transform.matrix[2][2] = 1.0f;
-        cube_instance_2.transform.matrix[0][3] = 0.0f;
-        cube_instance_2.transform.matrix[1][3] = 0.0f;
-        cube_instance_2.transform.matrix[2][3] = 50.0f;
-        cube_instance_2.mask = 0xff;
-        cube_instance_2.instanceCustomIndex = 0;
-        // Cube instance 2 will be associated to closest hit shader 2
-        cube_instance_2.instanceShaderBindingTableRecordOffset = 1;
-        cube_instances[0].AddInstanceDeviceAccelStructRef(*m_device, out_cube_blas->GetDstAS()->handle(), cube_instance_2);
-
-        tlas.SetGeometries(std::move(cube_instances));
-        tlas.SetBuildRanges(tlas.GetBuildRangeInfosFromGeometries());
-
-        // Set source and destination acceleration structures info. Does not create handles, it is done in Build()
-        tlas.SetSrcAS(vkt::as::blueprint::AccelStructNull(*m_device));
-        auto dstAsSize = tlas.GetSizeInfo().accelerationStructureSize;
-        auto dst_as = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, dstAsSize);
-        dst_as->SetType(VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR);
-        tlas.SetDstAS(std::move(dst_as));
-        tlas.SetUpdateDstAccelStructSizeBeforeBuild(true);
-
-        tlas.SetInfoCount(1);
-        tlas.SetNullInfos(false);
-        tlas.SetNullBuildRangeInfos(false);
-
-        m_command_buffer.Begin();
-        tlas.BuildCmdBuffer(m_command_buffer);
-        m_command_buffer.End();
-
-        m_default_queue->Submit(m_command_buffer);
-        m_device->Wait();
-
-        return tlas;
-    }
 };
 
 TEST_F(NegativeDebugPrintfRayTracing, Raygen) {
@@ -525,7 +436,7 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRays) {
     RETURN_IF_SKIP(InitState());
 
     std::shared_ptr<vkt::as::BuildGeometryInfoKHR> cube_blas;
-    vkt::as::BuildGeometryInfoKHR tlas = GetCubesTLAS(cube_blas);
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::GetCubesTLAS(*m_device, m_command_buffer, *m_default_queue, cube_blas);
 
     // Buffer used to count invocations for the 2 * 3 shaders
     vkt::Buffer debug_buffer(*m_device, 2 * 3 * sizeof(uint32_t),
@@ -717,7 +628,7 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndi
     RETURN_IF_SKIP(InitState());
 
     std::shared_ptr<vkt::as::BuildGeometryInfoKHR> cube_blas;
-    vkt::as::BuildGeometryInfoKHR tlas = GetCubesTLAS(cube_blas);
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::GetCubesTLAS(*m_device, m_command_buffer, *m_default_queue, cube_blas);
 
     // Buffer used to count invocations for the 2 * 3 shaders
     vkt::Buffer debug_buffer(*m_device, 2 * 3 * sizeof(uint32_t),
@@ -806,7 +717,8 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndi
             printf("In Closest Hit 1");
             InterlockedAdd(debug_buffer[4], 1);
             const float3 barycentric_coords = float3(1.0f - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x,
-                attr.barycentrics.y); payload.hit = barycentric_coords;
+                attr.barycentrics.y); 
+            payload.hit = barycentric_coords;
         
             RayPayload ray_payload = { float3(0) };
             RayDesc ray;
@@ -908,7 +820,7 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndi
     RETURN_IF_SKIP(InitState());
 
     std::shared_ptr<vkt::as::BuildGeometryInfoKHR> cube_blas;
-    vkt::as::BuildGeometryInfoKHR tlas = GetCubesTLAS(cube_blas);
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::GetCubesTLAS(*m_device, m_command_buffer, *m_default_queue, cube_blas);
 
     // Buffer used to count invocations for the 2 * 3 shaders
     vkt::Buffer debug_buffer(*m_device, 2 * 3 * sizeof(uint32_t),

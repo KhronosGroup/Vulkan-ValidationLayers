@@ -15,6 +15,7 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/ray_tracing_objects.h"
 #include "../framework/gpu_av_helper.h"
+#include "../layers/gpuav/shaders/gpuav_shaders_constants.h"
 
 class NegativeGpuAVRayTracing : public GpuAVRayTracingTest {};
 
@@ -256,4 +257,586 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_BasicTraceRaysDeferredBuild) {
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
+}
+
+TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferRayGenShader) {
+    TEST_DESCRIPTION(
+        "GPU validation: Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors in a ray "
+        "generation shader");
+
+    RETURN_IF_SKIP(CheckSlangSupport());
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
+    AddRequiredFeature(vkt::Feature::descriptorBindingSampledImageUpdateAfterBind);
+    AddRequiredFeature(vkt::Feature::descriptorBindingPartiallyBound);
+    AddRequiredFeature(vkt::Feature::descriptorBindingVariableDescriptorCount);
+    AddRequiredFeature(vkt::Feature::shaderSampledImageArrayNonUniformIndexing);
+    AddRequiredFeature(vkt::Feature::shaderStorageBufferArrayNonUniformIndexing);
+    AddRequiredFeature(vkt::Feature::rayTracingPipelineTraceRaysIndirect2);
+
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    std::shared_ptr<vkt::as::BuildGeometryInfoKHR> cube_blas;
+    vkt::as::BuildGeometryInfoKHR cubes_tlas =
+        vkt::as::blueprint::GetCubesTLAS(*m_device, m_command_buffer, *m_default_queue, cube_blas);
+
+    const char *slang_shader = R"slang(
+        [[vk::binding(0, 0)]] uniform RaytracingAccelerationStructure tlas;
+        struct UniformBuffer {
+            uint ray_payload_i;
+        };
+        [[vk::binding(1, 0)]] ConstantBuffer<UniformBuffer> uniform_buffer;
+
+        [[vk::binding(2, 0)]] uniform RWStructuredBuffer<uint4> ray_payload_buffer[];
+        
+        struct RayPayload {
+            uint4 payload;
+            float3 hit;
+        };
+        
+        [shader("raygeneration")]
+        void rayGenShader()
+        {
+            RayPayload ray_payload = { ray_payload_buffer[uniform_buffer.ray_payload_i].Load(0) };
+            RayDesc ray;
+            ray.TMin = 0.01;
+            ray.TMax = 1000.0;
+        
+            ray.Origin = float3(0,0,0);
+            ray.Direction = float3(0,0,-1);
+            TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
+        }
+        
+        [shader("miss")]
+        void missShader(inout RayPayload payload)
+        {
+            payload.hit = float3(0.1, 0.2, 0.3);
+        }
+        
+        [shader("closesthit")]
+        void closestHitShader(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attr)
+        {
+            const float3 barycentric_coords = float3(1.0f - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x,
+                attr.barycentrics.y); 
+            payload.hit = barycentric_coords;
+        }
+    )slang";
+
+    vkt::rt::Pipeline pipeline(*this, m_device);
+    pipeline.AddSlangRayGenShader(slang_shader, "rayGenShader");
+    pipeline.AddSlangMissShader(slang_shader, "missShader");
+    pipeline.AddSlangClosestHitShader(slang_shader, "closestHitShader");
+
+    // Make a uniform buffer to be passed to the shader that contains the invalid array index.
+    vkt::Buffer uniform_buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+
+    // Make another buffer to populate the buffer array to be indexed
+    vkt::Buffer ray_payload_buffer(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+
+    pipeline.AddDescriptorIndexingBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
+    pipeline.AddDescriptorIndexingBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1);
+    pipeline.AddDescriptorIndexingBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT, 6);
+    pipeline.CreateDescriptorIndexingSet();
+
+    pipeline.Build();
+
+    pipeline.GetDescriptorIndexingSet().WriteDescriptorAccelStruct(0, 1, &cubes_tlas.GetDstAS()->handle());
+    pipeline.GetDescriptorIndexingSet().WriteDescriptorBufferInfo(1, uniform_buffer, 0, VK_WHOLE_SIZE,
+                                                                  VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    // Intentionally not writing to 6th array element
+    for (uint32_t i = 0; i < 5; ++i) {
+        pipeline.GetDescriptorIndexingSet().WriteDescriptorBufferInfo(2, ray_payload_buffer, 0, VK_WHOLE_SIZE,
+                                                                      VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, i);
+    }
+
+    pipeline.GetDescriptorIndexingSet().UpdateDescriptorSets();
+
+    {
+        m_command_buffer.Begin();
+
+        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
+                                  &pipeline.GetDescriptorIndexingSet().set_, 0, nullptr);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
+
+        // Invoke ray gen shader 1
+        vkt::rt::TraceRaysSbt sbt_ray_gen_1 = pipeline.GetTraceRaysSbt(0);
+        vk::CmdTraceRaysKHR(m_command_buffer, &sbt_ray_gen_1.ray_gen_sbt, &sbt_ray_gen_1.miss_sbt, &sbt_ray_gen_1.hit_sbt,
+                            &sbt_ray_gen_1.callable_sbt, 1, 1, 1);
+
+        vkt::Buffer sbt_buffer_ray_gen_1 = pipeline.GetTraceRaysSbtIndirectBuffer(0, 1, 1, 1);
+        vk::CmdTraceRaysIndirect2KHR(m_command_buffer, sbt_buffer_ray_gen_1.Address());
+
+        m_command_buffer.End();
+
+        uint32_t *uniform_buffer_ptr = (uint32_t *)uniform_buffer.Memory().Map();
+
+        {
+            uniform_buffer_ptr[0] = 25;
+            SCOPED_TRACE("Out of Bounds");
+            m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysKHR-None-10068", 1);
+            m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirect2KHR-None-10068", 1);
+            m_default_queue->SubmitAndWait(m_command_buffer);
+            m_errorMonitor->VerifyFound();
+        }
+        {
+            uniform_buffer_ptr[0] = 5;
+            SCOPED_TRACE("uninitialized");
+            m_errorMonitor->SetDesiredError("08114", 3);
+            m_default_queue->SubmitAndWait(m_command_buffer);
+            m_errorMonitor->VerifyFound();
+        }
+    }
+}
+
+TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferMissShader) {
+    TEST_DESCRIPTION(
+        "GPU validation: Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors in a "
+        "miss shader");
+
+    RETURN_IF_SKIP(CheckSlangSupport());
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
+    AddRequiredFeature(vkt::Feature::descriptorBindingSampledImageUpdateAfterBind);
+    AddRequiredFeature(vkt::Feature::descriptorBindingPartiallyBound);
+    AddRequiredFeature(vkt::Feature::descriptorBindingVariableDescriptorCount);
+    AddRequiredFeature(vkt::Feature::shaderSampledImageArrayNonUniformIndexing);
+    AddRequiredFeature(vkt::Feature::shaderStorageBufferArrayNonUniformIndexing);
+
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    std::shared_ptr<vkt::as::BuildGeometryInfoKHR> cube_blas;
+    vkt::as::BuildGeometryInfoKHR cubes_tlas =
+        vkt::as::blueprint::GetCubesTLAS(*m_device, m_command_buffer, *m_default_queue, cube_blas);
+
+    const char *slang_shader = R"slang(
+        [[vk::binding(0, 0)]] uniform RaytracingAccelerationStructure tlas;
+        struct UniformBuffer {
+            uint ray_payload_i;
+        };
+        [[vk::binding(1, 0)]] ConstantBuffer<UniformBuffer> uniform_buffer;
+
+        [[vk::binding(2, 0)]] uniform RWStructuredBuffer<uint4> ray_payload_buffer[];
+        
+        struct RayPayload {
+            uint4 payload;
+            float3 hit;
+        };
+        
+        [shader("raygeneration")]
+        void rayGenShader()
+        {
+            RayPayload ray_payload = {};
+            RayDesc ray;
+            ray.TMin = 0.01;
+            ray.TMax = 1000.0;
+        
+            ray.Origin = float3(0,0,0);
+            ray.Direction = float3(0,0,-1);
+            TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
+        }
+        
+        [shader("miss")]
+        void missShader(inout RayPayload payload)
+        {
+            payload.payload = ray_payload_buffer[uniform_buffer.ray_payload_i].Load(0);
+            payload.hit = float3(0.1, 0.2, 0.3);
+        }
+        
+        [shader("closesthit")]
+        void closestHitShader(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attr)
+        {
+            const float3 barycentric_coords = float3(1.0f - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x,
+                attr.barycentrics.y); 
+            payload.hit = barycentric_coords;
+        }
+    )slang";
+
+    vkt::rt::Pipeline pipeline(*this, m_device);
+    pipeline.AddSlangRayGenShader(slang_shader, "rayGenShader");
+    pipeline.AddSlangMissShader(slang_shader, "missShader");
+    pipeline.AddSlangClosestHitShader(slang_shader, "closestHitShader");
+
+    // Make a uniform buffer to be passed to the shader that contains the invalid array index.
+    vkt::Buffer uniform_buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+
+    // Make another buffer to populate the buffer array to be indexed
+    vkt::Buffer ray_payload_buffer(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+
+    pipeline.AddDescriptorIndexingBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
+    pipeline.AddDescriptorIndexingBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1);
+    pipeline.AddDescriptorIndexingBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT, 6);
+    pipeline.CreateDescriptorIndexingSet();
+
+    pipeline.Build();
+
+    pipeline.GetDescriptorIndexingSet().WriteDescriptorAccelStruct(0, 1, &cubes_tlas.GetDstAS()->handle());
+    pipeline.GetDescriptorIndexingSet().WriteDescriptorBufferInfo(1, uniform_buffer, 0, VK_WHOLE_SIZE,
+                                                                  VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    // Intentionally not writing to 6th array element
+    for (uint32_t i = 0; i < 5; ++i) {
+        pipeline.GetDescriptorIndexingSet().WriteDescriptorBufferInfo(2, ray_payload_buffer, 0, VK_WHOLE_SIZE,
+                                                                      VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, i);
+    }
+
+    pipeline.GetDescriptorIndexingSet().UpdateDescriptorSets();
+
+    {
+        m_command_buffer.Begin();
+
+        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
+                                  &pipeline.GetDescriptorIndexingSet().set_, 0, nullptr);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
+
+        // Invoke ray gen shader 1
+        vkt::rt::TraceRaysSbt sbt_ray_gen_1 = pipeline.GetTraceRaysSbt(0);
+        vk::CmdTraceRaysKHR(m_command_buffer, &sbt_ray_gen_1.ray_gen_sbt, &sbt_ray_gen_1.miss_sbt, &sbt_ray_gen_1.hit_sbt,
+                            &sbt_ray_gen_1.callable_sbt, 1, 1, 1);
+
+        m_command_buffer.End();
+
+        uint32_t *uniform_buffer_ptr = (uint32_t *)uniform_buffer.Memory().Map();
+
+        {
+            uniform_buffer_ptr[0] = 25;
+            SCOPED_TRACE("Out of Bounds");
+            m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysKHR-None-10068", 1);
+            m_default_queue->SubmitAndWait(m_command_buffer);
+            m_errorMonitor->VerifyFound();
+        }
+        {
+            uniform_buffer_ptr[0] = 5;
+            SCOPED_TRACE("uninitialized");
+            m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysKHR-None-08114", 2);
+            m_default_queue->SubmitAndWait(m_command_buffer);
+            m_errorMonitor->VerifyFound();
+        }
+    }
+}
+
+TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferClosetHitShader) {
+    TEST_DESCRIPTION(
+        "GPU validation: Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors in a "
+        "closest hit shader");
+
+    RETURN_IF_SKIP(CheckSlangSupport());
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
+    AddRequiredFeature(vkt::Feature::descriptorBindingSampledImageUpdateAfterBind);
+    AddRequiredFeature(vkt::Feature::descriptorBindingPartiallyBound);
+    AddRequiredFeature(vkt::Feature::descriptorBindingVariableDescriptorCount);
+    AddRequiredFeature(vkt::Feature::shaderSampledImageArrayNonUniformIndexing);
+    AddRequiredFeature(vkt::Feature::shaderStorageBufferArrayNonUniformIndexing);
+
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    std::shared_ptr<vkt::as::BuildGeometryInfoKHR> cube_blas;
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::GetCubesTLAS(*m_device, m_command_buffer, *m_default_queue, cube_blas);
+
+    const char *slang_shader = R"slang(
+        [[vk::binding(0, 0)]] uniform RaytracingAccelerationStructure tlas;
+        struct UniformBuffer {
+            uint ray_payload_i;
+        };
+        [[vk::binding(1, 0)]] ConstantBuffer<UniformBuffer> uniform_buffer;
+
+        [[vk::binding(2, 0)]] uniform RWStructuredBuffer<uint4> ray_payload_buffer[];
+        
+        struct RayPayload {
+            uint4 payload;
+            float3 hit;
+        };
+        
+        [shader("raygeneration")]
+        void rayGenShader()
+        {
+            RayPayload ray_payload = {};
+            RayDesc ray;
+            ray.TMin = 0.01;
+            ray.TMax = 1000.0;
+        
+            // Will hit cube 1
+            ray.Origin = float3(0,0,0);
+            ray.Direction = float3(1,0,0);
+            TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
+        }
+        
+        [shader("miss")]
+        void missShader(inout RayPayload payload)
+        {
+            payload.hit = float3(0.1, 0.2, 0.3);
+        }
+        
+        [shader("closesthit")]
+        void closestHitShader(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attr)
+        {
+            const float3 barycentric_coords = float3(1.0f - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x,
+                attr.barycentrics.y); 
+            payload.hit = barycentric_coords;
+            payload.payload = ray_payload_buffer[uniform_buffer.ray_payload_i].Load(0);
+        }
+    )slang";
+
+    vkt::rt::Pipeline pipeline(*this, m_device);
+    pipeline.AddSlangRayGenShader(slang_shader, "rayGenShader");
+    pipeline.AddSlangMissShader(slang_shader, "missShader");
+    pipeline.AddSlangClosestHitShader(slang_shader, "closestHitShader");
+
+    // Make a uniform buffer to be passed to the shader that contains the invalid array index.
+    vkt::Buffer uniform_buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+
+    // Make another buffer to populate the buffer array to be indexed
+    vkt::Buffer ray_payload_buffer(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+
+    pipeline.AddDescriptorIndexingBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
+    pipeline.AddDescriptorIndexingBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1);
+    pipeline.AddDescriptorIndexingBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT, 6);
+    pipeline.CreateDescriptorIndexingSet();
+
+    pipeline.Build();
+
+    pipeline.GetDescriptorIndexingSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
+    pipeline.GetDescriptorIndexingSet().WriteDescriptorBufferInfo(1, uniform_buffer, 0, VK_WHOLE_SIZE,
+                                                                  VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    // Intentionally not writing to 6th array element
+    for (uint32_t i = 0; i < 5; ++i) {
+        pipeline.GetDescriptorIndexingSet().WriteDescriptorBufferInfo(2, ray_payload_buffer, 0, VK_WHOLE_SIZE,
+                                                                      VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, i);
+    }
+
+    pipeline.GetDescriptorIndexingSet().UpdateDescriptorSets();
+
+    {
+        m_command_buffer.Begin();
+
+        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
+                                  &pipeline.GetDescriptorIndexingSet().set_, 0, nullptr);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
+
+        // Invoke ray gen shader 1
+        vkt::rt::TraceRaysSbt sbt_ray_gen_1 = pipeline.GetTraceRaysSbt(0);
+        vk::CmdTraceRaysKHR(m_command_buffer, &sbt_ray_gen_1.ray_gen_sbt, &sbt_ray_gen_1.miss_sbt, &sbt_ray_gen_1.hit_sbt,
+                            &sbt_ray_gen_1.callable_sbt, 1, 1, 1);
+
+        m_command_buffer.End();
+
+        uint32_t *uniform_buffer_ptr = (uint32_t *)uniform_buffer.Memory().Map();
+
+        {
+            uniform_buffer_ptr[0] = 25;
+            SCOPED_TRACE("Out of Bounds");
+            m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysKHR-None-10068", 1);
+            m_default_queue->SubmitAndWait(m_command_buffer);
+            m_errorMonitor->VerifyFound();
+        }
+        {
+            uniform_buffer_ptr[0] = 5;
+            SCOPED_TRACE("uninitialized");
+            m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysKHR-None-08114", 2);
+            m_default_queue->SubmitAndWait(m_command_buffer);
+            m_errorMonitor->VerifyFound();
+        }
+    }
+}
+
+TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferTwoClosetHitShader) {
+    TEST_DESCRIPTION(
+        "GPU validation: Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors in two "
+        "different closest hit shaders");
+
+    RETURN_IF_SKIP(CheckSlangSupport());
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
+    AddRequiredFeature(vkt::Feature::descriptorBindingSampledImageUpdateAfterBind);
+    AddRequiredFeature(vkt::Feature::descriptorBindingPartiallyBound);
+    AddRequiredFeature(vkt::Feature::descriptorBindingVariableDescriptorCount);
+    AddRequiredFeature(vkt::Feature::shaderSampledImageArrayNonUniformIndexing);
+    AddRequiredFeature(vkt::Feature::shaderStorageBufferArrayNonUniformIndexing);
+
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    std::shared_ptr<vkt::as::BuildGeometryInfoKHR> cube_blas;
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::GetCubesTLAS(*m_device, m_command_buffer, *m_default_queue, cube_blas);
+
+    const char *slang_shader = R"slang(
+        [[vk::binding(0, 0)]] uniform RaytracingAccelerationStructure tlas;
+        struct UniformBuffer {
+            uint ray_payload_i;
+        };
+        [[vk::binding(1, 0)]] ConstantBuffer<UniformBuffer> uniform_buffer;
+
+        [[vk::binding(2, 0)]] uniform RWStructuredBuffer<uint4> ray_payload_buffer[];
+        
+        struct RayPayload {
+            uint4 payload;
+            float3 hit;
+        };
+        
+        [shader("raygeneration")]
+        void rayGenShader()
+        {
+            RayPayload ray_payload = {};
+            RayDesc ray;
+            ray.TMin = 0.01;
+            ray.TMax = 1000.0;
+        
+            // Will hit cube 1
+            ray.Origin = float3(0,0,0);
+            ray.Direction = float3(1,0,0);
+            TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
+        }
+        
+        [shader("miss")]
+        void missShader(inout RayPayload payload)
+        {
+            payload.hit = float3(0.1, 0.2, 0.3);
+        }
+        
+        [shader("closesthit")]
+        void closestHitShader(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attr)
+        {
+            const float3 barycentric_coords = float3(1.0f - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x,
+                attr.barycentrics.y); 
+            payload.hit = barycentric_coords;
+            payload.payload += ray_payload_buffer[uniform_buffer.ray_payload_i].Load(0);
+        
+            RayDesc ray;        
+            ray.TMin = 0.01;
+            ray.TMax = 1000.0;
+            const uint32_t miss_shader_i = 1;
+        
+            // Supposed to hit cube 2, and invoke closestHitShader2
+            ray.Origin = float3(0,0,0);
+            ray.Direction = float3(0,0,1);
+            TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, miss_shader_i, ray, payload);
+        }
+        
+        [shader("closesthit")]
+        void closestHitShader2(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attr)
+        {
+            const float3 barycentric_coords = float3(1.0f - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x,
+                attr.barycentrics.y); 
+            payload.hit = 999 * barycentric_coords;
+            payload.payload += ray_payload_buffer[uniform_buffer.ray_payload_i].Load(0);
+        }    
+    )slang";
+
+    vkt::rt::Pipeline pipeline(*this, m_device);
+    pipeline.AddSlangRayGenShader(slang_shader, "rayGenShader");
+    pipeline.AddSlangMissShader(slang_shader, "missShader");
+    pipeline.AddSlangClosestHitShader(slang_shader, "closestHitShader");
+    pipeline.AddSlangClosestHitShader(slang_shader, "closestHitShader2");
+
+    // Make a uniform buffer to be passed to the shader that contains the invalid array index.
+    vkt::Buffer uniform_buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+
+    // Make another buffer to populate the buffer array to be indexed
+    vkt::Buffer ray_payload_buffer(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+
+    pipeline.AddDescriptorIndexingBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
+    pipeline.AddDescriptorIndexingBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1);
+    pipeline.AddDescriptorIndexingBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT, 6);
+    pipeline.CreateDescriptorIndexingSet();
+
+    pipeline.Build();
+
+    pipeline.GetDescriptorIndexingSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
+    pipeline.GetDescriptorIndexingSet().WriteDescriptorBufferInfo(1, uniform_buffer, 0, VK_WHOLE_SIZE,
+                                                                  VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    // Intentionally not writing to 6th array element
+    for (uint32_t i = 0; i < 5; ++i) {
+        pipeline.GetDescriptorIndexingSet().WriteDescriptorBufferInfo(2, ray_payload_buffer, 0, VK_WHOLE_SIZE,
+                                                                      VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, i);
+    }
+
+    pipeline.GetDescriptorIndexingSet().UpdateDescriptorSets();
+
+    {
+        m_command_buffer.Begin();
+
+        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
+                                  &pipeline.GetDescriptorIndexingSet().set_, 0, nullptr);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
+
+        // Invoke ray gen shader 1
+        vkt::rt::TraceRaysSbt sbt_ray_gen_1 = pipeline.GetTraceRaysSbt(0);
+        vk::CmdTraceRaysKHR(m_command_buffer, &sbt_ray_gen_1.ray_gen_sbt, &sbt_ray_gen_1.miss_sbt, &sbt_ray_gen_1.hit_sbt,
+                            &sbt_ray_gen_1.callable_sbt, 1, 1, 1);
+
+        m_command_buffer.End();
+
+        uint32_t *uniform_buffer_ptr = (uint32_t *)uniform_buffer.Memory().Map();
+
+        {
+            uniform_buffer_ptr[0] = 25;
+            SCOPED_TRACE("Out of Bounds");
+            m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysKHR-None-10068", 2);
+            m_default_queue->SubmitAndWait(m_command_buffer);
+            m_errorMonitor->VerifyFound();
+        }
+        {
+            uniform_buffer_ptr[0] = 5;
+            SCOPED_TRACE("uninitialized");
+            m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysKHR-None-08114", 3);
+            m_default_queue->SubmitAndWait(m_command_buffer);
+            m_errorMonitor->VerifyFound();
+        }
+    }
 }
