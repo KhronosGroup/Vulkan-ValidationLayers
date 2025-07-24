@@ -1325,10 +1325,10 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
 }
 
 // Helper function to validate usage flags for images
-bool CoreChecks::ValidateImageUsageFlags(VkCommandBuffer cb, vvl::Image const &image_state, VkImageUsageFlags desired, bool strict,
-                                         const char *vuid, const Location &image_loc) const {
+bool CoreChecks::ValidateImageUsageFlags(VkCommandBuffer commandBuffer, vvl::Image const &image_state, VkImageUsageFlags desired,
+                                         bool strict, const char *vuid, const Location &image_loc) const {
     bool skip = false;
-    LogObjectList objlist(cb, image_state.Handle());
+    LogObjectList objlist(commandBuffer, image_state.Handle());
     bool correct_usage = false;
     if (strict) {
         correct_usage = ((image_state.create_info.usage & desired) == desired);
@@ -1344,13 +1344,13 @@ bool CoreChecks::ValidateImageUsageFlags(VkCommandBuffer cb, vvl::Image const &i
     return skip;
 }
 
-bool CoreChecks::ValidateImageFormatFeatureFlags(VkCommandBuffer cb, vvl::Image const &image_state,
+bool CoreChecks::ValidateImageFormatFeatureFlags(VkCommandBuffer commandBuffer, vvl::Image const &image_state,
                                                  VkFormatFeatureFlags2KHR desired, const Location &image_loc,
                                                  const char *vuid) const {
     bool skip = false;
     const VkFormatFeatureFlags2KHR image_format_features = image_state.format_features;
     if ((image_format_features & desired) != desired) {
-        const LogObjectList objlist(cb, image_state.Handle());
+        const LogObjectList objlist(commandBuffer, image_state.Handle());
         // Same error, but more details if it was an AHB external format
         if (image_state.HasAHBFormat()) {
             skip |= LogError(

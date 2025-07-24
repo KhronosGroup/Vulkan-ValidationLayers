@@ -1957,8 +1957,8 @@ bool CoreChecks::ValidateWriteUpdateInlineUniformBlock(const VkWriteDescriptorSe
 bool CoreChecks::ValidateWriteUpdateAccelerationStructureKHR(const VkWriteDescriptorSet &update, const Location &write_loc) const {
     bool skip = false;
 
-    const auto *pnext_struct = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureKHR>(update.pNext);
-    if (!pnext_struct) {
+    const auto *write_as = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureKHR>(update.pNext);
+    if (!write_as) {
         skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02382", device, write_loc.dot(Field::descriptorType),
                          "is VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, but the pNext chain doesn't include "
                          "VkWriteDescriptorSetAccelerationStructureKHR.\n%s",
@@ -1966,15 +1966,15 @@ bool CoreChecks::ValidateWriteUpdateAccelerationStructureKHR(const VkWriteDescri
         return skip;
     }
 
-    if (pnext_struct->accelerationStructureCount != update.descriptorCount) {
+    if (write_as->accelerationStructureCount != update.descriptorCount) {
         skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02382", device,
                          write_loc.pNext(Struct::VkWriteDescriptorSetAccelerationStructureKHR, Field::accelerationStructureCount),
-                         "(%" PRIu32 ") is not equal to descriptorCount (%" PRIu32 ").", pnext_struct->accelerationStructureCount,
+                         "(%" PRIu32 ") is not equal to descriptorCount (%" PRIu32 ").", write_as->accelerationStructureCount,
                          update.descriptorCount);
     }
 
-    for (uint32_t j = 0; j < pnext_struct->accelerationStructureCount; ++j) {
-        VkAccelerationStructureKHR as = pnext_struct->pAccelerationStructures[j];
+    for (uint32_t j = 0; j < write_as->accelerationStructureCount; ++j) {
+        VkAccelerationStructureKHR as = write_as->pAccelerationStructures[j];
         if (as == VK_NULL_HANDLE && !enabled_features.nullDescriptor) {
             skip |=
                 LogError("VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-03580", device,
@@ -2011,24 +2011,24 @@ bool CoreChecks::ValidateWriteUpdateAccelerationStructureKHR(const VkWriteDescri
 bool CoreChecks::ValidateWriteUpdateAccelerationStructureNV(const VkWriteDescriptorSet &update, const Location &write_loc) const {
     bool skip = false;
 
-    const auto *pnext_struct = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureNV>(update.pNext);
-    if (!pnext_struct || (pnext_struct->accelerationStructureCount != update.descriptorCount)) {
+    const auto *write_as = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureNV>(update.pNext);
+    if (!write_as || (write_as->accelerationStructureCount != update.descriptorCount)) {
         skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-03817", device, write_loc,
                          "If descriptorType is VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, the pNext"
                          "chain must include a VkWriteDescriptorSetAccelerationStructureNV structure whose "
                          "accelerationStructureCount %" PRIu32 " member equals descriptorCount %" PRIu32 ".",
-                         pnext_struct ? pnext_struct->accelerationStructureCount : -1, update.descriptorCount);
+                         write_as ? write_as->accelerationStructureCount : -1, update.descriptorCount);
         return skip;
     }
 
-    for (uint32_t j = 0; j < pnext_struct->accelerationStructureCount; ++j) {
-        if (pnext_struct->pAccelerationStructures[j] == VK_NULL_HANDLE && !enabled_features.nullDescriptor) {
+    for (uint32_t j = 0; j < write_as->accelerationStructureCount; ++j) {
+        if (write_as->pAccelerationStructures[j] == VK_NULL_HANDLE && !enabled_features.nullDescriptor) {
             skip |=
                 LogError("VUID-VkWriteDescriptorSetAccelerationStructureNV-pAccelerationStructures-03749", device,
                          write_loc.pNext(Struct::VkWriteDescriptorSetAccelerationStructureNV, Field::pAccelerationStructures, j),
                          "is VK_NULL_HANDLE, but the nullDescriptor feature is not enabled.");
         }
-        auto as_state = Get<vvl::AccelerationStructureNV>(pnext_struct->pAccelerationStructures[j]);
+        auto as_state = Get<vvl::AccelerationStructureNV>(write_as->pAccelerationStructures[j]);
         if (!as_state) continue;
         if (as_state->create_info.info.type != VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV) {
             skip |=
@@ -2044,14 +2044,17 @@ bool CoreChecks::ValidateWriteUpdateAccelerationStructureNV(const VkWriteDescrip
 bool CoreChecks::ValidateWriteUpdateTensor(const VkWriteDescriptorSet &update, const Location &write_loc) const {
     bool skip = false;
 
-    const auto *pnext_struct = vku::FindStructInPNextChain<VkWriteDescriptorSetTensorARM>(update.pNext);
-    if (pnext_struct == nullptr) {
+    const auto *write_as = vku::FindStructInPNextChain<VkWriteDescriptorSetTensorARM>(update.pNext);
+    if (!write_as) {
         skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-09945", device, write_loc,
                          "is missing a VkWriteDescriptorSetTensorARM in the pNext chain");
-    } else if (pnext_struct->tensorViewCount != update.descriptorCount) {
+        return skip;
+    }
+
+    if (write_as->tensorViewCount != update.descriptorCount) {
         skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-09945", device,
                          write_loc.pNext(Struct::VkWriteDescriptorSetTensorARM, Field::tensorViewCount),
-                         "(%" PRIu32 ") not equal to %s (%" PRIu32 ").", pnext_struct->tensorViewCount,
+                         "(%" PRIu32 ") not equal to %s (%" PRIu32 ").", write_as->tensorViewCount,
                          write_loc.dot(Field::descriptorCount).Fields().c_str(), update.descriptorCount);
     }
 

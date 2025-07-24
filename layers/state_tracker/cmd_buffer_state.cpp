@@ -48,6 +48,7 @@ static ShaderObjectStage inline ConvertToShaderObjectStage(VkShaderStageFlagBits
     return ShaderObjectStage::LAST;
 }
 
+// Dynamic Rendering we know it is depth only, but for VkRenderPass, we need to check incase it is a stencil only attachment
 bool AttachmentInfo::IsDepth() const {
     return type == Type::Depth ||
            (type == Type::DepthStencil && image_view && vkuFormatHasDepth(image_view->image_state->create_info.format));

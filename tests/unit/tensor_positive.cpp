@@ -9,19 +9,44 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include "containers/container_utils.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include <vector>
 
 class PositiveTensor : public TensorTest {};
 
-TEST_F(PositiveTensor, CreateTensor) {
-    TEST_DESCRIPTION("Create a tensor");
+void TensorTest::InitBasicTensor() {
     SetTargetApiVersion(VK_API_VERSION_1_4);
     AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::tensors);
     RETURN_IF_SKIP(Init());
+}
+
+VkTensorDescriptionARM TensorTest::DefaultDesc() {
+    static std::vector<int64_t> dimensions{2ul};
+    static std::vector<int64_t> strides{1l};
+    static VkTensorDescriptionARM desc = vku::InitStructHelper();
+    desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
+    desc.format = VK_FORMAT_R8_SINT;
+    desc.dimensionCount = 1;
+    desc.pDimensions = dimensions.data();
+    desc.pStrides = strides.data();
+    desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
+
+    return desc;
+}
+
+VkTensorCreateInfoARM TensorTest::DefaultCreateInfo(VkTensorDescriptionARM* desc) {
+    static VkTensorCreateInfoARM info = vku::InitStructHelper();
+    info.pDescription = desc;
+    info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    return info;
+}
+
+TEST_F(PositiveTensor, CreateTensor) {
+    TEST_DESCRIPTION("Create a tensor");
+    RETURN_IF_SKIP(InitBasicTensor());
 
     auto desc = DefaultDesc();
     auto info = DefaultCreateInfo(&desc);
@@ -31,12 +56,8 @@ TEST_F(PositiveTensor, CreateTensor) {
 
 TEST_F(PositiveTensor, ProtectedMemory) {
     TEST_DESCRIPTION("Create a protected tensor");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
     AddRequiredFeature(vkt::Feature::protectedMemory);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     auto desc = DefaultDesc();
     auto info = DefaultCreateInfo(&desc);
@@ -49,13 +70,9 @@ TEST_F(PositiveTensor, ProtectedMemory) {
 
 TEST_F(PositiveTensor, DescriptorBuffer) {
     TEST_DESCRIPTION("Create a tensor with replay capability");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
     AddRequiredFeature(vkt::Feature::descriptorBufferTensorDescriptors);
     AddRequiredFeature(vkt::Feature::descriptorBufferCaptureReplay);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     auto desc = DefaultDesc();
     auto info = DefaultCreateInfo(&desc);
@@ -81,12 +98,9 @@ TEST_F(PositiveTensor, DescriptorBuffer) {
 
 TEST_F(PositiveTensor, DispatchShader) {
     TEST_DESCRIPTION("Use a tensor in a shader");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderTensorAccess);
     AddRequiredFeature(vkt::Feature::timelineSemaphore);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     vkt::Tensor tensor(*m_device);
     tensor.BindToMem();

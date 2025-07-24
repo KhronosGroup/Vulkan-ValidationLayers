@@ -16,36 +16,11 @@
 
 class NegativeTensor : public TensorTest {};
 
-VkTensorDescriptionARM TensorTest::DefaultDesc() {
-    static std::vector<int64_t> dimensions{2ul};
-    static std::vector<int64_t> strides{1l};
-    static VkTensorDescriptionARM desc = vku::InitStructHelper();
-    desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
-    desc.format = VK_FORMAT_R8_SINT;
-    desc.dimensionCount = 1;
-    desc.pDimensions = dimensions.data();
-    desc.pStrides = strides.data();
-    desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
-
-    return desc;
-}
-
-VkTensorCreateInfoARM TensorTest::DefaultCreateInfo(VkTensorDescriptionARM* desc) {
-    static VkTensorCreateInfoARM info = vku::InitStructHelper();
-    info.pDescription = desc;
-    info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    return info;
-}
-
 TEST_F(NegativeTensor, ConcurrentTensor) {
     TEST_DESCRIPTION(
         "Try to create a tensor when sharingMode is VK_SHARING_MODE_CONCURRENT but queueFamilyIndexCount is 0 and "
         "pQueueFamilyIndices is nullptr");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     VkTensorDescriptionARM desc = DefaultDesc();
     VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
@@ -61,10 +36,7 @@ TEST_F(NegativeTensor, ConcurrentTensor) {
 TEST_F(NegativeTensor, ConcurrentTensorNonUniqueIdx) {
     TEST_DESCRIPTION(
         "Try to create a tensor when sharingMode is VK_SHARING_MODE_CONCURRENT but pQueueFamilyIndices are not unique");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     VkTensorDescriptionARM desc = DefaultDesc();
     VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
@@ -83,10 +55,7 @@ TEST_F(NegativeTensor, ConcurrentTensorLargeIdx) {
     TEST_DESCRIPTION(
         "Try to create a tensor when sharingMode is VK_SHARING_MODE_CONCURRENT and pQueueFamilyIndices are larger than what is "
         "reported by vkGetPhysicalDeviceQueueFamilyProperties");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     VkTensorDescriptionARM desc = DefaultDesc();
     VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
@@ -104,13 +73,10 @@ TEST_F(NegativeTensor, OpaqueCaptureMissingFlag) {
     TEST_DESCRIPTION(
         "Try to create a tensor passing in the VkOpaqueCaptureDescriptorDataCreateInfoEXT struct without setting the appropriate "
         "flag");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBufferTensorDescriptors);
     AddRequiredFeature(vkt::Feature::descriptorBufferCaptureReplay);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     VkTensorDescriptionARM desc = DefaultDesc();
     VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
@@ -128,11 +94,7 @@ TEST_F(NegativeTensor, OpaqueCaptureMissingFlag) {
 
 TEST_F(NegativeTensor, ProtectedMemory) {
     TEST_DESCRIPTION("Try to create a protected memory tensor when the feature is not supported");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     VkTensorDescriptionARM desc = DefaultDesc();
     VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
@@ -145,10 +107,7 @@ TEST_F(NegativeTensor, ProtectedMemory) {
 
 TEST_F(NegativeTensor, DescriptorBuffer) {
     TEST_DESCRIPTION("Try to create a descriptorBuffer tensor when the feature is not supported");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     VkTensorDescriptionARM desc = DefaultDesc();
     VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
@@ -161,10 +120,7 @@ TEST_F(NegativeTensor, DescriptorBuffer) {
 
 TEST_F(NegativeTensor, OptimalWithStrides) {
     TEST_DESCRIPTION("Try to create an optimal-tiled tensor with strides");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     VkTensorDescriptionARM desc = DefaultDesc();
     desc.tiling = VK_TENSOR_TILING_OPTIMAL_ARM;
@@ -177,10 +133,7 @@ TEST_F(NegativeTensor, OptimalWithStrides) {
 
 TEST_F(NegativeTensor, MaxTensorElements) {
     TEST_DESCRIPTION("Try to create a tensor larger than the limit");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     VkTensorDescriptionARM desc = DefaultDesc();
     VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
@@ -200,10 +153,7 @@ TEST_F(NegativeTensor, MaxTensorElements) {
 
 TEST_F(NegativeTensor, FormatFeatureLinUsage) {
     TEST_DESCRIPTION("Test creating a linear-tiled tensor where the format feature flags are not supported for the given usage");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     VkTensorDescriptionARM desc = DefaultDesc();
     VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
@@ -228,10 +178,7 @@ TEST_F(NegativeTensor, FormatFeatureLinUsage) {
 
 TEST_F(NegativeTensor, FormatFeatureOptUsage) {
     TEST_DESCRIPTION("Test creating an optimal-tiled tensor where the format feature flags are not supported for the given usage");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     VkTensorDescriptionARM desc = DefaultDesc();
     VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
@@ -258,10 +205,7 @@ TEST_F(NegativeTensor, FormatFeatureOptUsage) {
 
 TEST_F(NegativeTensor, MaxDimensionCount) {
     TEST_DESCRIPTION("Test creating a tensor where the dimensionCount is larger than the maximum");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     VkTensorDescriptionARM desc = DefaultDesc();
     VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
@@ -281,10 +225,7 @@ TEST_F(NegativeTensor, MaxDimensionCount) {
 
 TEST_F(NegativeTensor, DimensionsHaveZeros) {
     TEST_DESCRIPTION("Test creating a tensor where the one of the dimensions is zero");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     VkTensorDescriptionARM desc = DefaultDesc();
     VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
@@ -303,10 +244,7 @@ TEST_F(NegativeTensor, DimensionsHaveZeros) {
 
 TEST_F(NegativeTensor, FormatUndefined) {
     TEST_DESCRIPTION("Test creating a tensor where the format is VK_FORMAT_UNDEFINED");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     VkTensorDescriptionARM desc = DefaultDesc();
     VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
@@ -319,10 +257,7 @@ TEST_F(NegativeTensor, FormatUndefined) {
 
 TEST_F(NegativeTensor, FormatTwoComponent) {
     TEST_DESCRIPTION("Test creating a tensor where the format is two-component");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     VkTensorDescriptionARM desc = DefaultDesc();
     VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
@@ -337,10 +272,7 @@ TEST_F(NegativeTensor, FormatTwoComponent) {
 }
 TEST_F(NegativeTensor, FormatThreeComponent) {
     TEST_DESCRIPTION("Test creating a tensor where the format is three-component");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     VkTensorDescriptionARM desc = DefaultDesc();
     VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
@@ -355,10 +287,7 @@ TEST_F(NegativeTensor, FormatThreeComponent) {
 }
 TEST_F(NegativeTensor, FormatFourComponent) {
     TEST_DESCRIPTION("Test creating a tensor where the format is four-component");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     VkTensorDescriptionARM desc = DefaultDesc();
     VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
@@ -374,10 +303,7 @@ TEST_F(NegativeTensor, FormatFourComponent) {
 
 TEST_F(NegativeTensor, InnermostStrideWrongSize) {
     TEST_DESCRIPTION("Test creating a tensor where the innermost stride is not equal to the size of the tensor element in bytes");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     VkTensorDescriptionARM desc = DefaultDesc();
     VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
@@ -391,10 +317,7 @@ TEST_F(NegativeTensor, InnermostStrideWrongSize) {
 
 TEST_F(NegativeTensor, StridesNotMultiple) {
     TEST_DESCRIPTION("Test creating a tensor where the strides are not multiples of the size of tensor element in bytes");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     VkTensorDescriptionARM desc = DefaultDesc();
     VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
@@ -406,16 +329,14 @@ TEST_F(NegativeTensor, StridesNotMultiple) {
     desc.pStrides = strides.data();
 
     m_errorMonitor->SetDesiredError("VUID-VkTensorDescriptionARM-pStrides-09737");
+    m_errorMonitor->SetDesiredError("VUID-VkTensorDescriptionARM-None-09740");
     vkt::Tensor tensor(*m_device, info);
     m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeTensor, StridesExtremes) {
     TEST_DESCRIPTION("Test creating a tensor where the strides are less than or equal to zero, or greater than maxTensorStride");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     VkTensorDescriptionARM desc = DefaultDesc();
     VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
@@ -433,7 +354,7 @@ TEST_F(NegativeTensor, StridesExtremes) {
     m_errorMonitor->SetDesiredError("VUID-VkTensorDescriptionARM-pStrides-09738");
     m_errorMonitor->SetDesiredError("VUID-VkTensorDescriptionARM-pStrides-09738");
 
-    // This test also triggers VUID-VkTensorDescriptionARM-pStrides-09739
+    m_errorMonitor->SetDesiredError("VUID-VkTensorDescriptionARM-None-09740");
     m_errorMonitor->SetDesiredError("VUID-VkTensorDescriptionARM-pStrides-09739");
     m_errorMonitor->SetDesiredError("VUID-VkTensorDescriptionARM-pStrides-09739");
     vkt::Tensor tensor(*m_device, info);
@@ -442,10 +363,7 @@ TEST_F(NegativeTensor, StridesExtremes) {
 
 TEST_F(NegativeTensor, StridesOverlap) {
     TEST_DESCRIPTION("Test creating a tensor where the strides overlap");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     VkTensorDescriptionARM desc = DefaultDesc();
     VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
@@ -457,16 +375,14 @@ TEST_F(NegativeTensor, StridesOverlap) {
     desc.pStrides = strides.data();
 
     m_errorMonitor->SetDesiredError("VUID-VkTensorDescriptionARM-pStrides-09739");
+    m_errorMonitor->SetDesiredError("VUID-VkTensorDescriptionARM-None-09740");
     vkt::Tensor tensor(*m_device, info);
     m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeTensor, NonPacked) {
     TEST_DESCRIPTION("Test creating a non-packed tensor when it is not supported");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     VkPhysicalDeviceTensorFeaturesARM tensor_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(tensor_features);
@@ -488,10 +404,7 @@ TEST_F(NegativeTensor, NonPacked) {
 TEST_F(NegativeTensor, OptimalAliased) {
     TEST_DESCRIPTION(
         "Test creating an optimal tiled tensor with the IMAGE_ALIASING bit set and the innermost dimension being larger than 4");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     VkTensorDescriptionARM desc = DefaultDesc();
     VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
@@ -511,10 +424,7 @@ TEST_F(NegativeTensor, OptimalAliased) {
 
 TEST_F(NegativeTensor, LinearAliased) {
     TEST_DESCRIPTION("Test creating a linear tiled tensor with the IMAGE_ALIASING bit set");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     VkTensorDescriptionARM desc = DefaultDesc();
     VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
@@ -528,10 +438,7 @@ TEST_F(NegativeTensor, LinearAliased) {
 
 TEST_F(NegativeTensor, RebindTensor) {
     TEST_DESCRIPTION("Test binding a tensor which is already backed");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     vkt::Tensor tensor(*m_device);
 
@@ -556,10 +463,7 @@ TEST_F(NegativeTensor, RebindTensor) {
 
 TEST_F(NegativeTensor, BindTensorInvalidOffset) {
     TEST_DESCRIPTION("Test binding a tensor when the memory offset is larger than the size of the memory");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     vkt::Tensor tensor(*m_device);
 
@@ -584,10 +488,7 @@ TEST_F(NegativeTensor, BindTensorInvalidOffset) {
 
 TEST_F(NegativeTensor, BindTensorInvalidMemoryBits) {
     TEST_DESCRIPTION("Test binding a tensor where the required memory type is incorrect");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     vkt::Tensor tensor(*m_device);
 
@@ -610,10 +511,7 @@ TEST_F(NegativeTensor, BindTensorInvalidMemoryBits) {
 
 TEST_F(NegativeTensor, BindTensorOffsetNotAligned) {
     TEST_DESCRIPTION("Test binding a tensor when the memory offset is not aligned");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     vkt::Tensor tensor(*m_device);
 
@@ -636,10 +534,7 @@ TEST_F(NegativeTensor, BindTensorOffsetNotAligned) {
 
 TEST_F(NegativeTensor, BindTensorMemoryTooSmall) {
     TEST_DESCRIPTION("Test binding a tensor when the available memory is smaller than the requirements");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     vkt::Tensor tensor(*m_device);
 
@@ -680,10 +575,7 @@ TEST_F(NegativeTensor, BindTensorMemoryTooSmall) {
 
 TEST_F(NegativeTensor, BindTensorDedicatedMemoryDifferentTensor) {
     TEST_DESCRIPTION("Test binding a tensor to memory which is dedicated to a different tensor");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     vkt::Tensor tensor(*m_device);
 
@@ -719,11 +611,8 @@ TEST_F(NegativeTensor, BindTensorDedicatedMemoryDifferentTensor) {
 
 TEST_F(NegativeTensor, BindTensorNotProtectedToProtectedMemory) {
     TEST_DESCRIPTION("Test binding an unprotected tensor to protected memory");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::protectedMemory);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     auto tensor_desc = DefaultDesc();
     auto protected_tensor_info = DefaultCreateInfo(&tensor_desc);
@@ -756,11 +645,8 @@ TEST_F(NegativeTensor, BindTensorNotProtectedToProtectedMemory) {
 
 TEST_F(NegativeTensor, BindTensorProtectedToNotProtectedMemory) {
     TEST_DESCRIPTION("Test binding an protected tensor to unprotected memory");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::protectedMemory);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     auto tensor_desc = DefaultDesc();
     auto protected_tensor_info = DefaultCreateInfo(&tensor_desc);
@@ -791,10 +677,7 @@ TEST_F(NegativeTensor, BindTensorProtectedToNotProtectedMemory) {
 
 TEST_F(NegativeTensor, TensorViewFormatMismatch) {
     TEST_DESCRIPTION("Test creating a tensor view with a different format than the tensor");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
     vkt::Tensor tensor(*m_device);
     tensor.BindToMem();
 
@@ -809,10 +692,7 @@ TEST_F(NegativeTensor, TensorViewFormatMismatch) {
 
 TEST_F(NegativeTensor, TensorViewInvalidUsage) {
     TEST_DESCRIPTION("Test creating a tensor view where the usage flags for the tensor are incorrect");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
     auto tensor_desc = DefaultDesc();
     tensor_desc.usage = VK_TENSOR_USAGE_TRANSFER_SRC_BIT_ARM;
     vkt::Tensor tensor(*m_device, tensor_desc);
@@ -829,10 +709,7 @@ TEST_F(NegativeTensor, TensorViewInvalidUsage) {
 
 TEST_F(NegativeTensor, TensorViewNonSparseNotBound) {
     TEST_DESCRIPTION("Test creating a tensor view where the tensor is non-sparse and is not bound to memory");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
     vkt::Tensor tensor(*m_device);
 
     VkTensorViewCreateInfoARM tensor_view_create_info = vku::InitStructHelper();
@@ -846,10 +723,7 @@ TEST_F(NegativeTensor, TensorViewNonSparseNotBound) {
 
 TEST_F(NegativeTensor, TensorViewMutableNotCompatible) {
     TEST_DESCRIPTION("Test creating a mutable-format tensor view where the format of the tensor view is not compatible");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
     auto tensor_desc = DefaultDesc();
     auto tensor_info = DefaultCreateInfo(&tensor_desc);
     tensor_info.flags |= VK_TENSOR_CREATE_MUTABLE_FORMAT_BIT_ARM;
@@ -867,10 +741,7 @@ TEST_F(NegativeTensor, TensorViewMutableNotCompatible) {
 
 TEST_F(NegativeTensor, TensorViewDescriptorBuffer) {
     TEST_DESCRIPTION("Test creating a tensor view when the DESCRIPTOR_BUFFER is set but the feature is not available");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     vkt::Tensor tensor(*m_device);
     tensor.BindToMem();
@@ -890,13 +761,10 @@ TEST_F(NegativeTensor, TensorViewOpaqueCaptureMissingFlag) {
         "Try to create a tensor view passing in the VkOpaqueCaptureDescriptorDataCreateInfoEXT struct without setting the "
         "appropriate "
         "flag");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBufferTensorDescriptors);
     AddRequiredFeature(vkt::Feature::descriptorBufferCaptureReplay);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     vkt::Tensor tensor(*m_device);
     tensor.BindToMem();
@@ -919,10 +787,7 @@ TEST_F(NegativeTensor, TensorViewLinearMissingFeatureFlags) {
     TEST_DESCRIPTION(
         "Test creating a linear-tiled tensor where the format feature flags are not supported for the given usage"
         "flag");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     VkTensorDescriptionARM desc = DefaultDesc();
     VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
@@ -956,10 +821,7 @@ TEST_F(NegativeTensor, TensorViewOptimalMissingFeatureFlags) {
     TEST_DESCRIPTION(
         "Test creating a optimal-tiled tensor where the format feature flags are not supported for the given usage"
         "flag");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     VkTensorDescriptionARM desc = DefaultDesc();
     VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
@@ -993,10 +855,7 @@ TEST_F(NegativeTensor, TensorViewOptimalMissingFeatureFlags) {
 
 TEST_F(NegativeTensor, CopyTensorDifferentDimensionCounts) {
     TEST_DESCRIPTION("Test copying 2 tensors with different values for dimensionCount");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     auto dst_desc = DefaultDesc();
     std::vector<int64_t> dst_dimensions{2ul, 2ul, 2ul};
@@ -1031,10 +890,7 @@ TEST_F(NegativeTensor, CopyTensorDifferentDimensionCounts) {
 
 TEST_F(NegativeTensor, CopyTensorDifferentDimensions) {
     TEST_DESCRIPTION("Test copying 2 tensors with different values in pDimensions");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     auto dst_desc = DefaultDesc();
     std::vector<int64_t> dst_dimensions{1, 4, 4, 4};
@@ -1072,10 +928,7 @@ TEST_F(NegativeTensor, CopyTensorDifferentDimensions) {
 
 TEST_F(NegativeTensor, CopyTensorRegionCountTooLarge) {
     TEST_DESCRIPTION("Test copying 2 tensors where regionCount is larger than 1");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     constexpr bool is_copy_tensor = true;
     vkt::Tensor src_tensor(*m_device, is_copy_tensor);
@@ -1104,10 +957,7 @@ TEST_F(NegativeTensor, CopyTensorRegionCountTooLarge) {
 
 TEST_F(NegativeTensor, CopyTensorSrcOffsetNotAllZero) {
     TEST_DESCRIPTION("Test copying 2 tensors where pRegions->pSrcOffset is not null and not all 0's");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     constexpr bool is_copy_tensor = true;
     vkt::Tensor src_tensor(*m_device, is_copy_tensor);
@@ -1136,10 +986,7 @@ TEST_F(NegativeTensor, CopyTensorSrcOffsetNotAllZero) {
 
 TEST_F(NegativeTensor, CopyTensorDstOffsetNotAllZero) {
     TEST_DESCRIPTION("Test copying 2 tensors where pRegions->pDstOffset is not null and not all 0's");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     constexpr bool is_copy_tensor = true;
     vkt::Tensor src_tensor(*m_device, is_copy_tensor);
@@ -1168,10 +1015,7 @@ TEST_F(NegativeTensor, CopyTensorDstOffsetNotAllZero) {
 
 TEST_F(NegativeTensor, CopyTensorExtentDifferentToDimensions) {
     TEST_DESCRIPTION("Test copying 2 tensors where pRegions->pExtent does not equal the dimensions array of the tensors");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     constexpr bool is_copy_tensor = true;
     vkt::Tensor src_tensor(*m_device, is_copy_tensor);
@@ -1204,10 +1048,7 @@ TEST_F(NegativeTensor, CopyTensorExtentDifferentToDimensions) {
 
 TEST_F(NegativeTensor, CopyTensorSrcMissingFormatFeatures) {
     TEST_DESCRIPTION("Test copying 2 tensors where the src tensor format feature flags are not supported for the given usage");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     constexpr bool is_copy_tensor = true;
     vkt::Tensor src_tensor(*m_device, is_copy_tensor);
@@ -1246,10 +1087,7 @@ TEST_F(NegativeTensor, CopyTensorSrcMissingFormatFeatures) {
 
 TEST_F(NegativeTensor, CopyTensorSrcNoTransferBit) {
     TEST_DESCRIPTION("Test copying 2 tensors where the src tensor does not have the transfer bit set");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     constexpr bool is_copy_tensor = true;
     vkt::Tensor src_tensor(*m_device, !is_copy_tensor);
@@ -1276,10 +1114,7 @@ TEST_F(NegativeTensor, CopyTensorSrcNoTransferBit) {
 
 TEST_F(NegativeTensor, CopyTensorDstMissingFormatFeatures) {
     TEST_DESCRIPTION("Test copying 2 tensors where the dst tensor format feature flags are not supported for the given usage");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     constexpr bool is_copy_tensor = true;
     vkt::Tensor src_tensor(*m_device, is_copy_tensor);
@@ -1318,10 +1153,7 @@ TEST_F(NegativeTensor, CopyTensorDstMissingFormatFeatures) {
 
 TEST_F(NegativeTensor, CopyTensorDstNoTransferBit) {
     TEST_DESCRIPTION("Test copying 2 tensors where the dst tensor does not have the transfer bit set");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     constexpr bool is_copy_tensor = true;
     vkt::Tensor src_tensor(*m_device, is_copy_tensor);
@@ -1348,10 +1180,7 @@ TEST_F(NegativeTensor, CopyTensorDstNoTransferBit) {
 
 TEST_F(NegativeTensor, CopyTensorSrcNotBound) {
     TEST_DESCRIPTION("Test copying 2 tensors where the src tensor is not bound to memory");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     constexpr bool is_copy_tensor = true;
     vkt::Tensor src_tensor(*m_device, is_copy_tensor);
@@ -1377,10 +1206,7 @@ TEST_F(NegativeTensor, CopyTensorSrcNotBound) {
 
 TEST_F(NegativeTensor, CopyTensorDstNotBound) {
     TEST_DESCRIPTION("Test copying 2 tensors where the dst tensor is not bound to memory");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     constexpr bool is_copy_tensor = true;
     vkt::Tensor src_tensor(*m_device, is_copy_tensor);
@@ -1406,11 +1232,8 @@ TEST_F(NegativeTensor, CopyTensorDstNotBound) {
 
 TEST_F(NegativeTensor, DestroyTensorInUse) {
     TEST_DESCRIPTION("Test destroying a tensor while it is being used");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
     AddRequiredFeature(vkt::Feature::timelineSemaphore);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     constexpr bool is_copy_tensor = true;
     vkt::Tensor src_tensor(*m_device, is_copy_tensor);
@@ -1476,10 +1299,7 @@ TEST_F(NegativeTensor, DestroyTensorInUse) {
 
 TEST_F(NegativeTensor, DestroyTensorCreateWithDestroyWithoutCallbacks) {
     TEST_DESCRIPTION("Test destroying without callbacks a tensor which was created with callbacks");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     auto desc = DefaultDesc();
     auto info = DefaultCreateInfo(&desc);
@@ -1494,10 +1314,7 @@ TEST_F(NegativeTensor, DestroyTensorCreateWithDestroyWithoutCallbacks) {
 
 TEST_F(NegativeTensor, DestroyTensorCreateWithoutDestroyWithCallbacks) {
     TEST_DESCRIPTION("Test destroying with callbacks a tensor which was not created with callbacks");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     auto desc = DefaultDesc();
     auto info = DefaultCreateInfo(&desc);
@@ -1512,12 +1329,9 @@ TEST_F(NegativeTensor, DestroyTensorCreateWithoutDestroyWithCallbacks) {
 
 TEST_F(NegativeTensor, DestroyTensorViewInUse) {
     TEST_DESCRIPTION("Test destroying a tensor view while it is in use");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderTensorAccess);
     AddRequiredFeature(vkt::Feature::timelineSemaphore);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     vkt::Tensor tensor(*m_device);
     tensor.BindToMem();
@@ -1590,10 +1404,7 @@ TEST_F(NegativeTensor, DestroyTensorViewInUse) {
 
 TEST_F(NegativeTensor, DestroyTensorViewCreateWithDestroyWithoutCallbacks) {
     TEST_DESCRIPTION("Test destroying without callbacks a tensor view which was created with callbacks");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     vkt::Tensor tensor(*m_device);
     tensor.BindToMem();
@@ -1611,10 +1422,7 @@ TEST_F(NegativeTensor, DestroyTensorViewCreateWithDestroyWithoutCallbacks) {
 
 TEST_F(NegativeTensor, DestroyTensorViewCreateWithoutDestroyWithCallbacks) {
     TEST_DESCRIPTION("Test destroying with callbacks a tensor view which was not created with callbacks");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     vkt::Tensor tensor(*m_device);
     tensor.BindToMem();
@@ -1632,10 +1440,7 @@ TEST_F(NegativeTensor, DestroyTensorViewCreateWithoutDestroyWithCallbacks) {
 
 TEST_F(NegativeTensor, GetTensorOpaqueCaptureFeatureNotEnabled) {
     TEST_DESCRIPTION("Test getting descriptor data when the feature is not enabled");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     vkt::Tensor tensor(*m_device);
     VkTensorCaptureDescriptorDataInfoARM tensor_capture_desc_data_info = vku::InitStructHelper();
@@ -1648,13 +1453,9 @@ TEST_F(NegativeTensor, GetTensorOpaqueCaptureFeatureNotEnabled) {
 
 TEST_F(NegativeTensor, GetTensorOpaqueCaptureMissingFlag) {
     TEST_DESCRIPTION("Test getting tensor descriptor data when the flag was not set on creation");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBufferTensorDescriptors);
     AddRequiredFeature(vkt::Feature::descriptorBufferCaptureReplay);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     vkt::Tensor tensor(*m_device);
     VkTensorCaptureDescriptorDataInfoARM tensor_capture_desc_data_info = vku::InitStructHelper();
@@ -1667,10 +1468,7 @@ TEST_F(NegativeTensor, GetTensorOpaqueCaptureMissingFlag) {
 
 TEST_F(NegativeTensor, GetTensorViewOpaqueCaptureFeatureNotEnabled) {
     TEST_DESCRIPTION("Test getting descriptor data when the feature is not enabled");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     vkt::Tensor tensor(*m_device);
     tensor.BindToMem();
@@ -1692,13 +1490,10 @@ TEST_F(NegativeTensor, GetTensorViewOpaqueCaptureFeatureNotEnabled) {
 
 TEST_F(NegativeTensor, GetTensorViewOpaqueCaptureMissingFlag) {
     TEST_DESCRIPTION("Test getting tensor view descriptor data when the flag was not set on creation");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBufferTensorDescriptors);
     AddRequiredFeature(vkt::Feature::descriptorBufferCaptureReplay);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     auto tensor_desc = DefaultDesc();
     auto tensor_ci = DefaultCreateInfo(&tensor_desc);
@@ -1724,10 +1519,7 @@ TEST_F(NegativeTensor, GetTensorViewOpaqueCaptureMissingFlag) {
 TEST_F(NegativeTensor, MemoryDedicatedAllocateInfoTensorWrongAllocationSize) {
     TEST_DESCRIPTION(
         "Test allocating dedicated device memory for tensor, with allocation size not matching the tensor size requirement");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     vkt::Tensor tensor(*m_device);
 
@@ -1749,10 +1541,7 @@ TEST_F(NegativeTensor, MemoryDedicatedAllocateInfoTensorWrongAllocationSize) {
 
 TEST_F(NegativeTensor, WriteDescriptorSetTensorInfoMissing) {
     TEST_DESCRIPTION("Test writing tensors to descriptor set without a ");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     vkt::Tensor tensor(*m_device);
     tensor.BindToMem();
@@ -1784,10 +1573,7 @@ TEST_F(NegativeTensor, WriteDescriptorSetTensorInfoMissing) {
 
 TEST_F(NegativeTensor, WriteDescriptorSetTensorInfoWrongCount) {
     TEST_DESCRIPTION("Test writing tensors to descriptor set with the wrong descriptor count");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     vkt::Tensor tensor(*m_device);
     tensor.BindToMem();
@@ -1827,11 +1613,8 @@ TEST_F(NegativeTensor, TensorMemoryBarrierSharingModeConcurrentSrcQueueFamilyNot
     TEST_DESCRIPTION(
         "Test setting a tensor memory barrier when the tensor was created with VK_SHARING_MODE_CONCURRENT but the src "
         "QueueFamilyIndex is not VK_QUEUE_FAMILY_IGNORED ");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
     AddRequiredFeature(vkt::Feature::synchronization2);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     const uint32_t submit_family = m_device->graphics_queue_node_index_;
     const uint32_t queue_family_count = static_cast<uint32_t>(m_device->Physical().queue_properties_.size());
@@ -1878,11 +1661,8 @@ TEST_F(NegativeTensor, TensorMemoryBarrierSharingModeConcurrentDstQueueFamilyNot
     TEST_DESCRIPTION(
         "Test setting a tensor memory barrier when the tensor was created with VK_SHARING_MODE_CONCURRENT but the dst "
         "QueueFamilyIndex is not VK_QUEUE_FAMILY_IGNORED ");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
     AddRequiredFeature(vkt::Feature::synchronization2);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     const uint32_t submit_family = m_device->graphics_queue_node_index_;
     const uint32_t queue_family_count = static_cast<uint32_t>(m_device->Physical().queue_properties_.size());
@@ -1929,11 +1709,8 @@ TEST_F(NegativeTensor, TensorMemoryBarrierSrcQueueFamilyIgnoredDstSet) {
     TEST_DESCRIPTION(
         "Test setting a tensor memory barrier when the srcQueueFamilyIndex is VK_QUEUE_FAMILY_IGNORED but dstQueueFamilyIndex is "
         "set");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
     AddRequiredFeature(vkt::Feature::synchronization2);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     vkt::Tensor tensor(*m_device);
     tensor.BindToMem();
@@ -1963,11 +1740,8 @@ TEST_F(NegativeTensor, TensorMemoryBarrierDstQueueFamilyIgnoredSrcSet) {
     TEST_DESCRIPTION(
         "Test setting a tensor memory barrier when the srcQueueFamilyIndex is set but dstQueueFamilyIndex is "
         "VK_QUEUE_FAMILY_IGNORED");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
     AddRequiredFeature(vkt::Feature::synchronization2);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     vkt::Tensor tensor(*m_device);
     tensor.BindToMem();
@@ -1995,16 +1769,16 @@ TEST_F(NegativeTensor, TensorMemoryBarrierDstQueueFamilyIgnoredSrcSet) {
 
 TEST_F(NegativeTensor, TensorMemoryBarrierWrongQueueFamilySets) {
     TEST_DESCRIPTION("Use a tensor memory barrier on one queue family, but the command buffer is allocated on another");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
     AddRequiredFeature(vkt::Feature::synchronization2);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     auto queue_family_properties = m_device->Physical().queue_properties_;
     std::vector<uint32_t> queue_families;
-    for (uint32_t i = 0; i < queue_family_properties.size(); ++i)
-        if (queue_family_properties[i].queueCount > 0) queue_families.push_back(i);
+    for (uint32_t i = 0; i < queue_family_properties.size(); ++i) {
+        if (queue_family_properties[i].queueCount > 0) {
+            queue_families.push_back(i);
+        }
+    }
 
     if (queue_families.size() < 2) {
         GTEST_SKIP() << "Only 1 queue family found. Skipping VK_SHARING_MODE_CONCURRENT tests";
@@ -2052,11 +1826,8 @@ TEST_F(NegativeTensor, TensorMemoryBarrierWrongQueueFamilySets) {
 
 TEST_F(NegativeTensor, TensorMemoryBarrierTensorNotBound) {
     TEST_DESCRIPTION("Test setting a tensor memory barrier when the tensor is not bound completely to memory");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
     AddRequiredFeature(vkt::Feature::synchronization2);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     vkt::Tensor tensor(*m_device);
 
@@ -2085,10 +1856,7 @@ TEST_F(NegativeTensor, TensorMemoryBarrierTensorNotBound) {
 
 TEST_F(NegativeTensor, BindTensorDedicatedMemoryOffsetNotZero) {
     TEST_DESCRIPTION("Test binding a tensor to dedicated memory at a non-zero offset");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     vkt::Tensor tensor(*m_device);
 
@@ -2155,12 +1923,9 @@ TEST_F(NegativeTensor, GetDeviceMemoryReqsFeatureNotEnabled) {
 
 TEST_F(NegativeTensor, CreateTensorIncompatibleHandleTypes) {
     TEST_DESCRIPTION("Creating tensor with incompatible external memory handle types");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTERNAL_MEMORY_DMA_BUF_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTERNAL_MEMORY_HOST_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicTensor());
 
     // external memory handles and features supported for tensors (exclude graphics).
     constexpr auto allowed_handle_bits = static_cast<VkExternalMemoryHandleTypeFlags>(

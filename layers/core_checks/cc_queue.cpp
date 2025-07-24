@@ -99,12 +99,10 @@ struct CommandBufferSubmitState {
 
         // Validate TensorMemoryBarrierARM
         for (auto &barrier : cb_state.tensor_barriers) {
-            auto tensor_state_ptr = core.Get<vvl::Tensor>(barrier.tensor);
-            ASSERT_AND_RETURN_SKIP(tensor_state_ptr);
-            auto &tensor_state = *tensor_state_ptr;
-            if (VK_SHARING_MODE_EXCLUSIVE == tensor_state.create_info.sharingMode &&
-                barrier.srcQueueFamilyIndex != VK_QUEUE_FAMILY_IGNORED &&
-                barrier.dstQueueFamilyIndex != VK_QUEUE_FAMILY_IGNORED &&
+            auto tensor_state = core.Get<vvl::Tensor>(barrier.tensor);
+            ASSERT_AND_RETURN_SKIP(tensor_state);
+            if (VK_SHARING_MODE_EXCLUSIVE == tensor_state->create_info.sharingMode &&
+                barrier.srcQueueFamilyIndex != VK_QUEUE_FAMILY_IGNORED && barrier.dstQueueFamilyIndex != VK_QUEUE_FAMILY_IGNORED &&
                 barrier.srcQueueFamilyIndex != queue_state.queue_family_index &&
                 barrier.dstQueueFamilyIndex != queue_state.queue_family_index) {
                 skip |= core.LogError("VUID-VkTensorMemoryBarrierARM-tensor-09757", cb_state.Handle(), loc,
