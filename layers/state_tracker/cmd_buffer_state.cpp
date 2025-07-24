@@ -48,6 +48,11 @@ static ShaderObjectStage inline ConvertToShaderObjectStage(VkShaderStageFlagBits
     return ShaderObjectStage::LAST;
 }
 
+bool AttachmentInfo::IsDepth() const {
+    return type == Type::Depth ||
+           (type == Type::DepthStencil && image_view && vkuFormatHasDepth(image_view->image_state->create_info.format));
+}
+
 // For Traditional RenderPasses, the index is simply the index into the VkRenderPassCreateInfo::pAttachments,
 // but for dynamic rendering, there is no "standard" way to map the index, instead we have our own custom indexing and it is not
 // obvious at all to the user where it came from
