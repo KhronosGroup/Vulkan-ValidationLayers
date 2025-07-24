@@ -378,10 +378,20 @@ std::string Image::DescribeSubresourceLayers(const VkImageSubresourceLayers &sub
 
 VkImageSubresourceRange Image::NormalizeSubresourceRange(const VkImageSubresourceRange &range) const {
     VkImageSubresourceRange norm = range;
-    norm.levelCount =
-        (range.levelCount == VK_REMAINING_MIP_LEVELS) ? (create_info.mipLevels - range.baseMipLevel) : range.levelCount;
-    norm.layerCount =
-        (range.layerCount == VK_REMAINING_ARRAY_LAYERS) ? (create_info.arrayLayers - range.baseArrayLayer) : range.layerCount;
+    if (range.levelCount == VK_REMAINING_MIP_LEVELS) {
+        norm.levelCount = create_info.mipLevels - range.baseMipLevel;
+    }
+    if (range.layerCount == VK_REMAINING_ARRAY_LAYERS) {
+        norm.layerCount = create_info.arrayLayers - range.baseArrayLayer;
+
+        // TODO - Something is seriously wrong with the new VK_KHR_maintenance9 spec rule around depth slices as it is meant
+        // for Image Layout transitions, but there are many non-image layout cases where we don't want depth slices.
+        // If we hit this case, as a "quick fix", fall back to using depth slices otherwise this underflows and causes more
+        // confusing errors as well.
+        if (range.baseArrayLayer > create_info.arrayLayers && create_info.extent.depth > range.baseArrayLayer) {
+            norm.layerCount = create_info.extent.depth - range.baseArrayLayer;
+        }
+    }
 
     // For multiplanar formats, IMAGE_ASPECT_COLOR is equivalent to adding the aspect of the individual planes
     if (vkuFormatIsMultiplane(create_info.format)) {

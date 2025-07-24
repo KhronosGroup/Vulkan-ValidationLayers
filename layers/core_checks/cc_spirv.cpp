@@ -2223,7 +2223,7 @@ bool CoreChecks::ValidateShaderModuleCreateInfo(const VkShaderModuleCreateInfo &
         return skip;  // will be caught elsewhere
     }
 
-    // This extension is ment for tooling, but still valid to be used, if used, we need to detect if GLSL
+    // This extension is meant for tooling, but still valid to be used, if used, we need to detect if GLSL
     if (IsExtEnabled(extensions.vk_nv_glsl_shader)) {
         if (strncmp((char *)create_info.pCode, "#version", 8) == 0) {
             return skip;  // incoming GLSL
