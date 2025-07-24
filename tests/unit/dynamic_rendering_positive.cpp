@@ -11,6 +11,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <vulkan/vulkan_core.h>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/render_pass_helper.h"
@@ -1429,5 +1430,179 @@ TEST_F(PositiveDynamicRendering, AttachmentFeedbackLoopInfoUsage) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(rendering_info);
     m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveDynamicRendering, ColorAttachmentOOB) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/10441");
+    AddRequiredExtensions(VK_EXT_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRenderingUnusedAttachments);
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    if (!(m_device->FormatFeaturesOptimal(VK_FORMAT_R8_UINT) & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT)) {
+        GTEST_SKIP() << "Device does not support R8_UINT as color attachment";
+    }
+
+    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+
+    VkPipelineColorBlendAttachmentState color_blend_attachment = {};
+    VkPipelineColorBlendStateCreateInfo cbi = vku::InitStructHelper();
+    cbi.attachmentCount = 1u;
+    cbi.pAttachments = &color_blend_attachment;
+
+    CreatePipelineHelper pipeline(*this, &pipeline_rendering_info);
+    pipeline.gp_ci_.pColorBlendState = &cbi;
+    pipeline.CreateGraphicsPipeline();
+
+    vkt::Image image_1(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view_1 = image_1.CreateView();
+    vkt::Image image_2(*m_device, 32, 32, VK_FORMAT_R8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view_2 = image_2.CreateView();
+
+    VkRenderingAttachmentInfo color_attachments[2];
+    color_attachments[0] = vku::InitStructHelper();
+    color_attachments[0].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachments[0].imageView = image_view_1;
+    color_attachments[1] = vku::InitStructHelper();
+    color_attachments[1].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachments[1].imageView = image_view_2;
+
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+    begin_rendering_info.colorAttachmentCount = 2u;
+    begin_rendering_info.pColorAttachments = color_attachments;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(begin_rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+    vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveDynamicRendering, DynamicRenderingUnusedAttachments) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/4379");
+    AddRequiredExtensions(VK_EXT_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRenderingUnusedAttachments);
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    VkFormat color_formats[2];
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.pColorAttachmentFormats = color_formats;
+
+    VkPipelineColorBlendAttachmentState color_blend_attachments[2] = {};
+    color_blend_attachments[0] = DefaultColorBlendAttachmentState();
+    color_blend_attachments[1] = DefaultColorBlendAttachmentState();
+
+    VkPipelineColorBlendStateCreateInfo color_blend_state = vku::InitStructHelper();
+    color_blend_state.pAttachments = color_blend_attachments;
+
+    CreatePipelineHelper pipeline(*this, &pipeline_rendering_info);
+    pipeline.gp_ci_.pColorBlendState = &color_blend_state;
+    pipeline.CreateGraphicsPipeline();
+
+    vkt::Image image_1(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view_1 = image_1.CreateView();
+    vkt::Image image_2(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view_2 = image_2.CreateView();
+
+    VkRenderingAttachmentInfo color_attachments[2];
+    color_attachments[0] = vku::InitStructHelper();
+    color_attachments[0].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachments[0].imageView = image_view_1;
+    color_attachments[1] = vku::InitStructHelper();
+    color_attachments[1].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachments[1].imageView = image_view_2;
+
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+    begin_rendering_info.pColorAttachments = color_attachments;
+
+    m_command_buffer.Begin();
+
+    // Case 1 | undef and null
+    {
+        color_formats[0] = VK_FORMAT_R8G8B8A8_UNORM;
+        color_formats[1] = VK_FORMAT_UNDEFINED;
+        pipeline_rendering_info.colorAttachmentCount = 2;
+        color_blend_state.attachmentCount = 2;
+        begin_rendering_info.colorAttachmentCount = 2;
+        color_attachments[1].imageView = VK_NULL_HANDLE;
+
+        m_command_buffer.BeginRendering(begin_rendering_info);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
+        m_command_buffer.EndRendering();
+    }
+
+    // Case 2 | undef and non-null
+    {
+        color_attachments[1].imageView = image_view_2;
+
+        m_command_buffer.BeginRendering(begin_rendering_info);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
+        m_command_buffer.EndRendering();
+    }
+
+    // Case 3 | def and null
+    {
+        color_formats[1] = VK_FORMAT_R8G8B8A8_UNORM;
+        color_attachments[1].imageView = VK_NULL_HANDLE;
+
+        m_command_buffer.BeginRendering(begin_rendering_info);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
+        m_command_buffer.EndRendering();
+    }
+
+    // Case 4 | def and none
+    {
+        begin_rendering_info.colorAttachmentCount = 1;
+
+        m_command_buffer.BeginRendering(begin_rendering_info);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
+        m_command_buffer.EndRendering();
+    }
+
+    // Case 5 | undef and none
+    {
+        color_formats[1] = VK_FORMAT_UNDEFINED;
+
+        m_command_buffer.BeginRendering(begin_rendering_info);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
+        m_command_buffer.EndRendering();
+    }
+
+    // Case 6 | none and non-null
+    {
+        begin_rendering_info.colorAttachmentCount = 2;
+        color_attachments[1].imageView = image_view_2;
+        pipeline_rendering_info.colorAttachmentCount = 1;
+        color_blend_state.attachmentCount = 1;
+
+        m_command_buffer.BeginRendering(begin_rendering_info);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
+        m_command_buffer.EndRendering();
+    }
+
+    // Case 7 | none and null
+    {
+        color_attachments[1].imageView = VK_NULL_HANDLE;
+
+        m_command_buffer.BeginRendering(begin_rendering_info);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
+        m_command_buffer.EndRendering();
+    }
+
     m_command_buffer.End();
 }

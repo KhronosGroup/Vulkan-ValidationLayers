@@ -199,7 +199,9 @@ bool LastBound::IsLogicOpEnabled() const {
             return cb_state.dynamic_state_value.logic_op_enable;
         }
     } else {
-        return pipeline_state->ColorBlendState() && pipeline_state->ColorBlendState()->logicOpEnable;
+        if (const auto &color_blend = pipeline_state->ColorBlendState()) {
+            return color_blend->logicOpEnable;
+        }
     }
     return false;
 }
@@ -210,8 +212,10 @@ VkColorComponentFlags LastBound::GetColorWriteMask(uint32_t i) const {
             return cb_state.dynamic_state_value.color_write_masks[i];
         }
     } else {
-        if (pipeline_state->ColorBlendState() && i < pipeline_state->ColorBlendState()->attachmentCount) {
-            return pipeline_state->ColorBlendState()->pAttachments[i].colorWriteMask;
+        if (const auto &color_blend = pipeline_state->ColorBlendState()) {
+            if (i < color_blend->attachmentCount) {
+                return color_blend->pAttachments[i].colorWriteMask;
+            }
         }
     }
     return (VkColorComponentFlags)0u;
@@ -223,9 +227,8 @@ bool LastBound::IsColorWriteEnabled(uint32_t i) const {
             return cb_state.dynamic_state_value.color_write_enabled[i];
         }
     } else {
-        if (pipeline_state->ColorBlendState()) {
-            auto color_write =
-                vku::FindStructInPNextChain<VkPipelineColorWriteCreateInfoEXT>(pipeline_state->ColorBlendState()->pNext);
+        if (const auto &color_blend = pipeline_state->ColorBlendState()) {
+            auto color_write = vku::FindStructInPNextChain<VkPipelineColorWriteCreateInfoEXT>(color_blend->pNext);
             if (color_write && i < color_write->attachmentCount) {
                 return color_write->pColorWriteEnables[i];
             }
@@ -240,8 +243,10 @@ bool LastBound::IsColorBlendEnabled(uint32_t i) const {
             return cb_state.dynamic_state_value.color_blend_enabled[i];
         }
     } else {
-        if (pipeline_state->ColorBlendState() && i < pipeline_state->ColorBlendState()->attachmentCount) {
-            return pipeline_state->ColorBlendState()->pAttachments[i].blendEnable;
+        if (const auto &color_blend = pipeline_state->ColorBlendState()) {
+            if (i < color_blend->attachmentCount) {
+                return color_blend->pAttachments[i].blendEnable;
+            }
         }
     }
     return true;
@@ -255,9 +260,11 @@ std::string LastBound::DescribeColorBlendEnabled(uint32_t i) const {
             ss << (cb_state.dynamic_state_value.color_blend_enabled[i] ? "VK_TRUE" : "VK_FALSE");
         }
     } else {
-        if (pipeline_state->ColorBlendState() && i < pipeline_state->ColorBlendState()->attachmentCount) {
-            ss << "VkPipelineColorBlendStateCreateInfo::pAttachments[" << i << "].blendEnable is ";
-            ss << (pipeline_state->ColorBlendState()->pAttachments[i].blendEnable ? "VK_TRUE" : "VK_FALSE");
+        if (const auto &color_blend = pipeline_state->ColorBlendState()) {
+            if (i < color_blend->attachmentCount) {
+                ss << "VkPipelineColorBlendStateCreateInfo::pAttachments[" << i << "].blendEnable is ";
+                ss << (color_blend->pAttachments[i].blendEnable ? "VK_TRUE" : "VK_FALSE");
+            }
         }
     }
     return ss.str();
@@ -277,10 +284,12 @@ bool LastBound::IsBlendConstantsEnabled(uint32_t i) const {
                    IsValueIn(eq.srcAlphaBlendFactor, const_factors) || IsValueIn(eq.dstAlphaBlendFactor, const_factors);
         }
     } else {
-        if (pipeline_state->ColorBlendState() && i < pipeline_state->ColorBlendState()->attachmentCount) {
-            const VkPipelineColorBlendAttachmentState &eq = pipeline_state->ColorBlendState()->pAttachments[i];
-            return IsValueIn(eq.srcColorBlendFactor, const_factors) || IsValueIn(eq.dstColorBlendFactor, const_factors) ||
-                   IsValueIn(eq.srcAlphaBlendFactor, const_factors) || IsValueIn(eq.dstAlphaBlendFactor, const_factors);
+        if (const auto &color_blend = pipeline_state->ColorBlendState()) {
+            if (i < color_blend->attachmentCount) {
+                const VkPipelineColorBlendAttachmentState &eq = color_blend->pAttachments[i];
+                return IsValueIn(eq.srcColorBlendFactor, const_factors) || IsValueIn(eq.dstColorBlendFactor, const_factors) ||
+                       IsValueIn(eq.srcAlphaBlendFactor, const_factors) || IsValueIn(eq.dstAlphaBlendFactor, const_factors);
+            }
         }
     }
     return false;
@@ -299,12 +308,14 @@ bool LastBound::IsDualBlending(uint32_t i) const {
                    IsSecondaryColorInputBlendFactor(eq.dstAlphaBlendFactor);
         }
     } else {
-        if (pipeline_state->ColorBlendState() && i < pipeline_state->ColorBlendState()->attachmentCount) {
-            const VkPipelineColorBlendAttachmentState &eq = pipeline_state->ColorBlendState()->pAttachments[i];
-            return IsSecondaryColorInputBlendFactor(eq.srcColorBlendFactor) ||
-                   IsSecondaryColorInputBlendFactor(eq.dstColorBlendFactor) ||
-                   IsSecondaryColorInputBlendFactor(eq.srcAlphaBlendFactor) ||
-                   IsSecondaryColorInputBlendFactor(eq.dstAlphaBlendFactor);
+        if (const auto &color_blend = pipeline_state->ColorBlendState()) {
+            if (i < color_blend->attachmentCount) {
+                const VkPipelineColorBlendAttachmentState &eq = color_blend->pAttachments[i];
+                return IsSecondaryColorInputBlendFactor(eq.srcColorBlendFactor) ||
+                       IsSecondaryColorInputBlendFactor(eq.dstColorBlendFactor) ||
+                       IsSecondaryColorInputBlendFactor(eq.srcAlphaBlendFactor) ||
+                       IsSecondaryColorInputBlendFactor(eq.dstAlphaBlendFactor);
+            }
         }
     }
     return false;
@@ -322,13 +333,15 @@ std::string LastBound::DescribeBlendFactorEquation(uint32_t i) const {
             ss << "  dstAlphaBlendFactor = " << string_VkBlendFactor(eq.dstAlphaBlendFactor) << "\n";
         }
     } else {
-        if (pipeline_state->ColorBlendState() && i < pipeline_state->ColorBlendState()->attachmentCount) {
-            const VkPipelineColorBlendAttachmentState &eq = pipeline_state->ColorBlendState()->pAttachments[i];
-            ss << "The following are set by VkPipelineColorBlendStateCreateInfo::pAttachments[" << i << "]\n";
-            ss << "  srcColorBlendFactor = " << string_VkBlendFactor(eq.srcColorBlendFactor) << "\n";
-            ss << "  dstColorBlendFactor = " << string_VkBlendFactor(eq.dstColorBlendFactor) << "\n";
-            ss << "  srcAlphaBlendFactor = " << string_VkBlendFactor(eq.srcAlphaBlendFactor) << "\n";
-            ss << "  dstAlphaBlendFactor = " << string_VkBlendFactor(eq.dstAlphaBlendFactor) << "\n";
+        if (const auto &color_blend = pipeline_state->ColorBlendState()) {
+            if (i < color_blend->attachmentCount) {
+                const VkPipelineColorBlendAttachmentState &eq = color_blend->pAttachments[i];
+                ss << "The following are set by VkPipelineColorBlendStateCreateInfo::pAttachments[" << i << "]\n";
+                ss << "  srcColorBlendFactor = " << string_VkBlendFactor(eq.srcColorBlendFactor) << "\n";
+                ss << "  dstColorBlendFactor = " << string_VkBlendFactor(eq.dstColorBlendFactor) << "\n";
+                ss << "  srcAlphaBlendFactor = " << string_VkBlendFactor(eq.srcAlphaBlendFactor) << "\n";
+                ss << "  dstAlphaBlendFactor = " << string_VkBlendFactor(eq.dstAlphaBlendFactor) << "\n";
+            }
         }
     }
     return ss.str();
