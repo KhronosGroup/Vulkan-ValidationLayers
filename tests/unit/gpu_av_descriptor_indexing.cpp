@@ -3888,7 +3888,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, StorageImagePartiallyBound) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -3924,7 +3924,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, StorageImageRuntimeArray) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }

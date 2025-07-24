@@ -1380,7 +1380,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, MultipleCommandBuffersSameDescriptorS
 
     descriptor_set.WriteDescriptorImageInfo(1, bad_view, sampler);
     descriptor_set.UpdateDescriptorSets();
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewType-07752");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-viewType-07752");
     m_default_queue->SubmitAndWait(cb_1);
     m_errorMonitor->VerifyFound();
 
@@ -1460,7 +1460,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, AliasImageBindingRuntimeArray) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-format-07753");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-format-07753");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -1529,7 +1529,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, AliasImageBindingPartiallyBound) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-format-07753");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-format-07753");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -1604,7 +1604,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, DescriptorIndexingSlang) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewType-07752");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-viewType-07752");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -1666,7 +1666,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, ImageViewArrayAliasBinding) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewType-07752", 2);  // one for each descriptor
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-viewType-07752", 2);  // one for each descriptor
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -2624,7 +2624,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, ImportFence) {
     submit.waitSemaphoreCount = 0;
     submit.signalSemaphoreCount = 0;
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewType-07752");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-viewType-07752");
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit, fence);
     m_device->Wait();
     m_errorMonitor->VerifyFound();
