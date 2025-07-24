@@ -754,7 +754,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool VerifyPipelineLayoutCompatibility(const vvl::PipelineLayout& layout_a, const vvl::PipelineLayout& layout_b,
                                            std::string& error_msg) const;
 
-    bool VerifyPipeleinLayoutCompatibilityUnion(const vvl::PipelineLayout& layout, const vvl::PipelineLayout& pre_raster_layout,
+    bool VerifyPipelineLayoutCompatibilityUnion(const vvl::PipelineLayout& layout, const vvl::PipelineLayout& pre_raster_layout,
                                                 const vvl::PipelineLayout& fs_layout, std::string& error_msg) const;
 
     // Validate contents of a CopyUpdate

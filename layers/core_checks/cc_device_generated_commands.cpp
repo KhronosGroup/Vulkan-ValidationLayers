@@ -466,7 +466,7 @@ bool CoreChecks::ValidateGeneratedCommandsInfo(const vvl::CommandBuffer& cb_stat
         if (generated_commands_info.preprocessSize < mem_reqs.memoryRequirements.size) {
             skip |= LogError(
                 "VUID-VkGeneratedCommandsInfoEXT-preprocessSize-11071", cb_state.Handle(), info_loc.dot(Field::preprocessSize),
-                "(%" PRIu64 ") is less then the size returned from vkGetGeneratedCommandsMemoryRequirementsEXT (%" PRIu64 ").",
+                "(%" PRIu64 ") is less than the size returned from vkGetGeneratedCommandsMemoryRequirementsEXT (%" PRIu64 ").",
                 generated_commands_info.preprocessSize, mem_reqs.memoryRequirements.size);
         }
     }
@@ -984,7 +984,7 @@ bool CoreChecks::PreCallValidateUpdateIndirectExecutionSetShaderEXT(VkDevice dev
         if (set_shader.index >= indirect_execution_set->max_shader_count) {
             skip |= LogError("VUID-VkWriteIndirectExecutionSetShaderEXT-index-11031", device, set_write_loc.dot(Field::index),
                              "(%" PRIu32
-                             ") is not less then the sum of VkIndirectExecutionSetShaderInfoEXT::maxShaderCount (%" PRIu32 ").",
+                             ") is not less than the sum of VkIndirectExecutionSetShaderInfoEXT::maxShaderCount (%" PRIu32 ").",
                              set_shader.index, indirect_execution_set->max_shader_count);
         }
 

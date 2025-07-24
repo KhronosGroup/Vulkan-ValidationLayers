@@ -557,7 +557,7 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const vvl::CommandBuffer &c
                 const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle());
                 skip |= LogError("VUID-vkCmdExecuteCommands-nestedCommandBuffer-09376", objlist, cb_loc,
                                  "(%s) has a nesting level of %" PRIu32
-                                 " which is not less then maxCommandBufferNestingLevel (%" PRIu32 ").",
+                                 " which is not less than maxCommandBufferNestingLevel (%" PRIu32 ").",
                                  FormatHandle(secondary_cb_state.Handle()).c_str(), secondary_cb_sub_state.nesting_level,
                                  phys_dev_ext_props.nested_command_buffer_props.maxCommandBufferNestingLevel);
             }
