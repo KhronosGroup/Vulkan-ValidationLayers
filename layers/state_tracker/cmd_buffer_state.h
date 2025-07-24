@@ -18,6 +18,7 @@
  * limitations under the License.
  */
 #pragma once
+#include <vulkan/utility/vk_format_utils.h>
 #include "state_tracker/state_object.h"
 #include "state_tracker/image_layout_map.h"
 #include "state_tracker/pipeline_sub_state.h"
@@ -86,7 +87,7 @@ struct AttachmentInfo {
     bool IsResolve() const { return type == Type::ColorResolve || type == Type::DepthResolve || type == Type::StencilResolve; }
     bool IsInput() const { return type == Type::Input; }
     bool IsColor() const { return type == Type::Color; }
-    bool IsDepth() const { return type == Type::Depth || type == Type::DepthStencil; }
+    bool IsDepth() const;
     bool IsDepthOrStencil() const {
         return type == Type::DepthStencil || type == Type::Depth || type == Type::DepthResolve || type == Type::Stencil ||
                type == Type::StencilResolve;
