@@ -954,3 +954,32 @@ TEST_F(PositiveImage, ImageView2dOf3dBaseLayer) {
     vkt::Image image(*m_device, image_ci);
     vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 0u, 1u, 1u, 1u);
 }
+
+TEST_F(PositiveImage, FramebufferRemainingArrayLayers) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_ci.extent = {32u, 32u, 5u};
+    image_ci.mipLevels = 1u;
+    image_ci.arrayLayers = 1u;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    vkt::Image image(*m_device, image_ci);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0u, 1u, 2u, VK_REMAINING_ARRAY_LAYERS);
+
+    VkFramebufferCreateInfo fb_ci = vku::InitStructHelper();
+    fb_ci.renderPass = m_renderPass;
+    fb_ci.attachmentCount = 1u;
+    fb_ci.pAttachments = &image_view.handle();
+    fb_ci.width = 32u;
+    fb_ci.height = 32u;
+    fb_ci.layers = 1u;
+    vkt::Framebuffer framebuffer(*m_device, fb_ci);
+}

@@ -128,7 +128,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                             notSupported = False
                             break
                     if notSupported:
-                        continue # If just 'Kernel' capabilites then it's ment for OpenCL and skip instruction
+                        continue # If just 'Kernel' capabilites then it's meant for OpenCL and skip instruction
 
                 self.opnames.append(opname)
 

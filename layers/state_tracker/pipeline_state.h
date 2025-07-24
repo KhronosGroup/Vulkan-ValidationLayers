@@ -134,7 +134,7 @@ class Pipeline : public StateObject {
 
     // TODO - Because we have hack to create a pipeline at PreCallValidate time (for GPL) we have no proper way to create inherited
     // state objects of the pipeline This is to make it clear that while currently everyone has to allocate this memory, it is only
-    // ment for GPU-AV
+    // meant for GPU-AV
     struct InstrumentationData {
         // < unique_shader_id, instrumented_shader_module_handle >
         // We create a VkShaderModule that is instrumented and need to delete before leaving the pipeline call

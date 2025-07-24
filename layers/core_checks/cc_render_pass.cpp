@@ -4517,6 +4517,7 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo &c
         for (uint32_t j = 0; j < rpci.subpassCount; ++j) {
             const VkSubpassDescription2 &subpass = rpci.pSubpasses[j];
 
+            // if viewmask is zero, will return -1 (so layerCount is always lower)
             int highest_view_bit = MostSignificantBit(subpass.viewMask);
 
             for (uint32_t k = 0; k < rpci.pSubpasses[j].inputAttachmentCount; ++k) {
