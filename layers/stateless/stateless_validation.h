@@ -539,6 +539,7 @@ class Device : public vvl::base::Device {
     bool manual_PreCallValidateCreateTensorARM(VkDevice device, const VkTensorCreateInfoARM *pCreateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkTensorARM *pTensor,
                                                const Context &context) const;
+    bool ValidateTensorDescriptionARM(const VkTensorDescriptionARM &description, const Location &description_loc) const;
 
     bool ValidateViewport(const VkViewport &viewport, VkCommandBuffer object, const Location &loc) const;
 

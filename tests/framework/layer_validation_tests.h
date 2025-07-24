@@ -380,6 +380,7 @@ class SyncObjectTest : public VkLayerTest {
 
 class TensorTest : public VkLayerTest {
   public:
+    void InitBasicTensor();
     static VkTensorDescriptionARM DefaultDesc();
     static VkTensorCreateInfoARM DefaultCreateInfo(VkTensorDescriptionARM *desc = nullptr);
 

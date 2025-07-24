@@ -747,7 +747,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const vvl::CommandBuffer &cb_state,
 }
 
 template <typename RegionType>
-bool CoreChecks::ValidateCmdCopyBufferBounds(VkCommandBuffer cb, const vvl::Buffer &src_buffer_state,
+bool CoreChecks::ValidateCmdCopyBufferBounds(VkCommandBuffer commandBuffer, const vvl::Buffer &src_buffer_state,
                                              const vvl::Buffer &dst_buffer_state, uint32_t regionCount, const RegionType *pRegions,
                                              const Location &loc) const {
     bool skip = false;
@@ -777,7 +777,7 @@ bool CoreChecks::ValidateCmdCopyBufferBounds(VkCommandBuffer cb, const vvl::Buff
         {
             if (region.srcOffset >= src_buffer_state.create_info.size) {
                 const char *vuid = is_2 ? "VUID-VkCopyBufferInfo2-srcOffset-00113" : "VUID-vkCmdCopyBuffer-srcOffset-00113";
-                const LogObjectList objlist(cb, src_buffer_state.Handle());
+                const LogObjectList objlist(commandBuffer, src_buffer_state.Handle());
                 skip |= LogError(vuid, objlist, region_loc.dot(Field::srcOffset),
                                  "(%" PRIuLEAST64 ") is greater than size of srcBuffer (%" PRIuLEAST64 ").", region.srcOffset,
                                  src_buffer_state.create_info.size);
@@ -785,7 +785,7 @@ bool CoreChecks::ValidateCmdCopyBufferBounds(VkCommandBuffer cb, const vvl::Buff
 
             if (region.size > (src_buffer_state.create_info.size - region.srcOffset)) {
                 const char *vuid = is_2 ? "VUID-VkCopyBufferInfo2-size-00115" : "VUID-vkCmdCopyBuffer-size-00115";
-                const LogObjectList objlist(cb, src_buffer_state.Handle());
+                const LogObjectList objlist(commandBuffer, src_buffer_state.Handle());
                 skip |= LogError(vuid, objlist, region_loc.dot(Field::size),
                                  "(%" PRIuLEAST64 ") is greater than the source buffer size (%" PRIuLEAST64
                                  ") minus srcOffset (%" PRIuLEAST64 ").",
@@ -797,7 +797,7 @@ bool CoreChecks::ValidateCmdCopyBufferBounds(VkCommandBuffer cb, const vvl::Buff
         {
             if (region.dstOffset >= dst_buffer_state.create_info.size) {
                 const char *vuid = is_2 ? "VUID-VkCopyBufferInfo2-dstOffset-00114" : "VUID-vkCmdCopyBuffer-dstOffset-00114";
-                const LogObjectList objlist(cb, dst_buffer_state.Handle());
+                const LogObjectList objlist(commandBuffer, dst_buffer_state.Handle());
                 skip |= LogError(vuid, objlist, region_loc.dot(Field::dstOffset),
                                  "(%" PRIuLEAST64 ") is greater than size of dstBuffer (%" PRIuLEAST64 ").", region.dstOffset,
                                  dst_buffer_state.create_info.size);
@@ -805,7 +805,7 @@ bool CoreChecks::ValidateCmdCopyBufferBounds(VkCommandBuffer cb, const vvl::Buff
 
             if (region.size > (dst_buffer_state.create_info.size - region.dstOffset)) {
                 const char *vuid = is_2 ? "VUID-VkCopyBufferInfo2-size-00116" : "VUID-vkCmdCopyBuffer-size-00116";
-                const LogObjectList objlist(cb, dst_buffer_state.Handle());
+                const LogObjectList objlist(commandBuffer, dst_buffer_state.Handle());
                 skip |= LogError(vuid, objlist, region_loc.dot(Field::size),
                                  "(%" PRIuLEAST64 ") is greater than the destination buffer size (%" PRIuLEAST64
                                  ") minus dstOffset (%" PRIuLEAST64 ").",
@@ -841,7 +841,7 @@ bool CoreChecks::ValidateCmdCopyBufferBounds(VkCommandBuffer cb, const vvl::Buff
             if (src_ranges_it->intersects(*dst_ranges_it)) {
                 auto memory_range_overlap = *src_ranges_it & *dst_ranges_it;
 
-                const LogObjectList objlist(cb, src_binding->memory_state->Handle(), src_buffer_state.Handle(),
+                const LogObjectList objlist(commandBuffer, src_binding->memory_state->Handle(), src_buffer_state.Handle(),
                                             dst_buffer_state.Handle());
                 const char *vuid = is_2 ? "VUID-VkCopyBufferInfo2-pRegions-00117" : "VUID-vkCmdCopyBuffer-pRegions-00117";
                 skip |= LogError(

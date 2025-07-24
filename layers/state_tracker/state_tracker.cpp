@@ -507,9 +507,8 @@ void DeviceState::PostCallRecordBindTensorMemoryARM(VkDevice device, uint32_t bi
     if (VK_SUCCESS != record_obj.result) return;
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         auto tensor_state = Get<vvl::Tensor>(pBindInfos[i].tensor);
-        ASSERT_AND_RETURN(tensor_state);
         auto mem_info = Get<vvl::DeviceMemory>(pBindInfos[i].memory);
-        ASSERT_AND_RETURN(mem_info);
+        ASSERT_AND_RETURN(tensor_state && mem_info);
         tensor_state->BindMemory(tensor_state.get(), mem_info, pBindInfos[i].memoryOffset, 0u,
                                     tensor_state->MemReqs()->memoryRequirements.size);
     }

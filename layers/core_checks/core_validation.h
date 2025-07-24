@@ -438,10 +438,6 @@ class CoreChecks : public vvl::DeviceProxy {
                                          QueryMap* local_query_to_state_map);
     bool ValidateBindTensorMemoryARM(uint32_t bindInfoCount, const VkBindTensorMemoryInfoARM* pBindInfos,
                                      const ErrorObject& error_obj) const;
-    static bool VerifyQueryIsReset(const vvl::CommandBuffer& cb_state, const QueryObject& query_obj, Func command,
-                                   VkQueryPool& firstPerfQueryPool, uint32_t perfPass, QueryMap* localQueryToStateMap);
-    static bool ValidatePerformanceQuery(const vvl::CommandBuffer& cb_state, const QueryObject& query_obj, Func command,
-                                         VkQueryPool& firstPerfQueryPool, uint32_t perfPass, QueryMap* localQueryToStateMap);
     bool ValidateBeginQuery(const vvl::CommandBuffer& cb_state, const QueryObject& query_obj, VkQueryControlFlags flags,
                             uint32_t index, const Location& loc) const;
     bool ValidateCmdEndQuery(const vvl::CommandBuffer& cb_state, VkQueryPool queryPool, uint32_t slot, uint32_t index,
@@ -1170,11 +1166,11 @@ class CoreChecks : public vvl::DeviceProxy {
                                                const VkAttachmentDescription2& attachment_description,
                                                const Location& layout_loc) const;
 
-    bool ValidateImageUsageFlags(VkCommandBuffer cb, vvl::Image const& image_state, VkImageUsageFlags desired, bool strict,
-                                 const char* vuid, const Location& image_loc) const;
+    bool ValidateImageUsageFlags(VkCommandBuffer commandBuffer, vvl::Image const& image_state, VkImageUsageFlags desired,
+                                 bool strict, const char* vuid, const Location& image_loc) const;
 
-    bool ValidateImageFormatFeatureFlags(VkCommandBuffer cb, vvl::Image const& image_state, VkFormatFeatureFlags2KHR desired,
-                                         const Location& image_loc, const char* vuid) const;
+    bool ValidateImageFormatFeatureFlags(VkCommandBuffer commandBuffer, vvl::Image const& image_state,
+                                         VkFormatFeatureFlags2KHR desired, const Location& image_loc, const char* vuid) const;
 
     template <typename HandleT>
     bool ValidateImageSubresourceLayers(HandleT handle, const vvl::Image& image_state,
@@ -1227,9 +1223,9 @@ class CoreChecks : public vvl::DeviceProxy {
                                             const ErrorObject& error_obj) const override;
     bool PreCallValidateDestroyTensorViewARM(VkDevice device, VkTensorViewARM tensorView, const VkAllocationCallbacks* pAllocator,
                                              const ErrorObject& error_obj) const override;
-    bool PreCallValidateCmdCopyTensorARM(VkCommandBuffer cb, const VkCopyTensorInfoARM* pCopyTensorInfo,
+    bool PreCallValidateCmdCopyTensorARM(VkCommandBuffer commandBuffer, const VkCopyTensorInfoARM* pCopyTensorInfo,
                                          const ErrorObject& error_obj) const override;
-    bool ValidateTensorUsageFlags(VkCommandBuffer cb, vvl::Tensor const& tensor_state, VkTensorUsageFlagsARM desired,
+    bool ValidateTensorUsageFlags(VkCommandBuffer commandBuffer, vvl::Tensor const& tensor_state, VkTensorUsageFlagsARM desired,
                                   const char* vuid, const Location& tensor_loc) const;
     bool ValidateTensorFormatUsage(VkFormat format, VkTensorUsageFlagsARM usage, VkTensorTilingARM tiling, const char* vuid,
                                    const Location& tensor_loc) const;
@@ -1242,8 +1238,9 @@ class CoreChecks : public vvl::DeviceProxy {
                                                              VkMemoryRequirements2* pMemoryRequirements,
                                                              const ErrorObject& error_obj) const override;
     template <typename RegionType>
-    bool ValidateCmdCopyBufferBounds(VkCommandBuffer cb, const vvl::Buffer& src_buffer_state, const vvl::Buffer& dst_buffer_state,
-                                     uint32_t regionCount, const RegionType* pRegions, const Location& loc) const;
+    bool ValidateCmdCopyBufferBounds(VkCommandBuffer commandBuffer, const vvl::Buffer& src_buffer_state,
+                                     const vvl::Buffer& dst_buffer_state, uint32_t regionCount, const RegionType* pRegions,
+                                     const Location& loc) const;
 
     template <typename HandleT>
     bool ValidateImageBounds(const HandleT handle, const vvl::Image& image_state, VkExtent3D extent, VkOffset3D offset,

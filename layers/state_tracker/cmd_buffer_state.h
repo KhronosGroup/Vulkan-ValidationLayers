@@ -19,7 +19,6 @@
  * limitations under the License.
  */
 #pragma once
-#include <vulkan/utility/vk_format_utils.h>
 #include "state_tracker/state_object.h"
 #include "state_tracker/image_layout_map.h"
 #include "state_tracker/pipeline_sub_state.h"
