@@ -668,7 +668,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
 
                 if (pipeline_layout_state) {
                     std::string err_msg;
-                    if (!VerifyPipeleinLayoutCompatibilityUnion(*pipeline_layout_state, *pipeline.PreRasterPipelineLayoutState(),
+                    if (!VerifyPipelineLayoutCompatibilityUnion(*pipeline_layout_state, *pipeline.PreRasterPipelineLayoutState(),
                                                                 *pipeline.FragmentShaderPipelineLayoutState(), err_msg)) {
                         LogObjectList objlist(linking_layout_handle, pre_raster_layout_handle, fs_layout_handle);
                         skip |=
@@ -4137,7 +4137,7 @@ bool CoreChecks::ValidateDrawPipelineFragmentDensityMapLayered(const vvl::Comman
                     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                     skip |= LogError(vuid.fdm_layered_10831, objlist, vuid.loc(),
                                      "the vkCmdBeginRendering set layerCount to %" PRIu32
-                                     " which is greater than the bound pipline maxFragmentDensityMapLayers %" PRIu32 ".",
+                                     " which is greater than the bound pipeline maxFragmentDensityMapLayers %" PRIu32 ".",
                                      rp_state.dynamic_rendering_begin_rendering_info.layerCount,
                                      fragment_density_map_layered->maxFragmentDensityMapLayers);
                 }
@@ -4149,7 +4149,7 @@ bool CoreChecks::ValidateDrawPipelineFragmentDensityMapLayered(const vvl::Comman
                                                 cb_state.active_framebuffer->Handle());
                     skip |= LogError(vuid.fdm_layered_10831, objlist, vuid.loc(),
                                      "the bound VkFramebuffer was created with %" PRIu32
-                                     " layers which is greater than the bound pipline maxFragmentDensityMapLayers %" PRIu32 ".",
+                                     " layers which is greater than the bound pipeline maxFragmentDensityMapLayers %" PRIu32 ".",
                                      cb_state.active_framebuffer->create_info.layers,
                                      fragment_density_map_layered->maxFragmentDensityMapLayers);
                 }

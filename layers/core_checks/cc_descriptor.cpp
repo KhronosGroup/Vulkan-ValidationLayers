@@ -206,7 +206,7 @@ bool CoreChecks::VerifyPipelineLayoutCompatibility(const vvl::PipelineLayout &la
     return true;
 }
 
-bool CoreChecks::VerifyPipeleinLayoutCompatibilityUnion(const vvl::PipelineLayout &layout,
+bool CoreChecks::VerifyPipelineLayoutCompatibilityUnion(const vvl::PipelineLayout &layout,
                                                         const vvl::PipelineLayout &pre_raster_layout,
                                                         const vvl::PipelineLayout &fs_layout, std::string &error_msg) const {
     // When dealing with Graphics Pipeline Library, we need to get the union of pipeline states.

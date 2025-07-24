@@ -26,7 +26,7 @@
 
 VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFlags aspect_mask, const uint32_t mip_level);
 
-// When dealing with a compressed format, we could have a miplevel that is less then a single texel block
+// When dealing with a compressed format, we could have a miplevel that is less than a single texel block
 // In that case, we still view (from the API) that you need a full extent for 1 texel block
 // if block extent width is 4,
 //     then {1, 2, 3, 4} texel is 1 texel block

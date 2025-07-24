@@ -23,10 +23,10 @@ TEST_F(NegativeRayTracingPipelineNV, BasicUsage) {
     AddRequiredExtensions(VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME);
     RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest());
 
-    VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT pipleline_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(pipleline_features);
+    VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT pipeline_features = vku::InitStructHelper();
+    auto features2 = GetPhysicalDeviceFeatures2(pipeline_features);
     // Set this to true as it is a required feature
-    pipleline_features.pipelineCreationCacheControl = VK_TRUE;
+    pipeline_features.pipelineCreationCacheControl = VK_TRUE;
     RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});

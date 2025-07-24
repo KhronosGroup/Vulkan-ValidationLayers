@@ -2259,7 +2259,7 @@ bool CoreChecks::PreCallValidateCmdSetExtraPrimitiveOverestimationSizeEXT(VkComm
             phys_dev_ext_props.conservative_rasterization_props.maxExtraPrimitiveOverestimationSize) {
         skip |= LogError("VUID-vkCmdSetExtraPrimitiveOverestimationSizeEXT-extraPrimitiveOverestimationSize-07428", commandBuffer,
                          error_obj.location.dot(Field::extraPrimitiveOverestimationSize),
-                         "(%f) must be less then zero or greater than maxExtraPrimitiveOverestimationSize (%f).",
+                         "(%f) must be less than zero or greater than maxExtraPrimitiveOverestimationSize (%f).",
                          extraPrimitiveOverestimationSize,
                          phys_dev_ext_props.conservative_rasterization_props.maxExtraPrimitiveOverestimationSize);
     }

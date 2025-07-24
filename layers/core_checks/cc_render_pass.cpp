@@ -2398,7 +2398,7 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
                     "VUID-VkRenderPassCreateInfo-pNext-01927", device,
                     error_obj.location.pNext(Struct::VkRenderPassInputAttachmentAspectCreateInfo, Field::pAspectReferences, i)
                         .dot(Field::inputAttachmentIndex),
-                    "is %" PRIu32 " which is not less then pCreateInfo->pSubpasses[%" PRIu32 "].inputAttachmentCount (%" PRIu32
+                    "is %" PRIu32 " which is not less than pCreateInfo->pSubpasses[%" PRIu32 "].inputAttachmentCount (%" PRIu32
                     ").",
                     attachment, subpass, pCreateInfo->pSubpasses[subpass].inputAttachmentCount);
             }

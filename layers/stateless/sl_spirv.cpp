@@ -719,7 +719,7 @@ bool SpirvValidator::ValidateTexelOffsetLimits(const spirv::Module &module_state
                     const uint32_t offset = comp->Word(3);
                     // spec requires minTexelGatherOffset/minTexelOffset to be -8 or less so never can compare if
                     // unsigned spec requires maxTexelGatherOffset/maxTexelOffset to be 7 or greater so never can
-                    // compare if signed is less then zero
+                    // compare if signed is less than zero
                     const int32_t signed_offset = static_cast<int32_t>(offset);
                     const bool use_signed = (comp_type->Opcode() == spv::OpTypeInt && comp_type->Word(3) != 0);
 
