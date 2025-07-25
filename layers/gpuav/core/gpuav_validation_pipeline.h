@@ -37,26 +37,18 @@ class CommandBufferSubState;
 
 namespace valpipe {
 
-struct BoundStorageBuffer {
-    uint32_t binding = vvl::kU32Max;
-    VkDescriptorBufferInfo info{VK_NULL_HANDLE, vvl::kU64Max, 0};
-};
-
 namespace internal {
 [[nodiscard]] bool CreateComputePipelineHelper(Validator& gpuav, const Location& loc,
-                                               const std::vector<VkDescriptorSetLayoutBinding> specific_bindings,
                                                VkDescriptorSetLayout additional_desc_set_layout, uint32_t push_constants_byte_size,
                                                uint32_t spirv_size, const uint32_t* spirv, VkDevice& out_device,
-                                               VkDescriptorSetLayout& out_specific_descriptor_set_layout,
                                                VkPipelineLayout& out_pipeline_layout, VkShaderModule& out_shader_module,
                                                VkPipeline& out_pipeline);
-void DestroyComputePipelineHelper(VkDevice device, VkDescriptorSetLayout specific_descriptor_set_layout,
-                                  VkPipelineLayout pipeline_layout, VkShaderModule shader_module, VkPipeline pipeline);
+void DestroyComputePipelineHelper(VkDevice device, VkPipelineLayout pipeline_layout, VkShaderModule shader_module,
+                                  VkPipeline pipeline);
 
 VkDescriptorSet GetDescriptorSetHelper(CommandBufferSubState& cb_state, VkDescriptorSetLayout desc_set_layout);
 
 void BindShaderResourcesHelper(Validator& gpuav, CommandBufferSubState& cb_state, VkPipelineLayout pipeline_layout,
-                               VkDescriptorSet desc_set, const std::vector<VkWriteDescriptorSet>& descriptor_writes,
                                const uint32_t push_constants_byte_size, const void* push_constants);
 }  // namespace internal
 
@@ -70,31 +62,22 @@ template <typename ShaderResources>
 class ComputePipeline {
   public:
     ComputePipeline(Validator& gpuav, const Location& loc, VkDescriptorSetLayout additional_desc_set_layout = VK_NULL_HANDLE) {
-        std::vector<VkDescriptorSetLayoutBinding> specific_bindings = ShaderResources::GetDescriptorSetLayoutBindings();
-        valid = internal::CreateComputePipelineHelper(gpuav, loc, specific_bindings, additional_desc_set_layout,
-                                                      sizeof(ShaderResources::push_constants),
-                                                      uint32_t(ShaderResources::GetSpirvSize()), ShaderResources::GetSpirv(),
-                                                      device, specific_desc_set_layout, pipeline_layout, shader_module, pipeline);
+        valid =
+            internal::CreateComputePipelineHelper(gpuav, loc, additional_desc_set_layout, sizeof(ShaderResources::push_constants),
+                                                  uint32_t(ShaderResources::GetSpirvSize()), ShaderResources::GetSpirv(), device,
+                                                  pipeline_layout, shader_module, pipeline);
     }
 
-    ~ComputePipeline() {
-        internal::DestroyComputePipelineHelper(device, specific_desc_set_layout, pipeline_layout, shader_module, pipeline);
-    }
+    ~ComputePipeline() { internal::DestroyComputePipelineHelper(device, pipeline_layout, shader_module, pipeline); }
 
     [[nodiscard]] bool BindShaderResources(Validator& gpuav, CommandBufferSubState& cb_state,
                                            const ShaderResources& shader_resources) {
-        const VkDescriptorSet desc_set = internal::GetDescriptorSetHelper(cb_state, specific_desc_set_layout);
-        if (!desc_set) {
-            return false;
-        }
-        const std::vector<VkWriteDescriptorSet> desc_writes = shader_resources.GetDescriptorWrites(desc_set);
-        internal::BindShaderResourcesHelper(gpuav, cb_state, pipeline_layout, desc_set, desc_writes,
-                                            sizeof(shader_resources.push_constants), &shader_resources.push_constants);
+        internal::BindShaderResourcesHelper(gpuav, cb_state, pipeline_layout, sizeof(shader_resources.push_constants),
+                                            &shader_resources.push_constants);
         return true;
     }
 
     VkDevice device = VK_NULL_HANDLE;
-    VkDescriptorSetLayout specific_desc_set_layout = VK_NULL_HANDLE;
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
     VkShaderModule shader_module = VK_NULL_HANDLE;
     VkPipeline pipeline = VK_NULL_HANDLE;
