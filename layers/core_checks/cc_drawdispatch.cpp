@@ -1887,6 +1887,7 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
     const bool dynamic_advanced = last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT);
     const bool dynamic_blend_enable = last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
     const bool dynamic_write_mask = last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT);
+    const bool dynamic_blend_constants = last_bound_state.IsDynamic(CB_DYNAMIC_STATE_BLEND_CONSTANTS);
 
     for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
         const auto &attachment_info = cb_state.active_attachments[i];
@@ -1990,20 +1991,18 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
             }
         }
 
-        if (!dynamic_equation || cb_state.dynamic_state_value.color_blend_equation_attachments[color_index]) {
-            if (!cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_BLEND_CONSTANTS) &&
-                last_bound_state.IsBlendConstantsEnabled(color_index)) {
-                LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
-                objlist.add(attachment->Handle());
-                skip |= LogError(vuid.dynamic_blend_constants_07835, objlist, vuid.loc(),
-                                 "%svkCmdSetBlendConstants was never called, but color attachment index %" PRIu32
-                                 " (%s) has blending enabled (%s), and the blend factor is constant.\n%s\n%s",
-                                 has_pipeline ? "VK_DYNAMIC_STATE_BLEND_CONSTANT state is dynamic, " : "", color_index,
-                                 attachment_info.Describe(cb_state, i).c_str(),
-                                 last_bound_state.DescribeColorBlendEnabled(color_index).c_str(),
-                                 last_bound_state.DescribeBlendFactorEquation(color_index).c_str(),
-                                 cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_BLEND_CONSTANTS).c_str());
-            }
+        if (dynamic_blend_constants && !cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_BLEND_CONSTANTS) &&
+            last_bound_state.IsBlendConstantsEnabled(color_index)) {
+            LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
+            objlist.add(attachment->Handle());
+            skip |= LogError(vuid.dynamic_blend_constants_07835, objlist, vuid.loc(),
+                             "%svkCmdSetBlendConstants was never called, but color attachment index %" PRIu32
+                             " (%s) has blending enabled (%s), and the blend factor is constant.\n%s\n%s",
+                             has_pipeline ? "VK_DYNAMIC_STATE_BLEND_CONSTANT state is dynamic, " : "", color_index,
+                             attachment_info.Describe(cb_state, i).c_str(),
+                             last_bound_state.DescribeColorBlendEnabled(color_index).c_str(),
+                             last_bound_state.DescribeBlendFactorEquation(color_index).c_str(),
+                             cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_BLEND_CONSTANTS).c_str());
         }
 
         if (last_bound_state.IsDualBlending(color_index)) {
