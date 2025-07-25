@@ -1007,8 +1007,7 @@ TEST_F(PositivePipeline, PervertexNVShaderAttributes) {
     AddRequiredExtensions(VK_NV_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
-    VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragment_shader_barycentric_features =
-        vku::InitStructHelper();
+    VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragment_shader_barycentric_features = vku::InitStructHelper();
     fragment_shader_barycentric_features.fragmentShaderBarycentric = VK_TRUE;
     VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&fragment_shader_barycentric_features);
     RETURN_IF_SKIP(InitState(nullptr, &features2));
@@ -2051,5 +2050,38 @@ TEST_F(PositivePipeline, SampleLocations) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdDraw(m_command_buffer, 4u, 1u, 0u, 0u);
     vk::CmdEndRenderPass(m_command_buffer);
+    m_command_buffer.End();
+}
+
+TEST_F(PositivePipeline, StaticConstantBlend) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkPipelineColorBlendAttachmentState cb_as;
+    cb_as.blendEnable = VK_TRUE;
+    cb_as.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    cb_as.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
+    cb_as.colorBlendOp = VK_BLEND_OP_ADD;
+    cb_as.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    cb_as.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
+    cb_as.alphaBlendOp = VK_BLEND_OP_ADD;
+    cb_as.colorWriteMask =
+        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    VkPipelineColorBlendStateCreateInfo cb_ci = vku::InitStructHelper();
+    cb_ci.attachmentCount = 1;
+    cb_ci.pAttachments = &cb_as;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.pColorBlendState = &cb_ci;
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
+
+    m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
