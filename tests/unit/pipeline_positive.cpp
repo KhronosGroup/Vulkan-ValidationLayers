@@ -2085,3 +2085,129 @@ TEST_F(PositivePipeline, StaticConstantBlend) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(PositivePipeline, BlendDisabled) {
+    AddRequiredFeature(vkt::Feature::independentBlend);
+    RETURN_IF_SKIP(Init());
+
+    VkFormat non_blend_format = VK_FORMAT_R8_SINT;
+    VkFormat blend_format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    VkFormatFeatureFlags2 format_features1 = m_device->FormatFeaturesOptimal(non_blend_format);
+    VkFormatFeatureFlags2 format_features2 = m_device->FormatFeaturesOptimal(blend_format);
+
+    if (!(format_features1 & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) &&
+        (format_features1 & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT)) {
+        GTEST_SKIP() << "Format features not suitable";
+    }
+    if (!(format_features2 & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) &&
+        !(format_features2 & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT)) {
+        GTEST_SKIP() << "Format features not suitable";
+    }
+
+    vkt::Image non_blend_image(*m_device, 32u, 32u, non_blend_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView non_blend_view = non_blend_image.CreateView();
+    vkt::Image blend_image(*m_device, 32u, 32u, blend_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView blend_view = blend_image.CreateView();
+
+    VkAttachmentDescription attachments[2];
+    attachments[0] = {};
+    attachments[0].format = non_blend_format;
+    attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    attachments[1] = {};
+    attachments[1].format = blend_format;
+    attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[1].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference attachment_references1[2];
+    attachment_references1[0].attachment = 0u;
+    attachment_references1[0].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    attachment_references1[1].attachment = 1u;
+    attachment_references1[1].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference attachment_references2[2];
+    attachment_references2[0].attachment = VK_ATTACHMENT_UNUSED;
+    attachment_references2[0].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    attachment_references2[1].attachment = 1u;
+    attachment_references2[1].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription subpasses[2];
+    subpasses[0] = {};
+    subpasses[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpasses[0].colorAttachmentCount = 2u;
+    subpasses[0].pColorAttachments = attachment_references1;
+    subpasses[1] = {};
+    subpasses[1].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpasses[1].colorAttachmentCount = 2u;
+    subpasses[1].pColorAttachments = attachment_references2;
+
+    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper();
+    render_pass_ci.attachmentCount = 2u;
+    render_pass_ci.pAttachments = attachments;
+    render_pass_ci.subpassCount = 2u;
+    render_pass_ci.pSubpasses = subpasses;
+    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+
+    VkImageView views[2] = {non_blend_view.handle(), blend_view.handle()};
+    vkt::Framebuffer framebuffer(*m_device, render_pass, 2u, views);
+
+    VkPipelineColorBlendAttachmentState cb_attachments[2];
+    cb_attachments[0].blendEnable = VK_FALSE;
+    cb_attachments[0].srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    cb_attachments[0].dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    cb_attachments[0].colorBlendOp = VK_BLEND_OP_ADD;
+    cb_attachments[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    cb_attachments[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    cb_attachments[0].alphaBlendOp = VK_BLEND_OP_ADD;
+    cb_attachments[0].colorWriteMask = VK_COLOR_COMPONENT_R_BIT;
+    cb_attachments[1].blendEnable = VK_TRUE;
+    cb_attachments[1].srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    cb_attachments[1].dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    cb_attachments[1].colorBlendOp = VK_BLEND_OP_ADD;
+    cb_attachments[1].srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    cb_attachments[1].dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    cb_attachments[1].alphaBlendOp = VK_BLEND_OP_ADD;
+    cb_attachments[1].colorWriteMask = VK_COLOR_COMPONENT_R_BIT;
+
+    VkPipelineColorBlendStateCreateInfo cb_state = vku::InitStructHelper();
+    cb_state.attachmentCount = 2u;
+    cb_state.pAttachments = cb_attachments;
+
+    CreatePipelineHelper pipe1(*this);
+    pipe1.gp_ci_.renderPass = render_pass;
+    pipe1.gp_ci_.pColorBlendState = &cb_state;
+    pipe1.CreateGraphicsPipeline();
+
+    cb_attachments[0].blendEnable = VK_TRUE;
+    CreatePipelineHelper pipe2(*this);
+    pipe2.gp_ci_.renderPass = render_pass;
+    pipe2.gp_ci_.subpass = 1u;
+    pipe2.gp_ci_.pColorBlendState = &cb_state;
+    pipe2.CreateGraphicsPipeline();
+
+    VkClearValue clear_values[2] = {{m_clear_color}, {m_clear_color}};
+
+    VkRenderPassBeginInfo render_pass_bi = vku::InitStructHelper();
+    render_pass_bi.renderPass = render_pass;
+    render_pass_bi.framebuffer = framebuffer;
+    render_pass_bi.renderArea = {{0, 0}, {32u, 32u}};
+    render_pass_bi.clearValueCount = 2u;
+    render_pass_bi.pClearValues = clear_values;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(render_pass_bi);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1);
+    vk::CmdDraw(m_command_buffer, 4u, 1u, 0u, 0u);
+    vk::CmdNextSubpass(m_command_buffer, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2);
+    vk::CmdDraw(m_command_buffer, 4u, 1u, 0u, 0u);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
