@@ -45,7 +45,6 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
   public:
     struct LabelLogging {
         const std::vector<std::string> &initial_label_stack;
-        const vvl::unordered_map<uint32_t, uint32_t> &action_cmd_i_to_label_cmd_i_map;
     };
 
     using OnInstrumentionDescSetUpdate =
@@ -56,7 +55,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
         stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb, VkCommandBuffer per_submission_cb)>;
     using OnCommandBufferCompletion =
         stdext::inplace_function<bool(Validator &gpuav, CommandBufferSubState &cb,
-                                      const CommandBufferSubState::LabelLogging &label_logging, const Location &loc),
+                                      const CommandBufferSubState::LabelLogging &label_logging, const Location &submission_loc),
                                  64>;
     using OnPreCommandBufferSubmission =
         stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb, VkCommandBuffer per_pre_submission_cb)>;
@@ -121,13 +120,18 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void RecordEndRenderPass(const VkSubpassEndInfo *subpass_end_info, const Location &loc) final;
 
     vko::GpuResourcesManager gpu_resources_manager;
+
     // Using stdext::inplace_function over std::function to allocate memory in place
     using ErrorLoggerFunc =
-        stdext::inplace_function<bool(const uint32_t *error_record, const LogObjectList &objlist,
+        stdext::inplace_function<bool(const uint32_t *error_record, const Location &loc, const LogObjectList &objlist,
                                       const std::vector<std::string> &initial_label_stack),
                                  288 /*lambda storage size (bytes), large enough to store biggest error lambda*/>;
-    std::vector<ErrorLoggerFunc> per_command_error_loggers;
-    vvl::unordered_map<uint32_t, uint32_t> action_cmd_i_to_label_cmd_i_map;
+    struct CommandErrorLogger {
+        Location loc;
+        ErrorLoggerFunc error_logger_func;
+        int32_t label_cmd_i = -1;
+    };
+    std::vector<CommandErrorLogger> command_error_loggers;
 
     // Buffer storing GPU-AV errors
     vko::BufferRange error_output_buffer_range_;

@@ -293,6 +293,27 @@ BuildGeometryInfoKHR BuildGeometryInfoSimpleOnHostTopLevel(const vkt::Device& de
 
 // Create and build a top level acceleration structure
 BuildGeometryInfoKHR BuildOnDeviceTopLevel(const vkt::Device& device, vkt::Queue& queue, vkt::CommandBuffer& cmd_buffer);
+
+// Build Top Level Acceleration Structure:
+// 2 instances of the cube, at different positions
+// They are supposed to invoke 2 different closest hist shaders,
+// through different instanceShaderBindingTableRecordOffset
+// clang-format off
+/*
+    cube instance 2, translation (x = 0, y = 0, z = 50), instanceShaderBindingTableRecordOffset = 1
+    +----+
+    |  2 |
+    +----+
+
+       Z
+       ^
+       |            +----+
+       +---> X      |  1 | cube instance 1, translation (x = 50, y = 0, z = 0), instanceShaderBindingTableRecordOffset = 0
+                    +----+
+ */
+// clang-format on
+vkt::as::BuildGeometryInfoKHR GetCubesTLAS(vkt::Device& device, vkt::CommandBuffer& cb, vkt::Queue& queue,
+                                           std::shared_ptr<vkt::as::BuildGeometryInfoKHR>& out_cube_blas);
 }  // namespace blueprint
 }  // namespace as
 
@@ -317,6 +338,9 @@ class Pipeline {
 
     void AddBinding(VkDescriptorType descriptor_type, uint32_t binding, uint32_t descriptor_count = 1);
     void CreateDescriptorSet();
+    void AddDescriptorIndexingBinding(VkDescriptorType descriptor_type, uint32_t binding, VkDescriptorBindingFlags flags = 0,
+                                      uint32_t descriptor_count = 1);
+    void CreateDescriptorIndexingSet();
     // *If CreateDescriptorSet() is never called*, this method will hook supplied descriptor set layouts
     void SetPipelineSetLayouts(uint32_t set_layout_count, const VkDescriptorSetLayout* set_layouts);
 
@@ -350,6 +374,10 @@ class Pipeline {
         assert(desc_set_);
         return *desc_set_;
     }
+    OneOffDescriptorIndexingSet& GetDescriptorIndexingSet() {
+        assert(desc_indexing_set_);
+        return *desc_indexing_set_;
+    }
     TraceRaysSbt GetTraceRaysSbt(uint32_t ray_gen_shader_i = 0);
     const vkt::Buffer& GetTraceRaysSbtBuffer();
     vkt::Buffer GetTraceRaysSbtIndirectBuffer(uint32_t ray_gen_shader_i, uint32_t width, uint32_t height, uint32_t depth);
@@ -365,6 +393,8 @@ class Pipeline {
     uint32_t push_constant_range_size_ = 0;
     std::vector<VkDescriptorSetLayoutBinding> bindings_{};
     std::unique_ptr<OneOffDescriptorSet> desc_set_{};
+    std::vector<OneOffDescriptorIndexingSet::Binding> desc_indexing_bindings_{};
+    std::unique_ptr<OneOffDescriptorIndexingSet> desc_indexing_set_{};
     VkPipelineLayoutCreateInfo pipeline_layout_ci_;
     vkt::PipelineLayout pipeline_layout_{};
     std::vector<VkDynamicState> dynamic_states{};

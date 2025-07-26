@@ -1375,6 +1375,80 @@ BuildGeometryInfoKHR BuildOnDeviceTopLevel(const vkt::Device &device, vkt::Queue
     return top_level_accel_struct;
 }
 
+vkt::as::BuildGeometryInfoKHR GetCubesTLAS(vkt::Device &device, vkt::CommandBuffer &cb, vkt::Queue &queue,
+                                           std::shared_ptr<vkt::as::BuildGeometryInfoKHR> &out_cube_blas) {
+    vkt::as::GeometryKHR cube(vkt::as::blueprint::GeometryCubeOnDeviceInfo(device));
+    out_cube_blas = std::make_shared<vkt::as::BuildGeometryInfoKHR>(
+        vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(device, std::move(cube)));
+
+    // Build Bottom Level Acceleration Structure
+    cb.Begin();
+    out_cube_blas->BuildCmdBuffer(cb);
+    cb.End();
+
+    queue.Submit(cb);
+    device.Wait();
+
+    vkt::as::BuildGeometryInfoKHR tlas(&device);
+
+    tlas.SetType(VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR);
+    tlas.SetBuildType(VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR);
+    tlas.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR);
+
+    std::vector<vkt::as::GeometryKHR> cube_instances(1);
+    cube_instances[0].SetType(vkt::as::GeometryKHR::Type::Instance);
+
+    VkAccelerationStructureInstanceKHR cube_instance_1{};
+    cube_instance_1.transform.matrix[0][0] = 1.0f;
+    cube_instance_1.transform.matrix[1][1] = 1.0f;
+    cube_instance_1.transform.matrix[2][2] = 1.0f;
+    cube_instance_1.transform.matrix[0][3] = 50.0f;
+    cube_instance_1.transform.matrix[1][3] = 0.0f;
+    cube_instance_1.transform.matrix[2][3] = 0.0f;
+    cube_instance_1.mask = 0xff;
+    cube_instance_1.instanceCustomIndex = 0;
+    // Cube instance 1 will be associated to closest hit shader 1
+    cube_instance_1.instanceShaderBindingTableRecordOffset = 0;
+    cube_instances[0].AddInstanceDeviceAccelStructRef(device, out_cube_blas->GetDstAS()->handle(), cube_instance_1);
+
+    VkAccelerationStructureInstanceKHR cube_instance_2{};
+    cube_instance_2.transform.matrix[0][0] = 1.0f;
+    cube_instance_2.transform.matrix[1][1] = 1.0f;
+    cube_instance_2.transform.matrix[2][2] = 1.0f;
+    cube_instance_2.transform.matrix[0][3] = 0.0f;
+    cube_instance_2.transform.matrix[1][3] = 0.0f;
+    cube_instance_2.transform.matrix[2][3] = 50.0f;
+    cube_instance_2.mask = 0xff;
+    cube_instance_2.instanceCustomIndex = 0;
+    // Cube instance 2 will be associated to closest hit shader 2
+    cube_instance_2.instanceShaderBindingTableRecordOffset = 1;
+    cube_instances[0].AddInstanceDeviceAccelStructRef(device, out_cube_blas->GetDstAS()->handle(), cube_instance_2);
+
+    tlas.SetGeometries(std::move(cube_instances));
+    tlas.SetBuildRanges(tlas.GetBuildRangeInfosFromGeometries());
+
+    // Set source and destination acceleration structures info. Does not create handles, it is done in Build()
+    tlas.SetSrcAS(vkt::as::blueprint::AccelStructNull(device));
+    auto dstAsSize = tlas.GetSizeInfo().accelerationStructureSize;
+    auto dst_as = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(device, dstAsSize);
+    dst_as->SetType(VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR);
+    tlas.SetDstAS(std::move(dst_as));
+    tlas.SetUpdateDstAccelStructSizeBeforeBuild(true);
+
+    tlas.SetInfoCount(1);
+    tlas.SetNullInfos(false);
+    tlas.SetNullBuildRangeInfos(false);
+
+    cb.Begin();
+    tlas.BuildCmdBuffer(cb);
+    cb.End();
+
+    queue.Submit(cb);
+    device.Wait();
+
+    return tlas;
+}
+
 }  // namespace blueprint
 
 }  // namespace as
@@ -1407,11 +1481,28 @@ void Pipeline::AddBinding(VkDescriptorType descriptor_type, uint32_t binding, ui
     binding_layout.binding = binding;
     binding_layout.descriptorType = descriptor_type;
     binding_layout.descriptorCount = descriptor_count;
-    binding_layout.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
+    binding_layout.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
+                                VK_SHADER_STAGE_MISS_BIT_KHR | VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
     bindings_.emplace_back(binding_layout);
 }
 
+void Pipeline::AddDescriptorIndexingBinding(VkDescriptorType descriptor_type, uint32_t binding,
+                                            VkDescriptorBindingFlags flags /*= 0*/, uint32_t descriptor_count /*= 1*/) {
+    OneOffDescriptorIndexingSet::Binding desc_indexing_binding = {};
+    desc_indexing_binding.binding = binding;
+    desc_indexing_binding.descriptorType = descriptor_type;
+    desc_indexing_binding.descriptorCount = descriptor_count;
+    desc_indexing_binding.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
+                                       VK_SHADER_STAGE_MISS_BIT_KHR | VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
+    desc_indexing_binding.pImmutableSamplers = nullptr;
+    desc_indexing_binding.flag = flags;
+    desc_indexing_bindings_.emplace_back(desc_indexing_binding);
+}
+
 void Pipeline::CreateDescriptorSet() { desc_set_ = std::make_unique<OneOffDescriptorSet>(device_, bindings_); }
+void Pipeline::CreateDescriptorIndexingSet() {
+    desc_indexing_set_ = std::make_unique<OneOffDescriptorIndexingSet>(device_, desc_indexing_bindings_);
+}
 
 void Pipeline::SetPipelineSetLayouts(uint32_t set_layout_count, const VkDescriptorSetLayout *set_layouts) {
     pipeline_layout_ci_.setLayoutCount = set_layout_count;
@@ -1491,9 +1582,14 @@ void Pipeline::BuildPipeline() {
             pipeline_layout_ci_.pushConstantRangeCount = 1;
             pipeline_layout_ci_.pPushConstantRanges = &push_constant_range;
         }
-        if (desc_set_) {
+        assert(!(desc_set_ && desc_indexing_set_));
+        VkDescriptorSetLayout *desc_set = desc_set_            ? &desc_set_->layout_.handle()
+                                          : desc_indexing_set_ ? &desc_indexing_set_->layout_.handle()
+                                                               : nullptr;
+
+        if (desc_set) {
             pipeline_layout_ci_.setLayoutCount = 1;
-            pipeline_layout_ci_.pSetLayouts = &desc_set_->layout_.handle();
+            pipeline_layout_ci_.pSetLayouts = desc_set;
         }
         pipeline_layout_.Init(*device_, pipeline_layout_ci_);
     }

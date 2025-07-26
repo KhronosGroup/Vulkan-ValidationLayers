@@ -209,7 +209,7 @@ void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubSt
                                                                  copy_src_regions_mem_buffer_range.size};
 
         if (!BindShaderResources(validation_pipeline, gpuav, cb_state, cb_state.compute_index,
-                                 uint32_t(cb_state.per_command_error_loggers.size()), shader_resources)) {
+                                 uint32_t(cb_state.command_error_loggers.size()), shader_resources)) {
             return;
         }
 
@@ -224,9 +224,9 @@ void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubSt
         DispatchCmdDispatch(cb_state.VkHandle(), group_count_x, 1, 1);
     }
 
-    CommandBufferSubState::ErrorLoggerFunc error_logger = [&gpuav, loc, src_buffer = copy_buffer_to_img_info->srcBuffer](
-                                                              const uint32_t *error_record, const LogObjectList &objlist,
-                                                              const std::vector<std::string> &) {
+    CommandBufferSubState::ErrorLoggerFunc error_logger = [&gpuav, src_buffer = copy_buffer_to_img_info->srcBuffer](
+                                                              const uint32_t *error_record, const Location &loc,
+                                                              const LogObjectList &objlist, const std::vector<std::string> &) {
         bool skip = false;
         using namespace glsl;
 
@@ -257,7 +257,7 @@ void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubSt
         return skip;
     };
 
-    cb_state.per_command_error_loggers.emplace_back(std::move(error_logger));
+    cb_state.command_error_loggers.emplace_back(CommandBufferSubState::CommandErrorLogger{loc, std::move(error_logger)});
 }
 }  // namespace valcmd
 }  // namespace gpuav

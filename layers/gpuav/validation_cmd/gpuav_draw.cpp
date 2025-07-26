@@ -139,7 +139,7 @@ void FirstInstance(Validator &gpuav, CommandBufferSubState &cb_state, const Loca
 
     ValidationCommandFunc validation_cmd = [api_buffer, api_offset, api_stride, first_instance_member_pos, api_draw_count,
                                             api_count_buffer, api_count_buffer_offset, draw_i = cb_state.draw_index,
-                                            error_logger_i = uint32_t(cb_state.per_command_error_loggers.size()),
+                                            error_logger_i = uint32_t(cb_state.command_error_loggers.size()),
                                             loc](Validator &gpuav, CommandBufferSubState &cb_state) {
         SharedDrawValidationResources &shared_draw_validation_resources =
             gpuav.shared_resources_manager.GetOrCreate<SharedDrawValidationResources>(gpuav);
@@ -246,8 +246,8 @@ void FirstInstance(Validator &gpuav, CommandBufferSubState &cb_state, const Loca
     // ---
     const uint32_t label_command_i =
         !cb_state.base.GetLabelCommands().empty() ? uint32_t(cb_state.base.GetLabelCommands().size() - 1) : vvl::kU32Max;
-    ErrorLoggerFunc error_logger = [&gpuav, &cb_state, loc, vuid, api_struct_name, label_command_i](
-                                       const uint32_t *error_record, const LogObjectList &objlist,
+    ErrorLoggerFunc error_logger = [&gpuav, &cb_state, vuid, api_struct_name, label_command_i](
+                                       const uint32_t *error_record, const Location &loc, const LogObjectList &objlist,
                                        const std::vector<std::string> &initial_label_stack) {
         bool skip = false;
         using namespace glsl;
@@ -275,7 +275,7 @@ void FirstInstance(Validator &gpuav, CommandBufferSubState &cb_state, const Loca
         return skip;
     };
 
-    cb_state.per_command_error_loggers.emplace_back(std::move(error_logger));
+    cb_state.command_error_loggers.emplace_back(CommandBufferSubState::CommandErrorLogger{loc, std::move(error_logger)});
 }
 
 template <>
@@ -349,7 +349,7 @@ void CountBuffer(Validator &gpuav, CommandBufferSubState &cb_state, const Locati
     ValidationCommandFunc validation_cmd = [draw_buffer_size = draw_buffer_state->create_info.size, api_offset,
                                             api_struct_size_byte, api_stride, api_count_buffer, api_count_buffer_offset,
                                             draw_i = cb_state.draw_index,
-                                            error_logger_i = uint32_t(cb_state.per_command_error_loggers.size()),
+                                            error_logger_i = uint32_t(cb_state.command_error_loggers.size()),
                                             loc](Validator &gpuav, CommandBufferSubState &cb_state) {
         SharedDrawValidationResources &shared_draw_validation_resources =
             gpuav.shared_resources_manager.GetOrCreate<SharedDrawValidationResources>(gpuav);
@@ -410,10 +410,10 @@ void CountBuffer(Validator &gpuav, CommandBufferSubState &cb_state, const Locati
     // ---
     const uint32_t label_command_i =
         !cb_state.base.GetLabelCommands().empty() ? uint32_t(cb_state.base.GetLabelCommands().size() - 1) : vvl::kU32Max;
-    ErrorLoggerFunc error_logger = [&gpuav, &cb_state, loc, api_buffer, draw_buffer_size = draw_buffer_state->create_info.size,
-                                    api_offset, api_struct_size_byte, api_stride, api_struct_name, vuid,
-                                    label_command_i](const uint32_t *error_record, const LogObjectList &objlist,
-                                                     const std::vector<std::string> &initial_label_stack) {
+    ErrorLoggerFunc error_logger = [&gpuav, &cb_state, api_buffer, draw_buffer_size = draw_buffer_state->create_info.size,
+                                    api_offset, api_struct_size_byte, api_stride, api_struct_name, vuid, label_command_i](
+                                       const uint32_t *error_record, const Location &loc, const LogObjectList &objlist,
+                                       const std::vector<std::string> &initial_label_stack) {
         bool skip = false;
         using namespace glsl;
 
@@ -454,7 +454,7 @@ void CountBuffer(Validator &gpuav, CommandBufferSubState &cb_state, const Locati
         return skip;
     };
 
-    cb_state.per_command_error_loggers.emplace_back(std::move(error_logger));
+    cb_state.command_error_loggers.emplace_back(CommandBufferSubState::CommandErrorLogger{loc, std::move(error_logger)});
 }
 
 struct MeshValidationShader {
@@ -523,8 +523,7 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
     ValidationCommandFunc validation_cmd =
         [api_buffer, draw_buffer_full_size = draw_buffer_state->create_info.size, api_offset, api_stride, api_count_buffer,
          api_count_buffer_offset, api_draw_count, is_task_shader, draw_i = cb_state.draw_index,
-         error_logger_i = uint32_t(cb_state.per_command_error_loggers.size()),
-         loc](Validator &gpuav, CommandBufferSubState &cb_state) {
+         error_logger_i = uint32_t(cb_state.command_error_loggers.size()), loc](Validator &gpuav, CommandBufferSubState &cb_state) {
             SharedDrawValidationResources &shared_draw_validation_resources =
                 gpuav.shared_resources_manager.GetOrCreate<SharedDrawValidationResources>(gpuav);
             if (!shared_draw_validation_resources.valid) {
@@ -626,8 +625,8 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
     // ---
     const uint32_t label_command_i =
         !cb_state.base.GetLabelCommands().empty() ? uint32_t(cb_state.base.GetLabelCommands().size() - 1) : vvl::kU32Max;
-    ErrorLoggerFunc error_logger = [&gpuav, &cb_state, loc, is_task_shader, label_command_i](
-                                       const uint32_t *error_record, const LogObjectList &objlist,
+    ErrorLoggerFunc error_logger = [&gpuav, &cb_state, is_task_shader, label_command_i](
+                                       const uint32_t *error_record, const Location &loc, const LogObjectList &objlist,
                                        const std::vector<std::string> &initial_label_stack) {
         bool skip = false;
         using namespace glsl;
@@ -714,7 +713,7 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
         return skip;
     };
 
-    cb_state.per_command_error_loggers.emplace_back(std::move(error_logger));
+    cb_state.command_error_loggers.emplace_back(CommandBufferSubState::CommandErrorLogger{loc, std::move(error_logger)});
 }
 
 struct DrawIndexedIndirectIndexBufferShader {
@@ -840,7 +839,7 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
     ValidationCommandFunc validation_cmd = [index_buffer_binding = cb_state.base.index_buffer_binding, api_buffer, api_offset,
                                             api_stride, api_draw_count, api_count_buffer, api_count_buffer_offset,
                                             draw_i = cb_state.draw_index,
-                                            error_logger_i = uint32_t(cb_state.per_command_error_loggers.size()),
+                                            error_logger_i = uint32_t(cb_state.command_error_loggers.size()),
                                             loc](Validator &gpuav, CommandBufferSubState &cb_state) {
         SharedDrawValidationResources &shared_draw_validation_resources =
             gpuav.shared_resources_manager.GetOrCreate<SharedDrawValidationResources>(gpuav);
@@ -988,10 +987,10 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
 
     const uint32_t label_command_i =
         !cb_state.base.GetLabelCommands().empty() ? uint32_t(cb_state.base.GetLabelCommands().size() - 1) : vvl::kU32Max;
-    ErrorLoggerFunc error_logger = [&gpuav, &cb_state, loc, vuid, api_buffer, api_offset, api_stride,
-                                    index_buffer_binding = cb_state.base.index_buffer_binding,
-                                    label_command_i](const uint32_t *error_record, const LogObjectList &objlist,
-                                                     const std::vector<std::string> &initial_label_stack) {
+    ErrorLoggerFunc error_logger = [&gpuav, &cb_state, vuid, api_buffer, api_offset, api_stride,
+                                    index_buffer_binding = cb_state.base.index_buffer_binding, label_command_i](
+                                       const uint32_t *error_record, const Location &loc, const LogObjectList &objlist,
+                                       const std::vector<std::string> &initial_label_stack) {
         bool skip = false;
         using namespace glsl;
 
@@ -1051,7 +1050,7 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
         return skip;
     };
 
-    cb_state.per_command_error_loggers.emplace_back(std::move(error_logger));
+    cb_state.command_error_loggers.emplace_back(CommandBufferSubState::CommandErrorLogger{loc, std::move(error_logger)});
 }
 
 }  // namespace valcmd
