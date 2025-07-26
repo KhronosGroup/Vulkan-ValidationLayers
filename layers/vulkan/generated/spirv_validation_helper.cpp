@@ -625,6 +625,8 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "TextureBlockMatchQCOM";
         case spv::CapabilityTileShadingQCOM:
             return "TileShadingQCOM";
+        case spv::CapabilityCooperativeMatrixConversionQCOM:
+            return "CooperativeMatrixConversionQCOM";
         case spv::CapabilityTextureBlockMatch2QCOM:
             return "TextureBlockMatch2QCOM";
         case spv::CapabilityFloat16ImageAMD:
@@ -831,6 +833,14 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "SubgroupMatrixMultiplyAccumulateINTEL";
         case spv::CapabilityTernaryBitwiseFunctionINTEL:
             return "TernaryBitwiseFunctionINTEL";
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+        case spv::CapabilitySpecConditionalINTEL:
+            return "SpecConditionalINTEL";
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+        case spv::CapabilityFunctionVariantsINTEL:
+            return "FunctionVariantsINTEL";
+#endif
         case spv::CapabilityGroupUniformArithmeticKHR:
             return "GroupUniformArithmeticKHR";
         case spv::CapabilityTensorFloat32RoundingINTEL:

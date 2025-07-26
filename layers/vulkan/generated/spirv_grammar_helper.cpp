@@ -693,6 +693,8 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpImageBlockMatchSSDQCOM";
         case spv::OpImageBlockMatchSADQCOM:
             return "OpImageBlockMatchSADQCOM";
+        case spv::OpBitCastArrayQCOM:
+            return "OpBitCastArrayQCOM";
         case spv::OpImageBlockMatchWindowSSDQCOM:
             return "OpImageBlockMatchWindowSSDQCOM";
         case spv::OpImageBlockMatchWindowSADQCOM:
@@ -701,6 +703,12 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpImageBlockMatchGatherSSDQCOM";
         case spv::OpImageBlockMatchGatherSADQCOM:
             return "OpImageBlockMatchGatherSADQCOM";
+        case spv::OpCompositeConstructCoopMatQCOM:
+            return "OpCompositeConstructCoopMatQCOM";
+        case spv::OpCompositeExtractCoopMatQCOM:
+            return "OpCompositeExtractCoopMatQCOM";
+        case spv::OpExtractSubArrayQCOM:
+            return "OpExtractSubArrayQCOM";
         case spv::OpGroupIAddNonUniformAMD:
             return "OpGroupIAddNonUniformAMD";
         case spv::OpGroupFAddNonUniformAMD:
@@ -1099,6 +1107,20 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpConstantStringAMDX";
         case spv::OpSpecConstantStringAMDX:
             return "OpSpecConstantStringAMDX";
+        case spv::OpConditionalExtensionINTEL:
+            return "OpConditionalExtensionINTEL";
+        case spv::OpConditionalEntryPointINTEL:
+            return "OpConditionalEntryPointINTEL";
+        case spv::OpConditionalCapabilityINTEL:
+            return "OpConditionalCapabilityINTEL";
+        case spv::OpSpecConstantTargetINTEL:
+            return "OpSpecConstantTargetINTEL";
+        case spv::OpSpecConstantArchitectureINTEL:
+            return "OpSpecConstantArchitectureINTEL";
+        case spv::OpSpecConstantCapabilitiesINTEL:
+            return "OpSpecConstantCapabilitiesINTEL";
+        case spv::OpConditionalCopyObjectINTEL:
+            return "OpConditionalCopyObjectINTEL";
         case spv::OpConvertHandleToImageINTEL:
             return "OpConvertHandleToImageINTEL";
         case spv::OpConvertHandleToSamplerINTEL:
@@ -1713,6 +1735,8 @@ const char* string_SpvDecoration(uint32_t decoration) {
             return "PayloadNodeArraySizeAMDX";
         case spv::DecorationPayloadDispatchIndirectAMDX:
             return "PayloadDispatchIndirectAMDX";
+        case spv::DecorationConditionalINTEL:
+            return "ConditionalINTEL";
 #endif
         default:
             return "Unknown Decoration";
@@ -2373,10 +2397,14 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpImageBoxFilterQCOM, {{OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpImageBlockMatchSSDQCOM, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpImageBlockMatchSADQCOM, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpBitCastArrayQCOM, {{OperandKind::Id}}},
         {spv::OpImageBlockMatchWindowSSDQCOM, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpImageBlockMatchWindowSADQCOM, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpImageBlockMatchGatherSSDQCOM, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpImageBlockMatchGatherSADQCOM, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpCompositeConstructCoopMatQCOM, {{OperandKind::Id}}},
+        {spv::OpCompositeExtractCoopMatQCOM, {{OperandKind::Id}}},
+        {spv::OpExtractSubArrayQCOM, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpGroupIAddNonUniformAMD, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},
         {spv::OpGroupFAddNonUniformAMD, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},
         {spv::OpGroupFMinNonUniformAMD, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},

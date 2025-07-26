@@ -295,10 +295,14 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpImageBoxFilterQCOM:
         case spv::OpImageBlockMatchSSDQCOM:
         case spv::OpImageBlockMatchSADQCOM:
+        case spv::OpBitCastArrayQCOM:
         case spv::OpImageBlockMatchWindowSSDQCOM:
         case spv::OpImageBlockMatchWindowSADQCOM:
         case spv::OpImageBlockMatchGatherSSDQCOM:
         case spv::OpImageBlockMatchGatherSADQCOM:
+        case spv::OpCompositeConstructCoopMatQCOM:
+        case spv::OpCompositeExtractCoopMatQCOM:
+        case spv::OpExtractSubArrayQCOM:
         case spv::OpGroupIAddNonUniformAMD:
         case spv::OpGroupFAddNonUniformAMD:
         case spv::OpGroupFMinNonUniformAMD:
@@ -443,6 +447,10 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpFinishWritingNodePayloadAMDX:
         case spv::OpNodePayloadArrayLengthAMDX:
         case spv::OpIsNodePayloadValidAMDX:
+        case spv::OpSpecConstantTargetINTEL:
+        case spv::OpSpecConstantArchitectureINTEL:
+        case spv::OpSpecConstantCapabilitiesINTEL:
+        case spv::OpConditionalCopyObjectINTEL:
         case spv::OpConvertHandleToImageINTEL:
         case spv::OpConvertHandleToSamplerINTEL:
         case spv::OpConvertHandleToSampledImageINTEL:
@@ -731,10 +739,14 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpImageBoxFilterQCOM:
         case spv::OpImageBlockMatchSSDQCOM:
         case spv::OpImageBlockMatchSADQCOM:
+        case spv::OpBitCastArrayQCOM:
         case spv::OpImageBlockMatchWindowSSDQCOM:
         case spv::OpImageBlockMatchWindowSADQCOM:
         case spv::OpImageBlockMatchGatherSSDQCOM:
         case spv::OpImageBlockMatchGatherSADQCOM:
+        case spv::OpCompositeConstructCoopMatQCOM:
+        case spv::OpCompositeExtractCoopMatQCOM:
+        case spv::OpExtractSubArrayQCOM:
         case spv::OpGroupIAddNonUniformAMD:
         case spv::OpGroupFAddNonUniformAMD:
         case spv::OpGroupFMinNonUniformAMD:
@@ -890,6 +902,10 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpIsNodePayloadValidAMDX:
         case spv::OpConstantStringAMDX:
         case spv::OpSpecConstantStringAMDX:
+        case spv::OpSpecConstantTargetINTEL:
+        case spv::OpSpecConstantArchitectureINTEL:
+        case spv::OpSpecConstantCapabilitiesINTEL:
+        case spv::OpConditionalCopyObjectINTEL:
         case spv::OpConvertHandleToImageINTEL:
         case spv::OpConvertHandleToSamplerINTEL:
         case spv::OpConvertHandleToSampledImageINTEL:
