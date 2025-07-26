@@ -581,6 +581,10 @@ void CommandBuffer::UpdateSubpassAttachments() {
     const auto &subpass = active_render_pass->create_info.pSubpasses[GetActiveSubpass()];
     assert(active_subpasses.size() == active_attachments.size());
 
+    for (size_t i = 0; i < active_attachments.size(); ++i) {
+        active_attachments[i].type = AttachmentInfo::Type::Empty;
+    }
+
     for (uint32_t index = 0; index < subpass.inputAttachmentCount; ++index) {
         const uint32_t attachment_index = subpass.pInputAttachments[index].attachment;
         if (attachment_index != VK_ATTACHMENT_UNUSED) {
