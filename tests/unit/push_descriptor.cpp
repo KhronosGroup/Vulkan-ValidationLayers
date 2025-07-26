@@ -1144,3 +1144,40 @@ TEST_F(NegativePushDescriptor, DescriptorTemplateIncompatibleLayout) {
 
     m_command_buffer.End();
 }
+
+TEST_F(NegativePushDescriptor, PushDescriptorSetInfoPerStage) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_6_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_PER_STAGE_DESCRIPTOR_SET_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicPipelineLayout);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Buffer buffer(*m_device, 256u, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+    VkDescriptorBufferInfo descriptor_buffer_info;
+    descriptor_buffer_info.buffer = buffer;
+    descriptor_buffer_info.offset = 0u;
+    descriptor_buffer_info.range = VK_WHOLE_SIZE;
+
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstSet = 0u;
+    descriptor_write.dstBinding = 0u;
+    descriptor_write.dstArrayElement = 0u;
+    descriptor_write.descriptorCount = 1u;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_write.pBufferInfo = &descriptor_buffer_info;
+
+    VkPushDescriptorSetInfo push_descriptor_set_info = vku::InitStructHelper();
+    push_descriptor_set_info.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    push_descriptor_set_info.layout = VK_NULL_HANDLE;
+    push_descriptor_set_info.set = 0u;
+    push_descriptor_set_info.descriptorWriteCount = 1u;
+    push_descriptor_set_info.pDescriptorWrites = &descriptor_write;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkPushDescriptorSetInfo-layout-09496");
+    vk::CmdPushDescriptorSet2KHR(m_command_buffer, &push_descriptor_set_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
