@@ -538,3 +538,51 @@ TEST_F(PositivePushDescriptor, SamplerPushDescriptorWithImmutableSampler) {
     vk::CmdPushDescriptorSetKHR(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0u, 2u, write_sets);
     m_command_buffer.End();
 }
+
+TEST_F(PositivePushDescriptor, DISABLED_PushDescriptorSetInfoPerStage) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_6_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_PER_STAGE_DESCRIPTOR_SET_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicPipelineLayout);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Buffer buffer(*m_device, 256u, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+    VkDescriptorSetLayoutBinding dsl_binding;
+    dsl_binding.binding = 0u;
+    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    dsl_binding.descriptorCount = 1u;
+    dsl_binding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    dsl_binding.pImmutableSamplers = nullptr;
+
+    const vkt::DescriptorSetLayout push_ds_layout(*m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
+
+    VkDescriptorBufferInfo descriptor_buffer_info;
+    descriptor_buffer_info.buffer = buffer;
+    descriptor_buffer_info.offset = 0u;
+    descriptor_buffer_info.range = VK_WHOLE_SIZE;
+
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstSet = 0u;
+    descriptor_write.dstBinding = 0u;
+    descriptor_write.dstArrayElement = 0u;
+    descriptor_write.descriptorCount = 1u;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_write.pBufferInfo = &descriptor_buffer_info;
+
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
+    pipeline_layout_ci.setLayoutCount = 1u;
+    pipeline_layout_ci.pSetLayouts = &push_ds_layout.handle();
+
+    VkPushDescriptorSetInfo push_descriptor_set_info = vku::InitStructHelper(&pipeline_layout_ci);
+    push_descriptor_set_info.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    push_descriptor_set_info.layout = VK_NULL_HANDLE;
+    push_descriptor_set_info.set = 0u;
+    push_descriptor_set_info.descriptorWriteCount = 1u;
+    push_descriptor_set_info.pDescriptorWrites = &descriptor_write;
+
+    m_command_buffer.Begin();
+    vk::CmdPushDescriptorSet2KHR(m_command_buffer, &push_descriptor_set_info);
+    m_command_buffer.End();
+}
