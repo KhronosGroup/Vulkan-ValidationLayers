@@ -643,7 +643,7 @@ bool Device::manual_PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuff
         if (!enabled_features.fragmentDensityMapLayered) {
             skip |= LogError("VUID-VkRenderingInfo-fragmentDensityMapLayered-10827", commandBuffer,
                              rendering_info_loc.dot(Field::flags),
-                             "contains VK_RENDERING_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE, but fragmentDensityMapLayeredfeature "
+                             "contains VK_RENDERING_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE, but fragmentDensityMapLayered feature "
                              "were not enabled.");
         } else if (pRenderingInfo->layerCount > phys_dev_ext_props.fragment_density_map_layered_props.maxFragmentDensityMapLayers) {
             skip |= LogError("VUID-VkRenderingInfo-flags-10826", commandBuffer, rendering_info_loc.dot(Field::layerCount),
