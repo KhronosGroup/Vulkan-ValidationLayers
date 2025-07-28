@@ -155,6 +155,17 @@ bool CoreChecks::VerifyDescriptorSetLayoutIsCompatibile(const vvl::DescriptorSet
         }
     }
 
+    if (reference_ds_layout_def->GetCreateFlags() != to_bind_ds_layout_def->GetCreateFlags()) {
+        std::stringstream error_str;
+        error_str << FormatHandle(reference_dsl_handle) << " from pipeline layout was created with ("
+                  << string_VkDescriptorSetLayoutCreateFlags(reference_ds_layout_def->GetCreateFlags()) << "), but "
+                  << FormatHandle(to_bind_dsl_handle) << ", trying to bind, has ("
+                  << string_VkDescriptorSetLayoutCreateFlags(to_bind_ds_layout_def->GetCreateFlags()) << ")";
+        error_msg = error_str.str();
+        return false;
+    }
+
+    // Will find the mismatch of flags for each binding
     const auto &ds_layout_flags = reference_ds_layout_def->GetBindingFlags();
     const auto &bound_layout_flags = to_bind_ds_layout_def->GetBindingFlags();
     if (bound_layout_flags != ds_layout_flags) {
@@ -2375,9 +2386,13 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer 
         const char *vuid = is_2 ? "VUID-VkSetDescriptorBufferOffsetsInfoEXT-pBufferIndices-08065"
                                 : "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pBufferIndices-08065";
         const LogObjectList objlist(cb_state.Handle(), pipeline_layout->Handle());
-        skip |= LogError(vuid, objlist, loc,
-                         "There have been no calls to vkCmdBindDescriptorBuffersEXT and no descriptor buffers are bound. Any "
-                         "future call will vkCmdBindDescriptorBuffersEXT would invalidate these offsets anyway.");
+        skip |=
+            LogError(vuid, objlist, loc,
+                     "There have been no calls to vkCmdBindDescriptorBuffersEXT and no descriptor buffers are bound. Any "
+                     "future call will vkCmdBindDescriptorBuffersEXT would invalidate these offsets anyway.%s",
+                     cb_state.descriptor_buffer_ever_bound
+                         ? "\nThere was a legacy vkCmdBindDescriptorSets command recorded which invalidates all descriptor buffers."
+                         : "");
         // everything else won't make sense
         return skip;
     }

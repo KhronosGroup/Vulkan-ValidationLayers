@@ -969,6 +969,84 @@ TEST_F(NegativeDescriptorBuffer, DescriptorBufferAddress) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDescriptorBuffer, LegacyDescriptorInvalidate) {
+    TEST_DESCRIPTION("Case 5 and 6 in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7504#note_549388");
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+
+    vkt::Buffer legacy_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    OneOffDescriptorSet legacy_ds(m_device, {binding});
+    vkt::PipelineLayout legacy_pipeline_layout(*m_device, {&legacy_ds.layout_});
+    legacy_ds.WriteDescriptorBufferInfo(0, legacy_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    legacy_ds.UpdateDescriptorSets();
+
+    vkt::Buffer buffer_data(*m_device, 16, 0, vkt::device_address);
+    vkt::DescriptorSetLayout ds_layout(*m_device, binding, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
+    vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout});
+
+    VkDeviceSize ds_layout_size = ds_layout.GetDescriptorBufferSize();
+    vkt::Buffer descriptor_buffer(*m_device, ds_layout_size, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT,
+                                  vkt::device_address);
+
+    vkt::DescriptorGetInfo get_info(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_data, 16);
+
+    void *mapped_descriptor_data = descriptor_buffer.Memory().Map();
+    vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data);
+
+    char const *cs_source = R"glsl(
+        #version 450
+        layout (set = 0, binding = 0) buffer SSBO_0 { uint x; };
+        void main() {
+            x = 0;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    VkDescriptorBufferBindingInfoEXT descriptor_buffer_binding_info = vku::InitStructHelper();
+    descriptor_buffer_binding_info.address = descriptor_buffer.Address();
+    descriptor_buffer_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+    uint32_t buffer_index = 0;
+    VkDeviceSize buffer_offset = 0;
+
+    {
+        m_command_buffer.Begin();
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+
+        vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &descriptor_buffer_binding_info);
+
+        // invalidates
+        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, legacy_pipeline_layout, 0, 1, &legacy_ds.set_,
+                                  0, nullptr);
+
+        m_errorMonitor->SetDesiredError("VUID-vkCmdSetDescriptorBufferOffsetsEXT-pBufferIndices-08065");
+        vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &buffer_index,
+                                             &buffer_offset);
+        m_errorMonitor->VerifyFound();
+        m_command_buffer.End();
+    }
+    {
+        m_command_buffer.Begin();
+        vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &descriptor_buffer_binding_info);
+        vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &buffer_index,
+                                             &buffer_offset);
+
+        // invalidates
+        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, legacy_pipeline_layout, 0, 1, &legacy_ds.set_,
+                                  0, nullptr);
+
+        m_errorMonitor->SetDesiredError("VUID-vkCmdSetDescriptorBufferOffsetsEXT-pBufferIndices-08065");
+        vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &buffer_index,
+                                             &buffer_offset);
+        m_errorMonitor->VerifyFound();
+        m_command_buffer.End();
+    }
+}
+
 TEST_F(NegativeDescriptorBuffer, InconsistentBuffer) {
     TEST_DESCRIPTION("Dispatch pipeline with descriptor set bound while descriptor buffer expected");
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
