@@ -900,3 +900,54 @@ TEST_F(PositiveDescriptorBuffer, ShaderObject) {
         ASSERT_TRUE(data[2] == 20);
     }
 }
+
+TEST_F(PositiveDescriptorBuffer, NotInvalidatedLegacy) {
+    TEST_DESCRIPTION("Case 3 from https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7504#note_549388");
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+
+    vkt::Buffer legacy_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    OneOffDescriptorSet legacy_ds(m_device, {binding});
+    vkt::PipelineLayout pipeline_layout(*m_device, {&legacy_ds.layout_});
+    legacy_ds.WriteDescriptorBufferInfo(0, legacy_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    legacy_ds.UpdateDescriptorSets();
+
+    vkt::Buffer buffer_data(*m_device, 16, 0, vkt::device_address);
+    vkt::DescriptorSetLayout ds_layout(*m_device, binding, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
+
+    VkDeviceSize ds_layout_size = ds_layout.GetDescriptorBufferSize();
+    vkt::Buffer descriptor_buffer(*m_device, ds_layout_size, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT,
+                                  vkt::device_address);
+
+    vkt::DescriptorGetInfo get_info(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_data, 16);
+
+    void *mapped_descriptor_data = descriptor_buffer.Memory().Map();
+    vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data);
+
+    char const *cs_source = R"glsl(
+        #version 450
+        layout (set = 0, binding = 0) buffer SSBO_0 { uint x; };
+        void main() {
+            x = 0;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &legacy_ds.set_, 0, nullptr);
+
+    // Does not invalidate the legacy by itself
+    VkDescriptorBufferBindingInfoEXT descriptor_buffer_binding_info = vku::InitStructHelper();
+    descriptor_buffer_binding_info.address = descriptor_buffer.Address();
+    descriptor_buffer_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &descriptor_buffer_binding_info);
+
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+}

@@ -507,6 +507,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     uint32_t conditional_rendering_subpass{0};
 
     std::vector<VkDescriptorBufferBindingInfoEXT> descriptor_buffer_binding_info;
+    bool descriptor_buffer_ever_bound{false};
 
     mutable std::shared_mutex lock;
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock); }
