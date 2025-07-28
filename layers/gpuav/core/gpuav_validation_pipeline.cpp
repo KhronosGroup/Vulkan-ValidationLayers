@@ -29,28 +29,18 @@ namespace valpipe {
 namespace internal {
 
 bool CreateComputePipelineHelper(Validator &gpuav, const Location &loc,
-                                 const std::vector<VkDescriptorSetLayoutBinding> specific_bindings,
+
                                  VkDescriptorSetLayout additional_desc_set_layout, uint32_t push_constants_byte_size,
                                  uint32_t spirv_size, const uint32_t *spirv, VkDevice &out_device,
-                                 VkDescriptorSetLayout &out_specific_descriptor_set_layout, VkPipelineLayout &out_pipeline_layout,
-                                 VkShaderModule &out_shader_module, VkPipeline &out_pipeline) {
+                                 VkPipelineLayout &out_pipeline_layout, VkShaderModule &out_shader_module,
+                                 VkPipeline &out_pipeline) {
     out_device = gpuav.device;
     VkPushConstantRange push_constant_range = {};
     push_constant_range.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
     push_constant_range.offset = 0;
     push_constant_range.size = push_constants_byte_size;
 
-    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
-
-    ds_layout_ci.bindingCount = static_cast<uint32_t>(specific_bindings.size());
-    ds_layout_ci.pBindings = specific_bindings.data();
-    VkResult result = DispatchCreateDescriptorSetLayout(gpuav.device, &ds_layout_ci, nullptr, &out_specific_descriptor_set_layout);
-    if (result != VK_SUCCESS) {
-        gpuav.InternalError(gpuav.device, loc, "Failed to create descriptor set layout.");
-        return false;
-    }
-
-    std::vector<VkDescriptorSetLayout> set_layouts = {out_specific_descriptor_set_layout};
+    std::vector<VkDescriptorSetLayout> set_layouts;
     if (additional_desc_set_layout != VK_NULL_HANDLE) {
         set_layouts.emplace_back(additional_desc_set_layout);
     }
@@ -61,8 +51,8 @@ bool CreateComputePipelineHelper(Validator &gpuav, const Location &loc,
         pipeline_layout_ci.pPushConstantRanges = &push_constant_range;
     }
     pipeline_layout_ci.setLayoutCount = static_cast<uint32_t>(set_layouts.size());
-    pipeline_layout_ci.pSetLayouts = set_layouts.data();
-    result = DispatchCreatePipelineLayout(gpuav.device, &pipeline_layout_ci, nullptr, &out_pipeline_layout);
+    pipeline_layout_ci.pSetLayouts = !set_layouts.empty() ? set_layouts.data() : nullptr;
+    VkResult result = DispatchCreatePipelineLayout(gpuav.device, &pipeline_layout_ci, nullptr, &out_pipeline_layout);
     if (result != VK_SUCCESS) {
         gpuav.InternalError(gpuav.device, loc, "Failed to create pipeline layout.");
         return false;
@@ -93,12 +83,8 @@ bool CreateComputePipelineHelper(Validator &gpuav, const Location &loc,
     return true;
 }
 
-void DestroyComputePipelineHelper(VkDevice device, VkDescriptorSetLayout specific_descriptor_set_layout,
-                                  VkPipelineLayout pipeline_layout, VkShaderModule shader_module, VkPipeline pipeline) {
-    if (specific_descriptor_set_layout != VK_NULL_HANDLE) {
-        DispatchDestroyDescriptorSetLayout(device, specific_descriptor_set_layout, nullptr);
-    }
-
+void DestroyComputePipelineHelper(VkDevice device, VkPipelineLayout pipeline_layout, VkShaderModule shader_module,
+                                  VkPipeline pipeline) {
     if (pipeline_layout != VK_NULL_HANDLE) {
         DispatchDestroyPipelineLayout(device, pipeline_layout, nullptr);
     }
@@ -117,20 +103,11 @@ VkDescriptorSet GetDescriptorSetHelper(CommandBufferSubState &cb_state, VkDescri
 }
 
 void BindShaderResourcesHelper(Validator &gpuav, CommandBufferSubState &cb_state, VkPipelineLayout pipeline_layout,
-                               VkDescriptorSet desc_set, const std::vector<VkWriteDescriptorSet> &descriptor_writes,
                                const uint32_t push_constants_byte_size, const void *push_constants) {
     // Any push constants byte size below 4 is illegal. Can come from empty push constant struct
     if (push_constants_byte_size >= 4) {
         DispatchCmdPushConstants(cb_state.VkHandle(), pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, push_constants_byte_size,
                                  push_constants);
-    }
-
-    if (!descriptor_writes.empty()) {
-        // Specific resources
-        DispatchUpdateDescriptorSets(gpuav.device, uint32_t(descriptor_writes.size()), descriptor_writes.data(), 0, nullptr);
-
-        DispatchCmdBindDescriptorSets(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, glsl::kValPipeDescSet,
-                                      1, &desc_set, 0, nullptr);
     }
 }
 
