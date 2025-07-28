@@ -67,8 +67,9 @@ TEST_F(NegativeGpuAVRayTracing, CmdTraceRaysIndirect) {
     }
 
     // Create and fill buffers storing indirect data (ray query dimensions)
-    vkt::Buffer trace_rays_big_width(
-        *m_device, 4096, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    const VkBufferUsageFlags buffer_usage =
+        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+    vkt::Buffer trace_rays_big_width(*m_device, 4096, buffer_usage, vkt::device_address);
 
     VkTraceRaysIndirectCommandKHR trace_rays_dim{rt_pipeline_props.maxRayDispatchInvocationCount + 1, 1, 1};
 
@@ -77,16 +78,14 @@ TEST_F(NegativeGpuAVRayTracing, CmdTraceRaysIndirect) {
 
     trace_rays_dim = {1, rt_pipeline_props.maxRayDispatchInvocationCount + 1, 1};
 
-    vkt::Buffer trace_rays_big_height(
-        *m_device, 4096, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer trace_rays_big_height(*m_device, 4096, buffer_usage, vkt::device_address);
 
     uint8_t *ray_query_dimensions_buffer_2_ptr = (uint8_t *)trace_rays_big_height.Memory().Map();
     std::memcpy(ray_query_dimensions_buffer_2_ptr, &trace_rays_dim, sizeof(trace_rays_dim));
 
     trace_rays_dim = {1, 1, rt_pipeline_props.maxRayDispatchInvocationCount + 1};
 
-    vkt::Buffer trace_ray_big_depth(*m_device, 4096, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                    vkt::device_address);
+    vkt::Buffer trace_ray_big_depth(*m_device, 4096, buffer_usage, vkt::device_address);
 
     uint8_t *ray_query_dimensions_buffer_3_ptr = (uint8_t *)trace_ray_big_depth.Memory().Map();
     std::memcpy(ray_query_dimensions_buffer_3_ptr, &trace_rays_dim, sizeof(trace_rays_dim));

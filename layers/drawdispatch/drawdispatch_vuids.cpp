@@ -2186,7 +2186,6 @@ struct DispatchVuidsCmdTraceRaysIndirectKHR: DrawDispatchVuid {
         linear_mipmap_sampler_09599              = "VUID-vkCmdTraceRaysIndirectKHR-mipmapMode-09599";
         unnormalized_coordinates_09635           = "VUID-vkCmdTraceRaysIndirectKHR-unnormalizedCoordinates-09635";
         cubic_sampler_02692                      = "VUID-vkCmdTraceRaysIndirectKHR-None-02692";
-        indirect_buffer_bit_02290                = "VUID-vkCmdTraceRaysIndirectKHR-indirectDeviceAddress-03633";
         corner_sampled_address_mode_02696        = "VUID-vkCmdTraceRaysIndirectKHR-flags-02696";
         imageview_atomic_02691                   = "VUID-vkCmdTraceRaysIndirectKHR-None-02691";
         bufferview_atomic_07888                  = "VUID-vkCmdTraceRaysIndirectKHR-None-07888";
@@ -2233,7 +2232,6 @@ struct DispatchVuidsCmdTraceRaysIndirect2KHR: DrawDispatchVuid {
         linear_mipmap_sampler_09599              = "VUID-vkCmdTraceRaysIndirect2KHR-mipmapMode-09599";
         unnormalized_coordinates_09635           = "VUID-vkCmdTraceRaysIndirect2KHR-unnormalizedCoordinates-09635";
         cubic_sampler_02692                      = "VUID-vkCmdTraceRaysIndirect2KHR-None-02692";
-        indirect_buffer_bit_02290                = "VUID-vkCmdTraceRaysIndirect2KHR-indirectDeviceAddress-03633";
         corner_sampled_address_mode_02696        = "VUID-vkCmdTraceRaysIndirect2KHR-flags-02696";
         imageview_atomic_02691                   = "VUID-vkCmdTraceRaysIndirect2KHR-None-02691";
         bufferview_atomic_07888                  = "VUID-vkCmdTraceRaysIndirect2KHR-None-07888";
