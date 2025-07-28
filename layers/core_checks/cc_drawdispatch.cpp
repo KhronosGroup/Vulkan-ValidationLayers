@@ -18,6 +18,7 @@
  */
 
 #include <vulkan/vk_enum_string_helper.h>
+#include "core_checks/cc_buffer_address.h"
 #include "drawdispatch/drawdispatch_vuids.h"
 #include "core_validation.h"
 #include "error_message/error_strings.h"
@@ -1022,6 +1023,24 @@ bool CoreChecks::PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
     return skip;
 }
 
+bool CoreChecks::ValidateCmdTraceRaysIndirect(const Location &loc, const LastBound &last_bound_state,
+                                              VkDeviceAddress indirect_device_address) const {
+    bool skip = false;
+    const bool is_2khr = loc.function == Func::vkCmdTraceRaysIndirect2KHR;
+
+    const char *usage_vuid = is_2khr ? " VUID-vkCmdTraceRaysIndirect2KHR-indirectDeviceAddress-03633"
+                                     : "VUID-vkCmdTraceRaysIndirectKHR-indirectDeviceAddress-03633";
+    BufferAddressValidation<1> buffer_address_validator = {
+        {{{usage_vuid,
+           [](const vvl::Buffer &buffer_state) { return (buffer_state.usage & VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT) == 0; },
+           []() { return "The following buffers are missing VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT"; },
+           [](const vvl::Buffer &buffer_state) { return "buffer has usage " + string_VkBufferUsageFlags2(buffer_state.usage); }}}}};
+
+    skip |= buffer_address_validator.ValidateDeviceAddress(
+        *this, loc.dot(Field::indirectDeviceAddress), LogObjectList(last_bound_state.cb_state.Handle()), indirect_device_address);
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
                                                         const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
                                                         const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
@@ -1036,6 +1055,7 @@ bool CoreChecks::PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandB
     skip |= ValidateActionState(last_bound_state, vuid);
     skip |= ValidateCmdTraceRaysKHR(error_obj.location, last_bound_state, pRaygenShaderBindingTable, pMissShaderBindingTable,
                                     pHitShaderBindingTable, pCallableShaderBindingTable);
+    skip |= ValidateCmdTraceRaysIndirect(error_obj.location, last_bound_state, indirectDeviceAddress);
     return skip;
 }
 
@@ -1047,6 +1067,7 @@ bool CoreChecks::PreCallValidateCmdTraceRaysIndirect2KHR(VkCommandBuffer command
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
 
     skip |= ValidateActionState(last_bound_state, vuid);
+    skip |= ValidateCmdTraceRaysIndirect(error_obj.location, last_bound_state, indirectDeviceAddress);
     return skip;
 }
 

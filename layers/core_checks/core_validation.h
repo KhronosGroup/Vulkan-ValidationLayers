@@ -1399,6 +1399,8 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateRaytracingShaderBindingTable(const vvl::CommandBuffer& cb_state, const Location& table_loc,
                                               const char* vuid_binding_table_flag,
                                               const VkStridedDeviceAddressRegionKHR& binding_table) const;
+    bool ValidateCmdTraceRaysIndirect(const Location& loc, const LastBound& last_bound_state,
+                                      VkDeviceAddress indirect_device_address) const;
     bool ValidateCmdTraceRaysKHR(const Location& loc, const LastBound& last_bound_state,
                                  const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable,
                                  const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,
