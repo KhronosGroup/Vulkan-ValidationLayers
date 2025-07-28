@@ -20,6 +20,7 @@
 #include <vulkan/vk_enum_string_helper.h>
 #include "drawdispatch/drawdispatch_vuids.h"
 #include "core_validation.h"
+#include "error_message/error_strings.h"
 #include "generated/vk_extension_helper.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/image_state.h"
@@ -1353,6 +1354,7 @@ bool CoreChecks::ValidateActionState(const LastBound &last_bound_state, const Dr
         skip |= ValidateDrawFragmentShadingRate(last_bound_state, vuid);
         skip |= ValidateDrawAttachmentColorBlend(last_bound_state, vuid);
         skip |= ValidateDrawAttachmentSampleLocation(last_bound_state, vuid);
+        skip |= ValidateDrawDepthStencilAttachments(last_bound_state, vuid);
 
         if (cb_state.active_render_pass && cb_state.active_render_pass->UsesDynamicRendering()) {
             skip |= ValidateDrawDynamicRenderingFsOutputs(last_bound_state, *cb_state.active_render_pass, loc);
@@ -2048,6 +2050,63 @@ bool CoreChecks::ValidateDrawAttachmentSampleLocation(const LastBound &last_boun
                                  "VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT.",
                                  attachment_info.Describe(cb_state, i).c_str(), FormatHandle(attachment->Handle()).c_str(),
                                  FormatHandle(attachment->image_state->Handle()).c_str());
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateDrawDepthStencilAttachments(const LastBound &last_bound_state, const vvl::DrawDispatchVuid &vuid) const {
+    bool skip = false;
+
+    const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
+    for (uint32_t i = 0; i < cb_state.active_attachments.size(); i++) {
+        const auto &attachment_info = cb_state.active_attachments[i];
+        const auto *attachment = attachment_info.image_view;
+        if (!attachment) {
+            continue;
+        }
+
+        if (attachment_info.IsDepth() && last_bound_state.IsDepthWriteEnable() &&
+            IsImageLayoutDepthReadOnly(attachment_info.layout)) {
+            LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
+            objlist.add(attachment->Handle());
+            skip |= LogError(vuid.depth_read_only_06886, objlist, vuid.loc(),
+                             "depthWriteEnable is VK_TRUE, but %s (%s created with %s) has a layout %s which is READ_ONLY.",
+                             attachment_info.Describe(cb_state, i).c_str(), FormatHandle(attachment->Handle()).c_str(),
+                             FormatHandle(attachment->image_state->Handle()).c_str(), string_VkImageLayout(attachment_info.layout));
+        }
+
+        if (attachment_info.IsStencil() && last_bound_state.IsStencilTestEnable()) {
+            VkStencilOpState front = last_bound_state.GetStencilOpStateFront();
+            VkStencilOpState back = last_bound_state.GetStencilOpStateBack();
+
+            const bool all_keep_op = ((front.failOp == VK_STENCIL_OP_KEEP) && (front.passOp == VK_STENCIL_OP_KEEP) &&
+                                      (front.depthFailOp == VK_STENCIL_OP_KEEP) && (back.failOp == VK_STENCIL_OP_KEEP) &&
+                                      (back.passOp == VK_STENCIL_OP_KEEP) && (back.depthFailOp == VK_STENCIL_OP_KEEP));
+            const bool write_mask_enabled = (front.writeMask != 0) && (back.writeMask != 0);
+
+            if (!all_keep_op && write_mask_enabled) {
+                bool is_stencil_layout_read_only = false;
+                if (attachment_info.separate_stencil_layout != VK_IMAGE_LAYOUT_UNDEFINED) {
+                    is_stencil_layout_read_only = IsImageLayoutStencilReadOnly(attachment_info.separate_stencil_layout);
+                } else {
+                    is_stencil_layout_read_only = IsImageLayoutStencilReadOnly(attachment_info.layout);
+                }
+
+                if (is_stencil_layout_read_only) {
+                    LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
+                    objlist.add(attachment->Handle());
+                    skip |= LogError(
+                        vuid.stencil_read_only_06887, objlist, vuid.loc(),
+                        "%s (%s created with %s) has a layout of %s which is READ_ONLY, but stencilTestEnable is VK_TRUE, "
+                        "writeMask is non-zero, and all stencil ops are not VK_STENCIL_OP_KEEP.\n"
+                        "front:\n%sback:\n%s",
+                        attachment_info.Describe(cb_state, i).c_str(), FormatHandle(attachment->Handle()).c_str(),
+                        FormatHandle(attachment->image_state->Handle()).c_str(), string_VkImageLayout(attachment_info.layout),
+                        string_VkStencilOpState(front).c_str(), string_VkStencilOpState(back).c_str());
+                }
             }
         }
     }

@@ -562,7 +562,8 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     if (!cb_state.active_attachments.empty() && !cb_state.active_subpasses.empty() &&
         (descriptor_type != VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
         for (uint32_t att_index = 0; att_index < cb_state.active_attachments.size(); ++att_index) {
-            const auto *view_state = cb_state.active_attachments[att_index].image_view;
+            const auto &attachment_info = cb_state.active_attachments[att_index];
+            const auto *view_state = attachment_info.image_view;
             if (!view_state || view_state->Destroyed()) {
                 continue;
             }
@@ -586,7 +587,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             }
 
             const SubpassInfo &subpass = cb_state.active_subpasses[att_index];
-            const bool layout_read_only = IsImageLayoutReadOnly(subpass.layout);
+            const bool layout_read_only = IsImageLayoutReadOnly(attachment_info.layout);
             const bool read_attachment = (subpass.usage & (VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) != 0;
             if (read_attachment && descriptor_written_to) {
                 if (same_view) {

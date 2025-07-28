@@ -54,6 +54,11 @@ bool AttachmentInfo::IsDepth() const {
            (type == Type::DepthStencil && image_view && vkuFormatHasDepth(image_view->image_state->create_info.format));
 }
 
+bool AttachmentInfo::IsStencil() const {
+    return type == Type::Stencil ||
+           (type == Type::DepthStencil && image_view && vkuFormatHasStencil(image_view->image_state->create_info.format));
+}
+
 // For Traditional RenderPasses, the index is simply the index into the VkRenderPassCreateInfo::pAttachments,
 // but for dynamic rendering, there is no "standard" way to map the index, instead we have our own custom indexing and it is not
 // obvious at all to the user where it came from
@@ -99,7 +104,7 @@ std::string AttachmentInfo::Describe(const vvl::CommandBuffer &cb_state, uint32_
         } else if (type == Type::DepthResolve) {
             ss << "pStencilAttachment.resolveImageView";
         } else if (type == Type::Stencil) {
-            ss << "pDepthAttachment.imageView";
+            ss << "pStencilAttachment.imageView";
         } else if (type == Type::StencilResolve) {
             ss << "pStencilAttachment.resolveImageView";
         } else if (type == Type::FragmentDensityMap) {
@@ -585,9 +590,9 @@ void CommandBuffer::UpdateSubpassAttachments() {
         const uint32_t attachment_index = subpass.pInputAttachments[index].attachment;
         if (attachment_index != VK_ATTACHMENT_UNUSED) {
             active_attachments[attachment_index].type = AttachmentInfo::Type::Input;
+            active_attachments[attachment_index].layout = subpass.pInputAttachments[index].layout;
             active_subpasses[attachment_index].used = true;
             active_subpasses[attachment_index].usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
-            active_subpasses[attachment_index].layout = subpass.pInputAttachments[index].layout;
             active_subpasses[attachment_index].aspectMask = subpass.pInputAttachments[index].aspectMask;
         }
     }
@@ -596,20 +601,20 @@ void CommandBuffer::UpdateSubpassAttachments() {
         const uint32_t attachment_index = subpass.pColorAttachments[index].attachment;
         if (attachment_index != VK_ATTACHMENT_UNUSED) {
             active_attachments[attachment_index].type = AttachmentInfo::Type::Color;
+            active_attachments[attachment_index].layout = subpass.pColorAttachments[index].layout;
             active_attachments[attachment_index].color_index = index;
             active_color_attachments_index.insert(index);
             active_subpasses[attachment_index].used = true;
             active_subpasses[attachment_index].usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-            active_subpasses[attachment_index].layout = subpass.pColorAttachments[index].layout;
             active_subpasses[attachment_index].aspectMask = subpass.pColorAttachments[index].aspectMask;
         }
         if (subpass.pResolveAttachments) {
             const uint32_t attachment_index2 = subpass.pResolveAttachments[index].attachment;
             if (attachment_index2 != VK_ATTACHMENT_UNUSED) {
                 active_attachments[attachment_index2].type = AttachmentInfo::Type::ColorResolve;
+                active_attachments[attachment_index2].layout = subpass.pResolveAttachments[index].layout;
                 active_subpasses[attachment_index2].used = true;
                 active_subpasses[attachment_index2].usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-                active_subpasses[attachment_index2].layout = subpass.pResolveAttachments[index].layout;
                 active_subpasses[attachment_index2].aspectMask = subpass.pResolveAttachments[index].aspectMask;
             }
         }
@@ -619,9 +624,14 @@ void CommandBuffer::UpdateSubpassAttachments() {
         const uint32_t attachment_index = subpass.pDepthStencilAttachment->attachment;
         if (attachment_index != VK_ATTACHMENT_UNUSED) {
             active_attachments[attachment_index].type = AttachmentInfo::Type::DepthStencil;
+            active_attachments[attachment_index].layout = subpass.pDepthStencilAttachment->layout;
+            // Look for potential dedicated stencil layout
+            if (const auto *stencil_layout =
+                    vku::FindStructInPNextChain<VkAttachmentReferenceStencilLayout>(subpass.pDepthStencilAttachment->pNext)) {
+                active_attachments[attachment_index].separate_stencil_layout = stencil_layout->stencilLayout;
+            }
             active_subpasses[attachment_index].used = true;
             active_subpasses[attachment_index].usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-            active_subpasses[attachment_index].layout = subpass.pDepthStencilAttachment->layout;
             active_subpasses[attachment_index].aspectMask = subpass.pDepthStencilAttachment->aspectMask;
         }
     }
@@ -631,9 +641,9 @@ void CommandBuffer::UpdateSubpassAttachments() {
         const uint32_t attachment_index = rdm_ci->fragmentDensityMapAttachment.attachment;
         if (attachment_index != VK_ATTACHMENT_UNUSED) {
             active_attachments[attachment_index].type = AttachmentInfo::Type::FragmentDensityMap;
+            active_attachments[attachment_index].layout = rdm_ci->fragmentDensityMapAttachment.layout;
             active_subpasses[attachment_index].used = true;
             active_subpasses[attachment_index].usage = VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
-            active_subpasses[attachment_index].layout = rdm_ci->fragmentDensityMapAttachment.layout;
             active_subpasses[attachment_index].aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         }
     }
@@ -643,9 +653,9 @@ void CommandBuffer::UpdateSubpassAttachments() {
             const uint32_t attachment_index = rdr_attachment_ci->pFragmentShadingRateAttachment->attachment;
             if (attachment_index != VK_ATTACHMENT_UNUSED) {
                 active_attachments[attachment_index].type = AttachmentInfo::Type::FragmentShadingRate;
+                active_attachments[attachment_index].layout = rdr_attachment_ci->pFragmentShadingRateAttachment->layout;
                 active_subpasses[attachment_index].used = true;
                 active_subpasses[attachment_index].usage = VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
-                active_subpasses[attachment_index].layout = rdr_attachment_ci->pFragmentShadingRateAttachment->layout;
                 active_subpasses[attachment_index].aspectMask = rdr_attachment_ci->pFragmentShadingRateAttachment->aspectMask;
             }
         }
@@ -811,17 +821,20 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo &rendering_info, 
         rendering_attachments.color_locations[i] = i;
         rendering_attachments.color_indexes[i] = i;
 
-        if (rendering_info.pColorAttachments[i].imageView != VK_NULL_HANDLE) {
+        const auto &rendering_attachment = rendering_info.pColorAttachments[i];
+        if (rendering_attachment.imageView != VK_NULL_HANDLE) {
             auto &color_attachment = active_attachments[GetDynamicRenderingColorAttachmentIndex(i)];
-            color_attachment.image_view = dev_data.Get<vvl::ImageView>(rendering_info.pColorAttachments[i].imageView).get();
+            color_attachment.image_view = dev_data.Get<vvl::ImageView>(rendering_attachment.imageView).get();
             color_attachment.type = AttachmentInfo::Type::Color;
+            color_attachment.layout = rendering_attachment.imageLayout;
             color_attachment.color_index = i;
             active_color_attachments_index.insert(i);
-            if (rendering_info.pColorAttachments[i].resolveMode != VK_RESOLVE_MODE_NONE &&
-                rendering_info.pColorAttachments[i].resolveImageView != VK_NULL_HANDLE) {
+            if (rendering_attachment.resolveMode != VK_RESOLVE_MODE_NONE &&
+                rendering_attachment.resolveImageView != VK_NULL_HANDLE) {
                 auto &resolve_attachment = active_attachments[GetDynamicRenderingColorResolveAttachmentIndex(i)];
-                resolve_attachment.image_view = dev_data.Get<vvl::ImageView>(rendering_info.pColorAttachments[i].imageView).get();
+                resolve_attachment.image_view = dev_data.Get<vvl::ImageView>(rendering_attachment.resolveImageView).get();
                 resolve_attachment.type = AttachmentInfo::Type::ColorResolve;
+                resolve_attachment.layout = rendering_attachment.resolveImageLayout;
             }
         }
     }
@@ -830,11 +843,13 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo &rendering_info, 
         auto &depth_attachment = active_attachments[GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::Depth)];
         depth_attachment.image_view = dev_data.Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView).get();
         depth_attachment.type = AttachmentInfo::Type::Depth;
+        depth_attachment.layout = rendering_info.pDepthAttachment->imageLayout;
         if (rendering_info.pDepthAttachment->resolveMode != VK_RESOLVE_MODE_NONE &&
             rendering_info.pDepthAttachment->resolveImageView != VK_NULL_HANDLE) {
             auto &resolve_attachment = active_attachments[GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::DepthResolve)];
-            resolve_attachment.image_view = dev_data.Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView).get();
+            resolve_attachment.image_view = dev_data.Get<vvl::ImageView>(rendering_info.pDepthAttachment->resolveImageView).get();
             resolve_attachment.type = AttachmentInfo::Type::DepthResolve;
+            resolve_attachment.layout = rendering_info.pDepthAttachment->resolveImageLayout;
         }
     }
 
@@ -842,11 +857,13 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo &rendering_info, 
         auto &stencil_attachment = active_attachments[GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::Stencil)];
         stencil_attachment.image_view = dev_data.Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView).get();
         stencil_attachment.type = AttachmentInfo::Type::Stencil;
+        stencil_attachment.layout = rendering_info.pStencilAttachment->imageLayout;
         if (rendering_info.pStencilAttachment->resolveMode != VK_RESOLVE_MODE_NONE &&
             rendering_info.pStencilAttachment->resolveImageView != VK_NULL_HANDLE) {
             auto &resolve_attachment = active_attachments[GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::StencilResolve)];
-            resolve_attachment.image_view = dev_data.Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView).get();
+            resolve_attachment.image_view = dev_data.Get<vvl::ImageView>(rendering_info.pStencilAttachment->resolveImageView).get();
             resolve_attachment.type = AttachmentInfo::Type::StencilResolve;
+            resolve_attachment.layout = rendering_info.pStencilAttachment->resolveImageLayout;
         }
     }
 
@@ -855,6 +872,7 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo &rendering_info, 
         auto &fdm_attachment = active_attachments[GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::FragmentDensityMap)];
         fdm_attachment.image_view = dev_data.Get<vvl::ImageView>(fragment_density_map_info->imageView).get();
         fdm_attachment.type = AttachmentInfo::Type::FragmentDensityMap;
+        fdm_attachment.layout = fragment_density_map_info->imageLayout;
     }
 
     for (auto &item : sub_states_) {

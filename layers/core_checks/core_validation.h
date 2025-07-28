@@ -279,6 +279,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateDrawFragmentShadingRate(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawAttachmentColorBlend(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawAttachmentSampleLocation(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateDrawDepthStencilAttachments(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawDynamicRenderingFsOutputs(const LastBound& last_bound_state, const vvl::RenderPass& rp_state,
                                                const Location& loc) const;
     bool ValidateDrawDynamicRenderpassExternalFormatResolve(const LastBound& last_bound_state, const vvl::RenderPass& rp_state,

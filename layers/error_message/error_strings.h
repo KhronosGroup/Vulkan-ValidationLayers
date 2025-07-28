@@ -159,6 +159,18 @@
     return ss.str();
 }
 
+[[maybe_unused]] static std::string string_VkStencilOpState(VkStencilOpState state) {
+    std::stringstream ss;
+    ss << " failOp (" << string_VkStencilOp(state.failOp) << ")\n";
+    ss << " passOp (" << string_VkStencilOp(state.passOp) << ")\n";
+    ss << " depthFailOp (" << string_VkStencilOp(state.depthFailOp) << ")\n";
+    ss << " compareOp (" << string_VkCompareOp(state.compareOp) << ")\n";
+    ss << " compareMask (" << state.compareMask << ")\n";
+    ss << " writeMask (" << state.writeMask << ")\n";
+    ss << " reference (" << state.reference << ")\n";
+    return ss.str();
+}
+
 [[maybe_unused]] static std::string string_VkDependencyInfo(const Logger &logger, VkDependencyInfo set_dependency_info,
                                                             VkDependencyInfo dependency_info) {
     std::stringstream set;
