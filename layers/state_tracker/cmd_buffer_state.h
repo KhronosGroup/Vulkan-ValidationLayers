@@ -78,16 +78,25 @@ struct AttachmentInfo {
 
     vvl::ImageView *image_view;
     Type type;
+    VkImageLayout layout;
+    // Only for VkRenderPass with VK_KHR_separate_depth_stencil_layouts
+    VkImageLayout separate_stencil_layout;
     // When dealing with color attachments, need to know the index for things such as
     // VkPipelineColorBlendStateCreateInfo::pAttachments or vkCmdSetColorBlendEnableEXT
     uint32_t color_index;
 
-    AttachmentInfo() : image_view(nullptr), type(Type::Empty), color_index(0) {}
+    AttachmentInfo()
+        : image_view(nullptr),
+          type(Type::Empty),
+          layout(VK_IMAGE_LAYOUT_UNDEFINED),
+          separate_stencil_layout(VK_IMAGE_LAYOUT_UNDEFINED),
+          color_index(0) {}
 
     bool IsResolve() const { return type == Type::ColorResolve || type == Type::DepthResolve || type == Type::StencilResolve; }
     bool IsInput() const { return type == Type::Input; }
     bool IsColor() const { return type == Type::Color; }
     bool IsDepth() const;
+    bool IsStencil() const;
     bool IsDepthOrStencil() const {
         return type == Type::DepthStencil || type == Type::Depth || type == Type::DepthResolve || type == Type::Stencil ||
                type == Type::StencilResolve;
@@ -101,11 +110,9 @@ struct AttachmentInfo {
 struct SubpassInfo {
     bool used;
     VkImageUsageFlagBits usage;
-    VkImageLayout layout;
     VkImageAspectFlags aspectMask;
 
-    SubpassInfo()
-        : used(false), usage(VkImageUsageFlagBits(0)), layout(VK_IMAGE_LAYOUT_UNDEFINED), aspectMask(VkImageAspectFlags(0)) {}
+    SubpassInfo() : used(false), usage(VkImageUsageFlagBits(0)), aspectMask(VkImageAspectFlags(0)) {}
 };
 
 namespace vvl {

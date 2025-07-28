@@ -3361,58 +3361,12 @@ bool CoreChecks::ValidateDrawPipelineRenderpass(const LastBound &last_bound_stat
         skip |= ValidateRenderPassCompatibility(cb_state.Handle(), rp_state, pipeline.Handle(), *pipeline_rp_state.get(),
                                                 vuid.loc(), vuid.render_pass_compatible_02684);
     }
-    const auto subpass = pipeline.Subpass();
+    const uint32_t subpass = pipeline.Subpass();
     if (subpass != cb_state.GetActiveSubpass()) {
         const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), rp_state.Handle());
         skip |= LogError(vuid.subpass_index_02685, objlist, vuid.loc(),
                          "Pipeline was built for subpass %" PRIu32 " but used in subpass %" PRIu32 ".", subpass,
                          cb_state.GetActiveSubpass());
-    }
-    const vku::safe_VkAttachmentReference2 *ds_attachment =
-        rp_state.create_info.pSubpasses[cb_state.GetActiveSubpass()].pDepthStencilAttachment;
-    const auto ds_state = pipeline.DepthStencilState();
-    if (ds_attachment && ds_state) {
-        if (IsImageLayoutDepthReadOnly(ds_attachment->layout) && last_bound_state.IsDepthWriteEnable()) {
-            const LogObjectList objlist(pipeline.Handle(), rp_state.Handle(), cb_state.Handle());
-            skip |= LogError(vuid.depth_read_only_06886, objlist, vuid.loc(),
-                             "depthWriteEnable is VK_TRUE, while the layout (%s) of "
-                             "the depth aspect of the depth/stencil attachment in the render pass is read only.",
-                             string_VkImageLayout(ds_attachment->layout));
-        }
-
-        VkStencilOpState front = last_bound_state.GetStencilOpStateFront();
-        VkStencilOpState back = last_bound_state.GetStencilOpStateBack();
-
-        const bool all_keep_op = ((front.failOp == VK_STENCIL_OP_KEEP) && (front.passOp == VK_STENCIL_OP_KEEP) &&
-                                  (front.depthFailOp == VK_STENCIL_OP_KEEP) && (back.failOp == VK_STENCIL_OP_KEEP) &&
-                                  (back.passOp == VK_STENCIL_OP_KEEP) && (back.depthFailOp == VK_STENCIL_OP_KEEP));
-
-        const bool write_mask_enabled = (front.writeMask != 0) && (back.writeMask != 0);
-
-        if (!all_keep_op && write_mask_enabled) {
-            const bool is_stencil_layout_read_only = [&]() {
-                // Look for potential dedicated stencil layout
-                if (const auto *stencil_layout =
-                        vku::FindStructInPNextChain<VkAttachmentReferenceStencilLayout>(ds_attachment->pNext);
-                    stencil_layout)
-                    return IsImageLayoutStencilReadOnly(stencil_layout->stencilLayout);
-                // Else depth and stencil share same layout
-                return IsImageLayoutStencilReadOnly(ds_attachment->layout);
-            }();
-
-            if (is_stencil_layout_read_only) {
-                const LogObjectList objlist(pipeline.Handle(), rp_state.Handle(), cb_state.Handle());
-                skip |= LogError(vuid.stencil_read_only_06887, objlist, vuid.loc(),
-                                 "The layout (%s) of the stencil aspect of the depth/stencil attachment in the render pass "
-                                 "is read only but not all stencil ops are VK_STENCIL_OP_KEEP.\n"
-                                 "front = { .failOp = %s,  .passOp = %s , .depthFailOp = %s }\n"
-                                 "back = { .failOp = %s, .passOp = %s, .depthFailOp = %s }\n",
-                                 string_VkImageLayout(ds_attachment->layout), string_VkStencilOp(front.failOp),
-                                 string_VkStencilOp(front.passOp), string_VkStencilOp(front.depthFailOp),
-                                 string_VkStencilOp(back.failOp), string_VkStencilOp(back.passOp),
-                                 string_VkStencilOp(back.depthFailOp));
-            }
-        }
     }
 
     return skip;

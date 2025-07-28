@@ -2974,11 +2974,13 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
     stencil_state_info.front.failOp = VK_STENCIL_OP_ZERO;
     stencil_state_info.front.writeMask = 1;
     stencil_state_info.back.writeMask = 1;
+    stencil_state_info.stencilTestEnable = VK_TRUE;
 
     VkPipelineDepthStencilStateCreateInfo stencil_disabled_state_info = vku::InitStructHelper();
     stencil_disabled_state_info.front.failOp = VK_STENCIL_OP_ZERO;
     stencil_disabled_state_info.front.writeMask = 1;
     stencil_disabled_state_info.back.writeMask = 0;
+    stencil_disabled_state_info.stencilTestEnable = VK_TRUE;
 
     CreatePipelineHelper depth_pipe(*this);
     depth_pipe.LateBindPipelineInfo();
@@ -3036,6 +3038,85 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
+}
+
+TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayoutDynamicRendering) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
+
+    auto depth_format = FindSupportedDepthOnlyFormat(Gpu());
+    auto stencil_format = FindSupportedStencilOnlyFormat(Gpu());
+    if (stencil_format == VK_FORMAT_UNDEFINED) {
+        GTEST_SKIP() << "Couldn't find a stencil only image format";
+    }
+    vkt::Image depth_image(*m_device, 32, 32, depth_format,
+                           VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::Image stencil_image(*m_device, 32, 32, stencil_format,
+                             VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+
+    vkt::ImageView depth_image_view = depth_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
+    vkt::ImageView stencil_image_view = stencil_image.CreateView(VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 0;
+    pipeline_rendering_info.depthAttachmentFormat = depth_format;
+    pipeline_rendering_info.stencilAttachmentFormat = VK_FORMAT_UNDEFINED;
+
+    VkPipelineDepthStencilStateCreateInfo depth_state_info = vku::InitStructHelper();
+    depth_state_info.depthTestEnable = VK_TRUE;
+    depth_state_info.depthWriteEnable = VK_TRUE;
+
+    CreatePipelineHelper depth_pipe(*this, &pipeline_rendering_info);
+    depth_pipe.gp_ci_.pDepthStencilState = &depth_state_info;
+    depth_pipe.CreateGraphicsPipeline();
+
+    pipeline_rendering_info.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
+    pipeline_rendering_info.stencilAttachmentFormat = stencil_format;
+
+    VkPipelineDepthStencilStateCreateInfo stencil_state_info = vku::InitStructHelper();
+    stencil_state_info.front.failOp = VK_STENCIL_OP_ZERO;
+    stencil_state_info.front.writeMask = 1;
+    stencil_state_info.back.writeMask = 1;
+    stencil_state_info.stencilTestEnable = VK_TRUE;
+
+    CreatePipelineHelper stencil_pipe(*this, &pipeline_rendering_info);
+    stencil_pipe.gp_ci_.pDepthStencilState = &stencil_state_info;
+    stencil_pipe.CreateGraphicsPipeline();
+
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+
+    {
+        VkRenderingAttachmentInfo depth_attachment = vku::InitStructHelper();
+        depth_attachment.imageView = depth_image_view;
+        depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
+        begin_rendering_info.pDepthAttachment = &depth_attachment;
+
+        m_command_buffer.Begin();
+        m_command_buffer.BeginRendering(begin_rendering_info);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, depth_pipe);
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-06886");
+        vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+        m_errorMonitor->VerifyFound();
+        m_command_buffer.EndRendering();
+    }
+    {
+        VkRenderingAttachmentInfo stencil_attachment = vku::InitStructHelper();
+        stencil_attachment.imageView = stencil_image_view;
+        stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL;
+        begin_rendering_info.pStencilAttachment = &stencil_attachment;
+        begin_rendering_info.pDepthAttachment = nullptr;
+
+        m_command_buffer.BeginRendering(begin_rendering_info);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, stencil_pipe);
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-06887");
+        vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+        m_errorMonitor->VerifyFound();
+        m_command_buffer.EndRendering();
+    }
 }
 
 TEST_F(NegativeCommand, ClearColorImageWithRange) {

@@ -61,8 +61,8 @@ bool LastBound::IsDepthTestEnable() const {
             return cb_state.dynamic_state_value.depth_test_enable;
         }
     } else {
-        if (pipeline_state->DepthStencilState()) {
-            return pipeline_state->DepthStencilState()->depthTestEnable;
+        if (const auto ds_state = pipeline_state->DepthStencilState()) {
+            return ds_state->depthTestEnable;
         }
     }
     return false;
@@ -74,8 +74,8 @@ bool LastBound::IsDepthBoundTestEnable() const {
             return cb_state.dynamic_state_value.depth_bounds_test_enable;
         }
     } else {
-        if (pipeline_state->DepthStencilState()) {
-            return pipeline_state->DepthStencilState()->depthBoundsTestEnable;
+        if (const auto ds_state = pipeline_state->DepthStencilState()) {
+            return ds_state->depthBoundsTestEnable;
         }
     }
     return false;
@@ -91,8 +91,8 @@ bool LastBound::IsDepthWriteEnable() const {
             return cb_state.dynamic_state_value.depth_write_enable;
         }
     } else {
-        if (pipeline_state->DepthStencilState()) {
-            return pipeline_state->DepthStencilState()->depthWriteEnable;
+        if (const auto ds_state = pipeline_state->DepthStencilState()) {
+            return ds_state->depthWriteEnable;
         }
     }
     return false;
@@ -104,8 +104,8 @@ bool LastBound::IsDepthBiasEnable() const {
             return cb_state.dynamic_state_value.depth_bias_enable;
         }
     } else {
-        if (pipeline_state->RasterizationState()) {
-            return pipeline_state->RasterizationState()->depthBiasEnable;
+        if (const auto raster_state = pipeline_state->RasterizationState()) {
+            return raster_state->depthBiasEnable;
         }
     }
     return false;
@@ -117,8 +117,8 @@ bool LastBound::IsDepthClampEnable() const {
             return cb_state.dynamic_state_value.depth_clamp_enable;
         }
     } else {
-        if (pipeline_state->RasterizationState()) {
-            return pipeline_state->RasterizationState()->depthClampEnable;
+        if (const auto raster_state = pipeline_state->RasterizationState()) {
+            return raster_state->depthClampEnable;
         }
     }
     return false;
@@ -130,8 +130,8 @@ bool LastBound::IsStencilTestEnable() const {
             return cb_state.dynamic_state_value.stencil_test_enable;
         }
     } else {
-        if (pipeline_state->DepthStencilState()) {
-            return pipeline_state->DepthStencilState()->stencilTestEnable;
+        if (const auto ds_state = pipeline_state->DepthStencilState()) {
+            return ds_state->stencilTestEnable;
         }
     }
     return false;
@@ -188,7 +188,7 @@ bool LastBound::IsRasterizationDisabled() const {
             return cb_state.dynamic_state_value.rasterizer_discard_enable;
         }
     } else {
-        return (pipeline_state->RasterizationDisabled());
+        return pipeline_state->RasterizationDisabled();
     }
     return false;
 }
