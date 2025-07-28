@@ -62,6 +62,10 @@ TEST_F(NegativeGpuAVRayTracing, CmdTraceRaysIndirect) {
     VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&rt_pipeline_props);
     vk::GetPhysicalDeviceProperties2(Gpu(), &props2);
 
+    if (rt_pipeline_props.maxRayDispatchInvocationCount == std::numeric_limits<uint32_t>::max()) {
+        GTEST_SKIP() << "maxRayDispatchInvocationCount is maxed out, cannot go past it, skipping test";
+    }
+
     // Create and fill buffers storing indirect data (ray query dimensions)
     vkt::Buffer trace_rays_big_width(
         *m_device, 4096, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
