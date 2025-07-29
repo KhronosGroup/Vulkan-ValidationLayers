@@ -128,7 +128,12 @@ template <typename T>
 bool DescriptorValidator::ValidateDescriptorsStatic(const spirv::ResourceInterfaceVariable &resource_variable,
                                                     const T &binding) const {
     bool skip = false;
-    for (uint32_t index = 0; !skip && index < binding.count; index++) {
+
+    // If there is a descriptor array, we care about the size of the array statically used in the shader, not what was declared in
+    // the pipeline layout more info https://gitlab.khronos.org/vulkan/vulkan/-/issues/4383
+    const uint32_t count = resource_variable.array_length != 0 ? resource_variable.array_length : binding.count;
+
+    for (uint32_t index = 0; !skip && index < count; index++) {
         const auto &descriptor = binding.descriptors[index];
 
         if (!binding.updated[index]) {
