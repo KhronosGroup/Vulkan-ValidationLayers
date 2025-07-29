@@ -355,3 +355,45 @@ TEST_F(PositiveDescriptorIndexing, DescriptorSetVariableDescriptorCountAllocateI
     VkDescriptorSet ds = VK_NULL_HANDLE;
     vk::AllocateDescriptorSets(*m_device, &ds_alloc_info, &ds);
 }
+
+TEST_F(PositiveDescriptorIndexing, StaticAccessSomeOfTheArray) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/4383");
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    // Descriptor has 4 items, but only update the 2 used
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 4, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    vkt::Buffer buffer_0(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    vkt::Buffer buffer_1(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer_0, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0);
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer_0, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1);
+    descriptor_set.UpdateDescriptorSets();
+
+    char const *vs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform Foo { float x; } bufs[2];
+        void main() {
+            gl_Position = vec4(bufs[0].x, bufs[0].x, bufs[1].x, bufs[1].x);
+        }
+    )glsl";
+    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_[0] = vs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pipeline_layout;
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
