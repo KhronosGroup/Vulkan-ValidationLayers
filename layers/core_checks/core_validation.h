@@ -2648,6 +2648,16 @@ class CoreChecks : public vvl::DeviceProxy {
     void PostCallRecordReleaseCapturedPipelineDataKHR(VkDevice device, const VkReleaseCapturedPipelineDataInfoKHR* pInfo,
                                                       const VkAllocationCallbacks* pAllocator,
                                                       const RecordObject& record_obj) override;
+    bool PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(VkCommandBuffer commandBuffer,
+                                                                    const VkBuildPartitionedAccelerationStructureInfoNV* pBuildInfo,
+                                                                    const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetPartitionedAccelerationStructuresBuildSizesNV(VkDevice device, const VkPartitionedAccelerationStructureInstancesInputNV* pInfo,
+                                                                        VkAccelerationStructureBuildSizesInfoKHR* pBuildInfo, const ErrorObject& error_obj) const override;
+    bool ValidateBuildPartitionedAccelerationStructureInfoNV(VkDevice device,
+                                                             const VkBuildPartitionedAccelerationStructureInfoNV* pBuildInfo,
+                                                             const Location& loc) const;
+    bool ValidatePartitionedAccelerationStructureInstancesInputNV(const VkPartitionedAccelerationStructureInstancesInputNV* pInfo,
+                                                                  const Location& loc) const;
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
     bool PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo,
