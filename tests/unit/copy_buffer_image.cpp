@@ -4349,3 +4349,57 @@ TEST_F(NegativeCopyBufferImage, CopyCompress2DTo1D) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeCopyBufferImage, CopyCompressToCompress) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-Docs/issues/1005");
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_BC2_UNORM_BLOCK;
+    image_ci.mipLevels = 2u;  // [30x30], [15x15]
+    image_ci.arrayLayers = 1u;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_ci.extent = {30, 30, 1};
+    image_ci.usage = kSrcDstUsage;
+    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, kSrcDstFeature)) {
+        GTEST_SKIP() << "image format not supported";
+    }
+    vkt::Image src_image(*m_device, image_ci);
+    vkt::Image dst_image(*m_device, image_ci);
+
+    m_command_buffer.Begin();
+    src_image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    dst_image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    VkImageCopy image_copy;
+    image_copy.srcSubresource = {1u, 0u, 0u, 1u};
+    image_copy.srcOffset = {0u, 0u, 0u};
+    image_copy.dstSubresource = {1u, 0u, 0u, 1u};
+    image_copy.dstOffset = {0u, 0u, 0u};
+
+    {
+        image_copy.srcSubresource.mipLevel = 0;
+        image_copy.dstSubresource.mipLevel = 1;
+        image_copy.extent = {15u, 15u, 1u};
+
+        m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcImage-01728");
+        vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_image,
+                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &image_copy);
+        m_errorMonitor->VerifyFound();
+    }
+    m_command_buffer.FullMemoryBarrier();
+    {
+        image_copy.srcSubresource.mipLevel = 1;
+        image_copy.dstSubresource.mipLevel = 0;
+        image_copy.extent = {16u, 16u, 1u};
+        m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcOffset-00144");
+        vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_image,
+                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &image_copy);
+        m_errorMonitor->VerifyFound();
+    }
+
+    m_command_buffer.End();
+}
