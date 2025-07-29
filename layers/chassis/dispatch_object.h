@@ -64,6 +64,7 @@ class Device;
 // Device extension properties -- storing properties gathered from VkPhysicalDeviceProperties2::pNext chain
 // TODO: this could be defined and initialized via generated code
 struct DeviceExtensionProperties {
+    VkPhysicalDevicePartitionedAccelerationStructurePropertiesNV partitioned_acceleration_structure_props;
     VkPhysicalDeviceShadingRateImagePropertiesNV shading_rate_image_props;
     VkPhysicalDeviceMeshShaderPropertiesNV mesh_shader_props_nv;
     VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_props_ext;

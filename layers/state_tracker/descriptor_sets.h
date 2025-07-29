@@ -630,6 +630,8 @@ class AccelerationStructureDescriptor : public Descriptor {
     std::shared_ptr<vvl::AccelerationStructureKHR> acc_state_;
     VkAccelerationStructureNV acc_nv_{VK_NULL_HANDLE};
     std::shared_ptr<vvl::AccelerationStructureNV> acc_state_nv_;
+    VkDeviceAddress acc_partition_nv_{0};
+    std::shared_ptr<VkDeviceAddress> acc_state_partition_nv_;
 };
 
 class MutableDescriptor : public Descriptor {
