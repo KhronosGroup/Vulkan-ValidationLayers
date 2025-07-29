@@ -479,36 +479,6 @@
                             ]
                         },
                         {
-                            "key": "validate_gpu_based",
-                            "label": "GPU Base",
-                            "description": "Setting to choose between DebugPrintf and GPU-AV",
-                            "type": "ENUM",
-                            "default": "GPU_BASED_NONE",
-                            "expanded": true,
-                            "view": "HIDDEN",
-                            "status": "DEPRECATED",
-                            "platforms": [ "WINDOWS", "LINUX" ],
-                            "flags": [
-                                {
-                                    "key": "GPU_BASED_NONE",
-                                    "label": "None",
-                                    "description": "No GPU-based validation."
-                                },
-                                {
-                                    "key": "GPU_BASED_DEBUG_PRINTF",
-                                    "label": "Debug Printf",
-                                    "description": "Enables processing of debug printf instructions in shaders and sending debug strings to the debug callback.",
-                                    "url": "${LUNARG_SDK}/debug_printf.html"
-                                },
-                                {
-                                    "key": "GPU_BASED_GPU_ASSISTED",
-                                    "label": "GPU-Assisted",
-                                    "description": "Check for API usage errors at shader execution time.",
-                                    "url": "${LUNARG_SDK}/gpu_validation.html"
-                                }
-                            ]
-                        },
-                        {
                             "key": "printf_only_preset",
                             "label": "Debug Printf only preset",
                             "description": "A single, quick setting to turn on only DebugPrintf and turn off everything else",

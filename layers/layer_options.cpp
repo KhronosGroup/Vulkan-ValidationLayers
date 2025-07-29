@@ -141,8 +141,6 @@ const char *VK_LAYER_VALIDATE_BEST_PRACTICES_AMD = "validate_best_practices_amd"
 const char *VK_LAYER_VALIDATE_BEST_PRACTICES_IMG = "validate_best_practices_img";
 const char *VK_LAYER_VALIDATE_BEST_PRACTICES_NVIDIA = "validate_best_practices_nvidia";
 const char *VK_LAYER_VALIDATE_SYNC = "validate_sync";
-// These were deprecated after the 1.3.296 SDK release (because it was a flag and now is a boolean)
-const char *DEPRECATED_VK_LAYER_VALIDATE_GPU_BASED = "validate_gpu_based";
 
 // Corresponding to VkValidationFeatureDisableEXT
 // ---
@@ -1034,23 +1032,6 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
                              VK_LAYER_VALIDATE_BEST_PRACTICES_NVIDIA);
         SetValidationSetting(layer_setting_set, settings_data->enables, sync_validation, VK_LAYER_VALIDATE_SYNC);
         SetValidationSetting(layer_setting_set, settings_data->enables, deprecation_checks, VK_LAYER_DEPRECATION);
-
-        // These were deprecated after the 1.3.296 SDK release
-        // Before GPU-AV and DebugPrintf were merged, we used this enum to set GPU-AV and DebugPrintf in vkconfig.
-        // This code should in theory be dead since removing it from vkconfig, but keep just incase for a bit
-        if (vkuHasLayerSetting(layer_setting_set, DEPRECATED_VK_LAYER_VALIDATE_GPU_BASED)) {
-            std::string setting_value;
-            vkuGetLayerSettingValue(layer_setting_set, DEPRECATED_VK_LAYER_VALIDATE_GPU_BASED, setting_value);
-            if (setting_value == "GPU_BASED_GPU_ASSISTED") {
-                settings_data->enables[gpu_validation] = true;
-                setting_warnings.emplace_back("Deprecated " + std::string(DEPRECATED_VK_LAYER_VALIDATE_GPU_BASED) +
-                                              " setting was set, use " + std::string(VK_LAYER_GPUAV_ENABLE) + " instead.");
-            } else if (setting_value == "GPU_BASED_DEBUG_PRINTF") {
-                settings_data->enables[debug_printf_validation] = true;
-                setting_warnings.emplace_back("Deprecated " + std::string(DEPRECATED_VK_LAYER_VALIDATE_GPU_BASED) +
-                                              " setting was set, use " + std::string(VK_LAYER_PRINTF_ENABLE) + " instead.");
-            }
-        }
     }
 
     // Only read the legacy disables flags when used, not their replacement.
