@@ -2225,30 +2225,29 @@ bool CoreChecks::PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(
         skip |= buffer_address_validator.ValidateDeviceAddress(*this, error_obj.location.dot(Field::pBuildInfo).dot(Field::srcAccelerationStructureData),
                                                                LogObjectList(commandBuffer), pBuildInfo->srcAccelerationStructureData);
     }
-    if (pBuildInfo->srcAccelerationStructureData) {
-        if (pBuildInfo->scratchData) {
-            const auto src_buffer_states = GetBuffersByAddress(pBuildInfo->srcAccelerationStructureData);
-            const auto scratch_buffer_states = GetBuffersByAddress(pBuildInfo->scratchData);
-            for (const auto& scratch_buffer_state : scratch_buffer_states) {
-                vvl::range<VkDeviceAddress> scratch_address_range = scratch_buffer_state->DeviceAddressRange();
-                
-                if (!scratch_address_range.empty()) {
-                    for (const auto& buffer_state : src_buffer_states) {
-                        const vvl::range<VkDeviceAddress> buffer_address_range = buffer_state->DeviceAddressRange();
-                        if (buffer_address_range.intersects(scratch_address_range)) {
-                            skip |= LogError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10547", commandBuffer,
-                                             error_obj.location.dot(Field::pBuildInfo).dot(Field::srcAccelerationStructureData),
-                                             "(%s): srcAccelerationStructureData buffer address range %s intersects scratchData address range %s",
-                                             FormatHandle(buffer_state->Handle()).c_str(),
-                                             string_range_hex(buffer_address_range).c_str(),
-                                             string_range_hex(scratch_address_range).c_str());
-                        }
+    if (pBuildInfo->srcAccelerationStructureData && pBuildInfo->scratchData) {
+        const auto src_buffer_states = GetBuffersByAddress(pBuildInfo->srcAccelerationStructureData);
+        const auto scratch_buffer_states = GetBuffersByAddress(pBuildInfo->scratchData);
+        for (const auto& scratch_buffer_state : scratch_buffer_states) {
+            vvl::range<VkDeviceAddress> scratch_address_range = scratch_buffer_state->DeviceAddressRange();
+            
+            if (!scratch_address_range.empty()) {
+                for (const auto& buffer_state : src_buffer_states) {
+                    const vvl::range<VkDeviceAddress> buffer_address_range = buffer_state->DeviceAddressRange();
+                    if (buffer_address_range.intersects(scratch_address_range)) {
+                        const LogObjectList objlist(commandBuffer, buffer_state->Handle(), scratch_buffer_state->Handle());
+                        skip |= LogError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10547", objlist,
+                                         error_obj.location.dot(Field::pBuildInfo).dot(Field::srcAccelerationStructureData),
+                                         "%s address range %s intersects scratchData address range %s",
+                                         FormatHandle(buffer_state->Handle()).c_str(),
+                                         string_range_hex(buffer_address_range).c_str(),
+                                         string_range_hex(scratch_address_range).c_str());
                     }
                 }
             }
         }
     }
-
+    
     {
     BufferAddressValidation<2> buffer_address_validator = {{{
         {
@@ -2281,50 +2280,53 @@ bool CoreChecks::PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(
     skip |= buffer_address_validator.ValidateDeviceAddress(*this, error_obj.location.dot(Field::pBuildInfo).dot(Field::dstAccelerationStructureData),
                                                            LogObjectList(commandBuffer), pBuildInfo->dstAccelerationStructureData);
     }
-    if (pBuildInfo->dstAccelerationStructureData) {
+
+    if (pBuildInfo->dstAccelerationStructureData && pBuildInfo->scratchData) {
         const auto dst_buffer_states = GetBuffersByAddress(pBuildInfo->dstAccelerationStructureData);
         if (!dst_buffer_states.empty()) {
-            if (pBuildInfo->scratchData) {
-                const auto scratch_buffer_states = GetBuffersByAddress(pBuildInfo->scratchData);
-                for (const auto& scratch_buffer_state : scratch_buffer_states) {
-                    vvl::range<VkDeviceAddress> scratch_address_range = scratch_buffer_state->DeviceAddressRange();
-                    if (!scratch_address_range.empty()) {
-                        for (const auto& buffer_state : dst_buffer_states) {
-                            const vvl::range<VkDeviceAddress> buffer_address_range = buffer_state->DeviceAddressRange();
-                            if (buffer_address_range.intersects(scratch_address_range)) {
-                                skip |= LogError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10548", commandBuffer,
-                                                 error_obj.location.dot(Field::pBuildInfo).dot(Field::dstAccelerationStructureData),
-                                                 "(%s): dstAccelerationStructureData buffer address range %s intersects scratchData address range %s",
-                                                 FormatHandle(buffer_state->Handle()).c_str(),
-                                                 string_range_hex(buffer_address_range).c_str(),
-                                                 string_range_hex(scratch_address_range).c_str());
-                            }
-                        }
-                    }
-                }
-            }
-            
-            if (pBuildInfo->srcAccelerationStructureData) {
-                const auto src_buffer_states = GetBuffersByAddress(pBuildInfo->srcAccelerationStructureData);
-                for (const auto& src_buffer_state : src_buffer_states) {
-                    vvl::range<VkDeviceAddress> src_address_range = src_buffer_state->DeviceAddressRange();
-                    if (!src_address_range.empty()) {
-                        for (const auto& buffer_state : dst_buffer_states) {
-                            const vvl::range<VkDeviceAddress> buffer_address_range = buffer_state->DeviceAddressRange();
-                            if (buffer_address_range.intersects(src_address_range)) {
-                                skip |= LogError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10549", commandBuffer,
-                                                 error_obj.location.dot(Field::pBuildInfo).dot(Field::dstAccelerationStructureData),
-                                                 "(%s): dstAccelerationStructureData buffer address range %s intersects srcAccelerationStructureData address range %s",
-                                                 FormatHandle(buffer_state->Handle()).c_str(),
-                                                 string_range_hex(buffer_address_range).c_str(),
-                                                 string_range_hex(src_address_range).c_str());
-                            }
+            const auto scratch_buffer_states = GetBuffersByAddress(pBuildInfo->scratchData);
+            for (const auto& scratch_buffer_state : scratch_buffer_states) {
+                vvl::range<VkDeviceAddress> scratch_address_range = scratch_buffer_state->DeviceAddressRange();
+                if (!scratch_address_range.empty()) {
+                    for (const auto& buffer_state : dst_buffer_states) {
+                        const vvl::range<VkDeviceAddress> buffer_address_range = buffer_state->DeviceAddressRange();
+                        if (buffer_address_range.intersects(scratch_address_range)) {
+                            const LogObjectList objlist(commandBuffer, buffer_state->Handle(), scratch_buffer_state->Handle());
+                            skip |= LogError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10548", objlist,
+                                             error_obj.location.dot(Field::pBuildInfo).dot(Field::dstAccelerationStructureData),
+                                             "%s address range %s intersects scratchData address range %s",
+                                             FormatHandle(buffer_state->Handle()).c_str(),
+                                             string_range_hex(buffer_address_range).c_str(),
+                                             string_range_hex(scratch_address_range).c_str());
                         }
                     }
                 }
             }
         }
     }
+            
+    if (pBuildInfo->srcAccelerationStructureData && pBuildInfo->dstAccelerationStructureData) {
+        const auto src_buffer_states = GetBuffersByAddress(pBuildInfo->srcAccelerationStructureData);
+        const auto dst_buffer_states = GetBuffersByAddress(pBuildInfo->dstAccelerationStructureData);
+        for (const auto& src_buffer_state : src_buffer_states) {
+            vvl::range<VkDeviceAddress> src_address_range = src_buffer_state->DeviceAddressRange();
+            if (!src_address_range.empty()) {
+                for (const auto& buffer_state : dst_buffer_states) {
+                    const vvl::range<VkDeviceAddress> buffer_address_range = buffer_state->DeviceAddressRange();
+                    if (buffer_address_range.intersects(src_address_range)) {
+                        const LogObjectList objlist(commandBuffer, buffer_state->Handle(), src_buffer_state->Handle());
+                        skip |= LogError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10549", objlist,
+                                         error_obj.location.dot(Field::pBuildInfo).dot(Field::dstAccelerationStructureData),
+                                         "%s address range %s intersects srcAccelerationStructureData address range %s",
+                                         FormatHandle(buffer_state->Handle()).c_str(),
+                                         string_range_hex(buffer_address_range).c_str(),
+                                         string_range_hex(src_address_range).c_str());
+                    }
+                }
+            }
+        }
+    }
+        
     return skip;
 }
 
@@ -2336,7 +2338,14 @@ bool CoreChecks::PreCallValidateGetPartitionedAccelerationStructuresBuildSizesNV
         skip |= LogError("VUID-vkGetPartitionedAccelerationStructuresBuildSizesNV-partitionedAccelerationStructure-10534", device,
                          error_obj.location, "partitionedAccelerationStructure feature was not enabled.");
     }
-    skip |= ValidatePartitionedAccelerationStructureInstancesInputNV(pInfo, error_obj.location.dot(Field::pInfo));
+    if ((pInfo->partitionCount + pInfo->maxInstanceInGlobalPartitionCount) >
+        phys_dev_ext_props.partitioned_acceleration_structure_props.maxPartitionCount) {
+        skip |= LogError("VUID-VkPartitionedAccelerationStructureInstancesInputNV-partitionCount-10535", device,
+                         error_obj.location.dot(Field::pInfo).dot(Field::partitionCount),
+                         "(%" PRIu32 ")  and maxInstanceInGlobalPartitionCount (%" PRIu32 ") sum must be less than or equal to "
+                         "maxPartitionCount (%" PRIu32 ") ", pInfo->partitionCount, pInfo->maxInstanceInGlobalPartitionCount,
+                         phys_dev_ext_props.partitioned_acceleration_structure_props.maxPartitionCount);
+    }
     return skip;
 }
 
@@ -2400,20 +2409,6 @@ bool CoreChecks::ValidateBuildPartitionedAccelerationStructureInfoNV(
     if (SafeModulo(pBuildInfo->srcInfosCount, 4) != 0) {
         skip |= LogError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-srcInfosCount-10563", device,
                          loc.dot(Field::srcInfosCount), "(0x%" PRIx64 ") must be aligned to 256 bytes", pBuildInfo->srcInfosCount);
-    }
-    return skip;
-}
-
-bool CoreChecks::ValidatePartitionedAccelerationStructureInstancesInputNV(
-    const VkPartitionedAccelerationStructureInstancesInputNV *pInfo, const Location &loc) const {
-    bool skip = false;
-    if ((pInfo->partitionCount + pInfo->maxInstanceInGlobalPartitionCount) >
-        phys_dev_ext_props.partitioned_acceleration_structure_props.maxPartitionCount) {
-        skip |= LogError("VUID-VkPartitionedAccelerationStructureInstancesInputNV-partitionCount-10535", device,
-                         loc.dot(Field::partitionCount),
-                         "(%" PRIu32 ")  and maxInstanceInGlobalPartitionCount (%" PRIu32 ") sum must be less than or equal to "
-                         "maxPartitionCount (%" PRIu32 ") ", pInfo->partitionCount, pInfo->maxInstanceInGlobalPartitionCount,
-                         phys_dev_ext_props.partitioned_acceleration_structure_props.maxPartitionCount);
     }
     return skip;
 }

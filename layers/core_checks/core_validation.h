@@ -2655,8 +2655,6 @@ class CoreChecks : public vvl::DeviceProxy {
                                                                         VkAccelerationStructureBuildSizesInfoKHR* pBuildInfo, const ErrorObject& error_obj) const override;
     bool ValidateBuildPartitionedAccelerationStructureInfoNV(const VkBuildPartitionedAccelerationStructureInfoNV* pBuildInfo,
                                                              const Location& loc) const;
-    bool ValidatePartitionedAccelerationStructureInstancesInputNV(const VkPartitionedAccelerationStructureInstancesInputNV* pInfo,
-                                                                  const Location& loc) const;
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
     bool PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo,
