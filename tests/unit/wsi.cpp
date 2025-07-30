@@ -3791,19 +3791,19 @@ TEST_F(NegativeWsi, MissingPresentModesCreateInfoFifoLatestReadyFeature) {
     VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper(&present_mode);
     surface_info.surface = m_surface.Handle();
     vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
-    std::vector<VkPresentModeKHR> presentModes(present_mode_compatibility.presentModeCount);
-    present_mode_compatibility.pPresentModes = presentModes.data();
+    std::vector<VkPresentModeKHR> present_modes(present_mode_compatibility.presentModeCount);
+    present_mode_compatibility.pPresentModes = present_modes.data();
     vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
 
-    VkPresentModeKHR presentMode = VK_PRESENT_MODE_FIFO_LATEST_READY_EXT;
+    VkPresentModeKHR fifo_mode = VK_PRESENT_MODE_FIFO_LATEST_READY_EXT;
 
-    if (std::find(presentModes.begin(), presentModes.end(), presentMode) == presentModes.end()) {
+    if (std::find(present_modes.begin(), present_modes.end(), fifo_mode) == present_modes.end()) {
         GTEST_SKIP() << "VK_PRESENT_MODE_FIFO_LATEST_READY_EXT is not compatible";
     }
 
     VkSwapchainPresentModesCreateInfoEXT present_modes_ci = vku::InitStructHelper();
     present_modes_ci.presentModeCount = 1;
-    present_modes_ci.pPresentModes = &presentMode;
+    present_modes_ci.pPresentModes = &fifo_mode;
 
     VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper(&present_modes_ci);
     swapchain_ci.surface = m_surface.Handle();
