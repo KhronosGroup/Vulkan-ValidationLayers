@@ -62,14 +62,9 @@ TEST_F(PositiveImagelessFramebuffer, BasicUsage) {
 
 TEST_F(PositiveImagelessFramebuffer, Image3D) {
     TEST_DESCRIPTION("Create imageless framebuffer with image view from 3D image.");
-
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::imagelessFramebuffer);
     RETURN_IF_SKIP(Init());
-
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
-        GTEST_SKIP() << "VK_KHR_portability_subset enabled - requires imageView2DOn3DImage to be VK_TRUE.\n";
-    }
 
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     RenderPassSingleSubpass rp(*this);

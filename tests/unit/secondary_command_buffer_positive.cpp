@@ -391,10 +391,6 @@ TEST_F(PositiveSecondaryCommandBuffer, EventsIn) {
     TEST_DESCRIPTION("Test setting and waiting for an event in a secondary command buffer");
     RETURN_IF_SKIP(Init());
 
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
-        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
-    }
-
     vkt::Event event(*m_device);
     vkt::CommandBuffer secondary_cb(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     secondary_cb.Begin();

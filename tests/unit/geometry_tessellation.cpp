@@ -1145,28 +1145,10 @@ TEST_F(NegativeGeometryTessellation, IncompatibleTessGeomPrimitiveTopology) {
 
 TEST_F(NegativeGeometryTessellation, PipelineTessellationMissingPointSize) {
     TEST_DESCRIPTION("Create pipeline with tessellation shader with missing point size");
-
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitFramework());
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
-        VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features = vku::InitStructHelper();
-        VkPhysicalDeviceFeatures2 features2;
-        features2 = GetPhysicalDeviceFeatures2(portability_subset_features);
-        if (!features2.features.tessellationShader || !features2.features.shaderTessellationAndGeometryPointSize) {
-            GTEST_SKIP() << "tessellationShader or shaderTessellationAndGeometryPointSize not supported";
-        }
-        if (!portability_subset_features.tessellationPointMode) {
-            GTEST_SKIP() << "tessellationPointMode not supported";
-        }
-        RETURN_IF_SKIP(InitState(nullptr, &features2));
-    } else {
-        VkPhysicalDeviceFeatures features;
-        GetPhysicalDeviceFeatures(&features);
-        if (!features.tessellationShader || !features.shaderTessellationAndGeometryPointSize) {
-            GTEST_SKIP() << "tessellationShader or shaderTessellationAndGeometryPointSize not supported";
-        }
-        RETURN_IF_SKIP(InitState(&features));
-    }
+    AddRequiredFeature(vkt::Feature::tessellationShader);
+    AddRequiredFeature(vkt::Feature::shaderTessellationAndGeometryPointSize);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     static const char tess_src[] = R"glsl(
@@ -1193,30 +1175,9 @@ TEST_F(NegativeGeometryTessellation, PipelineTessellationMissingPointSize) {
 
 TEST_F(NegativeGeometryTessellation, PipelineTessellationPointSize) {
     TEST_DESCRIPTION("Create pipeline with tessellation shader with missing point size");
-
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitFramework());
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
-        VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features = vku::InitStructHelper();
-        VkPhysicalDeviceFeatures2 features2;
-        features2 = GetPhysicalDeviceFeatures2(portability_subset_features);
-        if (!features2.features.tessellationShader) {
-            GTEST_SKIP() << "tessellationShader not supported";
-        }
-        if (!portability_subset_features.tessellationPointMode) {
-            GTEST_SKIP() << "tessellationPointMode not supported";
-        }
-        features2.features.shaderTessellationAndGeometryPointSize = VK_FALSE;
-        RETURN_IF_SKIP(InitState(nullptr, &features2));
-    } else {
-        VkPhysicalDeviceFeatures features;
-        GetPhysicalDeviceFeatures(&features);
-        if (!features.tessellationShader) {
-            GTEST_SKIP() << "tessellationShader not supported";
-        }
-        features.shaderTessellationAndGeometryPointSize = VK_FALSE;
-        RETURN_IF_SKIP(InitState(&features));
-    }
+    AddRequiredFeature(vkt::Feature::tessellationShader);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     static const char tess_src[] = R"glsl(
@@ -1345,32 +1306,12 @@ TEST_F(NegativeGeometryTessellation, GeometryStreamsCapability) {
 
 TEST_F(NegativeGeometryTessellation, MismatchedTessellationExecutionModes) {
     TEST_DESCRIPTION("Test mismatched tessellation shaders execution modes");
-
-    RETURN_IF_SKIP(InitFramework());
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
-        VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features = vku::InitStructHelper();
-        auto features2 = GetPhysicalDeviceFeatures2(portability_subset_features);
-        if (!portability_subset_features.tessellationPointMode) {
-            GTEST_SKIP() << "tessellationPointMode not supported";
-        }
-        if (features2.features.tessellationShader == VK_FALSE) {
-            GTEST_SKIP() << "geometryShader not supported";
-        }
-        features2.features.shaderTessellationAndGeometryPointSize = VK_FALSE;
-        RETURN_IF_SKIP(InitState(nullptr, &features2));
-    } else {
-        VkPhysicalDeviceFeatures features{};
-        vk::GetPhysicalDeviceFeatures(Gpu(), &features);
-        if (features.tessellationShader == VK_FALSE) {
-            GTEST_SKIP() << "geometryShader not supported";
-        }
-        features.shaderTessellationAndGeometryPointSize = VK_FALSE;
-        RETURN_IF_SKIP(InitState(&features));
-    }
+    AddRequiredFeature(vkt::Feature::tessellationShader);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
     if (m_device->Physical().limits_.maxTessellationPatchSize == 0) {
         GTEST_SKIP() << "Tessellation shaders not supported";
     }
-    InitRenderTarget();
 
     std::string vuids[4] = {
         "VUID-VkGraphicsPipelineCreateInfo-pStages-00732",

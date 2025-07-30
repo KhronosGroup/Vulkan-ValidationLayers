@@ -425,26 +425,14 @@ TEST_F(VkPositiveBestPracticesLayerTest, CreateFifoRelaxedSwapchain) {
 
 TEST_F(VkPositiveBestPracticesLayerTest, ResetCommandPool) {
     TEST_DESCRIPTION("Destroy event that was set in a command buffer");
-
     RETURN_IF_SKIP(InitBestPracticesFramework());
-    void *pNext = nullptr;
-    VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features = vku::InitStructHelper();
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
-        GetPhysicalDeviceFeatures2(portability_subset_features);
-        if (!portability_subset_features.events) {
-            GTEST_SKIP() << "VkPhysicalDevicePortabilitySubsetFeaturesKHR::events not supported";
-        }
-        pNext = &portability_subset_features;
-    }
-    RETURN_IF_SKIP(InitState(nullptr, pNext));
+    RETURN_IF_SKIP(InitState());
 
-    {
-        vkt::Event event1(*m_device);
-        m_command_buffer.Begin();
-        event1.CmdSet(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-        m_command_buffer.End();
-        m_default_queue->SubmitAndWait(m_command_buffer);
-    }
+    vkt::Event event1(*m_device);
+    m_command_buffer.Begin();
+    event1.CmdSet(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     vkt::Event event2(*m_device);
     m_command_buffer.Begin();

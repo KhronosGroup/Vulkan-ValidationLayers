@@ -140,28 +140,11 @@ TEST_F(PositiveGeometryTessellation, DrawDynamicPrimitiveTopology) {
 
 TEST_F(PositiveGeometryTessellation, TessellationPointMode) {
     TEST_DESCRIPTION("Create pipeline with tessellation evaluation shader using point mode");
-
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitFramework());
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
-        VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features = vku::InitStructHelper();
-        VkPhysicalDeviceFeatures2 features2;
-        features2 = GetPhysicalDeviceFeatures2(portability_subset_features);
-        if (!features2.features.tessellationShader || !features2.features.shaderTessellationAndGeometryPointSize) {
-            GTEST_SKIP() << "tessellationShader or shaderTessellationAndGeometryPointSize not supported";
-        }
-        if (!portability_subset_features.tessellationPointMode) {
-            GTEST_SKIP() << "tessellationPointMode not supported";
-        }
-        RETURN_IF_SKIP(InitState(nullptr, &features2));
-    } else {
-        VkPhysicalDeviceFeatures features;
-        GetPhysicalDeviceFeatures(&features);
-        if (!features.tessellationShader || !features.shaderTessellationAndGeometryPointSize) {
-            GTEST_SKIP() << "tessellationShader or shaderTessellationAndGeometryPointSize not supported";
-        }
-        RETURN_IF_SKIP(InitState(&features));
-    }
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    AddRequiredFeature(vkt::Feature::tessellationShader);
+    AddRequiredFeature(vkt::Feature::shaderTessellationAndGeometryPointSize);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     static const char tess_src[] = R"glsl(

@@ -3618,21 +3618,9 @@ TEST_F(NegativeSyncObject, WaitOnNoEvent) {
 
 TEST_F(NegativeSyncObject, InvalidDeviceOnlyEvent) {
     TEST_DESCRIPTION("Attempt to use device only event with host commands.");
-
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features = vku::InitStructHelper();
-    VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
-        sync2_features.pNext = &portability_subset_features;
-    }
-    GetPhysicalDeviceFeatures2(sync2_features);
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
-        if (portability_subset_features.events) {
-            GTEST_SKIP() << "VkPhysicalDevicePortabilitySubsetFeaturesKHR::events not supported";
-        }
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
 
     VkEventCreateInfo event_ci = vku::InitStructHelper();
     event_ci.flags = VK_EVENT_CREATE_DEVICE_ONLY_BIT;
@@ -3717,10 +3705,6 @@ TEST_F(NegativeSyncObject, WaitEventRenderPassHostBit) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
-        GTEST_SKIP() << "VkPhysicalDevicePortabilitySubsetFeaturesKHR::events not supported";
-    }
-
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
@@ -3792,18 +3776,7 @@ TEST_F(NegativeSyncObject, DISABLED_WaitEventThenSet) {
     TEST_DESCRIPTION("Wait on a event then set it after the wait has been submitted.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitFramework());
-    void *pNext = nullptr;
-    VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features = vku::InitStructHelper();
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
-        pNext = &portability_subset_features;
-        GetPhysicalDeviceFeatures2(portability_subset_features);
-        if (!portability_subset_features.events) {
-            GTEST_SKIP() << "VkPhysicalDevicePortabilitySubsetFeaturesKHR::events not supported";
-        }
-    }
-    RETURN_IF_SKIP(InitState(nullptr, pNext));
-
+    RETURN_IF_SKIP(Init());
     vkt::Event event(*m_device);
 
     m_command_buffer.Begin();

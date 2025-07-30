@@ -1635,26 +1635,9 @@ TEST_F(PositivePipeline, ViewportStateNotSetRasterizerDiscardEnabled) {
 
 TEST_F(PositivePipeline, InterpolateAtSample) {
     TEST_DESCRIPTION("Test using spirv instruction InterpolateAtSample");
-
     AddRequiredFeature(vkt::Feature::sampleRateShading);
-    RETURN_IF_SKIP(InitFramework());
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
-        VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features = vku::InitStructHelper();
-        auto features2 = GetPhysicalDeviceFeatures2(portability_subset_features);
-        if (!portability_subset_features.shaderSampleRateInterpolationFunctions) {
-            GTEST_SKIP() << "shaderSampleRateInterpolationFunctions not supported";
-        }
-        RETURN_IF_SKIP(InitState(nullptr, &features2));
-        if (!features2.features.sampleRateShading) {
-            GTEST_SKIP() << "sampleRateShading not supported";
-        }
-    } else {
-        RETURN_IF_SKIP(InitState());
-        if (!m_device->Physical().Features().sampleRateShading) {
-            GTEST_SKIP() << "sampleRateShading not supported";
-        }
-    }
-    RETURN_IF_SKIP(InitRenderTarget());
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
 
     static const char vs_src[] = R"glsl(
         #version 460
