@@ -4898,14 +4898,6 @@ TEST_F(NegativeImage, Image3DWith2DArrayCompatIssue) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(Init());
 
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
-        VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features = vku::InitStructHelper();
-        GetPhysicalDeviceFeatures2(portability_subset_features);
-        if (!portability_subset_features.imageView2DOn3DImage) {
-            GTEST_SKIP() << "imageView2DOn3DImage not supported, skipping test";
-        }
-    }
-
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
     image_ci.imageType = VK_IMAGE_TYPE_3D;

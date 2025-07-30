@@ -1473,9 +1473,6 @@ TEST_F(NegativeYcbcr, MultiplaneImageViewAspectMasks) {
     AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
     RETURN_IF_SKIP(Init());
 
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
-        GTEST_SKIP() << "VK_KHR_portability_subset enabled, can hit issues with imageViewFormatReinterpretation";
-    }
     const VkFormat mp_format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
 
     if (!(m_device->FormatFeaturesOptimal(mp_format) & VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT)) {

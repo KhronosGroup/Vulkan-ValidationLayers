@@ -737,14 +737,6 @@ TEST_F(PositiveRenderPass, ImageLayoutTransitionOf3dImageWith2dViews) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
-        VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features = vku::InitStructHelper();
-        GetPhysicalDeviceFeatures2(portability_subset_features);
-        if (!portability_subset_features.imageView2DOn3DImage) {
-            GTEST_SKIP() << "imageView2DOn3DImage not supported, skipping test";
-        }
-    }
-
     constexpr unsigned image_depth = 2u;
 
     // 3D image

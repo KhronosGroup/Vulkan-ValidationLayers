@@ -4638,19 +4638,8 @@ TEST_F(NegativeRenderPass, FramebufferCreateWithInvalidExtent) {
 
 TEST_F(NegativeRenderPass, FramebufferCreateWithInvalidSwizzle) {
     TEST_DESCRIPTION("Create a framebuffer with image view that does not have identity swizzle");
-
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features = vku::InitStructHelper();
-    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper();
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
-        features2 = GetPhysicalDeviceFeatures2(portability_subset_features);
-        if (!portability_subset_features.imageViewFormatSwizzle) {
-            GTEST_SKIP() << "imageViewFormatSwizzle not supported";
-        }
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
-
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkImageViewCreateInfo image_view_ci = vku::InitStructHelper();

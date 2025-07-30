@@ -2715,14 +2715,6 @@ TEST_F(PositiveSyncObject, Transition3dImageWithMipLevels) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
-        VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features = vku::InitStructHelper();
-        GetPhysicalDeviceFeatures2(portability_subset_features);
-        if (!portability_subset_features.imageView2DOn3DImage) {
-            GTEST_SKIP() << "imageView2DOn3DImage not supported, skipping test";
-        }
-    }
-
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
     image_create_info.imageType = VK_IMAGE_TYPE_3D;

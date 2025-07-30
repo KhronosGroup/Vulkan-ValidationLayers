@@ -2599,16 +2599,7 @@ TEST_F(PositiveSyncVal, AmdBufferMarker) {
 TEST_F(PositiveSyncVal, VertexBufferWithEventSync) {
     TEST_DESCRIPTION("Use Event to synchronize vertex buffer accesses");
     RETURN_IF_SKIP(InitSyncValFramework());
-    void *p_next = nullptr;
-    VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features = vku::InitStructHelper();
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
-        p_next = &portability_subset_features;
-        GetPhysicalDeviceFeatures2(portability_subset_features);
-        if (!portability_subset_features.events) {
-            GTEST_SKIP() << "VkPhysicalDevicePortabilitySubsetFeaturesKHR::events not supported";
-        }
-    }
-    RETURN_IF_SKIP(InitState(nullptr, p_next));
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     vkt::Buffer vertex_buffer(*m_device, 12, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);

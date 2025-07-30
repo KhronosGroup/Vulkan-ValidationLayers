@@ -5370,21 +5370,9 @@ TEST_F(NegativeDescriptors, BindDescriptorWithoutPipelineLayout) {
 
 TEST_F(NegativeDescriptors, InvalidImageInfoDescriptorType) {
     TEST_DESCRIPTION("Try to copy a descriptor set where the src and dst have different update after bind flags.");
-
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_IMAGE_2D_VIEW_OF_3D_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features = vku::InitStructHelper();
-    void *pNext = nullptr;
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
-        GetPhysicalDeviceFeatures2(portability_subset_features);
-        if (!portability_subset_features.imageView2DOn3DImage) {
-            GTEST_SKIP() << "imageView2DOn3DImage not supported, skipping test";
-        }
-        pNext = &portability_subset_features;
-    }
-    RETURN_IF_SKIP(InitState(nullptr, pNext));
+    RETURN_IF_SKIP(Init());
 
     const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageCreateInfo image_ci = vku::InitStructHelper();
