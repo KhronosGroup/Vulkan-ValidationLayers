@@ -385,9 +385,14 @@ class DescriptorSetLayout : public StateObject {
         return layout_id_->DescribeDescriptorBufferSizeAndOffests(device, VkHandle());
     }
 
+    VkDescriptorSetLayout Recreate() const;
+    void DestroyRecreated(VkDescriptorSetLayout desc_set_layout) const;
+
   private:
     DescriptorSetLayoutId layout_id_{};
     VkDeviceSize layout_size_in_bytes_ = 0;
+    vku::safe_VkDescriptorSetLayoutCreateInfo desc_set_layout_ci{};
+    VkDevice device = VK_NULL_HANDLE;
 };
 
 // Slightly broader than type, each c++ "class" will has a corresponding "DescriptorClass"

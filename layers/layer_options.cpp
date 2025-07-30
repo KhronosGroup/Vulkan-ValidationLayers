@@ -765,9 +765,11 @@ std::vector<std::pair<uint32_t, uint32_t>> &GetCustomStypeInfo() {
     return custom_stype_info;
 }
 
+#if !defined(BUILD_SELF_VVL)
 // Generated, put here to mimic where it would have been if manually written
 // Can't move up to top of file until we generate the VK_LAYER_* names as well
 #include "layer_options_validation.h"
+#endif
 
 // Process enables and disables set though the vk_layer_settings.txt config file or through an environment variable
 void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
