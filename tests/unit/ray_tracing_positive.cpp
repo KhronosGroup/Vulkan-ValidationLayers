@@ -1936,6 +1936,7 @@ TEST_F(PositiveRayTracing, MultipleGeometries) {
     vk::CmdBuildAccelerationStructuresKHR(m_command_buffer, 1u, pInfos, ppBuildRangeInfos);
     m_command_buffer.End();
 }
+
 TEST_F(PositiveRayTracing, CmdBuildPartitionedAccelerationStructuresNV) {
     TEST_DESCRIPTION("Test vkCmdBuildPartitionedAccelerationStructuresNV can build a partitioned TLAS");
 
@@ -1952,7 +1953,6 @@ TEST_F(PositiveRayTracing, CmdBuildPartitionedAccelerationStructuresNV) {
     uint32_t instance_count = 20;
     uint32_t partition_count = 5;
 
-    // Set up the input information for partitioned acceleration structure instances.
     VkPartitionedAccelerationStructureFlagsNV ptlas_flags = {VK_STRUCTURE_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_FLAGS_NV};
     ptlas_flags.enablePartitionTranslation = true;
     VkPartitionedAccelerationStructureInstancesInputNV input_info = {
@@ -1964,23 +1964,19 @@ TEST_F(PositiveRayTracing, CmdBuildPartitionedAccelerationStructuresNV) {
     input_info.flags = {};
     input_info.pNext = &ptlas_flags;
 
-    // Create a buffer for building the acceleration structure.
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
     buffer_info.usage =
         VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     buffer_info.flags = 0;
 
-    // Initialize structure to hold build sizes info
     VkAccelerationStructureBuildSizesInfoKHR ptlas_size_info = vku::InitStructHelper();
     ptlas_size_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
 
-    // Retrieve the build sizes for the partitioned acceleration structure
     vk::GetPartitionedAccelerationStructuresBuildSizesNV(*m_device, &input_info, &ptlas_size_info);
     buffer_info.size = ptlas_size_info.accelerationStructureSize;
     buffer_info.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     vkt::Buffer build_buffer(*m_device, buffer_info, vkt::no_mem);
 
-    // Allocate memory for the buffer.
     VkMemoryRequirements memory_requirements = build_buffer.MemoryRequirements();
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
@@ -1991,17 +1987,14 @@ TEST_F(PositiveRayTracing, CmdBuildPartitionedAccelerationStructuresNV) {
     vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
     ASSERT_TRUE(buffer_memory.initialized());
     build_buffer.BindMemory(buffer_memory, 0);
-    // clear build buffer
+
     void* buffer_data;
     vk::MapMemory(*m_device, buffer_memory.handle(), 0, VK_WHOLE_SIZE, 0, &buffer_data);
     memset(buffer_data, 0, static_cast<size_t>(buffer_info.size));
     vk::UnmapMemory(*m_device, buffer_memory.handle());
 
-    // Get the device address for the partitioned acceleration structure.
     VkBufferDeviceAddressInfo ptlas_buffer_address_info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, NULL, build_buffer};
     VkDeviceAddress ptlas_buffer_address = vk::GetBufferDeviceAddress(*m_device, &ptlas_buffer_address_info);
-
-    // create count_buffer
     buffer_info.size = sizeof(uint32_t);
     buffer_info.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
                         VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
@@ -2014,8 +2007,6 @@ TEST_F(PositiveRayTracing, CmdBuildPartitionedAccelerationStructuresNV) {
     ASSERT_TRUE(device_memory.initialized());
     ASSERT_TRUE(device_memory.initialized());
     count_buffer.BindMemory(device_memory, 0);
-
-    // initialize count buffer with a value
     uint32_t input = 1;
     void* data;
     vk::MapMemory(*m_device, device_memory.handle(), 0, VK_WHOLE_SIZE, 0, &data);
@@ -2025,7 +2016,6 @@ TEST_F(PositiveRayTracing, CmdBuildPartitionedAccelerationStructuresNV) {
     VkBufferDeviceAddressInfo count_buffer_address_info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, NULL, count_buffer};
     VkDeviceAddress count_buffer_address = vk::GetBufferDeviceAddress(*m_device, &count_buffer_address_info);
 
-    // Create Buffer for scratchData
     buffer_info.size = ptlas_size_info.buildScratchSize;
     buffer_info.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
                         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
@@ -2040,7 +2030,6 @@ TEST_F(PositiveRayTracing, CmdBuildPartitionedAccelerationStructuresNV) {
     VkBufferDeviceAddressInfo scratch_buffer_address_info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, NULL, scratch_buffer};
     VkDeviceAddress scratch_buffer_address = vk::GetBufferDeviceAddress(*m_device, &scratch_buffer_address_info);
 
-    // create writePartitionBuffer
     buffer_info.size = partition_count * sizeof(VkPartitionedAccelerationStructureWritePartitionTranslationDataNV);
     buffer_info.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     vkt::Buffer write_partition_buffer(*m_device, buffer_info, vkt::no_mem);
@@ -2051,7 +2040,6 @@ TEST_F(PositiveRayTracing, CmdBuildPartitionedAccelerationStructuresNV) {
     vkt::DeviceMemory write_partition_buffer_device_memory(*m_device, alloc_info);
     ASSERT_TRUE(write_partition_buffer_device_memory.initialized());
     write_partition_buffer.BindMemory(write_partition_buffer_device_memory, 0);
-    // fill in writePartitionBuffer
     std::vector<VkPartitionedAccelerationStructureWritePartitionTranslationDataNV> writePartitionArgs;
     // 5 here is partition count
     static uint32_t partitionArray[5] = {3, 0xFFFFFFFF, 0, 2, 1};  // 0xFFFFFFFF is the global partition
@@ -2061,7 +2049,7 @@ TEST_F(PositiveRayTracing, CmdBuildPartitionedAccelerationStructuresNV) {
         writePartition.partitionIndex = partitionArray[t];
         writePartition.partitionTranslation[0] = 0;
         writePartition.partitionTranslation[1] =
-            partitionTranslationY[t];  // Each partition is translated along Y axis based on its partition index
+            partitionTranslationY[t];
         writePartition.partitionTranslation[2] = 0;
         writePartitionArgs.push_back(writePartition);
     }
@@ -2085,7 +2073,6 @@ TEST_F(PositiveRayTracing, CmdBuildPartitionedAccelerationStructuresNV) {
     ptlas_op.argData.strideInBytes = sizeof(VkPartitionedAccelerationStructureWriteInstanceDataNV);
     ptlas_ops.push_back(ptlas_op);
 
-    // Create Buffer for srcInfo Buffer
     buffer_info.size = partition_count * sizeof(VkBuildPartitionedAccelerationStructureIndirectCommandNV);
     buffer_info.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
                         VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
@@ -2096,8 +2083,6 @@ TEST_F(PositiveRayTracing, CmdBuildPartitionedAccelerationStructuresNV) {
         m_device->Physical().SetMemoryType(memory_requirements.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
     vkt::DeviceMemory src_info_buffer_device_memory(*m_device, alloc_info);
     ASSERT_TRUE(src_info_buffer_device_memory.initialized());
-
-    // fill in src info
     src_info_buffer.BindMemory(src_info_buffer_device_memory, 0);
     void* src_info_data;
     vk::MapMemory(*m_device, src_info_buffer_device_memory.handle(), 0, VK_WHOLE_SIZE, 0, &src_info_data);
@@ -2107,9 +2092,7 @@ TEST_F(PositiveRayTracing, CmdBuildPartitionedAccelerationStructuresNV) {
     VkBufferDeviceAddressInfo src_info_buffer_address_info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, NULL, src_info_buffer};
     VkDeviceAddress src_info_buffer_address = vk::GetBufferDeviceAddress(*m_device, &src_info_buffer_address_info);
 
-    // Prepare the command info for building the partitioned acceleration structure.
-    VkBuildPartitionedAccelerationStructureInfoNV command_info = {
-        VK_STRUCTURE_TYPE_BUILD_PARTITIONED_ACCELERATION_STRUCTURE_INFO_NV};
+    VkBuildPartitionedAccelerationStructureInfoNV command_info = vku::InitStructHelper();
     command_info.input = input_info;
     command_info.srcAccelerationStructureData = 0;
     command_info.dstAccelerationStructureData = ptlas_buffer_address;
@@ -2120,8 +2103,6 @@ TEST_F(PositiveRayTracing, CmdBuildPartitionedAccelerationStructuresNV) {
     m_command_buffer.Begin();
     vk::CmdBuildPartitionedAccelerationStructuresNV(m_command_buffer.handle(), &command_info);
     m_command_buffer.End();
-
-    // submit queue and wait
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 
@@ -2158,23 +2139,17 @@ TEST_F(PositiveRayTracing, PartitionedAccelerationStructuresBuildSizes) {
     int instance_count = 20;
     int partition_count = 5;
 
-    // Set up input information for partitioned acceleration structure instances
-    VkPartitionedAccelerationStructureInstancesInputNV input_info = {
-        VK_STRUCTURE_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_INSTANCES_INPUT_NV};
+    VkPartitionedAccelerationStructureInstancesInputNV input_info = vku::InitStructHelper();
     input_info.instanceCount = instance_count;
     input_info.maxInstancePerPartitionCount = instance_count / partition_count;
     input_info.partitionCount = partition_count;
     input_info.maxInstanceInGlobalPartitionCount = instance_count / partition_count;
     input_info.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
 
-    // Initialize structure to hold build sizes info
     VkAccelerationStructureBuildSizesInfoKHR ptlas_size_info = vku::InitStructHelper();
     ptlas_size_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
 
-    // Retrieve the build sizes for the partitioned acceleration structure
     vk::GetPartitionedAccelerationStructuresBuildSizesNV(*m_device, &input_info, &ptlas_size_info);
-
     // check if the output of GetPartitionedAccelerationStructuresBuildSizesNV is valid
     ASSERT_TRUE(ptlas_size_info.accelerationStructureSize != 0);
-
 }

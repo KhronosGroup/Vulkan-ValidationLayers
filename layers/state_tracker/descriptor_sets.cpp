@@ -1078,7 +1078,6 @@ void vvl::AccelerationStructureDescriptor::WriteUpdate(DescriptorSet &set_state,
                                                        const VkWriteDescriptorSet &update, const uint32_t index, bool is_bindless) {
     const auto *acc_info = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureKHR>(update.pNext);
     const auto *acc_info_nv = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureNV>(update.pNext);
-    //assert(acc_info || acc_info_nv);
     const auto *acc_info_partition_nv =
         vku::FindStructInPNextChain<VkWriteDescriptorSetPartitionedAccelerationStructureNV>(update.pNext);
     assert(acc_info || acc_info_nv || acc_info_partition_nv);
