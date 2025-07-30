@@ -1018,8 +1018,9 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfacePresentModesKHR(Vk
                                                                               VkPresentModeKHR* pPresentModes) {
     // Currently always say that all present modes are supported
     if (!pPresentModes) {
-        *pPresentModeCount = 6;
+        *pPresentModeCount = 7;
     } else {
+        if (*pPresentModeCount >= 7) pPresentModes[6] = VK_PRESENT_MODE_FIFO_LATEST_READY_KHR;
         if (*pPresentModeCount >= 6) pPresentModes[5] = VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR;
         if (*pPresentModeCount >= 5) pPresentModes[4] = VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR;
         if (*pPresentModeCount >= 4) pPresentModes[3] = VK_PRESENT_MODE_FIFO_RELAXED_KHR;

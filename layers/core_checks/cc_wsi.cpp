@@ -1679,7 +1679,7 @@ bool core::Instance::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(VkP
                              "is called with VK_KHR_surface_maintenance1 enabled and "
                              "a VkSurfacePresentModeKHR structure included in "
                              "the pNext chain of VkPhysicalDeviceSurfaceInfo2KHR, but the specified presentMode (%s) is not among "
-                             "those returned by vkGetPhysicalDevicePresentModesKHR().",
+                             "those returned by vkGetPhysicalDeviceSurfacePresentModesKHR().",
                              string_VkPresentModeKHR(present_mode));
             }
         }
