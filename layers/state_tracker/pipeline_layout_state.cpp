@@ -89,7 +89,14 @@ std::string PipelineLayoutCompatDef::DescribeDifference(const PipelineLayoutComp
             }
         }
     } else if (is_independent_sets != other.is_independent_sets) {
-        ss << "One set is created with VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT while the other is not\n";
+        ss << "The pipeline layout used to bind set " << set;
+        if (is_independent_sets) {
+            ss << " was created with VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT when the pipeline layout of last bound "
+                  "pipeline was not.";
+        } else {
+            ss << " was created without VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT when the pipeline layout of last bound "
+                  "pipeline was.";
+        }
     } else {
         const auto &descriptor_set_layouts = *set_layouts_id.get();
         const auto &other_ds_layouts = *other.set_layouts_id.get();
@@ -209,10 +216,6 @@ static PipelineLayout::SetLayoutVector GetSetLayouts(const vvl::span<const Pipel
         if (layout && (layout->set_layouts.size() > num_layouts)) {
             num_layouts = layout->set_layouts.size();
         }
-    }
-
-    if (!num_layouts) {
-        return {};
     }
 
     set_layouts.reserve(num_layouts);

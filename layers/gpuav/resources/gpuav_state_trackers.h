@@ -26,15 +26,17 @@
 
 // We pull in most the core state tracking files
 // gpuav_state_trackers.h should NOT be included by any other header file
+
 #include "state_tracker/buffer_state.h"
-#include "state_tracker/image_state.h"
-#include "state_tracker/tensor_state.h"
 #include "state_tracker/cmd_buffer_state.h"
-#include "state_tracker/queue_state.h"
-#include "state_tracker/sampler_state.h"
-#include "state_tracker/ray_tracing_state.h"
-#include "state_tracker/shader_object_state.h"
+#include "state_tracker/image_state.h"
+#include "state_tracker/pipeline_state.h"
 #include "state_tracker/push_constant_data.h"
+#include "state_tracker/queue_state.h"
+#include "state_tracker/ray_tracing_state.h"
+#include "state_tracker/sampler_state.h"
+#include "state_tracker/shader_object_state.h"
+#include "state_tracker/tensor_state.h"
 
 namespace gpuav {
 
@@ -354,6 +356,28 @@ static inline ShaderObjectSubState &SubState(vvl::ShaderObject &obj) {
 }
 static inline const ShaderObjectSubState &SubState(const vvl::ShaderObject &obj) {
     return *static_cast<const ShaderObjectSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));
+}
+
+class PipelineTrackerSubState : public vvl::PipelineTrackerSubState {
+  public:
+    explicit PipelineTrackerSubState(Validator &gpuav, vvl::Pipeline &pipeline);
+
+    void Destroy() override;
+    // #ARNO_TODO do I need that?
+    void NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) override;
+
+    VkPipelineLayout GetPipelineLayoutUnion(const Location &loc) const;
+
+  private:
+    mutable VkPipelineLayout recreated_layout = VK_NULL_HANDLE;
+    Validator &gpuav_;
+};
+
+static inline PipelineTrackerSubState &SubState(vvl::Pipeline &pipeline) {
+    return *static_cast<PipelineTrackerSubState *>(pipeline.SubState(LayerObjectTypeGpuAssisted));
+}
+static inline const PipelineTrackerSubState &SubState(const vvl::Pipeline &pipeline) {
+    return *static_cast<const PipelineTrackerSubState *>(pipeline.SubState(LayerObjectTypeGpuAssisted));
 }
 
 }  // namespace gpuav

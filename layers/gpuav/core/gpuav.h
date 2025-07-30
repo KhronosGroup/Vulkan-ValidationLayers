@@ -205,6 +205,7 @@ class Validator : public GpuShaderInstrumentor {
     void Created(vvl::Tensor&) final;
     void Created(vvl::TensorView&) final;
     void Created(vvl::ShaderObject&) final;
+    void Created(vvl::Pipeline&) final;
 
     void DebugCapture() final;
 
