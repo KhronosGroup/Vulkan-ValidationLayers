@@ -777,6 +777,7 @@ Pipeline::Pipeline(const DeviceState &state_data, const VkGraphicsPipelineCreate
         layouts[1] = fragment_shader_layout;
         layouts[2] = pre_raster_layout;
         merged_graphics_layout = std::make_shared<vvl::PipelineLayout>(layouts);
+        exe_graphics_layout = exe_layout_state;
 
         // TODO Could store the graphics_lib_type in the sub-state rather than searching for it again here.
         //      Or, could store a pointer back to the owning Pipeline.

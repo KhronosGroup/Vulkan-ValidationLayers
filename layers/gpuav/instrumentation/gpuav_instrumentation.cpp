@@ -41,8 +41,14 @@ namespace gpuav {
 
 // If application is using shader objects, bindings count will be computed from bound shaders
 static uint32_t LastBoundPipelineOrShaderDescSetBindingsCount(const LastBound &last_bound) {
-    if (last_bound.pipeline_state && last_bound.pipeline_state->PreRasterPipelineLayoutState()) {
-        return static_cast<uint32_t>(last_bound.pipeline_state->PreRasterPipelineLayoutState()->set_layouts.size());
+    if (last_bound.pipeline_state && !last_bound.pipeline_state->PreRasterPipelineLayoutState()->Destroyed()) {
+        if (last_bound.pipeline_state->PreRasterPipelineLayoutState()->IsIndependentSets() &&
+            last_bound.pipeline_state->ExePipelineLayoutState() &&
+            !last_bound.pipeline_state->ExePipelineLayoutState()->Destroyed()) {
+            return uint32_t(last_bound.pipeline_state->ExePipelineLayoutState()->set_layouts.size());
+        } else {
+            return uint32_t(last_bound.pipeline_state->PreRasterPipelineLayoutState()->set_layouts.size());
+        }
     }
 
     if (const vvl::ShaderObject *main_bound_shader = last_bound.GetFirstShader()) {
@@ -504,8 +510,11 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
         // One exception when using GPL is we need to look out for INDEPENDENT_SETS_BIT which will have null sets inside them.
         // We have a fake merged_graphics_layout to mimic the complete layout, but the app must bind it to descriptor set
         if (inst_binding_pipe_layout_state->IsIndependentSets()) {
-            inst_binding_pipe_layout_state = last_bound.desc_set_pipeline_layout;
-            inst_binding_pipe_layout_src = PipelineLayoutSource::LastBoundDescriptorSet;
+            inst_binding_pipe_layout_state = last_bound.pipeline_state->ExePipelineLayoutState();
+            if (!inst_binding_pipe_layout_state || inst_binding_pipe_layout_state->Destroyed()) {
+                inst_binding_pipe_layout_state = last_bound.desc_set_pipeline_layout;
+                inst_binding_pipe_layout_src = PipelineLayoutSource::LastBoundDescriptorSet;
+            }
         }
     } else if (last_bound.desc_set_pipeline_layout) {
         inst_binding_pipe_layout_state = last_bound.desc_set_pipeline_layout;

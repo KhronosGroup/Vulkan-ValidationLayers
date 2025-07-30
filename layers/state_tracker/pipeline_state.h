@@ -249,7 +249,7 @@ class Pipeline : public StateObject {
         return OwnsSubState(pre_raster_state) || OwnsSubState(fragment_shader_state) || OwnsSubState(fragment_output_state);
     }
 
-    // There could be an invalid RenderPass which will not come as as null, need to check RenderPassState() if it is valid
+    // There could be an invalid RenderPass which will not come as null, need to check RenderPassState() if it is valid
     bool IsRenderPassNull() const { return GraphicsCreateInfo().renderPass == VK_NULL_HANDLE; }
 
     const std::shared_ptr<const vvl::PipelineLayout> PipelineLayoutState() const {
@@ -279,6 +279,8 @@ class Pipeline : public StateObject {
         }
         return merged_graphics_layout;
     }
+
+    const std::shared_ptr<const vvl::PipelineLayout> ExePipelineLayoutState() const { return exe_graphics_layout; }
 
     // the VkPipelineMultisampleStateCreateInfo need to be identically defined so can safely grab both
     const vku::safe_VkPipelineMultisampleStateCreateInfo *MultisampleState() const {
@@ -597,8 +599,8 @@ class Pipeline : public StateObject {
         return EnablesRasterizationStates(pre_raster_state->parent.GraphicsCreateInfo());
     }
 
-    // Merged layouts
     std::shared_ptr<const vvl::PipelineLayout> merged_graphics_layout;
+    std::shared_ptr<const vvl::PipelineLayout> exe_graphics_layout;
 };
 
 template <>
