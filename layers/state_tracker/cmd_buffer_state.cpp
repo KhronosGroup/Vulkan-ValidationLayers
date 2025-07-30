@@ -1108,7 +1108,7 @@ void vvl::CommandBuffer::RecordEncodeVideo(const VkVideoEncodeInfoKHR &encode_in
 }
 
 void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
-    if (CbState::Recorded == state || CbState::InvalidComplete == state) {
+    if (IsRecorded(state)) {
         Location loc(Func::vkBeginCommandBuffer);
         Reset(loc);
     }

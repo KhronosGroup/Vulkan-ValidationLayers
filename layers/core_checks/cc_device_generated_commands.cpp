@@ -655,13 +655,15 @@ bool CoreChecks::ValidatePreprocessGeneratedCommandsStateCommandBuffer(const vvl
                                                                        const Location& loc) const {
     bool skip = false;
 
-    if (state_command_buffer.state == CbState::InvalidComplete || state_command_buffer.state == CbState::InvalidIncomplete) {
+    if (state_command_buffer.state == CbState::InvalidIncomplete) {
         skip |= ReportInvalidCommandBuffer(state_command_buffer, loc.dot(Field::stateCommandBuffer),
                                            "VUID-vkCmdPreprocessGeneratedCommandsEXT-stateCommandBuffer-11138");
-    } else if (CbState::Recording != state_command_buffer.state) {
+    } else if (!IsRecording(state_command_buffer.state)) {
         const LogObjectList objlist(command_buffer.Handle(), state_command_buffer.Handle());
         skip |= LogError("VUID-vkCmdPreprocessGeneratedCommandsEXT-stateCommandBuffer-11138", objlist,
-                         loc.dot(Field::stateCommandBuffer), "is not in a recording state.");
+                         loc.dot(Field::stateCommandBuffer),
+                         "(%s) is not in a recording state. vkBeginCommandBuffer() must first be called.",
+                         FormatHandle(state_command_buffer).c_str());
     }
 
     if (auto indirect_execution_set = Get<vvl::IndirectExecutionSet>(generated_commands_info.indirectExecutionSet)) {

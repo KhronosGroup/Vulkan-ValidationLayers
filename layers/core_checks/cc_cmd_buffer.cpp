@@ -23,7 +23,6 @@
 
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/utility/vk_format_utils.h>
-#include "core_checks/cc_buffer_address.h"
 #include "core_checks/cc_state_tracker.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/buffer_state.h"
@@ -36,19 +35,36 @@
 #include "utils/image_layout_utils.h"
 #include "utils/math_utils.h"
 
+// This is a single location to report when a command buffer is invalid (which means it is not in a "recording state")
 bool CoreChecks::ReportInvalidCommandBuffer(const vvl::CommandBuffer &cb_state, const Location &loc, const char *vuid) const {
-    bool skip = false;
-    for (const auto &entry : cb_state.broken_bindings) {
-        const auto &obj = entry.first;
-        const char *cause_str = (obj.type == kVulkanObjectTypeDescriptorSet)   ? " or updated"
-                                : (obj.type == kVulkanObjectTypeCommandBuffer) ? " or rerecorded"
-                                                                               : "";
-        auto objlist = entry.second;  // intentional copy
-        objlist.add(cb_state.Handle());
-        skip |= LogError(vuid, objlist, loc, "was called in %s which is invalid because the bound %s was destroyed%s.",
-                         FormatHandle(cb_state).c_str(), FormatHandle(obj).c_str(), cause_str);
+    std::stringstream ss;
+    ss << "was called in " << FormatHandle(cb_state) << " which ";
+
+    assert(cb_state.state == CbState::InvalidIncomplete || cb_state.state == CbState::InvalidComplete);
+    if (cb_state.state == CbState::InvalidIncomplete) {
+        ss << "is now in an invalid state (instead of recording state) ";
+    } else {
+        ss << "was recorded but now has become invalid to use ";
     }
-    return skip;
+
+    ss << "because the following objects bound to the command buffer were invalidated\n";
+    LogObjectList objlist(cb_state.Handle());
+    for (const auto &entry : cb_state.broken_bindings) {
+        ss << " " << FormatHandle(entry.first) << " was ";
+        if (entry.first.type == kVulkanObjectTypeDescriptorSet) {
+            ss << "destroy or updated without UPDATE_AFTER_BIND\n";
+        } else if (entry.first.type == kVulkanObjectTypeCommandBuffer) {
+            ss << "destroy or rerecorded\n";
+        } else {
+            ss << "destroy\n";
+        }
+
+        for (const auto &obj : entry.second.object_list) {
+            objlist.add(obj);
+        }
+    }
+
+    return LogError(vuid, objlist, loc, "%s", ss.str().c_str());
 }
 
 bool CoreChecks::PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
@@ -287,12 +303,12 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
             }
         }
     }
-    if (CbState::Recording == cb_state->state) {
+    if (IsRecording(cb_state->state)) {
         skip |= LogError("VUID-vkBeginCommandBuffer-commandBuffer-00049", commandBuffer, error_obj.location,
-                         "Cannot call Begin on %s in the RECORDING state. Must first call "
+                         "Cannot be called for %s while it is still in the recording state. Must first call "
                          "vkEndCommandBuffer().",
                          FormatHandle(commandBuffer).c_str());
-    } else if (CbState::Recorded == cb_state->state || CbState::InvalidComplete == cb_state->state) {
+    } else if (IsRecorded(cb_state->state)) {
         VkCommandPool cmd_pool = cb_state->allocate_info.commandPool;
         const auto *pool = cb_state->command_pool;
         if (!(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT & pool->createFlags)) {
@@ -338,12 +354,13 @@ bool CoreChecks::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer, 
         skip |= InsideRenderPass(cb_state, error_obj.location, "VUID-vkEndCommandBuffer-commandBuffer-00060");
     }
 
-    if (cb_state.state == CbState::InvalidComplete || cb_state.state == CbState::InvalidIncomplete) {
+    if (cb_state.state == CbState::InvalidIncomplete) {
         skip |= ReportInvalidCommandBuffer(cb_state, error_obj.location, "VUID-vkEndCommandBuffer-commandBuffer-00059");
-    } else if (CbState::Recording != cb_state.state) {
-        skip |= LogError("VUID-vkEndCommandBuffer-commandBuffer-00059", commandBuffer, error_obj.location,
-                         "Cannot call End on %s when not in the RECORDING state. Must first call vkBeginCommandBuffer().",
-                         FormatHandle(commandBuffer).c_str());
+    } else if (!IsRecording(cb_state.state)) {
+        skip |=
+            LogError("VUID-vkEndCommandBuffer-commandBuffer-00059", commandBuffer, error_obj.location,
+                     "Cannot be called for %s when it is not in a recording state, vkBeginCommandBuffer() must first be called.",
+                     FormatHandle(commandBuffer).c_str());
     }
 
     for (const auto &query_obj : cb_state.active_queries) {
