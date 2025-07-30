@@ -863,6 +863,21 @@ Pipeline::Pipeline(const DeviceState &state_data, const VkRayTracingPipelineCrea
     assert(0 == (active_shaders & ~(kShaderStageAllRayTracing)));
 }
 
+void Pipeline::Destroy() {
+    for (auto &item : sub_states_) {
+        item.second->Destroy();
+    }
+    sub_states_.clear();
+    StateObject::Destroy();
+}
+
+void Pipeline::NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {
+    for (auto &item : sub_states_) {
+        item.second->NotifyInvalidate(invalid_nodes, unlink);
+    }
+    StateObject::NotifyInvalidate(invalid_nodes, unlink);
+}
+
 }  // namespace vvl
 
 bool IsPipelineLayoutSetCompatible(uint32_t set, const vvl::PipelineLayout *a, const vvl::PipelineLayout *b) {

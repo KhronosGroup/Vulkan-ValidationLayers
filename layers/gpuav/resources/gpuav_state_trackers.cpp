@@ -16,6 +16,7 @@
  */
 
 #include <vulkan/vulkan_core.h>
+#include "generated/dispatch_functions.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/descriptor_validation/gpuav_descriptor_validation.h"
 #include "gpuav/instrumentation/gpuav_instrumentation.h"
@@ -626,5 +627,75 @@ void TensorViewSubState::Destroy() { id_tracker.reset(); }
 void TensorViewSubState::NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) { id_tracker.reset(); }
 
 ShaderObjectSubState::ShaderObjectSubState(vvl::ShaderObject &obj) : vvl::ShaderObjectSubState(obj) {}
+
+PipelineTrackerSubState::PipelineTrackerSubState(Validator &gpuav, vvl::Pipeline &pipeline)
+    : vvl::PipelineTrackerSubState(pipeline), gpuav_(gpuav) {}
+
+VkPipelineLayout PipelineTrackerSubState::GetPipelineLayoutUnion(const Location &loc) const {
+    if (recreated_layout != VK_NULL_HANDLE) {
+        return recreated_layout;
+    }
+
+    assert(base.PipelineLayoutState()->set_layouts.size() <= gpuav_.instrumentation_desc_set_bind_index_);
+    if (base.PipelineLayoutState()->set_layouts.size() > gpuav_.instrumentation_desc_set_bind_index_) {
+        gpuav_.InternalError(LogObjectList(base.VkHandle()), loc,
+                             "Trying to recreate a pipeline layout with no room for the instrumenation descriptor set.");
+        return VK_NULL_HANDLE;
+    }
+
+    std::vector<VkDescriptorSetLayout> set_layout_handles;
+    set_layout_handles.reserve(gpuav_.instrumentation_desc_set_bind_index_ + 1);
+    std::vector<size_t> recreated_desc_set_layouts_indices;
+    for (size_t set_layout_i = 0; set_layout_i < base.PipelineLayoutState()->set_layouts.size(); ++set_layout_i) {
+        const auto &set_layout = base.PipelineLayoutState()->set_layouts[set_layout_i];
+        assert(set_layout);
+        if (!set_layout->Destroyed()) {
+            set_layout_handles.emplace_back(set_layout->VkHandle());
+        } else {
+            VkDescriptorSetLayout recreated_desc_set_layout = VK_NULL_HANDLE;
+
+            const VkResult result = DispatchCreateDescriptorSetLayout(gpuav_.device, set_layout->GetCreateInfo().ptr(), nullptr,
+                                                                      &recreated_desc_set_layout);
+            (void)result;
+            assert(result == VK_SUCCESS);
+
+            set_layout_handles.emplace_back(recreated_desc_set_layout);
+            recreated_desc_set_layouts_indices.emplace_back(set_layout_i);
+        }
+    }
+    // #ARNO_TODO not 31, needs to be max descriptor sets available on device
+    for (size_t i = set_layout_handles.size(); i < gpuav_.instrumentation_desc_set_bind_index_; ++i) {
+        set_layout_handles.emplace_back(gpuav_.dummy_desc_layout_);
+    }
+    set_layout_handles.emplace_back(gpuav_.GetInstrumentationDescriptorSetLayout());
+
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
+    pipeline_layout_ci.flags = base.PipelineLayoutState()->create_flags;
+    pipeline_layout_ci.setLayoutCount = uint32_t(set_layout_handles.size());
+    pipeline_layout_ci.pSetLayouts = set_layout_handles.data();
+    if (base.PipelineLayoutState()->push_constant_ranges_layout) {
+        pipeline_layout_ci.pushConstantRangeCount = uint32_t(base.PipelineLayoutState()->push_constant_ranges_layout->size());
+        pipeline_layout_ci.pPushConstantRanges = base.PipelineLayoutState()->push_constant_ranges_layout->data();
+    }
+
+    const VkResult result = DispatchCreatePipelineLayout(gpuav_.device, &pipeline_layout_ci, nullptr, &recreated_layout);
+    (void)result;
+    assert(result == VK_SUCCESS);
+
+    for (size_t i : recreated_desc_set_layouts_indices) {
+        DispatchDestroyDescriptorSetLayout(gpuav_.device, set_layout_handles[i], nullptr);
+    }
+
+    return recreated_layout;
+}
+
+void PipelineTrackerSubState::Destroy() {
+    if (recreated_layout != VK_NULL_HANDLE) {
+        DispatchDestroyPipelineLayout(gpuav_.device, recreated_layout, nullptr);
+        recreated_layout = VK_NULL_HANDLE;
+    }
+}
+
+void PipelineTrackerSubState::NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) { Destroy(); }
 
 }  // namespace gpuav

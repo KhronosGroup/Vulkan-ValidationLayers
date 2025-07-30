@@ -46,6 +46,7 @@ static inline VkGraphicsPipelineLibraryFlagsEXT GetGraphicsLibType(const CreateI
     return static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0);
 }
 
+// #ARNO_TODO rename to something like "PipelineLibrarySubState"
 // Common amoung all pipeline sub state
 struct PipelineSubState {
     PipelineSubState(const vvl::Pipeline &p) : parent(p) {}

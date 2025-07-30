@@ -326,6 +326,7 @@ class DescriptorSetLayout : public StateObject {
     bool IsCompatible(DescriptorSetLayout const *rh_ds_layout) const;
     // Straightforward Get functions
     VkDescriptorSetLayout VkHandle() const { return handle_.Cast<VkDescriptorSetLayout>(); };
+    vku::safe_VkDescriptorSetLayoutCreateInfo GetCreateInfo() const { return desc_set_layout_ci; }
     const DescriptorSetLayoutDef *GetLayoutDef() const { return layout_id_.get(); }
     DescriptorSetLayoutId GetLayoutId() const { return layout_id_; }
     uint32_t GetTotalDescriptorCount() const { return layout_id_->GetTotalDescriptorCount(); };
@@ -388,6 +389,7 @@ class DescriptorSetLayout : public StateObject {
   private:
     DescriptorSetLayoutId layout_id_{};
     VkDeviceSize layout_size_in_bytes_ = 0;
+    vku::safe_VkDescriptorSetLayoutCreateInfo desc_set_layout_ci{};
 };
 
 // Slightly broader than type, each c++ "class" will has a corresponding "DescriptorClass"

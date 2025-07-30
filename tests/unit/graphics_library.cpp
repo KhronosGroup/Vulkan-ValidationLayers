@@ -3645,7 +3645,8 @@ TEST_F(NegativeGraphicsLibrary, DrawWithMismatchIndependentBit) {
                                   static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
         // VUID-vkCmdDraw-None-08600
         m_errorMonitor->SetDesiredError(
-            "One set is created with VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT while the other is not");
+            "The pipeline layout used to bind set 0 was created with VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT when the "
+            "pipeline layout of last bound pipeline was not");
         vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         m_command_buffer.EndRenderPass();
@@ -3666,7 +3667,8 @@ TEST_F(NegativeGraphicsLibrary, DrawWithMismatchIndependentBit) {
                                   static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
         // VUID-vkCmdDraw-None-08600
         m_errorMonitor->SetDesiredError(
-            "One set is created with VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT while the other is not");
+            "The pipeline layout used to bind set 0 was created without VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT when "
+            "the pipeline layout of last bound pipeline was");
         vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         m_command_buffer.EndRenderPass();

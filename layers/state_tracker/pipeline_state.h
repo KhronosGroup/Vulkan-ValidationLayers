@@ -66,7 +66,10 @@ class PipelineCache : public StateObject {
     }
 };
 
-class Pipeline : public StateObject {
+// #ARNO_TODO rename to "PipelineSubState" once "PipelineSubState" in pipeline_sub_state.h is renamed
+class PipelineTrackerSubState;
+
+class Pipeline : public StateObject, public SubStateManager<PipelineTrackerSubState> {
   protected:
     // NOTE: The style guide suggests private data appear at the end, but we need this populated first, so placing it here
 
@@ -163,6 +166,9 @@ class Pipeline : public StateObject {
              std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
              spirv::StatelessData *stateless_data);
 
+    void Destroy() override;
+    void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) override;
+
     VkPipeline VkHandle() const { return handle_.Cast<VkPipeline>(); }
 
     void SetHandle(VkPipeline p) { handle_.handle = CastToUint64(p); }
@@ -249,7 +255,7 @@ class Pipeline : public StateObject {
         return OwnsSubState(pre_raster_state) || OwnsSubState(fragment_shader_state) || OwnsSubState(fragment_output_state);
     }
 
-    // There could be an invalid RenderPass which will not come as as null, need to check RenderPassState() if it is valid
+    // There could be an invalid RenderPass which will not come as null, need to check RenderPassState() if it is valid
     bool IsRenderPassNull() const { return GraphicsCreateInfo().renderPass == VK_NULL_HANDLE; }
 
     const std::shared_ptr<const vvl::PipelineLayout> PipelineLayoutState() const {
@@ -597,8 +603,20 @@ class Pipeline : public StateObject {
         return EnablesRasterizationStates(pre_raster_state->parent.GraphicsCreateInfo());
     }
 
-    // Merged layouts
     std::shared_ptr<const vvl::PipelineLayout> merged_graphics_layout;
+};
+
+class PipelineTrackerSubState {
+  public:
+    explicit PipelineTrackerSubState(Pipeline &pipeline) : base(pipeline) {}
+    PipelineTrackerSubState(const PipelineTrackerSubState &) = delete;
+    PipelineTrackerSubState &operator=(const PipelineTrackerSubState &) = delete;
+    virtual ~PipelineTrackerSubState() {}
+    virtual void Destroy() {}
+    // #ARNO_TODO do I need that?
+    virtual void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {}
+
+    Pipeline &base;
 };
 
 template <>
