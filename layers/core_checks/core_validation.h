@@ -2653,8 +2653,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                                                     const ErrorObject& error_obj) const override;
     bool PreCallValidateGetPartitionedAccelerationStructuresBuildSizesNV(VkDevice device, const VkPartitionedAccelerationStructureInstancesInputNV* pInfo,
                                                                         VkAccelerationStructureBuildSizesInfoKHR* pBuildInfo, const ErrorObject& error_obj) const override;
-    bool ValidateBuildPartitionedAccelerationStructureInfoNV(VkDevice device,
-                                                             const VkBuildPartitionedAccelerationStructureInfoNV* pBuildInfo,
+    bool ValidateBuildPartitionedAccelerationStructureInfoNV(const VkBuildPartitionedAccelerationStructureInfoNV* pBuildInfo,
                                                              const Location& loc) const;
     bool ValidatePartitionedAccelerationStructureInstancesInputNV(const VkPartitionedAccelerationStructureInstancesInputNV* pInfo,
                                                                   const Location& loc) const;
