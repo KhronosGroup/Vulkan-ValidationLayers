@@ -6301,8 +6301,7 @@ TEST_F(NegativeDescriptors, InvalidCombinedImageSampler) {
 
 TEST_F(NegativeDescriptors, PartitionedAccelerationStructureTypeMismatch) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    
-    AddOptionalExtensions(VK_NV_PARTITIONED_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_PARTITIONED_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
@@ -6313,11 +6312,8 @@ TEST_F(NegativeDescriptors, PartitionedAccelerationStructureTypeMismatch) {
                                                  });
 
     // Try to update with VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV when the layout expects UNIFORM_BUFFER
-    VkWriteDescriptorSetPartitionedAccelerationStructureNV accel_struct_info = {};
-    accel_struct_info.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_PARTITIONED_ACCELERATION_STRUCTURE_NV;
+    VkWriteDescriptorSetPartitionedAccelerationStructureNV accel_struct_info = vku::InitStructHelper();
     accel_struct_info.accelerationStructureCount = 1;
-    accel_struct_info.pAccelerationStructures = nullptr; // This would normally point to device addresses
-
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper(&accel_struct_info);
     descriptor_write.dstSet = descriptor_set.set_;
     descriptor_write.dstBinding = 0;
@@ -6325,6 +6321,5 @@ TEST_F(NegativeDescriptors, PartitionedAccelerationStructureTypeMismatch) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV;
     m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00319");
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
-
     m_errorMonitor->VerifyFound();
 }
