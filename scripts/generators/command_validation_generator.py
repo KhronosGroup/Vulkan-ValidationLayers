@@ -176,14 +176,20 @@ class CommandValidationOutputGenerator(BaseGenerator):
                         skip |= ValidateCmdSubpassState(cb_state, loc, info.recording_vuid);
                         break;
 
-                    case CbState::InvalidComplete:
                     case CbState::InvalidIncomplete:
                         skip |= ReportInvalidCommandBuffer(cb_state, loc, info.recording_vuid);
                         break;
 
-                    default:
-                        assert(loc.function != Func::Empty);
+                    case CbState::New:
                         skip |= LogError(info.recording_vuid, cb_state.Handle(), loc, "was called before vkBeginCommandBuffer().");
+                        break;
+
+                    case CbState::Recorded:
+                    case CbState::InvalidComplete:
+                        assert(loc.function != Func::Empty);
+                        skip |= LogError(info.recording_vuid, cb_state.Handle(), loc,
+                                        "was recorded, but vkBeginCommandBuffer() was not called prior to this command.");
+                        break;
                 }
 
                 // Validate the command pool from which the command buffer is from that the command is allowed for queue type

@@ -52,6 +52,10 @@ enum class CbState {
     InvalidIncomplete,  // fouled before recording was completed
 };
 
+static inline bool IsRecorded(CbState state) { return state == CbState::Recorded || state == CbState::InvalidComplete; }
+
+static inline bool IsRecording(CbState state) { return state == CbState::Recording || state == CbState::InvalidIncomplete; }
+
 enum class AttachmentSource {
     Empty = 0,
     RenderPass,

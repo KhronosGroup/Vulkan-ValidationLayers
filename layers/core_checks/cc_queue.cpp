@@ -554,7 +554,6 @@ bool CoreChecks::ValidateCommandBufferState(const vvl::CommandBuffer &cb_state, 
 
     // Validate that cmd buffers have been updated
     switch (cb_state.state) {
-        case CbState::InvalidIncomplete:
         case CbState::InvalidComplete:
             skip |= ReportInvalidCommandBuffer(cb_state, loc, vuid);
             break;
@@ -564,13 +563,15 @@ bool CoreChecks::ValidateCommandBufferState(const vvl::CommandBuffer &cb_state, 
                              FormatHandle(cb_state).c_str());
             break;
 
+        case CbState::InvalidIncomplete:
         case CbState::Recording:
-            skip |= LogError(vuid, cb_state.Handle(), loc, "You must call vkEndCommandBuffer() on %s before this call.",
+            skip |= LogError(vuid, cb_state.Handle(), loc,
+                             "You must call vkEndCommandBuffer() on %s before this call can use the command buffer.",
                              FormatHandle(cb_state).c_str());
             break;
 
-        default: /* recorded */
-            break;
+        case CbState::Recorded:
+            break;  // only valid option
     }
     return skip;
 }
@@ -615,7 +616,7 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
                                  FormatHandle(sub_cb->primary_command_buffer).c_str());
             }
 
-            if (sub_cb->state != CbState::Recorded) {
+            if (!IsRecorded(sub_cb->state)) {
                 const char *const finished_cb_vuid = (loc.function == Func::vkQueueSubmit)
                                                          ? "VUID-vkQueueSubmit-pCommandBuffers-00072"
                                                          : "VUID-vkQueueSubmit2-commandBuffer-03876";
