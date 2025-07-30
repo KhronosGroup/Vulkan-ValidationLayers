@@ -2127,6 +2127,7 @@ class DeviceProxy : public vvl::base::Device {
     virtual void Created(vvl::Swapchain& state) {}
     virtual void Created(vvl::DescriptorSet& state) {}
     virtual void Created(vvl::ShaderObject& state) {}
+    virtual void Created(vvl::Pipeline& state){};
 
     // callbacks for image layout validation, which is implemented in both core validation and gpu-av
     // TODO - It would be nice to have a way to not need a duplicate copy in both CoreChecks and GPU-AV code

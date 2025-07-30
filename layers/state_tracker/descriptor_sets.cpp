@@ -496,7 +496,9 @@ bool vvl::DescriptorSetLayout::IsCompatible(DescriptorSetLayout const *rh_ds_lay
 // handle invariant portion
 vvl::DescriptorSetLayout::DescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
                                               const VkDescriptorSetLayout handle)
-    : StateObject(handle, kVulkanObjectTypeDescriptorSetLayout), layout_id_(GetCanonicalId(pCreateInfo)) {
+    : StateObject(handle, kVulkanObjectTypeDescriptorSetLayout),
+      layout_id_(GetCanonicalId(pCreateInfo)),
+      desc_set_layout_ci(pCreateInfo) {
     if (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
         DispatchGetDescriptorSetLayoutSizeEXT(device, handle, &layout_size_in_bytes_);
     }
