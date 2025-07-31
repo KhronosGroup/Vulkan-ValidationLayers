@@ -5815,10 +5815,6 @@ static VKAPI_ATTR void VKAPI_CALL GetClusterAccelerationStructureBuildSizesNV(
 static VKAPI_ATTR void VKAPI_CALL CmdBuildClusterAccelerationStructureIndirectNV(
     VkCommandBuffer commandBuffer, const VkClusterAccelerationStructureCommandsInfoNV* pCommandInfos) {}
 
-static VKAPI_ATTR void VKAPI_CALL
-GetPartitionedAccelerationStructuresBuildSizesNV(VkDevice device, const VkPartitionedAccelerationStructureInstancesInputNV* pInfo,
-                                                 VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo) {}
-
 static VKAPI_ATTR void VKAPI_CALL CmdBuildPartitionedAccelerationStructuresNV(
     VkCommandBuffer commandBuffer, const VkBuildPartitionedAccelerationStructureInfoNV* pBuildInfo) {}
 

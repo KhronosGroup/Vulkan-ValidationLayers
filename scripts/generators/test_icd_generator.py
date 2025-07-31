@@ -121,6 +121,7 @@ class TestIcdGenerator(BaseGenerator):
             'vkRegisterDisplayEventEXT',
             'vkCreatePipelineBinariesKHR',
             'vkGetPipelineBinaryDataKHR',
+            'vkGetPartitionedAccelerationStructuresBuildSizesNV',
         ]
 
     def generate(self):

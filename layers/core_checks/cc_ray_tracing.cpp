@@ -2107,8 +2107,12 @@ bool CoreChecks::PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(
         skip |= LogError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-partitionedAccelerationStructure-10536", commandBuffer,
                          error_obj.location, "partitionedAccelerationStructure feature was not enabled.");
     }
+    //Get build size info here for memory size check
+    VkAccelerationStructureBuildSizesInfoKHR build_size_info = vku::InitStructHelper();
+    const VkPartitionedAccelerationStructureInstancesInputNV input = pBuildInfo->input;
+    DispatchGetPartitionedAccelerationStructuresBuildSizesNV(device, &input, &build_size_info);
     
-    skip |= ValidateBuildPartitionedAccelerationStructureInfoNV(pBuildInfo, error_obj.location.dot(Field::pBuildInfo));
+    skip |= ValidateBuildPartitionedAccelerationStructureInfoNV(*pBuildInfo, error_obj.location.dot(Field::pBuildInfo), build_size_info.buildScratchSize, build_size_info.accelerationStructureSize);
 
     if (SafeModulo(pBuildInfo->srcAccelerationStructureData, 256) != 0) {
         skip |= LogError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10544", commandBuffer,
@@ -2128,11 +2132,6 @@ bool CoreChecks::PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(
                          "(0x%" PRIx64 ") must be aligned to 256 bytes", pBuildInfo->scratchData);
     }
 
-    //Get build size info here for memory size check
-    VkAccelerationStructureBuildSizesInfoKHR build_size_info = vku::InitStructHelper();
-    const VkPartitionedAccelerationStructureInstancesInputNV input = pBuildInfo->input;
-    DispatchGetPartitionedAccelerationStructuresBuildSizesNV(device, &input, &build_size_info);
-
     {
         BufferAddressValidation<2> buffer_address_validator = {{{
             {
@@ -2141,10 +2140,10 @@ bool CoreChecks::PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(
                     return (buffer_state.usage & VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT) == 0; 
                 },
                 []() { 
-                    return "The following buffers are missing VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT"; 
+                    return "The following buffers are missing VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT";
                 },
                 [](const vvl::Buffer& buffer_state) { 
-                    return "buffer has usage " + string_VkBufferUsageFlags2(buffer_state.usage); 
+                    return "buffer has usage " + string_VkBufferUsageFlags2(buffer_state.usage);  
                 },
             },
             {
@@ -2350,65 +2349,62 @@ bool CoreChecks::PreCallValidateGetPartitionedAccelerationStructuresBuildSizesNV
 }
 
 bool CoreChecks::ValidateBuildPartitionedAccelerationStructureInfoNV(
-    const VkBuildPartitionedAccelerationStructureInfoNV *pBuildInfo, const Location &loc) const {
+    const VkBuildPartitionedAccelerationStructureInfoNV& build_info, const Location &build_info_loc, VkDeviceSize build_scratch_size, VkDeviceSize build_acceleration_structure_size) const {
     bool skip = false;
 
-    VkAccelerationStructureBuildSizesInfoKHR build_size_info = vku::InitStructHelper();
-    const VkPartitionedAccelerationStructureInstancesInputNV input = pBuildInfo->input;
-    DispatchGetPartitionedAccelerationStructuresBuildSizesNV(device, &input, &build_size_info);
-    if (!pBuildInfo->scratchData) {
+    if (!build_info.scratchData) {
         skip |= LogError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-scratchData-10558", device,
-                         loc.dot(Field::scratchData), "(0x%" PRIx64 ") must not be NULL", pBuildInfo->scratchData);
+                         build_info_loc.dot(Field::scratchData), "(0x%" PRIx64 ") must not be NULL", build_info.scratchData);
     }
     else
     {
         BufferAddressValidation<1> buffer_address_validator = {{{
             {
                 "VUID-VkBuildPartitionedAccelerationStructureInfoNV-scratchData-10559",
-                [&build_size_info](const vvl::Buffer& buffer_state) {
-                    return buffer_state.requirements.size < build_size_info.buildScratchSize;
+                [&build_scratch_size](const vvl::Buffer& buffer_state) {
+                    return buffer_state.requirements.size < build_scratch_size;
                 },
                 []() {
                     return "The following buffers have insufficient scratch memory size:";
                 },
-                [&build_size_info](const vvl::Buffer& buffer_state) {
+                [&build_scratch_size](const vvl::Buffer& buffer_state) {
                     return "buffer memory size is " + std::to_string(buffer_state.requirements.size) + 
-                           ", required buildScratchSize is " + std::to_string(build_size_info.buildScratchSize);
+                           ", required buildScratchSize is " + std::to_string(build_scratch_size);
                 },
             }
         }}};
 
-        skip |= buffer_address_validator.ValidateDeviceAddress(*this, loc.dot(Field::scratchData),
-                                                              LogObjectList(device), pBuildInfo->scratchData);
+        skip |= buffer_address_validator.ValidateDeviceAddress(*this, build_info_loc.dot(Field::scratchData),
+                                                              LogObjectList(device), build_info.scratchData);
     }
-    if (!pBuildInfo->dstAccelerationStructureData) {
+    if (!build_info.dstAccelerationStructureData) {
         skip |= LogError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-dstAccelerationStructureData-10561", device,
-                         loc.dot(Field::dstAccelerationStructureData), "(0x%" PRIx64 ") must not be NULL", pBuildInfo->dstAccelerationStructureData);
+                         build_info_loc.dot(Field::dstAccelerationStructureData), "(0x%" PRIx64 ") must not be NULL", build_info.dstAccelerationStructureData);
     }
     else
     {
         BufferAddressValidation<1> buffer_address_validator = {{{
              {
                  "VUID-VkBuildPartitionedAccelerationStructureInfoNV-dstAccelerationStructureData-10562",
-                 [&build_size_info](const vvl::Buffer& buffer_state) {
-                     return buffer_state.requirements.size < build_size_info.accelerationStructureSize;
+                 [&build_acceleration_structure_size](const vvl::Buffer& buffer_state) {
+                     return buffer_state.requirements.size < build_acceleration_structure_size;
                  },
                  []() {
                      return "The following buffers have insufficient destination memory size:";
                  },
-                 [&build_size_info](const vvl::Buffer& buffer_state) {
+                 [&build_acceleration_structure_size](const vvl::Buffer& buffer_state) {
                      return "buffer memory size is " + std::to_string(buffer_state.requirements.size) + 
-                            ", required accelerationStructureSize is " + std::to_string(build_size_info.accelerationStructureSize);
+                            ", required accelerationStructureSize is " + std::to_string(build_acceleration_structure_size);
                  },
              }
          }}};
-             skip |= buffer_address_validator.ValidateDeviceAddress(*this, loc.dot(Field::dstAccelerationStructureData),
-                                             LogObjectList(device), pBuildInfo->dstAccelerationStructureData);
+             skip |= buffer_address_validator.ValidateDeviceAddress(*this, build_info_loc.dot(Field::dstAccelerationStructureData),
+                                             LogObjectList(device), build_info.dstAccelerationStructureData);
     }
 
-    if (SafeModulo(pBuildInfo->srcInfosCount, 4) != 0) {
+    if (SafeModulo(build_info.srcInfosCount, 4) != 0) {
         skip |= LogError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-srcInfosCount-10563", device,
-                         loc.dot(Field::srcInfosCount), "(0x%" PRIx64 ") must be aligned to 256 bytes", pBuildInfo->srcInfosCount);
+                         build_info_loc.dot(Field::srcInfosCount), "(0x%" PRIx64 ") must be aligned to 256 bytes", build_info.srcInfosCount);
     }
     return skip;
 }
