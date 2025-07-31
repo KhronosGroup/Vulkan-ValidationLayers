@@ -1911,7 +1911,12 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo &create
         image_state, create_info.viewType == VK_IMAGE_VIEW_TYPE_2D || create_info.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY,
         create_info.subresourceRange, create_info_loc);
 
-    const auto normalized_subresource_range = image_state.NormalizeSubresourceRange(create_info.subresourceRange);
+    // TODO: this is incorrectly normalizes layerCount when image view selects slices of 3d image
+    // (it is enough to run PositiveImage.FramebufferRemainingArrayLayers to show this).
+    // Still currently it does not affect any of the following validations. Fix this when we have a repro case.
+    // The fix should be similar to how ImageView normalizes its ImageView::normalized_subresource_range.
+    auto normalized_subresource_range = image_state.NormalizeSubresourceRange(create_info.subresourceRange);
+
     const VkImageCreateFlags image_flags = image_state.create_info.flags;
     const VkFormat image_format = image_state.create_info.format;
     const VkFormat view_format = create_info.format;
@@ -2889,7 +2894,7 @@ bool CoreChecks::ValidateImageViewSampleWeightQCOM(const VkImageViewCreateInfo &
         skip |=
             LogError("VUID-VkImageViewCreateInfo-pNext-06951", create_info.image, create_info_loc.dot(Field::pNext),
                      "chain includes VkImageViewSampleWeightCreateInfoQCOM "
-                     "and the view type is VK_IMAGE_VIEW_TYPE_1D_ARRAY so teh subresourceRange.layerCount must be 2, but it is %s.",
+                     "and the view type is VK_IMAGE_VIEW_TYPE_1D_ARRAY so the subresourceRange.layerCount must be 2, but it is %s.",
                      string_LayerCount(image_state.create_info, create_info.subresourceRange).c_str());
     }
 
