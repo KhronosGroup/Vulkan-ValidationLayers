@@ -383,14 +383,6 @@ VkImageSubresourceRange Image::NormalizeSubresourceRange(const VkImageSubresourc
     }
     if (range.layerCount == VK_REMAINING_ARRAY_LAYERS) {
         norm.layerCount = create_info.arrayLayers - range.baseArrayLayer;
-
-        // TODO - Something is seriously wrong with the new VK_KHR_maintenance9 spec rule around depth slices as it is meant
-        // for Image Layout transitions, but there are many non-image layout cases where we don't want depth slices.
-        // If we hit this case, as a "quick fix", fall back to using depth slices otherwise this underflows and causes more
-        // confusing errors as well.
-        if (range.baseArrayLayer > create_info.arrayLayers && create_info.extent.depth > range.baseArrayLayer) {
-            norm.layerCount = create_info.extent.depth - range.baseArrayLayer;
-        }
     }
 
     // For multiplanar formats, IMAGE_ASPECT_COLOR is equivalent to adding the aspect of the individual planes
@@ -559,7 +551,7 @@ ImageView::ImageView(const DeviceState &device_state, const std::shared_ptr<vvl:
       metal_imageview_export(GetMetalExport(ci)),
 #endif
       is_depth_sliced(IsDepthSliced()),
-      normalized_subresource_range(image_state->NormalizeSubresourceRange(create_info.subresourceRange)),
+      normalized_subresource_range(ImageView::NormalizeImageViewSubresourceRange(*image_state, create_info)),
       range_generator(image_state->subresource_encoder,
                       NormalizeImageLayoutSubresourceRange(device_state.extensions.vk_khr_maintenance9)),
       samples(image_state->create_info.samples),
@@ -618,6 +610,33 @@ uint32_t ImageView::GetAttachmentLayerCount() const {
         return image_state->create_info.arrayLayers;
     }
     return create_info.subresourceRange.layerCount;
+}
+
+VkImageSubresourceRange ImageView::NormalizeImageViewSubresourceRange(const Image &image_state,
+                                                                      const VkImageViewCreateInfo &image_view_ci) {
+    auto normalized_subresource_range = image_state.NormalizeSubresourceRange(image_view_ci.subresourceRange);
+
+    // When image view references 3d slices then Image::NormalizeSubresourceRange computes incorrect value
+    // because it mixes depth slice units (VkImageViewCreateInfo::subresourceRange::baseArrayLayer) and
+    // image layer units (VkImageCreateInfo::arrayLayers). Adjust layerCount so it is in depth slices units
+    // (since non-VK_REMAINING_ARRAY_LAYERS is in depth slices units and VUIDs are defined against these units
+    // when the image view select 3d image slices).
+    //
+    // TODO: refactor this code so we compute correct value immediately instead of using NormalizeSubresourceRange
+    // on the wrong input and then correcting results.
+    if (image_view_ci.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS) {
+        const bool is_2d_view = IsValueIn(image_view_ci.viewType, {VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_VIEW_TYPE_2D_ARRAY});
+        const bool is_image_slicable = image_state.IsDepthSliceable();
+        const bool is_3d_to_2d_map = is_image_slicable && is_2d_view;
+        if (is_3d_to_2d_map) {
+            const VkImageSubresourceLayers subresource_layers = LayersFromRange(image_view_ci.subresourceRange);
+            const auto extent = image_state.GetEffectiveSubresourceExtent(subresource_layers);
+            const uint32_t layer_count = extent.depth;
+
+            normalized_subresource_range.layerCount = layer_count - image_view_ci.subresourceRange.baseArrayLayer;
+        }
+    }
+    return normalized_subresource_range;
 }
 
 bool ImageView::OverlapSubresource(const ImageView &compare_view) const {
