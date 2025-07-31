@@ -1849,4 +1849,13 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPipelineBinaryDataKHR(VkDevice device, 
     return VK_SUCCESS;
 }
 
+static VKAPI_ATTR void VKAPI_CALL GetPartitionedAccelerationStructuresBuildSizesNV(VkDevice device,
+                                                                                    const VkPartitionedAccelerationStructureInstancesInputNV* pInfo,
+                                                                                    VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo) {
+    // arbitrary
+    pSizeInfo->accelerationStructureSize = 512;
+    pSizeInfo->updateScratchSize = 512;
+    pSizeInfo->buildScratchSize = 512;
+}
+
 }  // namespace icd
