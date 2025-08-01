@@ -975,3 +975,36 @@ TEST_F(PositiveImage, FramebufferRemainingArrayLayers) {
     fb_ci.layers = 1u;
     vkt::Framebuffer framebuffer(*m_device, fb_ci);
 }
+
+TEST_F(PositiveImage, BlockTexelViewLayerCount) {
+    TEST_DESCRIPTION("Create view with VK_REMAINING_ARRAY_LAYERS layerCount from CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE image");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
+    image_create_info.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT | VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT |
+                              VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+    image_create_info.imageType = VK_IMAGE_TYPE_3D;
+    image_create_info.format = VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
+    image_create_info.extent = {32, 32, 2};
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    VkFormatProperties image_fmt;
+    vk::GetPhysicalDeviceFormatProperties(m_device->Physical(), image_create_info.format, &image_fmt);
+    if (!vkt::Image::IsCompatible(*m_device, image_create_info.usage, image_fmt.optimalTilingFeatures)) {
+        GTEST_SKIP() << "Image usage and format not compatible on device";
+    }
+    vkt::Image image(*m_device, image_create_info);
+
+    VkImageViewCreateInfo image_view_ci = vku::InitStructHelper();
+    image_view_ci.image = image;
+    image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    image_view_ci.format = VK_FORMAT_R16G16B16A16_UNORM;
+    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, VK_REMAINING_ARRAY_LAYERS};
+
+    // Test that VK_REMAINING_ARRAY_LAYERS evaluates to 1
+    vkt::ImageView view(*m_device, image_view_ci);
+}
