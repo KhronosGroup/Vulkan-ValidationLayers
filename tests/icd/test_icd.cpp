@@ -749,6 +749,13 @@ static VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(VkDevice device, const VkBuff
                                                    const VkAllocationCallbacks* pAllocator, VkBuffer* pBuffer) {
     unique_lock_t lock(global_lock);
     *pBuffer = (VkBuffer)global_unique_handle++;
+    // Some address for RTX need to be aligned to 256
+    if (pCreateInfo->usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR) {
+        const uint64_t rtx_alignment = current_available_address % 256;
+        if (rtx_alignment != 0) {
+            current_available_address += (256 - rtx_alignment);
+        }
+    }
     buffer_map[device][*pBuffer] = {pCreateInfo->size, current_available_address};
     current_available_address += pCreateInfo->size;
     // Always align to next 64-bit pointer
