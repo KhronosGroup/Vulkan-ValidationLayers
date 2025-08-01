@@ -72,7 +72,6 @@ config("vulkan_layer_config") {
 vvl_sources = [
   "$vulkan_headers_dir/include/vulkan/vk_layer.h",
   "$vulkan_headers_dir/include/vulkan/vulkan.h",
-  "layers/best_practices/best_practices_utils.cpp",
   "layers/best_practices/best_practices_validation.h",
   "layers/best_practices/bp_buffer.cpp",
   "layers/best_practices/bp_cmd_buffer.cpp",
@@ -92,6 +91,8 @@ vvl_sources = [
   "layers/best_practices/bp_state.h",
   "layers/best_practices/bp_state.cpp",
   "layers/best_practices/bp_synchronization.cpp",
+  "layers/best_practices/bp_utils.cpp",
+  "layers/best_practices/bp_utils.h",
   "layers/best_practices/bp_video.cpp",
   "layers/best_practices/bp_wsi.cpp",
   "layers/chassis/chassis.h",

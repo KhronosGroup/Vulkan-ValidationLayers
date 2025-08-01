@@ -25,6 +25,7 @@
 #include <cmath>
 #include "state_tracker/image_state.h"
 #include "generated/dispatch_functions.h"
+#include "utils/image_utils.h"
 
 namespace subresource_adapter {
 Subresource::Subresource(const RangeEncoder& encoder, const VkImageSubresource& subres)
@@ -429,14 +430,9 @@ void ImageRangeEncoder::Decode(const VkImageSubresource& subres, const IndexType
     out_offset.x = static_cast<int32_t>(static_cast<double>(decode) / texel_sizes_[LowerBoundFromMask(subres.aspectMask)]);
 }
 
-
 inline VkImageSubresourceRange GetRemaining(const VkImageSubresourceRange& full_range, VkImageSubresourceRange subres_range) {
-    if (subres_range.levelCount == VK_REMAINING_MIP_LEVELS) {
-        subres_range.levelCount = full_range.levelCount - subres_range.baseMipLevel;
-    }
-    if (subres_range.layerCount == VK_REMAINING_ARRAY_LAYERS) {
-        subres_range.layerCount = full_range.layerCount - subres_range.baseArrayLayer;
-    }
+    subres_range.levelCount = GetEffectiveLevelCount(subres_range, full_range.levelCount);
+    subres_range.layerCount = GetEffectiveLayerCount(subres_range, full_range.layerCount);
     return subres_range;
 }
 inline bool CoversAllLayers(const VkImageSubresourceRange& full_range, VkImageSubresourceRange subres_range) {

@@ -179,7 +179,6 @@ else()
 endif()
 
 target_sources(vvl PRIVATE
-    best_practices/best_practices_utils.cpp
     best_practices/bp_buffer.cpp
     best_practices/bp_cmd_buffer.cpp
     best_practices/bp_cmd_buffer_nv.cpp
@@ -198,6 +197,8 @@ target_sources(vvl PRIVATE
     best_practices/bp_state.h
     best_practices/bp_state.cpp
     best_practices/bp_synchronization.cpp
+    best_practices/bp_utils.cpp
+    best_practices/bp_utils.h
     best_practices/bp_video.cpp
     best_practices/bp_wsi.cpp
     best_practices/best_practices_validation.h
