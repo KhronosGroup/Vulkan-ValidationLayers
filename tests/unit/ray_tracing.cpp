@@ -4792,12 +4792,12 @@ TEST_F(NegativeRayTracing, CmdBuildClusterAccelerationStructureIndirectBadMemory
 
     m_command_buffer.Begin();
     
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDeviceAddress-no-memory");
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDeviceAddress-no-memory");
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDeviceAddress-no-memory");
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDeviceAddress-no-memory");
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDeviceAddress-no-memory");
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDeviceAddress-no-memory");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-None-10894");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-None-10894");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-None-10894");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-None-10894");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-None-10894");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-None-10894");
     vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer.handle(), &command_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();

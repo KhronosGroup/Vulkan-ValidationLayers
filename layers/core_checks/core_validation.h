@@ -1650,9 +1650,9 @@ class CoreChecks : public vvl::DeviceProxy {
         VkCommandBuffer commandBuffer, const VkClusterAccelerationStructureCommandsInfoNV* pCommandInfos,
         const ErrorObject& error_obj) const override;
     bool ValidateClusterAccelerationStructureTriangleClusterInputNV(
-        const VkClusterAccelerationStructureTriangleClusterInputNV* pInput, const Location& loc) const;
-    bool ValidateClusterAccelerationStructureCommandsInfoNV(const VkClusterAccelerationStructureCommandsInfoNV* pCommandInfos,
-                                                            const Location& loc) const;
+        const VkClusterAccelerationStructureTriangleClusterInputNV* input, const Location& input_loc) const;
+    bool ValidateClusterAccelerationStructureCommandsInfoNV(const VkClusterAccelerationStructureCommandsInfoNV& command_infos,
+                                                            const Location& command_infos_loc) const;
     bool PreCallValidateCreateAccelerationStructureNV(VkDevice device, const VkAccelerationStructureCreateInfoNV* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator,
                                                       VkAccelerationStructureNV* pAccelerationStructure,
