@@ -794,7 +794,9 @@ namespace vvl {
 struct ShaderModule : public StateObject {
     ShaderModule(VkShaderModule handle, std::shared_ptr<spirv::Module> &spirv_module)
         : StateObject(handle, kVulkanObjectTypeShaderModule), spirv(spirv_module) {
-        spirv->handle_ = handle_;
+        if (spirv) {
+            spirv->handle_ = handle_;
+        }
     }
 
     // For when we need to create a module with no SPIR-V backing it
