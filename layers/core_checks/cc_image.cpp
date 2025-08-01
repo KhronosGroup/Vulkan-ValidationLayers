@@ -1911,11 +1911,7 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo &create
         image_state, create_info.viewType == VK_IMAGE_VIEW_TYPE_2D || create_info.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY,
         create_info.subresourceRange, create_info_loc);
 
-    // TODO: this is incorrectly normalizes layerCount when image view selects slices of 3d image
-    // (it is enough to run PositiveImage.FramebufferRemainingArrayLayers to show this).
-    // Still currently it does not affect any of the following validations. Fix this when we have a repro case.
-    // The fix should be similar to how ImageView normalizes its ImageView::normalized_subresource_range.
-    auto normalized_subresource_range = image_state.NormalizeSubresourceRange(create_info.subresourceRange);
+    auto normalized_subresource_range = vvl::ImageView::NormalizeImageViewSubresourceRange(image_state, create_info);
 
     const VkImageCreateFlags image_flags = image_state.create_info.flags;
     const VkFormat image_format = image_state.create_info.format;
