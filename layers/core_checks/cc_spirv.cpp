@@ -141,7 +141,7 @@ bool CoreChecks::ValidatePushConstantUsage(const spirv::Module &module_state, co
         }
     } else {
         shader_object_push_constant_ranges_id = GetCanonicalId(stage_state.shader_object_create_info->pushConstantRangeCount,
-                                                          stage_state.shader_object_create_info->pPushConstantRanges);
+                                                               stage_state.shader_object_create_info->pPushConstantRanges);
         push_constant_ranges = shader_object_push_constant_ranges_id.get();
         stage_vuid = "VUID-VkShaderCreateInfoEXT-codeType-10064";
         range_vuid = "VUID-VkShaderCreateInfoEXT-codeType-10065";
@@ -2224,7 +2224,7 @@ bool CoreChecks::ValidateShaderModuleCreateInfo(const VkShaderModuleCreateInfo &
     bool skip = false;
 
     if (disabled[shader_validation]) {
-        return skip; // VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT
+        return skip;  // VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT
     } else if (!create_info.pCode) {
         return skip;  // will be caught elsewhere
     }

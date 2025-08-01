@@ -510,7 +510,7 @@ void DeviceState::PostCallRecordBindTensorMemoryARM(VkDevice device, uint32_t bi
         auto mem_info = Get<vvl::DeviceMemory>(pBindInfos[i].memory);
         ASSERT_AND_RETURN(tensor_state && mem_info);
         tensor_state->BindMemory(tensor_state.get(), mem_info, pBindInfos[i].memoryOffset, 0u,
-                                    tensor_state->MemReqs()->memoryRequirements.size);
+                                 tensor_state->MemReqs()->memoryRequirements.size);
     }
 }
 
@@ -918,8 +918,7 @@ void DeviceState::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const
         uint32_t num_queue_families = 0;
         DispatchGetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families, nullptr);
         std::vector<VkQueueFamilyProperties> queue_family_properties_list(num_queue_families);
-        DispatchGetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families,
-                                                                       queue_family_properties_list.data());
+        DispatchGetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families, queue_family_properties_list.data());
 
         for (uint32_t i = 0; i < pCreateInfo->queueCreateInfoCount; ++i) {
             const VkDeviceQueueCreateInfo &queue_create_info = pCreateInfo->pQueueCreateInfos[i];
@@ -1411,7 +1410,7 @@ void DeviceState::PreCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoC
                 }
             }
         }
-        auto* timeline_info = vku::FindStructInPNextChain<VkTimelineSemaphoreSubmitInfo>(bind_info.pNext);
+        auto *timeline_info = vku::FindStructInPNextChain<VkTimelineSemaphoreSubmitInfo>(bind_info.pNext);
         Location submit_loc = record_obj.location.dot(Struct::VkBindSparseInfo, Field::pBindInfo, bind_idx);
         QueueSubmission submission(submit_loc);
         for (uint32_t i = 0; i < bind_info.waitSemaphoreCount; ++i) {
@@ -1578,8 +1577,7 @@ void DeviceState::RecordGetDeviceQueueState(uint32_t queue_family_index, uint32_
         uint32_t num_queue_families = 0;
         DispatchGetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families, nullptr);
         std::vector<VkQueueFamilyProperties> queue_family_properties_list(num_queue_families);
-        DispatchGetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families,
-                                                                       queue_family_properties_list.data());
+        DispatchGetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families, queue_family_properties_list.data());
 
         Add(CreateQueue(queue, queue_family_index, queue_index, flags, queue_family_properties_list[queue_family_index]));
     }
