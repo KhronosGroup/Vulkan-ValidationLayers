@@ -219,8 +219,7 @@ struct ReadState {
     QueueId queue;
     VkPipelineStageFlags2 pending_dep_chain;  // Should be zero except during barrier application
                                               // Excluded from comparison
-    ReadState() = default;
-    ReadState(VkPipelineStageFlags2 stage, SyncAccessIndex access_index, ResourceUsageTagEx tag_ex);
+
     void Set(VkPipelineStageFlags2 stage, SyncAccessIndex access_index, ResourceUsageTagEx tag_ex);
 
     ResourceUsageTagEx TagEx() const { return {tag, handle_index}; }
@@ -229,7 +228,6 @@ struct ReadState {
                (sync_stages == rhs.sync_stages) && (tag == rhs.tag) && (queue == rhs.queue) &&
                (pending_dep_chain == rhs.pending_dep_chain);
     }
-    void Normalize() { pending_dep_chain = VK_PIPELINE_STAGE_2_NONE; }
     bool IsReadBarrierHazard(VkPipelineStageFlags2 src_exec_scope) const {
         // If the read stage is not in the src sync scope
         // *AND* not execution chained with an existing sync barrier (that's the or)
@@ -272,6 +270,8 @@ struct ReadState {
     void ApplyReadBarrier(VkPipelineStageFlags2 dst_scope) { pending_dep_chain |= dst_scope; }
     VkPipelineStageFlags2 ApplyPendingBarriers();
 };
+
+static_assert(std::is_trivially_copyable_v<ReadState>);
 
 class WriteState {
   public:
@@ -333,6 +333,8 @@ class WriteState {
 
     friend ResourceAccessState;
 };
+
+static_assert(std::is_trivially_copyable_v<WriteState>);
 
 class ResourceAccessState {
   protected:
