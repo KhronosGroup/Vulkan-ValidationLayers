@@ -191,7 +191,7 @@ struct ExecutionModeSet {
 struct AtomicInstructionInfo {
     uint32_t storage_class;
     uint32_t bit_width;
-    uint32_t type;  // ex. OpTypeInt
+    uint32_t type;             // ex. OpTypeInt
     uint32_t vector_size = 0;  // 0 for scalar, otherwise number of components
 };
 
