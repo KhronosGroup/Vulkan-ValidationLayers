@@ -3290,7 +3290,7 @@ TEST_F(NegativeRayTracing, TransformBufferInvalid) {
     m_command_buffer.Begin();
     blas.SetupBuild(*m_device, true);
     transform_buffer.Memory().Destroy();
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDeviceAddress-no-memory");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-None-10894");
     blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -3375,7 +3375,7 @@ TEST_F(NegativeRayTracing, InstanceBufferBadMemory) {
 
     tlas.GetGeometries()[0].GetInstance().buffer.Memory().Destroy();
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDeviceAddress-no-memory");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-None-10894");
     tlas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -3569,7 +3569,7 @@ TEST_F(NegativeRayTracing, ScratchBufferBadMemory) {
 
     buffer_memory.Destroy();
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDeviceAddress-no-memory");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-None-10894");
     blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();

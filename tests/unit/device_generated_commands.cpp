@@ -2185,7 +2185,7 @@ TEST_F(NegativeDeviceGeneratedCommands, ExecutePreprocessBufferUsage) {
 
         generated_commands_info.preprocessAddress = bad_buffer.Address();
         bad_buffer.Memory().Destroy();
-        m_errorMonitor->SetDesiredError("UNASSIGNED-VkDeviceAddress-no-memory");
+        m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-None-10894");
         vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer, false, &generated_commands_info);
         m_errorMonitor->VerifyFound();
     }
@@ -2254,7 +2254,7 @@ TEST_F(NegativeDeviceGeneratedCommands, ExecuteSequenceCountBufferUsage) {
 
         generated_commands_info.sequenceCountAddress = bad_buffer.Address();
         bad_buffer.Memory().Destroy();
-        m_errorMonitor->SetDesiredError("UNASSIGNED-VkDeviceAddress-no-memory");
+        m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-None-10894");
         vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer, false, &generated_commands_info);
         m_errorMonitor->VerifyFound();
     }

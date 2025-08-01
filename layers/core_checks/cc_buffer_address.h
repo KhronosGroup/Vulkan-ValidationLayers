@@ -96,7 +96,7 @@ class BufferAddressValidation {
         // Checks if memory is in a completely and contiguously to a single VkDeviceMemory object
         // Everyone needs to check for this in order to be a valid VkDeviceAddress
         vuid_and_validations[ChecksCount] = {
-            "UNASSIGNED-VkDeviceAddress-no-memory",
+            "VUID-VkDeviceAddress-None-10894",
             [](const vvl::Buffer& buffer_state) { return !buffer_state.sparse && !buffer_state.IsMemoryBound(); },
             []() { return "The following buffers are not bound to memory or it has been freed:"; },
             [&validator](const vvl::Buffer& buffer_state) {

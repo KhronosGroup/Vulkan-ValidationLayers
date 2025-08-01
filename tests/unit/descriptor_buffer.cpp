@@ -1384,25 +1384,25 @@ TEST_F(NegativeDescriptorBuffer, DescriptorGetInfoAddressRange) {
 
     dgi.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     dgi.data.pUniformBuffer = &dai;
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDeviceAddress-no-memory");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-None-10894");
     vk::GetDescriptorEXT(device(), &dgi, descriptor_buffer_properties.uniformBufferDescriptorSize, &buffer);
     m_errorMonitor->VerifyFound();
 
     dgi.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     dgi.data.pStorageBuffer = &dai;
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDeviceAddress-no-memory");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-None-10894");
     vk::GetDescriptorEXT(device(), &dgi, descriptor_buffer_properties.storageBufferDescriptorSize, &buffer);
     m_errorMonitor->VerifyFound();
 
     dgi.type = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
     dgi.data.pUniformTexelBuffer = &dai;
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDeviceAddress-no-memory");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-None-10894");
     vk::GetDescriptorEXT(device(), &dgi, descriptor_buffer_properties.uniformTexelBufferDescriptorSize, &buffer);
     m_errorMonitor->VerifyFound();
 
     dgi.type = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
     dgi.data.pStorageTexelBuffer = &dai;
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDeviceAddress-no-memory");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-None-10894");
     vk::GetDescriptorEXT(device(), &dgi, descriptor_buffer_properties.storageTexelBufferDescriptorSize, &buffer);
     m_errorMonitor->VerifyFound();
 }
