@@ -454,10 +454,6 @@ void ResourceAccessState::Update(const SyncAccessInfo &usage_info, SyncOrdering 
             const auto not_usage_stage = ~usage_stage;
             for (auto &read_access : last_reads) {
                 if (read_access.stage == usage_stage) {
-                    // TODO: having Set here instead of constructor makes measurable performance difference.
-                    // With MSVC compiler for doom capture using constructor results in: 4.8 fps -> 4.0 fps.
-                    // When the entire system is more optimized there should be no sensitivity to such changes
-                    // (more POD objects), and the Set method should be removed.
                     read_access.Set(usage_stage, usage_info.access_index, tag_ex);
                 } else if (read_access.barriers & usage_stage) {
                     // If the current access is barriered to this stage, mark it as "known to happen after"
@@ -475,7 +471,8 @@ void ResourceAccessState::Update(const SyncAccessInfo &usage_info, SyncOrdering 
                     read_access.sync_stages |= usage_stage;
                 }
             }
-            last_reads.emplace_back(usage_stage, usage_info.access_index, tag_ex);
+            ReadState &new_read_state = last_reads.emplace_back();
+            new_read_state.Set(usage_stage, usage_info.access_index, tag_ex);
             last_read_stages |= usage_stage;
         }
 
@@ -776,10 +773,6 @@ void ResourceAccessState::TouchupFirstForLayoutTransition(ResourceUsageTag tag, 
         assert(first_accesses_.back().usage_info->access_index == SyncAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION);
         first_write_layout_ordering_ = layout_ordering;
     }
-}
-
-ReadState::ReadState(VkPipelineStageFlags2 stage, SyncAccessIndex access_index, ResourceUsageTagEx tag_ex) {
-    Set(stage, access_index, tag_ex);
 }
 
 void ReadState::Set(VkPipelineStageFlags2 stage, SyncAccessIndex access_index, ResourceUsageTagEx tag_ex) {
