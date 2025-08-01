@@ -4980,11 +4980,13 @@ void DeviceState::PostCallRecordCmdExecuteGeneratedCommandsEXT(VkCommandBuffer c
 void DeviceState::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                                   const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
                                                   const RecordObject &record_obj, chassis::CreateShaderModule &chassis_state) {
-    if (pCreateInfo->codeSize == 0 || !pCreateInfo->pCode) {
+    if (disabled[shader_validation]) {
+        return;  // VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT
+    } else if (pCreateInfo->codeSize == 0 || !pCreateInfo->pCode) {
         return;
     } else if (chassis_state.module_state) {
         // We store the shader module at a chassis stack level (because we need it for PostCallRecord in things like GPU-AV)
-        // Only one validaiton object needs to create it
+        // Only one validation object needs to create it
         return;
     }
 
@@ -5013,6 +5015,9 @@ void DeviceState::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t create
                                                 const VkShaderCreateInfoEXT *pCreateInfos, const VkAllocationCallbacks *pAllocator,
                                                 VkShaderEXT *pShaders, const RecordObject &record_obj,
                                                 chassis::ShaderObject &chassis_state) {
+    if (disabled[shader_validation]) {
+        return;  // VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT
+    }
     for (uint32_t i = 0; i < createInfoCount; ++i) {
         const VkShaderCreateInfoEXT &create_info = pCreateInfos[i];
         if (create_info.codeSize == 0 || !create_info.pCode || create_info.codeType != VK_SHADER_CODE_TYPE_SPIRV_EXT) {
