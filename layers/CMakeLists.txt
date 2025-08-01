@@ -270,6 +270,7 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/dynamic_state_helper.cpp
     ${API_TYPE}/generated/dynamic_state_helper.h
     ${API_TYPE}/generated/enum_flag_bits.h
+    ${API_TYPE}/generated/feature_not_present.cpp
     ${API_TYPE}/generated/dispatch_vector.cpp
     ${API_TYPE}/generated/dispatch_object.cpp
     ${API_TYPE}/generated/validation_object_device_methods.h

@@ -419,6 +419,7 @@ vvl_sources = [
   "layers/vulkan/generated/error_location_helper.h",
   "layers/vulkan/generated/feature_requirements_helper.cpp",
   "layers/vulkan/generated/feature_requirements_helper.h",
+  "layers/vulkan/generated/feature_not_present.cpp",
   "layers/vulkan/generated/gpuav_offline_spirv.cpp",
   "layers/vulkan/generated/gpuav_offline_spirv.h",
   "layers/vulkan/generated/object_tracker.cpp",
