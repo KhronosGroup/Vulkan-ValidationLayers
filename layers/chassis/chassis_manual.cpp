@@ -364,9 +364,21 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     }
 
     VkResult result = fpCreateDevice(gpu, reinterpret_cast<VkDeviceCreateInfo*>(&modified_create_info), pAllocator, pDevice);
+
     if (result != VK_SUCCESS) {
+        // From https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10472
+        // While it is not invalid to have unsupported features, we use this time to help the developer bisect what they added that
+        // caused the error from the driver
+        //
+        // Note that VK_ERROR_EXTENSION_NOT_PRESENT will be validated and reported in the Vulkan-Loader
+        if (result == VK_ERROR_FEATURE_NOT_PRESENT) {
+            instance_dispatch->ReportErrorFeatureNotPresent(gpu, *modified_create_info.ptr());
+        }
+
+        // If not successful, don't keep going as things will likely crash
         return result;
     }
+
     record_obj.result = result;
     device_dispatch->device = *pDevice;
 
