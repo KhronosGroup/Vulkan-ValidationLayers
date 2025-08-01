@@ -1865,4 +1865,10 @@ static VKAPI_ATTR void VKAPI_CALL GetPartitionedAccelerationStructuresBuildSizes
     pSizeInfo->buildScratchSize = 388480;
 }
 
+static VKAPI_ATTR void VKAPI_CALL GetClusterAccelerationStructureBuildSizesNV(VkDevice device, const VkClusterAccelerationStructureInputInfoNV* pInfo, VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo){
+    pSizeInfo->accelerationStructureSize = 256;
+    pSizeInfo->buildScratchSize = 256;
+    pSizeInfo->updateScratchSize = 4;
+}
+
 }  // namespace icd
