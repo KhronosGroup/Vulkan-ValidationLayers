@@ -85,6 +85,7 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
     from generators.pnext_chain_extraction_generator import PnextChainExtractionGenerator
     from generators.device_features_generator import DeviceFeaturesOutputGenerator
     from generators.feature_requirements import FeatureRequirementsGenerator
+    from generators.feature_not_present import FeatureNotPresentGenerator
     from generators.test_icd_generator import TestIcdGenerator
 
     # These set fields that are needed by both OutputGenerator and BaseGenerator,
@@ -335,6 +336,10 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
             'generator' : FeatureRequirementsGenerator,
             'genCombined': True,
         },
+        'feature_not_present.cpp' : {
+            'generator' : FeatureNotPresentGenerator,
+            'genCombined': True,
+        },
         'test_icd_helper.h' : {
             'generator' : TestIcdGenerator,
             'genCombined': False,
@@ -419,7 +424,8 @@ def main(argv):
         'gpuav_offline_spirv.h',
         'gpuav_offline_spirv.cpp',
         'feature_requirements_helper.h', # https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8969
-        'feature_requirements_helper.cpp'
+        'feature_requirements_helper.cpp',
+        'feature_not_present.cpp', # this single funciton really fails with various clang-format versions
     ]
 
     parser = argparse.ArgumentParser(description='Generate source code for this repository')

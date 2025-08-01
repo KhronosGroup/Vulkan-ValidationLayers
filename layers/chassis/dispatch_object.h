@@ -280,6 +280,8 @@ class Instance : public HandleWrapper {
             }
         }
     }
+
+    void ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDeviceCreateInfo& create_info);
 };
 
 class Device : public HandleWrapper {
