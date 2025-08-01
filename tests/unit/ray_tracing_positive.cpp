@@ -1964,17 +1964,17 @@ TEST_F(PositiveRayTracing, CmdBuildPartitionedAccelerationStructuresNV) {
 
     VkAccelerationStructureBuildSizesInfoKHR ptlas_size_info = vku::InitStructHelper();
     vk::GetPartitionedAccelerationStructuresBuildSizesNV(*m_device, &input_info, &ptlas_size_info);
-    vkt::Buffer build_buffer(*m_device, ptlas_size_info.accelerationStructureSize, 
-                             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, 
+    vkt::Buffer build_buffer(*m_device, ptlas_size_info.accelerationStructureSize,
+                             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                              vkt::device_address);
 
     void* buffer_data = build_buffer.Memory().Map();
     memset(buffer_data, 0, static_cast<size_t>(ptlas_size_info.accelerationStructureSize));
     build_buffer.Memory().Unmap();
     VkDeviceAddress ptlas_buffer_address = build_buffer.Address();
-    vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), 
+    vkt::Buffer count_buffer(*m_device, sizeof(uint32_t),
                              VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
-                             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR, 
+                                 VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
                              vkt::device_address);
     uint32_t input = 1;
     auto *data = static_cast<uint32_t*>(count_buffer.Memory().Map());
@@ -1982,15 +1982,15 @@ TEST_F(PositiveRayTracing, CmdBuildPartitionedAccelerationStructuresNV) {
     count_buffer.Memory().Unmap();
     VkDeviceAddress count_buffer_address = count_buffer.Address();
 
-    vkt::Buffer scratch_buffer(*m_device, ptlas_size_info.buildScratchSize, 
+    vkt::Buffer scratch_buffer(*m_device, ptlas_size_info.buildScratchSize,
                                VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
-                               VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, 
+                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                vkt::device_address);
     VkDeviceAddress scratch_buffer_address = scratch_buffer.Address();
 
-    vkt::Buffer write_partition_buffer(*m_device, partition_count * sizeof(VkPartitionedAccelerationStructureWritePartitionTranslationDataNV), 
-                                       VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, 
-                                       vkt::device_address);
+    vkt::Buffer write_partition_buffer(
+        *m_device, partition_count * sizeof(VkPartitionedAccelerationStructureWritePartitionTranslationDataNV),
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, vkt::device_address);
     std::vector<VkPartitionedAccelerationStructureWritePartitionTranslationDataNV> writePartitionArgs;
     // 5 here is partition count
     static uint32_t partitionArray[5] = {3, 0xFFFFFFFF, 0, 2, 1};  // 0xFFFFFFFF is the global partition
@@ -2019,9 +2019,9 @@ TEST_F(PositiveRayTracing, CmdBuildPartitionedAccelerationStructuresNV) {
     ptlas_op.argData.strideInBytes = sizeof(VkPartitionedAccelerationStructureWriteInstanceDataNV);
     ptlas_ops.push_back(ptlas_op);
 
-    vkt::Buffer src_info_buffer(*m_device, partition_count * sizeof(VkBuildPartitionedAccelerationStructureIndirectCommandNV), 
+    vkt::Buffer src_info_buffer(*m_device, partition_count * sizeof(VkBuildPartitionedAccelerationStructureIndirectCommandNV),
                                 VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
-                                VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR, 
+                                    VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
                                 vkt::device_address);
     auto *src_info_data = static_cast<VkBuildPartitionedAccelerationStructureIndirectCommandNV*>(src_info_buffer.Memory().Map());
     memcpy(src_info_data, ptlas_ops.data(), sizeof(VkBuildPartitionedAccelerationStructureIndirectCommandNV));
@@ -2041,18 +2041,20 @@ TEST_F(PositiveRayTracing, CmdBuildPartitionedAccelerationStructuresNV) {
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 
-    void* mapped_memory = build_buffer.Memory().Map();
-    unsigned char* memory_data = (unsigned char*)mapped_memory;
-    bool has_data = false;
-    for (size_t i = 0; i < ptlas_size_info.accelerationStructureSize; i++) {
-        if (memory_data[i] != 0) {
-            has_data = true;
-            break;
+    if (!IsPlatformMockICD()) {
+        void* mapped_memory = build_buffer.Memory().Map();
+        unsigned char* memory_data = (unsigned char*)mapped_memory;
+        bool has_data = false;
+        for (size_t i = 0; i < ptlas_size_info.accelerationStructureSize; i++) {
+            if (memory_data[i] != 0) {
+                has_data = true;
+                break;
+            }
         }
-    }
 
-    // check if CmdBuildPartitionedAccelerationStructuresNV call return an non-empty output
-    ASSERT_TRUE(has_data);
+        // check if CmdBuildPartitionedAccelerationStructuresNV call return an non-empty output
+        ASSERT_TRUE(has_data);
+    }
 }
 
 TEST_F(PositiveRayTracing, PartitionedAccelerationStructuresBuildSizes) {

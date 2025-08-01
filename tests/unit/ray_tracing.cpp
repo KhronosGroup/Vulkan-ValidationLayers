@@ -4269,19 +4269,21 @@ TEST_F(NegativeRayTracing, BuildPartitionedAccelerationStructureInfo) {
     vk::GetPartitionedAccelerationStructuresBuildSizesNV(m_device->handle(), &input_info, &size_info);
     // memory dstAccelerationStructureData must be equal or larger than the
     // VkAccelerationStructureBuildSizesInfoKHR::accelerationStructureSize minus 1500 to cause memeory difference
-    vkt::Buffer build_buffer(*m_device, size_info.accelerationStructureSize - 1500, 
-                             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, 
-                             vkt::device_address);
+    vkt::Buffer build_buffer(
+        *m_device, size_info.accelerationStructureSize - 1500,
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+        vkt::device_address);
     VkDeviceAddress ptlas_buffer_address = build_buffer.Address();
 
-    vkt::Buffer correct_build_buffer(*m_device, size_info.accelerationStructureSize, 
+    vkt::Buffer correct_build_buffer(*m_device, size_info.accelerationStructureSize,
                                      VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
-                                     VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR, 
+                                         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+                                         VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR,
                                      vkt::device_address);
     VkDeviceAddress correct_ptlas_buffer_address = correct_build_buffer.Address();
-    vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), 
+    vkt::Buffer count_buffer(*m_device, sizeof(uint32_t),
                              VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
-                             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR, 
+                                 VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
                              vkt::device_address);
 
     int input = instance_count;
@@ -4290,16 +4292,16 @@ TEST_F(NegativeRayTracing, BuildPartitionedAccelerationStructureInfo) {
     VkDeviceAddress count_buffer_address = count_buffer.Address();
 
     // Create correct Buffer for scratchData
-    vkt::Buffer scratch_buffer(*m_device, size_info.buildScratchSize, 
+    vkt::Buffer scratch_buffer(*m_device, size_info.buildScratchSize,
                                VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
-                               VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, 
+                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                vkt::device_address);
     VkDeviceAddress scratch_buffer_address = scratch_buffer.Address();
 
     // VkAccelerationStructureBuildSizesInfoKHR::accelerationStructureSize minus 1500 to cause memeory difference
-    vkt::Buffer wrong_scratch_buffer(*m_device, size_info.buildScratchSize - 1500, 
-                                     VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, 
-                                     vkt::device_address);
+    vkt::Buffer wrong_scratch_buffer(
+        *m_device, size_info.buildScratchSize - 1500,
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, vkt::device_address);
     VkDeviceAddress wrong_scratch_buffer_address = wrong_scratch_buffer.Address();
 
     VkBuildPartitionedAccelerationStructureInfoNV command_info = vku::InitStructHelper();
@@ -4403,26 +4405,26 @@ TEST_F(NegativeRayTracing, BuildPartitionedAccelerationStrutureInfoBadMemory) {
 
     VkAccelerationStructureBuildSizesInfoKHR ptlas_size_info = vku::InitStructHelper();
     vk::GetPartitionedAccelerationStructuresBuildSizesNV(*m_device, &input_info, &ptlas_size_info);
-    
-    vkt::Buffer build_buffer(*m_device, ptlas_size_info.accelerationStructureSize, 
-                             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, 
+
+    vkt::Buffer build_buffer(*m_device, ptlas_size_info.accelerationStructureSize,
+                             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                              vkt::device_address);
     VkDeviceAddress ptlas_buffer_address = build_buffer.Address();
 
-    vkt::Buffer dst_build_buffer(*m_device, ptlas_size_info.accelerationStructureSize, 
-                                 VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, 
+    vkt::Buffer dst_build_buffer(*m_device, ptlas_size_info.accelerationStructureSize,
+                                 VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                                  vkt::device_address);
     VkDeviceAddress dst_ptlas_buffer_address = dst_build_buffer.Address();
-    
-    vkt::Buffer scratch_buffer(*m_device, ptlas_size_info.buildScratchSize, 
+
+    vkt::Buffer scratch_buffer(*m_device, ptlas_size_info.buildScratchSize,
                                VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
-                               VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, 
+                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                vkt::device_address);
     VkDeviceAddress scratch_buffer_address = scratch_buffer.Address();
 
-    vkt::Buffer write_partition_buffer(*m_device, partition_count * sizeof(VkPartitionedAccelerationStructureWritePartitionTranslationDataNV), 
-                                       VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, 
-                                       vkt::device_address);
+    vkt::Buffer write_partition_buffer(
+        *m_device, partition_count * sizeof(VkPartitionedAccelerationStructureWritePartitionTranslationDataNV),
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, vkt::device_address);
     std::vector<VkPartitionedAccelerationStructureWritePartitionTranslationDataNV> writePartitionArgs;
     static uint32_t partitionArray[5] = {3, 0xFFFFFFFF, 0, 2, 1};
     static float partitionTranslationY[] = {0, 20, 40, 20, 0};
@@ -4450,17 +4452,17 @@ TEST_F(NegativeRayTracing, BuildPartitionedAccelerationStrutureInfoBadMemory) {
     ptlas_op.argData.strideInBytes = sizeof(VkPartitionedAccelerationStructureWriteInstanceDataNV);
     ptlas_ops.push_back(ptlas_op);
 
-    vkt::Buffer src_info_buffer(*m_device, partition_count * sizeof(VkBuildPartitionedAccelerationStructureIndirectCommandNV), 
+    vkt::Buffer src_info_buffer(*m_device, partition_count * sizeof(VkBuildPartitionedAccelerationStructureIndirectCommandNV),
                                 VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
-                                VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR, 
+                                    VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
                                 vkt::device_address);
     auto *src_info_data = static_cast<VkBuildPartitionedAccelerationStructureIndirectCommandNV *>(src_info_buffer.Memory().Map());
     memcpy(src_info_data, ptlas_ops.data(), sizeof(VkBuildPartitionedAccelerationStructureIndirectCommandNV));
     VkDeviceAddress src_info_buffer_address = src_info_buffer.Address();
 
-    vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), 
+    vkt::Buffer count_buffer(*m_device, sizeof(uint32_t),
                              VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
-                             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR, 
+                                 VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
                              vkt::device_address);
     VkDeviceAddress count_buffer_address = count_buffer.Address();
 
@@ -4470,7 +4472,7 @@ TEST_F(NegativeRayTracing, BuildPartitionedAccelerationStrutureInfoBadMemory) {
     scratch_buffer.Memory().Destroy();
     src_info_buffer.Memory().Destroy();
     count_buffer.Memory().Destroy();
-    
+
     VkBuildPartitionedAccelerationStructureInfoNV command_info = vku::InitStructHelper();
     command_info.input = input_info;
     command_info.srcAccelerationStructureData = ptlas_buffer_address;
@@ -4518,14 +4520,15 @@ TEST_F(NegativeRayTracing, CmdBuildPartitionedAccelerationStructures) {
 
     // constant size here is irrelevant, this test just check the feature enabled
     // Set a size smaller than VkAccelerationStructureBuildSizesInfoKHR::buildScratchSize to trigger the VU
-    vkt::Buffer build_buffer(*m_device, 0x4, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, 
+    vkt::Buffer build_buffer(*m_device, 0x4,
+                             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                              vkt::device_address);
     VkDeviceAddress ptlas_buffer_address = build_buffer.Address();
 
-    vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), 
-                             VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
-                             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR, 
-                             vkt::device_address);
+    vkt::Buffer count_buffer(
+        *m_device, sizeof(uint32_t),
+        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
+        vkt::device_address);
     // store the value into count buffer
     int input = instance_count;
     auto *data = static_cast<uint32_t *>(count_buffer.Memory().Map());
@@ -4533,9 +4536,9 @@ TEST_F(NegativeRayTracing, CmdBuildPartitionedAccelerationStructures) {
     VkDeviceAddress count_buffer_address = count_buffer.Address();
     // constant size here is irrelevant, this test just check the feature enabled
     // Set a size smaller than VkAccelerationStructureBuildSizesInfoKHR:: to trigger the VU
-    vkt::Buffer scratch_buffer(*m_device, 0x4, 
+    vkt::Buffer scratch_buffer(*m_device, 0x4,
                                VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
-                               VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, 
+                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                vkt::device_address);
     VkDeviceAddress scratch_buffer_address = scratch_buffer.Address();
     VkBuildPartitionedAccelerationStructureInfoNV command_info = vku::InitStructHelper();
