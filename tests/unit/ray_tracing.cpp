@@ -4250,6 +4250,10 @@ TEST_F(NegativeRayTracing, BuildPartitionedAccelerationStructureInfo) {
     AddOptionalExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
+    // MockICD will cause the test to fail, skip it
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
 
     int instance_count = 20;
     int partition_count = 5;
@@ -4477,14 +4481,14 @@ TEST_F(NegativeRayTracing, BuildPartitionedAccelerationStrutureInfoBadMemory) {
 
     m_command_buffer.Begin();
     //For checking BuildPartitionedAccelerationStructureInfoNV memory bound
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDeviceAddress-no-memory");
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDeviceAddress-no-memory");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-None-10894");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-None-10894");
     //For checking CmdBuildPartitionedAccelerationStructuresNV memory bound
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDeviceAddress-no-memory");
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDeviceAddress-no-memory");
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDeviceAddress-no-memory");
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDeviceAddress-no-memory");
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDeviceAddress-no-memory");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-None-10894");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-None-10894");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-None-10894");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-None-10894");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-None-10894");
     vk::CmdBuildPartitionedAccelerationStructuresNV(m_command_buffer.handle(), &command_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
