@@ -238,8 +238,6 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
     void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) override;
 
   private:
-    VkImageSubresourceRange MakeImageFullRange();
-
     // Subresource encoder need to take into account that 3d image can have a separate layout
     // per slice, if supported by the implementation. This adjusts the layout range so
     // layouts map can address each slice.
@@ -316,8 +314,8 @@ class ImageView : public StateObject, public SubStateManager<ImageViewSubState> 
                                                                       const VkImageViewCreateInfo &image_view_ci);
 
   private:
-    VkImageSubresourceRange NormalizeImageLayoutSubresourceRange(bool is_3d_slice_transition_allowed) const;
-    bool IsDepthSliced();
+    VkImageSubresourceRange GetRangeGeneratorRange(bool is_3d_slice_transition_allowed) const;
+    static bool IsDepthSliced(const Image &image_state, VkImageViewType view_type);
 };
 
 class ImageViewSubState {

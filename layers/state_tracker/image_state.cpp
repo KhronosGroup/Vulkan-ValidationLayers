@@ -95,6 +95,24 @@ static std::vector<VkSparseImageMemoryRequirements> GetSparseRequirements(const 
     return result;
 }
 
+static VkImageSubresourceRange MakeImageFullRange(const VkImageCreateInfo &create_info) {
+    const VkFormat format = create_info.format;
+    VkImageAspectFlags aspect_mask = 0;
+    if (vkuFormatIsMultiplane(format)) {
+        aspect_mask = NormalizeAspectMask(VK_IMAGE_ASPECT_COLOR_BIT, format);
+    } else if (vkuFormatIsColor(format) || GetExternalFormat(create_info.pNext) != 0) {
+        aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT;
+    } else {
+        if (vkuFormatHasDepth(format)) {
+            aspect_mask |= VK_IMAGE_ASPECT_DEPTH_BIT;
+        }
+        if (vkuFormatHasStencil(format)) {
+            aspect_mask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+        }
+    }
+    return VkImageSubresourceRange{aspect_mask, 0, create_info.mipLevels, 0, create_info.arrayLayers};
+}
+
 #ifdef VK_USE_PLATFORM_METAL_EXT
 static bool GetMetalExport(const VkImageCreateInfo *info, VkExportMetalObjectTypeFlagBitsEXT object_type_required) {
     bool retval = false;
@@ -120,7 +138,7 @@ Image::Image(const vvl::DeviceState &dev_data, VkImage img, const VkImageCreateI
       shared_presentable(false),
       layout_locked(false),
       ahb_format(GetExternalFormat(pCreateInfo->pNext)),
-      full_range{MakeImageFullRange()},
+      full_range{MakeImageFullRange(create_info)},
       create_from_swapchain(GetSwapchain(pCreateInfo)),
       owned_by_swapchain(false),
       swapchain_image_index(0),
@@ -159,7 +177,7 @@ Image::Image(const vvl::DeviceState &dev_data, VkImage img, const VkImageCreateI
       shared_presentable(false),
       layout_locked(false),
       ahb_format(GetExternalFormat(pCreateInfo->pNext)),
-      full_range{MakeImageFullRange()},
+      full_range{MakeImageFullRange(create_info)},
       create_from_swapchain(swapchain),
       owned_by_swapchain(true),
       swapchain_image_index(swapchain_index),
@@ -378,42 +396,15 @@ std::string Image::DescribeSubresourceLayers(const VkImageSubresourceLayers &sub
 
 VkImageSubresourceRange Image::NormalizeSubresourceRange(const VkImageSubresourceRange &range) const {
     VkImageSubresourceRange norm = range;
-    if (range.levelCount == VK_REMAINING_MIP_LEVELS) {
-        norm.levelCount = create_info.mipLevels - range.baseMipLevel;
-    }
-    if (range.layerCount == VK_REMAINING_ARRAY_LAYERS) {
-        norm.layerCount = create_info.arrayLayers - range.baseArrayLayer;
-    }
-
-    // For multiplanar formats, IMAGE_ASPECT_COLOR is equivalent to adding the aspect of the individual planes
-    if (vkuFormatIsMultiplane(create_info.format)) {
-        if (norm.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
-            norm.aspectMask &= ~VK_IMAGE_ASPECT_COLOR_BIT;
-            norm.aspectMask |= (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT);
-            if (vkuFormatPlaneCount(create_info.format) > 2) {
-                norm.aspectMask |= VK_IMAGE_ASPECT_PLANE_2_BIT;
-            }
-        }
-    }
+    norm.levelCount = GetEffectiveLevelCount(range, create_info.mipLevels);
+    norm.layerCount = GetEffectiveLayerCount(range, create_info.arrayLayers);
+    norm.aspectMask = NormalizeAspectMask(range.aspectMask, create_info.format);
     return norm;
 }
 
 uint32_t Image::NormalizeLayerCount(const VkImageSubresourceLayers &resource) const {
     return (resource.layerCount == VK_REMAINING_ARRAY_LAYERS) ? (create_info.arrayLayers - resource.baseArrayLayer)
                                                               : resource.layerCount;
-}
-
-VkImageSubresourceRange Image::MakeImageFullRange() {
-    const auto format = create_info.format;
-    VkImageSubresourceRange init_range{0, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
-
-    if (vkuFormatIsColor(format) || vkuFormatIsMultiplane(format) || GetExternalFormat(create_info.pNext) != 0) {
-        init_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;  // Normalization will expand this for multiplane
-    } else {
-        init_range.aspectMask = (vkuFormatHasDepth(format) ? VK_IMAGE_ASPECT_DEPTH_BIT : 0) |
-                                (vkuFormatHasStencil(format) ? VK_IMAGE_ASPECT_STENCIL_BIT : 0);
-    }
-    return NormalizeSubresourceRange(init_range);
 }
 
 VkImageSubresourceRange Image::GetSubresourceEncoderRange(const DeviceState &device_state,
@@ -550,10 +541,9 @@ ImageView::ImageView(const DeviceState &device_state, const std::shared_ptr<vvl:
 #ifdef VK_USE_PLATFORM_METAL_EXT
       metal_imageview_export(GetMetalExport(ci)),
 #endif
-      is_depth_sliced(IsDepthSliced()),
+      is_depth_sliced(IsDepthSliced(*image_state, create_info.viewType)),
       normalized_subresource_range(ImageView::NormalizeImageViewSubresourceRange(*image_state, create_info)),
-      range_generator(image_state->subresource_encoder,
-                      NormalizeImageLayoutSubresourceRange(device_state.extensions.vk_khr_maintenance9)),
+      range_generator(image_state->subresource_encoder, GetRangeGeneratorRange(device_state.extensions.vk_khr_maintenance9)),
       samples(image_state->create_info.samples),
       samplerConversion(GetSamplerConversion(ci)),
       filter_cubic_props(cubic_props),
@@ -580,12 +570,37 @@ void ImageView::Destroy() {
     StateObject::Destroy();
 }
 
-bool ImageView::IsDepthSliced() {
-    return image_state->IsDepthSliceable() &&
-           (create_info.viewType == VK_IMAGE_VIEW_TYPE_2D || create_info.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY);
+bool ImageView::IsDepthSliced(const Image &image_state, VkImageViewType view_type) {
+    return image_state.IsDepthSliceable() && (view_type == VK_IMAGE_VIEW_TYPE_2D || view_type == VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 }
 
-VkImageSubresourceRange ImageView::NormalizeImageLayoutSubresourceRange(bool is_3d_slice_transition_allowed) const {
+uint32_t ImageView::GetAttachmentLayerCount() const {
+    if (create_info.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS && !is_depth_sliced) {
+        return image_state->create_info.arrayLayers;
+    }
+    return create_info.subresourceRange.layerCount;
+}
+
+VkImageSubresourceRange ImageView::NormalizeImageViewSubresourceRange(const Image &image_state,
+                                                                      const VkImageViewCreateInfo &image_view_ci) {
+    const VkImageCreateInfo &image_ci = image_state.create_info;
+
+    VkImageSubresourceRange range = image_view_ci.subresourceRange;
+    range.levelCount = GetEffectiveLevelCount(range, image_ci.mipLevels);
+    range.aspectMask = NormalizeAspectMask(range.aspectMask, image_view_ci.format);
+
+    if (image_view_ci.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS) {
+        if (ImageView::IsDepthSliced(image_state, image_view_ci.viewType)) {
+            const VkExtent3D extent = GetEffectiveExtent(image_ci, range.aspectMask, range.baseMipLevel);
+            range.layerCount = extent.depth - image_view_ci.subresourceRange.baseArrayLayer;
+        } else {
+            range.layerCount = GetEffectiveLayerCount(range, image_ci.arrayLayers);
+        }
+    }
+    return range;
+}
+
+VkImageSubresourceRange ImageView::GetRangeGeneratorRange(bool is_3d_slice_transition_allowed) const {
     VkImageSubresourceRange subres_range = create_info.subresourceRange;
 
     // if we're mapping a 3D image to a 2d image view, convert the view's subresource range to be compatible with the
@@ -603,40 +618,6 @@ VkImageSubresourceRange ImageView::NormalizeImageLayoutSubresourceRange(bool is_
         subres_range.layerCount = 1;
     }
     return image_state->NormalizeSubresourceRange(subres_range);
-}
-
-uint32_t ImageView::GetAttachmentLayerCount() const {
-    if (create_info.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS && !is_depth_sliced) {
-        return image_state->create_info.arrayLayers;
-    }
-    return create_info.subresourceRange.layerCount;
-}
-
-VkImageSubresourceRange ImageView::NormalizeImageViewSubresourceRange(const Image &image_state,
-                                                                      const VkImageViewCreateInfo &image_view_ci) {
-    auto normalized_subresource_range = image_state.NormalizeSubresourceRange(image_view_ci.subresourceRange);
-
-    // When image view references 3d slices then Image::NormalizeSubresourceRange computes incorrect value
-    // because it mixes depth slice units (VkImageViewCreateInfo::subresourceRange::baseArrayLayer) and
-    // image layer units (VkImageCreateInfo::arrayLayers). Adjust layerCount so it is in depth slices units
-    // (since non-VK_REMAINING_ARRAY_LAYERS is in depth slices units and VUIDs are defined against these units
-    // when the image view select 3d image slices).
-    //
-    // TODO: refactor this code so we compute correct value immediately instead of using NormalizeSubresourceRange
-    // on the wrong input and then correcting results.
-    if (image_view_ci.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS) {
-        const bool is_2d_view = IsValueIn(image_view_ci.viewType, {VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_VIEW_TYPE_2D_ARRAY});
-        const bool is_image_slicable = image_state.IsDepthSliceable();
-        const bool is_3d_to_2d_map = is_image_slicable && is_2d_view;
-        if (is_3d_to_2d_map) {
-            const VkImageSubresourceLayers subresource_layers = LayersFromRange(image_view_ci.subresourceRange);
-            const auto extent = image_state.GetEffectiveSubresourceExtent(subresource_layers);
-            const uint32_t layer_count = extent.depth;
-
-            normalized_subresource_range.layerCount = layer_count - image_view_ci.subresourceRange.baseArrayLayer;
-        }
-    }
-    return normalized_subresource_range;
 }
 
 bool ImageView::OverlapSubresource(const ImageView &compare_view) const {

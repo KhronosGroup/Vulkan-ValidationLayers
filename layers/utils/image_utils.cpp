@@ -27,6 +27,30 @@
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/utility/vk_struct_helper.hpp>
 
+uint32_t GetEffectiveLevelCount(const VkImageSubresourceRange &subresource_range, uint32_t total_level_count) {
+    uint32_t level_count = subresource_range.levelCount;
+    if (level_count == VK_REMAINING_MIP_LEVELS) {
+        if (total_level_count > subresource_range.baseMipLevel) {
+            level_count = total_level_count - subresource_range.baseMipLevel;
+        } else {  // invalid mip range which should be caught by validation
+            level_count = 0;
+        }
+    }
+    return level_count;
+}
+
+uint32_t GetEffectiveLayerCount(const VkImageSubresourceRange &subresource_range, uint32_t total_layer_count) {
+    uint32_t layer_count = subresource_range.layerCount;
+    if (layer_count == VK_REMAINING_ARRAY_LAYERS) {
+        if (total_layer_count > subresource_range.baseArrayLayer) {
+            layer_count = total_layer_count - subresource_range.baseArrayLayer;
+        } else {  // invalid array layer range which should be caught by validation
+            layer_count = 0;
+        }
+    }
+    return layer_count;
+}
+
 // Returns the effective extent of an image subresource, adjusted for mip level and array depth.
 VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFlags aspect_mask, const uint32_t mip_level) {
     // Return zero extent if mip level doesn't exist
@@ -188,6 +212,20 @@ bool IsAnyPlaneAspect(VkImageAspectFlags aspect_mask) {
     constexpr VkImageAspectFlags valid_planes =
         VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT;
     return (aspect_mask & valid_planes) != 0;
+}
+
+// TODO: this function does not check if the image is disjoint, is it an issue?
+VkImageAspectFlags NormalizeAspectMask(VkImageAspectFlags aspect_mask, VkFormat format) {
+    // For multiplanar formats and disjoint image the IMAGE_ASPECT_COLOR is equivalent
+    // to adding the aspect of the individual planes.
+    if (vkuFormatIsMultiplane(format) && (aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) != 0) {
+        aspect_mask &= ~VK_IMAGE_ASPECT_COLOR_BIT;
+        aspect_mask |= (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT);
+        if (vkuFormatPlaneCount(format) > 2) {
+            aspect_mask |= VK_IMAGE_ASPECT_PLANE_2_BIT;
+        }
+    }
+    return aspect_mask;
 }
 
 bool IsImageLayoutReadOnly(VkImageLayout layout) {

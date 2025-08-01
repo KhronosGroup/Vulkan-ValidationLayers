@@ -53,22 +53,6 @@ static bool IsClearColorZeroOrOne(VkFormat format, const std::array<uint32_t, 4>
     return is_one || is_zero;
 }
 
-template <typename Func>
-static void ForEachSubresource(const vvl::Image& image, const VkImageSubresourceRange& range, Func&& func) {
-    const uint32_t layer_count =
-        (range.layerCount == VK_REMAINING_ARRAY_LAYERS) ? (image.full_range.layerCount - range.baseArrayLayer) : range.layerCount;
-    const uint32_t level_count =
-        (range.levelCount == VK_REMAINING_MIP_LEVELS) ? (image.full_range.levelCount - range.baseMipLevel) : range.levelCount;
-
-    for (uint32_t i = 0; i < layer_count; ++i) {
-        const uint32_t layer = range.baseArrayLayer + i;
-        for (uint32_t j = 0; j < level_count; ++j) {
-            const uint32_t level = range.baseMipLevel + j;
-            func(layer, level);
-        }
-    }
-}
-
 bool BestPractices::ValidateZcullScope(const bp_state::CommandBufferSubState& cb_state, const Location& loc) const {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 

@@ -20,6 +20,7 @@
 #pragma once
 
 #include "best_practices/bp_constants.h"
+#include "best_practices/bp_utils.h"
 #include "chassis/validation_object.h"
 #include "state_tracker/shader_module.h"
 #include "state_tracker/state_tracker.h"
@@ -75,10 +76,6 @@ void LogResult(const StateObject& state, Handle handle, const RecordObject& reco
     }
 }
 
-const char* VendorSpecificTag(BPVendorFlags vendors);
-
-bool VendorCheckEnabled(const ValidationEnabled& enabled, BPVendorFlags vendors);
-
 class Instance : public vvl::InstanceProxy {
     using BaseClass = vvl::InstanceProxy;
 
@@ -89,7 +86,7 @@ class Instance : public vvl::InstanceProxy {
 
     Instance(vvl::dispatch::Instance* dispatch) : BaseClass(dispatch, LayerObjectTypeBestPractices) {}
 
-    bool VendorCheckEnabled(BPVendorFlags vendors) const { return bp_state::VendorCheckEnabled(enabled, vendors); }
+    bool VendorCheckEnabled(BPVendorFlags vendors) const { return IsVendorCheckEnabled(enabled, vendors); }
 
     bool PreCallValidateCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                        VkInstance* pInstance, const ErrorObject& error_obj) const override;
@@ -594,8 +591,7 @@ class BestPractices : public vvl::DeviceProxy {
     void Created(vvl::Image& image_state) override;
 
     // Check that vendor-specific checks are enabled for at least one of the vendors
-    bool VendorCheckEnabled(BPVendorFlags vendors) const { return bp_state::VendorCheckEnabled(enabled, vendors); }
-    const char* VendorSpecificTag(BPVendorFlags vendors) const { return bp_state::VendorSpecificTag(vendors); }
+    bool VendorCheckEnabled(BPVendorFlags vendors) const { return IsVendorCheckEnabled(enabled, vendors); }
 
     // TODO - Move these to CommandBufferSubState
     void RecordCmdDrawTypeArm(bp_state::CommandBufferSubState& cb_state, uint32_t draw_count);

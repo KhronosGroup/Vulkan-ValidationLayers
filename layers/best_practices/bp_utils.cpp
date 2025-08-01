@@ -17,15 +17,14 @@
  * limitations under the License.
  */
 
-#include "best_practices/best_practices_validation.h"
-#include "best_practices/bp_state.h"
+#include "best_practices/bp_utils.h"
 
 struct VendorSpecificInfo {
     EnableFlags vendor_id;
     std::string name;
 };
 
-const auto& GetVendorInfo() {
+static const auto& GetVendorInfo() {
     static const std::map<BPVendorFlagBits, VendorSpecificInfo> kVendorInfo = {
         {kBPVendorArm, {vendor_specific_arm, "Arm"}},
         {kBPVendorAMD, {vendor_specific_amd, "AMD"}},
@@ -35,23 +34,7 @@ const auto& GetVendorInfo() {
     return kVendorInfo;
 }
 
-ReadLockGuard BestPractices::ReadLock() const {
-    if (global_settings.fine_grained_locking) {
-        return ReadLockGuard(validation_object_mutex, std::defer_lock);
-    } else {
-        return ReadLockGuard(validation_object_mutex);
-    }
-}
-
-WriteLockGuard BestPractices::WriteLock() {
-    if (global_settings.fine_grained_locking) {
-        return WriteLockGuard(validation_object_mutex, std::defer_lock);
-    } else {
-        return WriteLockGuard(validation_object_mutex);
-    }
-}
-
-bool bp_state::VendorCheckEnabled(const ValidationEnabled& enabled, BPVendorFlags vendors) {
+bool IsVendorCheckEnabled(const ValidationEnabled& enabled, BPVendorFlags vendors) {
     for (const auto& vendor : GetVendorInfo()) {
         if (vendors & vendor.first && enabled[vendor.second.vendor_id]) {
             return true;
@@ -60,7 +43,7 @@ bool bp_state::VendorCheckEnabled(const ValidationEnabled& enabled, BPVendorFlag
     return false;
 }
 
-const char* bp_state::VendorSpecificTag(BPVendorFlags vendors) {
+const char* VendorSpecificTag(BPVendorFlags vendors) {
     // Cache built vendor tags in a map
     static vvl::unordered_map<BPVendorFlags, std::string> tag_map;
 

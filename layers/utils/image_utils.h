@@ -24,6 +24,8 @@
 
 #include <vulkan/vulkan_core.h>
 
+uint32_t GetEffectiveLevelCount(const VkImageSubresourceRange &subresource_range, uint32_t total_level_count);
+uint32_t GetEffectiveLayerCount(const VkImageSubresourceRange &subresource_range, uint32_t total_layer_count);
 VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFlags aspect_mask, const uint32_t mip_level);
 
 // When dealing with a compressed format, we could have a miplevel that is less than a single texel block
@@ -68,6 +70,7 @@ bool IsValidPlaneAspect(VkFormat format, VkImageAspectFlags aspect_mask);
 bool IsOnlyOneValidPlaneAspect(VkFormat format, VkImageAspectFlags aspect_mask);
 bool IsMultiplePlaneAspect(VkImageAspectFlags aspect_mask);
 bool IsAnyPlaneAspect(VkImageAspectFlags aspect_mask);
+VkImageAspectFlags NormalizeAspectMask(VkImageAspectFlags aspect_mask, VkFormat format);
 
 bool IsImageLayoutReadOnly(VkImageLayout layout);
 bool IsImageLayoutDepthOnly(VkImageLayout layout);
