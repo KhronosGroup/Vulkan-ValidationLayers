@@ -1,5 +1,7 @@
 # Vulkan Validation Layers (VVL)
 
+Trivial change to trigger CI
+
 ## Introduction
 
 Vulkan is an Explicit API, enabling direct control over how GPUs actually work. By design, minimal error checking is done inside
