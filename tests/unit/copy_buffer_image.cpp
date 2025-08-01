@@ -1190,7 +1190,7 @@ TEST_F(NegativeCopyBufferImage, ImageTypeExtentMismatch) {
     vk::CmdCopyImage(m_command_buffer, image_1D, VK_IMAGE_LAYOUT_GENERAL, image_2D, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-dstImage-00152");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcImage-10908");
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-dstOffset-00151");   // also y-dim overrun
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-apiVersion-07933");  // not same image type
     vk::CmdCopyImage(m_command_buffer, image_2D, VK_IMAGE_LAYOUT_GENERAL, image_1D, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
@@ -1223,7 +1223,7 @@ TEST_F(NegativeCopyBufferImage, ImageTypeExtentMismatch) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-apiVersion-07933");  // not same image type
     vk::CmdCopyImage(m_command_buffer, image_1D, VK_IMAGE_LAYOUT_GENERAL, image_2D, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-dstImage-01786");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcImage-10907");
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcOffset-00147");   // also z-dim overrun (src)
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-dstOffset-00153");   // also z-dim overrun (dst)
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-apiVersion-08969");  // 2D needs to be 1 pre-Vulkan 1.1
@@ -1367,7 +1367,7 @@ TEST_F(NegativeCopyBufferImage, ImageTypeExtentMismatchCopyCommands2) {
 
         copy_image_info2.srcImage = image_2D;
         copy_image_info2.dstImage = image_1D;
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-dstImage-00152");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-srcImage-10908");
         m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-dstOffset-00151");   // also y-dim overrun
         m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-apiVersion-07933");  // not same image type
         vk::CmdCopyImage2KHR(m_command_buffer, &copy_image_info2);
@@ -1405,7 +1405,7 @@ TEST_F(NegativeCopyBufferImage, Compressed2DToUncompressed1D) {
     // 2D to 1D
     image_copy.extent = {16u, 8u, 1u};
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-dstOffset-00151");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-dstImage-00152");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcImage-10908");
     vk::CmdCopyImage(m_command_buffer, comp_image, VK_IMAGE_LAYOUT_GENERAL, uncomp_image, VK_IMAGE_LAYOUT_GENERAL, 1u, &image_copy);
     m_errorMonitor->VerifyFound();
     m_command_buffer.FullMemoryBarrier();

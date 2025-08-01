@@ -57,8 +57,10 @@ enum class CopyError {
 
     SrcImage1D_00146,
     DstImage1D_00152,
+    DstImage1D_10908,
     SrcImage1D_01785,
     DstImage1D_01786,
+    DstImage1D_10907,
     SrcOffset_01728,
     SrcOffset_01729,
     SrcOffset_01730,

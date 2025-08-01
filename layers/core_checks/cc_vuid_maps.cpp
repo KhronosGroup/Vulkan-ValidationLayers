@@ -338,6 +338,12 @@ const std::string &GetCopyImageVUID(const Location &loc, CopyError error) {
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-dstImage-00152"},
              {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-dstImage-07979"},
          }}},
+        {CopyError::DstImage1D_10908,
+         {{
+             {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-srcImage-10908"},
+             {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-srcImage-10908"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-dstImage-07979"},
+         }}},
         {CopyError::SrcImage1D_01785,
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-srcImage-01785"},
@@ -348,6 +354,12 @@ const std::string &GetCopyImageVUID(const Location &loc, CopyError error) {
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-dstImage-01786"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-dstImage-01786"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-dstImage-07980"},
+         }}},
+        {CopyError::DstImage1D_10907,
+         {{
+             {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-srcImage-10907"},
+             {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-srcImage-10907"},
              {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-dstImage-07980"},
          }}},
         {CopyError::SrcOffset_01728,

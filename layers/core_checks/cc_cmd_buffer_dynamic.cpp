@@ -942,9 +942,8 @@ bool CoreChecks::ValidateDrawDynamicStateVertex(const LastBound& last_bound_stat
         }
         if (!enabled_features.primitiveTopologyPatchListRestart) {
             if (topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
-                // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7501
                 skip |= LogError(
-                    "UNASSIGNED-Draw-primitiveTopologyPatchListRestart", cb_state.Handle(), vuid.loc(),
+                    vuid.primitive_restart_patch_10909, cb_state.Handle(), vuid.loc(),
                     "%s is VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, the primitiveTopologyPatchListRestart feature was not enabled, but "
                     "vkCmdSetPrimitiveRestartEnable last set primitiveRestartEnable to VK_TRUE.",
                     last_bound_state.DescribeVertexInputAssemblerTopology().c_str());

@@ -347,7 +347,7 @@ TEST_F(NegativePipelineTopology, DynamicPrimitiveRestartEnablePatchList) {
     vk::CmdSetPrimitiveRestartEnableEXT(m_command_buffer, VK_TRUE);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Draw-primitiveTopologyPatchListRestart");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10909");
     vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     vk::CmdEndRenderPass(m_command_buffer);
