@@ -284,6 +284,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/wsi_positive.cpp
     unit/ycbcr.cpp
     unit/ycbcr_positive.cpp
+    unit/ray_tracing_spheres.cpp
+    unit/ray_tracing_spheres_positive.cpp
     vvl_utils/small_vector.cpp
     vvl_utils/pnext_chain_extraction.cpp
 )
