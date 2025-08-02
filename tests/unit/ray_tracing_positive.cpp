@@ -1937,6 +1937,41 @@ TEST_F(PositiveRayTracing, MultipleGeometries) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveRayTracing, ZeroPrimitiveCountWithIndexTypeNone) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    auto blas =
+        std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device));
+
+    m_command_buffer.Begin();
+    blas->SetupBuild(true);
+    blas->GetGeometries()[0].SetTrianglesIndexType(VK_INDEX_TYPE_NONE_KHR);
+    const VkAccelerationStructureGeometryKHR* pGeometries = &blas->GetGeometries()[0].GetVkObj();
+
+    VkAccelerationStructureBuildGeometryInfoKHR build_geometry_info = vku::InitStructHelper();
+    build_geometry_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    build_geometry_info.dstAccelerationStructure = *blas->GetDstAS();
+    build_geometry_info.geometryCount = 1u;
+    build_geometry_info.ppGeometries = &pGeometries;
+    build_geometry_info.scratchData = blas->GetInfo().scratchData;
+
+    VkAccelerationStructureBuildRangeInfoKHR build_range_info;
+    build_range_info.primitiveCount = 0u;
+    build_range_info.primitiveOffset = 0u;
+    build_range_info.firstVertex = 0u;
+    build_range_info.transformOffset = 0u;
+    const VkAccelerationStructureBuildRangeInfoKHR* p_build_range_info = &build_range_info;
+    vk::CmdBuildAccelerationStructuresKHR(m_command_buffer, 1u, &build_geometry_info, &p_build_range_info);
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_device->Wait();
+}
+
 TEST_F(PositiveRayTracing, CmdBuildPartitionedAccelerationStructuresNV) {
     TEST_DESCRIPTION("Test vkCmdBuildPartitionedAccelerationStructuresNV can build a partitioned TLAS");
 
