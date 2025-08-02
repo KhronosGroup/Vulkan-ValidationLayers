@@ -1233,16 +1233,18 @@ bool Device::manual_PreCallValidateCmdBuildAccelerationStructuresKHR(
                     if (geom_i < infoCount && as_geometry.geometry.triangles.indexType == VK_INDEX_TYPE_NONE_KHR) {
                         for (const auto [build_range_i, build_range] :
                              vvl::enumerate(ppBuildRangeInfos[geom_i], info.geometryCount)) {
-                            const uint64_t build_range_max_vertex =
-                                uint64_t(build_range.firstVertex) + 3 * uint64_t(build_range.primitiveCount) - 1;
-                            if (uint64_t(as_geometry.geometry.triangles.maxVertex) < build_range_max_vertex) {
-                                const Location p_build_range_loc = error_obj.location.dot(Field::ppBuildRangeInfos, info_i);
-                                skip |= LogError("VUID-VkAccelerationStructureBuildRangeInfoKHR-None-10775", commandBuffer,
-                                                 p_geom_geom_loc.dot(Field::triangles).dot(Field::maxVertex),
-                                                 "is %" PRIu32 " but for %s, firstVertex ( %" PRIu32
-                                                 " ) + primitiveCount ( %" PRIu32 " ) x 3 - 1 = %" PRIu64 ".",
-                                                 as_geometry.geometry.triangles.maxVertex, p_build_range_loc.Fields().c_str(),
-                                                 build_range.firstVertex, build_range.primitiveCount, build_range_max_vertex);
+                            if (build_range.primitiveCount > 0) {
+                                const uint64_t build_range_max_vertex =
+                                    uint64_t(build_range.firstVertex) + 3 * uint64_t(build_range.primitiveCount) - 1;
+                                if (uint64_t(as_geometry.geometry.triangles.maxVertex) < build_range_max_vertex) {
+                                    const Location p_build_range_loc = error_obj.location.dot(Field::ppBuildRangeInfos, info_i);
+                                    skip |= LogError("VUID-VkAccelerationStructureBuildRangeInfoKHR-None-10775", commandBuffer,
+                                                     p_geom_geom_loc.dot(Field::triangles).dot(Field::maxVertex),
+                                                     "is %" PRIu32 " but for %s, firstVertex ( %" PRIu32
+                                                     " ) + primitiveCount ( %" PRIu32 " ) x 3 - 1 = %" PRIu64 ".",
+                                                     as_geometry.geometry.triangles.maxVertex, p_build_range_loc.Fields().c_str(),
+                                                     build_range.firstVertex, build_range.primitiveCount, build_range_max_vertex);
+                                }
                             }
                         }
                     }
