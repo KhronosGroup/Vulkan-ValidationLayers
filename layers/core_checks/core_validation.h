@@ -1642,6 +1642,17 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV& triangles, const Location& loc) const;
     bool ValidateGeometryAABBNV(const VkGeometryAABBNV& geometry, const Location& loc) const;
     bool ValidateGeometryNV(const VkGeometryNV& geometry, const Location& loc) const;
+    bool PreCallValidateGetClusterAccelerationStructureBuildSizesNV(VkDevice device,
+                                                                    const VkClusterAccelerationStructureInputInfoNV* pInfo,
+                                                                    VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo,
+                                                                    const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV(
+        VkCommandBuffer commandBuffer, const VkClusterAccelerationStructureCommandsInfoNV* pCommandInfos,
+        const ErrorObject& error_obj) const override;
+    bool ValidateClusterAccelerationStructureTriangleClusterInputNV(
+        const VkClusterAccelerationStructureTriangleClusterInputNV& input, const Location& input_loc) const;
+    bool ValidateClusterAccelerationStructureCommandsInfoNV(const VkClusterAccelerationStructureCommandsInfoNV& command_infos,
+                                                            const Location& command_infos_loc) const;
     bool PreCallValidateCreateAccelerationStructureNV(VkDevice device, const VkAccelerationStructureCreateInfoNV* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator,
                                                       VkAccelerationStructureNV* pAccelerationStructure,

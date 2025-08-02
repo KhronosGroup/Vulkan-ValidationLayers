@@ -1260,7 +1260,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
                                                                 const ErrorObject &error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
-
+    
     skip |= ValidateCmd(*cb_state, error_obj.location);
 
     if (pInfo != nullptr && pInfo->type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV) {
@@ -2386,5 +2386,400 @@ bool CoreChecks::ValidateBuildPartitionedAccelerationStructureInfoNV(
         skip |= LogError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-srcInfosCount-10563", device,
                          build_info_loc.dot(Field::srcInfosCount), "(0x%" PRIx64 ") must be aligned to 256 bytes", build_info.srcInfosCount);
     }
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV(
+    VkCommandBuffer commandBuffer, const VkClusterAccelerationStructureCommandsInfoNV *pCommandInfos,
+    const ErrorObject &error_obj) const {
+    bool skip = false;
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    const Location command_infos_loc = error_obj.location.dot(Field::pCommandInfos);
+    const LogObjectList objlist(commandBuffer);
+    skip |= ValidateCmd(*cb_state, error_obj.location);
+    skip |= ValidateClusterAccelerationStructureCommandsInfoNV(*pCommandInfos, command_infos_loc);
+    if (!enabled_features.clusterAccelerationStructure) {
+        skip |= LogError("VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-clusterAccelerationStructure-10443", commandBuffer,
+                         error_obj.location, "clusterAccelerationStructures feature was not enabled.");
+    }
+  
+    {
+        VkAccelerationStructureBuildSizesInfoKHR accelerationStructure_size = vku::InitStructHelper();
+        DispatchGetClusterAccelerationStructureBuildSizesNV(device, &(pCommandInfos->input), &accelerationStructure_size);
+        BufferAddressValidation<2> scratch_buffer_validator = {{{
+            {"VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-scratchData-10446",
+             [&accelerationStructure_size, this](const vvl::Buffer &buffer_state) {
+                 VkMemoryRequirements mem_requirements;
+                 DispatchGetBufferMemoryRequirements(device, buffer_state.VkHandle(), &mem_requirements);
+                 return mem_requirements.size < accelerationStructure_size.buildScratchSize;
+             },
+             [&accelerationStructure_size]() {
+                 return "The scratch memory of the cluster acceleration structure specified in "
+                        "VkClusterAccelerationStructureCommandsInfoNV::scratchData must be larger than or equal to the "
+                        "scratch size (" + std::to_string(accelerationStructure_size.buildScratchSize) + ") queried with vkGetClusterAccelerationStructureBuildSizesNV";
+             },
+             [this](const vvl::Buffer &buffer_state) { 
+                 VkMemoryRequirements mem_requirements;
+                 DispatchGetBufferMemoryRequirements(device, buffer_state.VkHandle(), &mem_requirements);
+                 return "buffer size " + std::to_string(mem_requirements.size) + 
+                        " is less than required scratch size"; 
+             }},
+            {"VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-pCommandInfos-10457",
+             [](const vvl::Buffer &buffer_state) {
+                 return (static_cast<uint32_t>(buffer_state.usage) & VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT) == 0;
+             },
+             []() {
+                 return "The following buffers have not been created with the VK_BUFFER_USAGE_STORAGE_BUFFER_BIT usage flag:";
+             },
+             [](const vvl::Buffer &buffer_state) { 
+                 return "buffer has usage " + string_VkBufferUsageFlags2(buffer_state.usage); 
+             }},
+        }}};
+        skip |= scratch_buffer_validator.ValidateDeviceAddress(*this, command_infos_loc.dot(Field::scratchData),
+                                                              objlist, pCommandInfos->scratchData);
+    }
+
+    if (SafeModulo(pCommandInfos->scratchData, phys_dev_ext_props.cluster_acceleration_props.clusterScratchByteAlignment) != 0) {
+        skip |=
+            LogError("VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-scratchData-10447", commandBuffer,
+                     command_infos_loc.dot(Field::scratchData),
+                     "(0x%" PRIx64 ") must be aligned to VkPhysicalDeviceClusterAccelerationPropertiesNV::clusterScratchByteAlignment (%" PRIu32 ")",
+                     pCommandInfos->scratchData, phys_dev_ext_props.cluster_acceleration_props.clusterScratchByteAlignment);
+    }
+
+    {
+        BufferAddressValidation<1> read_only_flags_validator = {{{
+            {"VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-pCommandInfos-10458",
+             [](const vvl::Buffer &buffer_state) {
+                 return (static_cast<uint32_t>(buffer_state.usage) & VK_BUFFER_USAGE_2_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR) == 0;
+             },
+             []() {
+                 return "The following buffers have not been created with the VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR usage flag:";
+             },
+             [](const vvl::Buffer &buffer_state) { 
+                 return "buffer has usage " + string_VkBufferUsageFlags2(buffer_state.usage); 
+             }},
+        }}};
+
+        skip |= read_only_flags_validator.ValidateDeviceAddress(*this, command_infos_loc.dot(Field::srcInfosArray),
+                                                                objlist, pCommandInfos->srcInfosArray.deviceAddress);
+        skip |= read_only_flags_validator.ValidateDeviceAddress(*this, command_infos_loc.dot(Field::srcInfosCount),
+                                                                objlist, pCommandInfos->srcInfosCount);
+        skip |= read_only_flags_validator.ValidateDeviceAddress(*this, command_infos_loc.dot(Field::addressResolutionFlags),
+                                                                objlist, pCommandInfos->addressResolutionFlags);
+    }
+
+    {    
+            BufferAddressValidation<1> storage_flags_validator = {{{
+            {"VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-pCommandInfos-10459",
+             [](const vvl::Buffer &buffer_state) {
+                 return (static_cast<uint32_t>(buffer_state.usage) & VK_BUFFER_USAGE_2_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR) == 0;
+             },
+             []() {
+                 return "The following buffers have not been created with the VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR usage flag:";
+             },
+             [](const vvl::Buffer &buffer_state) { 
+                 return "buffer has usage " + string_VkBufferUsageFlags2(buffer_state.usage); 
+             }},
+        }}};
+
+        skip |= storage_flags_validator.ValidateDeviceAddress(*this, command_infos_loc.dot(Field::dstImplicitData),
+                                                                objlist, pCommandInfos->dstImplicitData);
+        skip |= storage_flags_validator.ValidateDeviceAddress(*this, command_infos_loc.dot(Field::dstAddressesArray),
+                                                                objlist, pCommandInfos->dstAddressesArray.deviceAddress);
+    }
+
+    {
+        if(pCommandInfos->scratchData && pCommandInfos->dstImplicitData) {
+            const auto scratch_buffer_states = GetBuffersByAddress(pCommandInfos->scratchData);
+            const auto dst_implicit_buffer_states = GetBuffersByAddress(pCommandInfos->dstImplicitData);
+            for (const auto& scratch_buffer_state : scratch_buffer_states) {
+                vvl::range<VkDeviceAddress> scratch_address_range = scratch_buffer_state->DeviceAddressRange();
+
+                if (!scratch_address_range.empty()) {
+                    for (const auto& dst_implicit_buffer_state : dst_implicit_buffer_states) {
+                        const vvl::range<VkDeviceAddress> dst_implicit_address_range = dst_implicit_buffer_state->DeviceAddressRange();
+                        if (dst_implicit_address_range.intersects(scratch_address_range)) {
+                            const LogObjectList objlist_implicit(commandBuffer, dst_implicit_buffer_state->Handle(), scratch_buffer_state->Handle());
+                            skip |= LogError("VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-dstImplicitData-10456", objlist_implicit,
+                                             command_infos_loc.dot(Field::dstImplicitData),
+                                             "%s address range %s intersects with scratchData address range %s",
+                                             FormatHandle(dst_implicit_buffer_state->Handle()).c_str(),
+                                             string_range_hex(dst_implicit_address_range).c_str(),
+                                             string_range_hex(scratch_address_range).c_str());
+                        }
+                    }
+                }
+            }  
+        }
+    }
+
+    {
+        if(pCommandInfos->scratchData && pCommandInfos->dstAddressesArray.deviceAddress) {
+            const auto scratch_buffer_states = GetBuffersByAddress(pCommandInfos->scratchData);
+            const auto dst_addresses_buffer_states = GetBuffersByAddress(pCommandInfos->dstAddressesArray.deviceAddress);
+            for (const auto& scratch_buffer_state : scratch_buffer_states) {
+                vvl::range<VkDeviceAddress> scratch_address_range = scratch_buffer_state->DeviceAddressRange();
+
+                if (!scratch_address_range.empty()) {
+                    for (const auto& dst_addresses_buffer_state : dst_addresses_buffer_states) {
+                        const vvl::range<VkDeviceAddress> dst_addresses_address_range = dst_addresses_buffer_state->DeviceAddressRange();
+                        if (dst_addresses_address_range.intersects(scratch_address_range)) {
+                            const LogObjectList objlist_addresses(commandBuffer, dst_addresses_buffer_state->Handle(), scratch_buffer_state->Handle());
+                            skip |= LogError("VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-dstAddressesArray-10455", objlist_addresses,
+                                             command_infos_loc.dot(Field::dstAddressesArray),
+                                             "%s address range %s intersects with scratchData address range %s",
+                                             FormatHandle(dst_addresses_buffer_state->Handle()).c_str(),
+                                             string_range_hex(dst_addresses_address_range).c_str(),
+                                             string_range_hex(scratch_address_range).c_str());
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateGetClusterAccelerationStructureBuildSizesNV(VkDevice device,
+                                                                            const VkClusterAccelerationStructureInputInfoNV *pinfo,
+                                                                            VkAccelerationStructureBuildSizesInfoKHR *pSizeInfo,
+                                                                            const ErrorObject &error_obj) const {
+    bool skip = false;
+    if (!enabled_features.clusterAccelerationStructure) {
+        skip |= LogError("VUID-vkGetClusterAccelerationStructureBuildSizesNV-clusterAccelerationStructure-10438", device,
+                         error_obj.location, "clusterAccelerationStructures feature was not enabled.");
+    }
+
+    if (pinfo->opType == VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_NV ||
+        pinfo->opType == VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_TEMPLATE_NV) {
+        const VkClusterAccelerationStructureTriangleClusterInputNV *triangle_input =
+            reinterpret_cast<const VkClusterAccelerationStructureTriangleClusterInputNV *>(pinfo->opInput.pTriangleClusters);
+
+        skip |= ValidateClusterAccelerationStructureTriangleClusterInputNV(*triangle_input, error_obj.location.dot(Field::input).dot(Field::opInput).dot(Field::pTriangleClusters));
+    }
+
+    return skip;
+}
+bool CoreChecks::ValidateClusterAccelerationStructureTriangleClusterInputNV(
+    const VkClusterAccelerationStructureTriangleClusterInputNV& input, const Location &input_loc) const {
+    bool skip = false;
+    const VkFormatProperties3KHR vertex_properties = GetPDFormatProperties(input.vertexFormat);
+    if (!(vertex_properties.bufferFeatures & VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR)) {
+        skip |= LogError(
+            "VUID-VkClusterAccelerationStructureTriangleClusterInputNV-vertexFormat-10439", device, input_loc.dot(Field::vertexFormat),
+            "is %s which doesn't support VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR.\n"
+            "(supported bufferFeatures: %s)",
+            string_VkFormat(input.vertexFormat), string_VkFormatFeatureFlags2(vertex_properties.bufferFeatures).c_str());
+    }
+
+    if (input.maxClusterTriangleCount > phys_dev_ext_props.cluster_acceleration_props.maxTrianglesPerCluster) {
+        skip |= LogError("VUID-VkClusterAccelerationStructureTriangleClusterInputNV-maxClusterTriangleCount-10440", device,
+                         input_loc.dot(Field::maxClusterTriangleCount),
+                         "(%" PRIu32 ") must be less than or equal to "
+                         "VkPhysicalDeviceClusterAccelerationStructurePropertiesNV::maxTrianglesPerCluster (%u)",
+                         input.maxClusterTriangleCount, phys_dev_ext_props.cluster_acceleration_props.maxTrianglesPerCluster);
+    }
+
+    if (input.maxClusterVertexCount > phys_dev_ext_props.cluster_acceleration_props.maxVerticesPerCluster) {
+        skip |= LogError("VUID-VkClusterAccelerationStructureTriangleClusterInputNV-maxClusterVertexCount-10441", device,
+                         input_loc.dot(Field::maxClusterVertexCount),
+                         "(%" PRIu32 ") must be less than or equal to "
+                         "VkPhysicalDeviceClusterAccelerationStructurePropertiesNV::maxVerticesPerCluster (%u)",
+                         input.maxClusterVertexCount, phys_dev_ext_props.cluster_acceleration_props.maxVerticesPerCluster);
+    }
+
+    // Validate position truncation bit count range
+    if (input.minPositionTruncateBitCount > 32) {
+        skip |= LogError("VUID-VkClusterAccelerationStructureTriangleClusterInputNV-minPositionTruncateBitCount-10442", device,
+                         input_loc.dot(Field::minPositionTruncateBitCount),
+                         "(%" PRIu32 ") must be less than or equal to 32", input.minPositionTruncateBitCount);
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateClusterAccelerationStructureCommandsInfoNV(
+    const VkClusterAccelerationStructureCommandsInfoNV &command_infos, const Location &command_infos_loc) const {
+    bool skip = false;
+    uint32_t stride_min = 0;
+    switch (command_infos.input.opType) {
+        case VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_MOVE_OBJECTS_NV:
+            stride_min = sizeof(VkClusterAccelerationStructureMoveObjectsInfoNV);
+            break;
+
+        case VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_CLUSTERS_BOTTOM_LEVEL_NV:
+            stride_min = sizeof(VkClusterAccelerationStructureBuildClustersBottomLevelInfoNV);
+            break;
+
+        case VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_NV:
+            stride_min = sizeof(VkClusterAccelerationStructureBuildTriangleClusterInfoNV);
+            break;
+
+        case VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_TEMPLATE_NV:
+            stride_min = sizeof(VkClusterAccelerationStructureBuildTriangleClusterTemplateInfoNV);
+            break;
+
+        case VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_INSTANTIATE_TRIANGLE_CLUSTER_NV:
+            stride_min = sizeof(VkClusterAccelerationStructureInstantiateClusterInfoNV);
+            break;
+
+        case VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_GET_CLUSTER_TEMPLATE_INDICES_NV:
+        case VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_MAX_ENUM_NV:
+            break;
+    }
+    bool invalid_triangle_input = false;
+    if (command_infos.input.opType == VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_NV ||
+        command_infos.input.opType == VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_TEMPLATE_NV) {
+        const VkClusterAccelerationStructureTriangleClusterInputNV *triangle_input =
+            reinterpret_cast<const VkClusterAccelerationStructureTriangleClusterInputNV *>(
+                command_infos.input.opInput.pTriangleClusters);
+        skip |= ValidateClusterAccelerationStructureTriangleClusterInputNV(*triangle_input, command_infos_loc.dot(Field::input).dot(Field::opInput).dot(Field::pTriangleClusters));
+     
+
+        if (triangle_input->maxClusterTriangleCount > phys_dev_ext_props.cluster_acceleration_props.maxTrianglesPerCluster ||
+            triangle_input->maxClusterVertexCount > phys_dev_ext_props.cluster_acceleration_props.maxVerticesPerCluster ||
+            triangle_input->minPositionTruncateBitCount > 32) {
+            invalid_triangle_input = true;
+        }
+    }
+    // aligned based on the cluster acceleration structure type and its alignment properties as described in VkPhysicalDeviceClusterAccelerationStructurePropertiesNV
+    uint32_t alignment_type = 1;
+    const char *vvuid = kVUIDUndefined;
+    switch (command_infos.input.opType) {
+        case VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_TEMPLATE_NV:
+            alignment_type = phys_dev_ext_props.cluster_acceleration_props.clusterTemplateByteAlignment;
+            vvuid = "VUID-VkClusterAccelerationStructureCommandsInfoNV-input-10478";
+            break;
+
+        case VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_NV:
+            alignment_type = phys_dev_ext_props.cluster_acceleration_props.clusterByteAlignment;
+            vvuid = "VUID-VkClusterAccelerationStructureCommandsInfoNV-input-10477";
+            break;
+
+        case VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_INSTANTIATE_TRIANGLE_CLUSTER_NV:
+            alignment_type = phys_dev_ext_props.cluster_acceleration_props.clusterByteAlignment;
+            vvuid = "VUID-VkClusterAccelerationStructureCommandsInfoNV-input-10479";
+            break;
+
+        case VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_GET_CLUSTER_TEMPLATE_INDICES_NV:
+        case VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_CLUSTERS_BOTTOM_LEVEL_NV:
+        case VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_MOVE_OBJECTS_NV:
+        case VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_MAX_ENUM_NV:
+            break;
+    }
+    VkAccelerationStructureBuildSizesInfoKHR accelerationStructure_size = vku::InitStructHelper();
+    DispatchGetClusterAccelerationStructureBuildSizesNV(device, &(command_infos.input), &accelerationStructure_size);
+    if (command_infos.input.opMode == VK_CLUSTER_ACCELERATION_STRUCTURE_OP_MODE_IMPLICIT_DESTINATIONS_NV) {
+        if (command_infos.dstImplicitData == 0) {
+            skip |=
+                LogError("VUID-VkClusterAccelerationStructureCommandsInfoNV-opMode-10466", device, command_infos_loc.dot(Field::dstImplicitData),
+                         " (0x%" PRIx64 ") must be a valid address if input::opMode is VK_CLUSTER_ACCELERATION_STRUCTURE_OP_MODE_IMPLICIT_DESTINATIONS_NV", command_infos.dstImplicitData);
+        } else if (SafeModulo(command_infos.dstImplicitData, alignment_type) != 0) {
+            skip |= LogError(vvuid, device, command_infos_loc.dot(Field::dstImplicitData),
+                                         "(0x%" PRIx64 ") or addresses specified in dstAddressesArray must be aligned to (%" PRIu32 ") depending on the input::opMode (%s), if input::opType is VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_NV", command_infos.dstImplicitData, alignment_type, string_VkClusterAccelerationStructureOpModeNV(command_infos.input.opMode));
+        } else {
+            if (!invalid_triangle_input && command_infos.input.opType != VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_MOVE_OBJECTS_NV) {
+                BufferAddressValidation<1> dst_implicit_size_validator = {{{
+                    {"VUID-VkClusterAccelerationStructureCommandsInfoNV-opMode-10467",
+                     [&accelerationStructure_size, this](const vvl::Buffer &buffer_state) {
+                         VkMemoryRequirements mem_requirements;
+                         DispatchGetBufferMemoryRequirements(device, buffer_state.VkHandle(), &mem_requirements);
+                         return mem_requirements.size < accelerationStructure_size.accelerationStructureSize;
+                     },
+                     [&accelerationStructure_size]() {
+                         return "If input::opMode is VK_CLUSTER_ACCELERATION_STRUCTURE_OP_MODE_IMPLICIT_DESTINATIONS_NV and "
+                                "input::opType is not VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_MOVE_OBJECTS_NV"
+                                ", the memory in dstImplicitData must be equal to or larger than the "
+                                "VkAccelerationStructureBuildSizesInfoKHR::accelerationStructureSize value (" + std::to_string(accelerationStructure_size.accelerationStructureSize) + ")returned from "
+                                "vkGetClusterAccelerationStructureBuildSizesNV with same input parameters";
+                     },
+                     [this](const vvl::Buffer &buffer_state) { 
+                         VkMemoryRequirements mem_requirements;
+                         DispatchGetBufferMemoryRequirements(device, buffer_state.VkHandle(), &mem_requirements);
+                         return "buffer size " + std::to_string(mem_requirements.size) + 
+                                " is less than required acceleration structure size"; 
+                     }},
+                }}};
+           
+                skip |= dst_implicit_size_validator.ValidateDeviceAddress(*this, command_infos_loc.dot(Field::dstImplicitData),
+                                                                         LogObjectList(device), command_infos.dstImplicitData);
+            }
+        }
+    }
+
+    if (command_infos.input.opMode == VK_CLUSTER_ACCELERATION_STRUCTURE_OP_MODE_COMPUTE_SIZES_NV) {
+        if (command_infos.dstSizesArray.deviceAddress == 0) {
+            skip |= LogError("VUID-VkClusterAccelerationStructureCommandsInfoNV-opMode-10470", device,
+                             command_infos_loc.dot(Field::dstSizesArray).dot(Field::deviceAddress),
+                             "(0x%" PRIx64 ") must be a valid address if input::opMode is VK_CLUSTER_ACCELERATION_STRUCTURE_OP_MODE_COMPUTE_SIZES_NV", command_infos.dstSizesArray.deviceAddress);
+        }
+    }
+
+    if (command_infos.input.opMode == VK_CLUSTER_ACCELERATION_STRUCTURE_OP_MODE_EXPLICIT_DESTINATIONS_NV) {
+        if (command_infos.dstAddressesArray.deviceAddress == 0) {
+            skip |= LogError("VUID-VkClusterAccelerationStructureCommandsInfoNV-opMode-10471", device,
+                             command_infos_loc.dot(Field::dstAddressesArray).dot(Field::deviceAddress),
+                             "(0x%" PRIx64 ") must be a valid address if input::opMode is VK_CLUSTER_ACCELERATION_STRUCTURE_OP_MODE_EXPLICIT_DESTINATIONS_NV", command_infos.dstAddressesArray.deviceAddress);
+        } else if (!invalid_triangle_input && command_infos.input.opType != VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_MOVE_OBJECTS_NV) {
+            BufferAddressValidation<1> dst_addresses_size_validator = {{{
+                {"VUID-VkClusterAccelerationStructureCommandsInfoNV-opMode-10471",
+                 [&accelerationStructure_size, this](const vvl::Buffer &buffer_state) {
+                     VkMemoryRequirements mem_requirements;
+                     DispatchGetBufferMemoryRequirements(device, buffer_state.VkHandle(), &mem_requirements);
+                     return mem_requirements.size < accelerationStructure_size.accelerationStructureSize;
+                 },
+                 [&accelerationStructure_size]() {
+                     return "If input::opMode is VK_CLUSTER_ACCELERATION_STRUCTURE_OP_MODE_EXPLICIT_DESTINATIONS_NV and "
+                            "input::opType is not VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_MOVE_OBJECTS_NV"
+                            ", the buffers in dstAddressesArray must be equal to or larger than the "
+                            "VkAccelerationStructureBuildSizesInfoKHR::accelerationStructureSize value (" + std::to_string(accelerationStructure_size.accelerationStructureSize) + ") returned from "
+                            "vkGetClusterAccelerationStructureBuildSizesNV with same input parameters";
+                 },
+                 [this](const vvl::Buffer &buffer_state) { 
+                     VkMemoryRequirements mem_requirements;
+                     DispatchGetBufferMemoryRequirements(device, buffer_state.VkHandle(), &mem_requirements);
+                     return "buffer size " + std::to_string(mem_requirements.size) + 
+                            " is less than required acceleration structure size";   
+                 }},
+            }}};
+
+                skip |= dst_addresses_size_validator.ValidateDeviceAddress(*this, command_infos_loc.dot(Field::dstAddressesArray).dot(Field::deviceAddress),
+                                                                         LogObjectList(device), command_infos.dstAddressesArray.deviceAddress);
+        }
+    }
+    
+
+    if (command_infos.dstAddressesArray.deviceAddress != 0 && command_infos.dstAddressesArray.stride < 8) {
+        skip |= LogError("VUID-VkClusterAccelerationStructureCommandsInfoNV-dstAddressesArray-10474", device,
+                         command_infos_loc.dot(Field::dstAddressesArray).dot(Field::stride),
+                         "(%" PRIu64 ") must be greater than or equal to 8", 
+                         command_infos.dstAddressesArray.stride);
+    }
+
+    if (command_infos.dstSizesArray.deviceAddress != 0 && command_infos.dstSizesArray.stride < 4) {
+        skip |= LogError("VUID-VkClusterAccelerationStructureCommandsInfoNV-dstSizesArray-10475", device,
+                         command_infos_loc.dot(Field::dstSizesArray).dot(Field::stride),
+                         "(%" PRIu64 ") must be greater than or equal to 4", 
+                         command_infos.dstSizesArray.stride);
+    }
+
+    if (command_infos.srcInfosArray.stride < stride_min) {
+        skip |= LogError("VUID-VkClusterAccelerationStructureCommandsInfoNV-srcInfosArray-10476", device, command_infos_loc.dot(Field::srcInfosArray).dot(Field::stride),
+                         "(%" PRIu64 ") must be greater than size of %s (minimum: %" PRIu32 ")",
+                         command_infos.srcInfosArray.stride, string_VkClusterAccelerationStructureOpTypeNV(command_infos.input.opType), stride_min);
+    }
+
+    if (SafeModulo(command_infos.scratchData, phys_dev_ext_props.cluster_acceleration_props.clusterScratchByteAlignment) != 0) {
+        skip |=
+            LogError("VUID-VkClusterAccelerationStructureCommandsInfoNV-scratchData-10480", device, command_infos_loc.dot(Field::scratchData),
+                     "(0x%" PRIx64 ") must be aligned to VkPhysicalDeviceClusterAccelerationPropertiesNV::clusterScratchByteAlignment (%" PRIu32 ")",
+                     command_infos.scratchData, phys_dev_ext_props.cluster_acceleration_props.clusterScratchByteAlignment);
+    }
+
+    if (SafeModulo(command_infos.srcInfosCount, 4)) {
+        skip |= LogError("VUID-VkClusterAccelerationStructureCommandsInfoNV-srcInfosCount-10481", device, command_infos_loc.dot(Field::srcInfosCount),
+                         "(0x%" PRIx64 ") must be 4-byte aligned", command_infos.srcInfosCount);
+    }
+
     return skip;
 }

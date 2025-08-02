@@ -750,7 +750,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(VkDevice device, const VkBuff
     unique_lock_t lock(global_lock);
     *pBuffer = (VkBuffer)global_unique_handle++;
     // Some address for RTX need to be aligned to 256
-    if (pCreateInfo->usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR) {
+    if (pCreateInfo->usage & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT || pCreateInfo->usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR) {
         const uint64_t rtx_alignment = current_available_address % 256;
         if (rtx_alignment != 0) {
             current_available_address += (256 - rtx_alignment);
@@ -1863,6 +1863,12 @@ static VKAPI_ATTR void VKAPI_CALL GetPartitionedAccelerationStructuresBuildSizes
     pSizeInfo->accelerationStructureSize = 1062400;
     pSizeInfo->updateScratchSize = 4;
     pSizeInfo->buildScratchSize = 388480;
+}
+
+static VKAPI_ATTR void VKAPI_CALL GetClusterAccelerationStructureBuildSizesNV(VkDevice device, const VkClusterAccelerationStructureInputInfoNV* pInfo, VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo){
+    pSizeInfo->accelerationStructureSize = 256;
+    pSizeInfo->buildScratchSize = 256;
+    pSizeInfo->updateScratchSize = 4;
 }
 
 }  // namespace icd
