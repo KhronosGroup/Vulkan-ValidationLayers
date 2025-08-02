@@ -1996,14 +1996,16 @@ bool CoreChecks::ValidateWriteUpdateAccelerationStructureKHR(const VkWriteDescri
 
         auto as_state = Get<vvl::AccelerationStructureKHR>(as);
         if (!as_state) {
-            // This is to catch Template updates, normal updates can be caught in ObjectTracker
-            skip |=
-                LogError("VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-03580", device,
-                         write_loc.pNext(Struct::VkWriteDescriptorSetAccelerationStructureKHR, Field::pAccelerationStructures, j),
-                         "found in the template update has an invalid %s (while trying to update a descriptorType of "
-                         "VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR). Make sure your pData is pointing to "
-                         "vkAccelerationStructureKHR and not VkWriteDescriptorSetAccelerationStructureKHR.",
-                         FormatHandle(as).c_str());
+            if (!enabled_features.nullDescriptor) {
+                // This is to catch Template updates, normal updates can be caught in ObjectTracker
+                skip |= LogError(
+                    "VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-03580", device,
+                    write_loc.pNext(Struct::VkWriteDescriptorSetAccelerationStructureKHR, Field::pAccelerationStructures, j),
+                    "found in the template update has an invalid %s (while trying to update a descriptorType of "
+                    "VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR). Make sure your pData is pointing to "
+                    "vkAccelerationStructureKHR and not VkWriteDescriptorSetAccelerationStructureKHR.",
+                    FormatHandle(as).c_str());
+            }
             continue;
         }
 
