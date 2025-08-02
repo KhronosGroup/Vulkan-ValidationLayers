@@ -4970,7 +4970,7 @@ TEST_F(NegativeWsi, PresentIdWait2) {
 
     SetPresentImageLayout(images[image_index]);
 
-    uint64_t present_id_value = 2u;
+    uint64_t present_id_value = 1u;
     VkPresentId2KHR present_id = vku::InitStructHelper();
     present_id.swapchainCount = 1u;
     present_id.pPresentIds = &present_id_value;
@@ -4978,7 +4978,7 @@ TEST_F(NegativeWsi, PresentIdWait2) {
     m_default_queue->Present(swapchain, image_index, vkt::no_semaphore, &present_id);
 
     VkPresentWait2InfoKHR present_wait_2_info = vku::InitStructHelper();
-    present_wait_2_info.presentId = 1u;
+    present_wait_2_info.presentId = 2u;
     present_wait_2_info.timeout = kWaitTimeout;
     m_errorMonitor->SetDesiredError("VUID-vkWaitForPresent2KHR-presentId-10817");
     vk::WaitForPresent2KHR(device(), swapchain, &present_wait_2_info);

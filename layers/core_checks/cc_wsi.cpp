@@ -1307,7 +1307,7 @@ bool CoreChecks::PreCallValidateWaitForPresent2KHR(VkDevice device, VkSwapchainK
         }
         // We cannot reasonably track all values that have been presented
         // Therefore we only validate that a presentId with equal or higher value has been submitted to vkQueuePresent
-        if (pPresentWait2Info->presentId < swapchain_state->max_present_id) {
+        if (pPresentWait2Info->presentId > swapchain_state->max_present_id) {
             skip |= LogError("VUID-vkWaitForPresent2KHR-presentId-10817", swapchain,
                              error_obj.location.dot(Field::pPresentWait2Info).dot(Field::presentId),
                              "is %" PRIu64 ", but this value was never associated with the VkPresentWait2InfoKHR::presentId on %s.",
