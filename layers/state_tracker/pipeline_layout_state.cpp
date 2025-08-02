@@ -20,6 +20,7 @@
 #include "state_tracker/pipeline_layout_state.h"
 
 #include "error_message/error_strings.h"
+#include "generated/dispatch_functions.h"
 #include "state_tracker/shader_module.h"
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/descriptor_sets.h"
@@ -89,7 +90,14 @@ std::string PipelineLayoutCompatDef::DescribeDifference(const PipelineLayoutComp
             }
         }
     } else if (is_independent_sets != other.is_independent_sets) {
-        ss << "One set is created with VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT while the other is not\n";
+        ss << "The pipeline layout used to bind set " << set;
+        if (is_independent_sets) {
+            ss << " was created with VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT when the pipeline layout of last bound "
+                  "pipeline was not.";
+        } else {
+            ss << " was created without VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT when the pipeline layout of last bound "
+                  "pipeline was.";
+        }
     } else {
         const auto &descriptor_set_layouts = *set_layouts_id.get();
         const auto &other_ds_layouts = *other.set_layouts_id.get();
@@ -211,10 +219,6 @@ static PipelineLayout::SetLayoutVector GetSetLayouts(const vvl::span<const Pipel
         }
     }
 
-    if (!num_layouts) {
-        return {};
-    }
-
     set_layouts.reserve(num_layouts);
     for (size_t i = 0; i < num_layouts; ++i) {
         const PipelineLayout *used_layout = nullptr;
@@ -253,15 +257,23 @@ PipelineLayout::PipelineLayout(DeviceState &dev_data, VkPipelineLayout handle, c
       push_constant_ranges_layout(GetCanonicalId(pCreateInfo->pushConstantRangeCount, pCreateInfo->pPushConstantRanges)),
       create_flags(pCreateInfo->flags),
       set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges_layout, create_flags)),
-      has_immutable_samplers(HasImmutableSamplers(set_layouts)) {}
+      has_immutable_samplers(HasImmutableSamplers(set_layouts)),
+      device(dev_data.device) {}
 
-PipelineLayout::PipelineLayout(const vvl::span<const PipelineLayout *const> &layouts)
+PipelineLayout::PipelineLayout(VkDevice device, const vvl::span<const PipelineLayout *const> &layouts)
     : StateObject(static_cast<VkPipelineLayout>(VK_NULL_HANDLE), kVulkanObjectTypePipelineLayout),
       set_layouts(GetSetLayouts(layouts)),
       push_constant_ranges_layout(GetPushConstantRangesFromLayouts(layouts)),  // TODO is this correct?
       create_flags(GetCreateFlags(layouts)),
       set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges_layout, create_flags)),
-      has_immutable_samplers(HasImmutableSamplers(set_layouts)) {}
+      has_immutable_samplers(HasImmutableSamplers(set_layouts)),
+      device(device) {}
+
+PipelineLayout::~PipelineLayout() {
+    if (recreated_layout != VK_NULL_HANDLE) {
+        DispatchDestroyPipelineLayout(device, recreated_layout, nullptr);
+    }
+}
 
 const VkDescriptorSetLayoutBinding *PipelineLayout::FindBinding(const spirv::ResourceInterfaceVariable &variable) const {
     const VkDescriptorSetLayoutBinding *binding = nullptr;
@@ -273,6 +285,50 @@ const VkDescriptorSetLayoutBinding *PipelineLayout::FindBinding(const spirv::Res
         }
     }
     return binding;
+}
+
+VkPipelineLayout PipelineLayout::GetPipelineLayoutUnion(VkDescriptorSetLayout dummy_desc_set_layout,
+                                                        VkDescriptorSetLayout instrumentation_desc_set_layout) const {
+    if (recreated_layout != VK_NULL_HANDLE) {
+        return recreated_layout;
+    }
+
+    std::vector<VkDescriptorSetLayout> set_layout_handles;
+    std::vector<size_t> recreated_desc_set_layouts_indices;
+    for (size_t set_layout_i = 0; set_layout_i < set_layouts.size(); ++set_layout_i) {
+        const auto &set_layout = set_layouts[set_layout_i];
+        assert(set_layout);
+        if (!set_layout->Destroyed()) {
+            set_layout_handles.emplace_back(set_layout->VkHandle());
+        } else {
+            VkDescriptorSetLayout recreated_desc_set_layout = set_layout->Recreate();
+            set_layout_handles.emplace_back(recreated_desc_set_layout);
+            recreated_desc_set_layouts_indices.emplace_back(set_layout_i);
+        }
+    }
+    for (size_t i = set_layout_handles.size(); i < 31; ++i) {
+        set_layout_handles.emplace_back(dummy_desc_set_layout);
+    }
+    set_layout_handles.emplace_back(instrumentation_desc_set_layout);
+
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
+    pipeline_layout_ci.flags = create_flags;
+    pipeline_layout_ci.setLayoutCount = uint32_t(set_layout_handles.size());
+    pipeline_layout_ci.pSetLayouts = set_layout_handles.data();
+    if (push_constant_ranges_layout) {
+        pipeline_layout_ci.pushConstantRangeCount = uint32_t(push_constant_ranges_layout->size());
+        pipeline_layout_ci.pPushConstantRanges = push_constant_ranges_layout->data();
+    }
+
+    const VkResult result = DispatchCreatePipelineLayout(device, &pipeline_layout_ci, nullptr, &recreated_layout);
+    (void)result;
+    assert(result == VK_SUCCESS);
+
+    for (size_t i : recreated_desc_set_layouts_indices) {
+        set_layouts[i]->DestroyRecreated(set_layout_handles[i]);
+    }
+
+    return recreated_layout;
 }
 
 }  // namespace vvl

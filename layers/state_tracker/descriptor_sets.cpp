@@ -492,11 +492,27 @@ bool vvl::DescriptorSetLayout::IsCompatible(DescriptorSetLayout const *rh_ds_lay
     return (this == rh_ds_layout) || (GetLayoutDef() == rh_ds_layout->GetLayoutDef());
 }
 
+VkDescriptorSetLayout vvl::DescriptorSetLayout::Recreate() const {
+    VkDescriptorSetLayout desc_set_layout = VK_NULL_HANDLE;
+
+    const VkResult result = DispatchCreateDescriptorSetLayout(device, desc_set_layout_ci.ptr(), nullptr, &desc_set_layout);
+    (void)result;
+    assert(result == VK_SUCCESS);
+    return desc_set_layout;
+}
+
+void vvl::DescriptorSetLayout::DestroyRecreated(VkDescriptorSetLayout desc_set_layout) const {
+    DispatchDestroyDescriptorSetLayout(device, desc_set_layout, nullptr);
+}
+
 // The DescriptorSetLayout stores the per handle data for a descriptor set layout, and references the common defintion for the
 // handle invariant portion
 vvl::DescriptorSetLayout::DescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
                                               const VkDescriptorSetLayout handle)
-    : StateObject(handle, kVulkanObjectTypeDescriptorSetLayout), layout_id_(GetCanonicalId(pCreateInfo)) {
+    : StateObject(handle, kVulkanObjectTypeDescriptorSetLayout),
+      layout_id_(GetCanonicalId(pCreateInfo)),
+      desc_set_layout_ci(pCreateInfo),
+      device(device) {
     if (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
         DispatchGetDescriptorSetLayoutSizeEXT(device, handle, &layout_size_in_bytes_);
     }

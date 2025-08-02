@@ -25,6 +25,7 @@
 #include "utils/hash_util.h"
 #include "utils/hash_vk_types.h"
 #include "containers/span.h"
+#include <vulkan/utility/vk_safe_struct.hpp>
 
 // Fwd declarations -- including descriptor_set.h creates an ugly include loop
 namespace vvl {
@@ -89,9 +90,11 @@ class PipelineLayout : public StateObject {
 
     PipelineLayout(DeviceState &dev_data, VkPipelineLayout handle, const VkPipelineLayoutCreateInfo *pCreateInfo);
     // Merge 2 or more non-overlapping layouts
-    PipelineLayout(const vvl::span<const PipelineLayout *const> &layouts);
+    PipelineLayout(VkDevice device, const vvl::span<const PipelineLayout *const> &layouts);
     template <typename Container>
-    PipelineLayout(const Container &layouts) : PipelineLayout(vvl::span<const PipelineLayout *const>{layouts}) {}
+    PipelineLayout(VkDevice device, const Container &layouts)
+        : PipelineLayout(device, vvl::span<const PipelineLayout *const>{layouts}) {}
+    ~PipelineLayout();
 
     VkPipelineLayout VkHandle() const { return handle_.Cast<VkPipelineLayout>(); }
 
@@ -99,6 +102,11 @@ class PipelineLayout : public StateObject {
     bool IsIndependentSets() const { return (create_flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT) != 0; }
 
     const VkDescriptorSetLayoutBinding *FindBinding(const spirv::ResourceInterfaceVariable &variable) const;
+
+    VkDevice device = VK_NULL_HANDLE;
+    mutable VkPipelineLayout recreated_layout = VK_NULL_HANDLE;
+    VkPipelineLayout GetPipelineLayoutUnion(VkDescriptorSetLayout dummy_desc_set_layout,
+                                            VkDescriptorSetLayout instrumentation_desc_set_layout) const;
 };
 
 }  // namespace vvl
