@@ -139,7 +139,7 @@ bool LastBound::IsStencilTestEnable() const {
 
 VkStencilOpState LastBound::GetStencilOpStateFront() const {
     VkStencilOpState front = {};
-    if (pipeline_state) {
+    if (pipeline_state && pipeline_state->DepthStencilState()) {
         front = pipeline_state->DepthStencilState()->front;
     }
     if (IsDynamic(CB_DYNAMIC_STATE_STENCIL_WRITE_MASK)) {
@@ -155,7 +155,7 @@ VkStencilOpState LastBound::GetStencilOpStateFront() const {
 
 VkStencilOpState LastBound::GetStencilOpStateBack() const {
     VkStencilOpState back = {};
-    if (pipeline_state) {
+    if (pipeline_state && pipeline_state->DepthStencilState()) {
         back = pipeline_state->DepthStencilState()->back;
     }
     if (IsDynamic(CB_DYNAMIC_STATE_STENCIL_WRITE_MASK)) {
