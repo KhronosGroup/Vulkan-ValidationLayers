@@ -410,7 +410,8 @@ uint32_t Image::NormalizeLayerCount(const VkImageSubresourceLayers &resource) co
 VkImageSubresourceRange Image::GetSubresourceEncoderRange(const DeviceState &device_state,
                                                           const VkImageSubresourceRange &full_range) {
     VkImageSubresourceRange encoder_range = full_range;
-    if (device_state.extensions.vk_khr_maintenance9 && IsDepthSliceable()) {
+    if (device_state.extensions.vk_khr_maintenance9 && (create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) != 0 &&
+        IsDepthSliceable()) {
         encoder_range.layerCount = create_info.extent.depth;
     }
     return encoder_range;
@@ -543,7 +544,9 @@ ImageView::ImageView(const DeviceState &device_state, const std::shared_ptr<vvl:
 #endif
       is_depth_sliced(IsDepthSliced(*image_state, create_info.viewType)),
       normalized_subresource_range(ImageView::NormalizeImageViewSubresourceRange(*image_state, create_info)),
-      range_generator(image_state->subresource_encoder, GetRangeGeneratorRange(device_state.extensions.vk_khr_maintenance9)),
+      range_generator(image_state->subresource_encoder,
+                      GetRangeGeneratorRange(device_state.extensions.vk_khr_maintenance9 &&
+                                             (image_state->create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) != 0)),
       samples(image_state->create_info.samples),
       samplerConversion(GetSamplerConversion(ci)),
       filter_cubic_props(cubic_props),
