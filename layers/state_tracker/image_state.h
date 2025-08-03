@@ -32,6 +32,8 @@ class Swapchain;
 class VideoProfileDesc;
 }  // namespace vvl
 
+struct DeviceExtensions;
+
 // Transfer VkImageSubresourceRange into VkImageSubresourceLayers struct
 static inline VkImageSubresourceLayers LayersFromRange(const VkImageSubresourceRange &subresource_range) {
     VkImageSubresourceLayers subresource_layers;
@@ -314,7 +316,7 @@ class ImageView : public StateObject, public SubStateManager<ImageViewSubState> 
                                                                       const VkImageViewCreateInfo &image_view_ci);
 
   private:
-    VkImageSubresourceRange GetRangeGeneratorRange(bool is_3d_slice_transition_allowed) const;
+    VkImageSubresourceRange GetRangeGeneratorRange(const DeviceExtensions &extensions) const;
     static bool IsDepthSliced(const Image &image_state, VkImageViewType view_type);
 };
 

@@ -410,8 +410,7 @@ uint32_t Image::NormalizeLayerCount(const VkImageSubresourceLayers &resource) co
 VkImageSubresourceRange Image::GetSubresourceEncoderRange(const DeviceState &device_state,
                                                           const VkImageSubresourceRange &full_range) {
     VkImageSubresourceRange encoder_range = full_range;
-    if (device_state.extensions.vk_khr_maintenance9 && (create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) != 0 &&
-        IsDepthSliceable()) {
+    if (CanTransitionDepthSlices(device_state.extensions, create_info)) {
         encoder_range.layerCount = create_info.extent.depth;
     }
     return encoder_range;
@@ -544,9 +543,7 @@ ImageView::ImageView(const DeviceState &device_state, const std::shared_ptr<vvl:
 #endif
       is_depth_sliced(IsDepthSliced(*image_state, create_info.viewType)),
       normalized_subresource_range(ImageView::NormalizeImageViewSubresourceRange(*image_state, create_info)),
-      range_generator(image_state->subresource_encoder,
-                      GetRangeGeneratorRange(device_state.extensions.vk_khr_maintenance9 &&
-                                             (image_state->create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) != 0)),
+      range_generator(image_state->subresource_encoder, GetRangeGeneratorRange(device_state.extensions)),
       samples(image_state->create_info.samples),
       samplerConversion(GetSamplerConversion(ci)),
       filter_cubic_props(cubic_props),
@@ -603,7 +600,7 @@ VkImageSubresourceRange ImageView::NormalizeImageViewSubresourceRange(const Imag
     return range;
 }
 
-VkImageSubresourceRange ImageView::GetRangeGeneratorRange(bool is_3d_slice_transition_allowed) const {
+VkImageSubresourceRange ImageView::GetRangeGeneratorRange(const DeviceExtensions &extensions) const {
     VkImageSubresourceRange subres_range = create_info.subresourceRange;
 
     // if we're mapping a 3D image to a 2d image view, convert the view's subresource range to be compatible with the
@@ -616,7 +613,7 @@ VkImageSubresourceRange ImageView::GetRangeGeneratorRange(bool is_3d_slice_trans
     //     If the maintenance9 feature is not enabled, any layout transitions performed on such an attachment view during a render
     //     pass instance still apply to the entire subresource referenced which includes all the slices of the selected mip level.
     //
-    if (is_depth_sliced && !is_3d_slice_transition_allowed) {
+    if (is_depth_sliced && !CanTransitionDepthSlices(extensions, image_state->create_info)) {
         subres_range.baseArrayLayer = 0;
         subres_range.layerCount = 1;
     }

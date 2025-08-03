@@ -24,6 +24,8 @@
 
 #include <vulkan/vulkan_core.h>
 
+struct DeviceExtensions;
+
 uint32_t GetEffectiveLevelCount(const VkImageSubresourceRange &subresource_range, uint32_t total_level_count);
 uint32_t GetEffectiveLayerCount(const VkImageSubresourceRange &subresource_range, uint32_t total_layer_count);
 VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFlags aspect_mask, const uint32_t mip_level);
@@ -77,6 +79,9 @@ bool IsImageLayoutDepthOnly(VkImageLayout layout);
 bool IsImageLayoutDepthReadOnly(VkImageLayout layout);
 bool IsImageLayoutStencilOnly(VkImageLayout layout);
 bool IsImageLayoutStencilReadOnly(VkImageLayout layout);
+
+// Return true if layout transition of separate slices of 3d image is supported for the image with a given create info.
+bool CanTransitionDepthSlices(const DeviceExtensions &extensions, const VkImageCreateInfo &create_info);
 
 static inline bool IsIdentitySwizzle(VkComponentMapping components) {
     // clang-format off
