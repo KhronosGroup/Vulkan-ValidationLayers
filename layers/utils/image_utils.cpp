@@ -18,6 +18,7 @@
 #include "image_utils.h"
 #include "containers/range.h"
 #include "utils/math_utils.h"
+#include "generated/vk_extension_helper.h"
 
 #include <algorithm>
 #include <sstream>
@@ -275,4 +276,9 @@ bool IsImageLayoutStencilReadOnly(VkImageLayout layout) {
     };
     return std::any_of(read_only_layouts.begin(), read_only_layouts.end(),
                        [layout](const VkImageLayout read_only_layout) { return layout == read_only_layout; });
+}
+
+bool CanTransitionDepthSlices(const DeviceExtensions &extensions, const VkImageCreateInfo &create_info) {
+    return IsExtEnabled(extensions.vk_khr_maintenance9) && create_info.imageType == VK_IMAGE_TYPE_3D &&
+           (create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) != 0;
 }

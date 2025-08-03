@@ -30,6 +30,7 @@
 #include "state_tracker/image_state.h"
 #include "state_tracker/queue_state.h"
 #include "utils/assert_utils.h"
+#include "utils/image_utils.h"
 
 using RangeGenerator = subresource_adapter::RangeGenerator;
 
@@ -1571,13 +1572,11 @@ void CommandBuffer::TrackImageViewFirstLayout(const vvl::ImageView &view_state, 
 }
 
 void CommandBuffer::TrackImageFirstLayout(const vvl::Image &image_state, const VkImageSubresourceRange &subresource_range,
-                                          int32_t depth_offset, uint32_t depth_extent,
-                                          VkImageLayout layout) {
+                                          int32_t depth_offset, uint32_t depth_extent, VkImageLayout layout) {
     if (auto image_layout_map = GetOrCreateImageLayoutMap(image_state)) {
         VkImageSubresourceRange normalized_subresource_range = image_state.NormalizeSubresourceRange(subresource_range);
 
-        if (dev_data.extensions.vk_khr_maintenance9 && image_state.create_info.imageType == VK_IMAGE_TYPE_3D &&
-            (image_state.create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) != 0 && depth_extent != 0) {
+        if (depth_extent != 0 && CanTransitionDepthSlices(dev_data.extensions, image_state.create_info)) {
             normalized_subresource_range.baseArrayLayer = (uint32_t)depth_offset;
             normalized_subresource_range.layerCount = depth_extent;
         }

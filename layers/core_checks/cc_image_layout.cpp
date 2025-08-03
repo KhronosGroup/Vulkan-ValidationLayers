@@ -117,8 +117,7 @@ bool CoreChecks::VerifyImageLayoutSubresource(const vvl::CommandBuffer &cb_state
     VkImageSubresourceRange normalized_subresource_range =
         image_state.NormalizeSubresourceRange(RangeFromLayers(subresource_layers));
 
-    if (IsExtEnabled(extensions.vk_khr_maintenance9) && image_state.create_info.imageType == VK_IMAGE_TYPE_3D &&
-        (image_state.create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) != 0) {
+    if (CanTransitionDepthSlices(extensions, image_state.create_info)) {
         normalized_subresource_range.baseArrayLayer = (uint32_t)depth_offset;
         normalized_subresource_range.layerCount = depth_extent;
     }
@@ -1080,12 +1079,10 @@ void CoreChecks::RecordTransitionImageLayout(vvl::CommandBuffer &cb_state, const
     VkImageSubresourceRange normalized_subresource_range = image_state.NormalizeSubresourceRange(mem_barrier.subresourceRange);
 
     // VK_REMAINING_ARRAY_LAYERS for sliced 3d image in the context of layout transition means image's depth extent.
-    if (mem_barrier.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS) {
-        if (IsExtEnabled(extensions.vk_khr_maintenance9) && image_state.create_info.imageType == VK_IMAGE_TYPE_3D &&
-            (image_state.create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) != 0) {
-            normalized_subresource_range.layerCount =
-                image_state.create_info.extent.depth - normalized_subresource_range.baseArrayLayer;
-        }
+    if (mem_barrier.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS &&
+        CanTransitionDepthSlices(extensions, image_state.create_info)) {
+        normalized_subresource_range.layerCount =
+            image_state.create_info.extent.depth - normalized_subresource_range.baseArrayLayer;
     }
 
     VkImageLayout old_layout = mem_barrier.oldLayout;
