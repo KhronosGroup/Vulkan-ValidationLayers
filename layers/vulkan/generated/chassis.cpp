@@ -31710,60 +31710,6 @@ VKAPI_ATTR void VKAPI_CALL QueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBa
     }
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL CreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                                           VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                                           const VkDataGraphPipelineCreateInfoARM* pCreateInfos,
-                                                           const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
-    VVL_ZoneScoped;
-
-    auto device_dispatch = vvl::dispatch::GetData(device);
-    bool skip = false;
-    ErrorObject error_obj(vvl::Func::vkCreateDataGraphPipelinesARM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
-    {
-        VVL_ZoneScopedN("PreCallValidate_vkCreateDataGraphPipelinesARM");
-        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCreateDataGraphPipelinesARM]) {
-            if (!vo) {
-                continue;
-            }
-            auto lock = vo->ReadLock();
-            skip |= vo->PreCallValidateCreateDataGraphPipelinesARM(device, deferredOperation, pipelineCache, createInfoCount,
-                                                                   pCreateInfos, pAllocator, pPipelines, error_obj);
-            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-        }
-    }
-    RecordObject record_obj(vvl::Func::vkCreateDataGraphPipelinesARM);
-    {
-        VVL_ZoneScopedN("PreCallRecord_vkCreateDataGraphPipelinesARM");
-        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCreateDataGraphPipelinesARM]) {
-            if (!vo) {
-                continue;
-            }
-            auto lock = vo->WriteLock();
-            vo->PreCallRecordCreateDataGraphPipelinesARM(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos,
-                                                         pAllocator, pPipelines, record_obj);
-        }
-    }
-    VkResult result;
-    {
-        VVL_ZoneScopedN("Dispatch_vkCreateDataGraphPipelinesARM");
-        result = device_dispatch->CreateDataGraphPipelinesARM(device, deferredOperation, pipelineCache, createInfoCount,
-                                                              pCreateInfos, pAllocator, pPipelines);
-    }
-    record_obj.result = result;
-    {
-        VVL_ZoneScopedN("PostCallRecord_vkCreateDataGraphPipelinesARM");
-        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateDataGraphPipelinesARM]) {
-            if (!vo) {
-                continue;
-            }
-            auto lock = vo->WriteLock();
-            vo->PostCallRecordCreateDataGraphPipelinesARM(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos,
-                                                          pAllocator, pPipelines, record_obj);
-        }
-    }
-    return result;
-}
-
 VKAPI_ATTR VkResult VKAPI_CALL CreateDataGraphPipelineSessionARM(VkDevice device,
                                                                  const VkDataGraphPipelineSessionCreateInfoARM* pCreateInfo,
                                                                  const VkAllocationCallbacks* pAllocator,
