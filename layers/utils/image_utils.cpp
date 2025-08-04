@@ -278,6 +278,16 @@ bool IsImageLayoutStencilReadOnly(VkImageLayout layout) {
                        [layout](const VkImageLayout read_only_layout) { return layout == read_only_layout; });
 }
 
+bool IsDepthSliceView(const VkImageCreateInfo &image_create_info, VkImageViewType view_type) {
+    constexpr VkImageCreateFlags depth_slice_view_flags =
+        VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT | VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT;
+
+    const bool image_supports_depth_slice_view =
+        image_create_info.imageType == VK_IMAGE_TYPE_3D && (image_create_info.flags & depth_slice_view_flags) != 0;
+
+    return image_supports_depth_slice_view && (view_type == VK_IMAGE_VIEW_TYPE_2D || view_type == VK_IMAGE_VIEW_TYPE_2D_ARRAY);
+}
+
 bool CanTransitionDepthSlices(const DeviceExtensions &extensions, const VkImageCreateInfo &create_info) {
     return IsExtEnabled(extensions.vk_khr_maintenance9) && create_info.imageType == VK_IMAGE_TYPE_3D &&
            (create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) != 0;

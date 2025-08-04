@@ -347,12 +347,6 @@ bool Image::IsCompatibleAliasing(const Image *other_image_state) const {
     return false;
 }
 
-bool Image::IsDepthSliceable() const {
-    const VkImageCreateFlags sliceable_depth_flags =
-        VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT | VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT;
-    return (create_info.imageType == VK_IMAGE_TYPE_3D) && (create_info.flags & sliceable_depth_flags) != 0;
-}
-
 VkExtent3D Image::GetEffectiveSubresourceExtent(const VkImageSubresourceLayers &sub) const {
     return GetEffectiveExtent(create_info, sub.aspectMask, sub.mipLevel);
 }
@@ -541,7 +535,7 @@ ImageView::ImageView(const DeviceState &device_state, const std::shared_ptr<vvl:
 #ifdef VK_USE_PLATFORM_METAL_EXT
       metal_imageview_export(GetMetalExport(ci)),
 #endif
-      is_depth_sliced(IsDepthSliced(*image_state, create_info.viewType)),
+      is_depth_sliced(IsDepthSliceView(image_state->create_info, create_info.viewType)),
       normalized_subresource_range(ImageView::NormalizeImageViewSubresourceRange(*image_state, create_info)),
       range_generator(image_state->subresource_encoder, GetRangeGeneratorRange(device_state.extensions)),
       samples(image_state->create_info.samples),
@@ -570,10 +564,6 @@ void ImageView::Destroy() {
     StateObject::Destroy();
 }
 
-bool ImageView::IsDepthSliced(const Image &image_state, VkImageViewType view_type) {
-    return image_state.IsDepthSliceable() && (view_type == VK_IMAGE_VIEW_TYPE_2D || view_type == VK_IMAGE_VIEW_TYPE_2D_ARRAY);
-}
-
 uint32_t ImageView::GetAttachmentLayerCount() const {
     if (create_info.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS && !is_depth_sliced) {
         return image_state->create_info.arrayLayers;
@@ -590,7 +580,7 @@ VkImageSubresourceRange ImageView::NormalizeImageViewSubresourceRange(const Imag
     range.aspectMask = NormalizeAspectMask(range.aspectMask, image_view_ci.format);
 
     if (image_view_ci.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS) {
-        if (ImageView::IsDepthSliced(image_state, image_view_ci.viewType)) {
+        if (IsDepthSliceView(image_state.create_info, image_view_ci.viewType)) {
             const VkExtent3D extent = GetEffectiveExtent(image_ci, range.aspectMask, range.baseMipLevel);
             range.layerCount = extent.depth - image_view_ci.subresourceRange.baseArrayLayer;
         } else {
