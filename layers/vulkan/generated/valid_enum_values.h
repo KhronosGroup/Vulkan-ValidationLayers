@@ -223,6 +223,10 @@ template <>
 ValidValue stateless::Context::IsValidEnumValue(VkAntiLagModeAMD value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkAntiLagStageAMD value) const;
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkCompressedTriangleFormatAMDX value) const;
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkShaderCodeTypeEXT value) const;
 template <>

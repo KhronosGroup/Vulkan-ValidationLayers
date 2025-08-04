@@ -1814,6 +1814,11 @@ const vvl::unordered_map<VkQueueFlagBits, VkPipelineStageFlags2>& syncAllCommand
         VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT |
         VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT
     )},
+    { VK_QUEUE_DATA_GRAPH_BIT_ARM, (
+        VK_PIPELINE_STAGE_2_DATA_GRAPH_BIT_ARM |
+        VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT |
+        VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT
+    )},
     };
     return variable;
 }

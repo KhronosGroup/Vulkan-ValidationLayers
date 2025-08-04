@@ -1605,6 +1605,8 @@ ValidValue stateless::Context::IsValidEnumValue(VkGeometryTypeKHR value) const {
         case VK_GEOMETRY_TYPE_SPHERES_NV:
         case VK_GEOMETRY_TYPE_LINEAR_SWEPT_SPHERES_NV:
             return IsExtEnabled(extensions.vk_nv_ray_tracing_linear_swept_spheres) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_GEOMETRY_TYPE_DENSE_GEOMETRY_FORMAT_TRIANGLES_AMDX:
+            return IsExtEnabled(extensions.vk_amdx_dense_geometry_format) ? ValidValue::Valid : ValidValue::NoExtension;
         default:
             return ValidValue::NotFound;
     };
@@ -2039,6 +2041,18 @@ ValidValue stateless::Context::IsValidEnumValue(VkAntiLagStageAMD value) const {
             return ValidValue::NotFound;
     };
 }
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkCompressedTriangleFormatAMDX value) const {
+    switch (value) {
+        case VK_COMPRESSED_TRIANGLE_FORMAT_DGF1_AMDX:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkShaderCodeTypeEXT value) const {
@@ -3412,6 +3426,8 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkGeometryTypeKHR value) c
         case VK_GEOMETRY_TYPE_SPHERES_NV:
         case VK_GEOMETRY_TYPE_LINEAR_SWEPT_SPHERES_NV:
             return {vvl::Extension::_VK_NV_ray_tracing_linear_swept_spheres};
+        case VK_GEOMETRY_TYPE_DENSE_GEOMETRY_FORMAT_TRIANGLES_AMDX:
+            return {vvl::Extension::_VK_AMDX_dense_geometry_format};
         default:
             return {};
     };
@@ -3741,6 +3757,17 @@ template <>
 const char* stateless::Context::DescribeEnum(VkAntiLagStageAMD value) const {
     return nullptr;
 }
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkCompressedTriangleFormatAMDX value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkCompressedTriangleFormatAMDX value) const {
+    return nullptr;
+}
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 
 template <>
 vvl::Extensions stateless::Context::GetEnumExtensions(VkShaderCodeTypeEXT value) const {

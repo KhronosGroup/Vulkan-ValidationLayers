@@ -158,6 +158,8 @@ struct DeviceFeatures {
     bool dataGraphUpdateAfterBind;
     // VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV
     bool dedicatedAllocationImageAliasing;
+    // VkPhysicalDeviceDenseGeometryFormatFeaturesAMDX
+    bool denseGeometryFormat;
     // VkPhysicalDeviceDepthBiasControlFeaturesEXT
     bool depthBiasControl;
     // VkPhysicalDeviceDepthBiasControlFeaturesEXT
