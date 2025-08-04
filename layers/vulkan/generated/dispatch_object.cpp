@@ -552,6 +552,13 @@ void HandleWrapper::UnwrapPnextChainHandles(const void* pNext) {
                     safe_struct->tensorView = Unwrap(safe_struct->tensorView);
                 }
             } break;
+            case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_TRIANGLES_OPACITY_MICROMAP_EXT: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkAccelerationStructureTrianglesOpacityMicromapEXT*>(cur_pnext);
+
+                if (safe_struct->micromap) {
+                    safe_struct->micromap = Unwrap(safe_struct->micromap);
+                }
+            } break;
             case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SHADER_MODULE_CREATE_INFO_ARM: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkDataGraphPipelineShaderModuleCreateInfoARM*>(cur_pnext);
 
@@ -583,13 +590,6 @@ void HandleWrapper::UnwrapPnextChainHandles(const void* pNext) {
                 }
             } break;
 #endif  // VK_ENABLE_BETA_EXTENSIONS
-            case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_TRIANGLES_OPACITY_MICROMAP_EXT: {
-                auto* safe_struct = reinterpret_cast<vku::safe_VkAccelerationStructureTrianglesOpacityMicromapEXT*>(cur_pnext);
-
-                if (safe_struct->micromap) {
-                    safe_struct->micromap = Unwrap(safe_struct->micromap);
-                }
-            } break;
 
             default:
                 break;

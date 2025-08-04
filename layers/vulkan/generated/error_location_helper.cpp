@@ -805,6 +805,7 @@ const char* String(Struct structure) {
     {"VkAccelerationStructureCaptureDescriptorDataInfoEXT", 52},
     {"VkAccelerationStructureCreateInfoKHR", 37},
     {"VkAccelerationStructureCreateInfoNV", 36},
+    {"VkAccelerationStructureDenseGeometryFormatTrianglesDataAMDX", 60},
     {"VkAccelerationStructureDeviceAddressInfoKHR", 44},
     {"VkAccelerationStructureGeometryAabbsDataKHR", 44},
     {"VkAccelerationStructureGeometryDataKHR", 39},
@@ -1368,6 +1369,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceDataGraphOperationSupportARM", 45},
     {"VkPhysicalDeviceDataGraphProcessingEngineARM", 45},
     {"VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV", 59},
+    {"VkPhysicalDeviceDenseGeometryFormatFeaturesAMDX", 48},
     {"VkPhysicalDeviceDepthBiasControlFeaturesEXT", 44},
     {"VkPhysicalDeviceDepthClampControlFeaturesEXT", 45},
     {"VkPhysicalDeviceDepthClampZeroOneFeaturesKHR", 45},
@@ -2284,6 +2286,7 @@ const char* String(Field field) {
     {"componentMapping", 17},
     {"components", 11},
     {"compositeAlpha", 15},
+    {"compressedData", 15},
     {"compressedHeaderOffset", 23},
     {"compressedSize", 15},
     {"compressionControlPlaneCount", 29},
@@ -2400,6 +2403,7 @@ const char* String(Field field) {
     {"degenerateLinesRasterized", 26},
     {"degenerateTrianglesRasterized", 30},
     {"denormBehaviorIndependence", 27},
+    {"denseGeometryFormat", 20},
     {"dependencyCount", 16},
     {"dependencyFlags", 16},
     {"depth", 6},
@@ -3178,6 +3182,7 @@ const char* String(Field field) {
     {"maxFramebufferLayers", 21},
     {"maxFramebufferWidth", 20},
     {"maxGeometryCount", 17},
+    {"maxGeometryIndex", 17},
     {"maxGeometryIndexValue", 22},
     {"maxGeometryInputComponents", 27},
     {"maxGeometryOutputComponents", 28},
@@ -3273,6 +3278,7 @@ const char* String(Field field) {
     {"maxPreferredMeshWorkGroupInvocations", 37},
     {"maxPreferredTaskWorkGroupInvocations", 37},
     {"maxPrimitiveCount", 18},
+    {"maxPrimitiveIndex", 18},
     {"maxPushConstantsSize", 21},
     {"maxPushDescriptors", 19},
     {"maxQIndex", 10},
@@ -3545,8 +3551,10 @@ const char* String(Field field) {
     {"numPhysicalSgprs", 17},
     {"numPhysicalVgprs", 17},
     {"numRows", 8},
+    {"numTriangles", 13},
     {"numUsedSgprs", 13},
     {"numUsedVgprs", 13},
+    {"numVertices", 12},
     {"object", 7},
     {"objectCount", 12},
     {"objectHandle", 13},
@@ -5173,6 +5181,7 @@ const char* String(Enum value) {
     {"VkCompareOp", 12},
     {"VkComponentSwizzle", 19},
     {"VkComponentTypeKHR", 19},
+    {"VkCompressedTriangleFormatAMDX", 31},
     {"VkConservativeRasterizationModeEXT", 35},
     {"VkCooperativeVectorMatrixLayoutNV", 34},
     {"VkCopyAccelerationStructureModeKHR", 35},
@@ -5464,6 +5473,7 @@ const char* String(FlagBitmask value) {
 const char* String(Extension extension) {
     static const std::string_view table[] = {
     {"INVALID_EMPTY", 15}, // Extension::Empty
+    {"VK_AMDX_dense_geometry_format", 30},
     {"VK_AMDX_shader_enqueue", 23},
     {"VK_AMD_anti_lag", 16},
     {"VK_AMD_buffer_marker", 21},
@@ -7476,10 +7486,10 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceLayeredApiPropertiesListKHR;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LAYERED_API_VULKAN_PROPERTIES_KHR:
        return Struct::VkPhysicalDeviceLayeredApiVulkanPropertiesKHR;
-    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_8_FEATURES_KHR:
-       return Struct::VkPhysicalDeviceMaintenance8FeaturesKHR;
     case VK_STRUCTURE_TYPE_MEMORY_BARRIER_ACCESS_FLAGS_3_KHR:
        return Struct::VkMemoryBarrierAccessFlags3KHR;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_8_FEATURES_KHR:
+       return Struct::VkPhysicalDeviceMaintenance8FeaturesKHR;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_9_FEATURES_KHR:
        return Struct::VkPhysicalDeviceMaintenance9FeaturesKHR;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_9_PROPERTIES_KHR:
@@ -8338,6 +8348,10 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkAntiLagPresentationInfoAMD;
     case VK_STRUCTURE_TYPE_ANTI_LAG_DATA_AMD:
        return Struct::VkAntiLagDataAMD;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DENSE_GEOMETRY_FORMAT_FEATURES_AMDX:
+       return Struct::VkPhysicalDeviceDenseGeometryFormatFeaturesAMDX;
+    case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DENSE_GEOMETRY_FORMAT_TRIANGLES_DATA_AMDX:
+       return Struct::VkAccelerationStructureDenseGeometryFormatTrianglesDataAMDX;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT:
        return Struct::VkPhysicalDeviceShaderObjectFeaturesEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_PROPERTIES_EXT:

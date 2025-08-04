@@ -1164,6 +1164,11 @@ vvl::Extensions stateless::Context::IsValidFlag64Value(vvl::FlagBitmask flag_bit
                     return {vvl::Extension::_VK_AMDX_shader_enqueue};
                 }
             }
+            if (value & (VK_BUFFER_USAGE_2_COMPRESSED_DATA_DGF1_BIT_AMDX)) {
+                if (!IsExtEnabled(extensions.vk_amdx_dense_geometry_format)) {
+                    return {vvl::Extension::_VK_AMDX_dense_geometry_format};
+                }
+            }
             if (value & (VK_BUFFER_USAGE_2_DATA_GRAPH_FOREIGN_DESCRIPTOR_BIT_ARM)) {
                 if (!IsExtEnabled(extensions.vk_arm_data_graph)) {
                     return {vvl::Extension::_VK_ARM_data_graph};

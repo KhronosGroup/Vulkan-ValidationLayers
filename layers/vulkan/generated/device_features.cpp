@@ -1554,6 +1554,14 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->antiLag |= enabled->antiLag == VK_TRUE;
                 break;
             }
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DENSE_GEOMETRY_FORMAT_FEATURES_AMDX: {
+                const VkPhysicalDeviceDenseGeometryFormatFeaturesAMDX *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceDenseGeometryFormatFeaturesAMDX *>(pNext);
+                features->denseGeometryFormat |= enabled->denseGeometryFormat == VK_TRUE;
+                break;
+            }
+#endif  // VK_ENABLE_BETA_EXTENSIONS
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT: {
                 const VkPhysicalDeviceShaderObjectFeaturesEXT *enabled =
                     reinterpret_cast<const VkPhysicalDeviceShaderObjectFeaturesEXT *>(pNext);

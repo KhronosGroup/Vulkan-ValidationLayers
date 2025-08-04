@@ -150,6 +150,8 @@ enum class Feature {
     dataGraphUpdateAfterBind,
     // VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV
     dedicatedAllocationImageAliasing,
+    // VkPhysicalDeviceDenseGeometryFormatFeaturesAMDX
+    denseGeometryFormat,
     // VkPhysicalDeviceDepthBiasControlFeaturesEXT
     depthBiasControl,
     // VkPhysicalDeviceDepthBiasControlFeaturesEXT

@@ -393,6 +393,7 @@ vvl::Extension GetExtension(std::string extension) {
         {"VK_EXT_pipeline_protected_access", vvl::Extension::_VK_EXT_pipeline_protected_access},
         {"VK_ANDROID_external_format_resolve", vvl::Extension::_VK_ANDROID_external_format_resolve},
         {"VK_AMD_anti_lag", vvl::Extension::_VK_AMD_anti_lag},
+        {"VK_AMDX_dense_geometry_format", vvl::Extension::_VK_AMDX_dense_geometry_format},
         {"VK_EXT_shader_object", vvl::Extension::_VK_EXT_shader_object},
         {"VK_QCOM_tile_properties", vvl::Extension::_VK_QCOM_tile_properties},
         {"VK_SEC_amigo_profiling", vvl::Extension::_VK_SEC_amigo_profiling},
@@ -1836,6 +1837,12 @@ static const DeviceExtensionsInfoMap& GetDeviceInfoMap() {
                  VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME}}})},
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
         {vvl::Extension::_VK_AMD_anti_lag, Info(&DeviceExtensions::vk_amd_anti_lag, {})},
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+        {vvl::Extension::_VK_AMDX_dense_geometry_format,
+         Info(&DeviceExtensions::vk_amdx_dense_geometry_format,
+              {{{&DeviceExtensions::vk_khr_acceleration_structure, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME},
+                {&DeviceExtensions::vk_khr_maintenance5, VK_KHR_MAINTENANCE_5_EXTENSION_NAME}}})},
+#endif  // VK_ENABLE_BETA_EXTENSIONS
         {vvl::Extension::_VK_EXT_shader_object,
          Info(&DeviceExtensions::vk_ext_shader_object,
               {{{&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},

@@ -2679,6 +2679,19 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
                 skip |= ValidateBool32(pNext_loc.dot(Field::antiLag), structure->antiLag);
             }
         } break;
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+        // Validation code for VkPhysicalDeviceDenseGeometryFormatFeaturesAMDX structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DENSE_GEOMETRY_FORMAT_FEATURES_AMDX: {  // Covers
+                                                                                       // VUID-VkPhysicalDeviceDenseGeometryFormatFeaturesAMDX-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceDenseGeometryFormatFeaturesAMDX);
+                VkPhysicalDeviceDenseGeometryFormatFeaturesAMDX* structure =
+                    (VkPhysicalDeviceDenseGeometryFormatFeaturesAMDX*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::denseGeometryFormat), structure->denseGeometryFormat);
+            }
+        } break;
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkPhysicalDeviceShaderObjectFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT: {  // Covers
@@ -7099,6 +7112,22 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
         // No Validation code for VkAndroidHardwareBufferFormatResolvePropertiesANDROID structure members  -- Covers
         // VUID-VkAndroidHardwareBufferFormatResolvePropertiesANDROID-sType-sType
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+        // Validation code for VkAccelerationStructureDenseGeometryFormatTrianglesDataAMDX structure members
+        case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DENSE_GEOMETRY_FORMAT_TRIANGLES_DATA_AMDX: {  // Covers
+                                                                                                    // VUID-VkAccelerationStructureDenseGeometryFormatTrianglesDataAMDX-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc =
+                    loc.pNext(Struct::VkAccelerationStructureDenseGeometryFormatTrianglesDataAMDX);
+                VkAccelerationStructureDenseGeometryFormatTrianglesDataAMDX* structure =
+                    (VkAccelerationStructureDenseGeometryFormatTrianglesDataAMDX*)header;
+                skip |=
+                    ValidateRangedEnum(pNext_loc.dot(Field::format), vvl::Enum::VkCompressedTriangleFormatAMDX, structure->format,
+                                       "VUID-VkAccelerationStructureDenseGeometryFormatTrianglesDataAMDX-format-parameter");
+            }
+        } break;
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 
         // No Validation code for VkAmigoProfilingSubmitInfoSEC structure members  -- Covers
         // VUID-VkAmigoProfilingSubmitInfoSEC-sType-sType
@@ -7626,6 +7655,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_FEATURES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEDICATED_ALLOCATION_IMAGE_ALIASING_FEATURES_NV,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DENSE_GEOMETRY_FORMAT_FEATURES_AMDX,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_BIAS_CONTROL_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_CONTROL_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_ZERO_ONE_FEATURES_KHR,
@@ -9239,11 +9269,6 @@ bool Device::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreate
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-
-    if (has_zero_queues) {
-        skip |= LogError("VUID-vkCreateSampler-device-queuecount", device, error_obj.location,
-                         "device was created with queueCreateInfoCount of zero.");
-    }
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO, true,
                                        "VUID-vkCreateSampler-pCreateInfo-parameter", "VUID-VkSamplerCreateInfo-sType-sType");
     if (pCreateInfo != nullptr) {
@@ -11379,11 +11404,6 @@ bool Device::PreCallValidateCreateSamplerYcbcrConversion(VkDevice device, const 
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-
-    if (has_zero_queues) {
-        skip |= LogError("VUID-vkCreateSamplerYcbcrConversion-device-queuecount", device, error_obj.location,
-                         "device was created with queueCreateInfoCount of zero.");
-    }
     skip |= context.ValidateStructType(
         loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO, true,
         "VUID-vkCreateSamplerYcbcrConversion-pCreateInfo-parameter", "VUID-VkSamplerYcbcrConversionCreateInfo-sType-sType");
@@ -26299,6 +26319,7 @@ bool Device::PreCallValidateCmdBuildAccelerationStructuresKHR(
                 for (uint32_t geometryIndex = 0; geometryIndex < pInfos[infoIndex].geometryCount; ++geometryIndex) {
                     [[maybe_unused]] const Location pGeometries_loc = pInfos_loc.dot(Field::pGeometries, geometryIndex);
                     constexpr std::array allowed_structs_VkAccelerationStructureGeometryKHR = {
+                        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DENSE_GEOMETRY_FORMAT_TRIANGLES_DATA_AMDX,
                         VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_LINEAR_SWEPT_SPHERES_DATA_NV,
                         VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_SPHERES_DATA_NV};
 
@@ -26328,6 +26349,7 @@ bool Device::PreCallValidateCmdBuildAccelerationStructuresKHR(
                 for (uint32_t geometryIndex = 0; geometryIndex < pInfos[infoIndex].geometryCount; ++geometryIndex) {
                     [[maybe_unused]] const Location ppGeometries_loc = pInfos_loc.dot(Field::ppGeometries, geometryIndex);
                     constexpr std::array allowed_structs_VkAccelerationStructureGeometryKHR = {
+                        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DENSE_GEOMETRY_FORMAT_TRIANGLES_DATA_AMDX,
                         VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_LINEAR_SWEPT_SPHERES_DATA_NV,
                         VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_SPHERES_DATA_NV};
 
@@ -26398,6 +26420,7 @@ bool Device::PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(VkCommandB
                 for (uint32_t geometryIndex = 0; geometryIndex < pInfos[infoIndex].geometryCount; ++geometryIndex) {
                     [[maybe_unused]] const Location pGeometries_loc = pInfos_loc.dot(Field::pGeometries, geometryIndex);
                     constexpr std::array allowed_structs_VkAccelerationStructureGeometryKHR = {
+                        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DENSE_GEOMETRY_FORMAT_TRIANGLES_DATA_AMDX,
                         VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_LINEAR_SWEPT_SPHERES_DATA_NV,
                         VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_SPHERES_DATA_NV};
 
@@ -26427,6 +26450,7 @@ bool Device::PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(VkCommandB
                 for (uint32_t geometryIndex = 0; geometryIndex < pInfos[infoIndex].geometryCount; ++geometryIndex) {
                     [[maybe_unused]] const Location ppGeometries_loc = pInfos_loc.dot(Field::ppGeometries, geometryIndex);
                     constexpr std::array allowed_structs_VkAccelerationStructureGeometryKHR = {
+                        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DENSE_GEOMETRY_FORMAT_TRIANGLES_DATA_AMDX,
                         VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_LINEAR_SWEPT_SPHERES_DATA_NV,
                         VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_SPHERES_DATA_NV};
 
@@ -26503,6 +26527,7 @@ bool Device::PreCallValidateBuildAccelerationStructuresKHR(VkDevice device, VkDe
                 for (uint32_t geometryIndex = 0; geometryIndex < pInfos[infoIndex].geometryCount; ++geometryIndex) {
                     [[maybe_unused]] const Location pGeometries_loc = pInfos_loc.dot(Field::pGeometries, geometryIndex);
                     constexpr std::array allowed_structs_VkAccelerationStructureGeometryKHR = {
+                        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DENSE_GEOMETRY_FORMAT_TRIANGLES_DATA_AMDX,
                         VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_LINEAR_SWEPT_SPHERES_DATA_NV,
                         VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_SPHERES_DATA_NV};
 
@@ -26532,6 +26557,7 @@ bool Device::PreCallValidateBuildAccelerationStructuresKHR(VkDevice device, VkDe
                 for (uint32_t geometryIndex = 0; geometryIndex < pInfos[infoIndex].geometryCount; ++geometryIndex) {
                     [[maybe_unused]] const Location ppGeometries_loc = pInfos_loc.dot(Field::ppGeometries, geometryIndex);
                     constexpr std::array allowed_structs_VkAccelerationStructureGeometryKHR = {
+                        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DENSE_GEOMETRY_FORMAT_TRIANGLES_DATA_AMDX,
                         VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_LINEAR_SWEPT_SPHERES_DATA_NV,
                         VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_SPHERES_DATA_NV};
 
@@ -26852,6 +26878,7 @@ bool Device::PreCallValidateGetAccelerationStructureBuildSizesKHR(VkDevice devic
             for (uint32_t geometryIndex = 0; geometryIndex < pBuildInfo->geometryCount; ++geometryIndex) {
                 [[maybe_unused]] const Location pGeometries_loc = pBuildInfo_loc.dot(Field::pGeometries, geometryIndex);
                 constexpr std::array allowed_structs_VkAccelerationStructureGeometryKHR = {
+                    VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DENSE_GEOMETRY_FORMAT_TRIANGLES_DATA_AMDX,
                     VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_LINEAR_SWEPT_SPHERES_DATA_NV,
                     VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_SPHERES_DATA_NV};
 
@@ -26881,6 +26908,7 @@ bool Device::PreCallValidateGetAccelerationStructureBuildSizesKHR(VkDevice devic
             for (uint32_t geometryIndex = 0; geometryIndex < pBuildInfo->geometryCount; ++geometryIndex) {
                 [[maybe_unused]] const Location ppGeometries_loc = pBuildInfo_loc.dot(Field::ppGeometries, geometryIndex);
                 constexpr std::array allowed_structs_VkAccelerationStructureGeometryKHR = {
+                    VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DENSE_GEOMETRY_FORMAT_TRIANGLES_DATA_AMDX,
                     VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_LINEAR_SWEPT_SPHERES_DATA_NV,
                     VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_SPHERES_DATA_NV};
 
