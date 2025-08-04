@@ -1539,24 +1539,18 @@ bool CoreChecks::ValidateImageSubresourceRange(const uint32_t image_mip_count, c
     return skip;
 }
 
-bool CoreChecks::ValidateCreateImageViewSubresourceRange(const vvl::Image &image_state, bool is_imageview_2d_type,
+bool CoreChecks::ValidateCreateImageViewSubresourceRange(const vvl::Image &image_state, bool is_depth_slice_view,
                                                          const VkImageSubresourceRange &subresourceRange,
                                                          const Location &loc) const {
-    const bool is_khr_maintenance1 = IsExtEnabled(extensions.vk_khr_maintenance1);
-    const bool is_image_slicable = image_state.IsDepthSliceable();
-    const bool is_3d_to_2d_map = is_khr_maintenance1 && is_image_slicable && is_imageview_2d_type;
-
     uint32_t image_layer_count;
-
-    if (is_3d_to_2d_map) {
-        const auto layers = LayersFromRange(subresourceRange);
-        const auto extent = image_state.GetEffectiveSubresourceExtent(layers);
+    if (is_depth_slice_view) {
+        const VkExtent3D extent = image_state.GetEffectiveSubresourceExtent(subresourceRange);
         image_layer_count = extent.depth;
     } else {
         image_layer_count = image_state.create_info.arrayLayers;
     }
 
-    const auto image_layer_count_var = is_3d_to_2d_map ? Field::depth : Field::arrayLayers;
+    const auto image_layer_count_var = is_depth_slice_view ? Field::depth : Field::arrayLayers;
 
     return ValidateImageSubresourceRange(image_state.create_info.mipLevels, image_layer_count, subresourceRange,
                                          image_layer_count_var, image_state.VkHandle(), loc.dot(Field::subresourceRange));
@@ -1907,9 +1901,8 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo &create
     skip |= ValidateMemoryIsBoundToImage(LogObjectList(device, create_info.image), image_state, create_info_loc.dot(Field::image),
                                          "VUID-VkImageViewCreateInfo-image-01020");
     // Checks imported from image layer
-    skip |= ValidateCreateImageViewSubresourceRange(
-        image_state, create_info.viewType == VK_IMAGE_VIEW_TYPE_2D || create_info.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY,
-        create_info.subresourceRange, create_info_loc);
+    skip |= ValidateCreateImageViewSubresourceRange(image_state, IsDepthSliceView(image_state.create_info, create_info.viewType),
+                                                    create_info.subresourceRange, create_info_loc);
 
     auto normalized_subresource_range = vvl::ImageView::NormalizeImageViewSubresourceRange(image_state, create_info);
 

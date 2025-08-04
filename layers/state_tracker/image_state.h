@@ -135,7 +135,6 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
     bool IsCreateInfoEqual(const VkImageCreateInfo &other_create_info) const;
     bool IsCreateInfoDedicatedAllocationImageAliasingCompatible(const VkImageCreateInfo &other_create_info) const;
     bool IsSwapchainImage() const { return create_from_swapchain != VK_NULL_HANDLE; }
-    bool IsDepthSliceable() const;
 
     // TODO - need to understand if VkBindImageMemorySwapchainInfoKHR counts as "bound"
     bool HasBeenBound() const { return (MemoryState() != nullptr) || (bind_swapchain); }
@@ -317,7 +316,6 @@ class ImageView : public StateObject, public SubStateManager<ImageViewSubState> 
 
   private:
     VkImageSubresourceRange GetRangeGeneratorRange(const DeviceExtensions &extensions) const;
-    static bool IsDepthSliced(const Image &image_state, VkImageViewType view_type);
 };
 
 class ImageViewSubState {

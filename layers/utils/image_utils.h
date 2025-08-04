@@ -80,7 +80,10 @@ bool IsImageLayoutDepthReadOnly(VkImageLayout layout);
 bool IsImageLayoutStencilOnly(VkImageLayout layout);
 bool IsImageLayoutStencilReadOnly(VkImageLayout layout);
 
-// Return true if layout transition of separate slices of 3d image is supported for the image with a given create info.
+// Return true if an image view of this type references separate depth slices of a 3d image
+bool IsDepthSliceView(const VkImageCreateInfo &image_create_info, VkImageViewType view_type);
+
+// Return true if layout transitions of separate slices of a 3d image are supported for the image with the given create info
 bool CanTransitionDepthSlices(const DeviceExtensions &extensions, const VkImageCreateInfo &create_info);
 
 static inline bool IsIdentitySwizzle(VkComponentMapping components) {
