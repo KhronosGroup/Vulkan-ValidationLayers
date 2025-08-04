@@ -1877,9 +1877,6 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateQueueNotifyOutOfBandNV);
     BUILD_DISPATCH_VECTOR(PreCallRecordQueueNotifyOutOfBandNV);
     BUILD_DISPATCH_VECTOR(PostCallRecordQueueNotifyOutOfBandNV);
-    BUILD_DISPATCH_VECTOR(PreCallValidateCreateDataGraphPipelinesARM);
-    BUILD_DISPATCH_VECTOR(PreCallRecordCreateDataGraphPipelinesARM);
-    BUILD_DISPATCH_VECTOR(PostCallRecordCreateDataGraphPipelinesARM);
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateDataGraphPipelineSessionARM);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateDataGraphPipelineSessionARM);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateDataGraphPipelineSessionARM);

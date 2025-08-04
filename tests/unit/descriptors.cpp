@@ -3155,8 +3155,7 @@ TEST_F(NegativeDescriptors, CreateDescriptorPool) {
 
     RETURN_IF_SKIP(Init());
 
-    const uint32_t default_descriptor_count = 1;
-    const VkDescriptorPoolSize dp_size_template{VK_DESCRIPTOR_TYPE_SAMPLER, default_descriptor_count};
+    const VkDescriptorPoolSize dp_size_template{VK_DESCRIPTOR_TYPE_SAMPLER, 1};
 
     const auto dp_ci_template = vku::InitStruct<VkDescriptorPoolCreateInfo>(nullptr, 0u, 1u, 1u, &dp_size_template);
     // try maxSets = 0

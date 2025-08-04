@@ -581,7 +581,7 @@ struct EntryPoint {
 
     EntryPoint(const Module &module_state, const Instruction &entrypoint_insn, const ImageAccessMap &image_access_map,
                const AccessChainVariableMap &access_chain_map, const VariableAccessMap &variable_access_map,
-               const DebugNameMap &debug_name_map);
+               const DebugNameMap &debug_name_map, const bool is_data_graph_entrypoint = false);
 
     bool HasBuiltIn(spv::BuiltIn built_in) const;
 

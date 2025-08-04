@@ -124,6 +124,14 @@ struct CreateRayTracingPipelinesKHR {
     CreateRayTracingPipelinesKHR(const VkRayTracingPipelineCreateInfoKHR* create_info) { pCreateInfos = create_info; }
 };
 
+struct CreateDataGraphPipelinesARM {
+    std::vector<vku::safe_VkDataGraphPipelineCreateInfoARM> modified_create_infos;
+    const VkDataGraphPipelineCreateInfoARM* pCreateInfos;
+    spirv::StatelessData stateless_data;
+
+    CreateDataGraphPipelinesARM(const VkDataGraphPipelineCreateInfoARM* create_info) { pCreateInfos = create_info; }
+};
+
 struct CreatePipelineLayout {
     // This currently only works because GPU-AV is the only layer who creates this state
     // If a 2nd layer starts to use it, can have conflicting values

@@ -753,7 +753,8 @@ void PostCallRecordCreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperat
                                                VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                const VkDataGraphPipelineCreateInfoARM* pCreateInfos,
                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                               const RecordObject& record_obj) override;
+                                               const RecordObject& record_obj, PipelineStates& pipeline_states,
+                                               chassis::CreateDataGraphPipelinesARM& chassis_state) override;
 
 void PostCallRecordCreateDataGraphPipelineSessionARM(VkDevice device, const VkDataGraphPipelineSessionCreateInfoARM* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator,

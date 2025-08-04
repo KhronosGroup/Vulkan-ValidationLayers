@@ -19,6 +19,7 @@
  * limitations under the License.
  */
 #pragma once
+#include "utils/hash_vk_types.h"
 #include "state_tracker/state_object.h"
 #include "state_tracker/image_layout_map.h"
 #include "state_tracker/pipeline_sub_state.h"
@@ -42,6 +43,7 @@ class Queue;
 class RenderPass;
 class VideoSession;
 class VideoSessionParameters;
+class DataGraphPipelineSession;
 }  // namespace vvl
 
 enum class CbState {
@@ -403,6 +405,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     const LastBound &GetLastBoundGraphics() const { return lastBound[vvl::BindPointGraphics]; }
     const LastBound &GetLastBoundCompute() const { return lastBound[vvl::BindPointCompute]; }
     const LastBound &GetLastBoundRayTracing() const { return lastBound[vvl::BindPointRayTracing]; }
+    const LastBound &GetLastBoundDataGraph() const { return lastBound[vvl::BindPointDataGraph]; }
 
     // Use the casting boilerplate from StateObject to implement the derived shared_from_this
     std::shared_ptr<const CommandBuffer> shared_from_this() const { return SharedFromThisImpl(this); }

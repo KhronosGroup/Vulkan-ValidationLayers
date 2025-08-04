@@ -408,9 +408,13 @@ static uint32_t ExecutionModelToShaderStageFlagBits(uint32_t mode) {
 // converting parts of this to be generated from the machine-readable spec instead.
 static void FindPointersAndObjects(const Instruction& insn, vvl::unordered_set<uint32_t>& result) {
     switch (insn.Opcode()) {
+        case spv::OpGraphInputARM:
+            result.insert(insn.Word(2));  // ptr
+            break;
         case spv::OpLoad:
             result.insert(insn.Word(3));  // ptr
             break;
+        case spv::OpGraphSetOutputARM:
         case spv::OpStore:
             result.insert(insn.Word(1));  // ptr
             break;
@@ -477,7 +481,12 @@ static void FindPointersAndObjects(const Instruction& insn, vvl::unordered_set<u
                 result.insert(insn.Word(i));  // Operands to ext inst
             }
             break;
-
+        case spv::OpGraphEntryPointARM: {
+            for (uint32_t i = 3; i < insn.Length(); i++) {
+                result.insert(insn.Word(i));  // Operands to ext inst
+            }
+            break;
+        }
         default: {
             if (AtomicOperation(insn.Opcode())) {
                 result.insert(insn.Operand(0));  // ptr
@@ -543,8 +552,15 @@ vvl::unordered_set<uint32_t> EntryPoint::GetAccessibleIds(const Module& module_s
     // For some analyses, we need to know about all ids referenced by the static call tree of a particular entrypoint.
     // This is important for identifying the set of shader resources actually used by an entrypoint.
     vvl::unordered_set<uint32_t> worklist;
-    worklist.insert(entrypoint.id);
+    if (entrypoint.entrypoint_insn.Opcode() == spv::OpGraphEntryPointARM) {
+        FindPointersAndObjects(entrypoint.entrypoint_insn, worklist);
+    }
 
+    std::unordered_map<uint32_t, uint32_t> entry_exit_pairs = {
+        { spv::OpFunction, spv::OpFunctionEnd },
+        { spv::OpGraphEntryPointARM, spv::OpGraphEndARM },
+    };
+    worklist.insert(entrypoint.id);
     while (!worklist.empty()) {
         auto worklist_id_iter = worklist.begin();
         auto worklist_id = *worklist_id_iter;
@@ -562,9 +578,10 @@ vvl::unordered_set<uint32_t> EntryPoint::GetAccessibleIds(const Module& module_s
             continue;  // If we already saw this id, we don't want to walk it again.
         }
 
-        if (next_insn->Opcode() == spv::OpFunction) {
+        if (next_insn->Opcode() == spv::OpFunction || next_insn->Opcode() == spv::OpGraphEntryPointARM) {
+            const auto& exit = entry_exit_pairs[next_insn->Opcode()];
             // Scan whole body of the function
-            while (++next_insn, next_insn->Opcode() != spv::OpFunctionEnd) {
+            while (++next_insn, next_insn->Opcode() != exit) {
                 const auto& insn = *next_insn;
                 // Build up list of accessible ID
                 FindPointersAndObjects(insn, worklist);
@@ -854,12 +871,13 @@ ImageAccess::ImageAccess(const Module& module_state, const Instruction& image_in
 
 EntryPoint::EntryPoint(const Module& module_state, const Instruction& entrypoint_insn, const ImageAccessMap& image_access_map,
                        const AccessChainVariableMap& access_chain_map, const VariableAccessMap& variable_access_map,
-                       const DebugNameMap& debug_name_map)
+                       const DebugNameMap& debug_name_map, const bool is_data_graph_entrypoint)
     : entrypoint_insn(entrypoint_insn),
-      execution_model(spv::ExecutionModel(entrypoint_insn.Word(1))),
-      stage(static_cast<VkShaderStageFlagBits>(ExecutionModelToShaderStageFlagBits(execution_model))),
-      id(entrypoint_insn.Word(2)),
-      name(entrypoint_insn.GetAsString(3)),
+      execution_model(is_data_graph_entrypoint ? spv::ExecutionModelGLCompute : spv::ExecutionModel(entrypoint_insn.Word(1))),
+      stage(is_data_graph_entrypoint ? VK_SHADER_STAGE_ALL
+                                     : static_cast<VkShaderStageFlagBits>(ExecutionModelToShaderStageFlagBits(execution_model))),
+      id(is_data_graph_entrypoint ? entrypoint_insn.Word(1) : entrypoint_insn.Word(2)),
+      name(is_data_graph_entrypoint ? entrypoint_insn.GetAsString(2) : entrypoint_insn.GetAsString(3)),
       execution_mode(module_state.GetExecutionModeSet(id)),
       emit_vertex_geometry(false),
       accessible_ids(GetAccessibleIds(module_state, *this)),
@@ -1071,6 +1089,7 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
                 break;
 
             // Entry points
+            case spv::OpGraphEntryPointARM:
             case spv::OpEntryPoint: {
                 entry_point_instructions.push_back(&insn);
                 break;
@@ -1330,8 +1349,9 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
 
     // Need to build the definitions table for FindDef before looking for which instructions each entry point uses
     for (const auto& insn : entry_point_instructions) {
+        bool is_data_graph_entrypoint = insn->Opcode() == spv::OpGraphEntryPointARM;
         entry_points.emplace_back(std::make_shared<EntryPoint>(module_state, *insn, image_access_map, access_chain_map,
-                                                               variable_access_map, debug_name_map));
+                                                               variable_access_map, debug_name_map, is_data_graph_entrypoint));
     }
 }
 

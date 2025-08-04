@@ -185,8 +185,8 @@ bool CoreChecks::ValidatePushConstantUsage(const spirv::Module &module_state, co
     return skip;
 }
 
-static void TypeToDescriptorTypeSet(const spirv::Module &module_state, uint32_t type_id,
-                                    vvl::unordered_set<uint32_t> &descriptor_type_set) {
+void CoreChecks::TypeToDescriptorTypeSet(const spirv::Module &module_state, uint32_t type_id,
+                                         vvl::unordered_set<uint32_t> &descriptor_type_set) {
     const spirv::Instruction *type = module_state.FindDef(type_id);
     bool is_storage_buffer = false;
 
