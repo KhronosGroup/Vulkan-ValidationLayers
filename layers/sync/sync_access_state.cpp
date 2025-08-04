@@ -585,8 +585,8 @@ void ResourceAccessState::ApplySemaphore(const SemaphoreScope &signal, const Sem
             read_access.barriers = VK_PIPELINE_STAGE_2_NONE;
         }
     }
-    if (WriteInQueueSourceScopeOrChain(signal.queue, signal.exec_scope, signal.valid_accesses)) {
-        assert(last_write.has_value());
+    if (last_write.has_value() &&
+        last_write->WriteInQueueSourceScopeOrChain(signal.queue, signal.exec_scope, signal.valid_accesses)) {
         // Will deflect RAW wait queue, WAW needs a chained barrier on wait queue
         read_execution_barriers = wait.exec_scope;
         last_write->barriers_ = wait.valid_accesses;
@@ -679,20 +679,6 @@ void ResourceAccessState::SetQueueId(QueueId id) {
 bool ResourceAccessState::IsWriteBarrierHazard(QueueId queue_id, VkPipelineStageFlags2 src_exec_scope,
                                                const SyncAccessFlags &src_access_scope) const {
     return last_write.has_value() && last_write->IsWriteBarrierHazard(queue_id, src_exec_scope, src_access_scope);
-}
-
-bool ResourceAccessState::WriteInSourceScopeOrChain(VkPipelineStageFlags2 src_exec_scope, SyncAccessFlags src_access_scope) const {
-    return last_write.has_value() && last_write->WriteInSourceScopeOrChain(src_exec_scope, src_access_scope);
-}
-
-bool ResourceAccessState::WriteInQueueSourceScopeOrChain(QueueId queue, VkPipelineStageFlags2 src_exec_scope,
-                                                         const SyncAccessFlags &src_access_scope) const {
-    return last_write.has_value() && last_write->WriteInQueueSourceScopeOrChain(queue, src_exec_scope, src_access_scope);
-}
-
-bool ResourceAccessState::WriteInEventScope(VkPipelineStageFlags2 src_exec_scope, const SyncAccessFlags &src_access_scope,
-                                            QueueId scope_queue, ResourceUsageTag scope_tag) const {
-    return last_write.has_value() && last_write->WriteInEventScope(src_exec_scope, src_access_scope, scope_queue, scope_tag);
 }
 
 // As ReadStates must be unique by stage, this is as good a sort as needed

@@ -140,13 +140,9 @@ class HazardResult {
 };
 
 struct SyncExecScope {
-    VkPipelineStageFlags2 mask_param;  // the xxxStageMask parameter passed by the caller
-    VkPipelineStageFlags2 exec_scope;  // all earlier or later stages that would be affected by a barrier using this scope.
-    SyncAccessFlags valid_accesses;    // all valid accesses that can be used with this scope.
-
-    SyncExecScope() : mask_param(0), exec_scope(0), valid_accesses(0) {}
-    SyncExecScope(VkPipelineStageFlags2 mask_param, VkPipelineStageFlags2 exec_scope, const SyncAccessFlags &valid_accesses)
-        : mask_param(mask_param), exec_scope(exec_scope), valid_accesses(valid_accesses) {}
+    VkPipelineStageFlags2 mask_param = 0;  // the xxxStageMask parameter passed by the caller
+    VkPipelineStageFlags2 exec_scope = 0;  // all earlier or later stages that would be affected by a barrier using this scope.
+    SyncAccessFlags valid_accesses;        // all valid accesses that can be used with this scope.
 
     static SyncExecScope MakeSrc(VkQueueFlags queue_flags, VkPipelineStageFlags2 src_stage_mask,
                                  const VkPipelineStageFlags2 disabled_feature_mask = 0);
@@ -430,15 +426,10 @@ class ResourceAccessState {
 
     bool IsWriteBarrierHazard(QueueId queue_id, VkPipelineStageFlags2 src_exec_scope,
                               const SyncAccessFlags &src_access_scope) const;
-    bool WriteInSourceScopeOrChain(VkPipelineStageFlags2 src_exec_scope, SyncAccessFlags src_access_scope) const;
-    bool WriteInQueueSourceScopeOrChain(QueueId queue, VkPipelineStageFlags2 src_exec_scope,
-                                        const SyncAccessFlags &src_access_scope) const;
-    bool WriteInEventScope(VkPipelineStageFlags2 src_exec_scope, const SyncAccessFlags &src_access_scope, QueueId scope_queue,
-                           ResourceUsageTag scope_tag) const;
 
     struct UntaggedScopeOps {
-        bool WriteInScope(const SyncBarrier &barrier, const ResourceAccessState &access) const {
-            return access.WriteInSourceScopeOrChain(barrier.src_exec_scope.exec_scope, barrier.src_access_scope);
+        bool WriteInScope(const SyncBarrier &barrier, const WriteState &write_state) const {
+            return write_state.WriteInSourceScopeOrChain(barrier.src_exec_scope.exec_scope, barrier.src_access_scope);
         }
         bool ReadInScope(const SyncBarrier &barrier, const ReadState &read_state) const {
             return read_state.ReadInScopeOrChain(barrier.src_exec_scope.exec_scope);
@@ -446,8 +437,8 @@ class ResourceAccessState {
     };
 
     struct QueueScopeOps {
-        bool WriteInScope(const SyncBarrier &barrier, const ResourceAccessState &access) const {
-            return access.WriteInQueueSourceScopeOrChain(queue, barrier.src_exec_scope.exec_scope, barrier.src_access_scope);
+        bool WriteInScope(const SyncBarrier &barrier, const WriteState &write_state) const {
+            return write_state.WriteInQueueSourceScopeOrChain(queue, barrier.src_exec_scope.exec_scope, barrier.src_access_scope);
         }
         bool ReadInScope(const SyncBarrier &barrier, const ReadState &read_state) const {
             return read_state.ReadInQueueScopeOrChain(queue, barrier.src_exec_scope.exec_scope);
@@ -457,8 +448,9 @@ class ResourceAccessState {
     };
 
     struct EventScopeOps {
-        bool WriteInScope(const SyncBarrier &barrier, const ResourceAccessState &access) const {
-            return access.WriteInEventScope(barrier.src_exec_scope.exec_scope, barrier.src_access_scope, scope_queue, scope_tag);
+        bool WriteInScope(const SyncBarrier &barrier, const WriteState &write_state) const {
+            return write_state.WriteInEventScope(barrier.src_exec_scope.exec_scope, barrier.src_access_scope, scope_queue,
+                                                 scope_tag);
         }
         bool ReadInScope(const SyncBarrier &barrier, const ReadState &read_state) const {
             return read_state.ReadInEventScope(barrier.src_exec_scope.exec_scope, scope_queue, scope_tag);
@@ -559,7 +551,7 @@ void ResourceAccessState::ApplyBarrier(ScopeOps &&scope, const SyncBarrier &barr
         pending_layout_transition = true;
         pending_layout_transition_handle_index = layout_transition_handle_index;
     } else {
-        if (scope.WriteInScope(barrier, *this)) {
+        if (last_write.has_value() && scope.WriteInScope(barrier, *last_write)) {
             last_write->UpdatePendingBarriers(barrier);
         }
 
@@ -597,7 +589,7 @@ bool ResourceAccessState::ApplyPredicatedWait(Predicate &predicate) {
 
     // Use the predicate to build a mask of the read stages we are synchronizing
     // Use the sync_stages to also detect reads known to be before any synchronized reads (first pass)
-    for (auto &read_access : last_reads) {
+    for (const auto &read_access : last_reads) {
         if (predicate(read_access)) {
             // If we know this stage is before any stage we syncing, or if the predicate tells us that we are waited for..
             sync_reads |= read_access.stage;
@@ -607,7 +599,7 @@ bool ResourceAccessState::ApplyPredicatedWait(Predicate &predicate) {
     // Now that we know the reads directly in scopejust need to go over the list again to pick up the "known earlier" stages.
     // NOTE: sync_stages is "deep" catching all stages synchronized after it because we forward barriers
     uint32_t unsync_count = 0;
-    for (auto &read_access : last_reads) {
+    for (const auto &read_access : last_reads) {
         if (0 != ((read_access.stage | read_access.sync_stages) & sync_reads)) {
             // This is redundant in the "stage" case, but avoids a second branch to get an accurate count
             sync_reads |= read_access.stage;
