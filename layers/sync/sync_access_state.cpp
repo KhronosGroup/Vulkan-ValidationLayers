@@ -797,7 +797,7 @@ void ResourceAccessState::TouchupFirstForLayoutTransition(ResourceUsageTag tag, 
     }
 }
 
-void ReadState::Set(VkPipelineStageFlags2 stage, SyncAccessIndex access_index, ResourceUsageTagEx tag_ex) {
+void ReadState::Set(VkPipelineStageFlagBits2 stage, SyncAccessIndex access_index, ResourceUsageTagEx tag_ex) {
     assert(access_index != SYNC_ACCESS_INDEX_NONE);
     this->stage = stage;
     this->access_index = access_index;

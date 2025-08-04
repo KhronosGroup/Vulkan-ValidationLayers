@@ -214,7 +214,7 @@ using ResourceUsageTagSet = CachedInsertSet<ResourceUsageTag, 4>;
 // but only up to one per pipeline stage (as another read from the *same* stage become more recent,
 // and applicable one for hazard detection
 struct ReadState {
-    VkPipelineStageFlags2 stage;        // The stage of this read
+    VkPipelineStageFlagBits2 stage;     // The stage of this read
     SyncAccessIndex access_index;       // TODO: Revisit whether this needs to support multiple reads per stage
     VkPipelineStageFlags2 barriers;     // all applicable barriered stages
     VkPipelineStageFlags2 sync_stages;  // reads known to have happened after this
@@ -224,7 +224,7 @@ struct ReadState {
     VkPipelineStageFlags2 pending_dep_chain;  // Should be zero except during barrier application
                                               // Excluded from comparison
 
-    void Set(VkPipelineStageFlags2 stage, SyncAccessIndex access_index, ResourceUsageTagEx tag_ex);
+    void Set(VkPipelineStageFlagBits2 stage, SyncAccessIndex access_index, ResourceUsageTagEx tag_ex);
 
     ResourceUsageTagEx TagEx() const { return {tag, handle_index}; }
     bool operator==(const ReadState &rhs) const {
