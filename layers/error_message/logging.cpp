@@ -36,6 +36,8 @@
 
 [[maybe_unused]] const char *kVUIDUndefined = "VUID_Undefined";
 
+This should cause a compile error
+
 static inline void DebugReportFlagsToAnnotFlags(VkDebugReportFlagsEXT dr_flags, VkDebugUtilsMessageSeverityFlagsEXT *da_severity,
                                                 VkDebugUtilsMessageTypeFlagsEXT *da_type) {
     *da_severity = 0;
