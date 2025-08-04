@@ -23,8 +23,8 @@
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vulkan_core.h>
 #include <vulkan/utility/vk_struct_helper.hpp>
-
-#include "state_tracker/state_tracker.h"
+#include "containers/custom_containers.h"
+#include "state_tracker/data_graph_pipeline_session_state.h"
 #include "state_tracker/shader_stage_state.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/buffer_state.h"
@@ -577,6 +577,37 @@ void DeviceState::PostCallRecordCreateBufferView(VkDevice device, const VkBuffer
     }
 
     Add(CreateBufferViewState(buffer_state, *pView, pCreateInfo, buffer_features));
+}
+
+std::shared_ptr<vvl::DataGraphPipelineSession> DeviceState::CreateDataGraphPipelineSessionState(
+    VkDataGraphPipelineSessionARM handle, const VkDataGraphPipelineSessionCreateInfoARM *pCreateInfo) {
+    return std::make_shared<vvl::DataGraphPipelineSession>(*this, handle, pCreateInfo);
+}
+
+void DeviceState::PostCallRecordCreateDataGraphPipelineSessionARM(
+    VkDevice device, const VkDataGraphPipelineSessionCreateInfoARM *pCreateInfo, const VkAllocationCallbacks *pAllocator,
+    VkDataGraphPipelineSessionARM *pSession, const RecordObject &record_obj) {
+    if (record_obj.result != VK_SUCCESS) return;
+    std::shared_ptr<vvl::DataGraphPipelineSession> pipeline_session_state =
+        CreateDataGraphPipelineSessionState(*pSession, pCreateInfo);
+    Add(std::move(pipeline_session_state));
+}
+
+void DeviceState::PostCallRecordBindDataGraphPipelineSessionMemoryARM(
+    VkDevice device, uint32_t bindInfoCount, const VkBindDataGraphPipelineSessionMemoryInfoARM *pBindInfos,
+    const RecordObject &record_obj) {
+    if (VK_SUCCESS != record_obj.result) {
+        return;
+    }
+    for (uint32_t i = 0; i < bindInfoCount; i++) {
+        auto &bind_info = pBindInfos[i];
+        auto session_state = Get<vvl::DataGraphPipelineSession>(bind_info.session);
+        if (session_state) {
+            auto mem_info = std::shared_ptr<vvl::DeviceMemory>(Get<vvl::DeviceMemory>(bind_info.memory));
+            vvl::MemoryBinding binding = { mem_info, bind_info.memoryOffset, 0 };
+            session_state->AddBoundMemory(bind_info.bindPoint, binding);
+        }
+    }
 }
 
 std::shared_ptr<ImageView> DeviceState::CreateImageViewState(const std::shared_ptr<Image> &image_state, VkImageView handle,
@@ -2125,6 +2156,49 @@ void DeviceState::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, Vk
         });
         dispatch_device_->deferred_operation_post_check.insert(deferredOperation, cleanup_fn);
     }
+}
+
+std::shared_ptr<vvl::Pipeline> DeviceState::CreateDataGraphPipelineState(
+    const VkDataGraphPipelineCreateInfoARM *pCreateInfo, std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
+    std::shared_ptr<const vvl::PipelineLayout> &&layout, spirv::StatelessData *stateless_data) const {
+    return std::make_shared<vvl::Pipeline>(*this, pCreateInfo, std::move(pipeline_cache), std::move(layout), stateless_data);
+}
+
+bool DeviceState::PreCallValidateCreateDataGraphPipelinesARM(
+    VkDevice device, VkDeferredOperationKHR deferredOperation, VkPipelineCache pipelineCache, uint32_t count,
+    const VkDataGraphPipelineCreateInfoARM *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+    const ErrorObject &error_obj, PipelineStates &pipeline_states, chassis::CreateDataGraphPipelinesARM &chassis_state) const {
+    pipeline_states.reserve(count);
+    auto pipeline_cache = Get<vvl::PipelineCache>(pipelineCache);
+    for (uint32_t i = 0; i < count; i++) {
+        // Create and initialize internal tracking data structure
+        pipeline_states.push_back(CreateDataGraphPipelineState(
+            &pCreateInfos[i], pipeline_cache, Get<vvl::PipelineLayout>(pCreateInfos[i].layout), &chassis_state.stateless_data));
+    }
+    return false;
+}
+
+void DeviceState::PostCallRecordCreateDataGraphPipelinesARM(
+    VkDevice device, VkDeferredOperationKHR deferredOperation, VkPipelineCache pipelineCache, uint32_t count,
+    const VkDataGraphPipelineCreateInfoARM *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+    const RecordObject &record_obj, PipelineStates &pipeline_states, chassis::CreateDataGraphPipelinesARM &chassis_state) {
+    // This API may create pipelines regardless of the return value
+    for (uint32_t i = 0; i < count; i++) {
+        if (pPipelines[i] != VK_NULL_HANDLE) {
+            pipeline_states[i]->SetHandle(pPipelines[i]);
+            Add(std::move(pipeline_states[i]));
+        }
+    }
+    pipeline_states.clear();
+}
+
+void DeviceState::PostCallRecordCmdDispatchDataGraphARM(VkCommandBuffer commandBuffer,
+                                                        VkDataGraphPipelineSessionARM session,
+                                                        const VkDataGraphPipelineDispatchInfoARM *pInfo,
+                                                        const RecordObject &record_obj) {
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    std::shared_ptr<vvl::DataGraphPipelineSession> pipeline_session = Get<vvl::DataGraphPipelineSession>(session);
+    cb_state->AddChild(pipeline_session);
 }
 
 void DeviceState::PostCallRecordCreateSampler(VkDevice device, const VkSamplerCreateInfo *pCreateInfo,

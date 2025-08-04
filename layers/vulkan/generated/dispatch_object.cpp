@@ -8358,51 +8358,6 @@ void Device::QueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBandQueueTypeInf
     device_dispatch_table.QueueNotifyOutOfBandNV(queue, pQueueTypeInfo);
 }
 
-VkResult Device::CreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                             VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                             const VkDataGraphPipelineCreateInfoARM* pCreateInfos,
-                                             const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
-    if (!wrap_handles)
-        return device_dispatch_table.CreateDataGraphPipelinesARM(device, deferredOperation, pipelineCache, createInfoCount,
-                                                                 pCreateInfos, pAllocator, pPipelines);
-    vku::safe_VkDataGraphPipelineCreateInfoARM* local_pCreateInfos = nullptr;
-    {
-        deferredOperation = Unwrap(deferredOperation);
-        pipelineCache = Unwrap(pipelineCache);
-        if (pCreateInfos) {
-            local_pCreateInfos = new vku::safe_VkDataGraphPipelineCreateInfoARM[createInfoCount];
-            for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
-                local_pCreateInfos[index0].initialize(&pCreateInfos[index0]);
-                UnwrapPnextChainHandles(local_pCreateInfos[index0].pNext);
-
-                if (pCreateInfos[index0].layout) {
-                    local_pCreateInfos[index0].layout = Unwrap(pCreateInfos[index0].layout);
-                }
-            }
-        }
-    }
-    VkResult result = device_dispatch_table.CreateDataGraphPipelinesARM(device, deferredOperation, pipelineCache, createInfoCount,
-                                                                        (const VkDataGraphPipelineCreateInfoARM*)local_pCreateInfos,
-                                                                        pAllocator, pPipelines);
-    if (local_pCreateInfos) {
-        // Fix check for deferred ray tracing pipeline creation
-        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5817
-        const bool is_operation_deferred = (deferredOperation != VK_NULL_HANDLE) && (result == VK_OPERATION_DEFERRED_KHR);
-        if (is_operation_deferred) {
-            std::vector<std::function<void()>> cleanup{[local_pCreateInfos]() { delete[] local_pCreateInfos; }};
-            deferred_operation_post_completion.insert(deferredOperation, cleanup);
-        } else {
-            delete[] local_pCreateInfos;
-        }
-    }
-    if (result == VK_SUCCESS) {
-        for (uint32_t index0 = 0; index0 < createInfoCount; index0++) {
-            pPipelines[index0] = WrapNew(pPipelines[index0]);
-        }
-    }
-    return result;
-}
-
 VkResult Device::CreateDataGraphPipelineSessionARM(VkDevice device, const VkDataGraphPipelineSessionCreateInfoARM* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator,
                                                    VkDataGraphPipelineSessionARM* pSession) {

@@ -1241,11 +1241,9 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     const auto tensor_state = descriptor.GetTensorViewState()->tensor_state;
     {
         if (tensor_state->unprotected) {
-            return dev_proxy.ValidateUnprotectedTensor(cb_state, *tensor_state, loc.Get(), vuids->protected_command_buffer_02712,
-                                                       " (Tensor is in a descriptorSet)");
+            return dev_proxy.ValidateUnprotectedTensor(cb_state, *tensor_state, loc.Get(), vuids->protected_command_buffer_02712);
         } else {
-            return dev_proxy.ValidateProtectedTensor(cb_state, *tensor_state, loc.Get(), vuids->unprotected_command_buffer_02707,
-                                                     " (Tensor is in a descriptorSet)");
+            return dev_proxy.ValidateProtectedTensor(cb_state, *tensor_state, loc.Get(), vuids->unprotected_command_buffer_02707);
         }
     }
     return false;
