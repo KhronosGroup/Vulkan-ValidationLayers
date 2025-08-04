@@ -51,6 +51,7 @@ struct CreateGraphicsPipelines;
 struct CreateComputePipelines;
 struct CreateRayTracingPipelinesNV;
 struct CreateRayTracingPipelinesKHR;
+struct CreateDataGraphPipelinesARM;
 struct CreateShaderModule;
 struct ShaderObject;
 struct ShaderBinaryData;
@@ -351,6 +352,35 @@ class Device : public Logger {
                                                             const RecordObject& record_obj, PipelineStates& pipeline_states,
                                                             std::shared_ptr<chassis::CreateRayTracingPipelinesKHR> chassis_state) {
         PostCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos,
+                                                   pAllocator, pPipelines, record_obj);
+    }
+
+    // Allow additional state parameter for CreateDataGraphPipelinesARM
+    virtual bool PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                             VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                             const VkDataGraphPipelineCreateInfoARM* pCreateInfos,
+                                                             const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                             const ErrorObject& error_obj, PipelineStates& pipeline_states,
+                                                             chassis::CreateDataGraphPipelinesARM& chassis_state) const {
+        return PreCallValidateCreateDataGraphPipelinesARM(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos,
+                                                           pAllocator, pPipelines, error_obj);
+    }
+    virtual void PreCallRecordCreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                           VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                           const VkDataGraphPipelineCreateInfoARM* pCreateInfos,
+                                                           const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                           const RecordObject& record_obj, PipelineStates& pipeline_states,
+                                                           chassis::CreateDataGraphPipelinesARM& chassis_state) {
+        PreCallRecordCreateDataGraphPipelinesARM(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos,
+                                                  pAllocator, pPipelines, record_obj);
+    }
+    virtual void PostCallRecordCreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                            VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                            const VkDataGraphPipelineCreateInfoARM* pCreateInfos,
+                                                            const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                            const RecordObject& record_obj, PipelineStates& pipeline_states,
+                                                            chassis::CreateDataGraphPipelinesARM& chassis_state) {
+        PostCallRecordCreateDataGraphPipelinesARM(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos,
                                                    pAllocator, pPipelines, record_obj);
     }
 
