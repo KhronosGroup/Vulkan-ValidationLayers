@@ -168,7 +168,7 @@ void SyncValidator::ApplySignalsUpdate(SignalsUpdate &update, const QueueBatchCo
 }
 
 void SyncValidator::ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag) {
-    auto tagged_wait_op = [queue_id, tag](const QueueBatchContext::Ptr &batch) {
+    for (const auto &batch : GetAllQueueBatchContexts()) {
         batch->ApplyTaggedWait(queue_id, tag);
         batch->Trim();
 
@@ -182,20 +182,17 @@ void SyncValidator::ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag) {
             pending_batch->ApplyTaggedWait(queue_id, tag);
             pending_batch->Trim();
         }
-    };
-    ForAllQueueBatchContexts(tagged_wait_op);
+    }
 }
 
 void SyncValidator::ApplyAcquireWait(const AcquiredImage &acquired) {
-    auto acq_wait_op = [&acquired](const QueueBatchContext::Ptr &batch) {
+    for (const auto &batch : GetAllQueueBatchContexts()) {
         batch->ApplyAcquireWait(acquired);
         batch->Trim();
-    };
-    ForAllQueueBatchContexts(acq_wait_op);
+    }
 }
 
-template <typename BatchOp>
-void SyncValidator::ForAllQueueBatchContexts(BatchOp &&op) {
+std::vector<QueueBatchContext::Ptr> SyncValidator::GetAllQueueBatchContexts() {
     // Get last batch from each queue
     std::vector<QueueBatchContext::Ptr> batch_contexts = GetLastBatches([](auto) { return true; });
 
@@ -219,14 +216,7 @@ void SyncValidator::ForAllQueueBatchContexts(BatchOp &&op) {
         sync_swapchain.GetPresentBatches(batch_contexts);
     });
 
-    // Note: The const is to force the reference to const be on all platforms.
-    //
-    // It's not obivious (nor cross platform consitent), that the batch reference should be const
-    // but since it's pointing to the actual *key* for the set it must be. This doesn't make the
-    // object the shared pointer is referencing constant however.
-    for (const auto &batch : batch_contexts) {
-        op(batch);
-    }
+    return batch_contexts;
 }
 
 void SyncValidator::UpdateFenceHostSyncPoint(VkFence fence, FenceHostSyncPoint &&sync_point) {
@@ -321,18 +311,17 @@ void SyncValidator::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer,
     if (const auto buffer_state = Get<vvl::Buffer>(buffer)) {
         const VkDeviceSize base_address = ResourceBaseAddress(*buffer_state);
         const ResourceAccessRange buffer_range(base_address, base_address + buffer_state->create_info.size);
-        auto batch_op = [&buffer_range](const QueueBatchContext::Ptr &batch) {
+        for (const auto &batch : GetAllQueueBatchContexts()) {
             batch->OnResourceDestroyed(buffer_range);
             batch->Trim();
-        };
-        ForAllQueueBatchContexts(batch_op);
+        }
     }
 }
 
 void SyncValidator::PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator,
                                               const RecordObject &record_obj) {
     if (const auto image_state = Get<vvl::Image>(image)) {
-        auto batch_op = [&image_state](const QueueBatchContext::Ptr &batch) {
+        for (const auto &batch : GetAllQueueBatchContexts()) {
             const auto &sub_state = syncval_state::SubState(*image_state);
             ImageRangeGen range_gen = sub_state.MakeImageRangeGen(image_state->full_range, false);
             for (; range_gen->non_empty(); ++range_gen) {
@@ -340,8 +329,7 @@ void SyncValidator::PreCallRecordDestroyImage(VkDevice device, VkImage image, co
                 batch->OnResourceDestroyed(subresource_range);
             }
             batch->Trim();
-        };
-        ForAllQueueBatchContexts(batch_op);
+        }
     }
 }
 
@@ -2350,8 +2338,9 @@ void SyncValidator::PostCallRecordQueueWaitIdle(VkQueue queue, const RecordObjec
 
 void SyncValidator::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordObject &record_obj) {
     // We need to treat this a fence waits for all queues... noting that present engine ops will be preserved.
-    ForAllQueueBatchContexts(
-        [](const QueueBatchContext::Ptr &batch) { batch->ApplyTaggedWait(kQueueAny, ResourceUsageRecord::kMaxIndex); });
+    for (const auto &batch : GetAllQueueBatchContexts()) {
+        batch->ApplyTaggedWait(kQueueAny, ResourceUsageRecord::kMaxIndex);
+    }
 
     // For each timeline keep only the last signal per queue.
     // The last signal is needed to represent the current timeline state.

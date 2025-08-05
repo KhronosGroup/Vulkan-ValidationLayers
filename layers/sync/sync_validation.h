@@ -106,9 +106,7 @@ class SyncValidator : public vvl::DeviceProxy {
     void ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag);
     void ApplyAcquireWait(const AcquiredImage &acquired);
 
-     // Go through every queue batch context and apply synchronization operation
-    template <typename BatchOp>
-    void ForAllQueueBatchContexts(BatchOp &&op);
+    std::vector<QueueBatchContext::Ptr> GetAllQueueBatchContexts();
 
     void UpdateFenceHostSyncPoint(VkFence fence, FenceHostSyncPoint &&sync_point);
 
