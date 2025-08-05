@@ -1143,8 +1143,18 @@ static void SetRenderingInputAttachmentIndices(CommandBuffer::RenderingAttachmen
     for (uint32_t i = 0; i < pLocationInfo->colorAttachmentCount; ++i) {
         attachments.color_indexes[i] = indexes ? indexes[i] : i;
     }
-    attachments.depth_index = pLocationInfo->pDepthInputAttachmentIndex;
-    attachments.stencil_index = pLocationInfo->pStencilInputAttachmentIndex;
+    if (pLocationInfo->pDepthInputAttachmentIndex) {
+        attachments.depth_index_storage = *pLocationInfo->pDepthInputAttachmentIndex;
+        attachments.depth_index = &attachments.depth_index_storage;
+    } else {
+        attachments.depth_index = nullptr;
+    }
+    if (pLocationInfo->pStencilInputAttachmentIndex) {
+        attachments.stencil_index_storage = *pLocationInfo->pStencilInputAttachmentIndex;
+        attachments.stencil_index = &attachments.stencil_index_storage;
+    } else {
+        attachments.stencil_index = nullptr;
+    }
 }
 
 void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
