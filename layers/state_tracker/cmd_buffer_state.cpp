@@ -782,6 +782,8 @@ static void InitDefaultRenderingAttachments(CommandBuffer::RenderingAttachment &
     attachments.color_indexes.resize(count);
     attachments.depth_index = nullptr;
     attachments.stencil_index = nullptr;
+    attachments.set_color_locations = false;
+    attachments.set_color_indexes = false;
     for (uint32_t i = 0; i < count; i++) {
         // Default from spec
         attachments.color_locations[i] = i;
