@@ -670,6 +670,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordBeginConditionalRendering();
     void RecordEndConditionalRendering();
 
+    void RecordSetRenderingAttachmentLocations(const VkRenderingAttachmentLocationInfo *pLocationInfo);
     void RecordSetRenderingInputAttachmentIndices(const VkRenderingInputAttachmentIndexInfo *pLocationInfo);
 
     void RecordBarrierObjects(uint32_t buffer_barrier_count, const VkBufferMemoryBarrier *buffer_barriers,
