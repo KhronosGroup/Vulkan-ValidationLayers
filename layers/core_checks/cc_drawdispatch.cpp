@@ -1378,7 +1378,7 @@ bool CoreChecks::ValidateActionState(const LastBound &last_bound_state, const Dr
         skip |= ValidateDrawDepthStencilAttachments(last_bound_state, vuid);
 
         if (cb_state.active_render_pass && cb_state.active_render_pass->UsesDynamicRendering()) {
-            skip |= ValidateDrawDynamicRenderingFsOutputs(last_bound_state, *cb_state.active_render_pass, loc);
+            skip |= ValidateDrawDynamicRenderingFsOutputs(last_bound_state, cb_state, loc);
             skip |= ValidateDrawDynamicRenderpassExternalFormatResolve(last_bound_state, *cb_state.active_render_pass, vuid);
         }
 
