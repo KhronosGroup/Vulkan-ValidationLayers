@@ -19,6 +19,8 @@
 
 #if VVL_ENABLE_SYNCVAL_STATS != 0
 #include "sync_commandbuffer.h"
+#include "sync_validation.h"
+#include "state_tracker/state_tracker.h"
 
 #include <iostream>
 
@@ -91,6 +93,58 @@ void Stats::RemoveUnresolvedBatch() { unresolved_batch_counter.Sub(1); }
 void Stats::AddHandleRecord(uint32_t count) { handle_record_counter.Add(count); }
 void Stats::RemoveHandleRecord(uint32_t count) { handle_record_counter.Sub(count); }
 
+void AccessContextStats::UpdateMax(const AccessContextStats& cur_stats) {
+#define UPDATE_MAX(field) field = std::max(field, cur_stats.field)
+    UPDATE_MAX(access_contexts);
+    UPDATE_MAX(access_states);
+    UPDATE_MAX(read_states);
+    UPDATE_MAX(write_states);
+    UPDATE_MAX(access_states_with_multiple_reads);
+    UPDATE_MAX(access_states_with_dynamic_allocations);
+    UPDATE_MAX(access_states_dynamic_allocation_size);
+#undef UPDATE_MAX
+}
+
+void AccessContextStats::Report(std::ostringstream& ss) {
+    ss << "\taccess_contexts = " << access_contexts << '\n';
+    ss << "\taccess_states = " << access_states << '\n';
+    ss << "\tread_states = " << read_states << '\n';
+    ss << "\twrite_states = " << write_states << '\n';
+    ss << "\taccess_states_with_multiple_reads = " << access_states_with_multiple_reads << '\n';
+    ss << "\taccess_states_with_dynamic_allocations = " << access_states_with_dynamic_allocations << '\n';
+    ss << "\taccess_states_dynamic_allocation_size = " << access_states_dynamic_allocation_size << '\n';
+}
+
+void UpdateAccessMapStats(const ResourceAccessRangeMap& access_map, AccessContextStats& stats) {
+    stats.access_states += (uint32_t)access_map.size();
+    for (const auto& entry : access_map) {
+        const ResourceAccessState& access_state = entry.second;
+        access_state.UpdateStats(stats);
+    }
+}
+
+void AccessStats::Update(SyncValidator& validator) {
+    std::unique_lock<std::mutex> lock(access_stats_mutex);
+    cb_access_stats = {};
+    queue_access_stats = {};
+    subpass_access_stats = {};
+
+    validator.device_state->ForEachShared<vvl::CommandBuffer>([this](std::shared_ptr<vvl::CommandBuffer> cb) {
+        const CommandBufferAccessContext* cb_access_context = syncval_state::AccessContext(*cb);
+        cb_access_context->UpdateStats(*this);
+    });
+    for (const auto& batch : validator.GetAllQueueBatchContexts()) {
+        const AccessContext& access_context = batch->GetAccessContext();
+        UpdateAccessMapStats(access_context.GetAccessStateMap(), queue_access_stats);
+    }
+
+    max_cb_access_stats.UpdateMax(cb_access_stats);
+    max_queue_access_stats.UpdateMax(queue_access_stats);
+    max_subpass_access_stats.UpdateMax(subpass_access_stats);
+}
+
+void Stats::UpdateAccessStats(SyncValidator& validator) { access_stats.Update(validator); }
+
 void Stats::UpdateMemoryStats() {
 #if defined(USE_MIMALLOC_STATS)
     mi_stats_merge();
@@ -143,6 +197,23 @@ std::string Stats::CreateReport() {
         str << "\tmemory = " << handle_record_memory << " bytes\n";
         str << "\tmax_count = " << handle_record_max << '\n';
         str << "\tmax_memory = " << handle_record_max_memory << " bytes\n";
+    }
+    {
+        str << "Access Context Stats (from most recent update):\n";
+        str << "[cb access context]\n";
+        access_stats.cb_access_stats.Report(str);
+        str << "[queue access context]\n";
+        access_stats.queue_access_stats.Report(str);
+        str << "[subpass access context]\n";
+        access_stats.subpass_access_stats.Report(str);
+
+        str << "Access Context Stats (max values):\n";
+        str << "[cb access context]\n";
+        access_stats.max_cb_access_stats.Report(str);
+        str << "[queue access context]\n";
+        access_stats.max_queue_access_stats.Report(str);
+        str << "[subpass access context]\n";
+        access_stats.max_subpass_access_stats.Report(str);
     }
 
 #if defined(USE_MIMALLOC_STATS)
