@@ -52,6 +52,12 @@ SyncValidator::~SyncValidator() {
 // Location to add per-queue submit debug info if built with -D DEBUG_CAPTURE_KEYBOARD=ON.
 void SyncValidator::DebugCapture() {
     if (report_stats_) {
+        stats.UpdateAccessStats(*this);
+
+        // NOTE: mimalloc stats are not updated here - mostly because they are tracked
+        // per thread and updating stats only for current thread feels a bit unbalanced.
+        // Instead we have specific places to trigger memory stats collection.
+
         const std::string report = stats.CreateReport();
         std::cout << report;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
@@ -2432,6 +2438,7 @@ uint32_t SyncValidator::SetupPresentInfo(const VkPresentInfoKHR &present_info, Q
 
 void SyncValidator::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo,
                                                   const RecordObject &record_obj) {
+    stats.UpdateAccessStats(*this);
     stats.UpdateMemoryStats();
 
     if (!syncval_settings.submit_time_validation) {

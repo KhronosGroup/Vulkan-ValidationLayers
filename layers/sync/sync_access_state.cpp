@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 #include "sync/sync_access_state.h"
+#include "sync/sync_stats.h"
 #include "utils/sync_utils.h"
 #include <vulkan/utility/vk_struct_helper.hpp>
 
@@ -710,6 +711,27 @@ void ResourceAccessState::GatherReferencedTags(ResourceUsageTagSet &used) const 
     for (const auto &read_access : last_reads) {
         used.CachedInsert(read_access.tag);
     }
+}
+
+void ResourceAccessState::UpdateStats(syncval_stats::AccessContextStats &stats) const {
+#if VVL_ENABLE_SYNCVAL_STATS != 0
+    stats.read_states += (uint32_t)last_reads.size();
+    stats.write_states += last_write.has_value();
+    stats.access_states_with_multiple_reads += (last_reads.size() > 1);
+
+    bool is_dynamic_allocation = false;
+    // check if last reads allocate
+    if (last_reads.size() > last_reads.kSmallCapacity) {
+        stats.access_states_dynamic_allocation_size += uint64_t(sizeof(ReadState) * last_reads.size());
+        is_dynamic_allocation = true;
+    }
+    // check if first accesses allocate
+    if (first_accesses_.size() > first_accesses_.kSmallCapacity) {
+        stats.access_states_dynamic_allocation_size += uint64_t(sizeof(ResourceFirstAccess) * first_accesses_.size());
+        is_dynamic_allocation = true;
+    }
+    stats.access_states_with_dynamic_allocations += is_dynamic_allocation;
+#endif
 }
 
 bool ResourceAccessState::IsRAWHazard(const SyncAccessInfo &usage_info) const {

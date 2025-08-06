@@ -23,6 +23,10 @@ class WriteState;
 struct ReadState;
 struct ResourceFirstAccess;
 
+namespace syncval_stats {
+struct AccessContextStats;
+}  // namespace syncval_stats
+
 // NOTE: the attachement read flag is put *only* in the access scope and not in the exect scope, since the ordering
 //       rules apply only to this specific access for this stage, and not the stage as a whole. The ordering detection
 //       also reflects this special case for read hazard detection (using access instead of exec scope)
@@ -470,6 +474,8 @@ class ResourceAccessState {
     static const OrderingBarrier &GetOrderingRules(SyncOrdering ordering_enum) {
         return kOrderingRules[static_cast<size_t>(ordering_enum)];
     }
+
+    void UpdateStats(syncval_stats::AccessContextStats &stats) const;
 
   private:
     static constexpr VkPipelineStageFlags2 kInvalidAttachmentStage = ~VkPipelineStageFlags2(0);

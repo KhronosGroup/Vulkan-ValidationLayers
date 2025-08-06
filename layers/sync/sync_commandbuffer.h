@@ -24,6 +24,10 @@ struct ReportProperties;
 struct RecordObject;
 class SyncValidator;
 
+namespace syncval_stats {
+struct AccessStats;
+}  // namespace syncval_stats
+
 namespace syncval {
 class ErrorMessages;
 }  // namespace syncval
@@ -283,6 +287,8 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     std::string GetDebugRegionName(const ResourceUsageRecord &record) const override;
 
     std::vector<vvl::LabelCommand> &GetProxyLabelCommands() { return proxy_label_commands_; }
+
+    void UpdateStats(syncval_stats::AccessStats &access_stats) const;
 
   private:
     CommandBufferAccessContext(const SyncValidator &sync_validator, VkQueueFlags queue_flags);

@@ -346,6 +346,8 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
     void ResolveSubmitSemaphoreWait(const SignalInfo &signal_info, VkPipelineStageFlags2 wait_mask);
     void ImportTags(const QueueBatchContext &from);
 
+    const AccessContext &GetAccessContext() const { return access_context_; }
+
   private:
     void ResolvePresentSemaphoreWait(const SignalInfo &signal_info, const PresentedImages &presented_images);
 
