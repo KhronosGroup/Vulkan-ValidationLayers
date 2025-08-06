@@ -114,23 +114,23 @@ struct Stats {
     std::mutex mi_stats_mutex;
 #endif
 
-    ValueMax32 command_buffer_context_counter;
+    ValueMax32 command_buffer_contexts;
     void AddCommandBufferContext();
     void RemoveCommandBufferContext();
 
-    ValueMax32 queue_batch_context_counter;
+    ValueMax32 queue_batch_contexts;
     void AddQueueBatchContext();
     void RemoveQueueBatchContext();
 
-    ValueMax32 timeline_signal_counter;
+    ValueMax32 timeline_signals;
     void AddTimelineSignals(uint32_t count);
     void RemoveTimelineSignals(uint32_t count);
 
-    ValueMax32 unresolved_batch_counter;
+    ValueMax32 unresolved_batches;
     void AddUnresolvedBatch();
     void RemoveUnresolvedBatch();
 
-    ValueMax32 handle_record_counter;
+    ValueMax32 handle_records;
     void AddHandleRecord(uint32_t count = 1);
     void RemoveHandleRecord(uint32_t count = 1);
 
