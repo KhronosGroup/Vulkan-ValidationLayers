@@ -276,7 +276,7 @@ class AccessContext {
                                           DetectOptions options) const;
     HazardResult DetectImageBarrierHazard(const vvl::Image &image, VkPipelineStageFlags2 src_exec_scope,
                                           const SyncAccessFlags &src_access_scope, const VkImageSubresourceRange &subresource_range,
-                                          DetectOptions options) const;
+                                          bool is_depth_sliced, DetectOptions options) const;
     HazardResult DetectSubpassTransitionHazard(const TrackBack &track_back, const AttachmentViewGen &attach_view) const;
 
     HazardResult DetectFirstUseHazard(QueueId queue_id, const ResourceUsageRange &tag_range,

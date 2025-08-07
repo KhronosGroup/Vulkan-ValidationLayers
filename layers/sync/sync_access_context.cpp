@@ -521,10 +521,10 @@ HazardResult AccessContext::DetectImageBarrierHazard(const AttachmentViewGen &vi
 
 HazardResult AccessContext::DetectImageBarrierHazard(const vvl::Image &image, VkPipelineStageFlags2 src_exec_scope,
                                                      const SyncAccessFlags &src_access_scope,
-                                                     const VkImageSubresourceRange &subresource_range,
+                                                     const VkImageSubresourceRange &subresource_range, bool is_depth_sliced,
                                                      const DetectOptions options) const {
     BarrierHazardDetector detector(SyncAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION, src_exec_scope, src_access_scope);
-    return DetectHazard(detector, image, subresource_range, false, options);
+    return DetectHazard(detector, image, subresource_range, is_depth_sliced, options);
 }
 
 ResourceAccessRangeMap::iterator AccessContext::UpdateMemoryAccessStateFunctor::Infill(ResourceAccessRangeMap *accesses,
