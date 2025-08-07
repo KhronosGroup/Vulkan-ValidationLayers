@@ -357,22 +357,25 @@ TEST_F(NegativeDeviceQueue, QueuesSameQueueFamily) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceProtectedMemoryFeatures protected_memory_features = vku::InitStructHelper();
+    auto features2 = GetPhysicalDeviceFeatures2(protected_memory_features);
     if (!protected_memory_features.protectedMemory) {
         GTEST_SKIP() << "protectedMemory not supported";
     }
-    RETURN_IF_SKIP(InitState(nullptr, &protected_memory_features));
 
     uint32_t qf_count;
     vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &qf_count, nullptr);
     std::vector<VkQueueFamilyProperties> qf_props(qf_count);
     vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &qf_count, qf_props.data());
 
-    uint32_t index = 0;
+    uint32_t index = UINT32_MAX;
     for (uint32_t i = 0; i < qf_count; ++i) {
-        if (qf_props[i].queueFlags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT) {
+        if (qf_props[i].queueFlags & VK_QUEUE_PROTECTED_BIT) {
             index = i;
             break;
         }
+    }
+    if (UINT32_MAX == index) {
+        GTEST_SKIP() << "no queue supports protected memory";
     }
 
     std::vector<float> priorities(qf_props[index].queueCount, 1.0f);
@@ -387,7 +390,7 @@ TEST_F(NegativeDeviceQueue, QueuesSameQueueFamily) {
     device_queue_ci[1].queueCount = 1u;
     device_queue_ci[1].pQueuePriorities = priorities.data();
 
-    VkDeviceCreateInfo device_ci = vku::InitStructHelper();
+    VkDeviceCreateInfo device_ci = vku::InitStructHelper(&features2);
     device_ci.queueCreateInfoCount = 2u;
     device_ci.pQueueCreateInfos = device_queue_ci;
 
