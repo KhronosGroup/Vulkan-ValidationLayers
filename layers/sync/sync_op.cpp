@@ -20,12 +20,13 @@
 #include "sync/sync_access_context.h"
 #include "sync/sync_commandbuffer.h"
 #include "sync/sync_image.h"
+#include "sync/sync_validation.h"
 
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/render_pass_state.h"
 
-#include "sync/sync_validation.h"
+#include "utils/image_utils.h"
 #include "utils/sync_utils.h"
 
 // Range generators for to allow event scope filtration to be limited to the top of the resource access traversal pipeline
@@ -209,12 +210,14 @@ void ApplyBarriers(const std::vector<SyncBufferMemoryBarrier> &barriers, QueueId
     }
 }
 
-void ApplyBarriers(const std::vector<SyncImageMemoryBarrier> &barriers, QueueId queue_id, AccessContext *access_context) {
+void ApplyBarriers(const std::vector<SyncImageMemoryBarrier> &barriers, QueueId queue_id, AccessContext *access_context,
+                   const DeviceExtensions &extensions) {
     for (const SyncImageMemoryBarrier &barrier : barriers) {
         ApplyBarrierFunctor update_action(
             PipelineBarrierOp(queue_id, barrier.barrier, barrier.layout_transition, barrier.handle_index));
         const auto &sub_state = syncval_state::SubState(*barrier.image);
-        auto range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, false);
+        const bool can_transition_depth_slices = CanTransitionDepthSlices(extensions, sub_state.base.create_info);
+        auto range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, can_transition_depth_slices);
         access_context->UpdateMemoryAccessState(update_action, range_gen);
     }
 }
@@ -256,14 +259,15 @@ void ApplyBarriers(const std::vector<SyncBufferMemoryBarrier> &barriers, QueueId
 }
 
 void ApplyBarriers(const std::vector<SyncImageMemoryBarrier> &barriers, QueueId queue_id, AccessContext *access_context,
-                   const SyncEventState &sync_event) {
+                   const SyncEventState &sync_event, const DeviceExtensions &extensions) {
     for (const SyncImageMemoryBarrier &barrier : barriers) {
         auto sync_barrier = RestrictToEvent(barrier.barrier, sync_event);
         ApplyBarrierFunctor update_action(
             WaitEventBarrierOp(queue_id, sync_event.first_scope_tag, sync_barrier, barrier.layout_transition));
 
         const auto &sub_state = syncval_state::SubState(*barrier.image);
-        auto range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, false);
+        const bool can_transition_depth_slices = CanTransitionDepthSlices(extensions, sub_state.base.create_info);
+        auto range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, can_transition_depth_slices);
         EventImageRangeGenerator filtered_range_gen(sync_event.FirstScope(), range_gen);
 
         access_context->UpdateMemoryAccessState(update_action, filtered_range_gen);
@@ -402,9 +406,11 @@ bool SyncOpPipelineBarrier::Validate(const CommandBufferAccessContext &cb_contex
             continue;
         }
         const vvl::Image &image_state = *image_barrier.image;
-        const auto hazard = context->DetectImageBarrierHazard(image_state, image_barrier.barrier.src_exec_scope.exec_scope,
-                                                              image_barrier.barrier.src_access_scope,
-                                                              image_barrier.subresource_range, AccessContext::kDetectAll);
+        const bool can_transition_depth_slices =
+            CanTransitionDepthSlices(cb_context.GetSyncState().extensions, image_state.create_info);
+        const auto hazard = context->DetectImageBarrierHazard(
+            image_state, image_barrier.barrier.src_exec_scope.exec_scope, image_barrier.barrier.src_access_scope,
+            image_barrier.subresource_range, can_transition_depth_slices, AccessContext::kDetectAll);
         if (hazard.IsHazard()) {
             LogObjectList objlist(cb_context.GetCBState().Handle(), image_state.Handle());
             const Location loc(command_);
@@ -440,7 +446,8 @@ void SyncOpPipelineBarrier::ReplayRecord(CommandExecutionContext &exec_context, 
     AccessContext *access_context = exec_context.GetCurrentAccessContext();
     const auto queue_id = exec_context.GetQueueId();
     PipelineBarrier::ApplyBarriers(barrier_set_.buffer_memory_barriers, queue_id, access_context);
-    PipelineBarrier::ApplyBarriers(barrier_set_.image_memory_barriers, queue_id, access_context);
+    PipelineBarrier::ApplyBarriers(barrier_set_.image_memory_barriers, queue_id, access_context,
+                                   exec_context.GetSyncState().extensions);
     PipelineBarrier::ApplyGlobalBarriers(barrier_set_.memory_barriers, queue_id, exec_tag, access_context);
     if (barrier_set_.single_exec_scope) {
         events_context->ApplyBarrier(barrier_set_.src_exec_scope, barrier_set_.dst_exec_scope, exec_tag);
@@ -707,7 +714,8 @@ void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext &exec_context, Resou
             // but do not update the dependency chain information (but set the "pending" state) // s.t. the order independence
             // of the barriers is maintained.
             Events::ApplyBarriers(barrier_set.buffer_memory_barriers, queue_id, access_context, *sync_event);
-            Events::ApplyBarriers(barrier_set.image_memory_barriers, queue_id, access_context, *sync_event);
+            Events::ApplyBarriers(barrier_set.image_memory_barriers, queue_id, access_context, *sync_event,
+                                  exec_context.GetSyncState().extensions);
             Events::ApplyGlobalBarriers(barrier_set.memory_barriers, queue_id, exec_tag, access_context, *sync_event);
 
             // Apply the global barrier to the event itself (for race condition tracking)
