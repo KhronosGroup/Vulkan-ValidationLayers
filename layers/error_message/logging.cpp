@@ -280,18 +280,13 @@ std::string DebugReport::CreateMessageText(const Location &loc, std::string_view
 
     // Append the spec error text to the error message, unless it contains a word treated as special
     if ((vuid_text.find("VUID-") != std::string::npos)) {
-        // Linear search makes no assumptions about the layout of the string table. This is not fast, but it does not need to be at
-        // this point in the error reporting path
-        uint32_t num_vuids = sizeof(vuid_spec_text) / sizeof(vuid_spec_text_pair);
         const char *spec_text = nullptr;
         // Only the Antora site will make use of the sections
         const char *spec_url_section = nullptr;
-        for (uint32_t i = 0; i < num_vuids; i++) {
-            if (0 == strncmp(vuid_text.data(), vuid_spec_text[i].vuid, vuid_text.size())) {
-                spec_text = vuid_spec_text[i].spec_text;
-                spec_url_section = vuid_spec_text[i].url_id;
-                break;
-            }
+        const auto found_vuid = GetVuidMap().find(vuid_text);
+        if (found_vuid != GetVuidMap().end()) {
+            spec_text = found_vuid->second.spec_text.data();
+            spec_url_section = found_vuid->second.url_id.data();
         }
 
         // Construct and append the specification text and link to the appropriate version of the spec
@@ -415,20 +410,14 @@ std::string DebugReport::CreateMessageJson(VkFlags msg_flags, const Location &lo
     }
 
     if ((vuid_text.find("VUID-") != std::string::npos)) {
-        // Linear search makes no assumptions about the layout of the string table. This is not fast, but it does not need to be at
-        // this point in the error reporting path
-        uint32_t num_vuids = sizeof(vuid_spec_text) / sizeof(vuid_spec_text_pair);
         const char *spec_text = nullptr;
         // Only the Antora site will make use of the sections
         const char *spec_url_section = nullptr;
-        for (uint32_t i = 0; i < num_vuids; i++) {
-            if (0 == strncmp(vuid_text.data(), vuid_spec_text[i].vuid, vuid_text.size())) {
-                spec_text = vuid_spec_text[i].spec_text;
-                spec_url_section = vuid_spec_text[i].url_id;
-                break;
-            }
+        const auto found_vuid = GetVuidMap().find(vuid_text);
+        if (found_vuid != GetVuidMap().end()) {
+            spec_text = found_vuid->second.spec_text.data();
+            spec_url_section = found_vuid->second.url_id.data();
         }
-
         if (spec_text) {
             oss << line_start << "\"SpecText\" : \"" << spec_text << "\"," << new_line;
         } else {
