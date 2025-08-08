@@ -78,7 +78,9 @@ void QueueSubmissionValidator::Validate(const vvl::QueueSubmission& submission) 
     }
 
     // Check that image being presented has correct layout
-    if (submission.swapchain) {
+    // NOTE: Do separate check that swapchain and its images are not destroyed at this point.
+    //       For example, you can destroy swapchain after it was used as the old swapchain.
+    if (submission.swapchain && !submission.swapchain_image->Destroyed()) {
         std::vector<VkImageLayout> layouts;
         if (submission.swapchain_image && FindLayouts(*submission.swapchain_image, layouts)) {
             for (auto layout : layouts) {
