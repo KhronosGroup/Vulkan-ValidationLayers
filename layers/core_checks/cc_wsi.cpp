@@ -517,7 +517,7 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
                 }
             }
         }
-        if (!found_match) {
+        if (!found_match && !formats.empty()) {
             if (!found_format) {
                 if (LogError("VUID-VkSwapchainCreateInfoKHR-imageFormat-01273", device, create_info_loc.dot(Field::imageFormat),
                              "is %s.", string_VkFormat(create_info.imageFormat))) {
