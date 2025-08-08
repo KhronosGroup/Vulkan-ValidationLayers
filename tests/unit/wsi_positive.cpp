@@ -2681,3 +2681,60 @@ TEST_F(PositiveWsi, DestroySemaphoreUsedByOldSwapchain2) {
     m_default_queue->Submit(vkt::no_cmd, vkt::Signal(semaphore));
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveWsi, DestroySwapchainBeforeLayoutValidation) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10455
+    TEST_DESCRIPTION("Delete swapchain before global layout validation takes place");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    const SurfaceInformation info = GetSwapchainInfo(m_surface.Handle());
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
+    swapchain_ci.surface = m_surface.Handle();
+    swapchain_ci.minImageCount = info.surface_capabilities.minImageCount;
+    swapchain_ci.imageFormat = info.surface_formats[0].format;
+    swapchain_ci.imageColorSpace = info.surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = info.surface_capabilities.minImageExtent;
+    swapchain_ci.imageArrayLayers = 1;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = info.surface_composite_alpha;
+    swapchain_ci.presentMode = VK_PRESENT_MODE_FIFO_KHR;
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+
+    const auto swapchain_images = swapchain.GetImages();
+
+    vkt::Semaphore render_semaphore(*m_device);
+    vkt::Fence fence(*m_device);
+
+    const uint32_t image_index = swapchain.AcquireNextImage(fence, kWaitTimeout);
+    fence.Wait(kWaitTimeout);
+
+    VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
+    layout_transition.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    layout_transition.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    layout_transition.image = swapchain_images[image_index];
+    layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+    m_command_buffer.Barrier(layout_transition);
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer, vkt::Signal(render_semaphore));
+    m_default_queue->Present(swapchain, image_index, render_semaphore);
+
+    swapchain_ci.oldSwapchain = swapchain.handle();
+    vkt::Swapchain swapchain2(*m_device, swapchain_ci);
+    swapchain.Destroy();
+
+    // In current implementation global layout validation is performed by the queue threads and it happens
+    // usually at sync points, for example, during the next Wait(). Test that layout validation does not
+    // cause false positives here.
+    m_default_queue->Wait();
+}
