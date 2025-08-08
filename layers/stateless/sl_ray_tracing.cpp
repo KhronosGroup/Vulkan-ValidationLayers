@@ -1416,7 +1416,7 @@ bool Device::manual_PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(
                             string_VkIndexType(as_geometry.geometry.triangles.indexType));
                     }
 
-                    if (SafeModulo(as_geometry.geometry.triangles.indexData.deviceAddress, 16) != 0) {
+                    if (SafeModulo(as_geometry.geometry.triangles.transformData.deviceAddress, 16) != 0) {
                         skip |= LogError("VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03810", commandBuffer,
                                          geometry_loc.dot(Field::geometry)
                                              .dot(Field::triangles)
