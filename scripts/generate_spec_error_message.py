@@ -192,20 +192,26 @@ def GenerateSpecErrorMessage(api : str, valid_usage_json : str, out_file : str):
  ****************************************************************************/
 #pragma once
 
+#include "containers/custom_containers.h"
+
+#include <array>
+
 // clang-format off
 
 // Mapping from VUID string to the corresponding spec text
-typedef struct _vuid_spec_text_pair {{
-    const char * vuid;
-    const char * spec_text;
-    const char * url_id;
-}} vuid_spec_text_pair;
-\n''')
+struct vuid_info {{
+    const std::string_view spec_text;
+    const std::string_view url_id;
+}};
+''')
 
     vuid_list = list(val_json.all_vuids)
     vuid_list.sort()
 
-    out.append('static const vuid_spec_text_pair vuid_spec_text[] = {\n')
+    out.append(f'''
+const vvl::unordered_map<std::string_view, vuid_info> &GetVuidMap() {{
+    static const std::array<std::pair<std::string_view, vuid_info>, {len(vuid_list)}> vuid_array = {{{{
+''')
     for vuid in vuid_list:
         db_entry = val_json.vuid_db[vuid][0]
         html_page = db_entry['page']
@@ -222,12 +228,16 @@ typedef struct _vuid_spec_text_pair {{
         if vuid in oversized_vus:
             db_text = oversized_vus[vuid]
 
-        out.append(f'    {{"{vuid}", "{db_text}", "{html_page}"}},\n')
+        out.append(f'        {{ {{"{vuid}", {len(vuid)}}}, {{ {{"{db_text}", {len(db_text)}}}, {{ "{html_page}", {len(html_page)}}} }} }},\n')
         # For multiply-defined VUIDs, include versions with extension appended
         if len(val_json.vuid_db[vuid]) > 1:
             print(f'Warning: Found a duplicate VUID: {vuid}')
 
-    out.append('};')
+    out.append('''    }};
+    static const vvl::unordered_map<std::string_view, vuid_info> vuid_map(std::begin(vuid_array), std::end(vuid_array));
+    return vuid_map;
+}
+''')
 
     with open(out_file, 'w', newline='\n', encoding='utf-8') as file:
         file.write("".join(out))

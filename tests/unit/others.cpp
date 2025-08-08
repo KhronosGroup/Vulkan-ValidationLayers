@@ -63,11 +63,10 @@ TEST_F(VkLayerTest, UnsupportedPnextApiVersion) {
 TEST_F(VkLayerTest, VuidCheckForHashCollisions) {
     TEST_DESCRIPTION("Ensure there are no VUID hash collisions");
 
-    constexpr uint64_t num_vuids = sizeof(vuid_spec_text) / sizeof(vuid_spec_text[0]);
     std::vector<uint32_t> hashes;
-    hashes.reserve(num_vuids);
-    for (const auto &vuid_spec_text_pair : vuid_spec_text) {
-        const uint32_t hash = hash_util::VuidHash(vuid_spec_text_pair.vuid);
+    hashes.reserve(GetVuidMap().size());
+    for (const auto &vuid_spec_text_pair : GetVuidMap()) {
+        const uint32_t hash = hash_util::VuidHash(vuid_spec_text_pair.first);
         hashes.push_back(hash);
     }
     std::sort(hashes.begin(), hashes.end());
