@@ -666,6 +666,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->rayTracingPipelineTraceRaysIndirect2 |= enabled->rayTracingPipelineTraceRaysIndirect2 == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_UNTYPED_POINTERS_FEATURES_KHR: {
+                const VkPhysicalDeviceShaderUntypedPointersFeaturesKHR *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceShaderUntypedPointersFeaturesKHR *>(pNext);
+                features->shaderUntypedPointers |= enabled->shaderUntypedPointers == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MAXIMAL_RECONVERGENCE_FEATURES_KHR: {
                 const VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR *enabled =
                     reinterpret_cast<const VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR *>(pNext);

@@ -892,6 +892,8 @@ struct DeviceFeatures {
     bool shaderTileImageDepthReadAccess;
     // VkPhysicalDeviceShaderTileImageFeaturesEXT
     bool shaderTileImageStencilReadAccess;
+    // VkPhysicalDeviceShaderUntypedPointersFeaturesKHR
+    bool shaderUntypedPointers;
     // VkPhysicalDeviceShadingRateImageFeaturesNV
     bool shadingRateCoarseSampleOrder;
     // VkPhysicalDeviceShadingRateImageFeaturesNV
