@@ -882,6 +882,8 @@ enum class Feature {
     shaderTileImageDepthReadAccess,
     // VkPhysicalDeviceShaderTileImageFeaturesEXT
     shaderTileImageStencilReadAccess,
+    // VkPhysicalDeviceShaderUntypedPointersFeaturesKHR
+    shaderUntypedPointers,
     // VkPhysicalDeviceShadingRateImageFeaturesNV
     shadingRateCoarseSampleOrder,
     // VkPhysicalDeviceShadingRateImageFeaturesNV

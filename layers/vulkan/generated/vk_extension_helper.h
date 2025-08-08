@@ -233,6 +233,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_copy_commands2{kNotEnabled};
     ExtEnabled vk_khr_format_feature_flags2{kNotEnabled};
     ExtEnabled vk_khr_ray_tracing_maintenance1{kNotEnabled};
+    ExtEnabled vk_khr_shader_untyped_pointers{kNotEnabled};
     ExtEnabled vk_khr_maintenance4{kNotEnabled};
     ExtEnabled vk_khr_shader_subgroup_rotate{kNotEnabled};
     ExtEnabled vk_khr_shader_maximal_reconvergence{kNotEnabled};
@@ -692,6 +693,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_KHR_copy_commands2:
         case vvl::Extension::_VK_KHR_format_feature_flags2:
         case vvl::Extension::_VK_KHR_ray_tracing_maintenance1:
+        case vvl::Extension::_VK_KHR_shader_untyped_pointers:
         case vvl::Extension::_VK_KHR_maintenance4:
         case vvl::Extension::_VK_KHR_shader_subgroup_rotate:
         case vvl::Extension::_VK_KHR_shader_maximal_reconvergence:

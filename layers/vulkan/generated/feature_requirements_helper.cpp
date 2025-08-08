@@ -6845,6 +6845,21 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
                     "VkPhysicalDeviceShaderTileImageFeaturesEXT::shaderTileImageStencilReadAccess"};
         }
 
+        case Feature::shaderUntypedPointers: {
+            auto vk_struct = const_cast<VkPhysicalDeviceShaderUntypedPointersFeaturesKHR *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceShaderUntypedPointersFeaturesKHR>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceShaderUntypedPointersFeaturesKHR;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->shaderUntypedPointers, "VkPhysicalDeviceShaderUntypedPointersFeaturesKHR::shaderUntypedPointers"};
+        }
+
         case Feature::shadingRateCoarseSampleOrder: {
             auto vk_struct = const_cast<VkPhysicalDeviceShadingRateImageFeaturesNV *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceShadingRateImageFeaturesNV>(*inout_pnext_chain));

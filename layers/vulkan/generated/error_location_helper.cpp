@@ -1628,6 +1628,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceShaderTerminateInvocationFeatures", 50},
     {"VkPhysicalDeviceShaderTileImageFeaturesEXT", 43},
     {"VkPhysicalDeviceShaderTileImagePropertiesEXT", 45},
+    {"VkPhysicalDeviceShaderUntypedPointersFeaturesKHR", 49},
     {"VkPhysicalDeviceShadingRateImageFeaturesNV", 43},
     {"VkPhysicalDeviceShadingRateImagePropertiesNV", 45},
     {"VkPhysicalDeviceSparseImageFormatInfo2", 39},
@@ -4700,6 +4701,7 @@ const char* String(Field field) {
     {"shaderUniformBufferArrayNonUniformIndexingNative", 49},
     {"shaderUniformTexelBufferArrayDynamicIndexing", 45},
     {"shaderUniformTexelBufferArrayNonUniformIndexing", 48},
+    {"shaderUntypedPointers", 22},
     {"shaderWarpsPerCore", 19},
     {"shaderWarpsPerSM", 17},
     {"shaderZeroInitializeWorkgroupMemory", 36},
@@ -5764,6 +5766,7 @@ const char* String(Extension extension) {
     {"VK_KHR_shader_subgroup_rotate", 30},
     {"VK_KHR_shader_subgroup_uniform_control_flow", 44},
     {"VK_KHR_shader_terminate_invocation", 35},
+    {"VK_KHR_shader_untyped_pointers", 31},
     {"VK_KHR_shared_presentable_image", 32},
     {"VK_KHR_spirv_1_4", 17},
     {"VK_KHR_storage_buffer_storage_class", 36},
@@ -7326,6 +7329,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MAINTENANCE_1_FEATURES_KHR:
        return Struct::VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_UNTYPED_POINTERS_FEATURES_KHR:
+       return Struct::VkPhysicalDeviceShaderUntypedPointersFeaturesKHR;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MAXIMAL_RECONVERGENCE_FEATURES_KHR:
        return Struct::VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR;
     case VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_PRESENT_ID_2_KHR:

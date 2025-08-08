@@ -283,6 +283,9 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites(
         {spv::CapabilityFloat8EXT, {0, &DeviceFeatures::shaderFloat8, nullptr, ""}},
         {spv::CapabilityFloat8CooperativeMatrixEXT, {0, &DeviceFeatures::shaderFloat8CooperativeMatrix, nullptr, ""}},
         {spv::CapabilityGraphARM, {0, &DeviceFeatures::dataGraph, nullptr, ""}},
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+        {spv::CapabilityUntypedPointersKHR, {0, &DeviceFeatures::shaderUntypedPointers, nullptr, ""}},
+#endif
     };
     // clang-format on
     return spirv_capabilities;
@@ -409,6 +412,7 @@ const std::unordered_multimap<std::string_view, RequiredSpirvInfo>& GetSpirvExte
         {"SPV_ARM_tensors", {0, nullptr, &DeviceExtensions::vk_arm_tensors, ""}},
         {"SPV_EXT_float8", {0, nullptr, &DeviceExtensions::vk_ext_shader_float8, ""}},
         {"SPV_ARM_graph", {0, nullptr, &DeviceExtensions::vk_arm_data_graph, ""}},
+        {"SPV_KHR_untyped_pointers", {0, nullptr, &DeviceExtensions::vk_khr_shader_untyped_pointers, ""}},
     };
     // clang-format on
     return spirv_extensions;
@@ -1214,6 +1218,9 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityFloat8EXT, "VkPhysicalDeviceShaderFloat8FeaturesEXT::shaderFloat8"},
     {spv::CapabilityFloat8CooperativeMatrixEXT, "VkPhysicalDeviceShaderFloat8FeaturesEXT::shaderFloat8CooperativeMatrix"},
     {spv::CapabilityGraphARM, "VkPhysicalDeviceDataGraphFeaturesARM::dataGraph"},
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    {spv::CapabilityUntypedPointersKHR, "VkPhysicalDeviceShaderUntypedPointersFeaturesKHR::shaderUntypedPointers"},
+#endif  // VK_ENABLE_BETA_EXTENSIONS
     };
 
     // VUs before catch unknown capabilities
@@ -1320,6 +1327,7 @@ static inline std::string SpvExtensionRequirements(std::string_view extension) {
     {"SPV_ARM_tensors", {{vvl::Extension::_VK_ARM_tensors}}},
     {"SPV_EXT_float8", {{vvl::Extension::_VK_EXT_shader_float8}}},
     {"SPV_ARM_graph", {{vvl::Extension::_VK_ARM_data_graph}}},
+    {"SPV_KHR_untyped_pointers", {{vvl::Extension::_VK_KHR_shader_untyped_pointers}}},
     };
 
     // VUs before catch unknown extensions
