@@ -107,6 +107,21 @@ bool CoreChecks::ValidateRayTracingPipeline(const vvl::Pipeline &pipeline,
             }
         }
     }
+    if (const auto *cluster_accel_info =
+            vku::FindStructInPNextChain<VkRayTracingPipelineClusterAccelerationStructureCreateInfoNV>(create_info.pNext)) {
+        const Location cluster_loc = create_info_loc.pNext(Struct::VkRayTracingPipelineClusterAccelerationStructureCreateInfoNV);
+
+        if (cluster_accel_info->allowClusterAccelerationStructure == VK_TRUE) {
+            // Validate that required features/extensions are enabled
+            if (!enabled_features.clusterAccelerationStructure) {
+                skip |=
+                    LogError("VUID-VkRayTracingPipelineClusterAccelerationStructureCreateInfoNV-clusterAccelerationStructure-10576",
+                             device, cluster_loc.dot(Field::allowClusterAccelerationStructure),
+                             "The VkPhysicalDeviceClusterAccelerationStructureFeaturesNV::clusterAccelerationStructure feature "
+                             "must be enabled.");
+            }
+        }
+    }
     return skip;
 }
 

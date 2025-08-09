@@ -234,3 +234,56 @@ TEST_F(PositiveRayTracingPipeline, GetRayTracingShaderGroupStackSizeKHR) {
         vk::GetRayTracingShaderGroupStackSizeKHR(device(), rt_pipe, 1, VK_SHADER_GROUP_SHADER_GENERAL_KHR);
     (void)stack_size;
 }
+
+TEST_F(PositiveRayTracingPipeline, ClusterAccelerationStructureFeatureEnabled) {
+    TEST_DESCRIPTION("Test that ray tracing pipeline creation succeeds when cluster acceleration structure feature is enabled");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_NV_CLUSTER_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::clusterAccelerationStructure);  // Enable the feature
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
+    VkShaderObj rgen_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
+
+    VkPipeline pipeline = VK_NULL_HANDLE;
+    VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
+    stage_create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+    stage_create_info.module = rgen_shader;
+    stage_create_info.pName = "main";
+
+    VkRayTracingShaderGroupCreateInfoKHR group_create_info = vku::InitStructHelper();
+    group_create_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+    group_create_info.generalShader = 0;
+    group_create_info.closestHitShader = VK_SHADER_UNUSED_KHR;
+    group_create_info.anyHitShader = VK_SHADER_UNUSED_KHR;
+    group_create_info.intersectionShader = VK_SHADER_UNUSED_KHR;
+
+    VkPipelineLibraryCreateInfoKHR library_info = vku::InitStructHelper();
+    library_info.libraryCount = 0;
+
+    // Create cluster acceleration structure info with allowClusterAccelerationStructure = VK_TRUE
+    VkRayTracingPipelineClusterAccelerationStructureCreateInfoNV cluster_info = vku::InitStructHelper();
+    cluster_info.allowClusterAccelerationStructure = VK_TRUE;
+
+    VkRayTracingPipelineCreateInfoKHR pipeline_ci = vku::InitStructHelper(&cluster_info);
+    pipeline_ci.pLibraryInfo = &library_info;
+    pipeline_ci.stageCount = 1;
+    pipeline_ci.pStages = &stage_create_info;
+    pipeline_ci.groupCount = 1;
+    pipeline_ci.pGroups = &group_create_info;
+    pipeline_ci.layout = empty_pipeline_layout;
+
+    // Should succeed because clusterAccelerationStructure feature is enabled
+    VkResult result =
+        vk::CreateRayTracingPipelinesKHR(*m_device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+    ASSERT_EQ(VK_SUCCESS, result);
+
+    if (pipeline != VK_NULL_HANDLE) {
+        vk::DestroyPipeline(*m_device, pipeline, nullptr);
+    }
+}

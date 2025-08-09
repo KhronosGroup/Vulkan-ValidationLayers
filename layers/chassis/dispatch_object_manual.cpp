@@ -359,6 +359,8 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
     // Extensions with properties to extract to DeviceExtensionProperties
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_nv_partitioned_acceleration_structure,
         &phys_dev_ext_props.partitioned_acceleration_structure_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_nv_cluster_acceleration_structure,
+        &phys_dev_ext_props.cluster_acceleration_props);
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_nv_shading_rate_image,
                                              &phys_dev_ext_props.shading_rate_image_props);
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_nv_mesh_shader,

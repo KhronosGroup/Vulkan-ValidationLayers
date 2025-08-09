@@ -783,7 +783,7 @@ TEST_F(NegativeRayTracingPipeline, LibraryFlags) {
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {});
 
-    const char *ray_generation_shader = R"glsl(
+    const char* ray_generation_shader = R"glsl(
         #version 460 core
         #extension GL_KHR_ray_tracing : enable
         void main() {
@@ -1003,7 +1003,7 @@ TEST_F(NegativeRayTracingPipeline, DeferredOp) {
     }
     RETURN_IF_SKIP(InitState());
 
-    static const char *chit_src = R"glsl(
+    static const char* chit_src = R"glsl(
         #version 460
         #extension GL_EXT_ray_tracing : require // Requires SPIR-V 1.5 (Vulkan 1.2)
         layout(location = 0) rayPayloadEXT uvec4 hitValue;
@@ -1671,5 +1671,57 @@ TEST_F(NegativeRayTracingPipeline, RaygenOneMissShaderOneClosestHitShader) {
     m_errorMonitor->SetDesiredError("VUID-VkRayTracingPipelineCreateInfoKHR-layout-07988");
     m_errorMonitor->SetDesiredError("UNASSIGNED-GeneralParameterError-RequiredHandle");
     pipeline.Build();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeRayTracingPipeline, ClusterAccelerationStructureFeatureDisabled) {
+    TEST_DESCRIPTION(
+        "Test VUID-10576: clusterAccelerationStructure feature must be enabled when using cluster acceleration structure pipeline "
+        "info");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_NV_CLUSTER_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    // Deliberately NOT enabling clusterAccelerationStructure feature
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
+    VkShaderObj rgen_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
+
+    VkPipeline pipeline = VK_NULL_HANDLE;
+    VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
+    stage_create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+    stage_create_info.module = rgen_shader;
+    stage_create_info.pName = "main";
+
+    VkRayTracingShaderGroupCreateInfoKHR group_create_info = vku::InitStructHelper();
+    group_create_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+    group_create_info.generalShader = 0;
+    group_create_info.closestHitShader = VK_SHADER_UNUSED_KHR;
+    group_create_info.anyHitShader = VK_SHADER_UNUSED_KHR;
+    group_create_info.intersectionShader = VK_SHADER_UNUSED_KHR;
+
+    VkPipelineLibraryCreateInfoKHR library_info = vku::InitStructHelper();
+    library_info.libraryCount = 0;
+
+    // Create cluster acceleration structure info with allowClusterAccelerationStructure = VK_TRUE
+    VkRayTracingPipelineClusterAccelerationStructureCreateInfoNV cluster_info = vku::InitStructHelper();
+    cluster_info.allowClusterAccelerationStructure = VK_TRUE;
+
+    VkRayTracingPipelineCreateInfoKHR pipeline_ci = vku::InitStructHelper(&cluster_info);
+    pipeline_ci.pLibraryInfo = &library_info;
+    pipeline_ci.stageCount = 1;
+    pipeline_ci.pStages = &stage_create_info;
+    pipeline_ci.groupCount = 1;
+    pipeline_ci.pGroups = &group_create_info;
+    pipeline_ci.layout = empty_pipeline_layout;
+
+    // Should trigger VUID-10576 because clusterAccelerationStructure feature is not enabled
+    m_errorMonitor->SetDesiredError(
+        "VUID-VkRayTracingPipelineClusterAccelerationStructureCreateInfoNV-clusterAccelerationStructure-10576");
+    vk::CreateRayTracingPipelinesKHR(*m_device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
     m_errorMonitor->VerifyFound();
 }

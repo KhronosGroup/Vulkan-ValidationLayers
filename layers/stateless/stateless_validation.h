@@ -502,6 +502,13 @@ class Device : public vvl::base::Device {
     bool ValidateGeometryNV(const VkGeometryNV &geometry, VkAccelerationStructureNV object_handle, const Location &loc) const;
     bool ValidateAccelerationStructureInfoNV(const Context &context, const VkAccelerationStructureInfoNV &info,
                                              VkAccelerationStructureNV object_handle, const Location &loc) const;
+    bool ValidateClusterAccelerationStructureClustersBottomLevelInputNV(
+        const Context &context, const VkClusterAccelerationStructureClustersBottomLevelInputNV &input, const Location &loc) const;
+    bool ValidateClusterAccelerationStructureTriangleClusterInputNV(
+        const Context &context, const VkClusterAccelerationStructureTriangleClusterInputNV &input, const Location &loc) const;
+    bool ValidateClusterAccelerationStructureMoveObjectsInputNV(const Context &context,
+                                                                const VkClusterAccelerationStructureMoveObjectsInputNV &input,
+                                                                const Location &loc) const;
     bool ValidateSwapchainCreateInfoMaintenance1(const VkSwapchainCreateInfoKHR &create_info, const Location &loc) const;
     bool ValidateSwapchainCreateInfo(const Context &context, const VkSwapchainCreateInfoKHR &create_info,
                                      const Location &loc) const;
@@ -1180,6 +1187,14 @@ class Device : public vvl::base::Device {
     bool manual_PreCallValidateCmdConvertCooperativeVectorMatrixNV(VkCommandBuffer commandBuffer, uint32_t infoCount,
                                                                    const VkConvertCooperativeVectorMatrixInfoNV *pInfos,
                                                                    const Context &context) const;
+
+    bool manual_PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV(
+        VkCommandBuffer commandBuffer, const VkClusterAccelerationStructureCommandsInfoNV *pInfo, const Context &context) const;
+
+    bool manual_PreCallValidateGetClusterAccelerationStructureBuildSizesNV(VkDevice device,
+                                                                           const VkClusterAccelerationStructureInputInfoNV *pInfo,
+                                                                           VkAccelerationStructureBuildSizesInfoKHR *pSizeInfo,
+                                                                           const Context &context) const;
 
 #include "generated/stateless_device_methods.h"
 };

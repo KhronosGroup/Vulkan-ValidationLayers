@@ -65,6 +65,7 @@ class Device;
 // TODO: this could be defined and initialized via generated code
 struct DeviceExtensionProperties {
     VkPhysicalDevicePartitionedAccelerationStructurePropertiesNV partitioned_acceleration_structure_props;
+    VkPhysicalDeviceClusterAccelerationStructurePropertiesNV cluster_acceleration_props;
     VkPhysicalDeviceShadingRateImagePropertiesNV shading_rate_image_props;
     VkPhysicalDeviceMeshShaderPropertiesNV mesh_shader_props_nv;
     VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_props_ext;

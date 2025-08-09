@@ -218,6 +218,8 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkReleaseSwapchainImagesKHR',
             'vkConvertCooperativeVectorMatrixNV',
             'vkCmdConvertCooperativeVectorMatrixNV',
+            'vkCmdBuildClusterAccelerationStructureIndirectNV',
+            'vkGetClusterAccelerationStructureBuildSizesNV',
         ]
 
         # Commands to ignore
