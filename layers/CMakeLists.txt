@@ -216,6 +216,7 @@ target_sources(vvl PRIVATE
     core_checks/cc_cmd_buffer.cpp
     core_checks/cc_copy_blit_resolve.cpp
     core_checks/core_validation.h
+    core_checks/cc_data_graph.cpp
     core_checks/cc_descriptor.cpp
     core_checks/cc_device.cpp
     core_checks/cc_device_memory.cpp
@@ -342,6 +343,8 @@ target_sources(vvl PRIVATE
     state_tracker/buffer_state.h
     state_tracker/cmd_buffer_state.cpp
     state_tracker/cmd_buffer_state.h
+    state_tracker/data_graph_pipeline_session_state.cpp
+    state_tracker/data_graph_pipeline_session_state.h
     state_tracker/descriptor_sets.cpp
     state_tracker/descriptor_sets.h
     state_tracker/device_generated_commands_state.cpp

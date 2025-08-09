@@ -255,6 +255,9 @@ PipelineLayout::PipelineLayout(DeviceState &dev_data, VkPipelineLayout handle, c
       set_layouts(GetSetLayouts(dev_data, pCreateInfo)),
       push_constant_ranges_layout(GetCanonicalId(pCreateInfo->pushConstantRangeCount, pCreateInfo->pPushConstantRanges)),
       create_flags(pCreateInfo->flags),
+      pushConstantRangeCount(pCreateInfo->pushConstantRangeCount),
+      pPushConstantRanges(pCreateInfo->pPushConstantRanges),
+      initializedFromVkPipelineLayoutCreateInfo(true),
       set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges_layout, create_flags)),
       has_immutable_samplers(HasImmutableSamplers(set_layouts)) {}
 

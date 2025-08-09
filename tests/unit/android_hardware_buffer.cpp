@@ -1160,6 +1160,60 @@ TEST_F(NegativeAndroidHardwareBuffer, ImportBufferHandleType) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeAndroidHardwareBuffer, ImportTensorHandleType) {
+    TEST_DESCRIPTION("Don't use proper resource handleType for import tensor");
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tensors);
+    RETURN_IF_SKIP(Init());
+
+    vkt::AHB ahb(AHARDWAREBUFFER_FORMAT_BLOB, AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER, 64);
+
+    VkImportAndroidHardwareBufferInfoANDROID import_ahb_Info = vku::InitStructHelper();
+    import_ahb_Info.buffer = ahb.handle();
+
+    VkAndroidHardwareBufferPropertiesANDROID ahb_props = vku::InitStructHelper();
+    vk::GetAndroidHardwareBufferPropertiesANDROID(device(), ahb.handle(), &ahb_props);
+
+    VkMemoryAllocateInfo memory_allocate_info = vku::InitStructHelper(&import_ahb_Info);
+    memory_allocate_info.allocationSize = ahb_props.allocationSize;
+    // driver won't expose correct memoryType since resource was not created as an import operation
+    // so just need any valid memory type returned from GetAHBInfo
+    for (int i = 0; i < 32; i++) {
+        if (ahb_props.memoryTypeBits & (1 << i)) {
+            memory_allocate_info.memoryTypeIndex = i;
+            break;
+        }
+    }
+
+    vkt::DeviceMemory memory(*m_device, memory_allocate_info);
+
+    // Create tensor without VkExternalMemoryTensorCreateInfoARM
+    const std::vector<int64_t> dimensions{2ul};
+    VkTensorDescriptionARM tensor_desc = vku::InitStructHelper();
+    tensor_desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
+    tensor_desc.format = VK_FORMAT_R8_SINT;
+    tensor_desc.dimensionCount = dimensions.size();
+    tensor_desc.pDimensions = dimensions.data();
+    tensor_desc.pStrides = nullptr;
+    tensor_desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
+
+    VkTensorCreateInfoARM tensor_create_info = vku::InitStructHelper();
+    tensor_create_info.pDescription = &tensor_desc;
+    tensor_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    vkt::Tensor tensor(*m_device, tensor_create_info);
+
+    VkBindTensorMemoryInfoARM bind_info = vku::InitStructHelper();
+    bind_info.tensor = tensor.handle();
+    bind_info.memory = memory.handle();
+
+    m_errorMonitor->SetDesiredError("VUID-VkBindTensorMemoryInfoARM-memory-09897");
+    m_errorMonitor->SetUnexpectedError("VUID-vkBindBufferMemory-memory-01035");
+    vk::BindTensorMemoryARM(device(), 1, &bind_info);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeAndroidHardwareBuffer, ImportImageHandleType) {
     TEST_DESCRIPTION("Don't use proper resource handleType for import image");
 

@@ -82,7 +82,12 @@ class PipelineLayout : public StateObject {
     // canonical form IDs for the "compatible for set" contents
     const PushConstantRangesId push_constant_ranges_layout;
     VkPipelineLayoutCreateFlags create_flags;
-    // table of "compatible for set N" cannonical forms for trivial accept validation
+    // store original values (info is lost in push_constant_ranges_layout)
+    // valid only for the constructor using VkPipelineLayoutCreateInfo
+    uint32_t pushConstantRangeCount = 0;
+    const void *pPushConstantRanges = nullptr;
+    bool initializedFromVkPipelineLayoutCreateInfo = false;
+    // table of "compatible for set N" canonical forms for trivial accept validation
     const std::vector<PipelineLayoutCompatId> set_compat_ids;
     // Way to quick prevent searching if we know there are no immutable samplers
     bool has_immutable_samplers;

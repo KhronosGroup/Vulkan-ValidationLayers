@@ -675,6 +675,117 @@ TEST_F(NegativeTensor, BindTensorProtectedToNotProtectedMemory) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeTensor, BindTensorIncompatibleExportHandleType) {
+    TEST_DESCRIPTION("Test binding exporting memory with mismatched handleTypes.");
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTERNAL_MEMORY_DMA_BUF_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTERNAL_MEMORY_HOST_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tensors);
+    RETURN_IF_SKIP(Init());
+
+    // 2 external memory type handleTypes
+    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT;
+    const auto handle_type2 = VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT;
+
+    // Create a tensor with external memory using one of the handle types
+    VkExternalMemoryTensorCreateInfoARM external_info = vku::InitStructHelper();
+    external_info.handleTypes = handle_type;
+    VkTensorDescriptionARM desc = DefaultDesc();
+    desc.usage |= VK_TENSOR_USAGE_TRANSFER_SRC_BIT_ARM | VK_TENSOR_USAGE_TRANSFER_DST_BIT_ARM;
+    VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
+    info.pNext = &external_info;
+    vkt::Tensor tensor(*m_device, info);
+
+    // Create export memory with the other handle type
+    VkExportMemoryAllocateInfo export_memory_info = vku::InitStructHelper();
+    export_memory_info.handleTypes = handle_type2;
+    VkMemoryDedicatedAllocateInfoTensorARM dedicated_alloc_info = vku::InitStructHelper();
+    dedicated_alloc_info.tensor = tensor.handle();
+    VkMemoryDedicatedAllocateInfo dedicated_info = vku::InitStructHelper();
+    dedicated_info.pNext = &dedicated_alloc_info;
+    export_memory_info.pNext = &dedicated_info;
+
+    VkTensorMemoryRequirementsInfoARM req_info = vku::InitStructHelper();
+    req_info.tensor = tensor.handle();
+    VkMemoryRequirements2 mem_reqs = vku::InitStructHelper();
+    vk::GetTensorMemoryRequirementsARM(device(), &req_info, &mem_reqs);
+    const auto alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, mem_reqs.memoryRequirements, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                                                    &export_memory_info);
+    const auto memory = vkt::DeviceMemory(*m_device, alloc_info);
+
+    VkBindTensorMemoryInfoARM bind_info = vku::InitStructHelper();
+    bind_info.tensor = tensor.handle();
+    bind_info.memory = memory.handle();
+
+    m_errorMonitor->SetDesiredError("VUID-VkBindTensorMemoryInfoARM-memory-09895");
+    vk::BindTensorMemoryARM(device(), 1, &bind_info);
+    m_errorMonitor->VerifyFound();
+}
+
+// Because of aligned_alloc
+// Undefined in compiler used for android. Different test for Android, search VUID 09897
+#if defined(__linux__) && !defined(__ANDROID__)
+TEST_F(NegativeTensor, BindTensorImportMemoryHandleType) {
+    TEST_DESCRIPTION("Validate import memory handleType for tensor");
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTERNAL_MEMORY_DMA_BUF_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTERNAL_MEMORY_HOST_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tensors);
+    RETURN_IF_SKIP(Init());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "External tests are not supported by MockICD, skipping tests";
+    }
+
+    // mismatched handleTypes for tensor and memory
+    const auto handle_type1 = VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT;
+    const auto handle_type2 = VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT;
+
+    // Create a tensor with external memory, use type #1
+    VkTensorDescriptionARM desc = DefaultDesc();
+    desc.usage |= VK_TENSOR_USAGE_TRANSFER_SRC_BIT_ARM | VK_TENSOR_USAGE_TRANSFER_DST_BIT_ARM;
+    VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
+    VkExternalMemoryTensorCreateInfoARM tensor_external_info = vku::InitStructHelper();
+    info.pNext = &tensor_external_info;
+    tensor_external_info.handleTypes = handle_type1;
+    vkt::Tensor tensor(*m_device, info);
+    auto tensor_mem_reqs = tensor.GetMemoryReqs().memoryRequirements;
+
+    // Get external memory buffer
+    VkPhysicalDeviceExternalMemoryHostPropertiesEXT memory_host_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(memory_host_props);
+    auto alignment = memory_host_props.minImportedHostPointerAlignment;
+    auto size = ((tensor_mem_reqs.size + alignment - 1) / alignment) * alignment;
+    void *host_memory = aligned_alloc(alignment, size);
+    if (!host_memory) {
+        GTEST_SKIP() << "Failed to allocate host memory";
+    }
+    VkImportMemoryHostPointerInfoEXT import_info = vku::InitStructHelper();
+    import_info.handleType = handle_type2;
+    import_info.pHostPointer = host_memory;
+
+    // Allocate tensor in imported buffer
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.pNext = &import_info;
+    alloc_info.allocationSize = size;
+    m_device->Physical().SetMemoryType(tensor_mem_reqs.memoryTypeBits, &alloc_info,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT|VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    const auto memory = vkt::DeviceMemory(*m_device, alloc_info);
+
+    // Bind tensor (with handle_type1) and memory (with handle_type2)
+    VkBindTensorMemoryInfoARM bind_info = vku::InitStructHelper();
+    bind_info.tensor = tensor.handle();
+    bind_info.memory = memory.handle();
+    m_errorMonitor->SetDesiredError("VUID-VkBindTensorMemoryInfoARM-memory-09896");
+    vk::BindTensorMemoryARM(device(), 1, &bind_info);
+    m_errorMonitor->VerifyFound();
+
+    free(host_memory);
+}
+#endif
+
 TEST_F(NegativeTensor, TensorViewFormatMismatch) {
     TEST_DESCRIPTION("Test creating a tensor view with a different format than the tensor");
     RETURN_IF_SKIP(InitBasicTensor());

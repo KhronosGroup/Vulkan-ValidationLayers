@@ -156,10 +156,11 @@ struct LastBound {
 namespace vvl {
 // Need to be values that can be used to access an array for each bind point
 enum BindPoint {
-    BindPointGraphics = VK_PIPELINE_BIND_POINT_GRAPHICS,
-    BindPointCompute = VK_PIPELINE_BIND_POINT_COMPUTE,
-    BindPointRayTracing = 2,
-    BindPointCount = 3,
+    BindPointGraphics = 0, // VK_PIPELINE_BIND_POINT_GRAPHICS
+    BindPointCompute = 1, // VK_PIPELINE_BIND_POINT_COMPUTE
+    BindPointRayTracing = 2, // VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR
+    BindPointDataGraph = 3, // VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM
+    BindPointCount = 4,
 };
 }  // namespace vvl
 
@@ -171,6 +172,8 @@ static vvl::BindPoint inline ConvertToVvlBindPoint(VkPipelineBindPoint bind_poin
             return vvl::BindPointCompute;
         case VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR:
             return vvl::BindPointRayTracing;
+        case VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM:
+            return vvl::BindPointDataGraph;
         default:
             break;
     }
