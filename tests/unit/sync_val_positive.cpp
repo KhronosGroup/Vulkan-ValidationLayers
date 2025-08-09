@@ -3048,3 +3048,38 @@ TEST_F(PositiveSyncVal, Maintenance9LayerTransitionTestUpdate) {
     vk::CmdCopyBufferToImage(m_command_buffer, buffer, image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveSyncVal, CmdPipelineBarrier2ExecutionDependency) {
+    TEST_DESCRIPTION("The accompanying test to NegativeSyncVal.CmdPipelineBarrier2IndependentBarriers that uses separate barriers");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer2(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    // These two barriers define execution dependency that protect copy read from subsequent copy write.
+    // Two separate barrier command should be used. Barriers within a single barrier command can't
+    // create execution dependency.
+    VkBufferMemoryBarrier2 barriers[2];
+    barriers[0] = vku::InitStructHelper();
+    barriers[0].srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    barriers[0].srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
+    barriers[0].dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+    barriers[0].buffer = buffer;
+    barriers[0].size = VK_WHOLE_SIZE;
+
+    barriers[1] = vku::InitStructHelper();
+    barriers[1].srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+    barriers[1].dstStageMask = VK_PIPELINE_STAGE_2_CLEAR_BIT;
+    barriers[1].dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    barriers[1].buffer = buffer;
+    barriers[1].size = VK_WHOLE_SIZE;
+
+    m_command_buffer.Begin();
+    m_command_buffer.Copy(buffer, buffer2);
+    m_command_buffer.Barrier(barriers[0]);
+    m_command_buffer.Barrier(barriers[1]);
+    vk::CmdFillBuffer(m_command_buffer, buffer, 0, 4, 0x314);
+    m_command_buffer.End();
+}

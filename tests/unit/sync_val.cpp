@@ -5720,3 +5720,45 @@ TEST_F(NegativeSyncVal, BadDestroy) {
     vk::DestroyDevice(leaky_device, nullptr);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeSyncVal, CmdPipelineBarrier2IndependentBarriers) {
+    TEST_DESCRIPTION("Barriers within single CmdPipelineBarrier2 command are independent and do not create execution dependencies");
+    // NOTE: there is a correspodning positive test that issues the same barriers as separate command and in that case
+    // it successfully creates execution dependency.
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer2(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    VkBufferMemoryBarrier2 barriers[2];
+    barriers[0] = vku::InitStructHelper();
+    barriers[0].srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    barriers[0].srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
+    barriers[0].dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+    barriers[0].buffer = buffer;
+    barriers[0].size = VK_WHOLE_SIZE;
+
+    // This second barrier looks like it can chain with compute stage from the previous barrier,
+    // but it is not the case since barriers within a single command are independent. That's why
+    // these two barriers specified together can't protect copy read from subsequent clear write.
+    barriers[1] = vku::InitStructHelper();
+    barriers[1].srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+    barriers[1].dstStageMask = VK_PIPELINE_STAGE_2_CLEAR_BIT;
+    barriers[1].dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    barriers[1].buffer = buffer;
+    barriers[1].size = VK_WHOLE_SIZE;
+
+    VkDependencyInfo dep_info = vku::InitStructHelper();
+    dep_info.bufferMemoryBarrierCount = 2;
+    dep_info.pBufferMemoryBarriers = barriers;
+
+    m_command_buffer.Begin();
+    m_command_buffer.Copy(buffer, buffer2);
+    m_command_buffer.Barrier(dep_info);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
+    vk::CmdFillBuffer(m_command_buffer, buffer, 0, 4, 0x314);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
