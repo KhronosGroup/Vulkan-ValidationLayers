@@ -1062,6 +1062,94 @@ bool Device::ValidateAccelerationStructureBuildGeometryInfoKHR(const Context &co
                              "(%" PRIu64 ") must be less than or equal to 2^32-1.", geom.geometry.aabbs.stride);
             }
         }
+        if (geom.geometryType == VK_GEOMETRY_TYPE_SPHERES_NV) {
+            auto sphere_struct = reinterpret_cast<VkAccelerationStructureGeometrySpheresDataNV const *>(geom.pNext);
+            if (!enabled_features.spheres) {
+                skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-None-10429", device,
+                                 geometry_loc.pNext(Struct::VkAccelerationStructureGeometrySpheresDataNV),
+                                 "The spheres feature must be enabled");
+            }
+            if (sphere_struct->vertexStride > vvl::kU32Max) {
+                skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexStride-10432", handle,
+                                 geometry_loc.pNext(Struct::VkAccelerationStructureGeometrySpheresDataNV).dot(Field::vertexStride),
+                                 "(%" PRIu64 ") must be less than or equal to 2^32-1.", sphere_struct->vertexStride);
+            }
+            if (sphere_struct->radiusStride > vvl::kU32Max) {
+                skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexStride-10432", handle,
+                                 geometry_loc.pNext(Struct::VkAccelerationStructureGeometrySpheresDataNV).dot(Field::radiusStride),
+                                 "(%" PRIu64 ") must be less than or equal to 2^32-1.", sphere_struct->radiusStride);
+            }
+            if (sphere_struct->indexType != VK_INDEX_TYPE_UINT16 && sphere_struct->indexType != VK_INDEX_TYPE_UINT32 &&
+                sphere_struct->indexType != VK_INDEX_TYPE_NONE_KHR) {
+                skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-indexData-10437", handle,
+                                 geometry_loc.pNext(Struct::VkAccelerationStructureGeometrySpheresDataNV).dot(Field::indexType),
+                                 "is %s.", string_VkIndexType(sphere_struct->indexType));
+            }
+            if (sphere_struct->vertexData.hostAddress == nullptr && sphere_struct->vertexData.deviceAddress == 0) {
+                skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexData-parameter", handle,
+                                 geometry_loc.pNext(Struct::VkAccelerationStructureGeometrySpheresDataNV).dot(Field::vertexData),
+                                 "must be a valid VkDeviceOrHostAddressConstKHR union");
+            }
+            if (sphere_struct->radiusData.hostAddress == nullptr && sphere_struct->radiusData.deviceAddress == 0) {
+                skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-radiusData-parameter", handle,
+                                 geometry_loc.pNext(Struct::VkAccelerationStructureGeometrySpheresDataNV).dot(Field::radiusData),
+                                 "must be a valid VkDeviceOrHostAddressConstKHR union");
+            }
+            if (sphere_struct->indexType != VK_INDEX_TYPE_NONE_KHR && sphere_struct->indexData.hostAddress == nullptr &&
+                sphere_struct->indexData.deviceAddress == 0) {
+                skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-indexData-parameter", handle,
+                                 geometry_loc.pNext(Struct::VkAccelerationStructureGeometrySpheresDataNV).dot(Field::indexData),
+                                 "must be a valid VkDeviceOrHostAddressConstKHR union");
+            }
+        }
+        if (geom.geometryType == VK_GEOMETRY_TYPE_LINEAR_SWEPT_SPHERES_NV) {
+            auto sphere_linear_struct =
+                reinterpret_cast<VkAccelerationStructureGeometryLinearSweptSpheresDataNV const *>(geom.pNext);
+            if (!enabled_features.linearSweptSpheres) {
+                skip |= LogError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-None-10419", device,
+                                 geometry_loc.pNext(Struct::VkAccelerationStructureGeometryLinearSweptSpheresDataNV),
+                                 "The linearSweptSpheres feature must be enabled");
+            }
+            if (sphere_linear_struct->vertexStride > vvl::kU32Max) {
+                skip |= LogError(
+                    "VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-vertexStride-10422", handle,
+                    geometry_loc.pNext(Struct::VkAccelerationStructureGeometryLinearSweptSpheresDataNV).dot(Field::vertexStride),
+                    "(%" PRIu64 ") must be less than or equal to 2^32-1.", sphere_linear_struct->vertexStride);
+            }
+            if (sphere_linear_struct->radiusStride > vvl::kU32Max) {
+                skip |= LogError(
+                    "VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-vertexStride-10422", handle,
+                    geometry_loc.pNext(Struct::VkAccelerationStructureGeometryLinearSweptSpheresDataNV).dot(Field::radiusStride),
+                    "(%" PRIu64 ") must be less than or equal to 2^32-1.", sphere_linear_struct->radiusStride);
+            }
+            if (sphere_linear_struct->indexType != VK_INDEX_TYPE_UINT16 &&
+                sphere_linear_struct->indexType != VK_INDEX_TYPE_UINT32 &&
+                sphere_linear_struct->indexType != VK_INDEX_TYPE_NONE_KHR) {
+                skip |= LogError(
+                    "VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-indexData-10428", handle,
+                    geometry_loc.pNext(Struct::VkAccelerationStructureGeometryLinearSweptSpheresDataNV).dot(Field::indexType),
+                    "is %s.", string_VkIndexType(sphere_linear_struct->indexType));
+            }
+            if (sphere_linear_struct->vertexData.hostAddress == nullptr && sphere_linear_struct->vertexData.deviceAddress == 0) {
+                skip |= LogError(
+                    "VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-vertexData-parameter", handle,
+                    geometry_loc.pNext(Struct::VkAccelerationStructureGeometryLinearSweptSpheresDataNV).dot(Field::vertexData),
+                    "must be a valid VkDeviceOrHostAddressConstKHR union");
+            }
+            if (sphere_linear_struct->radiusData.hostAddress == nullptr && sphere_linear_struct->radiusData.deviceAddress == 0) {
+                skip |= LogError(
+                    "VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-radiusData-parameter", handle,
+                    geometry_loc.pNext(Struct::VkAccelerationStructureGeometryLinearSweptSpheresDataNV).dot(Field::radiusData),
+                    "must be a valid VkDeviceOrHostAddressConstKHR union");
+            }
+            if (sphere_linear_struct->indexType != VK_INDEX_TYPE_NONE_KHR &&
+                sphere_linear_struct->indexData.hostAddress == nullptr && sphere_linear_struct->indexData.deviceAddress == 0) {
+                skip |= LogError(
+                    "VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-indexData-parameter", handle,
+                    geometry_loc.pNext(Struct::VkAccelerationStructureGeometryLinearSweptSpheresDataNV).dot(Field::indexData),
+                    "must be a valid VkDeviceOrHostAddressConstKHR union");
+            }
+        }
         if (info.type == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR && geom.geometryType != VK_GEOMETRY_TYPE_INSTANCES_KHR) {
             skip |=
                 LogError("VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-03789", handle,
@@ -1921,13 +2009,13 @@ bool Device::manual_PreCallValidateCreateMicromapEXT(VkDevice device, const VkMi
     const auto &error_obj = context.error_obj;
 
     if (!enabled_features.micromap) {
-        skip |= LogError("VUID-vkCreateMicromapEXT-micromap-07430", device,
-            error_obj.location, "micromap feature was not enabled.");
+        skip |=
+            LogError("VUID-vkCreateMicromapEXT-micromap-07430", device, error_obj.location, "micromap feature was not enabled.");
     }
 
     if ((pCreateInfo->deviceAddress != 0ULL) && !enabled_features.micromapCaptureReplay) {
-        skip |= LogError("VUID-vkCreateMicromapEXT-deviceAddress-07431", device,
-            error_obj.location, "micromapCaptureReplay feature was not enabled.");
+        skip |= LogError("VUID-vkCreateMicromapEXT-deviceAddress-07431", device, error_obj.location,
+                         "micromapCaptureReplay feature was not enabled.");
     }
 
     return skip;
@@ -1987,8 +2075,8 @@ bool Device::manual_PreCallValidateBuildMicromapsEXT(VkDevice device, VkDeferred
     const auto &error_obj = context.error_obj;
 
     if (!enabled_features.micromapHostCommands) {
-        skip |= LogError("VUID-vkBuildMicromapsEXT-micromapHostCommands-07555", device,
-            error_obj.location, "micromapHostCommands feature was not enabled.");
+        skip |= LogError("VUID-vkBuildMicromapsEXT-micromapHostCommands-07555", device, error_obj.location,
+                         "micromapHostCommands feature was not enabled.");
     }
 
     return skip;
@@ -2005,10 +2093,9 @@ bool Device::manual_PreCallValidateCopyMicromapEXT(VkDevice device, VkDeferredOp
     }
 
     const Location info_loc = error_obj.location.dot(Field::pInfo);
-    if (pInfo->mode != VK_COPY_MICROMAP_MODE_COMPACT_EXT &&
-        pInfo->mode != VK_COPY_MICROMAP_MODE_CLONE_EXT) {
+    if (pInfo->mode != VK_COPY_MICROMAP_MODE_COMPACT_EXT && pInfo->mode != VK_COPY_MICROMAP_MODE_CLONE_EXT) {
         skip |= LogError("VUID-VkCopyMicromapInfoEXT-mode-07531", device, info_loc.dot(Field::mode), "is %s.",
-            string_VkCopyMicromapModeEXT(pInfo->mode));
+                         string_VkCopyMicromapModeEXT(pInfo->mode));
     }
 
     return skip;
@@ -2028,7 +2115,7 @@ bool Device::manual_PreCallValidateCopyMicromapToMemoryEXT(VkDevice device, VkDe
     const Location info_loc = error_obj.location.dot(Field::pInfo);
     if (pInfo->mode != VK_COPY_MICROMAP_MODE_SERIALIZE_EXT) {
         skip |= LogError("VUID-VkCopyMicromapToMemoryInfoEXT-mode-07542", device, info_loc.dot(Field::mode), "is %s.",
-            string_VkCopyMicromapModeEXT(pInfo->mode));
+                         string_VkCopyMicromapModeEXT(pInfo->mode));
     }
 
     return skip;
@@ -2061,10 +2148,9 @@ bool Device::manual_PreCallValidateWriteMicromapsPropertiesEXT(VkDevice device, 
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
-    if (queryType != VK_QUERY_TYPE_MICROMAP_COMPACTED_SIZE_EXT &&
-        queryType != VK_QUERY_TYPE_MICROMAP_SERIALIZATION_SIZE_EXT) {
+    if (queryType != VK_QUERY_TYPE_MICROMAP_COMPACTED_SIZE_EXT && queryType != VK_QUERY_TYPE_MICROMAP_SERIALIZATION_SIZE_EXT) {
         skip |= LogError("VUID-vkWriteMicromapsPropertiesEXT-queryType-07503", device, error_obj.location, "is %s.",
-            string_VkQueryType(queryType));
+                         string_VkQueryType(queryType));
     }
 
     return skip;
@@ -2076,10 +2162,9 @@ bool Device::manual_PreCallValidateCmdCopyMicromapEXT(VkCommandBuffer commandBuf
     const auto &error_obj = context.error_obj;
 
     const Location info_loc = error_obj.location.dot(Field::pInfo);
-    if (pInfo->mode != VK_COPY_MICROMAP_MODE_COMPACT_EXT &&
-        pInfo->mode != VK_COPY_MICROMAP_MODE_CLONE_EXT) {
+    if (pInfo->mode != VK_COPY_MICROMAP_MODE_COMPACT_EXT && pInfo->mode != VK_COPY_MICROMAP_MODE_CLONE_EXT) {
         skip |= LogError("VUID-VkCopyMicromapInfoEXT-mode-07531", commandBuffer, info_loc.dot(Field::mode), "is %s.",
-            string_VkCopyMicromapModeEXT(pInfo->mode));
+                         string_VkCopyMicromapModeEXT(pInfo->mode));
     }
 
     return skip;
@@ -2094,7 +2179,7 @@ bool Device::manual_PreCallValidateCmdCopyMicromapToMemoryEXT(VkCommandBuffer co
     const Location info_loc = error_obj.location.dot(Field::pInfo);
     if (pInfo->mode != VK_COPY_MICROMAP_MODE_SERIALIZE_EXT) {
         skip |= LogError("VUID-VkCopyMicromapToMemoryInfoEXT-mode-07542", commandBuffer, info_loc.dot(Field::mode), "is %s.",
-            string_VkCopyMicromapModeEXT(pInfo->mode));
+                         string_VkCopyMicromapModeEXT(pInfo->mode));
     }
 
     return skip;
@@ -2109,7 +2194,7 @@ bool Device::manual_PreCallValidateCmdCopyMemoryToMicromapEXT(VkCommandBuffer co
     const Location info_loc = error_obj.location.dot(Field::pInfo);
     if (pInfo->mode != VK_COPY_MICROMAP_MODE_DESERIALIZE_EXT) {
         skip |= LogError("VUID-VkCopyMemoryToMicromapInfoEXT-mode-07548", commandBuffer, info_loc.dot(Field::mode), "is %s.",
-            string_VkCopyMicromapModeEXT(pInfo->mode));
+                         string_VkCopyMicromapModeEXT(pInfo->mode));
     }
 
     return skip;
@@ -2122,10 +2207,9 @@ bool Device::manual_PreCallValidateCmdWriteMicromapsPropertiesEXT(VkCommandBuffe
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
-    if (queryType != VK_QUERY_TYPE_MICROMAP_COMPACTED_SIZE_EXT &&
-        queryType != VK_QUERY_TYPE_MICROMAP_SERIALIZATION_SIZE_EXT) {
+    if (queryType != VK_QUERY_TYPE_MICROMAP_COMPACTED_SIZE_EXT && queryType != VK_QUERY_TYPE_MICROMAP_SERIALIZATION_SIZE_EXT) {
         skip |= LogError("VUID-vkCmdWriteMicromapsPropertiesEXT-queryType-07503", commandBuffer, error_obj.location, "is %s.",
-            string_VkQueryType(queryType));
+                         string_VkQueryType(queryType));
     }
 
     return skip;
@@ -2138,8 +2222,8 @@ bool Device::manual_PreCallValidateGetDeviceMicromapCompatibilityEXT(VkDevice de
     const auto &error_obj = context.error_obj;
 
     if (!enabled_features.micromap) {
-        skip |= LogError("VUID-vkGetDeviceMicromapCompatibilityEXT-micromap-07551", device,
-            error_obj.location, "micromap feature was not enabled.");
+        skip |= LogError("VUID-vkGetDeviceMicromapCompatibilityEXT-micromap-07551", device, error_obj.location,
+                         "micromap feature was not enabled.");
     }
 
     return skip;
@@ -2152,13 +2236,13 @@ bool Device::manual_PreCallValidateGetMicromapBuildSizesEXT(VkDevice device, VkA
     const auto &error_obj = context.error_obj;
 
     if (!enabled_features.micromap) {
-        skip |= LogError("VUID-vkGetMicromapBuildSizesEXT-micromap-07439", device,
-            error_obj.location, "micromap feature was not enabled.");
+        skip |= LogError("VUID-vkGetMicromapBuildSizesEXT-micromap-07439", device, error_obj.location,
+                         "micromap feature was not enabled.");
     }
 
     if (pBuildInfo->pUsageCounts && pBuildInfo->ppUsageCounts) {
         skip |= LogError("VUID-VkMicromapBuildInfoEXT-pUsageCounts-07516", device, error_obj.location,
-            "both pUsageCounts and ppUsageCounts are not NULL.");
+                         "both pUsageCounts and ppUsageCounts are not NULL.");
     }
 
     return skip;
