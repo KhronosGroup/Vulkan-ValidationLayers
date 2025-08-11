@@ -20,7 +20,8 @@ static const VkLayerSettingEXT layer_setting = {OBJECT_LAYER_NAME, "printf_verbo
 static VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
                                                                   &layer_setting};
 
-TEST_F(NegativeDebugPrintfShaderDebugInfo, PipelineHandle) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10516
+TEST_F(NegativeDebugPrintfShaderDebugInfo, DISABLED_PipelineHandle) {
     TEST_DESCRIPTION("Make sure we are printing out which pipeline the error is from");
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     RETURN_IF_SKIP(InitDebugPrintfFramework(&layer_settings_create_info));

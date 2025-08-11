@@ -1588,13 +1588,11 @@ std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(VkCommandBuffer comm
                << "(0x" << HandleToUint64(instrumented_shader->shader_object) << ") (internal ID " << std::dec
                << shader_info.shader_id << ")\n";
         } else {
-            ss << "Pipeline " << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(instrumented_shader->pipeline)) << "(0x"
-               << HandleToUint64(instrumented_shader->pipeline) << ")";
             if (instrumented_shader->shader_module == kPipelineStageInfoHandle) {
-                ss << " (internal ID " << std::dec << shader_info.shader_id
-                   << ")\nShader Module was passed in via VkPipelineShaderStageCreateInfo::pNext\n";
+                ss << "Shader Module was passed in via VkPipelineShaderStageCreateInfo::pNext (internal ID " << std::dec
+                   << shader_info.shader_id << ")\n";
             } else {
-                ss << "\nShader Module "
+                ss << "Shader Module "
                    << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(instrumented_shader->shader_module)) << "(0x"
                    << HandleToUint64(instrumented_shader->shader_module) << ") (internal ID " << std::dec << shader_info.shader_id
                    << ")\n";
