@@ -19,6 +19,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include "containers/limits.h"
 #include "state_tracker/vertex_index_buffer_state.h"
 
 #include <string>
@@ -64,20 +65,21 @@ struct VertexAttributeFetchLimit {
 struct InstrumentationErrorBlob {
     std::optional<VertexAttributeFetchLimit> vertex_attribute_fetch_limit_vertex_input_rate{};
     std::optional<VertexAttributeFetchLimit> vertex_attribute_fetch_limit_instance_input_rate{};
-    std::optional<vvl::IndexBufferBinding> index_buffer_binding;
+    std::optional<vvl::IndexBufferBinding> index_buffer_binding{};
 
     // indexing into the VkDebugUtilsLabelEXT
-    uint32_t label_command_i;
+    uint32_t label_command_i = vvl::kU32Max;
     // used to know which action command this occured at
-    uint32_t action_command_i;
+    uint32_t action_command_i = vvl::kU32Max;
 
+    VkPipeline pipeline = VK_NULL_HANDLE;
     // Used to know if from draw, dispatch, or traceRays
-    VkPipelineBindPoint pipeline_bind_point;
+    VkPipelineBindPoint pipeline_bind_point = VK_PIPELINE_BIND_POINT_MAX_ENUM;
     // Used pick which VUID to report
-    bool uses_shader_object;
+    bool uses_shader_object = false;
 
     // index into the last vkCmdBindDescriptors prior to a draw/dispatch
-    uint32_t descriptor_binding_index;
+    uint32_t descriptor_binding_index = vvl::kU32Max;
 };
 
 // Return true iff an error has been found
