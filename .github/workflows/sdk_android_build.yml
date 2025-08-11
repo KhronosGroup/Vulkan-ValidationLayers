@@ -133,7 +133,7 @@ jobs:
         sdk_version=`echo "${{ github.ref }}" | cut -d "-" -f 3`
         echo "sdk_version=$sdk_version" >> $GITHUB_OUTPUT
     - name: Download artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       with:
         path: ./android-binaries-${{ steps.get_sdk_version.outputs.sdk_version }}
         merge-multiple: true
@@ -142,7 +142,7 @@ jobs:
       run: |
         ${{ matrix.config.command }} android-binaries-${{ steps.get_sdk_version.outputs.sdk_version }}.${{ matrix.config.suffix }} android-binaries-${{ steps.get_sdk_version.outputs.sdk_version }}
     - name: Download release URL
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       with:
         name: release_url
         path: ./
