@@ -224,9 +224,10 @@ struct ReadState {
 
     ResourceUsageTagEx TagEx() const { return {tag, handle_index}; }
     bool operator==(const ReadState &rhs) const {
+        assert(pending_dep_chain == 0);
+        assert(rhs.pending_dep_chain == 0);
         return (stage == rhs.stage) && (access_index == rhs.access_index) && (barriers == rhs.barriers) &&
-               (sync_stages == rhs.sync_stages) && (tag == rhs.tag) && (queue == rhs.queue) &&
-               (pending_dep_chain == rhs.pending_dep_chain);
+               (sync_stages == rhs.sync_stages) && (tag == rhs.tag) && (queue == rhs.queue);
     }
     bool IsReadBarrierHazard(VkPipelineStageFlags2 src_exec_scope) const {
         // If the read stage is not in the src sync scope

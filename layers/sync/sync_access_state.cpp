@@ -342,13 +342,14 @@ void ResourceAccessState::MergeReads(const ResourceAccessState &other) {
             for (uint32_t my_read_index = 0; my_read_index < pre_merge_count; my_read_index++) {
                 auto &my_read = last_reads[my_read_index];
                 if (other_read.stage == my_read.stage) {
+                    assert(my_read.pending_dep_chain == 0);
+                    assert(other_read.pending_dep_chain == 0);
                     if (my_read.tag < other_read.tag) {
                         // Other is more recent, copy in the state
                         my_read.access_index = other_read.access_index;
                         my_read.tag = other_read.tag;
                         my_read.handle_index = other_read.handle_index;
                         my_read.queue = other_read.queue;
-                        my_read.pending_dep_chain = other_read.pending_dep_chain;
                         // TODO: Phase 2 -- review the state merge logic to avoid false positive from overwriting the barriers
                         //                  May require tracking more than one access per stage.
                         my_read.barriers = other_read.barriers;
@@ -362,7 +363,6 @@ void ResourceAccessState::MergeReads(const ResourceAccessState &other) {
                         // The read tags match so merge the barriers
                         my_read.barriers |= other_read.barriers;
                         my_read.sync_stages |= other_read.sync_stages;
-                        my_read.pending_dep_chain |= other_read.pending_dep_chain;
                     }
 
                     break;
@@ -792,7 +792,11 @@ void ReadState::Set(VkPipelineStageFlagBits2 stage, SyncAccessIndex access_index
     tag = tag_ex.tag;
     handle_index = tag_ex.handle_index;
     queue = kQueueIdInvalid;
-    pending_dep_chain = VK_PIPELINE_STAGE_2_NONE;  // If this is a new read, we aren't applying a barrier set.
+
+    // We have pending state during short duration of specific API calls and it should already
+    // be applied when ResourceAccessState::Update is called (which calls ReadState::Set)
+    assert(pending_dep_chain == VK_PIPELINE_STAGE_2_NONE);
+    pending_dep_chain = VK_PIPELINE_STAGE_2_NONE;
 }
 
 // Scope test including "queue submission order" effects.  Specifically, accesses from a different queue are not

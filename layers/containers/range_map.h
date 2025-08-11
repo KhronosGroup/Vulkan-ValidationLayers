@@ -558,45 +558,6 @@ class range_map {
         return iterator(impl_insert);
     }
 
-    // Try to insert value. If insertion failed, recursively split union of retrieved stored range with inserted range.
-    // Split at intersection of stored range and inserted range.
-    // Range intersection is merged using merge_op.
-    // Ranges before and after this intersection are recursively inserted.
-    // merge_pos should have this signature: (mapped_type& current_value, const mapped_type& new_value) -> void
-    template <typename MergeOp>
-    iterator split_and_merge_insert(const value_type &value, const MergeOp &merge_op) {
-        if (!value.first.non_empty()) {
-            return end();
-        }
-
-        if (auto [it, was_inserted] = insert(value); !was_inserted) {
-            // insert failed, so at least one stored range intersects with new range
-            const RangeKey it_range = it->first;
-            const auto &[inserted_range, insert_mapped_value] = value;
-            const RangeKey intersection = it_range & inserted_range;
-            // if intersection is empty or invalid, insertion should have succeeded
-            assert(intersection.non_empty());
-
-            const iterator split_point_it = sparse_container::split(it, *this, intersection);
-            // given it->first and instersection do intersect, split should have succeeded
-            RANGE_ASSERT(split_point_it != end());
-            // merge values at inserted range and retrieved range intersection
-            merge_op(split_point_it->second, insert_mapped_value);
-
-            // Recursively insert ranges before and after intersection
-            const RangeKey range_after_intersection(intersection.end, std::max(it_range.end, inserted_range.end));
-            const RangeKey range_before_intersection(std::min(it_range.begin, inserted_range.begin), intersection.begin);
-            split_and_merge_insert({range_after_intersection, insert_mapped_value}, merge_op);
-            if (range_before_intersection.non_empty()) {
-                return split_and_merge_insert({range_before_intersection, insert_mapped_value}, merge_op);
-            } else {
-                return split_point_it;
-            }
-        } else {
-            return it;
-        }
-    }
-
     template <typename SplitOp>
     iterator split(const iterator whole_it, const index_type &index, const SplitOp &split_op) {
         auto split_it = split_impl(whole_it.pos_, index, split_op);
