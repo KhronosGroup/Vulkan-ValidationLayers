@@ -1181,6 +1181,10 @@ class Device : public vvl::base::Device {
                                                                    const VkConvertCooperativeVectorMatrixInfoNV *pInfos,
                                                                    const Context &context) const;
 
+    bool manual_PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(VkCommandBuffer commandBuffer,
+                                                                           const VkBuildPartitionedAccelerationStructureInfoNV *pBuildInfo,
+                                                                           const Context &context) const;
+
 #include "generated/stateless_device_methods.h"
 };
 
