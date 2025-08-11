@@ -25812,6 +25812,7 @@ bool Device::PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(
                                       AllVkBuildAccelerationStructureFlagBitsKHR, pBuildInfo->input.flags, kOptionalFlags,
                                       "VUID-VkPartitionedAccelerationStructureInstancesInputNV-flags-parameter");
     }
+    if (!skip) skip |= manual_PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(commandBuffer, pBuildInfo, context);
     return skip;
 }
 
