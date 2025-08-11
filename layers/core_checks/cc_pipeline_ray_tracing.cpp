@@ -265,7 +265,9 @@ bool CoreChecks::ValidateRayTracingPipelineLibrary(const vvl::Pipeline &pipeline
     for (uint32_t i = 0; i < library_create_info.libraryCount; i++) {
         const Location library_loc = library_info_loc.dot(Field::pLibraries, i);
         const auto lib = Get<vvl::Pipeline>(library_create_info.pLibraries[i]);
-        if (!lib) continue;
+        if (!lib) {
+            continue;
+        }
 
         if ((lib->create_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) == 0) {
             skip |= LogError("VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-03381", device, library_loc, "was created with %s.",

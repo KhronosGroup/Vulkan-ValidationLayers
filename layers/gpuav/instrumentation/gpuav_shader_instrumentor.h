@@ -198,8 +198,7 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
         vku::safe_VkGraphicsPipelineCreateInfo &modified_pipeline_ci, const Location &loc,
         std::vector<chassis::ShaderInstrumentationMetadata> &shader_instrumentation_metadata);
     void PostCallRecordPipelineCreationShaderInstrumentationGPL(
-        vvl::Pipeline &pipeline_state, const VkAllocationCallbacks *pAllocator,
-        std::vector<chassis::ShaderInstrumentationMetadata> &shader_instrumentation_metadata);
+        vvl::Pipeline &pipeline_state, std::vector<chassis::ShaderInstrumentationMetadata> &shader_instrumentation_metadata);
 
     // GPU-AV and DebugPrint are using the same way to do the actual shader instrumentation logic
     // Returns if shader was instrumented successfully or not
