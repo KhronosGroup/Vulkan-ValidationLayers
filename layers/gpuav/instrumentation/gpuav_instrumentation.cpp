@@ -484,7 +484,7 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
                                                   : (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)
                                                       ? cb_state.trace_rays_index
                                                       : 0;
-
+    instrumentation_error_blob.pipeline = last_bound.pipeline_state ? last_bound.pipeline_state->VkHandle() : VK_NULL_HANDLE;
     instrumentation_error_blob.pipeline_bind_point = bind_point;
     instrumentation_error_blob.uses_shader_object = last_bound.pipeline_state == nullptr;
 
@@ -617,9 +617,13 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
                                                               const uint32_t *error_record, const Location &loc,
                                                               const LogObjectList &objlist,
                                                               const std::vector<std::string> &initial_label_stack) {
+        LogObjectList augmented_objlist(objlist);
+        if (instrumentation_error_blob.pipeline != VK_NULL_HANDLE) {
+            augmented_objlist.add(instrumentation_error_blob.pipeline);
+        }
         bool skip = false;
-        skip |=
-            LogInstrumentationError(gpuav, cb_state, objlist, instrumentation_error_blob, initial_label_stack, error_record, loc);
+        skip |= LogInstrumentationError(gpuav, cb_state, augmented_objlist, instrumentation_error_blob, initial_label_stack,
+                                        error_record, loc);
         return skip;
     };
 
