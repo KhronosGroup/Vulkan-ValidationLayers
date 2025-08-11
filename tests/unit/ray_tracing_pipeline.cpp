@@ -1300,7 +1300,7 @@ TEST_F(NegativeRayTracingPipeline, LibraryGroupHandlesEXT) {
 
     vkt::rt::Pipeline rt_pipe_lib(*this, m_device);
     rt_pipe_lib.AddCreateInfoFlags(VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR);
-    rt_pipe_lib.InitLibraryInfo();
+    rt_pipe_lib.InitLibraryInfo(sizeof(float), false);
     rt_pipe_lib.SetGlslRayGenShader(kRayTracingMinimalGlsl);
     rt_pipe_lib.BuildPipeline();
 
@@ -1525,13 +1525,13 @@ TEST_F(NegativeRayTracingPipeline, GetRayTracingShaderGroupStackSizeKHR) {
     RETURN_IF_SKIP(InitState());
 
     vkt::rt::Pipeline rt_pipe_lib(*this, m_device);
-    rt_pipe_lib.InitLibraryInfo();
+    rt_pipe_lib.InitLibraryInfo(sizeof(float), false);
     rt_pipe_lib.SetGlslRayGenShader(kRayTracingMinimalGlsl);
     rt_pipe_lib.AddGlslMissShader(kRayTracingMinimalGlsl);
     rt_pipe_lib.Build();
 
     vkt::rt::Pipeline rt_pipe(*this, m_device);
-    rt_pipe.InitLibraryInfo();
+    rt_pipe.InitLibraryInfo(sizeof(float), true);
     rt_pipe.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
     rt_pipe.CreateDescriptorSet();
     vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
