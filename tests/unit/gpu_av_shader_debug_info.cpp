@@ -1531,7 +1531,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, PipelineHandles) {
     m_command_buffer.End();
 
     // UNASSIGNED-Device address out of bounds
-    m_errorMonitor->SetDesiredError("Pipeline (bad_pipeline)");
+    m_errorMonitor->SetDesiredErrorRegex("", "VkPipeline.*bad_pipeline");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
