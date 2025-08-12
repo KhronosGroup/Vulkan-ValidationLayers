@@ -72,7 +72,6 @@ struct InstrumentationErrorBlob {
     // used to know which action command this occured at
     uint32_t action_command_i = vvl::kU32Max;
 
-    VkPipeline pipeline = VK_NULL_HANDLE;
     // Used to know if from draw, dispatch, or traceRays
     VkPipelineBindPoint pipeline_bind_point = VK_PIPELINE_BIND_POINT_MAX_ENUM;
     // Used pick which VUID to report

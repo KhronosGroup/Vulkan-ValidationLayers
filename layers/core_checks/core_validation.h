@@ -739,7 +739,7 @@ class CoreChecks : public vvl::DeviceProxy {
     // For given bindings validate state at time of draw is correct, returning false on error and writing error details into string*
     bool ValidateDrawState(const vvl::DescriptorSet& descriptor_set, uint32_t set_index, const BindingVariableMap& binding_req_map,
                            const vvl::CommandBuffer& cb_state, const vvl::DrawDispatchVuid& vuid,
-                           const VulkanTypedHandle& shader_handle) const;
+                           const LogObjectList& objlist) const;
 
     bool ImmutableSamplersAreEqual(const VkDescriptorSetLayoutBinding& b1, const VkDescriptorSetLayoutBinding& b2,
                                    bool& out_exception) const;

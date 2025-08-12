@@ -334,8 +334,8 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, const std::vector<std::s
                     error_record_ptr[glsl::kHeaderActionIdErrorLoggerIdOffset] & glsl::kErrorLoggerIdMask;
                 assert(error_logger_i < command_error_loggers.size());
                 CommandErrorLogger &error_logger = command_error_loggers[error_logger_i];
-                const LogObjectList objlist(queue, VkHandle());
-                error_logger.error_logger_func(error_record_ptr, error_logger.loc, objlist, initial_label_stack);
+                const LogObjectList objlist(queue, VkHandle(), error_logger.objlist);
+                error_logger.error_logger_func(error_record_ptr, error_logger.loc.Get(), objlist, initial_label_stack);
 
                 // Next record
                 error_record_ptr += record_size;
