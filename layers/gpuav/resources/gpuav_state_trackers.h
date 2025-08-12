@@ -129,7 +129,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
                                       const std::vector<std::string> &initial_label_stack),
                                  288 /*lambda storage size (bytes), large enough to store biggest error lambda*/>;
     struct CommandErrorLogger {
-        Location loc;
+        vvl::LocationCapture loc;
+        LogObjectList objlist;
         ErrorLoggerFunc error_logger_func;
         int32_t label_cmd_i = -1;
     };

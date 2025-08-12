@@ -55,6 +55,21 @@ struct LogObjectList {
         object_list.emplace_back(object, ConvertCoreObjectToVulkanObject(VkHandleInfo<HANDLE_T>::kVkObjectType));
     }
 
+    void add(const LogObjectList &rhs) {
+        for (const auto &obj : rhs) {
+            object_list.emplace_back(obj);
+        }
+    }
+
+    void add(const LogObjectList *rhs) {
+        if (!rhs) {
+            return;
+        }
+        for (const auto &obj : *rhs) {
+            object_list.emplace_back(obj);
+        }
+    }
+
     template <typename... HANDLE_T>
     void add(HANDLE_T... objects) {
         (..., add(objects));
@@ -72,10 +87,10 @@ struct LogObjectList {
         (..., add(objects));
     }
 
-    [[nodiscard]] auto size() const { return object_list.size(); }
-    [[nodiscard]] auto empty() const { return object_list.empty(); }
-    [[nodiscard]] auto begin() const { return object_list.begin(); }
-    [[nodiscard]] auto end() const { return object_list.end(); }
+    [[nodiscard]] auto size() const -> decltype(object_list.size()) { return object_list.size(); }
+    [[nodiscard]] auto empty() const -> decltype(object_list.empty()) { return object_list.empty(); }
+    [[nodiscard]] auto begin() const -> decltype(object_list.begin()) { return object_list.begin(); }
+    [[nodiscard]] auto end() const -> decltype(object_list.end()) { return object_list.end(); }
 
     LogObjectList(){};
 };
