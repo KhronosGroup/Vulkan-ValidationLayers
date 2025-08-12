@@ -257,7 +257,8 @@ void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubSt
         return skip;
     };
 
-    cb_state.command_error_loggers.emplace_back(CommandBufferSubState::CommandErrorLogger{loc, std::move(error_logger)});
+    cb_state.command_error_loggers.emplace_back(
+        CommandBufferSubState::CommandErrorLogger{loc, LogObjectList{}, std::move(error_logger)});
 }
 }  // namespace valcmd
 }  // namespace gpuav

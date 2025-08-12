@@ -854,7 +854,7 @@ bool CoreChecks::PreCallValidateGetDescriptorSetLayoutSupportKHR(VkDevice device
 // Return true if state is acceptable, or false and write an error message into error string
 bool CoreChecks::ValidateDrawState(const vvl::DescriptorSet &descriptor_set, uint32_t set_index,
                                    const BindingVariableMap &binding_req_map, const vvl::CommandBuffer &cb_state,
-                                   const vvl::DrawDispatchVuid &vuids, const VulkanTypedHandle &shader_handle) const {
+                                   const vvl::DrawDispatchVuid &vuids, const LogObjectList &objlist) const {
     bool result = false;
     const Location &loc = vuids.loc();
     const VkFramebuffer framebuffer = cb_state.active_framebuffer ? cb_state.active_framebuffer->VkHandle() : VK_NULL_HANDLE;
@@ -862,8 +862,8 @@ bool CoreChecks::ValidateDrawState(const vvl::DescriptorSet &descriptor_set, uin
     // descriptors, via the non-const version of ValidateBindingDynamic(), this code uses the const path only even it gives up
     // non-const versions of its state objects here.
     const vvl::DescriptorValidator desc_val(const_cast<CoreChecks &>(*this), const_cast<vvl::CommandBuffer &>(cb_state),
-                                            const_cast<vvl::DescriptorSet &>(descriptor_set), set_index, framebuffer,
-                                            &shader_handle, loc);
+                                            const_cast<vvl::DescriptorSet &>(descriptor_set), set_index, framebuffer, &objlist,
+                                            loc);
 
     for (const auto &[binding_index, desc_set_reqs] : binding_req_map) {
         ASSERT_AND_CONTINUE(desc_set_reqs.variable);
@@ -871,8 +871,8 @@ bool CoreChecks::ValidateDrawState(const vvl::DescriptorSet &descriptor_set, uin
 
         const vvl::DescriptorBinding *binding = descriptor_set.GetBinding(binding_index);
         if (!binding) {  //  End at construction is the condition for an invalid binding.
-            const LogObjectList objlist(cb_state.Handle(), shader_handle, descriptor_set.Handle());
-            result |= LogError(vuids.descriptor_buffer_bit_set_08114, objlist, loc, "%s %s is invalid.",
+            const LogObjectList updated_objlist(cb_state.Handle(), objlist, descriptor_set.Handle());
+            result |= LogError(vuids.descriptor_buffer_bit_set_08114, updated_objlist, loc, "%s %s is invalid.",
                                FormatHandle(descriptor_set).c_str(), resource_variable.DescribeDescriptor().c_str());
             return result;
         }
