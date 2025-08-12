@@ -140,6 +140,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/gpu_av_ray_tracing.cpp
     unit/gpu_av_ray_tracing_positive.cpp
     unit/gpu_av_vertex_attribute_fetch.cpp
+    unit/gpu_av_vertex_attribute_fetch_positive.cpp
     unit/graphics_library.cpp
     unit/graphics_library_positive.cpp
     unit/host_image_copy.cpp
