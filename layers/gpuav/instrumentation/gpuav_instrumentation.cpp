@@ -216,22 +216,33 @@ static std::pair<std::optional<VertexAttributeFetchLimit>, std::optional<VertexA
             }
             const VkDeviceSize attribute_size = GetVertexInputFormatSize(attrib.desc.format);
 
-            const VkDeviceSize stride =
-                vbb->stride != 0 ? vbb->stride : attribute_size;  // Tracked stride should already handle all possible value origin
-
             VkDeviceSize vertex_buffer_remaining_size =
                 vbb->effective_size > attrib.desc.offset ? vbb->effective_size - attrib.desc.offset : 0;
 
-            VkDeviceSize vertex_attributes_count = vertex_buffer_remaining_size / stride;
-            if (vertex_buffer_remaining_size > vertex_attributes_count * stride) {
-                vertex_buffer_remaining_size -= vertex_attributes_count * stride;
-            } else {
-                vertex_buffer_remaining_size = 0;
-            }
+            VkDeviceSize vertex_attributes_count = 0;
+            if (vbb->stride > 0) {
+                vertex_attributes_count = vertex_buffer_remaining_size / vbb->stride;
 
-            // maybe room for one more attribute but not full stride - not having stride space does not matter for last element
-            if (vertex_buffer_remaining_size >= attribute_size) {
-                vertex_attributes_count += 1;
+                if (vertex_buffer_remaining_size > vertex_attributes_count * vbb->stride) {
+                    vertex_buffer_remaining_size -= vertex_attributes_count * vbb->stride;
+                } else {
+                    vertex_buffer_remaining_size = 0;
+                }
+
+                // maybe room for one more attribute but not full stride - not having stride space does not matter for last element
+                if (vertex_buffer_remaining_size >= attribute_size) {
+                    vertex_attributes_count += 1;
+                }
+            } else {
+                // For the current attribute type, if stride is 0, the same vertex data chunk will be accessed by all vertex shader
+                // instances See https://docs.vulkan.org/spec/latest/chapters/fxvertex.html#fxvertex-input-address-calculation
+                if (vertex_buffer_remaining_size >= attribute_size) {
+                    // attribute won't be limiting
+                    continue;
+                } else {
+                    // Vertex attribute does not fit in vertex buffer
+                    vertex_attributes_count = 0;
+                }
             }
 
             if (vertex_binding_desc.desc.inputRate == VK_VERTEX_INPUT_RATE_VERTEX) {
