@@ -3083,3 +3083,113 @@ TEST_F(PositiveSyncVal, CmdPipelineBarrier2ExecutionDependency) {
     vk::CmdFillBuffer(m_command_buffer, buffer, 0, 4, 0x314);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveSyncVal, BufferBarrierExecutionDependencySync1) {
+    TEST_DESCRIPTION("Buffer barrier syncs additional resource through execution dependency");
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer buffer_a(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_b(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    // This barrier syncs not only buffer_b writes but also buffer_a reads through execution dependency
+    VkBufferMemoryBarrier buffer_barrier = vku::InitStructHelper();
+    buffer_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    buffer_barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    buffer_barrier.buffer = buffer_b;
+    buffer_barrier.size = VK_WHOLE_SIZE;
+
+    m_command_buffer.Begin();
+    m_command_buffer.Copy(buffer_a, buffer_b);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1,
+                           &buffer_barrier, 0, nullptr);
+    m_command_buffer.Copy(buffer_b, buffer_a);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncVal, BufferBarrierExecutionDependencySync2) {
+    TEST_DESCRIPTION("Buffer barrier syncs additional resource through execution dependency");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer buffer_a(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_b(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    // This barrier syncs not only buffer_b writes but also buffer_a reads through execution dependency
+    VkBufferMemoryBarrier2 buffer_barrier = vku::InitStructHelper();
+    buffer_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    buffer_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    buffer_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    buffer_barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
+    buffer_barrier.buffer = buffer_b;
+    buffer_barrier.size = VK_WHOLE_SIZE;
+
+    m_command_buffer.Begin();
+    m_command_buffer.Copy(buffer_a, buffer_b);
+    m_command_buffer.Barrier(buffer_barrier);
+    m_command_buffer.Copy(buffer_b, buffer_a);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncVal, ImageBarrierExecutionDependencySync1) {
+    TEST_DESCRIPTION("Image barrier syncs additional resource through execution dependency");
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Image image_a(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM,
+                       VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image_b(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM,
+                       VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+
+    VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
+    image_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    image_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    image_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    image_barrier.image = image_b;
+    image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    VkImageCopy region{};
+    region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.extent = {32, 32, 1};
+
+    m_command_buffer.Begin();
+    vk::CmdCopyImage(m_command_buffer, image_a, VK_IMAGE_LAYOUT_GENERAL, image_b, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
+                           nullptr, 1, &image_barrier);
+    vk::CmdCopyImage(m_command_buffer, image_b, VK_IMAGE_LAYOUT_GENERAL, image_a, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncVal, ImageBarrierExecutionDependencySync2) {
+    TEST_DESCRIPTION("Image barrier syncs additional resource through execution dependency");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Image image_a(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM,
+                       VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image_b(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM,
+                       VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+
+    VkImageMemoryBarrier2 image_barrier = vku::InitStructHelper();
+    image_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    image_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    image_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    image_barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
+    image_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    image_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    image_barrier.image = image_b;
+    image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    VkImageCopy region{};
+    region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.extent = {32, 32, 1};
+
+    m_command_buffer.Begin();
+    vk::CmdCopyImage(m_command_buffer, image_a, VK_IMAGE_LAYOUT_GENERAL, image_b, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    m_command_buffer.Barrier(image_barrier);
+    vk::CmdCopyImage(m_command_buffer, image_b, VK_IMAGE_LAYOUT_GENERAL, image_a, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    m_command_buffer.End();
+}
