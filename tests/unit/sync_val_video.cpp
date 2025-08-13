@@ -86,14 +86,6 @@ TEST_F(NegativeSyncValVideo, DecodeReconstructedPicture) {
     cb.DecodeVideo(context.DecodeFrame(1).AddReferenceFrame(0));
     vk::CmdPipelineBarrier2KHR(cb, context.DecodeOutput()->MemoryBarrier());
 
-    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    cb.DecodeVideo(context.DecodeReferenceFrame(0));
-    m_errorMonitor->VerifyFound();
-
-    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    cb.DecodeVideo(context.DecodeFrame(0));
-    m_errorMonitor->VerifyFound();
-
     cb.EndVideoCoding(context.End());
     cb.End();
 }
@@ -219,14 +211,6 @@ TEST_F(NegativeSyncValVideo, EncodeReconstructedPicture) {
 
     cb.EncodeVideo(context.EncodeFrame(1).AddReferenceFrame(0));
     vk::CmdPipelineBarrier2KHR(cb, context.Bitstream().MemoryBarrier());
-
-    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    cb.EncodeVideo(context.EncodeReferenceFrame(0));
-    m_errorMonitor->VerifyFound();
-
-    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    cb.EncodeVideo(context.EncodeFrame(0));
-    m_errorMonitor->VerifyFound();
 
     cb.EndVideoCoding(context.End());
     cb.End();
