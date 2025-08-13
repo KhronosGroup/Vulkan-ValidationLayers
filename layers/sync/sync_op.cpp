@@ -293,8 +293,12 @@ void BarrierSet::MakeMemoryBarriers(const SyncExecScope &src, const SyncExecScop
         SyncBarrier sync_barrier(src, barrier.srcAccessMask, dst, barrier.dstAccessMask);
         memory_barriers.emplace_back(sync_barrier);
     }
+
+    // Ensure we have a barrier that handles execution dependencies.
+    // NOTE: the reason to have execution barrier is explained in details in the comment for Sync2
+    // MakeMemoryBarriers overload. The Sync1 implementation is much simpler since execution scopes
+    // are the same for all barriers.
     if (memory_barrier_count == 0) {
-        // If there are no global memory barriers, force an exec barrier
         memory_barriers.emplace_back(SyncBarrier(src, dst));
     }
     single_exec_scope = true;
@@ -312,13 +316,44 @@ void BarrierSet::MakeBufferMemoryBarriers(const SyncValidator &sync_state, const
     }
 }
 
-void BarrierSet::MakeMemoryBarriers(VkQueueFlags queue_flags, uint32_t memory_barrier_count, const VkMemoryBarrier2 *barriers) {
-    memory_barriers.reserve(memory_barrier_count);
-    for (const VkMemoryBarrier2 &barrier : vvl::make_span(barriers, memory_barrier_count)) {
+void BarrierSet::MakeMemoryBarriers(VkQueueFlags queue_flags, const VkDependencyInfo &dep_info) {
+    // Collect unique execution dependencies from buffer and image barriers.
+    //
+    // NOTE: the reason to collect execution dependencies in addition to original buffer/image
+    // barriers is because syncval applies buffer/image barriers to the memory ranges defined
+    // by the resource. But execution dependency can affect any resource/memory range, not
+    // only the one specified by the barrier. For example, execution dependency synchronizes
+    // all READ accesses that are in scope. To emulate this behavior we collect unique
+    // execution dependencies and apply them to all memory accesses (don't specify access mask).
+    small_vector<std::pair<VkPipelineStageFlags2, VkPipelineStageFlags2>, 4> buffer_image_barrier_exec_deps;
+    for (const VkBufferMemoryBarrier2 &buffer_barrier :
+         vvl::make_span(dep_info.pBufferMemoryBarriers, dep_info.bufferMemoryBarrierCount)) {
+        const auto src_dst = std::make_pair(buffer_barrier.srcStageMask, buffer_barrier.dstStageMask);
+        if (!buffer_image_barrier_exec_deps.Contains(src_dst)) {
+            buffer_image_barrier_exec_deps.emplace_back(src_dst);
+        }
+    }
+    for (const VkImageMemoryBarrier2 &image_barrier :
+         vvl::make_span(dep_info.pImageMemoryBarriers, dep_info.imageMemoryBarrierCount)) {
+        const auto src_dst = std::make_pair(image_barrier.srcStageMask, image_barrier.dstStageMask);
+        if (!buffer_image_barrier_exec_deps.Contains(src_dst)) {
+            buffer_image_barrier_exec_deps.emplace_back(src_dst);
+        }
+    }
+
+    memory_barriers.reserve(dep_info.memoryBarrierCount + buffer_image_barrier_exec_deps.size());
+
+    // Add global memory barriers specified in VkDependencyInfo
+    for (const VkMemoryBarrier2 &barrier : vvl::make_span(dep_info.pMemoryBarriers, dep_info.memoryBarrierCount)) {
         auto src = SyncExecScope::MakeSrc(queue_flags, barrier.srcStageMask);
         auto dst = SyncExecScope::MakeDst(queue_flags, barrier.dstStageMask);
-        SyncBarrier sync_barrier(src, barrier.srcAccessMask, dst, barrier.dstAccessMask);
-        memory_barriers.emplace_back(sync_barrier);
+        memory_barriers.emplace_back(SyncBarrier(src, barrier.srcAccessMask, dst, barrier.dstAccessMask));
+    }
+    // Add execution dependencies from buffer and image barriers
+    for (const auto &src_dst : buffer_image_barrier_exec_deps) {
+        auto src = SyncExecScope::MakeSrc(queue_flags, src_dst.first);
+        auto dst = SyncExecScope::MakeDst(queue_flags, src_dst.second);
+        memory_barriers.emplace_back(SyncBarrier(src, dst));
     }
     single_exec_scope = false;
 }
@@ -388,7 +423,8 @@ SyncOpPipelineBarrier::SyncOpPipelineBarrier(vvl::Func command, const SyncValida
     const ExecScopes stage_masks = sync_utils::GetExecScopes(dep_info);
     barrier_set_.src_exec_scope = SyncExecScope::MakeSrc(queue_flags, stage_masks.src);
     barrier_set_.dst_exec_scope = SyncExecScope::MakeDst(queue_flags, stage_masks.dst);
-    barrier_set_.MakeMemoryBarriers(queue_flags, dep_info.memoryBarrierCount, dep_info.pMemoryBarriers);
+    barrier_set_.MakeMemoryBarriers(queue_flags, dep_info);
+    
     barrier_set_.MakeBufferMemoryBarriers(sync_state, queue_flags, dep_info.bufferMemoryBarrierCount,
                                           dep_info.pBufferMemoryBarriers);
     barrier_set_.MakeImageMemoryBarriers(sync_state, queue_flags, dep_info.imageMemoryBarrierCount, dep_info.pImageMemoryBarriers);
@@ -492,7 +528,7 @@ SyncOpWaitEvents::SyncOpWaitEvents(vvl::Func command, const SyncValidator &sync_
         auto stage_masks = sync_utils::GetExecScopes(dep_info);
         barrier_set.src_exec_scope = SyncExecScope::MakeSrc(queue_flags, stage_masks.src);
         barrier_set.dst_exec_scope = SyncExecScope::MakeDst(queue_flags, stage_masks.dst);
-        barrier_set.MakeMemoryBarriers(queue_flags, dep_info.memoryBarrierCount, dep_info.pMemoryBarriers);
+        barrier_set.MakeMemoryBarriers(queue_flags, dep_info);
         barrier_set.MakeBufferMemoryBarriers(sync_state, queue_flags, dep_info.bufferMemoryBarrierCount,
                                              dep_info.pBufferMemoryBarriers);
         barrier_set.MakeImageMemoryBarriers(sync_state, queue_flags, dep_info.imageMemoryBarrierCount,
