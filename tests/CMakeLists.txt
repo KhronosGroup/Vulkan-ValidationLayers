@@ -227,6 +227,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/shader_storage_image_positive.cpp
     unit/shader_storage_texel.cpp
     unit/shader_storage_texel_positive.cpp
+    unit/shader_untyped.cpp
+    unit/shader_untyped_positive.cpp
     unit/sparse_buffer.cpp
     unit/sparse_buffer_positive.cpp
     unit/sparse_image.cpp
