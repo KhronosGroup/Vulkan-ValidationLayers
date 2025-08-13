@@ -367,7 +367,7 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, 
                 skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
             }
         }
-        if (dst_buffer && !skip) {
+        if (dst_buffer) {
             const ResourceAccessRange dst_range = MakeRange(*dst_buffer, copy_region.dstOffset, copy_region.size);
             auto hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, dst_range);
             if (hazard.IsHazard()) {
@@ -377,7 +377,9 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, 
                 skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
             }
         }
-        if (skip) break;
+        if (skip) {
+            break;
+        }
     }
     return skip;
 }
@@ -469,7 +471,9 @@ bool SyncValidator::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, V
                     copy_region.dstOffset, copy_region.extent, copy_region.dstSubresource);
                 skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
             }
-            if (skip) break;
+        }
+        if (skip) {
+            break;
         }
     }
 

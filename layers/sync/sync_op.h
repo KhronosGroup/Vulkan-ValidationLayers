@@ -153,7 +153,7 @@ struct BarrierSet {
                                   uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers);
     void MakeImageMemoryBarriers(const SyncValidator &sync_state, const SyncExecScope &src, const SyncExecScope &dst,
                                  uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers);
-    void MakeMemoryBarriers(VkQueueFlags queue_flags, uint32_t barrier_count, const VkMemoryBarrier2 *barriers);
+    void MakeMemoryBarriers(VkQueueFlags queue_flags, const VkDependencyInfo &dep_info);
     void MakeBufferMemoryBarriers(const SyncValidator &sync_state, VkQueueFlags queue_flags, uint32_t barrier_count,
                                   const VkBufferMemoryBarrier2 *barriers);
     void MakeImageMemoryBarriers(const SyncValidator &sync_state, VkQueueFlags queue_flags, uint32_t barrier_count,
