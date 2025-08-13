@@ -4,6 +4,7 @@
 # Copyright (c) 2015-2025 Valve Corporation
 # Copyright (c) 2015-2025 LunarG, Inc.
 # Copyright (c) 2015-2025 Google Inc.
+# Copyright (C) 2025 Arm Limited.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -129,6 +130,7 @@ class DispatchObjectGenerator(BaseGenerator):
             'vkCreateComputePipelines',
             'vkCreateRayTracingPipelinesNV',
             'vkCreateRayTracingPipelinesKHR',
+            'vkCreateDataGraphPipelinesARM',
             # Need to only wrap on certain cases
             'vkCreateShadersEXT',
             # Need handle which pool descriptors were allocated from

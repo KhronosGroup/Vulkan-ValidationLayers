@@ -80,7 +80,7 @@ class Pipeline : public StateObject, public SubStateManager<PipelineTrackerSubSt
 
   public:
     const std::variant<vku::safe_VkGraphicsPipelineCreateInfo, vku::safe_VkComputePipelineCreateInfo,
-                       vku::safe_VkRayTracingPipelineCreateInfoCommon>
+                       vku::safe_VkRayTracingPipelineCreateInfoCommon, vku::safe_VkDataGraphPipelineCreateInfoARM>
         create_info;
 
     // Pipeline cache state
@@ -129,9 +129,9 @@ class Pipeline : public StateObject, public SubStateManager<PipelineTrackerSubSt
 
     const VkPrimitiveTopology topology_at_rasterizer = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
     const bool descriptor_buffer_mode = false;
-    const bool uses_pipeline_robustness;
-    const bool uses_pipeline_vertex_robustness;
-    bool ignore_color_attachments;
+    const bool uses_pipeline_robustness = false;
+    const bool uses_pipeline_vertex_robustness = false;
+    bool ignore_color_attachments = true;
 
     mutable bool binary_data_released = false;
 
@@ -166,9 +166,12 @@ class Pipeline : public StateObject, public SubStateManager<PipelineTrackerSubSt
              std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
              spirv::StatelessData *stateless_data);
 
+    Pipeline(const DeviceState &state_data, const VkDataGraphPipelineCreateInfoARM *pCreateInfo,
+             std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
+             spirv::StatelessData *stateless_data);
+
     void Destroy() override;
     void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) override;
-
     VkPipeline VkHandle() const { return handle_.Cast<VkPipeline>(); }
 
     void SetHandle(VkPipeline p) { handle_.handle = CastToUint64(p); }
@@ -396,6 +399,9 @@ class Pipeline : public StateObject, public SubStateManager<PipelineTrackerSubSt
     const vku::safe_VkRayTracingPipelineCreateInfoCommon &RayTracingCreateInfo() const {
         return std::get<vku::safe_VkRayTracingPipelineCreateInfoCommon>(create_info);
     }
+    const vku::safe_VkDataGraphPipelineCreateInfoARM &DataGraphCreateInfo() const {
+        return std::get<vku::safe_VkDataGraphPipelineCreateInfoARM>(create_info);
+    }
 
     VkStructureType GetCreateInfoSType() const {
         const auto *gfx = std::get_if<vku::safe_VkGraphicsPipelineCreateInfo>(&create_info);
@@ -407,7 +413,14 @@ class Pipeline : public StateObject, public SubStateManager<PipelineTrackerSubSt
             return cmp->sType;
         }
         const auto *rt = std::get_if<vku::safe_VkRayTracingPipelineCreateInfoCommon>(&create_info);
-        return rt->sType;
+        if (rt) {
+            return rt->sType;
+        }
+        const auto *dg = std::get_if<vku::safe_VkDataGraphPipelineCreateInfoARM>(&create_info);
+        if (dg) {
+            return dg->sType;
+        }
+        return VK_STRUCTURE_TYPE_MAX_ENUM;
     }
 
     const void *GetCreateInfoPNext() const {

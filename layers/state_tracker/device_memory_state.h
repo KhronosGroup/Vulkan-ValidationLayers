@@ -37,9 +37,11 @@ struct DedicatedBinding {
         CreateInfo(const VkBufferCreateInfo &b) : buffer(b) {}
         CreateInfo(const VkImageCreateInfo &i) : image(i) {}
         CreateInfo(const VkTensorCreateInfoARM &t) : tensor(t) {}
+        CreateInfo(const VkDataGraphPipelineSessionCreateInfoARM &s) : session(s) {}
         VkBufferCreateInfo buffer;
         VkImageCreateInfo image;
         VkTensorCreateInfoARM tensor;
+        VkDataGraphPipelineSessionCreateInfoARM session;
     } create_info;
 
     DedicatedBinding(VkBuffer buffer, const VkBufferCreateInfo &buffer_create_info)
@@ -50,6 +52,9 @@ struct DedicatedBinding {
 
     DedicatedBinding(VkTensorARM tensor, const VkTensorCreateInfoARM &tensor_create_info)
         : handle(tensor, kVulkanObjectTypeTensorARM), create_info(tensor_create_info) {}
+
+    DedicatedBinding(VkDataGraphPipelineSessionARM session, const VkDataGraphPipelineSessionCreateInfoARM &session_create_info)
+        : handle(session, kVulkanObjectTypeDataGraphPipelineSessionARM), create_info(session_create_info) {}
 };
 
 // Data struct for tracking memory object

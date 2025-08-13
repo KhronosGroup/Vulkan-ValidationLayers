@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2025 Valve Corporation
  * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (C) 2015-2025 Google Inc.
+ * Copyright (c) 2025 Arm Limited.
  * Modifications Copyright (C) 2020-2024 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,6 +22,15 @@
 
 namespace vvl {
 // clang-format off
+struct DispatchVuidsCmdDispatchDataGraphARM : DrawDispatchVuid {
+    DispatchVuidsCmdDispatchDataGraphARM() : DrawDispatchVuid(Func::vkCmdDispatchDataGraphARM) {
+        pipeline_bound_08606                     = "VUID-vkCmdDispatchDataGraphARM-None-09799";
+        compatible_pipeline_08600                = "VUID-vkCmdDispatchDataGraphARM-None-09797";
+        unprotected_command_buffer_02707         = "VUID-vkCmdDispatchDataGraphARM-commandBuffer-09800";
+        protected_command_buffer_02712           = "VUID-vkCmdDispatchDataGraphARM-commandBuffer-09801";
+    }
+};
+
 struct DispatchVuidsCmdDraw : DrawDispatchVuid {
     DispatchVuidsCmdDraw() : DrawDispatchVuid(Func::vkCmdDraw) {
         pipeline_bound_08606                     = "VUID-vkCmdDraw-None-08606";
@@ -3977,6 +3987,7 @@ static const std::pair<Func, DrawDispatchVuid> pairs[] = {
     {Func::vkCmdDrawIndirectByteCountEXT, DispatchVuidsCmdDrawIndirectByteCountEXT()},
     {Func::vkCmdDispatchBase, DispatchVuidsCmdDispatchBase()},
     {Func::vkCmdDispatchBaseKHR, DispatchVuidsCmdDispatchBase()},
+    {Func::vkCmdDispatchDataGraphARM, DispatchVuidsCmdDispatchDataGraphARM()},
     // Used if invalid function is used
     {Func::Empty, DrawDispatchVuid(Func::Empty)}
 };
