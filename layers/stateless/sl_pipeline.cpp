@@ -170,10 +170,10 @@ bool Device::ValidatePipelineBinaryInfo(const void *next, VkPipelineCreateFlags 
 
     if (binary_info && (binary_info->binaryCount > 0)) {
         if (pipelineCache != VK_NULL_HANDLE) {
-            skip |= LogError(GetPipelineBinaryInfoVUID(flag_loc, vvl::PipelineBinaryInfoError::PNext_09616), device, loc.pNext(Struct::VkPipelineBinaryInfoKHR, Field::binaryCount),
-                             "(%" PRIu32 ") is greated than zero while  "
-                             "pipelineCache is not VK_NULL_HANDLE.",
-                             binary_info->binaryCount);
+            skip |=
+                LogError(GetPipelineBinaryInfoVUID(flag_loc, vvl::PipelineBinaryInfoError::PNext_09616), device,
+                         loc.pNext(Struct::VkPipelineBinaryInfoKHR, Field::binaryCount),
+                         "(%" PRIu32 ") is greater than zero while pipelineCache is not VK_NULL_HANDLE.", binary_info->binaryCount);
         }
 
         const auto creation_feedback = vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfo>(next);

@@ -128,7 +128,7 @@ bool Device::manual_PreCallValidateCreateBufferView(VkDevice device, const VkBuf
     }
 
     if (range != VK_WHOLE_SIZE) {
-        // will be 1 because  block-compressed format are not supported for Texe l Buffer
+        // will be 1 because  block-compressed format are not supported for Texel Buffer
         const VkDeviceSize texels_per_block = static_cast<VkDeviceSize>(vkuFormatTexelsPerBlock(format));
         const VkDeviceSize texel_block_size = static_cast<VkDeviceSize>(GetTexelBufferFormatSize(format));
 
@@ -174,7 +174,7 @@ bool Device::ValidateCreateBufferFlags(const VkBufferCreateFlags flags, const Lo
     if ((flags & VK_BUFFER_CREATE_SPARSE_ALIASED_BIT) && (!enabled_features.sparseResidencyAliased)) {
         skip |= LogError("VUID-VkBufferCreateInfo-flags-00917", device, flag_loc,
                          "includes VK_BUFFER_CREATE_SPARSE_ALIASED_BIT, but the sparseResidencyAliased feature is not enabled.");
-    };
+    }
 
     if (((flags & (VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT | VK_BUFFER_CREATE_SPARSE_ALIASED_BIT)) != 0) &&
         ((flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) != VK_BUFFER_CREATE_SPARSE_BINDING_BIT)) {
