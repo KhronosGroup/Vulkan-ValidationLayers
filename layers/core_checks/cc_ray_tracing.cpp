@@ -522,7 +522,6 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
     for (uint32_t geom_i = 0; geom_i < info.geometryCount; ++geom_i) {
         const Location p_geom_loc = info_loc.dot(info.pGeometries ? Field::pGeometries : Field::ppGeometries, geom_i);
         const Location p_geom_geom_loc = p_geom_loc.dot(Field::geometry);
-        const Location p_geom_geom_triangles_loc = p_geom_geom_loc.dot(Field::triangles);
         const VkAccelerationStructureGeometryKHR &geom_data = rt::GetGeometry(info, geom_i);
         const uint32_t geometry_build_range_primitive_count =
             geometry_build_ranges ? geometry_build_ranges[geom_i].primitiveCount : 0;
@@ -530,36 +529,34 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
         switch (geom_data.geometryType) {
             case VK_GEOMETRY_TYPE_TRIANGLES_KHR:  // == VK_GEOMETRY_TYPE_TRIANGLES_NV
             {
-                skip |=
-                    buffer_check(geom_i, geom_data.geometry.triangles.vertexData, p_geom_geom_triangles_loc.dot(Field::vertexData));
-                skip |=
-                    buffer_check(geom_i, geom_data.geometry.triangles.indexData, p_geom_geom_triangles_loc.dot(Field::indexData));
-                skip |= buffer_check(geom_i, geom_data.geometry.triangles.transformData,
-                                     p_geom_geom_triangles_loc.dot(Field::transformData));
+                const Location p_geom_geom_triangles_loc = p_geom_geom_loc.dot(Field::triangles);
+                const auto &triangles = geom_data.geometry.triangles;
+                skip |= buffer_check(geom_i, triangles.vertexData, p_geom_geom_triangles_loc.dot(Field::vertexData));
+                skip |= buffer_check(geom_i, triangles.indexData, p_geom_geom_triangles_loc.dot(Field::indexData));
+                skip |= buffer_check(geom_i, triangles.transformData, p_geom_geom_triangles_loc.dot(Field::transformData));
 
                 if (geometry_build_range_primitive_count > 0) {
-                    if (geom_data.geometry.triangles.vertexData.deviceAddress == 0) {
+                    if (triangles.vertexData.deviceAddress == 0) {
                         skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03804",
                                                    "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03804"),
                                          cmd_buffer, p_geom_geom_triangles_loc.dot(Field::vertexData).dot(Field::deviceAddress),
                                          "is zero");
                     }
                     skip |= ValidateDeviceAddress(p_geom_geom_triangles_loc.dot(Field::vertexData).dot(Field::deviceAddress),
-                                                  LogObjectList(cmd_buffer), geom_data.geometry.triangles.vertexData.deviceAddress);
+                                                  LogObjectList(cmd_buffer), triangles.vertexData.deviceAddress);
                 }
 
-                if (geom_data.geometry.triangles.indexType != VK_INDEX_TYPE_NONE_KHR) {
+                if (triangles.indexType != VK_INDEX_TYPE_NONE_KHR) {
                     if (geometry_build_range_primitive_count > 0) {
-                        if (geom_data.geometry.triangles.indexData.deviceAddress == 0) {
+                        if (triangles.indexData.deviceAddress == 0) {
                             skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03806",
                                                        "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03806"),
                                              cmd_buffer, p_geom_geom_triangles_loc.dot(Field::indexData).dot(Field::deviceAddress),
                                              "is zero");
                         }
 
-                        skip |=
-                            ValidateDeviceAddress(p_geom_geom_triangles_loc.dot(Field::indexData).dot(Field::deviceAddress),
-                                                  LogObjectList(cmd_buffer), geom_data.geometry.triangles.indexData.deviceAddress);
+                        skip |= ValidateDeviceAddress(p_geom_geom_triangles_loc.dot(Field::indexData).dot(Field::deviceAddress),
+                                                      LogObjectList(cmd_buffer), triangles.indexData.deviceAddress);
                     }
 
                     if (info_loc.function == Func::vkCmdBuildAccelerationStructuresKHR &&
@@ -584,84 +581,84 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                     }
                 }
 
-                const VkFormatProperties3KHR format_properties = GetPDFormatProperties(geom_data.geometry.triangles.vertexFormat);
+                const VkFormatProperties3KHR format_properties = GetPDFormatProperties(triangles.vertexFormat);
                 if (!(format_properties.bufferFeatures & VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR)) {
                     skip |= LogError("VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexFormat-03797", cmd_buffer,
                                      p_geom_geom_triangles_loc.dot(Field::vertexFormat),
                                      "is %s which doesn't support VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR.\n"
                                      "(supported bufferFeatures: %s)",
-                                     string_VkFormat(geom_data.geometry.triangles.vertexFormat),
+                                     string_VkFormat(triangles.vertexFormat),
                                      string_VkFormatFeatureFlags2(format_properties.bufferFeatures).c_str());
                 }
                 // Only try to get format info if vertex format is valid
                 else {
-                    const VKU_FORMAT_INFO format_info = vkuGetFormatInfo(geom_data.geometry.triangles.vertexFormat);
+                    const VKU_FORMAT_INFO format_info = vkuGetFormatInfo(triangles.vertexFormat);
                     uint32_t min_component_bits_size = format_info.components[0].size;
                     for (uint32_t component_i = 1; component_i < format_info.component_count; ++component_i) {
                         min_component_bits_size = std::min(format_info.components[component_i].size, min_component_bits_size);
                     }
                     const uint32_t min_component_byte_size = min_component_bits_size / 8;
-                    if (SafeModulo(geom_data.geometry.triangles.vertexData.deviceAddress, min_component_byte_size) != 0) {
+                    if (SafeModulo(triangles.vertexData.deviceAddress, min_component_byte_size) != 0) {
                         skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03711",
                                                    "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03711"),
                                          cmd_buffer, p_geom_geom_triangles_loc.dot(Field::vertexData).dot(Field::deviceAddress),
                                          "is 0x%" PRIx64 " and is not aligned to the minimum component byte size (%" PRIu32
                                          ") of its corresponding vertex "
                                          "format (%s).",
-                                         geom_data.geometry.triangles.vertexData.deviceAddress, min_component_byte_size,
-                                         string_VkFormat(geom_data.geometry.triangles.vertexFormat));
+                                         triangles.vertexData.deviceAddress, min_component_byte_size,
+                                         string_VkFormat(triangles.vertexFormat));
                     }
-                    if (SafeModulo(geom_data.geometry.triangles.vertexStride, min_component_byte_size) != 0) {
+                    if (SafeModulo(triangles.vertexStride, min_component_byte_size) != 0) {
                         skip |= LogError("VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexStride-03735", cmd_buffer,
                                          p_geom_geom_triangles_loc.dot(Field::vertexStride),
                                          "is %" PRIu64 " and is not aligned to the minimum component byte size (%" PRIu32
                                          ") of its corresponding vertex "
                                          "format (%s).",
-                                         geom_data.geometry.triangles.vertexStride, min_component_byte_size,
-                                         string_VkFormat(geom_data.geometry.triangles.vertexFormat));
+                                         triangles.vertexStride, min_component_byte_size, string_VkFormat(triangles.vertexFormat));
                     }
                 }
-                if (geom_data.geometry.triangles.transformData.deviceAddress != 0 && geometry_build_range_primitive_count > 0) {
-                    skip |=
-                        ValidateDeviceAddress(p_geom_geom_triangles_loc.dot(Field::transformData).dot(Field::deviceAddress),
-                                              LogObjectList(cmd_buffer), geom_data.geometry.triangles.transformData.deviceAddress);
+                if (triangles.transformData.deviceAddress != 0 && geometry_build_range_primitive_count > 0) {
+                    skip |= ValidateDeviceAddress(p_geom_geom_triangles_loc.dot(Field::transformData).dot(Field::deviceAddress),
+                                                  LogObjectList(cmd_buffer), triangles.transformData.deviceAddress);
                 }
                 break;
             }
             case VK_GEOMETRY_TYPE_INSTANCES_KHR: {
                 const Location instances_loc = p_geom_geom_loc.dot(Field::instances);
                 const Location instances_data_loc = instances_loc.dot(Field::data);
+                const auto &instances = geom_data.geometry.instances;
 
-                skip |= buffer_check(geom_i, geom_data.geometry.instances.data, instances_data_loc);
+                skip |= buffer_check(geom_i, instances.data, instances_data_loc);
 
                 if (geometry_build_range_primitive_count > 0) {
-                    if (geom_data.geometry.instances.data.deviceAddress == 0) {
+                    if (instances.data.deviceAddress == 0) {
                         skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03813",
                                                    "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03813"),
                                          cmd_buffer, instances_data_loc.dot(Field::deviceAddress), "is zero");
                     }
 
                     skip |= ValidateDeviceAddress(instances_data_loc.dot(Field::deviceAddress), LogObjectList(cmd_buffer),
-                                                  geom_data.geometry.instances.data.deviceAddress);
+                                                  instances.data.deviceAddress);
                 }
                 break;
             }
             case VK_GEOMETRY_TYPE_AABBS_KHR:  // == VK_GEOMETRY_TYPE_AABBS_NV
             {
-                const Location aabbs_loc = p_geom_geom_loc.dot(Field::instances);
+                const Location aabbs_loc = p_geom_geom_loc.dot(Field::aabbs);
                 const Location aabbs_data_loc = aabbs_loc.dot(Field::data);
+                const auto &aabbs = geom_data.geometry.aabbs;
 
-                skip |= buffer_check(geom_i, geom_data.geometry.aabbs.data, aabbs_data_loc);
+                skip |= buffer_check(geom_i, aabbs.data, aabbs_data_loc);
 
                 if (geometry_build_range_primitive_count > 0) {
-                    if (geom_data.geometry.aabbs.data.deviceAddress == 0) {
+                    if (aabbs.data.deviceAddress == 0) {
                         skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03811",
                                                    "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03811"),
                                          cmd_buffer, aabbs_data_loc.dot(Field::deviceAddress), "is zero");
                     }
 
                     skip |= ValidateDeviceAddress(aabbs_data_loc.dot(Field::deviceAddress), LogObjectList(cmd_buffer),
-                                                  geom_data.geometry.aabbs.data.deviceAddress);
+                                                  aabbs.data.deviceAddress);
                 }
                 break;
             }
