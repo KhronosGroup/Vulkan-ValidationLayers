@@ -334,6 +334,7 @@ char const *string_NumericType(uint32_t type);
 struct VariableBase {
     const uint32_t id;
     const uint32_t type_id;
+    const uint32_t data_type_id;
     const spv::StorageClass storage_class;
     const DecorationSet &decorations;
     std::shared_ptr<const TypeStructInfo> type_struct_info;  // null if no struct type
@@ -370,6 +371,8 @@ struct VariableBase {
     bool IsImageWrittenTo() const { return access_mask & AccessBit::image_write; }
     // Something like textureSize() will access the OpVariable, but not the image itself
     bool IsImageAccessed() const { return access_mask & AccessBit::image_mask; }
+
+    bool IsUntyped() const { return data_type_id != 0; }
 
   private:
     static const char *FindDebugName(const VariableBase &variable, const DebugNameMap &debug_name_map);
@@ -655,6 +658,7 @@ struct Module {
         std::vector<const Instruction *> member_decoration_inst;
         // Find all variable instructions to prevent relookping module later
         std::vector<const Instruction *> variable_inst;
+        std::vector<const Instruction *> explicit_memory_inst;
         // For shader tile image - OpDepthAttachmentReadEXT/OpStencilAttachmentReadEXT/OpColorAttachmentReadEXT
         bool has_shader_tile_image_depth_read{false};
         bool has_shader_tile_image_stencil_read{false};
@@ -768,10 +772,13 @@ struct Module {
     uint32_t GetBaseType(const Instruction *insn) const;
     const Instruction *GetBaseTypeInstruction(uint32_t type) const;
     const Instruction *GetVariablePointerType(const spirv::Instruction &var_insn) const;
+    const Instruction *GetVariableDataType(const spirv::Instruction &var_insn) const;
     uint32_t GetTypeId(uint32_t id) const;
     uint32_t GetTexelComponentCount(const Instruction &insn) const;
     uint32_t GetFlattenArraySize(const Instruction &insn) const;
     AtomicInstructionInfo GetAtomicInfo(const Instruction &insn) const;
+    spv::StorageClass StorageClass(const Instruction &insn) const;
+    bool UsesStorageCapabilityStorageClass(const Instruction &insn) const;
 
     bool HasCapability(spv::Capability find_capability) const {
         return std::any_of(static_data_.capability_list.begin(), static_data_.capability_list.end(),

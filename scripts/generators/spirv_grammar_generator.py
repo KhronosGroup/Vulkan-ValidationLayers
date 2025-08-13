@@ -646,7 +646,6 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
             }}
             ''')
 
-
         out.append('''
             const OperandInfo& GetOperandInfo(uint32_t opcode) {
                 static const vvl::unordered_map<uint32_t, OperandInfo> kOperandTable {

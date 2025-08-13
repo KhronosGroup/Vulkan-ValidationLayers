@@ -208,9 +208,11 @@ spv::StorageClass Instruction::StorageClass() const {
     switch (Opcode()) {
         case spv::OpTypePointer:
         case spv::OpTypeForwardPointer:
+        case spv::OpTypeUntypedPointerKHR:
             storage_class = static_cast<spv::StorageClass>(Word(2));
             break;
         case spv::OpVariable:
+        case spv::OpUntypedVariableKHR:
             storage_class = static_cast<spv::StorageClass>(Word(3));
             break;
 

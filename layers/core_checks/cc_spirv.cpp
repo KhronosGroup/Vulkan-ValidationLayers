@@ -185,10 +185,13 @@ bool CoreChecks::ValidatePushConstantUsage(const spirv::Module &module_state, co
     return skip;
 }
 
-static void TypeToDescriptorTypeSet(const spirv::Module &module_state, uint32_t type_id,
+static void TypeToDescriptorTypeSet(const spirv::Module &module_state, uint32_t type_id, uint32_t data_type_id,
                                     vvl::unordered_set<uint32_t> &descriptor_type_set) {
     const spirv::Instruction *type = module_state.FindDef(type_id);
-    bool is_storage_buffer = false;
+    assert(type->Opcode() == spv::OpTypePointer || type->Opcode() == spv::OpTypeUntypedPointerKHR);
+    bool is_storage_buffer = type->StorageClass() == spv::StorageClassStorageBuffer;
+
+    if (data_type_id != 0) type = module_state.FindDef(data_type_id);
 
     // Strip off any array or ptrs. Where we remove array levels, adjust the  descriptor count for each dimension.
     while (type->IsArray() || type->Opcode() == spv::OpTypePointer) {
@@ -2048,7 +2051,7 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
 
     for (const auto &variable : entrypoint.resource_interface_variables) {
         vvl::unordered_set<uint32_t> descriptor_type_set;
-        TypeToDescriptorTypeSet(module_state, variable.type_id, descriptor_type_set);
+        TypeToDescriptorTypeSet(module_state, variable.type_id, variable.data_type_id, descriptor_type_set);
         skip |= ValidateShaderInterfaceVariable(module_state, variable, descriptor_type_set, loc);
         if (pipeline) {
             skip |=

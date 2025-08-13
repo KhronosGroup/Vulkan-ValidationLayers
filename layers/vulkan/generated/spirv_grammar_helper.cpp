@@ -617,10 +617,26 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpTypeGraphARM";
         case spv::OpTerminateInvocation:
             return "OpTerminateInvocation";
+        case spv::OpTypeUntypedPointerKHR:
+            return "OpTypeUntypedPointerKHR";
+        case spv::OpUntypedVariableKHR:
+            return "OpUntypedVariableKHR";
+        case spv::OpUntypedAccessChainKHR:
+            return "OpUntypedAccessChainKHR";
+        case spv::OpUntypedInBoundsAccessChainKHR:
+            return "OpUntypedInBoundsAccessChainKHR";
         case spv::OpSubgroupBallotKHR:
             return "OpSubgroupBallotKHR";
         case spv::OpSubgroupFirstInvocationKHR:
             return "OpSubgroupFirstInvocationKHR";
+        case spv::OpUntypedPtrAccessChainKHR:
+            return "OpUntypedPtrAccessChainKHR";
+        case spv::OpUntypedInBoundsPtrAccessChainKHR:
+            return "OpUntypedInBoundsPtrAccessChainKHR";
+        case spv::OpUntypedArrayLengthKHR:
+            return "OpUntypedArrayLengthKHR";
+        case spv::OpUntypedPrefetchKHR:
+            return "OpUntypedPrefetchKHR";
         case spv::OpSubgroupAllKHR:
             return "OpSubgroupAllKHR";
         case spv::OpSubgroupAnyKHR:
@@ -633,6 +649,8 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpSubgroupReadInvocationKHR";
         case spv::OpExtInstWithForwardRefsKHR:
             return "OpExtInstWithForwardRefsKHR";
+        case spv::OpUntypedGroupAsyncCopyKHR:
+            return "OpUntypedGroupAsyncCopyKHR";
         case spv::OpTraceRayKHR:
             return "OpTraceRayKHR";
         case spv::OpExecuteCallableKHR:
@@ -1075,22 +1093,6 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpRoundFToTF32INTEL";
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-        case spv::OpTypeUntypedPointerKHR:
-            return "OpTypeUntypedPointerKHR";
-        case spv::OpUntypedVariableKHR:
-            return "OpUntypedVariableKHR";
-        case spv::OpUntypedAccessChainKHR:
-            return "OpUntypedAccessChainKHR";
-        case spv::OpUntypedInBoundsAccessChainKHR:
-            return "OpUntypedInBoundsAccessChainKHR";
-        case spv::OpUntypedPtrAccessChainKHR:
-            return "OpUntypedPtrAccessChainKHR";
-        case spv::OpUntypedInBoundsPtrAccessChainKHR:
-            return "OpUntypedInBoundsPtrAccessChainKHR";
-        case spv::OpUntypedArrayLengthKHR:
-            return "OpUntypedArrayLengthKHR";
-        case spv::OpUntypedPrefetchKHR:
-            return "OpUntypedPrefetchKHR";
         case spv::OpAllocateNodePayloadsAMDX:
             return "OpAllocateNodePayloadsAMDX";
         case spv::OpEnqueueNodePayloadsAMDX:
@@ -2359,14 +2361,23 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpGraphEndARM, {{}}},
         {spv::OpTypeGraphARM, {{OperandKind::Literal, OperandKind::Id}}},
         {spv::OpTerminateInvocation, {{}}},
+        {spv::OpTypeUntypedPointerKHR, {{OperandKind::ValueEnum}}},
+        {spv::OpUntypedVariableKHR, {{OperandKind::ValueEnum, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpUntypedAccessChainKHR, {{OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpUntypedInBoundsAccessChainKHR, {{OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpSubgroupBallotKHR, {{OperandKind::Id}}},
         {spv::OpSubgroupFirstInvocationKHR, {{OperandKind::Id}}},
+        {spv::OpUntypedPtrAccessChainKHR, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpUntypedInBoundsPtrAccessChainKHR, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpUntypedArrayLengthKHR, {{OperandKind::Id, OperandKind::Id, OperandKind::Literal}}},
+        {spv::OpUntypedPrefetchKHR, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpSubgroupAllKHR, {{OperandKind::Id}}},
         {spv::OpSubgroupAnyKHR, {{OperandKind::Id}}},
         {spv::OpSubgroupAllEqualKHR, {{OperandKind::Id}}},
         {spv::OpGroupNonUniformRotateKHR, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpSubgroupReadInvocationKHR, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpExtInstWithForwardRefsKHR, {{OperandKind::Id, OperandKind::Literal, OperandKind::Id}}},
+        {spv::OpUntypedGroupAsyncCopyKHR, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum, OperandKind::BitEnum}}},
         {spv::OpTraceRayKHR, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpExecuteCallableKHR, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpConvertUToAccelerationStructureKHR, {{OperandKind::Id}}},

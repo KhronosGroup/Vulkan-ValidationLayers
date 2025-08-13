@@ -29,7 +29,7 @@
             "sub_dir": "SPIRV-Headers",
             "build_dir": "SPIRV-Headers/build",
             "install_dir": "SPIRV-Headers/build/install",
-            "commit": "de1807b7cfa8e722979d5ab7b7445b258dbc1836"
+            "commit": "e6d5e88c07cc66a798b668945e7fb29ec1cfee27"
         },
         {
             "name": "SPIRV-Tools",

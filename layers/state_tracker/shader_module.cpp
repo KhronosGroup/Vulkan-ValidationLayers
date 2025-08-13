@@ -420,6 +420,12 @@ static void FindPointersAndObjects(const Instruction& insn, vvl::unordered_set<u
         case spv::OpInBoundsPtrAccessChain:
             result.insert(insn.Word(3));  // base ptr
             break;
+        case spv::OpUntypedAccessChainKHR:
+        case spv::OpUntypedInBoundsAccessChainKHR:
+        case spv::OpUntypedPtrAccessChainKHR:
+        case spv::OpUntypedInBoundsPtrAccessChainKHR:
+            result.insert(insn.Word(4));  // base ptr
+            break;
         case spv::OpArrayLength:
             // This is not an access of memory, but counts as static usage of the variable
             result.insert(insn.Word(3));
@@ -631,7 +637,7 @@ std::vector<ResourceInterfaceVariable> EntryPoint::GetResourceInterfaceVariables
     // Now that the accessible_ids list is known, fill in any information that can be statically known per EntryPoint
     for (const auto& accessible_id : entrypoint.accessible_ids) {
         const Instruction& insn = *module_state.FindDef(accessible_id);
-        if (insn.Opcode() != spv::OpVariable) {
+        if (insn.Opcode() != spv::OpVariable && insn.Opcode() != spv::OpUntypedVariableKHR) {
             continue;
         }
         const uint32_t storage_class = insn.StorageClass();
@@ -1034,6 +1040,7 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
                 break;
 
             case spv::OpVariable:
+            case spv::OpUntypedVariableKHR:
                 variable_inst.push_back(&insn);
                 break;
 
@@ -1240,6 +1247,11 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
                 // We don't care about any other defs for now.
                 break;
         }
+
+        if (opcode == spv::OpVariable || module_state.UsesStorageCapabilityStorageClass(insn)) {
+            // Capture non-explicit layout variables here too.
+            explicit_memory_inst.push_back(&insn);
+        }
     }
 
     FuncParameterMap func_parameter_map;
@@ -1277,6 +1289,7 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
                         insn = module_state.FindDef(variable_id);
                         break;
                     case spv::OpVariable:
+                    case spv::OpUntypedVariableKHR:
                         variable_access_map[variable_id] |= access;
                         insn = nullptr;
                         break;
@@ -1339,6 +1352,8 @@ std::shared_ptr<const TypeStructInfo> Module::GetTypeStructInfo(const Instructio
     while (true) {
         if (insn->Opcode() == spv::OpVariable) {
             insn = FindDef(insn->TypeId());
+        } else if (insn->Opcode() == spv::OpUntypedVariableKHR && insn->Length() > 4) {
+            insn = FindDef(insn->Word(4));
         } else if (insn->Opcode() == spv::OpTypePointer) {
             insn = FindDef(insn->Word(3));
         } else if (insn->IsArray()) {
@@ -1797,13 +1812,14 @@ VariableBase::VariableBase(const Module& module_state, const Instruction& insn, 
                            const VariableAccessMap& variable_access_map, const DebugNameMap& debug_name_map)
     : id(insn.ResultId()),
       type_id(insn.TypeId()),
+      data_type_id(insn.Opcode() == spv::OpUntypedVariableKHR ? insn.Word(4) : 0),
       storage_class(static_cast<spv::StorageClass>(insn.Word(3))),
       decorations(module_state.GetDecorationSet(id)),
       type_struct_info(module_state.GetTypeStructInfo(&insn)),
       access_mask(AccessBit::empty),
       stage(stage),
       debug_name(FindDebugName(*this, debug_name_map)) {
-    assert(insn.Opcode() == spv::OpVariable);
+    assert(insn.Opcode() == spv::OpVariable || insn.Opcode() == spv::OpUntypedVariableKHR);
 
     // Finding the access of an image is more complex we will set that using the ImageAccessMap later
     // (Also there are no images for push constant or stage interface variables)
@@ -2371,7 +2387,7 @@ uint32_t Module::GetTypeBitsSize(const Instruction* insn) const {
             const Instruction* type = FindDef(insn->Word(3));
             bit_size = GetTypeBitsSize(type);
         }
-    } else if (opcode == spv::OpVariable) {
+    } else if (opcode == spv::OpVariable || opcode == spv::OpUntypedVariableKHR) {
         const Instruction* type = FindDef(insn->TypeId());
         bit_size = GetTypeBitsSize(type);
     } else if (opcode == spv::OpTypeImage) {
@@ -2432,14 +2448,20 @@ const Instruction* Module::GetBaseTypeInstruction(uint32_t type) const {
     return FindDef(base_insn_id);
 }
 
-// return %A in:
+// For typed pointers, return %A in:
 //   %B = OpTypePointer Input %A
 //   %C = OpVariable %B Input
+// For untyped pointers, return %B in:
+//   %C = OpUntypedVariableKHR %A Input %B
 const Instruction* Module::GetVariablePointerType(const spirv::Instruction& var_insn) const {
-    assert(var_insn.Opcode() == spv::OpVariable);
-    const uint32_t result_type_id = var_insn.TypeId();
-    const Instruction* type_pointer = FindDef(result_type_id);
-    return FindDef(type_pointer->Word(3));
+    assert(var_insn.Opcode() == spv::OpVariable || var_insn.Opcode() == spv::OpUntypedVariableKHR);
+    if (var_insn.Opcode() == spv::OpVariable) {
+        const uint32_t result_type_id = var_insn.TypeId();
+        const Instruction* type_pointer = FindDef(result_type_id);
+        return FindDef(type_pointer->Word(3));
+    } else {
+        return FindDef(var_insn.Word(4));
+    }
 }
 
 // Returns type_id if id has type or zero otherwise
@@ -2484,12 +2506,22 @@ AtomicInstructionInfo Module::GetAtomicInfo(const Instruction& insn) const {
     // All atomics have a pointer referenced
     const uint32_t pointer_index = insn.Opcode() == spv::OpAtomicStore ? 1 : 3;
     const Instruction* access = FindDef(insn.Word(pointer_index));
-
-    // spirv-val will catch if not OpTypePointer
     const Instruction* pointer = FindDef(access->Word(1));
     info.storage_class = pointer->StorageClass();
 
-    const Instruction* data_type = FindDef(pointer->Word(3));
+    const bool is_untyped = (pointer->Opcode() == spv::OpTypeUntypedPointerKHR);
+
+    const Instruction* data_type = nullptr;
+    if (is_untyped) {
+        if (insn.Opcode() == spv::OpAtomicStore) {
+            const Instruction* value_id = FindDef(insn.Word(4));
+            data_type = FindDef(value_id->TypeId());
+        } else {
+            data_type = FindDef(insn.TypeId());
+        }
+    } else {
+        data_type = FindDef(pointer->Word(3));
+    }
 
     if (data_type->Opcode() == spv::OpTypeVector) {
         info.vector_size = data_type->Word(3);
@@ -2497,10 +2529,74 @@ AtomicInstructionInfo Module::GetAtomicInfo(const Instruction& insn) const {
     }
 
     info.type = data_type->Opcode();
-
     info.bit_width = data_type->GetBitWidth();
 
     return info;
+}
+
+spv::StorageClass Module::StorageClass(const Instruction& insn) const {
+    spv::StorageClass storage_class = spv::StorageClassMax;
+    uint32_t ptr_id = 0;
+    // TODO: this could be expanded to many more opcodes,
+    // but only contains minimally necessary ones right now.
+    switch (insn.Opcode()) {
+        case spv::OpVariable:
+        case spv::OpUntypedVariableKHR:
+        case spv::OpTypePointer:
+        case spv::OpTypeForwardPointer:
+        case spv::OpTypeUntypedPointerKHR:
+            storage_class = insn.StorageClass();
+            break;
+        case spv::OpLoad:
+        case spv::OpAtomicLoad:
+        case spv::OpAtomicExchange:
+        case spv::OpAtomicCompareExchange:
+        case spv::OpAtomicIIncrement:
+        case spv::OpAtomicIDecrement:
+        case spv::OpAtomicIAdd:
+        case spv::OpAtomicISub:
+        case spv::OpAtomicSMin:
+        case spv::OpAtomicSMax:
+        case spv::OpAtomicUMin:
+        case spv::OpAtomicUMax:
+        case spv::OpAtomicAnd:
+        case spv::OpAtomicOr:
+        case spv::OpAtomicFMinEXT:
+        case spv::OpAtomicFMaxEXT:
+        case spv::OpAtomicFAddEXT:
+            ptr_id = insn.Word(3);
+            break;
+        case spv::OpStore:
+        case spv::OpAtomicStore:
+            ptr_id = insn.Word(1);
+            break;
+        default:
+            break;
+    }
+
+    if (ptr_id != 0) {
+        const uint32_t ptr_ty_id = GetTypeId(ptr_id);
+        const Instruction* ptr_insn = FindDef(ptr_ty_id);
+        storage_class = ptr_insn->StorageClass();
+    }
+
+    return storage_class;
+}
+
+bool Module::UsesStorageCapabilityStorageClass(const Instruction& insn) const {
+    switch (StorageClass(insn)) {
+        case spv::StorageClassStorageBuffer:
+        case spv::StorageClassPhysicalStorageBuffer:
+        case spv::StorageClassShaderRecordBufferKHR:
+        case spv::StorageClassUniform:
+        case spv::StorageClassPushConstant:
+        case spv::StorageClassInput:
+        case spv::StorageClassOutput:
+        case spv::StorageClassWorkgroup:  // with additional feature
+            return true;
+        default:
+            return false;
+    }
 }
 
 }  // namespace spirv
