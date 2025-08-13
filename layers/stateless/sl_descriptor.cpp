@@ -186,7 +186,7 @@ bool Device::ValidateSamplerFilterMinMax(const VkSamplerCreateInfo &create_info,
 }
 
 // VK_EXT_custom_border_color
-bool Device::ValidateSamplerCustomBoarderColor(const VkSamplerCreateInfo &create_info, const Location &create_info_loc) const {
+bool Device::ValidateSamplerCustomBorderColor(const VkSamplerCreateInfo &create_info, const Location &create_info_loc) const {
     bool skip = false;
 
     if (create_info.borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT || create_info.borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT) {
@@ -502,7 +502,7 @@ bool Device::ValidateSamplerCreateInfo(const VkSamplerCreateInfo &create_info, c
     }
 
     skip |= ValidateSamplerFilterMinMax(create_info, create_info_loc);
-    skip |= ValidateSamplerCustomBoarderColor(create_info, create_info_loc);
+    skip |= ValidateSamplerCustomBorderColor(create_info, create_info_loc);
     skip |= ValidateSamplerSubsampled(create_info, create_info_loc);
     skip |= ValidateSamplerImageProcessingQCOM(create_info, create_info_loc);
 

@@ -61,26 +61,16 @@ bool Device::manual_PreCallValidateCmdSetScissorWithCount(VkCommandBuffer comman
         if (scissorCount != 1) {
             skip |= LogError("VUID-vkCmdSetScissorWithCount-scissorCount-03398", commandBuffer,
                              error_obj.location.dot(Field::scissorCount),
-                             "(%" PRIu32
-                             ") must "
-                             "be 1 when the multiViewport feature is disabled.",
-                             scissorCount);
+                             "(%" PRIu32 ") must be 1 when the multiViewport feature is disabled.", scissorCount);
         }
     } else {  // multiViewport enabled
         if (scissorCount == 0) {
             skip |= LogError("VUID-vkCmdSetScissorWithCount-scissorCount-03397", commandBuffer,
-                             error_obj.location.dot(Field::scissorCount),
-                             "(%" PRIu32
-                             ") must "
-                             "be great than zero.",
-                             scissorCount);
+                             error_obj.location.dot(Field::scissorCount), "(%" PRIu32 ") must be greater than zero.", scissorCount);
         } else if (scissorCount > device_limits.maxViewports) {
-            skip |= LogError("VUID-vkCmdSetScissorWithCount-scissorCount-03397", commandBuffer,
-                             error_obj.location.dot(Field::scissorCount),
-                             "(%" PRIu32
-                             ") must "
-                             "not be greater than maxViewports (%" PRIu32 ").",
-                             scissorCount, device_limits.maxViewports);
+            skip |= LogError(
+                "VUID-vkCmdSetScissorWithCount-scissorCount-03397", commandBuffer, error_obj.location.dot(Field::scissorCount),
+                "(%" PRIu32 ") must not be greater than maxViewports (%" PRIu32 ").", scissorCount, device_limits.maxViewports);
         }
     }
 
@@ -406,7 +396,7 @@ bool Device::manual_PreCallValidateCmdSetViewportWScalingNV(VkCommandBuffer comm
     if ((sum < 1) || (sum > device_limits.maxViewports)) {
         skip |= LogError("VUID-vkCmdSetViewportWScalingNV-firstViewport-01324", commandBuffer, error_obj.location,
                          "firstViewport (%" PRIu32 ") + viewportCount (%" PRIu32 ") is %" PRIu64
-                         ", which must be between 1 and VkPhysicalDeviceLimits::maxViewports (%" PRIu32 "), inculsive.",
+                         ", which must be between 1 and VkPhysicalDeviceLimits::maxViewports (%" PRIu32 "), inclusive.",
                          firstViewport, viewportCount, sum, device_limits.maxViewports);
     }
 

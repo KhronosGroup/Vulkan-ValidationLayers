@@ -350,7 +350,7 @@ bool SpirvValidator::ValidateAtomicsTypes(const spirv::Module &module_state, con
             } else if ((atomic.bit_width == 64) && (valid_64_float == false)) {
                 skip |= LogError(
                     "VUID-RuntimeSpirv-None-06339", module_state.handle(), loc,
-                    "SPIR-V is using 64-bit float atomics operations but snone of the required features were enabled.\n%s\n",
+                    "SPIR-V is using 64-bit float atomics operations but none of the required features were enabled.\n%s\n",
                     module_state.DescribeInstruction(atomic_def).c_str());
             }
         }

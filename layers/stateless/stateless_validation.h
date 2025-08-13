@@ -570,7 +570,7 @@ class Device : public vvl::base::Device {
                                                       const Context &context) const;
 
     bool ValidateSamplerFilterMinMax(const VkSamplerCreateInfo &create_info, const Location &create_info_loc) const;
-    bool ValidateSamplerCustomBoarderColor(const VkSamplerCreateInfo &create_info, const Location &create_info_loc) const;
+    bool ValidateSamplerCustomBorderColor(const VkSamplerCreateInfo &create_info, const Location &create_info_loc) const;
     bool ValidateSamplerSubsampled(const VkSamplerCreateInfo &create_info, const Location &create_info_loc) const;
     bool ValidateSamplerImageProcessingQCOM(const VkSamplerCreateInfo &create_info, const Location &create_info_loc) const;
     bool ValidateSamplerCreateInfo(const VkSamplerCreateInfo &create_info, const Location &create_info_loc,
