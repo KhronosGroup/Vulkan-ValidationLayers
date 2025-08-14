@@ -85,8 +85,8 @@ TEST_F(PositiveGpuAVDescriptorClassTexelBuffer, AtomicImageLoadStore) {
         layout(set = 0, binding = 0, r32f) uniform imageBuffer s_buffer;  // texel_buffer[4]
 
         void main() {
-            float x = imageAtomicLoad(s_buffer, 3, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelaxed);
-            imageAtomicStore(s_buffer, 3, x, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelaxed);
+            float x = imageAtomicLoad(s_buffer, 3, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsAcquire);
+            imageAtomicStore(s_buffer, 3, x, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelease);
         }
     )glsl";
 

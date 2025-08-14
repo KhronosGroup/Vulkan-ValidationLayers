@@ -2026,7 +2026,7 @@ TEST_F(NegativeShaderSpirv, DeviceMemoryScope) {
         #extension GL_KHR_memory_scope_semantics : enable
         layout(set = 0, binding = 0) buffer ssbo { uint y; };
         void main() {
-            atomicStore(y, 1u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
+            atomicStore(y, 1u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelease);
        }
     )glsl";
 
@@ -2048,7 +2048,7 @@ TEST_F(NegativeShaderSpirv, QueueFamilyMemoryScope) {
         #extension GL_KHR_memory_scope_semantics : enable
         layout(set = 0, binding = 0) buffer ssbo { uint y; };
         void main() {
-            atomicStore(y, 1u, gl_ScopeQueueFamily, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
+            atomicStore(y, 1u, gl_ScopeQueueFamily, gl_StorageSemanticsBuffer, gl_SemanticsRelease);
        }
     )glsl";
 
@@ -2078,7 +2078,7 @@ TEST_F(NegativeShaderSpirv, DeviceMemoryScopeDebugInfo) {
 #extension GL_KHR_memory_scope_semantics : enable
 layout(set = 0, binding = 0) buffer ssbo { uint y; };
 void main() {
-    atomicStore(y, 1u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
+    atomicStore(y, 1u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelease);
 }"
                OpSourceExtension "GL_KHR_memory_scope_semantics"
                OpName %main "main"
@@ -2102,20 +2102,20 @@ void main() {
       %int_1 = OpConstant %int 1
      %int_64 = OpConstant %int 64
      %uint_0 = OpConstant %uint 0
-    %uint_64 = OpConstant %uint 64
+    %uint_68 = OpConstant %uint 68
                OpLine %1 4 19
        %main = OpFunction %void None %4
           %6 = OpLabel
                OpLine %1 5 0
          %14 = OpAccessChain %_ptr_Uniform_uint %_ %int_0
-               OpAtomicStore %14 %int_1 %uint_64 %uint_1
+               OpAtomicStore %14 %int_1 %uint_68 %uint_1
                OpLine %1 6 0
                OpReturn
                OpFunctionEnd
     )";
 
     // VUID-RuntimeSpirv-vulkanMemoryModel-06265
-    m_errorMonitor->SetDesiredError("5:     atomicStore(y, 1u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);");
+    m_errorMonitor->SetDesiredError("5:     atomicStore(y, 1u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelease);");
     VkShaderObj const cs(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }

@@ -1793,15 +1793,15 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ArrayCopySlang) {
           uint b[4]; // b[3] is OOB
           uint c; // offset 36
         };
-        
+
         [[vk::binding(0, 0)]]
         RWStructuredBuffer<Bar> foo;
-        
+
         [shader("compute")]
         void main() {
           uint d[4] = {4, 5, 6, 7};
           foo[0].b = d;
-        }    
+        }
     )slang";
     ComputeStorageBufferTest(slang_shader, SPV_SOURCE_SLANG, 32, "VUID-vkCmdDispatch-storageBuffers-06936");
 }
@@ -1870,19 +1870,19 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ArrayCopyTwoBindingsSlang) {
             uint b[4];
             uint c;
         };
-        
+
         struct Bar2 {
             uint4 d;
             uint e[4];
             uint f;
         };
-        
+
         [[vk::binding(0, 0)]]
         RWStructuredBuffer<Bar1> foo1;
-        
+
         [[vk::binding(1, 0)]]
         RWStructuredBuffer<Bar2> foo2;
-        
+
         [shader("compute")]
         void main() {
             foo1[0].b = foo2[0].e;
@@ -1997,16 +1997,16 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, StructCopySlang) {
           uint y;
           uint z[2];
         };
-        
+
         struct FooBuffer {
           float4 a;
           Bar b;
           uint c;
         };
-        
+
         [[vk::binding(0, 0)]]
         RWStructuredBuffer<FooBuffer> foo;
-        
+
         [shader("compute")]
         void main() {
           foo[1].b = foo[0].b;
@@ -2026,10 +2026,10 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ChainOfAccessChains) {
             uint a;
             uint d[4]; // this really ends up being a 1 element struct with the array in it
         };
-        
+
         [[vk::binding(0, 0)]]
         RWStructuredBuffer<Bar> foo; // 20 byte stride
-        
+
         [shader("compute")]
         void main() {
             foo[1].d[3] = 44;
@@ -2049,7 +2049,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, AtomicStore) {
         };
 
         void main() {
-            atomicStore(b, 0u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
+            atomicStore(b, 0u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelease);
         }
     )glsl";
     ComputeStorageBufferTest(cs_source, SPV_SOURCE_GLSL, 16, "VUID-vkCmdDispatch-storageBuffers-06936");
@@ -2065,7 +2065,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, AtomicLoad) {
         };
 
         void main() {
-            a.x = atomicLoad(b.x, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
+            a.x = atomicLoad(b.x, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsAcquire);
         }
     )glsl";
     ComputeStorageBufferTest(cs_source, SPV_SOURCE_GLSL, 16, "VUID-vkCmdDispatch-storageBuffers-06936");
@@ -2101,8 +2101,8 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, AtomicsDescriptorIndex) {
         } ssbo[2];
 
         void main() {
-            atomicStore(ssbo[0].b, 0u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed); // valid
-            atomicStore(ssbo[1].b, 0u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed); // invalid
+            atomicStore(ssbo[0].b, 0u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelease); // valid
+            atomicStore(ssbo[1].b, 0u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelease); // invalid
         }
     )glsl";
 
@@ -2142,10 +2142,10 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DescriptorIndexSlang) {
           uint c;
           uint d;
         };
-        
+
         [[vk::binding(0, 0)]]
         RWStructuredBuffer<Bar> foo[2]; // stride of 48 bytes
-        
+
         [shader("compute")]
         void main() {
           foo[1][1].d = 0;

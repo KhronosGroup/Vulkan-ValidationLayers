@@ -3706,9 +3706,9 @@ TEST_F(NegativeGpuAVDescriptorIndexing, AtomicImagePartiallyBound) {
         layout(set = 0, binding = 0, R32ui) uniform uimage2D atomic_image;
 
         void main() {
-            uint y = imageAtomicLoad(atomic_image, ivec2(0), gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelaxed);
-            imageAtomicStore(atomic_image, ivec2(0), y, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelaxed);
-            imageAtomicExchange(atomic_image, ivec2(0), y, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelaxed);
+            uint y = imageAtomicLoad(atomic_image, ivec2(0), gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsAcquire);
+            imageAtomicStore(atomic_image, ivec2(0), y, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelease);
+            imageAtomicExchange(atomic_image, ivec2(0), y, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelease);
         }
     )glsl";
 
@@ -3756,9 +3756,9 @@ TEST_F(NegativeGpuAVDescriptorIndexing, AtomicImageRuntimeArray) {
         layout(set = 0, binding = 0, R32ui) uniform uimage2D atomic_image_array[];
 
         void main() {
-            uint y = imageAtomicLoad(atomic_image_array[1], ivec2(0), gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelaxed);
-            imageAtomicStore(atomic_image_array[1], ivec2(0), y, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelaxed);
-            imageAtomicExchange(atomic_image_array[1], ivec2(0), y, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelaxed);
+            uint y = imageAtomicLoad(atomic_image_array[1], ivec2(0), gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsAcquire);
+            imageAtomicStore(atomic_image_array[1], ivec2(0), y, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelease);
+            imageAtomicExchange(atomic_image_array[1], ivec2(0), y, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelease);
         }
     )glsl";
 
@@ -4130,10 +4130,10 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleAccessChains) {
         struct Bar {
             uint x;
         };
-        
+
         [[vk::binding(0, 0)]]
         RWStructuredBuffer<Bar> foo[4];
-        
+
         [shader("compute")]
         void main() {
             uint index = foo[0][0].x;

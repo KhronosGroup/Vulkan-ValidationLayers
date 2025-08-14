@@ -1627,11 +1627,11 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, Atomics) {
         };
 
         void main() {
-            uint a = atomicLoad(node.x[8], gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
-            uint b = atomicLoad(non_bda, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
+            uint a = atomicLoad(node.x[8], gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsAcquire);
+            uint b = atomicLoad(non_bda, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsAcquire);
 
-            atomicStore(node.x[6], 0u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
-            atomicStore(non_bda, a + b, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
+            atomicStore(node.x[6], 0u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelease);
+            atomicStore(non_bda, a + b, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelease);
 
             atomicExchange(node.x[2], node.x[4]);
         }
@@ -1819,13 +1819,13 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, PieceOfDataPointerInStruct) {
             float3 pad_1;
             uint* a; // offset 48 (16 + 32)
         }
-        
+
         struct Data{
            float4 pad_2;
            Foo node;
         };
         [[vk::push_constant]] Data pc;
-        
+
         [shader("compute")]
         void main(uint3 threadId : SV_DispatchThreadID) {
             result[0] = *pc.node.a;

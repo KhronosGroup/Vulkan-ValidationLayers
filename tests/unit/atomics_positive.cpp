@@ -37,17 +37,17 @@ TEST_F(PositiveAtomic, ImageInt64) {
     )glsl";
 
     std::string cs_image_load = cs_image_base + R"glsl(
-           y = imageAtomicLoad(z, ivec2(1, 1), gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelaxed);
+           y = imageAtomicLoad(z, ivec2(1, 1), gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsAcquire);
         }
     )glsl";
 
     std::string cs_image_store = cs_image_base + R"glsl(
-           imageAtomicStore(z, ivec2(1, 1), y, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelaxed);
+           imageAtomicStore(z, ivec2(1, 1), y, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelease);
         }
     )glsl";
 
     std::string cs_image_exchange = cs_image_base + R"glsl(
-           imageAtomicExchange(z, ivec2(1, 1), y, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelaxed);
+           imageAtomicExchange(z, ivec2(1, 1), y, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelease);
         }
     )glsl";
 
@@ -99,7 +99,7 @@ TEST_F(PositiveAtomic, ImageInt64DrawtimeSparse) {
         layout(set = 0, binding = 0) buffer ssbo { uint64_t y; };
         layout(set = 0, binding = 1, r64ui) uniform u64image2D z;
         void main() {
-           y = imageAtomicLoad(z, ivec2(1, 1), gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelaxed);
+           y = imageAtomicLoad(z, ivec2(1, 1), gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsAcquire);
         }
     )glsl";
 
@@ -157,13 +157,13 @@ TEST_F(PositiveAtomic, Float) {
     )glsl";
 
     std::string cs_buffer_float_32_load = cs_32_base + R"glsl(
-           y = 1 + atomicLoad(y, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
+           y = 1 + atomicLoad(y, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsAcquire);
         }
     )glsl";
 
     std::string cs_buffer_float_32_store = cs_32_base + R"glsl(
            float32_t a = 1;
-           atomicStore(y, a, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
+           atomicStore(y, a, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelease);
         }
     )glsl";
 
@@ -179,12 +179,12 @@ TEST_F(PositiveAtomic, Float) {
     )glsl";
 
     std::string cs_shared_float_32_load = cs_32_base + R"glsl(
-           y = 1 + atomicLoad(x, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
+           y = 1 + atomicLoad(x, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsAcquire);
         }
     )glsl";
 
     std::string cs_shared_float_32_store = cs_32_base + R"glsl(
-           atomicStore(x, y, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
+           atomicStore(x, y, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelease);
         }
     )glsl";
 
@@ -210,13 +210,13 @@ TEST_F(PositiveAtomic, Float) {
     )glsl";
 
     std::string cs_buffer_float_64_load = cs_64_base + R"glsl(
-           y = 1 + atomicLoad(y, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
+           y = 1 + atomicLoad(y, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsAcquire);
         }
     )glsl";
 
     std::string cs_buffer_float_64_store = cs_64_base + R"glsl(
            float64_t a = 1;
-           atomicStore(y, a, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
+           atomicStore(y, a, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelease);
         }
     )glsl";
 
@@ -232,12 +232,12 @@ TEST_F(PositiveAtomic, Float) {
     )glsl";
 
     std::string cs_shared_float_64_load = cs_64_base + R"glsl(
-           y = 1 + atomicLoad(x, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
+           y = 1 + atomicLoad(x, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsAcquire);
         }
     )glsl";
 
     std::string cs_shared_float_64_store = cs_64_base + R"glsl(
-           atomicStore(x, y, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
+           atomicStore(x, y, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelease);
         }
     )glsl";
 
@@ -257,17 +257,17 @@ TEST_F(PositiveAtomic, Float) {
     )glsl";
 
     std::string cs_image_load = cs_image_base + R"glsl(
-           y = imageAtomicLoad(z, ivec2(1, 1), gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelaxed);
+           y = imageAtomicLoad(z, ivec2(1, 1), gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsAcquire);
         }
     )glsl";
 
     std::string cs_image_store = cs_image_base + R"glsl(
-           imageAtomicStore(z, ivec2(1, 1), y, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelaxed);
+           imageAtomicStore(z, ivec2(1, 1), y, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelease);
         }
     )glsl";
 
     std::string cs_image_exchange = cs_image_base + R"glsl(
-           imageAtomicExchange(z, ivec2(1, 1), y, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelaxed);
+           imageAtomicExchange(z, ivec2(1, 1), y, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelease);
         }
     )glsl";
 
@@ -408,13 +408,13 @@ TEST_F(PositiveAtomic, Float2) {
     )glsl";
 
     std::string cs_buffer_float_16_load = cs_16_base + R"glsl(
-           y = float16_t(1.0) + atomicLoad(y, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
+           y = float16_t(1.0) + atomicLoad(y, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsAcquire);
         }
     )glsl";
 
     std::string cs_buffer_float_16_store = cs_16_base + R"glsl(
            float16_t a = float16_t(1.0);
-           atomicStore(y, a, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
+           atomicStore(y, a, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelease);
         }
     )glsl";
 
@@ -440,12 +440,12 @@ TEST_F(PositiveAtomic, Float2) {
     )glsl";
 
     std::string cs_shared_float_16_load = cs_16_base + R"glsl(
-           y = float16_t(1.0) + atomicLoad(x, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
+           y = float16_t(1.0) + atomicLoad(x, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsAcquire);
         }
     )glsl";
 
     std::string cs_shared_float_16_store = cs_16_base + R"glsl(
-           atomicStore(x, y, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
+           atomicStore(x, y, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelease);
         }
     )glsl";
 
@@ -540,71 +540,71 @@ TEST_F(PositiveAtomic, Float2) {
            y = imageAtomicMax(z, ivec2(1, 1), y);
         }
     )glsl";
-    // clang-format on
+     // clang-format on
 
-    const char *current_shader = nullptr;
-    // set binding for buffer tests
-    std::vector<VkDescriptorSetLayoutBinding> current_bindings = {
-        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+     const char *current_shader = nullptr;
+     // set binding for buffer tests
+     std::vector<VkDescriptorSetLayoutBinding> current_bindings = {
+         {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
 
-    const auto set_info = [&](CreateComputePipelineHelper &helper) {
-        // This could get triggered in the event that the shader fails to compile
-        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-08740");
-        // Requires SPIR-V 1.3 for SPV_KHR_storage_buffer_storage_class
-        helper.cs_ = VkShaderObj::CreateFromGLSL(this, current_shader, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
-        // Skip the test if shader failed to compile
-        helper.override_skip_ = !static_cast<bool>(helper.cs_);
-        helper.dsl_bindings_ = current_bindings;
-    };
+     const auto set_info = [&](CreateComputePipelineHelper &helper) {
+         // This could get triggered in the event that the shader fails to compile
+         m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-08740");
+         // Requires SPIR-V 1.3 for SPV_KHR_storage_buffer_storage_class
+         helper.cs_ = VkShaderObj::CreateFromGLSL(this, current_shader, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+         // Skip the test if shader failed to compile
+         helper.override_skip_ = !static_cast<bool>(helper.cs_);
+         helper.dsl_bindings_ = current_bindings;
+     };
 
-    if (float16int8_features.shaderFloat16 == VK_TRUE && storage_16_bit_features.storageBuffer16BitAccess == VK_TRUE) {
-        if (atomic_float2_features.shaderBufferFloat16Atomics == VK_TRUE) {
-            current_shader = cs_buffer_float_16_load.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+     if (float16int8_features.shaderFloat16 == VK_TRUE && storage_16_bit_features.storageBuffer16BitAccess == VK_TRUE) {
+         if (atomic_float2_features.shaderBufferFloat16Atomics == VK_TRUE) {
+             current_shader = cs_buffer_float_16_load.c_str();
+             CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
-            current_shader = cs_buffer_float_16_store.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+             current_shader = cs_buffer_float_16_store.c_str();
+             CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
-            current_shader = cs_buffer_float_16_exchange.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
-        }
+             current_shader = cs_buffer_float_16_exchange.c_str();
+             CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+         }
 
-        if (atomic_float2_features.shaderBufferFloat16AtomicAdd == VK_TRUE) {
-            current_shader = cs_buffer_float_16_add.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
-        }
+         if (atomic_float2_features.shaderBufferFloat16AtomicAdd == VK_TRUE) {
+             current_shader = cs_buffer_float_16_add.c_str();
+             CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+         }
 
-        if (atomic_float2_features.shaderBufferFloat16AtomicMinMax == VK_TRUE) {
-            current_shader = cs_buffer_float_16_min.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+         if (atomic_float2_features.shaderBufferFloat16AtomicMinMax == VK_TRUE) {
+             current_shader = cs_buffer_float_16_min.c_str();
+             CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
-            current_shader = cs_buffer_float_16_max.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
-        }
+             current_shader = cs_buffer_float_16_max.c_str();
+             CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+         }
 
-        if (atomic_float2_features.shaderSharedFloat16Atomics == VK_TRUE) {
-            current_shader = cs_shared_float_16_load.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+         if (atomic_float2_features.shaderSharedFloat16Atomics == VK_TRUE) {
+             current_shader = cs_shared_float_16_load.c_str();
+             CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
-            current_shader = cs_shared_float_16_store.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+             current_shader = cs_shared_float_16_store.c_str();
+             CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
-            current_shader = cs_shared_float_16_exchange.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
-        }
+             current_shader = cs_shared_float_16_exchange.c_str();
+             CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+         }
 
-        if (atomic_float2_features.shaderSharedFloat16AtomicAdd == VK_TRUE) {
-            current_shader = cs_shared_float_16_add.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
-        }
+         if (atomic_float2_features.shaderSharedFloat16AtomicAdd == VK_TRUE) {
+             current_shader = cs_shared_float_16_add.c_str();
+             CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+         }
 
-        if (atomic_float2_features.shaderSharedFloat16AtomicMinMax == VK_TRUE) {
-            current_shader = cs_shared_float_16_min.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+         if (atomic_float2_features.shaderSharedFloat16AtomicMinMax == VK_TRUE) {
+             current_shader = cs_shared_float_16_min.c_str();
+             CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
-            current_shader = cs_shared_float_16_max.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
-        }
+             current_shader = cs_shared_float_16_max.c_str();
+             CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+         }
     }
 
     if (atomic_float2_features.shaderBufferFloat32AtomicMinMax == VK_TRUE) {
@@ -750,7 +750,7 @@ TEST_F(PositiveAtomic, Int64) {
     // StorageBuffer storage class using AtomicStore
     // atomicStore is slightly different than other atomics, so good edge case
     std::string cs_store = cs_base + R"glsl(
-           atomicStore(y, 1ul, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
+           atomicStore(y, 1ul, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelease);
         }
     )glsl";
 
