@@ -410,6 +410,55 @@ TEST_F(PositiveCopyBufferImage, UncompressedToCompressedImage2) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveCopyBufferImage, UncompressedToCompressedImage3) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-Docs/issues/1637");
+    RETURN_IF_SKIP(Init());
+
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R32G32B32A32_UINT, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature) ||
+        !FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC6H_SFLOAT_BLOCK, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(2, 2, 2, 1, VK_FORMAT_R32G32B32A32_UINT, kSrcDstUsage);
+    vkt::Image uncomp_image(*m_device, image_ci);
+
+    image_ci.format = VK_FORMAT_BC6H_SFLOAT_BLOCK;
+    image_ci.extent = {8, 8, 1};
+    image_ci.mipLevels = 4;
+    vkt::Image comp_image(*m_device, image_ci);
+    if (!uncomp_image.initialized() || !comp_image.initialized()) {
+        GTEST_SKIP() << "Unable to initialize surfaces";
+    }
+
+    VkImageCopy copy_region = {};
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.srcOffset = {0, 0, 0};
+    copy_region.dstOffset = {0, 0, 0};
+
+    m_command_buffer.Begin();
+
+    copy_region.extent = {2, 2, 1};
+    vk::CmdCopyImage(m_command_buffer, uncomp_image, VK_IMAGE_LAYOUT_GENERAL, comp_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_command_buffer.FullMemoryBarrier();
+
+    copy_region.extent = {1, 1, 1};
+    copy_region.srcSubresource.mipLevel = 1;
+    copy_region.dstSubresource.mipLevel = 1;
+    vk::CmdCopyImage(m_command_buffer, uncomp_image, VK_IMAGE_LAYOUT_GENERAL, comp_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_command_buffer.FullMemoryBarrier();
+
+    copy_region.dstSubresource.mipLevel = 2;
+    vk::CmdCopyImage(m_command_buffer, uncomp_image, VK_IMAGE_LAYOUT_GENERAL, comp_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_command_buffer.FullMemoryBarrier();
+
+    copy_region.dstSubresource.mipLevel = 3;
+    vk::CmdCopyImage(m_command_buffer, uncomp_image, VK_IMAGE_LAYOUT_GENERAL, comp_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_command_buffer.FullMemoryBarrier();
+
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveCopyBufferImage, UncompressedToCompressedNonPowerOfTwo) {
     RETURN_IF_SKIP(Init());
 
