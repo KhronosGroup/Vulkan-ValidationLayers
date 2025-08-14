@@ -855,7 +855,10 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                                 # Handle edge case where XML expresses a non-optional non-pointer value length with noautovalidity
                                 # ex: <param noautovalidity="true"len="commandBufferCount">
                                 countRequiredVuid = self.GetVuid(callerName, f"{lengthMember.name}-arraylength")
-                                if countRequiredVuid in duplicateCountVuid:
+                                if ' ' in member.length:
+                                    # For things like altlen="(rasterizationSamples + 31) / 32" we want to skip these
+                                    countRequiredVuid = None
+                                elif countRequiredVuid in duplicateCountVuid:
                                     countRequiredVuid = None
                                 else:
                                     duplicateCountVuid.append(countRequiredVuid)
