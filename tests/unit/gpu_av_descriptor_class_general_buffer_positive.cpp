@@ -26,8 +26,7 @@ void GpuAVDescriptorClassGeneralBuffer::ComputeStorageBufferTest(const char *sha
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
-    pipe.cs_ = VkShaderObj(this, shader, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, 
-    						(SpvSourceType)source_type);
+    pipe.cs_ = VkShaderObj(this, shader, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, (SpvSourceType)source_type);
     pipe.CreateComputePipeline();
 
     vkt::Buffer in_buffer(*m_device, buffer_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
@@ -811,10 +810,10 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ArrayCopySlang) {
             uint b[4];
             uint c;
         };
-        
+
         [[vk::binding(0, 0)]]
         RWStructuredBuffer<Bar> foo;
-        
+
         [shader("compute")]
         void main() {
             uint d[4] = {4, 5, 6, 7};
@@ -927,19 +926,19 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ArrayCopyTwoBindingsSlang) {
             uint b[4];
             uint c;
         };
-        
+
         struct Bar2 {
             uint4 d;
             uint e[4];
             uint f;
         };
-        
+
         [[vk::binding(0, 0)]]
         RWStructuredBuffer<Bar1> foo1;
-        
+
         [[vk::binding(1, 0)]]
         RWStructuredBuffer<Bar2> foo2;
-        
+
         [shader("compute")]
         void main() {
             foo1[0].b = foo2[0].e;
@@ -1050,16 +1049,16 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, StructCopySlang) {
           uint y;
           uint z[2];
         };
-        
+
         struct FooBuffer {
           float4 a;
           Bar b;
           uint c;
         };
-        
+
         [[vk::binding(0, 0)]]
         RWStructuredBuffer<FooBuffer> foo;
-        
+
         [shader("compute")]
         void main() {
           foo[1].b = foo[0].b;
@@ -1079,10 +1078,10 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ChainOfAccessChains) {
             uint a;
             uint d[4];
         };
-        
+
         [[vk::binding(0, 0)]]
         RWStructuredBuffer<Bar> foo; // 20 byte stride
-        
+
         [shader("compute")]
         void main() {
             foo[1].d[3] = 44;
@@ -1102,8 +1101,8 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, Atomics) {
         };
 
         void main() {
-            uint x = atomicLoad(c.x, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
-            atomicStore(c.y, 0u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
+            uint x = atomicLoad(c.x, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsAcquire);
+            atomicStore(c.y, 0u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelease);
             atomicExchange(c.z, x);
         }
     )glsl";
@@ -1125,9 +1124,9 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, AtomicsDescriptorIndex) {
         } ssbo[2];
 
         void main() {
-            uint x = atomicLoad(ssbo[1].c.x, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
-            atomicStore(ssbo[0].c.y, 0u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
-            atomicStore(ssbo[1].c.y, 0u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
+            uint x = atomicLoad(ssbo[1].c.x, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsAcquire);
+            atomicStore(ssbo[0].c.y, 0u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelease);
+            atomicStore(ssbo[1].c.y, 0u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelease);
             atomicExchange(ssbo[1].c.z, x);
         }
     )glsl";
@@ -1166,10 +1165,10 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, DescriptorIndexSlang) {
           uint c;
           uint d;
         };
-        
+
         [[vk::binding(0, 0)]]
         RWStructuredBuffer<Bar> foo[2]; // stride of 48 bytes
-        
+
         [shader("compute")]
         void main() {
           foo[1][1].d = 0;
@@ -1461,7 +1460,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, InternalPipelineLayoutSelectio
 
     static const char frag_shader[] = R"glsl(
         #version 450
-        
+
         layout(location = 0) out vec4 c_out;
         void main() {
             c_out = vec4(1.0);

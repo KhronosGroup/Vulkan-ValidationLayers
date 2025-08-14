@@ -2581,9 +2581,9 @@ TEST_F(PositiveGpuAVDescriptorIndexing, AtomicImage) {
         layout(set = 0, binding = 0, R32ui) uniform uimage2D atomic_image_array[];
 
         void main() {
-            uint y = imageAtomicLoad(atomic_image_array[1], ivec2(0), gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelaxed);
-            imageAtomicStore(atomic_image_array[1], ivec2(0), y, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelaxed);
-            imageAtomicExchange(atomic_image_array[1], ivec2(0), y, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelaxed);
+            uint y = imageAtomicLoad(atomic_image_array[1], ivec2(0), gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsAcquire);
+            imageAtomicStore(atomic_image_array[1], ivec2(0), y, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelease);
+            imageAtomicExchange(atomic_image_array[1], ivec2(0), y, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelease);
         }
     )glsl";
 

@@ -4094,7 +4094,7 @@ TEST_F(NegativeShaderObject, MemoryModelNotEnabled) {
         #extension GL_KHR_memory_scope_semantics : enable
         layout(set = 0, binding = 0) buffer ssbo { uint y; };
         void main() {
-            atomicStore(y, 1u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
+            atomicStore(y, 1u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelease);
        }
     )glsl";
 

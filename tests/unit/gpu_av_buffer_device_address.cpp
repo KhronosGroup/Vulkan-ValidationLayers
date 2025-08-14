@@ -1841,7 +1841,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicLoad) {
         };
 
         void main() {
-            uint a = atomicLoad(node.x[16], gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
+            uint a = atomicLoad(node.x[16], gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsAcquire);
             node.x[0] = a;
         }
     )glsl";
@@ -1889,7 +1889,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicStore) {
         };
 
         void main() {
-            atomicStore(node.x[16], 0u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
+            atomicStore(node.x[16], 0u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelease);
         }
     )glsl";
 
@@ -2280,7 +2280,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, PieceOfDataPointerInStruct) {
 
     const char *slang_shader = R"slang(
         RWStructuredBuffer<uint> result;
-        
+
         struct Bar {
           uint z;
           uint y;
@@ -2291,13 +2291,13 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, PieceOfDataPointerInStruct) {
             uint* a; // offset 48 (16 + 32)
             Bar* b; // also invalid, adds another indirection
         }
-        
+
         struct Data{
            float4 pad_2;
            Foo node;
         };
         [[vk::push_constant]] Data pc;
-        
+
         [shader("compute")]
         void main(uint3 threadId : SV_DispatchThreadID) {
             result[0] = *pc.node.a;
