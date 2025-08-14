@@ -25,6 +25,7 @@ class CommandExecutionContext;
 class RenderPassAccessContext;
 class ReplayState;
 class SyncValidator;
+struct DeviceExtensions;
 
 namespace vvl {
 class ImageView;
@@ -152,12 +153,13 @@ struct BarrierSet {
     void MakeBufferMemoryBarriers(const SyncValidator &sync_state, const SyncExecScope &src, const SyncExecScope &dst,
                                   uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers);
     void MakeImageMemoryBarriers(const SyncValidator &sync_state, const SyncExecScope &src, const SyncExecScope &dst,
-                                 uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers);
+                                 uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers,
+                                 const DeviceExtensions &extensions);
     void MakeMemoryBarriers(VkQueueFlags queue_flags, const VkDependencyInfo &dep_info);
     void MakeBufferMemoryBarriers(const SyncValidator &sync_state, VkQueueFlags queue_flags, uint32_t barrier_count,
                                   const VkBufferMemoryBarrier2 *barriers);
     void MakeImageMemoryBarriers(const SyncValidator &sync_state, VkQueueFlags queue_flags, uint32_t barrier_count,
-                                 const VkImageMemoryBarrier2 *barriers);
+                                 const VkImageMemoryBarrier2 *barriers, const DeviceExtensions &extensions);
 };
 
 class SyncOpBase {

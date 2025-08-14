@@ -373,11 +373,19 @@ void BarrierSet::MakeBufferMemoryBarriers(const SyncValidator &sync_state, VkQue
 }
 
 void BarrierSet::MakeImageMemoryBarriers(const SyncValidator &sync_state, const SyncExecScope &src, const SyncExecScope &dst,
-                                         uint32_t barrier_count, const VkImageMemoryBarrier *barriers) {
+                                         uint32_t barrier_count, const VkImageMemoryBarrier *barriers,
+                                         const DeviceExtensions &extensions) {
     image_memory_barriers.reserve(barrier_count);
     for (const auto [index, barrier] : vvl::enumerate(barriers, barrier_count)) {
         if (auto image = sync_state.Get<vvl::Image>(barrier.image)) {
             auto subresource_range = image->NormalizeSubresourceRange(barrier.subresourceRange);
+
+            // VK_REMAINING_ARRAY_LAYERS for sliced 3d image in the context of layout transition means image's depth extent.
+            if (barrier.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS &&
+                CanTransitionDepthSlices(extensions, image->create_info)) {
+                subresource_range.layerCount = image->create_info.extent.depth - subresource_range.baseArrayLayer;
+            }
+
             const SyncBarrier sync_barrier(src, barrier.srcAccessMask, dst, barrier.dstAccessMask);
             const bool layout_transition = barrier.oldLayout != barrier.newLayout;
             image_memory_barriers.emplace_back(image, sync_barrier, subresource_range, layout_transition, index);
@@ -386,7 +394,7 @@ void BarrierSet::MakeImageMemoryBarriers(const SyncValidator &sync_state, const 
 }
 
 void BarrierSet::MakeImageMemoryBarriers(const SyncValidator &sync_state, VkQueueFlags queue_flags, uint32_t barrier_count,
-                                         const VkImageMemoryBarrier2 *barriers) {
+                                         const VkImageMemoryBarrier2 *barriers, const DeviceExtensions &extensions) {
     image_memory_barriers.reserve(barrier_count);
     for (const auto [index, barrier] : vvl::enumerate(barriers, barrier_count)) {
         auto src = SyncExecScope::MakeSrc(queue_flags, barrier.srcStageMask);
@@ -394,6 +402,13 @@ void BarrierSet::MakeImageMemoryBarriers(const SyncValidator &sync_state, VkQueu
         auto image = sync_state.Get<vvl::Image>(barrier.image);
         if (image) {
             auto subresource_range = image->NormalizeSubresourceRange(barrier.subresourceRange);
+
+            // VK_REMAINING_ARRAY_LAYERS for sliced 3d image in the context of layout transition means image's depth extent.
+            if (barrier.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS &&
+                CanTransitionDepthSlices(extensions, image->create_info)) {
+                subresource_range.layerCount = image->create_info.extent.depth - subresource_range.baseArrayLayer;
+            }
+
             const SyncBarrier sync_barrier(src, barrier.srcAccessMask, dst, barrier.dstAccessMask);
             const bool layout_transition = barrier.oldLayout != barrier.newLayout;
             image_memory_barriers.emplace_back(image, sync_barrier, subresource_range, layout_transition, index);
@@ -414,7 +429,8 @@ SyncOpPipelineBarrier::SyncOpPipelineBarrier(vvl::Func command, const SyncValida
     barrier_set_.MakeMemoryBarriers(src_exec_scope, dst_exec_scope, memoryBarrierCount, pMemoryBarriers);
     barrier_set_.MakeBufferMemoryBarriers(sync_state, src_exec_scope, dst_exec_scope, bufferMemoryBarrierCount,
                                           pBufferMemoryBarriers);
-    barrier_set_.MakeImageMemoryBarriers(sync_state, src_exec_scope, dst_exec_scope, imageMemoryBarrierCount, pImageMemoryBarriers);
+    barrier_set_.MakeImageMemoryBarriers(sync_state, src_exec_scope, dst_exec_scope, imageMemoryBarrierCount, pImageMemoryBarriers,
+                                         sync_state.device_state->extensions);
 }
 
 SyncOpPipelineBarrier::SyncOpPipelineBarrier(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags,
@@ -424,10 +440,11 @@ SyncOpPipelineBarrier::SyncOpPipelineBarrier(vvl::Func command, const SyncValida
     barrier_set_.src_exec_scope = SyncExecScope::MakeSrc(queue_flags, stage_masks.src);
     barrier_set_.dst_exec_scope = SyncExecScope::MakeDst(queue_flags, stage_masks.dst);
     barrier_set_.MakeMemoryBarriers(queue_flags, dep_info);
-    
+
     barrier_set_.MakeBufferMemoryBarriers(sync_state, queue_flags, dep_info.bufferMemoryBarrierCount,
                                           dep_info.pBufferMemoryBarriers);
-    barrier_set_.MakeImageMemoryBarriers(sync_state, queue_flags, dep_info.imageMemoryBarrierCount, dep_info.pImageMemoryBarriers);
+    barrier_set_.MakeImageMemoryBarriers(sync_state, queue_flags, dep_info.imageMemoryBarrierCount, dep_info.pImageMemoryBarriers,
+                                         sync_state.device_state->extensions);
 }
 
 bool SyncOpPipelineBarrier::Validate(const CommandBufferAccessContext &cb_context) const {
@@ -515,7 +532,8 @@ SyncOpWaitEvents::SyncOpWaitEvents(vvl::Func command, const SyncValidator &sync_
     barrier_set.MakeMemoryBarriers(src_exec_scope, dst_exec_scope, memoryBarrierCount, pMemoryBarriers);
     barrier_set.MakeBufferMemoryBarriers(sync_state, src_exec_scope, dst_exec_scope, bufferMemoryBarrierCount,
                                          pBufferMemoryBarriers);
-    barrier_set.MakeImageMemoryBarriers(sync_state, src_exec_scope, dst_exec_scope, imageMemoryBarrierCount, pImageMemoryBarriers);
+    barrier_set.MakeImageMemoryBarriers(sync_state, src_exec_scope, dst_exec_scope, imageMemoryBarrierCount, pImageMemoryBarriers,
+                                        sync_state.device_state->extensions);
     MakeEventsList(sync_state, eventCount, pEvents);
 }
 
@@ -532,7 +550,7 @@ SyncOpWaitEvents::SyncOpWaitEvents(vvl::Func command, const SyncValidator &sync_
         barrier_set.MakeBufferMemoryBarriers(sync_state, queue_flags, dep_info.bufferMemoryBarrierCount,
                                              dep_info.pBufferMemoryBarriers);
         barrier_set.MakeImageMemoryBarriers(sync_state, queue_flags, dep_info.imageMemoryBarrierCount,
-                                            dep_info.pImageMemoryBarriers);
+                                            dep_info.pImageMemoryBarriers, sync_state.device_state->extensions);
     }
     MakeEventsList(sync_state, eventCount, pEvents);
 }
