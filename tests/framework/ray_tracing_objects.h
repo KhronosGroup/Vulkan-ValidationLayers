@@ -322,6 +322,7 @@ GeometryKHR GeometrySimpleOnDeviceAABBInfo(const vkt::Device& device, VkBufferUs
 GeometryKHR GeometrySimpleOnHostAABBInfo();
 
 GeometryKHR GeometrySimpleDeviceInstance(const vkt::Device& device, VkAccelerationStructureKHR device_blas);
+GeometryKHR GeometrySimpleHostInstance(VkAccelerationStructureKHR host_instance);
 
 GeometryKHR GeometrySimpleOnDeviceSpheresInfo(const vkt::Device& device);
 GeometryKHR GeometrySimpleOnHostSpheresInfo();

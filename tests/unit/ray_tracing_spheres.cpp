@@ -36,7 +36,6 @@
      m_command_buffer.Begin();
      auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::Spheres);
      blas.GetGeometries()[0].SetSpheresVertexStride(1);
-     // vertexStride must be a multiple of the size in bytes of the smallest component of vertexFormat
      m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexStride-10431");
      blas.BuildCmdBuffer(m_command_buffer.handle());
      m_errorMonitor->VerifyFound();
@@ -65,7 +64,6 @@
      blas.BuildCmdBuffer(m_command_buffer.handle());
      m_errorMonitor->VerifyFound();
  
-     // Set valid vertex stride but invalid radius stride
      blas.GetGeometries()[0].SetSpheresVertexStride(3 * sizeof(float));
      blas.GetGeometries()[0].SetSpheresRadiusStride(VkDeviceSize(vvl::kU32Max) + 1);
      blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
@@ -90,7 +88,6 @@
      RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
      RETURN_IF_SKIP(InitState());
  
-     // Set an invalid vertex format
      const VkFormat spheres_vertex_format = VK_FORMAT_R32_SFLOAT;
      VkFormatProperties spheres_format_props{};
      vk::GetPhysicalDeviceFormatProperties(m_device->Physical(), spheres_vertex_format, &spheres_format_props);
@@ -125,7 +122,6 @@
      RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
      RETURN_IF_SKIP(InitState());
  
-     // Set an invalid radius format
      const VkFormat spheres_vertex_format = VK_FORMAT_R8G8_UNORM;
      VkFormatProperties spheres_format_props{};
      vk::GetPhysicalDeviceFormatProperties(m_device->Physical(), spheres_vertex_format, &spheres_format_props);
@@ -160,7 +156,6 @@
  
      m_command_buffer.Begin();
      auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::Spheres);
-     // Set invalid index type (UINT8_KHR)
      blas.GetGeometries()[0].SetSpheresIndexType(VK_INDEX_TYPE_UINT8_KHR);
      blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
      m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometrySpheresDataNV-indexData-10437");
@@ -184,7 +179,6 @@
      RETURN_IF_SKIP(InitState());
  
      m_command_buffer.Begin();
-     // Set an invalid vertex stride
      auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::LSSpheres);
      blas.GetGeometries()[0].SetLSSpheresVertexStride(1);
  
@@ -208,7 +202,6 @@
      RETURN_IF_SKIP(InitState());
  
      m_command_buffer.Begin();
-     // Set vertex stride larger than 2^32
      auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::LSSpheres);
      blas.GetGeometries()[0].SetLSSpheresVertexStride(VkDeviceSize(vvl::kU32Max) + 1);
      blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
@@ -218,7 +211,6 @@
      blas.BuildCmdBuffer(m_command_buffer.handle(), false);
      m_errorMonitor->VerifyFound();
      blas.GetGeometries()[0].SetLSSpheresVertexStride(3 * sizeof(float));
-     // Set radius stride larger than 2^32
      blas.GetGeometries()[0].SetLSSpheresRadiusStride(VkDeviceSize(vvl::kU32Max) + 1);
      blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
  
@@ -243,7 +235,6 @@
      RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
      RETURN_IF_SKIP(InitState());
  
-     // set invalid vertexFormat
      const VkFormat lsspheres_vertex_format = VK_FORMAT_R32_SFLOAT;
      VkFormatProperties lsspheres_format_props{};
      vk::GetPhysicalDeviceFormatProperties(m_device->Physical(), lsspheres_vertex_format, &lsspheres_format_props);
@@ -275,7 +266,6 @@
      RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
      RETURN_IF_SKIP(InitState());
  
-     // set invalid radiusFormat
      const VkFormat lsspheres_vertex_format = VK_FORMAT_R8G8_UNORM;
      VkFormatProperties lsspheres_format_props{};
      vk::GetPhysicalDeviceFormatProperties(m_device->Physical(), lsspheres_vertex_format, &lsspheres_format_props);

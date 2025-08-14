@@ -1086,18 +1086,18 @@ bool Device::ValidateAccelerationStructureBuildGeometryInfoKHR(const Context &co
             if (sphere_struct->vertexData.hostAddress == nullptr && sphere_struct->vertexData.deviceAddress == 0) {
                 skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexData-parameter", handle,
                                  geometry_loc.pNext(Struct::VkAccelerationStructureGeometrySpheresDataNV).dot(Field::vertexData),
-                                 "must be a valid VkDeviceOrHostAddressConstKHR union");
+                                 "must not be 0 or NULL");
             }
             if (sphere_struct->radiusData.hostAddress == nullptr && sphere_struct->radiusData.deviceAddress == 0) {
                 skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-radiusData-parameter", handle,
                                  geometry_loc.pNext(Struct::VkAccelerationStructureGeometrySpheresDataNV).dot(Field::radiusData),
-                                 "must be a valid VkDeviceOrHostAddressConstKHR union");
+                                 "must not be 0 or NULL");
             }
             if (sphere_struct->indexType != VK_INDEX_TYPE_NONE_KHR && sphere_struct->indexData.hostAddress == nullptr &&
                 sphere_struct->indexData.deviceAddress == 0) {
                 skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-indexData-parameter", handle,
                                  geometry_loc.pNext(Struct::VkAccelerationStructureGeometrySpheresDataNV).dot(Field::indexData),
-                                 "must be a valid VkDeviceOrHostAddressConstKHR union");
+                                 "must not be 0 or NULL");
             }
         }
         if (geom.geometryType == VK_GEOMETRY_TYPE_LINEAR_SWEPT_SPHERES_NV) {
@@ -1132,20 +1132,20 @@ bool Device::ValidateAccelerationStructureBuildGeometryInfoKHR(const Context &co
                 skip |= LogError(
                     "VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-vertexData-parameter", handle,
                     geometry_loc.pNext(Struct::VkAccelerationStructureGeometryLinearSweptSpheresDataNV).dot(Field::vertexData),
-                    "must be a valid VkDeviceOrHostAddressConstKHR union");
+                    "must not be 0 or NULL");
             }
             if (sphere_linear_struct->radiusData.hostAddress == nullptr && sphere_linear_struct->radiusData.deviceAddress == 0) {
                 skip |= LogError(
                     "VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-radiusData-parameter", handle,
                     geometry_loc.pNext(Struct::VkAccelerationStructureGeometryLinearSweptSpheresDataNV).dot(Field::radiusData),
-                    "must be a valid VkDeviceOrHostAddressConstKHR union");
+                    "must not be 0 or NULL");
             }
             if (sphere_linear_struct->indexType != VK_INDEX_TYPE_NONE_KHR &&
                 sphere_linear_struct->indexData.hostAddress == nullptr && sphere_linear_struct->indexData.deviceAddress == 0) {
                 skip |= LogError(
                     "VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-indexData-parameter", handle,
                     geometry_loc.pNext(Struct::VkAccelerationStructureGeometryLinearSweptSpheresDataNV).dot(Field::indexData),
-                    "must be a valid VkDeviceOrHostAddressConstKHR union");
+                    "must not be 0 or NULL");
             }
         }
         if (info.type == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR && geom.geometryType != VK_GEOMETRY_TYPE_INSTANCES_KHR) {
