@@ -669,24 +669,21 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                 const Location p_geom_geom_spheres_loc = p_geom_geom_loc.pNext(Struct::VkAccelerationStructureGeometrySpheresDataNV);
                 auto sphere_struct = reinterpret_cast<VkAccelerationStructureGeometrySpheresDataNV const *>(geom_data.pNext);
                 ASSERT_AND_RETURN_SKIP(sphere_struct);
-                // Check the validity of buffer references for vertex, index, and radius data
                 skip |= buffer_check(geom_i, sphere_struct->vertexData, p_geom_geom_spheres_loc.dot(Field::vertexData));
                 skip |= buffer_check(geom_i, sphere_struct->indexData, p_geom_geom_spheres_loc.dot(Field::indexData));
                 skip |= buffer_check(geom_i, sphere_struct->radiusData, p_geom_geom_spheres_loc.dot(Field::radiusData));
 
-                // Check the validity of the vertex radius and index data
                 if (!sphere_struct->vertexData.deviceAddress && !sphere_struct->vertexData.hostAddress) {
                     skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexData-10430", cmd_buffer,
                                      p_geom_geom_spheres_loc.dot(Field::vertexData),
-                                     "The memory address in vertexData must not be 0 or `NULL'");
+                                     "must not be 0 or NULL");
                 }
                 if (!sphere_struct->radiusData.deviceAddress && !sphere_struct->radiusData.hostAddress) {
                     skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-radiusData-10433", cmd_buffer,
                                      p_geom_geom_spheres_loc.dot(Field::radiusData),
-                                     "The memory address in radiusData must not be 0 or `NULL'");
+                                     "must not be 0 or NULL");
                 }
 
-                // Retrieve format properties for vertex and radius
                 const VkFormatProperties3KHR vertex_properties = GetPDFormatProperties(sphere_struct->vertexFormat);
                 const VkFormatProperties3KHR radius_properties = GetPDFormatProperties(sphere_struct->radiusFormat);
 
@@ -698,7 +695,6 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                      string_VkFormat(sphere_struct->vertexFormat),
                                      string_VkFormatFeatureFlags2(vertex_properties.bufferFeatures).c_str());
                 }
-                // If vertex format is valid, check component size alignment
                 else {
                     if (vkuFormatIsPacked(sphere_struct->vertexFormat)) {
                         const uint32_t format_block_size = vkuFormatTexelBlockSize(sphere_struct->vertexFormat);
@@ -785,7 +781,6 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                      "The memory address in radiusData must not be 0 or `NULL'");
                 }
 
-                // Retrieve format properties for vertex and radius
                 const VkFormatProperties3KHR vertex_properties = GetPDFormatProperties(sphere_linear_struct->vertexFormat);
                 const VkFormatProperties3KHR radius_properties = GetPDFormatProperties(sphere_linear_struct->radiusFormat);
 
@@ -797,7 +792,6 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                      string_VkFormat(sphere_linear_struct->vertexFormat),
                                      string_VkFormatFeatureFlags2(vertex_properties.bufferFeatures).c_str());
                 }
-                // If vertex format is valid, check component size alignment
                 else {
                     if (vkuFormatIsPacked(sphere_linear_struct->vertexFormat)) {
                         const uint32_t format_block_size = vkuFormatTexelBlockSize(sphere_linear_struct->vertexFormat);
@@ -852,7 +846,6 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                  string_VkFormatFeatureFlags2(radius_properties.bufferFeatures).c_str());
                 }
 
-                // indexingMode is VK_RAY_TRACING_LSS_INDEXING_MODE_SUCCESSIVE_NV, indexData must be provided
                 if (sphere_linear_struct->indexingMode == VK_RAY_TRACING_LSS_INDEXING_MODE_SUCCESSIVE_NV) {
                     if (!sphere_linear_struct->indexData.deviceAddress && !sphere_linear_struct->indexData.hostAddress) {
                         skip |= LogError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-indexingMode-10427",
