@@ -31,7 +31,7 @@
 /* This class aims at helping with the validation of a family of VUIDs referring to the same buffer device address.
    For example, take those VUIDs for VkDescriptorBufferBindingInfoEXT:
 
-   VUID-VkDescriptorBufferBindingInfoEXT-usage-08122:
+   VUID-VkDescriptorBufferBindingInfoEXT-usage-08122
    If usage includes VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT, address must be an address within a valid buffer that was
    created with VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT
 
