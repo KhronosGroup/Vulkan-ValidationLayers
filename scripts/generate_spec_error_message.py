@@ -161,7 +161,12 @@ oversized_vus = {
     'VUID-VkColorBlendEquationEXT-colorBlendOp-07361' : 'colorBlendOp and alphaBlendOp must not be a VkBlendOp from VK_EXT_blend_operation_advanced',
     'VUID-VkDeviceCreateInfo-pNext-pNext' : 'Each pNext member of any structure (including this one) in the pNext chain must be either NULL or a pointer to a valid struct for extending VkDeviceCreateInfo',
     'VUID-VkPhysicalDeviceProperties2-pNext-pNext' : 'Each pNext member of any structure (including this one) in the pNext chain must be either NULL or a pointer to a valid struct for extending VkPhysicalDeviceProperties2',
-    'VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060' : 'For OpCooperativeMatrixMulAddKHR, the operands must match a supported VkCooperativeMatrixPropertiesKHR'
+    'VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060' : 'For OpCooperativeMatrixMulAddKHR, the operands must match a supported VkCooperativeMatrixPropertiesKHR',
+    'VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10163' : 'For OpTypeCooperativeMatrixKHR, if the cooperativeMatrixFlexibleDimensions feature is not enabled, the component type, scope, number of rows, and number of columns must match one of the matrices in any of the supported VkCooperativeMatrixPropertiesKHR',
+    'VUID-RuntimeSpirv-OpTypeCooperativeMatrixMulAddNV-10059' : 'For OpTypeCooperativeMatrixMulAddNV, the operands must match a supported VkCooperativeMatrixPropertiesNV',
+    'VUID-RuntimeSpirv-cooperativeMatrixFlexibleDimensions-10165' : 'For OpTypeCooperativeMatrixKHR, if the cooperativeMatrixFlexibleDimensions feature is enabled, the component type, scope, number of rows, and number of columns must match either one of the matrices in one of the supported VkCooperativeMatrixPropertiesKHR or VkCooperativeMatrixFlexibleDimensionsPropertiesNV',
+    'VUID-RuntimeSpirv-cooperativeMatrixFlexibleDimensions-10166' : 'For OpCooperativeMatrixMulAddKHR, if the cooperativeMatrixFlexibleDimensions feature is enabled, the operands must match either one of the supported VkCooperativeMatrixPropertiesKHR or VkCooperativeMatrixFlexibleDimensionsPropertiesNV',
+    'VUID-RuntimeSpirv-pNext-09923' : 'The data graph pipeline must satisfies all constraints',
 }
 
 def GenerateSpecErrorMessage(api : str, valid_usage_json : str, out_file : str):
@@ -227,6 +232,10 @@ const vvl::unordered_map<std::string_view, vuid_info> &GetVuidMap() {{
         # Override for large VU text messages
         if vuid in oversized_vus:
             db_text = oversized_vus[vuid]
+
+        # If hit this warning, likely should be added to oversized_vus
+        if (len(db_text) > 1000):
+            print(f'Warning: {vuid} has a large message ({len(db_text)})')
 
         out.append(f'        {{ {{"{vuid}", {len(vuid)}}}, {{ {{"{db_text}", {len(db_text)}}}, {{ "{html_page}", {len(html_page)}}} }} }},\n')
         # For multiply-defined VUIDs, include versions with extension appended
