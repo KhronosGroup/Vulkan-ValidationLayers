@@ -445,3 +445,48 @@ TEST_F(NegativeDescriptorIndexing, DescriptorSetVariableDescriptorCountAllocateI
     ds_alloc_info.pNext = &count_alloc_info;
     vk::AllocateDescriptorSets(*m_device, &ds_alloc_info, &ds);
 }
+
+TEST_F(NegativeDescriptorIndexing, VariableDescriptorCountBuffer) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10490");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::descriptorBindingVariableDescriptorCount);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+    VkDescriptorBindingFlags binding_flags = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT;
+    VkDescriptorSetLayoutBindingFlagsCreateInfo dsl_binding_flags = vku::InitStructHelper();
+    dsl_binding_flags.bindingCount = 1u;
+    dsl_binding_flags.pBindingFlags = &binding_flags;
+
+    uint32_t variable_count = 2u;
+    VkDescriptorSetVariableDescriptorCountAllocateInfo variable_count_info = vku::InitStructHelper();
+    variable_count_info.descriptorSetCount = 1u;
+    variable_count_info.pDescriptorCounts = &variable_count;
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 3, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                       },
+                                       0u, &dsl_binding_flags, 0u, &variable_count_info);
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0u, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0u);
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0u, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u);
+    descriptor_set.UpdateDescriptorSets();
+
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    char const *cs_source = R"glsl(
+        #version 450 core
+        layout(set = 0, binding = 0) buffer SSBO { int x; } bufs[4];
+        void main() {
+          bufs[0].x = 0;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.layout = pipeline_layout;
+    m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-layout-07991");
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}

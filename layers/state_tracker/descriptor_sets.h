@@ -1128,7 +1128,7 @@ class DescriptorSet : public StateObject, public SubStateManager<DescriptorSetSu
     std::vector<BindingBackingStore> bindings_store_;
     std::vector<BindingPtr> bindings_;
     DeviceState *state_data_;
-    uint32_t variable_count_;
+    uint32_t variable_count_;  // zero if no variable count
     std::atomic<uint64_t> change_count_;
 
     // For a given dynamic offset index in the set, map to associated index of the descriptors in the set

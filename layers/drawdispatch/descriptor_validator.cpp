@@ -136,7 +136,11 @@ bool DescriptorValidator::ValidateDescriptorsStatic(const spirv::ResourceInterfa
 
     // If there is a descriptor array, we care about the size of the array statically used in the shader, not what was declared in
     // the pipeline layout more info https://gitlab.khronos.org/vulkan/vulkan/-/issues/4383
-    const uint32_t count = resource_variable.array_length != 0 ? resource_variable.array_length : binding.count;
+    uint32_t count = binding.count;
+    // if using VARIABLE_DESCRIPTOR_COUNT, we will still use binding.count as that will be the adjusted value
+    if (resource_variable.array_length != 0 && descriptor_set.GetVariableDescriptorCount() == 0) {
+        count = resource_variable.array_length;
+    }
 
     for (uint32_t index = 0; !skip && index < count; index++) {
         const auto &descriptor = binding.descriptors[index];
