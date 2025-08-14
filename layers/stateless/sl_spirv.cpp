@@ -515,7 +515,7 @@ bool SpirvValidator::Validate8And16BitStorage(const spirv::Module &module_state,
             const std::string message = "SPIRV contains an 8-bit " + text +
                                         " with Workgroup Storage Class, "
                                         "but workgroupMemoryExplicitLayout8BitAccess was not enabled.\n%s\n";
-            skip |= LogError("VUID-RuntimeSpirv-workgroupMemoryExplicitLayout8BitAccess-10757", module_state.handle(), loc,
+            skip |= LogError("VUID-RuntimeSpirv-workgroupMemoryExplicitLayout8BitAccess-10756", module_state.handle(), loc,
                              message.c_str(), insn.Describe().c_str());
         }
 
@@ -558,7 +558,7 @@ bool SpirvValidator::Validate8And16BitStorage(const spirv::Module &module_state,
             const std::string message = "SPIR-V contains an 16-bit " + text +
                                         " with Workgroup Storage Class, "
                                         "but workgroupMemoryExplicitLayout16BitAccess was not enabled.\n%s\n";
-            skip |= LogError("VUID-RuntimeSpirv-workgroupMemoryExplicitLayout16BitAccess-10756", module_state.handle(), loc,
+            skip |= LogError("VUID-RuntimeSpirv-workgroupMemoryExplicitLayout16BitAccess-10757", module_state.handle(), loc,
                              message.c_str(), insn.Describe().c_str());
         }
     }
