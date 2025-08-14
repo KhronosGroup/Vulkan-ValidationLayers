@@ -3193,3 +3193,39 @@ TEST_F(PositiveSyncVal, ImageBarrierExecutionDependencySync2) {
     vk::CmdCopyImage(m_command_buffer, image_b, VK_IMAGE_LAYOUT_GENERAL, image_a, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveSyncVal, Maintenance9TransitionWithMultipleMips) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10520
+    // NOTE: to repro the original issue it was important to specify at least 3 mip level. In that case with broken
+    // VK_REMAINING_ARRAY_LAYERS expansion range generator generated wrong ranges that triggered assert. With a smaller
+    // number of mips even with incorrect VK_REMAINING_ARRAY_LAYERS expansion this did not result in broken configuration.
+    TEST_DESCRIPTION("Use VK_REMAINING_ARRAY_LAYERS with image barrier subresource range");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_9_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance9);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.extent = {16, 16, 2};
+    image_ci.mipLevels = 3;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    vkt::Image image(*m_device, image_ci);
+
+    VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
+    layout_transition.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    layout_transition.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    layout_transition.image = image;
+    layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 3, 0, VK_REMAINING_ARRAY_LAYERS};
+
+    m_command_buffer.Begin();
+    m_command_buffer.Barrier(layout_transition);
+    m_command_buffer.End();
+}
