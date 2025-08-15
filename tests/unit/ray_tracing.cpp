@@ -1422,10 +1422,8 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirect2KHRFeatureDisabled) {
 
 TEST_F(NegativeRayTracing, CmdTraceRaysIndirect2KHRAddress) {
     TEST_DESCRIPTION("Validate vkCmdTraceRaysIndirect2KHR.");
-
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
-
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::rayTracingPipelineTraceRaysIndirect2);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
