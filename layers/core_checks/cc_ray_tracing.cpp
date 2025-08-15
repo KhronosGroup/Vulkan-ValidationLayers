@@ -2686,7 +2686,7 @@ bool CoreChecks::ValidateClusterAccelerationStructureCommandsInfoNV(
                 }}};
 
                 skip |= dst_implicit_size_validator.ValidateDeviceAddress(*this, command_infos_loc.dot(Field::dstImplicitData),
-                                                                          LogObjectList(device), command_infos.dstImplicitData);
+                                                                          objlist, command_infos.dstImplicitData);
             }
         }
     }
@@ -2742,7 +2742,7 @@ bool CoreChecks::ValidateClusterAccelerationStructureCommandsInfoNV(
                 }}};
 
                 skip |= dst_addresses_size_validator.ValidateDeviceAddress(
-                    *this, command_infos_loc.dot(Field::dstAddressesArray).dot(Field::deviceAddress), LogObjectList(device),
+                    *this, command_infos_loc.dot(Field::dstAddressesArray).dot(Field::deviceAddress), objlist,
                     command_infos.dstAddressesArray.deviceAddress);
             }
         }
