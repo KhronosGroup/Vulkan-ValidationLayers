@@ -1049,6 +1049,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                         usedLines.append(f'skip |= {context}ValidateFlags({errorLoc}.dot(Field::{member.name}), vvl::FlagBitmask::{flagBitsName}, {allFlagsName}, {valuePrefix}{member.name}, {flagsType}, {invalidVuid}{zeroVuidArg});\n')
                     elif member.type == 'VkBool32':
                         usedLines.append(f'skip |= {context}ValidateBool32({errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.name});\n')
+                    elif member.type == 'VkDeviceAddress' and not member.optional:
+                        vuid = self.GetVuid(callerName, f"{member.name}-parameter")
+                        usedLines.append(f'skip |= {context}ValidateNotZero({valuePrefix}{member.name} == 0, {vuid}, {errorLoc}.dot(Field::{member.name}));\n')
                     elif member.type in self.vk.enums and member.type != 'VkStructureType':
                         vuid = self.GetVuid(callerName, f"{member.name}-parameter")
                         usedLines.append(f'skip |= {context}ValidateRangedEnum({errorLoc}.dot(Field::{member.name}), vvl::Enum::{member.type}, {valuePrefix}{member.name}, {vuid});\n')

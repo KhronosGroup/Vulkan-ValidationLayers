@@ -2207,21 +2207,6 @@ bool Device::manual_PreCallValidateCmdBuildClusterAccelerationStructureIndirectN
     const Location op_input_loc = input_loc.dot(Field::opInput);
     const auto &input = pInfo->input;
 
-    if (pInfo->dstImplicitData == 0) {
-        skip |= LogError("VUID-VkClusterAccelerationStructureCommandsInfoNV-dstImplicitData-parameter",
-                         LogObjectList(commandBuffer), input_loc.dot(Field::dstImplicitData),
-                         "(%" PRIu64 ") must be a valid VkDeviceAddress value", pInfo->dstImplicitData);
-    }
-    if (pInfo->scratchData == 0) {
-        skip |=
-            LogError("VUID-VkClusterAccelerationStructureCommandsInfoNV-scratchData-parameter", LogObjectList(commandBuffer),
-                     input_loc.dot(Field::scratchData), "(%" PRIu64 ") must be a valid VkDeviceAddress value", pInfo->scratchData);
-    }
-    if (pInfo->srcInfosCount == 0) {
-        skip |= LogError("VUID-VkClusterAccelerationStructureCommandsInfoNV-srcInfosCount-parameter", LogObjectList(commandBuffer),
-                         input_loc.dot(Field::srcInfosCount), "(%" PRIu64 ") must be a valid VkDeviceAddress value",
-                         pInfo->srcInfosCount);
-    }
     skip |= context.ValidateStructType(input_loc, &pInfo->input, VK_STRUCTURE_TYPE_CLUSTER_ACCELERATION_STRUCTURE_INPUT_INFO_NV,
                                        true, "VUID-VkClusterAccelerationStructureCommandsInfoNV-input-parameter",
                                        "VUID-VkClusterAccelerationStructureInputInfoNV-sType-sType");
