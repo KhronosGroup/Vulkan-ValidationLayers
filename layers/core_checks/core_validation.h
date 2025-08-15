@@ -788,8 +788,9 @@ class CoreChecks : public vvl::DeviceProxy {
     // Descriptor Set Validation Functions
     bool ValidateBufferUpdate(const vvl::Buffer& buffer_state, const VkDescriptorBufferInfo& buffer_info, VkDescriptorType type,
                               const Location& buffer_info_loc) const;
-    bool ValidateUpdateDescriptorSets(uint32_t descriptorWriteCount, const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
-                                      const VkCopyDescriptorSet* pDescriptorCopies, const Location& loc) const;
+    bool ValidateUpdateDescriptorSets(uint32_t descriptorWriteCount, const VkWriteDescriptorSet* pDescriptorWrites,
+                                      uint32_t descriptorCopyCount, const VkCopyDescriptorSet* pDescriptorCopies,
+                                      const Location& loc) const;
 
     bool ValidateGraphicsPipelineVertexInputState(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelinePreRasterizationState(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
@@ -1652,7 +1653,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateClusterAccelerationStructureTriangleClusterInputNV(
         const VkClusterAccelerationStructureTriangleClusterInputNV& input, const Location& input_loc) const;
     bool ValidateClusterAccelerationStructureCommandsInfoNV(const VkClusterAccelerationStructureCommandsInfoNV& command_infos,
-                                                            const Location& command_infos_loc) const;
+                                                            const LogObjectList& objlist, const Location& command_infos_loc) const;
     bool PreCallValidateCreateAccelerationStructureNV(VkDevice device, const VkAccelerationStructureCreateInfoNV* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator,
                                                       VkAccelerationStructureNV* pAccelerationStructure,
@@ -2662,9 +2663,12 @@ class CoreChecks : public vvl::DeviceProxy {
     bool PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(VkCommandBuffer commandBuffer,
                                                                     const VkBuildPartitionedAccelerationStructureInfoNV* pBuildInfo,
                                                                     const ErrorObject& error_obj) const override;
-    bool PreCallValidateGetPartitionedAccelerationStructuresBuildSizesNV(VkDevice device, const VkPartitionedAccelerationStructureInstancesInputNV* pInfo,
-                                                                        VkAccelerationStructureBuildSizesInfoKHR* pBuildInfo, const ErrorObject& error_obj) const override;
-    bool ValidateBuildPartitionedAccelerationStructureInfoNV(const VkBuildPartitionedAccelerationStructureInfoNV& build_info, const Location &build_info_loc, VkDeviceSize build_scratch_size, VkDeviceSize build_acceleration_structure_size) const;
+    bool PreCallValidateGetPartitionedAccelerationStructuresBuildSizesNV(
+        VkDevice device, const VkPartitionedAccelerationStructureInstancesInputNV* pInfo,
+        VkAccelerationStructureBuildSizesInfoKHR* pBuildInfo, const ErrorObject& error_obj) const override;
+    bool ValidateBuildPartitionedAccelerationStructureInfoNV(const VkBuildPartitionedAccelerationStructureInfoNV& build_info,
+                                                             const Location& build_info_loc, VkDeviceSize build_scratch_size,
+                                                             VkDeviceSize build_acceleration_structure_size) const;
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
     bool PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo,
