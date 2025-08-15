@@ -1978,7 +1978,8 @@ TEST_F(PositiveRayTracing, ZeroPrimitiveCountWithIndexTypeNone) {
     m_device->Wait();
 }
 
-TEST_F(PositiveRayTracing, CmdBuildPartitionedAccelerationStructuresNV) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10621
+TEST_F(PositiveRayTracing, DISABLED_CmdBuildPartitionedAccelerationStructuresNV) {
     TEST_DESCRIPTION("Test vkCmdBuildPartitionedAccelerationStructuresNV can build a partitioned TLAS");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);

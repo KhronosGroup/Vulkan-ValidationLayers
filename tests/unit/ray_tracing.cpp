@@ -1422,10 +1422,8 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirect2KHRFeatureDisabled) {
 
 TEST_F(NegativeRayTracing, CmdTraceRaysIndirect2KHRAddress) {
     TEST_DESCRIPTION("Validate vkCmdTraceRaysIndirect2KHR.");
-
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
-
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::rayTracingPipelineTraceRaysIndirect2);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
@@ -4546,11 +4544,8 @@ TEST_F(NegativeRayTracing, CmdBuildPartitionedAccelerationStructures) {
     command_info.srcInfos = 0;
     command_info.srcInfosCount = count_buffer_address;
     m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-partitionedAccelerationStructure-10536");
-    m_errorMonitor->SetDesiredError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-dstAccelerationStructureData-10562");
-    m_errorMonitor->SetDesiredError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-scratchData-10559");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10541");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10543");
+    m_errorMonitor->SetDesiredError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-srcAccelerationStructureData-parameter");
+    m_errorMonitor->SetDesiredError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-srcInfos-parameter");
     vk::CmdBuildPartitionedAccelerationStructuresNV(m_command_buffer.handle(), &command_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
