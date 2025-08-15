@@ -23,6 +23,7 @@ class TestIcdGenerator(BaseGenerator):
         BaseGenerator.__init__(self)
 
         self.manual_functions = [
+            'vkGetClusterAccelerationStructureBuildSizesNV',
             'vkGetTensorMemoryRequirementsARM',
             'vkCreateInstance',
             'vkDestroyInstance',

@@ -5813,9 +5813,6 @@ static VKAPI_ATTR void VKAPI_CALL DestroyExternalComputeQueueNV(VkDevice device,
 static VKAPI_ATTR void VKAPI_CALL GetExternalComputeQueueDataNV(VkExternalComputeQueueNV externalQueue,
                                                                 VkExternalComputeQueueDataParamsNV* params, void* pData) {}
 
-static VKAPI_ATTR void VKAPI_CALL GetClusterAccelerationStructureBuildSizesNV(
-    VkDevice device, const VkClusterAccelerationStructureInputInfoNV* pInfo, VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo) {}
-
 static VKAPI_ATTR void VKAPI_CALL CmdBuildClusterAccelerationStructureIndirectNV(
     VkCommandBuffer commandBuffer, const VkClusterAccelerationStructureCommandsInfoNV* pCommandInfos) {}
 
