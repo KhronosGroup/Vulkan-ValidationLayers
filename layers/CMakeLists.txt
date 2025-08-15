@@ -363,8 +363,8 @@ target_sources(vvl PRIVATE
     state_tracker/pipeline_layout_state.h
     state_tracker/pipeline_state.cpp
     state_tracker/pipeline_state.h
-    state_tracker/pipeline_sub_state.cpp
-    state_tracker/pipeline_sub_state.h
+    state_tracker/pipeline_library_state.cpp
+    state_tracker/pipeline_library_state.h
     state_tracker/push_constant_data.h
     state_tracker/semaphore_state.cpp
     state_tracker/semaphore_state.h
