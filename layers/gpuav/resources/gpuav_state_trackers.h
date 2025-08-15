@@ -358,13 +358,11 @@ static inline const ShaderObjectSubState &SubState(const vvl::ShaderObject &obj)
     return *static_cast<const ShaderObjectSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));
 }
 
-class PipelineTrackerSubState : public vvl::PipelineTrackerSubState {
+class PipelineSubState : public vvl::PipelineSubState {
   public:
-    explicit PipelineTrackerSubState(Validator &gpuav, vvl::Pipeline &pipeline);
+    explicit PipelineSubState(Validator &gpuav, vvl::Pipeline &pipeline);
 
     void Destroy() override;
-    // #ARNO_TODO do I need that?
-    void NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) override;
 
     VkPipelineLayout GetPipelineLayoutUnion(const Location &loc) const;
 
@@ -373,11 +371,11 @@ class PipelineTrackerSubState : public vvl::PipelineTrackerSubState {
     Validator &gpuav_;
 };
 
-static inline PipelineTrackerSubState &SubState(vvl::Pipeline &pipeline) {
-    return *static_cast<PipelineTrackerSubState *>(pipeline.SubState(LayerObjectTypeGpuAssisted));
+static inline PipelineSubState &SubState(vvl::Pipeline &pipeline) {
+    return *static_cast<PipelineSubState *>(pipeline.SubState(LayerObjectTypeGpuAssisted));
 }
-static inline const PipelineTrackerSubState &SubState(const vvl::Pipeline &pipeline) {
-    return *static_cast<const PipelineTrackerSubState *>(pipeline.SubState(LayerObjectTypeGpuAssisted));
+static inline const PipelineSubState &SubState(const vvl::Pipeline &pipeline) {
+    return *static_cast<const PipelineSubState *>(pipeline.SubState(LayerObjectTypeGpuAssisted));
 }
 
 }  // namespace gpuav
