@@ -81,10 +81,12 @@ class BufferAddressValidation {
     [[nodiscard]] bool ValidateDeviceAddress(const CoreChecks& validator, const Location& device_address_loc,
                                              const LogObjectList& objlist, VkDeviceAddress device_address) noexcept {
         bool skip = false;
-        // Assumes the caller checks if the device_address can be null or not
+        // There will be an implicit VU like "must be a valid VkDeviceAddress value" and if can't be zero, stateless validation
+        // should have caught this already
         if (device_address == 0) {
             return skip;
         }
+
         vvl::span<vvl::Buffer* const> buffer_list = validator.GetBuffersByAddress(device_address);
         if (buffer_list.empty()) {
             skip |= validator.LogError(

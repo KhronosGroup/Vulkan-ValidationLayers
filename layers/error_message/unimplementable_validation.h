@@ -557,6 +557,13 @@ const char* unimplementable_validation[] = {
     "VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-09488"
     "VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-09489"
     "VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-09490"
+
+    // If VkDeviceAddress can be zero, we will validate it in cc_buffer_address.h
+    "VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-parameter",
+    "VUID-VkGeneratedCommandsInfoEXT-preprocessAddress-parameter",
+    "VUID-VkGeneratedCommandsInfoEXT-sequenceCountAddress-parameter",
+    "VUID-VkMicromapCreateInfoEXT-deviceAddress-parameter",
+    "VUID-VkStridedDeviceAddressRegionKHR-deviceAddress-parameter",
 };
 
 // VUs from deprecated extensions that would require complex codegen to get working
