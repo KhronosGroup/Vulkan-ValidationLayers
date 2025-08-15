@@ -1916,12 +1916,14 @@ class CoreChecks : public vvl::DeviceProxy {
                                            const VkCommandBuffer* pCommandBuffers, const ErrorObject& error_obj) const override;
     bool ValidateCmdExecuteCommandsRenderPass(const vvl::CommandBuffer& cb_state, const vvl::RenderPass& rp_state,
                                               const Location& loc) const;
-    bool ValidateCmdExecuteCommandsRenderPassSecondary(const vvl::CommandBuffer& cb_state, const vvl::RenderPass& rp_state,
-                                                       const vvl::CommandBuffer& secondary_cb_state, const Location& cb_loc) const;
     bool ValidateCmdExecuteCommandsRenderPassInheritance(const vvl::CommandBuffer& cb_state, const vvl::RenderPass& rp_state,
                                                          const vvl::CommandBuffer& secondary_cb_state,
                                                          const VkCommandBufferInheritanceInfo& inheritance_info,
                                                          const Location& cb_loc) const;
+    bool ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::CommandBuffer& cb_state, const vvl::RenderPass& rp_state,
+                                                             const vvl::CommandBuffer& secondary_cb_state,
+                                                             const vvl::RenderPass& secondary_rp_state,
+                                                             const Location& cb_loc) const;
     bool ValidateCmdExecuteCommandsDynamicRenderingSecondary(const vvl::CommandBuffer& cb_state,
                                                              const vvl::CommandBuffer& secondary_cb_state,
                                                              const vvl::RenderPass& secondary_rp_state,
