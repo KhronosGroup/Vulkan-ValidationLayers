@@ -129,7 +129,7 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const v
     skip |= ValidateGraphicsPipelineBlendEnable(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineMeshTask(pipeline, create_info_loc);
 
-    if (pipeline.OwnsSubState(pipeline.pre_raster_state) || pipeline.OwnsSubState(pipeline.fragment_shader_state)) {
+    if (pipeline.OwnsLibState(pipeline.pre_raster_state) || pipeline.OwnsLibState(pipeline.fragment_shader_state)) {
         vvl::unordered_map<VkShaderStageFlags, uint32_t> unique_stage_map;
         uint32_t index = 0;
         for (const auto &stage_ci : pipeline.shader_stages_ci) {
@@ -144,8 +144,8 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const v
         }
     }
 
-    // pStages are ignored if not using one of these sub states
-    if (pipeline.OwnsSubState(pipeline.fragment_shader_state) || pipeline.OwnsSubState(pipeline.pre_raster_state)) {
+    // pStages are ignored if not using one of these library states
+    if (pipeline.OwnsLibState(pipeline.fragment_shader_state) || pipeline.OwnsLibState(pipeline.pre_raster_state)) {
         uint32_t stage_index = 0;
         for (const auto &stage_ci : pipeline.shader_stages_ci) {
             skip |= ValidatePipelineShaderStage(pipeline, stage_ci, pipeline_ci_pnext,
@@ -474,7 +474,7 @@ bool CoreChecks::ValidatePipelineLibraryCreateInfo(const vvl::Pipeline &pipeline
 bool CoreChecks::ValidateGraphicsPipelineVertexInputState(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
     bool skip = false;
     // If using a mesh shader, all vertex input is ignored
-    if (!pipeline.OwnsSubState(pipeline.vertex_input_state) || (pipeline.active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT)) {
+    if (!pipeline.OwnsLibState(pipeline.vertex_input_state) || (pipeline.active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT)) {
         return skip;
     }
 
@@ -548,7 +548,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
     const bool is_create_library = (pipeline_flags & VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR) != 0;
 
     // It is possible to have no FS state in a complete pipeline whether or not GPL is used
-    if (pipeline.OwnsSubState(pipeline.pre_raster_state) && !pipeline.OwnsSubState(pipeline.fragment_shader_state) &&
+    if (pipeline.OwnsLibState(pipeline.pre_raster_state) && !pipeline.OwnsLibState(pipeline.fragment_shader_state) &&
         ((pipeline.create_info_shaders & FragmentShaderState::ValidShaderStages()) != 0)) {
         // Hint to help as shown from https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8761
         const char *hint = is_create_library ? "" : " (Is rasterizerDiscardEnable mistakenly set to VK_TRUE?)";
@@ -557,7 +557,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                          string_VkShaderStageFlags(pipeline.create_info_shaders).c_str(), hint);
     }
 
-    if (!pipeline.OwnsSubState(pipeline.fragment_shader_state) && !pipeline.OwnsSubState(pipeline.pre_raster_state) &&
+    if (!pipeline.OwnsLibState(pipeline.fragment_shader_state) && !pipeline.OwnsLibState(pipeline.pre_raster_state) &&
         pipeline.shader_stages_ci.size() > 0) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-stageCount-09587", device, create_info_loc.dot(Field::stageCount),
                          "is %zu, but the pipeline does not have a pre-rasterization or fragment shader state.",
@@ -572,7 +572,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                              string_VkPipelineCreateFlags2(pipeline_flags).c_str());
         }
     } else {
-        // check to make sure all required sub states are here
+        // check to make sure all required library states are here
         // Note: You don't require a vertex input state (ex. if using Mesh Shaders)
         if (!pipeline.pre_raster_state) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-08901", device, create_info_loc,
@@ -591,7 +591,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
         }
     }
 
-    if (pipeline.OwnsSubState(pipeline.fragment_shader_state) && !pipeline.OwnsSubState(pipeline.pre_raster_state) &&
+    if (pipeline.OwnsLibState(pipeline.fragment_shader_state) && !pipeline.OwnsLibState(pipeline.pre_raster_state) &&
         ((pipeline.create_info_shaders & PreRasterState::ValidShaderStages()) != 0)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-06895", device, create_info_loc,
                          "does not have pre-raster state, but stages (%s) contains pre-raster shader stages.",
@@ -635,8 +635,8 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
             // NOTE: it is possible for an executable pipeline to not contain FS state
             const bool fs_independent_set = pipeline.fragment_shader_state && pipeline.fragment_shader_state->IsIndependentSets();
             if (!pre_raster_independent_set && !fs_independent_set) {
-                // The layout defined at link time must be compatible with each (pre-raster and fragment shader) sub state's layout
-                // (vertex input and fragment output state do not contain a layout)
+                // The layout defined at link time must be compatible with each (pre-raster and fragment shader) library state's
+                // layout (vertex input and fragment output state do not contain a layout)
                 if (pipeline_layout_state) {
                     if (std::string err_msg; !VerifyPipelineLayoutCompatibility(
                             *pipeline_layout_state, *pipeline.PreRasterPipelineLayoutState(), err_msg)) {
@@ -788,7 +788,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
         }
     }
 
-    if ((pipeline.OwnsSubState(pipeline.pre_raster_state) || pipeline.OwnsSubState(pipeline.fragment_shader_state)) &&
+    if ((pipeline.OwnsLibState(pipeline.pre_raster_state) || pipeline.OwnsLibState(pipeline.fragment_shader_state)) &&
         !pipeline_layout_state) {
         const char *vuid = (pre_raster_info.init == GPLInitType::gpl_flags || frag_shader_info.init == GPLInitType::gpl_flags)
                                ? "VUID-VkGraphicsPipelineCreateInfo-flags-06642"
@@ -1379,7 +1379,7 @@ bool CoreChecks::ValidateGraphicsPipelineExternalFormatResolveDynamicRendering(c
                      "is %" PRIu32 ", but externalFormat is %" PRIu64 ".", rendering_struct->colorAttachmentCount, external_format);
     }
 
-    if (pipeline.OwnsSubState(pipeline.fragment_shader_state) && pipeline.fragment_shader_state->fragment_entry_point) {
+    if (pipeline.OwnsLibState(pipeline.fragment_shader_state) && pipeline.fragment_shader_state->fragment_entry_point) {
         auto entrypoint = pipeline.fragment_shader_state->fragment_entry_point;
         if (entrypoint->execution_mode.Has(spirv::ExecutionModeSet::depth_replacing_bit)) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-externalFormatResolve-09310", device,
@@ -1499,7 +1499,7 @@ bool CoreChecks::ValidateGraphicsPipelineInputAssemblyState(const vvl::Pipeline 
 bool CoreChecks::ValidateGraphicsPipelineTessellationState(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
     bool skip = false;
 
-    if (pipeline.OwnsSubState(pipeline.pre_raster_state) &&
+    if (pipeline.OwnsLibState(pipeline.pre_raster_state) &&
         (pipeline.create_info_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT)) {
         if (!pipeline.TessellationState() && (!pipeline.IsDynamic(CB_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT) ||
                                               !IsExtEnabled(extensions.vk_ext_extended_dynamic_state3))) {
@@ -1514,7 +1514,7 @@ bool CoreChecks::ValidateGraphicsPipelinePreRasterizationState(const vvl::Pipeli
                                                                const Location &create_info_loc) const {
     bool skip = false;
     // Only validate once during creation
-    if (!pipeline.OwnsSubState(pipeline.pre_raster_state)) {
+    if (!pipeline.OwnsLibState(pipeline.pre_raster_state)) {
         return skip;
     }
     const VkShaderStageFlags stages = pipeline.create_info_shaders;
@@ -2399,7 +2399,7 @@ bool CoreChecks::ValidateGraphicsPipelineNullState(const vvl::Pipeline &pipeline
     }
 
     if (IsExtEnabled(extensions.vk_ext_graphics_pipeline_library)) {
-        if (pipeline.OwnsSubState(pipeline.fragment_output_state) && !pipeline.MultisampleState()) {
+        if (pipeline.OwnsLibState(pipeline.fragment_output_state) && !pipeline.MultisampleState()) {
             // if VK_KHR_dynamic_rendering is not enabled, can be null renderpass if using GPL
             if (!null_rp) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderpass-06631", device,
@@ -2410,7 +2410,7 @@ bool CoreChecks::ValidateGraphicsPipelineNullState(const vvl::Pipeline &pipeline
     }
 
     const auto &pipeline_ci = pipeline.GraphicsCreateInfo();
-    if (!pipeline_ci.pMultisampleState && pipeline.OwnsSubState(pipeline.fragment_output_state)) {
+    if (!pipeline_ci.pMultisampleState && pipeline.OwnsLibState(pipeline.fragment_output_state)) {
         // Don't need to check for VK_EXT_extended_dynamic_state3 since it would be on if using these VkDynamicState
         const bool dynamic_alpha_to_one =
             pipeline.IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT) || !enabled_features.alphaToOne;
@@ -2423,7 +2423,7 @@ bool CoreChecks::ValidateGraphicsPipelineNullState(const vvl::Pipeline &pipeline
     }
 
     if (!pipeline.RasterizationState()) {
-        if (!pipeline_ci.pRasterizationState && pipeline.OwnsSubState(pipeline.pre_raster_state)) {
+        if (!pipeline_ci.pRasterizationState && pipeline.OwnsLibState(pipeline.pre_raster_state)) {
             if (!IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) ||
                 !pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT) ||
                 !pipeline.IsDynamic(CB_DYNAMIC_STATE_POLYGON_MODE_EXT) ||
@@ -3011,7 +3011,7 @@ bool CoreChecks::ValidateGraphicsPipelineFragmentShadingRateState(
     };
 
     const auto combiner_ops = fragment_shading_rate_state.combinerOps;
-    if (pipeline.OwnsSubState(pipeline.pre_raster_state) || pipeline.OwnsSubState(pipeline.fragment_shader_state)) {
+    if (pipeline.OwnsLibState(pipeline.pre_raster_state) || pipeline.OwnsLibState(pipeline.fragment_shader_state)) {
         if (!is_valid_enum_value(combiner_ops[0])) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-06567", device,
                              create_info_loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR, Field::combinerOps, 0),
@@ -3039,7 +3039,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline &p
         // The spec says when thie struct is not included it is same as
         // viewMask = 0, colorAttachmentCount = 0, formats = VK_FORMAT_UNDEFINED.
         // Most VUs are worded around this, but some need to be validated here
-        if (pipeline.OwnsSubState(pipeline.fragment_output_state) && color_blend_state && color_blend_state->attachmentCount > 0) {
+        if (pipeline.OwnsLibState(pipeline.fragment_output_state) && color_blend_state && color_blend_state->attachmentCount > 0) {
             skip |= LogError(
                 "VUID-VkGraphicsPipelineCreateInfo-renderPass-06055", device,
                 create_info_loc.dot(Field::pColorBlendState).dot(Field::attachmentCount),
@@ -3113,7 +3113,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline &p
                                          rendering_struct->viewMask, true);
     }
 
-    if (pipeline.OwnsSubState(pipeline.fragment_output_state)) {
+    if (pipeline.OwnsLibState(pipeline.fragment_output_state)) {
         for (uint32_t color_index = 0; color_index < rendering_struct->colorAttachmentCount; color_index++) {
             const VkFormat color_format = rendering_struct->pColorAttachmentFormats[color_index];
             if (color_format == VK_FORMAT_UNDEFINED) {

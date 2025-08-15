@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 
-#include "state_tracker/pipeline_sub_state.h"
+#include "state_tracker/pipeline_library_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/shader_module.h"
 
-bool PipelineSubState::IsIndependentSets() const {
+bool PipelineLibraryState::IsIndependentSets() const {
     if (const auto layout_state = parent.PipelineLayoutState()) {
         if (layout_state->CreateFlags() & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT) {
             return true;
@@ -29,7 +29,7 @@ bool PipelineSubState::IsIndependentSets() const {
 }
 
 VertexInputState::VertexInputState(const vvl::Pipeline &p, const vku::safe_VkGraphicsPipelineCreateInfo &create_info)
-    : PipelineSubState(p) {
+    : PipelineLibraryState(p) {
     for (uint32_t i = 0; i < create_info.stageCount; i++) {
         if (create_info.pStages && create_info.pStages[i].stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
             return;  // if mesh shaders are used, all vertex input state is ignored
@@ -68,7 +68,7 @@ VertexInputState::VertexInputState(const vvl::Pipeline &p, const vku::safe_VkGra
 PreRasterState::PreRasterState(const vvl::Pipeline &p, const vvl::DeviceState &state_data,
                                const vku::safe_VkGraphicsPipelineCreateInfo &create_info, std::shared_ptr<const vvl::RenderPass> rp,
                                spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages])
-    : PipelineSubState(p),
+    : PipelineLibraryState(p),
       pipeline_layout(state_data.Get<vvl::PipelineLayout>(create_info.layout)),
       viewport_state(create_info.pViewportState),
       raster_state(create_info.pRasterizationState),
@@ -109,7 +109,8 @@ PreRasterState::PreRasterState(const vvl::Pipeline &p, const vvl::DeviceState &s
 
         // Check if a shader module identifier is used to reference the shader module.
         if (!module_state) {
-            if (const auto shader_stage_id = vku::FindStructInPNextChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(stage_ci.pNext);
+            if (const auto shader_stage_id =
+                    vku::FindStructInPNextChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(stage_ci.pNext);
                 shader_stage_id) {
                 module_state = state_data.GetShaderModuleStateFromIdentifier(*shader_stage_id);
             }
@@ -229,8 +230,8 @@ void SetFragmentShaderInfoPrivate(const vvl::Pipeline &pipeline_state, FragmentS
 
             // Check if a shader module identifier is used to reference the shader module.
             if (!module_state) {
-                if (const auto shader_stage_id =
-                        vku::FindStructInPNextChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(create_info.pStages[i].pNext);
+                if (const auto shader_stage_id = vku::FindStructInPNextChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(
+                        create_info.pStages[i].pNext);
                     shader_stage_id) {
                     module_state = state_data.GetShaderModuleStateFromIdentifier(*shader_stage_id);
                 }
@@ -265,8 +266,8 @@ void FragmentShaderState::SetFragmentShaderInfo(const vvl::Pipeline &pipeline_st
 }
 
 FragmentShaderState::FragmentShaderState(const vvl::Pipeline &p, const vvl::DeviceState &dev_data,
-                                         std::shared_ptr<const vvl::RenderPass> rp, uint32_t subp, VkPipelineLayout layout)
-    : PipelineSubState(p), rp_state(rp), subpass(subp), pipeline_layout(dev_data.Get<vvl::PipelineLayout>(layout)) {}
+                                         std::shared_ptr<const vvl::RenderPass> rp, uint32_t subpass_index, VkPipelineLayout layout)
+    : PipelineLibraryState(p), rp_state(rp), subpass(subpass_index), pipeline_layout(dev_data.Get<vvl::PipelineLayout>(layout)) {}
 
-FragmentOutputState::FragmentOutputState(const vvl::Pipeline &p, std::shared_ptr<const vvl::RenderPass> rp, uint32_t sp)
-    : PipelineSubState(p), rp_state(rp), subpass(sp) {}
+FragmentOutputState::FragmentOutputState(const vvl::Pipeline &p, std::shared_ptr<const vvl::RenderPass> rp, uint32_t subpass_index)
+    : PipelineLibraryState(p), rp_state(rp), subpass(subpass_index) {}

@@ -21,7 +21,7 @@
 #pragma once
 #include "state_tracker/state_object.h"
 #include "state_tracker/image_layout_map.h"
-#include "state_tracker/pipeline_sub_state.h"
+#include "state_tracker/pipeline_library_state.h"
 #include "state_tracker/video_session_state.h"
 #include "state_tracker/last_bound_state.h"
 #include "state_tracker/query_state.h"
