@@ -2172,4 +2172,81 @@ bool Device::manual_PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(
 
     return skip;
 }
+
+bool Device::manual_PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV(
+    VkCommandBuffer commandBuffer, const VkClusterAccelerationStructureCommandsInfoNV *pInfo, const Context &context) const {
+    bool skip = false;
+    const auto &error_obj = context.error_obj;
+    const Location info_loc = error_obj.location.dot(Field::pInfo);
+    const Location input_loc = info_loc.dot(Field::input);
+    const Location op_input_loc = input_loc.dot(Field::opInput);
+    const auto &input = pInfo->input;
+
+    if (pInfo->dstImplicitData == 0) {
+        skip |= LogError("VUID-VkClusterAccelerationStructureCommandsInfoNV-dstImplicitData-parameter",
+                         LogObjectList(commandBuffer), input_loc.dot(Field::dstImplicitData),
+                         "(%" PRIu64 ") must be a valid VkDeviceAddress value", pInfo->dstImplicitData);
+    }
+    if (pInfo->scratchData == 0) {
+        skip |=
+            LogError("VUID-VkClusterAccelerationStructureCommandsInfoNV-scratchData-parameter", LogObjectList(commandBuffer),
+                     input_loc.dot(Field::scratchData), "(%" PRIu64 ") must be a valid VkDeviceAddress value", pInfo->scratchData);
+    }
+    if (pInfo->srcInfosCount == 0) {
+        skip |= LogError("VUID-VkClusterAccelerationStructureCommandsInfoNV-srcInfosCount-parameter", LogObjectList(commandBuffer),
+                         input_loc.dot(Field::srcInfosCount), "(%" PRIu64 ") must be a valid VkDeviceAddress value",
+                         pInfo->srcInfosCount);
+    }
+    skip |= context.ValidateStructType(input_loc, &pInfo->input, VK_STRUCTURE_TYPE_CLUSTER_ACCELERATION_STRUCTURE_INPUT_INFO_NV,
+                                       true, "VUID-VkClusterAccelerationStructureCommandsInfoNV-input-parameter",
+                                       "VUID-VkClusterAccelerationStructureInputInfoNV-sType-sType");
+
+    if (input.opType == VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_CLUSTERS_BOTTOM_LEVEL_NV) {
+        skip |= ValidateClusterAccelerationStructureClustersBottomLevelInputNV(context, *input.opInput.pClustersBottomLevel,
+                                                                               op_input_loc.dot(Field::pClustersBottomLevel));
+    }
+
+    if (IsValueIn(input.opType, {VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_NV,
+        VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_TEMPLATE_NV,
+        VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_INSTANTIATE_TRIANGLE_CLUSTER_NV,
+        VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_GET_CLUSTER_TEMPLATE_INDICES_NV})) {
+        skip |= ValidateClusterAccelerationStructureTriangleClusterInputNV(context, *input.opInput.pTriangleClusters,
+                                                                           op_input_loc.dot(Field::pTriangleClusters));
+    }
+
+    if (input.opType == VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_MOVE_OBJECTS_NV) {
+        skip |= ValidateClusterAccelerationStructureMoveObjectsInputNV(context, *input.opInput.pMoveObjects,
+                                                                       op_input_loc.dot(Field::pMoveObjects));
+    }
+    return skip;
+}
+
+bool Device::manual_PreCallValidateGetClusterAccelerationStructureBuildSizesNV(
+    VkDevice device, const VkClusterAccelerationStructureInputInfoNV *pInfo, VkAccelerationStructureBuildSizesInfoKHR *pSizeInfo,
+    const Context &context) const {
+    bool skip = false;
+    const auto &error_obj = context.error_obj;
+    const Location input_loc = error_obj.location.dot(Field::pInfo);
+    const Location op_input_loc = input_loc.dot(Field::opInput);
+
+    if (pInfo->opType == VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_CLUSTERS_BOTTOM_LEVEL_NV) {
+        skip |= ValidateClusterAccelerationStructureClustersBottomLevelInputNV(context, *pInfo->opInput.pClustersBottomLevel,
+                                                                               op_input_loc.dot(Field::pClustersBottomLevel));
+    }
+
+    if (IsValueIn(pInfo->opType, {VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_NV,
+        VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_TEMPLATE_NV,
+        VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_INSTANTIATE_TRIANGLE_CLUSTER_NV,
+        VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_GET_CLUSTER_TEMPLATE_INDICES_NV})) {
+        skip |= ValidateClusterAccelerationStructureTriangleClusterInputNV(context, *pInfo->opInput.pTriangleClusters,
+                                                                           op_input_loc.dot(Field::pTriangleClusters));
+    }
+
+    if (pInfo->opType == VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_MOVE_OBJECTS_NV) {
+        skip |= ValidateClusterAccelerationStructureMoveObjectsInputNV(context, *pInfo->opInput.pMoveObjects,
+                                                                       op_input_loc.dot(Field::pMoveObjects));
+    }
+    return skip;
+}
+
 }  // namespace stateless

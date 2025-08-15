@@ -25690,6 +25690,7 @@ bool Device::PreCallValidateGetClusterAccelerationStructureBuildSizesNV(VkDevice
         skip |= context.ValidateStructPnext(pSizeInfo_loc, pSizeInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
                                             "VUID-VkAccelerationStructureBuildSizesInfoKHR-pNext-pNext", kVUIDUndefined, false);
     }
+    if (!skip) skip |= manual_PreCallValidateGetClusterAccelerationStructureBuildSizesNV(device, pInfo, pSizeInfo, context);
     return skip;
 }
 
@@ -25736,6 +25737,7 @@ bool Device::PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV(
                                       pCommandInfos->addressResolutionFlags, kOptionalFlags,
                                       "VUID-VkClusterAccelerationStructureCommandsInfoNV-addressResolutionFlags-parameter");
     }
+    if (!skip) skip |= manual_PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV(commandBuffer, pCommandInfos, context);
     return skip;
 }
 
@@ -27682,6 +27684,49 @@ bool Device::ValidateIndirectExecutionSetPipelineInfoEXT(const Context& context,
                                        kVUIDUndefined, "VUID-VkIndirectExecutionSetPipelineInfoEXT-sType-sType");
 
     skip |= context.ValidateRequiredHandle(loc.dot(Field::initialPipeline), info.initialPipeline);
+    return skip;
+}
+bool Device::ValidateClusterAccelerationStructureTriangleClusterInputNV(
+    const Context& context, const VkClusterAccelerationStructureTriangleClusterInputNV& info, const Location& loc) const {
+    bool skip = false;
+    skip |=
+        context.ValidateStructType(loc, &info, VK_STRUCTURE_TYPE_CLUSTER_ACCELERATION_STRUCTURE_TRIANGLE_CLUSTER_INPUT_NV, false,
+                                   kVUIDUndefined, "VUID-VkClusterAccelerationStructureTriangleClusterInputNV-sType-sType");
+
+    skip |=
+        context.ValidateStructPnext(loc, info.pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                    "VUID-VkClusterAccelerationStructureTriangleClusterInputNV-pNext-pNext", kVUIDUndefined, false);
+
+    skip |= context.ValidateRangedEnum(loc.dot(Field::vertexFormat), vvl::Enum::VkFormat, info.vertexFormat,
+                                       "VUID-VkClusterAccelerationStructureTriangleClusterInputNV-vertexFormat-parameter");
+    return skip;
+}
+bool Device::ValidateClusterAccelerationStructureClustersBottomLevelInputNV(
+    const Context& context, const VkClusterAccelerationStructureClustersBottomLevelInputNV& info, const Location& loc) const {
+    bool skip = false;
+    skip |= context.ValidateStructType(loc, &info, VK_STRUCTURE_TYPE_CLUSTER_ACCELERATION_STRUCTURE_CLUSTERS_BOTTOM_LEVEL_INPUT_NV,
+                                       false, kVUIDUndefined,
+                                       "VUID-VkClusterAccelerationStructureClustersBottomLevelInputNV-sType-sType");
+
+    skip |= context.ValidateStructPnext(loc, info.pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                        "VUID-VkClusterAccelerationStructureClustersBottomLevelInputNV-pNext-pNext", kVUIDUndefined,
+                                        false);
+    return skip;
+}
+bool Device::ValidateClusterAccelerationStructureMoveObjectsInputNV(const Context& context,
+                                                                    const VkClusterAccelerationStructureMoveObjectsInputNV& info,
+                                                                    const Location& loc) const {
+    bool skip = false;
+    skip |= context.ValidateStructType(loc, &info, VK_STRUCTURE_TYPE_CLUSTER_ACCELERATION_STRUCTURE_MOVE_OBJECTS_INPUT_NV, false,
+                                       kVUIDUndefined, "VUID-VkClusterAccelerationStructureMoveObjectsInputNV-sType-sType");
+
+    skip |= context.ValidateStructPnext(loc, info.pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                        "VUID-VkClusterAccelerationStructureMoveObjectsInputNV-pNext-pNext", kVUIDUndefined, false);
+
+    skip |= context.ValidateRangedEnum(loc.dot(Field::type), vvl::Enum::VkClusterAccelerationStructureTypeNV, info.type,
+                                       "VUID-VkClusterAccelerationStructureMoveObjectsInputNV-type-parameter");
+
+    skip |= context.ValidateBool32(loc.dot(Field::noMoveOverlap), info.noMoveOverlap);
     return skip;
 }
 

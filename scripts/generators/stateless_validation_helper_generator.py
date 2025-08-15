@@ -219,6 +219,8 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkConvertCooperativeVectorMatrixNV',
             'vkCmdConvertCooperativeVectorMatrixNV',
             'vkCmdBuildPartitionedAccelerationStructuresNV',
+            'vkCmdBuildClusterAccelerationStructureIndirectNV',
+            'vkGetClusterAccelerationStructureBuildSizesNV',
         ]
 
         # Commands to ignore
@@ -281,6 +283,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'VkAccelerationStructureGeometryInstancesDataKHR',
             'VkAccelerationStructureGeometryAabbsDataKHR',
             'VkIndirectExecutionSetPipelineInfoEXT', # VkIndirectExecutionSetShaderInfoEXT is done manually
+            'VkClusterAccelerationStructureTriangleClusterInputNV',
+            'VkClusterAccelerationStructureClustersBottomLevelInputNV',
+            'VkClusterAccelerationStructureMoveObjectsInputNV',
         ]
 
         # These functions entrypoints we as VVL expose

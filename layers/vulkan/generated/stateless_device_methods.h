@@ -1693,4 +1693,12 @@ bool ValidateAccelerationStructureGeometryAabbsDataKHR(const Context& context,
                                                        const Location& loc) const;
 bool ValidateIndirectExecutionSetPipelineInfoEXT(const Context& context, const VkIndirectExecutionSetPipelineInfoEXT& info,
                                                  const Location& loc) const;
+bool ValidateClusterAccelerationStructureTriangleClusterInputNV(const Context& context,
+                                                                const VkClusterAccelerationStructureTriangleClusterInputNV& info,
+                                                                const Location& loc) const;
+bool ValidateClusterAccelerationStructureClustersBottomLevelInputNV(
+    const Context& context, const VkClusterAccelerationStructureClustersBottomLevelInputNV& info, const Location& loc) const;
+bool ValidateClusterAccelerationStructureMoveObjectsInputNV(const Context& context,
+                                                            const VkClusterAccelerationStructureMoveObjectsInputNV& info,
+                                                            const Location& loc) const;
 // NOLINTEND
