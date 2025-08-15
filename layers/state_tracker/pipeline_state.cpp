@@ -870,13 +870,6 @@ void Pipeline::Destroy() {
     StateObject::Destroy();
 }
 
-void Pipeline::NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {
-    for (auto &item : sub_states_) {
-        item.second->NotifyInvalidate(invalid_nodes, unlink);
-    }
-    StateObject::NotifyInvalidate(invalid_nodes, unlink);
-}
-
 }  // namespace vvl
 
 bool IsPipelineLayoutSetCompatible(uint32_t set, const vvl::PipelineLayout *a, const vvl::PipelineLayout *b) {

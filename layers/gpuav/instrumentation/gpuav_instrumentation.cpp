@@ -516,7 +516,7 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
         }
         // Pipeline layout has been destroyed, or pipeline is a graphics pipeline library
         else {
-            const PipelineTrackerSubState &pipeline_sub_state = SubState(*last_bound.pipeline_state);
+            const PipelineSubState &pipeline_sub_state = SubState(*last_bound.pipeline_state);
             inst_binding_pipe_layout = pipeline_sub_state.GetPipelineLayoutUnion(loc);
             assert(inst_binding_pipe_layout != VK_NULL_HANDLE);
             if (gpuav.aborted_) {

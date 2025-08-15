@@ -628,10 +628,9 @@ void TensorViewSubState::NotifyInvalidate(const vvl::StateObject::NodeList &inva
 
 ShaderObjectSubState::ShaderObjectSubState(vvl::ShaderObject &obj) : vvl::ShaderObjectSubState(obj) {}
 
-PipelineTrackerSubState::PipelineTrackerSubState(Validator &gpuav, vvl::Pipeline &pipeline)
-    : vvl::PipelineTrackerSubState(pipeline), gpuav_(gpuav) {}
+PipelineSubState::PipelineSubState(Validator &gpuav, vvl::Pipeline &pipeline) : vvl::PipelineSubState(pipeline), gpuav_(gpuav) {}
 
-VkPipelineLayout PipelineTrackerSubState::GetPipelineLayoutUnion(const Location &loc) const {
+VkPipelineLayout PipelineSubState::GetPipelineLayoutUnion(const Location &loc) const {
     if (recreated_layout != VK_NULL_HANDLE) {
         return recreated_layout;
     }
@@ -689,13 +688,11 @@ VkPipelineLayout PipelineTrackerSubState::GetPipelineLayoutUnion(const Location 
     return recreated_layout;
 }
 
-void PipelineTrackerSubState::Destroy() {
+void PipelineSubState::Destroy() {
     if (recreated_layout != VK_NULL_HANDLE) {
         DispatchDestroyPipelineLayout(gpuav_.device, recreated_layout, nullptr);
         recreated_layout = VK_NULL_HANDLE;
     }
 }
-
-void PipelineTrackerSubState::NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) { Destroy(); }
 
 }  // namespace gpuav

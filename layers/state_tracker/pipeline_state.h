@@ -66,10 +66,9 @@ class PipelineCache : public StateObject {
     }
 };
 
-// #ARNO_TODO rename to "PipelineSubState" once "PipelineSubState" in pipeline_sub_state.h is renamed
-class PipelineTrackerSubState;
+class PipelineSubState;
 
-class Pipeline : public StateObject, public SubStateManager<PipelineTrackerSubState> {
+class Pipeline : public StateObject, public SubStateManager<PipelineSubState> {
   protected:
     // NOTE: The style guide suggests private data appear at the end, but we need this populated first, so placing it here
 
@@ -171,7 +170,6 @@ class Pipeline : public StateObject, public SubStateManager<PipelineTrackerSubSt
              spirv::StatelessData *stateless_data);
 
     void Destroy() override;
-    void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) override;
 
     VkPipeline VkHandle() const { return handle_.Cast<VkPipeline>(); }
 
@@ -617,15 +615,13 @@ class Pipeline : public StateObject, public SubStateManager<PipelineTrackerSubSt
     std::shared_ptr<const vvl::PipelineLayout> merged_graphics_layout;
 };
 
-class PipelineTrackerSubState {
+class PipelineSubState {
   public:
-    explicit PipelineTrackerSubState(Pipeline &pipeline) : base(pipeline) {}
-    PipelineTrackerSubState(const PipelineTrackerSubState &) = delete;
-    PipelineTrackerSubState &operator=(const PipelineTrackerSubState &) = delete;
-    virtual ~PipelineTrackerSubState() {}
+    explicit PipelineSubState(Pipeline &pipeline) : base(pipeline) {}
+    PipelineSubState(const PipelineSubState &) = delete;
+    PipelineSubState &operator=(const PipelineSubState &) = delete;
+    virtual ~PipelineSubState() {}
     virtual void Destroy() {}
-    // #ARNO_TODO do I need that?
-    virtual void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {}
 
     Pipeline &base;
 };

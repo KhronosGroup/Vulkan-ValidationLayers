@@ -84,9 +84,7 @@ void Validator::Created(vvl::TensorView &obj) {
 }
 void Validator::Created(vvl::ShaderObject &obj) { obj.SetSubState(container_type, std::make_unique<ShaderObjectSubState>(obj)); }
 
-void Validator::Created(vvl::Pipeline &obj) {
-    obj.SetSubState(container_type, std::make_unique<PipelineTrackerSubState>(*this, obj));
-}
+void Validator::Created(vvl::Pipeline &obj) { obj.SetSubState(container_type, std::make_unique<PipelineSubState>(*this, obj)); }
 
 // Trampolines to make VMA call Dispatch for Vulkan calls
 static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL gpuVkGetInstanceProcAddr(VkInstance inst, const char *name) {
