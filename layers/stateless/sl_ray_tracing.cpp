@@ -1060,6 +1060,99 @@ bool Device::ValidateAccelerationStructureBuildGeometryInfoKHR(const Context &co
                                  aabbs_loc.dot(Field::stride), "(%" PRIu64 ") must be less than or equal to 2^32-1.", aabbs.stride);
             }
         }
+        else if (geom.geometryType == VK_GEOMETRY_TYPE_SPHERES_NV) {
+            auto sphere_struct = reinterpret_cast<VkAccelerationStructureGeometrySpheresDataNV const *>(geom.pNext);
+            if (!enabled_features.spheres) {
+                skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-None-10429", device,
+                                 geometry_loc.pNext(Struct::VkAccelerationStructureGeometrySpheresDataNV),
+                                 "The spheres feature must be enabled");
+            }
+            if (sphere_struct->vertexStride > vvl::kU32Max) {
+                skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexStride-10432", handle,
+                                 geometry_loc.pNext(Struct::VkAccelerationStructureGeometrySpheresDataNV).dot(Field::vertexStride),
+                                 "(%" PRIu64 ") must be less than or equal to 2^32-1.", sphere_struct->vertexStride);
+            }
+            if (sphere_struct->radiusStride > vvl::kU32Max) {
+                skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexStride-10432", handle,
+                                 geometry_loc.pNext(Struct::VkAccelerationStructureGeometrySpheresDataNV).dot(Field::radiusStride),
+                                 "(%" PRIu64 ") must be less than or equal to 2^32-1.", sphere_struct->radiusStride);
+            }
+            const bool has_index_data = (sphere_struct->indexData.hostAddress != nullptr || sphere_struct->indexData.deviceAddress != 0);
+            if (has_index_data && sphere_struct->indexType != VK_INDEX_TYPE_UINT32 && sphere_struct->indexType != VK_INDEX_TYPE_UINT16) {
+                skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-indexData-10437", handle,
+                                 geometry_loc.pNext(Struct::VkAccelerationStructureGeometrySpheresDataNV).dot(Field::indexType),
+                                 "is %s.", string_VkIndexType(sphere_struct->indexType));
+            }
+            if (sphere_struct->vertexData.hostAddress == nullptr && sphere_struct->vertexData.deviceAddress == 0) {
+                skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexData-parameter", handle,
+                               geometry_loc.pNext(Struct::VkAccelerationStructureGeometrySpheresDataNV).dot(Field::vertexData),
+                               "must not be 0 or NULL");
+            }
+            if (sphere_struct->radiusData.hostAddress == nullptr && sphere_struct->radiusData.deviceAddress == 0) {
+                skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-radiusData-parameter", handle,
+                                 geometry_loc.pNext(Struct::VkAccelerationStructureGeometrySpheresDataNV).dot(Field::radiusData),
+                                 "must not be 0 or NULL");
+            }
+            if (sphere_struct->indexType != VK_INDEX_TYPE_NONE_KHR && sphere_struct->indexData.hostAddress == nullptr &&
+                sphere_struct->indexData.deviceAddress == 0) {
+                skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-indexData-parameter", handle,
+                                 geometry_loc.pNext(Struct::VkAccelerationStructureGeometrySpheresDataNV).dot(Field::indexData),
+                                 "must not be 0 or NULL");
+            }
+        }
+        else if (geom.geometryType == VK_GEOMETRY_TYPE_LINEAR_SWEPT_SPHERES_NV) {
+            auto sphere_linear_struct =
+                reinterpret_cast<VkAccelerationStructureGeometryLinearSweptSpheresDataNV const *>(geom.pNext);
+            if (!enabled_features.linearSweptSpheres) {
+                skip |= LogError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-None-10419", device,
+                                 geometry_loc.pNext(Struct::VkAccelerationStructureGeometryLinearSweptSpheresDataNV),
+                                 "The linearSweptSpheres feature must be enabled");
+            }
+            if (sphere_linear_struct->vertexStride > vvl::kU32Max) {
+                skip |= LogError(
+                    "VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-vertexStride-10422", handle,
+                    geometry_loc.pNext(Struct::VkAccelerationStructureGeometryLinearSweptSpheresDataNV).dot(Field::vertexStride),
+                    "(%" PRIu64 ") must be less than or equal to 2^32-1.", sphere_linear_struct->vertexStride);
+            }
+            if (sphere_linear_struct->radiusStride > vvl::kU32Max) {
+                skip |= LogError(
+                    "VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-vertexStride-10422", handle,
+                    geometry_loc.pNext(Struct::VkAccelerationStructureGeometryLinearSweptSpheresDataNV).dot(Field::radiusStride),
+                    "(%" PRIu64 ") must be less than or equal to 2^32-1.", sphere_linear_struct->radiusStride);
+            }
+            const bool has_index_data = (sphere_linear_struct->indexData.hostAddress != nullptr || sphere_linear_struct->indexData.deviceAddress != 0);
+            if (has_index_data && sphere_linear_struct->indexType != VK_INDEX_TYPE_UINT32 && sphere_linear_struct->indexType != VK_INDEX_TYPE_UINT16) {
+                skip |= LogError(
+                    "VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-indexData-10428", handle,
+                    geometry_loc.pNext(Struct::VkAccelerationStructureGeometryLinearSweptSpheresDataNV).dot(Field::indexType),
+                    "is %s.", string_VkIndexType(sphere_linear_struct->indexType));
+            }
+            if (sphere_linear_struct->vertexData.hostAddress == nullptr && sphere_linear_struct->vertexData.deviceAddress == 0) {
+                skip |= LogError(
+                    "VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-vertexData-parameter", handle,
+                    geometry_loc.pNext(Struct::VkAccelerationStructureGeometryLinearSweptSpheresDataNV).dot(Field::vertexData),
+                    "must not be 0 or NULL");
+            }
+            if (sphere_linear_struct->radiusData.hostAddress == nullptr && sphere_linear_struct->radiusData.deviceAddress == 0) {
+                skip |= LogError(
+                    "VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-radiusData-parameter", handle,
+                    geometry_loc.pNext(Struct::VkAccelerationStructureGeometryLinearSweptSpheresDataNV).dot(Field::radiusData),
+                    "must not be 0 or NULL");
+            }
+            if (sphere_linear_struct->indexData.hostAddress == nullptr && sphere_linear_struct->indexData.deviceAddress == 0) {
+                skip |= LogError(
+                    "VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-indexData-parameter", handle,
+                    geometry_loc.pNext(Struct::VkAccelerationStructureGeometryLinearSweptSpheresDataNV).dot(Field::indexData),
+                    "must not be 0 or NULL");
+            }
+            if (sphere_linear_struct->indexingMode == VK_RAY_TRACING_LSS_INDEXING_MODE_SUCCESSIVE_NV) {
+                if (!sphere_linear_struct->indexData.deviceAddress && !sphere_linear_struct->indexData.hostAddress) {
+                    skip |= LogError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-indexingMode-10427",
+                                     handle, geometry_loc.dot(Field::indexData),
+                                     "is NULL but indexingMode is VK_RAY_TRACING_LSS_INDEXING_MODE_SUCCESSIVE_NV.");
+                }
+            }
+        }
         if (info.type == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR && geom.geometryType != VK_GEOMETRY_TYPE_INSTANCES_KHR) {
             skip |=
                 LogError("VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-03789", handle,
