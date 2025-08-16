@@ -1547,7 +1547,8 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
                 const bool need_validate =
                     NeedDrawStateValidated(cb_state, descriptor_set, ds_slot, disabled[image_layout_validation]);
                 if (need_validate) {
-                    skip |= ValidateDrawState(*descriptor_set, set_index, binding_req_map, cb_state, vuid, pipeline.Handle());
+                    skip |= ValidateDrawState(*descriptor_set, set_index, binding_req_map, cb_state, vuid,
+                                              LogObjectList(pipeline.Handle()));
                 }
             }
         }
@@ -1621,8 +1622,8 @@ bool CoreChecks::ValidateActionStateDescriptorsShaderObject(const LastBound &las
                     const bool need_validate =
                         NeedDrawStateValidated(cb_state, descriptor_set, ds_slot, disabled[image_layout_validation]);
                     if (need_validate) {
-                        skip |=
-                            ValidateDrawState(*descriptor_set, set_index, binding_req_map, cb_state, vuid, shader_state->Handle());
+                        skip |= ValidateDrawState(*descriptor_set, set_index, binding_req_map, cb_state, vuid,
+                                                  LogObjectList(shader_state->Handle()));
                     }
                 }
             }
