@@ -468,4 +468,27 @@
      m_errorMonitor->VerifyFound();
      m_command_buffer.End();
  }
- 
+
+ TEST_F(NegativeRayTracingSpheres, SpheresVertexDataNullParameter) {
+    TEST_DESCRIPTION("Test that vertexData must not be NULL");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    AddRequiredFeature(vkt::Feature::spheres);
+    AddRequiredFeature(vkt::Feature::linearSweptSpheres);
+    AddRequiredExtensions(VK_NV_RAY_TRACING_LINEAR_SWEPT_SPHERES_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    m_command_buffer.Begin();
+    auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::Spheres);
+    blas.GetGeometries()[0].SetSpheresVertexAddressNull();
+    blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
+    
+    m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexData-parameter");
+    blas.BuildCmdBuffer(m_command_buffer.handle());
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}

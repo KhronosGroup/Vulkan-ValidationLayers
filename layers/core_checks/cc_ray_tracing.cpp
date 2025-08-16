@@ -845,15 +845,6 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                  string_VkFormat(sphere_linear_struct->radiusFormat),
                                  string_VkFormatFeatureFlags2(radius_properties.bufferFeatures).c_str());
                 }
-
-                if (sphere_linear_struct->indexingMode == VK_RAY_TRACING_LSS_INDEXING_MODE_SUCCESSIVE_NV) {
-                    if (!sphere_linear_struct->indexData.deviceAddress && !sphere_linear_struct->indexData.hostAddress) {
-                        skip |= LogError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-indexingMode-10427",
-                                         cmd_buffer, p_geom_geom_linear_spheres_loc.dot(Field::indexData),
-                                         "shouldn't be NUll if indexing mode is %s.",
-                                         string_VkRayTracingLssIndexingModeNV(sphere_linear_struct->indexingMode));
-                    }
-                }
                 break;
             }
             default:
