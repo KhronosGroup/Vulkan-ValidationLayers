@@ -18590,6 +18590,9 @@ bool Device::PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint32_t
                                   "VUID-vkGetCalibratedTimestampsKHR-pTimestamps-parameter");
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pMaxDeviation), pMaxDeviation,
                                             "VUID-vkGetCalibratedTimestampsKHR-pMaxDeviation-parameter");
+    if (!skip)
+        skip |= manual_PreCallValidateGetCalibratedTimestampsKHR(device, timestampCount, pTimestampInfos, pTimestamps,
+                                                                 pMaxDeviation, context);
     return skip;
 }
 
