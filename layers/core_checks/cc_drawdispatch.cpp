@@ -1919,7 +1919,7 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
         if (!attachment || !attachment_info.IsColor()) {
             continue;
         }
-        const uint32_t color_index = attachment_info.color_index;
+        const uint32_t color_index = attachment_info.type_index;
 
         if (dynamic_write_mask && cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT) &&
             !cb_state.dynamic_state_value.color_write_mask_attachments[color_index]) {

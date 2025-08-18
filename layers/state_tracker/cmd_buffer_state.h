@@ -87,14 +87,20 @@ struct AttachmentInfo {
     VkImageLayout separate_stencil_layout;
     // When dealing with color attachments, need to know the index for things such as
     // VkPipelineColorBlendStateCreateInfo::pAttachments or vkCmdSetColorBlendEnableEXT
-    uint32_t color_index;
+    //
+    // This index is tied to a Attachment::Type and will line up to the index in either:
+    //   VkRenderingInfo::pColorAttachments
+    //   VkSubpassDescription::pColorAttachments
+    //   VkSubpassDescription::pInputAttachments
+    //   VkSubpassDescription::pResolveAttachments
+    uint32_t type_index;
 
     AttachmentInfo()
         : image_view(nullptr),
           type(Type::Empty),
           layout(VK_IMAGE_LAYOUT_UNDEFINED),
           separate_stencil_layout(VK_IMAGE_LAYOUT_UNDEFINED),
-          color_index(0) {}
+          type_index(0) {}
 
     bool IsResolve() const { return type == Type::ColorResolve || type == Type::DepthResolve || type == Type::StencilResolve; }
     bool IsInput() const { return type == Type::Input; }
@@ -108,7 +114,7 @@ struct AttachmentInfo {
     bool IsFragmentDensityMap() const { return type == Type::FragmentDensityMap; }
     bool IsFragmentShadingRate() const { return type == Type::FragmentShadingRate; }
 
-    std::string Describe(const vvl::CommandBuffer &cb_state, uint32_t index) const;
+    std::string Describe(const vvl::CommandBuffer &cb_state, uint32_t rp_index) const;
 };
 
 struct SubpassInfo {

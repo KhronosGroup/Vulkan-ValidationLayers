@@ -1167,14 +1167,15 @@ bool CoreChecks::ValidateDrawDynamicStateValue(const LastBound& last_bound_state
             const auto& attachment_info = cb_state.active_attachments[i];
             const auto* attachment = attachment_info.image_view;
             if (attachment && attachment->create_info.format == VK_FORMAT_E5B9G9R9_UFLOAT_PACK32) {
-                const auto color_write_mask = cb_state.dynamic_state_value.color_write_masks[attachment_info.color_index];
+                const uint32_t color_index = attachment_info.type_index;
+                const auto color_write_mask = cb_state.dynamic_state_value.color_write_masks[color_index];
                 VkColorComponentFlags rgb = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT;
                 if ((color_write_mask & rgb) != rgb && (color_write_mask & rgb) != 0) {
                     skip |= LogError(
                         vuid.color_write_mask_09116, cb_state.Handle(), vuid.loc(),
                         "%s has format VK_FORMAT_E5B9G9R9_UFLOAT_PACK32, but vkCmdSetColorWriteMaskEXT::pColorWriteMasks[%" PRIu32
                         "] is %s.",
-                        attachment_info.Describe(cb_state, i).c_str(), attachment_info.color_index,
+                        attachment_info.Describe(cb_state, i).c_str(), color_index,
                         string_VkColorComponentFlags(color_write_mask).c_str());
                 }
             }
