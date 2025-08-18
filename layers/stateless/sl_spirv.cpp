@@ -362,34 +362,36 @@ bool SpirvValidator::ValidateVariables(const spirv::Module &module_state, const 
     bool skip = false;
 
     for (const spirv::Instruction *insn : module_state.static_data_.explicit_memory_inst) {
-        const uint32_t storage_class = insn->StorageClass();
-        const bool variable = insn->Opcode() == spv::OpVariable || insn->Opcode() == spv::OpUntypedVariableKHR;
+        const uint32_t opcode = insn->Opcode();
+        if (opcode == spv::OpVariable || opcode == spv::OpUntypedVariableKHR) {
+            const uint32_t storage_class = insn->StorageClass();
+            if (storage_class == spv::StorageClassWorkgroup) {
+                // If Workgroup variable is initalized, make sure the feature is enabled
+                const bool untyped = opcode == spv::OpUntypedVariableKHR;
+                const bool has_initializer = insn->Length() > (untyped ? 5u : 4u);
+                if (has_initializer && !enabled_features.shaderZeroInitializeWorkgroupMemory) {
+                    skip |= LogError("VUID-RuntimeSpirv-shaderZeroInitializeWorkgroupMemory-06372", module_state.handle(), loc,
+                                     "SPIR-V contains an %s with Workgroup Storage Class with an Initializer operand, but "
+                                     "shaderZeroInitializeWorkgroupMemory was not enabled.\n%s\n.",
+                                     string_SpvOpcode(opcode), insn->Describe().c_str());
+                }
+            }
 
-        if (variable && storage_class == spv::StorageClassWorkgroup) {
-            // If Workgroup variable is initalized, make sure the feature is enabled
-            const bool untyped = insn->Opcode() == spv::OpUntypedVariableKHR;
-            const bool has_initializer = insn->Length() > (untyped ? 5u : 4u);
-            if (has_initializer && !enabled_features.shaderZeroInitializeWorkgroupMemory) {
-                skip |= LogError("VUID-RuntimeSpirv-shaderZeroInitializeWorkgroupMemory-06372", module_state.handle(), loc,
-                                 "SPIR-V contains an OpVariable with Workgroup Storage Class with an Initializer operand, but "
-                                 "shaderZeroInitializeWorkgroupMemory was not enabled.\n%s\n.",
-                                 insn->Describe().c_str());
+            // Checks based off shaderStorageImage(Read|Write)WithoutFormat are
+            // disabled if VK_KHR_format_feature_flags2 is supported.
+            //
+            //   https://github.com/KhronosGroup/Vulkan-Docs/blob/6177645341afc/appendices/spirvenv.txt#L553
+            //
+            // The other checks need to take into account the format features and so
+            // we apply that in the descriptor set matching validation code (see
+            // descriptor_sets.cpp).
+            if (!special_supported.vk_khr_format_feature_flags2) {
+                skip |= ValidateShaderStorageImageFormatsVariables(module_state, *insn, loc);
             }
         }
 
+        // These check occur both when we see a OpVariable, but also during an OpLoad/OpStore pointing to an OpUntypedVariableKHR
         skip |= Validate8And16BitStorage(module_state, *insn, loc);
-
-        // Checks based off shaderStorageImage(Read|Write)WithoutFormat are
-        // disabled if VK_KHR_format_feature_flags2 is supported.
-        //
-        //   https://github.com/KhronosGroup/Vulkan-Docs/blob/6177645341afc/appendices/spirvenv.txt#L553
-        //
-        // The other checks need to take into account the format features and so
-        // we apply that in the descriptor set matching validation code (see
-        // descriptor_sets.cpp).
-        if (variable && !special_supported.vk_khr_format_feature_flags2) {
-            skip |= ValidateShaderStorageImageFormatsVariables(module_state, *insn, loc);
-        }
     }
 
     return skip;
@@ -401,10 +403,10 @@ bool SpirvValidator::Validate8And16BitStorage(const spirv::Module &module_state,
     bool skip = false;
 
     const bool variable = insn.Opcode() == spv::OpVariable;
-    VariableInstInfo info;
-    std::string text = "OpVariable";
-
     const uint32_t storage_class = module_state.StorageClass(insn);
+    bool untyped_access = false;
+
+    VariableInstInfo info;
 
     // When untyped pointers is enabled, storage VUs are based around memory
     // access widths and not static declaration types. For example, with
@@ -454,7 +456,9 @@ bool SpirvValidator::Validate8And16BitStorage(const spirv::Module &module_state,
                 break;
         }
 
-        if (type_id == 0) return skip;
+        if (type_id == 0) {
+            return skip;
+        }
 
         if (storage_class == spv::StorageClassWorkgroup) {
             // TODO: This doesn't capture explicitly laid out workgroup variables
@@ -475,7 +479,7 @@ bool SpirvValidator::Validate8And16BitStorage(const spirv::Module &module_state,
         info.has_8bit = byte_size % 2 == 1;
         info.has_16bit = !info.has_8bit && byte_size % 4 == 2;
 
-        text = "access";
+        untyped_access = true;
     } else if (variable) {
         // type will either be a float, int, or struct and if struct need to traverse it
         const spirv::Instruction *type = module_state.GetVariablePointerType(insn);
@@ -485,38 +489,36 @@ bool SpirvValidator::Validate8And16BitStorage(const spirv::Module &module_state,
             (struct_info && struct_info->decorations.Has(spirv::DecorationBase::block_bit))) {
             GetVariableInfo(module_state, type, info);
         }
+    } else {
+        return skip;  // nothing to check
     }
 
     if (info.has_8bit) {
         if (!enabled_features.storageBuffer8BitAccess &&
             (storage_class == spv::StorageClassStorageBuffer || storage_class == spv::StorageClassShaderRecordBufferKHR ||
              storage_class == spv::StorageClassPhysicalStorageBuffer)) {
-            const std::string message = "SPIR-V contains an 8-bit " + text +
-                                        " with %s Storage Class, "
-                                        "but storageBuffer8BitAccess was not enabled.\n%s\n";
-            skip |= LogError("VUID-RuntimeSpirv-storageBuffer8BitAccess-06328", module_state.handle(), loc, message.c_str(),
-                             string_SpvStorageClass(storage_class), insn.Describe().c_str());
+            skip |=
+                LogError("VUID-RuntimeSpirv-storageBuffer8BitAccess-06328", module_state.handle(), loc,
+                         "SPIR-V contains an 8-bit %s with %s Storage Class, but storageBuffer8BitAccess was not enabled.\n%s\n",
+                         untyped_access ? "access" : "OpVariable", string_SpvStorageClass(storage_class), insn.Describe().c_str());
         }
         if (!enabled_features.uniformAndStorageBuffer8BitAccess && storage_class == spv::StorageClassUniform) {
-            const std::string message = "SPIRV contains an 8-bit " + text +
-                                        " with Uniform Storage Class, "
-                                        "but uniformAndStorageBuffer8BitAccess was not enabled.\n%s\n";
             skip |= LogError("VUID-RuntimeSpirv-uniformAndStorageBuffer8BitAccess-06329", module_state.handle(), loc,
-                             message.c_str(), insn.Describe().c_str());
+                             "SPIRV contains an 8-bit %s with Uniform Storage Class, but uniformAndStorageBuffer8BitAccess was not "
+                             "enabled.\n%s\n",
+                             untyped_access ? "access" : "OpVariable", insn.Describe().c_str());
         }
         if (!enabled_features.storagePushConstant8 && storage_class == spv::StorageClassPushConstant) {
-            const std::string message = "SPIR-V contains an 8-bit " + text +
-                                        " with PushConstant Storage Class, "
-                                        "but storagePushConstant8 was not enabled.\n%s\n";
-            skip |= LogError("VUID-RuntimeSpirv-storagePushConstant8-06330", module_state.handle(), loc, message.c_str(),
-                             insn.Describe().c_str());
+            skip |= LogError(
+                "VUID-RuntimeSpirv-storagePushConstant8-06330", module_state.handle(), loc,
+                "SPIR-V contains an 8-bit %s with PushConstant Storage Class, but storagePushConstant8 was not enabled.\n%s\n",
+                untyped_access ? "access" : "OpVariable", insn.Describe().c_str());
         }
         if (!enabled_features.workgroupMemoryExplicitLayout8BitAccess && storage_class == spv::StorageClassWorkgroup) {
-            const std::string message = "SPIRV contains an 8-bit " + text +
-                                        " with Workgroup Storage Class, "
-                                        "but workgroupMemoryExplicitLayout8BitAccess was not enabled.\n%s\n";
             skip |= LogError("VUID-RuntimeSpirv-workgroupMemoryExplicitLayout8BitAccess-10756", module_state.handle(), loc,
-                             message.c_str(), insn.Describe().c_str());
+                             "SPIRV contains an 8-bit %s with Workgroup Storage Class, but workgroupMemoryExplicitLayout8BitAccess "
+                             "was not enabled.\n%s\n",
+                             untyped_access ? "access" : "OpVariable", insn.Describe().c_str());
         }
 
         // Input and Output are disallowed to have 8-bit storage, but there is a missing VU.
@@ -526,40 +528,35 @@ bool SpirvValidator::Validate8And16BitStorage(const spirv::Module &module_state,
         if (!enabled_features.storageBuffer16BitAccess &&
             (storage_class == spv::StorageClassStorageBuffer || storage_class == spv::StorageClassShaderRecordBufferKHR ||
              storage_class == spv::StorageClassPhysicalStorageBuffer)) {
-            const std::string message = "SPIR-V contains an 16-bit " + text +
-                                        " with %s StorageClass, "
-                                        "but storageBuffer16BitAccess was not enabled.\n%s\n";
-            skip |= LogError("VUID-RuntimeSpirv-storageBuffer16BitAccess-11161", module_state.handle(), loc, message.c_str(),
-                             string_SpvStorageClass(storage_class), insn.Describe().c_str());
+            skip |=
+                LogError("VUID-RuntimeSpirv-storageBuffer16BitAccess-11161", module_state.handle(), loc,
+                         "SPIR-V contains a 16-bit %s with %s StorageClass, but storageBuffer16BitAccess was not enabled.\n%s\n",
+                         untyped_access ? "access" : "OpVariable", string_SpvStorageClass(storage_class), insn.Describe().c_str());
         }
         if (!enabled_features.uniformAndStorageBuffer16BitAccess && storage_class == spv::StorageClassUniform) {
-            const std::string message = "SPIR-V contains an 16-bit " + text +
-                                        " with Uniform Storage Class, "
-                                        "but uniformAndStorageBuffer16BitAccess was not enabled.\n%s\n";
             skip |= LogError("VUID-RuntimeSpirv-uniformAndStorageBuffer16BitAccess-06332", module_state.handle(), loc,
-                             message.c_str(), insn.Describe().c_str());
+                             "SPIR-V contains a 16-bit %s with Uniform Storage Class, but uniformAndStorageBuffer16BitAccess was "
+                             "not enabled.\n%s\n",
+                             untyped_access ? "access" : "OpVariable", insn.Describe().c_str());
         }
         if (!enabled_features.storagePushConstant16 && storage_class == spv::StorageClassPushConstant) {
-            const std::string message = "SPIR-V contains an 16-bit " + text +
-                                        " with PushConstant storage class, "
-                                        "but storagePushConstant16 was not enabled.\n%s\n";
-            skip |= LogError("VUID-RuntimeSpirv-storagePushConstant16-06333", module_state.handle(), loc, message.c_str(),
-                             insn.Describe().c_str());
+            skip |= LogError(
+                "VUID-RuntimeSpirv-storagePushConstant16-06333", module_state.handle(), loc,
+                "SPIR-V contains a 16-bit %s with PushConstant storage class, but storagePushConstant16 was not enabled.\n%s\n",
+                untyped_access ? "access" : "OpVariable", insn.Describe().c_str());
         }
         if (!enabled_features.storageInputOutput16 &&
             (storage_class == spv::StorageClassInput || storage_class == spv::StorageClassOutput)) {
-            const std::string message = "SPIR-V contains an 16-bit " + text +
-                                        " with %s Storage Class, "
-                                        "but storageInputOutput16 was not enabled.\n%s\n";
-            skip |= LogError("VUID-RuntimeSpirv-storageInputOutput16-11162", module_state.handle(), loc, message.c_str(),
-                             string_SpvStorageClass(storage_class), insn.Describe().c_str());
+            skip |=
+                LogError("VUID-RuntimeSpirv-storageInputOutput16-11162", module_state.handle(), loc,
+                         "SPIR-V contains a 16-bit %s with %s Storage Class, but storageInputOutput16 was not enabled.\n%s\n",
+                         untyped_access ? "access" : "OpVariable", string_SpvStorageClass(storage_class), insn.Describe().c_str());
         }
         if (!enabled_features.workgroupMemoryExplicitLayout16BitAccess && storage_class == spv::StorageClassWorkgroup) {
-            const std::string message = "SPIR-V contains an 16-bit " + text +
-                                        " with Workgroup Storage Class, "
-                                        "but workgroupMemoryExplicitLayout16BitAccess was not enabled.\n%s\n";
             skip |= LogError("VUID-RuntimeSpirv-workgroupMemoryExplicitLayout16BitAccess-10757", module_state.handle(), loc,
-                             message.c_str(), insn.Describe().c_str());
+                             "SPIR-V contains a 16-bit %s with Workgroup Storage Class, but "
+                             "workgroupMemoryExplicitLayout16BitAccess was not enabled.\n%s\n",
+                             untyped_access ? "access" : "OpVariable", insn.Describe().c_str());
         }
     }
 
