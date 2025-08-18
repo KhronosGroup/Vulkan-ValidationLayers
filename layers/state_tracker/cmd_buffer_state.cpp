@@ -63,43 +63,15 @@ bool AttachmentInfo::IsStencil() const {
 // For Traditional RenderPasses, the index is simply the index into the VkRenderPassCreateInfo::pAttachments,
 // but for dynamic rendering, there is no "standard" way to map the index, instead we have our own custom indexing and it is not
 // obvious at all to the user where it came from
-std::string AttachmentInfo::Describe(const vvl::CommandBuffer &cb_state, uint32_t index) const {
+std::string AttachmentInfo::Describe(const vvl::CommandBuffer &cb_state, uint32_t rp_index) const {
     std::ostringstream ss;
-    auto type_string = [](Type type) {
-        switch (type) {
-            case Type::Input:
-                return "Input";
-            case Type::Color:
-                return "Color";
-            case Type::ColorResolve:
-                return "Color Resolve";
-            case Type::DepthStencil:
-                return "Depth Stencil";
-            case Type::Depth:
-                return "Depth";
-            case Type::DepthResolve:
-                return "Depth Resolve";
-            case Type::Stencil:
-                return "Stencil";
-            case Type::StencilResolve:
-                return "Stencil Resolve";
-            case Type::FragmentDensityMap:
-                return "Fragment Density Map";
-            case Type::FragmentShadingRate:
-                return "Fragment Shading Rate";
-            default:
-                break;
-        }
-        return "Unknown Type";
-    };
-
     if (cb_state.attachment_source == AttachmentSource::DynamicRendering) {
         ss << "VkRenderingInfo::";
         if (type == Type::Color) {
-            ss << "pColorAttachments[" << index << "].imageView";
+            ss << "pColorAttachments[" << rp_index << "].imageView";
         } else if (type == Type::ColorResolve) {
             // This assumes the caller calculated the correct index with GetDynamicRenderingColorResolveAttachmentIndex
-            ss << "pColorAttachments[" << index << "].resolveImageView";
+            ss << "pColorAttachments[" << rp_index << "].resolveImageView";
         } else if (type == Type::Depth) {
             ss << "pDepthAttachment.imageView";
         } else if (type == Type::DepthResolve) {
@@ -114,8 +86,30 @@ std::string AttachmentInfo::Describe(const vvl::CommandBuffer &cb_state, uint32_
             ss << "pNext<VkRenderingFragmentShadingRateAttachmentInfoKHR>.imageView";
         }
     } else {
-        ss << "VkRenderPassCreateInfo::pAttachments[" << index << "] (" << type_string(type) << ") (Subpass "
-           << cb_state.GetActiveSubpass() << ")";
+        // if the user has a [color, depth, color] the last color would have
+        //   rp_index == 2
+        //   index == 1
+        ss << "VkRenderPassCreateInfo::pAttachments[" << rp_index << "] (Subpass " << cb_state.GetActiveSubpass() << ", ";
+
+        if (type == Type::Empty) {
+            ss << "VK_ATTACHMENT_UNUSED";
+        } else if (type == Type::Input) {
+            ss << "VkSubpassDescription::pInputAttachments[" << type_index << "]";
+        } else if (type == Type::Color) {
+            ss << "VkSubpassDescription::pColorAttachments[" << type_index << "]";
+        } else if (type == Type::ColorResolve) {
+            ss << "VkSubpassDescription::pResolveAttachments[" << type_index << "]";
+        } else if (type == Type::DepthStencil) {
+            ss << "VkSubpassDescription::pDepthStencilAttachment";
+        } else if (type == Type::FragmentDensityMap) {
+            ss << "VkRenderPassFragmentDensityMapCreateInfoEXT::fragmentDensityMapAttachment";
+        } else if (type == Type::FragmentShadingRate) {
+            ss << "VkFragmentShadingRateAttachmentInfoKHR::pFragmentShadingRateAttachment";
+        } else {
+            ss << "Unknown Type";
+        }
+
+        ss << ")";
     }
     return ss.str();
 }
@@ -596,6 +590,7 @@ void CommandBuffer::UpdateSubpassAttachments() {
         if (attachment_index != VK_ATTACHMENT_UNUSED) {
             active_attachments[attachment_index].type = AttachmentInfo::Type::Input;
             active_attachments[attachment_index].layout = subpass.pInputAttachments[index].layout;
+            active_attachments[attachment_index].type_index = index;
             active_subpasses[attachment_index].used = true;
             active_subpasses[attachment_index].usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
             active_subpasses[attachment_index].aspectMask = subpass.pInputAttachments[index].aspectMask;
@@ -607,7 +602,7 @@ void CommandBuffer::UpdateSubpassAttachments() {
         if (attachment_index != VK_ATTACHMENT_UNUSED) {
             active_attachments[attachment_index].type = AttachmentInfo::Type::Color;
             active_attachments[attachment_index].layout = subpass.pColorAttachments[index].layout;
-            active_attachments[attachment_index].color_index = index;
+            active_attachments[attachment_index].type_index = index;
             active_color_attachments_index.insert(index);
             active_subpasses[attachment_index].used = true;
             active_subpasses[attachment_index].usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -618,6 +613,7 @@ void CommandBuffer::UpdateSubpassAttachments() {
             if (attachment_index2 != VK_ATTACHMENT_UNUSED) {
                 active_attachments[attachment_index2].type = AttachmentInfo::Type::ColorResolve;
                 active_attachments[attachment_index2].layout = subpass.pResolveAttachments[index].layout;
+                active_attachments[attachment_index2].type_index = index;
                 active_subpasses[attachment_index2].used = true;
                 active_subpasses[attachment_index2].usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
                 active_subpasses[attachment_index2].aspectMask = subpass.pResolveAttachments[index].aspectMask;
@@ -832,7 +828,7 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo &rendering_info, 
             color_attachment.image_view = dev_data.Get<vvl::ImageView>(rendering_attachment.imageView).get();
             color_attachment.type = AttachmentInfo::Type::Color;
             color_attachment.layout = rendering_attachment.imageLayout;
-            color_attachment.color_index = i;
+            color_attachment.type_index = i;
             active_color_attachments_index.insert(i);
             if (rendering_attachment.resolveMode != VK_RESOLVE_MODE_NONE &&
                 rendering_attachment.resolveImageView != VK_NULL_HANDLE) {
@@ -840,6 +836,7 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo &rendering_info, 
                 resolve_attachment.image_view = dev_data.Get<vvl::ImageView>(rendering_attachment.resolveImageView).get();
                 resolve_attachment.type = AttachmentInfo::Type::ColorResolve;
                 resolve_attachment.layout = rendering_attachment.resolveImageLayout;
+                resolve_attachment.type_index = i;
             }
         }
     }

@@ -301,3 +301,108 @@ TEST_F(PositiveSubpass, BottomOfPipeInSubpassDependency) {
     rp.AddSubpassDependency(subpass_dep);
     rp.CreateRenderPass();
 }
+
+TEST_F(PositiveSubpass, ColorBlendEnable) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10535");
+    RETURN_IF_SKIP(Init());
+    const VkFormat depth_format = FindSupportedDepthStencilFormat(Gpu());
+
+    VkAttachmentDescription attach_desc[3];
+    attach_desc[0].flags = 0;
+    attach_desc[0].format = VK_FORMAT_R8G8B8A8_UNORM;
+    attach_desc[0].samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attach_desc[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attach_desc[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attach_desc[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attach_desc[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    attach_desc[1] = attach_desc[0];
+    attach_desc[1].format = depth_format;
+    attach_desc[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+
+    attach_desc[2] = attach_desc[0];
+    attach_desc[2].format = VK_FORMAT_R32G32B32A32_UINT;
+    attach_desc[2].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference color_reference[2] = {};
+    color_reference[0].attachment = 0;
+    color_reference[0].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_reference[1].attachment = 2;
+    color_reference[1].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference ds_reference = {1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
+
+    VkSubpassDescription subpasses[2] = {};
+    subpasses[0].colorAttachmentCount = 2;
+    subpasses[0].pColorAttachments = color_reference;
+    subpasses[0].pDepthStencilAttachment = &ds_reference;
+
+    subpasses[1].colorAttachmentCount = 1;
+    subpasses[1].pColorAttachments = &color_reference[0];
+    subpasses[1].pDepthStencilAttachment = &ds_reference;
+
+    VkSubpassDependency dependencies[2] = {
+        {VK_SUBPASS_EXTERNAL, 0, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+         VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_DEPENDENCY_BY_REGION_BIT},
+        {0, 1, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+         VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_DEPENDENCY_BY_REGION_BIT}};
+
+    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
+    rpci.attachmentCount = 3;
+    rpci.pAttachments = attach_desc;
+    rpci.subpassCount = 2;
+    rpci.pSubpasses = subpasses;
+    rpci.dependencyCount = 2;
+    rpci.pDependencies = dependencies;
+    vkt::RenderPass rp(*m_device, rpci);
+
+    vkt::Image image_0(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view_0 = image_0.CreateView();
+    vkt::Image image_1(*m_device, 32, 32, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::ImageView image_view_1 = image_1.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::Image image_2(*m_device, 32, 32, VK_FORMAT_R32G32B32A32_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view_2 = image_2.CreateView();
+
+    VkImageView fb_attachments[3] = {image_view_0, image_view_1, image_view_2};
+    vkt::Framebuffer fb(*m_device, rp, 3, fb_attachments);
+
+    VkPipelineDepthStencilStateCreateInfo ds_state_ci = vku::InitStructHelper();
+    ds_state_ci.depthTestEnable = VK_FALSE;
+    ds_state_ci.stencilTestEnable = VK_FALSE;
+
+    VkPipelineColorBlendAttachmentState color_state[2];
+    color_state[0] = DefaultColorBlendAttachmentState();
+    color_state[0].blendEnable = VK_FALSE;
+    color_state[1] = DefaultColorBlendAttachmentState();
+    color_state[1].blendEnable = VK_FALSE;
+
+    CreatePipelineHelper pipe0(*this);
+    pipe0.gp_ci_.renderPass = rp;
+    pipe0.gp_ci_.pDepthStencilState = &ds_state_ci;
+    pipe0.cb_ci_.attachmentCount = 2;
+    pipe0.cb_ci_.pAttachments = color_state;
+    pipe0.CreateGraphicsPipeline();
+
+    CreatePipelineHelper pipe1(*this);
+    pipe1.gp_ci_.renderPass = rp;
+    pipe1.gp_ci_.pDepthStencilState = &ds_state_ci;
+    pipe1.cb_ci_.attachmentCount = 1;
+    pipe1.cb_ci_.pAttachments = color_state;
+    pipe1.gp_ci_.subpass = 1;
+    pipe1.CreateGraphicsPipeline();
+
+    VkClearValue clear_values[3];
+    memset(clear_values, 0, sizeof(clear_values));
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp, fb, 32, 32, 3, clear_values);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe0);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_command_buffer.NextSubpass();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
