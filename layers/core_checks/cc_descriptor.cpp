@@ -1270,9 +1270,10 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView &view_state, VkImageLa
 
     if (image_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
         if (aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
-            skip |= LogError("VUID-VkDescriptorImageInfo-imageLayout-09425", objlist, image_info_loc.dot(Field::imageView),
-                             "uses layout VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL but aspectMask (%s) include depth/stencil bit.",
-                             string_VkImageAspectFlags(aspect_mask).c_str());
+            skip |= LogError(
+                "VUID-VkDescriptorImageInfo-imageLayout-09425", objlist, image_info_loc.dot(Field::imageLayout),
+                "is VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL but the imageView was created with depth/stencil aspectMask (%s).",
+                string_VkImageAspectFlags(aspect_mask).c_str());
         }
     }
 
@@ -1283,8 +1284,8 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView &view_state, VkImageLa
              VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL,
              VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL})) {
         if (aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) {
-            skip |= LogError("VUID-VkDescriptorImageInfo-imageLayout-09426", objlist, image_info_loc.dot(Field::imageView),
-                             "uses layout %s but aspectMask (%s) includes color bit.", string_VkImageLayout(image_layout),
+            skip |= LogError("VUID-VkDescriptorImageInfo-imageLayout-09426", objlist, image_info_loc.dot(Field::imageLayout),
+                             "is %s but the imageView was created with color aspectMask (%s).", string_VkImageLayout(image_layout),
                              string_VkImageAspectFlags(aspect_mask).c_str());
         }
     }
@@ -1292,10 +1293,16 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView &view_state, VkImageLa
     if (vkuFormatIsDepthOrStencil(image_node->create_info.format)) {
         if (aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) {
             if (aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) {
-                skip |= LogError("VUID-VkDescriptorImageInfo-imageView-01976", objlist, image_info_loc.dot(Field::imageView),
-                                 "use layout %s and the image format (%s), but it has both STENCIL and DEPTH aspects set",
-                                 string_VkImageLayout(image_layout), string_VkFormat(image_node->create_info.format));
+                skip |= LogError(
+                    "VUID-VkDescriptorImageInfo-imageView-01976", objlist, image_info_loc.dot(Field::imageView),
+                    "was created with an image format %s, but the image aspectMask (%s) has both STENCIL and DEPTH aspects set ",
+                    string_VkFormat(image_node->create_info.format), string_VkImageAspectFlags(aspect_mask).c_str());
             }
+        } else if ((aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) == 0) {
+            skip |=
+                LogError("VUID-VkDescriptorImageInfo-imageView-01976", objlist, image_info_loc.dot(Field::imageView),
+                         "was created with an image format %s, but the image aspectMask (%s) is missing a STENCIL or DEPTH aspects",
+                         string_VkFormat(image_node->create_info.format), string_VkImageAspectFlags(aspect_mask).c_str());
         }
     }
 
@@ -1324,8 +1331,8 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView &view_state, VkImageLa
 
             } else if ((VK_IMAGE_LAYOUT_GENERAL != image_layout) && (!IsExtEnabled(extensions.vk_khr_shared_presentable_image) ||
                                                                      (VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR != image_layout))) {
-                skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-04152", objlist, image_info_loc.dot(Field::imageView),
-                                 "image layout is %s, but descriptorType is VK_DESCRIPTOR_TYPE_STORAGE_IMAGE. (allowed layouts are "
+                skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-04152", objlist, image_info_loc.dot(Field::imageLayout),
+                                 "is %s, but descriptorType is VK_DESCRIPTOR_TYPE_STORAGE_IMAGE. (allowed layouts are "
                                  "VK_IMAGE_LAYOUT_GENERAL or VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR).",
                                  string_VkImageLayout(image_layout));
             }
