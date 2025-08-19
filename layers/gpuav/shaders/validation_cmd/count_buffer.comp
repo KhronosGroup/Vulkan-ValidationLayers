@@ -20,12 +20,12 @@
 #include "common.h"
 #include "push_data.h"
 
-layout(push_constant)
+layout(push_constant, scalar)
 uniform PushConstants {
     CountBufferPushData pc;
 };
 
-layout(set = kValPipeDescSet, binding = kPreDrawBinding_CountBuffer) readonly buffer CountBuffer {
+layout(set = kValPipeDescSet, binding = kPreDrawBinding_CountBuffer, scalar) readonly buffer CountBuffer {
     uint count_buffer[];
 };
 

@@ -28,7 +28,7 @@ struct Range {
 };
 
 
-layout(buffer_reference, buffer_reference_align = 8, std430) buffer BufferDeviceAddressRanges {
+layout(buffer_reference, buffer_reference_align = 8, scalar) buffer BufferDeviceAddressRanges {
     uint bda_range_count;
     uint padding_unused;
     Range bda_ranges[];
@@ -37,7 +37,7 @@ layout(buffer_reference, buffer_reference_align = 8, std430) buffer BufferDevice
 // Ranges are supposed to:
 // 1) be stored from low to high
 // 2) not overlap
-layout(set = kInstDefaultDescriptorSet, binding = kBindingInstBufferDeviceAddress, std430) buffer BuffAddrInputBuffer {
+layout(set = kInstDefaultDescriptorSet, binding = kBindingInstBufferDeviceAddress, scalar) buffer BuffAddrInputBuffer {
     BufferDeviceAddressRanges bda_ranges_ptr;
 };
 
@@ -68,7 +68,7 @@ bool inst_buffer_device_address_range(
     // Find out if addr is valid
     // ---
     for (uint range_i = 0; range_i < bda_ranges_ptr.bda_range_count; ++range_i) {
-        
+
         const Range range = bda_ranges_ptr.bda_ranges[range_i];
         if (addr < range.begin) {
             // Invalid address, proceed to error logging

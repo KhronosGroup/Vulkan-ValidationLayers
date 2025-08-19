@@ -505,6 +505,8 @@ TEST_F(NegativeGpuAV, ForceUniformAndStorageBuffer8BitAccess) {
     m_errorMonitor->SetAllowedFailureMsg(
         "Adding a VkPhysicalDeviceBufferDeviceAddressFeatures to pNext with bufferDeviceAddress set to VK_TRUE");
     m_errorMonitor->SetAllowedFailureMsg(
+        "Adding a VkPhysicalDeviceScalarBlockLayoutFeatures to pNext with scalarBlockLayout set to VK_TRUE");
+    m_errorMonitor->SetAllowedFailureMsg(
         "Buffer device address validation option was enabled, but required buffer device address extension and/or features are not "
         "enabled");
     m_errorMonitor->SetAllowedFailureMsg("Ray Query validation option was enabled");

@@ -20,7 +20,7 @@
 #extension GL_GOOGLE_include_directive : enable
 #include "common_descriptor_sets.h"
 
-layout(set = kInstDefaultDescriptorSet, binding = kBindingInstVertexAttributeFetchLimits, std430)
+layout(set = kInstDefaultDescriptorSet, binding = kBindingInstVertexAttributeFetchLimits, scalar)
 readonly buffer VertexAttributeFetchLimits {
     uint has_max_vbb_vertex_input_rate;
     uint vertex_attribute_fetch_limit_vertex_input_rate;

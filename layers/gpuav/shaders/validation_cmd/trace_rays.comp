@@ -21,7 +21,7 @@
 #include "common.h"
 #include "push_data.h"
 
-layout(push_constant) uniform PushConstants {
+layout(push_constant, scalar) uniform PushConstants {
     TraceRaysPushData pc;
 };
 
@@ -36,16 +36,16 @@ void main() {
         GpuavLogError2(kErrorGroupGpuPreTraceRays, kErrorSubCodePreTraceRaysLimitDepth, pc.indirect_data.trace_rays_dimensions.depth, 0);
     }
 
-    const uint64_t trace_rays_volume = 
-        pc.indirect_data.trace_rays_dimensions.width * 
-        pc.indirect_data.trace_rays_dimensions.height * 
+    const uint64_t trace_rays_volume =
+        pc.indirect_data.trace_rays_dimensions.width *
+        pc.indirect_data.trace_rays_dimensions.height *
         pc.indirect_data.trace_rays_dimensions.depth;
 
     if (trace_rays_volume > pc.max_ray_dispatch_invocation_count) {
         GpuavLogError4(
-            kErrorGroupGpuPreTraceRays, 
-            kErrorSubCodePreTraceRaysLimitVolume, 
-            pc.indirect_data.trace_rays_dimensions.width, 
+            kErrorGroupGpuPreTraceRays,
+            kErrorSubCodePreTraceRaysLimitVolume,
+            pc.indirect_data.trace_rays_dimensions.width,
             pc.indirect_data.trace_rays_dimensions.height,
             pc.indirect_data.trace_rays_dimensions.depth,
             0);
