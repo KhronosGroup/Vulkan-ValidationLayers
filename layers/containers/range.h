@@ -76,9 +76,7 @@ struct range {
 
     // use as "strictly less/greater than" to check for non-overlapping ranges
     bool strictly_less(const range &rhs) const { return end <= rhs.begin; }
-    bool strictly_less(const index_type &index) const { return end <= index; }
     bool strictly_greater(const range &rhs) const { return rhs.end <= begin; }
-    bool strictly_greater(const index_type &index) const { return index < begin; }
 
     range &operator=(const range &rhs) {
         begin = rhs.begin;
@@ -98,7 +96,7 @@ struct range {
 
     index_type size() const { return end - begin; }
     range() : begin(), end() {}
-    range(const index_type &begin_, const index_type &end_) : begin(begin_), end(end_) {}
+    range(const index_type &begin, const index_type &end) : begin(begin), end(end) {}
     range(const range &other) : begin(other.begin), end(other.end) {}
 };
 

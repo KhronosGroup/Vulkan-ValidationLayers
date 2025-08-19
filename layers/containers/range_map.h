@@ -34,30 +34,6 @@
 
 namespace sparse_container {
 
-// Type parameters for the range_map(s)
-struct insert_range_no_split_bounds {
-    const static bool split_boundaries = false;
-};
-
-struct insert_range_split_bounds {
-    const static bool split_boundaries = true;
-};
-
-struct split_op_keep_both {
-    static constexpr bool keep_lower() { return true; }
-    static constexpr bool keep_upper() { return true; }
-};
-
-struct split_op_keep_lower {
-    static constexpr bool keep_lower() { return true; }
-    static constexpr bool keep_upper() { return false; }
-};
-
-struct split_op_keep_upper {
-    static constexpr bool keep_lower() { return false; }
-    static constexpr bool keep_upper() { return true; }
-};
-
 enum class value_precedence { prefer_source, prefer_dest };
 
 template <typename Iterator, typename Map, typename Range>
@@ -67,11 +43,9 @@ Iterator split(Iterator in, Map &map, const Range &range);
 //
 // The range based sparse map implemented on the ImplMap.
 // Implements an ordered map of non-overlapping, non-empty ranges
-template <typename Key, typename T, typename RangeKey = vvl::range<Key>, typename ImplMap = std::map<RangeKey, T>>
+template <typename Key, typename T, typename ImplMap = std::map<vvl::range<Key>, T>>
 class range_map {
-  public:
-  protected:
-    using MapKey = RangeKey;
+  private:
     ImplMap impl_map_;
     using ImplIterator = typename ImplMap::iterator;
     using ImplConstIterator = typename ImplMap::const_iterator;
@@ -173,54 +147,62 @@ class range_map {
         return impl_insert(hint, key_type(begin, end), value);
     }
 
-    template <typename SplitOp>
-    ImplIterator split_impl(const ImplIterator &split_it, const index_type &index, const SplitOp &) {
-        // Make sure contains the split point
-        if (!split_it->first.includes(index)) return split_it;  // If we don't have a valid split point, just return the iterator
-
+    ImplIterator split_impl(const ImplIterator &split_it, const index_type &index) {
         const auto range = split_it->first;
-        key_type lower_range(range.begin, index);
-        if (lower_range.empty() && SplitOp::keep_upper()) {
-            return split_it;  // this is a noop we're keeping the upper half which is the same as split_it;
-        }
-        // Save the contents of it and erase it
-        auto value = split_it->second;
-        auto next_it = impl_map_.erase(split_it);  // Keep this, just in case the split point results in an empty "keep" set
 
-        if (lower_range.empty() && !SplitOp::keep_upper()) {
-            // This effectively an erase...
+        if (!range.includes(index)) {
+            return split_it;  // If we don't have a valid split point, just return the iterator
+        }
+
+        key_type lower_range(range.begin, index);
+
+        if (lower_range.empty()) {
+            // This is a noop, we're keeping the upper half which is the same as split_it
+            return split_it;
+        }
+
+        // Save the contents and erase
+        auto value = split_it->second;
+        auto next_it = impl_map_.erase(split_it);
+
+        key_type upper_range(index, range.end);
+        assert(!upper_range.empty());  // Upper range cannot be empty
+
+        // Copy value to the upper range
+        // NOTE: we insert from upper to lower because that's what emplace_hint can do in constant time
+        RANGE_ASSERT(impl_map_.find(upper_range) == impl_map_.end());
+        next_it = impl_map_.emplace_hint(next_it, std::make_pair(upper_range, value));
+
+        // Move value to the lower range (we can move since the upper range already got a copy of value)
+        RANGE_ASSERT(impl_map_.find(lower_range) == impl_map_.end());
+        next_it = impl_map_.emplace_hint(next_it, std::make_pair(lower_range, std::move(value)));
+
+        // Iterator to the beginning of the lower range
+        return next_it;
+    }
+
+    ImplIterator split_impl_keep_only_lower(const ImplIterator &split_it, const index_type &index) {
+        const auto range = split_it->first;
+
+        if (!range.includes(index)) {
+            return split_it;  // If we don't have a valid split point, just return the iterator
+        }
+
+        key_type lower_range(range.begin, index);
+
+        // Save the contents and erase
+        auto value = split_it->second;
+        auto next_it = impl_map_.erase(split_it);
+
+        if (lower_range.empty()) {
+            // This effectively an erase because this function does not keep upper range and lower is empty
             return next_it;
         }
-        // Upper range cannot be empty
-        key_type upper_range(index, range.end);
-        key_type move_range;
-        key_type copy_range;
 
-        // Were either going to keep one or both of the split pieces.  If we keep both, we'll copy value to the upper,
-        // and move to the lower, and return the lower, else move to, and return the kept one.
-        if (SplitOp::keep_lower() && !lower_range.empty()) {
-            move_range = lower_range;
-            if (SplitOp::keep_upper()) {
-                copy_range = upper_range;  // only need a valid copy range if we keep both.
-            }
-        } else if (SplitOp::keep_upper()) {  // We're not keeping the lower split because it's either empty or not wanted
-            move_range = upper_range;        // this will be non_empty as index is included ( < end) in the original range)
-        }
+        RANGE_ASSERT(impl_map_.find(lower_range) == impl_map_.end());
+        next_it = impl_map_.emplace_hint(next_it, std::make_pair(lower_range, std::move(value)));
 
-        // we insert from upper to lower because that's what emplace_hint can do in constant time. (not log time in C++11)
-        if (!copy_range.empty()) {
-            // We have a second range to create, so do it by copy
-            RANGE_ASSERT(impl_map_.find(copy_range) == impl_map_.end());
-            next_it = impl_map_.emplace_hint(next_it, std::make_pair(copy_range, value));
-        }
-
-        if (!move_range.empty()) {
-            // Whether we keep one or both, the one we return gets value moved to it, as the other one already has a copy
-            RANGE_ASSERT(impl_map_.find(move_range) == impl_map_.end());
-            next_it = impl_map_.emplace_hint(next_it, std::make_pair(move_range, std::move(value)));
-        }
-
-        // point to the beginning of the inserted elements (or the next from the erase
+        // Iterator to the beginning of the lower range
         return next_it;
     }
 
@@ -235,7 +217,7 @@ class range_map {
         // Trim/infil the beginning if needed
         const auto first_begin = pos->first.begin;
         if (bounds.begin > first_begin && split_bounds) {
-            pos = split_impl(pos, bounds.begin, split_op_keep_both());
+            pos = split_impl(pos, bounds.begin);
             lower = pos;
             ++lower;
             RANGE_ASSERT(lower == lower_bound_impl(bounds));
@@ -274,7 +256,7 @@ class range_map {
                     // extends past the end of the bounds range, snip to only include the bounded section
                     // NOTE: this splits pos, but the upper half of the split should now be considered upper_bound
                     // for the range
-                    pos = split_impl(pos, bounds.end, split_op_keep_both());
+                    pos = split_impl(pos, bounds.end);
                 }
                 // advance to the upper half of the split which will be upper_bound  or to next which will both be out of bounds
                 ++pos;
@@ -299,10 +281,10 @@ class range_map {
             // Preserve the portion of lower bound excluded from bounds
             if (current->first.end <= bounds.end) {
                 // If current ends within the erased bound we can discard the the upper portion of current
-                current = split_impl(current, bounds.begin, split_op_keep_lower());
+                current = split_impl_keep_only_lower(current, bounds.begin);
             } else {
                 // Keep the upper portion of current for the later split below
-                current = split_impl(current, bounds.begin, split_op_keep_both());
+                current = split_impl(current, bounds.begin);
             }
             // Exclude the preserved portion
             ++current;
@@ -320,7 +302,7 @@ class range_map {
 
         if (!at_impl_end(current) && current->first.includes(bounds.end)) {
             // last entry extends past the end of the bounds range, snip to only erase the bounded section
-            current = split_impl(current, bounds.end, split_op_keep_both());
+            current = split_impl(current, bounds.end);
             // test if lower_bound (eventually) computed in split_impl is not empty.
             // If it is not empty, then it contains values inside the bounds range,
             // they need to be touched
@@ -351,8 +333,8 @@ class range_map {
         iterator_impl(const WrappedIterator &pos) : pos_(pos) {}
 
       public:
-        iterator_impl() : iterator_impl(WrappedIterator()){};
-        iterator_impl(const iterator_impl &other) : pos_(other.pos_){};
+        iterator_impl() : iterator_impl(WrappedIterator()) {}
+        iterator_impl(const iterator_impl &other) : pos_(other.pos_) {}
 
         iterator_impl &operator=(const iterator_impl &rhs) {
             pos_ = rhs.pos_;
@@ -558,9 +540,8 @@ class range_map {
         return iterator(impl_insert);
     }
 
-    template <typename SplitOp>
-    iterator split(const iterator whole_it, const index_type &index, const SplitOp &split_op) {
-        auto split_it = split_impl(whole_it.pos_, index, split_op);
+    iterator split(const iterator whole_it, const index_type &index) {
+        auto split_it = split_impl(whole_it.pos_, index);
         return iterator(split_it);
     }
 
@@ -825,77 +806,35 @@ class small_range_map {
         return std::make_pair(iterator(this, collision_begin), false);
     }
 
-    template <typename SplitOp>
-    iterator split(const iterator whole_it, const index_type &index, [[maybe_unused]] const SplitOp &split_op) {
-        if (!whole_it->first.includes(index)) return whole_it;  // If we don't have a valid split point, just return the iterator
-
+    iterator split(const iterator whole_it, const index_type &index) {
         const auto &key = whole_it->first;
+
+        if (!key.includes(index)) {
+            return whole_it;  // If we don't have a valid split point, just return the iterator
+        }
+
         const auto small_key = make_small_range(key);
         key_type lower_key(key.begin, index);
-        if (lower_key.empty() && SplitOp::keep_upper()) {
+        if (lower_key.empty()) {
             return whole_it;  // this is a noop we're keeping the upper half which is the same as whole_it;
         }
 
-        if ((lower_key.empty() && !SplitOp::keep_upper()) || !(SplitOp::keep_lower() || SplitOp::keep_upper())) {
-            // This effectively an erase... so erase.
-            return erase(whole_it);
-        }
-
-        // Upper range cannot be empty (because the split point would be included...
+        // Upper range cannot be empty (because the split point is included)
         const auto small_lower_key = make_small_range(lower_key);
         const SmallRange small_upper_key{small_lower_key.end, small_key.end};
-        if (SplitOp::keep_upper()) {
-            // Note: create the upper section before the lower, as processing the lower may erase it
-            RANGE_ASSERT(!small_upper_key.empty());
-            const key_type upper_key{lower_key.end, key.end};
-            if (SplitOp::keep_lower()) {
-                construct_value(small_upper_key.begin, std::make_pair(upper_key, get_value(small_key.begin)->second));
-            } else {
-                // If we aren't keeping the lower, move instead of copy
-                construct_value(small_upper_key.begin, std::make_pair(upper_key, std::move(get_value(small_key.begin)->second)));
-            }
-            for (auto i = small_upper_key.begin; i < small_upper_key.end; ++i) {
-                ranges_[i] = small_upper_key;
-            }
-        } else {
-            // rewrite "end" to the next valid range (or end)
-            RANGE_ASSERT(SplitOp::keep_lower());
-            auto next = next_range(small_key.begin);
-            rerange(small_upper_key, SmallRange(next, small_lower_key.end));
-            // for any already invalid, we just rewrite the end.
-            rerange_end(small_upper_key.end, next, small_lower_key.end);
-        }
-        SmallIndex split_index;
-        if (SplitOp::keep_lower()) {
-            resize_value(small_key.begin, lower_key.end);
-            rerange_end(small_lower_key.begin, small_lower_key.end, small_lower_key.end);
-            split_index = small_lower_key.begin;
-        } else {
-            // Remove lower and rewrite empty space
-            RANGE_ASSERT(SplitOp::keep_upper());
-            destruct_value(small_key.begin);
 
-            // Rewrite prior empty space (if any)
-            auto prev = prev_range(small_key.begin);
-            SmallIndex limit = small_lower_key.end;
-            SmallIndex start = 0;
-            if (small_key.begin != 0) {
-                const auto &prev_start = ranges_[prev];
-                if (prev_start.valid()) {
-                    // If there is a previous used range, the empty space starts after it.
-                    start = prev_start.end;
-                } else {
-                    RANGE_ASSERT(prev == 0);  // prev_range only returns invalid ranges "off the front"
-                    start = prev;
-                }
-                // for the section *prior* to key begin only need to rewrite the "invalid" begin (i.e. next "in use" begin)
-                rerange_begin(start, small_lower_key.begin, limit);
-            }
-            // for the section being erased rewrite the invalid range reflecting the empty space
-            rerange(small_lower_key, SmallRange(limit, start));
-            split_index = small_lower_key.end;
+        // Note: create the upper section before the lower, as processing the lower may erase it
+        RANGE_ASSERT(!small_upper_key.empty());
+        const key_type upper_key{lower_key.end, key.end};
+        construct_value(small_upper_key.begin, std::make_pair(upper_key, get_value(small_key.begin)->second));
+
+        for (auto i = small_upper_key.begin; i < small_upper_key.end; ++i) {
+            ranges_[i] = small_upper_key;
         }
 
+        resize_value(small_key.begin, lower_key.end);
+        rerange_end(small_lower_key.begin, small_lower_key.end, small_lower_key.end);
+        SmallIndex split_index = small_lower_key.begin;
         return iterator(this, split_index);
     }
 
@@ -1463,11 +1402,11 @@ Iterator split(Iterator in, Map &map, const Range &range) {
 
     auto pos = in;
     if (split_range.begin != in_range.begin) {
-        pos = map.split(pos, split_range.begin, sparse_container::split_op_keep_both());
+        pos = map.split(pos, split_range.begin);
         ++pos;
     }
     if (split_range.end != in_range.end) {
-        pos = map.split(pos, split_range.end, sparse_container::split_op_keep_both());
+        pos = map.split(pos, split_range.end);
     }
     return pos;
 }
@@ -1506,7 +1445,7 @@ Iterator infill_update_range(RangeMap &map, Iterator pos, const typename RangeMa
 
     if ((pos != end) && (range.begin > pos->first.begin)) {
         // lower bound starts before the range, trim and advance
-        pos = map.split(pos, range.begin, sparse_container::split_op_keep_both());
+        pos = map.split(pos, range.begin);
         ++pos;
     }
 
@@ -1524,7 +1463,7 @@ Iterator infill_update_range(RangeMap &map, Iterator pos, const typename RangeMa
             // We need to run the update operation on the valid portion of the current value
             if (pos->first.end > range.end) {
                 // If this entry overlaps end-of-range we need to trim it to the range
-                pos = map.split(pos, range.end, sparse_container::split_op_keep_both());
+                pos = map.split(pos, range.end);
             }
 
             // We have a valid fully contained range, merge with it
