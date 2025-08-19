@@ -753,15 +753,15 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, DescriptorIndexingSlang) {
         Texture2D texture[];
         [[vk::binding(1, 0)]]
         SamplerState sampler;
-        
+
         struct StorageBuffer {
             uint data; // Will be zero
             float4 color;
         };
-        
+
         [[vk::binding(2, 0)]]
         RWStructuredBuffer<StorageBuffer> storageBuffer;
-        
+
         [shader("compute")]
         void main() {
             uint dataIndex = storageBuffer[0].data;
