@@ -60,7 +60,8 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
     VkPhysicalDeviceRobustness2FeaturesKHR supported_robustness2_feature = vku::InitStructHelper();
     VkPhysicalDevice8BitStorageFeatures supported_8bit_feature = vku::InitStructHelper(&supported_robustness2_feature);
     VkPhysicalDeviceBufferDeviceAddressFeatures supported_bda_feature = vku::InitStructHelper(&supported_8bit_feature);
-    VkPhysicalDeviceVulkanMemoryModelFeatures supported_memory_model_feature = vku::InitStructHelper(&supported_bda_feature);
+    VkPhysicalDeviceScalarBlockLayoutFeatures supported_scalar_feature = vku::InitStructHelper(&supported_bda_feature);
+    VkPhysicalDeviceVulkanMemoryModelFeatures supported_memory_model_feature = vku::InitStructHelper(&supported_scalar_feature);
     VkPhysicalDeviceTimelineSemaphoreFeatures supported_timeline_feature = vku::InitStructHelper(&supported_memory_model_feature);
     VkPhysicalDeviceFeatures2 features_2 = vku::InitStructHelper(&supported_timeline_feature);
     DispatchGetPhysicalDeviceFeatures2(physical_device, &features_2);
@@ -225,6 +226,42 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
             // Only adds if not found already
             vku::AddExtension(*modified_create_info, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
             add_bda();
+        }
+    }
+
+    if (supported_scalar_feature.scalarBlockLayout) {
+        auto add_scalar = [this, &loc, modified_create_info]() {
+            if (auto *bda_features = const_cast<VkPhysicalDeviceScalarBlockLayoutFeatures *>(
+                    vku::FindStructInPNextChain<VkPhysicalDeviceScalarBlockLayoutFeatures>(modified_create_info))) {
+                if (!bda_features->scalarBlockLayout) {
+                    InternalWarning(kNoObjects, loc,
+                                    "Forcing VkPhysicalDeviceScalarBlockLayoutFeatures::scalarBlockLayout to VK_TRUE");
+                    bda_features->scalarBlockLayout = VK_TRUE;
+                }
+            } else {
+                InternalWarning(
+                    kNoObjects, loc,
+                    "Adding a VkPhysicalDeviceScalarBlockLayoutFeatures to pNext with scalarBlockLayout set to VK_TRUE");
+                VkPhysicalDeviceScalarBlockLayoutFeatures new_bda_features = vku::InitStructHelper();
+                new_bda_features.scalarBlockLayout = VK_TRUE;
+                vku::AddToPnext(*modified_create_info, new_bda_features);
+            }
+        };
+
+        if (api_version >= VK_API_VERSION_1_2) {
+            if (auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
+                    vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext))) {
+                if (!features12->scalarBlockLayout) {
+                    InternalWarning(kNoObjects, loc, "Forcing VkPhysicalDeviceVulkan12Features::scalarBlockLayout to VK_TRUE");
+                    features12->scalarBlockLayout = VK_TRUE;
+                }
+            } else {
+                add_scalar();
+            }
+        } else if (IsExtensionAvailable(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME, available_extensions)) {
+            // Only adds if not found already
+            vku::AddExtension(*modified_create_info, VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
+            add_scalar();
         }
     }
 

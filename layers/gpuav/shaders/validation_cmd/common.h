@@ -17,21 +17,23 @@
 #include "gpuav_error_header.h"
 #include "gpuav_shaders_constants.h"
 
-layout(set = kDiagCommonDescriptorSet, binding = kBindingDiagErrorBuffer) buffer ErrorBuffer {
+#extension GL_EXT_scalar_block_layout : require
+
+layout(set = kDiagCommonDescriptorSet, binding = kBindingDiagErrorBuffer, scalar) buffer ErrorBuffer {
     uint flags;
     uint errors_count;
     uint errors_buffer[];
 };
 
-layout(set = kDiagCommonDescriptorSet, binding = kBindingDiagActionIndex) readonly buffer ActionIndexBuffer {
+layout(set = kDiagCommonDescriptorSet, binding = kBindingDiagActionIndex, scalar) readonly buffer ActionIndexBuffer {
     uint action_index[];
 };
 
-layout(set = kDiagCommonDescriptorSet, binding = kBindingDiagCmdResourceIndex) readonly buffer ResourceIndexBuffer {
+layout(set = kDiagCommonDescriptorSet, binding = kBindingDiagCmdResourceIndex, scalar) readonly buffer ResourceIndexBuffer {
     uint resource_index[];
 };
 
-layout(set = kDiagCommonDescriptorSet, binding = kBindingDiagCmdErrorsCount) buffer CmdErrorsCountBuffer {
+layout(set = kDiagCommonDescriptorSet, binding = kBindingDiagCmdErrorsCount, scalar) buffer CmdErrorsCountBuffer {
     uint cmd_errors_count[];
 };
 

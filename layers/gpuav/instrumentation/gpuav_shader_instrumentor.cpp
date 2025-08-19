@@ -103,6 +103,10 @@ void GpuShaderInstrumentor::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateI
         InternalError(device, loc, "GPU Shader Instrumentation requires bufferDeviceAddress to manage witting out of the shader.");
         return;
     }
+    if (!modified_features.scalarBlockLayout) {
+        InternalError(device, loc, "GPU Shader Instrumentation requires scalarBlockLayout to pack data in a shader.");
+        return;
+    }
     if (modified_features.vulkanMemoryModel && !modified_features.vulkanMemoryModelDeviceScope) {
         InternalError(device, loc,
                       "GPU Shader Instrumentation requires vulkanMemoryModelDeviceScope feature (if vulkanMemoryModel is enabled) "

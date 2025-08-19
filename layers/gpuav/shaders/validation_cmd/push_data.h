@@ -105,7 +105,7 @@ struct VkTraceRaysIndirectCommandKHR {
     uint depth;
 };
 
-layout(buffer_reference, std430) buffer IndirectCommandReference { VkTraceRaysIndirectCommandKHR trace_rays_dimensions; };
+layout(buffer_reference, scalar) buffer IndirectCommandReference { VkTraceRaysIndirectCommandKHR trace_rays_dimensions; };
 #endif
 
 struct TraceRaysPushData {

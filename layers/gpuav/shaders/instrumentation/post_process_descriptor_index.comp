@@ -20,13 +20,13 @@
 #extension GL_GOOGLE_include_directive : enable
 #include "common_descriptor_sets.h"
 
-layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorIndexPostProcess {
+layout(buffer_reference, buffer_reference_align = 8, scalar) buffer DescriptorIndexPostProcess {
     // size of descriptor count (including all array elements)
     // Used to mark which indexes were accessed
     uvec2 slot[]; // PostProcessDescriptorIndexSlot
 };
 
-layout(set = kInstDefaultDescriptorSet, binding = kBindingInstPostProcess, std430) buffer PostProcessSSBO {
+layout(set = kInstDefaultDescriptorSet, binding = kBindingInstPostProcess, scalar) buffer PostProcessSSBO {
     // There is a chance 2 sets are aliased to the same pointer
     // ex - descriptor_index_post_process_buffers[0] == descriptor_index_post_process_buffers[1]
     // But that is ok as we use the variable_id to extract thet set on the CPU

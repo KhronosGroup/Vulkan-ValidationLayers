@@ -35,11 +35,11 @@ struct BufferImageCopy {
     uvec4 region_extent;
 };
 
-layout(set = kValPipeDescSet, binding = kPreCopyBufferToImageBinding_SrcBuffer) buffer SrcBuffer {
+layout(set = kValPipeDescSet, binding = kPreCopyBufferToImageBinding_SrcBuffer, scalar) buffer SrcBuffer {
     uint8_t src_buffer[];
 };
 
-layout(set = kValPipeDescSet, binding = kPreCopyBufferToImageBinding_CopySrcRegions, std430) buffer CopySrcRegions {
+layout(set = kValPipeDescSet, binding = kPreCopyBufferToImageBinding_CopySrcRegions, scalar) buffer CopySrcRegions {
     uvec4 image_extent;
     uint block_size;
     uint copy_regions_count;

@@ -21,7 +21,7 @@
 #include "common.h"
 #include "push_data.h"
 
-layout(push_constant) uniform UniformInfo {
+layout(push_constant, scalar) uniform UniformInfo {
     DrawIndexedIndirectIndexBufferPushData pc;
 };
 
@@ -41,13 +41,13 @@ const uint kFirstIndex = 2;
 const uint kVertexOffset = 3;
 const uint kFirstInstance = 4;
 
-layout(set = kValPipeDescSet, binding = kPreDrawBinding_IndirectBuffer) 
+layout(set = kValPipeDescSet, binding = kPreDrawBinding_IndirectBuffer, scalar)
 readonly buffer DrawBuffer {
     uint draw_indexed_indirect_cmds[];
 };
 
 // CountBuffer won't be bound for non-count draws
-layout(set = kValPipeDescSet, binding = kPreDrawBinding_CountBuffer) 
+layout(set = kValPipeDescSet, binding = kPreDrawBinding_CountBuffer, scalar)
 readonly buffer CountBuffer {
     uint count_buffer[];
 };
@@ -68,7 +68,7 @@ void main() {
     if (draw_i >= draw_count) {
         return;
     }
-    
+
     const uint draw_indexed_indirect_cmd_i = draw_i * pc.api_stride_dwords + pc.api_offset_dwords;
     const uint draw_i_index_count = draw_indexed_indirect_cmds[ draw_indexed_indirect_cmd_i + kIndexCount ];
     const uint draw_i_first_index = draw_indexed_indirect_cmds[ draw_indexed_indirect_cmd_i + kFirstIndex ];

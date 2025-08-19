@@ -86,6 +86,7 @@ def compile_shader(gpu_shaders_dir, filename, glslang_validator, spirv_opt, targ
         args += ['--vector-dce']
         args += ['--simplify-instructions']
         args += ['--eliminate-dead-code-aggressive']
+        args += ['--scalar-block-layout']
 
         subprocess.check_output(args, universal_newlines=True)
     except subprocess.CalledProcessError as e:
@@ -280,7 +281,7 @@ def main():
         spirv_opt = args.spirv_opt
     if not shutil.which(spirv_opt):
         sys.exit("Cannot find spirv-opt " + spirv_opt)
-    
+
     # compile shaders
     compiled_shader_data = []
     compilation_failed = False
