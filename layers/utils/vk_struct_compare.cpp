@@ -87,10 +87,6 @@ bool ComparePipelineFragmentShadingRateStateCreateInfo(const VkPipelineFragmentS
 static inline bool CompareSamplerYcbcrConversionInfo(const VkSamplerYcbcrConversionInfo &a, const VkSamplerYcbcrConversionInfo &b) {
     return a.conversion == b.conversion;
 }
-static inline bool CompareSamplerReductionModeCreateInfo(const VkSamplerReductionModeCreateInfo &a,
-                                                         const VkSamplerReductionModeCreateInfo &b) {
-    return a.reductionMode == b.reductionMode;
-}
 
 static inline bool CompareSamplerBorderColorComponentMappingCreateInfo(const VkSamplerBorderColorComponentMappingCreateInfoEXT &a,
                                                                        const VkSamplerBorderColorComponentMappingCreateInfoEXT &b) {
@@ -115,14 +111,17 @@ bool CompareSamplerCreateInfo(const VkSamplerCreateInfo &a, const VkSamplerCreat
             return false;  // both are not null
         }
 
-        auto *a_reduction_mode = vku::FindStructInPNextChain<VkSamplerReductionModeCreateInfo>(a.pNext);
-        auto *b_reduction_mode = vku::FindStructInPNextChain<VkSamplerReductionModeCreateInfo>(b.pNext);
-        if (a_reduction_mode && b_reduction_mode) {
-            if (!CompareSamplerReductionModeCreateInfo(*a_reduction_mode, *b_reduction_mode)) {
-                return false;
-            }
-        } else if (a_reduction_mode != b_reduction_mode) {
-            return false;  // both are not null
+        // "If this structure is not present, reductionMode is considered to be VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE"
+        VkSamplerReductionMode a_reduction_mode = VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE;
+        VkSamplerReductionMode b_reduction_mode = VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE;
+        if (auto *a_reduction_mode_ci = vku::FindStructInPNextChain<VkSamplerReductionModeCreateInfo>(a.pNext)) {
+            a_reduction_mode = a_reduction_mode_ci->reductionMode;
+        }
+        if (auto *b_reduction_mode_ci = vku::FindStructInPNextChain<VkSamplerReductionModeCreateInfo>(b.pNext)) {
+            b_reduction_mode = b_reduction_mode_ci->reductionMode;
+        }
+        if (a_reduction_mode != b_reduction_mode) {
+            return false;
         }
 
         auto *a_component_mapping = vku::FindStructInPNextChain<VkSamplerBorderColorComponentMappingCreateInfoEXT>(a.pNext);

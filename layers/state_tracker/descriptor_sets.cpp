@@ -248,15 +248,16 @@ std::string DescriptorSetLayoutDef::DescribeDifference(uint32_t index, const Des
                 ss << "binding " << i << " stageFlags " << string_VkShaderStageFlags(l.stageFlags) << " doesn't match "
                    << string_VkShaderStageFlags(r.stageFlags);
                 break;
-            } else if (l.pImmutableSamplers != r.pImmutableSamplers) {
-                ss << "binding " << i << " pImmutableSamplers " << l.pImmutableSamplers << " doesn't match "
-                   << r.pImmutableSamplers;
+            } else if ((l.pImmutableSamplers && !r.pImmutableSamplers) || (!l.pImmutableSamplers && r.pImmutableSamplers)) {
+                ss << "binding " << i << " pImmutableSamplers doesn't match as one is null and one in non-null";
                 break;
             } else if (l.pImmutableSamplers) {
                 for (uint32_t s = 0; s < l.descriptorCount; s++) {
                     if (l.pImmutableSamplers[s] != r.pImmutableSamplers[s]) {
                         ss << "binding " << i << " pImmutableSamplers[" << s << "] " << l.pImmutableSamplers[s] << " doesn't match "
-                           << r.pImmutableSamplers[s];
+                           << r.pImmutableSamplers[s]
+                           << " (If the VkSamplerCreateInfo is the same, it is actually valid, this is a known VVL bug "
+                              "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10560)";
                         break;
                     }
                 }
