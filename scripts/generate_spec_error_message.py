@@ -38,6 +38,7 @@ class ValidationJSON:
 
         # A set of specific regular expression substitutions needed to clean up VUID text
         self.regex_dict = {}
+        self.regex_dict[re.compile(r'<sup>(.*?)</sup>')] = r'^\1'
         self.regex_dict[re.compile('<.*?>|&(amp;)+lt;|&(amp;)+gt;')] = ""
         self.regex_dict[re.compile(r'\\\(codeSize \\over 4\\\)')] = "(codeSize/4)"
         self.regex_dict[re.compile(r'\\\(\\lceil\{\\mathit\{rasterizationSamples} \\over 32}\\rceil\\\)')] = "(rasterizationSamples/32)"
