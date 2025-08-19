@@ -329,3 +329,132 @@ TEST_F(PositiveShaderCompute, ZeroInitializeWorkgroupMemoryFeature) {
     const auto set_info = [&cs](CreateComputePipelineHelper &helper) { helper.cs_ = std::move(cs); };
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
+
+TEST_F(PositiveShaderCompute, MemoryModelOperand2) {
+    TEST_DESCRIPTION("Offset a buffer device address in a OpAccessChain");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModelDeviceScope);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    RETURN_IF_SKIP(Init());
+
+    // SPIR-V based of:
+    /*
+    #version 460
+            #pragma use_vulkan_memory_model
+            #extension GL_KHR_memory_scope_semantics : enable
+            #extension GL_EXT_buffer_reference : enable
+            #extension GL_ARB_gpu_shader_int64 : enable
+
+            shared bool sharedSkip;
+            layout(buffer_reference) buffer Node { uint x[]; };
+            layout(set=0, binding=0) buffer SSBO {
+                Node node;
+                uint a;
+                uint b;
+            };
+
+            void foo(uint64_t x) {
+                b = uint(x);
+            }
+
+            void main() {
+                foo(node.x[128]);
+            }
+    */
+    // But manually modified to instead pass something similar in spirit to:
+    // foo( uint64_t(node) + 128 * sizeof(uint32_t) );
+    const char *spv_shader_source = R"(
+               OpCapability Shader
+               OpCapability Int64
+               OpCapability VulkanMemoryModel
+               OpCapability PhysicalStorageBufferAddresses
+          %2 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel PhysicalStorageBuffer64 Vulkan
+               OpEntryPoint GLCompute %main "main" %_ %sharedSkip
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %SSBO Block
+               OpMemberDecorate %SSBO 0 Offset 0
+               OpMemberDecorate %SSBO 1 Offset 8
+               OpMemberDecorate %SSBO 2 Offset 12
+               OpDecorate %_runtimearr_uint ArrayStride 4
+               OpDecorate %Node Block
+               OpMemberDecorate %Node 0 Offset 0
+               OpDecorate %_ Binding 0
+               OpDecorate %_ DescriptorSet 0
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+      %ulong = OpTypeInt 64 0
+          %9 = OpTypeFunction %void %ulong
+               OpTypeForwardPointer %_ptr_PhysicalStorageBuffer_Node PhysicalStorageBuffer
+       %uint = OpTypeInt 32 0
+       %SSBO = OpTypeStruct %_ptr_PhysicalStorageBuffer_Node %uint %uint    
+%_runtimearr_uint = OpTypeRuntimeArray %uint                                
+       %Node = OpTypeStruct %_runtimearr_uint                               
+%_ptr_PhysicalStorageBuffer_Node = OpTypePointer PhysicalStorageBuffer %Node
+%_ptr_StorageBuffer_SSBO = OpTypePointer StorageBuffer %SSBO
+          %_ = OpVariable %_ptr_StorageBuffer_SSBO StorageBuffer    
+        %int = OpTypeInt 32 1
+      %int_2 = OpConstant %int 2
+%_ptr_StorageBuffer_uint = OpTypePointer StorageBuffer %uint
+      %int_0 = OpConstant %int 0
+%_ptr_StorageBuffer__ptr_PhysicalStorageBuffer_Node = OpTypePointer StorageBuffer %_ptr_PhysicalStorageBuffer_Node
+    %int_128 = OpConstant %int 128
+%_ptr_PhysicalStorageBuffer_uint = OpTypePointer PhysicalStorageBuffer %uint
+       %bool = OpTypeBool
+%_ptr_Workgroup_bool = OpTypePointer Workgroup %bool
+ %sharedSkip = OpVariable %_ptr_Workgroup_bool Workgroup
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+         %28 = OpAccessChain %_ptr_StorageBuffer__ptr_PhysicalStorageBuffer_Node %_ %int_0
+         %29 = OpLoad %_ptr_PhysicalStorageBuffer_Node %28
+         
+         ; ===== PROBLEM HERE =====
+         ; This OpAccessChain does not seem to be correctly executed by the driver,
+         ; it does not apply the 128 * sizeof(uint32_t) offset and instead just 
+         ; ends up accessing the base address
+         %32 = OpAccessChain %_ptr_PhysicalStorageBuffer_uint %29 %int_0 %int_128
+         ; ========================
+
+         %param = OpConvertPtrToU %ulong %32
+         %36 = OpFunctionCall %void %foo_u641_ %param
+               OpReturn
+               OpFunctionEnd
+  %foo_u641_ = OpFunction %void None %9
+          %x = OpFunctionParameter %ulong
+         %12 = OpLabel
+         %23 = OpUConvert %uint %x
+         %25 = OpAccessChain %_ptr_StorageBuffer_uint %_ %int_2
+               OpStore %25 %23
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    vkt::Buffer bda_buffer(*m_device, 256 * sizeof(uint32_t), 0, vkt::device_address);
+    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+
+    auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
+    in_buffer_ptr[0] = bda_buffer.Address();
+    in_buffer_ptr[1] = 0;  // set SSBO.a and SSBO.b to be zero
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    pipe.cs_ = VkShaderObj(this, spv_shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe.CreateComputePipeline();
+
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    auto in_buffer_u32_ptr = (uint32_t *)in_buffer_ptr;
+    ASSERT_EQ(in_buffer_u32_ptr[3], (uint32_t)bda_buffer.Address() + 128 * sizeof(uint32_t));
+}
