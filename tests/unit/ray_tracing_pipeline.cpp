@@ -1676,8 +1676,8 @@ TEST_F(NegativeRayTracingPipeline, RaygenOneMissShaderOneClosestHitShader) {
 
 TEST_F(NegativeRayTracingPipeline, ClusterAccelerationStructureFeatureDisabled) {
     TEST_DESCRIPTION(
-        "Test VUID-10576: clusterAccelerationStructure feature must be enabled when using cluster acceleration structure pipeline "
-        "info");
+        "clusterAccelerationStructure feature must be enabled when using "
+        "VkRayTracingPipelineClusterAccelerationStructureCreateInfoNV");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_NV_CLUSTER_ACCELERATION_STRUCTURE_EXTENSION_NAME);
