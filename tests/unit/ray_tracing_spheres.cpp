@@ -327,6 +327,9 @@
      blas.GetGeometries()[0].SetLSSpheresIndexingMode(VK_RAY_TRACING_LSS_INDEXING_MODE_SUCCESSIVE_NV);
      blas.GetGeometries()[0].SetLSSpheresIndexDataNull();
      blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
+     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-indexData-parameter");
+     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-indexData-parameter");
+     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-indexingMode-10427");
      m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-indexingMode-10427");
      blas.BuildCmdBuffer(m_command_buffer.handle());
      m_errorMonitor->VerifyFound();
@@ -351,7 +354,8 @@
  
      blas.GetGeometries()[0].SetSpheresVertexAddressNull();
      blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
-     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexData-10430");
+     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexData-parameter");
+     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexData-parameter");
      blas.BuildCmdBuffer(m_command_buffer.handle());
      m_errorMonitor->VerifyFound();
      m_command_buffer.End();
@@ -374,7 +378,8 @@
      auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::Spheres);
      blas.GetGeometries()[0].SetSpheresRadiusAddressNull();
      blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
-     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometrySpheresDataNV-radiusData-10433");
+     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometrySpheresDataNV-radiusData-parameter");
+     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometrySpheresDataNV-radiusData-parameter");
      blas.BuildCmdBuffer(m_command_buffer.handle());
      m_errorMonitor->VerifyFound();
      m_command_buffer.End();
@@ -398,7 +403,8 @@
  
      blas.GetGeometries()[0].SetLSSpheresVertexAddressNull();
      blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
-     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-vertexData-10420");
+     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-vertexData-parameter");
+     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-vertexData-parameter");
      blas.BuildCmdBuffer(m_command_buffer.handle());
      m_errorMonitor->VerifyFound();
      m_command_buffer.End();
@@ -421,7 +427,8 @@
      auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::LSSpheres);
      blas.GetGeometries()[0].SetLSSpheresRadiusAddressNull();
      blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
-     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-radiusData-10425");
+     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-radiusData-parameter");
+     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-radiusData-parameter");
      blas.BuildCmdBuffer(m_command_buffer.handle());
      m_errorMonitor->VerifyFound();
      m_command_buffer.End();
@@ -486,7 +493,7 @@
     auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::Spheres);
     blas.GetGeometries()[0].SetSpheresVertexAddressNull();
     blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
-    
+    m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexData-parameter");
     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexData-parameter");
     blas.BuildCmdBuffer(m_command_buffer.handle());
     m_errorMonitor->VerifyFound();
