@@ -751,7 +751,7 @@ Iterator infill_update_range(RangeMap &map, Iterator pos, const typename RangeMa
                 pos = map.split(pos, range.end);
             }
 
-            // We have a valid fully contained range, merge with it
+            // We have a valid fully contained range, apply update op
             ops.update(pos);
 
             // Advance the current location and map entry
@@ -773,14 +773,6 @@ void infill_update_range(RangeMap &map, const typename RangeMap::key_type &range
     if (range.empty()) return;
     auto pos = map.lower_bound(range);
     infill_update_range(map, pos, range, ops);
-}
-
-template <typename RangeMap, typename RangeGen, typename InfillUpdateOps>
-void infill_update_rangegen(RangeMap &map, RangeGen &range_gen, const InfillUpdateOps &ops) {
-    auto pos = map.lower_bound(*range_gen);
-    for (; range_gen->non_empty(); ++range_gen) {
-        pos = infill_update_range(map, pos, *range_gen, ops);
-    }
 }
 
 // Parallel iterator

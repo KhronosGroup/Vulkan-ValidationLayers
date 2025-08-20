@@ -91,23 +91,3 @@ class CachedInsertSet : public std::set<IntegralKey> {
     key_type entries_[kSize];
 };
 
-// A wrapper for a single range with the same semantics as other non-trivial range generators
-template <typename KeyType>
-class SingleRangeGenerator {
-  public:
-    using RangeType = KeyType;
-    SingleRangeGenerator(const KeyType &range) : current_(range) {}
-    const KeyType &operator*() const { return current_; }
-    const KeyType *operator->() const { return &current_; }
-    SingleRangeGenerator &operator++() {
-        current_ = KeyType();  // just one real range
-        return *this;
-    }
-
-    bool operator==(const SingleRangeGenerator &other) const { return current_ == other.current_; }
-
-  private:
-    SingleRangeGenerator() = default;
-    const KeyType range_;
-    KeyType current_;
-};

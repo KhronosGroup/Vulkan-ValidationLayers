@@ -94,12 +94,6 @@ bool ForEachEntryInRangesUntil(const RangeMap &map, RangeGen &range_gen, Action 
     return false;
 }
 
-struct NoopBarrierAction {
-    explicit NoopBarrierAction() {}
-    void operator()(ResourceAccessState *access) const {}
-    const bool layout_transition = false;
-};
-
 // This functor applies a collection of barriers, updating the "pending state" in each touched memory range, and optionally
 // resolves the pending state. Suitable for processing Global memory barriers, or Subpass Barriers when the "final" barrier
 // of a collection is known/present.
@@ -108,7 +102,7 @@ class ApplyBarrierOpsFunctor {
   public:
     using Iterator = ResourceAccessRangeMap::iterator;
     // Only called with a gap, and pos at the lower_bound(range)
-    inline Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos, const ResourceAccessRange &range) const {
+    Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos, const ResourceAccessRange &range) const {
         if (!infill_default_) {
             return pos;
         }
@@ -148,21 +142,43 @@ class ApplyBarrierOpsFunctor {
 };
 
 // This functor applies a single barrier, updating the "pending state" in each touched memory range, but does not
-// resolve the pendinging state. Suitable for processing Image and Buffer barriers from PipelineBarriers or Events
+// resolve the pending state. Suitable for processing Image and Buffer barriers from PipelineBarriers or Events
 template <typename BarrierOp>
-class ApplyBarrierFunctor : public ApplyBarrierOpsFunctor<BarrierOp, small_vector<BarrierOp, 1>> {
-    using Base = ApplyBarrierOpsFunctor<BarrierOp, small_vector<BarrierOp, 1>>;
+struct ApplySingleBarrierOpFunctor {
+    ApplySingleBarrierOpFunctor(const BarrierOp &barrier_op) : barrier_op(barrier_op) {}
+    using Iterator = ResourceAccessRangeMap::iterator;
 
-  public:
-    ApplyBarrierFunctor(const BarrierOp &barrier_op) : Base(false, 1, kInvalidTag) { Base::EmplaceBack(barrier_op); }
+    // Only called with a gap, and pos at the lower_bound(range)
+    Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos, const ResourceAccessRange &range) const {
+        if (!barrier_op.layout_transition) {
+            return pos;
+        }
+        ResourceAccessState default_state;
+        auto inserted = accesses->insert(pos, std::make_pair(range, default_state));
+        return inserted;
+    }
+
+    void operator()(const Iterator &pos) const {
+        auto &access_state = pos->second;
+        barrier_op(&access_state);
+    }
+
+    BarrierOp barrier_op;
 };
 
-// This functor resolves the pendinging state.
-class ResolvePendingBarrierFunctor : public ApplyBarrierOpsFunctor<NoopBarrierAction, small_vector<NoopBarrierAction, 1>> {
-    using Base = ApplyBarrierOpsFunctor<NoopBarrierAction, small_vector<NoopBarrierAction, 1>>;
+// This functor resolves the barrier's pending state
+struct ResolvePendingBarrierFunctor {
+    ResolvePendingBarrierFunctor(ResourceUsageTag tag) : tag(tag) {}
+    using Iterator = ResourceAccessRangeMap::iterator;
 
-  public:
-    ResolvePendingBarrierFunctor(ResourceUsageTag tag) : Base(true, 0, tag) {}
+    Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos, const ResourceAccessRange &range) const { return pos; }
+
+    void operator()(const Iterator &pos) const {
+        ResourceAccessState &access_state = pos->second;
+        access_state.ApplyPendingBarriers(tag);
+    }
+
+    const ResourceUsageTag tag;
 };
 
 struct ApplySubpassTransitionBarriersAction {
@@ -381,12 +397,13 @@ class AccessContext {
         QueueId queue_id_;
     };
 
+    template <typename Action>
+    void UpdateMemoryAccessRangeState(Action &action, const ResourceAccessRange &range);
+
     template <typename Action, typename RangeGen>
     void UpdateMemoryAccessState(const Action &action, RangeGen &range_gen);
 
   private:
-    template <typename Action>
-    static void UpdateMemoryAccessRangeState(ResourceAccessRangeMap &accesses, Action &action, const ResourceAccessRange &range);
 
     struct UpdateMemoryAccessStateFunctor {
         using Iterator = ResourceAccessRangeMap::iterator;
@@ -489,20 +506,22 @@ struct ActionToOpsAdapter {
 template <typename Action>
 void AccessContext::ApplyToContext(const Action &barrier_action) {
     // Note: Barriers do *not* cross context boundaries, applying to accessess within.... (at least for renderpass subpasses)
-    UpdateMemoryAccessRangeState(access_state_map_, barrier_action, kFullRange);
+    UpdateMemoryAccessRangeState(barrier_action, kFullRange);
 }
 
 template <typename Action>
-void AccessContext::UpdateMemoryAccessRangeState(ResourceAccessRangeMap &accesses, Action &action,
-                                                 const ResourceAccessRange &range) {
+void AccessContext::UpdateMemoryAccessRangeState(Action &action, const ResourceAccessRange &range) {
     ActionToOpsAdapter<Action> ops{action};
-    infill_update_range(accesses, range, ops);
+    infill_update_range(access_state_map_, range, ops);
 }
 
 template <typename Action, typename RangeGen>
 void AccessContext::UpdateMemoryAccessState(const Action &action, RangeGen &range_gen) {
     ActionToOpsAdapter<Action> ops{action};
-    infill_update_rangegen(access_state_map_, range_gen, ops);
+    auto pos = access_state_map_.lower_bound(*range_gen);
+    for (; range_gen->non_empty(); ++range_gen) {
+        pos = infill_update_range(access_state_map_, pos, *range_gen, ops);
+    }
 }
 
 template <typename Action>
@@ -576,6 +595,24 @@ HazardResult AccessContext::DetectHazardOneRange(Detector &detector, bool detect
 
     return hazard;
 }
+
+// A wrapper for a single range with the same semantics as other non-trivial range generators
+template <typename KeyType>
+class SingleRangeGenerator {
+  public:
+    using RangeType = KeyType;
+    SingleRangeGenerator(const KeyType &range) : current_(range) {}
+    const KeyType &operator*() const { return current_; }
+    const KeyType *operator->() const { return &current_; }
+    SingleRangeGenerator &operator++() {
+        current_ = KeyType();  // just one real range
+        return *this;
+    }
+
+  private:
+    SingleRangeGenerator() = default;
+    KeyType current_;
+};
 
 template <typename Detector>
 HazardResult AccessContext::DetectHazardRange(Detector &detector, const ResourceAccessRange &range, DetectOptions options) const {
