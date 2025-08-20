@@ -27,6 +27,7 @@ target_sources(VkLayer_utils PRIVATE
     containers/custom_containers.h
     containers/limits.h
     containers/small_container.h
+    containers/small_range_map.h
     containers/small_vector.h
     containers/span.h
     containers/tls_guard.h

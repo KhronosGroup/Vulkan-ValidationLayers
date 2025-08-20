@@ -107,6 +107,7 @@ vvl_sources = [
   "layers/containers/custom_containers.h",
   "layers/containers/limits.h",
   "layers/containers/small_container.h",
+  "layers/containers/small_range_map.h",
   "layers/containers/small_vector.h",
   "layers/containers/span.h",
   "layers/containers/tls_guard.h",
