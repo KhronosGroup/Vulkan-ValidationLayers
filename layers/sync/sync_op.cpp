@@ -411,16 +411,15 @@ void SyncOpPipelineBarrier::ReplayRecord(CommandExecutionContext &exec_context, 
 
     // Apply buffer barriers
     for (const SyncBufferMemoryBarrier &barrier : barrier_set_.buffer_memory_barriers) {
-        ApplyBarrierFunctor update_action(PipelineBarrierOp(queue_id, barrier.barrier, false));
+        ApplySingleBarrierOpFunctor update_action(PipelineBarrierOp(queue_id, barrier.barrier, false));
         const auto base_address = ResourceBaseAddress(*barrier.buffer);
         ResourceAccessRange range = SimpleBinding(*barrier.buffer) ? (barrier.range + base_address) : ResourceAccessRange();
-        SingleRangeGenerator<ResourceAccessRange> range_gen(range);
-        access_context->UpdateMemoryAccessState(update_action, range_gen);
+        access_context->UpdateMemoryAccessRangeState(update_action, range);
     }
 
     // Apply image barriers
     for (const SyncImageMemoryBarrier &barrier : barrier_set_.image_memory_barriers) {
-        ApplyBarrierFunctor update_action(
+        ApplySingleBarrierOpFunctor update_action(
             PipelineBarrierOp(queue_id, barrier.barrier, barrier.layout_transition, barrier.handle_index));
         const auto &sub_state = syncval_state::SubState(*barrier.image);
         const bool can_transition_depth_slices =
@@ -435,8 +434,7 @@ void SyncOpPipelineBarrier::ReplayRecord(CommandExecutionContext &exec_context, 
         for (const auto &barrier : barrier_set_.memory_barriers) {
             barriers_functor.EmplaceBack(PipelineBarrierOp(queue_id, barrier, false));
         }
-        auto range_gen = SingleRangeGenerator<ResourceAccessRange>(kFullRange);
-        access_context->UpdateMemoryAccessState(barriers_functor, range_gen);
+        access_context->UpdateMemoryAccessRangeState(barriers_functor, kFullRange);
     }
 
     if (barrier_set_.single_exec_scope) {
@@ -716,7 +714,8 @@ void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext &exec_context, Resou
             // Apply buffer barriers
             for (const SyncBufferMemoryBarrier &barrier : barrier_set.buffer_memory_barriers) {
                 auto sync_barrier = RestrictToEvent(barrier.barrier, *sync_event);
-                ApplyBarrierFunctor update_action(WaitEventBarrierOp(queue_id, sync_event->first_scope_tag, sync_barrier, false));
+                ApplySingleBarrierOpFunctor update_action(
+                    WaitEventBarrierOp(queue_id, sync_event->first_scope_tag, sync_barrier, false));
                 const auto base_address = ResourceBaseAddress(*barrier.buffer);
                 ResourceAccessRange range = SimpleBinding(*barrier.buffer) ? (barrier.range + base_address) : ResourceAccessRange();
                 EventSimpleRangeGenerator range_gen(sync_event->FirstScope(), range);
@@ -726,7 +725,7 @@ void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext &exec_context, Resou
             // Apply image barriers
             for (const SyncImageMemoryBarrier &barrier : barrier_set.image_memory_barriers) {
                 auto sync_barrier = RestrictToEvent(barrier.barrier, *sync_event);
-                ApplyBarrierFunctor update_action(
+                ApplySingleBarrierOpFunctor update_action(
                     WaitEventBarrierOp(queue_id, sync_event->first_scope_tag, sync_barrier, barrier.layout_transition));
                 const auto &sub_state = syncval_state::SubState(*barrier.image);
                 const bool can_transition_depth_slices =

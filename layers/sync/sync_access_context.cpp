@@ -144,8 +144,8 @@ void AccessContext::ConstForAll(Action &&action) const {
 }
 
 void AccessContext::ResolveFromContext(const AccessContext &from) {
-    const NoopBarrierAction noop_barrier;
-    from.ResolveAccessRange(kFullRange, noop_barrier, &access_state_map_, nullptr);
+    auto noop_action = [](ResourceAccessState *access) {};
+    from.ResolveAccessRange(kFullRange, noop_action, &access_state_map_, nullptr);
 }
 
 void AccessContext::ResolvePreviousAccess(const ResourceAccessRange &range, ResourceAccessRangeMap *descent_map,
@@ -191,7 +191,7 @@ void AccessContext::UpdateAccessState(const vvl::Buffer &buffer, SyncAccessIndex
     }
     const auto base_address = ResourceBaseAddress(buffer);
     UpdateMemoryAccessStateFunctor action(*this, current_usage, ordering_rule, tag_ex);
-    UpdateMemoryAccessRangeState(access_state_map_, action, range + base_address);
+    UpdateMemoryAccessRangeState(action, range + base_address);
 }
 
 void AccessContext::UpdateAccessState(const vvl::Image &image, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
