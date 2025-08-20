@@ -2227,3 +2227,357 @@ TEST_F(PositivePipeline, NullDepthStencilState) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(PositivePipeline, EmulateDebugPrintf) {
+    TEST_DESCRIPTION("Based off NegativeDebugPrintf.Fragment - Reproduce driver bugs");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    const char *spv_shader_source = R"(
+; SPIR-V
+; Version: 1.0
+; Generator: Khronos Glslang Reference Front End; 11
+; Bound: 192
+; Schema: 0
+               OpCapability Shader
+               OpCapability PhysicalStorageBufferAddresses
+               OpExtension "SPV_KHR_non_semantic_info"
+               OpExtension "SPV_KHR_physical_storage_buffer"
+               OpExtension "SPV_KHR_storage_buffer_storage_class"
+          %1 = OpExtInstImport "GLSL.std.450"
+         %45 = OpExtInstImport "NonSemantic.DebugPrintf"
+               OpMemoryModel PhysicalStorageBuffer64 GLSL450
+               OpEntryPoint Fragment %main "main" %gl_FragCoord %outColor
+               OpExecutionMode %main OriginUpperLeft
+         %40 = OpString "gl_FragCoord.xy %1.2f, %1.2f
+"
+               OpSource GLSL 450
+               OpSourceExtension "GL_EXT_debug_printf"
+               OpName %main "main"
+               OpName %gl_FragCoord "gl_FragCoord"
+               OpName %outColor "outColor"
+               OpName %inst_debug_printf_13 "inst_debug_printf_13"
+               OpDecorate %gl_FragCoord BuiltIn FragCoord
+               OpDecorate %outColor Location 0
+               OpDecorate %_runtimearr_uint ArrayStride 4
+               OpDecorate %_struct_64 Block
+               OpMemberDecorate %_struct_64 0 Offset 0
+               OpMemberDecorate %_struct_64 1 Offset 4
+               OpMemberDecorate %_struct_64 2 Offset 8
+               OpDecorate %_struct_66 Block
+               OpMemberDecorate %_struct_66 0 Offset 0
+               OpDecorate %_struct_68 Block
+               OpMemberDecorate %_struct_68 0 Offset 0
+               OpDecorate %70 DescriptorSet 0
+               OpDecorate %70 Binding 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %bool = OpTypeBool
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Input_v4float = OpTypePointer Input %v4float
+%gl_FragCoord = OpVariable %_ptr_Input_v4float Input
+       %uint = OpTypeInt 32 0
+     %uint_0 = OpConstant %uint 0
+%_ptr_Input_float = OpTypePointer Input %float
+   %float_10 = OpConstant %float 10
+   %float_11 = OpConstant %float 11
+     %uint_1 = OpConstant %uint 1
+   %float_12 = OpConstant %float 12
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+   %outColor = OpVariable %_ptr_Output_v4float Output
+     %v4uint = OpTypeVector %uint 4
+     %uint_4 = OpConstant %uint 4
+    %uint_67 = OpConstant %uint 67
+    %uint_40 = OpConstant %uint 40
+%_runtimearr_uint = OpTypeRuntimeArray %uint
+ %_struct_64 = OpTypeStruct %uint %uint %_runtimearr_uint
+%_ptr_PhysicalStorageBuffer__struct_64 = OpTypePointer PhysicalStorageBuffer %_struct_64
+ %_struct_66 = OpTypeStruct %_ptr_PhysicalStorageBuffer__struct_64
+%_ptr_PhysicalStorageBuffer__struct_66 = OpTypePointer PhysicalStorageBuffer %_struct_66
+ %_struct_68 = OpTypeStruct %_ptr_PhysicalStorageBuffer__struct_66
+%_ptr_StorageBuffer__struct_68 = OpTypePointer StorageBuffer %_struct_68
+         %70 = OpVariable %_ptr_StorageBuffer__struct_68 StorageBuffer
+         %71 = OpTypeFunction %void %uint %uint %uint %uint %uint %uint %uint %uint %uint %uint %uint
+%_ptr_StorageBuffer__ptr_PhysicalStorageBuffer__struct_66 = OpTypePointer StorageBuffer %_ptr_PhysicalStorageBuffer__struct_66
+%_ptr_PhysicalStorageBuffer__ptr_PhysicalStorageBuffer__struct_64 = OpTypePointer PhysicalStorageBuffer %_ptr_PhysicalStorageBuffer__struct_64
+%_ptr_PhysicalStorageBuffer_uint = OpTypePointer PhysicalStorageBuffer %uint
+    %uint_13 = OpConstant %uint 13
+     %uint_2 = OpConstant %uint 2
+     %uint_3 = OpConstant %uint 3
+     %uint_5 = OpConstant %uint 5
+     %uint_6 = OpConstant %uint 6
+     %uint_7 = OpConstant %uint 7
+     %uint_8 = OpConstant %uint 8
+     %uint_9 = OpConstant %uint 9
+    %uint_10 = OpConstant %uint 10
+    %uint_11 = OpConstant %uint 11
+    %uint_12 = OpConstant %uint 12
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %52 = OpLoad %v4float %gl_FragCoord
+         %53 = OpBitcast %v4uint %52
+         %54 = OpCompositeExtract %uint %53 0
+         %55 = OpCompositeExtract %uint %53 1
+         %56 = OpCompositeConstruct %v4uint %uint_4 %54 %55 %uint_0
+         %14 = OpAccessChain %_ptr_Input_float %gl_FragCoord %uint_0
+         %15 = OpLoad %float %14
+         %17 = OpFOrdGreaterThan %bool %15 %float_10
+               OpSelectionMerge %19 None
+               OpBranchConditional %17 %18 %19
+         %18 = OpLabel
+         %20 = OpAccessChain %_ptr_Input_float %gl_FragCoord %uint_0
+         %21 = OpLoad %float %20
+         %23 = OpFOrdLessThan %bool %21 %float_11
+               OpBranch %19
+         %19 = OpLabel
+         %24 = OpPhi %bool %17 %5 %23 %18
+               OpSelectionMerge %26 None
+               OpBranchConditional %24 %25 %26
+         %25 = OpLabel
+         %28 = OpAccessChain %_ptr_Input_float %gl_FragCoord %uint_1
+         %29 = OpLoad %float %28
+         %30 = OpFOrdGreaterThan %bool %29 %float_10
+               OpSelectionMerge %32 None
+               OpBranchConditional %30 %31 %32
+         %31 = OpLabel
+         %33 = OpAccessChain %_ptr_Input_float %gl_FragCoord %uint_1
+         %34 = OpLoad %float %33
+         %36 = OpFOrdLessThan %bool %34 %float_12
+               OpBranch %32
+         %32 = OpLabel
+         %37 = OpPhi %bool %30 %25 %36 %31
+               OpSelectionMerge %39 None
+               OpBranchConditional %37 %38 %39
+         %38 = OpLabel
+         %41 = OpAccessChain %_ptr_Input_float %gl_FragCoord %uint_0
+         %42 = OpLoad %float %41
+         %43 = OpAccessChain %_ptr_Input_float %gl_FragCoord %uint_1
+         %44 = OpLoad %float %43
+         %60 = OpBitcast %uint %42
+         %61 = OpBitcast %uint %44
+         %59 = OpFunctionCall %void %inst_debug_printf_13 %uint_67 %uint_40 %uint_0 %uint_0 %uint_0 %uint_4 %54 %55 %uint_0 %60 %61
+         %46 = OpExtInst %void %45 1 %40 %42 %44
+               OpBranch %39
+         %39 = OpLabel
+               OpBranch %26
+         %26 = OpLabel
+         %49 = OpLoad %v4float %gl_FragCoord
+               OpStore %outColor %49
+               OpReturn
+               OpFunctionEnd
+%inst_debug_printf_13 = OpFunction %void None %71
+         %72 = OpFunctionParameter %uint
+         %73 = OpFunctionParameter %uint
+         %74 = OpFunctionParameter %uint
+         %75 = OpFunctionParameter %uint
+         %76 = OpFunctionParameter %uint
+         %77 = OpFunctionParameter %uint
+         %78 = OpFunctionParameter %uint
+         %79 = OpFunctionParameter %uint
+         %80 = OpFunctionParameter %uint
+         %81 = OpFunctionParameter %uint
+         %82 = OpFunctionParameter %uint
+         %83 = OpLabel
+         %90 = OpAccessChain %_ptr_StorageBuffer__ptr_PhysicalStorageBuffer__struct_66 %70 %uint_0
+         %91 = OpLoad %_ptr_PhysicalStorageBuffer__struct_66 %90
+         %92 = OpAccessChain %_ptr_PhysicalStorageBuffer__ptr_PhysicalStorageBuffer__struct_64 %91 %uint_0
+         %93 = OpLoad %_ptr_PhysicalStorageBuffer__struct_64 %92 Aligned 8
+         %94 = OpAccessChain %_ptr_PhysicalStorageBuffer_uint %93 %uint_1
+         %95 = OpAtomicIAdd %uint %94 %uint_4 %uint_0 %uint_13
+         %96 = OpIAdd %uint %95 %uint_13
+         %97 = OpAccessChain %_ptr_StorageBuffer__ptr_PhysicalStorageBuffer__struct_66 %70 %uint_0
+         %98 = OpLoad %_ptr_PhysicalStorageBuffer__struct_66 %97
+         %99 = OpAccessChain %_ptr_PhysicalStorageBuffer__ptr_PhysicalStorageBuffer__struct_64 %98 %uint_0
+        %100 = OpLoad %_ptr_PhysicalStorageBuffer__struct_64 %99 Aligned 8
+        %101 = OpAccessChain %_ptr_PhysicalStorageBuffer_uint %100 %uint_0
+        %102 = OpLoad %uint %101 Aligned 8
+        %103 = OpULessThanEqual %bool %96 %102
+               OpSelectionMerge %85 None
+               OpBranchConditional %103 %84 %85
+         %84 = OpLabel
+        %104 = OpIAdd %uint %95 %uint_0
+        %105 = OpAccessChain %_ptr_StorageBuffer__ptr_PhysicalStorageBuffer__struct_66 %70 %uint_0
+        %106 = OpLoad %_ptr_PhysicalStorageBuffer__struct_66 %105
+        %107 = OpAccessChain %_ptr_PhysicalStorageBuffer__ptr_PhysicalStorageBuffer__struct_64 %106 %uint_0
+        %108 = OpLoad %_ptr_PhysicalStorageBuffer__struct_64 %107 Aligned 8
+        %109 = OpAccessChain %_ptr_PhysicalStorageBuffer_uint %108 %uint_2 %104
+               OpStore %109 %uint_13 Aligned 8
+        %111 = OpIAdd %uint %95 %uint_1
+        %112 = OpAccessChain %_ptr_StorageBuffer__ptr_PhysicalStorageBuffer__struct_66 %70 %uint_0
+        %113 = OpLoad %_ptr_PhysicalStorageBuffer__struct_66 %112
+        %114 = OpAccessChain %_ptr_PhysicalStorageBuffer__ptr_PhysicalStorageBuffer__struct_64 %113 %uint_0
+        %115 = OpLoad %_ptr_PhysicalStorageBuffer__struct_64 %114 Aligned 8
+        %116 = OpAccessChain %_ptr_PhysicalStorageBuffer_uint %115 %uint_2 %111
+               OpStore %116 %uint_2 Aligned 8
+        %117 = OpIAdd %uint %95 %uint_2
+        %118 = OpAccessChain %_ptr_StorageBuffer__ptr_PhysicalStorageBuffer__struct_66 %70 %uint_0
+        %119 = OpLoad %_ptr_PhysicalStorageBuffer__struct_66 %118
+        %120 = OpAccessChain %_ptr_PhysicalStorageBuffer__ptr_PhysicalStorageBuffer__struct_64 %119 %uint_0
+        %121 = OpLoad %_ptr_PhysicalStorageBuffer__struct_64 %120 Aligned 8
+        %122 = OpAccessChain %_ptr_PhysicalStorageBuffer_uint %121 %uint_2 %117
+               OpStore %122 %72 Aligned 8
+        %123 = OpIAdd %uint %95 %uint_3
+        %125 = OpAccessChain %_ptr_StorageBuffer__ptr_PhysicalStorageBuffer__struct_66 %70 %uint_0
+        %126 = OpLoad %_ptr_PhysicalStorageBuffer__struct_66 %125
+        %127 = OpAccessChain %_ptr_PhysicalStorageBuffer__ptr_PhysicalStorageBuffer__struct_64 %126 %uint_0
+        %128 = OpLoad %_ptr_PhysicalStorageBuffer__struct_64 %127 Aligned 8
+        %129 = OpAccessChain %_ptr_PhysicalStorageBuffer_uint %128 %uint_2 %123
+               OpStore %129 %73 Aligned 8
+        %130 = OpIAdd %uint %95 %uint_4
+        %131 = OpAccessChain %_ptr_StorageBuffer__ptr_PhysicalStorageBuffer__struct_66 %70 %uint_0
+        %132 = OpLoad %_ptr_PhysicalStorageBuffer__struct_66 %131
+        %133 = OpAccessChain %_ptr_PhysicalStorageBuffer__ptr_PhysicalStorageBuffer__struct_64 %132 %uint_0
+        %134 = OpLoad %_ptr_PhysicalStorageBuffer__struct_64 %133 Aligned 8
+        %135 = OpAccessChain %_ptr_PhysicalStorageBuffer_uint %134 %uint_2 %130
+               OpStore %135 %74 Aligned 8
+        %136 = OpIAdd %uint %95 %uint_5
+        %138 = OpAccessChain %_ptr_StorageBuffer__ptr_PhysicalStorageBuffer__struct_66 %70 %uint_0
+        %139 = OpLoad %_ptr_PhysicalStorageBuffer__struct_66 %138
+        %140 = OpAccessChain %_ptr_PhysicalStorageBuffer__ptr_PhysicalStorageBuffer__struct_64 %139 %uint_0
+        %141 = OpLoad %_ptr_PhysicalStorageBuffer__struct_64 %140 Aligned 8
+        %142 = OpAccessChain %_ptr_PhysicalStorageBuffer_uint %141 %uint_2 %136
+               OpStore %142 %75 Aligned 8
+        %143 = OpIAdd %uint %95 %uint_6
+        %145 = OpAccessChain %_ptr_StorageBuffer__ptr_PhysicalStorageBuffer__struct_66 %70 %uint_0
+        %146 = OpLoad %_ptr_PhysicalStorageBuffer__struct_66 %145
+        %147 = OpAccessChain %_ptr_PhysicalStorageBuffer__ptr_PhysicalStorageBuffer__struct_64 %146 %uint_0
+        %148 = OpLoad %_ptr_PhysicalStorageBuffer__struct_64 %147 Aligned 8
+        %149 = OpAccessChain %_ptr_PhysicalStorageBuffer_uint %148 %uint_2 %143
+               OpStore %149 %76 Aligned 8
+        %150 = OpIAdd %uint %95 %uint_7
+        %152 = OpAccessChain %_ptr_StorageBuffer__ptr_PhysicalStorageBuffer__struct_66 %70 %uint_0
+        %153 = OpLoad %_ptr_PhysicalStorageBuffer__struct_66 %152
+        %154 = OpAccessChain %_ptr_PhysicalStorageBuffer__ptr_PhysicalStorageBuffer__struct_64 %153 %uint_0
+        %155 = OpLoad %_ptr_PhysicalStorageBuffer__struct_64 %154 Aligned 8
+        %156 = OpAccessChain %_ptr_PhysicalStorageBuffer_uint %155 %uint_2 %150
+               OpStore %156 %77 Aligned 8
+        %157 = OpIAdd %uint %95 %uint_8
+        %159 = OpAccessChain %_ptr_StorageBuffer__ptr_PhysicalStorageBuffer__struct_66 %70 %uint_0
+        %160 = OpLoad %_ptr_PhysicalStorageBuffer__struct_66 %159
+        %161 = OpAccessChain %_ptr_PhysicalStorageBuffer__ptr_PhysicalStorageBuffer__struct_64 %160 %uint_0
+        %162 = OpLoad %_ptr_PhysicalStorageBuffer__struct_64 %161 Aligned 8
+        %163 = OpAccessChain %_ptr_PhysicalStorageBuffer_uint %162 %uint_2 %157
+               OpStore %163 %78 Aligned 8
+        %164 = OpIAdd %uint %95 %uint_9
+        %166 = OpAccessChain %_ptr_StorageBuffer__ptr_PhysicalStorageBuffer__struct_66 %70 %uint_0
+        %167 = OpLoad %_ptr_PhysicalStorageBuffer__struct_66 %166
+        %168 = OpAccessChain %_ptr_PhysicalStorageBuffer__ptr_PhysicalStorageBuffer__struct_64 %167 %uint_0
+        %169 = OpLoad %_ptr_PhysicalStorageBuffer__struct_64 %168 Aligned 8
+        %170 = OpAccessChain %_ptr_PhysicalStorageBuffer_uint %169 %uint_2 %164
+               OpStore %170 %79 Aligned 8
+        %171 = OpIAdd %uint %95 %uint_10
+        %173 = OpAccessChain %_ptr_StorageBuffer__ptr_PhysicalStorageBuffer__struct_66 %70 %uint_0
+        %174 = OpLoad %_ptr_PhysicalStorageBuffer__struct_66 %173
+        %175 = OpAccessChain %_ptr_PhysicalStorageBuffer__ptr_PhysicalStorageBuffer__struct_64 %174 %uint_0
+        %176 = OpLoad %_ptr_PhysicalStorageBuffer__struct_64 %175 Aligned 8
+        %177 = OpAccessChain %_ptr_PhysicalStorageBuffer_uint %176 %uint_2 %171
+               OpStore %177 %80 Aligned 8
+        %178 = OpIAdd %uint %95 %uint_11
+        %180 = OpAccessChain %_ptr_StorageBuffer__ptr_PhysicalStorageBuffer__struct_66 %70 %uint_0
+        %181 = OpLoad %_ptr_PhysicalStorageBuffer__struct_66 %180
+        %182 = OpAccessChain %_ptr_PhysicalStorageBuffer__ptr_PhysicalStorageBuffer__struct_64 %181 %uint_0
+        %183 = OpLoad %_ptr_PhysicalStorageBuffer__struct_64 %182 Aligned 8
+        %184 = OpAccessChain %_ptr_PhysicalStorageBuffer_uint %183 %uint_2 %178
+               OpStore %184 %81 Aligned 8
+        %185 = OpIAdd %uint %95 %uint_12
+        %187 = OpAccessChain %_ptr_StorageBuffer__ptr_PhysicalStorageBuffer__struct_66 %70 %uint_0
+        %188 = OpLoad %_ptr_PhysicalStorageBuffer__struct_66 %187
+        %189 = OpAccessChain %_ptr_PhysicalStorageBuffer__ptr_PhysicalStorageBuffer__struct_64 %188 %uint_0
+        %190 = OpLoad %_ptr_PhysicalStorageBuffer__struct_64 %189 Aligned 8
+        %191 = OpAccessChain %_ptr_PhysicalStorageBuffer_uint %190 %uint_2 %185
+               OpStore %191 %82 Aligned 8
+               OpBranch %85
+         %85 = OpLabel
+               OpReturn
+               OpFunctionEnd        
+    )";
+
+    VkShaderObj vs(this, kVertexDrawPassthroughGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, spv_shader_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    
+    vkt::Buffer printf_buffer(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer root_node_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer root_node_ptr_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+
+    {
+        uint32_t *printf_buffer_ptr = (uint32_t*)printf_buffer.Memory().Map();
+        std::memset(printf_buffer_ptr, 0, (size_t)printf_buffer.CreateInfo().size);
+        printf_buffer_ptr[0] = uint32_t(printf_buffer.CreateInfo().size / sizeof(uint32_t));
+        printf_buffer.Memory().Unmap();
+    }
+    {
+        VkDeviceAddress *root_node_buffer_ptr = (VkDeviceAddress*)root_node_buffer.Memory().Map();
+        root_node_buffer_ptr[0] = printf_buffer.Address();
+        root_node_buffer.Memory().Unmap();
+    }
+    {
+        VkDeviceAddress *root_node_ptr_buffer_ptr = (VkDeviceAddress*)root_node_ptr_buffer.Memory().Map();
+        root_node_ptr_buffer_ptr[0] = root_node_buffer.Address();
+        root_node_ptr_buffer.Memory().Unmap();
+    }
+
+    OneOffDescriptorSet fragment_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}});
+    fragment_set.WriteDescriptorBufferInfo(0, root_node_ptr_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    fragment_set.UpdateDescriptorSets();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.pipeline_layout_ = vkt::PipelineLayout (*m_device, {&fragment_set.layout_});
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_, 0, 1, &fragment_set.set_, 0,
+                              nullptr);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);    
+
+    {
+        uint32_t *printf_buffer_ptr = (uint32_t*)printf_buffer.Memory().Map();
+        VkMappedMemoryRange mem_range = vku::InitStructHelper();
+        mem_range.memory = printf_buffer.Memory().handle();
+        mem_range.offset = 0;
+        mem_range.size = VK_WHOLE_SIZE;
+        vk::InvalidateMappedMemoryRanges(device(), 1, &mem_range);
+        ASSERT_EQ(printf_buffer_ptr[0], 256);
+        ASSERT_EQ(printf_buffer_ptr[1], 26);
+        ASSERT_EQ(printf_buffer_ptr[2], 13);
+        ASSERT_EQ(printf_buffer_ptr[3], 2);
+        ASSERT_EQ(printf_buffer_ptr[4], 67);
+        ASSERT_EQ(printf_buffer_ptr[5], 40);
+        ASSERT_EQ(printf_buffer_ptr[6], 0);
+        ASSERT_EQ(printf_buffer_ptr[7], 0);
+        ASSERT_EQ(printf_buffer_ptr[8], 0);
+        ASSERT_EQ(printf_buffer_ptr[9], 4);
+        ASSERT_EQ(printf_buffer_ptr[10], 1093140480);
+        ASSERT_EQ(printf_buffer_ptr[11], 1093140480);
+        ASSERT_EQ(printf_buffer_ptr[12], 0);
+        ASSERT_EQ(printf_buffer_ptr[13], 1093140480);
+        ASSERT_EQ(printf_buffer_ptr[14], 1093140480);
+        ASSERT_EQ(printf_buffer_ptr[15], 13);
+        ASSERT_EQ(printf_buffer_ptr[16], 2);
+        ASSERT_EQ(printf_buffer_ptr[17], 67);
+        ASSERT_EQ(printf_buffer_ptr[18], 40);
+        ASSERT_EQ(printf_buffer_ptr[19], 0);
+        ASSERT_EQ(printf_buffer_ptr[20], 0);
+        ASSERT_EQ(printf_buffer_ptr[21], 0);
+        ASSERT_EQ(printf_buffer_ptr[22], 4);
+        ASSERT_EQ(printf_buffer_ptr[23], 1093140480);
+        ASSERT_EQ(printf_buffer_ptr[24], 1094189056);
+        ASSERT_EQ(printf_buffer_ptr[25], 0);
+        ASSERT_EQ(printf_buffer_ptr[26], 1093140480);
+        ASSERT_EQ(printf_buffer_ptr[27], 1094189056);
+        printf_buffer.Memory().Unmap();
+    }
+
+}
