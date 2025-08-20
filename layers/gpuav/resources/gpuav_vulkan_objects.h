@@ -143,8 +143,8 @@ class GpuResourcesManager {
 
         struct CachedBufferBlock {
             vko::Buffer buffer;
-            vvl::range<VkDeviceSize> total_range;
-            vvl::range<VkDeviceSize> used_range;
+            vvl::range<VkDeviceAddress> total_addr_range;
+            vvl::range<VkDeviceAddress> used_addr_range;
         };
 
         std::vector<CachedBufferBlock> cached_buffers_blocks_{};
