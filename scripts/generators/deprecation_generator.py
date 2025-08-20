@@ -218,6 +218,13 @@ class DeprecationGenerator(BaseGenerator):
                             "{command.name} is deprecated and this {objName} supports {extension}\\nSee more information about this deprecation in the specification: https://docs.vulkan.org/spec/latest/appendices/deprecation.html#{command.deprecate.link}");
                     }}''')
 
+            # For things deprecated in Vulkan 1.0
+            if command.deprecate.version is None and len(command.deprecate.extensions) == 0:
+                out.append(f'''
+                           LogWarning("WARNING-{command.deprecate.link}", {objName}, error_obj.location,
+                            "{command.name} is deprecated.\\nSee more information about this deprecation in the specification: https://docs.vulkan.org/spec/latest/appendices/deprecation.html#{command.deprecate.link}");
+                    ''')
+
             out.append('''
                 return false;
             }
