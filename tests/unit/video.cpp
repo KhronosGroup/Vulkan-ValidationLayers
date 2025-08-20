@@ -1535,22 +1535,24 @@ TEST_F(NegativeVideo, CreateImageProfileIndependent) {
             vk::CreateImage(device(), &image_ci, nullptr, &image);
             m_errorMonitor->VerifyFound();
 
-            // Except when DECODE_DST usage is also requested
-            image_ci.usage |= VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR;
-            vk::CreateImage(device(), &image_ci, nullptr, &image);
-            vk::DestroyImage(device(), image, nullptr);
+            // Except when DECODE_DST usage is also requested, which is only legal when COINCIDE is supported.
+            if (config.SupportsDecodeOutputCoincide()) {
+                image_ci.usage |= VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR;
+                vk::CreateImage(device(), &image_ci, nullptr, &image);
+                vk::DestroyImage(device(), image, nullptr);
 
-            // Profile list is still validated though
-            VkVideoProfileListInfoKHR video_profiles = vku::InitStructHelper();
-            VkVideoProfileInfoKHR profiles[] = {*config.Profile(), *config.Profile()};
-            video_profiles.profileCount = 2;
-            video_profiles.pProfiles = profiles;
-            image_ci.pNext = &video_profiles;
+                // Profile list is still validated though
+                VkVideoProfileListInfoKHR video_profiles = vku::InitStructHelper();
+                VkVideoProfileInfoKHR profiles[] = {*config.Profile(), *config.Profile()};
+                video_profiles.profileCount = 2;
+                video_profiles.pProfiles = profiles;
+                image_ci.pNext = &video_profiles;
 
-            m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-pNext-06811");
-            m_errorMonitor->SetDesiredError("VUID-VkVideoProfileListInfoKHR-pProfiles-06813");
-            vk::CreateImage(device(), &image_ci, nullptr, &image);
-            m_errorMonitor->VerifyFound();
+                m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-pNext-06811");
+                m_errorMonitor->SetDesiredError("VUID-VkVideoProfileListInfoKHR-pProfiles-06813");
+                vk::CreateImage(device(), &image_ci, nullptr, &image);
+                m_errorMonitor->VerifyFound();
+            }
         }
 
         if (config.IsEncode()) {
