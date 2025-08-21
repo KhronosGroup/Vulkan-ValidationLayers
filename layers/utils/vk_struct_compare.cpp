@@ -18,6 +18,7 @@
 #include "utils/vk_struct_compare.h"
 #include "utils/image_utils.h"
 #include <vulkan/utility/vk_struct_helper.hpp>
+#include <cstring>
 
 static inline bool ComparePipelineSampleLocationsStateCreateInfo(const VkPipelineSampleLocationsStateCreateInfoEXT &a,
                                                                  const VkPipelineSampleLocationsStateCreateInfoEXT &b) {
@@ -96,57 +97,61 @@ static inline bool CompareSamplerBorderColorComponentMappingCreateInfo(const VkS
 
 static inline bool CompareSamplerCustomBorderColorCreateInfo(const VkSamplerCustomBorderColorCreateInfoEXT &a,
                                                              const VkSamplerCustomBorderColorCreateInfoEXT &b) {
-    return (a.format == b.format);
+    return (memcmp(a.customBorderColor.uint32, b.customBorderColor.uint32,
+                   sizeof(VkSamplerCustomBorderColorCreateInfoEXT::customBorderColor)) == 0 &&
+            a.format == b.format);
 }
+// to be sure there are gaps between fields and its safe to use memcmp
+static_assert(sizeof(VkSamplerCustomBorderColorCreateInfoEXT::customBorderColor) == 16);
 
 bool CompareSamplerCreateInfo(const VkSamplerCreateInfo &a, const VkSamplerCreateInfo &b) {
-    if (a.pNext && b.pNext) {
-        auto *a_ycbcr_conversion = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(a.pNext);
-        auto *b_ycbcr_conversion = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(b.pNext);
-        if (a_ycbcr_conversion && b_ycbcr_conversion) {
-            if (!CompareSamplerYcbcrConversionInfo(*a_ycbcr_conversion, *b_ycbcr_conversion)) {
-                return false;
-            }
-        } else if (a_ycbcr_conversion != b_ycbcr_conversion) {
-            return false;  // both are not null
+    // VkSamplerYcbcrConversionInfo
+    auto *a_ycbcr_conversion = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(a.pNext);
+    auto *b_ycbcr_conversion = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(b.pNext);
+    if (a_ycbcr_conversion || b_ycbcr_conversion) {  // at least one not null
+        if (!a_ycbcr_conversion || !b_ycbcr_conversion) {
+            return false;  // one null, other not null
         }
-
-        // "If this structure is not present, reductionMode is considered to be VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE"
-        VkSamplerReductionMode a_reduction_mode = VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE;
-        VkSamplerReductionMode b_reduction_mode = VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE;
-        if (auto *a_reduction_mode_ci = vku::FindStructInPNextChain<VkSamplerReductionModeCreateInfo>(a.pNext)) {
-            a_reduction_mode = a_reduction_mode_ci->reductionMode;
-        }
-        if (auto *b_reduction_mode_ci = vku::FindStructInPNextChain<VkSamplerReductionModeCreateInfo>(b.pNext)) {
-            b_reduction_mode = b_reduction_mode_ci->reductionMode;
-        }
-        if (a_reduction_mode != b_reduction_mode) {
+        if (!CompareSamplerYcbcrConversionInfo(*a_ycbcr_conversion, *b_ycbcr_conversion)) {
             return false;
         }
-
-        auto *a_component_mapping = vku::FindStructInPNextChain<VkSamplerBorderColorComponentMappingCreateInfoEXT>(a.pNext);
-        auto *b_component_mapping = vku::FindStructInPNextChain<VkSamplerBorderColorComponentMappingCreateInfoEXT>(b.pNext);
-        if (a_component_mapping && b_component_mapping) {
-            if (!CompareSamplerBorderColorComponentMappingCreateInfo(*a_component_mapping, *b_component_mapping)) {
-                return false;
-            }
-        } else if (a_component_mapping != b_component_mapping) {
-            return false;  // both are not null
-        }
-
-        auto *a_border_color = vku::FindStructInPNextChain<VkSamplerCustomBorderColorCreateInfoEXT>(a.pNext);
-        auto *b_border_color = vku::FindStructInPNextChain<VkSamplerCustomBorderColorCreateInfoEXT>(b.pNext);
-        if (a_border_color && b_border_color) {
-            if (!CompareSamplerCustomBorderColorCreateInfo(*a_border_color, *b_border_color)) {
-                return false;
-            }
-        } else if (a_border_color != b_border_color) {
-            return false;  // both are not null
-        }
-    } else if (a.pNext != b.pNext) {
-        return false;  // both are not null
     }
-
+    // VkSamplerBorderColorComponentMappingCreateInfoEXT
+    auto *a_component_mapping = vku::FindStructInPNextChain<VkSamplerBorderColorComponentMappingCreateInfoEXT>(a.pNext);
+    auto *b_component_mapping = vku::FindStructInPNextChain<VkSamplerBorderColorComponentMappingCreateInfoEXT>(b.pNext);
+    if (a_component_mapping || b_component_mapping) {  // at least one not null
+        if (!a_component_mapping || !b_component_mapping) {
+            return false;  // one null, other not null
+        }
+        if (!CompareSamplerBorderColorComponentMappingCreateInfo(*a_component_mapping, *b_component_mapping)) {
+            return false;
+        }
+    }
+    // VkSamplerCustomBorderColorCreateInfoEXT
+    auto *a_border_color = vku::FindStructInPNextChain<VkSamplerCustomBorderColorCreateInfoEXT>(a.pNext);
+    auto *b_border_color = vku::FindStructInPNextChain<VkSamplerCustomBorderColorCreateInfoEXT>(b.pNext);
+    if (a_border_color || b_border_color) {  // at least one not null
+        if (!a_border_color || !b_border_color) {
+            return false;  // one null, other not null
+        }
+        if (!CompareSamplerCustomBorderColorCreateInfo(*a_border_color, *b_border_color)) {
+            return false;
+        }
+    }
+    // VkSamplerReductionModeCreateInfo
+    auto get_reduction_mode = [](const VkSamplerCreateInfo &ci) {
+        if (auto *reduction_mode_ci = vku::FindStructInPNextChain<VkSamplerReductionModeCreateInfo>(ci.pNext)) {
+            return reduction_mode_ci->reductionMode;
+        }
+        // AVERAGE is default reduction mode (used when pNext does not specify VkSamplerReductionModeCreateInfo)
+        return VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE;
+    };
+    const VkSamplerReductionMode a_reduction_mode = get_reduction_mode(a);
+    const VkSamplerReductionMode b_reduction_mode = get_reduction_mode(b);
+    if (a_reduction_mode != b_reduction_mode) {
+        return false;
+    }
+    // Commons
     return (a.flags == b.flags) && (a.magFilter == b.magFilter) && (a.minFilter == b.minFilter) && (a.mipmapMode == b.mipmapMode) &&
            (a.addressModeU == b.addressModeU) && (a.addressModeV == b.addressModeV) && (a.addressModeW == b.addressModeW) &&
            (a.mipLodBias == b.mipLodBias) && (a.anisotropyEnable == b.anisotropyEnable) && (a.maxAnisotropy == b.maxAnisotropy) &&

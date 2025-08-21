@@ -741,8 +741,6 @@ class CoreChecks : public vvl::DeviceProxy {
                            const vvl::CommandBuffer& cb_state, const vvl::DrawDispatchVuid& vuid,
                            const LogObjectList& objlist) const;
 
-    bool ImmutableSamplersAreEqual(const VkDescriptorSetLayoutBinding& b1, const VkDescriptorSetLayoutBinding& b2,
-                                   bool& out_exception) const;
     bool VerifyDescriptorSetLayoutIsCompatibile(const vvl::DescriptorSetLayout& reference_dsl,
                                                 const vvl::DescriptorSetLayout& to_bind_dsl, std::string& error_msg) const;
     bool VerifyDescriptorSetIsCompatibile(const vvl::DescriptorSet& to_bind_descriptor_set,

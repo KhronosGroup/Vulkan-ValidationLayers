@@ -1172,8 +1172,13 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
 bool DescriptorValidator::ValidateSamplerDescriptor(const spirv::ResourceInterfaceVariable &resource_variable, uint32_t index,
                                                     VkSampler sampler, bool is_immutable, const Sampler *sampler_state) const {
     bool skip = false;
+
+    // maintenance4 specifies that pipeline layout and its children (set layout, immutable samplers)
+    // are not accessed after they were used to create another object and can be destroyed.
+    const bool can_be_destroyed = is_immutable && dev_proxy.enabled_features.maintenance4;
+
     // Verify Sampler still valid
-    if (!sampler_state || sampler_state->Destroyed()) {
+    if (!sampler_state || (sampler_state->Destroyed() && !can_be_destroyed)) {
         const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle());
         skip |= LogError(vuids->descriptor_buffer_bit_set_08114, objlist, loc.Get(),
                          "the %s is using sampler %s that is invalid or has been destroyed.%s",

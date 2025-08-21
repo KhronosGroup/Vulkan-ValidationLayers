@@ -18,45 +18,113 @@
 
 // Includes everything needed for overloading std::hash
 #include "hash_util.h"
+#include "vk_struct_compare.h"
 
 #include <vulkan/vulkan.h>
 #include <vulkan/utility/vk_safe_struct.hpp>
+#include <vulkan/utility/vk_struct_helper.hpp>
 #include <vector>
 
+//
 // Hash and equality and/or compare functions for selected Vk types (and useful collections thereof)
+//
 
-// VkDescriptorSetLayoutBinding
-static inline bool operator==(const vku::safe_VkDescriptorSetLayoutBinding &lhs, const vku::safe_VkDescriptorSetLayoutBinding &rhs) {
-    if ((lhs.binding != rhs.binding) || (lhs.descriptorType != rhs.descriptorType) ||
-        (lhs.descriptorCount != rhs.descriptorCount) || (lhs.stageFlags != rhs.stageFlags) ||
-        !hash_util::SimilarForNullity(lhs.pImmutableSamplers, rhs.pImmutableSamplers)) {
-        return false;
-    }
-    if (lhs.pImmutableSamplers) {  // either one will do as they *are* similar for nullity (i.e. either both null or both non-null)
-        for (uint32_t samp = 0; samp < lhs.descriptorCount; samp++) {
-            if (lhs.pImmutableSamplers[samp] != rhs.pImmutableSamplers[samp]) {
-                return false;
-            }
-        }
-    }
-    return true;
-}
+// We do not provide a hasher directly for VkDescriptorSetLayoutBinding structure because
+// immutable samplers in the context of pipeline layout compatibility can't be compared
+// by comparing their VkSampler handles. The immutable samplers are compared based on their
+// create parameters. DescriptorSetLayoutBindingHashingData allows to specify a hash that is
+// computed based on sampler create parameters. This hash is a combined hash that combine
+// hashes of all samplers from the same binding.
+struct DescriptorSetLayoutBindingHashingData {
+    const VkDescriptorSetLayoutBinding &binding;
+    size_t immutable_samplers_combined_hash = 0;
+};
 
 namespace std {
 template <>
-struct hash<vku::safe_VkDescriptorSetLayoutBinding> {
-    size_t operator()(const vku::safe_VkDescriptorSetLayoutBinding &value) const {
+struct hash<DescriptorSetLayoutBindingHashingData> {
+    size_t operator()(const DescriptorSetLayoutBindingHashingData &value) const {
         hash_util::HashCombiner hc;
-        hc << value.binding << value.descriptorType << value.descriptorCount << value.stageFlags;
-        if (value.pImmutableSamplers) {
-            for (uint32_t samp = 0; samp < value.descriptorCount; samp++) {
-                hc << value.pImmutableSamplers[samp];
-            }
-        }
+        const VkDescriptorSetLayoutBinding &binding = value.binding;
+        hc << binding.binding << binding.descriptorType << binding.descriptorCount << binding.stageFlags;
+        hc << value.immutable_samplers_combined_hash;
         return hc.Value();
     }
 };
 }  // namespace std
+
+// VkSamplerCreateInfo and its pNexts
+static inline void HashCombineSamplerYcbcrConversionInfo(hash_util::HashCombiner &hc, const VkSamplerYcbcrConversionInfo &value) {
+    // TODO: clarify if conversion should be hashed based on parameters and not just by handle (similar to immutable samplers)
+    hc << value.conversion;
+}
+
+static inline void HashCombineSamplerBorderColorComponentMappingCreateInfo(
+    hash_util::HashCombiner &hc, const VkSamplerBorderColorComponentMappingCreateInfoEXT &value) {
+    hc << value.components.r;
+    hc << value.components.g;
+    hc << value.components.b;
+    hc << value.components.a;
+    hc << value.srgb;
+}
+
+static inline void HashCombineSamplerCustomBorderColorCreateInfo(hash_util::HashCombiner &hc,
+                                                                 const VkSamplerCustomBorderColorCreateInfoEXT &value) {
+    hc << value.customBorderColor.uint32[0];
+    hc << value.customBorderColor.uint32[1];
+    hc << value.customBorderColor.uint32[2];
+    hc << value.customBorderColor.uint32[3];
+    hc << value.format;
+}
+
+static inline void HashCombineSamplerReductionModeCreateInfo(hash_util::HashCombiner &hc,
+                                                             const VkSamplerReductionModeCreateInfo *p_value) {
+    if (p_value) {
+        hc << p_value->reductionMode;
+    } else {
+        // Default reduction mode
+        hc << VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE;
+    }
+}
+
+static inline void HashCombineSamplerCreateInfo(hash_util::HashCombiner &hc, const VkSamplerCreateInfo &value) {
+    hc << value.flags;
+    hc << value.magFilter;
+    hc << value.minFilter;
+    hc << value.mipmapMode;
+    hc << value.addressModeU;
+    hc << value.addressModeV;
+    hc << value.addressModeW;
+    hc << value.mipLodBias;
+    hc << value.anisotropyEnable;
+    hc << value.maxAnisotropy;
+    hc << value.compareEnable;
+    hc << value.compareOp;
+    hc << value.minLod;
+    hc << value.maxLod;
+    hc << value.borderColor;
+    hc << value.unnormalizedCoordinates;
+
+    if (auto *ycbcr_conversion = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(value.pNext)) {
+        HashCombineSamplerYcbcrConversionInfo(hc, *ycbcr_conversion);
+    }
+    if (auto *component_mapping = vku::FindStructInPNextChain<VkSamplerBorderColorComponentMappingCreateInfoEXT>(value.pNext)) {
+        HashCombineSamplerBorderColorComponentMappingCreateInfo(hc, *component_mapping);
+    }
+    if (auto *border_color = vku::FindStructInPNextChain<VkSamplerCustomBorderColorCreateInfoEXT>(value.pNext)) {
+        HashCombineSamplerCustomBorderColorCreateInfo(hc, *border_color);
+    }
+    // NOTE: do not have condition for reduction mode because hashing function runs logic
+    // for default reduction mode when pNext is null
+    auto *reduction_mode = vku::FindStructInPNextChain<VkSamplerReductionModeCreateInfo>(value.pNext);
+    HashCombineSamplerReductionModeCreateInfo(hc, reduction_mode);
+}
+
+static inline size_t HashSamplerCreateInfo(const VkSamplerCreateInfo &value) {
+    hash_util::HashCombiner hc;
+    HashCombineSamplerCreateInfo(hc, value);
+    return hc.Value();
+}
 
 // VkPushConstantRange
 static inline bool operator==(const VkPushConstantRange &lhs, const VkPushConstantRange &rhs) {

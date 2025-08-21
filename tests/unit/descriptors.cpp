@@ -5870,6 +5870,31 @@ TEST_F(NegativeDescriptors, DuplicateLayoutDifferentSampler) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeDescriptors, DuplicateLayoutDifferentSampler2) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    RETURN_IF_SKIP(Init());
+    auto sampler_ci = SafeSaneSamplerCreateInfo();
+    vkt::Sampler sampler_0(*m_device, sampler_ci);
+    sampler_ci.maxLod = 8.0;
+    vkt::Sampler sampler_1(*m_device, sampler_ci);
+
+    OneOffDescriptorSet ds_0(m_device,
+                             {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, &sampler_0.handle()}});
+    const vkt::PipelineLayout pipeline_layout_0(*m_device, {&ds_0.layout_});
+
+    OneOffDescriptorSet ds_1(m_device,
+                             {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, &sampler_1.handle()}});
+    sampler_1.Destroy();
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-00358");
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_0, 0, 1, &ds_1.set_, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeDescriptors, DuplicateLayoutDifferentSamplerArray) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8497");
     RETURN_IF_SKIP(Init());
