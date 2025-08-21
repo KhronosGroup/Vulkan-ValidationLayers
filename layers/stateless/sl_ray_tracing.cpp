@@ -1141,13 +1141,13 @@ bool Device::ValidateAccelerationStructureBuildGeometryInfoKHR(const Context &co
                 skip |= LogError(
                     "VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-vertexData-10420", handle,
                     geometry_loc.pNext(Struct::VkAccelerationStructureGeometryLinearSweptSpheresDataNV).dot(Field::vertexData),
-                    "The memory address in vertexData must not be 0 or `NULL'");
+                    "must not be 0 or NULL");
             }
             if (!sphere_linear_struct->radiusData.deviceAddress && !sphere_linear_struct->radiusData.hostAddress) {
                 skip |= LogError(
                     "VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-radiusData-10425", handle,
                     geometry_loc.pNext(Struct::VkAccelerationStructureGeometryLinearSweptSpheresDataNV).dot(Field::radiusData),
-                    "The memory address in radiusData must not be 0 or `NULL'");
+                    "must not be 0 or NULL");
             }
         }
         if (info.type == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR && geom.geometryType != VK_GEOMETRY_TYPE_INSTANCES_KHR) {

@@ -21,7 +21,6 @@ TEST_F(NegativeRayTracingSpheres, SpheresMisalignedVertexStride) {
     TEST_DESCRIPTION("Validate vertexStride must be a multiple of the size in bytes of the smallest component of vertexFormat");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::rayQuery);
     AddRequiredFeature(vkt::Feature::spheres);
@@ -42,7 +41,6 @@ TEST_F(NegativeRayTracingSpheres, SpheresMisalignedVertexStride) {
 TEST_F(NegativeRayTracingSpheres, SpheresInvalidStride) {
     TEST_DESCRIPTION("Validate vertexStride and radiusStride must be less than or equal to 2^32-1");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::rayQuery);
@@ -76,7 +74,6 @@ TEST_F(NegativeRayTracingSpheres, SpheresInvalidVertexFormat) {
         "Validate the format features of vertexFormat must contain VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::rayQuery);
     AddRequiredFeature(vkt::Feature::spheres);
@@ -109,7 +106,6 @@ TEST_F(NegativeRayTracingSpheres, SpheresInvalidRadiusFormat) {
         "VK_FORMAT_FEATURE_2_ACCELERATION_STRUCTURE_RADIUS_BUFFER_BIT_NV");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::rayQuery);
     AddRequiredFeature(vkt::Feature::spheres);
@@ -139,7 +135,6 @@ TEST_F(NegativeRayTracingSpheres, SpheresInvalidIndexType) {
     TEST_DESCRIPTION("indexType must be VK_INDEX_TYPE_UINT16, VK_INDEX_TYPE_UINT32, or VK_INDEX_TYPE_NONE_KHR");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::rayQuery);
     AddRequiredFeature(vkt::Feature::spheres);
@@ -165,7 +160,6 @@ TEST_F(NegativeRayTracingSpheres, LSSpheresMisalignedVertexStride) {
     TEST_DESCRIPTION("vertexStride must be a multiple of the size in bytes of the smallest component of vertexFormat");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::rayQuery);
     AddRequiredFeature(vkt::Feature::spheres);
@@ -187,7 +181,6 @@ TEST_F(NegativeRayTracingSpheres, LSSpheresMisalignedVertexStride) {
 TEST_F(NegativeRayTracingSpheres, LSSpheresInvalidStride) {
     TEST_DESCRIPTION("vertexStride and radiusStride must be less than or equal to 2^32-1");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::rayQuery);
@@ -222,7 +215,6 @@ TEST_F(NegativeRayTracingSpheres, LSSpheresInvalidVertexFormat) {
         "The format features of vertexFormat must contain VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::rayQuery);
     AddRequiredFeature(vkt::Feature::spheres);
@@ -252,7 +244,6 @@ TEST_F(NegativeRayTracingSpheres, LSSpheresInvalidRadiusFormat) {
     TEST_DESCRIPTION(
         "The format features of radiusFormat must contain VK_FORMAT_FEATURE_2_ACCELERATION_STRUCTURE_RADIUS_BUFFER_BIT_NV");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::rayQuery);
@@ -285,7 +276,6 @@ TEST_F(NegativeRayTracingSpheres, LSSpheresInvalidIndexType) {
     AddRequiredExtensions(VK_KHR_INDEX_TYPE_UINT8_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::indexTypeUint8);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::rayQuery);
     AddRequiredFeature(vkt::Feature::spheres);
@@ -308,7 +298,6 @@ TEST_F(NegativeRayTracingSpheres, LSSpheresInvalidIndexType) {
 TEST_F(NegativeRayTracingSpheres, LSSpheresIndexDataNull) {
     TEST_DESCRIPTION("When indexingMode is VK_RAY_TRACING_LSS_INDEXING_MODE_SUCCESSIVE_NV, indexData must be provided");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::rayQuery);
@@ -336,7 +325,6 @@ TEST_F(NegativeRayTracingSpheres, SpheresVertexDataNull) {
     TEST_DESCRIPTION("The memory address in vertexData must not be 0 or `NULL'");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::rayQuery);
     AddRequiredFeature(vkt::Feature::spheres);
@@ -361,7 +349,6 @@ TEST_F(NegativeRayTracingSpheres, SpheresRadiusDataNull) {
     TEST_DESCRIPTION("The memory address in radiusData must not be 0 or `NULL'");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::rayQuery);
     AddRequiredFeature(vkt::Feature::spheres);
@@ -384,7 +371,6 @@ TEST_F(NegativeRayTracingSpheres, SpheresRadiusDataNull) {
 TEST_F(NegativeRayTracingSpheres, LSSpheresVertexDataNull) {
     TEST_DESCRIPTION("The memory address in vertexData must not be 0 or `NULL'");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::rayQuery);
@@ -410,7 +396,6 @@ TEST_F(NegativeRayTracingSpheres, LSSpheresRadiusDataNull) {
     TEST_DESCRIPTION("The memory address in radiusData must not be 0 or `NULL'");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::rayQuery);
     AddRequiredFeature(vkt::Feature::spheres);
@@ -434,7 +419,6 @@ TEST_F(NegativeRayTracingSpheres, LSSpheresFeatureDisabled) {
     TEST_DESCRIPTION("The linearSweptSpheres feature must be enabled");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::rayQuery);
     AddRequiredFeature(vkt::Feature::spheres);
@@ -456,7 +440,6 @@ TEST_F(NegativeRayTracingSpheres, SpheresFeatureDisabled) {
     TEST_DESCRIPTION("The spheres feature must be enabled");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::rayQuery);
     AddRequiredFeature(vkt::Feature::linearSweptSpheres);
@@ -475,7 +458,6 @@ TEST_F(NegativeRayTracingSpheres, SpheresFeatureDisabled) {
 TEST_F(NegativeRayTracingSpheres, SpheresVertexDataNullParameter) {
     TEST_DESCRIPTION("Test that vertexData must not be NULL");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::rayQuery);

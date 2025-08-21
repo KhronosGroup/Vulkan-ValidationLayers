@@ -54,24 +54,23 @@ class GeometryKHR {
         vkt::Buffer buffer;
     };
     struct Spheres {
-      vkt::Buffer device_vertex_buffer;
-      std::unique_ptr<float[]> host_vertex_buffer;
-      vkt::Buffer device_index_buffer;
-      std::unique_ptr<uint32_t[]> host_index_buffer;
-      vkt::Buffer device_radius_buffer;
-      std::unique_ptr<float[]> host_radius_buffer;
-      std::shared_ptr<VkAccelerationStructureGeometrySpheresDataNV> sphere_geometry_ptr;
+        vkt::Buffer device_vertex_buffer;
+        std::unique_ptr<float[]> host_vertex_buffer;
+        vkt::Buffer device_index_buffer;
+        std::unique_ptr<uint32_t[]> host_index_buffer;
+        vkt::Buffer device_radius_buffer;
+        std::unique_ptr<float[]> host_radius_buffer;
+        std::shared_ptr<VkAccelerationStructureGeometrySpheresDataNV> sphere_geometry_ptr;
     };
     struct LSSpheres {
-      vkt::Buffer device_vertex_buffer;
-      std::unique_ptr<float[]> host_vertex_buffer;
-      vkt::Buffer device_index_buffer;
-      std::unique_ptr<uint32_t[]> host_index_buffer;
-      vkt::Buffer device_radius_buffer;
-      std::unique_ptr<float[]> host_radius_buffer;
-      std::shared_ptr<VkAccelerationStructureGeometryLinearSweptSpheresDataNV> sphere_geometry_ptr;
+        vkt::Buffer device_vertex_buffer;
+        std::unique_ptr<float[]> host_vertex_buffer;
+        vkt::Buffer device_index_buffer;
+        std::unique_ptr<uint32_t[]> host_index_buffer;
+        vkt::Buffer device_radius_buffer;
+        std::unique_ptr<float[]> host_radius_buffer;
+        std::shared_ptr<VkAccelerationStructureGeometryLinearSweptSpheresDataNV> sphere_geometry_ptr;
     };
-
 
     ~GeometryKHR() = default;
     GeometryKHR();
@@ -119,10 +118,11 @@ class GeometryKHR {
     GeometryKHR& SetSpheresRadiusFormat(VkFormat radius_format);
     GeometryKHR& SetSpheresDeviceVertexBuffer(vkt::Buffer&& vertex_buffer, VkFormat vertex_format = VK_FORMAT_R32G32B32_SFLOAT,
                                               VkDeviceSize stride = 3 * sizeof(float));
-    GeometryKHR& SetSpheresDeviceIndexBuffer(vkt::Buffer&& index_buffer, VkIndexType index_type = VK_INDEX_TYPE_UINT32);
+    GeometryKHR& SetSpheresDeviceIndexBuffer(vkt::Buffer&& index_buffer, VkIndexType index_type = VK_INDEX_TYPE_UINT32,
+                                             VkDeviceSize stride = sizeof(uint32_t));
     GeometryKHR& SetSpheresDeviceRadiusBuffer(vkt::Buffer&& radius_buffer, VkDeviceSize stride = sizeof(float));
     GeometryKHR& SetSpheresHostVertexBuffer(std::unique_ptr<float[]>&& vertex_buffer, VkDeviceSize stride = 3 * sizeof(float));
-    GeometryKHR& SetSpheresHostIndexBuffer(std::unique_ptr<uint32_t[]> index_buffer);
+    GeometryKHR& SetSpheresHostIndexBuffer(std::unique_ptr<uint32_t[]> index_buffer, VkDeviceSize stride = sizeof(uint32_t));
     GeometryKHR& SetSpheresHostRadiusBuffer(std::unique_ptr<float[]> radius_buffer, VkDeviceSize stride = sizeof(float));
     GeometryKHR& SetSpheresIndexType(VkIndexType index_type);
     GeometryKHR& SetSpheresVertexStride(VkDeviceSize stride);
@@ -135,10 +135,11 @@ class GeometryKHR {
     GeometryKHR& SetLSSpheresRadiusFormat(VkFormat radius_format);
     GeometryKHR& SetLSSpheresDeviceVertexBuffer(vkt::Buffer&& vertex_buffer, VkFormat vertex_format = VK_FORMAT_R32G32B32_SFLOAT,
                                                 VkDeviceSize stride = 3 * sizeof(float));
-    GeometryKHR& SetLSSpheresDeviceIndexBuffer(vkt::Buffer&& index_buffer, VkIndexType index_type = VK_INDEX_TYPE_UINT32);
+    GeometryKHR& SetLSSpheresDeviceIndexBuffer(vkt::Buffer&& index_buffer, VkIndexType index_type = VK_INDEX_TYPE_UINT32,
+                                               VkDeviceSize stride = sizeof(uint32_t));
     GeometryKHR& SetLSSpheresDeviceRadiusBuffer(vkt::Buffer&& radius_buffer, VkDeviceSize stride = sizeof(float));
     GeometryKHR& SetLSSpheresHostVertexBuffer(std::unique_ptr<float[]>&& vertex_buffer, VkDeviceSize stride = 3 * sizeof(float));
-    GeometryKHR& SetLSSpheresHostIndexBuffer(std::unique_ptr<uint32_t[]> index_buffer);
+    GeometryKHR& SetLSSpheresHostIndexBuffer(std::unique_ptr<uint32_t[]> index_buffer, VkDeviceSize stride = sizeof(uint32_t));
     GeometryKHR& SetLSSpheresHostRadiusBuffer(std::unique_ptr<float[]> radius_buffer, VkDeviceSize stride = sizeof(float));
     GeometryKHR& SetLSSpheresIndexType(VkIndexType index_type);
     GeometryKHR& SetLSSpheresVertexStride(VkDeviceSize stride);
@@ -459,7 +460,7 @@ class Pipeline {
     std::vector<VkDynamicState> dynamic_states{};
     std::vector<std::unique_ptr<VkShaderObj>> ray_gen_shaders_{};
     std::vector<std::unique_ptr<VkShaderObj>> miss_shaders_{};
-    std::vector<std::unique_ptr<VkShaderObj>> closest_hit_shaders_ {};
+    std::vector<std::unique_ptr<VkShaderObj>> closest_hit_shaders_{};
     std::vector<VkRayTracingShaderGroupCreateInfoKHR> shader_group_cis_{};
     vkt::Pipeline rt_pipeline_{};
     VkDeferredOperationKHR deferred_op_ = VK_NULL_HANDLE;
