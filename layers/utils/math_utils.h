@@ -20,10 +20,8 @@
 
 #include <bitset>
 #include <cassert>
-#include <cctype>
-#include <cmath>
 #include <cstdint>
-#include <cstring>
+#include <limits>
 #include <type_traits>
 
 #ifdef WIN32

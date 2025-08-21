@@ -19,6 +19,7 @@
 #include "state_tracker/state_object.h"
 #include "utils/hash_util.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
+#include <cmath>
 #include <memory>
 #include <mutex>
 #include <vector>

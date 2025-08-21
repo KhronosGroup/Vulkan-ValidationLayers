@@ -16,7 +16,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <array>
-#include <cstdarg>
 #include <vector>
 
 #include <vulkan/utility/vk_struct_helper.hpp>

@@ -29,10 +29,7 @@
 #include "gpuav/validation_cmd/gpuav_dispatch.h"
 #include "gpuav/validation_cmd/gpuav_draw.h"
 #include "gpuav/validation_cmd/gpuav_trace_rays.h"
-#include "utils/assert_utils.h"
 #include "utils/math_utils.h"
-
-#include <cmath>
 
 namespace gpuav {
 

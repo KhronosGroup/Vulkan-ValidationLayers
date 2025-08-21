@@ -17,12 +17,10 @@
 
 #include <vulkan/vulkan.h>
 #include "gpuav/debug_printf/debug_printf.h"
-#include "chassis/dispatch_object.h"
 #include "gpuav/shaders/gpuav_error_header.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/core/gpuav.h"
-#include "state_tracker/shader_instruction.h"
 #include "error_message/spirv_logging.h"
 
 #include <iostream>

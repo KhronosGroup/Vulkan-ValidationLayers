@@ -19,7 +19,6 @@
  *
  */
 #include "state_tracker/image_layout_map.h"
-#include "state_tracker/image_state.h"
 #include "utils/image_layout_utils.h"
 
 using IndexRange = subresource_adapter::IndexRange;

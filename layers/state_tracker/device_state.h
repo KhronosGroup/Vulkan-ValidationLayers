@@ -18,7 +18,7 @@
  */
 #pragma once
 #include "state_tracker/state_object.h"
-#include "error_message/error_location.h"
+#include "generated/error_location_helper.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
 #include <vector>
 

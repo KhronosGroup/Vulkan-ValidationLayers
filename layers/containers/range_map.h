@@ -22,11 +22,9 @@
 
 #include <algorithm>
 #include <cassert>
-#include <limits>
 #include <map>
 #include <optional>
 #include <utility>
-#include <cstdint>
 #include "containers/range.h"
 #include "containers/container_utils.h"
 

@@ -25,6 +25,7 @@
 #include "containers/container_utils.h"
 #include "utils/math_utils.h"
 #include "utils/image_utils.h"
+#include <cmath>
 
 namespace stateless {
 

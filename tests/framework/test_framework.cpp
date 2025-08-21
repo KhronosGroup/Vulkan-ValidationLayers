@@ -22,8 +22,6 @@
 #include <glslang/Public/ShaderLang.h>
 #include CONFIG_HEADER_FILE
 #include <filesystem>
-#include <cmath>
-#include <cstdarg>
 
 struct SwapchainBuffers {
     VkImage image;

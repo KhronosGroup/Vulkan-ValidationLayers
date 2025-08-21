@@ -19,7 +19,6 @@
 
 #include "generated/error_location_helper.h"
 #include "generated/sync_validation_types.h"
-#include "generated/vk_object_types.h"
 
 class CommandExecutionContext;
 class HazardResult;

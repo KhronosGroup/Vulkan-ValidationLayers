@@ -20,7 +20,6 @@
 #include "external/vma/vma.h"
 
 #include <typeinfo>
-#include <unordered_map>
 #include <vector>
 #include "containers/custom_containers.h"
 #include "containers/range.h"
