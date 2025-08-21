@@ -799,10 +799,11 @@ bool Device::manual_PreCallValidateCopyMemoryToAccelerationStructureKHR(VkDevice
         skip |= LogError("VUID-vkCopyMemoryToAccelerationStructureKHR-accelerationStructureHostCommands-03583", device,
                          error_obj.location, "accelerationStructureHostCommands feature was not enabled.");
     }
-    skip |= context.ValidateRequiredPointer(info_loc.dot(Field::src).dot(Field::hostAddress), pInfo->src.hostAddress,
-                                            "VUID-vkCopyMemoryToAccelerationStructureKHR-pInfo-03729");
 
-    if (SafeModulo((VkDeviceAddress)pInfo->src.hostAddress, 16) != 0) {
+    if (!pInfo->src.hostAddress) {
+        skip |= LogError("VUID-vkCopyMemoryToAccelerationStructureKHR-pInfo-03729", device,
+                         info_loc.dot(Field::src).dot(Field::hostAddress), "is zero.");
+    } else if (SafeModulo((VkDeviceAddress)pInfo->src.hostAddress, 16) != 0) {
         skip |= LogError("VUID-vkCopyMemoryToAccelerationStructureKHR-pInfo-03750", device,
                          info_loc.dot(Field::src).dot(Field::hostAddress), "(0x%" PRIx64 ") must be aligned to 16 bytes.",
                          (VkDeviceAddress)pInfo->src.hostAddress);
@@ -1523,12 +1524,12 @@ bool Device::manual_PreCallValidateBuildAccelerationStructuresKHR(
                                       "VUID-vkBuildAccelerationStructuresKHR-ppBuildRangeInfos-03676");
 
         if (info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR) {
-            if (info.scratchData.hostAddress == nullptr) {
+            if (!info.scratchData.hostAddress) {
                 skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03725", device,
                                  info_loc.dot(Field::scratchData).dot(Field::hostAddress), "is NULL.");
             }
         } else if (info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR) {
-            if (info.scratchData.hostAddress == nullptr) {
+            if (!info.scratchData.hostAddress) {
                 skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03726", device,
                                  info_loc.dot(Field::scratchData).dot(Field::hostAddress), "is NULL.");
             }
@@ -1545,28 +1546,37 @@ bool Device::manual_PreCallValidateBuildAccelerationStructuresKHR(
             switch (geom.geometryType) {
                 case VK_GEOMETRY_TYPE_TRIANGLES_KHR: {
                     const auto &triangles = geom.geometry.triangles;
-                    if (triangles.vertexData.hostAddress == nullptr) {
+                    if (!triangles.vertexData.hostAddress) {
                         skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03771", device,
                                          info_loc.dot(Field::triangles).dot(Field::vertexData).dot(Field::hostAddress), "is NULL.");
                     }
-                    if (triangles.indexType != VK_INDEX_TYPE_NONE_KHR) {
-                        if (triangles.indexData.hostAddress == nullptr) {
-                            skip |=
-                                LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03772", device,
+                    if (triangles.indexType != VK_INDEX_TYPE_NONE_KHR && !triangles.indexData.hostAddress) {
+                        skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03772", device,
                                          info_loc.dot(Field::triangles).dot(Field::indexData).dot(Field::hostAddress), "is NULL.");
+                    }
+
+                    if (const auto *micromap =
+                            vku::FindStructInPNextChain<VkAccelerationStructureTrianglesOpacityMicromapEXT>(triangles.pNext)) {
+                        if (micromap->indexType != VK_INDEX_TYPE_NONE_KHR && !micromap->indexBuffer.hostAddress) {
+                            skip |=
+                                LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-10892", device,
+                                         info_loc.dot(Field::triangles)
+                                             .pNext(Struct::VkAccelerationStructureTrianglesOpacityMicromapEXT, Field::indexBuffer)
+                                             .dot(Field::hostAddress),
+                                         "is NULL.");
                         }
                     }
                     break;
                 }
                 case VK_GEOMETRY_TYPE_AABBS_KHR: {
-                    if (geom.geometry.aabbs.data.hostAddress == nullptr) {
+                    if (!geom.geometry.aabbs.data.hostAddress) {
                         skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03774", device,
                                          info_loc.dot(Field::aabbs).dot(Field::data).dot(Field::hostAddress), "is NULL.");
                     }
                     break;
                 }
                 case VK_GEOMETRY_TYPE_INSTANCES_KHR: {
-                    if (geom.geometry.instances.data.hostAddress == nullptr) {
+                    if (!geom.geometry.instances.data.hostAddress) {
                         skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03778", device,
                                          info_loc.dot(Field::instances).dot(Field::data).dot(Field::hostAddress), "is NULL.");
                     }
@@ -1964,12 +1974,20 @@ bool Device::manual_PreCallValidateCmdBuildMicromapsEXT(VkCommandBuffer commandB
                              info.scratchData.deviceAddress,
                              phys_dev_ext_props.acc_structure_props.minAccelerationStructureScratchOffsetAlignment);
         }
-        if (SafeModulo(info.triangleArray.deviceAddress, 256) != 0) {
+
+        if (info.triangleArray.deviceAddress == 0) {
+            skip |= LogError("VUID-vkCmdBuildMicromapsEXT-pInfos-10897", device,
+                             info_loc.dot(Field::triangleArray).dot(Field::hostAddress), "is NULL.");
+        } else if (SafeModulo(info.triangleArray.deviceAddress, 256) != 0) {
             skip |= LogError("VUID-vkCmdBuildMicromapsEXT-pInfos-07515", commandBuffer,
                              info_loc.dot(Field::triangleArray).dot(Field::deviceAddress),
                              "(%" PRIu64 ") must be a multiple of 256.", info.triangleArray.deviceAddress);
         }
-        if (SafeModulo(info.data.deviceAddress, 256) != 0) {
+
+        if (info.data.deviceAddress == 0) {
+            skip |= LogError("VUID-vkCmdBuildMicromapsEXT-pInfos-10896", device, info_loc.dot(Field::data).dot(Field::hostAddress),
+                             "is NULL.");
+        } else if (SafeModulo(info.data.deviceAddress, 256) != 0) {
             skip |= LogError("VUID-vkCmdBuildMicromapsEXT-pInfos-07515", commandBuffer,
                              info_loc.dot(Field::data).dot(Field::deviceAddress), "(%" PRIu64 ") must be a multiple of 256.",
                              info.data.deviceAddress);
@@ -1991,6 +2009,18 @@ bool Device::manual_PreCallValidateBuildMicromapsEXT(VkDevice device, VkDeferred
     if (!enabled_features.micromapHostCommands) {
         skip |= LogError("VUID-vkBuildMicromapsEXT-micromapHostCommands-07555", device, error_obj.location,
                          "micromapHostCommands feature was not enabled.");
+    }
+
+    for (const auto [info_i, info] : vvl::enumerate(pInfos, infoCount)) {
+        const Location info_loc = error_obj.location.dot(Field::pInfos, info_i);
+        if (!info.data.hostAddress) {
+            skip |= LogError("VUID-vkBuildMicromapsEXT-pInfos-07553", device, info_loc.dot(Field::data).dot(Field::hostAddress),
+                             "is zero.");
+        }
+        if (!info.triangleArray.hostAddress) {
+            skip |= LogError("VUID-vkBuildMicromapsEXT-pInfos-07554", device,
+                             info_loc.dot(Field::triangleArray).dot(Field::hostAddress), "is zero.");
+        }
     }
 
     return skip;
@@ -2032,6 +2062,14 @@ bool Device::manual_PreCallValidateCopyMicromapToMemoryEXT(VkDevice device, VkDe
                          string_VkCopyMicromapModeEXT(pInfo->mode));
     }
 
+    if (!pInfo->dst.hostAddress) {
+        skip |= LogError("VUID-vkCopyMicromapToMemoryEXT-pInfo-07569", device, info_loc.dot(Field::dst).dot(Field::hostAddress),
+                         "is zero.");
+    } else if (SafeModulo((VkDeviceAddress)pInfo->dst.hostAddress, 16) != 0) {
+        skip |= LogError("VUID-vkCopyMicromapToMemoryEXT-pInfo-07570", device, info_loc.dot(Field::dst).dot(Field::hostAddress),
+                         "(0x%" PRIx64 ") must be aligned to 16 bytes.", (VkDeviceAddress)pInfo->dst.hostAddress);
+    }
+
     return skip;
 }
 
@@ -2050,6 +2088,14 @@ bool Device::manual_PreCallValidateCopyMemoryToMicromapEXT(VkDevice device, VkDe
     if (pInfo->mode != VK_COPY_MICROMAP_MODE_DESERIALIZE_EXT) {
         skip |= LogError("VUID-VkCopyMemoryToMicromapInfoEXT-mode-07548", device, info_loc.dot(Field::mode), "is %s.",
                          string_VkCopyMicromapModeEXT(pInfo->mode));
+    }
+
+    if (!pInfo->src.hostAddress) {
+        skip |= LogError("VUID-vkCopyMemoryToMicromapEXT-pInfo-07563", device, info_loc.dot(Field::src).dot(Field::hostAddress),
+                         "is zero.");
+    } else if (SafeModulo((VkDeviceAddress)pInfo->src.hostAddress, 16) != 0) {
+        skip |= LogError("VUID-vkCopyMemoryToMicromapEXT-pInfo-07564", device, info_loc.dot(Field::src).dot(Field::hostAddress),
+                         "(0x%" PRIx64 ") must be aligned to 16 bytes.", (VkDeviceAddress)pInfo->src.hostAddress);
     }
 
     return skip;
@@ -2096,6 +2142,15 @@ bool Device::manual_PreCallValidateCmdCopyMicromapToMemoryEXT(VkCommandBuffer co
                          string_VkCopyMicromapModeEXT(pInfo->mode));
     }
 
+    if (pInfo->dst.deviceAddress == 0) {
+        skip |= LogError("VUID-vkCmdCopyMicromapToMemoryEXT-pInfo-07536", device,
+                         info_loc.dot(Field::dst).dot(Field::deviceAddress), "is NULL.");
+    } else if (SafeModulo((VkDeviceAddress)pInfo->dst.deviceAddress, 256) != 0) {
+        skip |=
+            LogError("VUID-vkCmdCopyMicromapToMemoryEXT-pInfo-07537", device, info_loc.dot(Field::dst).dot(Field::deviceAddress),
+                     "(0x%" PRIx64 ") must be aligned to 256 bytes.", (VkDeviceAddress)pInfo->dst.deviceAddress);
+    }
+
     return skip;
 }
 
@@ -2109,6 +2164,15 @@ bool Device::manual_PreCallValidateCmdCopyMemoryToMicromapEXT(VkCommandBuffer co
     if (pInfo->mode != VK_COPY_MICROMAP_MODE_DESERIALIZE_EXT) {
         skip |= LogError("VUID-VkCopyMemoryToMicromapInfoEXT-mode-07548", commandBuffer, info_loc.dot(Field::mode), "is %s.",
                          string_VkCopyMicromapModeEXT(pInfo->mode));
+    }
+
+    if (pInfo->src.deviceAddress == 0) {
+        skip |= LogError("VUID-vkCmdCopyMemoryToMicromapEXT-pInfo-07543", device,
+                         info_loc.dot(Field::src).dot(Field::deviceAddress), "is NULL.");
+    } else if (SafeModulo((VkDeviceAddress)pInfo->src.deviceAddress, 256) != 0) {
+        skip |=
+            LogError("VUID-vkCmdCopyMemoryToMicromapEXT-pInfo-07544", device, info_loc.dot(Field::src).dot(Field::deviceAddress),
+                     "(0x%" PRIx64 ") must be aligned to 256 bytes.", (VkDeviceAddress)pInfo->src.deviceAddress);
     }
 
     return skip;
