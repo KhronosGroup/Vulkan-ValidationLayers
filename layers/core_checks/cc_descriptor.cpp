@@ -50,43 +50,6 @@
 using DescriptorSetLayoutDef = vvl::DescriptorSetLayoutDef;
 using DescriptorSetLayoutId = vvl::DescriptorSetLayoutId;
 
-bool CoreChecks::ImmutableSamplersAreEqual(const VkDescriptorSetLayoutBinding &b1, const VkDescriptorSetLayoutBinding &b2,
-                                           bool &out_exception) const {
-    if (b1.pImmutableSamplers == b2.pImmutableSamplers) {
-        return true;
-    } else if (b1.pImmutableSamplers && b2.pImmutableSamplers) {
-        if ((b1.descriptorType == b2.descriptorType) &&
-            ((b1.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER) ||
-             (b1.descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)) &&
-            (b1.descriptorCount == b2.descriptorCount)) {
-            out_exception = true;  // If here, we might have two VkSampler that are defined the same
-            for (uint32_t i = 0; i < b1.descriptorCount; ++i) {
-                if (b1.pImmutableSamplers[i] == b2.pImmutableSamplers[i]) {
-                    continue;  // both null or same pointer
-                }
-                auto sampler_state_1 = Get<vvl::Sampler>(b1.pImmutableSamplers[i]);
-                auto sampler_state_2 = Get<vvl::Sampler>(b2.pImmutableSamplers[i]);
-                if (!sampler_state_1 || !sampler_state_2) {
-                    // vkDestroySampler was called, which is valid when using maintenance4 and GPL
-                    // (details in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4348)
-                    // TODO https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10560
-                    // What we really need to do is hash the create info and compare the embedded samplers were created with
-                    // identical create info. This will involve having to add this as part of the DescriptorSetLayoutDef hash
-                    return true;
-                } else if (!CompareSamplerCreateInfo(sampler_state_1->create_info, sampler_state_2->create_info)) {
-                    return false;
-                }
-            }
-            return true;
-        } else {
-            return false;
-        }
-    } else {
-        // One pointer is null, the other is not
-        return false;
-    }
-}
-
 // Check if the |reference_dsl| (from PipelineLayout) is compatibile with |to_bind_dsl|
 // For GPL this is also used, but we don't care which DSL is which
 bool CoreChecks::VerifyDescriptorSetLayoutIsCompatibile(const vvl::DescriptorSetLayout &reference_dsl,
@@ -114,11 +77,10 @@ bool CoreChecks::VerifyDescriptorSetLayoutIsCompatibile(const vvl::DescriptorSet
         return false;  // trivial fail case
     }
 
-    bool exception = false;
     // Descriptor counts match so need to go through bindings one-by-one
     //  and verify that type and stageFlags match
-    for (const auto &layout_binding : reference_ds_layout_def->GetBindings()) {
-        const auto bound_binding = to_bind_ds_layout_def->GetBindingInfoFromBinding(layout_binding.binding);
+    for (const auto [binding_index, layout_binding] : vvl::enumerate(reference_ds_layout_def->GetBindings())) {
+        const auto bound_binding = to_bind_ds_layout_def->GetBindingInfoFromIndex((uint32_t)binding_index);
         if (layout_binding.descriptorCount != bound_binding->descriptorCount) {
             std::stringstream error_str;
             error_str << "Binding " << layout_binding.binding << " for " << FormatHandle(reference_dsl_handle)
@@ -147,7 +109,7 @@ bool CoreChecks::VerifyDescriptorSetLayoutIsCompatibile(const vvl::DescriptorSet
                       << ", trying to bind, has stageFlags " << string_VkShaderStageFlags(bound_binding->stageFlags);
             error_msg = error_str.str();
             return false;
-        } else if (!ImmutableSamplersAreEqual(*layout_binding.ptr(), *bound_binding, exception)) {
+        } else if (!ImmutableSamplersAreEqual(*reference_ds_layout_def, *to_bind_ds_layout_def, (uint32_t)binding_index)) {
             error_msg = "Immutable samplers from binding " + std::to_string(layout_binding.binding) + " in pipeline layout " +
                         FormatHandle(reference_dsl_handle) +
                         " do not match the immutable samplers in the layout currently bound (" + FormatHandle(to_bind_dsl_handle) +
@@ -185,10 +147,7 @@ bool CoreChecks::VerifyDescriptorSetLayoutIsCompatibile(const vvl::DescriptorSet
     }
 
     // If we got here, we failed IsCompatible() but didn't find what was different, likely missing a case
-    //
-    // There are exceptions where this is valid, example is the pImmutableSamplers pointing to 2 different handles are not hashed.
-    // It would be ugly to pass in the state object when hashing with hash_utils, so we just defer until here.
-    assert(exception);
+    assert(false);
     return true;
 }
 
@@ -965,14 +924,14 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet &update, const Loc
                             "(%" PRIu32 ") does not exist in %s.", update.srcBinding, FormatHandle(src_set->Handle()).c_str());
         }
 
-        uint32_t src_start_idx = src_set->GetGlobalIndexRangeFromBinding(update.srcBinding).start + update.srcArrayElement;
+        uint32_t src_start_idx = src_set->GetGlobalIndexRangeFromBinding(update.srcBinding).begin + update.srcArrayElement;
         if ((src_start_idx + update.descriptorCount) > src_set->GetTotalDescriptorCount()) {
             const LogObjectList objlist(update.srcSet, src_layout.Handle());
             skip |= LogError(
                 "VUID-VkCopyDescriptorSet-srcArrayElement-00346", objlist, copy_loc.dot(Field::srcArrayElement),
                 "(%" PRIu32 ") + descriptorCount (%" PRIu32 ") + offset index (%" PRIu32
                 ") is larger than the total descriptors count (%" PRIu32 ") for the binding at srcBinding (%" PRIu32 ").",
-                update.srcArrayElement, update.descriptorCount, src_set->GetGlobalIndexRangeFromBinding(update.srcBinding).start,
+                update.srcArrayElement, update.descriptorCount, src_set->GetGlobalIndexRangeFromBinding(update.srcBinding).begin,
                 src_set->GetTotalDescriptorCount(), update.srcBinding);
         }
     }
@@ -990,14 +949,14 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet &update, const Loc
                             "(%" PRIu32 ") does not exist in %s.", update.dstBinding, FormatHandle(dst_set->Handle()).c_str());
         }
 
-        uint32_t dst_start_idx = dst_layout.GetGlobalIndexRangeFromBinding(update.dstBinding).start + update.dstArrayElement;
+        uint32_t dst_start_idx = dst_layout.GetGlobalIndexRangeFromBinding(update.dstBinding).begin + update.dstArrayElement;
         if ((dst_start_idx + update.descriptorCount) > dst_layout.GetTotalDescriptorCount()) {
             const LogObjectList objlist(update.dstSet, dst_layout.Handle());
             skip |= LogError(
                 "VUID-VkCopyDescriptorSet-dstArrayElement-00348", objlist, copy_loc.dot(Field::dstArrayElement),
                 "(%" PRIu32 ") + descriptorCount (%" PRIu32 ") + offset index (%" PRIu32
                 ") is larger than the total descriptors count (%" PRIu32 ") for the binding at dstBinding (%" PRIu32 ").",
-                update.dstArrayElement, update.descriptorCount, dst_set->GetGlobalIndexRangeFromBinding(update.dstBinding).start,
+                update.dstArrayElement, update.descriptorCount, dst_set->GetGlobalIndexRangeFromBinding(update.dstBinding).begin,
                 dst_set->GetTotalDescriptorCount(), update.dstBinding);
         }
     }

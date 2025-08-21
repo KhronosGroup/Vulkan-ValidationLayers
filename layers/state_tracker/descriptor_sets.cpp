@@ -200,9 +200,11 @@ using DescriptorSetLayoutId = vvl::DescriptorSetLayoutId;
 // Canonical dictionary of DescriptorSetLayoutDef (without any handle/device specific information)
 vvl::DescriptorSetLayoutDict descriptor_set_layout_dict;
 
-DescriptorSetLayoutId GetCanonicalId(const VkDescriptorSetLayoutCreateInfo *p_create_info) {
-    return descriptor_set_layout_dict.LookUp(DescriptorSetLayoutDef(p_create_info));
+static DescriptorSetLayoutId GetCanonicalId(const VkDescriptorSetLayoutCreateInfo *p_create_info, vvl::DeviceState &device_state) {
+    return descriptor_set_layout_dict.LookUp(DescriptorSetLayoutDef(device_state, p_create_info));
 }
+
+void ClearDescriptorSetLayoutCanonicalIdDict() { descriptor_set_layout_dict.Clear(); }
 
 std::string DescriptorSetLayoutDef::DescribeDifference(uint32_t index, const DescriptorSetLayoutDef &other) const {
     std::ostringstream ss;
@@ -255,9 +257,7 @@ std::string DescriptorSetLayoutDef::DescribeDifference(uint32_t index, const Des
                 for (uint32_t s = 0; s < l.descriptorCount; s++) {
                     if (l.pImmutableSamplers[s] != r.pImmutableSamplers[s]) {
                         ss << "binding " << i << " pImmutableSamplers[" << s << "] " << l.pImmutableSamplers[s] << " doesn't match "
-                           << r.pImmutableSamplers[s]
-                           << " (If the VkSamplerCreateInfo is the same, it is actually valid, this is a known VVL bug "
-                              "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10560)";
+                           << r.pImmutableSamplers[s];
                         break;
                     }
                 }
@@ -274,13 +274,13 @@ std::string DescriptorSetLayoutDef::DescribeDifference(uint32_t index, const Des
 
 // Construct DescriptorSetLayout instance from given create info
 // Proactively reserve and resize as possible, as the reallocation was visible in profiling
-vvl::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescriptorSetLayoutCreateInfo *p_create_info)
+vvl::DescriptorSetLayoutDef::DescriptorSetLayoutDef(vvl::DeviceState &device_state,
+                                                    const VkDescriptorSetLayoutCreateInfo *p_create_info)
     : flags_(p_create_info->flags),
       binding_count_(0),
       descriptor_count_(0),
       non_inline_descriptor_count_(0),
-      dynamic_descriptor_count_(0),
-      has_immutable_samplers_(false) {
+      dynamic_descriptor_count_(0) {
     const auto *flags_create_info = vku::FindStructInPNextChain<VkDescriptorSetLayoutBindingFlagsCreateInfo>(p_create_info->pNext);
 
     binding_type_stats_ = {0, 0};
@@ -309,7 +309,7 @@ vvl::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescriptorSetLayoutC
     }
 
     // Store the create info in the sorted order from above
-    uint32_t index = 0;
+    uint32_t binding_index = 0;
     binding_count_ = static_cast<uint32_t>(sorted_bindings.size());
     bindings_.reserve(binding_count_);
     binding_flags_.reserve(binding_count_);
@@ -317,7 +317,7 @@ vvl::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescriptorSetLayoutC
     for (const auto &input_binding : sorted_bindings) {
         // Add to binding and map, s.t. it is robust to invalid duplication of binding_num
         const auto binding_num = input_binding.layout_binding->binding;
-        binding_to_index_map_[binding_num] = index++;
+        binding_to_index_map_[binding_num] = binding_index;
         bindings_.emplace_back(input_binding.layout_binding);
         // safe_VkDescriptorSetLayoutBinding will do some extra "cleanup" logic, so want to use it
         auto &binding_info = bindings_.back();
@@ -343,8 +343,24 @@ vvl::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescriptorSetLayoutC
                 binding_type_stats_.non_dynamic_buffer_count++;
             }
         }
-
-        has_immutable_samplers_ |= (binding_info.pImmutableSamplers != nullptr);
+        // Get immutable samplers info
+        if (binding_info.pImmutableSamplers != nullptr) {
+            if (immutable_sampler_create_infos_.empty()) {
+                immutable_sampler_create_infos_.resize(binding_count_);
+                immutable_sampler_combined_hashes_.resize(binding_count_, 0);
+            }
+            immutable_sampler_create_infos_[binding_index].resize(binding_info.descriptorCount, {});
+            hash_util::HashCombiner samplers_hc;
+            for (uint32_t array_index = 0; array_index < binding_info.descriptorCount; array_index++) {
+                if (auto sampler = device_state.Get<vvl::Sampler>(binding_info.pImmutableSamplers[array_index])) {
+                    immutable_sampler_create_infos_[binding_index][array_index] = sampler->safe_create_info;
+                    const size_t sampler_hash = HashSamplerCreateInfo(*sampler->safe_create_info.ptr());
+                    samplers_hc << sampler_hash;
+                }
+            }
+            immutable_sampler_combined_hashes_[binding_index] = samplers_hc.Value();
+        }
+        binding_index++;
     }
     assert(bindings_.size() == binding_count_);
     assert(binding_flags_.size() == binding_count_);
@@ -359,13 +375,17 @@ vvl::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescriptorSetLayoutC
 }
 
 size_t vvl::DescriptorSetLayoutDef::hash() const {
+    static const std::vector<size_t> empty_sampler_hashes;
     hash_util::HashCombiner hc;
     hc << flags_;
-    hc.Combine(bindings_);
+    for (auto [i, safe_binding] : vvl::enumerate(bindings_)) {
+        const VkDescriptorSetLayoutBinding &binding = *safe_binding.ptr();
+        const size_t samplers_combined_hash = binding.pImmutableSamplers ? immutable_sampler_combined_hashes_[i] : 0;
+        hc.Combine(DescriptorSetLayoutBindingHashingData{binding, samplers_combined_hash});
+    }
     hc.Combine(binding_flags_);
     return hc.Value();
 }
-//
 
 // Return valid index or "end" i.e. binding_count_;
 // The asserts in "Get" are reduced to the set where no valid answer(like null or 0) could be given
@@ -423,6 +443,19 @@ VkSampler const *vvl::DescriptorSetLayoutDef::GetImmutableSamplerPtrFromIndex(co
         return bindings_[index].pImmutableSamplers;
     }
     return nullptr;
+}
+
+const std::vector<vku::safe_VkSamplerCreateInfo> &DescriptorSetLayoutDef::GetImmutableSamplerCreateInfosFromIndex(
+    uint32_t index) const {
+    static const std::vector<vku::safe_VkSamplerCreateInfo> empty_sampler_infos;
+    if (immutable_sampler_create_infos_.empty()) {
+        return empty_sampler_infos;
+    }
+    return immutable_sampler_create_infos_[index];
+}
+
+size_t DescriptorSetLayoutDef::GetImmutableSamplersCombinedHashFromIndex(uint32_t index) const {
+    return immutable_sampler_combined_hashes_.empty() ? 0 : immutable_sampler_combined_hashes_[index];
 }
 
 bool vvl::DescriptorSetLayoutDef::IsTypeMutable(const VkDescriptorType type, uint32_t binding) const {
@@ -495,13 +528,13 @@ bool vvl::DescriptorSetLayout::IsCompatible(DescriptorSetLayout const *rh_ds_lay
 
 // The DescriptorSetLayout stores the per handle data for a descriptor set layout, and references the common defintion for the
 // handle invariant portion
-vvl::DescriptorSetLayout::DescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
+vvl::DescriptorSetLayout::DescriptorSetLayout(vvl::DeviceState &device_state, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
                                               const VkDescriptorSetLayout handle)
     : StateObject(handle, kVulkanObjectTypeDescriptorSetLayout),
-      layout_id_(GetCanonicalId(pCreateInfo)),
+      layout_id_(GetCanonicalId(pCreateInfo, device_state)),
       desc_set_layout_ci(pCreateInfo) {
     if (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
-        DispatchGetDescriptorSetLayoutSizeEXT(device, handle, &layout_size_in_bytes_);
+        DispatchGetDescriptorSetLayoutSizeEXT(device_state.VkHandle(), handle, &layout_size_in_bytes_);
     }
 }
 

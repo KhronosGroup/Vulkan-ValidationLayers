@@ -2147,7 +2147,7 @@ void DeviceState::PostCallRecordCreateDescriptorSetLayout(VkDevice device, const
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
-    Add(std::make_shared<DescriptorSetLayout>(device, pCreateInfo, *pSetLayout));
+    Add(std::make_shared<DescriptorSetLayout>(*this, pCreateInfo, *pSetLayout));
 }
 
 void DeviceState::PostCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,

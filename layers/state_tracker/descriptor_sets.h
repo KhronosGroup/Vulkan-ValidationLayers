@@ -21,7 +21,9 @@
 
 #include "state_tracker/state_object.h"
 #include "utils/hash_util.h"
+#include "utils/vk_struct_compare.h"
 #include "state_tracker/shader_stage_state.h"
+#include "containers/range.h"
 #include "containers/small_vector.h"
 #include "generated/vk_object_types.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
@@ -31,6 +33,10 @@
 
 class CoreChecks;
 struct DeviceExtensions;
+
+// TODO: there was a problem that global state persisted between test runs on CI machines.
+// Ideally is too rework these dictionaries so they are not global and part of state tracker.
+void ClearDescriptorSetLayoutCanonicalIdDict();
 
 namespace vvl {
 class Sampler;
@@ -121,14 +127,8 @@ class DescriptorUpdateTemplate : public StateObject {
     VkDescriptorUpdateTemplate VkHandle() const { return handle_.Cast<VkDescriptorUpdateTemplate>(); };
 };
 
-// Utility structs/classes/types
-// Index range for global indices below, end is exclusive, i.e. [start,end)
-struct IndexRange {
-    IndexRange(uint32_t start_in, uint32_t end_in) : start(start_in), end(end_in) {}
-    IndexRange() = default;
-    uint32_t start;
-    uint32_t end;
-};
+// Index range for global indices below
+using IndexRange = vvl::range<uint32_t>;
 
 /*
  * DescriptorSetLayoutDef/DescriptorSetLayout classes
@@ -168,14 +168,13 @@ struct IndexRange {
  */
 class DescriptorSetLayoutDef {
   public:
-    // Constructors and destructor
-    DescriptorSetLayoutDef(const VkDescriptorSetLayoutCreateInfo *p_create_info);
+    DescriptorSetLayoutDef(vvl::DeviceState &device_state, const VkDescriptorSetLayoutCreateInfo *p_create_info);
     size_t hash() const;
 
     uint32_t GetTotalDescriptorCount() const { return descriptor_count_; };
     uint32_t GetNonInlineDescriptorCount() const { return non_inline_descriptor_count_; };
     uint32_t GetDynamicDescriptorCount() const { return dynamic_descriptor_count_; };
-    bool HasImmutableSamplers() const { return has_immutable_samplers_; };
+    bool HasImmutableSamplers() const { return !immutable_sampler_create_infos_.empty(); };
     VkDescriptorSetLayoutCreateFlags GetCreateFlags() const { return flags_; }
     // For a given binding, return the number of descriptors in that binding and all successive bindings
     uint32_t GetBindingCount() const { return binding_count_; };
@@ -200,9 +199,6 @@ class DescriptorSetLayoutDef {
     }
     const std::vector<vku::safe_VkDescriptorSetLayoutBinding> &GetBindings() const { return bindings_; }
     const VkDescriptorSetLayoutBinding *GetBindingInfoFromIndex(const uint32_t index) const { return bindings_[index].ptr(); }
-    const VkDescriptorSetLayoutBinding *GetBindingInfoFromBinding(const uint32_t binding) const {
-        return GetBindingInfoFromIndex(GetIndexFromBinding(binding));
-    }
     const std::vector<VkDescriptorBindingFlags> &GetBindingFlags() const { return binding_flags_; }
     uint32_t GetDescriptorCountFromIndex(const uint32_t) const;
     uint32_t GetDescriptorCountFromBinding(const uint32_t binding) const {
@@ -216,6 +212,9 @@ class DescriptorSetLayoutDef {
         return GetDescriptorBindingFlagsFromIndex(GetIndexFromBinding(binding));
     }
     VkSampler const *GetImmutableSamplerPtrFromIndex(const uint32_t) const;
+    const std::vector<vku::safe_VkSamplerCreateInfo> &GetImmutableSamplerCreateInfosFromIndex(uint32_t index) const;
+    size_t GetImmutableSamplersCombinedHashFromIndex(uint32_t index) const;
+
     bool IsTypeMutable(const VkDescriptorType type, uint32_t binding) const;
     const std::vector<VkDescriptorType> &GetMutableTypes(uint32_t binding) const;
     std::string PrintMutableTypes(uint32_t binding) const;
@@ -239,11 +238,19 @@ class DescriptorSetLayoutDef {
     std::string DescribeDescriptorBufferSizeAndOffests(VkDevice device, VkDescriptorSetLayout layout) const;
 
   private:
-    // Only the first three data members are used for hash and equality checks, the other members are derived from them, and are
-    // used to speed up the various lookups/queries/validations
     VkDescriptorSetLayoutCreateFlags flags_;
     std::vector<vku::safe_VkDescriptorSetLayoutBinding> bindings_;
     std::vector<VkDescriptorBindingFlags> binding_flags_;
+
+    // The create_infos of immutable samplers: [binding][array index]
+    // The outer vector is allocated only if there is at least one binding with immutable samplers
+    // The inner vectors are empty for the bindings that do not have immutable samplers
+    std::vector<std::vector<vku::safe_VkSamplerCreateInfo>> immutable_sampler_create_infos_;
+
+    // The combined hashes (one hash per binding) of immutable samplers: [binding]
+    // The vector is allocated only if there is at least one binding with immutable samplers
+    std::vector<size_t> immutable_sampler_combined_hashes_;
+
     // List of mutable types for each binding: [binding][mutable type]
     std::vector<std::vector<VkDescriptorType>> mutable_types_;
 
@@ -261,13 +268,36 @@ class DescriptorSetLayoutDef {
     uint32_t non_inline_descriptor_count_;
     uint32_t dynamic_descriptor_count_;
     BindingTypeStats binding_type_stats_;
-
-    bool has_immutable_samplers_;
 };
 
 // Canonical dictionary of DSL definitions -- independent of device or handle
 using DescriptorSetLayoutDict = hash_util::Dictionary<DescriptorSetLayoutDef, hash_util::HasHashMember<DescriptorSetLayoutDef>>;
 using DescriptorSetLayoutId = DescriptorSetLayoutDict::Id;
+
+// TODO: the same reason in the header as why operator== below in this file too. Fix it.
+static inline bool ImmutableSamplersAreEqual(const DescriptorSetLayoutDef &dsl_def1, const DescriptorSetLayoutDef &dsl_def2,
+                                             uint32_t binding_index) {
+    const size_t hash1 = dsl_def1.GetImmutableSamplersCombinedHashFromIndex(binding_index);
+    const size_t hash2 = dsl_def2.GetImmutableSamplersCombinedHashFromIndex(binding_index);
+    if (hash1 != hash2) {
+        return false;
+    }
+    for (uint32_t i = 0; i < binding_index; i++) {
+        const std::vector<vku::safe_VkSamplerCreateInfo> &create_infos1 =
+            dsl_def1.GetImmutableSamplerCreateInfosFromIndex(binding_index);
+        const std::vector<vku::safe_VkSamplerCreateInfo> &create_infos2 =
+            dsl_def1.GetImmutableSamplerCreateInfosFromIndex(binding_index);
+        if (create_infos1.size() != create_infos2.size()) {
+            return false;
+        }
+        for (size_t s = 0; s < create_infos1.size(); s++) {
+            if (!CompareSamplerCreateInfo(*create_infos1[s].ptr(), *create_infos2[s].ptr())) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
 
 // Compare is in header and static because hash_util KeyValueEqual need the symbol at compile time
 static inline bool operator==(const DescriptorSetLayoutDef &lhs, const DescriptorSetLayoutDef &rhs) {
@@ -292,18 +322,8 @@ static inline bool operator==(const DescriptorSetLayoutDef &lhs, const Descripto
         if (l.descriptorType != r.descriptorType || l.descriptorCount != r.descriptorCount || l.stageFlags != r.stageFlags) {
             return false;
         }
-        if (l.pImmutableSamplers != r.pImmutableSamplers) {
+        if (!ImmutableSamplersAreEqual(lhs, rhs, i)) {
             return false;
-        }
-        if (l.pImmutableSamplers) {
-            for (uint32_t s = 0; s < l.descriptorCount; s++) {
-                if (l.pImmutableSamplers[s] != r.pImmutableSamplers[s]) {
-                    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8497
-                    // This just checks pointers, but two different VkSampler handles could be created with same createInfo.
-                    // Since this is rare enough, mark as "not the same" and check later when checking for compatibility.
-                    return false;
-                }
-            }
         }
         // These have been sorted already so can direct compare
         if (lhs.GetMutableTypes(i) != rhs.GetMutableTypes(i)) {
@@ -315,8 +335,8 @@ static inline bool operator==(const DescriptorSetLayoutDef &lhs, const Descripto
 
 class DescriptorSetLayout : public StateObject {
   public:
-    // Constructors and destructor
-    DescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo, const VkDescriptorSetLayout handle);
+    DescriptorSetLayout(vvl::DeviceState &device_state, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
+                        const VkDescriptorSetLayout handle);
     virtual ~DescriptorSetLayout() { Destroy(); }
 
     bool HasBinding(const uint32_t binding) const { return layout_id_->HasBinding(binding); }
