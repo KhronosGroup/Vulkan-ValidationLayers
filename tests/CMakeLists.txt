@@ -497,11 +497,8 @@ if(DEFINED SLANG_INSTALL_DIR)
 
             # Add post-build step to verify the library was copied and is executable
             add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E echo "Verifying shared libraries in $<TARGET_FILE_DIR:${TARGET_NAME}>"
-                COMMAND ${CMAKE_COMMAND} -E echo "Slang library path: $<TARGET_FILE_DIR:${TARGET_NAME}>/${SLANG_SONAME}"
+                COMMAND ${CMAKE_COMMAND} -E echo "Verifying slang library path: $<TARGET_FILE_DIR:${TARGET_NAME}>/${SLANG_SONAME}"
                 COMMAND test -f "$<TARGET_FILE_DIR:${TARGET_NAME}>/${SLANG_SONAME}" || echo "Library not copied correctly"
-                COMMAND chmod +x "$<TARGET_FILE_DIR:${TARGET_NAME}>/${SLANG_SONAME}"
-                COMMAND echo "Library permissions:" && ls -la "$<TARGET_FILE_DIR:${TARGET_NAME}>/${SLANG_SONAME}"
             )
         endif()
     endfunction()
