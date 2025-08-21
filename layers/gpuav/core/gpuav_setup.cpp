@@ -16,8 +16,6 @@
  */
 
 #include <array>
-#include <cmath>
-#include <cstring>
 #include <string>
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__)
 #include <unistd.h>

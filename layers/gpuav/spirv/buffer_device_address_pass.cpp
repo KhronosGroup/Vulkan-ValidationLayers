@@ -19,6 +19,7 @@
 #include <spirv/unified1/spirv.hpp>
 #include <iostream>
 #include "utils/math_utils.h"
+#include "utils/assert_utils.h"
 #include "gpuav/shaders/gpuav_error_header.h"
 
 #include "generated/gpuav_offline_spirv.h"

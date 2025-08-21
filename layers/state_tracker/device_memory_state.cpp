@@ -19,6 +19,7 @@
 #include "state_tracker/device_memory_state.h"
 
 #include <algorithm>
+#include "utils/assert_utils.h"
 
 using BufferRange = vvl::BindableMemoryTracker::BufferRange;
 using MemoryRange = vvl::BindableMemoryTracker::MemoryRange;

@@ -23,7 +23,6 @@
 #include "generated/vk_object_types.h"
 #include "error_message/logging.h"
 #include "chassis/layer_object_id.h"
-#include "utils/assert_utils.h"
 #include "utils/lock_utils.h"
 
 #include <atomic>

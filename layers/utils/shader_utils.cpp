@@ -29,10 +29,6 @@
 #include <cstring>
 #include <fstream>
 
-// Profiled that having filesystem included in shader_utils.h adds significant compile time to all files
-#include <filesystem>
-namespace fs = std::filesystem;
-
 void ValidationCache::GetUUID(uint8_t *uuid) {
     const char *sha1_str = SPIRV_TOOLS_COMMIT_ID;
     // Convert sha1_str from a hex string to binary. We only need VK_UUID_SIZE bytes of

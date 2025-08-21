@@ -20,7 +20,6 @@
 #include "module.h"
 #include <spirv/unified1/spirv.hpp>
 #include <iostream>
-#include "generated/device_features.h"
 
 #include "generated/gpuav_offline_spirv.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"

@@ -48,11 +48,10 @@
 #include "gpuav/spirv/post_process_descriptor_indexing_pass.h"
 #include "gpuav/spirv/vertex_attribute_fetch_oob.h"
 
-#include <filesystem>
 #include <cassert>
+#include <string>
 #include <filesystem>
 namespace fs = std::filesystem;
-#include <string>
 
 namespace gpuav {
 

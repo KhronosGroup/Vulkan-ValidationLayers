@@ -18,8 +18,6 @@
 
 #pragma once
 
-#include <cctype>
-#include <cstring>
 #include <string>
 
 #include <vulkan/vulkan_core.h>

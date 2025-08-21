@@ -20,7 +20,6 @@
 #include "state_tracker/image_state.h"
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vulkan_core.h>
-#include <cmath>
 #include <cstdint>
 #include <string>
 #include "error_message/error_strings.h"

@@ -17,8 +17,6 @@
 #pragma once
 
 #include <cassert>
-#include <cstdlib>
-#include <cstring>
 #include <vector>
 
 #include "state_tracker/state_object.h"

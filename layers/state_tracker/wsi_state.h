@@ -21,9 +21,9 @@
 
 #include "state_tracker/state_object.h"
 #include "state_tracker/submission_reference.h"
-#include "state_tracker/image_layout_map.h"
 #include "containers/span.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
+#include <optional>
 
 namespace vvl {
 class DeviceState;
@@ -32,6 +32,7 @@ class Semaphore;
 class Surface;
 class Swapchain;
 class SwapchainSubState;
+class Image;
 }  // namespace vvl
 
 struct GpuQueue {

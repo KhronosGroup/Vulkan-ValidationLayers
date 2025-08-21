@@ -15,7 +15,6 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/ray_tracing_objects.h"
 #include "../framework/gpu_av_helper.h"
-#include "../layers/gpuav/shaders/gpuav_shaders_constants.h"
 
 class NegativeGpuAVRayTracing : public GpuAVRayTracingTest {};
 
@@ -307,12 +306,12 @@ TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferRayGenShader) {
         [[vk::binding(1, 0)]] ConstantBuffer<UniformBuffer> uniform_buffer;
 
         [[vk::binding(2, 0)]] uniform RWStructuredBuffer<uint4> ray_payload_buffer[];
-        
+
         struct RayPayload {
             uint4 payload;
             float3 hit;
         };
-        
+
         [shader("raygeneration")]
         void rayGenShader()
         {
@@ -320,23 +319,23 @@ TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferRayGenShader) {
             RayDesc ray;
             ray.TMin = 0.01;
             ray.TMax = 1000.0;
-        
+
             ray.Origin = float3(0,0,0);
             ray.Direction = float3(0,0,-1);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
         }
-        
+
         [shader("miss")]
         void missShader(inout RayPayload payload)
         {
             payload.hit = float3(0.1, 0.2, 0.3);
         }
-        
+
         [shader("closesthit")]
         void closestHitShader(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attr)
         {
             const float3 barycentric_coords = float3(1.0f - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x,
-                attr.barycentrics.y); 
+                attr.barycentrics.y);
             payload.hit = barycentric_coords;
         }
     )slang";
@@ -449,12 +448,12 @@ TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferMissShader) {
         [[vk::binding(1, 0)]] ConstantBuffer<UniformBuffer> uniform_buffer;
 
         [[vk::binding(2, 0)]] uniform RWStructuredBuffer<uint4> ray_payload_buffer[];
-        
+
         struct RayPayload {
             uint4 payload;
             float3 hit;
         };
-        
+
         [shader("raygeneration")]
         void rayGenShader()
         {
@@ -462,24 +461,24 @@ TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferMissShader) {
             RayDesc ray;
             ray.TMin = 0.01;
             ray.TMax = 1000.0;
-        
+
             ray.Origin = float3(0,0,0);
             ray.Direction = float3(0,0,-1);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
         }
-        
+
         [shader("miss")]
         void missShader(inout RayPayload payload)
         {
             payload.payload = ray_payload_buffer[uniform_buffer.ray_payload_i].Load(0);
             payload.hit = float3(0.1, 0.2, 0.3);
         }
-        
+
         [shader("closesthit")]
         void closestHitShader(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attr)
         {
             const float3 barycentric_coords = float3(1.0f - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x,
-                attr.barycentrics.y); 
+                attr.barycentrics.y);
             payload.hit = barycentric_coords;
         }
     )slang";
@@ -587,12 +586,12 @@ TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferClosetHitShader) {
         [[vk::binding(1, 0)]] ConstantBuffer<UniformBuffer> uniform_buffer;
 
         [[vk::binding(2, 0)]] uniform RWStructuredBuffer<uint4> ray_payload_buffer[];
-        
+
         struct RayPayload {
             uint4 payload;
             float3 hit;
         };
-        
+
         [shader("raygeneration")]
         void rayGenShader()
         {
@@ -600,24 +599,24 @@ TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferClosetHitShader) {
             RayDesc ray;
             ray.TMin = 0.01;
             ray.TMax = 1000.0;
-        
+
             // Will hit cube 1
             ray.Origin = float3(0,0,0);
             ray.Direction = float3(1,0,0);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
         }
-        
+
         [shader("miss")]
         void missShader(inout RayPayload payload)
         {
             payload.hit = float3(0.1, 0.2, 0.3);
         }
-        
+
         [shader("closesthit")]
         void closestHitShader(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attr)
         {
             const float3 barycentric_coords = float3(1.0f - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x,
-                attr.barycentrics.y); 
+                attr.barycentrics.y);
             payload.hit = barycentric_coords;
             payload.payload = ray_payload_buffer[uniform_buffer.ray_payload_i].Load(0);
         }
@@ -726,12 +725,12 @@ TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferTwoClosetHitShader) {
         [[vk::binding(1, 0)]] ConstantBuffer<UniformBuffer> uniform_buffer;
 
         [[vk::binding(2, 0)]] uniform RWStructuredBuffer<uint4> ray_payload_buffer[];
-        
+
         struct RayPayload {
             uint4 payload;
             float3 hit;
         };
-        
+
         [shader("raygeneration")]
         void rayGenShader()
         {
@@ -739,46 +738,46 @@ TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferTwoClosetHitShader) {
             RayDesc ray;
             ray.TMin = 0.01;
             ray.TMax = 1000.0;
-        
+
             // Will hit cube 1
             ray.Origin = float3(0,0,0);
             ray.Direction = float3(1,0,0);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
         }
-        
+
         [shader("miss")]
         void missShader(inout RayPayload payload)
         {
             payload.hit = float3(0.1, 0.2, 0.3);
         }
-        
+
         [shader("closesthit")]
         void closestHitShader(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attr)
         {
             const float3 barycentric_coords = float3(1.0f - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x,
-                attr.barycentrics.y); 
+                attr.barycentrics.y);
             payload.hit = barycentric_coords;
             payload.payload += ray_payload_buffer[uniform_buffer.ray_payload_i].Load(0);
-        
-            RayDesc ray;        
+
+            RayDesc ray;
             ray.TMin = 0.01;
             ray.TMax = 1000.0;
             const uint32_t miss_shader_i = 1;
-        
+
             // Supposed to hit cube 2, and invoke closestHitShader2
             ray.Origin = float3(0,0,0);
             ray.Direction = float3(0,0,1);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, miss_shader_i, ray, payload);
         }
-        
+
         [shader("closesthit")]
         void closestHitShader2(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attr)
         {
             const float3 barycentric_coords = float3(1.0f - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x,
-                attr.barycentrics.y); 
+                attr.barycentrics.y);
             payload.hit = 999 * barycentric_coords;
             payload.payload += ray_payload_buffer[uniform_buffer.ray_payload_i].Load(0);
-        }    
+        }
     )slang";
 
     vkt::rt::Pipeline pipeline(*this, m_device);

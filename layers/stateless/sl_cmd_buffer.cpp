@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+#include <cmath>
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
 #include "containers/range.h"

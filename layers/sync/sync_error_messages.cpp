@@ -17,15 +17,12 @@
 
 #include "sync/sync_error_messages.h"
 #include "sync/sync_commandbuffer.h"
-#include "sync/sync_image.h"
 #include "sync/sync_validation.h"
 #include "error_message/error_strings.h"
-#include "state_tracker/buffer_state.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/pipeline_state.h"
 
 #include <cassert>
-#include <cinttypes>
 #include <sstream>
 
 namespace syncval {

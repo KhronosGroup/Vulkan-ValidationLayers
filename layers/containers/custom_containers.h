@@ -18,18 +18,12 @@
 
 #pragma once
 
-#include <cmath>
-
 #include <cassert>
-#include <algorithm>
-#include <iterator>
-#include <utility>
 
 #ifdef USE_CUSTOM_HASH_MAP
 #include "parallel_hashmap/phmap.h"
 #else
-#include <map>
-#include <set>
+#include <utility>
 #include <unordered_set>
 #include <unordered_map>
 #endif

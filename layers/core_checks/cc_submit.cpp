@@ -21,8 +21,6 @@
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/queue_state.h"
-#include "state_tracker/wsi_state.h"
-#include "chassis/validation_object.h"
 
 static Location GetSignaledSemaphoreLocation(const Location& submit_loc, uint32_t index) {
     vvl::Field field = vvl::Field::Empty;

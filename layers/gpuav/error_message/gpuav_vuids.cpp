@@ -1,6 +1,6 @@
-/* Copyright (c) 2021-2024 The Khronos Group Inc.
- * Copyright (c) 2021-2024 Valve Corporation
- * Copyright (c) 2021-2024 LunarG, Inc.
+/* Copyright (c) 2021-2025 The Khronos Group Inc.
+ * Copyright (c) 2021-2025 Valve Corporation
+ * Copyright (c) 2021-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 #include "gpuav/error_message/gpuav_vuids.h"
+#include <map>
 
 namespace gpuav {
 
@@ -179,7 +180,7 @@ struct GpuVuidsCmdTraceRaysIndirect2KHR : GpuVuid {
         invalid_descriptor_08114 = "VUID-vkCmdTraceRaysIndirect2KHR-None-08114";
         descriptor_index_oob_10068 = "VUID-vkCmdTraceRaysIndirect2KHR-None-10068";
     }
-};  
+};
 
 struct GpuVuidsCmdDrawMeshTasksNV : GpuVuid {
     GpuVuidsCmdDrawMeshTasksNV() : GpuVuid() {
