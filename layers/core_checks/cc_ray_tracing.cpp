@@ -26,6 +26,7 @@
 #include "core_validation.h"
 #include "core_checks/cc_state_tracker.h"
 #include "cc_buffer_address.h"
+#include "error_message/logging.h"
 #include "utils/ray_tracing_utils.h"
 #include "utils/math_utils.h"
 #include "state_tracker/ray_tracing_state.h"
@@ -518,6 +519,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
         return false;
     };
 
+    const LogObjectList cb_objlist(cmd_buffer);
     const Location pp_build_range_info_loc(info_loc.function, Field::ppBuildRangeInfos, info_i);
     for (uint32_t geom_i = 0; geom_i < info.geometryCount; ++geom_i) {
         const Location p_geom_loc = info_loc.dot(info.pGeometries ? Field::pGeometries : Field::ppGeometries, geom_i);
@@ -543,7 +545,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                          "is zero");
                     }
                     skip |= ValidateDeviceAddress(p_geom_geom_triangles_loc.dot(Field::vertexData).dot(Field::deviceAddress),
-                                                  LogObjectList(cmd_buffer), triangles.vertexData.deviceAddress);
+                                                  cb_objlist, triangles.vertexData.deviceAddress);
                 }
 
                 if (triangles.indexType != VK_INDEX_TYPE_NONE_KHR) {
@@ -556,7 +558,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                         }
 
                         skip |= ValidateDeviceAddress(p_geom_geom_triangles_loc.dot(Field::indexData).dot(Field::deviceAddress),
-                                                      LogObjectList(cmd_buffer), triangles.indexData.deviceAddress);
+                                                      cb_objlist, triangles.indexData.deviceAddress);
                     }
 
                     if (info_loc.function == Func::vkCmdBuildAccelerationStructuresKHR &&
@@ -589,9 +591,8 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                      "(supported bufferFeatures: %s)",
                                      string_VkFormat(triangles.vertexFormat),
                                      string_VkFormatFeatureFlags2(format_properties.bufferFeatures).c_str());
-                }
-                // Only try to get format info if vertex format is valid
-                else {
+                } else {
+                    // Only try to get format info if vertex format is valid
                     const VKU_FORMAT_INFO format_info = vkuGetFormatInfo(triangles.vertexFormat);
                     uint32_t min_component_bits_size = format_info.components[0].size;
                     for (uint32_t component_i = 1; component_i < format_info.component_count; ++component_i) {
@@ -617,9 +618,30 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                          triangles.vertexStride, min_component_byte_size, string_VkFormat(triangles.vertexFormat));
                     }
                 }
+
                 if (triangles.transformData.deviceAddress != 0 && geometry_build_range_primitive_count > 0) {
                     skip |= ValidateDeviceAddress(p_geom_geom_triangles_loc.dot(Field::transformData).dot(Field::deviceAddress),
-                                                  LogObjectList(cmd_buffer), triangles.transformData.deviceAddress);
+                                                  cb_objlist, triangles.transformData.deviceAddress);
+                }
+
+                if (const auto *micromap =
+                        vku::FindStructInPNextChain<VkAccelerationStructureTrianglesOpacityMicromapEXT>(triangles.pNext)) {
+                    if (micromap->indexType == VK_INDEX_TYPE_NONE_KHR) {
+                        if (!micromap->indexBuffer.deviceAddress) {
+                            skip |= LogError(
+                                "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-10904", device,
+                                p_geom_geom_triangles_loc
+                                    .pNext(Struct::VkAccelerationStructureTrianglesOpacityMicromapEXT, Field::indexBuffer)
+                                    .dot(Field::deviceAddress),
+                                "is 0x%" PRIx64 " but indexType is VK_INDEX_TYPE_NONE_KHR.", micromap->indexBuffer.deviceAddress);
+                        }
+                    } else {
+                        skip |= ValidateDeviceAddress(
+                            p_geom_geom_triangles_loc
+                                .pNext(Struct::VkAccelerationStructureTrianglesOpacityMicromapEXT, Field::indexBuffer)
+                                .dot(Field::deviceAddress),
+                            cb_objlist, micromap->indexBuffer.deviceAddress);
+                    }
                 }
                 break;
             }
@@ -637,7 +659,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                          cmd_buffer, instances_data_loc.dot(Field::deviceAddress), "is zero");
                     }
 
-                    skip |= ValidateDeviceAddress(instances_data_loc.dot(Field::deviceAddress), LogObjectList(cmd_buffer),
+                    skip |= ValidateDeviceAddress(instances_data_loc.dot(Field::deviceAddress), cb_objlist,
                                                   instances.data.deviceAddress);
                 }
                 break;
@@ -657,8 +679,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                          cmd_buffer, aabbs_data_loc.dot(Field::deviceAddress), "is zero");
                     }
 
-                    skip |= ValidateDeviceAddress(aabbs_data_loc.dot(Field::deviceAddress), LogObjectList(cmd_buffer),
-                                                  aabbs.data.deviceAddress);
+                    skip |= ValidateDeviceAddress(aabbs_data_loc.dot(Field::deviceAddress), cb_objlist, aabbs.data.deviceAddress);
                 }
                 break;
             }
@@ -730,7 +751,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
         }}};
 
         skip |= buffer_address_validator.ValidateDeviceAddress(*this, info_loc.dot(Field::scratchData).dot(Field::deviceAddress),
-                                                               LogObjectList(cmd_buffer), info.scratchData.deviceAddress);
+                                                               cb_objlist, info.scratchData.deviceAddress);
     }
 
     return skip;
