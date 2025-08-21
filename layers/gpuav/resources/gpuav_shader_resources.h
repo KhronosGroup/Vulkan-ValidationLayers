@@ -57,6 +57,8 @@ struct PostProcessDescriptorIndexSlot {
     // OpVariable ID of descriptor accessed.
     // This is required to distinguish between 2 aliased descriptors
     uint32_t variable_id;
+    // Used in order to print out information about which instruction caused the issue
+    uint32_t instruction_position;
 };
 
 // Represented as a uvec2 in the shader

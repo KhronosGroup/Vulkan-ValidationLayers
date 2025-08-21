@@ -1253,15 +1253,14 @@ void GpuShaderInstrumentor::PostCallRecordPipelineCreationShaderInstrumentationG
     }
 }
 
-static bool GpuValidateShader(const std::vector<uint32_t> &input, bool SetRelaxBlockLayout, bool SetScalarBlockLayout,
-                              spv_target_env target_env, std::string &error) {
+static bool GpuValidateShader(const std::vector<uint32_t> &input, spv_target_env target_env, std::string &error) {
     // Use SPIRV-Tools validator to try and catch any issues with the module
     spv_context ctx = spvContextCreate(target_env);
     spv_const_binary_t binary{input.data(), input.size()};
     spv_diagnostic diag = nullptr;
     spv_validator_options options = spvValidatorOptionsCreate();
-    spvValidatorOptionsSetRelaxBlockLayout(options, SetRelaxBlockLayout);
-    spvValidatorOptionsSetScalarBlockLayout(options, SetScalarBlockLayout);
+    // Everything is running scalar block layout now (only old 1.0 mobile GPU can't support this)
+    spvValidatorOptionsSetScalarBlockLayout(options, true);
     spv_result_t result = spvValidateWithOptions(ctx, options, &binary, &diag);
     if (result != SPV_SUCCESS && diag) error = diag->error;
     return (result == SPV_SUCCESS);
@@ -1373,14 +1372,13 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     // translate internal representation of SPIR-V into legal SPIR-V binary
     module.ToBinary(out_instrumented_spirv);
 
-    spv_target_env target_env = PickSpirvEnv(api_version, IsExtEnabled(extensions.vk_khr_spirv_1_4));
     // (Maybe) validate the instrumented and linked shader
     bool is_instrumented_spirv_valid = true;
     if (gpuav_settings.debug_validate_instrumented_shaders) {
         std::string spirv_val_error;
 
-        is_instrumented_spirv_valid = GpuValidateShader(out_instrumented_spirv, extensions.vk_khr_relaxed_block_layout,
-                                                        extensions.vk_ext_scalar_block_layout, target_env, spirv_val_error);
+        spv_target_env target_env = PickSpirvEnv(api_version, IsExtEnabled(extensions.vk_khr_spirv_1_4));
+        is_instrumented_spirv_valid = GpuValidateShader(out_instrumented_spirv, target_env, spirv_val_error);
         if (!is_instrumented_spirv_valid) {
             if (!gpuav_settings.debug_dump_instrumented_shaders) {
                 const auto non_instrumented_spirv_file = fs::absolute("dump_" + std::to_string(unique_shader_id) + "_before.spv");
@@ -1535,13 +1533,15 @@ static std::string FindShaderSource(std::ostringstream &ss, const std::vector<ui
                                     uint32_t instruction_position, bool debug_printf_only) {
     ss << "SPIR-V Instruction Index = " << instruction_position << '\n';
 
-    const uint32_t last_line_inst_offset = ::spirv::GetDebugLineOffset(instructions, instruction_position);
-    if (last_line_inst_offset != 0) {
-        Instruction last_line_inst(instructions.data() + last_line_inst_offset);
+    const auto debug_info = ::spirv::GetDebugLineOffset(instructions, instruction_position);
+    if (debug_info.last_line_offset != 0) {
+        Instruction last_line_inst(instructions.data() + debug_info.last_line_offset);
         ss << (debug_printf_only ? "Debug shader printf message generated at " : "Shader validation error occurred at ");
         GetShaderSourceInfo(ss, instructions, last_line_inst);
     } else {
-        ss << "Unable to source. Build shader with debug info to get source information.\n";
+        spirv::Instruction target_inst(instructions.data() + debug_info.target_offset);
+        ss << "SPIR-V instruction: " << target_inst.Describe()
+           << "\n(Unable to find shader source, build shader with debug info to get source information)\n";
     }
 
     return ss.str();
