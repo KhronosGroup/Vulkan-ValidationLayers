@@ -434,7 +434,7 @@ void GetExecutionModelNames(const std::vector<uint32_t> &instructions, std::ostr
 
 // Find the OpLine/DebugLine just before the failing instruction indicated by the debug info.
 // Return the offset into the instructions array
-uint32_t GetDebugLineOffset(const std::vector<uint32_t> &instructions, uint32_t instruction_position) {
+DebugLineInfo GetDebugLineOffset(const std::vector<uint32_t> &instructions, uint32_t instruction_position) {
     uint32_t index = 0;
     uint32_t shader_debug_info_set_id = 0;
     uint32_t last_line_inst_offset = 0;
@@ -469,7 +469,7 @@ uint32_t GetDebugLineOffset(const std::vector<uint32_t> &instructions, uint32_t 
         offset += length;
     }
 
-    return last_line_inst_offset;
+    return {offset, last_line_inst_offset};
 }
 
 }  // namespace spirv

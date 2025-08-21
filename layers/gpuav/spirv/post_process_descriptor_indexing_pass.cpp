@@ -47,13 +47,16 @@ void PostProcessDescriptorIndexingPass::CreateFunctionCall(BasicBlock& block, In
     const Constant& binding_layout_offset = module_.type_manager_.GetConstantUInt32(binding_layout.start);
     const Constant& variable_id_constant = module_.type_manager_.GetConstantUInt32(meta.variable_id);
 
+    const uint32_t inst_position = meta.target_instruction->GetPositionIndex();
+    const uint32_t inst_position_id = module_.type_manager_.CreateConstantUInt32(inst_position).Id();
+
     const uint32_t function_result = module_.TakeNextId();
     const uint32_t function_def = GetLinkFunctionId();
     const uint32_t void_type = module_.type_manager_.GetTypeVoid().Id();
 
     block.CreateInstruction(spv::OpFunctionCall,
                             {void_type, function_result, function_def, set_constant.Id(), binding_constant.Id(),
-                             descriptor_index_id, binding_layout_offset.Id(), variable_id_constant.Id()},
+                             descriptor_index_id, binding_layout_offset.Id(), variable_id_constant.Id(), inst_position_id},
                             inst_it);
 }
 

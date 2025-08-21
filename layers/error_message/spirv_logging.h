@@ -36,5 +36,12 @@ void GetShaderSourceInfo(std::ostringstream &ss, const std::vector<uint32_t> &in
 const char* GetOpString(const std::vector<uint32_t>& instructions, uint32_t string_id);
 uint32_t GetConstantValue(const std::vector<uint32_t>& instructions, uint32_t constant_id);
 void GetExecutionModelNames(const std::vector<uint32_t>& instructions, std::ostringstream& ss);
-uint32_t GetDebugLineOffset(const std::vector<uint32_t>& instructions, uint32_t instruction_position);
+
+struct DebugLineInfo {
+    // Offset of instruction from instruction_position
+    uint32_t target_offset;
+    // Offset to last line info, zero means nothing was found
+    uint32_t last_line_offset;
+};
+DebugLineInfo GetDebugLineOffset(const std::vector<uint32_t>& instructions, uint32_t instruction_position);
 }  // namespace spirv
