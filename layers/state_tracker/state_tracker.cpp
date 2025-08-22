@@ -4978,9 +4978,7 @@ void DeviceState::PostCallRecordCmdExecuteGeneratedCommandsEXT(VkCommandBuffer c
 void DeviceState::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                                   const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
                                                   const RecordObject &record_obj, chassis::CreateShaderModule &chassis_state) {
-    if (disabled[shader_validation]) {
-        return;  // VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT
-    } else if (pCreateInfo->codeSize == 0 || !pCreateInfo->pCode) {
+    if (pCreateInfo->codeSize == 0 || !pCreateInfo->pCode) {
         return;
     } else if (chassis_state.module_state) {
         // We store the shader module at a chassis stack level (because we need it for PostCallRecord in things like GPU-AV)
@@ -4989,7 +4987,7 @@ void DeviceState::PreCallRecordCreateShaderModule(VkDevice device, const VkShade
     }
 
     chassis_state.module_state =
-        std::make_shared<spirv::Module>(pCreateInfo->codeSize, pCreateInfo->pCode, &chassis_state.stateless_data);
+        CreateSpirvModuleState(pCreateInfo->codeSize, pCreateInfo->pCode, global_settings, &chassis_state.stateless_data);
     if (chassis_state.module_state && chassis_state.stateless_data.has_group_decoration) {
         spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(extensions.vk_khr_spirv_1_4));
         spvtools::Optimizer optimizer(spirv_environment);
@@ -5003,8 +5001,8 @@ void DeviceState::PreCallRecordCreateShaderModule(VkDevice device, const VkShade
             // Easier to just re-create the ShaderModule as StaticData uses itself when building itself up
             // It is really rare this will get here as Group Decorations have been deprecated and before this was added no one ever
             // raised an issue for a bug that would crash the layers that was around for many releases
-            chassis_state.module_state = std::make_shared<spirv::Module>(optimized_binary.size() * sizeof(uint32_t),
-                                                                         optimized_binary.data(), &chassis_state.stateless_data);
+            chassis_state.module_state = CreateSpirvModuleState(optimized_binary.size() * sizeof(uint32_t), optimized_binary.data(),
+                                                                global_settings, &chassis_state.stateless_data);
         }
     }
 }
@@ -5013,17 +5011,15 @@ void DeviceState::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t create
                                                 const VkShaderCreateInfoEXT *pCreateInfos, const VkAllocationCallbacks *pAllocator,
                                                 VkShaderEXT *pShaders, const RecordObject &record_obj,
                                                 chassis::ShaderObject &chassis_state) {
-    if (disabled[shader_validation]) {
-        return;  // VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT
-    }
     for (uint32_t i = 0; i < createInfoCount; ++i) {
         const VkShaderCreateInfoEXT &create_info = pCreateInfos[i];
         if (create_info.codeSize == 0 || !create_info.pCode || create_info.codeType != VK_SHADER_CODE_TYPE_SPIRV_EXT) {
             continue;
         }
         // don't need to worry about GroupDecoration with VK_EXT_shader_object
-        chassis_state.module_states[i] = std::make_shared<spirv::Module>(
-            create_info.codeSize, static_cast<const uint32_t *>(create_info.pCode), &chassis_state.stateless_data[i]);
+        chassis_state.module_states[i] =
+            CreateSpirvModuleState(create_info.codeSize, static_cast<const uint32_t *>(create_info.pCode), global_settings,
+                                   &chassis_state.stateless_data[i]);
     }
 }
 

@@ -99,7 +99,8 @@ PreRasterState::PreRasterState(const vvl::Pipeline &p, const vvl::DeviceState &s
                 // don't need to worry about GroupDecoration in GPL
                 spirv::StatelessData *stateless_data_stage =
                     (stateless_data && i < kCommonMaxGraphicsShaderStages) ? &stateless_data[i] : nullptr;
-                auto spirv_module = std::make_shared<spirv::Module>(shader_ci->codeSize, shader_ci->pCode, stateless_data_stage);
+                auto spirv_module = vvl::CreateSpirvModuleState(shader_ci->codeSize, shader_ci->pCode, state_data.global_settings,
+                                                                stateless_data_stage);
                 module_state = std::make_shared<vvl::ShaderModule>(VK_NULL_HANDLE, spirv_module);
                 if (stateless_data_stage) {
                     stateless_data_stage->pipeline_pnext_module = spirv_module;
@@ -219,8 +220,8 @@ void SetFragmentShaderInfoPrivate(const vvl::Pipeline &pipeline_state, FragmentS
                     // don't need to worry about GroupDecoration in GPL
                     spirv::StatelessData *stateless_data_stage =
                         (stateless_data && i < kCommonMaxGraphicsShaderStages) ? &stateless_data[i] : nullptr;
-                    auto spirv_module =
-                        std::make_shared<spirv::Module>(shader_ci->codeSize, shader_ci->pCode, stateless_data_stage);
+                    auto spirv_module = vvl::CreateSpirvModuleState(shader_ci->codeSize, shader_ci->pCode,
+                                                                    state_data.global_settings, stateless_data_stage);
                     module_state = std::make_shared<vvl::ShaderModule>(VK_NULL_HANDLE, spirv_module);
                     if (stateless_data_stage) {
                         stateless_data_stage->pipeline_pnext_module = spirv_module;

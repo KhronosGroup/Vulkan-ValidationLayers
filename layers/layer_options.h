@@ -84,6 +84,20 @@ struct GlobalSettings {
     bool fine_grained_locking = true;
 
     bool debug_disable_spirv_val = false;
+
+    // We have the spirv::Module state object designed to hold the SPIR-V and parse it so we can do validation on it, the
+    // issue/tricky part is gpuav/debugPrint use this to get the original SPIR-V (which we need to provide any useful error
+    // messages). These settings are here to make it more obvious what we want at runtime
+    //
+    // Stores a copy, needed to provide error messages and how DebugPrintf works
+    // (performance is fast, but memory overhead is higher)
+    bool spirv_store = true;
+    // Parsing of the SPIR-V to provide information for validation (core check, sync val, etc)
+    // (small performance hit for large shader)
+    bool spirv_parse = true;
+    // If we want to have spirv-opt potentially do constant folding on the spec constants
+    // (by far the largest performance bottle neck for large shaders using spec cosntants)
+    bool spirv_const_fold = true;
 };
 
 class DebugReport;

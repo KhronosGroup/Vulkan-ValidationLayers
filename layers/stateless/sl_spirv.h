@@ -42,9 +42,12 @@ namespace stateless {
 
 class SpirvValidator : public Logger {
   public:
-    SpirvValidator(DebugReport* debug_report, const vvl::StatelessDeviceData& stateless_device_data);
+    SpirvValidator(DebugReport* debug_report, const vvl::StatelessDeviceData& stateless_device_data, bool disabled);
 
     bool Validate(const spirv::Module& module_state, const spirv::StatelessData& stateless_data, const Location& loc) const;
+
+    // When we create the SpirvValidator, we will see if the runtime setting to disable it was set or not
+    const bool disabled;
 
     const APIVersion& api_version;
     const DeviceExtensions& extensions;

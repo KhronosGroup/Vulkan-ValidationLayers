@@ -1774,12 +1774,21 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
         }
     }
 
+    // Skip if VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT is set
+    // Both the validation and running spirv-opt on the spec constants really makes this function slow
+    // See https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/10566 for more info
+    if (disabled[shader_validation]) {
+        return skip;
+    }
+
     if ((pipeline && pipeline->uses_shader_module_id) || !stage_state.spirv_state) {
         return skip;  // these edge cases should be validated already
     }
 
     const spirv::Module &module_state = *stage_state.spirv_state.get();
-    if (!module_state.valid_spirv) return skip;  // checked elsewhere
+    if (!module_state.valid_spirv) {
+        return skip;  // checked elsewhere
+    }
 
     if (!stage_state.entrypoint) {
         const char *vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pName-00707" : "VUID-VkShaderCreateInfoEXT-pName-08440";
@@ -1814,8 +1823,7 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
     uint32_t total_task_payload_memory = 0;
 
     // If specialization-constant instructions are present in the shader, the specializations should be applied.
-    // Skip if VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT is set.
-    if (!disabled[shader_validation] && module_state.static_data_.has_specialization_constants) {
+    if (module_state.static_data_.has_specialization_constants && global_settings.spirv_const_fold) {
         // setup the call back if the optimizer fails
         spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(extensions.vk_khr_spirv_1_4));
         spvtools::Optimizer optimizer(spirv_environment);
@@ -2133,10 +2141,8 @@ void CoreChecks::PreCallRecordCreateShaderModule(VkDevice device, const VkShader
                                                  const RecordObject &record_obj, chassis::CreateShaderModule &chassis_state) {
     // Normally would validate in PreCallValidate, but need a non-const function to update chassis_state
     // This is on the stack, we don't have to worry about threading hazards and this could be moved and used const_cast
-    if (chassis_state.module_state) {
-        chassis_state.skip |=
-            stateless_spirv_validator.Validate(*chassis_state.module_state, chassis_state.stateless_data, record_obj.location);
-    }
+    chassis_state.skip |=
+        stateless_spirv_validator.Validate(*chassis_state.module_state, chassis_state.stateless_data, record_obj.location);
 }
 
 void CoreChecks::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos,
