@@ -115,7 +115,7 @@ def ParseSpirv(file: str, stats_collector: dict):
 
 def print_statistics(stats_collector: dict):
     print("\n=== Function Call Statistics ===")
-    for function_name, counts in stats_collector.items():            
+    for function_name, counts in stats_collector.items():
         counts_array = np.array(counts)
         print(f"\nFunction: {function_name}")
         print(f"  Count: {len(counts)}")
@@ -148,10 +148,10 @@ def main(argv):
         spirv_list = args.files
 
     stats_collector = defaultdict(list)
-    
+
     for file in spirv_list:
         ParseSpirv(file, stats_collector)
-    
+
     print_statistics(stats_collector)
 
 if __name__ == '__main__':

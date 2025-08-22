@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD041 -->
-<!-- Copyright 2021-2022 LunarG, Inc. -->
+<!-- Copyright 2021-2025 LunarG, Inc. -->
 [![Khronos Vulkan][1]][2]
 
 [1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
@@ -33,7 +33,7 @@ The locking in Vulkan-ValidationLayer is not intended to provide correct results
 
 ### Debugging Tips
 
-As mentioned above, solving all problems found by Thread Safety validation is highly recommended before trying to use Core Validation with Fine Grained Locking. 
+As mentioned above, solving all problems found by Thread Safety validation is highly recommended before trying to use Core Validation with Fine Grained Locking.
 
 If you encounter a crash, deadlock or incorrect behavior, re-run with Fine Grained Locking disabled. If your problem goes away, it is most likely a problem with the layer's locking code. If it remains, then it is probably caused by something else and will require further debugging.
 

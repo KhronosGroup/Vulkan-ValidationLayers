@@ -69,6 +69,26 @@ def VerifyClangFormatSource(commit, target_files):
     return retval
 #
 #
+# Check no trailing white spaces!
+def VerifyTrailingWhiteSpace(target_files):
+    whitespace_pattern = re.compile(r'[ \t]+$', flags=re.MULTILINE)
+    for file_path in target_files:
+        full_path = repo_relative(file_path)
+        if not os.path.isfile(full_path):
+            continue
+        try:
+            with open(repo_relative(full_path), 'r', encoding='utf-8', errors='ignore') as f:
+                for line in f:
+                    if whitespace_pattern.search(line):
+                        print(f"-------------- WHITE SPACE! --------------\nFound trailing white space in {file_path}")
+                        return 1
+        except FileNotFoundError:
+            print(f"Warning: File not found at '{file_path}'. Skipping.")
+        except Exception as e:
+            print(f"Error reading file '{file_path}': {e}")
+    return 0
+#
+#
 # Check copyright dates for modified files
 def VerifyCopyrights(commit, target_files):
     retval = 0
@@ -302,6 +322,7 @@ def main():
             continue
 
         failure |= VerifyClangFormatSource(commit, target_files)
+        failure |= VerifyTrailingWhiteSpace(target_files)
         failure |= VerifyCopyrights(commit, target_files)
         failure |= VerifyCommitMessageFormat(commit)
         failure |= VerifyTypeAssign(commit, target_files)
