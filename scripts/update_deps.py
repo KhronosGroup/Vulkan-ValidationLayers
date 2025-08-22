@@ -310,7 +310,7 @@ def run_cmake_command(cmake_cmd):
     # errors='replace' affects only how the text output is decoded, and indicates that
     # 8-bit characters that aren't recognized by the UTF decoder will be replaced with
     # an "unknown character" glyph instead of crashing.
-    result = subprocess.run(cmake_cmd, 
+    result = subprocess.run(cmake_cmd,
         stdout = subprocess.PIPE,
         stderr = subprocess.STDOUT,
         text = True,
@@ -468,18 +468,18 @@ class GoodRepo(object):
         """Get the platform suffix for binary downloads based on current platform."""
         system = platform.system().lower()
         machine = platform.machine().lower()
-        
+
         # No Android support
         for cmake_var in self._args.cmake_var:
             if "android.toolchain.cmake" in cmake_var:
                 return None
-        
+
         # No 32 bits architecture support
         if self._args.pointer_size == 4:
             return None
         if self._args.arch.lower() == '32' or self._args.arch == 'x86' or self._args.arch == 'win32':
             return None
-        
+
         platform_suffix = None
         if system == 'windows':
             if machine in ['aarch64', 'arm64']:
@@ -526,7 +526,7 @@ class GoodRepo(object):
 
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall(self.install_dir)
-        
+
         return True
 
     def CustomPreProcess(self, cmd_str, repo_dict):

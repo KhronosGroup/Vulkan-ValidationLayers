@@ -181,7 +181,7 @@ std::string Stats::CreateReport() {
 
         uint64_t access_state_objects_size = sizeof(ResourceAccessState) * stats.access_states;
         ss << std::setw(16) << access_state_objects_size;
-        
+
         ss << std::setw(14) << stats.access_states_dynamic_allocation_size;
         ss << "\n";
     };

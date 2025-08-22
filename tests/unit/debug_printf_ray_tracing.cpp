@@ -321,11 +321,11 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader) {
     const char* slang_shader = R"slang(
         [[vk::binding(0, 0)]] uniform RaytracingAccelerationStructure tlas;
         [[vk::binding(1, 0)]] RWStructuredBuffer<uint32_t> debug_buffer;
-        
+
         struct RayPayload {
             float3 hit;
         };
-        
+
         [shader("raygeneration")]
         void rayGenShader()
         {
@@ -335,34 +335,34 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader) {
             RayDesc ray;
             ray.TMin = 0.01;
             ray.TMax = 1000.0;
-        
+
             // Will hit
             ray.Origin = float3(0,0,-50);
             ray.Direction = float3(0,0,1);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
-        
+
             // Will miss
             ray.Origin = float3(0,0,-50);
             ray.Direction = float3(0,0,-1);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
-        
+
             // Will miss
             ray.Origin = float3(0,0,50);
             ray.Direction = float3(0,0,1);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
-        
+
             // Will miss
             ray.Origin = float3(0,0,50);
             ray.Direction = float3(0,0,-1);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
-        
+
             // Will miss
             ray.Origin = float3(0,0,0);
             ray.Direction = float3(0,0,1);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
-        
+
         }
-        
+
         [shader("miss")]
         void missShader(inout RayPayload payload)
         {
@@ -370,7 +370,7 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader) {
             InterlockedAdd(debug_buffer[1], 1);
             payload.hit = float3(0.1, 0.2, 0.3);
         }
-        
+
         [shader("closesthit")]
         void closestHitShader(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attr)
         {
@@ -378,7 +378,7 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader) {
             InterlockedAdd(debug_buffer[2], 1);
             const float3 barycentric_coords = float3(1.0f - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x,
         attr.barycentrics.y); payload.hit = barycentric_coords;
-        }        
+        }
     )slang";
 
     pipeline.AddSlangRayGenShader(slang_shader, "rayGenShader");
@@ -451,11 +451,11 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRays) {
     const char* slang_shader = R"slang(
         [[vk::binding(0, 0)]] uniform RaytracingAccelerationStructure tlas;
         [[vk::binding(1, 0)]] RWStructuredBuffer<uint32_t> debug_buffer;
-        
+
         struct RayPayload {
             float3 hit;
         };
-        
+
         [shader("raygeneration")]
         void rayGenShader()
         {
@@ -465,23 +465,23 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRays) {
             RayDesc ray;
             ray.TMin = 0.01;
             ray.TMax = 1000.0;
-        
+
             // Will miss
             ray.Origin = float3(0,0,0);
             ray.Direction = float3(0,0,-1);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
-        
+
             // Will hit cube 1
             ray.Origin = float3(0,0,0);
             ray.Direction = float3(1,0,0);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
-        
+
             // Will miss
             ray.Origin = float3(0,0,0);
             ray.Direction = float3(-1,0,0);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
         }
-        
+
         [shader("raygeneration")]
         void rayGenShader2()
         {
@@ -491,18 +491,18 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRays) {
             RayDesc ray;
             ray.TMin = 0.01;
             ray.TMax = 1000.0;
-        
+
             // Will hit cube 1
             ray.Origin = float3(-50,0,0);
             ray.Direction = float3(1,0,0);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
-        
+
             // Will hit cube 2
             ray.Origin = float3(0,0,0);
             ray.Direction = float3(0,0,1);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
         }
-        
+
         [shader("miss")]
         void missShader(inout RayPayload payload)
         {
@@ -510,7 +510,7 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRays) {
             InterlockedAdd(debug_buffer[2], 1);
             payload.hit = float3(0.1, 0.2, 0.3);
         }
-        
+
         [shader("miss")]
         void missShader2(inout RayPayload payload)
         {
@@ -518,7 +518,7 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRays) {
             InterlockedAdd(debug_buffer[3], 1);
             payload.hit = float3(42, 42, 42);
         }
-        
+
         [shader("closesthit")]
         void closestHitShader(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attr)
         {
@@ -526,25 +526,25 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRays) {
             InterlockedAdd(debug_buffer[4], 1);
             const float3 barycentric_coords = float3(1.0f - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x,
                 attr.barycentrics.y); payload.hit = barycentric_coords;
-        
+
             RayPayload ray_payload = { float3(0) };
             RayDesc ray;
-        
+
             ray.TMin = 0.01;
             ray.TMax = 1000.0;
             const uint32_t miss_shader_i = 1;
-        
+
             // Supposed to hit cube 2, and invoke closestHitShader2
             ray.Origin = float3(0,0,0);
             ray.Direction = float3(0,0,1);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, miss_shader_i, ray, ray_payload);
-        
+
             // Supposed to miss, and call missShader2
             ray.Origin = float3(0,0,0);
             ray.Direction = float3(0,1,0);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, miss_shader_i, ray, ray_payload);
         }
-        
+
         [shader("closesthit")]
         void closestHitShader2(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attr)
         {
@@ -552,7 +552,7 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRays) {
             InterlockedAdd(debug_buffer[5], 1);
             const float3 barycentric_coords = float3(1.0f - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x,
         attr.barycentrics.y); payload.hit = 999 * barycentric_coords;
-        }    
+        }
     )slang";
 
     pipeline.AddSlangRayGenShader(slang_shader, "rayGenShader");
@@ -643,11 +643,11 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndi
     const char* slang_shader = R"slang(
         [[vk::binding(0, 0)]] uniform RaytracingAccelerationStructure tlas;
         [[vk::binding(1, 0)]] RWStructuredBuffer<uint32_t> debug_buffer;
-        
+
         struct RayPayload {
             float3 hit;
         };
-        
+
         [shader("raygeneration")]
         void rayGenShader()
         {
@@ -657,23 +657,23 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndi
             RayDesc ray;
             ray.TMin = 0.01;
             ray.TMax = 1000.0;
-        
+
             // Will miss
             ray.Origin = float3(0,0,0);
             ray.Direction = float3(0,0,-1);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
-        
+
             // Will hit cube 1
             ray.Origin = float3(0,0,0);
             ray.Direction = float3(1,0,0);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
-        
+
             // Will miss
             ray.Origin = float3(0,0,0);
             ray.Direction = float3(-1,0,0);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
         }
-        
+
         [shader("raygeneration")]
         void rayGenShader2()
         {
@@ -683,18 +683,18 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndi
             RayDesc ray;
             ray.TMin = 0.01;
             ray.TMax = 1000.0;
-        
+
             // Will hit cube 1
             ray.Origin = float3(-50,0,0);
             ray.Direction = float3(1,0,0);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
-        
+
             // Will hit cube 2
             ray.Origin = float3(0,0,0);
             ray.Direction = float3(0,0,1);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
         }
-        
+
         [shader("miss")]
         void missShader(inout RayPayload payload)
         {
@@ -702,7 +702,7 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndi
             InterlockedAdd(debug_buffer[2], 1);
             payload.hit = float3(0.1, 0.2, 0.3);
         }
-        
+
         [shader("miss")]
         void missShader2(inout RayPayload payload)
         {
@@ -710,34 +710,34 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndi
             InterlockedAdd(debug_buffer[3], 1);
             payload.hit = float3(42, 42, 42);
         }
-        
+
         [shader("closesthit")]
         void closestHitShader(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attr)
         {
             printf("In Closest Hit 1");
             InterlockedAdd(debug_buffer[4], 1);
             const float3 barycentric_coords = float3(1.0f - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x,
-                attr.barycentrics.y); 
+                attr.barycentrics.y);
             payload.hit = barycentric_coords;
-        
+
             RayPayload ray_payload = { float3(0) };
             RayDesc ray;
-        
+
             ray.TMin = 0.01;
             ray.TMax = 1000.0;
             const uint32_t miss_shader_i = 1;
-        
+
             // Supposed to hit cube 2, and invoke closestHitShader2
             ray.Origin = float3(0,0,0);
             ray.Direction = float3(0,0,1);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, miss_shader_i, ray, ray_payload);
-        
+
             // Supposed to miss, and call missShader2
             ray.Origin = float3(0,0,0);
             ray.Direction = float3(0,1,0);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, miss_shader_i, ray, ray_payload);
         }
-        
+
         [shader("closesthit")]
         void closestHitShader2(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attr)
         {
@@ -745,7 +745,7 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndi
             InterlockedAdd(debug_buffer[5], 1);
             const float3 barycentric_coords = float3(1.0f - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x,
         attr.barycentrics.y); payload.hit = 999 * barycentric_coords;
-        }    
+        }
     )slang";
 
     pipeline.AddSlangRayGenShader(slang_shader, "rayGenShader");
@@ -835,11 +835,11 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndi
     const char* slang_shader = R"slang(
         [[vk::binding(0, 0)]] uniform RaytracingAccelerationStructure tlas;
         [[vk::binding(1, 0)]] RWStructuredBuffer<uint32_t> debug_buffer;
-        
+
         struct RayPayload {
             float3 hit;
         };
-        
+
         [shader("raygeneration")]
         void rayGenShader()
         {
@@ -849,23 +849,23 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndi
             RayDesc ray;
             ray.TMin = 0.01;
             ray.TMax = 1000.0;
-        
+
             // Will miss
             ray.Origin = float3(0,0,0);
             ray.Direction = float3(0,0,-1);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
-        
+
             // Will hit cube 1
             ray.Origin = float3(0,0,0);
             ray.Direction = float3(1,0,0);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
-        
+
             // Will miss
             ray.Origin = float3(0,0,0);
             ray.Direction = float3(-1,0,0);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
         }
-        
+
         [shader("raygeneration")]
         void rayGenShader2()
         {
@@ -875,18 +875,18 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndi
             RayDesc ray;
             ray.TMin = 0.01;
             ray.TMax = 1000.0;
-        
+
             // Will hit cube 1
             ray.Origin = float3(-50,0,0);
             ray.Direction = float3(1,0,0);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
-        
+
             // Will hit cube 2
             ray.Origin = float3(0,0,0);
             ray.Direction = float3(0,0,1);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
         }
-        
+
         [shader("miss")]
         void missShader(inout RayPayload payload)
         {
@@ -894,7 +894,7 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndi
             InterlockedAdd(debug_buffer[2], 1);
             payload.hit = float3(0.1, 0.2, 0.3);
         }
-        
+
         [shader("miss")]
         void missShader2(inout RayPayload payload)
         {
@@ -902,7 +902,7 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndi
             InterlockedAdd(debug_buffer[3], 1);
             payload.hit = float3(42, 42, 42);
         }
-        
+
         [shader("closesthit")]
         void closestHitShader(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attr)
         {
@@ -910,25 +910,25 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndi
             InterlockedAdd(debug_buffer[4], 1);
             const float3 barycentric_coords = float3(1.0f - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x,
                 attr.barycentrics.y); payload.hit = barycentric_coords;
-        
+
             RayPayload ray_payload = { float3(0) };
             RayDesc ray;
-        
+
             ray.TMin = 0.01;
             ray.TMax = 1000.0;
             const uint32_t miss_shader_i = 1;
-        
+
             // Supposed to hit cube 2, and invoke closestHitShader2
             ray.Origin = float3(0,0,0);
             ray.Direction = float3(0,0,1);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, miss_shader_i, ray, ray_payload);
-        
+
             // Supposed to miss, and call missShader2
             ray.Origin = float3(0,0,0);
             ray.Direction = float3(0,1,0);
             TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, miss_shader_i, ray, ray_payload);
         }
-        
+
         [shader("closesthit")]
         void closestHitShader2(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attr)
         {
@@ -936,7 +936,7 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndi
             InterlockedAdd(debug_buffer[5], 1);
             const float3 barycentric_coords = float3(1.0f - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x,
         attr.barycentrics.y); payload.hit = 999 * barycentric_coords;
-        }    
+        }
     )slang";
 
     pipeline.AddSlangRayGenShader(slang_shader, "rayGenShader");

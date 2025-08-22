@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #
-# Copyright (c) 2020-2023 Valve Corporation
-# Copyright (c) 2020-2023 LunarG, Inc.
+# Copyright (c) 2020-2025 Valve Corporation
+# Copyright (c) 2020-2025 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 # Scrub source code of "aliases" -- extension types and enums that have been promoted to core.
 #
 # Usage: antialias_source.py XML_PATH SOURCE_PATH...
-# 
+#
 # Notes:
 # - Source code generators need to be re-run after this script due to
 #   inconsitencies in the registry with regard to alias usage
