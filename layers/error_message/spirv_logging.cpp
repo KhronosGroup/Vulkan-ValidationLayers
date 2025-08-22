@@ -432,9 +432,16 @@ void GetExecutionModelNames(const std::vector<uint32_t> &instructions, std::ostr
     }
 }
 
+struct DebugLineInfo {
+    // Offset of instruction from instruction_position
+    uint32_t target_offset;
+    // Offset to last line info, zero means nothing was found
+    uint32_t last_line_offset;
+};
+
 // Find the OpLine/DebugLine just before the failing instruction indicated by the debug info.
 // Return the offset into the instructions array
-DebugLineInfo GetDebugLineOffset(const std::vector<uint32_t> &instructions, uint32_t instruction_position) {
+static DebugLineInfo GetDebugLineOffset(const std::vector<uint32_t> &instructions, uint32_t instruction_position) {
     uint32_t index = 0;
     uint32_t shader_debug_info_set_id = 0;
     uint32_t last_line_inst_offset = 0;
@@ -470,6 +477,25 @@ DebugLineInfo GetDebugLineOffset(const std::vector<uint32_t> &instructions, uint
     }
 
     return {offset, last_line_inst_offset};
+}
+
+// There are 2 ways to inject source into a shader:
+// 1. The "old" way using OpLine/OpSource
+// 2. The "new" way using NonSemantic Shader DebugInfo
+void FindShaderSource(std::ostringstream &ss, const std::vector<uint32_t> &instructions, uint32_t instruction_position,
+                      bool debug_printf_only) {
+    ss << "SPIR-V Instruction Index = " << instruction_position << '\n';
+
+    const DebugLineInfo debug_info = GetDebugLineOffset(instructions, instruction_position);
+    if (debug_info.last_line_offset != 0) {
+        Instruction last_line_inst(instructions.data() + debug_info.last_line_offset);
+        ss << (debug_printf_only ? "Debug shader printf message generated at " : "Shader validation error occurred at ");
+        GetShaderSourceInfo(ss, instructions, last_line_inst);
+    } else {
+        spirv::Instruction target_inst(instructions.data() + debug_info.target_offset);
+        ss << "SPIR-V Instruction: " << target_inst.Describe()
+           << "\n(Unable to find shader source, build shader with debug info to get source information)\n";
+    }
 }
 
 }  // namespace spirv
