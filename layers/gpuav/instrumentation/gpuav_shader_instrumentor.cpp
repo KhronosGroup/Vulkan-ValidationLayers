@@ -1526,27 +1526,6 @@ static void GenerateStageMessage(std::ostringstream &ss, const GpuShaderInstrume
     ss << '\n';
 }
 
-// There are 2 ways to inject source into a shader:
-// 1. The "old" way using OpLine/OpSource
-// 2. The "new" way using NonSemantic Shader DebugInfo
-static std::string FindShaderSource(std::ostringstream &ss, const std::vector<uint32_t> &instructions,
-                                    uint32_t instruction_position, bool debug_printf_only) {
-    ss << "SPIR-V Instruction Index = " << instruction_position << '\n';
-
-    const auto debug_info = ::spirv::GetDebugLineOffset(instructions, instruction_position);
-    if (debug_info.last_line_offset != 0) {
-        Instruction last_line_inst(instructions.data() + debug_info.last_line_offset);
-        ss << (debug_printf_only ? "Debug shader printf message generated at " : "Shader validation error occurred at ");
-        GetShaderSourceInfo(ss, instructions, last_line_inst);
-    } else {
-        spirv::Instruction target_inst(instructions.data() + debug_info.target_offset);
-        ss << "SPIR-V instruction: " << target_inst.Describe()
-           << "\n(Unable to find shader source, build shader with debug info to get source information)\n";
-    }
-
-    return ss.str();
-}
-
 // Where we build up the error message with all the useful debug information about where the error occured
 std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(VkCommandBuffer commandBuffer, const ShaderMessageInfo &shader_info,
                                                             const InstrumentedShader *instrumented_shader,
@@ -1604,7 +1583,8 @@ std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(VkCommandBuffer comm
     }
     ss << std::dec << std::noshowbase;
 
-    FindShaderSource(ss, instrumented_shader->original_spirv, shader_info.instruction_position, gpuav_settings.debug_printf_only);
+    ::spirv::FindShaderSource(ss, instrumented_shader->original_spirv, shader_info.instruction_position,
+                              gpuav_settings.debug_printf_only);
 
     return ss.str();
 }

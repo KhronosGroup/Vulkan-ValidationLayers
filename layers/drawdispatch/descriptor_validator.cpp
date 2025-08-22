@@ -117,16 +117,7 @@ std::string DescriptorValidator::DescribeInstruction() const {
     // This will not work for the static version because there we care there is an OpVariable defined (not if it is used).
     if (original_spirv) {
         ss << '\n';
-        const auto debug_info = ::spirv::GetDebugLineOffset(*original_spirv, instruction_position);
-        if (debug_info.last_line_offset != 0) {
-            spirv::Instruction last_line_inst(original_spirv->data() + debug_info.last_line_offset);
-            GetShaderSourceInfo(ss, *original_spirv, last_line_inst);
-        } else {
-            spirv::Instruction target_inst(original_spirv->data() + debug_info.target_offset);
-            ss << "SPIR-V instruction: " << target_inst.Describe()
-               << "\n(Unable to find shader source, build shader with debug info to get source information)\n";
-        }
-        ss << '\n';
+        ::spirv::FindShaderSource(ss, *original_spirv, instruction_position, false);
     }
     return ss.str();
 }
