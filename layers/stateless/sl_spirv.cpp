@@ -57,8 +57,9 @@ static void GetVariableInfo(const spirv::Module &module_state, const spirv::Inst
     }
 }
 
-SpirvValidator::SpirvValidator(DebugReport *debug_report, const vvl::StatelessDeviceData &stateless_device_data)
+SpirvValidator::SpirvValidator(DebugReport *debug_report, const vvl::StatelessDeviceData &stateless_device_data, bool disabled)
     : Logger(debug_report),
+      disabled(disabled),
       api_version(stateless_device_data.api_version),
       extensions(stateless_device_data.extensions),
       phys_dev_props(stateless_device_data.phys_dev_props),
@@ -77,7 +78,9 @@ SpirvValidator::SpirvValidator(DebugReport *debug_report, const vvl::StatelessDe
 bool SpirvValidator::Validate(const spirv::Module &module_state, const spirv::StatelessData &stateless_data,
                               const Location &loc) const {
     bool skip = false;
-    if (!module_state.valid_spirv) return skip;
+    if (!module_state.valid_spirv || disabled) {
+        return skip;
+    }
 
     skip |= ValidateShaderClock(module_state, stateless_data, loc);
     skip |= ValidateAtomicsTypes(module_state, stateless_data, loc);

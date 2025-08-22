@@ -287,9 +287,9 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
                                                  VkShaderEXT* pShaders, const ErrorObject& error_obj) const {
     bool skip = false;
 
-    // the spec clarifies that VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT works on VK_EXT_shader_object as well
+    // If user has VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT, just skip all things related to creating the shader object
     if (disabled[shader_validation]) {
-        return skip; // VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT
+        return skip;
     }
 
     if (enabled_features.shaderObject == VK_FALSE) {
@@ -323,7 +323,8 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
         spv_const_binary_t binary{static_cast<const uint32_t*>(create_info.pCode), create_info.codeSize / sizeof(uint32_t)};
         skip |= RunSpirvValidation(binary, create_info_loc, cache);
 
-        const auto spirv = std::make_shared<spirv::Module>(create_info.codeSize, static_cast<const uint32_t*>(create_info.pCode));
+        const auto spirv =
+            vvl::CreateSpirvModuleState(create_info.codeSize, static_cast<const uint32_t*>(create_info.pCode), global_settings);
         vku::safe_VkShaderCreateInfoEXT safe_create_info = vku::safe_VkShaderCreateInfoEXT(&pCreateInfos[i]);
         const ShaderStageState stage_state(nullptr, &safe_create_info, nullptr, spirv);
         skip |= ValidateShaderStage(stage_state, nullptr, create_info_loc);

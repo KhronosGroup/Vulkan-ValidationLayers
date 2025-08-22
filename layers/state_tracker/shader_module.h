@@ -632,7 +632,7 @@ struct Module {
     // The goal of this struct is to move everything that is ready only into here
     struct StaticData {
         StaticData() = default;
-        StaticData(const Module &module_state, StatelessData *stateless_data = nullptr);
+        StaticData(const Module &module_state, bool parse, StatelessData *stateless_data);
         StaticData &operator=(StaticData &&) = default;
         StaticData(StaticData &&) = default;
 
@@ -713,14 +713,20 @@ struct Module {
     VulkanTypedHandle handle_;                            // Will be updated once its known its valid SPIR-V
     VulkanTypedHandle handle() const { return handle_; }  // matches normal convention to get handle
 
-    // Used for when modifying the SPIR-V (spirv-opt, GPU-AV instrumentation, etc) and need reparse it for VVL validation
-    Module(vvl::span<const uint32_t> code) : valid_spirv(true), words_(code.begin(), code.end()), static_data_(*this) {}
+    // Only currently used for when modifying the SPIR-V after spirv-opt and we need reparse it for VVL validation
+    explicit Module(vvl::span<const uint32_t> code)
+        : valid_spirv(true), words_(code.begin(), code.end()), static_data_(*this, true, nullptr) {}
 
+    // Used when we want to create a spirv::Module object (to make it easier to have a handle everywhere) but don't actually want to
+    // store/parse the SPIR-V itself (because it is turned off via settings)
+    explicit Module(bool is_valid_spirv) : valid_spirv(is_valid_spirv) {}
+
+    // "Normal" case
     // StatelessData is a pointer as we have cases were we don't need it and simpler to just null check the few cases that use it
-    Module(size_t codeSize, const uint32_t *pCode, StatelessData *stateless_data = nullptr)
-        : valid_spirv(pCode && pCode[0] == spv::MagicNumber && ((codeSize % 4) == 0)),
+    Module(size_t codeSize, const uint32_t *pCode, bool is_valid_spirv, bool parse, StatelessData *stateless_data)
+        : valid_spirv(is_valid_spirv),
           words_(pCode, pCode + codeSize / sizeof(uint32_t)),
-          static_data_(*this, stateless_data) {}
+          static_data_(*this, parse, stateless_data) {}
 
     const Instruction *FindDef(uint32_t id) const {
         auto it = static_data_.definitions.find(id);
@@ -789,14 +795,19 @@ struct Module {
 
 }  // namespace spirv
 
+struct GlobalSettings;
+
 // Represents a VkShaderModule handle
 namespace vvl {
+
+// Need to allow a way to not waste time copying over to spirv::Module::words_ when we don't want to store the SPIR-V
+std::shared_ptr<spirv::Module> CreateSpirvModuleState(size_t codeSize, const uint32_t *pCode, const GlobalSettings &global_settings,
+                                                      spirv::StatelessData *stateless_data = nullptr);
+
 struct ShaderModule : public StateObject {
     ShaderModule(VkShaderModule handle, std::shared_ptr<spirv::Module> &spirv_module)
         : StateObject(handle, kVulkanObjectTypeShaderModule), spirv(spirv_module) {
-        if (spirv) {
-            spirv->handle_ = handle_;
-        }
+        spirv->handle_ = handle_;
     }
 
     // For when we need to create a module with no SPIR-V backing it

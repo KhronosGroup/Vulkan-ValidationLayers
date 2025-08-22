@@ -1119,6 +1119,28 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
             "errors in Core Check are solved, please disable, then only use GPU-AV for best performance.");
     }
 
+    // Set at the end once we decide what settings are actually on
+    if (settings_data->disables[shader_validation] || settings_data->disables[core_checks]) {
+        // only is used for core validation checks
+        global_settings.spirv_const_fold = false;
+
+        // sync val relies on the information from spirv::Module being parsed and stored
+        if (!settings_data->enables[sync_validation]) {
+            // GPU-AV/DebugPrintf relies on spirv::Module to hold the original SPIR-V
+            if (!settings_data->enables[gpu_validation] && !settings_data->enables[debug_printf_validation]) {
+                global_settings.spirv_store = false;
+            } else if (settings_data->disables[shader_validation]) {
+                setting_warnings.emplace_back(
+                    "Shader Validation was explicitly turned off, but the SPIR-V still needs to be stored, but not validated, in "
+                    "order for GPU-AV/DebugPrintf to get information from the original SPIR-V.");
+            }
+        } else if (settings_data->disables[shader_validation]) {
+            setting_warnings.emplace_back(
+                "Shader Validation was explicitly turned off, but the SPIR-V still needs to be parsed/stored, but not validated, "
+                "in order for Sync Validation to get read/write information out the SPIR-V.");
+        }
+    }
+
     // Last as previous settings are needed so we can make sure they line up with the DebugReport settings
     ProcessDebugReportSettings(settings_data, layer_setting_set, setting_warnings);
 

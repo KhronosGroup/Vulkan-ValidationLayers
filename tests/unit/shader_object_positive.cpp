@@ -1673,3 +1673,25 @@ TEST_F(PositiveShaderObject, MultiCreateGraphicsCompute) {
         vk::DestroyShaderEXT(*m_device, shaders[i], nullptr);
     }
 }
+
+TEST_F(PositiveShaderObject, DisableShaderValidation) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "check_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse};
+    VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
+    RETURN_IF_SKIP(InitFramework(&layer_setting_ci));
+    RETURN_IF_SKIP(InitState());
+    InitDynamicRenderTarget();
+    CreateMinimalShaders();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude();
+    m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}

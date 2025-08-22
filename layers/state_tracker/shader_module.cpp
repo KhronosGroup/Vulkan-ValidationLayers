@@ -21,6 +21,7 @@
 #include <queue>
 
 #include <vulkan/utility/vk_format_utils.h>
+#include "layer_options.h"
 #include "utils/assert_utils.h"
 #include "utils/hash_util.h"
 #include "generated/spirv_grammar_helper.h"
@@ -944,8 +945,11 @@ EntryPoint::EntryPoint(const Module& module_state, const Instruction& entrypoint
     }
 }
 
-Module::StaticData::StaticData(const Module& module_state, StatelessData* stateless_data) {
-    if (!module_state.valid_spirv) return;
+Module::StaticData::StaticData(const Module& module_state, bool parse, StatelessData* stateless_data) {
+    // If parse is set off, save time because StaticData is never accessed
+    if (!module_state.valid_spirv || !parse) {
+        return;
+    }
 
     // Parse the words first so we have instruction class objects to use
     {
@@ -2601,3 +2605,15 @@ bool Module::UsesStorageCapabilityStorageClass(const Instruction& insn) const {
 }
 
 }  // namespace spirv
+
+namespace vvl {
+// Need to allow a way to not waste time copying over to spirv::Module::words_ when we don't want to store the SPIR-V
+std::shared_ptr<spirv::Module> CreateSpirvModuleState(size_t codeSize, const uint32_t* pCode, const GlobalSettings& global_settings,
+                                                      spirv::StatelessData* stateless_data) {
+    const bool is_valid_spirv = (pCode && pCode[0] == spv::MagicNumber && ((codeSize % 4) == 0));
+    if (!global_settings.spirv_store) {
+        return std::make_shared<spirv::Module>(is_valid_spirv);
+    }
+    return std::make_shared<spirv::Module>(codeSize, pCode, is_valid_spirv, global_settings.spirv_parse, stateless_data);
+}
+}  // namespace vvl

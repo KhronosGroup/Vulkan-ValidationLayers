@@ -222,7 +222,7 @@ class CoreChecks : public vvl::DeviceProxy {
 
     CoreChecks(vvl::dispatch::Device* dev, core::Instance* instance_vo)
         : BaseClass(dev, instance_vo, LayerObjectTypeCoreValidation),
-          stateless_spirv_validator(dev->debug_report, dev->stateless_device_data) {}
+          stateless_spirv_validator(dev->debug_report, dev->stateless_device_data, dev->settings.disabled[shader_validation]) {}
 
     ReadLockGuard ReadLock() const override;
     WriteLockGuard WriteLock() override;

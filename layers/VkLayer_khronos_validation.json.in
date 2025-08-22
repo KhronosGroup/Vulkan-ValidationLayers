@@ -313,7 +313,7 @@
                                 {
                                     "key": "check_shaders",
                                     "label": "Shader",
-                                    "description": "This will validate the contents of the SPIR-V which can be CPU intensive during application start up. This does internal checks as well as calling spirv-val.",
+                                    "description": "This will validate the contents of the SPIR-V which can be CPU intensive during application start up. This does internal checks as well as calling spirv-val. (Same effect using VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT)",
                                     "type": "BOOL",
                                     "default": true,
                                     "expanded": true,

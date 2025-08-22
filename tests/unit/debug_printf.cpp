@@ -38,9 +38,6 @@ void DebugPrintfTests::InitDebugPrintfFramework(void *p_next, bool reserve_slot)
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
-        GTEST_SKIP() << "Currently disabled for Portability";
-    }
 }
 
 class NegativeDebugPrintf : public DebugPrintfTests {
@@ -2411,8 +2408,8 @@ TEST_F(NegativeDebugPrintf, SetupErrorVersion) {
     features.pDisabledValidationFeatures = disables;
     RETURN_IF_SKIP(InitFramework(&features));
 
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
-        GTEST_SKIP() << "Currently disabled for Portability";
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
 
     m_errorMonitor->SetDesiredError("requires Vulkan 1.1 or later");
@@ -5104,6 +5101,122 @@ TEST_F(NegativeDebugPrintf, DrawMeshTasksIndirectCountEXT) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("gl_DrawID = 0");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDebugPrintf, DisableShaderValidation) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
+    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    VkLayerSettingEXT layer_settings[2] = {{OBJECT_LAYER_NAME, "check_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse},
+                                           {OBJECT_LAYER_NAME, "printf_enable", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue}};
+    VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 2, layer_settings};
+    RETURN_IF_SKIP(InitFramework(&layer_setting_ci));
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    char const *frag_shader = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        layout(set = 0, binding = 0) buffer SSBO {
+            uint x; // something to trigger pipeline validation
+        };
+        void main() {
+            uint myValue = 42;
+            x = myValue;
+            // only will print once
+            if (gl_FragCoord.x > 10 && gl_FragCoord.x < 11 && gl_FragCoord.y > 10 && gl_FragCoord.y < 12) {
+                debugPrintfEXT("myValue == %u", myValue);
+            }
+        }
+    )glsl";
+
+    OneOffDescriptorSet ds(m_device, {
+                                         {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                     });
+    vkt::PipelineLayout pipeline_layout(*m_device, {&ds.layout_});
+    vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    ds.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    ds.UpdateDescriptorSets();
+
+    VkShaderObj vs(this, kVertexDrawPassthroughGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, frag_shader, VK_SHADER_STAGE_FRAGMENT_BIT);
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.gp_ci_.layout = pipeline_layout;
+    pipe.CreateGraphicsPipeline();
+
+    vkt::SimpleGPL pipe_gpl(*this, pipeline_layout, kVertexDrawPassthroughGlsl, frag_shader);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &ds.set_, 0, nullptr);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_gpl);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredInfo("myValue == 42");  // normal
+    m_errorMonitor->SetDesiredInfo("myValue == 42");  // gpl
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDebugPrintf, DisableShaderValidationShaderObject) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    VkLayerSettingEXT layer_settings[2] = {{OBJECT_LAYER_NAME, "check_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse},
+                                           {OBJECT_LAYER_NAME, "printf_enable", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue}};
+    VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 2, layer_settings};
+    RETURN_IF_SKIP(InitFramework(&layer_setting_ci));
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+    RETURN_IF_SKIP(InitState());
+
+    OneOffDescriptorSet ds(m_device, {
+                                         {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                     });
+    vkt::PipelineLayout pipeline_layout(*m_device, {&ds.layout_});
+    vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    ds.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    ds.UpdateDescriptorSets();
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        layout(set = 0, binding = 0) buffer SSBO {
+            uint x; // something to trigger pipeline validation
+        };
+        void main() {
+            uint myValue = 42;
+            x = myValue;
+            debugPrintfEXT("myValue == %u", myValue);
+        }
+    )glsl";
+
+    const vkt::Shader cs(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, shader_source),
+                         &ds.layout_.handle());
+
+    m_command_buffer.Begin();
+    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_COMPUTE_BIT};
+    vk::CmdBindShadersEXT(m_command_buffer, 1, stages, &cs.handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &ds.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredInfo("myValue == 42");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }

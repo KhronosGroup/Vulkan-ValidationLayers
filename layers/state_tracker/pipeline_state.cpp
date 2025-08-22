@@ -91,7 +91,8 @@ std::vector<ShaderStageState> Pipeline::GetStageStates(const DeviceState &state_
             // This support was also added in VK_KHR_maintenance5
             if (const auto shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext)) {
                 // don't need to worry about GroupDecoration in GPL
-                auto spirv_module = std::make_shared<spirv::Module>(shader_ci->codeSize, shader_ci->pCode, stateless_data);
+                auto spirv_module =
+                    CreateSpirvModuleState(shader_ci->codeSize, shader_ci->pCode, state_data.global_settings, stateless_data);
                 module_state = std::make_shared<vvl::ShaderModule>(VK_NULL_HANDLE, spirv_module);
                 if (stateless_data) {
                     stateless_data->pipeline_pnext_module = spirv_module;

@@ -39,9 +39,6 @@ class NegativeDebugPrintfRayTracing : public DebugPrintfTests {
         if (!CanEnableGpuAV(*this)) {
             GTEST_SKIP() << "Requirements for GPU-AV/Printf are not met";
         }
-        if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
-            GTEST_SKIP() << "Currently disabled for Portability";
-        }
     }
 };
 
