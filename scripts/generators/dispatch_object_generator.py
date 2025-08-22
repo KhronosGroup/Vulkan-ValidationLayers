@@ -617,6 +617,11 @@ class DispatchObjectGenerator(BaseGenerator):
                 if (count_name is not None) and not topLevel:
                     count_name = f'{prefix}{member.length}'
 
+                # Handle the case when the member specifying the count is a pointer
+                for count_member in members:
+                    if count_member.name == member.length and count_member.pointer:
+                        count_name = f'*{count_name}'
+
                 if (not topLevel) or (not isCreate) or (not member.pointer):
                     if count_name is not None:
                         if topLevel:
