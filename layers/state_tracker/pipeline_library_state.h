@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include <iterator>
+
 #include "state_tracker/pipeline_layout_state.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
 #include <vulkan/utility/vk_struct_helper.hpp>
