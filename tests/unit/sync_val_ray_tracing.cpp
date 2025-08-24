@@ -713,3 +713,63 @@ TEST_F(NegativeSyncValRayTracing, DeserializeASHazard) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeSyncValRayTracing, BuildAfterBuildSyncASBufferButNotScratch) {
+    TEST_DESCRIPTION("Build BLAS after BLAS. Barrier BLAS buffer but not syncs scratch buffer");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitRayTracing());
+
+    vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas.GetDstAS()->SetBufferUsageFlags(VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
+    blas.SetupBuild(true);
+
+    const vkt::Buffer& accel_buffer = blas.GetDstAS()->GetBuffer();
+
+    VkBufferMemoryBarrier2 blas_buffer_barrier = vku::InitStructHelper();
+    blas_buffer_barrier.srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+    blas_buffer_barrier.srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
+    blas_buffer_barrier.dstStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+    blas_buffer_barrier.dstAccessMask =
+        VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+    blas_buffer_barrier.buffer = accel_buffer;
+    blas_buffer_barrier.offset = 0;
+    blas_buffer_barrier.size = accel_buffer.CreateInfo().size;
+
+    m_command_buffer.Begin();
+    blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_command_buffer.Barrier(blas_buffer_barrier);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeSyncValRayTracing, BuildAfterBuildSyncScratchButNotASBuffer) {
+    TEST_DESCRIPTION("Build BLAS after BLAS. Barrier syncs scratch buffer but not BLAS buffer");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitRayTracing());
+
+    vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas.GetDstAS()->SetBufferUsageFlags(VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
+    blas.SetupBuild(true);
+
+    VkBufferMemoryBarrier2 scratch_buffer_barrier = vku::InitStructHelper();
+    scratch_buffer_barrier.srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+    scratch_buffer_barrier.srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
+    scratch_buffer_barrier.dstStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+    scratch_buffer_barrier.dstAccessMask =
+        VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+    scratch_buffer_barrier.buffer = *blas.GetScratchBuffer();
+    scratch_buffer_barrier.offset = 0;
+    scratch_buffer_barrier.size = blas.GetScratchBuffer()->CreateInfo().size;
+
+    m_command_buffer.Begin();
+    blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_command_buffer.Barrier(scratch_buffer_barrier);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
