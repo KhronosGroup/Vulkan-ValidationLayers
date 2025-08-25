@@ -2908,6 +2908,38 @@ void PreCallRecordGetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpoint
 void PostCallRecordGetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount, VkCheckpointData2NV* pCheckpointData,
                                              const RecordObject& record_obj) override;
 
+void PreCallRecordSetSwapchainPresentTimingQueueSizeEXT(VkDevice device, VkSwapchainKHR swapchain, uint32_t size,
+                                                        const RecordObject& record_obj) override;
+
+void PostCallRecordSetSwapchainPresentTimingQueueSizeEXT(VkDevice device, VkSwapchainKHR swapchain, uint32_t size,
+                                                         const RecordObject& record_obj) override;
+
+void PreCallRecordGetSwapchainTimingPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                  VkSwapchainTimingPropertiesEXT* pSwapchainTimingProperties,
+                                                  uint64_t* pSwapchainTimingPropertiesCounter,
+                                                  const RecordObject& record_obj) override;
+
+void PostCallRecordGetSwapchainTimingPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                   VkSwapchainTimingPropertiesEXT* pSwapchainTimingProperties,
+                                                   uint64_t* pSwapchainTimingPropertiesCounter,
+                                                   const RecordObject& record_obj) override;
+
+void PreCallRecordGetSwapchainTimeDomainPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                      VkSwapchainTimeDomainPropertiesEXT* pSwapchainTimeDomainProperties,
+                                                      uint64_t* pTimeDomainsCounter, const RecordObject& record_obj) override;
+
+void PostCallRecordGetSwapchainTimeDomainPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                       VkSwapchainTimeDomainPropertiesEXT* pSwapchainTimeDomainProperties,
+                                                       uint64_t* pTimeDomainsCounter, const RecordObject& record_obj) override;
+
+void PreCallRecordGetPastPresentationTimingEXT(VkDevice device, const VkPastPresentationTimingInfoEXT* pPastPresentationTimingInfo,
+                                               VkPastPresentationTimingPropertiesEXT* pPastPresentationTimingProperties,
+                                               const RecordObject& record_obj) override;
+
+void PostCallRecordGetPastPresentationTimingEXT(VkDevice device, const VkPastPresentationTimingInfoEXT* pPastPresentationTimingInfo,
+                                                VkPastPresentationTimingPropertiesEXT* pPastPresentationTimingProperties,
+                                                const RecordObject& record_obj) override;
+
 void PreCallRecordInitializePerformanceApiINTEL(VkDevice device, const VkInitializePerformanceApiInfoINTEL* pInitializeInfo,
                                                 const RecordObject& record_obj) override;
 

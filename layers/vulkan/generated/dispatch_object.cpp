@@ -499,6 +499,13 @@ void HandleWrapper::UnwrapPnextChainHandles(const void* pNext) {
                     safe_struct->quantizationMap = Unwrap(safe_struct->quantizationMap);
                 }
             } break;
+            case VK_STRUCTURE_TYPE_SWAPCHAIN_CALIBRATED_TIMESTAMP_INFO_EXT: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkSwapchainCalibratedTimestampInfoEXT*>(cur_pnext);
+
+                if (safe_struct->swapchain) {
+                    safe_struct->swapchain = Unwrap(safe_struct->swapchain);
+                }
+            } break;
 #ifdef VK_USE_PLATFORM_METAL_EXT
             case VK_STRUCTURE_TYPE_EXPORT_METAL_BUFFER_INFO_EXT: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkExportMetalBufferInfoEXT*>(cur_pnext);
@@ -5035,8 +5042,23 @@ VkResult Instance::GetPhysicalDeviceCalibrateableTimeDomainsKHR(VkPhysicalDevice
 VkResult Device::GetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
                                             const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
                                             uint64_t* pMaxDeviation) {
-    VkResult result =
-        device_dispatch_table.GetCalibratedTimestampsKHR(device, timestampCount, pTimestampInfos, pTimestamps, pMaxDeviation);
+    if (!wrap_handles)
+        return device_dispatch_table.GetCalibratedTimestampsKHR(device, timestampCount, pTimestampInfos, pTimestamps,
+                                                                pMaxDeviation);
+    small_vector<vku::safe_VkCalibratedTimestampInfoKHR, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pTimestampInfos;
+    vku::safe_VkCalibratedTimestampInfoKHR* local_pTimestampInfos = nullptr;
+    {
+        if (pTimestampInfos) {
+            var_local_pTimestampInfos.resize(timestampCount);
+            local_pTimestampInfos = var_local_pTimestampInfos.data();
+            for (uint32_t index0 = 0; index0 < timestampCount; ++index0) {
+                local_pTimestampInfos[index0].initialize(&pTimestampInfos[index0]);
+                UnwrapPnextChainHandles(local_pTimestampInfos[index0].pNext);
+            }
+        }
+    }
+    VkResult result = device_dispatch_table.GetCalibratedTimestampsKHR(
+        device, timestampCount, (const VkCalibratedTimestampInfoKHR*)local_pTimestampInfos, pTimestamps, pMaxDeviation);
 
     return result;
 }
@@ -6214,8 +6236,23 @@ VkResult Instance::GetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPhysicalDevice
 VkResult Device::GetCalibratedTimestampsEXT(VkDevice device, uint32_t timestampCount,
                                             const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
                                             uint64_t* pMaxDeviation) {
-    VkResult result =
-        device_dispatch_table.GetCalibratedTimestampsEXT(device, timestampCount, pTimestampInfos, pTimestamps, pMaxDeviation);
+    if (!wrap_handles)
+        return device_dispatch_table.GetCalibratedTimestampsEXT(device, timestampCount, pTimestampInfos, pTimestamps,
+                                                                pMaxDeviation);
+    small_vector<vku::safe_VkCalibratedTimestampInfoKHR, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pTimestampInfos;
+    vku::safe_VkCalibratedTimestampInfoKHR* local_pTimestampInfos = nullptr;
+    {
+        if (pTimestampInfos) {
+            var_local_pTimestampInfos.resize(timestampCount);
+            local_pTimestampInfos = var_local_pTimestampInfos.data();
+            for (uint32_t index0 = 0; index0 < timestampCount; ++index0) {
+                local_pTimestampInfos[index0].initialize(&pTimestampInfos[index0]);
+                UnwrapPnextChainHandles(local_pTimestampInfos[index0].pNext);
+            }
+        }
+    }
+    VkResult result = device_dispatch_table.GetCalibratedTimestampsEXT(
+        device, timestampCount, (const VkCalibratedTimestampInfoKHR*)local_pTimestampInfos, pTimestamps, pMaxDeviation);
 
     return result;
 }
@@ -6266,6 +6303,63 @@ void Device::GetQueueCheckpointDataNV(VkQueue queue, uint32_t* pCheckpointDataCo
 
 void Device::GetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount, VkCheckpointData2NV* pCheckpointData) {
     device_dispatch_table.GetQueueCheckpointData2NV(queue, pCheckpointDataCount, pCheckpointData);
+}
+
+VkResult Device::SetSwapchainPresentTimingQueueSizeEXT(VkDevice device, VkSwapchainKHR swapchain, uint32_t size) {
+    if (!wrap_handles) return device_dispatch_table.SetSwapchainPresentTimingQueueSizeEXT(device, swapchain, size);
+    { swapchain = Unwrap(swapchain); }
+    VkResult result = device_dispatch_table.SetSwapchainPresentTimingQueueSizeEXT(device, swapchain, size);
+
+    return result;
+}
+
+VkResult Device::GetSwapchainTimingPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                 VkSwapchainTimingPropertiesEXT* pSwapchainTimingProperties,
+                                                 uint64_t* pSwapchainTimingPropertiesCounter) {
+    if (!wrap_handles)
+        return device_dispatch_table.GetSwapchainTimingPropertiesEXT(device, swapchain, pSwapchainTimingProperties,
+                                                                     pSwapchainTimingPropertiesCounter);
+    { swapchain = Unwrap(swapchain); }
+    VkResult result = device_dispatch_table.GetSwapchainTimingPropertiesEXT(device, swapchain, pSwapchainTimingProperties,
+                                                                            pSwapchainTimingPropertiesCounter);
+
+    return result;
+}
+
+VkResult Device::GetSwapchainTimeDomainPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                     VkSwapchainTimeDomainPropertiesEXT* pSwapchainTimeDomainProperties,
+                                                     uint64_t* pTimeDomainsCounter) {
+    if (!wrap_handles)
+        return device_dispatch_table.GetSwapchainTimeDomainPropertiesEXT(device, swapchain, pSwapchainTimeDomainProperties,
+                                                                         pTimeDomainsCounter);
+    { swapchain = Unwrap(swapchain); }
+    VkResult result = device_dispatch_table.GetSwapchainTimeDomainPropertiesEXT(device, swapchain, pSwapchainTimeDomainProperties,
+                                                                                pTimeDomainsCounter);
+
+    return result;
+}
+
+VkResult Device::GetPastPresentationTimingEXT(VkDevice device, const VkPastPresentationTimingInfoEXT* pPastPresentationTimingInfo,
+                                              VkPastPresentationTimingPropertiesEXT* pPastPresentationTimingProperties) {
+    if (!wrap_handles)
+        return device_dispatch_table.GetPastPresentationTimingEXT(device, pPastPresentationTimingInfo,
+                                                                  pPastPresentationTimingProperties);
+    vku::safe_VkPastPresentationTimingInfoEXT var_local_pPastPresentationTimingInfo;
+    vku::safe_VkPastPresentationTimingInfoEXT* local_pPastPresentationTimingInfo = nullptr;
+    {
+        if (pPastPresentationTimingInfo) {
+            local_pPastPresentationTimingInfo = &var_local_pPastPresentationTimingInfo;
+            local_pPastPresentationTimingInfo->initialize(pPastPresentationTimingInfo);
+
+            if (pPastPresentationTimingInfo->swapchain) {
+                local_pPastPresentationTimingInfo->swapchain = Unwrap(pPastPresentationTimingInfo->swapchain);
+            }
+        }
+    }
+    VkResult result = device_dispatch_table.GetPastPresentationTimingEXT(
+        device, (const VkPastPresentationTimingInfoEXT*)local_pPastPresentationTimingInfo, pPastPresentationTimingProperties);
+
+    return result;
 }
 
 VkResult Device::InitializePerformanceApiINTEL(VkDevice device, const VkInitializePerformanceApiInfoINTEL* pInitializeInfo) {

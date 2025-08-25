@@ -22,6 +22,8 @@
 #include "generated/enum_flag_bits.h"
 #include "generated/dispatch_functions.h"
 
+#include <bitset>
+
 namespace stateless {
 bool Device::manual_PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
                                                        VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex,
@@ -200,6 +202,15 @@ bool Device::ValidateSwapchainCreateInfo(const Context &context, const VkSwapcha
         }
     }
 
+    if (create_info.flags & VK_SWAPCHAIN_CREATE_PRESENT_TIMING_BIT_EXT) {
+        if (!enabled_features.presentTiming && !enabled_features.presentAtAbsoluteTime && !enabled_features.presentAtRelativeTime) {
+            skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-Todo7", device, loc.dot(Field::flags),
+                             "(%s) contains VK_SWAPCHAIN_CREATE_PRESENT_TIMING_BIT_EXT, but none of presentTiming, "
+                             "presentAtAbsoluteTime or presentAtRelativeTime features are enabled.",
+                             string_VkSwapchainCreateFlagsKHR(create_info.flags).c_str());
+        }
+    }
+
     skip |= ValidateSwapchainCreateInfoMaintenance1(create_info, loc);
 
     return skip;
@@ -274,6 +285,35 @@ bool Device::manual_PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
                 skip |= LogError("VUID-VkPresentInfoKHR-pSwapchain-09231", device, error_obj.location.dot(Field::pSwapchain),
                                  "[%" PRIu32 "] and pSwapchain[%" PRIu32 "] are both %s.", i, j,
                                  FormatHandle(pPresentInfo->pSwapchains[i]).c_str());
+            }
+        }
+    }
+
+    if (const auto *present_timings_info = vku::FindStructInPNextChain<VkPresentTimingsInfoEXT>(pPresentInfo->pNext)) {
+        const auto present_info_loc = error_obj.location.dot(Field::pPresentInfo);
+        if (present_timings_info->swapchainCount != pPresentInfo->swapchainCount) {
+            skip |= LogError("VUID-VkPresentTimingsInfoEXT-swapchainCount-Todo1", device,
+                             present_info_loc.pNext(Struct::VkPresentTimingsInfoEXT, Field::swapchainCount),
+                             "(%" PRIu32 ") is not equal to %s (%" PRIu32 ").", present_timings_info->swapchainCount,
+                             present_info_loc.dot(Field::swapchainCount).Fields().c_str(), pPresentInfo->swapchainCount);
+        }
+        for (uint32_t i = 0; i < present_timings_info->swapchainCount; ++i) {
+            const auto &timing_info = present_timings_info->pTimingInfos[i];
+            const bool relative_time_flag = (timing_info.flags & VK_PRESENT_TIMING_INFO_PRESENT_AT_RELATIVE_TIME_BIT_EXT) != 0;
+            if (timing_info.targetTime != 0) {
+                if (!relative_time_flag && !enabled_features.presentAtAbsoluteTime) {
+                    skip |= LogError(
+                        "VUID-VkPresentTimingsInfoEXT-presentAtAbsoluteTime-Todo4", device,
+                        present_info_loc.pNext(Struct::VkPresentTimingsInfoEXT, Field::pTimingInfos, i).dot(Field::targetTime),
+                        "is %" PRIu64 ", but flags are %s", timing_info.targetTime,
+                        string_VkPresentTimingInfoFlagsEXT(timing_info.flags).c_str());
+                }
+            } else if (relative_time_flag && !enabled_features.presentAtRelativeTime) {
+                skip |=
+                    LogError("VUID-VkPresentTimingsInfoEXT-presentAtRelativeTime-Todo5", device,
+                             present_info_loc.pNext(Struct::VkPresentTimingsInfoEXT, Field::pTimingInfos, i).dot(Field::targetTime),
+                             "is %" PRIu64 ", but flags are %s", timing_info.targetTime,
+                             string_VkPresentTimingInfoFlagsEXT(timing_info.flags).c_str());
             }
         }
     }
@@ -584,4 +624,47 @@ bool Instance::manual_PreCallValidateCreateAndroidSurfaceKHR(VkInstance instance
     return skip;
 }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
+
+bool Device::manual_PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
+                                                              const VkCalibratedTimestampInfoKHR *pTimestampInfos,
+                                                              uint64_t *pTimestamps, uint64_t *pMaxDeviation,
+                                                              const Context &context) const {
+    bool skip = false;
+
+    for (uint32_t i = 0; i < timestampCount; ++i) {
+        if (pTimestampInfos[i].timeDomain == VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT ||
+            pTimestampInfos[i].timeDomain == VK_TIME_DOMAIN_SWAPCHAIN_LOCAL_EXT) {
+            const auto *swapchain_calibrated_timestamp_info =
+                vku::FindStructInPNextChain<VkSwapchainCalibratedTimestampInfoEXT>(pTimestampInfos[i].pNext);
+            if (!swapchain_calibrated_timestamp_info) {
+                skip |= LogError("VUID-VkCalibratedTimestampInfoKHR-timeDomain-Todo8", device,
+                                 context.error_obj.location.dot(Field::pTimestampInfos, i).dot(Field::timeDomain),
+                                 "is %s but pNext (%s) does not contain VkSwapchainCalibratedTimestampInfoEXT.",
+                                 string_VkTimeDomainKHR(pTimestampInfos[i].timeDomain),
+                                 PrintPNextChain(Struct::VkSwapchainCalibratedTimestampInfoEXT, pTimestampInfos[i].pNext).c_str());
+            } else if (pTimestampInfos[i].timeDomain == VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT) {
+                std::bitset<sizeof(VkPresentStageFlagsEXT)> bits(swapchain_calibrated_timestamp_info->presentStage);
+                if (bits.count() != 1) {
+                    skip |= LogError("VUID-VkSwapchainCalibratedTimestampInfoEXT-presentStage-Todo9", device,
+                                     context.error_obj.location.dot(Field::pTimestampInfos, i)
+                                         .pNext(Struct::VkSwapchainCalibratedTimestampInfoEXT)
+                                         .dot(Field::presentStage),
+                                     "is %s.",
+                                     string_VkPresentStageFlagsEXT(swapchain_calibrated_timestamp_info->presentStage).c_str());
+                }
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool Device::manual_PreCallValidateGetCalibratedTimestampsEXT(VkDevice device, uint32_t timestampCount,
+                                                              const VkCalibratedTimestampInfoKHR *pTimestampInfos,
+                                                              uint64_t *pTimestamps, uint64_t *pMaxDeviation,
+                                                              const Context &context) const {
+    return manual_PreCallValidateGetCalibratedTimestampsKHR(device, timestampCount, pTimestampInfos, pTimestamps, pMaxDeviation,
+                                                            context);
+}
+
 }  // namespace stateless

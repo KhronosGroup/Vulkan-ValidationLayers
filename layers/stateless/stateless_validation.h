@@ -1193,6 +1193,15 @@ class Device : public vvl::base::Device {
         VkCommandBuffer commandBuffer, const VkBuildPartitionedAccelerationStructureInfoNV *pBuildInfo,
         const Context &context) const;
 
+    bool manual_PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
+                                                          const VkCalibratedTimestampInfoKHR *pTimestampInfos,
+                                                          uint64_t *pTimestamps, uint64_t *pMaxDeviation,
+                                                          const Context &context) const;
+    bool manual_PreCallValidateGetCalibratedTimestampsEXT(VkDevice device, uint32_t timestampCount,
+                                                          const VkCalibratedTimestampInfoKHR *pTimestampInfos,
+                                                          uint64_t *pTimestamps, uint64_t *pMaxDeviation,
+                                                          const Context &context) const;
+
 #include "generated/stateless_device_methods.h"
 };
 

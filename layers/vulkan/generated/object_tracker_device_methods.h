@@ -735,6 +735,9 @@ bool PreCallValidateReleaseCapturedPipelineDataKHR(VkDevice device, const VkRele
                                                    const ErrorObject& error_obj) const override;
 bool PreCallValidateReleaseSwapchainImagesKHR(VkDevice device, const VkReleaseSwapchainImagesInfoKHR* pReleaseInfo,
                                               const ErrorObject& error_obj) const override;
+bool PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
+                                               const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
+                                               uint64_t* pMaxDeviation, const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
                                               const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo,
                                               const ErrorObject& error_obj) const override;
@@ -940,11 +943,18 @@ bool PreCallValidateCmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer, VkPip
                                             const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkBuffer dstBuffer,
                                              VkDeviceSize dstOffset, uint32_t marker, const ErrorObject& error_obj) const override;
+bool PreCallValidateGetCalibratedTimestampsEXT(VkDevice device, uint32_t timestampCount,
+                                               const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
+                                               uint64_t* pMaxDeviation, const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                uint32_t drawCount, uint32_t stride, const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                     VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                     uint32_t stride, const ErrorObject& error_obj) const override;
+bool PreCallValidateGetPastPresentationTimingEXT(VkDevice device,
+                                                 const VkPastPresentationTimingInfoEXT* pPastPresentationTimingInfo,
+                                                 VkPastPresentationTimingPropertiesEXT* pPastPresentationTimingProperties,
+                                                 const ErrorObject& error_obj) const override;
 void PostCallRecordAcquirePerformanceConfigurationINTEL(VkDevice device,
                                                         const VkPerformanceConfigurationAcquireInfoINTEL* pAcquireInfo,
                                                         VkPerformanceConfigurationINTEL* pConfiguration,

@@ -1336,6 +1336,18 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateGetQueueCheckpointData2NV);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetQueueCheckpointData2NV);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetQueueCheckpointData2NV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateSetSwapchainPresentTimingQueueSizeEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordSetSwapchainPresentTimingQueueSizeEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordSetSwapchainPresentTimingQueueSizeEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetSwapchainTimingPropertiesEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetSwapchainTimingPropertiesEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetSwapchainTimingPropertiesEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetSwapchainTimeDomainPropertiesEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetSwapchainTimeDomainPropertiesEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetSwapchainTimeDomainPropertiesEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetPastPresentationTimingEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetPastPresentationTimingEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetPastPresentationTimingEXT);
     BUILD_DISPATCH_VECTOR(PreCallValidateInitializePerformanceApiINTEL);
     BUILD_DISPATCH_VECTOR(PreCallRecordInitializePerformanceApiINTEL);
     BUILD_DISPATCH_VECTOR(PostCallRecordInitializePerformanceApiINTEL);

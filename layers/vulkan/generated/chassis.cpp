@@ -22626,6 +22626,218 @@ VKAPI_ATTR void VKAPI_CALL GetQueueCheckpointData2NV(VkQueue queue, uint32_t* pC
     }
 }
 
+VKAPI_ATTR VkResult VKAPI_CALL SetSwapchainPresentTimingQueueSizeEXT(VkDevice device, VkSwapchainKHR swapchain, uint32_t size) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkSetSwapchainPresentTimingQueueSizeEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkSetSwapchainPresentTimingQueueSizeEXT");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateSetSwapchainPresentTimingQueueSizeEXT]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateSetSwapchainPresentTimingQueueSizeEXT(device, swapchain, size, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkSetSwapchainPresentTimingQueueSizeEXT);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkSetSwapchainPresentTimingQueueSizeEXT");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordSetSwapchainPresentTimingQueueSizeEXT]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordSetSwapchainPresentTimingQueueSizeEXT(device, swapchain, size, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch_vkSetSwapchainPresentTimingQueueSizeEXT");
+        result = device_dispatch->SetSwapchainPresentTimingQueueSizeEXT(device, swapchain, size);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkSetSwapchainPresentTimingQueueSizeEXT");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordSetSwapchainPresentTimingQueueSizeEXT]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordSetSwapchainPresentTimingQueueSizeEXT(device, swapchain, size, record_obj);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainTimingPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                               VkSwapchainTimingPropertiesEXT* pSwapchainTimingProperties,
+                                                               uint64_t* pSwapchainTimingPropertiesCounter) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetSwapchainTimingPropertiesEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkGetSwapchainTimingPropertiesEXT");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateGetSwapchainTimingPropertiesEXT]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateGetSwapchainTimingPropertiesEXT(device, swapchain, pSwapchainTimingProperties,
+                                                                       pSwapchainTimingPropertiesCounter, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetSwapchainTimingPropertiesEXT);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkGetSwapchainTimingPropertiesEXT");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordGetSwapchainTimingPropertiesEXT]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordGetSwapchainTimingPropertiesEXT(device, swapchain, pSwapchainTimingProperties,
+                                                             pSwapchainTimingPropertiesCounter, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch_vkGetSwapchainTimingPropertiesEXT");
+        result = device_dispatch->GetSwapchainTimingPropertiesEXT(device, swapchain, pSwapchainTimingProperties,
+                                                                  pSwapchainTimingPropertiesCounter);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkGetSwapchainTimingPropertiesEXT");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetSwapchainTimingPropertiesEXT]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordGetSwapchainTimingPropertiesEXT(device, swapchain, pSwapchainTimingProperties,
+                                                              pSwapchainTimingPropertiesCounter, record_obj);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainTimeDomainPropertiesEXT(
+    VkDevice device, VkSwapchainKHR swapchain, VkSwapchainTimeDomainPropertiesEXT* pSwapchainTimeDomainProperties,
+    uint64_t* pTimeDomainsCounter) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetSwapchainTimeDomainPropertiesEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkGetSwapchainTimeDomainPropertiesEXT");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateGetSwapchainTimeDomainPropertiesEXT]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateGetSwapchainTimeDomainPropertiesEXT(device, swapchain, pSwapchainTimeDomainProperties,
+                                                                           pTimeDomainsCounter, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetSwapchainTimeDomainPropertiesEXT);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkGetSwapchainTimeDomainPropertiesEXT");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordGetSwapchainTimeDomainPropertiesEXT]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordGetSwapchainTimeDomainPropertiesEXT(device, swapchain, pSwapchainTimeDomainProperties,
+                                                                 pTimeDomainsCounter, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch_vkGetSwapchainTimeDomainPropertiesEXT");
+        result = device_dispatch->GetSwapchainTimeDomainPropertiesEXT(device, swapchain, pSwapchainTimeDomainProperties,
+                                                                      pTimeDomainsCounter);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkGetSwapchainTimeDomainPropertiesEXT");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetSwapchainTimeDomainPropertiesEXT]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordGetSwapchainTimeDomainPropertiesEXT(device, swapchain, pSwapchainTimeDomainProperties,
+                                                                  pTimeDomainsCounter, record_obj);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL
+GetPastPresentationTimingEXT(VkDevice device, const VkPastPresentationTimingInfoEXT* pPastPresentationTimingInfo,
+                             VkPastPresentationTimingPropertiesEXT* pPastPresentationTimingProperties) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetPastPresentationTimingEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkGetPastPresentationTimingEXT");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateGetPastPresentationTimingEXT]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateGetPastPresentationTimingEXT(device, pPastPresentationTimingInfo,
+                                                                    pPastPresentationTimingProperties, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetPastPresentationTimingEXT);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkGetPastPresentationTimingEXT");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordGetPastPresentationTimingEXT]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordGetPastPresentationTimingEXT(device, pPastPresentationTimingInfo, pPastPresentationTimingProperties,
+                                                          record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch_vkGetPastPresentationTimingEXT");
+        result =
+            device_dispatch->GetPastPresentationTimingEXT(device, pPastPresentationTimingInfo, pPastPresentationTimingProperties);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkGetPastPresentationTimingEXT");
+
+        if (result == VK_ERROR_DEVICE_LOST) {
+            for (auto& vo : device_dispatch->object_dispatch) {
+                vo->is_device_lost = true;
+            }
+        }
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetPastPresentationTimingEXT]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordGetPastPresentationTimingEXT(device, pPastPresentationTimingInfo, pPastPresentationTimingProperties,
+                                                           record_obj);
+        }
+    }
+    return result;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL InitializePerformanceApiINTEL(VkDevice device,
                                                              const VkInitializePerformanceApiInfoINTEL* pInitializeInfo) {
     VVL_ZoneScoped;
@@ -35169,6 +35381,10 @@ const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap() {
         {"vkCmdSetCheckpointNV", {kFuncTypeDev, (void*)CmdSetCheckpointNV}},
         {"vkGetQueueCheckpointDataNV", {kFuncTypeDev, (void*)GetQueueCheckpointDataNV}},
         {"vkGetQueueCheckpointData2NV", {kFuncTypeDev, (void*)GetQueueCheckpointData2NV}},
+        {"vkSetSwapchainPresentTimingQueueSizeEXT", {kFuncTypeDev, (void*)SetSwapchainPresentTimingQueueSizeEXT}},
+        {"vkGetSwapchainTimingPropertiesEXT", {kFuncTypeDev, (void*)GetSwapchainTimingPropertiesEXT}},
+        {"vkGetSwapchainTimeDomainPropertiesEXT", {kFuncTypeDev, (void*)GetSwapchainTimeDomainPropertiesEXT}},
+        {"vkGetPastPresentationTimingEXT", {kFuncTypeDev, (void*)GetPastPresentationTimingEXT}},
         {"vkInitializePerformanceApiINTEL", {kFuncTypeDev, (void*)InitializePerformanceApiINTEL}},
         {"vkUninitializePerformanceApiINTEL", {kFuncTypeDev, (void*)UninitializePerformanceApiINTEL}},
         {"vkCmdSetPerformanceMarkerINTEL", {kFuncTypeDev, (void*)CmdSetPerformanceMarkerINTEL}},

@@ -1024,6 +1024,19 @@ bool PreCallValidateGetQueueCheckpointDataNV(VkQueue queue, uint32_t* pCheckpoin
                                              const ErrorObject& error_obj) const override;
 bool PreCallValidateGetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount, VkCheckpointData2NV* pCheckpointData,
                                               const ErrorObject& error_obj) const override;
+bool PreCallValidateSetSwapchainPresentTimingQueueSizeEXT(VkDevice device, VkSwapchainKHR swapchain, uint32_t size,
+                                                          const ErrorObject& error_obj) const override;
+bool PreCallValidateGetSwapchainTimingPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                    VkSwapchainTimingPropertiesEXT* pSwapchainTimingProperties,
+                                                    uint64_t* pSwapchainTimingPropertiesCounter,
+                                                    const ErrorObject& error_obj) const override;
+bool PreCallValidateGetSwapchainTimeDomainPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                        VkSwapchainTimeDomainPropertiesEXT* pSwapchainTimeDomainProperties,
+                                                        uint64_t* pTimeDomainsCounter, const ErrorObject& error_obj) const override;
+bool PreCallValidateGetPastPresentationTimingEXT(VkDevice device,
+                                                 const VkPastPresentationTimingInfoEXT* pPastPresentationTimingInfo,
+                                                 VkPastPresentationTimingPropertiesEXT* pPastPresentationTimingProperties,
+                                                 const ErrorObject& error_obj) const override;
 bool PreCallValidateInitializePerformanceApiINTEL(VkDevice device, const VkInitializePerformanceApiInfoINTEL* pInitializeInfo,
                                                   const ErrorObject& error_obj) const override;
 bool PreCallValidateUninitializePerformanceApiINTEL(VkDevice device, const ErrorObject& error_obj) const override;

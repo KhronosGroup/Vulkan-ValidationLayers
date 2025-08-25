@@ -354,6 +354,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_shader_image_footprint{kNotEnabled};
     ExtEnabled vk_nv_scissor_exclusive{kNotEnabled};
     ExtEnabled vk_nv_device_diagnostic_checkpoints{kNotEnabled};
+    ExtEnabled vk_ext_present_timing{kNotEnabled};
     ExtEnabled vk_intel_shader_integer_functions2{kNotEnabled};
     ExtEnabled vk_intel_performance_query{kNotEnabled};
     ExtEnabled vk_ext_pci_bus_info{kNotEnabled};
@@ -814,6 +815,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_NV_shader_image_footprint:
         case vvl::Extension::_VK_NV_scissor_exclusive:
         case vvl::Extension::_VK_NV_device_diagnostic_checkpoints:
+        case vvl::Extension::_VK_EXT_present_timing:
         case vvl::Extension::_VK_INTEL_shader_integer_functions2:
         case vvl::Extension::_VK_INTEL_performance_query:
         case vvl::Extension::_VK_EXT_pci_bus_info:

@@ -4655,8 +4655,23 @@ bool Device::PreCallValidateReleaseSwapchainImagesKHR(VkDevice device, const VkR
 // vkGetPhysicalDeviceCalibrateableTimeDomainsKHR:
 // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceCalibrateableTimeDomainsKHR-physicalDevice-parameter"
 
-// vkGetCalibratedTimestampsKHR:
-// Checked by chassis: device: "VUID-vkGetCalibratedTimestampsKHR-device-parameter"
+bool Device::PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
+                                                       const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
+                                                       uint64_t* pMaxDeviation, const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkGetCalibratedTimestampsKHR-device-parameter"
+    if (pTimestampInfos) {
+        for (uint32_t index0 = 0; index0 < timestampCount; ++index0) {
+            [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pTimestampInfos, index0);
+            if ([[maybe_unused]] auto pNext =
+                    vku::FindStructInPNextChain<VkSwapchainCalibratedTimestampInfoEXT>(pTimestampInfos[index0].pNext)) {
+                [[maybe_unused]] const Location pNext_loc = index0_loc.pNext(Struct::VkSwapchainCalibratedTimestampInfoEXT);
+            }
+        }
+    }
+
+    return skip;
+}
 
 bool Device::PreCallValidateCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
                                                       const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo,
@@ -5895,8 +5910,12 @@ bool Device::PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuff
 // vkGetPhysicalDeviceCalibrateableTimeDomainsEXT:
 // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceCalibrateableTimeDomainsKHR-physicalDevice-parameter"
 
-// vkGetCalibratedTimestampsEXT:
-// Checked by chassis: device: "VUID-vkGetCalibratedTimestampsKHR-device-parameter"
+bool Device::PreCallValidateGetCalibratedTimestampsEXT(VkDevice device, uint32_t timestampCount,
+                                                       const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
+                                                       uint64_t* pMaxDeviation, const ErrorObject& error_obj) const {
+    return PreCallValidateGetCalibratedTimestampsKHR(device, timestampCount, pTimestampInfos, pTimestamps, pMaxDeviation,
+                                                     error_obj);
+}
 
 // vkCmdDrawMeshTasksNV:
 // Checked by chassis: commandBuffer: "VUID-vkCmdDrawMeshTasksNV-commandBuffer-parameter"
@@ -5942,6 +5961,29 @@ bool Device::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer comm
 
 // vkGetQueueCheckpointData2NV:
 // Checked by chassis: queue: "VUID-vkGetQueueCheckpointData2NV-queue-parameter"
+
+// vkSetSwapchainPresentTimingQueueSizeEXT:
+// Checked by chassis: device: kVUIDUndefined
+
+// vkGetSwapchainTimingPropertiesEXT:
+// Checked by chassis: device: kVUIDUndefined
+
+// vkGetSwapchainTimeDomainPropertiesEXT:
+// Checked by chassis: device: kVUIDUndefined
+
+bool Device::PreCallValidateGetPastPresentationTimingEXT(VkDevice device,
+                                                         const VkPastPresentationTimingInfoEXT* pPastPresentationTimingInfo,
+                                                         VkPastPresentationTimingPropertiesEXT* pPastPresentationTimingProperties,
+                                                         const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: kVUIDUndefined
+    if (pPastPresentationTimingInfo) {
+        [[maybe_unused]] const Location pPastPresentationTimingInfo_loc =
+            error_obj.location.dot(Field::pPastPresentationTimingInfo);
+    }
+
+    return skip;
+}
 
 // vkInitializePerformanceApiINTEL:
 // Checked by chassis: device: "VUID-vkInitializePerformanceApiINTEL-device-parameter"

@@ -330,6 +330,7 @@ static const std::unordered_map<std::string, uint32_t> device_extension_map = {
     {VK_NV_SHADER_IMAGE_FOOTPRINT_EXTENSION_NAME, VK_NV_SHADER_IMAGE_FOOTPRINT_SPEC_VERSION},
     {VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME, VK_NV_SCISSOR_EXCLUSIVE_SPEC_VERSION},
     {VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME, VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_SPEC_VERSION},
+    {VK_EXT_PRESENT_TIMING_EXTENSION_NAME, VK_EXT_PRESENT_TIMING_SPEC_VERSION},
     {VK_INTEL_SHADER_INTEGER_FUNCTIONS_2_EXTENSION_NAME, VK_INTEL_SHADER_INTEGER_FUNCTIONS_2_SPEC_VERSION},
     {VK_INTEL_PERFORMANCE_QUERY_EXTENSION_NAME, VK_INTEL_PERFORMANCE_QUERY_SPEC_VERSION},
     {VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, VK_EXT_PCI_BUS_INFO_SPEC_VERSION},
@@ -1625,6 +1626,17 @@ static VKAPI_ATTR void VKAPI_CALL GetQueueCheckpointDataNV(VkQueue queue, uint32
                                                            VkCheckpointDataNV* pCheckpointData);
 static VKAPI_ATTR void VKAPI_CALL GetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount,
                                                             VkCheckpointData2NV* pCheckpointData);
+static VKAPI_ATTR VkResult VKAPI_CALL SetSwapchainPresentTimingQueueSizeEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                                            uint32_t size);
+static VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainTimingPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                                      VkSwapchainTimingPropertiesEXT* pSwapchainTimingProperties,
+                                                                      uint64_t* pSwapchainTimingPropertiesCounter);
+static VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainTimeDomainPropertiesEXT(
+    VkDevice device, VkSwapchainKHR swapchain, VkSwapchainTimeDomainPropertiesEXT* pSwapchainTimeDomainProperties,
+    uint64_t* pTimeDomainsCounter);
+static VKAPI_ATTR VkResult VKAPI_CALL
+GetPastPresentationTimingEXT(VkDevice device, const VkPastPresentationTimingInfoEXT* pPastPresentationTimingInfo,
+                             VkPastPresentationTimingPropertiesEXT* pPastPresentationTimingProperties);
 static VKAPI_ATTR VkResult VKAPI_CALL InitializePerformanceApiINTEL(VkDevice device,
                                                                     const VkInitializePerformanceApiInfoINTEL* pInitializeInfo);
 static VKAPI_ATTR void VKAPI_CALL UninitializePerformanceApiINTEL(VkDevice device);
@@ -2755,6 +2767,10 @@ static const std::unordered_map<std::string, void*> name_to_func_ptr_map = {
     {"vkCmdSetCheckpointNV", (void*)CmdSetCheckpointNV},
     {"vkGetQueueCheckpointDataNV", (void*)GetQueueCheckpointDataNV},
     {"vkGetQueueCheckpointData2NV", (void*)GetQueueCheckpointData2NV},
+    {"vkSetSwapchainPresentTimingQueueSizeEXT", (void*)SetSwapchainPresentTimingQueueSizeEXT},
+    {"vkGetSwapchainTimingPropertiesEXT", (void*)GetSwapchainTimingPropertiesEXT},
+    {"vkGetSwapchainTimeDomainPropertiesEXT", (void*)GetSwapchainTimeDomainPropertiesEXT},
+    {"vkGetPastPresentationTimingEXT", (void*)GetPastPresentationTimingEXT},
     {"vkInitializePerformanceApiINTEL", (void*)InitializePerformanceApiINTEL},
     {"vkUninitializePerformanceApiINTEL", (void*)UninitializePerformanceApiINTEL},
     {"vkCmdSetPerformanceMarkerINTEL", (void*)CmdSetPerformanceMarkerINTEL},
@@ -4888,6 +4904,29 @@ static VKAPI_ATTR void VKAPI_CALL GetQueueCheckpointDataNV(VkQueue queue, uint32
 
 static VKAPI_ATTR void VKAPI_CALL GetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount,
                                                             VkCheckpointData2NV* pCheckpointData) {}
+
+static VKAPI_ATTR VkResult VKAPI_CALL SetSwapchainPresentTimingQueueSizeEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                                            uint32_t size) {
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainTimingPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                                      VkSwapchainTimingPropertiesEXT* pSwapchainTimingProperties,
+                                                                      uint64_t* pSwapchainTimingPropertiesCounter) {
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainTimeDomainPropertiesEXT(
+    VkDevice device, VkSwapchainKHR swapchain, VkSwapchainTimeDomainPropertiesEXT* pSwapchainTimeDomainProperties,
+    uint64_t* pTimeDomainsCounter) {
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR VkResult VKAPI_CALL
+GetPastPresentationTimingEXT(VkDevice device, const VkPastPresentationTimingInfoEXT* pPastPresentationTimingInfo,
+                             VkPastPresentationTimingPropertiesEXT* pPastPresentationTimingProperties) {
+    return VK_SUCCESS;
+}
 
 static VKAPI_ATTR VkResult VKAPI_CALL InitializePerformanceApiINTEL(VkDevice device,
                                                                     const VkInitializePerformanceApiInfoINTEL* pInitializeInfo) {

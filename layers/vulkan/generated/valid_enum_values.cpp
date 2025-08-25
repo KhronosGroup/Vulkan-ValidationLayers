@@ -1356,6 +1356,9 @@ ValidValue stateless::Context::IsValidEnumValue(VkTimeDomainKHR value) const {
         case VK_TIME_DOMAIN_CLOCK_MONOTONIC_RAW_KHR:
         case VK_TIME_DOMAIN_QUERY_PERFORMANCE_COUNTER_KHR:
             return ValidValue::Valid;
+        case VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT:
+        case VK_TIME_DOMAIN_SWAPCHAIN_LOCAL_EXT:
+            return IsExtEnabled(extensions.vk_ext_present_timing) ? ValidValue::Valid : ValidValue::NoExtension;
         default:
             return ValidValue::NotFound;
     };
@@ -3259,11 +3262,17 @@ const char* stateless::Context::DescribeEnum(VkVideoEncodeAV1RateControlGroupKHR
 
 template <>
 vvl::Extensions stateless::Context::GetEnumExtensions(VkTimeDomainKHR value) const {
-    return {};
+    switch (value) {
+        case VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT:
+        case VK_TIME_DOMAIN_SWAPCHAIN_LOCAL_EXT:
+            return {vvl::Extension::_VK_EXT_present_timing};
+        default:
+            return {};
+    };
 }
 template <>
 const char* stateless::Context::DescribeEnum(VkTimeDomainKHR value) const {
-    return nullptr;
+    return string_VkTimeDomainKHR(value);
 }
 
 template <>

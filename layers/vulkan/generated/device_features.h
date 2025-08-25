@@ -682,6 +682,12 @@ struct DeviceFeatures {
     bool presentMetering;
     // VkPhysicalDevicePresentModeFifoLatestReadyFeaturesKHR
     bool presentModeFifoLatestReady;
+    // VkPhysicalDevicePresentTimingFeaturesEXT
+    bool presentAtAbsoluteTime;
+    // VkPhysicalDevicePresentTimingFeaturesEXT
+    bool presentAtRelativeTime;
+    // VkPhysicalDevicePresentTimingFeaturesEXT
+    bool presentTiming;
     // VkPhysicalDevicePresentWait2FeaturesKHR
     bool presentWait2;
     // VkPhysicalDevicePresentWaitFeaturesKHR

@@ -5686,6 +5686,68 @@ void Device::PostCallRecordGetQueueCheckpointData2NV(VkQueue queue, uint32_t* pC
     FinishReadObject(queue, record_obj.location);
 }
 
+void Device::PreCallRecordSetSwapchainPresentTimingQueueSizeEXT(VkDevice device, VkSwapchainKHR swapchain, uint32_t size,
+                                                                const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+    StartWriteObject(swapchain, record_obj.location);
+    // Host access to swapchain must be externally synchronized
+}
+
+void Device::PostCallRecordSetSwapchainPresentTimingQueueSizeEXT(VkDevice device, VkSwapchainKHR swapchain, uint32_t size,
+                                                                 const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+    FinishWriteObject(swapchain, record_obj.location);
+    // Host access to swapchain must be externally synchronized
+}
+
+void Device::PreCallRecordGetSwapchainTimingPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                          VkSwapchainTimingPropertiesEXT* pSwapchainTimingProperties,
+                                                          uint64_t* pSwapchainTimingPropertiesCounter,
+                                                          const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+    StartWriteObject(swapchain, record_obj.location);
+    // Host access to swapchain must be externally synchronized
+}
+
+void Device::PostCallRecordGetSwapchainTimingPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                           VkSwapchainTimingPropertiesEXT* pSwapchainTimingProperties,
+                                                           uint64_t* pSwapchainTimingPropertiesCounter,
+                                                           const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+    FinishWriteObject(swapchain, record_obj.location);
+    // Host access to swapchain must be externally synchronized
+}
+
+void Device::PreCallRecordGetSwapchainTimeDomainPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                              VkSwapchainTimeDomainPropertiesEXT* pSwapchainTimeDomainProperties,
+                                                              uint64_t* pTimeDomainsCounter, const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+    StartWriteObject(swapchain, record_obj.location);
+    // Host access to swapchain must be externally synchronized
+}
+
+void Device::PostCallRecordGetSwapchainTimeDomainPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                               VkSwapchainTimeDomainPropertiesEXT* pSwapchainTimeDomainProperties,
+                                                               uint64_t* pTimeDomainsCounter, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+    FinishWriteObject(swapchain, record_obj.location);
+    // Host access to swapchain must be externally synchronized
+}
+
+void Device::PreCallRecordGetPastPresentationTimingEXT(VkDevice device,
+                                                       const VkPastPresentationTimingInfoEXT* pPastPresentationTimingInfo,
+                                                       VkPastPresentationTimingPropertiesEXT* pPastPresentationTimingProperties,
+                                                       const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordGetPastPresentationTimingEXT(VkDevice device,
+                                                        const VkPastPresentationTimingInfoEXT* pPastPresentationTimingInfo,
+                                                        VkPastPresentationTimingPropertiesEXT* pPastPresentationTimingProperties,
+                                                        const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
+
 void Device::PreCallRecordInitializePerformanceApiINTEL(VkDevice device, const VkInitializePerformanceApiInfoINTEL* pInitializeInfo,
                                                         const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, record_obj.location);

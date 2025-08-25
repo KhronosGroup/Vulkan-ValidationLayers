@@ -1484,6 +1484,20 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
+        // Validation code for VkPhysicalDevicePresentTimingFeaturesEXT structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_TIMING_FEATURES_EXT: {  // Covers
+                                                                               // VUID-VkPhysicalDevicePresentTimingFeaturesEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDevicePresentTimingFeaturesEXT);
+                VkPhysicalDevicePresentTimingFeaturesEXT* structure = (VkPhysicalDevicePresentTimingFeaturesEXT*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::presentTiming), structure->presentTiming);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::presentAtAbsoluteTime), structure->presentAtAbsoluteTime);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::presentAtRelativeTime), structure->presentAtRelativeTime);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_FUNCTIONS_2_FEATURES_INTEL: {  // Covers
                                                                                              // VUID-VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL-sType-sType
@@ -6059,6 +6073,66 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
         // No Validation code for VkQueueFamilyCheckpointProperties2NV structure members  -- Covers
         // VUID-VkQueueFamilyCheckpointProperties2NV-sType-sType
 
+        // Validation code for VkPresentTimingSurfaceCapabilitiesEXT structure members
+        case VK_STRUCTURE_TYPE_PRESENT_TIMING_SURFACE_CAPABILITIES_EXT: {  // Covers
+                                                                           // VUID-VkPresentTimingSurfaceCapabilitiesEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPresentTimingSurfaceCapabilitiesEXT);
+                VkPresentTimingSurfaceCapabilitiesEXT* structure = (VkPresentTimingSurfaceCapabilitiesEXT*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::presentTimingSupported), structure->presentTimingSupported);
+
+                skip |=
+                    ValidateBool32(pNext_loc.dot(Field::presentAtAbsoluteTimeSupported), structure->presentAtAbsoluteTimeSupported);
+
+                skip |=
+                    ValidateBool32(pNext_loc.dot(Field::presentAtRelativeTimeSupported), structure->presentAtRelativeTimeSupported);
+
+                skip |= ValidateFlags(pNext_loc.dot(Field::presentStageQueries), vvl::FlagBitmask::VkPresentStageFlagBitsEXT,
+                                      AllVkPresentStageFlagBitsEXT, structure->presentStageQueries, kRequiredFlags, kVUIDUndefined,
+                                      kVUIDUndefined);
+            }
+        } break;
+
+        // Validation code for VkSwapchainCalibratedTimestampInfoEXT structure members
+        case VK_STRUCTURE_TYPE_SWAPCHAIN_CALIBRATED_TIMESTAMP_INFO_EXT: {  // Covers
+                                                                           // VUID-VkSwapchainCalibratedTimestampInfoEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkSwapchainCalibratedTimestampInfoEXT);
+                VkSwapchainCalibratedTimestampInfoEXT* structure = (VkSwapchainCalibratedTimestampInfoEXT*)header;
+                skip |= ValidateRequiredHandle(pNext_loc.dot(Field::swapchain), structure->swapchain);
+
+                skip |= ValidateFlags(pNext_loc.dot(Field::presentStage), vvl::FlagBitmask::VkPresentStageFlagBitsEXT,
+                                      AllVkPresentStageFlagBitsEXT, structure->presentStage, kRequiredFlags, kVUIDUndefined,
+                                      kVUIDUndefined);
+            }
+        } break;
+
+        // Validation code for VkPresentTimingsInfoEXT structure members
+        case VK_STRUCTURE_TYPE_PRESENT_TIMINGS_INFO_EXT: {  // Covers VUID-VkPresentTimingsInfoEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPresentTimingsInfoEXT);
+                VkPresentTimingsInfoEXT* structure = (VkPresentTimingsInfoEXT*)header;
+                skip |= ValidateStructTypeArray(pNext_loc.dot(Field::swapchainCount), pNext_loc.dot(Field::pTimingInfos),
+                                                structure->swapchainCount, structure->pTimingInfos,
+                                                VK_STRUCTURE_TYPE_PRESENT_TIMING_INFO_EXT, true, false, kVUIDUndefined,
+                                                kVUIDUndefined, kVUIDUndefined);
+
+                if (structure->pTimingInfos != nullptr) {
+                    for (uint32_t swapchainIndex = 0; swapchainIndex < structure->swapchainCount; ++swapchainIndex) {
+                        [[maybe_unused]] const Location pTimingInfos_loc = pNext_loc.dot(Field::pTimingInfos, swapchainIndex);
+                        skip |= ValidateFlags(pTimingInfos_loc.dot(Field::flags), vvl::FlagBitmask::VkPresentTimingInfoFlagBitsEXT,
+                                              AllVkPresentTimingInfoFlagBitsEXT, structure->pTimingInfos[swapchainIndex].flags,
+                                              kOptionalFlags, kVUIDUndefined);
+
+                        skip |= ValidateFlags(pTimingInfos_loc.dot(Field::presentStageQueries),
+                                              vvl::FlagBitmask::VkPresentStageFlagBitsEXT, AllVkPresentStageFlagBitsEXT,
+                                              structure->pTimingInfos[swapchainIndex].presentStageQueries, kOptionalFlags,
+                                              kVUIDUndefined);
+                    }
+                }
+            }
+        } break;
+
         // Validation code for VkQueryPoolPerformanceQueryCreateInfoINTEL structure members
         case VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_QUERY_CREATE_INFO_INTEL: {  // Covers
                                                                                   // VUID-VkQueryPoolPerformanceQueryCreateInfoINTEL-sType-sType
@@ -7769,6 +7843,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_ID_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_METERING_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_MODE_FIFO_LATEST_READY_FEATURES_KHR,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_TIMING_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_WAIT_2_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_WAIT_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_TOPOLOGY_LIST_RESTART_FEATURES_EXT,
@@ -14757,6 +14832,7 @@ bool Device::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKH
                                                                  VK_STRUCTURE_TYPE_PRESENT_ID_KHR,
                                                                  VK_STRUCTURE_TYPE_PRESENT_REGIONS_KHR,
                                                                  VK_STRUCTURE_TYPE_PRESENT_TIMES_INFO_GOOGLE,
+                                                                 VK_STRUCTURE_TYPE_PRESENT_TIMINGS_INFO_EXT,
                                                                  VK_STRUCTURE_TYPE_SET_PRESENT_CONFIG_NV,
                                                                  VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_FENCE_INFO_KHR,
                                                                  VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODE_INFO_KHR};
@@ -16727,6 +16803,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysica
         constexpr std::array allowed_structs_VkSurfaceCapabilities2KHR = {
             VK_STRUCTURE_TYPE_DISPLAY_NATIVE_HDR_SURFACE_CAPABILITIES_AMD,
             VK_STRUCTURE_TYPE_LATENCY_SURFACE_CAPABILITIES_NV,
+            VK_STRUCTURE_TYPE_PRESENT_TIMING_SURFACE_CAPABILITIES_EXT,
             VK_STRUCTURE_TYPE_SHARED_PRESENT_SURFACE_CAPABILITIES_KHR,
             VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_FULL_SCREEN_EXCLUSIVE_EXT,
             VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_PRESENT_BARRIER_NV,
@@ -18106,9 +18183,13 @@ bool Device::PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint32_t
     if (pTimestampInfos != nullptr) {
         for (uint32_t timestampIndex = 0; timestampIndex < timestampCount; ++timestampIndex) {
             [[maybe_unused]] const Location pTimestampInfos_loc = loc.dot(Field::pTimestampInfos, timestampIndex);
-            skip |= context.ValidateStructPnext(pTimestampInfos_loc, pTimestampInfos[timestampIndex].pNext, 0, nullptr,
-                                                GeneratedVulkanHeaderVersion, "VUID-VkCalibratedTimestampInfoKHR-pNext-pNext",
-                                                kVUIDUndefined, true);
+            constexpr std::array allowed_structs_VkCalibratedTimestampInfoKHR = {
+                VK_STRUCTURE_TYPE_SWAPCHAIN_CALIBRATED_TIMESTAMP_INFO_EXT};
+
+            skip |= context.ValidateStructPnext(pTimestampInfos_loc, pTimestampInfos[timestampIndex].pNext,
+                                                allowed_structs_VkCalibratedTimestampInfoKHR.size(),
+                                                allowed_structs_VkCalibratedTimestampInfoKHR.data(), GeneratedVulkanHeaderVersion,
+                                                "VUID-VkCalibratedTimestampInfoKHR-pNext-pNext", kVUIDUndefined, true);
 
             skip |= context.ValidateRangedEnum(pTimestampInfos_loc.dot(Field::timeDomain), vvl::Enum::VkTimeDomainKHR,
                                                pTimestampInfos[timestampIndex].timeDomain,
@@ -18120,6 +18201,9 @@ bool Device::PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint32_t
                                   "VUID-vkGetCalibratedTimestampsKHR-pTimestamps-parameter");
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pMaxDeviation), pMaxDeviation,
                                             "VUID-vkGetCalibratedTimestampsKHR-pMaxDeviation-parameter");
+    if (!skip)
+        skip |= manual_PreCallValidateGetCalibratedTimestampsKHR(device, timestampCount, pTimestampInfos, pTimestamps,
+                                                                 pMaxDeviation, context);
     return skip;
 }
 
@@ -20621,6 +20705,131 @@ bool Device::PreCallValidateGetQueueCheckpointData2NV(VkQueue queue, uint32_t* p
             skip |= context.ValidateStructPnext(pCheckpointData_loc, pCheckpointData[pCheckpointDataIndex].pNext, 0, nullptr,
                                                 GeneratedVulkanHeaderVersion, "VUID-VkCheckpointData2NV-pNext-pNext",
                                                 kVUIDUndefined, false);
+        }
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateSetSwapchainPresentTimingQueueSizeEXT(VkDevice device, VkSwapchainKHR swapchain, uint32_t size,
+                                                                  const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_ext_present_timing))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_present_timing});
+    skip |= context.ValidateRequiredHandle(loc.dot(Field::swapchain), swapchain);
+    return skip;
+}
+
+bool Device::PreCallValidateGetSwapchainTimingPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                            VkSwapchainTimingPropertiesEXT* pSwapchainTimingProperties,
+                                                            uint64_t* pSwapchainTimingPropertiesCounter,
+                                                            const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_ext_present_timing))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_present_timing});
+    skip |= context.ValidateRequiredHandle(loc.dot(Field::swapchain), swapchain);
+    skip |= context.ValidateStructType(loc.dot(Field::pSwapchainTimingProperties), pSwapchainTimingProperties,
+                                       VK_STRUCTURE_TYPE_SWAPCHAIN_TIMING_PROPERTIES_EXT, true, kVUIDUndefined, kVUIDUndefined);
+    return skip;
+}
+
+bool Device::PreCallValidateGetSwapchainTimeDomainPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                                VkSwapchainTimeDomainPropertiesEXT* pSwapchainTimeDomainProperties,
+                                                                uint64_t* pTimeDomainsCounter, const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_ext_present_timing))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_present_timing});
+    skip |= context.ValidateRequiredHandle(loc.dot(Field::swapchain), swapchain);
+    skip |=
+        context.ValidateStructType(loc.dot(Field::pSwapchainTimeDomainProperties), pSwapchainTimeDomainProperties,
+                                   VK_STRUCTURE_TYPE_SWAPCHAIN_TIME_DOMAIN_PROPERTIES_EXT, true, kVUIDUndefined, kVUIDUndefined);
+    if (pSwapchainTimeDomainProperties != nullptr) {
+        [[maybe_unused]] const Location pSwapchainTimeDomainProperties_loc = loc.dot(Field::pSwapchainTimeDomainProperties);
+        skip |= context.ValidateArray(pSwapchainTimeDomainProperties_loc.dot(Field::timeDomainCount),
+                                      pSwapchainTimeDomainProperties_loc.dot(Field::pTimeDomains),
+                                      pSwapchainTimeDomainProperties->timeDomainCount,
+                                      &pSwapchainTimeDomainProperties->pTimeDomains, true, false, kVUIDUndefined, kVUIDUndefined);
+
+        skip |= context.ValidateArray(pSwapchainTimeDomainProperties_loc.dot(Field::timeDomainCount),
+                                      pSwapchainTimeDomainProperties_loc.dot(Field::pTimeDomainIds),
+                                      pSwapchainTimeDomainProperties->timeDomainCount,
+                                      &pSwapchainTimeDomainProperties->pTimeDomainIds, true, false, kVUIDUndefined, kVUIDUndefined);
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateGetPastPresentationTimingEXT(VkDevice device,
+                                                         const VkPastPresentationTimingInfoEXT* pPastPresentationTimingInfo,
+                                                         VkPastPresentationTimingPropertiesEXT* pPastPresentationTimingProperties,
+                                                         const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_ext_present_timing))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_present_timing});
+    skip |= context.ValidateStructType(loc.dot(Field::pPastPresentationTimingInfo), pPastPresentationTimingInfo,
+                                       VK_STRUCTURE_TYPE_PAST_PRESENTATION_TIMING_INFO_EXT, true, kVUIDUndefined, kVUIDUndefined);
+    if (pPastPresentationTimingInfo != nullptr) {
+        [[maybe_unused]] const Location pPastPresentationTimingInfo_loc = loc.dot(Field::pPastPresentationTimingInfo);
+        skip |= context.ValidateFlags(pPastPresentationTimingInfo_loc.dot(Field::flags),
+                                      vvl::FlagBitmask::VkPastPresentationTimingFlagBitsEXT, AllVkPastPresentationTimingFlagBitsEXT,
+                                      pPastPresentationTimingInfo->flags, kOptionalFlags, kVUIDUndefined);
+
+        skip |= context.ValidateRequiredHandle(pPastPresentationTimingInfo_loc.dot(Field::swapchain),
+                                               pPastPresentationTimingInfo->swapchain);
+    }
+    skip |=
+        context.ValidateStructType(loc.dot(Field::pPastPresentationTimingProperties), pPastPresentationTimingProperties,
+                                   VK_STRUCTURE_TYPE_PAST_PRESENTATION_TIMING_PROPERTIES_EXT, true, kVUIDUndefined, kVUIDUndefined);
+    if (pPastPresentationTimingProperties != nullptr) {
+        [[maybe_unused]] const Location pPastPresentationTimingProperties_loc = loc.dot(Field::pPastPresentationTimingProperties);
+        skip |= context.ValidateStructTypeArray(
+            pPastPresentationTimingProperties_loc.dot(Field::presentationTimingCount),
+            pPastPresentationTimingProperties_loc.dot(Field::pPresentationTimings),
+            pPastPresentationTimingProperties->presentationTimingCount, pPastPresentationTimingProperties->pPresentationTimings,
+            VK_STRUCTURE_TYPE_PAST_PRESENTATION_TIMING_EXT, true, true, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined);
+
+        if (pPastPresentationTimingProperties->pPresentationTimings != nullptr) {
+            for (uint32_t presentationTimingIndex = 0;
+                 presentationTimingIndex < pPastPresentationTimingProperties->presentationTimingCount; ++presentationTimingIndex) {
+                [[maybe_unused]] const Location pPresentationTimings_loc =
+                    pPastPresentationTimingProperties_loc.dot(Field::pPresentationTimings, presentationTimingIndex);
+                skip |= context.ValidateArray(
+                    pPresentationTimings_loc.dot(Field::presentStageCount), pPresentationTimings_loc.dot(Field::pPresentStages),
+                    pPastPresentationTimingProperties->pPresentationTimings[presentationTimingIndex].presentStageCount,
+                    &pPastPresentationTimingProperties->pPresentationTimings[presentationTimingIndex].pPresentStages, true, true,
+                    kVUIDUndefined, kVUIDUndefined);
+
+                if (pPastPresentationTimingProperties->pPresentationTimings[presentationTimingIndex].pPresentStages != nullptr) {
+                    for (uint32_t presentStageIndex = 0;
+                         presentStageIndex <
+                         pPastPresentationTimingProperties->pPresentationTimings[presentationTimingIndex].presentStageCount;
+                         ++presentStageIndex) {
+                        [[maybe_unused]] const Location pPresentStages_loc =
+                            pPresentationTimings_loc.dot(Field::pPresentStages, presentStageIndex);
+                        skip |=
+                            context.ValidateFlags(pPresentStages_loc.dot(Field::stage), vvl::FlagBitmask::VkPresentStageFlagBitsEXT,
+                                                  AllVkPresentStageFlagBitsEXT,
+                                                  pPastPresentationTimingProperties->pPresentationTimings[presentationTimingIndex]
+                                                      .pPresentStages[presentStageIndex]
+                                                      .stage,
+                                                  kRequiredFlags, kVUIDUndefined, kVUIDUndefined);
+                    }
+                }
+
+                skip |= context.ValidateRangedEnum(
+                    pPresentationTimings_loc.dot(Field::timeDomain), vvl::Enum::VkTimeDomainKHR,
+                    pPastPresentationTimingProperties->pPresentationTimings[presentationTimingIndex].timeDomain, kVUIDUndefined);
+
+                skip |= context.ValidateBool32(
+                    pPresentationTimings_loc.dot(Field::reportComplete),
+                    pPastPresentationTimingProperties->pPresentationTimings[presentationTimingIndex].reportComplete);
+            }
         }
     }
     return skip;

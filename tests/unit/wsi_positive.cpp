@@ -2738,3 +2738,115 @@ TEST_F(PositiveWsi, DestroySwapchainBeforeLayoutValidation) {
     // cause false positives here.
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveWsi, PresentTimings) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_PRESENT_TIMING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_PRESENT_ID_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_PRESENT_WAIT_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::presentId2);
+    AddRequiredFeature(vkt::Feature::presentWait2);
+    AddRequiredFeature(vkt::Feature::presentTiming);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    VkSurfaceCapabilitiesPresentWait2KHR present_wait_2_capabilities = vku::InitStructHelper();
+    VkSurfaceCapabilitiesPresentId2KHR present_id_2_capabilities = vku::InitStructHelper(&present_wait_2_capabilities);
+    VkSurfaceCapabilities2KHR capabilities2 = vku::InitStructHelper(&present_id_2_capabilities);
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
+    surface_info.surface = m_surface.Handle();
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu_, &surface_info, &capabilities2);
+
+    if (!present_id_2_capabilities.presentId2Supported || !present_wait_2_capabilities.presentWait2Supported) {
+        GTEST_SKIP() << "presentId2 and presentWait2 are not supported for the surface";
+    }
+
+    VkPresentModeKHR present_mode = VK_PRESENT_MODE_FIFO_KHR;
+
+    uint32_t present_mode_count = 0;
+    vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu_, m_surface.Handle(), &present_mode_count, nullptr);
+    std::vector<VkPresentModeKHR> present_modes(present_mode_count);
+    vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu_, m_surface.Handle(), &present_mode_count, present_modes.data());
+
+    bool found = false;
+    for (const auto& available_mode : present_modes) {
+        if (available_mode == present_mode) {
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        GTEST_SKIP() << "Required present mode " << present_mode << " not supported";
+    }
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
+    swapchain_ci.flags = VK_SWAPCHAIN_CREATE_PRESENT_TIMING_BIT_EXT | VK_SWAPCHAIN_CREATE_PRESENT_ID_2_BIT_KHR;
+    swapchain_ci.surface = m_surface.Handle();
+    swapchain_ci.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_ci.imageFormat = m_surface_formats[0].format;
+    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = m_surface_capabilities.minImageExtent;
+    swapchain_ci.imageArrayLayers = 1;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+    swapchain_ci.presentMode = present_mode;
+    swapchain_ci.clipped = VK_FALSE;
+    swapchain_ci.oldSwapchain = 0;
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+    const auto images = swapchain.GetImages();
+
+    vkt::Fence fence(*m_device);
+    const uint32_t image_index = swapchain.AcquireNextImage(fence, kWaitTimeout);
+    vk::WaitForFences(device(), 1, &fence.handle(), true, kWaitTimeout);
+
+    SetPresentImageLayout(images[image_index]);
+
+    uint64_t present_id_value = 1u;
+    VkPresentId2KHR present_id = vku::InitStructHelper();
+    present_id.swapchainCount = 1u;
+    present_id.pPresentIds = &present_id_value;
+
+    VkPresentTimingInfoEXT present_timing_info = vku::InitStructHelper();
+    present_timing_info.flags = VK_PRESENT_TIMING_INFO_PRESENT_AT_RELATIVE_TIME_BIT_EXT;
+    present_timing_info.targetTime = 1u;
+    present_timing_info.presentStageQueries = VK_PRESENT_STAGE_IMAGE_FIRST_PIXEL_OUT_BIT_EXT;
+
+    VkPresentTimingsInfoEXT present_timings_info = vku::InitStructHelper(&present_id);
+    present_timings_info.swapchainCount = 1u;
+    present_timings_info.pTimingInfos = &present_timing_info;
+    m_default_queue->Present(swapchain, image_index, vkt::no_semaphore, &present_timings_info);
+
+    VkPastPresentationTimingInfoEXT past_presentation_timing_info = vku::InitStructHelper();
+    past_presentation_timing_info.flags = VK_PAST_PRESENTATION_TIMING_ALLOW_OUT_OF_ORDER_RESULTS_BIT_EXT;
+    past_presentation_timing_info.swapchain = swapchain;
+
+    VkPresentStageTimeEXT present_stage_time;
+    present_stage_time.stage = VK_PRESENT_STAGE_IMAGE_FIRST_PIXEL_OUT_BIT_EXT;
+    present_stage_time.time = 0u;
+
+    VkPastPresentationTimingEXT past_presentation_timing = vku::InitStructHelper();
+    past_presentation_timing.presentId = present_id_value;
+    past_presentation_timing.targetTime = 1u;
+    past_presentation_timing.presentStageCount = 1u;
+    past_presentation_timing.pPresentStages = &present_stage_time;
+    past_presentation_timing.timeDomain = VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT;
+
+    VkPastPresentationTimingPropertiesEXT past_presentation_timing_properties = vku::InitStructHelper();
+    past_presentation_timing_properties.presentationTimingCount = 1u;
+    past_presentation_timing_properties.pPresentationTimings = &past_presentation_timing;
+    vk::GetPastPresentationTimingEXT(device(), &past_presentation_timing_info, &past_presentation_timing_properties);
+
+    std::vector<VkPastPresentationTimingEXT> past_presentation_timings(past_presentation_timing_properties.presentationTimingCount);
+    for (uint32_t i = 0; i < past_presentation_timing_properties.presentationTimingCount; ++i) {
+        past_presentation_timings[i] = vku::InitStructHelper();
+        past_presentation_timings[i].presentStageCount = 1u;
+        past_presentation_timings[i].pPresentStages = &present_stage_time;
+    }
+    past_presentation_timing_properties.pPresentationTimings = past_presentation_timings.data();
+    vk::GetPastPresentationTimingEXT(device(), &past_presentation_timing_info, &past_presentation_timing_properties);
+}

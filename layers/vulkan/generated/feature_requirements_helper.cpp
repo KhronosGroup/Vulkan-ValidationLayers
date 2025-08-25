@@ -4624,7 +4624,7 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             }
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
-        case Feature::constantAlphaColorBlendFactors: {
+            case Feature::constantAlphaColorBlendFactors : {
             auto vk_struct = const_cast<VkPhysicalDevicePortabilitySubsetFeaturesKHR *>(
                 vku::FindStructInPNextChain<VkPhysicalDevicePortabilitySubsetFeaturesKHR>(*inout_pnext_chain));
             if (!vk_struct) {
@@ -4959,6 +4959,51 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             }
             return {&vk_struct->presentModeFifoLatestReady,
                     "VkPhysicalDevicePresentModeFifoLatestReadyFeaturesKHR::presentModeFifoLatestReady"};
+        }
+
+        case Feature::presentAtAbsoluteTime: {
+            auto vk_struct = const_cast<VkPhysicalDevicePresentTimingFeaturesEXT *>(
+                vku::FindStructInPNextChain<VkPhysicalDevicePresentTimingFeaturesEXT>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDevicePresentTimingFeaturesEXT;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->presentAtAbsoluteTime, "VkPhysicalDevicePresentTimingFeaturesEXT::presentAtAbsoluteTime"};
+        }
+
+        case Feature::presentAtRelativeTime: {
+            auto vk_struct = const_cast<VkPhysicalDevicePresentTimingFeaturesEXT *>(
+                vku::FindStructInPNextChain<VkPhysicalDevicePresentTimingFeaturesEXT>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDevicePresentTimingFeaturesEXT;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->presentAtRelativeTime, "VkPhysicalDevicePresentTimingFeaturesEXT::presentAtRelativeTime"};
+        }
+
+        case Feature::presentTiming: {
+            auto vk_struct = const_cast<VkPhysicalDevicePresentTimingFeaturesEXT *>(
+                vku::FindStructInPNextChain<VkPhysicalDevicePresentTimingFeaturesEXT>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDevicePresentTimingFeaturesEXT;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->presentTiming, "VkPhysicalDevicePresentTimingFeaturesEXT::presentTiming"};
         }
 
         case Feature::presentWait2: {

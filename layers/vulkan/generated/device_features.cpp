@@ -900,6 +900,14 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->exclusiveScissor |= enabled->exclusiveScissor == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_TIMING_FEATURES_EXT: {
+                const VkPhysicalDevicePresentTimingFeaturesEXT *enabled =
+                    reinterpret_cast<const VkPhysicalDevicePresentTimingFeaturesEXT *>(pNext);
+                features->presentTiming |= enabled->presentTiming == VK_TRUE;
+                features->presentAtAbsoluteTime |= enabled->presentAtAbsoluteTime == VK_TRUE;
+                features->presentAtRelativeTime |= enabled->presentAtRelativeTime == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_FUNCTIONS_2_FEATURES_INTEL: {
                 const VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL *enabled =
                     reinterpret_cast<const VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL *>(pNext);

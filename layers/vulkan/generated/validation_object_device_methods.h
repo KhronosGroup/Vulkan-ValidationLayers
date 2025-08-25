@@ -3849,6 +3849,53 @@ virtual void PreCallRecordGetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCh
                                                     VkCheckpointData2NV* pCheckpointData, const RecordObject& record_obj) {}
 virtual void PostCallRecordGetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount,
                                                      VkCheckpointData2NV* pCheckpointData, const RecordObject& record_obj) {}
+virtual bool PreCallValidateSetSwapchainPresentTimingQueueSizeEXT(VkDevice device, VkSwapchainKHR swapchain, uint32_t size,
+                                                                  const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordSetSwapchainPresentTimingQueueSizeEXT(VkDevice device, VkSwapchainKHR swapchain, uint32_t size,
+                                                                const RecordObject& record_obj) {}
+virtual void PostCallRecordSetSwapchainPresentTimingQueueSizeEXT(VkDevice device, VkSwapchainKHR swapchain, uint32_t size,
+                                                                 const RecordObject& record_obj) {}
+virtual bool PreCallValidateGetSwapchainTimingPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                            VkSwapchainTimingPropertiesEXT* pSwapchainTimingProperties,
+                                                            uint64_t* pSwapchainTimingPropertiesCounter,
+                                                            const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordGetSwapchainTimingPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                          VkSwapchainTimingPropertiesEXT* pSwapchainTimingProperties,
+                                                          uint64_t* pSwapchainTimingPropertiesCounter,
+                                                          const RecordObject& record_obj) {}
+virtual void PostCallRecordGetSwapchainTimingPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                           VkSwapchainTimingPropertiesEXT* pSwapchainTimingProperties,
+                                                           uint64_t* pSwapchainTimingPropertiesCounter,
+                                                           const RecordObject& record_obj) {}
+virtual bool PreCallValidateGetSwapchainTimeDomainPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                                VkSwapchainTimeDomainPropertiesEXT* pSwapchainTimeDomainProperties,
+                                                                uint64_t* pTimeDomainsCounter, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordGetSwapchainTimeDomainPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                              VkSwapchainTimeDomainPropertiesEXT* pSwapchainTimeDomainProperties,
+                                                              uint64_t* pTimeDomainsCounter, const RecordObject& record_obj) {}
+virtual void PostCallRecordGetSwapchainTimeDomainPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                               VkSwapchainTimeDomainPropertiesEXT* pSwapchainTimeDomainProperties,
+                                                               uint64_t* pTimeDomainsCounter, const RecordObject& record_obj) {}
+virtual bool PreCallValidateGetPastPresentationTimingEXT(VkDevice device,
+                                                         const VkPastPresentationTimingInfoEXT* pPastPresentationTimingInfo,
+                                                         VkPastPresentationTimingPropertiesEXT* pPastPresentationTimingProperties,
+                                                         const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordGetPastPresentationTimingEXT(VkDevice device,
+                                                       const VkPastPresentationTimingInfoEXT* pPastPresentationTimingInfo,
+                                                       VkPastPresentationTimingPropertiesEXT* pPastPresentationTimingProperties,
+                                                       const RecordObject& record_obj) {}
+virtual void PostCallRecordGetPastPresentationTimingEXT(VkDevice device,
+                                                        const VkPastPresentationTimingInfoEXT* pPastPresentationTimingInfo,
+                                                        VkPastPresentationTimingPropertiesEXT* pPastPresentationTimingProperties,
+                                                        const RecordObject& record_obj) {}
 virtual bool PreCallValidateInitializePerformanceApiINTEL(VkDevice device,
                                                           const VkInitializePerformanceApiInfoINTEL* pInitializeInfo,
                                                           const ErrorObject& error_obj) const {

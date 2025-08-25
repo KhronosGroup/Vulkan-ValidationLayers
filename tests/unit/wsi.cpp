@@ -4984,3 +4984,435 @@ TEST_F(NegativeWsi, PresentIdWait2) {
     vk::WaitForPresent2KHR(device(), swapchain, &present_wait_2_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeWsi, PresentTimingsSwapchainCount) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_PRESENT_TIMING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::presentTiming);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
+    swapchain_ci.flags = VK_SWAPCHAIN_CREATE_PRESENT_TIMING_BIT_EXT;
+    swapchain_ci.surface = m_surface.Handle();
+    swapchain_ci.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_ci.imageFormat = m_surface_formats[0].format;
+    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = m_surface_capabilities.minImageExtent;
+    swapchain_ci.imageArrayLayers = 1;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+    swapchain_ci.presentMode = m_surface_non_shared_present_mode;
+    swapchain_ci.clipped = VK_FALSE;
+    swapchain_ci.oldSwapchain = 0;
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+    const auto images = swapchain.GetImages();
+
+    vkt::Fence fence(*m_device);
+    const uint32_t image_index = swapchain.AcquireNextImage(fence, kWaitTimeout);
+    vk::WaitForFences(device(), 1, &fence.handle(), true, kWaitTimeout);
+
+    SetPresentImageLayout(images[image_index]);
+
+    VkPresentTimingInfoEXT present_timing_infos[2];
+    present_timing_infos[0] = vku::InitStructHelper();
+    present_timing_infos[1] = vku::InitStructHelper();
+
+    VkPresentTimingsInfoEXT present_timings_info = vku::InitStructHelper();
+    present_timings_info.swapchainCount = 2u;
+    present_timings_info.pTimingInfos = present_timing_infos;
+
+    m_errorMonitor->SetDesiredError("VUID-VkPresentTimingsInfoEXT-swapchainCount-Todo1");
+    m_default_queue->Present(swapchain, image_index, vkt::no_semaphore, &present_timings_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeWsi, PresentTimingsMissingCreateFlag) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_PRESENT_TIMING_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
+    swapchain_ci.surface = m_surface.Handle();
+    swapchain_ci.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_ci.imageFormat = m_surface_formats[0].format;
+    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = m_surface_capabilities.minImageExtent;
+    swapchain_ci.imageArrayLayers = 1;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+    swapchain_ci.presentMode = m_surface_non_shared_present_mode;
+    swapchain_ci.clipped = VK_FALSE;
+    swapchain_ci.oldSwapchain = 0;
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+    const auto images = swapchain.GetImages();
+
+    vkt::Fence fence(*m_device);
+    const uint32_t image_index = swapchain.AcquireNextImage(fence, kWaitTimeout);
+    vk::WaitForFences(device(), 1, &fence.handle(), true, kWaitTimeout);
+
+    SetPresentImageLayout(images[image_index]);
+
+    VkPresentTimingInfoEXT present_timing_info = vku::InitStructHelper();
+
+    VkPresentTimingsInfoEXT present_timings_info = vku::InitStructHelper();
+    present_timings_info.swapchainCount = 1u;
+    present_timings_info.pTimingInfos = &present_timing_info;
+
+    m_errorMonitor->SetDesiredError("VUID-VkPresentTimingsInfoEXT-flags-Todo2");
+    m_default_queue->Present(swapchain, image_index, vkt::no_semaphore, &present_timings_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeWsi, PresentTimingsInvalidPresentMode) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_PRESENT_TIMING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::presentTiming);
+    AddRequiredFeature(vkt::Feature::presentAtAbsoluteTime);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    VkPresentModeKHR present_mode = VK_PRESENT_MODE_MAILBOX_KHR;
+
+    uint32_t present_mode_count = 0;
+    vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu_, m_surface.Handle(), &present_mode_count, nullptr);
+    std::vector<VkPresentModeKHR> present_modes(present_mode_count);
+    vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu_, m_surface.Handle(), &present_mode_count, present_modes.data());
+
+    if (std::find(present_modes.begin(), present_modes.end(), present_mode) == present_modes.end()) {
+        GTEST_SKIP() << "Required present mode " << present_mode << " not supported";
+    }
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
+    swapchain_ci.flags = VK_SWAPCHAIN_CREATE_PRESENT_TIMING_BIT_EXT;
+    swapchain_ci.surface = m_surface.Handle();
+    swapchain_ci.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_ci.imageFormat = m_surface_formats[0].format;
+    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = m_surface_capabilities.minImageExtent;
+    swapchain_ci.imageArrayLayers = 1;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+    swapchain_ci.presentMode = present_mode;
+    swapchain_ci.clipped = VK_FALSE;
+    swapchain_ci.oldSwapchain = 0;
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+    const auto images = swapchain.GetImages();
+
+    vkt::Fence fence(*m_device);
+    const uint32_t image_index = swapchain.AcquireNextImage(fence, kWaitTimeout);
+    vk::WaitForFences(device(), 1, &fence.handle(), true, kWaitTimeout);
+
+    SetPresentImageLayout(images[image_index]);
+
+    VkPresentTimingInfoEXT present_timing_info = vku::InitStructHelper();
+    present_timing_info.targetTime = 1u;
+
+    VkPresentTimingsInfoEXT present_timings_info = vku::InitStructHelper();
+    present_timings_info.swapchainCount = 1u;
+    present_timings_info.pTimingInfos = &present_timing_info;
+
+    m_errorMonitor->SetDesiredError("VUID-VkPresentTimingsInfoEXT-targetTime-Todo3");
+    m_default_queue->Present(swapchain, image_index, vkt::no_semaphore, &present_timings_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeWsi, PresentTimingsAbsoluteTime) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_PRESENT_TIMING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::presentTiming);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    VkPresentModeKHR present_mode = VK_PRESENT_MODE_FIFO_KHR;
+
+    uint32_t present_mode_count = 0;
+    vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu_, m_surface.Handle(), &present_mode_count, nullptr);
+    std::vector<VkPresentModeKHR> present_modes(present_mode_count);
+    vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu_, m_surface.Handle(), &present_mode_count, present_modes.data());
+
+    if (std::find(present_modes.begin(), present_modes.end(), present_mode) == present_modes.end()) {
+        GTEST_SKIP() << "Required present mode " << present_mode << " not supported";
+    }
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
+    swapchain_ci.flags = VK_SWAPCHAIN_CREATE_PRESENT_TIMING_BIT_EXT;
+    swapchain_ci.surface = m_surface.Handle();
+    swapchain_ci.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_ci.imageFormat = m_surface_formats[0].format;
+    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = m_surface_capabilities.minImageExtent;
+    swapchain_ci.imageArrayLayers = 1;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+    swapchain_ci.presentMode = present_mode;
+    swapchain_ci.clipped = VK_FALSE;
+    swapchain_ci.oldSwapchain = 0;
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+    const auto images = swapchain.GetImages();
+
+    vkt::Fence fence(*m_device);
+    const uint32_t image_index = swapchain.AcquireNextImage(fence, kWaitTimeout);
+    vk::WaitForFences(device(), 1, &fence.handle(), true, kWaitTimeout);
+
+    SetPresentImageLayout(images[image_index]);
+
+    VkPresentTimingInfoEXT present_timing_info = vku::InitStructHelper();
+    present_timing_info.targetTime = 1u;
+
+    VkPresentTimingsInfoEXT present_timings_info = vku::InitStructHelper();
+    present_timings_info.swapchainCount = 1u;
+    present_timings_info.pTimingInfos = &present_timing_info;
+
+    m_errorMonitor->SetDesiredError("VUID-VkPresentTimingsInfoEXT-presentAtAbsoluteTime-Todo4");
+    m_default_queue->Present(swapchain, image_index, vkt::no_semaphore, &present_timings_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeWsi, PresentTimingsRelativeTime) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_PRESENT_TIMING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::presentTiming);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    VkPresentModeKHR present_mode = VK_PRESENT_MODE_FIFO_KHR;
+
+    uint32_t present_mode_count = 0;
+    vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu_, m_surface.Handle(), &present_mode_count, nullptr);
+    std::vector<VkPresentModeKHR> present_modes(present_mode_count);
+    vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu_, m_surface.Handle(), &present_mode_count, present_modes.data());
+
+    if (std::find(present_modes.begin(), present_modes.end(), present_mode) == present_modes.end()) {
+        GTEST_SKIP() << "Required present mode " << present_mode << " not supported";
+    }
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
+    swapchain_ci.flags = VK_SWAPCHAIN_CREATE_PRESENT_TIMING_BIT_EXT;
+    swapchain_ci.surface = m_surface.Handle();
+    swapchain_ci.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_ci.imageFormat = m_surface_formats[0].format;
+    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = m_surface_capabilities.minImageExtent;
+    swapchain_ci.imageArrayLayers = 1;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+    swapchain_ci.presentMode = present_mode;
+    swapchain_ci.clipped = VK_FALSE;
+    swapchain_ci.oldSwapchain = 0;
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+    const auto images = swapchain.GetImages();
+
+    vkt::Fence fence(*m_device);
+    const uint32_t image_index = swapchain.AcquireNextImage(fence, kWaitTimeout);
+    vk::WaitForFences(device(), 1, &fence.handle(), true, kWaitTimeout);
+
+    SetPresentImageLayout(images[image_index]);
+
+    VkPresentTimingInfoEXT present_timing_info = vku::InitStructHelper();
+    present_timing_info.flags = VK_PRESENT_TIMING_INFO_PRESENT_AT_RELATIVE_TIME_BIT_EXT;
+    present_timing_info.targetTime = 1u;
+
+    VkPresentTimingsInfoEXT present_timings_info = vku::InitStructHelper();
+    present_timings_info.swapchainCount = 1u;
+    present_timings_info.pTimingInfos = &present_timing_info;
+
+    m_errorMonitor->SetDesiredError("VUID-VkPresentTimingsInfoEXT-presentAtRelativeTime-Todo5");
+    m_default_queue->Present(swapchain, image_index, vkt::no_semaphore, &present_timings_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeWsi, PresentTimingsQueueSize) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_PRESENT_TIMING_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
+    swapchain_ci.surface = m_surface.Handle();
+    swapchain_ci.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_ci.imageFormat = m_surface_formats[0].format;
+    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = m_surface_capabilities.minImageExtent;
+    swapchain_ci.imageArrayLayers = 1;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+    swapchain_ci.presentMode = m_surface_non_shared_present_mode;
+    swapchain_ci.clipped = VK_FALSE;
+    swapchain_ci.oldSwapchain = 0;
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+
+    m_errorMonitor->SetDesiredError("VUID-vkSetSwapchainPresentTimingQueueSizeEXT-swapchain-Todo6");
+    vk::SetSwapchainPresentTimingQueueSizeEXT(device(), swapchain, 0);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeWsi, PresentTimingsFeaturesNotEnabled) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_PRESENT_TIMING_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
+    swapchain_ci.flags = VK_SWAPCHAIN_CREATE_PRESENT_TIMING_BIT_EXT;
+    swapchain_ci.surface = m_surface.Handle();
+    swapchain_ci.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_ci.imageFormat = m_surface_formats[0].format;
+    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = m_surface_capabilities.minImageExtent;
+    swapchain_ci.imageArrayLayers = 1;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+    swapchain_ci.presentMode = m_surface_non_shared_present_mode;
+    swapchain_ci.clipped = VK_FALSE;
+    swapchain_ci.oldSwapchain = 0;
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainCreateInfoKHR-flags-Todo7");
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeWsi, PresentTimingsCalibrateableTimeDomains) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_PRESENT_TIMING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::presentTiming);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
+    swapchain_ci.flags = VK_SWAPCHAIN_CREATE_PRESENT_TIMING_BIT_EXT;
+    swapchain_ci.surface = m_surface.Handle();
+    swapchain_ci.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_ci.imageFormat = m_surface_formats[0].format;
+    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = m_surface_capabilities.minImageExtent;
+    swapchain_ci.imageArrayLayers = 1;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+    swapchain_ci.presentMode = m_surface_non_shared_present_mode;
+    swapchain_ci.clipped = VK_FALSE;
+    swapchain_ci.oldSwapchain = 0;
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+
+    uint32_t time_domain_count = 0u;
+    vk::GetPhysicalDeviceCalibrateableTimeDomainsKHR(gpu_, &time_domain_count, nullptr);
+    std::vector<VkTimeDomainKHR> time_domains(time_domain_count);
+    vk::GetPhysicalDeviceCalibrateableTimeDomainsKHR(Gpu(), &time_domain_count, time_domains.data());
+
+    bool found = false;
+    for (uint32_t i = 0; i < time_domain_count; ++i) {
+        if (time_domains[i] == VK_TIME_DOMAIN_SWAPCHAIN_LOCAL_EXT) {
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        GTEST_SKIP() << "VK_TIME_DOMAIN_SWAPCHAIN_LOCAL_EXT not supported";
+    }
+
+    VkCalibratedTimestampInfoKHR timestamp_info = vku::InitStructHelper();
+    timestamp_info.timeDomain = VK_TIME_DOMAIN_SWAPCHAIN_LOCAL_EXT;
+    uint64_t timestamp;
+    uint64_t max_deviation;
+    m_errorMonitor->SetDesiredError("VUID-VkCalibratedTimestampInfoKHR-timeDomain-Todo8");
+    vk::GetCalibratedTimestampsKHR(device(), 1u, &timestamp_info, &timestamp, &max_deviation);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeWsi, PresentTimingsCalibrateableTimeDomains2) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_PRESENT_TIMING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::presentTiming);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
+    swapchain_ci.flags = VK_SWAPCHAIN_CREATE_PRESENT_TIMING_BIT_EXT;
+    swapchain_ci.surface = m_surface.Handle();
+    swapchain_ci.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_ci.imageFormat = m_surface_formats[0].format;
+    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = m_surface_capabilities.minImageExtent;
+    swapchain_ci.imageArrayLayers = 1;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+    swapchain_ci.presentMode = m_surface_non_shared_present_mode;
+    swapchain_ci.clipped = VK_FALSE;
+    swapchain_ci.oldSwapchain = 0;
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+
+    uint32_t time_domain_count = 0u;
+    vk::GetPhysicalDeviceCalibrateableTimeDomainsKHR(gpu_, &time_domain_count, nullptr);
+    std::vector<VkTimeDomainKHR> time_domains(time_domain_count);
+    vk::GetPhysicalDeviceCalibrateableTimeDomainsKHR(Gpu(), &time_domain_count, time_domains.data());
+
+    bool found = false;
+    for (uint32_t i = 0; i < time_domain_count; ++i) {
+        if (time_domains[i] == VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT) {
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        GTEST_SKIP() << "VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT not supported";
+    }
+
+    VkSwapchainCalibratedTimestampInfoEXT swapchain_timestamp_info = vku::InitStructHelper();
+    swapchain_timestamp_info.swapchain = swapchain;
+    swapchain_timestamp_info.presentStage = VK_PRESENT_STAGE_QUEUE_OPERATIONS_END_BIT_EXT | VK_PRESENT_STAGE_REQUEST_DEQUEUED_BIT_EXT;
+
+    VkCalibratedTimestampInfoKHR timestamp_info = vku::InitStructHelper(&swapchain_timestamp_info);
+    timestamp_info.timeDomain = VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT;
+    uint64_t timestamp;
+    uint64_t max_deviation;
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainCalibratedTimestampInfoEXT-presentStage-Todo9");
+    vk::GetCalibratedTimestampsKHR(device(), 1u, &timestamp_info, &timestamp, &max_deviation);
+    m_errorMonitor->VerifyFound();
+}

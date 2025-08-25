@@ -672,6 +672,12 @@ enum class Feature {
     presentMetering,
     // VkPhysicalDevicePresentModeFifoLatestReadyFeaturesKHR
     presentModeFifoLatestReady,
+    // VkPhysicalDevicePresentTimingFeaturesEXT
+    presentAtAbsoluteTime,
+    // VkPhysicalDevicePresentTimingFeaturesEXT
+    presentAtRelativeTime,
+    // VkPhysicalDevicePresentTimingFeaturesEXT
+    presentTiming,
     // VkPhysicalDevicePresentWait2FeaturesKHR
     presentWait2,
     // VkPhysicalDevicePresentWaitFeaturesKHR

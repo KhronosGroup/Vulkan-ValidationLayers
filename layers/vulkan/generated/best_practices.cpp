@@ -1458,6 +1458,30 @@ void BestPractices::PostCallRecordGetCalibratedTimestampsEXT(VkDevice device, ui
     PostCallRecordGetCalibratedTimestampsKHR(device, timestampCount, pTimestampInfos, pTimestamps, pMaxDeviation, record_obj);
 }
 
+void BestPractices::PostCallRecordSetSwapchainPresentTimingQueueSizeEXT(VkDevice device, VkSwapchainKHR swapchain, uint32_t size,
+                                                                        const RecordObject& record_obj) {
+    bp_state::LogResult(*this, device, record_obj);
+}
+
+void BestPractices::PostCallRecordGetSwapchainTimingPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                                  VkSwapchainTimingPropertiesEXT* pSwapchainTimingProperties,
+                                                                  uint64_t* pSwapchainTimingPropertiesCounter,
+                                                                  const RecordObject& record_obj) {
+    bp_state::LogResult(*this, device, record_obj);
+}
+
+void BestPractices::PostCallRecordGetSwapchainTimeDomainPropertiesEXT(
+    VkDevice device, VkSwapchainKHR swapchain, VkSwapchainTimeDomainPropertiesEXT* pSwapchainTimeDomainProperties,
+    uint64_t* pTimeDomainsCounter, const RecordObject& record_obj) {
+    bp_state::LogResult(*this, device, record_obj);
+}
+
+void BestPractices::PostCallRecordGetPastPresentationTimingEXT(
+    VkDevice device, const VkPastPresentationTimingInfoEXT* pPastPresentationTimingInfo,
+    VkPastPresentationTimingPropertiesEXT* pPastPresentationTimingProperties, const RecordObject& record_obj) {
+    bp_state::LogResult(*this, device, record_obj);
+}
+
 void BestPractices::PostCallRecordInitializePerformanceApiINTEL(VkDevice device,
                                                                 const VkInitializePerformanceApiInfoINTEL* pInitializeInfo,
                                                                 const RecordObject& record_obj) {

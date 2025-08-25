@@ -536,6 +536,22 @@ void PostCallRecordGetCalibratedTimestampsEXT(VkDevice device, uint32_t timestam
                                               const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
                                               uint64_t* pMaxDeviation, const RecordObject& record_obj) override;
 
+void PostCallRecordSetSwapchainPresentTimingQueueSizeEXT(VkDevice device, VkSwapchainKHR swapchain, uint32_t size,
+                                                         const RecordObject& record_obj) override;
+
+void PostCallRecordGetSwapchainTimingPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                   VkSwapchainTimingPropertiesEXT* pSwapchainTimingProperties,
+                                                   uint64_t* pSwapchainTimingPropertiesCounter,
+                                                   const RecordObject& record_obj) override;
+
+void PostCallRecordGetSwapchainTimeDomainPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                       VkSwapchainTimeDomainPropertiesEXT* pSwapchainTimeDomainProperties,
+                                                       uint64_t* pTimeDomainsCounter, const RecordObject& record_obj) override;
+
+void PostCallRecordGetPastPresentationTimingEXT(VkDevice device, const VkPastPresentationTimingInfoEXT* pPastPresentationTimingInfo,
+                                                VkPastPresentationTimingPropertiesEXT* pPastPresentationTimingProperties,
+                                                const RecordObject& record_obj) override;
+
 void PostCallRecordInitializePerformanceApiINTEL(VkDevice device, const VkInitializePerformanceApiInfoINTEL* pInitializeInfo,
                                                  const RecordObject& record_obj) override;
 

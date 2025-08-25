@@ -663,6 +663,15 @@ void CmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclu
 void CmdSetCheckpointNV(VkCommandBuffer commandBuffer, const void* pCheckpointMarker);
 void GetQueueCheckpointDataNV(VkQueue queue, uint32_t* pCheckpointDataCount, VkCheckpointDataNV* pCheckpointData);
 void GetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount, VkCheckpointData2NV* pCheckpointData);
+VkResult SetSwapchainPresentTimingQueueSizeEXT(VkDevice device, VkSwapchainKHR swapchain, uint32_t size);
+VkResult GetSwapchainTimingPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                         VkSwapchainTimingPropertiesEXT* pSwapchainTimingProperties,
+                                         uint64_t* pSwapchainTimingPropertiesCounter);
+VkResult GetSwapchainTimeDomainPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                             VkSwapchainTimeDomainPropertiesEXT* pSwapchainTimeDomainProperties,
+                                             uint64_t* pTimeDomainsCounter);
+VkResult GetPastPresentationTimingEXT(VkDevice device, const VkPastPresentationTimingInfoEXT* pPastPresentationTimingInfo,
+                                      VkPastPresentationTimingPropertiesEXT* pPastPresentationTimingProperties);
 VkResult InitializePerformanceApiINTEL(VkDevice device, const VkInitializePerformanceApiInfoINTEL* pInitializeInfo);
 void UninitializePerformanceApiINTEL(VkDevice device);
 VkResult CmdSetPerformanceMarkerINTEL(VkCommandBuffer commandBuffer, const VkPerformanceMarkerInfoINTEL* pMarkerInfo);

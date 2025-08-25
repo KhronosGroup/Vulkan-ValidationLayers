@@ -610,6 +610,10 @@ PFN_vkCmdSetExclusiveScissorNV CmdSetExclusiveScissorNV;
 PFN_vkCmdSetCheckpointNV CmdSetCheckpointNV;
 PFN_vkGetQueueCheckpointDataNV GetQueueCheckpointDataNV;
 PFN_vkGetQueueCheckpointData2NV GetQueueCheckpointData2NV;
+PFN_vkSetSwapchainPresentTimingQueueSizeEXT SetSwapchainPresentTimingQueueSizeEXT;
+PFN_vkGetSwapchainTimingPropertiesEXT GetSwapchainTimingPropertiesEXT;
+PFN_vkGetSwapchainTimeDomainPropertiesEXT GetSwapchainTimeDomainPropertiesEXT;
+PFN_vkGetPastPresentationTimingEXT GetPastPresentationTimingEXT;
 PFN_vkInitializePerformanceApiINTEL InitializePerformanceApiINTEL;
 PFN_vkUninitializePerformanceApiINTEL UninitializePerformanceApiINTEL;
 PFN_vkCmdSetPerformanceMarkerINTEL CmdSetPerformanceMarkerINTEL;
@@ -2146,6 +2150,14 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
+            "VK_EXT_present_timing", [](VkInstance , VkDevice device) {
+                SetSwapchainPresentTimingQueueSizeEXT = reinterpret_cast<PFN_vkSetSwapchainPresentTimingQueueSizeEXT>(GetDeviceProcAddr(device, "vkSetSwapchainPresentTimingQueueSizeEXT"));
+                GetSwapchainTimingPropertiesEXT = reinterpret_cast<PFN_vkGetSwapchainTimingPropertiesEXT>(GetDeviceProcAddr(device, "vkGetSwapchainTimingPropertiesEXT"));
+                GetSwapchainTimeDomainPropertiesEXT = reinterpret_cast<PFN_vkGetSwapchainTimeDomainPropertiesEXT>(GetDeviceProcAddr(device, "vkGetSwapchainTimeDomainPropertiesEXT"));
+                GetPastPresentationTimingEXT = reinterpret_cast<PFN_vkGetPastPresentationTimingEXT>(GetDeviceProcAddr(device, "vkGetPastPresentationTimingEXT"));
+            }
+        },
+        {
             "VK_INTEL_performance_query", [](VkInstance , VkDevice device) {
                 InitializePerformanceApiINTEL = reinterpret_cast<PFN_vkInitializePerformanceApiINTEL>(GetDeviceProcAddr(device, "vkInitializePerformanceApiINTEL"));
                 UninitializePerformanceApiINTEL = reinterpret_cast<PFN_vkUninitializePerformanceApiINTEL>(GetDeviceProcAddr(device, "vkUninitializePerformanceApiINTEL"));
@@ -3025,6 +3037,10 @@ void ResetAllExtensions() {
     CmdSetCheckpointNV = nullptr;
     GetQueueCheckpointDataNV = nullptr;
     GetQueueCheckpointData2NV = nullptr;
+    SetSwapchainPresentTimingQueueSizeEXT = nullptr;
+    GetSwapchainTimingPropertiesEXT = nullptr;
+    GetSwapchainTimeDomainPropertiesEXT = nullptr;
+    GetPastPresentationTimingEXT = nullptr;
     InitializePerformanceApiINTEL = nullptr;
     UninitializePerformanceApiINTEL = nullptr;
     CmdSetPerformanceMarkerINTEL = nullptr;

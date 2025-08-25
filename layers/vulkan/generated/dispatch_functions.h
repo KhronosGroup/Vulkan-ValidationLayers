@@ -3053,6 +3053,33 @@ static inline void DispatchGetQueueCheckpointData2NV(VkQueue queue, uint32_t* pC
     dispatch->GetQueueCheckpointData2NV(queue, pCheckpointDataCount, pCheckpointData);
 }
 
+static inline VkResult DispatchSetSwapchainPresentTimingQueueSizeEXT(VkDevice device, VkSwapchainKHR swapchain, uint32_t size) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->SetSwapchainPresentTimingQueueSizeEXT(device, swapchain, size);
+}
+
+static inline VkResult DispatchGetSwapchainTimingPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                               VkSwapchainTimingPropertiesEXT* pSwapchainTimingProperties,
+                                                               uint64_t* pSwapchainTimingPropertiesCounter) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->GetSwapchainTimingPropertiesEXT(device, swapchain, pSwapchainTimingProperties,
+                                                     pSwapchainTimingPropertiesCounter);
+}
+
+static inline VkResult DispatchGetSwapchainTimeDomainPropertiesEXT(
+    VkDevice device, VkSwapchainKHR swapchain, VkSwapchainTimeDomainPropertiesEXT* pSwapchainTimeDomainProperties,
+    uint64_t* pTimeDomainsCounter) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->GetSwapchainTimeDomainPropertiesEXT(device, swapchain, pSwapchainTimeDomainProperties, pTimeDomainsCounter);
+}
+
+static inline VkResult DispatchGetPastPresentationTimingEXT(
+    VkDevice device, const VkPastPresentationTimingInfoEXT* pPastPresentationTimingInfo,
+    VkPastPresentationTimingPropertiesEXT* pPastPresentationTimingProperties) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->GetPastPresentationTimingEXT(device, pPastPresentationTimingInfo, pPastPresentationTimingProperties);
+}
+
 static inline VkResult DispatchInitializePerformanceApiINTEL(VkDevice device,
                                                              const VkInitializePerformanceApiInfoINTEL* pInitializeInfo) {
     auto dispatch = vvl::dispatch::GetData(device);

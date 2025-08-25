@@ -889,6 +889,21 @@ static VKAPI_ATTR void VKAPI_CALL StubCmdSetExclusiveScissorNV(VkCommandBuffer, 
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetCheckpointNV(VkCommandBuffer, const void*) {}
 static VKAPI_ATTR void VKAPI_CALL StubGetQueueCheckpointDataNV(VkQueue, uint32_t*, VkCheckpointDataNV*) {}
 static VKAPI_ATTR void VKAPI_CALL StubGetQueueCheckpointData2NV(VkQueue, uint32_t*, VkCheckpointData2NV*) {}
+static VKAPI_ATTR VkResult VKAPI_CALL StubSetSwapchainPresentTimingQueueSizeEXT(VkDevice, VkSwapchainKHR, uint32_t) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetSwapchainTimingPropertiesEXT(VkDevice, VkSwapchainKHR, VkSwapchainTimingPropertiesEXT*,
+                                                                          uint64_t*) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetSwapchainTimeDomainPropertiesEXT(VkDevice, VkSwapchainKHR,
+                                                                              VkSwapchainTimeDomainPropertiesEXT*, uint64_t*) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetPastPresentationTimingEXT(VkDevice, const VkPastPresentationTimingInfoEXT*,
+                                                                       VkPastPresentationTimingPropertiesEXT*) {
+    return VK_SUCCESS;
+}
 static VKAPI_ATTR VkResult VKAPI_CALL StubInitializePerformanceApiINTEL(VkDevice, const VkInitializePerformanceApiInfoINTEL*) {
     return VK_SUCCESS;
 }
@@ -1821,6 +1836,10 @@ const auto& GetApiExtensionMap() {
         {"vkCmdSetCheckpointNV", {vvl::Extension::_VK_NV_device_diagnostic_checkpoints}},
         {"vkGetQueueCheckpointDataNV", {vvl::Extension::_VK_NV_device_diagnostic_checkpoints}},
         {"vkGetQueueCheckpointData2NV", {vvl::Extension::_VK_NV_device_diagnostic_checkpoints}},
+        {"vkSetSwapchainPresentTimingQueueSizeEXT", {vvl::Extension::_VK_EXT_present_timing}},
+        {"vkGetSwapchainTimingPropertiesEXT", {vvl::Extension::_VK_EXT_present_timing}},
+        {"vkGetSwapchainTimeDomainPropertiesEXT", {vvl::Extension::_VK_EXT_present_timing}},
+        {"vkGetPastPresentationTimingEXT", {vvl::Extension::_VK_EXT_present_timing}},
         {"vkInitializePerformanceApiINTEL", {vvl::Extension::_VK_INTEL_performance_query}},
         {"vkUninitializePerformanceApiINTEL", {vvl::Extension::_VK_INTEL_performance_query}},
         {"vkCmdSetPerformanceMarkerINTEL", {vvl::Extension::_VK_INTEL_performance_query}},
@@ -3518,6 +3537,27 @@ void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* tab
     table->GetQueueCheckpointData2NV = (PFN_vkGetQueueCheckpointData2NV)gpa(device, "vkGetQueueCheckpointData2NV");
     if (table->GetQueueCheckpointData2NV == nullptr) {
         table->GetQueueCheckpointData2NV = (PFN_vkGetQueueCheckpointData2NV)StubGetQueueCheckpointData2NV;
+    }
+    table->SetSwapchainPresentTimingQueueSizeEXT =
+        (PFN_vkSetSwapchainPresentTimingQueueSizeEXT)gpa(device, "vkSetSwapchainPresentTimingQueueSizeEXT");
+    if (table->SetSwapchainPresentTimingQueueSizeEXT == nullptr) {
+        table->SetSwapchainPresentTimingQueueSizeEXT =
+            (PFN_vkSetSwapchainPresentTimingQueueSizeEXT)StubSetSwapchainPresentTimingQueueSizeEXT;
+    }
+    table->GetSwapchainTimingPropertiesEXT =
+        (PFN_vkGetSwapchainTimingPropertiesEXT)gpa(device, "vkGetSwapchainTimingPropertiesEXT");
+    if (table->GetSwapchainTimingPropertiesEXT == nullptr) {
+        table->GetSwapchainTimingPropertiesEXT = (PFN_vkGetSwapchainTimingPropertiesEXT)StubGetSwapchainTimingPropertiesEXT;
+    }
+    table->GetSwapchainTimeDomainPropertiesEXT =
+        (PFN_vkGetSwapchainTimeDomainPropertiesEXT)gpa(device, "vkGetSwapchainTimeDomainPropertiesEXT");
+    if (table->GetSwapchainTimeDomainPropertiesEXT == nullptr) {
+        table->GetSwapchainTimeDomainPropertiesEXT =
+            (PFN_vkGetSwapchainTimeDomainPropertiesEXT)StubGetSwapchainTimeDomainPropertiesEXT;
+    }
+    table->GetPastPresentationTimingEXT = (PFN_vkGetPastPresentationTimingEXT)gpa(device, "vkGetPastPresentationTimingEXT");
+    if (table->GetPastPresentationTimingEXT == nullptr) {
+        table->GetPastPresentationTimingEXT = (PFN_vkGetPastPresentationTimingEXT)StubGetPastPresentationTimingEXT;
     }
     table->InitializePerformanceApiINTEL = (PFN_vkInitializePerformanceApiINTEL)gpa(device, "vkInitializePerformanceApiINTEL");
     if (table->InitializePerformanceApiINTEL == nullptr) {

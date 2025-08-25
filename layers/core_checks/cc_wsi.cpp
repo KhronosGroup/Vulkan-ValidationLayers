@@ -1094,6 +1094,32 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                 }
             }
         }
+        const auto *present_timings_info = vku::FindStructInPNextChain<VkPresentTimingsInfoEXT>(pPresentInfo->pNext);
+        if (present_timings_info) {
+            for (uint32_t i = 0; i < present_timings_info->swapchainCount; i++) {
+                const auto swapchain_state = Get<vvl::Swapchain>(pPresentInfo->pSwapchains[i]);
+                ASSERT_AND_CONTINUE(swapchain_state);
+                if ((swapchain_state->create_info.flags & VK_SWAPCHAIN_CREATE_PRESENT_TIMING_BIT_EXT) == 0) {
+                    skip |= LogError("VUID-VkPresentTimingsInfoEXT-flags-Todo2", pPresentInfo->pSwapchains[i],
+                                     present_info_loc.dot(Field::pSwapchain, i),
+                                     "was created with %s, but VkPresentTimingsInfoEXT is included in the pNext chain.\n%s",
+                                     string_VkSwapchainCreateFlagsKHR(swapchain_state->create_info.flags).c_str(),
+                                     PrintPNextChain(Struct::VkPresentInfoKHR, pPresentInfo->pNext).c_str());
+                }
+
+                if (present_timings_info->pTimingInfos[i].targetTime != 0 &&
+                    !IsValueIn(
+                        swapchain_state->create_info.presentMode,
+                        {VK_PRESENT_MODE_FIFO_KHR, VK_PRESENT_MODE_FIFO_RELAXED_KHR, VK_PRESENT_MODE_FIFO_LATEST_READY_EXT})) {
+                    skip |= LogError(
+                        "VUID-VkPresentTimingsInfoEXT-targetTime-Todo3", pPresentInfo->pSwapchains[i],
+                        present_info_loc.pNext(Struct::VkPresentTimingsInfoEXT, Field::pTimingInfos, i).dot(Field::targetTime),
+                        "is %" PRIu64 ", but the swapchain was created with present mode %s.",
+                        present_timings_info->pTimingInfos[i].targetTime,
+                        string_VkPresentModeKHR(swapchain_state->create_info.presentMode));
+                }
+            }
+        }
     }
 
     return skip;
@@ -1152,6 +1178,19 @@ bool CoreChecks::PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint3
                                             error_obj.location.dot(Field::pCreateInfos, i));
         }
     }
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateSetSwapchainPresentTimingQueueSizeEXT(VkDevice device, VkSwapchainKHR swapchain, uint32_t size,
+                                                                      const ErrorObject &error_obj) const {
+    bool skip = false;
+
+    auto swapchain_state = Get<vvl::Swapchain>(swapchain);
+    if ((swapchain_state->create_info.flags & VK_SWAPCHAIN_CREATE_PRESENT_TIMING_BIT_EXT) == 0) {
+        skip |= LogError("VUID-vkSetSwapchainPresentTimingQueueSizeEXT-swapchain-Todo6", swapchain, error_obj.location,
+                         "was created with %s.", string_VkSwapchainCreateFlagsKHR(swapchain_state->create_info.flags).c_str());
+    }
+
     return skip;
 }
 
