@@ -748,28 +748,27 @@ bool Device::manual_PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuf
                                                   "VUID-VkCommandBufferInheritanceInfo-pipelineStatistics-00058");
         }
 
-        const auto *conditional_rendering =
-            vku::FindStructInPNextChain<VkCommandBufferInheritanceConditionalRenderingInfoEXT>(info.pNext);
-        if (conditional_rendering) {
+        if (const auto *conditional_rendering =
+                vku::FindStructInPNextChain<VkCommandBufferInheritanceConditionalRenderingInfoEXT>(info.pNext)) {
             if (!enabled_features.inheritedConditionalRendering && conditional_rendering->conditionalRenderingEnable == VK_TRUE) {
-                skip |= LogError(
-                    "VUID-VkCommandBufferInheritanceConditionalRenderingInfoEXT-conditionalRenderingEnable-01977", commandBuffer,
-                    error_obj.location,
-                    "Inherited conditional rendering is disabled, but "
-                    "pBeginInfo->pInheritanceInfo->pNext<VkCommandBufferInheritanceConditionalRenderingInfoEXT> is VK_TRUE.");
+                skip |= LogError("VUID-VkCommandBufferInheritanceConditionalRenderingInfoEXT-conditionalRenderingEnable-01977",
+                                 commandBuffer,
+                                 inheritance_loc.pNext(Struct::VkCommandBufferInheritanceConditionalRenderingInfoEXT,
+                                                       Field::conditionalRenderingEnable),
+                                 "is VK_TRUE but the inheritedConditionalRendering feature was not enabled.");
             }
         }
 
-        auto p_inherited_viewport_scissor_info =
-            vku::FindStructInPNextChain<VkCommandBufferInheritanceViewportScissorInfoNV>(info.pNext);
-        if (p_inherited_viewport_scissor_info != nullptr && !enabled_features.multiViewport &&
-            p_inherited_viewport_scissor_info->viewportScissor2D == VK_TRUE &&
-            p_inherited_viewport_scissor_info->viewportDepthCount != 1) {
-            skip |= LogError("VUID-VkCommandBufferInheritanceViewportScissorInfoNV-viewportScissor2D-04783", commandBuffer,
-                             error_obj.location,
-                             "multiViewport feature was not enabled, but "
-                             "VkCommandBufferInheritanceViewportScissorInfoNV::viewportScissor2D in "
-                             "pBeginInfo->pInheritanceInfo->pNext is VK_TRUE and viewportDepthCount is not 1.");
+        if (auto inherited_viewport_scissor_info =
+                vku::FindStructInPNextChain<VkCommandBufferInheritanceViewportScissorInfoNV>(info.pNext)) {
+            if (!enabled_features.multiViewport && inherited_viewport_scissor_info->viewportScissor2D &&
+                inherited_viewport_scissor_info->viewportDepthCount != 1) {
+                skip |= LogError(
+                    "VUID-VkCommandBufferInheritanceViewportScissorInfoNV-viewportScissor2D-04783", commandBuffer,
+                    inheritance_loc.pNext(Struct::VkCommandBufferInheritanceViewportScissorInfoNV, Field::viewportScissor2D),
+                    "is VK_TRUE and viewportDepthCount is %" PRIu32 " (not 1), but the multiViewport feature was not enabled.",
+                    inherited_viewport_scissor_info->viewportDepthCount);
+            }
         }
     }
     return skip;
