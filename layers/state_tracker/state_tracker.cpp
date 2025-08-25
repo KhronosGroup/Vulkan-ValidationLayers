@@ -141,8 +141,8 @@ std::vector<std::shared_ptr<const ImageView>> DeviceState::GetAttachmentViews(co
 // Android-specific validation that uses types defined only with VK_USE_PLATFORM_ANDROID_KHR
 // This could also move into a seperate core_validation_android.cpp file... ?
 
-VkFormatFeatureFlags2KHR DeviceState::GetExternalFormatFeaturesANDROID(const void *pNext) const {
-    VkFormatFeatureFlags2KHR format_features = 0;
+VkFormatFeatureFlags2 DeviceState::GetExternalFormatFeaturesANDROID(const void *pNext) const {
+    VkFormatFeatureFlags2 format_features = 0;
     const uint64_t external_format = GetExternalFormat(pNext);
     if ((0 != external_format)) {
         // VUID 01894 will catch if not found in map
@@ -169,7 +169,7 @@ void DeviceState::PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(VkDevi
         auto ahb_format_props = vku::FindStructInPNextChain<VkAndroidHardwareBufferFormatPropertiesANDROID>(pProperties->pNext);
         if (ahb_format_props) {
             external_format = ahb_format_props->externalFormat;
-            ahb_ext_formats_map.insert(external_format, static_cast<VkFormatFeatureFlags2KHR>(ahb_format_props->formatFeatures));
+            ahb_ext_formats_map.insert(external_format, static_cast<VkFormatFeatureFlags2>(ahb_format_props->formatFeatures));
         }
     }
 
@@ -195,7 +195,7 @@ void DeviceState::PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(VkDevi
 
 #else
 
-VkFormatFeatureFlags2KHR DeviceState::GetExternalFormatFeaturesANDROID(const void *pNext) const {
+VkFormatFeatureFlags2 DeviceState::GetExternalFormatFeaturesANDROID(const void *pNext) const {
     (void)pNext;
     return 0;
 }
@@ -211,7 +211,7 @@ VkFormatFeatureFlags2 InstanceState::GetImageFormatFeatures(VkPhysicalDevice phy
     // if format is AHB external format then the features are already set
     if (has_format_feature2) {
         VkDrmFormatModifierPropertiesList2EXT fmt_drm_props = vku::InitStructHelper();
-        auto fmt_props_3 = vku::InitStruct<VkFormatProperties3KHR>(has_drm_modifiers ? &fmt_drm_props : nullptr);
+        auto fmt_props_3 = vku::InitStruct<VkFormatProperties3>(has_drm_modifiers ? &fmt_drm_props : nullptr);
         VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
 
         DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, format, &fmt_props_2);
@@ -288,7 +288,7 @@ void DeviceState::PostCallRecordCreateImage(VkDevice device, const VkImageCreate
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
-    VkFormatFeatureFlags2KHR format_features = 0;
+    VkFormatFeatureFlags2 format_features = 0;
     if (IsExtEnabled(extensions.vk_android_external_memory_android_hardware_buffer)) {
         format_features = GetExternalFormatFeaturesANDROID(pCreateInfo->pNext);
     }
@@ -552,7 +552,7 @@ void DeviceState::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCrea
 
 std::shared_ptr<BufferView> DeviceState::CreateBufferViewState(const std::shared_ptr<Buffer> &buffer, VkBufferView handle,
                                                                const VkBufferViewCreateInfo *create_info,
-                                                               VkFormatFeatureFlags2KHR format_features) {
+                                                               VkFormatFeatureFlags2 format_features) {
     return std::make_shared<BufferView>(buffer, handle, create_info, format_features);
 }
 
@@ -564,9 +564,9 @@ void DeviceState::PostCallRecordCreateBufferView(VkDevice device, const VkBuffer
     }
     auto buffer_state = Get<Buffer>(pCreateInfo->buffer);
 
-    VkFormatFeatureFlags2KHR buffer_features;
+    VkFormatFeatureFlags2 buffer_features;
     if (special_supported.vk_khr_format_feature_flags2) {
-        VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
+        VkFormatProperties3 fmt_props_3 = vku::InitStructHelper();
         VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
         DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, pCreateInfo->format, &fmt_props_2);
         buffer_features = fmt_props_3.bufferFeatures | fmt_props_2.formatProperties.bufferFeatures;
@@ -581,7 +581,7 @@ void DeviceState::PostCallRecordCreateBufferView(VkDevice device, const VkBuffer
 
 std::shared_ptr<ImageView> DeviceState::CreateImageViewState(const std::shared_ptr<Image> &image_state, VkImageView handle,
                                                              const VkImageViewCreateInfo *create_info,
-                                                             VkFormatFeatureFlags2KHR format_features,
+                                                             VkFormatFeatureFlags2 format_features,
                                                              const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props) {
     return std::make_shared<ImageView>(*this, image_state, handle, create_info, format_features, cubic_props);
 }
@@ -595,7 +595,7 @@ void DeviceState::PostCallRecordCreateImageView(VkDevice device, const VkImageVi
     auto image_state = Get<Image>(pCreateInfo->image);
     ASSERT_AND_RETURN(image_state);
 
-    VkFormatFeatureFlags2KHR format_features = 0;
+    VkFormatFeatureFlags2 format_features = 0;
     if (image_state->HasAHBFormat() == true) {
         // The ImageView uses same Image's format feature since they share same AHB
         format_features = image_state->format_features;
@@ -836,13 +836,13 @@ void DeviceState::PostCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuf
 
 // Gets union of all features defined by Potential Format Features
 // except, does not handle the external format case for AHB as that only can be used for sampled images
-VkFormatFeatureFlags2KHR DeviceState::GetPotentialFormatFeatures(VkFormat format) const {
-    VkFormatFeatureFlags2KHR format_features = 0;
+VkFormatFeatureFlags2 DeviceState::GetPotentialFormatFeatures(VkFormat format) const {
+    VkFormatFeatureFlags2 format_features = 0;
 
     if (format != VK_FORMAT_UNDEFINED) {
         if (special_supported.vk_khr_format_feature_flags2) {
             VkDrmFormatModifierPropertiesList2EXT fmt_drm_props = vku::InitStructHelper();
-            auto fmt_props_3 = vku::InitStruct<VkFormatProperties3KHR>(
+            auto fmt_props_3 = vku::InitStruct<VkFormatProperties3>(
                 IsExtEnabled(extensions.vk_ext_image_drm_format_modifier) ? &fmt_drm_props : nullptr);
             VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
 
@@ -4672,7 +4672,7 @@ void DeviceState::PostCallRecordCreateSamplerYcbcrConversion(VkDevice device, co
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
-    VkFormatFeatureFlags2KHR format_features = 0;
+    VkFormatFeatureFlags2 format_features = 0;
 
     if (pCreateInfo->format != VK_FORMAT_UNDEFINED) {
         format_features = GetPotentialFormatFeatures(pCreateInfo->format);

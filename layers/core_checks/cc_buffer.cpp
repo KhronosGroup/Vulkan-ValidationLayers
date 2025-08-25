@@ -318,7 +318,7 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
         }
     }
 
-    const VkFormatProperties3KHR format_properties = GetPDFormatProperties(pCreateInfo->format);
+    const VkFormatProperties3 format_properties = GetPDFormatProperties(pCreateInfo->format);
     if ((buffer_view_usage & VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT) &&
         !(format_properties.bufferFeatures & VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT)) {
         const Location usage_loc = usage_flags2 ? create_info_loc.pNext(Struct::VkBufferUsageFlags2CreateInfo, Field::usage)

@@ -252,9 +252,8 @@ class InstanceState : public vvl::base::Instance {
                                             const VkDisplayModeCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                             VkDisplayModeKHR* pMode, const RecordObject& record_obj) override;
 
-    VkFormatFeatureFlags2KHR GetImageFormatFeatures(VkPhysicalDevice physical_device, bool has_format_feature2,
-                                                    bool has_drm_modifiers, VkDevice device, VkImage image, VkFormat format,
-                                                    VkImageTiling tiling);
+    VkFormatFeatureFlags2 GetImageFormatFeatures(VkPhysicalDevice physical_device, bool has_format_feature2, bool has_drm_modifiers,
+                                                 VkDevice device, VkImage image, VkFormat format, VkImageTiling tiling);
     void RecordVulkanSurface(VkSurfaceKHR* pSurface);
     void PostCallRecordCreateDisplayPlaneSurfaceKHR(VkInstance instance, const VkDisplaySurfaceCreateInfoKHR* pCreateInfo,
                                                     const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
@@ -855,7 +854,7 @@ class DeviceState : public vvl::base::Device {
 
     virtual std::shared_ptr<vvl::BufferView> CreateBufferViewState(const std::shared_ptr<vvl::Buffer>& buffer, VkBufferView handle,
                                                                    const VkBufferViewCreateInfo* create_info,
-                                                                   VkFormatFeatureFlags2KHR format_features);
+                                                                   VkFormatFeatureFlags2 format_features);
     void PostCallRecordCreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkBufferView* pView,
                                         const RecordObject& record_obj) override;
@@ -1619,7 +1618,7 @@ class DeviceState : public vvl::base::Device {
     void PostCallRecordLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepInfoNV* pSleepInfo,
                                       const RecordObject& record_obj) override;
 
-    VkFormatFeatureFlags2KHR GetExternalFormatFeaturesANDROID(const void* pNext) const;
+    VkFormatFeatureFlags2 GetExternalFormatFeaturesANDROID(const void* pNext) const;
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     void PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer* buffer,
                                                                  VkAndroidHardwareBufferPropertiesANDROID* pProperties,
@@ -1635,7 +1634,7 @@ class DeviceState : public vvl::base::Device {
     std::vector<std::shared_ptr<const vvl::ImageView>> GetAttachmentViews(const VkRenderPassBeginInfo& rp_begin,
                                                                           const vvl::Framebuffer& fb_state) const;
 
-    VkFormatFeatureFlags2KHR GetPotentialFormatFeatures(VkFormat format) const;
+    VkFormatFeatureFlags2 GetPotentialFormatFeatures(VkFormat format) const;
     void PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet,
                                                     const vvl::DescriptorUpdateTemplate& template_state, const void* pData);
     void RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
@@ -1964,7 +1963,7 @@ class DeviceState : public vvl::base::Device {
     mutable std::shared_mutex buffer_address_lock_;
 
     // < external format, features >
-    vvl::concurrent_unordered_map<uint64_t, VkFormatFeatureFlags2KHR> ahb_ext_formats_map;
+    vvl::concurrent_unordered_map<uint64_t, VkFormatFeatureFlags2> ahb_ext_formats_map;
     // < external format, colorAttachmentFormat > (VK_ANDROID_external_format_resolve)
     vvl::concurrent_unordered_map<uint64_t, VkFormat> ahb_ext_resolve_formats_map;
 
@@ -2108,7 +2107,7 @@ class DeviceProxy : public vvl::base::Device {
         return const_cast<const vvl::DeviceState*>(device_state)->GetBuffersByAddress(address);
     }
 
-    VkFormatFeatureFlags2KHR GetPotentialFormatFeatures(VkFormat format) const {
+    VkFormatFeatureFlags2 GetPotentialFormatFeatures(VkFormat format) const {
         return device_state->GetPotentialFormatFeatures(format);
     }
 

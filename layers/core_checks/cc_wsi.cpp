@@ -588,8 +588,8 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
     }
 
     // Validate pCreateInfo->imageUsage against GetPhysicalDeviceFormatProperties
-    const VkFormatProperties3KHR format_properties = GetPDFormatProperties(create_info.imageFormat);
-    const VkFormatFeatureFlags2KHR tiling_features = format_properties.optimalTilingFeatures;
+    const VkFormatProperties3 format_properties = GetPDFormatProperties(create_info.imageFormat);
+    const VkFormatFeatureFlags2 tiling_features = format_properties.optimalTilingFeatures;
 
     if (tiling_features == 0) {
         if (LogError("VUID-VkSwapchainCreateInfoKHR-imageFormat-01778", device, create_info_loc.dot(Field::imageFormat),

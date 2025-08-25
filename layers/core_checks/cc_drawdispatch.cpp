@@ -1951,7 +1951,7 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
             LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
             objlist.add(attachment->Handle());
             skip |= LogError(vuid.blend_enable_04727, objlist, vuid.loc(),
-                             "%s was created with %s which does not have VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT, but %s\n"
+                             "%s was created with %s which doesn't support VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT, but %s\n"
                              "(supported features: %s)",
                              attachment_info.Describe(cb_state, i).c_str(), string_VkFormat(attachment->create_info.format),
                              last_bound_state.DescribeColorBlendEnabled(color_index).c_str(),

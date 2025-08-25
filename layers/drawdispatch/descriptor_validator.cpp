@@ -545,7 +545,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         !(image_view_state->format_features & VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT)) {
         const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view);
         skip |= LogError(vuids->imageview_atomic_02691, objlist, loc.Get(),
-                         "the %s has %s with format of %s which is missing VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT.\n"
+                         "the %s has %s with format of %s which doesn't support VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT.\n"
                          "(supported features: %s).%s",
                          DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(image_view).c_str(),
                          string_VkFormat(image_view_ci.format),
@@ -1054,7 +1054,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         !(buffer_format_features & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT)) {
         const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), buffer_view);
         skip |= LogError(vuids->bufferview_atomic_07888, objlist, loc.Get(),
-                         "the %s has %s with format of %s which is missing VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT.\n"
+                         "the %s has %s with format of %s which doesn't support VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT.\n"
                          "(supported features: %s).%s",
                          DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(buffer_view).c_str(),
                          string_VkFormat(buffer_view_format), string_VkFormatFeatureFlags2(buffer_format_features).c_str(),
@@ -1070,7 +1070,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                 !(buffer_format_features & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR)) {
                 const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), buffer_view);
                 skip |= LogError(vuids->storage_texel_buffer_read_without_format_07030, objlist, loc.Get(),
-                                 "the %s has %s with format of %s which is missing "
+                                 "the %s has %s with format of %s which doesn't support "
                                  "VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR.\n"
                                  "(supported features: %s).%s",
                                  DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
@@ -1080,7 +1080,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                        !(buffer_format_features & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT)) {
                 const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), buffer_view);
                 skip |= LogError(vuids->storage_texel_buffer_write_without_format_07029, objlist, loc.Get(),
-                                 "the %s has %s with format of %s which is missing "
+                                 "the %s has %s with format of %s which doesn't support "
                                  "VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT.\n"
                                  "(supported features: %s).%s",
                                  DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),

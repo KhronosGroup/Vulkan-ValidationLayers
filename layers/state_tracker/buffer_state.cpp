@@ -125,7 +125,7 @@ bool Buffer::CompareCreateInfo(const Buffer &other) const {
 }
 
 BufferView::BufferView(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView handle, const VkBufferViewCreateInfo *pCreateInfo,
-                       VkFormatFeatureFlags2KHR format_features)
+                       VkFormatFeatureFlags2 format_features)
     : StateObject(handle, kVulkanObjectTypeBufferView),
       safe_create_info(pCreateInfo),
       create_info(*safe_create_info.ptr()),

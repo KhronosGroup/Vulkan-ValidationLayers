@@ -49,7 +49,7 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo &create_inf
     bool skip = false;
 
     // validates based on imageCreateFormatFeatures from vkspec.html#resources-image-creation-limits
-    VkFormatFeatureFlags2KHR tiling_features = 0;
+    VkFormatFeatureFlags2 tiling_features = 0;
     const VkImageTiling image_tiling = create_info.tiling;
     const VkFormat image_format = create_info.format;
 
@@ -111,7 +111,7 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo &create_inf
             }
         }
     } else {
-        VkFormatProperties3KHR format_properties = GetPDFormatProperties(image_format);
+        VkFormatProperties3 format_properties = GetPDFormatProperties(image_format);
         tiling_features = (image_tiling == VK_IMAGE_TILING_LINEAR) ? format_properties.linearTilingFeatures
                                                                    : format_properties.optimalTilingFeatures;
     }
@@ -1345,10 +1345,9 @@ bool CoreChecks::ValidateImageUsageFlags(VkCommandBuffer commandBuffer, vvl::Ima
 }
 
 bool CoreChecks::ValidateImageFormatFeatureFlags(VkCommandBuffer commandBuffer, vvl::Image const &image_state,
-                                                 VkFormatFeatureFlags2KHR desired, const Location &image_loc,
-                                                 const char *vuid) const {
+                                                 VkFormatFeatureFlags2 desired, const Location &image_loc, const char *vuid) const {
     bool skip = false;
-    const VkFormatFeatureFlags2KHR image_format_features = image_state.format_features;
+    const VkFormatFeatureFlags2 image_format_features = image_state.format_features;
     if ((image_format_features & desired) != desired) {
         const LogObjectList objlist(commandBuffer, image_state.Handle());
         // Same error, but more details if it was an AHB external format
@@ -1624,7 +1623,7 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const vvl::Image &image_state, 
     // Pass in image_usage here instead of extracting it from image_state in case there's a chained VkImageViewUsageCreateInfo
     bool skip = false;
 
-    VkFormatFeatureFlags2KHR tiling_features = 0;
+    VkFormatFeatureFlags2 tiling_features = 0;
     const VkImageTiling image_tiling = image_state.create_info.tiling;
 
     if (image_state.HasAHBFormat()) {
@@ -1670,7 +1669,7 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const vvl::Image &image_state, 
             }
         }
     } else {
-        VkFormatProperties3KHR format_properties = GetPDFormatProperties(view_format);
+        VkFormatProperties3 format_properties = GetPDFormatProperties(view_format);
         tiling_features = (image_tiling == VK_IMAGE_TILING_LINEAR) ? format_properties.linearTilingFeatures
                                                                    : format_properties.optimalTilingFeatures;
     }

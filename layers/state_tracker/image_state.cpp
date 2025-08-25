@@ -129,7 +129,7 @@ static bool GetMetalExport(const VkImageCreateInfo *info, VkExportMetalObjectTyp
 
 namespace vvl {
 
-Image::Image(const vvl::DeviceState &dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkFormatFeatureFlags2KHR ff)
+Image::Image(const vvl::DeviceState &dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkFormatFeatureFlags2 ff)
     : Bindable(img, kVulkanObjectTypeImage, (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
                (pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleTypes(pCreateInfo)),
       safe_create_info(pCreateInfo),
@@ -168,7 +168,7 @@ Image::Image(const vvl::DeviceState &dev_data, VkImage img, const VkImageCreateI
 }
 
 Image::Image(const vvl::DeviceState &dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
-             uint32_t swapchain_index, VkFormatFeatureFlags2KHR ff)
+             uint32_t swapchain_index, VkFormatFeatureFlags2 ff)
     : Bindable(img, kVulkanObjectTypeImage, (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
                (pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleTypes(pCreateInfo)),
       safe_create_info(pCreateInfo),
@@ -525,7 +525,7 @@ static bool GetMetalExport(const VkImageViewCreateInfo *info) {
 namespace vvl {
 
 ImageView::ImageView(const DeviceState &device_state, const std::shared_ptr<vvl::Image> &image_state, VkImageView handle,
-                     const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2KHR ff,
+                     const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2 ff,
                      const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props)
     : StateObject(handle, kVulkanObjectTypeImageView),
       safe_create_info(ci),

@@ -184,27 +184,27 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                             const VkFormatFeatureFlags2 potential_format_features = GetPotentialFormatFeatures(attachment_format);
                             if ((potential_format_features & (VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT |
                                                               VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV)) == 0) {
-                                skip |= LogError("VUID-VkCommandBufferInheritanceRenderingInfo-pColorAttachmentFormats-06492",
-                                                 commandBuffer,
-                                                 inheritance_loc.pNext(Struct::VkCommandBufferInheritanceRenderingInfo,
-                                                                       Field::pColorAttachmentFormats, i),
-                                                 "is %s with potential format features %s.", string_VkFormat(attachment_format),
-                                                 string_VkFormatFeatureFlags2(potential_format_features).c_str());
+                                skip |= LogError(
+                                    "VUID-VkCommandBufferInheritanceRenderingInfo-pColorAttachmentFormats-06492", commandBuffer,
+                                    inheritance_loc.pNext(Struct::VkCommandBufferInheritanceRenderingInfo,
+                                                          Field::pColorAttachmentFormats, i),
+                                    "(%s) doesn't support VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT\n(supported features: %s)",
+                                    string_VkFormat(attachment_format),
+                                    string_VkFormatFeatureFlags2(potential_format_features).c_str());
                             }
                         }
                     }
                 }
 
-                const VkFormatFeatureFlags2 valid_depth_stencil_format = VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT;
                 const VkFormat depth_format = p_inherited_rendering_info->depthAttachmentFormat;
                 if (depth_format != VK_FORMAT_UNDEFINED) {
                     const VkFormatFeatureFlags2 potential_format_features = GetPotentialFormatFeatures(depth_format);
-                    if ((potential_format_features & valid_depth_stencil_format) == 0) {
+                    if ((potential_format_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
                         skip |= LogError(
                             "VUID-VkCommandBufferInheritanceRenderingInfo-depthAttachmentFormat-06007", commandBuffer,
                             inheritance_loc.pNext(Struct::VkCommandBufferInheritanceRenderingInfo, Field::depthAttachmentFormat),
-                            "is %s with potential format features %s.", string_VkFormat(depth_format),
-                            string_VkFormatFeatureFlags2(potential_format_features).c_str());
+                            "(%s) doesn't support VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT\n(supported features: %s)",
+                            string_VkFormat(depth_format), string_VkFormatFeatureFlags2(potential_format_features).c_str());
                     }
                     if (!vkuFormatHasDepth(depth_format)) {
                         skip |= LogError(
@@ -217,12 +217,12 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                 const VkFormat stencil_format = p_inherited_rendering_info->stencilAttachmentFormat;
                 if (stencil_format != VK_FORMAT_UNDEFINED) {
                     const VkFormatFeatureFlags2 potential_format_features = GetPotentialFormatFeatures(stencil_format);
-                    if ((potential_format_features & valid_depth_stencil_format) == 0) {
+                    if ((potential_format_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
                         skip |= LogError(
                             "VUID-VkCommandBufferInheritanceRenderingInfo-stencilAttachmentFormat-06199", commandBuffer,
                             inheritance_loc.pNext(Struct::VkCommandBufferInheritanceRenderingInfo, Field::stencilAttachmentFormat),
-                            "is %s with potential format features %s.", string_VkFormat(stencil_format),
-                            string_VkFormatFeatureFlags2(potential_format_features).c_str());
+                            "(%s) doesn't support VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT\n(supported features: %s)",
+                            string_VkFormat(stencil_format), string_VkFormatFeatureFlags2(potential_format_features).c_str());
                     }
                     if (!vkuFormatHasStencil(stencil_format)) {
                         skip |= LogError(

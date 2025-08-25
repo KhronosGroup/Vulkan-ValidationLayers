@@ -87,7 +87,7 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
     const bool owned_by_swapchain;
     std::shared_ptr<vvl::Swapchain> bind_swapchain;
     uint32_t swapchain_image_index;
-    const VkFormatFeatureFlags2KHR format_features;
+    const VkFormatFeatureFlags2 format_features;
     // Need to memory requirements for each plane if image is disjoint
     const bool disjoint;  // True if image was created with VK_IMAGE_CREATE_DISJOINT_BIT
     static constexpr int kMaxPlanes = 3;
@@ -116,9 +116,9 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
 
     vvl::unordered_set<std::shared_ptr<const vvl::VideoProfileDesc>> supported_video_profiles;
 
-    Image(const DeviceState &dev_data, VkImage handle, const VkImageCreateInfo *pCreateInfo, VkFormatFeatureFlags2KHR features);
+    Image(const DeviceState &dev_data, VkImage handle, const VkImageCreateInfo *pCreateInfo, VkFormatFeatureFlags2 features);
     Image(const DeviceState &dev_data, VkImage handle, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
-          uint32_t swapchain_index, VkFormatFeatureFlags2KHR features);
+          uint32_t swapchain_index, VkFormatFeatureFlags2 features);
     Image(Image const &rh_obj) = delete;
     std::shared_ptr<const Image> shared_from_this() const { return SharedFromThisImpl(this); }
     std::shared_ptr<Image> shared_from_this() { return SharedFromThisImpl(this); }
@@ -282,11 +282,11 @@ class ImageView : public StateObject, public SubStateManager<ImageViewSubState> 
     const VkSamplerYcbcrConversion samplerConversion;  // Handle of the ycbcr sampler conversion the image was created with, if any
     const VkFilterCubicImageViewImageFormatPropertiesEXT filter_cubic_props;
     const float min_lod;
-    const VkFormatFeatureFlags2KHR format_features;
+    const VkFormatFeatureFlags2 format_features;
     const VkImageUsageFlags inherited_usage;  // from spec #resources-image-inherited-usage
 
     ImageView(const DeviceState &device_state, const std::shared_ptr<vvl::Image> &image_state, VkImageView handle,
-              const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2KHR ff,
+              const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2 ff,
               const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props);
     ImageView(const ImageView &rh_obj) = delete;
     VkImageView VkHandle() const { return handle_.Cast<VkImageView>(); }

@@ -660,7 +660,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateDepthStencilResolve(const VkRenderPassCreateInfo2& create_info, const Location& create_info_loc) const;
 
     // Prototypes for CoreChecks accessor functions
-    VkFormatProperties3KHR GetPDFormatProperties(const VkFormat format) const;
+    VkFormatProperties3 GetPDFormatProperties(const VkFormat format) const;
     const VkPhysicalDeviceMemoryProperties* GetPhysicalDeviceMemoryProperties();
 
     bool FormatRequiresYcbcrConversionExplicitly(const VkFormat format) const;
@@ -1170,7 +1170,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                  bool strict, const char* vuid, const Location& image_loc) const;
 
     bool ValidateImageFormatFeatureFlags(VkCommandBuffer commandBuffer, vvl::Image const& image_state,
-                                         VkFormatFeatureFlags2KHR desired, const Location& image_loc, const char* vuid) const;
+                                         VkFormatFeatureFlags2 desired, const Location& image_loc, const char* vuid) const;
 
     template <typename HandleT>
     bool ValidateImageSubresourceLayers(HandleT handle, const vvl::Image& image_state,

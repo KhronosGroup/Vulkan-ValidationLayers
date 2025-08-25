@@ -1233,15 +1233,17 @@ bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const vvl::Pipeline &pipeli
         }
 
         const auto attachment_desc = rp_state->create_info.pAttachments[attachment];
-        VkFormatFeatureFlags2KHR format_features = GetPotentialFormatFeatures(attachment_desc.format);
 
-        if (!pipeline.RasterizationDisabled() && pipeline.AttachmentStates()[i].blendEnable &&
-            !(format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT)) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06041", device,
-                             create_info_loc.dot(Field::pColorBlendState).dot(Field::pAttachments, i).dot(Field::blendEnable),
-                             "is VK_TRUE but format %s of the corresponding attachment description (subpass %" PRIu32
-                             ", attachment %" PRIu32 ") does not support VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT.",
-                             string_VkFormat(attachment_desc.format), subpass, attachment);
+        if (!pipeline.RasterizationDisabled() && pipeline.AttachmentStates()[i].blendEnable) {
+            const VkFormatFeatureFlags2 format_features = GetPotentialFormatFeatures(attachment_desc.format);
+            if (!(format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT)) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06041", device,
+                                 create_info_loc.dot(Field::pColorBlendState).dot(Field::pAttachments, i).dot(Field::blendEnable),
+                                 "is VK_TRUE but format %s of the corresponding attachment description (subpass %" PRIu32
+                                 ", attachment %" PRIu32 ") doesn't support VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT.\n%s",
+                                 string_VkFormat(attachment_desc.format), subpass, attachment,
+                                 string_VkFormatFeatureFlags2(format_features).c_str());
+            }
         }
 
         if (attachment_desc.format == VK_FORMAT_E5B9G9R9_UFLOAT_PACK32 &&
@@ -3120,20 +3122,21 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline &p
                 continue;
             }
 
-            VkFormatFeatureFlags2KHR format_features = GetPotentialFormatFeatures(color_format);
+            VkFormatFeatureFlags2 format_features = GetPotentialFormatFeatures(color_format);
             if ((format_features &
                  (VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV)) == 0) {
                 skip |= LogError(
                     "VUID-VkGraphicsPipelineCreateInfo-renderPass-06582", device,
                     create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::pColorAttachmentFormats, color_index),
-                    "(%s) potential format features are %s.", string_VkFormat(color_format),
-                    string_VkFormatFeatureFlags2(format_features).c_str());
+                    "(%s) doesn't support VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT\n(supported features: %s).",
+                    string_VkFormat(color_format), string_VkFormatFeatureFlags2(format_features).c_str());
             }
 
             if (color_blend_state && color_index < color_blend_state->attachmentCount) {
                 const auto &color_blend_attachment = color_blend_state->pAttachments[color_index];
 
-                if (((format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) == 0) && color_blend_attachment.blendEnable) {
+                if (((format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT) == 0) &&
+                    color_blend_attachment.blendEnable) {
                     skip |= LogError(
                         "VUID-VkGraphicsPipelineCreateInfo-renderPass-06062", device,
                         create_info_loc.dot(Field::pColorBlendState).dot(Field::pAttachments, color_index).dot(Field::blendEnable),
@@ -3161,7 +3164,8 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline &p
             if ((format_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06585", device,
                                  create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::depthAttachmentFormat),
-                                 "(%s) potential format features are %s.", string_VkFormat(rendering_struct->depthAttachmentFormat),
+                                 "(%s) doesn't support VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT\n(supported features: %s).",
+                                 string_VkFormat(rendering_struct->depthAttachmentFormat),
                                  string_VkFormatFeatureFlags2(format_features).c_str());
             }
         }
@@ -3169,11 +3173,11 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline &p
         if (rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED) {
             VkFormatFeatureFlags2 format_features = GetPotentialFormatFeatures(rendering_struct->stencilAttachmentFormat);
             if ((format_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
-                skip |=
-                    LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06586", device,
-                             create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::stencilAttachmentFormat),
-                             "(%s) potential format features are %s.", string_VkFormat(rendering_struct->stencilAttachmentFormat),
-                             string_VkFormatFeatureFlags2(format_features).c_str());
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06586", device,
+                                 create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::stencilAttachmentFormat),
+                                 "(%s) doesn't support VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT\n(supported features: %s).",
+                                 string_VkFormat(rendering_struct->stencilAttachmentFormat),
+                                 string_VkFormatFeatureFlags2(format_features).c_str());
             }
         }
 
