@@ -514,10 +514,6 @@ if(DEFINED SLANG_INSTALL_DIR)
             endforeach()
 
             set_target_properties(${TARGET_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
-
-            # Add install-time command to set executable permissions
-            install(CODE "message(STATUS \"Setting executable permissions on ${CMAKE_INSTALL_PREFIX}/${DESTINATION}/${SLANG_SONAME}\")
-                         execute_process(COMMAND chmod +x \"${CMAKE_INSTALL_PREFIX}/${DESTINATION}/${SLANG_SONAME}\")")
          endif()
     endfunction()
 
