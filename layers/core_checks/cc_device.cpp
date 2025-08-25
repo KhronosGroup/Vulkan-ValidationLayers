@@ -537,8 +537,8 @@ bool core::Instance::PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(
 }
 
 // Access helper functions for external modules
-VkFormatProperties3KHR CoreChecks::GetPDFormatProperties(const VkFormat format) const {
-    VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
+VkFormatProperties3 CoreChecks::GetPDFormatProperties(const VkFormat format) const {
+    VkFormatProperties3 fmt_props_3 = vku::InitStructHelper();
     VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
 
     if (device_state->special_supported.vk_khr_format_feature_flags2) {

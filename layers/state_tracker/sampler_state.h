@@ -119,13 +119,13 @@ inline void Sampler::NotifyInvalidate(const StateObject::NodeList &invalid_nodes
 
 class SamplerYcbcrConversion : public StateObject {
   public:
-    const VkFormatFeatureFlags2KHR format_features;
+    const VkFormatFeatureFlags2 format_features;
     const VkFormat format;
     const VkFilter chromaFilter;
     const uint64_t external_format;
 
     SamplerYcbcrConversion(VkSamplerYcbcrConversion handle, const VkSamplerYcbcrConversionCreateInfo *info,
-                           VkFormatFeatureFlags2KHR features)
+                           VkFormatFeatureFlags2 features)
         : StateObject(handle, kVulkanObjectTypeSamplerYcbcrConversion),
           format_features(features),
           format(info->format),

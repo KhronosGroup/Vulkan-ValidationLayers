@@ -1349,7 +1349,7 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties2(VkPhysicalDevice 
 static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice, VkFormat format,
                                                                      VkFormatProperties2* pFormatProperties) {
     GetPhysicalDeviceFormatProperties(physicalDevice, format, &pFormatProperties->formatProperties);
-    VkFormatProperties3KHR* props_3 = vku::FindStructInPNextChain<VkFormatProperties3KHR>(pFormatProperties->pNext);
+    VkFormatProperties3* props_3 = vku::FindStructInPNextChain<VkFormatProperties3>(pFormatProperties->pNext);
     if (props_3) {
         props_3->linearTilingFeatures = pFormatProperties->formatProperties.linearTilingFeatures;
         props_3->optimalTilingFeatures = pFormatProperties->formatProperties.optimalTilingFeatures;

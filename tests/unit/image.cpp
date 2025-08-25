@@ -4372,7 +4372,7 @@ TEST_F(NegativeImage, ImageViewTextureSampleWeighted) {
     GetPhysicalDeviceProperties2(image_proc_properties);
 
     // check the format feature flags
-    VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
+    VkFormatProperties3 fmt_props_3 = vku::InitStructHelper();
     VkFormatProperties2 fmt_props = vku::InitStructHelper(&fmt_props_3);
     vk::GetPhysicalDeviceFormatProperties2(Gpu(), VK_FORMAT_R8_UNORM, &fmt_props);
     if ((fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_WEIGHT_IMAGE_BIT_QCOM) == 0) {

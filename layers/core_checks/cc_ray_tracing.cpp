@@ -580,7 +580,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                 }
             }
 
-            const VkFormatProperties3KHR format_properties = GetPDFormatProperties(triangles.vertexFormat);
+            const VkFormatProperties3 format_properties = GetPDFormatProperties(triangles.vertexFormat);
             if (!(format_properties.bufferFeatures & VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR)) {
                 skip |= LogError("VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexFormat-03797", cmd_buffer,
                                  p_geom_geom_triangles_loc.dot(Field::vertexFormat),
@@ -2570,7 +2570,7 @@ bool CoreChecks::PreCallValidateGetClusterAccelerationStructureBuildSizesNV(VkDe
 bool CoreChecks::ValidateClusterAccelerationStructureTriangleClusterInputNV(
     const VkClusterAccelerationStructureTriangleClusterInputNV &input, const Location &input_loc) const {
     bool skip = false;
-    const VkFormatProperties3KHR vertex_properties = GetPDFormatProperties(input.vertexFormat);
+    const VkFormatProperties3 vertex_properties = GetPDFormatProperties(input.vertexFormat);
     if (!(vertex_properties.bufferFeatures & VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR)) {
         skip |=
             LogError("VUID-VkClusterAccelerationStructureTriangleClusterInputNV-vertexFormat-10439", device,

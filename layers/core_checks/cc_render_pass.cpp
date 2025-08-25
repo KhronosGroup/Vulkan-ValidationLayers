@@ -1460,14 +1460,18 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                         const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-pInputAttachments-02897"
                                                    : "VUID-VkSubpassDescription-pInputAttachments-02647";
                         skip |= LogError(vuid, device, attachment_loc.dot(Field::format),
-                                         "(%s) format features are %s (referenced by %s).", string_VkFormat(attachment_format),
-                                         string_VkFormatFeatureFlags2(format_features).c_str(), input_loc.Fields().c_str());
+                                         "%s (referenced by %s) doesn't support "
+                                         "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT\n(supported features: %s).",
+                                         string_VkFormat(attachment_format), input_loc.Fields().c_str(),
+                                         string_VkFormatFeatureFlags2(format_features).c_str());
                     } else if ((format_features & VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV) == 0) {
                         const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-linearColorAttachment-06499"
                                                    : "VUID-VkSubpassDescription-linearColorAttachment-06496";
                         skip |= LogError(vuid, device, attachment_loc.dot(Field::format),
-                                         "(%s) format features are %s (referenced by %s).", string_VkFormat(attachment_format),
-                                         string_VkFormatFeatureFlags2(format_features).c_str(), input_loc.Fields().c_str());
+                                         "%s (referenced by %s) doesn't support "
+                                         "VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV\n(supported features: %s).",
+                                         string_VkFormat(attachment_format), input_loc.Fields().c_str(),
+                                         string_VkFormatFeatureFlags2(format_features).c_str());
                     }
                 }
             }
@@ -1603,14 +1607,18 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                                                    : "VUID-VkSubpassDescription-pResolveAttachments-02649";
 
                         skip |= LogError(vuid, device, attachment_loc.dot(Field::format),
-                                         "(%s) format features are %s (referenced by %s).", string_VkFormat(attachment_format),
-                                         string_VkFormatFeatureFlags2(format_features).c_str(), resolve_loc.Fields().c_str());
+                                         "%s (referenced by %s) doesn't support "
+                                         "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT\n(supported features: %s).",
+                                         string_VkFormat(attachment_format), resolve_loc.Fields().c_str(),
+                                         string_VkFormatFeatureFlags2(format_features).c_str());
                     } else if ((format_features & VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV) == 0) {
                         const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-linearColorAttachment-06501"
                                                    : "VUID-VkSubpassDescription-linearColorAttachment-06498";
                         skip |= LogError(vuid, device, attachment_loc.dot(Field::format),
-                                         "(%s) format features are %s (referenced by %s).", string_VkFormat(attachment_format),
-                                         string_VkFormatFeatureFlags2(format_features).c_str(), resolve_loc.Fields().c_str());
+                                         "%s (referenced by %s) doesn't support "
+                                         "VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV\n(supported features: %s).",
+                                         string_VkFormat(attachment_format), resolve_loc.Fields().c_str(),
+                                         string_VkFormatFeatureFlags2(format_features).c_str());
                     }
                 }
 
@@ -1679,8 +1687,10 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                     const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-pDepthStencilAttachment-02900"
                                                : "VUID-VkSubpassDescription-pDepthStencilAttachment-02650";
                     skip |= LogError(vuid, device, attachment_loc.dot(Field::format),
-                                     "(%s) format features are %s (referenced by %s).", string_VkFormat(attachment_format),
-                                     string_VkFormatFeatureFlags2(format_features).c_str(), ds_loc.Fields().c_str());
+                                     "%s (referenced by %s) doesn't support "
+                                     "VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT\n(supported features: %s).",
+                                     string_VkFormat(attachment_format), ds_loc.Fields().c_str(),
+                                     string_VkFormatFeatureFlags2(format_features).c_str());
                 }
 
                 if (use_rp2 && enabled_features.multisampledRenderToSingleSampled && ms_render_to_single_sample &&
@@ -1946,14 +1956,18 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                             const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-pColorAttachments-02898"
                                                        : "VUID-VkSubpassDescription-pColorAttachments-02648";
                             skip |= LogError(vuid, device, attachment_loc.dot(Field::format),
-                                             "(%s) format features are %s (referenced by %s).", string_VkFormat(attachment_format),
-                                             string_VkFormatFeatureFlags2(format_features).c_str(), color_loc.Fields().c_str());
+                                             "(%s) (referenced by %s) doesn't support "
+                                             "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT\n(supported features: %s)",
+                                             string_VkFormat(attachment_format), color_loc.Fields().c_str(),
+                                             string_VkFormatFeatureFlags2(format_features).c_str());
                         } else if ((format_features & VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV) == 0) {
                             const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-linearColorAttachment-06500"
                                                        : "VUID-VkSubpassDescription-linearColorAttachment-06497";
                             skip |= LogError(vuid, device, attachment_loc.dot(Field::format),
-                                             "(%s) format features are %s (referenced by %s).", string_VkFormat(attachment_format),
-                                             string_VkFormatFeatureFlags2(format_features).c_str(), color_loc.Fields().c_str());
+                                             "(%s) (referenced by %s) doesn't support "
+                                             "VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV\n(supported features: %s)",
+                                             string_VkFormat(attachment_format), color_loc.Fields().c_str(),
+                                             string_VkFormatFeatureFlags2(format_features).c_str());
                         }
                     }
 
@@ -2591,10 +2605,10 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 &crea
 
         const VkFormatFeatureFlags2 potential_format_features = GetPotentialFormatFeatures(resolve_attachment_format);
         if ((potential_format_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
-            skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-02651", device,
-                             ds_resolve_loc,
-                             "has a format (%s) whose features do not contain VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT.",
-                             string_VkFormat(resolve_attachment_format));
+            skip |= LogError(
+                "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-02651", device, ds_resolve_loc,
+                "has a format %s which doesn't support VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT\n(supported features: %s).",
+                string_VkFormat(resolve_attachment_format), string_VkFormatFeatureFlags2(potential_format_features).c_str());
         }
 
         //  VK_QCOM_render_pass_shader_resolve check of depth/stencil attachmnent
@@ -2667,10 +2681,10 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(const VkRenderPassCreate
                 if (!(potential_format_features & VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
                     skip |= LogError("VUID-VkRenderPassCreateInfo2-pAttachments-04586", device,
                                      create_info_loc.dot(Field::pAttachments, attachment_reference.attachment).dot(Field::format),
-                                     "is %s and used in %s as a fragment shading rate attachment, but the format does not support "
-                                     "VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR.",
+                                     "is %s and used in %s as a fragment shading rate attachment, but the format doesn't support "
+                                     "VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR\n(supported features: %s)",
                                      string_VkFormat(create_info.pAttachments[attachment_reference.attachment].format),
-                                     subpass_loc.Fields().c_str());
+                                     subpass_loc.Fields().c_str(), string_VkFormatFeatureFlags2(potential_format_features).c_str());
                 }
 
                 if (attachment_reference.layout != VK_IMAGE_LAYOUT_GENERAL &&

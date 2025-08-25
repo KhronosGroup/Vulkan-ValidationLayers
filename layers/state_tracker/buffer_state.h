@@ -105,10 +105,10 @@ class BufferView : public StateObject, public SubStateManager<BufferViewSubState
 #endif  // VK_USE_PLATFORM_METAL_EXT
     // Format features that matter when accessing the buffer
     // both as a buffer (ex OpLoad) or image (ex OpImageWrite)
-    const VkFormatFeatureFlags2KHR buffer_format_features;
+    const VkFormatFeatureFlags2 buffer_format_features;
 
     BufferView(const std::shared_ptr<Buffer> &bf, VkBufferView handle, const VkBufferViewCreateInfo *pCreateInfo,
-               VkFormatFeatureFlags2KHR format_features);
+               VkFormatFeatureFlags2 format_features);
 
     void LinkChildNodes() override {
         // Connect child node(s), which cannot safely be done in the constructor.

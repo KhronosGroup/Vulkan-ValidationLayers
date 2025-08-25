@@ -404,7 +404,7 @@ bool Device::IsEnabledExtension(const char *extension) const {
 
 VkFormatFeatureFlags2 Device::FormatFeaturesLinear(VkFormat format) const {
     if (IsEnabledExtension(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
-        VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
+        VkFormatProperties3 fmt_props_3 = vku::InitStructHelper();
         VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
         vk::GetPhysicalDeviceFormatProperties2(Physical().handle(), format, &fmt_props_2);
         return fmt_props_3.linearTilingFeatures;
@@ -417,7 +417,7 @@ VkFormatFeatureFlags2 Device::FormatFeaturesLinear(VkFormat format) const {
 
 VkFormatFeatureFlags2 Device::FormatFeaturesOptimal(VkFormat format) const {
     if (IsEnabledExtension(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
-        VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
+        VkFormatProperties3 fmt_props_3 = vku::InitStructHelper();
         VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
         vk::GetPhysicalDeviceFormatProperties2(Physical().handle(), format, &fmt_props_2);
         return fmt_props_3.optimalTilingFeatures;
@@ -430,7 +430,7 @@ VkFormatFeatureFlags2 Device::FormatFeaturesOptimal(VkFormat format) const {
 
 VkFormatFeatureFlags2 Device::FormatFeaturesBuffer(VkFormat format) const {
     if (IsEnabledExtension(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
-        VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
+        VkFormatProperties3 fmt_props_3 = vku::InitStructHelper();
         VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
         vk::GetPhysicalDeviceFormatProperties2(Physical().handle(), format, &fmt_props_2);
         return fmt_props_3.bufferFeatures;
