@@ -30,12 +30,6 @@
 // Hash and equality utilities for supporting hashing containers (e.g. unordered_set, unordered_map)
 namespace hash_util {
 
-// True iff both pointers are null or both are non-null
-template <typename T>
-bool SimilarForNullity(const T *const lhs, const T *const rhs) {
-    return ((lhs != nullptr) && (rhs != nullptr)) || ((lhs == nullptr) && (rhs == nullptr));
-}
-
 // Wrap std hash to avoid manual casts for the holes in std::hash (in C++11)
 template <typename Value>
 size_t HashWithUnderlying(Value value, typename std::enable_if<!std::is_enum<Value>::value, void *>::type = nullptr) {
@@ -44,7 +38,7 @@ size_t HashWithUnderlying(Value value, typename std::enable_if<!std::is_enum<Val
 
 template <typename Value>
 size_t HashWithUnderlying(Value value, typename std::enable_if<std::is_enum<Value>::value, void *>::type = nullptr) {
-    using Underlying = typename std::underlying_type<Value>::type;
+    using Underlying = std::underlying_type_t<Value>;
     return vvl::hash<Underlying>()(static_cast<const Underlying &>(value));
 }
 
@@ -142,6 +136,11 @@ class Dictionary {
         // return the value of the Iterator from the <Iterator, bool> pair returned by insert
         Guard g(lock);  // Dict isn't thread safe, and use is presumed to be multi-threaded
         return *dict.insert(from_input).first;
+    }
+
+    void Clear() {
+        Guard g(lock);
+        dict.clear();
     }
 
   private:
