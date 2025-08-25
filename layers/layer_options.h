@@ -112,8 +112,8 @@ struct ConfigAndEnvSettings {
     const VkInstanceCreateInfo *create_info;
 
     // Find grain way to turn off/on parts of validation
-    ValidationEnabled &enables;
-    ValidationDisabled &disables;
+    ValidationEnabled &enabled;
+    ValidationDisabled &disabled;
 
     // Settings for DebugReport
     DebugReport *debug_report;
