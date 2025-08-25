@@ -138,6 +138,11 @@ class Dictionary {
         return *dict.insert(from_input).first;
     }
 
+    void Clear() {
+        Guard g(lock);
+        dict.clear();
+    }
+
   private:
     struct HashKeyValue {
         size_t operator()(const Id &value) const { return Hasher()(*value); }

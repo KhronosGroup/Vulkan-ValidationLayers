@@ -27,6 +27,7 @@
 #include "chassis/validation_object.h"
 #include "layer_options.h"
 #include "state_tracker/descriptor_sets.h"
+#include "state_tracker/pipeline_layout_state.h"
 #include "chassis/chassis_modification_state.h"
 #include "core_checks/core_validation.h"
 #include "profiling/profiling.h"
@@ -414,7 +415,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
         }
         vo->FinishDeviceSetup(modified_create_info.ptr(), record_obj.location);
     }
-
+    ClearPipelineLayoutCompatibilityGlobalDictionaries();
     return result;
 }
 

@@ -106,3 +106,6 @@ class PipelineLayout : public StateObject {
 std::vector<PipelineLayoutCompatId> GetCompatForSet(const std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>> &set_layouts,
                                                     const PushConstantRangesId &push_constant_ranges,
                                                     VkPipelineLayoutCreateFlags pipeline_layout_create_flags);
+
+// TODO: ideally not to have these dictionaries to be global, but for now clear them on each device init
+void ClearPipelineLayoutCompatibilityGlobalDictionaries();

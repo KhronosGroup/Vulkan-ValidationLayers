@@ -198,6 +198,12 @@ VkPipelineLayoutCreateFlags GetCreateFlags(const vvl::span<const vvl::PipelineLa
     return layouts[0] ? layouts[0]->CreateFlags() : 0;
 }
 
+void ClearPipelineLayoutCompatibilityGlobalDictionaries() {
+    pipeline_layout_set_layouts_dict.Clear();
+    pipeline_layout_compat_dict.Clear();
+    push_constant_ranges_dict.Clear();
+}
+
 namespace vvl {
 
 static PipelineLayout::SetLayoutVector GetSetLayouts(DeviceState &dev_data, const VkPipelineLayoutCreateInfo *pCreateInfo) {
