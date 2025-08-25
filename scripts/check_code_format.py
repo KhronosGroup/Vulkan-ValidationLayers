@@ -78,9 +78,9 @@ def VerifyTrailingWhiteSpace(target_files):
             continue
         try:
             with open(repo_relative(full_path), 'r', encoding='utf-8', errors='ignore') as f:
-                for line in f:
+                for line_number, line in enumerate(f, 1):
                     if whitespace_pattern.search(line):
-                        print(f"-------------- WHITE SPACE! --------------\nFound trailing white space in {file_path}")
+                        print(f"-------------- WHITE SPACE! --------------\nFound trailing white space in {file_path} at line {line_number}")
                         return 1
         except FileNotFoundError:
             print(f"Warning: File not found at '{file_path}'. Skipping.")

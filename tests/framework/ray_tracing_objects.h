@@ -334,7 +334,7 @@ class Pipeline {
     // Build settings
     // --------------
     void AddCreateInfoFlags(VkPipelineCreateFlags flags);
-    void InitLibraryInfo();
+    void InitLibraryInfo(uint32_t max_pipeline_payload_size, bool is_exe_pipeline);
 
     void AddBinding(VkDescriptorType descriptor_type, uint32_t binding, uint32_t descriptor_count = 1);
     void CreateDescriptorSet();
@@ -387,6 +387,11 @@ class Pipeline {
     std::vector<VkRayTracingShaderGroupCreateInfoKHR> GetRayTracingShaderGroupCreateInfos();
 
   private:
+    uint32_t GetRayGenShadersCount() const;
+    uint32_t GetMissShadersCount() const;
+    uint32_t GetClosestHitShadersCount() const;
+
+  private:
     VkLayerTest& test_;
     vkt::Device* device_;
     VkRayTracingPipelineCreateInfoKHR vk_info_{};
@@ -407,7 +412,8 @@ class Pipeline {
     vkt::Buffer sbt_buffer_{};
     VkRayTracingPipelineInterfaceCreateInfoKHR rt_pipeline_interface_info_{};
     VkPipelineLibraryCreateInfoKHR pipeline_lib_info_{};
-    std::vector<VkPipeline> libraries_{};
+    std::vector<const Pipeline*> libraries_{};
+    std::vector<VkPipeline> library_handles_{};
 };
 }  // namespace rt
 
