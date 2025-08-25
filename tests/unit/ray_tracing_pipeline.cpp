@@ -1722,3 +1722,35 @@ TEST_F(NegativeRayTracingPipeline, ClusterAccelerationStructureFeatureDisabled) 
     vk::CreateRayTracingPipelinesKHR(*m_device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeRayTracingPipeline, CmdTraceRaysIndirect2KHRAddressZero) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::rayTracingPipelineTraceRaysIndirect);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::rt::Pipeline pipeline(*this, m_device);
+    pipeline.SetGlslRayGenShader(kRayTracingMinimalGlsl);
+    pipeline.AddGlslMissShader(kRayTracingPayloadMinimalGlsl);
+    pipeline.AddGlslClosestHitShader(kRayTracingPayloadMinimalGlsl);
+
+    pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
+    pipeline.CreateDescriptorSet();
+    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
+    pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
+    pipeline.GetDescriptorSet().UpdateDescriptorSets();
+    pipeline.Build();
+    vkt::rt::TraceRaysSbt sbt = pipeline.GetTraceRaysSbt();
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
+                              &pipeline.GetDescriptorSet().set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
+    tlas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirectKHR-indirectDeviceAddress-parameter");
+    vk::CmdTraceRaysIndirectKHR(m_command_buffer, &sbt.ray_gen_sbt, &sbt.miss_sbt, &sbt.hit_sbt, &sbt.callable_sbt, 0);
+    m_errorMonitor->VerifyFound();
+}
