@@ -268,6 +268,9 @@ GpuResourcesManager::GpuResourcesManager(Validator &gpuav) : gpuav_(gpuav) {
     {
         VmaAllocationCreateInfo alloc_ci = {};
         alloc_ci.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+        if (gpuav.phys_dev_props.deviceType == VK_PHYSICAL_DEVICE_TYPE_CPU) {
+            alloc_ci.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
+        }
         device_local_buffer_cache_.Create(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
                                               VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                           alloc_ci);
@@ -276,6 +279,9 @@ GpuResourcesManager::GpuResourcesManager(Validator &gpuav) : gpuav_(gpuav) {
     {
         VmaAllocationCreateInfo alloc_ci = {};
         alloc_ci.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+        if (gpuav.phys_dev_props.deviceType == VK_PHYSICAL_DEVICE_TYPE_CPU) {
+            alloc_ci.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
+        }
         device_local_indirect_buffer_cache_.Create(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                                    alloc_ci);
     }
