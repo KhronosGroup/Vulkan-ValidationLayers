@@ -733,19 +733,19 @@ Iterator infill_update_range(RangeMap &map, Iterator pos, const typename RangeMa
     }
 
     IndexType current_begin = range.begin;
-    while ((pos != end) && (current_begin < range.end)) {
-        // The current_begin is either pointing to the next existing value to update or the beginning of a gap to infill
-        assert(pos->first.begin >= current_begin);
-
+    while (pos != end && current_begin < range.end) {
         if (current_begin < pos->first.begin) {
-            // We have a gap to infill (we supply pos for ("insert in front of" calls)
+            // The current_begin is pointing to the beginning of a gap to infill (we supply pos for "insert in front of" calls)
             ops.infill(map, pos, KeyType(current_begin, std::min(range.end, pos->first.begin)));
             // Advance current begin, but *not* pos as it's the next valid value. (infill shall not invalidate pos)
             current_begin = pos->first.begin;
         } else {
-            // We need to run the update operation on the valid portion of the current value
+            // The current_begin is pointing to the next existing value to update
+            assert(current_begin == pos->first.begin);
+
+            // We need to run the update operation on the valid portion of the current value.
+            // If this entry overlaps end-of-range we need to trim it to the range
             if (pos->first.end > range.end) {
-                // If this entry overlaps end-of-range we need to trim it to the range
                 pos = map.split(pos, range.end);
             }
 
