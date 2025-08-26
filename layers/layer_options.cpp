@@ -119,7 +119,7 @@ const std::vector<std::string> &GetEnableFlagNameHelper() {
         "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_NVIDIA",                      // vendor_specific_nvidia,
         "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT",                       // debug_printf,
         "VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT",         // sync_validation,
-        "VK_VALIDATION_DEPRECATION_CHECKS",                                    // deprecation_checks,
+        "VK_VALIDATION_DEPRECATION_DETECTION",                                 // deprecation_detection,
     };
     return enable_flag_name_helper;
 }
@@ -148,7 +148,7 @@ const char *VK_LAYER_DISABLES = "disables";
 const char *VK_LAYER_CHECK_SHADERS = "check_shaders";
 const char *VK_LAYER_THREAD_SAFETY = "thread_safety";
 const char *VK_LAYER_STATELESS_PARAM = "stateless_param";
-const char *VK_LAYER_DEPRECATION = "deprecation";
+const char *VK_LAYER_DEPRECATION_DETECTION = "deprecation_detection";
 const char *VK_LAYER_OBJECT_LIFETIME = "object_lifetime";
 const char *VK_LAYER_VALIDATE_CORE = "validate_core";
 const char *VK_LAYER_UNIQUE_HANDLES = "unique_handles";
@@ -688,6 +688,13 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings *settings_data, VkuL
         }
     }
 
+    if (settings_data->enabled[deprecation_detection] && ((report_flags & kWarningBit) == 0)) {
+        setting_warnings.emplace_back(
+            "Deprecation Detection logs to the Warning message severity, enabling Warning level logging otherwise the message "
+            "will not be seen.");
+        report_flags |= kWarningBit;
+    }
+
     // Flag as default if these settings are not from a vk_layer_settings.txt file
     const bool default_layer_callback = (debug_action & VK_DBG_LAYER_ACTION_DEFAULT) != 0;
 
@@ -1033,7 +1040,7 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         SetValidationSetting(layer_setting_set, settings_data->enabled, vendor_specific_nvidia,
                              VK_LAYER_VALIDATE_BEST_PRACTICES_NVIDIA);
         SetValidationSetting(layer_setting_set, settings_data->enabled, sync_validation, VK_LAYER_VALIDATE_SYNC);
-        SetValidationSetting(layer_setting_set, settings_data->enabled, deprecation_checks, VK_LAYER_DEPRECATION);
+        SetValidationSetting(layer_setting_set, settings_data->enabled, deprecation_detection, VK_LAYER_DEPRECATION_DETECTION);
     }
 
     // Only read the legacy disables flags when used, not their replacement.
