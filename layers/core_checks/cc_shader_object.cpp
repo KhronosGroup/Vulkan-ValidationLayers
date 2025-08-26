@@ -16,6 +16,7 @@
 
 #include <vulkan/vulkan_core.h>
 #include <spirv/unified1/spirv.hpp>
+#include "chassis/chassis_modification_state.h"
 #include "core_validation.h"
 #include "error_message/logging.h"
 #include "state_tracker/shader_object_state.h"
@@ -282,22 +283,13 @@ bool CoreChecks::ValidateCreateShadersMesh(const VkShaderCreateInfoEXT& create_i
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
-                                                 const VkShaderCreateInfoEXT* pCreateInfos, const VkAllocationCallbacks* pAllocator,
-                                                 VkShaderEXT* pShaders, const ErrorObject& error_obj) const {
+bool CoreChecks::ValidateCreateShadersSpirv(uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
+                                            const Location& loc, chassis::ShaderObject& chassis_state) const {
     bool skip = false;
-
     // If user has VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT, just skip all things related to creating the shader object
     if (disabled[shader_validation]) {
         return skip;
     }
-
-    if (enabled_features.shaderObject == VK_FALSE) {
-        skip |=
-            LogError("VUID-vkCreateShadersEXT-None-08400", device, error_obj.location, "the shaderObject feature was not enabled.");
-    }
-
-    skip |= ValidateCreateShadersLinking(createInfoCount, pCreateInfos, error_obj.location);
 
     uint32_t tesc_linked_subdivision = 0u;
     uint32_t tese_linked_subdivision = 0u;
@@ -307,7 +299,6 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
     bool tese_linked_point_mode = false;
     uint32_t tesc_linked_spacing = 0u;
     uint32_t tese_linked_spacing = 0u;
-    bool has_compute = false;
 
     // Currently we don't provide a way for apps to supply their own cache for shader object
     // https://gitlab.khronos.org/vulkan/vulkan/-/issues/3570
@@ -315,16 +306,23 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
 
     for (uint32_t i = 0; i < createInfoCount; ++i) {
         const VkShaderCreateInfoEXT& create_info = pCreateInfos[i];
-        if (create_info.codeType != VK_SHADER_CODE_TYPE_SPIRV_EXT) {
+        // Will be empty if not VK_SHADER_CODE_TYPE_SPIRV_EXT
+        const std::shared_ptr<spirv::Module> spirv = chassis_state.module_states[i];
+
+        if (!spirv || create_info.codeType != VK_SHADER_CODE_TYPE_SPIRV_EXT) {
             continue;
         }
-        const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
 
+        const Location create_info_loc = loc.dot(Field::pCreateInfos, i);
+
+        // Will do the "stateless" validation we also do at vkCreateShaderModule time
+        skip |= stateless_spirv_validator.Validate(*spirv, chassis_state.stateless_data[i], create_info_loc);
+
+        // Then we can run spirv-val
         spv_const_binary_t binary{static_cast<const uint32_t*>(create_info.pCode), create_info.codeSize / sizeof(uint32_t)};
         skip |= RunSpirvValidation(binary, create_info_loc, cache);
 
-        const auto spirv =
-            vvl::CreateSpirvModuleState(create_info.codeSize, static_cast<const uint32_t*>(create_info.pCode), global_settings);
+        // Finally, we have "pipeline" level information and can do validation we normally do at pipeline creation time
         vku::safe_VkShaderCreateInfoEXT safe_create_info = vku::safe_VkShaderCreateInfoEXT(&pCreateInfos[i]);
         const ShaderStageState stage_state(nullptr, &safe_create_info, nullptr, spirv);
         skip |= ValidateShaderStage(stage_state, nullptr, create_info_loc);
@@ -333,9 +331,7 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
             skip |= ValidateCreateShadersMesh(create_info, *spirv, create_info_loc);
         }
 
-        has_compute = create_info.stage == VK_SHADER_STAGE_COMPUTE_BIT;
-
-        // Validate tessellation stages
+        // We need to look for both tessellation stages to get information outside pCreateInfos loop
         if (stage_state.entrypoint && (create_info.stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT ||
                                        create_info.stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)) {
             const auto& execution_mode = stage_state.entrypoint->execution_mode;
@@ -385,27 +381,48 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
     }
 
     if (tesc_linked_subdivision != 0 && tese_linked_subdivision != 0 && tesc_linked_subdivision != tese_linked_subdivision) {
-        skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08867", device, error_obj.location,
+        skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08867", device, loc,
                          "The subdivision specified in tessellation control shader (%s) does not match the subdivision in "
                          "tessellation evaluation shader (%s).",
                          string_SpvExecutionMode(tesc_linked_subdivision), string_SpvExecutionMode(tese_linked_subdivision));
     }
     if (tesc_linked_orientation != 0 && tese_linked_orientation != 0 && tesc_linked_orientation != tese_linked_orientation) {
-        skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08868", device, error_obj.location,
+        skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08868", device, loc,
                          "The orientation specified in tessellation control shader (%s) does not match the orientation in "
                          "tessellation evaluation shader (%s).",
                          string_SpvExecutionMode(tesc_linked_orientation), string_SpvExecutionMode(tese_linked_orientation));
     }
     if (tesc_linked_point_mode && !tese_linked_point_mode) {
-        skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08869", device, error_obj.location,
+        skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08869", device, loc,
                          "The tessellation control shader specifies execution mode point mode, but the tessellation evaluation "
                          "shader does not.");
     }
     if (tesc_linked_spacing != 0 && tese_linked_spacing != 0 && tesc_linked_spacing != tese_linked_spacing) {
-        skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08870", device, error_obj.location,
+        skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08870", device, loc,
                          "The spacing specified in tessellation control shader (%s) does not match the spacing in "
                          "tessellation evaluation shader (%s).",
                          string_SpvExecutionMode(tesc_linked_spacing), string_SpvExecutionMode(tese_linked_spacing));
+    }
+
+    return skip;
+}
+
+// This will only validate things that can be done without parsing the SPIR-V
+bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
+                                                 const VkShaderCreateInfoEXT* pCreateInfos, const VkAllocationCallbacks* pAllocator,
+                                                 VkShaderEXT* pShaders, const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    if (enabled_features.shaderObject == VK_FALSE) {
+        skip |=
+            LogError("VUID-vkCreateShadersEXT-None-08400", device, error_obj.location, "the shaderObject feature was not enabled.");
+    }
+
+    skip |= ValidateCreateShadersLinking(createInfoCount, pCreateInfos, error_obj.location);
+
+    bool has_compute = false;
+    for (uint32_t i = 0; i < createInfoCount; ++i) {
+        has_compute = pCreateInfos[i].stage == VK_SHADER_STAGE_COMPUTE_BIT;
     }
 
     const VkQueueFlags queue_flag = has_compute ? VK_QUEUE_COMPUTE_BIT : VK_QUEUE_GRAPHICS_BIT;
