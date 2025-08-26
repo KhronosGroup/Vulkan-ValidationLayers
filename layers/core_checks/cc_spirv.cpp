@@ -2148,13 +2148,10 @@ void CoreChecks::PreCallRecordCreateShaderModule(VkDevice device, const VkShader
 void CoreChecks::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos,
                                                const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
                                                const RecordObject &record_obj, chassis::ShaderObject &chassis_state) {
-    for (uint32_t i = 0; i < createInfoCount; ++i) {
-        // Will be empty if not VK_SHADER_CODE_TYPE_SPIRV_EXT
-        if (chassis_state.module_states[i]) {
-            chassis_state.skip |= stateless_spirv_validator.Validate(
-                *chassis_state.module_states[i], chassis_state.stateless_data[i], record_obj.location.dot(Field::pCreateInfos, i));
-        }
-    }
+    // For ShaderObjects, to validate most things we need to first parse the SPIR-V.
+    // We use to parse both at PreCallValidate and PreCallRecord which was wasteful.
+    // We now parse it at PreCallRecord (so we can store it) and then just do the validation here
+    chassis_state.skip = ValidateCreateShadersSpirv(createInfoCount, pCreateInfos, record_obj.location, chassis_state);
 }
 
 bool CoreChecks::RunSpirvValidation(spv_const_binary_t &binary, const Location &loc, ValidationCache *cache) const {

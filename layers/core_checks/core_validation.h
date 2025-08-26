@@ -1617,6 +1617,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                                       const vvl::RenderPass& rp_state, const Location& loc) const;
     bool PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline,
                                         const ErrorObject& error_obj) const override;
+    bool ValidateCreateShadersSpirv(uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos, const Location& loc,
+                                    chassis::ShaderObject& chassis_state) const;
     bool PreCallValidateCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
                                          const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
                                          const ErrorObject& error_obj) const override;
