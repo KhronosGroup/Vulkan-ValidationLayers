@@ -685,6 +685,19 @@ void Instance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDevice
                 }
                 break;
             }
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DENSE_GEOMETRY_FORMAT_FEATURES_AMDX: {
+                VkPhysicalDeviceDenseGeometryFormatFeaturesAMDX supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceDenseGeometryFormatFeaturesAMDX *enabling =
+                    reinterpret_cast<const VkPhysicalDeviceDenseGeometryFormatFeaturesAMDX *>(current);
+                if (enabling->denseGeometryFormat && !supported.denseGeometryFormat) {
+                    ss << "VkPhysicalDeviceDenseGeometryFormatFeaturesAMDX::denseGeometryFormat is not supported\n";
+                }
+                break;
+            }
+#endif  // VK_ENABLE_BETA_EXTENSIONS
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_BIAS_CONTROL_FEATURES_EXT: {
                 VkPhysicalDeviceDepthBiasControlFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
@@ -2997,6 +3010,17 @@ void Instance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDevice
                 }
                 if (enabling->shaderTileImageStencilReadAccess && !supported.shaderTileImageStencilReadAccess) {
                     ss << "VkPhysicalDeviceShaderTileImageFeaturesEXT::shaderTileImageStencilReadAccess is not supported\n";
+                }
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_UNTYPED_POINTERS_FEATURES_KHR: {
+                VkPhysicalDeviceShaderUntypedPointersFeaturesKHR supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceShaderUntypedPointersFeaturesKHR *enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderUntypedPointersFeaturesKHR *>(current);
+                if (enabling->shaderUntypedPointers && !supported.shaderUntypedPointers) {
+                    ss << "VkPhysicalDeviceShaderUntypedPointersFeaturesKHR::shaderUntypedPointers is not supported\n";
                 }
                 break;
             }

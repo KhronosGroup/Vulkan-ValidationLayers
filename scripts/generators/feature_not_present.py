@@ -89,6 +89,11 @@ class FeatureNotPresentGenerator(BaseGenerator):
 
         feature_structs = self.vk.structs['VkPhysicalDeviceFeatures2'].extendedBy
         for extending_struct_name in feature_structs:
+            # TODO - When script is ran by itself this works fine, but when ran together, "VkPhysicalDeviceFeatures" is somehow added to extendedBy
+            # Seems to be an issue with the caching, likely the VulkanObject is being overwritten somewhere
+            if extending_struct_name == 'VkPhysicalDeviceFeatures':
+                continue
+
             extending_struct = self.vk.structs[extending_struct_name]
             out.extend(guard_helper.add_guard(extending_struct.protect))
             out.append(f'''case {extending_struct.sType}: {{
