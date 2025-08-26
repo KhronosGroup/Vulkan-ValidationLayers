@@ -13,15 +13,15 @@
 #include <vulkan/vulkan_core.h>
 #include "../framework/layer_validation_tests.h"
 
-static const VkLayerSettingEXT kDeprecationLayerSetting = {OBJECT_LAYER_NAME, "deprecation", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
-                                                           &kVkTrue};
-static VkLayerSettingsCreateInfoEXT kDeprecationLayerSettingCreateInfo = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr,
-                                                                          1, &kDeprecationLayerSetting};
+static const VkLayerSettingEXT kDeprecationSetting = {OBJECT_LAYER_NAME, "deprecation_detection", VK_LAYER_SETTING_TYPE_BOOL32_EXT,
+                                                      1, &kVkTrue};
+static VkLayerSettingsCreateInfoEXT kDeprecationSettingCreateInfo = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
+                                                                     &kDeprecationSetting};
 
 class NegativeDeprecation : public DeprecationTest {};
 
 TEST_F(NegativeDeprecation, RenderPass2Extension) {
-    RETURN_IF_SKIP(InitFramework(&kDeprecationLayerSettingCreateInfo));
+    RETURN_IF_SKIP(InitFramework(&kDeprecationSettingCreateInfo));
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
     if (!DeviceExtensionSupported(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)) {
@@ -37,7 +37,7 @@ TEST_F(NegativeDeprecation, RenderPass2Extension) {
 }
 
 TEST_F(NegativeDeprecation, MultipleDifferentWarnings) {
-    RETURN_IF_SKIP(InitFramework(&kDeprecationLayerSettingCreateInfo));
+    RETURN_IF_SKIP(InitFramework(&kDeprecationSettingCreateInfo));
     RETURN_IF_SKIP(InitState());
     if (IsPlatformMockICD()) {
         // Works locally
@@ -68,7 +68,7 @@ TEST_F(NegativeDeprecation, MuteSingleWarning) {
     TEST_DESCRIPTION("Only mute of the two warnings to make sure mutting works");
 
     const char *ids[] = {"WARNING-deprecation-renderpass2"};
-    VkLayerSettingEXT layer_settings[2] = {kDeprecationLayerSetting,
+    VkLayerSettingEXT layer_settings[2] = {kDeprecationSetting,
                                            {OBJECT_LAYER_NAME, "message_id_filter", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, ids}};
 
     VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 2, layer_settings};
@@ -101,7 +101,7 @@ TEST_F(NegativeDeprecation, MuteSingleWarning) {
 
 TEST_F(NegativeDeprecation, GetPhysicalDeviceProperties2Extension) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework(&kDeprecationLayerSettingCreateInfo));
+    RETURN_IF_SKIP(InitFramework(&kDeprecationSettingCreateInfo));
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
     m_errorMonitor->SetDesiredWarning("WARNING-deprecation-gpdp2");
@@ -121,7 +121,7 @@ TEST_F(NegativeDeprecation, GetPhysicalDeviceProperties2Extension) {
 
 TEST_F(NegativeDeprecation, GetPhysicalDeviceProperties2Version) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitFramework(&kDeprecationLayerSettingCreateInfo));
+    RETURN_IF_SKIP(InitFramework(&kDeprecationSettingCreateInfo));
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
     if (IsPlatformMockICD()) {
         // Works locally

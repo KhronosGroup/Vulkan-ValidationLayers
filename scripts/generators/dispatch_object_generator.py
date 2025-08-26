@@ -57,7 +57,7 @@ class APISpecific:
                         'device': 'deprecation::Device',
                         'instance': 'deprecation::Instance',
                         'type': 'LayerObjectTypeDeprecation',
-                        'enabled': 'settings.enabled[deprecation_checks]'
+                        'enabled': 'settings.enabled[deprecation_detection]'
                     },
                     {
                         'include': 'object_tracker/object_lifetime_validation.h',

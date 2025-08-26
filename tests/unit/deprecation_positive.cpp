@@ -40,7 +40,8 @@ class PositiveDeprecation : public DeprecationTest {};
 
 TEST_F(PositiveDeprecation, SettingExplicitOff) {
     TEST_DESCRIPTION("Turn off setting explicitly");
-    const VkLayerSettingEXT layer_setting = {OBJECT_LAYER_NAME, "deprecation", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse};
+    const VkLayerSettingEXT layer_setting = {OBJECT_LAYER_NAME, "deprecation_detection", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
+                                             &kVkFalse};
     VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &layer_setting};
 
     RETURN_IF_SKIP(InitFramework(&layer_setting_ci));
@@ -66,8 +67,9 @@ TEST_F(PositiveDeprecation, SettingDefault) {
 
 TEST_F(PositiveDeprecation, MuteMultipleWarnings) {
     const char *ids[] = {"WARNING-deprecation-renderpass2", "WARNING-deprecation-dynamicrendering"};
-    VkLayerSettingEXT layer_settings[2] = {{OBJECT_LAYER_NAME, "deprecation", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
-                                           {OBJECT_LAYER_NAME, "message_id_filter", VK_LAYER_SETTING_TYPE_STRING_EXT, 2, ids}};
+    VkLayerSettingEXT layer_settings[2] = {
+        {OBJECT_LAYER_NAME, "deprecation_detection", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
+        {OBJECT_LAYER_NAME, "message_id_filter", VK_LAYER_SETTING_TYPE_STRING_EXT, 2, ids}};
     VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 2, layer_settings};
 
     RETURN_IF_SKIP(InitFramework(&layer_setting_ci));
@@ -93,7 +95,8 @@ TEST_F(PositiveDeprecation, MuteMultipleWarnings) {
 
 TEST_F(PositiveDeprecation, GetPhysicalDeviceProperties2Extension) {
     TEST_DESCRIPTION("Show Instance extensions currently only detected if enabled, not if supported");
-    const VkLayerSettingEXT layer_setting = {OBJECT_LAYER_NAME, "deprecation", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
+    const VkLayerSettingEXT layer_setting = {OBJECT_LAYER_NAME, "deprecation_detection", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
+                                             &kVkTrue};
     VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &layer_setting};
 
     RETURN_IF_SKIP(InitFramework(&layer_setting_ci));

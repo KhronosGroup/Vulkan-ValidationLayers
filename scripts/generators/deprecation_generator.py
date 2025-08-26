@@ -183,6 +183,7 @@ class DeprecationGenerator(BaseGenerator):
                 continue
 
             className = 'Device' if command.device else 'Instance'
+            handleName = 'VkDevice' if command.device else 'VkInstance'
             objName = 'device' if command.device else 'physicalDevice'
 
             prototype = (command.cPrototype.split('VKAPI_CALL ')[1])[2:-1]
@@ -203,7 +204,7 @@ class DeprecationGenerator(BaseGenerator):
                     {logic} (api_version >= {command.deprecate.version.nameApi}) {{
                         reported = true;
                         LogWarning("WARNING-{command.deprecate.link}", {objName}, error_obj.location,
-                            "{command.name} is deprecated and this {objName} supports {command.deprecate.version.name}\\nSee more information about this deprecation in the specification: https://docs.vulkan.org/spec/latest/appendices/deprecation.html#{command.deprecate.link}");
+                            "{command.name} is deprecated and this {handleName} supports {command.deprecate.version.name} to replace it.\\nSee more information about this deprecation in the specification: https://docs.vulkan.org/spec/latest/appendices/deprecation.html#{command.deprecate.link}");
                     }}''')
 
             for extension in command.deprecate.extensions:
@@ -215,7 +216,7 @@ class DeprecationGenerator(BaseGenerator):
                     {logic} (supported_{extension.lower()}) {{
                         reported = true;
                         LogWarning("WARNING-{command.deprecate.link}", {objName}, error_obj.location,
-                            "{command.name} is deprecated and this {objName} supports {extension}\\nSee more information about this deprecation in the specification: https://docs.vulkan.org/spec/latest/appendices/deprecation.html#{command.deprecate.link}");
+                            "{command.name} is deprecated and this {handleName} supports {extension} to replace it.\\nSee more information about this deprecation in the specification: https://docs.vulkan.org/spec/latest/appendices/deprecation.html#{command.deprecate.link}");
                     }}''')
 
             # For things deprecated in Vulkan 1.0

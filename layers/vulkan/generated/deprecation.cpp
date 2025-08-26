@@ -68,14 +68,14 @@ bool Instance::PreCallValidateGetPhysicalDeviceFeatures(VkPhysicalDevice physica
     if (api_version >= VK_API_VERSION_1_1) {
         reported = true;
         LogWarning("WARNING-deprecation-gpdp2", physicalDevice, error_obj.location,
-                   "vkGetPhysicalDeviceFeatures is deprecated and this physicalDevice supports VK_VERSION_1_1\nSee more "
+                   "vkGetPhysicalDeviceFeatures is deprecated and this VkInstance supports VK_VERSION_1_1 to replace it.\nSee more "
                    "information about this deprecation in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
     } else if (supported_vk_khr_get_physical_device_properties2) {
         reported = true;
         LogWarning("WARNING-deprecation-gpdp2", physicalDevice, error_obj.location,
-                   "vkGetPhysicalDeviceFeatures is deprecated and this physicalDevice supports "
-                   "VK_KHR_get_physical_device_properties2\nSee more information about this deprecation in the specification: "
+                   "vkGetPhysicalDeviceFeatures is deprecated and this VkInstance supports VK_KHR_get_physical_device_properties2 "
+                   "to replace it.\nSee more information about this deprecation in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
     }
     return false;
@@ -90,15 +90,15 @@ bool Instance::PreCallValidateGetPhysicalDeviceFormatProperties(VkPhysicalDevice
     if (api_version >= VK_API_VERSION_1_1) {
         reported = true;
         LogWarning("WARNING-deprecation-gpdp2", physicalDevice, error_obj.location,
-                   "vkGetPhysicalDeviceFormatProperties is deprecated and this physicalDevice supports VK_VERSION_1_1\nSee more "
-                   "information about this deprecation in the specification: "
+                   "vkGetPhysicalDeviceFormatProperties is deprecated and this VkInstance supports VK_VERSION_1_1 to replace "
+                   "it.\nSee more information about this deprecation in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
     } else if (supported_vk_khr_get_physical_device_properties2) {
         reported = true;
         LogWarning("WARNING-deprecation-gpdp2", physicalDevice, error_obj.location,
-                   "vkGetPhysicalDeviceFormatProperties is deprecated and this physicalDevice supports "
-                   "VK_KHR_get_physical_device_properties2\nSee more information about this deprecation in the specification: "
-                   "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
+                   "vkGetPhysicalDeviceFormatProperties is deprecated and this VkInstance supports "
+                   "VK_KHR_get_physical_device_properties2 to replace it.\nSee more information about this deprecation in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
     }
     return false;
 }
@@ -114,15 +114,15 @@ bool Instance::PreCallValidateGetPhysicalDeviceImageFormatProperties(VkPhysicalD
     if (api_version >= VK_API_VERSION_1_1) {
         reported = true;
         LogWarning("WARNING-deprecation-gpdp2", physicalDevice, error_obj.location,
-                   "vkGetPhysicalDeviceImageFormatProperties is deprecated and this physicalDevice supports VK_VERSION_1_1\nSee "
-                   "more information about this deprecation in the specification: "
+                   "vkGetPhysicalDeviceImageFormatProperties is deprecated and this VkInstance supports VK_VERSION_1_1 to replace "
+                   "it.\nSee more information about this deprecation in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
     } else if (supported_vk_khr_get_physical_device_properties2) {
         reported = true;
         LogWarning("WARNING-deprecation-gpdp2", physicalDevice, error_obj.location,
-                   "vkGetPhysicalDeviceImageFormatProperties is deprecated and this physicalDevice supports "
-                   "VK_KHR_get_physical_device_properties2\nSee more information about this deprecation in the specification: "
-                   "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
+                   "vkGetPhysicalDeviceImageFormatProperties is deprecated and this VkInstance supports "
+                   "VK_KHR_get_physical_device_properties2 to replace it.\nSee more information about this deprecation in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
     }
     return false;
 }
@@ -135,15 +135,15 @@ bool Instance::PreCallValidateGetPhysicalDeviceProperties(VkPhysicalDevice physi
     if (api_version >= VK_API_VERSION_1_1) {
         reported = true;
         LogWarning("WARNING-deprecation-gpdp2", physicalDevice, error_obj.location,
-                   "vkGetPhysicalDeviceProperties is deprecated and this physicalDevice supports VK_VERSION_1_1\nSee more "
-                   "information about this deprecation in the specification: "
+                   "vkGetPhysicalDeviceProperties is deprecated and this VkInstance supports VK_VERSION_1_1 to replace it.\nSee "
+                   "more information about this deprecation in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
     } else if (supported_vk_khr_get_physical_device_properties2) {
         reported = true;
         LogWarning("WARNING-deprecation-gpdp2", physicalDevice, error_obj.location,
-                   "vkGetPhysicalDeviceProperties is deprecated and this physicalDevice supports "
-                   "VK_KHR_get_physical_device_properties2\nSee more information about this deprecation in the specification: "
-                   "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
+                   "vkGetPhysicalDeviceProperties is deprecated and this VkInstance supports "
+                   "VK_KHR_get_physical_device_properties2 to replace it.\nSee more information about this deprecation in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
     }
     return false;
 }
@@ -158,15 +158,15 @@ bool Instance::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalD
     if (api_version >= VK_API_VERSION_1_1) {
         reported = true;
         LogWarning("WARNING-deprecation-gpdp2", physicalDevice, error_obj.location,
-                   "vkGetPhysicalDeviceQueueFamilyProperties is deprecated and this physicalDevice supports VK_VERSION_1_1\nSee "
-                   "more information about this deprecation in the specification: "
+                   "vkGetPhysicalDeviceQueueFamilyProperties is deprecated and this VkInstance supports VK_VERSION_1_1 to replace "
+                   "it.\nSee more information about this deprecation in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
     } else if (supported_vk_khr_get_physical_device_properties2) {
         reported = true;
         LogWarning("WARNING-deprecation-gpdp2", physicalDevice, error_obj.location,
-                   "vkGetPhysicalDeviceQueueFamilyProperties is deprecated and this physicalDevice supports "
-                   "VK_KHR_get_physical_device_properties2\nSee more information about this deprecation in the specification: "
-                   "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
+                   "vkGetPhysicalDeviceQueueFamilyProperties is deprecated and this VkInstance supports "
+                   "VK_KHR_get_physical_device_properties2 to replace it.\nSee more information about this deprecation in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
     }
     return false;
 }
@@ -180,15 +180,15 @@ bool Instance::PreCallValidateGetPhysicalDeviceMemoryProperties(VkPhysicalDevice
     if (api_version >= VK_API_VERSION_1_1) {
         reported = true;
         LogWarning("WARNING-deprecation-gpdp2", physicalDevice, error_obj.location,
-                   "vkGetPhysicalDeviceMemoryProperties is deprecated and this physicalDevice supports VK_VERSION_1_1\nSee more "
-                   "information about this deprecation in the specification: "
+                   "vkGetPhysicalDeviceMemoryProperties is deprecated and this VkInstance supports VK_VERSION_1_1 to replace "
+                   "it.\nSee more information about this deprecation in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
     } else if (supported_vk_khr_get_physical_device_properties2) {
         reported = true;
         LogWarning("WARNING-deprecation-gpdp2", physicalDevice, error_obj.location,
-                   "vkGetPhysicalDeviceMemoryProperties is deprecated and this physicalDevice supports "
-                   "VK_KHR_get_physical_device_properties2\nSee more information about this deprecation in the specification: "
-                   "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
+                   "vkGetPhysicalDeviceMemoryProperties is deprecated and this VkInstance supports "
+                   "VK_KHR_get_physical_device_properties2 to replace it.\nSee more information about this deprecation in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
     }
     return false;
 }
@@ -205,15 +205,15 @@ bool Instance::PreCallValidateGetPhysicalDeviceSparseImageFormatProperties(VkPhy
     if (api_version >= VK_API_VERSION_1_1) {
         reported = true;
         LogWarning("WARNING-deprecation-gpdp2", physicalDevice, error_obj.location,
-                   "vkGetPhysicalDeviceSparseImageFormatProperties is deprecated and this physicalDevice supports "
-                   "VK_VERSION_1_1\nSee more information about this deprecation in the specification: "
+                   "vkGetPhysicalDeviceSparseImageFormatProperties is deprecated and this VkInstance supports VK_VERSION_1_1 to "
+                   "replace it.\nSee more information about this deprecation in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
     } else if (supported_vk_khr_get_physical_device_properties2) {
         reported = true;
         LogWarning("WARNING-deprecation-gpdp2", physicalDevice, error_obj.location,
-                   "vkGetPhysicalDeviceSparseImageFormatProperties is deprecated and this physicalDevice supports "
-                   "VK_KHR_get_physical_device_properties2\nSee more information about this deprecation in the specification: "
-                   "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
+                   "vkGetPhysicalDeviceSparseImageFormatProperties is deprecated and this VkInstance supports "
+                   "VK_KHR_get_physical_device_properties2 to replace it.\nSee more information about this deprecation in the "
+                   "specification: https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-gpdp2");
     }
     return false;
 }
@@ -227,14 +227,14 @@ bool Device::PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebuff
     if (api_version >= VK_API_VERSION_1_4) {
         reported = true;
         LogWarning("WARNING-deprecation-dynamicrendering", device, error_obj.location,
-                   "vkCreateFramebuffer is deprecated and this device supports VK_VERSION_1_4\nSee more information about this "
-                   "deprecation in the specification: "
+                   "vkCreateFramebuffer is deprecated and this VkDevice supports VK_VERSION_1_4 to replace it.\nSee more "
+                   "information about this deprecation in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-dynamicrendering");
     } else if (supported_vk_khr_dynamic_rendering_local_read) {
         reported = true;
         LogWarning("WARNING-deprecation-dynamicrendering", device, error_obj.location,
-                   "vkCreateFramebuffer is deprecated and this device supports VK_KHR_dynamic_rendering_local_read\nSee more "
-                   "information about this deprecation in the specification: "
+                   "vkCreateFramebuffer is deprecated and this VkDevice supports VK_KHR_dynamic_rendering_local_read to replace "
+                   "it.\nSee more information about this deprecation in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-dynamicrendering");
     }
     return false;
@@ -248,15 +248,15 @@ bool Device::PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPass
 
     if (api_version >= VK_API_VERSION_1_2) {
         reported = true;
-        LogWarning(
-            "WARNING-deprecation-renderpass2", device, error_obj.location,
-            "vkCreateRenderPass is deprecated and this device supports VK_VERSION_1_2\nSee more information about this deprecation "
-            "in the specification: https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-renderpass2");
+        LogWarning("WARNING-deprecation-renderpass2", device, error_obj.location,
+                   "vkCreateRenderPass is deprecated and this VkDevice supports VK_VERSION_1_2 to replace it.\nSee more "
+                   "information about this deprecation in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-renderpass2");
     } else if (supported_vk_khr_create_renderpass2) {
         reported = true;
         LogWarning("WARNING-deprecation-renderpass2", device, error_obj.location,
-                   "vkCreateRenderPass is deprecated and this device supports VK_KHR_create_renderpass2\nSee more information "
-                   "about this deprecation in the specification: "
+                   "vkCreateRenderPass is deprecated and this VkDevice supports VK_KHR_create_renderpass2 to replace it.\nSee more "
+                   "information about this deprecation in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-renderpass2");
     }
     return false;
@@ -270,14 +270,14 @@ bool Device::PreCallValidateGetRenderAreaGranularity(VkDevice device, VkRenderPa
     if (api_version >= VK_API_VERSION_1_4) {
         reported = true;
         LogWarning("WARNING-deprecation-dynamicrendering", device, error_obj.location,
-                   "vkGetRenderAreaGranularity is deprecated and this device supports VK_VERSION_1_4\nSee more information about "
-                   "this deprecation in the specification: "
+                   "vkGetRenderAreaGranularity is deprecated and this VkDevice supports VK_VERSION_1_4 to replace it.\nSee more "
+                   "information about this deprecation in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-dynamicrendering");
     } else if (supported_vk_khr_dynamic_rendering_local_read) {
         reported = true;
         LogWarning("WARNING-deprecation-dynamicrendering", device, error_obj.location,
-                   "vkGetRenderAreaGranularity is deprecated and this device supports VK_KHR_dynamic_rendering_local_read\nSee "
-                   "more information about this deprecation in the specification: "
+                   "vkGetRenderAreaGranularity is deprecated and this VkDevice supports VK_KHR_dynamic_rendering_local_read to "
+                   "replace it.\nSee more information about this deprecation in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-dynamicrendering");
     }
     return false;
@@ -291,14 +291,14 @@ bool Device::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, co
     if (api_version >= VK_API_VERSION_1_2) {
         reported = true;
         LogWarning("WARNING-deprecation-renderpass2", device, error_obj.location,
-                   "vkCmdBeginRenderPass is deprecated and this device supports VK_VERSION_1_2\nSee more information about this "
-                   "deprecation in the specification: "
+                   "vkCmdBeginRenderPass is deprecated and this VkDevice supports VK_VERSION_1_2 to replace it.\nSee more "
+                   "information about this deprecation in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-renderpass2");
     } else if (supported_vk_khr_create_renderpass2) {
         reported = true;
         LogWarning("WARNING-deprecation-renderpass2", device, error_obj.location,
-                   "vkCmdBeginRenderPass is deprecated and this device supports VK_KHR_create_renderpass2\nSee more information "
-                   "about this deprecation in the specification: "
+                   "vkCmdBeginRenderPass is deprecated and this VkDevice supports VK_KHR_create_renderpass2 to replace it.\nSee "
+                   "more information about this deprecation in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-renderpass2");
     }
     return false;
@@ -311,15 +311,15 @@ bool Device::PreCallValidateCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubp
 
     if (api_version >= VK_API_VERSION_1_2) {
         reported = true;
-        LogWarning(
-            "WARNING-deprecation-renderpass2", device, error_obj.location,
-            "vkCmdNextSubpass is deprecated and this device supports VK_VERSION_1_2\nSee more information about this deprecation "
-            "in the specification: https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-renderpass2");
+        LogWarning("WARNING-deprecation-renderpass2", device, error_obj.location,
+                   "vkCmdNextSubpass is deprecated and this VkDevice supports VK_VERSION_1_2 to replace it.\nSee more information "
+                   "about this deprecation in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-renderpass2");
     } else if (supported_vk_khr_create_renderpass2) {
         reported = true;
         LogWarning("WARNING-deprecation-renderpass2", device, error_obj.location,
-                   "vkCmdNextSubpass is deprecated and this device supports VK_KHR_create_renderpass2\nSee more information about "
-                   "this deprecation in the specification: "
+                   "vkCmdNextSubpass is deprecated and this VkDevice supports VK_KHR_create_renderpass2 to replace it.\nSee more "
+                   "information about this deprecation in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-renderpass2");
     }
     return false;
@@ -331,15 +331,15 @@ bool Device::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, cons
 
     if (api_version >= VK_API_VERSION_1_2) {
         reported = true;
-        LogWarning(
-            "WARNING-deprecation-renderpass2", device, error_obj.location,
-            "vkCmdEndRenderPass is deprecated and this device supports VK_VERSION_1_2\nSee more information about this deprecation "
-            "in the specification: https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-renderpass2");
+        LogWarning("WARNING-deprecation-renderpass2", device, error_obj.location,
+                   "vkCmdEndRenderPass is deprecated and this VkDevice supports VK_VERSION_1_2 to replace it.\nSee more "
+                   "information about this deprecation in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-renderpass2");
     } else if (supported_vk_khr_create_renderpass2) {
         reported = true;
         LogWarning("WARNING-deprecation-renderpass2", device, error_obj.location,
-                   "vkCmdEndRenderPass is deprecated and this device supports VK_KHR_create_renderpass2\nSee more information "
-                   "about this deprecation in the specification: "
+                   "vkCmdEndRenderPass is deprecated and this VkDevice supports VK_KHR_create_renderpass2 to replace it.\nSee more "
+                   "information about this deprecation in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-renderpass2");
     }
     return false;
@@ -354,14 +354,14 @@ bool Device::PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPas
     if (api_version >= VK_API_VERSION_1_4) {
         reported = true;
         LogWarning("WARNING-deprecation-dynamicrendering", device, error_obj.location,
-                   "vkCreateRenderPass2 is deprecated and this device supports VK_VERSION_1_4\nSee more information about this "
-                   "deprecation in the specification: "
+                   "vkCreateRenderPass2 is deprecated and this VkDevice supports VK_VERSION_1_4 to replace it.\nSee more "
+                   "information about this deprecation in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-dynamicrendering");
     } else if (supported_vk_khr_dynamic_rendering_local_read) {
         reported = true;
         LogWarning("WARNING-deprecation-dynamicrendering", device, error_obj.location,
-                   "vkCreateRenderPass2 is deprecated and this device supports VK_KHR_dynamic_rendering_local_read\nSee more "
-                   "information about this deprecation in the specification: "
+                   "vkCreateRenderPass2 is deprecated and this VkDevice supports VK_KHR_dynamic_rendering_local_read to replace "
+                   "it.\nSee more information about this deprecation in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-dynamicrendering");
     }
     return false;
@@ -375,14 +375,14 @@ bool Device::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, c
     if (api_version >= VK_API_VERSION_1_4) {
         reported = true;
         LogWarning("WARNING-deprecation-dynamicrendering", device, error_obj.location,
-                   "vkCmdBeginRenderPass2 is deprecated and this device supports VK_VERSION_1_4\nSee more information about this "
-                   "deprecation in the specification: "
+                   "vkCmdBeginRenderPass2 is deprecated and this VkDevice supports VK_VERSION_1_4 to replace it.\nSee more "
+                   "information about this deprecation in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-dynamicrendering");
     } else if (supported_vk_khr_dynamic_rendering_local_read) {
         reported = true;
         LogWarning("WARNING-deprecation-dynamicrendering", device, error_obj.location,
-                   "vkCmdBeginRenderPass2 is deprecated and this device supports VK_KHR_dynamic_rendering_local_read\nSee more "
-                   "information about this deprecation in the specification: "
+                   "vkCmdBeginRenderPass2 is deprecated and this VkDevice supports VK_KHR_dynamic_rendering_local_read to replace "
+                   "it.\nSee more information about this deprecation in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-dynamicrendering");
     }
     return false;
@@ -395,15 +395,15 @@ bool Device::PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer, const
 
     if (api_version >= VK_API_VERSION_1_4) {
         reported = true;
-        LogWarning(
-            "WARNING-deprecation-dynamicrendering", device, error_obj.location,
-            "vkCmdNextSubpass2 is deprecated and this device supports VK_VERSION_1_4\nSee more information about this deprecation "
-            "in the specification: https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-dynamicrendering");
+        LogWarning("WARNING-deprecation-dynamicrendering", device, error_obj.location,
+                   "vkCmdNextSubpass2 is deprecated and this VkDevice supports VK_VERSION_1_4 to replace it.\nSee more information "
+                   "about this deprecation in the specification: "
+                   "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-dynamicrendering");
     } else if (supported_vk_khr_dynamic_rendering_local_read) {
         reported = true;
         LogWarning("WARNING-deprecation-dynamicrendering", device, error_obj.location,
-                   "vkCmdNextSubpass2 is deprecated and this device supports VK_KHR_dynamic_rendering_local_read\nSee more "
-                   "information about this deprecation in the specification: "
+                   "vkCmdNextSubpass2 is deprecated and this VkDevice supports VK_KHR_dynamic_rendering_local_read to replace "
+                   "it.\nSee more information about this deprecation in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-dynamicrendering");
     }
     return false;
@@ -417,14 +417,14 @@ bool Device::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, con
     if (api_version >= VK_API_VERSION_1_4) {
         reported = true;
         LogWarning("WARNING-deprecation-dynamicrendering", device, error_obj.location,
-                   "vkCmdEndRenderPass2 is deprecated and this device supports VK_VERSION_1_4\nSee more information about this "
-                   "deprecation in the specification: "
+                   "vkCmdEndRenderPass2 is deprecated and this VkDevice supports VK_VERSION_1_4 to replace it.\nSee more "
+                   "information about this deprecation in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-dynamicrendering");
     } else if (supported_vk_khr_dynamic_rendering_local_read) {
         reported = true;
         LogWarning("WARNING-deprecation-dynamicrendering", device, error_obj.location,
-                   "vkCmdEndRenderPass2 is deprecated and this device supports VK_KHR_dynamic_rendering_local_read\nSee more "
-                   "information about this deprecation in the specification: "
+                   "vkCmdEndRenderPass2 is deprecated and this VkDevice supports VK_KHR_dynamic_rendering_local_read to replace "
+                   "it.\nSee more information about this deprecation in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-dynamicrendering");
     }
     return false;

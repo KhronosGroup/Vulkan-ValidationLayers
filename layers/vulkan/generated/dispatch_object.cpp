@@ -52,7 +52,7 @@ void Instance::InitValidationObjects() {
     if (!settings.disabled[stateless_checks]) {
         object_dispatch.emplace_back(new stateless::Instance(this));
     }
-    if (settings.enabled[deprecation_checks]) {
+    if (settings.enabled[deprecation_detection]) {
         object_dispatch.emplace_back(new deprecation::Instance(this));
     }
     if (!settings.disabled[object_tracking]) {
@@ -87,7 +87,7 @@ void Device::InitValidationObjects() {
         object_dispatch.emplace_back(new stateless::Device(
             this, static_cast<stateless::Instance*>(dispatch_instance->GetValidationObject(LayerObjectTypeParameterValidation))));
     }
-    if (settings.enabled[deprecation_checks]) {
+    if (settings.enabled[deprecation_detection]) {
         object_dispatch.emplace_back(new deprecation::Device(
             this, static_cast<deprecation::Instance*>(dispatch_instance->GetValidationObject(LayerObjectTypeDeprecation))));
     }
