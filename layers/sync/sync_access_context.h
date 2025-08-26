@@ -94,51 +94,27 @@ bool ForEachEntryInRangesUntil(const RangeMap &map, RangeGen &range_gen, Action 
     return false;
 }
 
-// This functor applies a collection of barriers, updating the "pending state" in each touched memory range, and optionally
-// resolves the pending state. Suitable for processing Global memory barriers, or Subpass Barriers when the "final" barrier
-// of a collection is known/present.
-template <typename BarrierOp, typename OpVector = std::vector<BarrierOp>>
-class ApplyBarrierOpsFunctor {
-  public:
+// This functor applies global memory barriers and optionally can resolve pending barrier state
+template <typename BarrierOp>
+struct ApplyGlobalBarrierOpsFunctor {
+    ApplyGlobalBarrierOpsFunctor(bool resolve, ResourceUsageTag tag) : resolve(resolve), tag(tag) {}
+
     using Iterator = ResourceAccessRangeMap::iterator;
-    // Only called with a gap, and pos at the lower_bound(range)
-    Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos, const ResourceAccessRange &range) const {
-        if (!infill_default_) {
-            return pos;
-        }
-        ResourceAccessState default_state;
-        auto inserted = accesses->insert(pos, std::make_pair(range, default_state));
-        return inserted;
-    }
+    Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos, const ResourceAccessRange &range) const { return pos; }
 
     void operator()(const Iterator &pos) const {
-        auto &access_state = pos->second;
-        for (const auto &op : barrier_ops_) {
+        ResourceAccessState &access_state = pos->second;
+        for (const auto &op : barrier_ops) {
             op(&access_state);
         }
-
-        if (resolve_) {
-            // If this is the last (or only) batch, we can do the pending resolve as the last step in this operation to avoid
-            // another walk
-            access_state.ApplyPendingBarriers(tag_);
+        if (resolve) {
+            access_state.ApplyPendingBarriers(tag);
         }
     }
 
-    // A valid tag is required IFF layout_transition is true, as transitions are write ops
-    ApplyBarrierOpsFunctor(bool resolve, typename OpVector::size_type size_hint, ResourceUsageTag tag)
-        : resolve_(resolve), infill_default_(false), barrier_ops_(), tag_(tag) {
-        barrier_ops_.reserve(size_hint);
-    }
-    void EmplaceBack(const BarrierOp &op) {
-        barrier_ops_.emplace_back(op);
-        infill_default_ |= op.layout_transition;
-    }
-
-  private:
-    bool resolve_;
-    bool infill_default_;
-    OpVector barrier_ops_;
-    const ResourceUsageTag tag_;
+    bool resolve;
+    small_vector<BarrierOp, 1> barrier_ops;
+    const ResourceUsageTag tag;
 };
 
 // This functor applies a single barrier, updating the "pending state" in each touched memory range, but does not
@@ -146,24 +122,66 @@ class ApplyBarrierOpsFunctor {
 template <typename BarrierOp>
 struct ApplySingleBarrierOpFunctor {
     ApplySingleBarrierOpFunctor(const BarrierOp &barrier_op) : barrier_op(barrier_op) {}
-    using Iterator = ResourceAccessRangeMap::iterator;
 
-    // Only called with a gap, and pos at the lower_bound(range)
+    using Iterator = ResourceAccessRangeMap::iterator;
     Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos, const ResourceAccessRange &range) const {
         if (!barrier_op.layout_transition) {
+            return pos;
+        }
+        // Never get here since MarkupFunctor is reponsdible for changing ranges of access map (infill and trim by range)
+        assert(false);
+        return pos;
+    }
+
+    void operator()(const Iterator &pos) const {
+        ResourceAccessState &access_state = pos->second;
+        barrier_op(&access_state);
+    }
+
+    BarrierOp barrier_op;
+};
+
+template <typename BarrierOp>
+struct EndRenderPassTransitionBarrierOpsFunctor {
+    EndRenderPassTransitionBarrierOpsFunctor(ResourceUsageTag tag) : tag(tag) {}
+
+    using Iterator = ResourceAccessRangeMap::iterator;
+    Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos, const ResourceAccessRange &range) const {
+        // Never get here since MarkupFunctor is reponsdible for changing ranges of access map (infill and trim by range)
+        assert(false);
+        return pos;
+    }
+
+    void operator()(const Iterator &pos) const {
+        ResourceAccessState &access_state = pos->second;
+        for (const auto &op : barrier_ops) {
+            op(&access_state);
+        }
+        access_state.ApplyPendingBarriers(tag);
+    }
+
+    small_vector<BarrierOp, 1> barrier_ops;
+    const ResourceUsageTag tag;
+};
+
+// This functor changes layout of access map by creating new infill or update ranges (as part of infill_update_range traversal)
+// and besides this it does not update any state. The subsequent functors that will run over the same range will have a guarantee
+// the access map structure won't be modified so they can collect persistent references to access states.
+struct ApplyMarkupFunctor {
+    ApplyMarkupFunctor(bool layout_transition) : layout_transition(layout_transition) {}
+
+    using Iterator = ResourceAccessRangeMap::iterator;
+    Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos, const ResourceAccessRange &range) const {
+        if (!layout_transition) {
             return pos;
         }
         ResourceAccessState default_state;
         auto inserted = accesses->insert(pos, std::make_pair(range, default_state));
         return inserted;
     }
+    void operator()(const Iterator &pos) const {}
 
-    void operator()(const Iterator &pos) const {
-        auto &access_state = pos->second;
-        barrier_op(&access_state);
-    }
-
-    BarrierOp barrier_op;
+    const bool layout_transition;
 };
 
 // This functor resolves the barrier's pending state
@@ -344,8 +362,6 @@ class AccessContext {
     void ImportAsyncContexts(const AccessContext &from);
     void ClearAsyncContexts() { async_.clear(); }
     template <typename Action>
-    void ApplyUpdateAction(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type, const Action &action);
-    template <typename Action>
     void ApplyToContext(const Action &barrier_action);
 
     AccessContext(uint32_t subpass, VkQueueFlags queue_flags, const std::vector<SubpassDependencyGraphNode> &dependencies,
@@ -521,15 +537,6 @@ void AccessContext::UpdateMemoryAccessState(const Action &action, RangeGen &rang
     auto pos = access_state_map_.lower_bound(*range_gen);
     for (; range_gen->non_empty(); ++range_gen) {
         pos = infill_update_range(access_state_map_, pos, *range_gen, ops);
-    }
-}
-
-template <typename Action>
-void AccessContext::ApplyUpdateAction(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type, const Action &action) {
-    const std::optional<ImageRangeGen> &ref_range_gen = view_gen.GetRangeGen(gen_type);
-    if (ref_range_gen) {
-        ImageRangeGen range_gen(*ref_range_gen);
-        UpdateMemoryAccessState(action, range_gen);
     }
 }
 
