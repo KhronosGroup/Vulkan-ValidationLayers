@@ -894,12 +894,6 @@ void RenderPassAccessContext::RecordEndRenderPass(AccessContext *external_contex
         const auto &last_trackback = subpass_contexts_[transition.prev_pass].GetDstExternalTrackBack();
         assert(&subpass_contexts_[transition.prev_pass] == last_trackback.source_subpass);
 
-        EndRenderPassTransitionBarrierOpsFunctor<PipelineBarrierOp> barrier_action(barrier_tag);
-        barrier_action.barrier_ops.reserve((uint32_t)last_trackback.barriers.size());
-        for (const auto &barrier : last_trackback.barriers) {
-            barrier_action.barrier_ops.emplace_back(kQueueIdInvalid, barrier, true);
-        }
-
         const std::optional<ImageRangeGen> &ref_range_gen = view_gen.GetRangeGen(AttachmentViewGen::Gen::kViewSubresource);
         if (ref_range_gen) {
             ImageRangeGen markup_range_gen(*ref_range_gen);
@@ -907,7 +901,12 @@ void RenderPassAccessContext::RecordEndRenderPass(AccessContext *external_contex
             external_context->UpdateMemoryAccessState(markup_action, markup_range_gen);
 
             ImageRangeGen range_gen(*ref_range_gen);
-            external_context->UpdateMemoryAccessState(barrier_action, range_gen);
+            PendingBarriers pending_barriers;
+            for (const auto &barrier : last_trackback.barriers) {
+                CollectBarriersFunctor collect_barriers(kQueueIdInvalid, barrier, true, vvl::kNoIndex32, pending_barriers);
+                external_context->UpdateMemoryAccessState(collect_barriers, range_gen);
+            }
+            pending_barriers.Apply(barrier_tag);
         }
     }
 }
