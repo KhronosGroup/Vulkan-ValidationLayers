@@ -288,7 +288,7 @@ TEST_F(NegativeLayerSettings, DuplicateMessageLimitLastWarning) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError(
-        "Warning - This VUID has now been reported 3 times, which is the duplicated_message_limit value, this will be the last "
+        "Warning - This VUID has now been reported 3 times, which is the duplicate_message_limit value, this will be the last "
         "time reporting it");
     vk::GetPhysicalDeviceProperties2KHR(Gpu(), &properties2);
     m_errorMonitor->VerifyFound();
