@@ -4026,3 +4026,29 @@ TEST_F(NegativePipeline, SampleLocationsDynamicRendering) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
+
+TEST_F(NegativePipeline, DepthBounds) {
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::depthBounds);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    RETURN_IF_SKIP(Init());
+
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(Gpu());
+
+    m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt,
+                         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    InitRenderTarget(&depth_image_view.handle());
+
+    VkPipelineDepthStencilStateCreateInfo ds_ci = vku::InitStructHelper();
+    ds_ci.depthTestEnable = VK_TRUE;
+    ds_ci.minDepthBounds = 0.6f;
+    ds_ci.maxDepthBounds = 0.4f;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.ds_ci_ = ds_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE);
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkPipelineDepthStencilStateCreateInfo-minDepthBounds");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
