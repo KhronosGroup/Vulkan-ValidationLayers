@@ -1116,6 +1116,11 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
             continue;
         }
 
+        // If a library is used to create multiple executable pipelines, we don't want to instrument it again
+        if (modified_lib->instrumentation_data.was_instrumented) {
+            continue;
+        }
+
         vku::safe_VkGraphicsPipelineCreateInfo modified_pipeline_ci(modified_lib->GraphicsCreateInfo());
         // If the application supplied pipeline might be interested in failing to be created
         // if the driver does not find it in its cache, GPU-AV needs to succeed in the instrumented pipeline library
@@ -1242,7 +1247,9 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
 void GpuShaderInstrumentor::PostCallRecordPipelineCreationShaderInstrumentationGPL(
     vvl::Pipeline &pipeline_state, std::vector<chassis::ShaderInstrumentationMetadata> &shader_instrumentation_metadata) {
     // if we return early from NeedPipelineCreationShaderInstrumentation, will need to skip at this point in PostCall
-    if (shader_instrumentation_metadata.empty()) return;
+    if (shader_instrumentation_metadata.empty()) {
+        return;
+    }
 
     uint32_t shader_index = 0;
     // This outer loop is the main difference between the GPL and non-GPL version and why its hard to merge them
