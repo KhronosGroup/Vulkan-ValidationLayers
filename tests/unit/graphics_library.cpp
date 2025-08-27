@@ -3675,3 +3675,54 @@ TEST_F(NegativeGraphicsLibrary, DrawWithMismatchIndependentBit) {
         m_command_buffer.End();
     }
 }
+
+TEST_F(NegativeGraphicsLibrary, StatelessSpirvValidation) {
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    static const char shader[] = R"glsl(
+        #version 450
+        #extension GL_EXT_shader_atomic_float : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_float32 : enable
+        layout(set = 0, binding = 0) buffer ssbo { float32_t y; };
+        void main() {
+           y = 1 + atomicLoad(y, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsAcquire);
+        }
+    )glsl";
+
+    vkt::Buffer buffer_in(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    // Build with both libraries together
+    VkGraphicsPipelineLibraryCreateInfoEXT lib_info = vku::InitStructHelper();
+    lib_info.flags =
+        VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT | VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT;
+
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, shader);
+    vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, shader);
+    vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    std::array stages = {vs_stage.stage_ci, fs_stage.stage_ci};
+
+    CreatePipelineHelper lib(*this, &lib_info);
+    lib.gp_ci_.flags |= VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
+    lib.gp_ci_.stageCount = size32(stages);
+    lib.gp_ci_.pStages = stages.data();
+    lib.gp_ci_.layout = pipeline_layout;
+
+    // Remove VI and FO state-related pointers
+    lib.gp_ci_.pVertexInputState = nullptr;
+    lib.gp_ci_.pVertexInputState = nullptr;
+    lib.gp_ci_.pColorBlendState = nullptr;
+    lib.gp_ci_.pMultisampleState = nullptr;
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-06338", 2);  // vertex and fragment
+    lib.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
