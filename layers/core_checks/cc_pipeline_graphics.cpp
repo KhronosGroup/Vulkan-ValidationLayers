@@ -1989,31 +1989,44 @@ bool CoreChecks::ValidateGraphicsPipelineRenderPassRasterization(const vvl::Pipe
                                      "and subpass %" PRIu32 " uses a depth/stencil attachment.",
                                      pipeline.Subpass());
                 }
-            } else if (ds_state->depthBoundsTestEnable == VK_TRUE &&
-                       !pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE)) {
-                if (!enabled_features.depthBounds) {
-                    skip |=
-                        LogError("VUID-VkPipelineDepthStencilStateCreateInfo-depthBoundsTestEnable-00598", device,
-                                 ds_loc.dot(Field::depthBoundsTestEnable), "is VK_TRUE, but depthBounds feature was not enabled.");
-                }
-
-                if (!IsExtEnabled(extensions.vk_ext_depth_range_unrestricted) &&
-                    !pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_BOUNDS)) {
-                    const float minDepthBounds = ds_state->minDepthBounds;
-                    const float maxDepthBounds = ds_state->maxDepthBounds;
-                    if (!(minDepthBounds >= 0.0) || !(minDepthBounds <= 1.0)) {
-                        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-02510", device,
-                                         ds_loc.dot(Field::minDepthBounds),
-                                         "is %f, depthBoundsTestEnable is VK_TRUE, but VK_EXT_depth_range_unrestricted extension "
-                                         "is not enabled (and not using VK_DYNAMIC_STATE_DEPTH_BOUNDS).",
-                                         minDepthBounds);
+            } else {
+                const float minDepthBounds = ds_state->minDepthBounds;
+                const float maxDepthBounds = ds_state->maxDepthBounds;
+                if (ds_state->depthBoundsTestEnable == VK_TRUE && !pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE)) {
+                    if (!enabled_features.depthBounds) {
+                        skip |= LogError("VUID-VkPipelineDepthStencilStateCreateInfo-depthBoundsTestEnable-00598", device,
+                                         ds_loc.dot(Field::depthBoundsTestEnable),
+                                         "is VK_TRUE, but depthBounds feature was not enabled.");
                     }
-                    if (!(maxDepthBounds >= 0.0) || !(maxDepthBounds <= 1.0)) {
-                        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-02510", device,
-                                         ds_loc.dot(Field::minDepthBounds),
-                                         "is %f, depthBoundsTestEnable is VK_TRUE, but VK_EXT_depth_range_unrestricted extension "
-                                         "is not enabled (and not using VK_DYNAMIC_STATE_DEPTH_BOUNDS).",
-                                         maxDepthBounds);
+
+                    if (!IsExtEnabled(extensions.vk_ext_depth_range_unrestricted) &&
+                        !pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_BOUNDS)) {
+                        if (!(minDepthBounds >= 0.0) || !(minDepthBounds <= 1.0)) {
+                            skip |= LogError(
+                                "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-02510", device, ds_loc.dot(Field::minDepthBounds),
+                                "is %f, depthBoundsTestEnable is VK_TRUE, but VK_EXT_depth_range_unrestricted extension "
+                                "is not enabled (and not using VK_DYNAMIC_STATE_DEPTH_BOUNDS).",
+                                minDepthBounds);
+                        }
+                        if (!(maxDepthBounds >= 0.0) || !(maxDepthBounds <= 1.0)) {
+                            skip |= LogError(
+                                "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-02510", device, ds_loc.dot(Field::minDepthBounds),
+                                "is %f, depthBoundsTestEnable is VK_TRUE, but VK_EXT_depth_range_unrestricted extension "
+                                "is not enabled (and not using VK_DYNAMIC_STATE_DEPTH_BOUNDS).",
+                                maxDepthBounds);
+                        }
+                    }
+                }
+                if (ds_state->depthBoundsTestEnable == VK_TRUE || pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE)) {
+                    if (minDepthBounds > maxDepthBounds && !pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_BOUNDS)) {
+                        skip |=
+                            LogError("UNASSIGNED-VkPipelineDepthStencilStateCreateInfo-minDepthBounds", device,
+                                     ds_loc.dot(Field::minDepthBounds), "(%f) is greater than maxDepthBounds (%f).%s",
+                                     minDepthBounds, maxDepthBounds,
+                                     pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE)
+                                         ? " (Even if depthBoundsTestEnable is dynamic, it can never be enabled and therefore this "
+                                           "is still invalid)"
+                                         : "");
                     }
                 }
             }

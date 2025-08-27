@@ -1609,6 +1609,11 @@ bool CoreChecks::PreCallValidateCmdSetDepthBounds(VkCommandBuffer commandBuffer,
                 maxDepthBounds);
         }
     }
+    if (minDepthBounds > maxDepthBounds) {
+        skip |=
+            LogError("UNASSIGNED-vkCmdSetDepthBounds-minDepthBounds", commandBuffer, error_obj.location.dot(Field::minDepthBounds),
+                     "(%f) is greater than maxDepthBounds (%f).", minDepthBounds, maxDepthBounds);
+    }
     return skip;
 }
 
