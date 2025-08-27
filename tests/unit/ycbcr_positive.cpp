@@ -480,6 +480,41 @@ TEST_F(PositiveYcbcr, ImageQuerySizeLod) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveYcbcr, TextureQueryLevels) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10598");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    vkt::SamplerYcbcrConversion conversion(*m_device, VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM);
+    auto conversion_info = conversion.ConversionInfo();
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo(&conversion_info));
+
+    VkSampler immutable_samplers[2] = {sampler, sampler};
+
+    OneOffDescriptorSet descriptor_set(
+        m_device, {
+                      {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_FRAGMENT_BIT, immutable_samplers},
+                  });
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    const char fs_source[] = R"glsl(
+        #version 450
+        layout(binding=0, set=0) uniform highp sampler2D u_image;
+        layout(location=0) out highp int o_result;
+        void main () {
+            o_result = textureQueryLevels(u_image);
+        }
+    )glsl";
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.gp_ci_.layout = pipeline_layout;
+    pipe.CreateGraphicsPipeline();
+}
+
 TEST_F(PositiveYcbcr, FormatCompatibilitySamePlane) {
     AddRequiredExtensions(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);

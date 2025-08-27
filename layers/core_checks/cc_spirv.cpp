@@ -1493,7 +1493,9 @@ bool CoreChecks::ValidateShaderInterfaceVariablePipeline(const spirv::Module &mo
     // TODO - Need to add Shader Object variation of these checks
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9893
     const bool possible_ycbcr = (pipeline_layout_state && pipeline_layout_state->has_immutable_samplers) &&
-                                // IsAccessed() will prevent things like textureSize() from be marked as a false positive
+                                // IsAccessed() will prevent things like textureSize() from be marked as a false positive.
+                                // Note that for YCbCr, OpImageQueryLod will query the sampler, but OpImageQuerySize only queries
+                                // the image and therefor can still be used with YCbCr.
                                 (variable.IsImage() && variable.IsImageAccessed()) &&
                                 // Quick check to prevent doing tons of sampler state lookup
                                 (variable.info.is_sampler_offset || !variable.info.is_sampler_sampled);
@@ -1550,7 +1552,7 @@ bool CoreChecks::ValidateShaderYcbcrSamplerAccess(const VkDescriptorSetLayoutBin
             skip |= LogError("VUID-RuntimeSpirv-None-10716", objlist, loc,
                              "%s points to pImmutableSamplers[%" PRIu32
                              "] (%s) that was created with a VkSamplerYcbcrConversion, but was accessed in the SPIR-V "
-                             "with a non OpImage*Sample* instruction.\nNon-sampled operations (like texelFetch) can't be used used "
+                             "with a non OpImage*Sample* instruction.\nNon-sampled operations (like texelFetch) can't be used "
                              "because it doesn't contain the sampler YCbCr conversion information for the driver.",
                              print_access_info().c_str(), i, FormatHandle(sampler_state->Handle()).c_str());
             break;  // only need to report a single descriptor
