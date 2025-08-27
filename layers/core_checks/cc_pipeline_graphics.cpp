@@ -111,6 +111,22 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const v
         }
     }
 
+    if (pipeline.OwnsLibState(pipeline.pre_raster_state) || pipeline.OwnsLibState(pipeline.fragment_shader_state)) {
+        vvl::unordered_map<VkShaderStageFlags, uint32_t> unique_stage_map;
+        uint32_t index = 0;
+        for (const auto &stage_ci : pipeline.shader_stages_ci) {
+            auto it = unique_stage_map.find(stage_ci.stage);
+            if (it != unique_stage_map.end()) {
+                skip |=
+                    LogError("VUID-VkGraphicsPipelineCreateInfo-stage-06897", device, create_info_loc.dot(Field::pStages, index),
+                             "and pStages[%" PRIu32 "] both have %s", it->second, string_VkShaderStageFlagBits(stage_ci.stage));
+                return skip;  // If we are here, you could have 2 vertex shaders and interface code will blow up
+            }
+            unique_stage_map[stage_ci.stage] = index;
+            index++;
+        }
+    }
+
     // While these are split into the 4 sub-states from GPL, they are validated for normal pipelines too.
     // These are VUs that fall strangely between both GPL and non-GPL pipelines
     skip |= ValidateGraphicsPipelineVertexInputState(pipeline, create_info_loc);
@@ -128,21 +144,6 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const v
     skip |= ValidateGraphicsPipelineShaderState(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineBlendEnable(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineMeshTask(pipeline, create_info_loc);
-
-    if (pipeline.OwnsLibState(pipeline.pre_raster_state) || pipeline.OwnsLibState(pipeline.fragment_shader_state)) {
-        vvl::unordered_map<VkShaderStageFlags, uint32_t> unique_stage_map;
-        uint32_t index = 0;
-        for (const auto &stage_ci : pipeline.shader_stages_ci) {
-            auto it = unique_stage_map.find(stage_ci.stage);
-            if (it != unique_stage_map.end()) {
-                skip |=
-                    LogError("VUID-VkGraphicsPipelineCreateInfo-stage-06897", device, create_info_loc.dot(Field::pStages, index),
-                             "and pStages[%" PRIu32 "] both have %s", it->second, string_VkShaderStageFlagBits(stage_ci.stage));
-            }
-            unique_stage_map[stage_ci.stage] = index;
-            index++;
-        }
-    }
 
     // pStages are ignored if not using one of these library states
     if (pipeline.OwnsLibState(pipeline.fragment_shader_state) || pipeline.OwnsLibState(pipeline.pre_raster_state)) {

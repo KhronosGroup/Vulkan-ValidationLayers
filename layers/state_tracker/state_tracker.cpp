@@ -5000,7 +5000,9 @@ void DeviceState::PreCallRecordCreateShaderModule(VkDevice device, const VkShade
         if (result) {
             // Easier to just re-create the ShaderModule as StaticData uses itself when building itself up
             // It is really rare this will get here as Group Decorations have been deprecated and before this was added no one ever
-            // raised an issue for a bug that would crash the layers that was around for many releases
+            // raised an issue for a bug that would crash the layers that was around for many releases.
+            //
+            // We also ignore doing this for any newer way to provide SPIR-V (GPL, shaderObject, RTX, etc) for same reason.
             chassis_state.module_state = CreateSpirvModuleState(optimized_binary.size() * sizeof(uint32_t), optimized_binary.data(),
                                                                 global_settings, &chassis_state.stateless_data);
         }
@@ -5016,7 +5018,6 @@ void DeviceState::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t create
         if (create_info.codeSize == 0 || !create_info.pCode || create_info.codeType != VK_SHADER_CODE_TYPE_SPIRV_EXT) {
             continue;
         }
-        // don't need to worry about GroupDecoration with VK_EXT_shader_object
         chassis_state.module_states[i] =
             CreateSpirvModuleState(create_info.codeSize, static_cast<const uint32_t *>(create_info.pCode), global_settings,
                                    &chassis_state.stateless_data[i]);

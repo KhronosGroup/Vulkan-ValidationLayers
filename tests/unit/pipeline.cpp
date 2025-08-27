@@ -942,7 +942,6 @@ TEST_F(NegativePipeline, ColorBlendUnsupportedDualSourceBlend) {
 
 TEST_F(NegativePipeline, DuplicateStage) {
     TEST_DESCRIPTION("Test that an error is produced for a pipeline containing multiple shaders for the same stage");
-
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -951,6 +950,82 @@ TEST_F(NegativePipeline, DuplicateStage) {
                                  helper.fs_->GetStageCreateInfo()};
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-stage-06897");
+}
+
+TEST_F(NegativePipeline, DuplicateStageMaintenance5) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kMinimalShaderGlsl);
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kMinimalShaderGlsl);
+
+    VkShaderModuleCreateInfo module_create_info_vs = vku::InitStructHelper();
+    module_create_info_vs.pCode = vs_spv.data();
+    module_create_info_vs.codeSize = vs_spv.size() * sizeof(uint32_t);
+
+    VkPipelineShaderStageCreateInfo stage_ci_vs = vku::InitStructHelper(&module_create_info_vs);
+    stage_ci_vs.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    stage_ci_vs.module = VK_NULL_HANDLE;
+    stage_ci_vs.pName = "main";
+
+    VkShaderModuleCreateInfo module_create_info_fs = vku::InitStructHelper();
+    module_create_info_fs.pCode = fs_spv.data();
+    module_create_info_fs.codeSize = fs_spv.size() * sizeof(uint32_t);
+
+    VkPipelineShaderStageCreateInfo stage_ci_fs = vku::InitStructHelper(&module_create_info_fs);
+    stage_ci_fs.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    stage_ci_fs.module = VK_NULL_HANDLE;
+    stage_ci_fs.pName = "main";
+
+    std::array stages = {stage_ci_vs, stage_ci_vs, stage_ci_fs};
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.stageCount = size32(stages);
+    pipe.gp_ci_.pStages = stages.data();
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-stage-06897");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativePipeline, DuplicateStageMaintenance5Vertex) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    static const char shader[] = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer ssbo { uint x; };
+        void main() {
+           x = 0;
+        }
+    )glsl";
+
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, shader);
+
+    VkShaderModuleCreateInfo module_create_info_vs = vku::InitStructHelper();
+    module_create_info_vs.pCode = vs_spv.data();
+    module_create_info_vs.codeSize = vs_spv.size() * sizeof(uint32_t);
+
+    VkPipelineShaderStageCreateInfo stage_ci_vs = vku::InitStructHelper(&module_create_info_vs);
+    stage_ci_vs.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    stage_ci_vs.module = VK_NULL_HANDLE;
+    stage_ci_vs.pName = "main";
+
+    std::array stages = {stage_ci_vs, stage_ci_vs};
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.stageCount = size32(stages);
+    pipe.gp_ci_.pStages = stages.data();
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-stage-06897");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativePipeline, MissingEntrypoint) {
@@ -1050,6 +1125,34 @@ TEST_F(NegativePipeline, MissingEntrypointInline) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), stage_ci};
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pName-00707");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativePipeline, MissingEntrypointInlineWrongStage) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    // Messed up and should be FRAGMENT
+    const auto shader = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kMinimalShaderGlsl);
+
+    VkShaderModuleCreateInfo module_create_info = vku::InitStructHelper();
+    module_create_info.pCode = shader.data();
+    module_create_info.codeSize = shader.size() * sizeof(uint32_t);
+
+    VkPipelineShaderStageCreateInfo stage_ci = vku::InitStructHelper(&module_create_info);
+    stage_ci.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    stage_ci.module = VK_NULL_HANDLE;
+    stage_ci.pName = "name";
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), stage_ci};
+    // VUID-VkPipelineShaderStageCreateInfo-pName-00707
+    m_errorMonitor->SetDesiredError(
+        "Seems like you accidently created your SPIR-V with VK_SHADER_STAGE_VERTEX_BIT so the entry point is not matching up");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }

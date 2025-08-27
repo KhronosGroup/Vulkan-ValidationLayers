@@ -1800,12 +1800,18 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
         if (stage_state.spirv_state->static_data_.entry_points.size() == 1) {
             auto entry_point = stage_state.spirv_state->static_data_.entry_points[0];
             if (entry_point) {
-                err << " (The only entry point found was \"" << entry_point->name << "\" for "
-                    << string_VkShaderStageFlagBits(entry_point->stage) << ")";
-                if (entry_point->name == "main") {
-                    err << "\nSome shading languages will let you name the main function something else, but when "
-                           "compiled to SPIR-V, it will keep it as 'main' to match defaults found in other shading langauges such "
-                           "as GLSL. It is also valid in a single SPIR-V binary to have 'main' for two different stages.";
+                if (entry_point->stage != stage) {
+                    err << " (Seems like you accidently created your SPIR-V with "
+                        << string_VkShaderStageFlagBits(entry_point->stage) << " so the entry point is not matching up)";
+                } else {
+                    err << " (The only entry point found was \"" << entry_point->name << "\" for "
+                        << string_VkShaderStageFlagBits(entry_point->stage) << ")";
+                    if (entry_point->name == "main") {
+                        err << "\nSome shading languages will let you name the main function something else, but when "
+                               "compiled to SPIR-V, it will keep it as 'main' to match defaults found in other shading langauges "
+                               "such "
+                               "as GLSL. It is also valid in a single SPIR-V binary to have 'main' for two different stages.";
+                    }
                 }
             }
         } else {

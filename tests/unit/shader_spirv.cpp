@@ -644,6 +644,61 @@ TEST_F(NegativeShaderSpirv, SpirvStatelessMaintenance5) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeShaderSpirv, SpirvStatelessMaintenance5VertAndFrag) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    static const char shader[] = R"glsl(
+        #version 450
+        #extension GL_EXT_shader_atomic_float : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_float32 : enable
+        layout(set = 0, binding = 0) buffer ssbo { float32_t y; };
+        void main() {
+           y = 1 + atomicLoad(y, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsAcquire);
+        }
+    )glsl";
+
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, shader);
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, shader);
+
+    VkShaderModuleCreateInfo module_create_info_vs = vku::InitStructHelper();
+    module_create_info_vs.pCode = vs_spv.data();
+    module_create_info_vs.codeSize = vs_spv.size() * sizeof(uint32_t);
+
+    VkPipelineShaderStageCreateInfo stage_ci_vs = vku::InitStructHelper(&module_create_info_vs);
+    stage_ci_vs.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    stage_ci_vs.module = VK_NULL_HANDLE;
+    stage_ci_vs.pName = "main";
+
+    VkShaderModuleCreateInfo module_create_info_fs = vku::InitStructHelper();
+    module_create_info_fs.pCode = fs_spv.data();
+    module_create_info_fs.codeSize = fs_spv.size() * sizeof(uint32_t);
+
+    VkPipelineShaderStageCreateInfo stage_ci_fs = vku::InitStructHelper(&module_create_info_fs);
+    stage_ci_fs.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    stage_ci_fs.module = VK_NULL_HANDLE;
+    stage_ci_fs.pName = "main";
+
+    std::array stages = {stage_ci_vs, stage_ci_fs};
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.stageCount = size32(stages);
+    pipe.gp_ci_.pStages = stages.data();
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-06338", 2);  // Vertex and Fragment
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeShaderSpirv, Storage8and16bitFeatures) {
     TEST_DESCRIPTION(
         "Test VK_KHR_8bit_storage and VK_KHR_16bit_storage where the Int8/Int16 capability are only used and since they are "

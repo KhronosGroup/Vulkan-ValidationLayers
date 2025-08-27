@@ -86,11 +86,17 @@ std::vector<ShaderStageState> Pipeline::GetStageStates(const DeviceState &state_
         }
 
         if (!module_state || !module_state->spirv) {
-            // If module is null and there is a VkShaderModuleCreateInfo in the pNext chain of the stage info, then this
-            // module is part of a library and the state must be created
-            // This support was also added in VK_KHR_maintenance5
+            // Using VkShaderModuleCreateInfo to inline with VK_KHR_maintenance5
             if (const auto shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext)) {
-                // don't need to worry about GroupDecoration in GPL
+                // Inlined Graphics shaders will still use GetLibraryStateShader to get module_state
+                // We can hit this only if using GPL and an invalid stage is passed in, the error will be caught elsewhere
+                if (pipe_state.pipeline_type == VK_PIPELINE_BIND_POINT_GRAPHICS) {
+                    continue;
+                }
+
+                // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10029
+                // This works for Compute because there is a single shader, but stateless_data will need to be indexed into
+                // We might have to remove (or increase) kCommonMaxGraphicsShaderStages as well
                 auto spirv_module =
                     CreateSpirvModuleState(shader_ci->codeSize, shader_ci->pCode, state_data.global_settings, stateless_data);
                 module_state = std::make_shared<vvl::ShaderModule>(VK_NULL_HANDLE, spirv_module);
@@ -569,52 +575,51 @@ const Location Pipeline::GetCreateFlagsLoc(const Location &create_info_loc) cons
     }
 }
 
-// static
 std::shared_ptr<VertexInputState> Pipeline::CreateVertexInputState(const Pipeline &p, const DeviceState &state,
                                                                    const vku::safe_VkGraphicsPipelineCreateInfo &create_info) {
     const auto lib_type = GetGraphicsLibType(create_info);
     if (lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT) {
-        // Vertex input graphics library
+        // Creating a vertex input graphics library
         return std::make_shared<VertexInputState>(p, create_info);
     } else if (p.library_create_info) {
+        // Linking it in for final pipeline
         auto ss = GetLibraryState<VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT>(state, *p.library_create_info);
         // null if linking together 2 other libraries
         if (ss) {
             return ss;
         }
     } else if (lib_type == static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0)) {
-        // Not a graphics library
+        // Not a graphics library (normal pipeline creation)
         return std::make_shared<VertexInputState>(p, create_info);
     }
 
-    // Creating another pipeline library
+    // Creating another pipeline library using this library
     return {};
 }
 
-// static
 std::shared_ptr<PreRasterState> Pipeline::CreatePreRasterState(
     const Pipeline &p, const DeviceState &state, const vku::safe_VkGraphicsPipelineCreateInfo &create_info,
     const std::shared_ptr<const vvl::RenderPass> &rp, spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]) {
     const auto lib_type = GetGraphicsLibType(create_info);
     if (lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) {
-        // Pre-raster graphics library
+        // Creating a pre-raster graphics library
         return std::make_shared<PreRasterState>(p, state, create_info, rp, stateless_data);
     } else if (p.library_create_info) {
+        // Linking it in for final pipeline
         auto ss = GetLibraryState<VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT>(state, *p.library_create_info);
         // null if linking together 2 other libraries
         if (ss) {
             return ss;
         }
     } else if (lib_type == static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0)) {
-        // Not a graphics library
+        // Not a graphics library (normal pipeline creation)
         return std::make_shared<PreRasterState>(p, state, create_info, rp, stateless_data);
     }
 
-    // Creating another pipeline library
+    // Creating another pipeline library using this library
     return {};
 }
 
-// static
 std::shared_ptr<FragmentShaderState> Pipeline::CreateFragmentShaderState(
     const Pipeline &p, const DeviceState &state, const VkGraphicsPipelineCreateInfo &create_info,
     const vku::safe_VkGraphicsPipelineCreateInfo &safe_create_info, const std::shared_ptr<const vvl::RenderPass> &rp,
@@ -622,16 +627,17 @@ std::shared_ptr<FragmentShaderState> Pipeline::CreateFragmentShaderState(
     const auto lib_type = GetGraphicsLibType(create_info);
 
     if (lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) {
-        // Fragment shader graphics library
+        // Creating a fragment shader graphics library
         return std::make_shared<FragmentShaderState>(p, state, create_info, rp, stateless_data);
     } else if (p.library_create_info) {
+        // Linking it in for final pipeline
         auto ss = GetLibraryState<VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT>(state, *p.library_create_info);
         // null if linking together 2 other libraries
         if (ss && EnablesRasterizationStates(p.pre_raster_state)) {
             return ss;
         }
     } else if ((lib_type == static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0)) && EnablesRasterizationStates(p.pre_raster_state)) {
-        // Not a graphics library
+        // Not a graphics library (normal pipeline creation)
         //
         // No fragment shader _should_ imply no fragment shader state, however, for historical (GL) reasons, a pipeline _can_
         // be created with a VS but no FS and still have valid fragment shader state.
@@ -639,11 +645,10 @@ std::shared_ptr<FragmentShaderState> Pipeline::CreateFragmentShaderState(
         return std::make_shared<FragmentShaderState>(p, state, safe_create_info, rp, stateless_data);
     }
 
-    // Creating another pipeline library
+    // Creating another pipeline library using this library
     return {};
 }
 
-// static
 // Pointers that should be ignored have been set to null in safe_create_info, but if this is a graphics library we need the "raw"
 // create_info.
 std::shared_ptr<FragmentOutputState> Pipeline::CreateFragmentOutputState(
@@ -653,9 +658,11 @@ std::shared_ptr<FragmentOutputState> Pipeline::CreateFragmentOutputState(
     // unconditionally set this pipeline's FO state.
     const auto lib_type = GetGraphicsLibType(create_info);
     if (lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT) {
-        // Fragment output graphics library
+        // Creating a fragment output graphics library
         return std::make_shared<FragmentOutputState>(p, create_info, rp);
     } else if (p.library_create_info) {
+        // Linking it in for final pipeline
+        //
         // If this pipeline is linking in a library that contains FO state, check to see if the FO state is valid before creating it
         // for this pipeline
         auto ss = GetLibraryState<VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT>(state, *p.library_create_info);
@@ -664,11 +671,11 @@ std::shared_ptr<FragmentOutputState> Pipeline::CreateFragmentOutputState(
             return ss;
         }
     } else if ((lib_type == static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0)) && EnablesRasterizationStates(p.pre_raster_state)) {
-        // Not a graphics library
+        // Not a graphics library (normal pipeline creation)
         return std::make_shared<FragmentOutputState>(p, safe_create_info, rp);
     }
 
-    // Creating another pipeline library
+    // Creating another pipeline library using this library
     return {};
 }
 
