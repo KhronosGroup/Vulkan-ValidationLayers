@@ -272,7 +272,7 @@ std::string DebugReport::CreateMessageText(const Location &loc, std::string_view
 
     if (at_message_limit) {
         oss << "(Warning - This VUID has now been reported " << duplicate_message_limit
-            << " times, which is the duplicated_message_limit value, this will be the last time reporting it).\n";
+            << " times, which is the duplicate_message_limit value, this will be the last time reporting it).\n";
     }
 
     oss << loc.Message() << " " << main_message;
@@ -386,7 +386,7 @@ std::string DebugReport::CreateMessageJson(VkFlags msg_flags, const Location &lo
 
         if (at_message_limit) {
             oss << "(Warning - This VUID has now been reported " << duplicate_message_limit
-                << " times, which is the duplicated_message_limit value, this will be the last time reporting it). ";
+                << " times, which is the duplicate_message_limit value, this will be the last time reporting it). ";
         }
 
         // For cases were where have multi-lines in the message, we need to escape them.
