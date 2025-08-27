@@ -196,6 +196,13 @@ class SyncOpPipelineBarrier : public SyncOpBase {
     void ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const override;
 
   private:
+    // Single barrier can be applied more efficently since there is no need to support independent
+    // barrier application and collect pending state.
+    void ApplySingleBarrier(CommandExecutionContext &exec_context) const;
+
+    void ApplyMultipleBarriers(CommandExecutionContext &exec_context, const ResourceUsageTag exec_tag) const;
+
+  private:
     BarrierSet barrier_set_;
 };
 
@@ -322,36 +329,6 @@ class SyncOpEndRenderPass : public SyncOpBase {
     vku::safe_VkSubpassEndInfo subpass_end_info_;
 };
 
-// The barrier operation for pipeline and subpass dependencies
-struct PipelineBarrierOp {
-    SyncBarrier barrier;
-    bool layout_transition;
-    uint32_t layout_transition_handle_index;
-    ResourceAccessState::QueueScopeOps scope;
-    PipelineBarrierOp(QueueId queue_id, const SyncBarrier &barrier_, bool layout_transition_,
-                      uint32_t layout_transition_handle_index = vvl::kNoIndex32)
-        : barrier(barrier_),
-          layout_transition(layout_transition_),
-          layout_transition_handle_index(layout_transition_handle_index),
-          scope(queue_id) {
-        if (queue_id != kQueueIdInvalid) {
-            // This is a submit time application... suppress layout transitions to not taint the QueueBatchContext write state
-            layout_transition = false;
-            this->layout_transition_handle_index = vvl::kNoIndex32;
-        }
-    }
-
-    PipelineBarrierOp(const PipelineBarrierOp &rhs)
-        : barrier(rhs.barrier),
-          layout_transition(rhs.layout_transition),
-          layout_transition_handle_index(rhs.layout_transition_handle_index),
-          scope(rhs.scope) {}
-
-    void operator()(ResourceAccessState *access_state) const {
-        access_state->ApplyBarrier(scope, barrier, layout_transition, layout_transition_handle_index);
-    }
-};
-
 // Batch barrier ops don't modify in place, and thus don't need to hold pending state, and also are *never* layout transitions.
 struct BatchBarrierOp {
     SyncBarrier barrier;
@@ -363,23 +340,6 @@ struct BatchBarrierOp {
         access_state->ApplyBarrier(scope, barrier, false);
         access_state->ApplyPendingBarriers(kInvalidTag);  // There can't be any need for this tag
     }
-};
-
-// The barrier operation for wait events
-struct WaitEventBarrierOp {
-    ResourceAccessState::EventScopeOps scope_ops;
-    SyncBarrier barrier;
-    bool layout_transition;
-
-    WaitEventBarrierOp(const QueueId scope_queue_, const ResourceUsageTag scope_tag_, const SyncBarrier &barrier_,
-                       bool layout_transition_)
-        : scope_ops(scope_queue_, scope_tag_), barrier(barrier_), layout_transition(layout_transition_) {
-        if (scope_queue_ != kQueueIdInvalid) {
-            // This is a submit time application... suppress layout transitions to not taint the QueueBatchContext write state
-            layout_transition = false;
-        }
-    }
-    void operator()(ResourceAccessState *access_state) const { access_state->ApplyBarrier(scope_ops, barrier, layout_transition); }
 };
 
 // Allow keep track of the exec contexts replay state

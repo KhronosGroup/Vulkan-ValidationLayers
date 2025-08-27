@@ -326,6 +326,8 @@ HazardResult ResourceAccessState::DetectBarrierHazard(const SyncAccessInfo &usag
 }
 
 void ResourceAccessState::MergePending(const ResourceAccessState &other) {
+    assert(other.pending_layout_transition == false);
+    assert(pending_layout_transition == false);
     pending_layout_transition |= other.pending_layout_transition;
 }
 
@@ -545,6 +547,44 @@ void ResourceAccessState::ClearFirstUse() {
     first_access_closed_ = false;
 }
 
+void ResourceAccessState::CollectBarriers(const QueueScopeOps &scope, const SyncBarrier &barrier, bool layout_transition,
+                                          uint32_t layout_transition_handle_index, PendingBarriers &pending_barriers) {
+    if (layout_transition) {
+        if (!last_write.has_value()) {
+            last_write.emplace(GetAccessInfo(SYNC_ACCESS_INDEX_NONE), ResourceUsageTagEx{0});
+        }
+        // Schedule layout transition first: layout transition creates WriteState if necessary
+        pending_barriers.AddLayoutTransition(this, barrier, layout_transition_handle_index);
+        // Apply barrier over layout trasition's write access
+        pending_barriers.AddWriteBarrier(this, barrier);
+        return;
+    }
+
+    // Collect barriers over write accesses
+    if (last_write.has_value() && scope.WriteInScope(barrier, *last_write)) {
+        pending_barriers.AddWriteBarrier(this, barrier);
+    }
+
+    // Collect barriers over read accesses
+    VkPipelineStageFlags2 stages_in_scope = VK_PIPELINE_STAGE_2_NONE;
+    for (auto &read_access : last_reads) {
+        // The | implements the "dependency chain" logic for this access,
+        // as the barriers field stores the second sync scope
+        if (scope.ReadInScope(barrier, read_access)) {
+            // We will apply the barrier in the next loop to have this in one place
+            stages_in_scope |= read_access.stage;
+        }
+    }
+    for (auto &read_access : last_reads) {
+        if ((read_access.stage | read_access.sync_stages) & stages_in_scope) {
+            // If this stage, or any stage known to be synchronized after it are in scope, apply the barrier to this read.
+            // NOTE: Forwarding barriers to known prior stages changes the sync_stages from shallow to deep, because the
+            // barriers used to determine sync_stages have been propagated to all known earlier stages
+            pending_barriers.AddReadBarrier(this, (uint32_t)(&read_access - last_reads.data()), barrier);
+        }
+    }
+}
+
 void ResourceAccessState::ApplyPendingBarriers(const ResourceUsageTag tag) {
     if (pending_layout_transition) {
         // SetWrite clobbers the last_reads array, and thus we don't have to clear the read_state out.
@@ -569,6 +609,102 @@ void ResourceAccessState::ApplyPendingBarriers(const ResourceUsageTag tag) {
             last_write->ApplyPendingBarriers();
         }
     }
+}
+
+void PendingBarriers::AddReadBarrier(ResourceAccessState *access_state, uint32_t last_reads_index, const SyncBarrier &barrier) {
+    // Do not register read barriers after a layout transition has been registered.
+    // The layout transition resets the read state (if any) and sets a write instead.
+    // This removes the need for read barriers.
+    if (!layout_transitions.empty()) {
+        return;
+    }
+    size_t barrier_index = 0;
+    for (; barrier_index < read_barriers.size(); barrier_index++) {
+        const PendingReadBarrier &pending = read_barriers[barrier_index];
+        if (pending.barriers == barrier.dst_exec_scope.exec_scope && pending.last_reads_index == last_reads_index) {
+            break;
+        }
+    }
+    if (barrier_index == read_barriers.size()) {
+        PendingReadBarrier &pending = read_barriers.emplace_back();
+        pending.barriers = barrier.dst_exec_scope.exec_scope;
+        pending.last_reads_index = last_reads_index;
+    }
+    PendingBarrierInfo &info = infos.emplace_back();
+    info.type = PendingBarrierType::ReadAccessBarrier;
+    info.index = (uint32_t)barrier_index;
+    info.access_state = access_state;
+}
+
+void PendingBarriers::AddWriteBarrier(ResourceAccessState *access_state, const SyncBarrier &barrier) {
+    size_t barrier_index = 0;
+    for (; barrier_index < write_barriers.size(); barrier_index++) {
+        const PendingWriteBarrier &pending = write_barriers[barrier_index];
+        if (pending.barriers == barrier.dst_access_scope && pending.dependency_chain == barrier.dst_exec_scope.exec_scope) {
+            break;
+        }
+    }
+    if (barrier_index == write_barriers.size()) {
+        PendingWriteBarrier &pending = write_barriers.emplace_back();
+        pending.barriers = barrier.dst_access_scope;
+        pending.dependency_chain = barrier.dst_exec_scope.exec_scope;
+    }
+    PendingBarrierInfo &info = infos.emplace_back();
+    info.type = PendingBarrierType::WriteAccessBarrier;
+    info.index = (uint32_t)barrier_index;
+    info.access_state = access_state;
+}
+
+void PendingBarriers::AddLayoutTransition(ResourceAccessState *access_state, const SyncBarrier &barrier,
+                                          uint32_t layout_transition_handle_index) {
+    // NOTE: in contrast to read/write barriers, we don't do reuse search here,
+    // mostly because we didn't see a beneficial use case yet.
+    // Storing handle index can be a hint it would be harder to find duplicates.
+    PendingBarrierInfo &info = infos.emplace_back();
+    info.type = PendingBarrierType::LayoutTransition;
+    info.index = (uint32_t)layout_transitions.size();
+    info.access_state = access_state;
+
+    PendingLayoutTransition &layout_transition = layout_transitions.emplace_back();
+    layout_transition.ordering = OrderingBarrier(barrier.src_exec_scope.exec_scope, barrier.src_access_scope);
+    layout_transition.handle_index = layout_transition_handle_index;
+}
+
+void PendingBarriers::Apply(const ResourceUsageTag exec_tag) {
+    for (const PendingBarrierInfo &info : infos) {
+        if (info.type == PendingBarrierType::ReadAccessBarrier) {
+            const PendingReadBarrier &read_barrier = read_barriers[info.index];
+            info.access_state->ApplyReadAccessBarrier(read_barrier);
+        } else if (info.type == PendingBarrierType::WriteAccessBarrier) {
+            const PendingWriteBarrier &write_barrier = write_barriers[info.index];
+            info.access_state->ApplyWriteAccessBarrier(write_barrier);
+        } else {
+            assert(info.type == PendingBarrierType::LayoutTransition);
+            const PendingLayoutTransition &layout_transition = layout_transitions[info.index];
+            info.access_state->ApplyLayoutTransition(layout_transition, exec_tag);
+        }
+    }
+}
+
+void ResourceAccessState::ApplyReadAccessBarrier(const PendingReadBarrier &read_barrier) {
+    ReadState &read_state = last_reads[read_barrier.last_reads_index];
+    read_state.barriers |= read_barrier.barriers;
+    read_execution_barriers |= read_barrier.barriers;
+}
+
+void ResourceAccessState::ApplyWriteAccessBarrier(const PendingWriteBarrier &write_barrier) {
+    if (last_write.has_value()) {
+        last_write->dependency_chain_ |= write_barrier.dependency_chain;
+        last_write->barriers_ |= write_barrier.barriers;
+    }
+}
+
+void ResourceAccessState::ApplyLayoutTransition(const PendingLayoutTransition &layout_transition, ResourceUsageTag tag) {
+    const SyncAccessInfo &layout_usage_info = GetAccessInfo(SYNC_IMAGE_LAYOUT_TRANSITION);
+    const ResourceUsageTagEx tag_ex = ResourceUsageTagEx{tag, layout_transition.handle_index};
+    SetWrite(layout_usage_info, tag_ex);
+    UpdateFirst(tag_ex, layout_usage_info, SyncOrdering::kNonAttachment);
+    TouchupFirstForLayoutTransition(tag, layout_transition.ordering);
 }
 
 // Assumes signal queue != wait queue
@@ -890,6 +1026,13 @@ void WriteState::Set(const SyncAccessInfo &usage_info, ResourceUsageTagEx tag_ex
 void WriteState::MergeBarriers(const WriteState &other) {
     barriers_ |= other.barriers_;
     dependency_chain_ |= other.dependency_chain_;
+
+    assert(pending_barriers_.none());
+    assert(other.pending_barriers_.none());
+    assert(pending_dep_chain_ == 0);
+    assert(other.pending_dep_chain_ == 0);
+    assert(pending_layout_ordering_ == OrderingBarrier{});
+    assert(other.pending_layout_ordering_ == OrderingBarrier{});
 
     pending_barriers_ |= other.pending_barriers_;
     pending_dep_chain_ |= other.pending_dep_chain_;

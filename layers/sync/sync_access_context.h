@@ -94,94 +94,67 @@ bool ForEachEntryInRangesUntil(const RangeMap &map, RangeGen &range_gen, Action 
     return false;
 }
 
-// This functor applies global memory barriers and optionally can resolve pending barrier state
-template <typename BarrierOp>
-struct ApplyGlobalBarrierOpsFunctor {
-    ApplyGlobalBarrierOpsFunctor(bool resolve, ResourceUsageTag tag) : resolve(resolve), tag(tag) {}
-
-    using Iterator = ResourceAccessRangeMap::iterator;
-    Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos, const ResourceAccessRange &range) const { return pos; }
-
-    void operator()(const Iterator &pos) const {
-        ResourceAccessState &access_state = pos->second;
-        for (const auto &op : barrier_ops) {
-            op(&access_state);
-        }
-        if (resolve) {
-            access_state.ApplyPendingBarriers(tag);
-        }
-    }
-
-    bool resolve;
-    small_vector<BarrierOp, 1> barrier_ops;
-    const ResourceUsageTag tag;
-};
-
-// This functor applies a single barrier, updating the "pending state" in each touched memory range, but does not
-// resolve the pending state. Suitable for processing Image and Buffer barriers from PipelineBarriers or Events
-template <typename BarrierOp>
-struct ApplySingleBarrierOpFunctor {
-    ApplySingleBarrierOpFunctor(const BarrierOp &barrier_op) : barrier_op(barrier_op) {}
-
-    using Iterator = ResourceAccessRangeMap::iterator;
-    Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos, const ResourceAccessRange &range) const {
-        if (!barrier_op.layout_transition) {
-            return pos;
-        }
-        // Never get here since MarkupFunctor is reponsdible for changing ranges of access map (infill and trim by range)
-        assert(false);
-        return pos;
-    }
-
-    void operator()(const Iterator &pos) const {
-        ResourceAccessState &access_state = pos->second;
-        barrier_op(&access_state);
-    }
-
-    BarrierOp barrier_op;
-};
-
-template <typename BarrierOp>
-struct EndRenderPassTransitionBarrierOpsFunctor {
-    EndRenderPassTransitionBarrierOpsFunctor(ResourceUsageTag tag) : tag(tag) {}
-
-    using Iterator = ResourceAccessRangeMap::iterator;
-    Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos, const ResourceAccessRange &range) const {
-        // Never get here since MarkupFunctor is reponsdible for changing ranges of access map (infill and trim by range)
-        assert(false);
-        return pos;
-    }
-
-    void operator()(const Iterator &pos) const {
-        ResourceAccessState &access_state = pos->second;
-        for (const auto &op : barrier_ops) {
-            op(&access_state);
-        }
-        access_state.ApplyPendingBarriers(tag);
-    }
-
-    small_vector<BarrierOp, 1> barrier_ops;
-    const ResourceUsageTag tag;
-};
-
-// This functor changes layout of access map by creating new infill or update ranges (as part of infill_update_range traversal)
-// and besides this it does not update any state. The subsequent functors that will run over the same range will have a guarantee
-// the access map structure won't be modified so they can collect persistent references to access states.
+// This functor changes layout of access map as part of infill_update_range traversal:
+//    * infills gaps within a specified input range (only for layout transition use case)
+//    * if existing ranges intersect begin/end of the input range then existing ranges are split
+//
+// Besides layout changes this functor does not update access state.
+// The subsequent functors that will run over the same input range will have a guarantee that access
+// map structure won't be modified, so they can collect persistent references to access states.
+//
+// NOTE: notice, when this functor is used for not layout transtiion barrier it is not a noop: yes,
+//  Infill operation is used only for layout transition, but infill_update_range can additionally
+//  perform up to two splits if input range intersects access map existing ranges.
 struct ApplyMarkupFunctor {
     ApplyMarkupFunctor(bool layout_transition) : layout_transition(layout_transition) {}
 
     using Iterator = ResourceAccessRangeMap::iterator;
-    Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos, const ResourceAccessRange &range) const {
+    Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos_hint, const ResourceAccessRange &range) const {
         if (!layout_transition) {
-            return pos;
+            return pos_hint;
         }
         ResourceAccessState default_state;
-        auto inserted = accesses->insert(pos, std::make_pair(range, default_state));
+        auto inserted = accesses->insert(pos_hint, std::make_pair(range, default_state));
         return inserted;
     }
     void operator()(const Iterator &pos) const {}
-
     const bool layout_transition;
+};
+
+// This functor populates PendingBarriers with the results of independent barrier appication (pending barriers).
+// After this functor finished its work then PendingBarriers::Apply() can be used to update the access states.
+struct CollectBarriersFunctor {
+    CollectBarriersFunctor(QueueId queue_id, const SyncBarrier &barrier, bool layout_transition,
+                           uint32_t layout_transition_handle_index, PendingBarriers &pending_barriers)
+        : scope(queue_id),
+          barrier(barrier),
+          layout_transition(layout_transition),
+          layout_transition_handle_index(layout_transition_handle_index),
+          pending_barriers(pending_barriers) {
+        // Suppress layout transition during submit time application.
+        // It add write access but this is necessary only during recording.
+        if (queue_id != kQueueIdInvalid) {
+            this->layout_transition = false;
+            this->layout_transition_handle_index = vvl::kNoIndex32;
+        }
+    }
+
+    using Iterator = ResourceAccessRangeMap::iterator;
+    Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos, const ResourceAccessRange &range) const {
+        assert(!layout_transition);  // MarkupFunctor infills gaps for layout transtion, so we should never get here in that case
+        return pos;
+    }
+
+    void operator()(const Iterator &pos) const {
+        ResourceAccessState &access_state = pos->second;
+        access_state.CollectBarriers(scope, barrier, layout_transition, layout_transition_handle_index, pending_barriers);
+    }
+
+    const ResourceAccessState::QueueScopeOps scope;
+    const SyncBarrier barrier;
+    bool layout_transition;
+    uint32_t layout_transition_handle_index;
+    PendingBarriers &pending_barriers;
 };
 
 // This functor resolves the barrier's pending state

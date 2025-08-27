@@ -337,6 +337,53 @@ class WriteState {
 
 static_assert(std::is_trivially_copyable_v<WriteState>);
 
+enum class PendingBarrierType : uint8_t { ReadAccessBarrier, WriteAccessBarrier, LayoutTransition };
+
+struct PendingBarrierInfo {
+    PendingBarrierType type;
+    uint32_t index;  // indexes array determined by 'type'
+    ResourceAccessState *access_state;
+};
+
+struct PendingReadBarrier {
+    VkPipelineStageFlags2 barriers;
+    uint32_t last_reads_index;  // indexes ResourceAccessState::last_reads
+};
+
+struct PendingWriteBarrier {
+    SyncAccessFlags barriers;
+    VkPipelineStageFlags2 dependency_chain;
+};
+
+struct PendingLayoutTransition {
+    OrderingBarrier ordering;
+    uint32_t handle_index;
+};
+
+// PendingBarriers stores the results of independent barrier applications, so the applied barriers
+// do not interact (for example, they do not create execution dependencies between themselves).
+// Apply() stores the final result in the access state. Independent barrier application is required
+// by various sync APIs, such as vkCmdPipelineBarrier.
+//
+// A naive approach to applying a set of independent barriers is to apply them directly to the access
+// state one at a time. This creates dependencies. PendingBarriers solves this by delaying updates to
+// the access state until all barriers have been processed.
+struct PendingBarriers {
+    std::vector<PendingBarrierInfo> infos;
+    std::vector<PendingReadBarrier> read_barriers;
+    std::vector<PendingWriteBarrier> write_barriers;
+    std::vector<PendingLayoutTransition> layout_transitions;
+
+    // Store result of barrier application as PendingBarriers state
+    void AddReadBarrier(ResourceAccessState *access_state, uint32_t last_reads_index, const SyncBarrier &barrier);
+    void AddWriteBarrier(ResourceAccessState *access_state, const SyncBarrier &barrier);
+    void AddLayoutTransition(ResourceAccessState *access_state, const SyncBarrier &barrier,
+                             uint32_t layout_transition_handle_index);
+
+    // Update accesss state with collected barriers
+    void Apply(const ResourceUsageTag exec_tag);
+};
+
 class ResourceAccessState {
   protected:
     using OrderingBarriers = std::array<OrderingBarrier, static_cast<size_t>(SyncOrdering::kNumOrderings)>;
@@ -369,7 +416,15 @@ class ResourceAccessState {
     template <typename ScopeOps>
     void ApplyBarrier(ScopeOps &&scope, const SyncBarrier &barrier, bool layout_transition,
                       uint32_t layout_transition_handle_index = vvl::kNoIndex32);
+    struct QueueScopeOps;
+    void CollectBarriers(const QueueScopeOps &scope, const SyncBarrier &barrier, bool layout_transition,
+                         uint32_t layout_transition_handle_index, PendingBarriers &pending_barriers);
     void ApplyPendingBarriers(ResourceUsageTag tag);
+
+    void ApplyReadAccessBarrier(const PendingReadBarrier &read_barrier);
+    void ApplyWriteAccessBarrier(const PendingWriteBarrier &write_barrier);
+    void ApplyLayoutTransition(const PendingLayoutTransition &layout_transition, ResourceUsageTag tag);
+
     void ApplySemaphore(const SemaphoreScope &signal, const SemaphoreScope wait);
 
     struct WaitQueueTagPredicate {
