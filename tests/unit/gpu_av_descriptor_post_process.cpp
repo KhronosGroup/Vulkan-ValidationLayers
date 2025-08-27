@@ -282,10 +282,8 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, PostProcesingOnlyPipelineInline) {
         }
     )glsl";
 
-    std::vector<uint32_t> vert_shader;
-    std::vector<uint32_t> frag_shader;
-    GLSLtoSPV(m_device->Physical().limits_, VK_SHADER_STAGE_VERTEX_BIT, kVertexDrawPassthroughGlsl, vert_shader);
-    GLSLtoSPV(m_device->Physical().limits_, VK_SHADER_STAGE_FRAGMENT_BIT, fs_source, frag_shader);
+    std::vector<uint32_t> vert_shader = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexDrawPassthroughGlsl);
+    std::vector<uint32_t> frag_shader = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source);
 
     VkShaderModuleCreateInfo module_create_info_vert = vku::InitStructHelper();
     module_create_info_vert.pCode = vert_shader.data();
@@ -1062,8 +1060,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, NonMultisampleMismatchWithInlineShade
         }
     )glsl";
 
-    std::vector<uint32_t> comp_shader;
-    GLSLtoSPV(m_device->Physical().limits_, VK_SHADER_STAGE_COMPUTE_BIT, cs_source, comp_shader);
+    std::vector<uint32_t> comp_shader = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source);
 
     VkShaderModuleCreateInfo module_create_info = vku::InitStructHelper();
     module_create_info.pCode = comp_shader.data();
