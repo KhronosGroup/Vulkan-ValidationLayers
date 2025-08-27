@@ -88,7 +88,6 @@ struct AccessContextStats {
     uint64_t access_states_dynamic_allocation_size = 0;
 
     void UpdateMax(const AccessContextStats& cur_stats);
-    void Report(std::ostringstream& ss);
 };
 
 struct AccessStats {
