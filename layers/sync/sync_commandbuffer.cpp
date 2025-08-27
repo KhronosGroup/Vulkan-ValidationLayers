@@ -1366,13 +1366,11 @@ void UpdateAccessMapStats(const ResourceAccessRangeMap &access_map, syncval_stat
 void CommandBufferAccessContext::UpdateStats(syncval_stats::AccessStats &access_stats) const {
 #if VVL_ENABLE_SYNCVAL_STATS != 0
     UpdateAccessMapStats(cb_access_context_.GetAccessStateMap(), access_stats.cb_access_stats);
-    access_stats.cb_access_stats.access_contexts += 1;
 
     for (const auto &render_pass_context : render_pass_contexts_) {
         for (const AccessContext &subpass_access_context : render_pass_context->GetContexts()) {
             UpdateAccessMapStats(subpass_access_context.GetAccessStateMap(), access_stats.subpass_access_stats);
         }
-        access_stats.subpass_access_stats.access_contexts += (uint32_t)render_pass_context->GetContexts().size();
     }
 #endif
 }

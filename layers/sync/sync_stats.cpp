@@ -105,17 +105,8 @@ void AccessContextStats::UpdateMax(const AccessContextStats& cur_stats) {
 #undef UPDATE_MAX
 }
 
-void AccessContextStats::Report(std::ostringstream& ss) {
-    ss << "\taccess_contexts = " << access_contexts << '\n';
-    ss << "\taccess_states = " << access_states << '\n';
-    ss << "\tread_states = " << read_states << '\n';
-    ss << "\twrite_states = " << write_states << '\n';
-    ss << "\taccess_states_with_multiple_reads = " << access_states_with_multiple_reads << '\n';
-    ss << "\taccess_states_with_dynamic_allocations = " << access_states_with_dynamic_allocations << '\n';
-    ss << "\taccess_states_dynamic_allocation_size = " << access_states_dynamic_allocation_size << '\n';
-}
-
 void UpdateAccessMapStats(const ResourceAccessRangeMap& access_map, AccessContextStats& stats) {
+    stats.access_contexts += 1;
     stats.access_states += (uint32_t)access_map.size();
     for (const auto& entry : access_map) {
         const ResourceAccessState& access_state = entry.second;
