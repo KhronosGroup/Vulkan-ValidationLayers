@@ -221,11 +221,14 @@ std::string Stats::CreateReport() {
     print_access_state_stats("Subpass", access_stats.max_subpass_access_stats);
 
 #if defined(USE_MIMALLOC_STATS)
-    ss << "\n";
-    mi_stats_print_out([](const char* msg, void* arg) { *static_cast<std::ostringstream*>(arg) << msg; }, &ss);
     // Print allocation counts (these are not reported by mi_stats_print_out)
+    ss << "\n";
     ss << "malloc_normal_count: " << mi_stats.malloc_normal_count.total << "\n";
     ss << "malloc_huge_count: " << mi_stats.malloc_huge_count.total << "\n";
+    ss << "\n";
+    // Print main mimalloc stats
+    mi_stats_print_out([](const char* msg, void* arg) { *static_cast<std::ostringstream*>(arg) << msg; }, &ss);
+    ss << "\n";
 #endif
     return ss.str();
 }
