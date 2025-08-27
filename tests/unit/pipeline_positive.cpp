@@ -2288,8 +2288,7 @@ TEST_F(PositivePipeline, DisableShaderValidationMaintenance5) {
     ds.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     ds.UpdateDescriptorSets();
 
-    std::vector<uint32_t> shader;
-    GLSLtoSPV(m_device->Physical().limits_, VK_SHADER_STAGE_COMPUTE_BIT, cs_source, shader);
+    std::vector<uint32_t> shader = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source);
 
     VkShaderModuleCreateInfo module_create_info = vku::InitStructHelper();
     module_create_info.pCode = shader.data();

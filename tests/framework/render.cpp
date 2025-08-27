@@ -1268,6 +1268,8 @@ void VkRenderFramework::SetDefaultDynamicStatesAll(VkCommandBuffer cmdBuffer) {
     vk::CmdSetColorWriteMaskEXT(cmdBuffer, 0u, 1u, &colorWriteMask);
 }
 
+// Used by the test as a "default"
+// TODO these are poorly similar names and easy to get confused
 std::vector<uint32_t> VkRenderFramework::GLSLToSPV(VkShaderStageFlagBits stage, const char *code, const spv_target_env env) {
     std::vector<uint32_t> spv;
     GLSLtoSPV(m_device->Physical().limits_, stage, code, spv, env);
