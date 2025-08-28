@@ -236,8 +236,13 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
         const Instruction* load_inst = meta.image_inst;
         while (load_inst && (load_inst->Opcode() == spv::OpSampledImage || load_inst->Opcode() == spv::OpImage ||
                              load_inst->Opcode() == spv::OpCopyObject)) {
-            load_inst = function.FindInstruction(load_inst->Operand(0));
-            if (load_inst->Opcode() == spv::OpSampledImage) {
+            const uint32_t load_operand = load_inst->Operand(0);
+            load_inst = function.FindInstruction(load_operand);
+
+            if (!load_inst) {
+                assert(module_.type_manager_.IsUndef(load_operand));
+                return false;  //
+            } else if (load_inst->Opcode() == spv::OpSampledImage) {
                 sampler_load_inst = function.FindInstruction(load_inst->Operand(1));
             }
         }
@@ -417,11 +422,12 @@ bool DescriptorIndexingOOBPass::Instrument() {
                     // TODO - This should be cleaned up then having it injected here
                     // we can have a situation where the incoming SPIR-V looks like
                     // %a = OpSampledImage %type %image %sampler
-                    // ... other stuff we inject a
-                    // function around
+                    // ... other stuff we inject a function around
                     // %b = OpImageSampleExplicitLod %type2 %a %3893 Lod %3918
                     // and we get an error "All OpSampledImage instructions must be in the same block in which their Result <id> are
                     // consumed" to get around this we inject a OpCopyObject right after the OpSampledImage
+                    //
+                    // https://github.com/KhronosGroup/SPIRV-Tools/issues/5830
                     if ((*inst_it)->Opcode() == spv::OpSampledImage) {
                         const uint32_t result_id = (*inst_it)->ResultId();
                         const uint32_t type_id = (*inst_it)->TypeId();

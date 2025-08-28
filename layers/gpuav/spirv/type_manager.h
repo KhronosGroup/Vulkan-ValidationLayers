@@ -156,6 +156,9 @@ class TypeManager {
     const Variable* FindVariableById(uint32_t id) const;
     const Variable* FindPushConstantVariable() const;
 
+    void AddUndef(std::unique_ptr<Instruction> new_inst);
+    bool IsUndef(uint32_t id) const;
+
   private:
     Module& module_;
 
@@ -202,6 +205,9 @@ class TypeManager {
     // Save the length of a struct so we don't have to look it up everytime
     // <struct_id, struct size>
     vvl::unordered_map<uint32_t, uint32_t> struct_size_map_;
+
+    // The use of OpUndef is sometime misused, we store all OpUndef here as way to check if we have it one by accident
+    vvl::unordered_set<uint32_t> undef_ids_;
 };
 
 }  // namespace spirv

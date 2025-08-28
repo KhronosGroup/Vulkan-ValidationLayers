@@ -108,6 +108,10 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
                 annotations_.emplace_back(std::move(new_inst));
                 break;
 
+            case spv::OpUndef:
+                type_manager_.AddUndef(std::move(new_inst));
+                break;
+
             case spv::OpSpecConstantTrue:
             case spv::OpSpecConstantFalse:
             case spv::OpConstantTrue:
