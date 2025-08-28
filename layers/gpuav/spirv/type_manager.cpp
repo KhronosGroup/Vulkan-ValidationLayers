@@ -647,5 +647,12 @@ uint32_t Constant::GetValueUint32() const {
     return inst_.Word(3);
 }
 
+void TypeManager::AddUndef(std::unique_ptr<Instruction> new_inst) {
+    const auto& inst = module_.types_values_constants_.emplace_back(std::move(new_inst));
+    undef_ids_.insert(inst->ResultId());
+}
+
+bool TypeManager::IsUndef(uint32_t id) const { return undef_ids_.find(id) != undef_ids_.end(); }
+
 }  // namespace spirv
 }  // namespace gpuav
