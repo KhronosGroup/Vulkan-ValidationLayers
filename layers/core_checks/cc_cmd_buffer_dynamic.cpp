@@ -1281,35 +1281,28 @@ bool CoreChecks::ValidateDrawRenderingAttachmentLocation(const vvl::CommandBuffe
     const uint32_t color_attachment_count = (uint32_t)cb_state.rendering_attachments.color_locations.size();
 
     // Default from spec
-    uint32_t pipeline_color_count = 0;
+    uint32_t pipeline_color_count =
+        pipeline_state.rendering_create_info ? pipeline_state.rendering_create_info->colorAttachmentCount : 0;
     const uint32_t* pipeline_color_locations = nullptr;
     if (const auto* pipeline_location_info =
             vku::FindStructInPNextChain<VkRenderingAttachmentLocationInfo>(pipeline_state.GetCreateInfoPNext())) {
         pipeline_color_count = pipeline_location_info->colorAttachmentCount;
         pipeline_color_locations = pipeline_location_info->pColorAttachmentLocations;
-    } else if (pipeline_state.rendering_create_info) {
-        pipeline_color_count = pipeline_state.rendering_create_info->colorAttachmentCount;
-    } else {
-        return skip;  // hit dynamic rendering that is not using local read
     }
 
-    if (pipeline_color_count != color_attachment_count) {
-        const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
-        skip = LogError(vuid.dynamic_rendering_local_location_09548, objlist, vuid.loc(),
-                        "The pipeline VkRenderingAttachmentLocationInfo::colorAttachmentCount is %" PRIu32
-                        " but vkCmdSetRenderingAttachmentLocations last set colorAttachmentCount to %" PRIu32 "",
-                        pipeline_color_count, color_attachment_count);
-    } else if (pipeline_color_locations) {
-        for (uint32_t i = 0; i < pipeline_color_count; i++) {
-            if (pipeline_color_locations[i] != cb_state.rendering_attachments.color_locations[i]) {
-                const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
-                skip = LogError(vuid.dynamic_rendering_local_location_09548, objlist, vuid.loc(),
-                                "The pipeline VkRenderingAttachmentLocationInfo::pColorAttachmentLocations[%" PRIu32 "] is %" PRIu32
-                                " but vkCmdSetRenderingAttachmentLocations last set pColorAttachmentLocations[%" PRIu32
-                                "] to %" PRIu32 "",
-                                i, pipeline_color_locations[i], i, cb_state.rendering_attachments.color_locations[i]);
-                break;
-            }
+    // If the count mismatches, that will either be caught by VUID-06179 or allowed,
+    // and we should only check the attachments that will be rendered to
+    uint32_t count = std::min(pipeline_color_count, color_attachment_count);
+    for (uint32_t i = 0; i < count; i++) {
+        uint32_t pipeline_color_location = pipeline_color_locations ? pipeline_color_locations[i] : i;
+        if (pipeline_color_location != cb_state.rendering_attachments.color_locations[i]) {
+            const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
+            skip =
+                LogError(vuid.dynamic_rendering_local_location_09548, objlist, vuid.loc(),
+                         "The pipeline VkRenderingAttachmentLocationInfo::pColorAttachmentLocations[%" PRIu32 "] is %" PRIu32
+                         " but vkCmdSetRenderingAttachmentLocations last set pColorAttachmentLocations[%" PRIu32 "] to %" PRIu32 "",
+                         i, pipeline_color_location, i, cb_state.rendering_attachments.color_locations[i]);
+            break;
         }
     }
     return skip;
@@ -1325,7 +1318,8 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
     const uint32_t color_index_count = (uint32_t)cb_state.rendering_attachments.color_indexes.size();
 
     // Default from spec
-    uint32_t pipeline_color_count = 0;
+    uint32_t pipeline_color_count =
+        pipeline_state.rendering_create_info ? pipeline_state.rendering_create_info->colorAttachmentCount : 0;
     const uint32_t* pipeline_color_indexes = nullptr;
     const uint32_t* pipeline_depth_index = nullptr;
     const uint32_t* pipeline_stencil_index = nullptr;
@@ -1335,30 +1329,21 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
         pipeline_color_indexes = pipeline_index_info->pColorAttachmentInputIndices;
         pipeline_depth_index = pipeline_index_info->pDepthInputAttachmentIndex;
         pipeline_stencil_index = pipeline_index_info->pStencilInputAttachmentIndex;
-    } else if (pipeline_state.rendering_create_info) {
-        pipeline_color_count = pipeline_state.rendering_create_info->colorAttachmentCount;
-    } else {
-        return skip;  // hit dynamic rendering that is not using local read
     }
 
-    if (pipeline_color_count != color_index_count) {
-        const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
-        skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(),
-                        "The pipeline VkRenderingInputAttachmentIndexInfo::colorAttachmentCount is %" PRIu32
-                        " but vkCmdSetRenderingInputAttachmentIndices last set colorAttachmentCount to %" PRIu32 "",
-                        pipeline_color_count, color_index_count);
-    } else if (pipeline_color_indexes) {
-        for (uint32_t i = 0; i < pipeline_color_count; i++) {
-            if (pipeline_color_indexes[i] != cb_state.rendering_attachments.color_indexes[i]) {
-                const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
-                skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(),
-                                "The pipeline VkRenderingInputAttachmentIndexInfo::pColorAttachmentInputIndices[%" PRIu32
-                                "] is %" PRIu32
-                                " but vkCmdSetRenderingInputAttachmentIndices last set pColorAttachmentInputIndices[%" PRIu32
-                                "] to %" PRIu32 "",
-                                i, pipeline_color_indexes[i], i, cb_state.rendering_attachments.color_indexes[i]);
-                break;
-            }
+    // If the count mismatches, that will either be caught by VUID-06179 or allowed,
+    // and we should only check the attachments that will be rendered to
+    uint32_t count = std::min(pipeline_color_count, color_index_count);
+    for (uint32_t i = 0; i < count; i++) {
+        uint32_t pipeline_color_index = pipeline_color_indexes ? pipeline_color_indexes[i] : i;
+        if (pipeline_color_index != cb_state.rendering_attachments.color_indexes[i]) {
+            const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
+            skip = LogError(
+                vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(),
+                "The pipeline VkRenderingInputAttachmentIndexInfo::pColorAttachmentInputIndices[%" PRIu32 "] is %" PRIu32
+                " but vkCmdSetRenderingInputAttachmentIndices last set pColorAttachmentInputIndices[%" PRIu32 "] to %" PRIu32 "",
+                i, pipeline_color_index, i, cb_state.rendering_attachments.color_indexes[i]);
+            break;
         }
     }
 
