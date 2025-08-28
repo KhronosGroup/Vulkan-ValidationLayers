@@ -1100,15 +1100,15 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
     InstrumentationDescriptorSetLayouts instrumentation_dsl;
     BuildDescriptorSetLayoutInfo(pipeline_state, instrumentation_dsl);
 
-    auto modified_pipeline_lib_ci = const_cast<VkPipelineLibraryCreateInfoKHR *>(
+    auto modified_library_ci = const_cast<VkPipelineLibraryCreateInfoKHR *>(
         vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(modified_pipeline_ci.pNext));
 
     // the "pStages[]" is spread across libraries, so build it up in the double for loop
     uint32_t shader_i = 0;
 
     // This outer loop is the main difference between the GPL and non-GPL version and why its hard to merge them
-    for (uint32_t modified_lib_i = 0; modified_lib_i < modified_pipeline_lib_ci->libraryCount; ++modified_lib_i) {
-        const auto modified_lib = Get<vvl::Pipeline>(modified_pipeline_lib_ci->pLibraries[modified_lib_i]);
+    for (uint32_t modified_lib_i = 0; modified_lib_i < modified_library_ci->libraryCount; ++modified_lib_i) {
+        const auto modified_lib = Get<vvl::Pipeline>(modified_library_ci->pLibraries[modified_lib_i]);
         if (!modified_lib) {
             continue;
         }
@@ -1121,11 +1121,11 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
             continue;
         }
 
-        vku::safe_VkGraphicsPipelineCreateInfo modified_pipeline_ci(modified_lib->GraphicsCreateInfo());
+        vku::safe_VkGraphicsPipelineCreateInfo new_lib_ci(modified_lib->GraphicsCreateInfo());
         // If the application supplied pipeline might be interested in failing to be created
         // if the driver does not find it in its cache, GPU-AV needs to succeed in the instrumented pipeline library
         // creation process no matter caching state.
-        modified_pipeline_ci.flags &= ~VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+        new_lib_ci.flags &= ~VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
         bool need_new_pipeline = false;
 
         // If pipeline library is selected for instrumentation, force instrumentation of all its shaders
@@ -1144,9 +1144,9 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
             {
                 vku::safe_VkPipelineShaderStageCreateInfo *modified_stage_ci = nullptr;
                 const VkShaderStageFlagBits stage = modified_stage_state.GetStage();
-                for (uint32_t i = 0; i < modified_pipeline_ci.stageCount; ++i) {
-                    if (modified_pipeline_ci.pStages[i].stage == stage) {
-                        modified_stage_ci = &modified_pipeline_ci.pStages[i];
+                for (uint32_t i = 0; i < new_lib_ci.stageCount; ++i) {
+                    if (new_lib_ci.pStages[i].stage == stage) {
+                        modified_stage_ci = &new_lib_ci.pStages[i];
                     }
                 }
                 assert(modified_stage_ci);
@@ -1193,8 +1193,8 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
                 }
                 VkResult result = DispatchCreateShaderModule(device, &create_info, pAllocator, &instrumented_shader_module);
                 if (result == VK_SUCCESS) {
-                    modified_pipeline_ci.pStages[stage_state_i] = *modified_stage_state.pipeline_create_info;
-                    modified_pipeline_ci.pStages[stage_state_i].module = instrumented_shader_module;
+                    new_lib_ci.pStages[stage_state_i] = *modified_stage_state.pipeline_create_info;
+                    new_lib_ci.pStages[stage_state_i].module = instrumented_shader_module;
 
                     modified_lib->instrumentation_data.instrumented_shader_modules.emplace_back(
                         std::pair<uint32_t, VkShaderModule>{unique_shader_id, instrumented_shader_module});
@@ -1223,8 +1223,14 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
         // Create instrumented pipeline library if we have instrumented one of the libraries inside of it
         if (need_new_pipeline) {
             VkPipeline instrumented_pipeline_lib = VK_NULL_HANDLE;
-            const VkResult result = DispatchCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, modified_pipeline_ci.ptr(),
-                                                                    pAllocator, &instrumented_pipeline_lib);
+
+            // The library could have destroyed its pipelineLayout, but will have a valid, compatible, version when linking
+            if (new_lib_ci.layout != VK_NULL_HANDLE && !Get<vvl::PipelineLayout>(new_lib_ci.layout)) {
+                new_lib_ci.layout = modified_pipeline_ci.layout;
+            }
+
+            const VkResult result = DispatchCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, new_lib_ci.ptr(), pAllocator,
+                                                                    &instrumented_pipeline_lib);
             if (result != VK_SUCCESS || instrumented_pipeline_lib == VK_NULL_HANDLE) {
                 // could just check result, but being extra cautious around GPL and checking handle as well
                 InternalError(device, loc, "Failed to recreate instrumented pipeline library.");
@@ -1238,7 +1244,7 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
                 pipeline_state.instrumentation_data.pre_raster_lib = instrumented_pipeline_lib;
             }
 
-            const_cast<VkPipeline *>(modified_pipeline_lib_ci->pLibraries)[modified_lib_i] = instrumented_pipeline_lib;
+            const_cast<VkPipeline *>(modified_library_ci->pLibraries)[modified_lib_i] = instrumented_pipeline_lib;
         }
     }
     return true;
