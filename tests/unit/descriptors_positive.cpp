@@ -1991,3 +1991,61 @@ TEST_F(PositiveDescriptors, ImmutableSamplerIdenticallyDefinedFilterMinmax) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveDescriptors, ReuseSetLayoutDefWithImmutableSamplers) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10603");
+    RETURN_IF_SKIP(Init());
+
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::ImageView view = image.CreateView();
+    // In the original issue the first iteration created DescriptorSetLayoutDef object
+    // and the second one tried to access pImmutableSamplers from Def's bindings array.
+    // Those sampler handles are not shareable between set layout objects and should
+    // not be accessed in general (can be accessed only to compare with null).
+    for (uint32_t i = 0; i < 2; ++i) {
+        vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+        VkDescriptorSetLayoutBinding binding;
+        binding.binding = 0u;
+        binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        binding.descriptorCount = 1u;
+        binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        binding.pImmutableSamplers = &sampler.handle();
+        const vkt::DescriptorSetLayout pipeline_dsl(*m_device, {binding});
+
+        VkDescriptorPoolSize pool_size = {};
+        pool_size.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        pool_size.descriptorCount = 1u;
+
+        VkDescriptorPoolCreateInfo pool_ci = vku::InitStructHelper();
+        pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+        pool_ci.maxSets = 1u;
+        pool_ci.poolSizeCount = 1u;
+        pool_ci.pPoolSizes = &pool_size;
+        vkt::DescriptorPool descriptor_pool(*m_device, pool_ci);
+
+        VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
+        alloc_info.descriptorPool = descriptor_pool;
+        alloc_info.descriptorSetCount = 1u;
+        alloc_info.pSetLayouts = &pipeline_dsl.handle();
+
+        VkDescriptorSet descriptor_set;
+        vk::AllocateDescriptorSets(*m_device, &alloc_info, &descriptor_set);
+
+        VkDescriptorImageInfo image_info = {};
+        image_info.sampler = VK_NULL_HANDLE;
+        image_info.imageView = view;
+        image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+        VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+        descriptor_write.dstSet = descriptor_set;
+        descriptor_write.dstBinding = 0u;
+        descriptor_write.dstArrayElement = 0u;
+        descriptor_write.descriptorCount = 1u;
+        descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptor_write.pImageInfo = &image_info;
+        // On the second iteration this write tried to use pImmutableSamplers from set layout Def object
+        // that stores sampler handle from the first iteration (already invalid)
+        vk::UpdateDescriptorSets(*m_device, 1u, &descriptor_write, 0u, nullptr);
+    }
+}
