@@ -201,12 +201,14 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory
         uint32_t allocated_properties = phys_dev_mem_props.memoryTypes[memory_state->allocate_info.memoryTypeIndex].propertyFlags;
 
         if (supports_lazy && (allocated_properties & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) == 0) {
-            skip |= LogPerformanceWarning(
-                "BestPractices-vkBindImageMemory-non-lazy-transient-image", device, loc,
-                "Attempting to bind memory type %u to VkImage which was created with TRANSIENT_ATTACHMENT_BIT,"
-                "but this memory type is not LAZILY_ALLOCATED_BIT. You should use memory type %u here instead to save "
-                "%" PRIu64 " bytes of physical memory.",
-                memory_state->allocate_info.memoryTypeIndex, suggested_type, image_state->requirements[0].size);
+            skip |= LogPerformanceWarning("BestPractices-vkBindImageMemory-non-lazy-transient-image", device, loc,
+                                          "Attempting to bind memory type %" PRIu32
+                                          " to VkImage which was created with TRANSIENT_ATTACHMENT_BIT,"
+                                          "but this memory type is not LAZILY_ALLOCATED_BIT. You should use memory type %" PRIu32
+                                          " here instead to save "
+                                          "%" PRIu64 " bytes of physical memory.",
+                                          memory_state->allocate_info.memoryTypeIndex, suggested_type,
+                                          image_state->requirements[0].size);
         }
     }
 

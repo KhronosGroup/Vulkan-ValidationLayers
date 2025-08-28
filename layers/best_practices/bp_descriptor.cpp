@@ -77,16 +77,17 @@ bool BestPractices::PreCallValidateCreateSampler(VkDevice device, const VkSample
         if ((pCreateInfo->addressModeU != pCreateInfo->addressModeV) || (pCreateInfo->addressModeV != pCreateInfo->addressModeW)) {
             skip |= LogPerformanceWarning(
                 "BestPractices-Arm-vkCreateSampler-different-wrapping-modes", device, error_obj.location,
-                "%s Creating a sampler object with wrapping modes which do not match (U = %u, V = %u, W = %u). "
+                "%s Creating a sampler object with wrapping modes which do not match (U = %s, V = %s, W = %s).\n"
                 "This may cause reduced performance even if only U (1D image) or U/V wrapping modes (2D "
                 "image) are actually used. If you need different wrapping modes, disregard this warning.",
-                VendorSpecificTag(kBPVendorArm), pCreateInfo->addressModeU, pCreateInfo->addressModeV, pCreateInfo->addressModeW);
+                VendorSpecificTag(kBPVendorArm), string_VkSamplerAddressMode(pCreateInfo->addressModeU),
+                string_VkSamplerAddressMode(pCreateInfo->addressModeV), string_VkSamplerAddressMode(pCreateInfo->addressModeW));
         }
 
         if ((pCreateInfo->minLod != 0.0f) || (pCreateInfo->maxLod < VK_LOD_CLAMP_NONE)) {
             skip |= LogPerformanceWarning(
                 "BestPractices-Arm-vkCreateSampler-lod-clamping", device, error_obj.location,
-                "%s Creating a sampler object with LOD clamping (minLod = %f, maxLod = %f). This may cause reduced performance. "
+                "%s Creating a sampler object with LOD clamping (minLod = %f, maxLod = %f).\nThis may cause reduced performance. "
                 "Instead of clamping LOD in the sampler, consider using an VkImageView which restricts the mip-levels, set minLod "
                 "to 0.0, and maxLod to VK_LOD_CLAMP_NONE.",
                 VendorSpecificTag(kBPVendorArm), pCreateInfo->minLod, pCreateInfo->maxLod);

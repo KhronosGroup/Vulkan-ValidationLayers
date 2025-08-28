@@ -57,18 +57,21 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
     if (VendorCheckEnabled(kBPVendorArm) && pCreateInfo->samples > kMaxEfficientSamplesArm) {
         skip |= LogPerformanceWarning(
             "BestPractices-Arm-vkCreateImage-too-large-sample-count", device, error_obj.location,
-            "%s Trying to create an image with %u samples. "
-            "The hardware revision may not have full throughput for framebuffers with more than %u samples.",
-            VendorSpecificTag(kBPVendorArm), static_cast<uint32_t>(pCreateInfo->samples), kMaxEfficientSamplesArm);
+            "%s Trying to create an image with %" PRIu32
+            " samples. "
+            "The hardware revision may not have full throughput for framebuffers with more than %" PRIu32 " samples.",
+            VendorSpecificTag(kBPVendorArm), SampleCountSize(pCreateInfo->samples), SampleCountSize(kMaxEfficientSamplesArm));
     }
 
     if (VendorCheckEnabled(kBPVendorIMG) && pCreateInfo->samples > kMaxEfficientSamplesImg) {
         skip |= LogPerformanceWarning(
             "BestPractices-IMG-vkCreateImage-too-large-sample-count", device, error_obj.location,
-            "%s Trying to create an image with %u samples. "
-            "The device may not have full support for true multisampling for images with more than %u samples. "
+            "%s Trying to create an image with %" PRIu32
+            " samples. "
+            "The device may not have full support for true multisampling for images with more than %" PRIu32
+            " samples. "
             "XT devices support up to 8 samples, XE up to 4 samples.",
-            VendorSpecificTag(kBPVendorIMG), static_cast<uint32_t>(pCreateInfo->samples), kMaxEfficientSamplesImg);
+            VendorSpecificTag(kBPVendorIMG), SampleCountSize(pCreateInfo->samples), SampleCountSize(kMaxEfficientSamplesImg));
     }
 
     if (VendorCheckEnabled(kBPVendorIMG) && (pCreateInfo->format == VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG ||
@@ -185,17 +188,18 @@ void BestPractices::ValidateImageInQueueArmImg(const Location& loc, vvl::Image& 
     // Swapchain images are implicitly read so clear after store is expected.
     if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_CLEARED && last_usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_STORED &&
         !image_state.IsSwapchainImage()) {
-        LogPerformanceWarning(
-            "BestPractices-RenderPass-redundant-store", device, loc,
-            "%s %s Subresource (arrayLayer: %u, mipLevel: %u) of image was cleared as part of LOAD_OP_CLEAR, but last time "
-            "image was used, it was written to with STORE_OP_STORE. "
-            "Storing to the image is probably redundant in this case, and wastes bandwidth on tile-based "
-            "architectures.",
-            VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), array_layer, mip_level);
+        LogPerformanceWarning("BestPractices-RenderPass-redundant-store", device, loc,
+                              "%s %s Subresource (arrayLayer: %" PRIu32 ", mipLevel: %" PRIu32
+                              ") of image was cleared as part of LOAD_OP_CLEAR, but last time "
+                              "image was used, it was written to with STORE_OP_STORE. "
+                              "Storing to the image is probably redundant in this case, and wastes bandwidth on tile-based "
+                              "architectures.",
+                              VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), array_layer, mip_level);
     } else if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_CLEARED && last_usage == IMAGE_SUBRESOURCE_USAGE_BP::CLEARED) {
         LogPerformanceWarning(
             "BestPractices-RenderPass-redundant-clear", device, loc,
-            "%s %s Subresource (arrayLayer: %u, mipLevel: %u) of image was cleared as part of LOAD_OP_CLEAR, but last time "
+            "%s %s Subresource (arrayLayer: %" PRIu32 ", mipLevel: %" PRIu32
+            ") of image was cleared as part of LOAD_OP_CLEAR, but last time "
             "image was used, it was written to with vkCmdClear*Image(). "
             "Clearing the image with vkCmdClear*Image() is probably redundant in this case, and wastes bandwidth on "
             "tile-based architectures.",
@@ -244,11 +248,12 @@ void BestPractices::ValidateImageInQueueArmImg(const Location& loc, vvl::Image& 
                 break;
         }
 
-        LogPerformanceWarning(
-            vuid, device, loc,
-            "%s %s Subresource (arrayLayer: %u, mipLevel: %u) of image was loaded to tile as part of LOAD_OP_LOAD, but last "
-            "time image was used, it was written to with %s. %s",
-            VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), array_layer, mip_level, last_cmd, suggestion);
+        LogPerformanceWarning(vuid, device, loc,
+                              "%s %s Subresource (arrayLayer: %" PRIu32 ", mipLevel: %" PRIu32
+                              ") of image was loaded to tile as part of LOAD_OP_LOAD, but last "
+                              "time image was used, it was written to with %s. %s",
+                              VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), array_layer, mip_level, last_cmd,
+                              suggestion);
     }
 }
 

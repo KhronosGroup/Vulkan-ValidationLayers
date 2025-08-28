@@ -783,7 +783,7 @@ void CommandBufferSubState::RecordBeginVideoCoding(vvl::VideoSession& vs_state, 
                     } else if (slot.resource && !dev_state.IsSlotPicture(slot.index, slot.resource)) {
                         skip |= validator.LogError("VUID-vkCmdBeginVideoCodingKHR-pPictureResource-07265", vs_state->Handle(), loc,
                                                    "DPB slot index %d of %s is not currently associated with the specified "
-                                                   "video picture resource: %s, layer %u, offset (%s), extent (%s).",
+                                                   "video picture resource: %s, layer %" PRIu32 ", offset (%s), extent (%s).",
                                                    slot.index, validator.FormatHandle(*vs_state).c_str(),
                                                    validator.FormatHandle(slot.resource.image_state->Handle()).c_str(),
                                                    slot.resource.range.baseArrayLayer,
@@ -864,7 +864,7 @@ void CommandBufferSubState::RecordDecodeVideo(vvl::VideoSession& vs_state, const
                                                         const char* picture_kind) -> bool {
                     return validator.LogError(vuid, vs_state->Handle(), loc,
                                               "DPB slot index %d of %s does not currently contain a %s with the specified "
-                                              "video picture resource: %s, layer %u, offset (%s), extent (%s).",
+                                              "video picture resource: %s, layer %" PRIu32 ", offset (%s), extent (%s).",
                                               slot.index, validator.FormatHandle(*vs_state).c_str(), picture_kind,
                                               validator.FormatHandle(slot.resource.image_state->Handle()).c_str(),
                                               slot.resource.range.baseArrayLayer,
@@ -915,8 +915,9 @@ void CommandBufferSubState::RecordEncodeVideo(vvl::VideoSession& vs_state, const
                     if (vsp_state->GetEncodeQualityLevel() != dev_state.GetEncodeQualityLevel()) {
                         const LogObjectList objlist(vs_state->Handle(), vsp_state->Handle());
                         skip |= validator.LogError("VUID-vkCmdEncodeVideoKHR-None-08318", objlist, loc,
-                                                   "The currently configured encode quality level (%u) for %s "
-                                                   "does not match the encode quality level (%u) %s was created with.",
+                                                   "The currently configured encode quality level (%" PRIu32
+                                                   ") for %s "
+                                                   "does not match the encode quality level (%" PRIu32 ") %s was created with.",
                                                    dev_state.GetEncodeQualityLevel(), validator.FormatHandle(*vs_state).c_str(),
                                                    vsp_state->GetEncodeQualityLevel(), validator.FormatHandle(*vsp_state).c_str());
                     }

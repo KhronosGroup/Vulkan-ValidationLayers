@@ -48,7 +48,8 @@ bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uin
         if (!attachment_should_be_transient && image_is_transient) {
             skip |=
                 LogPerformanceWarning("BestPractices-vkCreateFramebuffer-attachment-should-not-be-transient", device, loc,
-                                      "Attachment %u in VkFramebuffer uses loadOp/storeOps which need to access physical memory, "
+                                      "Attachment %" PRIu32
+                                      " in VkFramebuffer uses loadOp/storeOps which need to access physical memory, "
                                       "but the image backing the image view has VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set. "
                                       "Physical memory will need to be backed lazily to this image, potentially causing stalls.",
                                       i);
@@ -66,7 +67,8 @@ bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uin
         if (supports_lazy && attachment_should_be_transient && !image_is_transient) {
             skip |= LogPerformanceWarning(
                 "BestPractices-vkCreateFramebuffer-attachment-should-be-transient", device, loc,
-                "Attachment %u in VkFramebuffer uses loadOp/storeOps which never have to be backed by physical memory, "
+                "Attachment %" PRIu32
+                " in VkFramebuffer uses loadOp/storeOps which never have to be backed by physical memory, "
                 "but the image backing the image view does not have VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set. "
                 "You can save physical memory by using transient attachment backed by lazily allocated memory here.",
                 i);

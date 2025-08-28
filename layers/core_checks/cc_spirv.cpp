@@ -809,29 +809,29 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
                         }
                     }
                     if (!valid_a) {
-                        skip |= LogError(
-                            "VUID-RuntimeSpirv-OpTypeCooperativeMatrixMulAddNV-10059", module_state.handle(), loc,
-                            "SPIR-V (%s) OpCooperativeMatrixMulAddNV (result id = %u) operands don't match a supported matrix "
-                            "VkCooperativeMatrixPropertiesNV for A type (%s).",
-                            string_VkShaderStageFlagBits(entrypoint.stage), insn.Word(2), a.Describe().c_str());
+                        skip |= LogError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixMulAddNV-10059", module_state.handle(), loc,
+                                         "SPIR-V (%s) OpCooperativeMatrixMulAddNV (result id = %" PRIu32
+                                         ") operands don't match a supported matrix "
+                                         "VkCooperativeMatrixPropertiesNV for A type (%s).",
+                                         string_VkShaderStageFlagBits(entrypoint.stage), insn.Word(2), a.Describe().c_str());
                     } else if (!valid_b) {
-                        skip |= LogError(
-                            "VUID-RuntimeSpirv-OpTypeCooperativeMatrixMulAddNV-10059", module_state.handle(), loc,
-                            "SPIR-V (%s) OpCooperativeMatrixMulAddNV (result id = %u) operands don't match a supported matrix "
-                            "VkCooperativeMatrixPropertiesNV for B type (%s).",
-                            string_VkShaderStageFlagBits(entrypoint.stage), insn.Word(2), b.Describe().c_str());
+                        skip |= LogError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixMulAddNV-10059", module_state.handle(), loc,
+                                         "SPIR-V (%s) OpCooperativeMatrixMulAddNV (result id = %" PRIu32
+                                         ") operands don't match a supported matrix "
+                                         "VkCooperativeMatrixPropertiesNV for B type (%s).",
+                                         string_VkShaderStageFlagBits(entrypoint.stage), insn.Word(2), b.Describe().c_str());
                     } else if (!valid_c) {
-                        skip |= LogError(
-                            "VUID-RuntimeSpirv-OpTypeCooperativeMatrixMulAddNV-10059", module_state.handle(), loc,
-                            "SPIR-V (%s) OpCooperativeMatrixMulAddNV (result id = %u) operands don't match a supported matrix "
-                            "VkCooperativeMatrixPropertiesNV for C type (%s).",
-                            string_VkShaderStageFlagBits(entrypoint.stage), insn.Word(2), c.Describe().c_str());
+                        skip |= LogError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixMulAddNV-10059", module_state.handle(), loc,
+                                         "SPIR-V (%s) OpCooperativeMatrixMulAddNV (result id = %" PRIu32
+                                         ") operands don't match a supported matrix "
+                                         "VkCooperativeMatrixPropertiesNV for C type (%s).",
+                                         string_VkShaderStageFlagBits(entrypoint.stage), insn.Word(2), c.Describe().c_str());
                     } else if (!valid_d) {
-                        skip |= LogError(
-                            "VUID-RuntimeSpirv-OpTypeCooperativeMatrixMulAddNV-10059", module_state.handle(), loc,
-                            "SPIR-V (%s) OpCooperativeMatrixMulAddNV (result id = %u) operands don't match a supported matrix "
-                            "VkCooperativeMatrixPropertiesNV for D type (%s).",
-                            string_VkShaderStageFlagBits(entrypoint.stage), insn.Word(2), d.Describe().c_str());
+                        skip |= LogError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixMulAddNV-10059", module_state.handle(), loc,
+                                         "SPIR-V (%s) OpCooperativeMatrixMulAddNV (result id = %" PRIu32
+                                         ") operands don't match a supported matrix "
+                                         "VkCooperativeMatrixPropertiesNV for D type (%s).",
+                                         string_VkShaderStageFlagBits(entrypoint.stage), insn.Word(2), d.Describe().c_str());
                     }
                 }
                 break;

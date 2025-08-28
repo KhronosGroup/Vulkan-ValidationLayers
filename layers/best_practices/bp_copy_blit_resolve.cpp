@@ -78,7 +78,8 @@ bool BestPractices::ValidateClearAttachment(const bp_state::CommandBufferSubStat
         const LogObjectList objlist(cb_state.Handle(), rp->Handle());
         skip |=
             LogPerformanceWarning("BestPractices-vkCmdClearAttachments-clear-after-load-color", objlist, loc,
-                                  "issued on %s for color attachment #%u in this subpass, "
+                                  "issued on %s for color attachment %" PRIu32
+                                  " in this subpass, "
                                   "but LOAD_OP_LOAD was used. If you need to clear the framebuffer, always use LOAD_OP_CLEAR as "
                                   "it is more efficient.",
                                   FormatHandle(cb_state.Handle()).c_str(), color_attachment);

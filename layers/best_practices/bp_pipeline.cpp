@@ -67,7 +67,8 @@ bool BestPractices::ValidateMultisampledBlendingArm(const VkGraphicsPipelineCrea
             if (!FormatHasFullThroughputBlendingArm(rp_state->create_info.pAttachments[att].format)) {
                 skip |= LogPerformanceWarning("BestPractices-Arm-vkCreatePipelines-multisampled-blending", device, create_info_loc,
                                               "%s Pipeline is multisampled and "
-                                              "color attachment #%u makes use "
+                                              "color attachment %" PRIu32
+                                              " makes use "
                                               "of a format which cannot be blended at full throughput when using MSAA.",
                                               VendorSpecificTag(kBPVendorArm), j);
             }
@@ -103,11 +104,12 @@ bool BestPractices::ValidateCreateGraphicsPipeline(const VkGraphicsPipelineCreat
             }
         }
         if (count > kMaxInstancedVertexBuffers) {
-            skip |= LogPerformanceWarning(
-                "BestPractices-vkCreateGraphicsPipelines-too-many-instanced-vertex-buffers", device, create_info_loc,
-                "The pipeline is using %u instanced vertex buffers (current limit: %u), but this can be inefficient on the "
-                "GPU. If using instanced vertex attributes prefer interleaving them in a single buffer.",
-                count, kMaxInstancedVertexBuffers);
+            skip |= LogPerformanceWarning("BestPractices-vkCreateGraphicsPipelines-too-many-instanced-vertex-buffers", device,
+                                          create_info_loc,
+                                          "The pipeline is using %" PRIu32 " instanced vertex buffers (current limit: %" PRIu32
+                                          "), but this can be inefficient on the "
+                                          "GPU. If using instanced vertex attributes prefer interleaving them in a single buffer.",
+                                          count, kMaxInstancedVertexBuffers);
         }
     }
 
