@@ -122,7 +122,7 @@ class VkRenderFramework : public VkTestFramework {
     void InitRenderTarget(const VkImageView *dsBinding);
     void InitRenderTarget(uint32_t targets, const VkImageView *dsBinding);
     void InitDynamicRenderTarget(VkFormat format = VK_FORMAT_UNDEFINED);
-    VkImageView GetDynamicRenderTarget() const;
+    VkImageView GetDynamicRenderTarget(uint32_t idx = 0) const;
     VkRect2D GetRenderTargetArea() const;
     void DestroyRenderTarget();
 
