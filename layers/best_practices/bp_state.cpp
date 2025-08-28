@@ -706,22 +706,23 @@ void CommandBufferSubState::RecordBarriers2(const VkDependencyInfo& dep_info, co
     }
 }
 
-static std::vector<bp_state::AttachmentInfo> GetAttachmentAccess(vvl::Pipeline& pipe_state) {
+static std::vector<bp_state::AttachmentInfo> GetAttachmentAccess(vvl::Pipeline& pipeline) {
     std::vector<bp_state::AttachmentInfo> result;
-    auto rp = pipe_state.RenderPassState();
+    auto rp = pipeline.RenderPassState();
     if (!rp || rp->UsesDynamicRendering()) {
         return result;
     }
-    const auto& create_info = pipe_state.GraphicsCreateInfo();
-    const auto& subpass = rp->create_info.pSubpasses[create_info.subpass];
+
+    const auto& subpass = rp->create_info.pSubpasses[pipeline.Subpass()];
 
     // NOTE: see PIPELINE_LAYOUT and vku::safe_VkGraphicsPipelineCreateInfo constructors. pColorBlendState and pDepthStencilState
     // are only non-null if they are enabled.
-    if (create_info.pColorBlendState && !(pipe_state.ignore_color_attachments)) {
+    const auto* color_blend_state = pipeline.ColorBlendState();
+    if (color_blend_state && !(pipeline.ignore_color_attachments)) {
         // According to spec, pColorBlendState must be ignored if subpass does not have color attachments.
-        uint32_t num_color_attachments = std::min(subpass.colorAttachmentCount, create_info.pColorBlendState->attachmentCount);
+        uint32_t num_color_attachments = std::min(subpass.colorAttachmentCount, color_blend_state->attachmentCount);
         for (uint32_t j = 0; j < num_color_attachments; j++) {
-            if (create_info.pColorBlendState->pAttachments[j].colorWriteMask != 0) {
+            if (color_blend_state->pAttachments[j].colorWriteMask != 0) {
                 uint32_t attachment = subpass.pColorAttachments[j].attachment;
                 if (attachment != VK_ATTACHMENT_UNUSED) {
                     result.emplace_back(attachment, VK_IMAGE_ASPECT_COLOR_BIT);
@@ -730,16 +731,15 @@ static std::vector<bp_state::AttachmentInfo> GetAttachmentAccess(vvl::Pipeline& 
         }
     }
 
-    if (create_info.pDepthStencilState &&
-        (create_info.pDepthStencilState->depthTestEnable || create_info.pDepthStencilState->depthBoundsTestEnable ||
-         create_info.pDepthStencilState->stencilTestEnable)) {
+    const auto* ds_state = pipeline.DepthStencilState();
+    if (ds_state && (ds_state->depthTestEnable || ds_state->depthBoundsTestEnable || ds_state->stencilTestEnable)) {
         uint32_t attachment = subpass.pDepthStencilAttachment ? subpass.pDepthStencilAttachment->attachment : VK_ATTACHMENT_UNUSED;
         if (attachment != VK_ATTACHMENT_UNUSED) {
             VkImageAspectFlags aspects = 0;
-            if (create_info.pDepthStencilState->depthTestEnable || create_info.pDepthStencilState->depthBoundsTestEnable) {
+            if (ds_state->depthTestEnable || ds_state->depthBoundsTestEnable) {
                 aspects |= VK_IMAGE_ASPECT_DEPTH_BIT;
             }
-            if (create_info.pDepthStencilState->stencilTestEnable) {
+            if (ds_state->stencilTestEnable) {
                 aspects |= VK_IMAGE_ASPECT_STENCIL_BIT;
             }
             result.emplace_back(attachment, aspects);
@@ -836,9 +836,8 @@ void CommandBufferSubState::RecordBindPipeline(VkPipelineBindPoint bind_point, v
             tgm.state = new_tgm_state;
 
             // Track depthTestEnable and depthCompareOp
-            auto& pipeline_create_info = pipeline.GraphicsCreateInfo();
-            auto depth_stencil_state = pipeline_create_info.pDepthStencilState;
-            auto dynamic_state = pipeline_create_info.pDynamicState;
+            const auto* depth_stencil_state = pipeline.DepthStencilState();
+            auto dynamic_state = pipeline.GraphicsCreateInfo().pDynamicState;
             if (depth_stencil_state && dynamic_state) {
                 auto dynamic_state_begin = dynamic_state->pDynamicStates;
                 auto dynamic_state_end = dynamic_state->pDynamicStates + dynamic_state->dynamicStateCount;

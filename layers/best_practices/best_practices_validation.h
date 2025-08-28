@@ -212,7 +212,7 @@ class BestPractices : public vvl::DeviceProxy {
                                                VkCommandBuffer* pCommandBuffers, const ErrorObject& error_obj) const override;
     void PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator,
                                  const RecordObject& record_obj) override;
-    bool ValidateMultisampledBlendingArm(const VkGraphicsPipelineCreateInfo& create_info, const Location& create_info_loc) const;
+    bool ValidateMultisampledBlendingArm(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
 
     bool ValidateCreateGraphicsPipeline(const VkGraphicsPipelineCreateInfo& create_info, const vvl::Pipeline& pipeline,
                                         const Location create_info_loc) const;
