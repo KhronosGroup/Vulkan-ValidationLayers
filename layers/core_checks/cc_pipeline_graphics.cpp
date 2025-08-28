@@ -818,7 +818,13 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
     }
 
     // pre-raster and fragemnt shader state is defined by some combination of this library and pLibraries
-    if ((pre_raster_info.init != GPLInitType::uninitialized) && (frag_shader_info.init != GPLInitType::uninitialized)) {
+    if (pre_raster_info.init != GPLInitType::uninitialized && frag_shader_info.init != GPLInitType::uninitialized) {
+        if (!pre_raster_info.layout || !frag_shader_info.layout) {
+            // This will occur if 06642 is violated, if here, just exit as things are invalid already
+            // Put here, and not at 06642 to allow the other checks that don't care about pipeline layouts
+            return skip;
+        }
+
         // For VUs saying "includes only one... pLibraries includes the other flag" this would be when |only_libs == false|
         // This is because it is not valid to have both init be from |gpl_flags|
         const bool only_libs =
@@ -1152,7 +1158,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
         }
     }
 
-    if ((frag_shader_info.init != GPLInitType::uninitialized) && (frag_output_info.init != GPLInitType::uninitialized)) {
+    if (frag_shader_info.init != GPLInitType::uninitialized && frag_output_info.init != GPLInitType::uninitialized) {
         if (!frag_shader_info.ms_state && frag_output_info.ms_state) {
             // if Fragment Output has sampleShadingEnable == false, Fragement Shader may be null
             if (frag_output_info.ms_state->sampleShadingEnable) {

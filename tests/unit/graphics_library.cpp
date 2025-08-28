@@ -725,6 +725,39 @@ TEST_F(NegativeGraphicsLibrary, PreRasterStateNoLayout) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeGraphicsLibrary, PreRasterAndFragmentWithNoLayout) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    // Build with both libraries together
+    VkGraphicsPipelineLibraryCreateInfoEXT lib_info = vku::InitStructHelper();
+    lib_info.flags =
+        VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT | VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT;
+
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kMinimalShaderGlsl);
+    vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kMinimalShaderGlsl);
+    vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    std::array stages = {vs_stage.stage_ci, fs_stage.stage_ci};
+    CreatePipelineHelper lib(*this, &lib_info);
+    lib.gp_ci_.flags |= VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
+    lib.gp_ci_.stageCount = size32(stages);
+    lib.gp_ci_.pStages = stages.data();
+    lib.gp_ci_.layout = VK_NULL_HANDLE;
+
+    // Remove VI and FO state-related pointers
+    lib.gp_ci_.pVertexInputState = nullptr;
+    lib.gp_ci_.pVertexInputState = nullptr;
+    lib.gp_ci_.pColorBlendState = nullptr;
+    lib.gp_ci_.pMultisampleState = nullptr;
+
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06642");
+    lib.CreateGraphicsPipeline(false);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeGraphicsLibrary, ImmutableSamplersIncompatibleDSL) {
     TEST_DESCRIPTION("Link pipelines with DSLs that only differ by immutable samplers");
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
