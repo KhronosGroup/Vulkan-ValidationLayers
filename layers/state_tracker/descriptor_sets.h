@@ -165,6 +165,11 @@ using IndexRange = vvl::range<uint32_t>;
  *  increments from there. So if the lowest binding# in this example had descriptorCount of
  *  10, then the GlobalStartIndex of the 2nd lowest binding# will be 10 where 0-9 are the
  *  global indices for the lowest binding#.
+ *
+ * TODO: Ideally is to define interface of DescriptorSetLayoutDef so it does store original
+ * VkDescriptorSetLayoutBinding because it can reference pImmutableSamplers specific only to a
+ * single set layout object (Def should store only shared information for equivalent set layouts).
+ * Instead we can store custom structure that does not expose pImmutableSamplers.
  */
 class DescriptorSetLayoutDef {
   public:
@@ -211,7 +216,6 @@ class DescriptorSetLayoutDef {
     VkDescriptorBindingFlags GetDescriptorBindingFlagsFromBinding(const uint32_t binding) const {
         return GetDescriptorBindingFlagsFromIndex(GetIndexFromBinding(binding));
     }
-    VkSampler const *GetImmutableSamplerPtrFromIndex(const uint32_t) const;
     const std::vector<vku::safe_VkSamplerCreateInfo> &GetImmutableSamplerCreateInfosFromIndex(uint32_t index) const;
     size_t GetImmutableSamplersCombinedHashFromIndex(uint32_t index) const;
 
@@ -239,7 +243,14 @@ class DescriptorSetLayoutDef {
 
   private:
     VkDescriptorSetLayoutCreateFlags flags_;
+
+    // WARNING: do not use pImmutableSamplers from these bindings (except only to compare with null)
+    // because these samplers belong to a specific set layout object (used to init this Def) and are
+    // not necessarily shared between all set layouts with this Def.
+    // If the code needs access to pImmutableSamplers then specific set layout object or
+    // VkDescriptorSetLayoutCreateInfo should be used.
     std::vector<vku::safe_VkDescriptorSetLayoutBinding> bindings_;
+
     std::vector<VkDescriptorBindingFlags> binding_flags_;
 
     // The create_infos of immutable samplers: [binding][array index]
@@ -381,7 +392,8 @@ class DescriptorSetLayout : public StateObject {
         return layout_id_->GetDescriptorBindingFlagsFromBinding(binding);
     }
     VkSampler const *GetImmutableSamplerPtrFromIndex(const uint32_t index) const {
-        return layout_id_->GetImmutableSamplerPtrFromIndex(index);
+        assert(index < GetBindingCount());
+        return desc_set_layout_ci.pBindings[index].pImmutableSamplers;
     }
     bool IsTypeMutable(const VkDescriptorType type, uint32_t binding) const { return layout_id_->IsTypeMutable(type, binding); }
     const std::vector<VkDescriptorType> &GetMutableTypes(uint32_t binding) const { return layout_id_->GetMutableTypes(binding); }

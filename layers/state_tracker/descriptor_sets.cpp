@@ -437,13 +437,6 @@ uint32_t vvl::DescriptorSetLayoutDef::GetNextValidBinding(const uint32_t binding
     if (it != non_empty_bindings_.cend()) return *it;
     return GetMaxBinding() + 1;
 }
-// For given index, return ptr to ImmutableSampler array
-VkSampler const *vvl::DescriptorSetLayoutDef::GetImmutableSamplerPtrFromIndex(const uint32_t index) const {
-    if (index < bindings_.size()) {
-        return bindings_[index].pImmutableSamplers;
-    }
-    return nullptr;
-}
 
 const std::vector<vku::safe_VkSamplerCreateInfo> &DescriptorSetLayoutDef::GetImmutableSamplerCreateInfosFromIndex(
     uint32_t index) const {
