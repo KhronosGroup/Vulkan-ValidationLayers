@@ -41,26 +41,28 @@ static inline bool FormatHasFullThroughputBlendingArm(VkFormat format) {
     }
 }
 
-bool BestPractices::ValidateMultisampledBlendingArm(const VkGraphicsPipelineCreateInfo& create_info,
-                                                    const Location& create_info_loc) const {
+bool BestPractices::ValidateMultisampledBlendingArm(const vvl::Pipeline& pipeline, const Location& create_info_loc) const {
     bool skip = false;
 
-    if (!create_info.pColorBlendState || !create_info.pMultisampleState ||
-        create_info.pMultisampleState->rasterizationSamples == VK_SAMPLE_COUNT_1_BIT ||
-        create_info.pMultisampleState->sampleShadingEnable) {
+    const auto* color_blend_state = pipeline.ColorBlendState();
+    const auto* ms_state = pipeline.MultisampleState();
+    if (!color_blend_state || !ms_state || ms_state->rasterizationSamples == VK_SAMPLE_COUNT_1_BIT ||
+        ms_state->sampleShadingEnable) {
         return skip;
     }
 
-    auto rp_state = Get<vvl::RenderPass>(create_info.renderPass);
-    if (!rp_state) return skip;
+    auto rp_state = Get<vvl::RenderPass>(pipeline.GraphicsCreateInfo().renderPass);
+    if (!rp_state) {
+        return skip;
+    }
 
-    const auto& subpass = rp_state->create_info.pSubpasses[create_info.subpass];
+    const auto& subpass = rp_state->create_info.pSubpasses[pipeline.Subpass()];
 
     // According to spec, pColorBlendState must be ignored if subpass does not have color attachments.
-    uint32_t num_color_attachments = std::min(subpass.colorAttachmentCount, create_info.pColorBlendState->attachmentCount);
+    uint32_t num_color_attachments = std::min(subpass.colorAttachmentCount, color_blend_state->attachmentCount);
 
     for (uint32_t j = 0; j < num_color_attachments; j++) {
-        const auto& blend_att = create_info.pColorBlendState->pAttachments[j];
+        const auto& blend_att = color_blend_state->pAttachments[j];
         uint32_t att = subpass.pColorAttachments[j].attachment;
 
         if (att != VK_ATTACHMENT_UNUSED && blend_att.blendEnable && blend_att.colorWriteMask) {
@@ -95,11 +97,12 @@ void BestPractices::ManualPostCallRecordCreateComputePipelines(VkDevice device, 
 bool BestPractices::ValidateCreateGraphicsPipeline(const VkGraphicsPipelineCreateInfo& create_info, const vvl::Pipeline& pipeline,
                                                    const Location create_info_loc) const {
     bool skip = false;
-    if (!(pipeline.active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT) && create_info.pVertexInputState) {
-        const auto& vertex_input = *create_info.pVertexInputState;
+
+    const auto* vertex_input = pipeline.InputState();
+    if (!(pipeline.active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT) && vertex_input) {
         uint32_t count = 0;
-        for (uint32_t j = 0; j < vertex_input.vertexBindingDescriptionCount; j++) {
-            if (vertex_input.pVertexBindingDescriptions[j].inputRate == VK_VERTEX_INPUT_RATE_INSTANCE) {
+        for (uint32_t j = 0; j < vertex_input->vertexBindingDescriptionCount; j++) {
+            if (vertex_input->pVertexBindingDescriptions[j].inputRate == VK_VERTEX_INPUT_RATE_INSTANCE) {
                 count++;
             }
         }
@@ -113,9 +116,10 @@ bool BestPractices::ValidateCreateGraphicsPipeline(const VkGraphicsPipelineCreat
         }
     }
 
-    if ((create_info.pRasterizationState) && (create_info.pRasterizationState->depthBiasEnable) &&
-        (create_info.pRasterizationState->depthBiasConstantFactor == 0.0f) &&
-        (create_info.pRasterizationState->depthBiasSlopeFactor == 0.0f) && VendorCheckEnabled(kBPVendorArm)) {
+    const auto* raster_state = pipeline.RasterizationState();
+
+    if (raster_state && raster_state->depthBiasEnable && raster_state->depthBiasConstantFactor == 0.0f &&
+        raster_state->depthBiasSlopeFactor == 0.0f && VendorCheckEnabled(kBPVendorArm)) {
         skip |=
             LogPerformanceWarning("BestPractices-Arm-vkCreatePipelines-depthbias-zero", device, create_info_loc,
                                   "%s This vkCreateGraphicsPipelines call is created with depthBiasEnable set to true "
@@ -137,12 +141,14 @@ bool BestPractices::ValidateCreateGraphicsPipeline(const VkGraphicsPipelineCreat
     }
 
     if (VendorCheckEnabled(kBPVendorArm)) {
-        skip |= ValidateMultisampledBlendingArm(create_info, create_info_loc);
+        skip |= ValidateMultisampledBlendingArm(pipeline, create_info_loc);
     }
 
     if (VendorCheckEnabled(kBPVendorAMD)) {
-        if (create_info.pInputAssemblyState && create_info.pInputAssemblyState->primitiveRestartEnable) {
-            skip |= LogPerformanceWarning("BestPractices-AMD-CreatePipelines-AvoidPrimitiveRestart", device, create_info_loc,
+        const auto* ia_state = pipeline.InputAssemblyState();
+        if (ia_state && ia_state->primitiveRestartEnable) {
+            skip |= LogPerformanceWarning("BestPractices-AMD-CreatePipelines-AvoidPrimitiveRestart", device,
+                                          create_info_loc.dot(Field::pInputAssemblyState).dot(Field::primitiveRestartEnable),
                                           "%s Use of primitive restart is not recommended", VendorSpecificTag(kBPVendorAMD));
         }
 
