@@ -260,7 +260,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &alloc
             // AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER
             if ((uint64_t)AHARDWAREBUFFER_FORMAT_BLOB != ahb_desc.format) {
                 skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-02384", device, ahb_loc,
-                                 "AHardwareBuffer_Desc's format (%u) is not AHARDWAREBUFFER_FORMAT_BLOB. (AHB = %p).",
+                                 "AHardwareBuffer_Desc's format (%" PRIu32 ") is not AHARDWAREBUFFER_FORMAT_BLOB. (AHB = %p).",
                                  ahb_desc.format, import_ahb_info->buffer);
             } else if ((ahb_desc.usage & AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER) == 0) {
                 skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-02384", device, ahb_loc,

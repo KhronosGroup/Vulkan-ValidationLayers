@@ -2585,7 +2585,7 @@ bool CoreChecks::ValidateClusterAccelerationStructureTriangleClusterInputNV(
                          input_loc.dot(Field::maxClusterTriangleCount),
                          "(%" PRIu32
                          ") must be less than or equal to "
-                         "VkPhysicalDeviceClusterAccelerationStructurePropertiesNV::maxTrianglesPerCluster (%u)",
+                         "VkPhysicalDeviceClusterAccelerationStructurePropertiesNV::maxTrianglesPerCluster (%" PRIu32 ")",
                          input.maxClusterTriangleCount, phys_dev_ext_props.cluster_acceleration_props.maxTrianglesPerCluster);
     }
 
@@ -2594,7 +2594,7 @@ bool CoreChecks::ValidateClusterAccelerationStructureTriangleClusterInputNV(
                          input_loc.dot(Field::maxClusterVertexCount),
                          "(%" PRIu32
                          ") must be less than or equal to "
-                         "VkPhysicalDeviceClusterAccelerationStructurePropertiesNV::maxVerticesPerCluster (%u)",
+                         "VkPhysicalDeviceClusterAccelerationStructurePropertiesNV::maxVerticesPerCluster (%" PRIu32 ")",
                          input.maxClusterVertexCount, phys_dev_ext_props.cluster_acceleration_props.maxVerticesPerCluster);
     }
 

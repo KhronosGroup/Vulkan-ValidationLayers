@@ -199,15 +199,16 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
             if ((cb_state->unprotected == true) && (protected_submit == true)) {
                 const LogObjectList objlist(cb_state->Handle(), queue);
                 skip |= LogError("VUID-VkSubmitInfo-pNext-04148", objlist, cb_loc,
-                                 "(%s) is unprotected while queue %s pSubmits[%u] has "
+                                 "(%s) is unprotected while queue %s pSubmits[%" PRIu32
+                                 "] has "
                                  "VkProtectedSubmitInfo:protectedSubmit set to VK_TRUE",
                                  FormatHandle(cb_state->Handle()).c_str(), FormatHandle(queue).c_str(), submit_idx);
             }
             if ((cb_state->unprotected == false) && (protected_submit == false)) {
                 const LogObjectList objlist(cb_state->Handle(), queue);
                 skip |= LogError("VUID-VkSubmitInfo-pNext-04120", objlist, cb_loc,
-                                 "(%s) is protected while queue %s pSubmits[%u] has %s", FormatHandle(cb_state->Handle()).c_str(),
-                                 FormatHandle(queue).c_str(), submit_idx,
+                                 "(%s) is protected while queue %s pSubmits[%" PRIu32 "] has %s",
+                                 FormatHandle(cb_state->Handle()).c_str(), FormatHandle(queue).c_str(), submit_idx,
                                  protected_submit_info ? "VkProtectedSubmitInfo:protectedSubmit set to VK_FALSE"
                                                        : "no VkProtectedSubmitInfo in the pNext chain");
             }

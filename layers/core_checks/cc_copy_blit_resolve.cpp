@@ -1760,12 +1760,18 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                 !IsValueIn(dstImageLayout, {VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR, VK_IMAGE_LAYOUT_GENERAL})) {
                 vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-09460" : "VUID-vkCmdCopyImage-srcImage-09460";
                 skip |= LogError(vuid, src_objlist, loc,
-                                 "copying to same VkImage (miplevel = %u, srcLayer[%u,%u), dstLayer[%u,%u)), but srcImageLayout is "
-                                 "%s and dstImageLayout is %s",
+                                 "copying to same VkImage at miplevel = %" PRIu32
+                                 "\n"
+                                 "srcSubresource baseArrayLayer = %" PRIu32
+                                 ", layerCount = %s\n"
+                                 "dstSubresource baseArrayLayer = %" PRIu32
+                                 ", layerCount = %s\n"
+                                 "but srcImageLayout is %s and is dstImageLayout is %s",
                                  src_subresource.mipLevel, src_subresource.baseArrayLayer,
-                                 src_subresource.baseArrayLayer + src_subresource.layerCount, dst_subresource.baseArrayLayer,
-                                 dst_subresource.baseArrayLayer + dst_subresource.layerCount, string_VkImageLayout(srcImageLayout),
-                                 string_VkImageLayout(dstImageLayout));
+                                 string_LayerCount(src_image_state->create_info, src_subresource).c_str(),
+                                 dst_subresource.baseArrayLayer,
+                                 string_LayerCount(src_image_state->create_info, dst_subresource).c_str(),
+                                 string_VkImageLayout(srcImageLayout), string_VkImageLayout(dstImageLayout));
             }
         }
 
@@ -2845,12 +2851,18 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
                 !IsValueIn(dstImageLayout, {VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR, VK_IMAGE_LAYOUT_GENERAL})) {
                 vuid = is_2 ? "VUID-VkBlitImageInfo2-srcImage-09459" : "VUID-vkCmdBlitImage-srcImage-09459";
                 skip |= LogError(vuid, src_objlist, loc,
-                                 "blitting to same same VkImage (miplevel = %u, srcLayer[%u,%u), dstLayer[%u,%u)), but "
-                                 "srcImageLayout is %s and dstImageLayout is %s",
+                                 "blitting to same VkImage at miplevel = %" PRIu32
+                                 "\n"
+                                 "srcSubresource baseArrayLayer = %" PRIu32
+                                 ", layerCount = %s\n"
+                                 "dstSubresource baseArrayLayer = %" PRIu32
+                                 ", layerCount = %s\n"
+                                 "but srcImageLayout is %s and is dstImageLayout is %s",
                                  src_subresource.mipLevel, src_subresource.baseArrayLayer,
-                                 src_subresource.baseArrayLayer + normalized_src_layer_count, dst_subresource.baseArrayLayer,
-                                 dst_subresource.baseArrayLayer + normalized_dst_layer_count, string_VkImageLayout(srcImageLayout),
-                                 string_VkImageLayout(dstImageLayout));
+                                 string_LayerCount(src_image_state->create_info, src_subresource).c_str(),
+                                 dst_subresource.baseArrayLayer,
+                                 string_LayerCount(src_image_state->create_info, dst_subresource).c_str(),
+                                 string_VkImageLayout(srcImageLayout), string_VkImageLayout(dstImageLayout));
             }
         }
 

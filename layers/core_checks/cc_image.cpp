@@ -267,7 +267,7 @@ bool CoreChecks::ValidateImageVideo(const VkImageCreateInfo &create_info, const 
         } else if (video_profiles->profileCount != 1) {
             skip |= LogError("VUID-VkImageCreateInfo-usage-10254", device, create_info_loc.dot(Field::usage),
                              "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
-                             "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but %s (%u) does not equal 1.",
+                             "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but %s (%" PRIu32 ") does not equal 1.",
                              create_info_loc.pNext(Struct::VkVideoProfileListInfoKHR, Field::profileCount).Fields().c_str(),
                              video_profiles->profileCount);
             valid_quantization_map_format = false;
@@ -305,8 +305,10 @@ bool CoreChecks::ValidateImageVideo(const VkImageCreateInfo &create_info, const 
                     skip |=
                         LogError("VUID-VkImageCreateInfo-usage-10257", device, create_info_loc.dot(Field::usage),
                                  "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
-                                 "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but has extent.width (%u) "
-                                 "larger than the maxQuantizationMapExtent.width (%u) supported by the "
+                                 "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but has extent.width (%" PRIu32
+                                 ") "
+                                 "larger than the maxQuantizationMapExtent.width (%" PRIu32
+                                 ") supported by the "
                                  "encode profile specified in %s.",
                                  create_info.extent.width, profile_caps.encode_ext.quantization_map.maxQuantizationMapExtent.width,
                                  profile_info_loc.Fields().c_str());
@@ -316,8 +318,10 @@ bool CoreChecks::ValidateImageVideo(const VkImageCreateInfo &create_info, const 
                     create_info.extent.height > profile_caps.encode_ext.quantization_map.maxQuantizationMapExtent.height) {
                     skip |= LogError("VUID-VkImageCreateInfo-usage-10258", device, create_info_loc.dot(Field::usage),
                                      "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
-                                     "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but has extent.height (%u) "
-                                     "larger than the maxQuantizationMapExtent.height (%u) supported by the "
+                                     "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but has extent.height (%" PRIu32
+                                     ") "
+                                     "larger than the maxQuantizationMapExtent.height (%" PRIu32
+                                     ") supported by the "
                                      "encode profile specified in %s.",
                                      create_info.extent.height,
                                      profile_caps.encode_ext.quantization_map.maxQuantizationMapExtent.height,

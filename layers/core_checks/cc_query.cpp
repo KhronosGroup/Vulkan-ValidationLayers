@@ -98,8 +98,9 @@ bool CoreChecks::ValidatePerformanceQueryResults(const vvl::QueryPool &query_poo
             const char *vuid = loc.function == Func::vkGetQueryPoolResults ? "VUID-vkGetQueryPoolResults-queryType-09441"
                                                                            : "VUID-vkCmdCopyQueryPoolResults-queryType-09441";
             skip |= LogError(vuid, query_pool_state.Handle(), loc.dot(Field::queryPool),
-                             "(%s) has %u performance query passes, but the query has only been "
-                             "submitted for %u of the passes.",
+                             "(%s) has %" PRIu32
+                             " performance query passes, but the query has only been "
+                             "submitted for %" PRIu32 " of the passes.",
                              FormatHandle(query_pool_state).c_str(), query_pool_state.n_performance_passes, submitted);
         }
     }
@@ -585,7 +586,8 @@ bool CoreChecks::ValidateBeginQuery(const vvl::CommandBuffer &cb_state, const Qu
                     is_indexed ? "VUID-vkCmdBeginQueryIndexedEXT-queryType-07126" : "VUID-vkCmdBeginQuery-queryType-07126";
                 const LogObjectList objlist(cb_state.Handle(), query_obj.pool);
                 skip |= LogError(vuid, objlist, loc,
-                                 "the command pool's queue family (index %u) the command buffer %s was allocated "
+                                 "the command pool's queue family (index %" PRIu32
+                                 ") the command buffer %s was allocated "
                                  "from does not support result status queries.",
                                  cb_state.command_pool->queueFamilyIndex, FormatHandle(cb_state).c_str());
             }
@@ -827,8 +829,9 @@ bool CoreChecks::ValidatePerformanceQuery(const vvl::CommandBuffer &cb_state, co
     if (perf_query_pass >= query_pool_state->n_performance_passes) {
         const LogObjectList objlist(cb_state.Handle(), query_obj.pool);
         skip |= state_data.LogError("VUID-VkPerformanceQuerySubmitInfoKHR-counterPassIndex-03221", objlist, loc,
-                                    "Invalid counterPassIndex (%u, maximum allowed %u) value for query pool %s.", perf_query_pass,
-                                    query_pool_state->n_performance_passes, state_data.FormatHandle(query_obj.pool).c_str());
+                                    "Invalid counterPassIndex (%" PRIu32 ", maximum allowed %" PRIu32 ") value for query pool %s.",
+                                    perf_query_pass, query_pool_state->n_performance_passes,
+                                    state_data.FormatHandle(query_obj.pool).c_str());
     }
 
     if (!cb_state.performance_lock_acquired || cb_state.performance_lock_released) {
@@ -946,7 +949,7 @@ bool CoreChecks::PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQue
     if (slot >= available_query_count) {
         const LogObjectList objlist(commandBuffer, queryPool);
         skip |= LogError("VUID-vkCmdEndQuery-query-00810", objlist, error_obj.location.dot(Field::query),
-                         "(%u) is greater or equal to the queryPool size (%u).", slot, available_query_count);
+                         "(%" PRIu32 ") is greater or equal to the queryPool size (%" PRIu32 ").", slot, available_query_count);
     } else {
         skip |= ValidateCmdEndQuery(*cb_state, queryPool, slot, 0, error_obj.location);
         skip |= ValidateCmd(*cb_state, error_obj.location);
@@ -1107,8 +1110,9 @@ bool CoreChecks::ValidateCmdWriteTimestamp(const vvl::CommandBuffer &cb_state, V
         const char *vuid =
             is_2 ? "VUID-vkCmdWriteTimestamp2-timestampValidBits-03863" : "VUID-vkCmdWriteTimestamp-timestampValidBits-00829";
         const LogObjectList objlist(cb_state.Handle(), queryPool);
-        skip |= LogError(vuid, objlist, loc, "Query Pool %s has a timestampValidBits value of zero for queueFamilyIndex %u.",
-                         FormatHandle(queryPool).c_str(), cb_state.command_pool->queueFamilyIndex);
+        skip |=
+            LogError(vuid, objlist, loc, "Query Pool %s has a timestampValidBits value of zero for queueFamilyIndex %" PRIu32 ".",
+                     FormatHandle(queryPool).c_str(), cb_state.command_pool->queueFamilyIndex);
     }
 
     const auto query_pool_state = Get<vvl::QueryPool>(queryPool);
