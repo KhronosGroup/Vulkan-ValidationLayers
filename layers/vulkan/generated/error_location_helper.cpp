@@ -1291,7 +1291,6 @@ const char* String(Struct structure) {
     {"VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM", 53},
     {"VkMutableDescriptorTypeCreateInfoEXT", 37},
     {"VkMutableDescriptorTypeListEXT", 31},
-    {"VkOHSurfaceCreateInfoOHOS", 26},
     {"VkOffset2D", 11},
     {"VkOffset3D", 11},
     {"VkOpaqueCaptureDescriptorDataCreateInfoEXT", 43},
@@ -1897,6 +1896,7 @@ const char* String(Struct structure) {
     {"VkSurfaceCapabilitiesPresentBarrierNV", 38},
     {"VkSurfaceCapabilitiesPresentId2KHR", 35},
     {"VkSurfaceCapabilitiesPresentWait2KHR", 37},
+    {"VkSurfaceCreateInfoOHOS", 24},
     {"VkSurfaceFormat2KHR", 20},
     {"VkSurfaceFormatKHR", 19},
     {"VkSurfaceFullScreenExclusiveInfoEXT", 36},
@@ -8603,8 +8603,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceDepthClampControlFeaturesEXT;
     case VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_DEPTH_CLAMP_CONTROL_CREATE_INFO_EXT:
        return Struct::VkPipelineViewportDepthClampControlCreateInfoEXT;
-    case VK_STRUCTURE_TYPE_OH_SURFACE_CREATE_INFO_OHOS:
-       return Struct::VkOHSurfaceCreateInfoOHOS;
+    case VK_STRUCTURE_TYPE_SURFACE_CREATE_INFO_OHOS:
+       return Struct::VkSurfaceCreateInfoOHOS;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HDR_VIVID_FEATURES_HUAWEI:
        return Struct::VkPhysicalDeviceHdrVividFeaturesHUAWEI;
     case VK_STRUCTURE_TYPE_HDR_VIVID_DYNAMIC_METADATA_HUAWEI:

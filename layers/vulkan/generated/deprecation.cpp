@@ -193,6 +193,18 @@ bool Instance::PreCallValidateGetPhysicalDeviceMemoryProperties(VkPhysicalDevice
     return false;
 }
 
+bool Instance::PreCallValidateEnumerateDeviceLayerProperties(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
+                                                             VkLayerProperties* pProperties, const ErrorObject& error_obj) const {
+    static bool reported = false;
+    if (reported) return false;
+
+    LogWarning("WARNING-deprecation-devicelayers", physicalDevice, error_obj.location,
+               "vkEnumerateDeviceLayerProperties is deprecated.\nSee more information about this deprecation in the specification: "
+               "https://docs.vulkan.org/spec/latest/appendices/deprecation.html#deprecation-devicelayers");
+
+    return false;
+}
+
 bool Instance::PreCallValidateGetPhysicalDeviceSparseImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
                                                                            VkImageType type, VkSampleCountFlagBits samples,
                                                                            VkImageUsageFlags usage, VkImageTiling tiling,
