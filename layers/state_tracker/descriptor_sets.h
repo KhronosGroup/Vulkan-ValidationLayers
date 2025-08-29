@@ -285,64 +285,10 @@ class DescriptorSetLayoutDef {
 using DescriptorSetLayoutDict = hash_util::Dictionary<DescriptorSetLayoutDef, hash_util::HasHashMember<DescriptorSetLayoutDef>>;
 using DescriptorSetLayoutId = DescriptorSetLayoutDict::Id;
 
-// TODO: the same reason in the header as why operator== below in this file too. Fix it.
-static inline bool ImmutableSamplersAreEqual(const DescriptorSetLayoutDef &dsl_def1, const DescriptorSetLayoutDef &dsl_def2,
-                                             uint32_t binding_index) {
-    const size_t hash1 = dsl_def1.GetImmutableSamplersCombinedHashFromIndex(binding_index);
-    const size_t hash2 = dsl_def2.GetImmutableSamplersCombinedHashFromIndex(binding_index);
-    if (hash1 != hash2) {
-        return false;
-    }
-    for (uint32_t i = 0; i < binding_index; i++) {
-        const std::vector<vku::safe_VkSamplerCreateInfo> &create_infos1 =
-            dsl_def1.GetImmutableSamplerCreateInfosFromIndex(binding_index);
-        const std::vector<vku::safe_VkSamplerCreateInfo> &create_infos2 =
-            dsl_def1.GetImmutableSamplerCreateInfosFromIndex(binding_index);
-        if (create_infos1.size() != create_infos2.size()) {
-            return false;
-        }
-        for (size_t s = 0; s < create_infos1.size(); s++) {
-            if (!CompareSamplerCreateInfo(*create_infos1[s].ptr(), *create_infos2[s].ptr())) {
-                return false;
-            }
-        }
-    }
-    return true;
-}
+bool ImmutableSamplersAreEqual(const DescriptorSetLayoutDef &dsl_def1, const DescriptorSetLayoutDef &dsl_def2,
+                               uint32_t binding_index);
 
-// Compare is in header and static because hash_util KeyValueEqual need the symbol at compile time
-static inline bool operator==(const DescriptorSetLayoutDef &lhs, const DescriptorSetLayoutDef &rhs) {
-    // trivial types
-    if ((lhs.GetCreateFlags() != rhs.GetCreateFlags()) || (lhs.GetBindingFlags() != rhs.GetBindingFlags())) {
-        return false;
-    }
-    // vectors of vku::safe_VkDescriptorSetLayoutBinding structures
-    const auto &lhs_bindings = lhs.GetBindings();
-    const auto &rhs_bindings = rhs.GetBindings();
-    if (lhs_bindings.size() != rhs_bindings.size()) {
-        return false;
-    }
-    for (uint32_t i = 0; i < lhs_bindings.size(); i++) {
-        const auto &l = lhs_bindings[i];
-        const auto &r = rhs_bindings[i];
-        // For things where we are comparing with the bound pipeline, the binding will always be right, but when comparing two
-        // arbitrary layouts (ex. templates, DeviceState Generated Commands, etc) the bindings might be different
-        if (l.binding != r.binding) {
-            return false;
-        }
-        if (l.descriptorType != r.descriptorType || l.descriptorCount != r.descriptorCount || l.stageFlags != r.stageFlags) {
-            return false;
-        }
-        if (!ImmutableSamplersAreEqual(lhs, rhs, i)) {
-            return false;
-        }
-        // These have been sorted already so can direct compare
-        if (lhs.GetMutableTypes(i) != rhs.GetMutableTypes(i)) {
-            return false;
-        }
-    }
-    return true;
-}
+bool operator==(const DescriptorSetLayoutDef &lhs, const DescriptorSetLayoutDef &rhs);
 
 class DescriptorSetLayout : public StateObject {
   public:
