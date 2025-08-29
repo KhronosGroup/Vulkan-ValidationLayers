@@ -57,6 +57,8 @@ class Instance : public vvl::base::Instance {
     bool PreCallValidateGetPhysicalDeviceMemoryProperties(VkPhysicalDevice physicalDevice,
                                                           VkPhysicalDeviceMemoryProperties* pMemoryProperties,
                                                           const ErrorObject& error_obj) const override;
+    bool PreCallValidateEnumerateDeviceLayerProperties(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
+                                                       VkLayerProperties* pProperties, const ErrorObject& error_obj) const override;
     bool PreCallValidateGetPhysicalDeviceSparseImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
                                                                      VkImageType type, VkSampleCountFlagBits samples,
                                                                      VkImageUsageFlags usage, VkImageTiling tiling,

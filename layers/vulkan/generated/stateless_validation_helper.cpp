@@ -25122,7 +25122,8 @@ bool Device::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkDefer
                 VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_IDENTIFIER_CREATE_INFO_ARM,
                 VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SHADER_MODULE_CREATE_INFO_ARM,
                 VK_STRUCTURE_TYPE_DATA_GRAPH_PROCESSING_ENGINE_CREATE_INFO_ARM,
-                VK_STRUCTURE_TYPE_PIPELINE_CREATION_FEEDBACK_CREATE_INFO};
+                VK_STRUCTURE_TYPE_PIPELINE_CREATION_FEEDBACK_CREATE_INFO,
+                VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
 
             skip |= context.ValidateStructPnext(
                 pCreateInfos_loc, pCreateInfos[createInfoIndex].pNext, allowed_structs_VkDataGraphPipelineCreateInfoARM.size(),
@@ -26107,15 +26108,15 @@ bool Instance::PreCallValidateCreateSurfaceOHOS(VkInstance instance, const VkSur
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_ohos_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_OHOS_surface});
     skip |=
-        context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_OH_SURFACE_CREATE_INFO_OHOS, true,
-                                   "VUID-vkCreateSurfaceOHOS-pCreateInfo-parameter", "VUID-VkOHSurfaceCreateInfoOHOS-sType-sType");
+        context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_SURFACE_CREATE_INFO_OHOS, true,
+                                   "VUID-vkCreateSurfaceOHOS-pCreateInfo-parameter", "VUID-VkSurfaceCreateInfoOHOS-sType-sType");
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
         skip |= context.ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
-                                            "VUID-VkOHSurfaceCreateInfoOHOS-pNext-pNext", kVUIDUndefined, true);
+                                            "VUID-VkSurfaceCreateInfoOHOS-pNext-pNext", kVUIDUndefined, true);
 
         skip |= context.ValidateReservedFlags(pCreateInfo_loc.dot(Field::flags), pCreateInfo->flags,
-                                              "VUID-VkOHSurfaceCreateInfoOHOS-flags-zerobitmask");
+                                              "VUID-VkSurfaceCreateInfoOHOS-flags-zerobitmask");
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -27371,10 +27372,6 @@ bool Device::ValidatePipelineMultisampleStateCreateInfo(const Context& context, 
                                   "VUID-VkPipelineMultisampleStateCreateInfo-rasterizationSamples-parameter");
 
     skip |= context.ValidateBool32(loc.dot(Field::sampleShadingEnable), info.sampleShadingEnable);
-
-    skip |= context.ValidateArray(loc.dot(Field::rasterizationSamples), loc.dot(Field::pSampleMask), info.rasterizationSamples,
-                                  &info.pSampleMask, true, false, kVUIDUndefined,
-                                  "VUID-VkPipelineMultisampleStateCreateInfo-pSampleMask-parameter");
 
     skip |= context.ValidateBool32(loc.dot(Field::alphaToCoverageEnable), info.alphaToCoverageEnable);
 
