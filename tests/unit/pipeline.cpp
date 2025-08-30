@@ -4148,7 +4148,7 @@ TEST_F(NegativePipeline, DepthBounds) {
     CreatePipelineHelper pipe(*this);
     pipe.ds_ci_ = ds_ci;
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE);
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkPipelineDepthStencilStateCreateInfo-minDepthBounds");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-10913");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }

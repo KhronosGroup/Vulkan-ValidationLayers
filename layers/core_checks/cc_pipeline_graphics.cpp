@@ -2026,14 +2026,13 @@ bool CoreChecks::ValidateGraphicsPipelineRenderPassRasterization(const vvl::Pipe
                 }
                 if (ds_state->depthBoundsTestEnable == VK_TRUE || pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE)) {
                     if (minDepthBounds > maxDepthBounds && !pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_BOUNDS)) {
-                        skip |=
-                            LogError("UNASSIGNED-VkPipelineDepthStencilStateCreateInfo-minDepthBounds", device,
-                                     ds_loc.dot(Field::minDepthBounds), "(%f) is greater than maxDepthBounds (%f).%s",
-                                     minDepthBounds, maxDepthBounds,
-                                     pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE)
-                                         ? " (Even if depthBoundsTestEnable is dynamic, it can never be enabled and therefore this "
-                                           "is still invalid)"
-                                         : "");
+                        skip |= LogError(
+                            "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-10913", device, ds_loc.dot(Field::minDepthBounds),
+                            "(%f) is greater than maxDepthBounds (%f).%s", minDepthBounds, maxDepthBounds,
+                            pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE)
+                                ? " (Even if depthBoundsTestEnable is dynamic, it can never be enabled and therefore this "
+                                  "is still invalid)"
+                                : "");
                     }
                 }
             }
