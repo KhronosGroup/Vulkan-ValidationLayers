@@ -5184,6 +5184,7 @@ bool CoreChecks::ValidateInheritanceInfoFramebuffer(const vvl::CommandBuffer &cb
     return skip;
 }
 
+// TODO - loc_info makes no sense coming from a secondary command buffer
 bool CoreChecks::ValidateRenderingAttachmentLocations(const VkRenderingAttachmentLocationInfo &location_info,
                                                       const LogObjectList objlist, const Location &loc_info) const {
     bool skip = false;
@@ -5277,6 +5278,7 @@ bool CoreChecks::PreCallValidateCmdSetRenderingAttachmentLocationsKHR(VkCommandB
     return PreCallValidateCmdSetRenderingAttachmentLocations(commandBuffer, pLocationInfo, error_obj);
 }
 
+// TODO - loc_info makes no sense coming from a secondary command buffer
 bool CoreChecks::ValidateRenderingInputAttachmentIndices(const VkRenderingInputAttachmentIndexInfo &index_info,
                                                          const LogObjectList objlist, const Location &loc_info) const {
     bool skip = false;
