@@ -740,14 +740,13 @@ void Module::LinkFunctions(const LinkInfo& info) {
 
 // Things that need to be done once if there is any instrumentation.
 void Module::PostProcess() {
-    if (use_bda_) {
-        // Adjust the original addressing model to be PhysicalStorageBuffer64 if not already.
-        // A module can only have one OpMemoryModel
-        memory_model_[0]->UpdateWord(1, spv::AddressingModelPhysicalStorageBuffer64);
-        if (!HasCapability(spv::CapabilityPhysicalStorageBufferAddresses)) {
-            AddCapability(spv::CapabilityPhysicalStorageBufferAddresses);
-            AddExtension("SPV_KHR_physical_storage_buffer");
-        }
+    // Adjust the original addressing model to be PhysicalStorageBuffer64 if not already.
+    // Always needed because of the root node logic relies on buffer device addresses.
+    // A module can only have one OpMemoryModel.
+    memory_model_[0]->UpdateWord(1, spv::AddressingModelPhysicalStorageBuffer64);
+    if (!HasCapability(spv::CapabilityPhysicalStorageBufferAddresses)) {
+        AddCapability(spv::CapabilityPhysicalStorageBufferAddresses);
+        AddExtension("SPV_KHR_physical_storage_buffer");
     }
 
     // The instrumentation code has atomicAdd() to update the output buffer

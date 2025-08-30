@@ -39,30 +39,30 @@ void Validator::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateI
     const auto *flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(chassis_state.modified_create_info.pNext);
     const VkBufferUsageFlags2 in_usage = flags2 ? flags2->usage : chassis_state.modified_create_info.usage;
 
-    // Ray tracing acceleration structure instance buffers also need the storage buffer usage as
-    // acceleration structure build validation will find and replace invalid acceleration structure
-    // handles inside of a compute shader.
-    if (in_usage & VK_BUFFER_USAGE_2_SHADER_BINDING_TABLE_BIT_KHR) {
-        if (flags2) {
-            const_cast<VkBufferUsageFlags2CreateInfo *>(flags2)->usage |= VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT;
-        } else {
-            chassis_state.modified_create_info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-        }
-    }
-
-    // Indirect buffers will require validation shader to bind the indirect buffers as a storage buffer.
-    if (gpuav_settings.IsBufferValidationEnabled() &&
-        (in_usage & (VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_2_INDEX_BUFFER_BIT))) {
-        if (flags2) {
-            const_cast<VkBufferUsageFlags2CreateInfo *>(flags2)->usage |= VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT;
-        } else {
-            chassis_state.modified_create_info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-        }
-    }
-
-    // Align index buffer size to 4: validation shader reads DWORDS
     if (gpuav_settings.IsBufferValidationEnabled()) {
+        if (in_usage & (VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_2_INDEX_BUFFER_BIT |
+                        VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_2_TRANSFER_DST_BIT)) {
+            if (flags2) {
+                const_cast<VkBufferUsageFlags2CreateInfo *>(flags2)->usage |= VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT;
+            } else {
+                chassis_state.modified_create_info.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+            }
+        }
+
+        // Align index buffer size to 4: validation shader reads DWORDS
         chassis_state.modified_create_info.size = Align<VkDeviceSize>(chassis_state.modified_create_info.size, 4);
+    }
+}
+
+void Validator::PreCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
+                                            const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory,
+                                            const RecordObject &record_obj, chassis::AllocateMemory &chassis_state) {
+    if (gpuav_settings.IsBufferValidationEnabled()) {
+        if (chassis_state.allocate_flags_info.sType == 0) {
+            chassis_state.allocate_flags_info = vku::InitStructHelper();
+        }
+        chassis_state.allocate_flags_info.flags |= VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+        chassis_state.allocate_info.pNext = &chassis_state.allocate_flags_info;
     }
 }
 
