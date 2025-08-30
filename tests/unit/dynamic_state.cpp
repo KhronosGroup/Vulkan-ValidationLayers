@@ -3973,7 +3973,7 @@ TEST_F(NegativeDynamicState, DepthRangeUnrestricted) {
     pipe.ds_ci_.minDepthBounds = 1.5f;
     pipe.ds_ci_.maxDepthBounds = 1.0f;
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-02510");
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkPipelineDepthStencilStateCreateInfo-minDepthBounds");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-10913");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
@@ -3985,7 +3985,7 @@ TEST_F(NegativeDynamicState, DepthRangeUnrestricted) {
 
     pipe.ds_ci_.minDepthBounds = 0.6f;
     pipe.ds_ci_.maxDepthBounds = 0.4f;
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkPipelineDepthStencilStateCreateInfo-minDepthBounds");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-10913");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
@@ -3999,7 +3999,7 @@ TEST_F(NegativeDynamicState, DepthRangeUnrestricted) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetDepthBounds-minDepthBounds-00600");
-    m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdSetDepthBounds-minDepthBounds");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetDepthBounds-minDepthBounds-10912");
     vk::CmdSetDepthBounds(m_command_buffer, 1.5f, 0.0f);
     m_errorMonitor->VerifyFound();
 
@@ -4007,7 +4007,7 @@ TEST_F(NegativeDynamicState, DepthRangeUnrestricted) {
     vk::CmdSetDepthBounds(m_command_buffer, 0.0f, 1.5f);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdSetDepthBounds-minDepthBounds");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetDepthBounds-minDepthBounds-10912");
     vk::CmdSetDepthBounds(m_command_buffer, 0.5f, 0.45f);
     m_errorMonitor->VerifyFound();
 

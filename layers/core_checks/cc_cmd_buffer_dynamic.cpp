@@ -1611,7 +1611,7 @@ bool CoreChecks::PreCallValidateCmdSetDepthBounds(VkCommandBuffer commandBuffer,
     }
     if (minDepthBounds > maxDepthBounds) {
         skip |=
-            LogError("UNASSIGNED-vkCmdSetDepthBounds-minDepthBounds", commandBuffer, error_obj.location.dot(Field::minDepthBounds),
+            LogError("VUID-vkCmdSetDepthBounds-minDepthBounds-10912", commandBuffer, error_obj.location.dot(Field::minDepthBounds),
                      "(%f) is greater than maxDepthBounds (%f).", minDepthBounds, maxDepthBounds);
     }
     return skip;
