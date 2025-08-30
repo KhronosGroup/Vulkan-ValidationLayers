@@ -412,11 +412,11 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateMappedMemoryRangeDeviceLimits(uint32_t mem_range_count, const VkMappedMemoryRange* mem_ranges,
                                                const ErrorObject& error_obj) const;
     bool ValidateSecondaryCommandBufferState(const vvl::CommandBuffer& cb_state, const vvl::CommandBuffer& secondary_cb_state,
-                                             const Location& cb_loc) const;
+                                             const Location& secondary_cb_loc) const;
     bool ValidateSecondaryCommandBufferQuery(const vvl::CommandBuffer& cb_state, const vvl::CommandBuffer& secondary_cb_state,
-                                             const Location& cb_loc, const QueryObject* active_occlusion_query) const;
+                                             const Location& secondary_cb_loc, const QueryObject* active_occlusion_query) const;
     bool ValidateSecondaryCommandBufferLayout(const vvl::CommandBuffer& cb_state, const vvl::CommandBuffer& secondary_cb_state,
-                                              const Location& cb_loc) const;
+                                              const Location& secondary_cb_loc) const;
     bool ValidateInheritanceInfoFramebuffer(const vvl::CommandBuffer& cb_state, const vvl::CommandBuffer& secondary_cb_state,
                                             const VkCommandBufferInheritanceInfo& secondary_inheritance_info,
                                             const Location& loc) const;
@@ -1938,15 +1938,15 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateCmdExecuteCommandsRenderPassInheritance(const vvl::CommandBuffer& cb_state, const vvl::RenderPass& rp_state,
                                                          const vvl::CommandBuffer& secondary_cb_state,
                                                          const VkCommandBufferInheritanceInfo& inheritance_info,
-                                                         const Location& cb_loc) const;
+                                                         const Location& secondary_cb_loc) const;
     bool ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::CommandBuffer& cb_state, const vvl::RenderPass& rp_state,
                                                              const vvl::CommandBuffer& secondary_cb_state,
                                                              const vvl::RenderPass& secondary_rp_state,
-                                                             const Location& cb_loc) const;
+                                                             const Location& secondary_cb_loc) const;
     bool ValidateCmdExecuteCommandsDynamicRenderingSecondary(const vvl::CommandBuffer& cb_state,
                                                              const vvl::CommandBuffer& secondary_cb_state,
                                                              const vvl::RenderPass& secondary_rp_state,
-                                                             const Location& cb_loc) const;
+                                                             const Location& secondary_cb_loc) const;
     bool PreCallValidateMapMemory(VkDevice device, VkDeviceMemory memory, VkDeviceSize offset, VkDeviceSize size, VkFlags flags,
                                   void** ppData, const ErrorObject& error_obj) const override;
     bool PreCallValidateUnmapMemory(VkDevice device, VkDeviceMemory mememorym, const ErrorObject& error_obj) const override;
