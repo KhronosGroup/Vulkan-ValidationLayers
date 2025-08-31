@@ -187,6 +187,8 @@ class DescriptorSetLayoutDef {
     bool HasBinding(const uint32_t binding) const { return binding_to_index_map_.count(binding) > 0; };
     // Return true if binding 1 beyond given exists and has same type, stageFlags & immutable sampler use
     uint32_t GetIndexFromBinding(uint32_t binding) const;
+    // Gets original VkDescriptorSetLayoutCreateInfo::pBindings index from the binding index used by DescriptorSetLayoutDef
+    uint32_t GetOriginalBindingIndex(uint32_t index) const;
     // Various Get functions that can either be passed a binding#, which will
     //  be automatically translated into the appropriate index, or the index# can be passed in directly
     uint32_t GetMaxBinding() const {
@@ -268,6 +270,8 @@ class DescriptorSetLayoutDef {
     // Convenience data structures for rapid lookup of various descriptor set layout properties
     std::set<uint32_t> non_empty_bindings_;  // Containing non-emtpy bindings in numerical order
     vvl::unordered_map<uint32_t, uint32_t> binding_to_index_map_;
+    vvl::unordered_map<uint32_t, uint32_t> index_to_original_index_map_;  // def binding index to create info binding index
+
     // The following map allows an non-iterative lookup of a binding from a global index...
     std::vector<IndexRange> global_index_range_;  // range is exclusive of .end
 
@@ -318,10 +322,19 @@ class DescriptorSetLayout : public StateObject {
     uint32_t GetMaxBinding() const { return layout_id_->GetMaxBinding(); }
     uint32_t GetLastIndex() const { return layout_id_->GetLastIndex(); }
     VkDescriptorSetLayoutBinding const *GetDescriptorSetLayoutBindingPtrFromIndex(const uint32_t index) const {
-        return layout_id_->GetDescriptorSetLayoutBindingPtrFromIndex(index);
+        if (index >= GetBindingCount()) {
+            return nullptr;
+        }
+        const uint32_t original_binding_index = layout_id_->GetOriginalBindingIndex(index);
+        return desc_set_layout_ci.pBindings[original_binding_index].ptr();
     }
     VkDescriptorSetLayoutBinding const *GetDescriptorSetLayoutBindingPtrFromBinding(uint32_t binding) const {
-        return layout_id_->GetDescriptorSetLayoutBindingPtrFromBinding(binding);
+        const uint32_t index = GetIndexFromBinding(binding);
+        if (index >= GetBindingCount()) {
+            return nullptr;
+        }
+        const uint32_t original_binding_index = layout_id_->GetOriginalBindingIndex(index);
+        return desc_set_layout_ci.pBindings[original_binding_index].ptr();
     }
     const std::vector<vku::safe_VkDescriptorSetLayoutBinding> &GetBindings() const { return layout_id_->GetBindings(); }
     uint32_t GetDescriptorCountFromIndex(const uint32_t index) const { return layout_id_->GetDescriptorCountFromIndex(index); }
@@ -339,7 +352,8 @@ class DescriptorSetLayout : public StateObject {
     }
     VkSampler const *GetImmutableSamplerPtrFromIndex(const uint32_t index) const {
         assert(index < GetBindingCount());
-        return desc_set_layout_ci.pBindings[index].pImmutableSamplers;
+        const uint32_t original_binding_index = layout_id_->GetOriginalBindingIndex(index);
+        return desc_set_layout_ci.pBindings[original_binding_index].pImmutableSamplers;
     }
     bool IsTypeMutable(const VkDescriptorType type, uint32_t binding) const { return layout_id_->IsTypeMutable(type, binding); }
     const std::vector<VkDescriptorType> &GetMutableTypes(uint32_t binding) const { return layout_id_->GetMutableTypes(binding); }

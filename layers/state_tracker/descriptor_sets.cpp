@@ -144,10 +144,12 @@ void vvl::DescriptorPool::Destroy() {
 // state that comes from a different array/structure so they can stay together
 // while being sorted by binding number.
 struct ExtendedBinding {
-    ExtendedBinding(const VkDescriptorSetLayoutBinding *l, VkDescriptorBindingFlags f) : layout_binding(l), binding_flags(f) {}
+    ExtendedBinding(const VkDescriptorSetLayoutBinding *l, VkDescriptorBindingFlags f, uint32_t i)
+        : layout_binding(l), binding_flags(f), original_index(i) {}
 
     const VkDescriptorSetLayoutBinding *layout_binding;
     VkDescriptorBindingFlags binding_flags;
+    uint32_t original_index;  // Index in VkDescriptorSetLayoutCreateInfo::pBindings
 };
 
 struct BindingNumCmp {
@@ -292,7 +294,7 @@ vvl::DescriptorSetLayoutDef::DescriptorSetLayoutDef(vvl::DeviceState &device_sta
         if (flags_create_info && flags_create_info->bindingCount == p_create_info->bindingCount) {
             flags = flags_create_info->pBindingFlags[i];
         }
-        sorted_bindings.emplace(p_create_info->pBindings + i, flags);
+        sorted_bindings.emplace(p_create_info->pBindings + i, flags, i);
     }
 
     const auto *mutable_descriptor_type_create_info = vku::FindStructInPNextChain<VkMutableDescriptorTypeCreateInfoEXT>(p_create_info->pNext);
@@ -318,6 +320,7 @@ vvl::DescriptorSetLayoutDef::DescriptorSetLayoutDef(vvl::DeviceState &device_sta
         // Add to binding and map, s.t. it is robust to invalid duplication of binding_num
         const auto binding_num = input_binding.layout_binding->binding;
         binding_to_index_map_[binding_num] = binding_index;
+        index_to_original_index_map_[binding_index] = input_binding.original_index;
         bindings_.emplace_back(input_binding.layout_binding);
         // safe_VkDescriptorSetLayoutBinding will do some extra "cleanup" logic, so want to use it
         auto &binding_info = bindings_.back();
@@ -394,6 +397,12 @@ uint32_t vvl::DescriptorSetLayoutDef::GetIndexFromBinding(uint32_t binding) cons
     const auto &bi_itr = binding_to_index_map_.find(binding);
     if (bi_itr != binding_to_index_map_.cend()) return bi_itr->second;
     return GetBindingCount();
+}
+uint32_t vvl::DescriptorSetLayoutDef::GetOriginalBindingIndex(uint32_t index) const {
+    assert(index < GetBindingCount());
+    auto it = index_to_original_index_map_.find(index);
+    assert(it != index_to_original_index_map_.end());
+    return it->second;
 }
 VkDescriptorSetLayoutBinding const *vvl::DescriptorSetLayoutDef::GetDescriptorSetLayoutBindingPtrFromIndex(
     const uint32_t index) const {
