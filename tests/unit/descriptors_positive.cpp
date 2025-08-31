@@ -2049,3 +2049,84 @@ TEST_F(PositiveDescriptors, ReuseSetLayoutDefWithImmutableSamplers) {
         vk::UpdateDescriptorSets(*m_device, 1u, &descriptor_write, 0u, nullptr);
     }
 }
+
+TEST_F(PositiveDescriptors, ReuseSetLayoutDefWithImmutableSamplers2) {
+    TEST_DESCRIPTION("Scenario #2 from https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10603");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    for (uint32_t i = 0; i < 2; ++i) {
+        vkt::ImageView view = image.CreateView();
+        vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+        VkDescriptorSetLayoutBinding binding;
+        binding.binding = 0u;
+        binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        binding.descriptorCount = 1u;
+        binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        binding.pImmutableSamplers = &sampler.handle();
+        const vkt::DescriptorSetLayout pipeline_dsl(*m_device, {binding});
+
+        VkDescriptorPoolSize pool_size = {};
+        pool_size.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        pool_size.descriptorCount = 1u;
+
+        VkDescriptorPoolCreateInfo pool_ci = vku::InitStructHelper();
+        pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+        pool_ci.maxSets = 1u;
+        pool_ci.poolSizeCount = 1u;
+        pool_ci.pPoolSizes = &pool_size;
+        vkt::DescriptorPool descriptor_pool(*m_device, pool_ci);
+
+        VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
+        alloc_info.descriptorPool = descriptor_pool;
+        alloc_info.descriptorSetCount = 1u;
+        alloc_info.pSetLayouts = &pipeline_dsl.handle();
+
+        VkDescriptorSet descriptor_set;
+        vk::AllocateDescriptorSets(*m_device, &alloc_info, &descriptor_set);
+
+        VkDescriptorImageInfo image_info = {};
+        image_info.sampler = VK_NULL_HANDLE;
+        image_info.imageView = view;
+        image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+        VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+        descriptor_write.dstSet = descriptor_set;
+        descriptor_write.dstBinding = 0u;
+        descriptor_write.dstArrayElement = 0u;
+        descriptor_write.descriptorCount = 1u;
+        descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptor_write.pImageInfo = &image_info;
+        vk::UpdateDescriptorSets(*m_device, 1u, &descriptor_write, 0u, nullptr);
+
+        char const *fsSource = R"glsl(
+            #version 440
+
+            layout(set = 0, binding = 0) uniform sampler2DMS u_ms_image_sampler;
+            layout(push_constant) uniform PushConstantsBlock {
+                highp int sampleID;
+            } pushConstants;
+            layout(location = 0) out highp vec4 o_color;
+
+            void main (void)
+            {
+                o_color = texelFetch(u_ms_image_sampler, ivec2(gl_FragCoord.xy), pushConstants.sampleID);
+            }
+        )glsl";
+        VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+        VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+        VkPushConstantRange push_const_range = {};
+        push_const_range.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        push_const_range.offset = 0u;
+        push_const_range.size = sizeof(uint32_t);
+
+        CreatePipelineHelper pipe(*this);
+        pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&pipeline_dsl}, {push_const_range});
+        pipe.CreateGraphicsPipeline();
+    }
+}
