@@ -197,8 +197,8 @@ bool CoreChecks::ValidateTransferGranularityOffset(const LogObjectList &objlist,
         // If the queue family image transfer granularity is (0, 0, 0), then the offset must always be (0, 0, 0)
         if (!IsExtentAllZeroes(offset_extent)) {
             skip |= LogError(vuid, objlist, offset_loc,
-                             "(%s) must be (x=0, y=0, z=0) when the command buffer's queue family "
-                             "minImageTransferGranularity is (w=0, h=0, d=0).",
+                             "(%s) must be (0, 0, 0) when the command buffer's queue family "
+                             "minImageTransferGranularity is (0, 0, 0) as this queue doesn't allow for any offset.",
                              string_VkOffset3D(offset).c_str());
         }
     } else if (!IsExtentAligned(offset_extent, granularity)) {
@@ -213,66 +213,80 @@ bool CoreChecks::ValidateTransferGranularityOffset(const LogObjectList &objlist,
 }
 
 // Check elements of a VkExtent3D structure against a queue family's Image Transfer Granularity values
-bool CoreChecks::ValidateTransferGranularityExtent(const LogObjectList &objlist, const VkExtent3D &extent, const VkOffset3D &offset,
-                                                   const VkExtent3D &granularity, VkExtent3D subresource_extent,
-                                                   const vvl::Image &image_state, const Location &extent_loc,
-                                                   const char *vuid) const {
+bool CoreChecks::ValidateTransferGranularityExtent(const LogObjectList &objlist, const VkExtent3D &region_extent,
+                                                   const VkOffset3D &region_offset, const VkExtent3D &granularity,
+                                                   const VkExtent3D &subresource_extent, const vvl::Image &image_state,
+                                                   const Location &extent_loc, const char *vuid) const {
     bool skip = false;
-
-    const bool is_compressed = vkuFormatIsCompressed(image_state.create_info.format);
-    // "minImageTransferGranularity" is unit of compressed texel blocks for images having a block-compressed format, and a unit of
-    // texels otherwise.
-    if (is_compressed) {
-        const VkExtent3D block_extent = vkuFormatTexelBlockExtent(image_state.create_info.format);
-        subresource_extent = GetTexelBlocks(subresource_extent, block_extent);
-    }
 
     if (IsExtentAllZeroes(granularity)) {
         // If the queue family image transfer granularity is (0, 0, 0), then the extent must always match the image
         // subresource extent.
-        if (!IsExtentEqual(extent, subresource_extent)) {
+        if (!IsExtentEqual(region_extent, subresource_extent)) {
             skip |= LogError(vuid, objlist, extent_loc,
-                             "(%s) must match the image subresource extent (%s)%s when the command buffer's queue family "
-                             "minImageTransferGranularity is (w=0, h=0, d=0).",
-                             string_VkExtent3D(extent).c_str(), string_VkExtent3D(subresource_extent).c_str(),
-                             is_compressed ? " (expressed as texel blocks)" : "");
+                             "(%s) must match the image subresource extent (%s) when the command buffer's queue family "
+                             "minImageTransferGranularity is (0, 0, 0) as this queue only allows full image copies.",
+                             string_VkExtent3D(region_extent).c_str(), string_VkExtent3D(subresource_extent).c_str());
         }
     } else {
-        // If the queue family image transfer granularity is not (0, 0, 0), then the extent dimensions must always be even
-        // integer multiples of the image transfer granularity or the offset + extent dimensions must always match the image
-        // subresource extent dimensions.
-        VkExtent3D offset_extent_sum = {};
-        offset_extent_sum.width = static_cast<uint32_t>(abs(offset.x)) + extent.width;
-        offset_extent_sum.height = static_cast<uint32_t>(abs(offset.y)) + extent.height;
-        offset_extent_sum.depth = static_cast<uint32_t>(abs(offset.z)) + extent.depth;
+        const bool is_compressed = vkuFormatIsCompressed(image_state.create_info.format);
+        // "minImageTransferGranularity" is unit of compressed texel blocks for images having a block-compressed format, and a unit
+        // of texels otherwise.
+        //
+        // Either the effective region extent must be a multiple of minImageTransferGranularity or extent+offset must be the entire
+        // image subresource
+        VkExtent3D effective_region_extent = region_extent;
+        VkExtent3D block_extent = {1, 1, 1};
+        if (is_compressed) {
+            block_extent = vkuFormatTexelBlockExtent(image_state.create_info.format);
+            effective_region_extent = GetTexelBlocks(region_extent, block_extent);
+        }
+
+        // We keep this in texels regardless of compressed or not
+        const VkExtent3D offset_extent_sum = {static_cast<uint32_t>(abs(region_offset.x)) + region_extent.width,
+                                              static_cast<uint32_t>(abs(region_offset.y)) + region_extent.height,
+                                              static_cast<uint32_t>(abs(region_offset.z)) + region_extent.depth};
+
+        // This is an annoying VU, so provide granular (pun intended) error messages
         bool x_ok = true;
         bool y_ok = true;
         bool z_ok = true;
         switch (image_state.create_info.imageType) {
             case VK_IMAGE_TYPE_3D:
-                z_ok =
-                    ((0 == SafeModulo(extent.depth, granularity.depth)) || (subresource_extent.depth == offset_extent_sum.depth));
+                z_ok = (SafeModulo(effective_region_extent.depth, granularity.depth) == 0) ||
+                       (subresource_extent.depth == offset_extent_sum.depth);
                 [[fallthrough]];
             case VK_IMAGE_TYPE_2D:
-                y_ok = ((0 == SafeModulo(extent.height, granularity.height)) ||
-                        (subresource_extent.height == offset_extent_sum.height));
+                y_ok = (SafeModulo(effective_region_extent.height, granularity.height) == 0) ||
+                       (subresource_extent.height == offset_extent_sum.height);
                 [[fallthrough]];
             case VK_IMAGE_TYPE_1D:
-                x_ok =
-                    ((0 == SafeModulo(extent.width, granularity.width)) || (subresource_extent.width == offset_extent_sum.width));
+                x_ok = (SafeModulo(effective_region_extent.width, granularity.width) == 0) ||
+                       (subresource_extent.width == offset_extent_sum.width);
                 break;
             default:
                 // Unrecognized or new IMAGE_TYPE enums will be caught in parameter_validation
                 assert(false);
         }
+
         if (!(x_ok && y_ok && z_ok)) {
-            skip |= LogError(vuid, objlist, extent_loc,
-                             "(%s) dimensions must be even integer multiples of this command "
-                             "buffer's queue family minImageTransferGranularity (%s) or offset (%s) + "
-                             "extent (%s) must match the image subresource extent (%s)%s.",
-                             string_VkExtent3D(extent).c_str(), string_VkExtent3D(granularity).c_str(),
-                             string_VkOffset3D(offset).c_str(), string_VkExtent3D(extent).c_str(),
-                             string_VkExtent3D(subresource_extent).c_str(), is_compressed ? " (expressed as texel blocks)" : "");
+            std::stringstream ss;
+            ss << "(" << string_VkExtent3D(region_extent)
+               << ") is invalid with this command buffer's queue family minImageTransferGranularity ("
+               << string_VkExtent3D(granularity) << ") for copying to/from " << FormatHandle(image_state) << " ("
+               << string_VkFormat(image_state.create_info.format) << ") because both:\n";
+            if (is_compressed) {
+                ss << "1) The image is in texel blocks of size (" << string_VkExtentDimensions(block_extent)
+                   << ") so the texel block extent of (" << string_VkExtent3D(effective_region_extent)
+                   << ") is not an even integer multiple of minImageTransferGranularity.\n";
+            } else {
+                ss << "1) The extent is not an even integer multiple of minImageTransferGranularity.\n";
+            }
+            ss << "2) The extent plus the offset (" << string_VkOffset3D(region_offset) << ") is ("
+               << string_VkExtentDimensions(offset_extent_sum) << ") which is not the entire image subresource ("
+               << string_VkExtent3D(subresource_extent) << ").";
+
+            skip |= LogError(vuid, objlist, extent_loc, "%s", ss.str().c_str());
         }
     }
     return skip;

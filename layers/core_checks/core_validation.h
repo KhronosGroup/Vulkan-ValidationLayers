@@ -1048,9 +1048,10 @@ class CoreChecks : public vvl::DeviceProxy {
                                 const VkImageSubresourceRange& normalized_subresource_range, VkImageLayout explicit_layout,
                                 const Location& image_loc, const char* mismatch_layout_vuid, bool* error) const;
 
-    bool ValidateTransferGranularityExtent(const LogObjectList& objlist, const VkExtent3D& extent, const VkOffset3D& offset,
-                                           const VkExtent3D& granularity, VkExtent3D subresource_extent,
-                                           const vvl::Image& image_state, const Location& extent_loc, const char* vuid) const;
+    bool ValidateTransferGranularityExtent(const LogObjectList& objlist, const VkExtent3D& region_extent,
+                                           const VkOffset3D& region_offset, const VkExtent3D& granularity,
+                                           const VkExtent3D& subresource_extent, const vvl::Image& image_state,
+                                           const Location& extent_loc, const char* vuid) const;
 
     bool ValidateTransferGranularityOffset(const LogObjectList& objlist, const VkOffset3D& offset, const VkExtent3D& granularity,
                                            const Location& offset_loc, const char* vuid) const;
