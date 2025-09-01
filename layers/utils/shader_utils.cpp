@@ -28,6 +28,7 @@
 
 #include <cstring>
 #include <fstream>
+#include <sstream>
 
 void ValidationCache::GetUUID(uint8_t *uuid) {
     const char *sha1_str = SPIRV_TOOLS_COMMIT_ID;
@@ -116,7 +117,9 @@ void ValidationCache::Merge(ValidationCache const *other) {
 }
 
 spv_target_env PickSpirvEnv(const APIVersion &api_version, bool spirv_1_4) {
-    if (api_version >= VK_API_VERSION_1_3) {
+    if (api_version >= VK_API_VERSION_1_4) {
+        return SPV_ENV_VULKAN_1_4;
+    } else if (api_version >= VK_API_VERSION_1_3) {
         return SPV_ENV_VULKAN_1_3;
     } else if (api_version >= VK_API_VERSION_1_2) {
         return SPV_ENV_VULKAN_1_2;
@@ -132,7 +135,8 @@ spv_target_env PickSpirvEnv(const APIVersion &api_version, bool spirv_1_4) {
 
 // Some Vulkan extensions/features are just all done in spirv-val behind optional settings
 void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const DeviceFeatures &enabled_features,
-                            spvtools::ValidatorOptions &out_options, uint32_t *out_hash) {
+                            spv_target_env spirv_environment, spvtools::ValidatorOptions &out_options, uint32_t *out_hash,
+                            std::string &out_command) {
     struct Settings {
         bool relax_block_layout;
         bool uniform_buffer_standard_layout;
@@ -155,33 +159,56 @@ void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const Dev
     settings.allow_offset_texture_operand = enabled_features.maintenance8 == VK_TRUE;
     settings.allow_vulkan_32_bit_bitwise = enabled_features.maintenance9 == VK_TRUE;
 
+    std::stringstream ss;
+    ss << "spirv-val <input.spv>";
+
     if (settings.relax_block_layout) {
-        // --relax-block-layout
+        ss << " --relax-block-layout";
         out_options.SetRelaxBlockLayout(true);
     }
     if (settings.uniform_buffer_standard_layout) {
-        // --uniform-buffer-standard-layout
+        ss << " --uniform-buffer-standard-layout";
         out_options.SetUniformBufferStandardLayout(true);
     }
     if (settings.scalar_block_layout) {
-        // --scalar-block-layout
+        ss << " --scalar-block-layout";
         out_options.SetScalarBlockLayout(true);
     }
     if (settings.workgroup_scalar_block_layout) {
-        // --workgroup-scalar-block-layout
+        ss << " --workgroup-scalar-block-layout";
         out_options.SetWorkgroupScalarBlockLayout(true);
     }
     if (settings.allow_local_size_id) {
-        // --allow-localsizeid
+        ss << " --allow-localsizeid";
         out_options.SetAllowLocalSizeId(true);
     }
     if (settings.allow_offset_texture_operand) {
-        // --allow-offset-texture-operand
+        ss << " --allow-offset-texture-operand";
         out_options.SetAllowOffsetTextureOperand(true);
     }
     if (settings.allow_vulkan_32_bit_bitwise) {
-        // --allow-vulkan-32-bit-bitwise
+        ss << " --allow-vulkan-32-bit-bitwise";
         out_options.SetAllowVulkan32BitBitwise(true);
+    }
+
+    switch (spirv_environment) {
+        case SPV_ENV_VULKAN_1_4:
+            ss << " --target_env vulkan1.4";
+            break;
+        case SPV_ENV_VULKAN_1_3:
+            ss << " --target_env vulkan1.3";
+            break;
+        case SPV_ENV_VULKAN_1_2:
+            ss << " --target_env vulkan1.2";
+            break;
+        case SPV_ENV_VULKAN_1_1:
+            ss << " --target_env vulkan1.1";
+            break;
+        case SPV_ENV_VULKAN_1_0:
+            ss << " --target_env vulkan1.0";
+            break;
+        default:
+            break;
     }
 
     // Faster validation without friendly names.
@@ -191,6 +218,9 @@ void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const Dev
     if (out_hash) {
         *out_hash = hash_util::Hash32(&settings, sizeof(Settings));
     }
+
+    ss << "\n";
+    out_command = ss.str();
 }
 
 // This is used to help dump SPIR-V while debugging intermediate phases of any altercations to the SPIR-V
