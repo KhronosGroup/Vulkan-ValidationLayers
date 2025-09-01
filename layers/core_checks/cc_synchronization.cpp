@@ -246,7 +246,7 @@ static std::string GetSemaphoreInUseBySwapchainMessage(const vvl::Semaphore::Swa
                 marked_history_index = (history_length - 1) - (swapchain.acquire_count - swapchain_info.acquire_counter_value);
             }
             // Print acquire history
-            ss << "Here are the most recently acquired image indices: ";
+            ss << "Most recently acquired image indices: ";
             for (uint32_t i = 0; i < print_count; i++) {
                 uint32_t history_index = first_history_index + i;
                 uint32_t acquired_image_index = swapchain.GetAcquiredImageIndexFromHistory(history_index);
@@ -261,7 +261,7 @@ static std::string GetSemaphoreInUseBySwapchainMessage(const vvl::Semaphore::Swa
                     ss << ", ";
                 }
             }
-            ss << ".\n(brackets mark the last use of " << semaphore_str << " in a presentation operation)\n";
+            ss << ".\n(Brackets mark the last use of " << semaphore_str << " in a presentation operation.)\n";
             // Describe problem details
             ss << "Swapchain image " << swapchain_info.image_index << " was presented but was ";
             if (swapchain_fence_supported) {
@@ -277,29 +277,17 @@ static std::string GetSemaphoreInUseBySwapchainMessage(const vvl::Semaphore::Swa
                    << swapchain.GetAcquiredImageIndexFromHistory(history_length - 1);
             }
             ss << ".\n";
-            // Additional details
-            ss << "Vulkan insight: One solution is to assign each image its own semaphore.";
-            if (print_count >= 2 && swapchain.GetAcquiredImageIndexFromHistory(history_length - 2) ==
-                                        swapchain.GetAcquiredImageIndexFromHistory(history_length - 1)) {
-                ss << " This also handles the case where vkAcquireNextImageKHR returns the same index twice in a "
-                      "row.";
-            }
         }
     } else {  // Multiple swapchains use case. Describe problem without additional swapchain data
         ss << "(" << semaphore_str << ") is being signaled by " << queue_str
            << ", but it may still be in use by the swapchain since the corresponding swapchain image has not been "
               "re-acquired.\n";
-
-        ss << "Vulkan insight:";
     }
-    // Shared additional details.
-    ss << " Here are some common methods to ensure that a semaphore passed to vkQueuePresentKHR is not in use and can be "
-          "safely reused:\n"
-          "\ta) Use a separate semaphore per swapchain image. Index these semaphores using the index of the "
-          "acquired image.\n"
-          "\tb) Consider the VK_KHR_swapchain_maintenance1 extension. It allows using a VkFence with the "
-          "presentation operation.";
-
+    ss << "Vulkan insight: See https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html for details on swapchain "
+          "semaphore reuse. Examples of possible approaches:\n"
+          "   a) Use a separate semaphore per swapchain image. Index these semaphores using the index of the acquired image.\n"
+          "   b) Consider the VK_KHR_swapchain_maintenance1 extension. It allows using a VkFence with the presentation "
+          "operation.\n";
     return ss.str();
 }
 
