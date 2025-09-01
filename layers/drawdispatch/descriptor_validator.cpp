@@ -527,14 +527,15 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     if (resource_variable.IsImage()) {
         if (!resource_variable.info.is_multisampled && image_view_state->samples != VK_SAMPLE_COUNT_1_BIT) {
             const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view);
-            skip |= LogError("VUID-RuntimeSpirv-samples-08725", objlist, loc.Get(), "the %s has %s created with %s.%s",
+            skip |= LogError("VUID-RuntimeSpirv-samples-08725", objlist, loc.Get(),
+                             "the %s has %s created with %s, but OpTypeImage has marked it as single-sampled.%s",
                              DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
                              FormatHandle(image_state->Handle()).c_str(), string_VkSampleCountFlagBits(image_view_state->samples),
                              DescribeInstruction().c_str());
         } else if (resource_variable.info.is_multisampled && image_view_state->samples == VK_SAMPLE_COUNT_1_BIT) {
             const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view);
             skip |= LogError("VUID-RuntimeSpirv-samples-08726", objlist, loc.Get(),
-                             "the %s has %s created with VK_SAMPLE_COUNT_1_BIT.%s",
+                             "the %s has %s created with VK_SAMPLE_COUNT_1_BIT, but OpTypeImage has marked it as multisampled.%s",
                              DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
                              FormatHandle(image_state->Handle()).c_str(), DescribeInstruction().c_str());
         }
