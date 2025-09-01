@@ -489,22 +489,17 @@ bool Device::ValidateGeneratedCommandsInfo(VkCommandBuffer command_buffer,
                                            const Location& info_loc) const {
     bool skip = false;
 
-    if (generated_commands_info.sequenceCountAddress != 0) {
-        if (SafeModulo(generated_commands_info.sequenceCountAddress, 4) != 0) {
-            skip |= LogError("VUID-VkGeneratedCommandsInfoEXT-sequenceCountAddress-11073", command_buffer,
-                             info_loc.dot(Field::sequenceCountAddress), "(%" PRIuLEAST64 ") is not aligned to 4.",
-                             generated_commands_info.sequenceCountAddress);
-        }
+    if (generated_commands_info.sequenceCountAddress != 0 && SafeModulo(generated_commands_info.sequenceCountAddress, 4) != 0) {
+        skip |= LogError("VUID-VkGeneratedCommandsInfoEXT-sequenceCountAddress-11073", command_buffer,
+                         info_loc.dot(Field::sequenceCountAddress), "(%" PRIuLEAST64 ") is not aligned to 4.",
+                         generated_commands_info.sequenceCountAddress);
     }
     if (generated_commands_info.maxSequenceCount == 0) {
         skip |= LogError("VUID-VkGeneratedCommandsInfoEXT-maxSequenceCount-10246", command_buffer,
                          info_loc.dot(Field::maxSequenceCount), "is zero.");
     }
 
-    if (generated_commands_info.indirectAddress == 0) {
-        skip |= LogError("VUID-VkGeneratedCommandsInfoEXT-indirectAddress-parameter", command_buffer,
-                         info_loc.dot(Field::indirectAddress), "is zero.");
-    } else if (SafeModulo(generated_commands_info.indirectAddress, 4) != 0) {
+    if (SafeModulo(generated_commands_info.indirectAddress, 4) != 0) {
         skip |=
             LogError("VUID-VkGeneratedCommandsInfoEXT-indirectAddress-11074", command_buffer, info_loc.dot(Field::indirectAddress),
                      "(%" PRIuLEAST64 ") is not aligned to 4.", generated_commands_info.indirectAddress);

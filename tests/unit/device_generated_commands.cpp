@@ -1993,7 +1993,7 @@ TEST_F(NegativeDeviceGeneratedCommands, GeneratedCommandsInfoAddresses) {
     generated_commands_info.indirectExecutionSet = exe_set;
     generated_commands_info.indirectCommandsLayout = command_layout;
     generated_commands_info.indirectAddressSize = 0;
-    generated_commands_info.indirectAddress = 0;
+    generated_commands_info.indirectAddress = 0;  // this is not allowed to be zero
     generated_commands_info.preprocessAddress = 0;
     generated_commands_info.sequenceCountAddress = 3;
     generated_commands_info.maxSequenceCount = 0;
@@ -2002,6 +2002,15 @@ TEST_F(NegativeDeviceGeneratedCommands, GeneratedCommandsInfoAddresses) {
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredError("VUID-VkGeneratedCommandsInfoEXT-indirectAddress-parameter");
+    vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer, false, &generated_commands_info);
+    m_errorMonitor->VerifyFound();
+
+    generated_commands_info.indirectAddress = (VkDeviceAddress)0x1;
+    // Hit the stateless validation for all the fields at once
+    m_errorMonitor->SetDesiredError("VUID-VkGeneratedCommandsInfoEXT-sequenceCountAddress-11073");
+    m_errorMonitor->SetDesiredError("VUID-VkGeneratedCommandsInfoEXT-maxSequenceCount-10246");
+    m_errorMonitor->SetDesiredError("VUID-VkGeneratedCommandsInfoEXT-indirectAddress-11074");
+    m_errorMonitor->SetDesiredError("VUID-VkGeneratedCommandsInfoEXT-indirectAddressSize-11077");
     vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer, false, &generated_commands_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
