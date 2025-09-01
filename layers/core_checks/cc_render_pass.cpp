@@ -24,6 +24,7 @@
 
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/utility/vk_format_utils.h>
+#include "containers/container_utils.h"
 #include "core_checks/cc_state_tracker.h"
 #include "core_validation.h"
 #include "error_message/error_location.h"
@@ -4273,12 +4274,14 @@ bool CoreChecks::ValidateCmdSubpassState(const vvl::CommandBuffer &cb_state, con
     if (!cb_state.active_render_pass || cb_state.active_render_pass->UsesDynamicRendering()) return false;
     bool skip = false;
     if (cb_state.IsPrimary() && cb_state.active_subpass_contents == VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS &&
-        (loc.function != Func::vkCmdExecuteCommands && loc.function != Func::vkCmdNextSubpass &&
-         loc.function != Func::vkCmdEndRenderPass && loc.function != Func::vkCmdNextSubpass2 &&
-         loc.function != Func::vkCmdNextSubpass2KHR && loc.function != Func::vkCmdEndRenderPass2 &&
-         loc.function != Func::vkCmdEndRenderPass2KHR)) {
-        skip |= LogError(vuid, cb_state.Handle(), loc,
-                         "cannot be called in a subpass using VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS.");
+        !IsValueIn(loc.function,
+                   {Func::vkCmdExecuteCommands, Func::vkCmdNextSubpass, Func::vkCmdEndRenderPass, Func::vkCmdNextSubpass2,
+                    Func::vkCmdNextSubpass2KHR, Func::vkCmdEndRenderPass2, Func::vkCmdEndRenderPass2KHR})) {
+        skip |=
+            LogError(vuid, cb_state.Handle(), loc,
+                     "cannot be called on this primary command buffer because vkCmdBeginRenderPass was called with "
+                     "VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS.\nOnly vkCmdExecuteCommands is allowed in the first subpass "
+                     "until vkCmdNextSubpass or vkCmdEndRenderPass is called.");
     }
     return skip;
 }
