@@ -218,6 +218,8 @@ class CoreChecks : public vvl::DeviceProxy {
     // the second time).
     spvtools::ValidatorOptions spirv_val_options;
     uint32_t spirv_val_option_hash;
+    std::string spirv_val_command;
+    spv_target_env spirv_environment;
     stateless::SpirvValidator stateless_spirv_validator;
 
     CoreChecks(vvl::dispatch::Device* dev, core::Instance* instance_vo)

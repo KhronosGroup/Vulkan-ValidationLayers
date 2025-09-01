@@ -1833,7 +1833,6 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
     // If specialization-constant instructions are present in the shader, the specializations should be applied.
     if (module_state.static_data_.has_specialization_constants && global_settings.spirv_const_fold) {
         // setup the call back if the optimizer fails
-        spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(extensions.vk_khr_spirv_1_4));
         spvtools::Optimizer optimizer(spirv_environment);
         spvtools::MessageConsumer consumer = [&skip, &module_state, &stage, loc, this](
                                                  spv_message_level_t level, const char *source, const spv_position_t &position,
@@ -1949,9 +1948,11 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
                 const char *vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849"
                                             : "VUID-VkShaderCreateInfoEXT-pCode-08460";
                 std::string name = pipeline ? FormatHandle(module_state.handle()) : "shader object";
-                skip |= LogError(vuid, device, loc,
-                                 "After specialization was applied, %s produces a spirv-val error (stage %s):\n%s", name.c_str(),
-                                 string_VkShaderStageFlagBits(stage), diag && diag->error ? diag->error : "(no error text)");
+                skip |= LogError(
+                    vuid, device, loc,
+                    "After specialization was applied, %s produces a spirv-val error (stage %s):\n%s\nCommand to reproduce:\n\t%s",
+                    name.c_str(), string_VkShaderStageFlagBits(stage), diag && diag->error ? diag->error : "(no error text)",
+                    spirv_val_command.c_str());
             }
 
             // The new optimized SPIR-V will NOT match the original spirv::Module object parsing, so a new spirv::Module
@@ -2179,7 +2180,6 @@ bool CoreChecks::RunSpirvValidation(spv_const_binary_t &binary, const Location &
 
     // Use SPIRV-Tools validator to try and catch any issues with the module itself. If specialization constants are present,
     // the default values will be used during validation.
-    spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(extensions.vk_khr_spirv_1_4));
     spv_context ctx = spvContextCreate(spirv_environment);
     spv_diagnostic diag = nullptr;
     const spv_result_t spv_valid = spvValidateWithOptions(ctx, spirv_val_options, &binary, &diag);
@@ -2211,9 +2211,12 @@ bool CoreChecks::RunSpirvValidation(spv_const_binary_t &binary, const Location &
         }
 
         if (spv_valid == SPV_WARNING) {
-            skip |= LogWarning(vuid, device, loc.dot(Field::pCode), "(spirv-val produced a warning):\n%s", error_message);
+            skip |=
+                LogWarning(vuid, device, loc.dot(Field::pCode), "(spirv-val produced a warning):\n%s\nCommand to reproduce:\n\t%s",
+                           error_message, spirv_val_command.c_str());
         } else {
-            skip |= LogError(vuid, device, loc.dot(Field::pCode), "(spirv-val produced an error):\n%s", error_message);
+            skip |= LogError(vuid, device, loc.dot(Field::pCode), "(spirv-val produced an error):\n%s\nCommand to reproduce:\n\t%s",
+                             error_message, spirv_val_command.c_str());
         }
 
         if (spirv_val_vuid) {

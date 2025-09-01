@@ -113,6 +113,7 @@ class ValidationCache {
 spv_target_env PickSpirvEnv(const APIVersion &api_version, bool spirv_1_4);
 
 void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const DeviceFeatures &enabled_features,
-                            spvtools::ValidatorOptions &out_options, uint32_t *out_hash);
+                            spv_target_env spirv_environment, spvtools::ValidatorOptions &out_options, uint32_t *out_hash,
+                            std::string &out_command);
 
 void DumpSpirvToFile(const std::string &file_name, const uint32_t *spirv, size_t spirv_dwords_count);
