@@ -109,6 +109,49 @@ TEST_F(NegativeDynamicRenderingLocalRead, CmdDrawColorLocation) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDynamicRenderingLocalRead, CmdDrawColorLocationImplicit) {
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
+
+    VkFormat color_formats[] = {VK_FORMAT_UNDEFINED, VK_FORMAT_UNDEFINED};
+    uint32_t locations[] = {1, 0, 2};
+
+    VkRenderingAttachmentLocationInfo pipeline_location_info = vku::InitStructHelper();
+    pipeline_location_info.colorAttachmentCount = 2;
+    pipeline_location_info.pColorAttachmentLocations = locations;
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper(&pipeline_location_info);
+    pipeline_rendering_info.colorAttachmentCount = 2;
+    pipeline_rendering_info.pColorAttachmentFormats = color_formats;
+
+    std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachments(2);
+    VkPipelineColorBlendStateCreateInfo cbi = vku::InitStructHelper();
+    cbi.attachmentCount = 2;
+    cbi.pAttachments = color_blend_attachments.data();
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.gp_ci_.pColorBlendState = &cbi;
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingAttachmentInfo color_attachment[2] = {vku::InitStructHelper(), vku::InitStructHelper()};
+    color_attachment[0].imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    color_attachment[1].imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32, 32}};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 2;
+    rendering_info.pColorAttachments = &color_attachment[0];
+
+    m_command_buffer.BeginRendering(rendering_info);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09548");
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDynamicRenderingLocalRead, CmdDrawColorIndex) {
     TEST_DESCRIPTION("Validate that mapping is not applied in CmdDraw call if rendering is not started by vkCmdBeginRendering");
     RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
