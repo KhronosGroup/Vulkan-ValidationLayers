@@ -187,8 +187,6 @@ class DescriptorSetLayoutDef {
     bool HasBinding(const uint32_t binding) const { return binding_to_index_map_.count(binding) > 0; };
     // Return true if binding 1 beyond given exists and has same type, stageFlags & immutable sampler use
     uint32_t GetIndexFromBinding(uint32_t binding) const;
-    // Gets original VkDescriptorSetLayoutCreateInfo::pBindings index from the binding index used by DescriptorSetLayoutDef
-    uint32_t GetOriginalBindingIndex(uint32_t index) const;
     // Various Get functions that can either be passed a binding#, which will
     //  be automatically translated into the appropriate index, or the index# can be passed in directly
     uint32_t GetMaxBinding() const {
@@ -267,10 +265,11 @@ class DescriptorSetLayoutDef {
     // List of mutable types for each binding: [binding][mutable type]
     std::vector<std::vector<VkDescriptorType>> mutable_types_;
 
-    // Convenience data structures for rapid lookup of various descriptor set layout properties
-    std::set<uint32_t> non_empty_bindings_;  // Containing non-emtpy bindings in numerical order
+    // Containing non-emtpy bindings in numerical order
+    std::set<uint32_t> non_empty_bindings_;
+
+    // Map binding number to index in bindings_ array (sorted bindings)
     vvl::unordered_map<uint32_t, uint32_t> binding_to_index_map_;
-    vvl::unordered_map<uint32_t, uint32_t> index_to_original_index_map_;  // def binding index to create info binding index
 
     // The following map allows an non-iterative lookup of a binding from a global index...
     std::vector<IndexRange> global_index_range_;  // range is exclusive of .end
@@ -325,17 +324,25 @@ class DescriptorSetLayout : public StateObject {
         if (index >= GetBindingCount()) {
             return nullptr;
         }
-        const uint32_t original_binding_index = layout_id_->GetOriginalBindingIndex(index);
-        return desc_set_layout_ci.pBindings[original_binding_index].ptr();
+        const uint32_t binding = layout_id_->GetBindingInfoFromIndex(index)->binding;
+        const uint32_t original_index = GetOriginalIndexFromBinding(binding);
+        return desc_set_layout_ci.pBindings[original_index].ptr();
     }
     VkDescriptorSetLayoutBinding const *GetDescriptorSetLayoutBindingPtrFromBinding(uint32_t binding) const {
-        const uint32_t index = GetIndexFromBinding(binding);
-        if (index >= GetBindingCount()) {
+        if (GetIndexFromBinding(binding) >= GetBindingCount()) {
             return nullptr;
         }
-        const uint32_t original_binding_index = layout_id_->GetOriginalBindingIndex(index);
-        return desc_set_layout_ci.pBindings[original_binding_index].ptr();
+        const uint32_t original_index = GetOriginalIndexFromBinding(binding);
+        return desc_set_layout_ci.pBindings[original_index].ptr();
     }
+    // Returns index into VkDescriptorSetLayoutCreateInfo::pBindings array for this binding.
+    uint32_t GetOriginalIndexFromBinding(uint32_t binding) const {
+        auto it = binding_to_original_index_map_.find(binding);
+        assert(it != binding_to_original_index_map_.end());
+        const uint32_t original_index = it->second;
+        return original_index;
+    }
+
     const std::vector<vku::safe_VkDescriptorSetLayoutBinding> &GetBindings() const { return layout_id_->GetBindings(); }
     uint32_t GetDescriptorCountFromIndex(const uint32_t index) const { return layout_id_->GetDescriptorCountFromIndex(index); }
     uint32_t GetDescriptorCountFromBinding(const uint32_t binding) const {
@@ -352,8 +359,9 @@ class DescriptorSetLayout : public StateObject {
     }
     VkSampler const *GetImmutableSamplerPtrFromIndex(const uint32_t index) const {
         assert(index < GetBindingCount());
-        const uint32_t original_binding_index = layout_id_->GetOriginalBindingIndex(index);
-        return desc_set_layout_ci.pBindings[original_binding_index].pImmutableSamplers;
+        const uint32_t binding = layout_id_->GetBindingInfoFromIndex(index)->binding;
+        const uint32_t original_index = GetOriginalIndexFromBinding(binding);
+        return desc_set_layout_ci.pBindings[original_index].pImmutableSamplers;
     }
     bool IsTypeMutable(const VkDescriptorType type, uint32_t binding) const { return layout_id_->IsTypeMutable(type, binding); }
     const std::vector<VkDescriptorType> &GetMutableTypes(uint32_t binding) const { return layout_id_->GetMutableTypes(binding); }
@@ -382,6 +390,9 @@ class DescriptorSetLayout : public StateObject {
     DescriptorSetLayoutId layout_id_{};
     VkDeviceSize layout_size_in_bytes_ = 0;
     vku::safe_VkDescriptorSetLayoutCreateInfo desc_set_layout_ci{};
+
+    // Map binding number to index in desc_set_layout_ci.pBindings array (original unsorted bindings)
+    vvl::unordered_map<uint32_t, uint32_t> binding_to_original_index_map_;
 };
 
 // Slightly broader than type, each c++ "class" will has a corresponding "DescriptorClass"
