@@ -1073,6 +1073,8 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpSubgroupMatrixMultiplyAccumulateINTEL";
         case spv::OpBitwiseFunctionINTEL:
             return "OpBitwiseFunctionINTEL";
+        case spv::OpUntypedVariableLengthArrayINTEL:
+            return "OpUntypedVariableLengthArrayINTEL";
         case spv::OpGroupIMulKHR:
             return "OpGroupIMulKHR";
         case spv::OpGroupFMulKHR:
@@ -2589,6 +2591,7 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpSubgroup2DBlockStoreINTEL, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpSubgroupMatrixMultiplyAccumulateINTEL, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
         {spv::OpBitwiseFunctionINTEL, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpUntypedVariableLengthArrayINTEL, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpGroupIMulKHR, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},
         {spv::OpGroupFMulKHR, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},
         {spv::OpGroupBitwiseAndKHR, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},

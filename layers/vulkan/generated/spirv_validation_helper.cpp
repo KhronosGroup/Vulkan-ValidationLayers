@@ -832,6 +832,8 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "SubgroupMatrixMultiplyAccumulateINTEL";
         case spv::CapabilityTernaryBitwiseFunctionINTEL:
             return "TernaryBitwiseFunctionINTEL";
+        case spv::CapabilityUntypedVariableLengthArrayINTEL:
+            return "UntypedVariableLengthArrayINTEL";
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         case spv::CapabilitySpecConditionalINTEL:
             return "SpecConditionalINTEL";
