@@ -2687,7 +2687,7 @@ TEST_F(NegativeShaderInterface, PhysicalStorageBufferNested) {
                OpFunctionEnd
     )";
 
-    m_errorMonitor->SetDesiredWarning("VUID-StandaloneSpirv-Input-09557");
+    m_errorMonitor->SetDesiredWarning("VUID-StandaloneSpirv-PhysicalStorageBuffer64-06314");
     VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }

@@ -434,6 +434,7 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpTaskSequenceGetINTEL:
         case spv::OpSubgroupMatrixMultiplyAccumulateINTEL:
         case spv::OpBitwiseFunctionINTEL:
+        case spv::OpUntypedVariableLengthArrayINTEL:
         case spv::OpGroupIMulKHR:
         case spv::OpGroupFMulKHR:
         case spv::OpGroupBitwiseAndKHR:
@@ -887,6 +888,7 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpTypeTaskSequenceINTEL:
         case spv::OpSubgroupMatrixMultiplyAccumulateINTEL:
         case spv::OpBitwiseFunctionINTEL:
+        case spv::OpUntypedVariableLengthArrayINTEL:
         case spv::OpGroupIMulKHR:
         case spv::OpGroupFMulKHR:
         case spv::OpGroupBitwiseAndKHR:

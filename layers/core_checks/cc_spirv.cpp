@@ -1948,11 +1948,11 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
                 const char *vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849"
                                             : "VUID-VkShaderCreateInfoEXT-pCode-08460";
                 std::string name = pipeline ? FormatHandle(module_state.handle()) : "shader object";
-                skip |= LogError(
-                    vuid, device, loc,
-                    "After specialization was applied, %s produces a spirv-val error (stage %s):\n%s\nCommand to reproduce:\n\t%s",
-                    name.c_str(), string_VkShaderStageFlagBits(stage), diag && diag->error ? diag->error : "(no error text)",
-                    spirv_val_command.c_str());
+                skip |= LogError(vuid, device, loc,
+                                 "After specialization was applied, %s produces a spirv-val error (stage %s):\n%s\nCommand to "
+                                 "reproduce:\n\t%s\n",
+                                 name.c_str(), string_VkShaderStageFlagBits(stage),
+                                 diag && diag->error ? diag->error : "(no error text)", spirv_val_command.c_str());
             }
 
             // The new optimized SPIR-V will NOT match the original spirv::Module object parsing, so a new spirv::Module
@@ -2211,12 +2211,13 @@ bool CoreChecks::RunSpirvValidation(spv_const_binary_t &binary, const Location &
         }
 
         if (spv_valid == SPV_WARNING) {
-            skip |=
-                LogWarning(vuid, device, loc.dot(Field::pCode), "(spirv-val produced a warning):\n%s\nCommand to reproduce:\n\t%s",
-                           error_message, spirv_val_command.c_str());
+            skip |= LogWarning(vuid, device, loc.dot(Field::pCode),
+                               "(spirv-val produced a warning):\n%s\nCommand to reproduce:\n\t%s\n", error_message,
+                               spirv_val_command.c_str());
         } else {
-            skip |= LogError(vuid, device, loc.dot(Field::pCode), "(spirv-val produced an error):\n%s\nCommand to reproduce:\n\t%s",
-                             error_message, spirv_val_command.c_str());
+            skip |=
+                LogError(vuid, device, loc.dot(Field::pCode), "(spirv-val produced an error):\n%s\nCommand to reproduce:\n\t%s\n",
+                         error_message, spirv_val_command.c_str());
         }
 
         if (spirv_val_vuid) {
