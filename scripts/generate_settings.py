@@ -129,7 +129,7 @@ static void ValidateLayerSettingsProvided(const VkLayerSettingsCreateInfoEXT &la
 
     out.append('''        else {
             setting_warnings.emplace_back("The setting \\"" + std::string(name) +
-                                          "\\" in VkLayerSettingsCreateInfoEXT was not recognize by the Validation Layers. Please "
+                                          "\\" in VkLayerSettingsCreateInfoEXT was not recognized by the Validation Layers. Please "
                                           "view the VkLayer_khronos_validation.json for a list of all settings.");
         }
 

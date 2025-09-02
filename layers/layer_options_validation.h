@@ -96,7 +96,7 @@ static void ValidateLayerSettingsProvided(const VkLayerSettingsCreateInfoEXT &la
         else if (strcmp(VK_LAYER_VALIDATE_SYNC, name) == 0) { required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT; }
         else {
             setting_warnings.emplace_back("The setting \"" + std::string(name) +
-                                          "\" in VkLayerSettingsCreateInfoEXT was not recognize by the Validation Layers. Please "
+                                          "\" in VkLayerSettingsCreateInfoEXT was not recognized by the Validation Layers. Please "
                                           "view the VkLayer_khronos_validation.json for a list of all settings.");
         }
 
