@@ -2130,3 +2130,59 @@ TEST_F(PositiveDescriptors, ReuseSetLayoutDefWithImmutableSamplers2) {
         pipe.CreateGraphicsPipeline();
     }
 }
+
+TEST_F(PositiveDescriptors, TryToConfuseWithReorderedBindings) {
+    TEST_DESCRIPTION("SetLayout Def does not depend on the order of VkDescriptorSetLayoutBinding. Check for related regressions");
+    // NOTE: regression that led to trace crashes on CI: https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/10623
+    RETURN_IF_SKIP(Init());
+
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::ImageView view = image.CreateView();
+
+    std::vector<VkDescriptorSetLayoutBinding> binding_defs1 = {
+        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL},
+        {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL},
+    };
+    std::vector<VkDescriptorSetLayoutBinding> binding_defs2 = {
+        {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL},
+        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL},
+    };
+    // Both layouts will use the same Def (def's sorted binding order is the same as in binding_defs1)
+    const vkt::DescriptorSetLayout set_layout1(*m_device, binding_defs1);
+    const vkt::DescriptorSetLayout set_layout2(*m_device, binding_defs2);
+
+    const VkDescriptorPoolSize pool_sizes[2] = {{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1}, {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1}};
+    VkDescriptorPoolCreateInfo pool_ci = vku::InitStructHelper();
+    pool_ci.maxSets = 1;
+    pool_ci.poolSizeCount = 2;
+    pool_ci.pPoolSizes = pool_sizes;
+    vkt::DescriptorPool descriptor_pool(*m_device, pool_ci);
+
+    VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.descriptorPool = descriptor_pool;
+    alloc_info.descriptorSetCount = 1;
+    alloc_info.pSetLayouts = &set_layout2.handle();
+
+    VkDescriptorSet descriptor_set;
+    vk::AllocateDescriptorSets(*m_device, &alloc_info, &descriptor_set);
+
+    VkDescriptorImageInfo image_info = {};
+    image_info.imageView = view;
+    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstSet = descriptor_set;
+
+    // Binding 1 it's SAMPLED_IMAGE. In the regression we had the code used ordering directly from Def,
+    // which is based on binding_defs1, so it incorrectly determined that index of SAMPLE_IMAGE is 1.
+    // But descriptor_set is associated with set_layout2 and image index in set_layout2 bindings array is 0.
+    // Then by indexing with 1 in the binding_defs2 we get STORAGE_BUFFER and it leads to disaster when we
+    // try to update STORAGE_BUFFER descriptor with IMAGE resource.
+    descriptor_write.dstBinding = 1;
+
+    descriptor_write.dstArrayElement = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    descriptor_write.pImageInfo = &image_info;
+    vk::UpdateDescriptorSets(*m_device, 1, &descriptor_write, 0u, nullptr);
+}
