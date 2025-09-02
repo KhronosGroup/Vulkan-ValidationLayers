@@ -810,7 +810,7 @@ TEST_F(PositiveSyncObject, ExternalSemaphore) {
     import_semaphore.ImportHandle(ext_handle, handle_type);
 
     // Signal the exported semaphore and wait on the imported semaphore
-    VkPipelineStageFlags flags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+    const VkPipelineStageFlags flags = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     std::vector<VkSubmitInfo> si(4, vku::InitStruct<VkSubmitInfo>());
     si[0].signalSemaphoreCount = 1;
     si[0].pSignalSemaphores = &export_semaphore.handle();
