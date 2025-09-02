@@ -470,7 +470,7 @@ TEST_F(NegativeLayerSettings, NotRealSetting) {
     VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
     Monitor().ExpectSuccess(kErrorBit | kWarningBit);
     Monitor().SetDesiredWarning(
-        "The setting \"not_a_real_setting\" in VkLayerSettingsCreateInfoEXT was not recognize by the Validation Layers.");
+        "The setting \"not_a_real_setting\" in VkLayerSettingsCreateInfoEXT was not recognized by the Validation Layers.");
     RETURN_IF_SKIP(InitFramework(&create_info));
     RETURN_IF_SKIP(InitState());
     Monitor().VerifyFound();
