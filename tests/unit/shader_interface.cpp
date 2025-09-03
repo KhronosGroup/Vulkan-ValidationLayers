@@ -1897,6 +1897,69 @@ TEST_F(NegativeShaderInterface, FragmentOutputTypeMismatchDynamicRendering) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeShaderInterface, FragmentOutputTypeMismatchDynamicRenderingLocalRead) {
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::dynamicRenderingLocalRead);
+    RETURN_IF_SKIP(Init());
+    InitDynamicRenderTarget(VK_FORMAT_R8G8B8A8_SINT);
+    InitDynamicRenderTarget(VK_FORMAT_R8G8B8A8_UNORM);
+
+    char const *fs_source = R"glsl(
+        #version 450
+        layout(location=0) out ivec4 x; /* not UNORM */
+        void main(){
+           x = ivec4(1);
+        }
+    )glsl";
+
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    static constexpr uint32_t locations[] = {VK_ATTACHMENT_UNUSED, 0};
+    VkRenderingAttachmentLocationInfo locations_info = vku::InitStructHelper();
+    locations_info.colorAttachmentCount = std::size(locations);
+    locations_info.pColorAttachmentLocations = locations;
+
+    static constexpr VkFormat color_formats[] = {VK_FORMAT_R8G8B8A8_SINT, VK_FORMAT_R8G8B8A8_UNORM};
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper(&locations_info);
+    pipeline_rendering_info.colorAttachmentCount = std::size(color_formats);
+    pipeline_rendering_info.pColorAttachmentFormats = color_formats;
+
+    VkPipelineColorBlendAttachmentState color_blend_attachments[2] = {};
+    VkPipelineColorBlendStateCreateInfo cbi = vku::InitStructHelper();
+    cbi.attachmentCount = 2u;
+    cbi.pAttachments = color_blend_attachments;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.cb_attachments_.colorWriteMask = 0xf;  // all components
+    pipe.gp_ci_.pColorBlendState = &cbi;
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingAttachmentInfo color_attachment[] = {vku::InitStructHelper(), vku::InitStructHelper()};
+    color_attachment[0].imageView = GetDynamicRenderTarget(0);
+    color_attachment[0].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment[1].imageView = GetDynamicRenderTarget(1);
+    color_attachment[1].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.colorAttachmentCount = std::size(color_attachment);
+    rendering_info.pColorAttachments = color_attachment;
+    rendering_info.layerCount = 1;
+    rendering_info.renderArea = GetRenderTargetArea();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdSetRenderingAttachmentLocationsKHR(m_command_buffer, &locations_info);
+    m_errorMonitor->SetDesiredWarning("Undefined-Value-ShaderFragmentOutputMismatch-DynamicRendering");
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeShaderInterface, FragmentOutputDynamicRenderingUnusedAttachments) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);

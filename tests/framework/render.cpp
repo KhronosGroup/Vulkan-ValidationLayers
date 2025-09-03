@@ -1128,9 +1128,9 @@ void VkRenderFramework::InitDynamicRenderTarget(VkFormat format) {
     m_renderTargets.push_back(std::move(img));
 }
 
-VkImageView VkRenderFramework::GetDynamicRenderTarget() const {
-    assert(m_framebuffer_attachments.size() == 1);
-    return m_framebuffer_attachments[0];
+VkImageView VkRenderFramework::GetDynamicRenderTarget(uint32_t idx) const {
+    assert(m_framebuffer_attachments.size() > idx);
+    return m_framebuffer_attachments[idx];
 }
 
 VkRect2D VkRenderFramework::GetRenderTargetArea() const { return {{0, 0}, {m_width, m_height}}; }

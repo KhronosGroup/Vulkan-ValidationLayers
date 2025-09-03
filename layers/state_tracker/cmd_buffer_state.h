@@ -471,6 +471,8 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
         std::vector<uint32_t> color_indexes;
         const uint32_t *depth_index = nullptr;
         const uint32_t *stencil_index = nullptr;
+        uint32_t depth_index_storage;
+        uint32_t stencil_index_storage;
         void Reset() {
             color_locations.clear();
             color_indexes.clear();
@@ -670,6 +672,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordBeginConditionalRendering();
     void RecordEndConditionalRendering();
 
+    void RecordSetRenderingAttachmentLocations(const VkRenderingAttachmentLocationInfo *pLocationInfo);
     void RecordSetRenderingInputAttachmentIndices(const VkRenderingInputAttachmentIndexInfo *pLocationInfo);
 
     void RecordBarrierObjects(uint32_t buffer_barrier_count, const VkBufferMemoryBarrier *buffer_barriers,

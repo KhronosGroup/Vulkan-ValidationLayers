@@ -5397,13 +5397,7 @@ void DeviceState::PostCallRecordCmdSetRenderingAttachmentLocations(VkCommandBuff
                                                                    const VkRenderingAttachmentLocationInfo *pLocationInfo,
                                                                    const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-
-    cb_state->rendering_attachments.set_color_locations = true;
-    cb_state->rendering_attachments.color_locations.resize(pLocationInfo->colorAttachmentCount);
-    for (uint32_t i = 0; i < pLocationInfo->colorAttachmentCount; ++i) {
-        cb_state->rendering_attachments.color_locations[i] =
-            pLocationInfo->pColorAttachmentLocations ? pLocationInfo->pColorAttachmentLocations[i] : i;
-    }
+    cb_state->RecordSetRenderingAttachmentLocations(pLocationInfo);
 }
 
 void DeviceState::PostCallRecordCmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer commandBuffer,

@@ -777,15 +777,25 @@ void CommandBuffer::RecordEndRenderPass(const VkSubpassEndInfo *subpass_end_info
     sample_locations_begin_info = {};
 }
 
+static void InitDefaultRenderingAttachments(CommandBuffer::RenderingAttachment &attachments, uint32_t count) {
+    attachments.color_locations.resize(count);
+    attachments.color_indexes.resize(count);
+    attachments.depth_index = nullptr;
+    attachments.stencil_index = nullptr;
+    for (uint32_t i = 0; i < count; i++) {
+        // Default from spec
+        attachments.color_locations[i] = i;
+        attachments.color_indexes[i] = i;
+    }
+}
+
 void CommandBuffer::RecordBeginRendering(const VkRenderingInfo &rendering_info, const Location &loc) {
     command_count++;
     active_render_pass = std::make_shared<vvl::RenderPass>(&rendering_info, true);
     render_area = rendering_info.renderArea;
     render_pass_queries.clear();
 
-    rendering_attachments.Reset();
-    rendering_attachments.color_locations.resize(rendering_info.colorAttachmentCount);
-    rendering_attachments.color_indexes.resize(rendering_info.colorAttachmentCount);
+    InitDefaultRenderingAttachments(rendering_attachments, rendering_info.colorAttachmentCount);
 
     auto chained_device_group_struct = vku::FindStructInPNextChain<VkDeviceGroupRenderPassBeginInfo>(rendering_info.pNext);
     render_pass_device_mask = chained_device_group_struct ? chained_device_group_struct->deviceMask : initial_device_mask;
@@ -818,10 +828,6 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo &rendering_info, 
     active_attachments.resize(attachment_count);
 
     for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
-        // Default from spec
-        rendering_attachments.color_locations[i] = i;
-        rendering_attachments.color_indexes[i] = i;
-
         const auto &rendering_attachment = rendering_info.pColorAttachments[i];
         if (rendering_attachment.imageView != VK_NULL_HANDLE) {
             auto &color_attachment = active_attachments[GetDynamicRenderingColorAttachmentIndex(i)];
@@ -1123,6 +1129,34 @@ void vvl::CommandBuffer::RecordEncodeVideo(const VkVideoEncodeInfoKHR &encode_in
     }
 }
 
+static void SetRenderingAttachmentLocations(CommandBuffer::RenderingAttachment &attachments, const VkRenderingAttachmentLocationInfo *pLocationInfo) {
+    attachments.color_locations.resize(pLocationInfo->colorAttachmentCount);
+    const uint32_t *locations = pLocationInfo->pColorAttachmentLocations;
+    for (uint32_t i = 0; i < pLocationInfo->colorAttachmentCount; ++i) {
+        attachments.color_locations[i] = locations ? locations[i] : i;
+    }
+}
+
+static void SetRenderingInputAttachmentIndices(CommandBuffer::RenderingAttachment &attachments, const VkRenderingInputAttachmentIndexInfo *pLocationInfo) {
+    attachments.color_indexes.resize(pLocationInfo->colorAttachmentCount);
+    const uint32_t *indexes = pLocationInfo->pColorAttachmentInputIndices;
+    for (uint32_t i = 0; i < pLocationInfo->colorAttachmentCount; ++i) {
+        attachments.color_indexes[i] = indexes ? indexes[i] : i;
+    }
+    if (pLocationInfo->pDepthInputAttachmentIndex) {
+        attachments.depth_index_storage = *pLocationInfo->pDepthInputAttachmentIndex;
+        attachments.depth_index = &attachments.depth_index_storage;
+    } else {
+        attachments.depth_index = nullptr;
+    }
+    if (pLocationInfo->pStencilInputAttachmentIndex) {
+        attachments.stencil_index_storage = *pLocationInfo->pStencilInputAttachmentIndex;
+        attachments.stencil_index = &attachments.stencil_index_storage;
+    } else {
+        attachments.stencil_index = nullptr;
+    }
+}
+
 void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
     if (IsRecorded(state)) {
         Location loc(Func::vkBeginCommandBuffer);
@@ -1168,6 +1202,14 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
                     vku::FindStructInPNextChain<VkCommandBufferInheritanceRenderingInfo>(pBeginInfo->pInheritanceInfo->pNext);
                 if (inheritance_rendering_info) {
                     active_render_pass = std::make_shared<vvl::RenderPass>(inheritance_rendering_info);
+
+                    InitDefaultRenderingAttachments(rendering_attachments, inheritance_rendering_info->colorAttachmentCount);
+                    if (auto locations = vku::FindStructInPNextChain<VkRenderingAttachmentLocationInfo>(inheritance_rendering_info->pNext)) {
+                        SetRenderingAttachmentLocations(rendering_attachments, locations);
+                    }
+                    if (auto indexes = vku::FindStructInPNextChain<VkRenderingInputAttachmentIndexInfo>(inheritance_rendering_info->pNext)) {
+                        SetRenderingInputAttachmentIndices(rendering_attachments, indexes);
+                    }
                 }
             }
         }
@@ -1963,16 +2005,16 @@ void CommandBuffer::RecordEndConditionalRendering() {
     conditional_rendering_subpass = 0;
 }
 
+void CommandBuffer::RecordSetRenderingAttachmentLocations(const VkRenderingAttachmentLocationInfo *pLocationInfo) {
+    command_count++;
+    rendering_attachments.set_color_locations = true;
+    SetRenderingAttachmentLocations(rendering_attachments, pLocationInfo);
+}
+
 void CommandBuffer::RecordSetRenderingInputAttachmentIndices(const VkRenderingInputAttachmentIndexInfo *pLocationInfo) {
     command_count++;
     rendering_attachments.set_color_indexes = true;
-    rendering_attachments.color_indexes.resize(pLocationInfo->colorAttachmentCount);
-    for (uint32_t i = 0; i < pLocationInfo->colorAttachmentCount; ++i) {
-        rendering_attachments.color_indexes[i] =
-            pLocationInfo->pColorAttachmentInputIndices ? pLocationInfo->pColorAttachmentInputIndices[i] : i;
-    }
-    rendering_attachments.depth_index = pLocationInfo->pDepthInputAttachmentIndex;
-    rendering_attachments.stencil_index = pLocationInfo->pStencilInputAttachmentIndex;
+    SetRenderingInputAttachmentIndices(rendering_attachments, pLocationInfo);
 }
 
 void CommandBuffer::SubmitTimeValidate(Queue &queue_state, uint32_t perf_submit_pass, const Location &loc) {
