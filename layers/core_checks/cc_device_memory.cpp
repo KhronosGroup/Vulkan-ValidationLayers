@@ -461,6 +461,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
         imported_qnx_buffer = imported_buffer_info->buffer != nullptr;
     }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+    const bool is_external_memory = imported_ahb_buffer || imported_qnx_buffer;
 
     VkBuffer dedicated_buffer = VK_NULL_HANDLE;
     VkImage dedicated_image = VK_NULL_HANDLE;
@@ -482,13 +483,13 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                 skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-image-01797", objlist, image_loc,
                                  "(%s) was created with VK_IMAGE_CREATE_DISJOINT_BIT.", FormatHandle(dedicated_image).c_str());
             } else {
-                if (!IgnoreAllocationSize(*pAllocateInfo) && (pAllocateInfo->allocationSize != image_state->requirements[0].size) &&
-                    !imported_ahb_buffer && !imported_qnx_buffer) {
-                    skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-image-02964", objlist,
-                                     allocate_info_loc.dot(Field::allocationSize),
-                                     "(%" PRIu64 ") needs to be equal to %s (%s) VkMemoryRequirements::size (%" PRIu64 ").",
-                                     pAllocateInfo->allocationSize, image_loc.Fields().c_str(),
-                                     FormatHandle(dedicated_image).c_str(), image_state->requirements[0].size);
+                if (!IgnoreAllocationSize(*pAllocateInfo) && !is_external_memory &&
+                    (pAllocateInfo->allocationSize < image_state->requirements[0].size)) {
+                    skip |= LogError(
+                        "VUID-VkMemoryDedicatedAllocateInfo-image-02964", objlist, allocate_info_loc.dot(Field::allocationSize),
+                        "(%" PRIu64 ") needs to be greater than or equal to %s (%s) VkMemoryRequirements::size (%" PRIu64 ").",
+                        pAllocateInfo->allocationSize, image_loc.Fields().c_str(), FormatHandle(dedicated_image).c_str(),
+                        image_state->requirements[0].size);
                 }
                 if ((image_state->create_info.flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0) {
                     skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-image-01434", objlist, image_loc,
@@ -501,8 +502,9 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
             const LogObjectList objlist(device, dedicated_buffer);
             const Location buffer_loc = allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::buffer);
             if (auto buffer_state = Get<vvl::Buffer>(dedicated_buffer)) {
-                if (!IgnoreAllocationSize(*pAllocateInfo) && (pAllocateInfo->allocationSize != buffer_state->requirements.size) &&
-                    !imported_ahb_buffer && !imported_qnx_buffer) {
+                // Fix once https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7644 is approved
+                if (!IgnoreAllocationSize(*pAllocateInfo) && !is_external_memory &&
+                    (pAllocateInfo->allocationSize != buffer_state->requirements.size)) {
                     skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-buffer-02965", objlist,
                                      allocate_info_loc.dot(Field::allocationSize),
                                      "(%" PRIu64 ") needs to be equal to %s (%s) VkMemoryRequirements::size (%" PRIu64 ").",
