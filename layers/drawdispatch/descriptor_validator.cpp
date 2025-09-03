@@ -432,8 +432,9 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             }
         }
 
+        // Check for only_report_errors last (to save a nesting), this string building is expensive if being spammed constantly
         if (image_view_ci.format != VK_FORMAT_UNDEFINED && resource_variable.info.image_format != VK_FORMAT_UNDEFINED &&
-            image_view_ci.format != resource_variable.info.image_format) {
+            image_view_ci.format != resource_variable.info.image_format && !dev_proxy.global_settings.only_report_errors) {
             // This warning was added after being discussed in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4128
             auto set = descriptor_set.Handle();
             const LogObjectList objlist(cb_state.Handle(), this->objlist, set, image_view);
@@ -995,8 +996,9 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         }
     }
 
+    // Check for only_report_errors last (to save a nesting), this string building is expensive if being spammed constantly
     if (buffer_view_format != VK_FORMAT_UNDEFINED && resource_variable.info.image_format != VK_FORMAT_UNDEFINED &&
-        buffer_view_format != resource_variable.info.image_format) {
+        buffer_view_format != resource_variable.info.image_format && !dev_proxy.global_settings.only_report_errors) {
         // This warning was added after being discussed in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4128
         auto set = descriptor_set.Handle();
         const LogObjectList objlist(cb_state.Handle(), this->objlist, set, buffer_view);

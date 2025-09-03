@@ -716,6 +716,7 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings *settings_data, VkuL
     if (report_flags & kVerboseBit) {
         dbg_create_info.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
     }
+    settings_data->global_settings->only_report_errors = report_flags == kErrorBit;
 
     VkDebugUtilsMessengerEXT messenger = VK_NULL_HANDLE;
     if (debug_action & VK_DBG_LAYER_ACTION_LOG_MSG) {
