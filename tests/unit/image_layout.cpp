@@ -352,7 +352,7 @@ TEST_F(NegativeImageLayout, PushDescriptor) {
     const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
     auto pipeline_layout = vkt::PipelineLayout(*m_device, {&ds_layout});
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform sampler2D tex;
         layout(location=0) out vec4 color;
@@ -772,7 +772,7 @@ TEST_F(NegativeImageLayout, DescriptorArrayStaticIndex) {
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitRenderTarget());
 
-    char const *fs_source = R"glsl(
+    const char *fs_source = R"glsl(
         #version 450
         #extension GL_EXT_nonuniform_qualifier : enable
         // [0] is good layout

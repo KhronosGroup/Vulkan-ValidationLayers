@@ -457,7 +457,7 @@ bool SlangToSPV(const char *slang_shader, const char *entry_point_name, std::vec
 VkPipelineShaderStageCreateInfo const &VkShaderObj::GetStageCreateInfo() const { return m_stage_info; }
 
 VkShaderObj::VkShaderObj(vkt::Device &device, const char *source, VkShaderStageFlagBits stage, const spv_target_env env,
-                         SpvSourceType source_type, const VkSpecializationInfo *spec_info, char const *entry_point,
+                         SpvSourceType source_type, const VkSpecializationInfo *spec_info, const char *entry_point,
                          const void *pNext)
     : m_device(&device), m_source(source), m_spv_env(env) {
     m_stage_info = vku::InitStructHelper();
@@ -476,7 +476,7 @@ VkShaderObj::VkShaderObj(vkt::Device &device, const char *source, VkShaderStageF
 }
 
 VkShaderObj::VkShaderObj(VkRenderFramework *framework, const char *source, VkShaderStageFlagBits stage, const spv_target_env env,
-                         SpvSourceType source_type, const VkSpecializationInfo *spec_info, char const *entry_point,
+                         SpvSourceType source_type, const VkSpecializationInfo *spec_info, const char *entry_point,
                          const void *pNext)
     : VkShaderObj(*framework->DeviceObj(), source, stage, env, source_type, spec_info, entry_point, pNext) {}
 

@@ -29,7 +29,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerPushConstant) {
     plci.pPushConstantRanges = &push_constant_ranges;
     vkt::PipelineLayout pipeline_layout(*m_device, plci);
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
             #version 450
             #extension GL_EXT_buffer_reference : enable
             layout(buffer_reference, buffer_reference_align = 16) buffer bufStruct;
@@ -91,7 +91,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadAfterPointerPushConstant) {
     plci.pPushConstantRanges = &push_constant_ranges;
     vkt::PipelineLayout pipeline_layout(*m_device, plci);
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
             #version 450
             #extension GL_EXT_buffer_reference : enable
             layout(buffer_reference, buffer_reference_align = 16) buffer bufStruct;
@@ -163,7 +163,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerDescriptor) {
     memcpy(uniform_buffer_ptr, &invalid_buffer_address, sizeof(VkDeviceAddress));
     memcpy(uniform_buffer_ptr + sizeof(VkDeviceAddress), &n_writes, sizeof(uint32_t));
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
         layout(buffer_reference, buffer_reference_align = 16) buffer bufStruct;
@@ -230,7 +230,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadAfterPointerDescriptor) {
     memcpy(uniform_buffer_ptr, &u_info_ptr, sizeof(VkDeviceAddress));
     memcpy(uniform_buffer_ptr + sizeof(VkDeviceAddress), &n_writes, sizeof(uint32_t));
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
         layout(buffer_reference, buffer_reference_align = 16) buffer bufStruct;
@@ -280,7 +280,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, UVec3Array) {
     AddRequiredFeature(vkt::Feature::scalarBlockLayout);
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
         #extension GL_EXT_scalar_block_layout : enable
@@ -340,7 +340,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, Maintenance5) {
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
     InitRenderTarget();
 
-    char const *fs_source = R"glsl(
+    const char *fs_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
 
@@ -421,7 +421,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ArrayOfStruct) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
         layout(std430, buffer_reference) buffer T1 {
@@ -490,7 +490,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140) {
     const uint32_t uniform_buffer_size = 8 + 4;  // 64 bits pointer + int
     vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
         layout(buffer_reference, buffer_reference_align = 16) buffer bufStruct;
@@ -555,7 +555,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140NumerousRanges) {
     const uint32_t uniform_buffer_size = 8 + 4;  // 64 bits pointer + int
     vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
         layout(buffer_reference, buffer_reference_align = 16) buffer bufStruct;
@@ -638,7 +638,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430) {
     const uint32_t uniform_buffer_size = 8 + 4;  // 64 bits pointer + int
     vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
         layout(buffer_reference, buffer_reference_align = 16) buffer bufStruct;
@@ -711,7 +711,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
     //     ssbo.ptr.f = 42.0;
     //     ssbo.ptr.v = uvec3(1.0, 2.0, 3.0);
     // }
-    char const *shader_source = R"(
+    const char *shader_source = R"(
                OpCapability Shader
                OpCapability PhysicalStorageBufferAddresses
                OpMemoryModel PhysicalStorageBuffer64 GLSL450
@@ -821,7 +821,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreRelaxedBlockLayoutFront) {
     // void main() {
     //     ssbo.ptr.f = 42.0;
     // }
-    char const *shader_source = R"(
+    const char *shader_source = R"(
                OpCapability Shader
                OpCapability PhysicalStorageBufferAddresses
                OpMemoryModel PhysicalStorageBuffer64 GLSL450
@@ -900,7 +900,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreScalarBlockLayout) {
 
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_scalar_block_layout : enable
         #extension GL_EXT_buffer_reference : enable
@@ -963,7 +963,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreScalarBlockLayoutFront) {
 
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_scalar_block_layout : enable
         #extension GL_EXT_buffer_reference : enable
@@ -1022,7 +1022,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
     const uint32_t uniform_buffer_size = 3 * sizeof(VkDeviceAddress);
     vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
 
@@ -1098,7 +1098,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoad) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8073");
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 460
         #extension GL_EXT_scalar_block_layout : require
         #extension GL_EXT_buffer_reference2 : require
@@ -1159,7 +1159,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoad2) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8073");
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 460
         #extension GL_EXT_scalar_block_layout : require
         #extension GL_EXT_buffer_reference2 : require
@@ -1232,7 +1232,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoadSlang) {
     //     Foo a = pc.node[0];
     //     result[0] = a.x;
     // }
-    char const *shader_source = R"(
+    const char *shader_source = R"(
                OpCapability PhysicalStorageBufferAddresses
                OpCapability Shader
                OpExtension "SPV_KHR_physical_storage_buffer"
@@ -1324,7 +1324,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoadUint64) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8073");
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 460
         #extension GL_EXT_scalar_block_layout : require
         #extension GL_EXT_buffer_reference2 : require
@@ -1384,7 +1384,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoadBadAddress) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8073");
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 460
         #extension GL_EXT_scalar_block_layout : require
         #extension GL_EXT_buffer_reference2 : require
@@ -1442,7 +1442,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoadBadAddress) {
 TEST_F(NegativeGpuAVBufferDeviceAddress, StoreAlignment) {
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
 
@@ -1488,7 +1488,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreAlignment) {
 TEST_F(NegativeGpuAVBufferDeviceAddress, LoadAlignment) {
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
 
@@ -1632,7 +1632,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, OpCopyObject) {
     // void main() {
     //     ptr.a = ptr.b;
     // }
-    char const *shader_source = R"(
+    const char *shader_source = R"(
                OpCapability Shader
                OpCapability PhysicalStorageBufferAddresses
                OpExtension "SPV_KHR_physical_storage_buffer"
@@ -1711,7 +1711,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, MemoryModelOperand) {
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
 
@@ -1764,7 +1764,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, MemoryModelOperand2) {
     AddRequiredFeature(vkt::Feature::vulkanMemoryModelDeviceScope);
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 460
         #pragma use_vulkan_memory_model
         #extension GL_KHR_memory_scope_semantics : enable
@@ -1827,7 +1827,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicLoad) {
     AddRequiredFeature(vkt::Feature::vulkanMemoryModelDeviceScope);
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 460
         #pragma use_vulkan_memory_model
         #extension GL_KHR_memory_scope_semantics : enable
@@ -1875,7 +1875,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicStore) {
     AddRequiredFeature(vkt::Feature::vulkanMemoryModelDeviceScope);
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 460
         #pragma use_vulkan_memory_model
         #extension GL_KHR_memory_scope_semantics : enable
@@ -1921,7 +1921,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicExchange) {
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 460
         #pragma use_vulkan_memory_model
         #extension GL_KHR_memory_scope_semantics : enable
@@ -1971,7 +1971,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicAddValueOperand) {
     AddRequiredFeature(vkt::Feature::vulkanMemoryModelDeviceScope);
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
 
@@ -2021,7 +2021,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicAddPointerOperand) {
     AddRequiredFeature(vkt::Feature::vulkanMemoryModelDeviceScope);
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
 
@@ -2069,7 +2069,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicsMaxMin) {
     AddRequiredFeature(vkt::Feature::vulkanMemoryModelDeviceScope);
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
 
@@ -2185,7 +2185,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicExchangeSlang) {
     //     InterlockedExchange(*(x->b), 0);
     // }
 
-    char const *shader_source = R"(
+    const char *shader_source = R"(
                OpCapability Int64
                OpCapability PhysicalStorageBufferAddresses
                OpCapability Shader
@@ -2337,7 +2337,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, PointerChainLastInvalid) {
     TEST_DESCRIPTION("Have BDA point to more BDA creating a chain, and the last pointer is bad");
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
 
@@ -2391,7 +2391,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, PointerChainFirstInvalid) {
     TEST_DESCRIPTION("Have BDA point to more BDA creating a chain, and the first pointer is bad");
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
 
@@ -2446,7 +2446,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, PointerChainFirstInvalidAtomic) {
     TEST_DESCRIPTION("Have BDA point to more BDA creating a chain, and the first pointer is bad");
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
 

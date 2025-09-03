@@ -1113,7 +1113,7 @@ TEST_F(NegativeShaderObject, IncompatibleDescriptorSet) {
 TEST_F(NegativeShaderObject, DescriptorSetNotBound) {
     RETURN_IF_SKIP(InitBasicShaderObject());
 
-    char const* cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer SSBO { uint x; };
         void main() {
@@ -1136,7 +1136,7 @@ TEST_F(NegativeShaderObject, DescriptorSetNotBound) {
 TEST_F(NegativeShaderObject, DescriptorSetBoundRange) {
     RETURN_IF_SKIP(InitBasicShaderObject());
 
-    char const* cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer SSBO0 { uint x; };
         layout(set = 1, binding = 0) buffer SSBO1 { uint y; };
@@ -3550,7 +3550,7 @@ TEST_F(NegativeShaderObject, ComputeShaderMissingPushConst) {
     push_const_range.offset = 0u;
     push_const_range.size = sizeof(int);
 
-    static const char kComputeShaderGlsl[] = R"glsl(
+    const char kComputeShaderGlsl[] = R"glsl(
         #version 460
         layout (push_constant) uniform constants {
             int value;
@@ -3637,7 +3637,7 @@ TEST_F(NegativeShaderObject, SpecializationMapEntryOffset) {
 
     RETURN_IF_SKIP(InitBasicShaderObject());
 
-    static const char kVertexSource[] = R"glsl(
+    const char kVertexSource[] = R"glsl(
         #version 460
         layout (constant_id = 0) const int v = 0;
         void main() {
@@ -3674,7 +3674,7 @@ TEST_F(NegativeShaderObject, SpecializationMapEntrySize) {
 
     RETURN_IF_SKIP(InitBasicShaderObject());
 
-    static const char kVertexSource[] = R"glsl(
+    const char kVertexSource[] = R"glsl(
         #version 460
         layout (constant_id = 0) const int v = 0;
         void main() {
@@ -3711,7 +3711,7 @@ TEST_F(NegativeShaderObject, SpecializationMismatch) {
 
     RETURN_IF_SKIP(InitBasicShaderObject());
 
-    static const char kVertexSource[] = R"glsl(
+    const char kVertexSource[] = R"glsl(
         #version 460
         layout (constant_id = 0) const int v = 0;
         void main() {
@@ -3748,7 +3748,7 @@ TEST_F(NegativeShaderObject, SpecializationSameConstantId) {
 
     RETURN_IF_SKIP(InitBasicShaderObject());
 
-    static const char kVertexSource[] = R"glsl(
+    const char kVertexSource[] = R"glsl(
         #version 460
         layout (constant_id = 0) const int v = 0;
         void main() {
@@ -4089,7 +4089,7 @@ TEST_F(NegativeShaderObject, MemoryModelNotEnabled) {
 
     RETURN_IF_SKIP(Init());
 
-    char const* cs_src = R"glsl(
+    const char* cs_src = R"glsl(
         #version 450
         #extension GL_KHR_memory_scope_semantics : enable
         layout(set = 0, binding = 0) buffer ssbo { uint y; };
@@ -4337,7 +4337,7 @@ TEST_F(NegativeShaderObject, ExtendedTypesDisabled) {
         GTEST_SKIP() << "Required features not supported";
     }
 
-    char const* cs_src = R"glsl(
+    const char* cs_src = R"glsl(
         #version 450
         #extension GL_KHR_shader_subgroup_arithmetic : enable
         #extension GL_EXT_shader_subgroup_extended_types_float16 : enable
@@ -4364,7 +4364,7 @@ TEST_F(NegativeShaderObject, ReadShaderClock) {
     AddRequiredExtensions(VK_KHR_SHADER_CLOCK_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
-    char const* vs_src = R"glsl(
+    const char* vs_src = R"glsl(
         #version 450
         #extension GL_ARB_shader_clock: enable
         void main(){
@@ -4576,7 +4576,7 @@ TEST_F(NegativeShaderObject, MaxSampleMaskWords) {
     //     int y = gl_SampleMaskIn[0];
     //     uFragColor = vec4(0,1,0,1) * x * y;
     // }
-    char const* fs_src = R"(
+    const char* fs_src = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint Fragment %main "main" %gl_SampleMaskIn %uFragColor
@@ -4739,7 +4739,7 @@ TEST_F(NegativeShaderObject, MissingLineWidthSet) {
     InitDynamicRenderTarget();
     CreateMinimalShaders();
 
-    static char const geom_src[] = R"glsl(
+    const char geom_src[] = R"glsl(
         #version 460
         layout(triangles) in;
         layout(line_strip, max_vertices=2) out;
@@ -4779,7 +4779,7 @@ TEST_F(NegativeShaderObject, InvalidViewportCount) {
         GTEST_SKIP() << "required primitiveFragmentShadingRateWithMultipleViewports to be unsupported.";
     }
 
-    char const* vsSource = R"glsl(
+    const char* vsSource = R"glsl(
             #version 450
             #extension GL_EXT_fragment_shading_rate : enable
             void main() {
@@ -4821,7 +4821,7 @@ TEST_F(NegativeShaderObject, AlphaToCoverage) {
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
-    static const char frag_src[] = R"glsl(
+    const char frag_src[] = R"glsl(
         #version 460
         layout(location = 1) out vec4 uFragColor;
         void main(){
@@ -4856,7 +4856,7 @@ TEST_F(NegativeShaderObject, MissingLineRasterizationMode) {
     InitDynamicRenderTarget();
     CreateMinimalShaders();
 
-    static char const geom_src[] = R"glsl(
+    const char geom_src[] = R"glsl(
         #version 460
         layout(triangles) in;
         layout(line_strip, max_vertices=2) out;
@@ -4892,7 +4892,7 @@ TEST_F(NegativeShaderObject, MissingLineStippleEnable) {
     InitDynamicRenderTarget();
     CreateMinimalShaders();
 
-    static char const geom_src[] = R"glsl(
+    const char geom_src[] = R"glsl(
         #version 460
         layout(triangles) in;
         layout(line_strip, max_vertices=2) out;
@@ -4972,7 +4972,7 @@ TEST_F(NegativeShaderObject, Mismatched64BitAttributeType) {
         GTEST_SKIP() << "format not supported.";
     }
 
-    static const char vert_src[] = R"glsl(
+    const char vert_src[] = R"glsl(
         #version 460
         layout(location = 0) in int pos;
         void main() {
@@ -5017,7 +5017,7 @@ TEST_F(NegativeShaderObject, Mismatched32BitAttributeType) {
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
-    static const char vert_src[] = R"glsl(
+    const char vert_src[] = R"glsl(
         #version 460
         #extension GL_EXT_shader_explicit_arithmetic_types : enable
         layout(location = 0) in int64_t pos;
@@ -5068,7 +5068,7 @@ TEST_F(NegativeShaderObject, MismatchedFormat64Components) {
         GTEST_SKIP() << "format not supported.";
     }
 
-    static const char vert_src[] = R"glsl(
+    const char vert_src[] = R"glsl(
         #version 460
         #extension GL_EXT_shader_explicit_arithmetic_types : enable
         layout(location = 0) in i64vec4 pos;
@@ -5113,7 +5113,7 @@ TEST_F(NegativeShaderObject, MismatchedAttributeType) {
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
-    static const char vert_src[] = R"glsl(
+    const char vert_src[] = R"glsl(
         #version 460
         layout(location=0) in int x; /* attrib provided float */
         void main(){
@@ -5166,7 +5166,7 @@ TEST_F(NegativeShaderObject, DescriptorNotUpdated) {
 
     vkt::PipelineLayout pipeline_layout(*m_device, {&vert_descriptor_set.layout_, &frag_descriptor_set.layout_});
 
-    static const char vert_src[] = R"glsl(
+    const char vert_src[] = R"glsl(
         #version 460
         layout(location = 0) out vec2 uv;
         layout(set = 0, binding = 0) buffer Buffer {
@@ -5178,7 +5178,7 @@ TEST_F(NegativeShaderObject, DescriptorNotUpdated) {
         }
     )glsl";
 
-    static const char frag_src[] = R"glsl(
+    const char frag_src[] = R"glsl(
         #version 460
         layout(set = 1, binding = 0) uniform sampler2D s;
         layout(location = 0) in vec2 uv;
@@ -5438,7 +5438,7 @@ TEST_F(NegativeShaderObject, MissingImageFilterLinearBit) {
 
     vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    static const char frag_src[] = R"glsl(
+    const char frag_src[] = R"glsl(
         #version 460
         layout(set=0, binding=0) uniform isampler2D s;
         layout(location=0) out vec4 x;
@@ -5651,7 +5651,7 @@ TEST_F(NegativeShaderObject, CooperativeMatrix) {
     const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     // Tests are assume that Float16 3*5 is not available
-    char const* comp_src = R"glsl(
+    const char* comp_src = R"glsl(
         #version 450
         #pragma use_vulkan_memory_model
         #extension GL_KHR_cooperative_matrix : enable
@@ -6628,7 +6628,7 @@ TEST_F(NegativeShaderObject, DescriptorWrongStage) {
     // wrong stage
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}});
 
-    static const char comp_src[] = R"glsl(
+    const char comp_src[] = R"glsl(
         #version 450
         layout(local_size_x=16, local_size_x=1, local_size_x=1) in;
         layout(binding = 0) buffer Output {
@@ -6653,7 +6653,7 @@ TEST_F(NegativeShaderObject, DescriptorWrongStageMultipleBindings) {
                                                   {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
                                                   {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
 
-    static const char comp_src[] = R"glsl(
+    const char comp_src[] = R"glsl(
         #version 450
         layout(local_size_x=1, local_size_x=1, local_size_x=1) in;
         layout(set = 0, binding = 0) buffer SSBO_0 { uint a; };
@@ -6678,7 +6678,7 @@ TEST_F(NegativeShaderObject, DescriptorWrongStageMultipleSets) {
     OneOffDescriptorSet descriptor_set1(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}});
     OneOffDescriptorSet descriptor_set2(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
 
-    static const char comp_src[] = R"glsl(
+    const char comp_src[] = R"glsl(
         #version 450
         layout(local_size_x=1, local_size_x=1, local_size_x=1) in;
         layout(set = 0, binding = 0) buffer SSBO_0 { uint a; };
@@ -6700,7 +6700,7 @@ TEST_F(NegativeShaderObject, DescriptorWrongStageMultipleSets) {
 TEST_F(NegativeShaderObject, DescriptorNotProvided) {
     RETURN_IF_SKIP(InitBasicShaderObject());
 
-    static const char comp_src[] = R"glsl(
+    const char comp_src[] = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer SSBO_0 { uint a; };
         void main() {
@@ -6716,7 +6716,7 @@ TEST_F(NegativeShaderObject, DescriptorNotProvided) {
 TEST_F(NegativeShaderObject, DescriptorTypeMismatch) {
     RETURN_IF_SKIP(InitBasicShaderObject());
 
-    static const char comp_src[] = R"glsl(
+    const char comp_src[] = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer SSBO_0 { uint a; };
         void main() {
@@ -6734,7 +6734,7 @@ TEST_F(NegativeShaderObject, DescriptorTypeMismatch) {
 TEST_F(NegativeShaderObject, DescriptorCount) {
     RETURN_IF_SKIP(InitBasicShaderObject());
 
-    static const char comp_src[] = R"glsl(
+    const char comp_src[] = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer SSBO_0 { uint a; } x[3];
         void main() {
@@ -6754,7 +6754,7 @@ TEST_F(NegativeShaderObject, InlineUniformBlockArray) {
     AddRequiredFeature(vkt::Feature::inlineUniformBlock);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
-    static const char comp_src[] = R"glsl(
+    const char comp_src[] = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(set = 0, binding = 0) buffer SSBO0 { uint ssbo; };
@@ -6785,7 +6785,7 @@ TEST_F(NegativeShaderObject, PushConstantNotDeclared) {
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitRenderTarget();
 
-    char const* vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo { float x; } consts;
         void main(){
@@ -6866,7 +6866,7 @@ TEST_F(NegativeShaderObject, TaskMeshShadersDrawWithoutBindingVertex) {
 
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_3));
 
-    static const char task_src[] = R"glsl(
+    const char task_src[] = R"glsl(
         #version 450
         #extension GL_EXT_mesh_shader : require
         layout (local_size_x=1, local_size_y=1, local_size_z=1) in;
@@ -6875,7 +6875,7 @@ TEST_F(NegativeShaderObject, TaskMeshShadersDrawWithoutBindingVertex) {
         }
     )glsl";
 
-    static const char mesh_src[] = R"glsl(
+    const char mesh_src[] = R"glsl(
         #version 460
         #extension GL_EXT_mesh_shader : require
         layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
@@ -6891,7 +6891,7 @@ TEST_F(NegativeShaderObject, TaskMeshShadersDrawWithoutBindingVertex) {
         }
     )glsl";
 
-    static const char frag_src[] = R"glsl(
+    const char frag_src[] = R"glsl(
         #version 460
         layout(location = 0) out vec4 uFragColor;
         void main(){

@@ -39,7 +39,7 @@ TEST_F(NegativeMesh, BasicUsage) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    static const char vert_shader_text[] = R"glsl(
+    const char vert_shader_text[] = R"glsl(
         #version 460
         vec2 vertices[3];
         void main() {
@@ -51,7 +51,7 @@ TEST_F(NegativeMesh, BasicUsage) {
         }
     )glsl";
 
-    static const char mesh_shader_text[] = R"glsl(
+    const char mesh_shader_text[] = R"glsl(
         #version 460
         #extension GL_EXT_mesh_shader : require
         layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
@@ -67,7 +67,7 @@ TEST_F(NegativeMesh, BasicUsage) {
         }
     )glsl";
 
-    static const char mesh_shader_xfb_text[] = R"(
+    const char mesh_shader_xfb_text[] = R"(
                OpCapability MeshShadingEXT
                OpCapability TransformFeedback
                OpExtension "SPV_EXT_mesh_shader"
@@ -445,7 +445,7 @@ TEST_F(NegativeMesh, BasicUsageNV) {
     RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
-    static const char vertShaderText[] = R"glsl(
+    const char vertShaderText[] = R"glsl(
         #version 450
         vec2 vertices[3];
         void main() {
@@ -457,7 +457,7 @@ TEST_F(NegativeMesh, BasicUsageNV) {
         }
     )glsl";
 
-    static const char meshShaderText[] = R"glsl(
+    const char meshShaderText[] = R"glsl(
         #version 450
         #extension GL_NV_mesh_shader : require
         layout(local_size_x = 1) in;
@@ -652,7 +652,7 @@ TEST_F(NegativeMesh, ExtensionDisabledNV) {
                OpFunctionEnd
     )";
 
-    static const char mesh_src[] = R"glsl(
+    const char mesh_src[] = R"glsl(
         #version 450
 
         #extension GL_NV_mesh_shader : require
@@ -831,7 +831,7 @@ TEST_F(NegativeMesh, MultiDrawIndirect) {
     // };
     // taskPayloadSharedEXT Task IN;
     // void main() {}
-    static const char mesh_src[] = R"(
+    const char mesh_src[] = R"(
                OpCapability MeshShadingEXT
                OpExtension "SPV_EXT_mesh_shader"
           %1 = OpExtInstImport "GLSL.std.450"
@@ -939,7 +939,7 @@ TEST_F(NegativeMesh, DrawCmdsNV) {
 
     InitRenderTarget();
 
-    static const char mesh_src[] = R"glsl(
+    const char mesh_src[] = R"glsl(
         #version 450
         #extension GL_NV_mesh_shader : require
         layout(local_size_x = 1) in;
@@ -1042,7 +1042,7 @@ TEST_F(NegativeMesh, MeshTasksWorkgroupCount) {
         }
     )glsl";
 
-    static const char mesh_src[] = R"glsl(
+    const char mesh_src[] = R"glsl(
         #version 460
         #extension GL_EXT_mesh_shader : require
         layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
@@ -1058,7 +1058,7 @@ TEST_F(NegativeMesh, MeshTasksWorkgroupCount) {
         }
     )glsl";
 
-    static const char frag_src[] = R"glsl(
+    const char frag_src[] = R"glsl(
         #version 460
         layout(location = 0) out vec4 uFragColor;
         void main(){
@@ -1109,7 +1109,7 @@ TEST_F(NegativeMesh, MeshShaderConservativeRasterization) {
     RETURN_IF_SKIP(InitBasicMeshAndTask());
     InitRenderTarget();
 
-    static const char meshShaderText[] = R"glsl(
+    const char meshShaderText[] = R"glsl(
         #version 460
         #extension GL_EXT_mesh_shader : require
         layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;

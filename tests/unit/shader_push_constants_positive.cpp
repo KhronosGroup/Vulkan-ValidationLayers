@@ -22,7 +22,7 @@ TEST_F(PositiveShaderPushConstants, OverlappingPushConstantRange) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *const vsSource = R"glsl(
+    const char *const vsSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo { float x[8]; } constants;
         void main(){
@@ -30,7 +30,7 @@ TEST_F(PositiveShaderPushConstants, OverlappingPushConstantRange) {
         }
     )glsl";
 
-    char const *const fsSource = R"glsl(
+    const char *const fsSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo { float x[4]; } constants;
         layout(location=0) out vec4 o;
@@ -278,7 +278,7 @@ TEST_F(PositiveShaderPushConstants, CompatibilityGraphicsOnly) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *const vsSource = R"glsl(
+    const char *const vsSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo { layout(offset = 16) vec4 x; } constants;
         void main(){
@@ -418,7 +418,7 @@ TEST_F(PositiveShaderPushConstants, StaticallyUnused) {
     VkPipelineLayoutCreateInfo pipeline_layout_info = {
         VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &push_constant_range};
 
-    char const *vsSourceUnused = R"glsl(
+    const char *vsSourceUnused = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo { float x; } consts;
         void main(){
@@ -426,7 +426,7 @@ TEST_F(PositiveShaderPushConstants, StaticallyUnused) {
         }
     )glsl";
 
-    char const *vsSourceEmpty = R"glsl(
+    const char *vsSourceEmpty = R"glsl(
         #version 450
         void main(){
            gl_Position = vec4(1.0);
@@ -475,7 +475,7 @@ TEST_F(PositiveShaderPushConstants, OffsetVector) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *const vsSource = R"glsl(
+    const char *const vsSource = R"glsl(
         #version 450
 
         layout(push_constant) uniform Material {
@@ -516,7 +516,7 @@ TEST_F(PositiveShaderPushConstants, PhysicalStorageBufferBasic) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *const vsSource = R"glsl(
+    const char *const vsSource = R"glsl(
         #version 450
 
         #extension GL_EXT_buffer_reference : enable

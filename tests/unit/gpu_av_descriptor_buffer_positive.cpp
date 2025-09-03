@@ -60,7 +60,7 @@ TEST_F(PositiveGpuAVDescriptorBuffer, Basic) {
     vk::GetDescriptorEXT(device(), &buffer_descriptor_info, descriptor_buffer_properties.storageBufferDescriptorSize,
                          mapped_descriptor_data);
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout (set = 0, binding = 0) buffer SSBO_0 {
             uint a;

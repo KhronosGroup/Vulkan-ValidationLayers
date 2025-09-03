@@ -196,7 +196,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, PushConstantSet) {
 
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
-    char const *const vsSource = R"glsl(
+    const char *const vsSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo { uint x[4]; } constants;
         void main(){
@@ -450,7 +450,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, ShaderObjectDraw) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    static const char kVertexGlsl[] = R"glsl(
+    const char kVertexGlsl[] = R"glsl(
         #version 460
         layout(location = 0) in vec4 pos;
         void main() {

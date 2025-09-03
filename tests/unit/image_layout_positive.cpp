@@ -541,7 +541,7 @@ TEST_F(PositiveImageLayout, DescriptorArray) {
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitRenderTarget());
 
-    char const *fs_source = R"glsl(
+    const char *fs_source = R"glsl(
         #version 450
         #extension GL_EXT_nonuniform_qualifier : enable
         layout(set = 0, binding = 0) uniform UBO { uint index; };
@@ -849,7 +849,7 @@ TEST_F(PositiveImageLayout, DepthSliceTransitionCriteriaNotMet) {
     layout_transition.image = image;
     layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450 core
         layout (rgba8, set = 0, binding = 0) uniform image2D verifyImage;
         void main (void) {

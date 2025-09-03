@@ -317,7 +317,7 @@ void NegativeGpuAVDescriptorClassGeneralBuffer::ShaderBufferSizeTest(VkDeviceSiz
 
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, UniformBufferTooSmall) {
     TEST_DESCRIPTION("Test that an error is produced when trying to access uniform buffer outside the bound region.");
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
 
         layout(location=0) out vec4 x;
@@ -335,7 +335,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, UniformBufferTooSmall) {
 
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, UniformBufferTooSmall2) {
     TEST_DESCRIPTION("Buffer is correct size, but only updating half of it.");
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
 
         layout(location=0) out vec4 x;
@@ -357,7 +357,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, UniformBufferTooSmall2) {
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, StorageBufferTooSmall) {
     TEST_DESCRIPTION("Test that an error is produced when trying to access storage buffer outside the bound region.");
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
 
         layout(location=0) out vec4 x;
@@ -379,7 +379,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, UniformBufferTooSmallArray) {
         "Test that an error is produced when trying to access uniform buffer outside the bound region. Uses array in block "
         "definition.");
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
 
         layout(location=0) out vec4 x;
@@ -404,7 +404,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, UniformBufferTooSmallNestedStr
         "Test that an error is produced when trying to access uniform buffer outside the bound region. Uses nested struct in block "
         "definition.");
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
 
         struct S {
@@ -427,7 +427,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, UniformBufferTooSmallNestedStr
 
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ObjectUniformBufferTooSmall) {
     TEST_DESCRIPTION("Test that an error is produced when trying to access uniform buffer outside the bound region.");
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
 
         layout(location=0) out vec4 x;
@@ -466,7 +466,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, GPLWrite) {
     uint32_t *data = (uint32_t *)offset_buffer.Memory().Map();
     *data = 8;
 
-    static const char vertshader[] = R"glsl(
+    const char vertshader[] = R"glsl(
         #version 450
         layout(set = 0, binding = 0) uniform Foo { uint index[]; };
         layout(set = 0, binding = 1) buffer StorageBuffer { uint data[]; };
@@ -522,7 +522,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, GPLWriteSelectPipeline) {
     uint32_t *data = (uint32_t *)offset_buffer.Memory().Map();
     *data = 8;
 
-    static const char vertshader[] = R"glsl(
+    const char vertshader[] = R"glsl(
         #version 450
         layout(set = 0, binding = 0) uniform Foo { uint index[]; };
         layout(set = 0, binding = 1) buffer StorageBuffer { uint data[]; };
@@ -632,7 +632,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, GPLWriteSelectShaders) {
     uint32_t *data = (uint32_t *)offset_buffer.Memory().Map();
     *data = 8;
 
-    static const char vertshader[] = R"glsl(
+    const char vertshader[] = R"glsl(
         #version 450
         layout(set = 0, binding = 0) uniform Foo { uint index[]; };
         layout(set = 0, binding = 1) buffer StorageBuffer { uint data[]; };
@@ -736,7 +736,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, GPLRead) {
     descriptor_set.WriteDescriptorBufferInfo(1, write_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
-    static const char vertshader[] = R"glsl(
+    const char vertshader[] = R"glsl(
         #version 450
         layout(set = 0, binding = 0) uniform Foo { uint index[]; };
         layout(set = 0, binding = 1) buffer StorageBuffer { uint data[]; };
@@ -801,7 +801,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, GPLReadWriteIndependentSets) {
     uint32_t *data = (uint32_t *)offset_buffer.Memory().Map();
     *data = 8;
 
-    static const char vert_shader[] = R"glsl(
+    const char vert_shader[] = R"glsl(
         #version 450
         layout(set = 1, binding = 0) uniform ufoo { uint index[]; };        // index[1]
         layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; }; // data[4]
@@ -818,7 +818,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, GPLReadWriteIndependentSets) {
         }
     )glsl";
 
-    static const char frag_shader[] = R"glsl(
+    const char frag_shader[] = R"glsl(
         #version 450
         layout(set = 1, binding = 0) uniform ufoo { uint index[]; };      // index[1]
         layout(set = 2, binding = 1) uniform samplerBuffer u_buffer;      // texel_buffer[4]
@@ -906,7 +906,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, GPLNonInlined) {
     uint32_t *offset_buffer_ptr = (uint32_t *)offset_buffer.Memory().Map();
     *offset_buffer_ptr = 8;
 
-    static const char vertshader[] = R"glsl(
+    const char vertshader[] = R"glsl(
         #version 450
         layout(set = 0, binding = 0) uniform Uniform { uint offset_buffer[]; };
         layout(set = 0, binding = 1) buffer StorageBuffer { uint write_buffer[]; };
@@ -1102,7 +1102,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, StorageBuffer) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
         #extension GL_ARB_gpu_shader_int64 : enable
@@ -1162,7 +1162,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, StorageBuffer) {
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, Vector) {
     TEST_DESCRIPTION("index into a vector OOB");
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
 
         // 28 bytes large
@@ -1181,7 +1181,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, Vector) {
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, Matrix) {
     TEST_DESCRIPTION("index into a matrix OOB");
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
 
         // 32 bytes large
@@ -1206,7 +1206,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, Geometry) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    char const *gsSource = R"glsl(
+    const char *gsSource = R"glsl(
         #version 450
         layout(triangles) in;
         layout(triangle_strip, max_vertices=3) out;
@@ -1261,7 +1261,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DISABLED_TessellationControl) 
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    static const char shader_source[] = R"glsl(
+    const char shader_source[] = R"glsl(
         #version 460
         layout(vertices=3) out;
         layout(set = 0, binding = 0, std430) buffer foo {
@@ -1319,7 +1319,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DISABLED_TessellationEvaluatio
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    static const char shader_source[] = R"glsl(
+    const char shader_source[] = R"glsl(
         #version 460
         layout(triangles, equal_spacing, cw) in;
         layout(set = 0, binding = 0, std430) buffer foo {
@@ -1514,7 +1514,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, PartialBoundDescriptorCopy) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer foo {
             vec4 a;
@@ -1588,7 +1588,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DeviceGeneratedCommandsCompute
     command_layout_ci.pTokens = &token;
     vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer ssbo {
             uint x[];
@@ -1664,7 +1664,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, SpecConstant) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(constant_id = 0) const uint index = 2;
 
@@ -1712,7 +1712,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, PartialBoundDescriptorSSBO) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer foo {
             vec4 a; // offset 0
@@ -1751,7 +1751,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, PartialBoundDescriptorSSBO) {
 }
 
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, VectorArray) {
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer foo {
             uvec4 a[8]; // stride 16
@@ -1764,7 +1764,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, VectorArray) {
 }
 
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ArrayCopyGLSL) {
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0, std430) buffer foo {
             uvec4 a;
@@ -1811,7 +1811,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ArrayCopyTwoBindingsGLSL) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0, std430) buffer foo1 {
             uvec4 a;
@@ -1914,7 +1914,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ArrayCopyTwoBindingsSlang) {
 
 // https://github.com/KhronosGroup/glslang/issues/3892
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DISABLED_StructCopyGLSL) {
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
 
         struct Bar {
@@ -1939,7 +1939,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DISABLED_StructCopyGLSL) {
 }
 
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, StructCopyGLSL2) {
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
 
         struct Bar {
@@ -1962,7 +1962,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, StructCopyGLSL2) {
 }
 
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, StructCopyGLSL3) {
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
 
         struct Bar2 {
@@ -2040,7 +2040,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ChainOfAccessChains) {
 }
 
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, AtomicStore) {
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         #extension GL_KHR_memory_scope_semantics : enable
         layout(set = 0, binding = 0, std430) buffer foo {
@@ -2056,7 +2056,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, AtomicStore) {
 }
 
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, AtomicLoad) {
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         #extension GL_KHR_memory_scope_semantics : enable
         layout(set = 0, binding = 0, std430) buffer foo {
@@ -2072,7 +2072,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, AtomicLoad) {
 }
 
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, AtomicExchange) {
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         #extension GL_KHR_memory_scope_semantics : enable
         layout(set = 0, binding = 0, std430) buffer foo {
@@ -2092,7 +2092,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, AtomicsDescriptorIndex) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         #extension GL_KHR_memory_scope_semantics : enable
         layout(set = 0, binding = 0, std430) buffer SSBO {
@@ -2177,7 +2177,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DescriptorIndexSlang) {
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, Loops) {
     TEST_DESCRIPTION("Invalid during last iteration of a loop");
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer Input {
             uint result;
@@ -2198,7 +2198,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, Loops) {
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, LoopsNested) {
     TEST_DESCRIPTION("Invalid during last iteration of a loop");
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer Input {
             uint result;
@@ -2221,7 +2221,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, LoopsNested) {
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, LoopsHoistable) {
     TEST_DESCRIPTION("Invalid during each iteration of a loop, but not dependent on the loop itself");
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer Input {
             uint result;
@@ -2242,7 +2242,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, LoopsHoistable) {
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, LoopsNestedHoistable) {
     TEST_DESCRIPTION("Invalid during each iteration of a loop, but not dependent on the loop itself");
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer Input {
             uint result;
@@ -2265,7 +2265,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, LoopsNestedHoistable) {
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, LoopsWithBranch) {
     TEST_DESCRIPTION("Invalid during last iteration of a loop, but has branch in it");
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer Input {
             uint result;
@@ -2289,7 +2289,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, LoopsWithBranch) {
 
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ComplexCalculate) {
     TEST_DESCRIPTION("from Granite meshopt-sandbox test");
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
 
         layout(set = 0, binding = 0, std430) buffer SSBO {
@@ -2410,7 +2410,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, MeshTaskIndirect) {
         }
     )glsl";
 
-    char const *mesh_source = R"glsl(
+    const char *mesh_source = R"glsl(
         #version 450
         #extension GL_EXT_mesh_shader : require
         layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
@@ -2432,7 +2432,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, MeshTaskIndirect) {
         }
     )glsl";
 
-    char const *frag_source = R"glsl(
+    const char *frag_source = R"glsl(
         #version 460
         layout(location = 0) out vec4 uFragColor;
         layout(set = 0, binding = 2) readonly uniform UBO {
@@ -2503,7 +2503,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, GPLOneLibraryTwoLinkedPipeline
     uint32_t *data = (uint32_t *)offset_buffer.Memory().Map();
     *data = 8;
 
-    static const char vertshader[] = R"glsl(
+    const char vertshader[] = R"glsl(
         #version 450
         layout(set = 0, binding = 0) uniform Foo { uint index[]; };
         layout(set = 0, binding = 1) buffer StorageBuffer { uint data[]; };

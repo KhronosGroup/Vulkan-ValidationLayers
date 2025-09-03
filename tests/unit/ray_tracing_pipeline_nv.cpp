@@ -683,7 +683,7 @@ TEST_F(NegativeRayTracingPipelineNV, MissingEntrypoint) {
     RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
-    char const missShaderText[] = R"glsl(
+    const char missShaderText[] = R"glsl(
         #version 460 core
         #extension GL_EXT_ray_tracing : enable
         layout(location = 0) rayPayloadInEXT float hitValue;

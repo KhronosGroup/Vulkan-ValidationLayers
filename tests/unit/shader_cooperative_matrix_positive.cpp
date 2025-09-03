@@ -139,7 +139,7 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixNV) {
     const vkt::DescriptorSetLayout dsl(*m_device, bindings);
     const vkt::PipelineLayout pl(*m_device, {&dsl});
 
-    char const *csSource = R"glsl(
+    const char *csSource = R"glsl(
         #version 450
         #extension GL_NV_cooperative_matrix : enable
         #extension GL_KHR_shader_subgroup_basic : enable
@@ -422,7 +422,7 @@ TEST_F(PositiveShaderCooperativeMatrix, BFloat16) {
     AddRequiredFeature(vkt::Feature::shaderBFloat16CooperativeMatrix);
     RETURN_IF_SKIP(InitCooperativeMatrixKHR());
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450 core
         #extension GL_EXT_bfloat16 : require
         #extension GL_EXT_shader_explicit_arithmetic_types : enable
@@ -450,7 +450,7 @@ TEST_F(PositiveShaderCooperativeMatrix, Float8) {
     AddRequiredFeature(vkt::Feature::shaderInt8);
     RETURN_IF_SKIP(InitCooperativeMatrixKHR());
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450 core
         #extension GL_EXT_float_e4m3 : require
         #extension GL_EXT_shader_explicit_arithmetic_types : enable

@@ -31,7 +31,7 @@ TEST_F(NegativeShaderLimits, MaxSampleMaskWordsInput) {
     //     int x = gl_SampleMaskIn[3]; // Exceed sample mask input array size
     //     uFragColor = vec4(0,1,0,1) * x;
     // }
-    char const *source = R"(
+    const char *source = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint Fragment %main "main" %gl_SampleMaskIn %uFragColor
@@ -93,7 +93,7 @@ TEST_F(NegativeShaderLimits, MaxSampleMaskWordsOutput) {
     //    gl_SampleMask[3] = 1; // Exceed sample mask output array size
     //    uFragColor = vec4(0,1,0,1);
     // }
-    char const *source = R"(
+    const char *source = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint Fragment %main "main" %gl_SampleMask %uFragColor
@@ -434,7 +434,7 @@ TEST_F(NegativeShaderLimits, MaxFragmentOutputAttachments) {
         GTEST_SKIP() << "maxFragmentOutputAttachments is not 4";
     }
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(location=0) out vec4 c0;
         layout(location=1) out vec4 c1;
@@ -461,7 +461,7 @@ TEST_F(NegativeShaderLimits, MaxFragmentOutputAttachmentsArray) {
         GTEST_SKIP() << "maxFragmentOutputAttachments is not 4";
     }
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(location=0) out vec4 c[5];
         void main(){
@@ -480,7 +480,7 @@ TEST_F(NegativeShaderLimits, MaxFragmentOutputAttachmentsArrayAtEnd) {
         GTEST_SKIP() << "maxFragmentOutputAttachments is not 4";
     }
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(location=3) out vec4 c[2];
         void main(){
@@ -506,7 +506,7 @@ TEST_F(NegativeShaderLimits, MaxFragmentCombinedOutputResources) {
     fpvkSetPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
     RETURN_IF_SKIP(InitState());
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(set = 0, binding=0) buffer SSBO_0 {
             uint a;

@@ -212,7 +212,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, GPLNonInlined) {
     uint32_t *offset_buffer_ptr = (uint32_t *)offset_buffer.Memory().Map();
     *offset_buffer_ptr = 8;
 
-    static const char vertshader[] = R"glsl(
+    const char vertshader[] = R"glsl(
         #version 450
         layout(set = 0, binding = 0) uniform Uniform { uint offset_buffer[]; };
         layout(set = 0, binding = 1) buffer StorageBuffer { uint write_buffer[]; };
@@ -328,7 +328,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, GPLFragmentIndependentSets) {
     vertex_input_lib.InitVertexInputLibInfo();
     vertex_input_lib.CreateGraphicsPipeline(false);
 
-    static const char vertshader[] = R"glsl(
+    const char vertshader[] = R"glsl(
         #version 450
         layout(set = 0, binding = 0) readonly buffer Input { uint u_buffer[]; } v_in; // texel_buffer[4]
         const vec2 vertices[3] = vec2[](
@@ -355,7 +355,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, GPLFragmentIndependentSets) {
     pre_raster_lib.gp_ci_.layout = pipeline_layout_vs;
     pre_raster_lib.CreateGraphicsPipeline(false);
 
-    static const char frag_shader[] = R"glsl(
+    const char frag_shader[] = R"glsl(
         #version 450
         layout(set = 1, binding = 0) readonly buffer Input { uint u_buffer[]; } f_in; // texel_buffer[4]
         layout(location = 0) out vec4 c_out;
@@ -548,7 +548,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, PartialBoundDescriptorSSBO) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer foo {
             vec4 a; // offset 0
@@ -590,7 +590,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, PartialBoundDescriptorSSBOUpda
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer foo {
             vec4 a; // offset 0
@@ -632,7 +632,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, PartialBoundDescriptorBuffer) 
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer foo {
             vec4 a; // offset 0
@@ -674,7 +674,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, PartialBoundDescriptorCopy) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer foo {
             vec4 a; // offset 0
@@ -769,7 +769,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, RobustBuffer) {
 }
 
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, VectorArray) {
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer foo {
             uvec4 a[8]; // stride 16
@@ -783,7 +783,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, VectorArray) {
 }
 
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ArrayCopyGLSL) {
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer foo {
             uvec4 a;
@@ -832,7 +832,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ArrayStrideEnd) {
     // void main() {
     //     x[3] = 0;
     // }
-    char const *cs_source = R"(
+    const char *cs_source = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint GLCompute %main "main" %_
@@ -871,7 +871,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ArrayCopyTwoBindingsGLSL) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0, std430) buffer foo1 {
             uvec4 a;
@@ -968,7 +968,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ArrayCopyTwoBindingsSlang) {
 
 // https://github.com/KhronosGroup/glslang/issues/3892
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, DISABLED_StructCopyGLSL) {
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
 
         struct Bar {
@@ -991,7 +991,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, DISABLED_StructCopyGLSL) {
     ComputeStorageBufferTest(cs_source, SPV_SOURCE_GLSL, 32);
 }
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, StructCopyGLSL2) {
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
 
         struct Bar {
@@ -1013,7 +1013,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, StructCopyGLSL2) {
 }
 
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, StructCopyGLSL3) {
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
 
         struct Bar2 {
@@ -1091,7 +1091,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ChainOfAccessChains) {
 }
 
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, Atomics) {
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         #extension GL_KHR_memory_scope_semantics : enable
         layout(set = 0, binding = 0, std430) buffer foo {
@@ -1114,7 +1114,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, AtomicsDescriptorIndex) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         #extension GL_KHR_memory_scope_semantics : enable
         layout(set = 0, binding = 0, std430) buffer SSBO {
@@ -1200,7 +1200,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, OpArrayLength) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
 
@@ -1246,7 +1246,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, OpArrayLength) {
 }
 
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, Loops) {
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer Input {
             uint result;
@@ -1275,7 +1275,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, Loops) {
 }
 
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, LoopsEarlyBranch) {
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer Input {
             uint result;
@@ -1333,7 +1333,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, MeshTaskIndirect) {
         }
     )glsl";
 
-    char const *mesh_source = R"glsl(
+    const char *mesh_source = R"glsl(
         #version 450
         #extension GL_EXT_mesh_shader : require
         layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
@@ -1355,7 +1355,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, MeshTaskIndirect) {
         }
     )glsl";
 
-    char const *frag_source = R"glsl(
+    const char *frag_source = R"glsl(
         #version 460
         layout(location = 0) out vec4 uFragColor;
         layout(set = 0, binding = 2) readonly uniform UBO {
@@ -1435,7 +1435,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, InternalPipelineLayoutSelectio
     vertex_input_lib.InitVertexInputLibInfo();
     vertex_input_lib.CreateGraphicsPipeline(false);
 
-    static const char vertshader[] = R"glsl(
+    const char vertshader[] = R"glsl(
         #version 450
         const vec2 vertices[3] = vec2[](
             vec2(-1.0, -1.0),
@@ -1458,7 +1458,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, InternalPipelineLayoutSelectio
     pre_raster_lib.gp_ci_.layout = pipeline_layout_vs;
     pre_raster_lib.CreateGraphicsPipeline(false);
 
-    static const char frag_shader[] = R"glsl(
+    const char frag_shader[] = R"glsl(
         #version 450
 
         layout(location = 0) out vec4 c_out;

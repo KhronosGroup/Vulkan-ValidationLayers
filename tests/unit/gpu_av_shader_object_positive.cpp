@@ -74,7 +74,7 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants) {
     plci.pPushConstantRanges = push_constant_ranges.data();
     vkt::PipelineLayout pipeline_layout(*m_device, plci);
 
-    char const *vs_source = R"glsl(
+    const char *vs_source = R"glsl(
             #version 450
             #extension GL_EXT_buffer_reference : enable
 
@@ -103,7 +103,7 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants) {
 
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_source);
 
-    char const *fs_source = R"glsl(
+    const char *fs_source = R"glsl(
             #version 450
             #extension GL_EXT_buffer_reference : enable
 
@@ -180,7 +180,7 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
     // Graphics pipeline
     // ---
 
-    char const *vs_source = R"glsl(
+    const char *vs_source = R"glsl(
             #version 450
             #extension GL_EXT_buffer_reference : enable
 
@@ -209,7 +209,7 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
 
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_source);
 
-    char const *fs_source = R"glsl(
+    const char *fs_source = R"glsl(
             #version 450
             #extension GL_EXT_buffer_reference : enable
 
@@ -268,7 +268,7 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
     // Compute pipeline
     // ---
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
             #version 450
             #extension GL_EXT_buffer_reference : enable
 
@@ -365,7 +365,7 @@ TEST_F(PositiveGpuAVShaderObject, DispatchShaderObjectAndPipeline) {
     RETURN_IF_SKIP(InitGpuAvFramework(layer_settings));
     RETURN_IF_SKIP(InitState());
 
-    static const char comp_src[] = R"glsl(
+    const char comp_src[] = R"glsl(
         #version 450
         layout(local_size_x=16, local_size_x=1, local_size_x=1) in;
 
@@ -428,7 +428,7 @@ TEST_F(PositiveGpuAVShaderObject, GetShaderBinaryData) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    static const char frag_src[] = R"glsl(
+    const char frag_src[] = R"glsl(
         #version 450
         layout(location = 0) in highp vec4 vtxColor;
         layout(location = 0) out highp vec4 fragColor;
@@ -458,7 +458,7 @@ TEST_F(PositiveGpuAVShaderObject, BinaryShaderObjects) {
     RETURN_IF_SKIP(InitState());
     InitDynamicRenderTarget();
 
-    static const char vert_src[] = R"glsl(
+    const char vert_src[] = R"glsl(
         #version 450
         layout(location = 0) out highp vec4 vtxColor;
         layout(set = 0, binding = 0) uniform Block { vec4 color; };
@@ -468,7 +468,7 @@ TEST_F(PositiveGpuAVShaderObject, BinaryShaderObjects) {
         }
     )glsl";
 
-    static const char frag_src[] = R"glsl(
+    const char frag_src[] = R"glsl(
         #version 450
         layout(location = 0) in highp vec4 vtxColor;
         layout(location = 0) out highp vec4 fragColor;

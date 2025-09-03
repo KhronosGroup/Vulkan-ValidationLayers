@@ -151,7 +151,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlock) {
     descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
     vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, NULL);
 
-    char const *csSource = R"glsl(
+    const char *csSource = R"glsl(
         #version 450
         #extension GL_EXT_nonuniform_qualifier : enable
         layout(set = 0, binding = 0) buffer StorageBuffer { uint index; } u_index;
@@ -256,7 +256,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
     vkt::PipelineLayout pl_layout(*m_device, layouts);
     m_errorMonitor->VerifyFound();
 
-    char const *csSource = R"glsl(
+    const char *csSource = R"glsl(
         #version 450
         #extension GL_EXT_nonuniform_qualifier : enable
         layout(set = 0, binding = 0) buffer StorageBuffer { uint index; } u_index;
@@ -324,7 +324,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockUninitialized) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer SSBO { uint out_buffer; };
         layout(set = 0, binding = 1) uniform InlineUBO {
@@ -389,7 +389,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockUninitializedUpdateAfterBind) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer SSBO { uint out_buffer; };
         layout(set = 0, binding = 1) uniform InlineUBO {
@@ -461,7 +461,7 @@ TEST_F(PositiveGpuAV, SetSSBOBindDescriptor) {
         GTEST_SKIP() << "maxBoundDescriptorSets is too low";
     }
 
-    char const *csSource = R"glsl(
+    const char *csSource = R"glsl(
         #version 450
         layout(constant_id=0) const uint _const_2_0 = 1;
         layout(constant_id=1) const uint _const_3_0 = 1;
@@ -522,7 +522,7 @@ TEST_F(PositiveGpuAV, SetSSBOPushDescriptor) {
         GTEST_SKIP() << "maxBoundDescriptorSets is too low";
     }
 
-    char const *csSource = R"glsl(
+    const char *csSource = R"glsl(
         #version 450
         layout(constant_id=0) const uint _const_2_0 = 1;
         layout(constant_id=1) const uint _const_3_0 = 1;
@@ -633,7 +633,7 @@ TEST_F(PositiveGpuAV, MutableBuffer) {
         GTEST_SKIP() << "maxBoundDescriptorSets is too low";
     }
 
-    char const *csSource = R"glsl(
+    const char *csSource = R"glsl(
         #version 450
         layout(constant_id=0) const uint _const_2_0 = 1;
         layout(constant_id=1) const uint _const_3_0 = 1;
@@ -778,7 +778,7 @@ TEST_F(PositiveGpuAV, SelectInstrumentedShaders) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
     descriptor_set.WriteDescriptorBufferInfo(0, write_buffer, 0, 4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
-    static const char vertshader[] = R"glsl(
+    const char vertshader[] = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } Data;
         void main() {
@@ -826,7 +826,7 @@ TEST_F(PositiveGpuAV, DrawingWithUnboundUnusedSet) {
         GTEST_SKIP() << "Tests requires Vulkan 1.1 exactly";
     }
 
-    char const *fs_source = R"glsl(
+    const char *fs_source = R"glsl(
         #version 450
         layout (set = 1, binding = 0) uniform sampler2D samplerColor;
         layout(location = 0) out vec4 color;
@@ -1129,7 +1129,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants) {
     plci.pPushConstantRanges = push_constant_ranges.data();
     vkt::PipelineLayout pipeline_layout(*m_device, plci);
 
-    char const *vs_source = R"glsl(
+    const char *vs_source = R"glsl(
             #version 450
             #extension GL_EXT_buffer_reference : enable
 
@@ -1157,7 +1157,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants) {
         )glsl";
     VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
 
-    char const *fs_source = R"glsl(
+    const char *fs_source = R"glsl(
             #version 450
             #extension GL_EXT_buffer_reference : enable
 
@@ -1229,7 +1229,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
     // Graphics pipeline
     // ---
 
-    char const *vs_source = R"glsl(
+    const char *vs_source = R"glsl(
             #version 450
             #extension GL_EXT_buffer_reference : enable
 
@@ -1257,7 +1257,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
         )glsl";
     VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
 
-    char const *fs_source = R"glsl(
+    const char *fs_source = R"glsl(
             #version 450
             #extension GL_EXT_buffer_reference : enable
 
@@ -1312,7 +1312,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
     // Compute pipeline
     // ---
 
-    char const *compute_source = R"glsl(
+    const char *compute_source = R"glsl(
             #version 450
             #extension GL_EXT_buffer_reference : enable
 
@@ -1478,7 +1478,7 @@ TEST_F(PositiveGpuAV, SharedPipelineLayoutSubset) {
     pipeline_layout_ci.setLayoutCount = 2;
     const vkt::PipelineLayout pipeline_layout_2(*m_device, pipeline_layout_ci);
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer foo_0 { int a; int b;};
         void main() {
@@ -1554,7 +1554,7 @@ TEST_F(PositiveGpuAV, SharedPipelineLayoutSubsetWithUnboundDescriptorSet) {
     pipeline_layout_ci.setLayoutCount = 3;
     const vkt::PipelineLayout pipeline_layout_2(*m_device, pipeline_layout_ci);
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer foo_0 {
             int a;
@@ -1647,7 +1647,7 @@ TEST_F(PositiveGpuAV, DestroyedPipelineLayout2) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    static const char vertshader[] = R"glsl(
+    const char vertshader[] = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer StorageBuffer { uint x; };
         void main() {
@@ -1717,7 +1717,7 @@ TEST_F(PositiveGpuAV, DISABLED_DeviceGeneratedCommandsIES) {
     command_layout_ci.pTokens = tokens;
     vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
 
-    char const *shader_source_1 = R"glsl(
+    const char *shader_source_1 = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer ssbo {
             uint x[];
@@ -1726,7 +1726,7 @@ TEST_F(PositiveGpuAV, DISABLED_DeviceGeneratedCommandsIES) {
             x[48] = 0; // invalid!
         }
     )glsl";
-    char const *shader_source_2 = R"glsl(
+    const char *shader_source_2 = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer ssbo {
             uint x[];
@@ -1735,7 +1735,7 @@ TEST_F(PositiveGpuAV, DISABLED_DeviceGeneratedCommandsIES) {
             x[24] = 0; // invalid!
         }
     )glsl";
-    char const *shader_source_3 = R"glsl(
+    const char *shader_source_3 = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer ssbo {
             uint x[];
@@ -2136,7 +2136,7 @@ TEST_F(PositiveGpuAV, MixDynamicNormalRenderPass) {
     const vkt::PipelineLayout g_pipeline_layout(*m_device, {&descriptor_set1.layout_}, {pc_ranges});
     const vkt::PipelineLayout c_pipeline_layout(*m_device, {&descriptor_set2.layout_}, {pc_ranges});
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         layout(push_constant) uniform PushConstants {
             uint a[4];

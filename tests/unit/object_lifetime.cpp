@@ -283,7 +283,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferViewDestroyed) {
         descriptor_set.WriteDescriptorBufferView(0, view);
         descriptor_set.UpdateDescriptorSets();
 
-        char const *fsSource = R"glsl(
+        const char *fsSource = R"glsl(
             #version 450
             layout(set=0, binding=0, r32f) uniform readonly imageBuffer s;
             layout(location=0) out vec4 x;
@@ -1008,7 +1008,7 @@ TEST_F(NegativeObjectLifetime, BufferViewInUseDestroyedSignaled) {
     VkResult err = vk::CreateBufferView(device(), &bvci, NULL, &view);
     ASSERT_EQ(VK_SUCCESS, err);
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(set=0, binding=0, r32f) uniform readonly imageBuffer s;
         layout(location=0) out vec4 x;

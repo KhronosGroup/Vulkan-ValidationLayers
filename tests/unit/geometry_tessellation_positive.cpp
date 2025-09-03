@@ -30,7 +30,7 @@ TEST_F(PositiveGeometryTessellation, PointSizeGeomShaderDontWriteMaintenance5) {
     InitRenderTarget();
 
     // Create GS declaring PointSize and writing to it
-    static char const *gsSource = R"glsl(
+    const char *gsSource = R"glsl(
         #version 450
         layout (points) in;
         layout (points) out;
@@ -63,7 +63,7 @@ TEST_F(PositiveGeometryTessellation, IncompatibleDynamicPrimitiveTopology) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    static const char *gsSource = R"glsl(
+    const char *gsSource = R"glsl(
         #version 450
         layout (points) in;
         layout (triangle_strip) out;
@@ -102,7 +102,7 @@ TEST_F(PositiveGeometryTessellation, DrawDynamicPrimitiveTopology) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    static const char *gsSource = R"glsl(
+    const char *gsSource = R"glsl(
         #version 450
         layout (points) in;
         layout (triangle_strip) out;
@@ -147,13 +147,13 @@ TEST_F(PositiveGeometryTessellation, TessellationPointMode) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    static const char tess_src[] = R"glsl(
+    const char tess_src[] = R"glsl(
         #version 460
         layout(triangles, equal_spacing, cw, point_mode) in;
         void main() { gl_Position = vec4(1); }
     )glsl";
 
-    static char const geom_src[] = R"glsl(
+    const char geom_src[] = R"glsl(
         #version 450
         layout (points) in;
         layout (points) out;
@@ -186,7 +186,7 @@ TEST_F(PositiveGeometryTessellation, InterfaceComponents) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vs_source = R"glsl(
+    const char *vs_source = R"glsl(
         #version 450
         layout(location = 0) out ivec4 a;
         void main() {
@@ -194,7 +194,7 @@ TEST_F(PositiveGeometryTessellation, InterfaceComponents) {
         }
     )glsl";
 
-    char const *geom_source = R"glsl(
+    const char *geom_source = R"glsl(
         #version 450
         layout(triangles) in;
         layout(triangle_strip) out;
@@ -219,7 +219,7 @@ TEST_F(PositiveGeometryTessellation, InterfaceComponents) {
         }
     )glsl";
 
-    char const *fs_source = R"glsl(
+    const char *fs_source = R"glsl(
         #version 450
         layout(location = 0) in vec4 b;
         layout(location = 0) out vec4 c;
@@ -245,7 +245,7 @@ TEST_F(PositiveGeometryTessellation, TessGeomPointPrimitiveTopology) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *tcsSource = R"asm(
+    const char *tcsSource = R"asm(
                OpCapability Tessellation
           %2 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
@@ -268,7 +268,7 @@ TEST_F(PositiveGeometryTessellation, TessGeomPointPrimitiveTopology) {
                OpReturn
                OpFunctionEnd
     )asm";
-    char const *tesSource = R"glsl(
+    const char *tesSource = R"glsl(
         #version 450
         layout(triangles, equal_spacing, cw) in;
         layout(location=0) patch in int x;
@@ -277,7 +277,7 @@ TEST_F(PositiveGeometryTessellation, TessGeomPointPrimitiveTopology) {
            gl_Position.w = x;
         }
     )glsl";
-    static const char *gsSource = R"glsl(
+    const char *gsSource = R"glsl(
         #version 450
         layout (points) in;
         layout (triangle_strip) out;

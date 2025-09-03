@@ -188,7 +188,7 @@ TEST_F(PositiveSubpass, DISABLED_InputAttachmentMissingSpecConstant) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout (constant_id = 0) const int index = 4; // over VkDescriptorSetLayoutBinding::descriptorCount
         layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput xs[index];

@@ -455,7 +455,7 @@ TEST_F(NegativeSampler, LinearReductionModeMinMax) {
     sampler_ci.compareEnable = VK_FALSE;
     vkt::Sampler sampler(*m_device, sampler_ci);
 
-    char const *fs_source = R"glsl(
+    const char *fs_source = R"glsl(
         #version 450
         layout (set=0, binding=0) uniform sampler2D bad;
         layout(location=0) out vec4 color;
@@ -823,7 +823,7 @@ TEST_F(NegativeSampler, CustomBorderColorFormatUndefined) {
     descriptor_set.WriteDescriptorImageInfo(0, view, sampler);
     descriptor_set.UpdateDescriptorSets();
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform sampler2D s;
         layout(location=0) out vec4 x;
@@ -876,7 +876,7 @@ TEST_F(NegativeSampler, CustomBorderColorFormatUndefinedNonCombined) {
     descriptor_set.WriteDescriptorImageInfo(1, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
     descriptor_set.UpdateDescriptorSets();
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform sampler s;
         layout(set=0, binding=1) uniform texture2D t;
@@ -935,7 +935,7 @@ TEST_F(NegativeSampler, DISABLED_CustomBorderColorFormatUndefinedNonCombinedMult
     descriptor_set1.WriteDescriptorImageInfo(3, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
     descriptor_set1.UpdateDescriptorSets();
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(set=0, binding=2) uniform sampler s;
         layout(set=1, binding=3) uniform texture2D t;

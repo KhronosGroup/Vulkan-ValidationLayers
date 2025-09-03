@@ -24,7 +24,7 @@ TEST_F(PositiveGpuAVDescriptorClassTexelBuffer, ImageLoadStoreTexelFetch) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
 
         layout(set = 0, binding = 0) uniform samplerBuffer u_buffer; // texel_buffer[5]
@@ -77,7 +77,7 @@ TEST_F(PositiveGpuAVDescriptorClassTexelBuffer, AtomicImageLoadStore) {
         GTEST_SKIP() << "No atomic texel buffer support";
     }
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         #extension GL_KHR_memory_scope_semantics : enable
         #extension GL_EXT_shader_atomic_float : enable
@@ -118,7 +118,7 @@ TEST_F(PositiveGpuAVDescriptorClassTexelBuffer, TexelFetchArray) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
 
         layout(set = 0, binding = 0, std430) buffer foo {
@@ -176,7 +176,7 @@ TEST_F(PositiveGpuAVDescriptorClassTexelBuffer, Robustness) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
 
         layout(set = 0, binding = 0) uniform samplerBuffer u_buffer; // texel_buffer[5]

@@ -22,7 +22,7 @@ TEST_F(NegativeShaderDebugInfo, FileName1) {
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
     RETURN_IF_SKIP(Init());
 
-    char const *source = R"(
+    const char *source = R"(
                OpCapability Shader
                OpExtension "SPV_KHR_non_semantic_info"
           %1 = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"
@@ -76,7 +76,7 @@ TEST_F(NegativeShaderDebugInfo, FileName2) {
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
     RETURN_IF_SKIP(Init());
 
-    char const *source = R"(
+    const char *source = R"(
                OpCapability Shader
                OpExtension "SPV_KHR_non_semantic_info"
           %1 = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"
@@ -132,7 +132,7 @@ TEST_F(NegativeShaderDebugInfo, FileName3) {
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
     RETURN_IF_SKIP(Init());
 
-    char const *source = R"(
+    const char *source = R"(
                OpCapability Shader
                OpExtension "SPV_KHR_non_semantic_info"
           %1 = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"
@@ -188,7 +188,7 @@ TEST_F(NegativeShaderDebugInfo, FileName4) {
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
     RETURN_IF_SKIP(Init());
 
-    char const *source = R"(
+    const char *source = R"(
                OpCapability Shader
                OpExtension "SPV_KHR_non_semantic_info"
           %1 = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"

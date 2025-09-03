@@ -473,7 +473,7 @@ TEST_F(PositiveRenderPass, SingleMipTransition) {
 
     // Create shader modules
 
-    char const fsSource[] = R"glsl(
+    const char fsSource[] = R"glsl(
         #version 450
         layout(location=0) out vec4 x;
         layout(set=0, binding=2) uniform sampler2D depth;

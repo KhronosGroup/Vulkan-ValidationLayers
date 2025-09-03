@@ -64,7 +64,7 @@ TEST_F(PositivePipelineTopology, PointSizeGeomShaderDontEmit) {
     InitRenderTarget();
 
     // Never calls OpEmitVertex
-    static char const *gsSource = R"glsl(
+    const char *gsSource = R"glsl(
         #version 450
         layout (points) in;
         layout (points) out;
@@ -374,7 +374,7 @@ TEST_F(PositivePipelineTopology, NotPointSizeGeometry) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    static char const geom_src[] = R"glsl(
+    const char geom_src[] = R"glsl(
         #version 460
         layout(points) in;
         layout(triangle_strip, max_vertices=3) out;
@@ -402,7 +402,7 @@ TEST_F(PositivePipelineTopology, Rasterizer) {
 
     InitRenderTarget();
 
-    char const *tcsSource = R"glsl(
+    const char *tcsSource = R"glsl(
         #version 450
         layout(vertices = 3) out;
         void main(){
@@ -410,7 +410,7 @@ TEST_F(PositivePipelineTopology, Rasterizer) {
            gl_TessLevelInner[0] = 1;
         }
     )glsl";
-    char const *tesSource = R"glsl(
+    const char *tesSource = R"glsl(
         #version 450
         layout(triangles, equal_spacing, cw) in;
         void main(){
@@ -418,7 +418,7 @@ TEST_F(PositivePipelineTopology, Rasterizer) {
            gl_Position.w = 1.0f;
         }
     )glsl";
-    static char const *gsSource = R"glsl(
+    const char *gsSource = R"glsl(
         #version 450
         layout (triangles) in;
         layout (triangle_strip) out;

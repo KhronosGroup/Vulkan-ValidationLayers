@@ -37,7 +37,7 @@ vkt::Buffer VkSyncValTest::GetSerializationDeserializationBuffer(const vkt::as::
 }
 
 CreateComputePipelineHelper VkSyncValTest::GetRayQueryComputePipeline(VkAccelerationStructureKHR as) {
-    char const* cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 460
         #extension GL_EXT_ray_query : require
         layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;

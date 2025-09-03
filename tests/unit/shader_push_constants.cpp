@@ -26,7 +26,7 @@ TEST_F(NegativeShaderPushConstants, NotDeclared) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo { float x; } consts;
         void main(){
@@ -194,7 +194,7 @@ TEST_F(NegativeShaderPushConstants, NotInLayout) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo { float x; } consts;
         void main(){
@@ -234,7 +234,7 @@ TEST_F(NegativeShaderPushConstants, Range) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    char const *const vsSource = R"glsl(
+    const char *const vsSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo { float x[4]; } constants;
         void main(){
@@ -297,7 +297,7 @@ TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
     InitRenderTarget();
 
     // push constant range: 0-99
-    char const *const vsSource = R"glsl(
+    const char *const vsSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo {
            bool b;
@@ -321,7 +321,7 @@ TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
     )glsl";
 
     // push constant range: 0 - 95
-    char const *const fsSource = R"glsl(
+    const char *const fsSource = R"glsl(
         #version 450
         struct foo1{
            int i[4];
@@ -410,7 +410,7 @@ TEST_F(NegativeShaderPushConstants, BufferDeviceAddress) {
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(Init());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
         layout(buffer_reference, buffer_reference_align = 16, std430) buffer BDA {

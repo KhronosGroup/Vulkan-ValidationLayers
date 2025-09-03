@@ -64,9 +64,9 @@ class Instruction {
     // Only used to get strings in SPIR-V instructions
     // SPIR-V spec (and spirv-val) ensure:
     // "A string is interpreted as a nul-terminated stream of characters"
-    char const* GetAsString(uint32_t operand) const {
+    const char* GetAsString(uint32_t operand) const {
         assert(operand < Length());
-        return (char const*)&words_[operand];
+        return (const char*)&words_[operand];
     }
 
     uint32_t GetConstantValue() const;

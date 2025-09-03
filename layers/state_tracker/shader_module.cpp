@@ -1542,7 +1542,7 @@ std::string Module::DescribeInstruction(const Instruction& error_insn) const {
     return ss.str();
 }
 
-std::shared_ptr<const EntryPoint> Module::FindEntrypoint(char const* name, VkShaderStageFlagBits stageBits) const {
+std::shared_ptr<const EntryPoint> Module::FindEntrypoint(const char* name, VkShaderStageFlagBits stageBits) const {
     if (!name) return nullptr;
     for (const auto& entry_point : static_data_.entry_points) {
         if (entry_point->name.compare(name) == 0 && entry_point->stage == stageBits) {
@@ -1787,7 +1787,7 @@ uint32_t GetFormatType(VkFormat format) {
     return NumericTypeFloat;
 }
 
-char const* string_NumericType(uint32_t type) {
+const char* string_NumericType(uint32_t type) {
     if (type == NumericTypeSint) return "SINT";
     if (type == NumericTypeUint) return "UINT";
     if (type == NumericTypeFloat) return "FLOAT";

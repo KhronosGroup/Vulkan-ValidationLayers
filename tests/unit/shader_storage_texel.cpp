@@ -159,7 +159,7 @@ TEST_F(NegativeShaderStorageTexel, ComponentTypeMismatch) {
         GTEST_SKIP() << "Format doesn't support storage write without format";
     }
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) writeonly uniform iimageBuffer storageTexelBuffer;
         void main() {
@@ -203,7 +203,7 @@ TEST_F(NegativeShaderStorageTexel, FormatComponentTypeMismatch) {
         GTEST_SKIP() << "Format doesn't support storage texel buffer";
     }
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0, R8ui) writeonly uniform uimageBuffer storageTexelBuffer;
         void main() {
@@ -247,7 +247,7 @@ TEST_F(NegativeShaderStorageTexel, FormatComponentTypeMismatch2) {
         GTEST_SKIP() << "Format doesn't support storage texel buffer";
     }
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0, R32ui) writeonly uniform uimageBuffer storageTexelBuffer;
         void main() {

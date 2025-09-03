@@ -234,7 +234,7 @@ TEST_F(PositiveDescriptors, ImmutableSamplerOnlyDescriptor) {
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(location=0) out vec4 x;
         layout(set=0, binding=0) uniform sampler immutableSampler;
@@ -340,7 +340,7 @@ TEST_F(PositiveDescriptors, DynamicOffsetWithInactiveBinding) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     // Create PSO to be used for draw-time errors below
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(location=0) out vec4 x;
         layout(set=0) layout(binding=0) uniform foo1 { int x; int y; } bar1;
@@ -491,7 +491,7 @@ TEST_F(PositiveDescriptors, DescriptorSetCompatibilityMutableDescriptors) {
     descriptor_set_1.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set_1.UpdateDescriptorSets();
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer SSBO {
             uint a;
@@ -708,7 +708,7 @@ TEST_F(PositiveDescriptors, ImageViewAsDescriptorReadAndInputAttachment) {
 
     vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view_handle);
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
             #version 450
             layout(location = 0) out vec4 color;
             layout(set = 0, binding = 0, rgba8) readonly uniform image2D image1;
@@ -875,7 +875,7 @@ TEST_F(PositiveDescriptors, DrawingWithUnboundUnusedSetWithInputAttachments) {
 
     vkt::Framebuffer fb(*m_device, rp, 1, &view_input.handle(), width, height);
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;
         void main() {
@@ -1118,7 +1118,7 @@ TEST_F(PositiveDescriptors, AttachmentFeedbackLoopLayout) {
                                             VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT);
     descriptor_set.UpdateDescriptorSets();
 
-    char const *frag_src = R"glsl(
+    const char *frag_src = R"glsl(
         #version 450
         layout(set=0) layout(binding=0) uniform sampler2D tex;
         layout(location=0) out vec4 color;
@@ -1259,7 +1259,7 @@ TEST_F(PositiveDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescripto
     //     x = vec4(1.0f);
     //     foo(image_1);
     // }
-    char const *fsSource = R"(
+    const char *fsSource = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint Fragment %main "main" %color_attach
@@ -1844,7 +1844,7 @@ TEST_F(PositiveDescriptors, ImmutableSamplerIdenticallyDefined) {
                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     descriptor_set.UpdateDescriptorSets();
 
-    char const *csSource = R"glsl(
+    const char *csSource = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer StorageBuffer { vec4 dummy; };
         layout(set = 0, binding = 1) uniform sampler s;
@@ -1902,7 +1902,7 @@ TEST_F(PositiveDescriptors, ImmutableSamplerIdenticallyDefinedMaintenance4) {
                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     descriptor_set.UpdateDescriptorSets();
 
-    char const *csSource = R"glsl(
+    const char *csSource = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer StorageBuffer { vec4 dummy; };
         layout(set = 0, binding = 1) uniform sampler s;
@@ -1969,7 +1969,7 @@ TEST_F(PositiveDescriptors, ImmutableSamplerIdenticallyDefinedFilterMinmax) {
                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     descriptor_set.UpdateDescriptorSets();
 
-    char const *csSource = R"glsl(
+    const char *csSource = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer StorageBuffer { vec4 dummy; };
         layout(set = 0, binding = 1) uniform sampler s;
@@ -2102,7 +2102,7 @@ TEST_F(PositiveDescriptors, ReuseSetLayoutDefWithImmutableSamplers2) {
         descriptor_write.pImageInfo = &image_info;
         vk::UpdateDescriptorSets(*m_device, 1u, &descriptor_write, 0u, nullptr);
 
-        char const *fsSource = R"glsl(
+        const char *fsSource = R"glsl(
             #version 440
 
             layout(set = 0, binding = 0) uniform sampler2DMS u_ms_image_sampler;

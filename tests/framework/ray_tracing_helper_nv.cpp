@@ -78,7 +78,7 @@ void RayTracingPipelineHelper::InitPipelineLayoutInfo() {
 }
 
 void RayTracingPipelineHelper::InitShaderInfo() {  // DONE
-    static const char rayGenShaderText[] = R"glsl(
+    const char rayGenShaderText[] = R"glsl(
         #version 460 core
         #extension GL_NV_ray_tracing : require
         layout(set = 0, binding = 0, rgba8) uniform image2D image;
@@ -102,7 +102,7 @@ void RayTracingPipelineHelper::InitShaderInfo() {  // DONE
         }
     )glsl";
 
-    static char const closestHitShaderText[] = R"glsl(
+    const char closestHitShaderText[] = R"glsl(
         #version 460 core
         #extension GL_NV_ray_tracing : require
         layout(location = 0) rayPayloadInNV float hitValue;
@@ -112,7 +112,7 @@ void RayTracingPipelineHelper::InitShaderInfo() {  // DONE
         }
     )glsl";
 
-    static char const missShaderText[] = R"glsl(
+    const char missShaderText[] = R"glsl(
         #version 460 core
         #extension GL_NV_ray_tracing : require
         layout(location = 0) rayPayloadInNV float hitValue;

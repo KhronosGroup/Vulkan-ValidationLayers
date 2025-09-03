@@ -65,7 +65,7 @@ void NegativeDebugPrintf::BasicComputeTest(const char *shader, const char *messa
 }
 
 TEST_F(NegativeDebugPrintf, Float) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -77,7 +77,7 @@ TEST_F(NegativeDebugPrintf, Float) {
 }
 
 TEST_F(NegativeDebugPrintf, IntUnsigned) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -89,7 +89,7 @@ TEST_F(NegativeDebugPrintf, IntUnsigned) {
 }
 
 TEST_F(NegativeDebugPrintf, IntUnsignedUnderflow) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -101,7 +101,7 @@ TEST_F(NegativeDebugPrintf, IntUnsignedUnderflow) {
 }
 
 TEST_F(NegativeDebugPrintf, IntSignedOverflow) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -113,7 +113,7 @@ TEST_F(NegativeDebugPrintf, IntSignedOverflow) {
 }
 
 TEST_F(NegativeDebugPrintf, TwoFloats) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -125,7 +125,7 @@ TEST_F(NegativeDebugPrintf, TwoFloats) {
 }
 
 TEST_F(NegativeDebugPrintf, FloatPrecision) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -137,7 +137,7 @@ TEST_F(NegativeDebugPrintf, FloatPrecision) {
 }
 
 TEST_F(NegativeDebugPrintf, TextBeforeAndAfter) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -149,7 +149,7 @@ TEST_F(NegativeDebugPrintf, TextBeforeAndAfter) {
 }
 
 TEST_F(NegativeDebugPrintf, IntOctal) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -161,7 +161,7 @@ TEST_F(NegativeDebugPrintf, IntOctal) {
 }
 
 TEST_F(NegativeDebugPrintf, IntOctalNegative) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -173,7 +173,7 @@ TEST_F(NegativeDebugPrintf, IntOctalNegative) {
 }
 
 TEST_F(NegativeDebugPrintf, IntNegative) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -185,7 +185,7 @@ TEST_F(NegativeDebugPrintf, IntNegative) {
 }
 
 TEST_F(NegativeDebugPrintf, FloatVector2) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -197,7 +197,7 @@ TEST_F(NegativeDebugPrintf, FloatVector2) {
 }
 
 TEST_F(NegativeDebugPrintf, FloatVector3) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -209,7 +209,7 @@ TEST_F(NegativeDebugPrintf, FloatVector3) {
 }
 
 TEST_F(NegativeDebugPrintf, FloatVector4) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -221,7 +221,7 @@ TEST_F(NegativeDebugPrintf, FloatVector4) {
 }
 
 TEST_F(NegativeDebugPrintf, FloatVectorPrecision) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -233,7 +233,7 @@ TEST_F(NegativeDebugPrintf, FloatVectorPrecision) {
 }
 
 TEST_F(NegativeDebugPrintf, FloatVectorPrecisionZeroPad) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -245,7 +245,7 @@ TEST_F(NegativeDebugPrintf, FloatVectorPrecisionZeroPad) {
 }
 
 TEST_F(NegativeDebugPrintf, FloatVectorZeroPad) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -257,7 +257,7 @@ TEST_F(NegativeDebugPrintf, FloatVectorZeroPad) {
 }
 
 TEST_F(NegativeDebugPrintf, FloatVectorScientificNotation) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -269,7 +269,7 @@ TEST_F(NegativeDebugPrintf, FloatVectorScientificNotation) {
 }
 
 TEST_F(NegativeDebugPrintf, IntVector) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -281,7 +281,7 @@ TEST_F(NegativeDebugPrintf, IntVector) {
 }
 
 TEST_F(NegativeDebugPrintf, IntVectorUnsigned) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -293,7 +293,7 @@ TEST_F(NegativeDebugPrintf, IntVectorUnsigned) {
 }
 
 TEST_F(NegativeDebugPrintf, IntVectorHex) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -305,7 +305,7 @@ TEST_F(NegativeDebugPrintf, IntVectorHex) {
 }
 
 TEST_F(NegativeDebugPrintf, IntVectorZeroPad) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -317,7 +317,7 @@ TEST_F(NegativeDebugPrintf, IntVectorZeroPad) {
 }
 
 TEST_F(NegativeDebugPrintf, ScientificNotation) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -329,7 +329,7 @@ TEST_F(NegativeDebugPrintf, ScientificNotation) {
 }
 
 TEST_F(NegativeDebugPrintf, ScientificNotationPrecision) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -341,7 +341,7 @@ TEST_F(NegativeDebugPrintf, ScientificNotationPrecision) {
 }
 
 TEST_F(NegativeDebugPrintf, FloatShortest) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -354,7 +354,7 @@ TEST_F(NegativeDebugPrintf, FloatShortest) {
 
 // TODO - This prints out  0x1.921cacp+1 vs 0x1.921cac0000000p+1 depending on Windows or not
 TEST_F(NegativeDebugPrintf, DISABLED_FloatHex) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -366,7 +366,7 @@ TEST_F(NegativeDebugPrintf, DISABLED_FloatHex) {
 }
 
 TEST_F(NegativeDebugPrintf, FloatHexPrecision) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -379,7 +379,7 @@ TEST_F(NegativeDebugPrintf, FloatHexPrecision) {
 
 TEST_F(NegativeDebugPrintf, Int64) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_ARB_gpu_shader_int64 : enable
@@ -393,7 +393,7 @@ TEST_F(NegativeDebugPrintf, Int64) {
 
 TEST_F(NegativeDebugPrintf, Int64Vector) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_ARB_gpu_shader_int64 : enable
@@ -408,7 +408,7 @@ TEST_F(NegativeDebugPrintf, Int64Vector) {
 
 TEST_F(NegativeDebugPrintf, Int64Hex) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_ARB_gpu_shader_int64 : enable
@@ -422,7 +422,7 @@ TEST_F(NegativeDebugPrintf, Int64Hex) {
 
 TEST_F(NegativeDebugPrintf, Int64VectorHex) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_ARB_gpu_shader_int64 : enable
@@ -438,7 +438,7 @@ TEST_F(NegativeDebugPrintf, Int64VectorHex) {
 // TODO - Windows trims the leading values and will print 0x001 (Linux ignores the Precision)
 TEST_F(NegativeDebugPrintf, DISABLED_Int64VectorHexPrecision) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_ARB_gpu_shader_int64 : enable
@@ -453,7 +453,7 @@ TEST_F(NegativeDebugPrintf, DISABLED_Int64VectorHexPrecision) {
 
 TEST_F(NegativeDebugPrintf, Int64VectorDecimal) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_ARB_gpu_shader_int64 : enable
@@ -468,7 +468,7 @@ TEST_F(NegativeDebugPrintf, Int64VectorDecimal) {
 
 TEST_F(NegativeDebugPrintf, Float64) {
     AddRequiredFeature(vkt::Feature::shaderFloat64);
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
@@ -483,7 +483,7 @@ TEST_F(NegativeDebugPrintf, Float64) {
 
 TEST_F(NegativeDebugPrintf, Float64Vector) {
     AddRequiredFeature(vkt::Feature::shaderFloat64);
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
@@ -498,7 +498,7 @@ TEST_F(NegativeDebugPrintf, Float64Vector) {
 
 TEST_F(NegativeDebugPrintf, Float64VectorPrecision) {
     AddRequiredFeature(vkt::Feature::shaderFloat64);
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
@@ -515,7 +515,7 @@ TEST_F(NegativeDebugPrintf, FloatMix) {
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderFloat16);
     AddRequiredFeature(vkt::Feature::shaderFloat64);
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
@@ -533,7 +533,7 @@ TEST_F(NegativeDebugPrintf, FloatMix) {
 TEST_F(NegativeDebugPrintf, Float16) {
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderFloat16);
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
@@ -549,7 +549,7 @@ TEST_F(NegativeDebugPrintf, Float16) {
 TEST_F(NegativeDebugPrintf, Float16Vector) {
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderFloat16);
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
@@ -565,7 +565,7 @@ TEST_F(NegativeDebugPrintf, Float16Vector) {
 TEST_F(NegativeDebugPrintf, Float16Precision) {
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderFloat16);
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
@@ -580,7 +580,7 @@ TEST_F(NegativeDebugPrintf, Float16Precision) {
 // TODO casting is wrong
 TEST_F(NegativeDebugPrintf, Int16) {
     AddRequiredFeature(vkt::Feature::shaderInt16);
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_EXT_shader_explicit_arithmetic_types_int16: enable
@@ -595,7 +595,7 @@ TEST_F(NegativeDebugPrintf, Int16) {
 
 TEST_F(NegativeDebugPrintf, Int16Vector) {
     AddRequiredFeature(vkt::Feature::shaderInt16);
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_EXT_shader_explicit_arithmetic_types_int16: enable
@@ -612,7 +612,7 @@ TEST_F(NegativeDebugPrintf, Int16Vector) {
 
 TEST_F(NegativeDebugPrintf, Int16Hex) {
     AddRequiredFeature(vkt::Feature::shaderInt16);
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_EXT_shader_explicit_arithmetic_types_int16: enable
@@ -628,7 +628,7 @@ TEST_F(NegativeDebugPrintf, Int16Hex) {
 TEST_F(NegativeDebugPrintf, Int8) {
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderInt8);
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_EXT_shader_explicit_arithmetic_types_int8: enable
@@ -644,7 +644,7 @@ TEST_F(NegativeDebugPrintf, Int8) {
 TEST_F(NegativeDebugPrintf, Int8Vector) {
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderInt8);
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_EXT_shader_explicit_arithmetic_types_int8: enable
@@ -662,7 +662,7 @@ TEST_F(NegativeDebugPrintf, Int8Vector) {
 TEST_F(NegativeDebugPrintf, Int8Hex) {
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderInt8);
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_EXT_shader_explicit_arithmetic_types_int8: enable
@@ -676,7 +676,7 @@ TEST_F(NegativeDebugPrintf, Int8Hex) {
 }
 
 TEST_F(NegativeDebugPrintf, BoolAsHex) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -689,7 +689,7 @@ TEST_F(NegativeDebugPrintf, BoolAsHex) {
 }
 
 TEST_F(NegativeDebugPrintf, BoolVector) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
 
@@ -708,7 +708,7 @@ TEST_F(NegativeDebugPrintf, BoolVector) {
 }
 
 TEST_F(NegativeDebugPrintf, BoolNonConstant) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
 
@@ -724,7 +724,7 @@ TEST_F(NegativeDebugPrintf, BoolNonConstant) {
 }
 
 TEST_F(NegativeDebugPrintf, Int32Before) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -739,7 +739,7 @@ TEST_F(NegativeDebugPrintf, Int32Before) {
 }
 
 TEST_F(NegativeDebugPrintf, Int32After) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -755,7 +755,7 @@ TEST_F(NegativeDebugPrintf, Int32After) {
 
 TEST_F(NegativeDebugPrintf, Int64Before) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_ARB_gpu_shader_int64 : enable
@@ -773,7 +773,7 @@ TEST_F(NegativeDebugPrintf, Int64Before) {
 
 TEST_F(NegativeDebugPrintf, Int64After) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_ARB_gpu_shader_int64 : enable
@@ -790,7 +790,7 @@ TEST_F(NegativeDebugPrintf, Int64After) {
 
 TEST_F(NegativeDebugPrintf, Int64Signed) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_ARB_gpu_shader_int64 : enable
@@ -807,7 +807,7 @@ TEST_F(NegativeDebugPrintf, Int64Signed) {
 
 TEST_F(NegativeDebugPrintf, Int64SignedMix) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_ARB_gpu_shader_int64 : enable
@@ -822,7 +822,7 @@ TEST_F(NegativeDebugPrintf, Int64SignedMix) {
 }
 
 TEST_F(NegativeDebugPrintf, FunctionParam) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         int foo(int x, int y) {
@@ -844,7 +844,7 @@ TEST_F(NegativeDebugPrintf, Pointers) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_EXT_buffer_reference : enable
@@ -902,7 +902,7 @@ TEST_F(NegativeDebugPrintf, Empty) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -931,7 +931,7 @@ TEST_F(NegativeDebugPrintf, MultipleFunctions) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         int data = 0;
@@ -979,7 +979,7 @@ TEST_F(NegativeDebugPrintf, Fragment) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(location = 0) out vec4 outColor;
@@ -1024,7 +1024,7 @@ TEST_F(NegativeDebugPrintf, HLSL) {
     //         printf("launchIndex %v2d", launchIndex);
     //    }
     // }
-    char const *shader_source = R"(
+    const char *shader_source = R"(
                OpCapability Shader
                OpExtension "SPV_KHR_non_semantic_info"
          %29 = OpExtInstImport "NonSemantic.DebugPrintf"
@@ -1105,7 +1105,7 @@ TEST_F(NegativeDebugPrintf, MultiDraw) {
     descriptor_set.WriteDescriptorBufferInfo(0, buffer_in, 0, sizeof(uint32_t));
     descriptor_set.UpdateDescriptorSets();
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(set = 0, binding = 0) uniform ufoo {
@@ -1197,7 +1197,7 @@ TEST_F(NegativeDebugPrintf, MeshTaskShadersNV) {
     RETURN_IF_SKIP(InitState(nullptr, &mesh_shader_features));
     InitRenderTarget();
 
-    static const char taskShaderText[] = R"glsl(
+    const char taskShaderText[] = R"glsl(
         #version 460
         #extension GL_NV_mesh_shader : enable
         #extension GL_EXT_debug_printf : enable
@@ -1211,7 +1211,7 @@ TEST_F(NegativeDebugPrintf, MeshTaskShadersNV) {
         }
         )glsl";
 
-    static const char meshShaderText[] = R"glsl(
+    const char meshShaderText[] = R"glsl(
         #version 450
         #extension GL_NV_mesh_shader : require
         #extension GL_EXT_debug_printf : enable
@@ -1365,7 +1365,7 @@ TEST_F(NegativeDebugPrintf, MeshTaskIndirect) {
         }
     )glsl";
 
-    char const *mesh_source = R"glsl(
+    const char *mesh_source = R"glsl(
         #version 450
         #extension GL_EXT_mesh_shader : require
         #extension GL_EXT_debug_printf : enable
@@ -1384,7 +1384,7 @@ TEST_F(NegativeDebugPrintf, MeshTaskIndirect) {
         }
     )glsl";
 
-    char const *frag_source = R"glsl(
+    const char *frag_source = R"glsl(
         #version 460
         #extension GL_EXT_debug_printf : enable
         layout(location = 0) out vec4 uFragColor;
@@ -1448,7 +1448,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
     descriptor_set.WriteDescriptorBufferInfo(0, buffer_in, 0, sizeof(uint32_t));
     descriptor_set.UpdateDescriptorSets();
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(set = 0, binding = 0) uniform ufoo {
@@ -1512,7 +1512,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    std::vector<char const *> messages;
+    std::vector<const char *> messages;
     messages.emplace_back("Here are two float values 1.000000, 3.141500");
     messages.emplace_back("Here's a smaller float value 3.14");
     messages.emplace_back("Here's an integer -135 with text before and after it");
@@ -1558,7 +1558,7 @@ TEST_F(NegativeDebugPrintf, GPLMultiDraw) {
     descriptor_set.WriteDescriptorBufferInfo(0, buffer_in, 0, sizeof(uint32_t));
     descriptor_set.UpdateDescriptorSets();
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(set = 0, binding = 0) uniform ufoo {
@@ -1642,7 +1642,7 @@ TEST_F(NegativeDebugPrintf, GPLInt64) {
     descriptor_set.WriteDescriptorBufferInfo(0, buffer_in, 0, sizeof(uint32_t));
     descriptor_set.UpdateDescriptorSets();
 
-    char const *shader_source_int64 = R"glsl(
+    const char *shader_source_int64 = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_ARB_gpu_shader_int64 : enable
@@ -1737,7 +1737,7 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
 
     const std::array<VkDescriptorSet, 2> desc_sets = {vertex_set.set_, fragment_set.set_};
 
-    static const char vert_shader[] = R"glsl(
+    const char vert_shader[] = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(set = 0, binding = 0) readonly buffer Input { uint u_buffer[]; } v_in; // texel_buffer[4]
@@ -1755,7 +1755,7 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
         }
     )glsl";
 
-    static const char frag_shader[] = R"glsl(
+    const char frag_shader[] = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(set = 1, binding = 0) readonly buffer Input { uint u_buffer[]; } f_in; // texel_buffer[4]
@@ -1832,7 +1832,7 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     vertex_input_lib.InitVertexInputLibInfo();
     vertex_input_lib.CreateGraphicsPipeline(false);
 
-    static const char vertshader[] = R"glsl(
+    const char vertshader[] = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(set = 0, binding = 0) readonly buffer Input { uint u_buffer[]; } v_in; // texel_buffer[4]
@@ -1861,7 +1861,7 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     pre_raster_lib.gp_ci_.layout = pipeline_layout_vs;
     pre_raster_lib.CreateGraphicsPipeline(false);
 
-    static const char frag_shader[] = R"glsl(
+    const char frag_shader[] = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(set = 1, binding = 0) readonly buffer Input { uint u_buffer[]; } f_in; // texel_buffer[4]
@@ -1922,7 +1922,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectsGraphics) {
     RETURN_IF_SKIP(InitState());
     InitDynamicRenderTarget();
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -1956,7 +1956,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjects) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -2006,7 +2006,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectsInt64) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_ARB_gpu_shader_int64 : enable
@@ -2046,7 +2046,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectsMultiDraw) {
     RETURN_IF_SKIP(InitState());
     InitDynamicRenderTarget();
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -2120,7 +2120,7 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaderObjects) {
     RETURN_IF_SKIP(InitState());
     InitDynamicRenderTarget();
 
-    static const char *taskShaderText = R"glsl(
+    const char *taskShaderText = R"glsl(
         #version 460
         #extension GL_EXT_mesh_shader : require // Requires SPIR-V 1.5 (Vulkan 1.2)
         #extension GL_EXT_debug_printf : enable
@@ -2131,7 +2131,7 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaderObjects) {
         }
     )glsl";
 
-    static const char *meshShaderText = R"glsl(
+    const char *meshShaderText = R"glsl(
         #version 460
         #extension GL_EXT_mesh_shader : require // Requires SPIR-V 1.5 (Vulkan 1.2)
         #extension GL_EXT_debug_printf : enable
@@ -2168,7 +2168,7 @@ TEST_F(NegativeDebugPrintf, VertexFragmentSeparateShader) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    static const char vert_shader[] = R"glsl(
+    const char vert_shader[] = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
 
@@ -2178,7 +2178,7 @@ TEST_F(NegativeDebugPrintf, VertexFragmentSeparateShader) {
             gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
         }
     )glsl";
-    static const char frag_shader[] = R"glsl(
+    const char frag_shader[] = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
 
@@ -2335,7 +2335,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectFragment) {
     RETURN_IF_SKIP(InitState());
     InitDynamicRenderTarget();
 
-    char const *fs_source = R"glsl(
+    const char *fs_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -2372,7 +2372,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectCompute) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -2420,7 +2420,7 @@ TEST_F(NegativeDebugPrintf, SetupErrorVersion) {
 
     InitRenderTarget();
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -2447,7 +2447,7 @@ TEST_F(NegativeDebugPrintf, LocalSizeId) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"(
+    const char *shader_source = R"(
                OpCapability Shader
                OpExtension "SPV_KHR_non_semantic_info"
          %30 = OpExtInstImport "NonSemantic.DebugPrintf"
@@ -2531,7 +2531,7 @@ TEST_F(NegativeDebugPrintf, Maintenance5) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -2573,7 +2573,7 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineReserved) {
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit | kInformationBit);
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -2642,7 +2642,7 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineNotReserved) {
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit | kInformationBit);
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -2710,7 +2710,7 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineGraphics) {
     InitRenderTarget();
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit | kInformationBit);
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -2787,7 +2787,7 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineGPL) {
     InitRenderTarget();
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit | kInformationBit);
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -2855,7 +2855,7 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsShaderObjectReserved) {
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit | kInformationBit);
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -2925,7 +2925,7 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsShaderObjectNotReserved) {
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit | kInformationBit);
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -2996,7 +2996,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectMultiCreate) {
     RETURN_IF_SKIP(InitState());
     InitDynamicRenderTarget();
 
-    char const *vs_source = R"glsl(
+    const char *vs_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         vec2 vertices[3];
@@ -3009,7 +3009,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectMultiCreate) {
         }
     )glsl";
 
-    char const *fs_source = R"glsl(
+    const char *fs_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -3061,7 +3061,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectBoundDescriptor) {
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit | kInformationBit);
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(set = 0, binding = 0) buffer SSBO { uint x; };
@@ -3098,7 +3098,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectUnusedBoundDescriptor) {
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit | kInformationBit);
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(set = 0, binding = 0) buffer SSBO { uint x; };
@@ -3136,7 +3136,7 @@ TEST_F(NegativeDebugPrintf, OverflowBuffer) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
@@ -3165,7 +3165,7 @@ TEST_F(NegativeDebugPrintf, OverflowBufferLoop) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
@@ -3203,7 +3203,7 @@ void NegativeDebugPrintf::BasicFormattingTest(const char *shader, bool warning) 
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedNoVectorSize) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -3214,7 +3214,7 @@ TEST_F(NegativeDebugPrintf, MisformattedNoVectorSize) {
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedLargeVectorSize) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -3226,7 +3226,7 @@ TEST_F(NegativeDebugPrintf, MisformattedLargeVectorSize) {
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedSmallVectorSize) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -3238,7 +3238,7 @@ TEST_F(NegativeDebugPrintf, MisformattedSmallVectorSize) {
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedNoSpecifier1) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -3249,7 +3249,7 @@ TEST_F(NegativeDebugPrintf, MisformattedNoSpecifier1) {
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedNoSpecifier2) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -3260,7 +3260,7 @@ TEST_F(NegativeDebugPrintf, MisformattedNoSpecifier2) {
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedUnknown1) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -3271,7 +3271,7 @@ TEST_F(NegativeDebugPrintf, MisformattedUnknown1) {
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedUnknown2) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -3282,7 +3282,7 @@ TEST_F(NegativeDebugPrintf, MisformattedUnknown2) {
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedUnknown3) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -3293,7 +3293,7 @@ TEST_F(NegativeDebugPrintf, MisformattedUnknown3) {
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedExtraArguments) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -3304,7 +3304,7 @@ TEST_F(NegativeDebugPrintf, MisformattedExtraArguments) {
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedNoModifiers) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -3315,7 +3315,7 @@ TEST_F(NegativeDebugPrintf, MisformattedNoModifiers) {
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedIsloatedPercent) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -3326,7 +3326,7 @@ TEST_F(NegativeDebugPrintf, MisformattedIsloatedPercent) {
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedNotEnoughArguments) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -3337,7 +3337,7 @@ TEST_F(NegativeDebugPrintf, MisformattedNotEnoughArguments) {
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedNoArguments) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -3348,7 +3348,7 @@ TEST_F(NegativeDebugPrintf, MisformattedNoArguments) {
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedNotVectorArg) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -3360,7 +3360,7 @@ TEST_F(NegativeDebugPrintf, MisformattedNotVectorArg) {
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedNotVectorParam) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -3372,7 +3372,7 @@ TEST_F(NegativeDebugPrintf, MisformattedNotVectorParam) {
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedVectorSmall) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -3383,7 +3383,7 @@ TEST_F(NegativeDebugPrintf, MisformattedVectorSmall) {
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedVectorLarge) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -3394,7 +3394,7 @@ TEST_F(NegativeDebugPrintf, MisformattedVectorLarge) {
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedFloat1) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -3406,7 +3406,7 @@ TEST_F(NegativeDebugPrintf, MisformattedFloat1) {
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedFloat2) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -3418,7 +3418,7 @@ TEST_F(NegativeDebugPrintf, MisformattedFloat2) {
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedFloatVector1) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -3430,7 +3430,7 @@ TEST_F(NegativeDebugPrintf, MisformattedFloatVector1) {
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedFloatVector2) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -3443,7 +3443,7 @@ TEST_F(NegativeDebugPrintf, MisformattedFloatVector2) {
 
 TEST_F(NegativeDebugPrintf, Misformatted64Int1) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_ARB_gpu_shader_int64 : enable
@@ -3457,7 +3457,7 @@ TEST_F(NegativeDebugPrintf, Misformatted64Int1) {
 
 TEST_F(NegativeDebugPrintf, Misformatted64Int2) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_ARB_gpu_shader_int64 : enable
@@ -3471,7 +3471,7 @@ TEST_F(NegativeDebugPrintf, Misformatted64Int2) {
 
 TEST_F(NegativeDebugPrintf, Misformatted64IntVector1) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_ARB_gpu_shader_int64 : enable
@@ -3486,7 +3486,7 @@ TEST_F(NegativeDebugPrintf, Misformatted64IntVector1) {
 
 TEST_F(NegativeDebugPrintf, Misformatted64IntVector2) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_ARB_gpu_shader_int64 : enable
@@ -3500,7 +3500,7 @@ TEST_F(NegativeDebugPrintf, Misformatted64IntVector2) {
 
 TEST_F(NegativeDebugPrintf, Misformatted64Bool) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_ARB_gpu_shader_int64 : enable
@@ -3513,7 +3513,7 @@ TEST_F(NegativeDebugPrintf, Misformatted64Bool) {
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedEmptyString) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -3524,7 +3524,7 @@ TEST_F(NegativeDebugPrintf, MisformattedEmptyString) {
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedNewLine) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -3536,7 +3536,7 @@ TEST_F(NegativeDebugPrintf, MisformattedNewLine) {
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedVectorNewLine) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -3548,7 +3548,7 @@ TEST_F(NegativeDebugPrintf, MisformattedVectorNewLine) {
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedPointer) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_EXT_buffer_reference : enable
@@ -3568,7 +3568,7 @@ TEST_F(NegativeDebugPrintf, MisformattedPointer) {
 }
 
 TEST_F(NegativeDebugPrintf, MisformattedNotPointer) {
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_ARB_gpu_shader_int64 : enable
@@ -3617,7 +3617,7 @@ TEST_F(NegativeDebugPrintf, DualPipelines) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -3660,7 +3660,7 @@ TEST_F(NegativeDebugPrintf, DualCommandBufferHalfPrint) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -3704,7 +3704,7 @@ TEST_F(NegativeDebugPrintf, DualCommandBufferBothPrint) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(push_constant) uniform PushConstants { int x; } pc;
@@ -3757,7 +3757,7 @@ TEST_F(NegativeDebugPrintf, DualCommandBufferEmpty) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -3804,7 +3804,7 @@ TEST_F(NegativeDebugPrintf, DispatchIndirect) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -3838,7 +3838,7 @@ TEST_F(NegativeDebugPrintf, DispatchBase) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -3867,7 +3867,7 @@ TEST_F(NegativeDebugPrintf, DrawIndexed) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    char const *vs_source = R"glsl(
+    const char *vs_source = R"glsl(
     #version 450
         #extension GL_EXT_debug_printf : enable
         vec2 vertices[3];
@@ -3879,7 +3879,7 @@ TEST_F(NegativeDebugPrintf, DrawIndexed) {
             debugPrintfEXT("gl_VertexIndex %u\n", gl_VertexIndex);
         }
     )glsl";
-    char const *fs_source = R"glsl(
+    const char *fs_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(location = 0) out vec4 outColor;
@@ -3920,7 +3920,7 @@ TEST_F(NegativeDebugPrintf, DrawIndexedIndirect) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    char const *fs_source = R"glsl(
+    const char *fs_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(location = 0) out vec4 outColor;
@@ -3969,7 +3969,7 @@ TEST_F(NegativeDebugPrintf, DrawIndirectCount) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    char const *fs_source = R"glsl(
+    const char *fs_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(location = 0) out vec4 outColor;
@@ -4019,7 +4019,7 @@ TEST_F(NegativeDebugPrintf, DrawIndexedIndirectCount) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    char const *fs_source = R"glsl(
+    const char *fs_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(location = 0) out vec4 outColor;
@@ -4092,7 +4092,7 @@ TEST_F(NegativeDebugPrintf, DeviceGeneratedCommandsCompute) {
     command_layout_ci.pTokens = &token;
     vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -4183,7 +4183,7 @@ TEST_F(NegativeDebugPrintf, DeviceGeneratedCommandsGraphics) {
     command_layout_ci.pTokens = &token;
     vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
 
-    char const *vs_source = R"glsl(
+    const char *vs_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -4287,21 +4287,21 @@ TEST_F(NegativeDebugPrintf, DISABLED_DeviceGeneratedCommandsIES) {
     command_layout_ci.pTokens = tokens;
     vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
 
-    char const *shader_source_1 = R"glsl(
+    const char *shader_source_1 = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
             debugPrintfEXT("Init Pipeline\n");
         }
     )glsl";
-    char const *shader_source_2 = R"glsl(
+    const char *shader_source_2 = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
             debugPrintfEXT("IndirectExecutionSet Pipeline 1\n");
         }
     )glsl";
-    char const *shader_source_3 = R"glsl(
+    const char *shader_source_3 = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -4387,7 +4387,7 @@ TEST_F(NegativeDebugPrintf, MultipleComputePasses) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source_1 = R"glsl(
+    const char *shader_source_1 = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(binding = 0, set = 0) uniform UBO {
@@ -4397,7 +4397,7 @@ TEST_F(NegativeDebugPrintf, MultipleComputePasses) {
             debugPrintfEXT("float x == %f", x);
         }
     )glsl";
-    char const *shader_source_2 = R"glsl(
+    const char *shader_source_2 = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -4440,7 +4440,7 @@ TEST_F(NegativeDebugPrintf, SpecConstant) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(constant_id = 0) const uint value = 22; // default
@@ -4491,7 +4491,7 @@ TEST_F(NegativeDebugPrintf, InlineUniformBlock) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(set = 0, binding = 0) uniform UBO0 { uint ubo_0; };
@@ -4559,7 +4559,7 @@ TEST_F(NegativeDebugPrintf, StorageBufferLength) {
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit | kInformationBit);
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_EXT_scalar_block_layout : enable
@@ -4627,7 +4627,7 @@ TEST_F(NegativeDebugPrintf, StorageBufferLengthUpdateAfterBind) {
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit | kInformationBit);
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         #extension GL_EXT_scalar_block_layout : enable
@@ -4686,7 +4686,7 @@ TEST_F(NegativeDebugPrintf, PushDescriptor) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(set = 0, binding = 0) uniform Push {
@@ -4747,7 +4747,7 @@ TEST_F(NegativeDebugPrintf, DescriptorTemplates) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(set = 0, binding = 0) uniform UBO {
@@ -4811,7 +4811,7 @@ TEST_F(NegativeDebugPrintf, PushDescriptorTemplates) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(set = 0, binding = 0) uniform UBO {
@@ -4876,7 +4876,7 @@ TEST_F(NegativeDebugPrintf, DuplicateMessageLimit) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
 
@@ -4916,7 +4916,7 @@ TEST_F(NegativeDebugPrintf, DuplicateMessageLimitExplicit) {
     RETURN_IF_SKIP(InitDebugPrintfFramework(&layer_settings_create_info));
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
 
@@ -4991,7 +4991,7 @@ TEST_F(NegativeDebugPrintf, DescriptorBuffer) {
     vk::GetDescriptorEXT(device(), &buffer_descriptor_info, descriptor_buffer_properties.storageBufferDescriptorSize,
                          mapped_descriptor_data);
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout (set = 0, binding = 0) buffer SSBO_0 {
@@ -5120,7 +5120,7 @@ TEST_F(NegativeDebugPrintf, DisableShaderValidation) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    char const *frag_shader = R"glsl(
+    const char *frag_shader = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(set = 0, binding = 0) buffer SSBO {
@@ -5192,7 +5192,7 @@ TEST_F(NegativeDebugPrintf, DisableShaderValidationShaderObject) {
     ds.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     ds.UpdateDescriptorSets();
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(set = 0, binding = 0) buffer SSBO {

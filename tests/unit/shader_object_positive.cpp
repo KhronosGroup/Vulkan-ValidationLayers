@@ -216,7 +216,7 @@ TEST_F(PositiveShaderObject, VertFragShaderDraw) {
 
     RETURN_IF_SKIP(InitBasicShaderObject());
 
-    static const char vert_src[] = R"glsl(
+    const char vert_src[] = R"glsl(
         #version 460
         void main() {
             vec2 pos = vec2(float(gl_VertexIndex & 1), float((gl_VertexIndex >> 1) & 1));
@@ -224,7 +224,7 @@ TEST_F(PositiveShaderObject, VertFragShaderDraw) {
         }
     )glsl";
 
-    static const char frag_src[] = R"glsl(
+    const char frag_src[] = R"glsl(
         #version 460
         layout(location = 0) out vec4 uFragColor;
         void main(){
@@ -297,7 +297,7 @@ TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
     AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
-    static const char vert_src[] = R"glsl(
+    const char vert_src[] = R"glsl(
         #version 460
         void main() {
             vec2 pos = vec2(float(gl_VertexIndex & 1), float((gl_VertexIndex >> 1) & 1));
@@ -305,7 +305,7 @@ TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
         }
     )glsl";
 
-    static const char tesc_src[] = R"glsl(
+    const char tesc_src[] = R"glsl(
         #version 450
         layout(vertices = 4) out;
         void main (void) {
@@ -321,7 +321,7 @@ TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
         }
     )glsl";
 
-    static const char tese_src[] = R"glsl(
+    const char tese_src[] = R"glsl(
         #version 450
         layout(quads, equal_spacing) in;
         void main (void) {
@@ -334,7 +334,7 @@ TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
         }
     )glsl";
 
-    static const char geom_src[] = R"glsl(
+    const char geom_src[] = R"glsl(
         #version 450
         layout(triangles) in;
         layout(triangle_strip, max_vertices = 4) out;
@@ -357,7 +357,7 @@ TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
         }
     )glsl";
 
-    static const char frag_src[] = R"glsl(
+    const char frag_src[] = R"glsl(
         #version 460
         layout(location = 0) out vec4 uFragColor;
         void main(){
@@ -407,7 +407,7 @@ TEST_F(PositiveShaderObject, ComputeShader) {
 
     RETURN_IF_SKIP(InitBasicShaderObject());
 
-    static const char comp_src[] = R"glsl(
+    const char comp_src[] = R"glsl(
         #version 450
         layout(local_size_x=16, local_size_x=1, local_size_x=1) in;
         layout(binding = 0) buffer Output {
@@ -447,7 +447,7 @@ TEST_F(PositiveShaderObject, TaskMeshShadersDraw) {
 
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_3));
 
-    static const char task_src[] = R"glsl(
+    const char task_src[] = R"glsl(
         #version 450
         #extension GL_EXT_mesh_shader : require
         layout (local_size_x=1, local_size_y=1, local_size_z=1) in;
@@ -456,7 +456,7 @@ TEST_F(PositiveShaderObject, TaskMeshShadersDraw) {
         }
     )glsl";
 
-    static const char mesh_src[] = R"glsl(
+    const char mesh_src[] = R"glsl(
         #version 460
         #extension GL_EXT_mesh_shader : require
         layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
@@ -472,7 +472,7 @@ TEST_F(PositiveShaderObject, TaskMeshShadersDraw) {
         }
     )glsl";
 
-    static const char frag_src[] = R"glsl(
+    const char frag_src[] = R"glsl(
         #version 460
         layout(location = 0) out vec4 uFragColor;
         void main(){
@@ -526,7 +526,7 @@ TEST_F(PositiveShaderObject, FailCreateShaders) {
         GTEST_SKIP() << "Test not supported by MockICD because shader needs to fail";
     }
 
-    static const char vert_src[] = R"glsl(
+    const char vert_src[] = R"glsl(
         #version 460
         void main() {
             vec2 pos = vec2(float(gl_VertexIndex & 1), float((gl_VertexIndex >> 1) & 1));
@@ -534,7 +534,7 @@ TEST_F(PositiveShaderObject, FailCreateShaders) {
         }
     )glsl";
 
-    static const char tesc_src[] = R"glsl(
+    const char tesc_src[] = R"glsl(
         #version 450
         layout(vertices = 4) out;
         void main (void) {
@@ -550,7 +550,7 @@ TEST_F(PositiveShaderObject, FailCreateShaders) {
         }
     )glsl";
 
-    static const char tese_src[] = R"glsl(
+    const char tese_src[] = R"glsl(
         #version 450
         layout(quads, equal_spacing) in;
         void main (void) {
@@ -563,7 +563,7 @@ TEST_F(PositiveShaderObject, FailCreateShaders) {
         }
     )glsl";
 
-    static const char geom_src[] = R"glsl(
+    const char geom_src[] = R"glsl(
         #version 450
         layout(triangles) in;
         layout(triangle_strip, max_vertices = 4) out;
@@ -586,7 +586,7 @@ TEST_F(PositiveShaderObject, FailCreateShaders) {
         }
     )glsl";
 
-    static const char frag_src[] = R"glsl(
+    const char frag_src[] = R"glsl(
         #version 460
         layout(location = 0) out vec4 uFragColor;
         void main(){
@@ -731,7 +731,7 @@ TEST_F(PositiveShaderObject, ShadersDescriptorSets) {
 
     vkt::PipelineLayout pipeline_layout(*m_device, {&vert_descriptor_set.layout_, &frag_descriptor_set.layout_});
 
-    static const char vert_src[] = R"glsl(
+    const char vert_src[] = R"glsl(
         #version 460
         layout(location = 0) out vec2 uv;
         layout(set = 0, binding = 0) buffer Buffer {
@@ -743,7 +743,7 @@ TEST_F(PositiveShaderObject, ShadersDescriptorSets) {
         }
     )glsl";
 
-    static const char frag_src[] = R"glsl(
+    const char frag_src[] = R"glsl(
         #version 460
         layout(set = 1, binding = 0) uniform sampler2D s;
         layout(location = 0) in vec2 uv;
@@ -835,7 +835,7 @@ TEST_F(PositiveShaderObject, MultiplePushConstants) {
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
-    static const char vert_src[] = R"glsl(
+    const char vert_src[] = R"glsl(
         #version 460
         layout (push_constant) uniform constants {
             int pos;
@@ -845,7 +845,7 @@ TEST_F(PositiveShaderObject, MultiplePushConstants) {
         }
     )glsl";
 
-    static const char frag_src[] = R"glsl(
+    const char frag_src[] = R"glsl(
         #version 460
         layout (push_constant) uniform constants {
             layout(offset = 4) float c;
@@ -894,7 +894,7 @@ TEST_F(PositiveShaderObject, MultipleSpecializationConstants) {
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
-    static const char vert_src[] = R"glsl(
+    const char vert_src[] = R"glsl(
         #version 460
         layout (constant_id = 0) const int pos = 1;
         void main() {
@@ -902,7 +902,7 @@ TEST_F(PositiveShaderObject, MultipleSpecializationConstants) {
         }
     )glsl";
 
-    static const char frag_src[] = R"glsl(
+    const char frag_src[] = R"glsl(
         #version 460
         layout (constant_id = 1) const float c = 0.0f;
         layout(location = 0) out vec4 uFragColor;
@@ -956,7 +956,7 @@ TEST_F(PositiveShaderObject, IndirectDraw) {
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
-    static const char vert_src[] = R"glsl(
+    const char vert_src[] = R"glsl(
         #version 460
         void main() {
             vec2 pos = vec2(float(gl_VertexIndex & 1), float((gl_VertexIndex >> 1) & 1));
@@ -964,7 +964,7 @@ TEST_F(PositiveShaderObject, IndirectDraw) {
         }
     )glsl";
 
-    static const char tesc_src[] = R"glsl(
+    const char tesc_src[] = R"glsl(
         #version 450
         layout(vertices = 4) out;
         void main (void) {
@@ -980,7 +980,7 @@ TEST_F(PositiveShaderObject, IndirectDraw) {
         }
     )glsl";
 
-    static const char tese_src[] = R"glsl(
+    const char tese_src[] = R"glsl(
         #version 450
         layout(quads, equal_spacing) in;
         void main (void) {
@@ -993,7 +993,7 @@ TEST_F(PositiveShaderObject, IndirectDraw) {
         }
     )glsl";
 
-    static const char geom_src[] = R"glsl(
+    const char geom_src[] = R"glsl(
         #version 450
         layout(triangles) in;
         layout(triangle_strip, max_vertices = 4) out;
@@ -1016,7 +1016,7 @@ TEST_F(PositiveShaderObject, IndirectDraw) {
         }
     )glsl";
 
-    static const char frag_src[] = R"glsl(
+    const char frag_src[] = R"glsl(
         #version 460
         layout(location = 0) out vec4 uFragColor;
         void main(){
@@ -1073,7 +1073,7 @@ TEST_F(PositiveShaderObject, OutputToMultipleAttachments) {
 
     InitDynamicRenderTarget();
 
-    static const char frag_src[] = R"glsl(
+    const char frag_src[] = R"glsl(
         #version 460
         layout(location = 0) out vec4 uFragColor1;
         layout(location = 1) out vec4 uFragColor2;
@@ -1461,7 +1461,7 @@ TEST_F(PositiveShaderObject, DrawWithVertGeomFragShaderObjects) {
 
     InitDynamicRenderTarget();
 
-    static const char vert_src[] = R"glsl(
+    const char vert_src[] = R"glsl(
         #version 450
 
         void main(void) {
@@ -1470,7 +1470,7 @@ TEST_F(PositiveShaderObject, DrawWithVertGeomFragShaderObjects) {
         }
     )glsl";
 
-    static const char geom_src[] = R"glsl(
+    const char geom_src[] = R"glsl(
         #version 450
         layout(triangles) in;
         layout(triangle_strip, max_vertices = 4) out;
@@ -1498,7 +1498,7 @@ TEST_F(PositiveShaderObject, DrawWithVertGeomFragShaderObjects) {
         }
     )glsl";
 
-    static const char frag_src[] = R"glsl(
+    const char frag_src[] = R"glsl(
         #version 450
 
         layout(location = 0) in vec4 in_color;

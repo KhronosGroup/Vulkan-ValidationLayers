@@ -79,7 +79,7 @@ TEST_F(NegativeGpuAV, SelectInstrumentedShaders) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
     descriptor_set.WriteDescriptorBufferInfo(0, write_buffer, 0, 4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
-    static const char vertshader[] = R"glsl(
+    const char vertshader[] = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } Data;
         void main() {
@@ -134,7 +134,7 @@ TEST_F(NegativeGpuAV, SelectInstrumentedShadersRegex) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
     descriptor_set.WriteDescriptorBufferInfo(0, write_buffer, 0, 4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
-    static const char vertshader[] = R"glsl(
+    const char vertshader[] = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } Data;
         void main() {
@@ -202,7 +202,7 @@ TEST_F(NegativeGpuAV, SelectInstrumentedShadersRegexDestroyedShaders) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
     descriptor_set.WriteDescriptorBufferInfo(0, write_buffer, 0, 4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
-    static const char vertshader[] = R"glsl(
+    const char vertshader[] = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } Data;
         void main() {
@@ -270,7 +270,7 @@ TEST_F(NegativeGpuAV, SelectInstrumentedShadersShaderObject) {
                                             });
     vkt::PipelineLayout pipeline_layout(*m_device, {&vert_descriptor_set.layout_});
 
-    static const char vert_src[] = R"glsl(
+    const char vert_src[] = R"glsl(
         #version 460
         layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } Data;
         void main() {
@@ -366,7 +366,7 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineNotReserved) {
     }
     vkt::PipelineLayout pipe_layout(*m_device, layouts);
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
         layout(buffer_reference, std430) readonly buffer IndexBuffer {
@@ -440,7 +440,7 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineReserved) {
     }
     vkt::PipelineLayout pipe_layout(*m_device, layouts);
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
         layout(buffer_reference, std430) readonly buffer IndexBuffer {
@@ -542,7 +542,7 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineLayout) {
     m_errorMonitor->SetAllowedFailureMsg("This Pipeline Layout has too many descriptor sets");
     vkt::PipelineLayout bad_pipe_layout(*m_device, empty_layouts);
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer foo {
             int x;
@@ -655,7 +655,7 @@ TEST_F(NegativeGpuAV, LeakedResource) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout (set = 0, binding = 0) uniform sampler2D samplerColor[2];
         void main() {

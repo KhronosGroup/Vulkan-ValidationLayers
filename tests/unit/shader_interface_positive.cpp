@@ -24,7 +24,7 @@ TEST_F(PositiveShaderInterface, InputAndOutputComponents) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
                 #version 450
 
                 layout(location = 0, component = 0) out vec2 rg;
@@ -70,7 +70,7 @@ TEST_F(PositiveShaderInterface, InputAndOutputComponents) {
             )glsl";
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
                 #version 450
 
                 layout(location = 0, component = 0) in float r;
@@ -126,7 +126,7 @@ TEST_F(PositiveShaderInterface, InputAndOutputStructComponents) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
                 #version 450
 
                 struct R {
@@ -143,7 +143,7 @@ TEST_F(PositiveShaderInterface, InputAndOutputStructComponents) {
             )glsl";
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
                 #version 450
 
                 struct R {
@@ -298,7 +298,7 @@ TEST_F(PositiveShaderInterface, FragmentOutputNotWrittenButMasked) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         void main() {}
     )glsl";
@@ -322,7 +322,7 @@ TEST_F(PositiveShaderInterface, RelaxedTypeMatch) {
 
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
         layout(location=0) out vec3 x;
         layout(location=1) out ivec3 y;
@@ -332,7 +332,7 @@ TEST_F(PositiveShaderInterface, RelaxedTypeMatch) {
            x = vec3(0); y = ivec3(0); z = vec3(0);
         }
     )glsl";
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(location=0) out vec4 color;
         layout(location=0) in float x;
@@ -358,7 +358,7 @@ TEST_F(PositiveShaderInterface, TessPerVertex) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *tcsSource = R"glsl(
+    const char *tcsSource = R"glsl(
         #version 450
         layout(location=0) out int x[];
         layout(vertices=3) out;
@@ -368,7 +368,7 @@ TEST_F(PositiveShaderInterface, TessPerVertex) {
            x[gl_InvocationID] = gl_InvocationID;
         }
     )glsl";
-    char const *tesSource = R"glsl(
+    const char *tesSource = R"glsl(
         #version 450
         layout(triangles, equal_spacing, cw) in;
         layout(location=0) in int x[];
@@ -404,7 +404,7 @@ TEST_F(PositiveShaderInterface, GeometryInputBlockPositive) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
 
         layout(location = 0) out VertexData { vec4 x; } gs_out;
@@ -414,7 +414,7 @@ TEST_F(PositiveShaderInterface, GeometryInputBlockPositive) {
         }
     )glsl";
 
-    char const *gsSource = R"glsl(
+    const char *gsSource = R"glsl(
         #version 450
         layout(triangles) in;
         layout(triangle_strip, max_vertices=3) out;
@@ -440,7 +440,7 @@ TEST_F(PositiveShaderInterface, InputAttachment) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;
         layout(location=0) out vec4 color;
@@ -947,7 +947,7 @@ TEST_F(PositiveShaderInterface, AlphaToCoverageOffsetToAlpha) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget(0u);
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(location=0, component = 3) out float x;
         void main(){
@@ -973,7 +973,7 @@ TEST_F(PositiveShaderInterface, AlphaToCoverageArray) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget(0u);
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         // Just need to declare variable
         layout(location=0) out vec4 fragData[4];
@@ -1002,7 +1002,7 @@ TEST_F(PositiveShaderInterface, VsFsTypeMismatchBlockStructArray) {
         GTEST_SKIP() << "maxVertexOutputComponents is too low";
     }
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
         struct S {
             float b;
@@ -1018,7 +1018,7 @@ TEST_F(PositiveShaderInterface, VsFsTypeMismatchBlockStructArray) {
         void main() {}
     )glsl";
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         struct S {
             float b;
@@ -1050,7 +1050,7 @@ TEST_F(PositiveShaderInterface, VsFsTypeMismatchBlockNestedStructLastElementArra
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
         struct A {
             float a0_;
@@ -1073,7 +1073,7 @@ TEST_F(PositiveShaderInterface, VsFsTypeMismatchBlockNestedStructLastElementArra
         void main() {}
     )glsl";
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         struct A {
             float a0_;
@@ -1112,7 +1112,7 @@ TEST_F(PositiveShaderInterface, VsFsTypeMismatchBlockNestedStructArray) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
         struct A {
             float a0_;
@@ -1135,7 +1135,7 @@ TEST_F(PositiveShaderInterface, VsFsTypeMismatchBlockNestedStructArray) {
         void main() {}
     )glsl";
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         struct A {
             float a0_;
@@ -1174,13 +1174,13 @@ TEST_F(PositiveShaderInterface, MultidimensionalArray) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
         layout(location=0) out float[4][2][2] x;
         void main() {}
     )glsl";
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(location=0) in float[4][2][2] x;
         layout(location=0) out float color;
@@ -1205,13 +1205,13 @@ TEST_F(PositiveShaderInterface, MultidimensionalArrayVertex) {
         GTEST_SKIP() << "maxVertexOutputComponents is too low";
     }
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
         layout(location=0) out float[4][3][2] x;
         void main() {}
     )glsl";
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(location=0) in float[4][2][2] x;
         layout(location=0) out float color;
@@ -1236,13 +1236,13 @@ TEST_F(PositiveShaderInterface, MultidimensionalArrayDims) {
         GTEST_SKIP() << "maxVertexOutputComponents is too low";
     }
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
         layout(location=0) out float[4][3][2] x; // 24 locations
         void main() {}
     )glsl";
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(location=0) in float[3][2][4] x; // 24 locations
         layout(location=0) out float color;
@@ -1267,13 +1267,13 @@ TEST_F(PositiveShaderInterface, MultidimensionalArrayDims2) {
         GTEST_SKIP() << "maxVertexOutputComponents is too low";
     }
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
         layout(location=0) out float[4][3][2] x; // 24 locations
         void main() {}
     )glsl";
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(location=0) in float[24] x;
         layout(location=0) out float color;
@@ -1300,7 +1300,7 @@ TEST_F(PositiveShaderInterface, MultidimensionalArray64bit) {
         GTEST_SKIP() << "maxFragmentOutputAttachments is too low";
     }
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
         #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
         layout(location=0) out f64vec3[2][2] x; // take 2 locations each (total 8)
@@ -1308,7 +1308,7 @@ TEST_F(PositiveShaderInterface, MultidimensionalArray64bit) {
         void main() {}
     )glsl";
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
         layout(location=0) flat in f64vec3[2][2] x;
@@ -1330,7 +1330,7 @@ TEST_F(PositiveShaderInterface, MultipleFragmentAttachment) {
     RETURN_IF_SKIP(Init());
     m_errorMonitor->ExpectSuccess(kWarningBit | kErrorBit);
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(location=0) out vec4 color[2];
         void main() {
@@ -1483,7 +1483,7 @@ TEST_F(PositiveShaderInterface, FragmentOutputTypeDynamicRenderingLocalReadTypeR
     InitDynamicRenderTarget(VK_FORMAT_R8G8B8A8_UNORM);
     m_errorMonitor->ExpectSuccess(kWarningBit | kErrorBit);
 
-    char const *fs_source = R"glsl(
+    const char *fs_source = R"glsl(
         #version 450
         layout(location=0) out vec4 x;
         void main(){
@@ -1540,13 +1540,13 @@ TEST_F(PositiveShaderInterface, NonZeroComponentArray) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
         layout(location = 0, component = 1) out float[2] x;
         void main() {}
     )glsl";
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(location = 0, component = 1) in float[2] x;
         layout(location=0) out float color;
@@ -1574,7 +1574,7 @@ TEST_F(PositiveShaderInterface, PackingInsideArray) {
     // layout(location = 0, component = 1) out float[2] x;
     // layout(location = 1, component = 0) out int y;
     // layout(location = 1, component = 2) out int z;
-    char const *vs_source1 = R"(
+    const char *vs_source1 = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint Vertex %main "main" %x %y %z
@@ -1604,7 +1604,7 @@ TEST_F(PositiveShaderInterface, PackingInsideArray) {
 
     VkShaderObj vs1(this, vs_source1, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
-    char const *vs_source2 = R"glsl(
+    const char *vs_source2 = R"glsl(
         #version 450
         layout(location = 0, component = 0) out float x;
         layout(location = 0, component = 1) out float[2] y;

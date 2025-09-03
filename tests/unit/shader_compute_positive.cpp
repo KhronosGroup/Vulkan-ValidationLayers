@@ -250,7 +250,7 @@ TEST_F(PositiveShaderCompute, SharedMemorySpecConstantOp) {
         GTEST_SKIP() << "Supported compute shader shared memory size is too small";
     }
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
@@ -275,7 +275,7 @@ TEST_F(PositiveShaderCompute, SharedMemory) {
     RETURN_IF_SKIP(Init());
 
     // Make sure compute pipeline has a compute shader stage set
-    char const *csSource = R"glsl(
+    const char *csSource = R"glsl(
         #version 450
         shared uint a;
         shared float b;

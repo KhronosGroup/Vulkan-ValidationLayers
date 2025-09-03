@@ -582,12 +582,12 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_SwitchTessGeometryMesh) {
         GTEST_SKIP() << "Device doesn't support requried maxGeometryOutputVertices";
     }
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
         void main() {}
     )glsl";
 
-    char const *gsSource = R"glsl(
+    const char *gsSource = R"glsl(
         #version 450
         layout(triangles) in;
         layout(triangle_strip, max_vertices = 3) out;

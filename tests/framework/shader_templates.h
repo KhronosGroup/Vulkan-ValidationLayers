@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ static const char kVertexPointSizeGlsl[] = R"glsl(
     }
 )glsl";
 
-static char const kGeometryMinimalGlsl[] = R"glsl(
+static const char kGeometryMinimalGlsl[] = R"glsl(
     #version 460
     layout(triangles) in;
     layout(triangle_strip, max_vertices=3) out;
@@ -60,7 +60,7 @@ static char const kGeometryMinimalGlsl[] = R"glsl(
     }
 )glsl";
 
-static char const kGeometryPointSizeGlsl[] = R"glsl(
+static const char kGeometryPointSizeGlsl[] = R"glsl(
     #version 460
     layout (points) in;
     layout (points) out;
@@ -117,7 +117,7 @@ static const char kFragmentUniformGlsl[] = R"glsl(
     }
 )glsl";
 
-static char const kFragmentSubpassLoadGlsl[] = R"glsl(
+static const char kFragmentSubpassLoadGlsl[] = R"glsl(
     #version 460
     layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;
     void main() {
@@ -148,7 +148,7 @@ static char const kFragmentSubpassLoadGlsl[] = R"glsl(
     void main() {}
 )glsl";
 
-[[maybe_unused]] static char const kRayTracingPayloadMinimalGlsl[] = R"glsl(
+[[maybe_unused]] static const char kRayTracingPayloadMinimalGlsl[] = R"glsl(
         #version 460
         #extension GL_EXT_ray_tracing : enable
         layout(location = 0) rayPayloadInEXT float hitValue;
@@ -164,7 +164,7 @@ static char const kFragmentSubpassLoadGlsl[] = R"glsl(
     void main() {}
 )glsl";
 
-static char const kShaderTileImageDepthReadSpv[] = R"(
+static const char kShaderTileImageDepthReadSpv[] = R"(
                OpCapability Shader
                OpCapability TileImageDepthReadAccessEXT
                OpExtension "SPV_EXT_shader_tile_image"
@@ -198,7 +198,7 @@ static char const kShaderTileImageDepthReadSpv[] = R"(
                OpFunctionEnd
         )";
 
-static char const kShaderTileImageStencilReadSpv[] = R"(
+static const char kShaderTileImageStencilReadSpv[] = R"(
                OpCapability Shader
                OpCapability TileImageStencilReadAccessEXT
                OpExtension "SPV_EXT_shader_tile_image"
@@ -235,7 +235,7 @@ static char const kShaderTileImageStencilReadSpv[] = R"(
                OpFunctionEnd
         )";
 
-static char const kShaderTileImageColorReadSpv[] = R"(
+static const char kShaderTileImageColorReadSpv[] = R"(
                OpCapability Shader
                OpCapability TileImageColorReadAccessEXT
                OpExtension "SPV_EXT_shader_tile_image"
@@ -268,7 +268,7 @@ static char const kShaderTileImageColorReadSpv[] = R"(
                OpFunctionEnd
         )";
 
-static char const kShaderTileImageDepthStencilReadSpv[] = R"(
+static const char kShaderTileImageDepthStencilReadSpv[] = R"(
                OpCapability Shader
                OpCapability TileImageDepthReadAccessEXT
                OpCapability TileImageStencilReadAccessEXT
@@ -338,4 +338,4 @@ static char const kShaderTileImageDepthStencilReadSpv[] = R"(
         }
     )glsl";
 
-[[maybe_unused]] static char const *kMissGlsl = kRayTracingPayloadMinimalGlsl;
+[[maybe_unused]] static const char *kMissGlsl = kRayTracingPayloadMinimalGlsl;

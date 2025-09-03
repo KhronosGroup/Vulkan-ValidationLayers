@@ -328,7 +328,7 @@ enum NumericType {
     NumericTypeUint = 4,
 };
 uint32_t GetFormatType(VkFormat format);
-char const *string_NumericType(uint32_t type);
+const char *string_NumericType(uint32_t type);
 
 // Common info needed for all OpVariable
 struct VariableBase {
@@ -759,7 +759,7 @@ struct Module {
     std::string DescribeVariable(uint32_t id) const;
     std::string DescribeInstruction(const Instruction &error_insn) const;
 
-    std::shared_ptr<const EntryPoint> FindEntrypoint(char const *name, VkShaderStageFlagBits stageBits) const;
+    std::shared_ptr<const EntryPoint> FindEntrypoint(const char *name, VkShaderStageFlagBits stageBits) const;
     LocalSize FindLocalSize(const EntryPoint &entrypoint) const;
 
     uint32_t CalculateWorkgroupSharedMemory() const;

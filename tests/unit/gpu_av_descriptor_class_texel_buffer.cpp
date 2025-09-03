@@ -38,7 +38,7 @@ TEST_F(NegativeGpuAVDescriptorClassTexelBuffer, GPLTexelFetch) {
     descriptor_set.WriteDescriptorBufferInfo(1, write_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
-    static const char vertshader[] = R"glsl(
+    const char vertshader[] = R"glsl(
         #version 450
         layout(set = 0, binding = 0) uniform samplerBuffer u_buffer;  // texel_buffer[4]
         layout(set = 0, binding = 1) buffer StorageBuffer { vec4 data; };
@@ -82,7 +82,7 @@ TEST_F(NegativeGpuAVDescriptorClassTexelBuffer, GPLImageLoad) {
     descriptor_set.WriteDescriptorBufferInfo(1, write_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
-    static const char vertshader[] = R"glsl(
+    const char vertshader[] = R"glsl(
         #version 450
         layout(set = 0, binding = 0, r32f) uniform imageBuffer s_buffer; // texel_buffer[4]
         layout(set = 0, binding = 1) buffer StorageBuffer { vec4 data; };
@@ -126,7 +126,7 @@ TEST_F(NegativeGpuAVDescriptorClassTexelBuffer, GPLImageStore) {
     descriptor_set.WriteDescriptorBufferInfo(1, write_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
-    static const char vertshader[] = R"glsl(
+    const char vertshader[] = R"glsl(
         #version 450
         layout(set = 0, binding = 0, r32f) uniform imageBuffer s_buffer; // texel_buffer[4]
         layout(set = 0, binding = 1) buffer StorageBuffer { vec4 data; };
@@ -187,7 +187,7 @@ TEST_F(NegativeGpuAVDescriptorClassTexelBuffer, GPLTexelFetchIndependentSets) {
     uint32_t *data = (uint32_t *)offset_buffer.Memory().Map();
     *data = 8;
 
-    static const char vert_shader[] = R"glsl(
+    const char vert_shader[] = R"glsl(
         #version 450
         layout(set = 1, binding = 0) uniform ufoo { uint index[]; };        // index[1]
         layout(set = 0, binding = 0) readonly buffer StorageBuffer { uint data[]; }; // data[4]
@@ -201,7 +201,7 @@ TEST_F(NegativeGpuAVDescriptorClassTexelBuffer, GPLTexelFetchIndependentSets) {
         }
     )glsl";
 
-    static const char frag_shader[] = R"glsl(
+    const char frag_shader[] = R"glsl(
         #version 450
         layout(set = 1, binding = 0) uniform ufoo { uint index[]; };      // index[1]
         layout(set = 2, binding = 1) uniform samplerBuffer u_buffer;      // texel_buffer[4]
@@ -262,7 +262,7 @@ TEST_F(NegativeGpuAVDescriptorClassTexelBuffer, GPLImageLoadStoreIndependentSets
 
     const std::array<VkDescriptorSet, 3> desc_sets = {vertex_set.set_, common_set.set_, fragment_set.set_};
 
-    static const char vert_shader[] = R"glsl(
+    const char vert_shader[] = R"glsl(
         #version 450
         layout(set = 1, binding = 0) uniform ufoo { uint index[]; } u_index;      // index[1]
         layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } Data;  // data[4]
@@ -276,7 +276,7 @@ TEST_F(NegativeGpuAVDescriptorClassTexelBuffer, GPLImageLoadStoreIndependentSets
         }
     )glsl";
 
-    static const char frag_shader[] = R"glsl(
+    const char frag_shader[] = R"glsl(
         #version 450
         layout(set = 1, binding = 0) uniform ufoo { uint index[]; } u_index;      // index[1]
         layout(set = 2, binding = 2, r32f) uniform imageBuffer s_buffer;          // texel_buffer[4]
@@ -310,7 +310,7 @@ TEST_F(NegativeGpuAVDescriptorClassTexelBuffer, TexelFetch) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
 
         layout(set = 0, binding = 0, std430) buffer foo {
@@ -360,7 +360,7 @@ TEST_F(NegativeGpuAVDescriptorClassTexelBuffer, TexelFetchArray) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
 
         layout(set = 0, binding = 0, std430) buffer foo {
@@ -416,7 +416,7 @@ TEST_F(NegativeGpuAVDescriptorClassTexelBuffer, ImageLoad) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0, std430) buffer foo {
             vec4 a;
@@ -464,7 +464,7 @@ TEST_F(NegativeGpuAVDescriptorClassTexelBuffer, ImageStore) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0, r32f) uniform imageBuffer s_buffer;  // texel_buffer[4]
 

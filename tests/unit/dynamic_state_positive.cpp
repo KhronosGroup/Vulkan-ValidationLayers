@@ -576,7 +576,7 @@ TEST_F(PositiveDynamicState, AlphaToCoverageSetFalse) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(location = 0) out float x;
         void main(){
@@ -1026,7 +1026,7 @@ TEST_F(PositiveDynamicState, VertexInputMultipleBindings) {
     attributes[3].format = VK_FORMAT_R32_SFLOAT;
     attributes[3].offset = offsetof(PerInstance, d);
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
         layout(location = 0) in int a;
         layout(location = 1) in float b;
@@ -1575,7 +1575,7 @@ TEST_F(PositiveDynamicState, VertexInputLocationMissing) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
         layout(location = 0) in vec4 x;
         layout(location = 1) in vec4 y;

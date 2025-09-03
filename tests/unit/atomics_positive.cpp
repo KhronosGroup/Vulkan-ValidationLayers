@@ -946,7 +946,7 @@ TEST_F(PositiveAtomic, VertexPipelineStoresAndAtomics) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
         layout(set=0, binding=0, std430) readonly buffer SSBO {
             float a;
