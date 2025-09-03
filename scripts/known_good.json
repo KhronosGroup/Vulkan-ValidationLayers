@@ -57,7 +57,7 @@
                 "-DMI_BUILD_SHARED=OFF",
                 "-DMI_BUILD_TESTS=OFF"
             ],
-            "commit": "v3.0.3",
+            "commit": "v3.1.5",
             "build_platforms": [
                 "windows"
             ]
