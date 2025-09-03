@@ -461,6 +461,10 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module &module_
                                                     const vvl::Pipeline &pipeline, uint32_t subpass_index,
                                                     const Location &create_info_loc) const {
     bool skip = false;
+    // To match with the dynamic rendering case
+    if (global_settings.only_report_errors) {
+        return skip;
+    }
 
     struct Attachment {
         const VkAttachmentReference2 *reference = nullptr;
@@ -561,13 +565,17 @@ static std::string DescribeMappedLocation(uint32_t shader, uint32_t rendering_in
 // This is validated at draw time unlike the VkRenderPass version
 bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bound_state, const vvl::CommandBuffer &cb_state,
                                                        const Location &loc) const {
-    const vvl::RenderPass &rp_state = *cb_state.active_render_pass;
     bool skip = false;
+    // Some apps do 100k draws a frame and found this function is a bottleneck if an app is violating these warnings
+    if (global_settings.only_report_errors) {
+        return skip;
+    }
 
     const spirv::EntryPoint *entrypoint = last_bound_state.GetFragmentEntryPoint();
     if (!entrypoint) {
         return skip;
     }
+    const vvl::RenderPass &rp_state = *cb_state.active_render_pass;
     if (rp_state.use_dynamic_rendering_inherited) {
         return skip;
     }

@@ -3483,7 +3483,7 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
             }
         }
 
-        if (IsExtEnabled(extensions.vk_khr_maintenance1)) {
+        if (IsExtEnabled(extensions.vk_khr_maintenance1) && !global_settings.only_report_errors) {
             // Discussed in https://gitlab.khronos.org/vulkan/vulkan/-/issues/3347
             // The issue if users see VK_ERROR_OUT_OF_POOL_MEMORY (or any error) they think they over-allocated, but if they instead
             // allocated type not avaiable (so the pool size is zero), they will just keep getting this error mistakenly thinking
@@ -3533,7 +3533,7 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
                                  available_count);
             }
         }
-    } else {
+    } else if (!global_settings.only_report_errors) {
         // Part of VK_KHR_maintenance1 is that the driver will return VK_ERROR_OUT_OF_POOL_MEMORY_KHR when you run out.
         // What we want to warn about is when the app tried to allocate more sets then there ever was in the pool.
         // We do this here (instead of PostCallRecordAllocateDescriptorSets) because some drivers will just return VK_SUCCESS

@@ -85,6 +85,10 @@ struct GlobalSettings {
 
     bool debug_disable_spirv_val = false;
 
+    // Have quick way to know if user only has requsted errors as we can skip larger, expensive parts of the code if the user will
+    // never see the message
+    bool only_report_errors = false;
+
     // We have the spirv::Module state object designed to hold the SPIR-V and parse it so we can do validation on it, the
     // issue/tricky part is gpuav/debugPrint use this to get the original SPIR-V (which we need to provide any useful error
     // messages). These settings are here to make it more obvious what we want at runtime
