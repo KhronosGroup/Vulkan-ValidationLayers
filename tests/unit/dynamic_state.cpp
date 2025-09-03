@@ -2129,7 +2129,7 @@ TEST_F(NegativeDynamicState, DrawNotSetLineStippleEnableGeometry) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    static char const geom_src[] = R"glsl(
+    const char geom_src[] = R"glsl(
         #version 460
         layout(triangles) in;
         layout(line_strip, max_vertices=2) out;
@@ -4661,7 +4661,7 @@ TEST_F(NegativeDynamicState, AlphaToCoverageOutputNoAlpha) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(location=0) out vec3 x;
         void main(){
@@ -4896,7 +4896,7 @@ TEST_F(NegativeDynamicState, VertexInputLocationMissing) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
         layout(location = 0) in vec4 x;
         layout(location = 1) in vec4 y;
@@ -5677,7 +5677,7 @@ TEST_F(NegativeDynamicState, InterpolateAtSample) {
         GTEST_SKIP() << "variableSampleLocations not supported";
     }
 
-    static const char vs_src[] = R"glsl(
+    const char vs_src[] = R"glsl(
         #version 460
         layout(location = 0) out vec2 uv;
         void main() {
@@ -5685,7 +5685,7 @@ TEST_F(NegativeDynamicState, InterpolateAtSample) {
             gl_Position = vec4(uv, 0.0f, 1.0f);
         }
     )glsl";
-    static const char fs_src[] = R"glsl(
+    const char fs_src[] = R"glsl(
         #version 460
         layout(location = 0) out vec4 uFragColor;
         layout(location = 0) in vec2 v;

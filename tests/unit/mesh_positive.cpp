@@ -77,7 +77,7 @@ TEST_F(PositiveMesh, MeshShaderOnly) {
 
     InitRenderTarget();
 
-    static const char meshShaderText[] = R"glsl(
+    const char meshShaderText[] = R"glsl(
         #version 450
         #extension GL_NV_mesh_shader : require
         layout(local_size_x = 1) in;
@@ -124,7 +124,7 @@ TEST_F(PositiveMesh, PointSize) {
 
     InitRenderTarget();
 
-    static const char meshShaderText[] = R"glsl(
+    const char meshShaderText[] = R"glsl(
         #version 460
         #extension GL_NV_mesh_shader : enable
         layout (local_size_x=1) in;
@@ -174,7 +174,7 @@ TEST_F(PositiveMesh, TaskAndMeshShaderNV) {
                         "VK_SHADER_STAGE_TASK_BIT_NV, skipping test.";
     }
 
-    static const char taskShaderText[] = R"glsl(
+    const char taskShaderText[] = R"glsl(
         #version 450
 
         #extension GL_NV_mesh_shader : require
@@ -209,7 +209,7 @@ TEST_F(PositiveMesh, TaskAndMeshShaderNV) {
         }
     )glsl";
 
-    static const char meshShaderText[] = R"glsl(
+    const char meshShaderText[] = R"glsl(
         #version 450
 
         #extension GL_NV_mesh_shader : require
@@ -252,7 +252,7 @@ TEST_F(PositiveMesh, MeshPerTaskNV) {
     RETURN_IF_SKIP(InitState(nullptr, &mesh_shader_features));
     InitRenderTarget();
 
-    static const char taskShaderText[] = R"glsl(
+    const char taskShaderText[] = R"glsl(
         #version 450
         #extension GL_NV_mesh_shader : require
         layout(local_size_x = 32) in;
@@ -262,7 +262,7 @@ TEST_F(PositiveMesh, MeshPerTaskNV) {
         void main() {}
     )glsl";
 
-    static const char meshShaderText[] = R"glsl(
+    const char meshShaderText[] = R"glsl(
         #version 460
         #extension GL_NV_mesh_shader : enable
 

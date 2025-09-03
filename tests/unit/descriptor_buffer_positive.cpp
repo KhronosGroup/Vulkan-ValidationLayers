@@ -202,7 +202,7 @@ TEST_F(PositiveDescriptorBuffer, Basic) {
     void *mapped_descriptor_data = descriptor_buffer.Memory().Map();
     vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data);
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout (set = 0, binding = 0) buffer SSBO_0 {
             uint a;
@@ -283,7 +283,7 @@ TEST_F(PositiveDescriptorBuffer, BasicSampler) {
     vk::GetDescriptorEXT(device(), get_info_buffer, descriptor_buffer_properties.storageBufferDescriptorSize,
                          mapped_descriptor_data + ds_layout.GetDescriptorBufferBindingOffset(3));
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) uniform sampler s;
         layout(set = 0, binding = 1) uniform texture2D t; // sampled image
@@ -356,7 +356,7 @@ TEST_F(PositiveDescriptorBuffer, MultipleDescriptors) {
     vkt::DescriptorGetInfo get_info_sampler(&sampler.handle());
     vk::GetDescriptorEXT(device(), get_info_sampler, descriptor_buffer_properties.samplerDescriptorSize, mapped_descriptor_data);
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 2) uniform sampler s;
         layout(set = 0, binding = 0) uniform texture2D t;
@@ -433,7 +433,7 @@ TEST_F(PositiveDescriptorBuffer, MultipleSet) {
     mapped_descriptor_data += ds_layout_size;
     vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data);
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout (set = 0, binding = 0) buffer SSBO_0 {
             uint a;
@@ -514,7 +514,7 @@ TEST_F(PositiveDescriptorBuffer, MultipleBinding) {
     vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize,
                          mapped_descriptor_data + ds_layout.GetDescriptorBufferBindingOffset(2));
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout (set = 0, binding = 0) buffer SSBO_0 {
             uint a;
@@ -596,7 +596,7 @@ TEST_F(PositiveDescriptorBuffer, DescriptorIndexing) {
     mapped_descriptor_data += descriptor_size;
     vk::GetDescriptorEXT(device(), get_info, descriptor_size, mapped_descriptor_data);
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout (set = 0, binding = 0) buffer SSBO_0 {
             uint data;
@@ -714,7 +714,7 @@ TEST_F(PositiveDescriptorBuffer, TexelBuffer) {
     vk::GetDescriptorEXT(device(), get_info_u, descriptor_buffer_properties.uniformTexelBufferDescriptorSize,
                          mapped_descriptor_data + ds_layout.GetDescriptorBufferBindingOffset(1));
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0, r32ui) uniform uimageBuffer s_buffer;
         layout(set = 0, binding = 1) uniform usamplerBuffer u_buffer;
@@ -786,7 +786,7 @@ TEST_F(PositiveDescriptorBuffer, BindingOffsets) {
     mapped_descriptor_data += ds_layout_size;
     vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data);
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout (set = 0, binding = 0) buffer SSBO_0 {
             uint data;
@@ -860,7 +860,7 @@ TEST_F(PositiveDescriptorBuffer, ShaderObject) {
     void *mapped_descriptor_data = descriptor_buffer.Memory().Map();
     vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data);
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout (set = 0, binding = 0) buffer SSBO_0 {
             uint a;
@@ -924,7 +924,7 @@ TEST_F(PositiveDescriptorBuffer, NotInvalidatedLegacy) {
     void *mapped_descriptor_data = descriptor_buffer.Memory().Map();
     vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data);
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout (set = 0, binding = 0) buffer SSBO_0 { uint x; };
         void main() {

@@ -583,7 +583,7 @@ TEST_F(NegativeSubpass, SubpassInputNotBoundDescriptorSet) {
     {
         // input index is wrong, it doesn't exist in supbass input attachments and the set and binding is undefined
         // It causes desired failures.
-        char const *fsSource_fail = R"glsl(
+        const char *fsSource_fail = R"glsl(
             #version 450
             layout(input_attachment_index=1, set=0, binding=1) uniform subpassInput x;
             void main() {
@@ -604,7 +604,7 @@ TEST_F(NegativeSubpass, SubpassInputNotBoundDescriptorSet) {
     }
 
     {  // Binds input attachment
-        char const *fsSource = R"glsl(
+        const char *fsSource = R"glsl(
             #version 450
             layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;
             void main() {
@@ -971,7 +971,7 @@ TEST_F(NegativeSubpass, InputAttachmentMissing) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;
         layout(location=0) out vec4 color;
@@ -997,7 +997,7 @@ TEST_F(NegativeSubpass, InputAttachmentMissingArray) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput xs[1];
         layout(location=0) out vec4 color;
@@ -1021,7 +1021,7 @@ TEST_F(NegativeSubpass, DISABLED_InputAttachmentMissingSpecConstant) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout (constant_id = 0) const int index = 2;
         layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput xs[index];

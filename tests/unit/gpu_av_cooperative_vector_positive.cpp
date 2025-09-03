@@ -38,7 +38,7 @@ TEST_F(PositiveGpuAVCooperativeVector, CooperativeVector) {
 
     vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_NV_cooperative_vector : enable
         #extension GL_KHR_shader_subgroup_basic : enable

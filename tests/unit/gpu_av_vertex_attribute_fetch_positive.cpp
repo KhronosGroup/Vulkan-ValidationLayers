@@ -24,7 +24,7 @@ TEST_F(PositiveGpuAVVertexAttributeFetch, IndirectDrawZeroStride) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
         layout(location=0) in vec3 pos;
         void main() {

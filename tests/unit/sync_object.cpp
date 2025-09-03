@@ -1269,20 +1269,20 @@ TEST_F(NegativeSyncObject, BarrierQueueFamilyOneFamily) {
     conc_test.Init(&families);
     {
         // src
-        static const char *img_vuid = "VUID-VkImageMemoryBarrier-None-09053";
-        static const char *buf_vuid = "VUID-VkBufferMemoryBarrier-None-09050";
+        const char *img_vuid = "VUID-VkImageMemoryBarrier-None-09053";
+        const char *buf_vuid = "VUID-VkBufferMemoryBarrier-None-09050";
         conc_test(img_vuid, buf_vuid, submit_family, VK_QUEUE_FAMILY_IGNORED);
     }
     {
         // dst
-        static const char *img_vuid = "VUID-VkImageMemoryBarrier-None-09054";
-        static const char *buf_vuid = "VUID-VkBufferMemoryBarrier-None-09051";
+        const char *img_vuid = "VUID-VkImageMemoryBarrier-None-09054";
+        const char *buf_vuid = "VUID-VkBufferMemoryBarrier-None-09051";
         conc_test(img_vuid, buf_vuid, VK_QUEUE_FAMILY_IGNORED, submit_family);
     }
     {
         // neither
-        static const char *img_vuid = "VUID-VkImageMemoryBarrier-None-09053";
-        static const char *buf_vuid = "VUID-VkBufferMemoryBarrier-None-09050";
+        const char *img_vuid = "VUID-VkImageMemoryBarrier-None-09053";
+        const char *buf_vuid = "VUID-VkBufferMemoryBarrier-None-09050";
         conc_test(img_vuid, buf_vuid, submit_family, submit_family);
     }
     conc_test(VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED);
@@ -1663,8 +1663,8 @@ TEST_F(NegativeSyncObject, BarrierQueueFamilyWithMemExt2) {
     BarrierQueueFamilyTestHelper conc_test(&test_context);
 
     conc_test.Init(&families);
-    static const char *img_vuid = "VUID-VkImageMemoryBarrier-None-09053";
-    static const char *buf_vuid = "VUID-VkBufferMemoryBarrier-None-09050";
+    const char *img_vuid = "VUID-VkImageMemoryBarrier-None-09053";
+    const char *buf_vuid = "VUID-VkBufferMemoryBarrier-None-09050";
     conc_test(img_vuid, buf_vuid, submit_family, submit_family);
     conc_test(VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED);
     conc_test(VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_EXTERNAL_KHR);

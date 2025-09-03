@@ -911,7 +911,7 @@ TEST_F(VkBestPracticesLayerTest, CreatePipelineVsFsTypeMismatchArraySize) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
         layout(location=0) out float x[2];
         void main(){
@@ -919,7 +919,7 @@ TEST_F(VkBestPracticesLayerTest, CreatePipelineVsFsTypeMismatchArraySize) {
            gl_Position = vec4(1);
         }
     )glsl";
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(location=0) in float x[1];
         layout(location=0) out vec4 color;
@@ -1837,7 +1837,7 @@ TEST_F(VkBestPracticesLayerTest, PartialPushConstantSetEnd) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    char const *const vsSource = R"glsl(
+    const char *const vsSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo { uint x[2]; } constants;
         void main(){
@@ -1879,7 +1879,7 @@ TEST_F(VkBestPracticesLayerTest, PartialPushConstantSetMiddle) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    char const *const vsSource = R"glsl(
+    const char *const vsSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo {
             uint a; // set
@@ -2133,7 +2133,7 @@ TEST_F(VkBestPracticesLayerTest, PartialPushConstantSetEndCompute) {
     RETURN_IF_SKIP(InitBestPracticesFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *const csSource = R"glsl(
+    const char *const csSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo { uint x[2]; } constants;
         layout(set = 0, binding = 0) buffer bar { vec4 r; } res;

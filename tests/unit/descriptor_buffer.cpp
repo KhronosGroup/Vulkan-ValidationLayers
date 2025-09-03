@@ -993,7 +993,7 @@ TEST_F(NegativeDescriptorBuffer, LegacyDescriptorInvalidate) {
     void *mapped_descriptor_data = descriptor_buffer.Memory().Map();
     vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data);
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout (set = 0, binding = 0) buffer SSBO_0 { uint x; };
         void main() {
@@ -1068,7 +1068,7 @@ TEST_F(NegativeDescriptorBuffer, InconsistentBuffer) {
     dbbi.address = buffer.Address();
     dbbi.usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) uniform ufoo { uint index; };
         void main() {
@@ -1107,7 +1107,7 @@ TEST_F(NegativeDescriptorBuffer, InconsistentSet) {
                                        });
     vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) uniform ufoo { uint index; };
         void main() {

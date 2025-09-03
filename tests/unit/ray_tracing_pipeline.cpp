@@ -1003,7 +1003,7 @@ TEST_F(NegativeRayTracingPipeline, DeferredOp) {
     }
     RETURN_IF_SKIP(InitState());
 
-    static const char* chit_src = R"glsl(
+    const char* chit_src = R"glsl(
         #version 460
         #extension GL_EXT_ray_tracing : require // Requires SPIR-V 1.5 (Vulkan 1.2)
         layout(location = 0) rayPayloadEXT uvec4 hitValue;

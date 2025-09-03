@@ -57,7 +57,7 @@ void NegativeGpuAVShaderDebugInfo::BasicSingleStorageBufferComputeOOB(const char
 TEST_F(NegativeGpuAVShaderDebugInfo, OpLine) {
     TEST_DESCRIPTION("Make sure basic OpLine works");
 
-    char const *shader_source = R"(
+    const char *shader_source = R"(
                OpCapability Shader
                OpCapability PhysicalStorageBufferAddresses
           %2 = OpExtInstImport "GLSL.std.450"
@@ -109,7 +109,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, OpLine) {
 TEST_F(NegativeGpuAVShaderDebugInfo, OpLineColumn) {
     TEST_DESCRIPTION("Make sure the column in OpLine will add value to show which part the error occured");
 
-    char const *shader_source = R"(
+    const char *shader_source = R"(
                OpCapability Shader
                OpCapability PhysicalStorageBufferAddresses
           %2 = OpExtInstImport "GLSL.std.450"
@@ -168,7 +168,7 @@ void main() {
 TEST_F(NegativeGpuAVShaderDebugInfo, OpSourceContinued) {
     TEST_DESCRIPTION("Make sure can find source in OpSourceContinued");
 
-    char const *shader_source = R"(
+    const char *shader_source = R"(
                OpCapability Shader
                OpCapability PhysicalStorageBufferAddresses
           %2 = OpExtInstImport "GLSL.std.450"
@@ -227,7 +227,7 @@ layout(buffer_reference, std430) readonly buffer IndexBuffer { int indices[]; };
 TEST_F(NegativeGpuAVShaderDebugInfo, BadLineNumber) {
     TEST_DESCRIPTION("OpLine gives a line number not in the source");
 
-    char const *shader_source = R"(
+    const char *shader_source = R"(
                OpCapability Shader
                OpCapability PhysicalStorageBufferAddresses
           %2 = OpExtInstImport "GLSL.std.450"
@@ -288,7 +288,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, BasicGlslang) {
 
     // Manually ran:
     //   glslangValidator -V -g in.comp -o out.spv --target-env vulkan1.2
-    char const *shader_source = R"(
+    const char *shader_source = R"(
                OpCapability Shader
                OpCapability PhysicalStorageBufferAddresses
           %2 = OpExtInstImport "GLSL.std.450"
@@ -366,7 +366,7 @@ void main() {
 TEST_F(NegativeGpuAVShaderDebugInfo, GlslLineDerective) {
     TEST_DESCRIPTION("Use the #line derective in GLSL");
 
-    char const *shader_source = R"(
+    const char *shader_source = R"(
                OpCapability Shader
                OpCapability PhysicalStorageBufferAddresses
           %2 = OpExtInstImport "GLSL.std.450"
@@ -438,7 +438,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, BasicGlslangShaderDebugInfo) {
 
     // Manually ran:
     //   glslangValidator -V -gV in.comp -o out.spv --target-env vulkan1.2
-    char const *shader_source = R"(
+    const char *shader_source = R"(
                        OpCapability Shader
                OpCapability PhysicalStorageBufferAddresses
                OpExtension "SPV_KHR_non_semantic_info"
@@ -549,7 +549,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, BasicGlslangShaderDebugInfo) {
 
 // Manually ran:
 //   glslangValidator -V -gVS in.comp -o out.spv --target-env vulkan1.2
-static char const *kBasicGlslShaderSource = R"(
+static const char *kBasicGlslShaderSource = R"(
               OpCapability Shader
                OpCapability PhysicalStorageBufferAddresses
                OpExtension "SPV_KHR_non_semantic_info"
@@ -722,7 +722,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, ShaderDebugInfoColumns) {
     TEST_DESCRIPTION("DebugLine has a Column Start and Column End");
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
 
-    char const *shader_source = R"(
+    const char *shader_source = R"(
                OpCapability Shader
                OpCapability PhysicalStorageBufferAddresses
                OpExtension "SPV_KHR_non_semantic_info"
@@ -800,7 +800,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, ShaderDebugSourceContinued) {
     TEST_DESCRIPTION("Make sure can find source in DebugSourceContinued");
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
 
-    char const *shader_source = R"(
+    const char *shader_source = R"(
                OpCapability Shader
                OpCapability PhysicalStorageBufferAddresses
                OpExtension "SPV_KHR_non_semantic_info"
@@ -880,7 +880,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, ShaderDebugLineMultiLine) {
     TEST_DESCRIPTION("DebugLine has a Line Start and Line End");
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
 
-    char const *shader_source = R"(
+    const char *shader_source = R"(
                OpCapability Shader
                OpCapability PhysicalStorageBufferAddresses
                OpExtension "SPV_KHR_non_semantic_info"
@@ -957,7 +957,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, BadShaderDebugLineStart) {
     TEST_DESCRIPTION("DebugLine Line Start has bad value");
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
 
-    char const *shader_source = R"(
+    const char *shader_source = R"(
                OpCapability Shader
                OpCapability PhysicalStorageBufferAddresses
                OpExtension "SPV_KHR_non_semantic_info"
@@ -1033,7 +1033,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, BadShaderDebugLineEnd) {
     TEST_DESCRIPTION("DebugLine Line End has bad value");
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
 
-    char const *shader_source = R"(
+    const char *shader_source = R"(
                OpCapability Shader
                OpCapability PhysicalStorageBufferAddresses
                OpExtension "SPV_KHR_non_semantic_info"
@@ -1120,7 +1120,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, BasicDXC) {
     // Manually ran:
     //   dxc -spirv -T cs_6_0 -E main -fspv-target-env=vulkan1.2 -fspv-extension=SPV_KHR_non_semantic_info
     //   -fspv-debug=vulkan-with-source in.hlsl
-    char const *shader_source = R"(
+    const char *shader_source = R"(
                OpCapability Shader
                OpExtension "SPV_KHR_non_semantic_info"
           %1 = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"
@@ -1230,7 +1230,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, NoLineInFunctionFirst) {
     TEST_DESCRIPTION("Test if first function listed, has no debug info, we don't use the functions after it");
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
 
-    char const *shader_source = R"(
+    const char *shader_source = R"(
                OpCapability Shader
                OpCapability PhysicalStorageBufferAddresses
                OpExtension "SPV_KHR_non_semantic_info"
@@ -1357,7 +1357,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, NoLineInFunctionLast) {
     TEST_DESCRIPTION("Test if last function listed, has no debug info, we don't use the functions before it");
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
 
-    char const *shader_source = R"(
+    const char *shader_source = R"(
                OpCapability Shader
                OpCapability PhysicalStorageBufferAddresses
                OpExtension "SPV_KHR_non_semantic_info"
@@ -1490,7 +1490,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, PipelineHandles) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
         layout(buffer_reference, std430) readonly buffer IndexBuffer {
@@ -1551,7 +1551,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, ShaderObjectHandle) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    static const char comp_src[] = R"glsl(
+    const char comp_src[] = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
         layout(buffer_reference, std430) readonly buffer IndexBuffer {
@@ -1611,7 +1611,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, CommandBufferCommandIndex) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
         layout(buffer_reference, std430) readonly buffer IndexBuffer {
@@ -1675,7 +1675,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfo) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
         layout(buffer_reference, std430) readonly buffer IndexBuffer {
@@ -1729,7 +1729,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel1) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
         layout(buffer_reference, std430) readonly buffer IndexBuffer {
@@ -1790,7 +1790,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel2) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
         layout(buffer_reference, std430) readonly buffer IndexBuffer {
@@ -1853,7 +1853,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel3) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
         layout(buffer_reference, std430) readonly buffer IndexBuffer {
@@ -1930,7 +1930,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel4) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
         layout(buffer_reference, std430) readonly buffer IndexBuffer {
@@ -2017,7 +2017,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, DISABLED_StageInfoWithDebugLabel5) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
         layout(buffer_reference, std430) readonly buffer IndexBuffer {
@@ -2111,7 +2111,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel6) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
         layout(buffer_reference, std430) readonly buffer IndexBuffer {
@@ -2201,7 +2201,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel7) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
         layout(buffer_reference, std430) readonly buffer IndexBuffer {
@@ -2322,7 +2322,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, PostProcess) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    char const *fs_source = R"(
+    const char *fs_source = R"(
                OpCapability Shader
           %2 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
@@ -2453,7 +2453,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, PostProcessSlangGPL) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    char const *fs_source = R"(
+    const char *fs_source = R"(
                OpCapability Shader
                OpExtension "SPV_KHR_non_semantic_info"
           %2 = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"

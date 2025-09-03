@@ -775,7 +775,7 @@ TEST_F(NegativePipelineLayout, DescriptorTypeMismatch) {
                                                      {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                  });
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
         layout (std140, set = 0, binding = 0) uniform buf {
             mat4 mvp;
@@ -801,7 +801,7 @@ TEST_F(NegativePipelineLayout, DescriptorTypeMismatchCompute) {
 
     RETURN_IF_SKIP(Init());
 
-    char const *csSource = R"glsl(
+    const char *csSource = R"glsl(
         #version 450
         layout(local_size_x=1) in;
         layout(set=0, binding=0) buffer block { vec4 x; };
@@ -824,7 +824,7 @@ TEST_F(NegativePipelineLayout, DescriptorTypeMismatchNonCombinedImageSampler) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget(0, nullptr);
 
-    char const *fsSource = R"(
+    const char *fsSource = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint Fragment %main "main"
@@ -886,7 +886,7 @@ TEST_F(NegativePipelineLayout, DescriptorNotAccessible) {
                                          {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT /*!*/, nullptr},
                                      });
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
         layout (std140, set = 0, binding = 0) uniform buf {
             mat4 mvp;
@@ -936,7 +936,7 @@ TEST_F(NegativePipelineLayout, MissingDescriptor) {
 
     RETURN_IF_SKIP(Init());
 
-    char const *csSource = R"glsl(
+    const char *csSource = R"glsl(
         #version 450
         layout(local_size_x=1) in;
         layout(set=0, binding=0) buffer block { vec4 x; };
@@ -1038,7 +1038,7 @@ TEST_F(NegativePipelineLayout, InlineUniformBlockArray) {
                                        0, nullptr, 0, nullptr, &pool_inline_info);
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(set = 0, binding = 0) buffer SSBO0 { uint ssbo; };
@@ -1074,7 +1074,7 @@ TEST_F(NegativePipelineLayout, InlineUniformBlockArrayOf1) {
                                        0, nullptr, 0, nullptr, &pool_inline_info);
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(set = 0, binding = 0) buffer SSBO0 { uint ssbo; };

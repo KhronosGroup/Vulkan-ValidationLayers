@@ -56,7 +56,7 @@ TEST_F(PositivePipeline, MissingDescriptorUnused) {
 
     RETURN_IF_SKIP(Init());
 
-    char const *csSource = R"glsl(
+    const char *csSource = R"glsl(
         #version 450
         layout(local_size_x=1) in;
         layout(set=0, binding=0) buffer block { vec4 x; };
@@ -79,7 +79,7 @@ TEST_F(PositivePipeline, FragmentShadingRate) {
     AddRequiredFeature(vkt::Feature::primitiveFragmentShadingRate);
     RETURN_IF_SKIP(Init());
 
-    char const *csSource = R"glsl(
+    const char *csSource = R"glsl(
         #version 450
         layout(local_size_x=1) in;
         layout(set=0, binding=0) buffer block { vec4 x; };
@@ -99,7 +99,7 @@ TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsSampler) {
 
     RETURN_IF_SKIP(Init());
 
-    char const *csSource = R"glsl(
+    const char *csSource = R"glsl(
         #version 450
         layout(local_size_x=1) in;
         layout(set=0, binding=0) uniform sampler s;
@@ -125,7 +125,7 @@ TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsImage) {
 
     RETURN_IF_SKIP(Init());
 
-    char const *csSource = R"glsl(
+    const char *csSource = R"glsl(
         #version 450
         layout(local_size_x=1) in;
         layout(set=0, binding=0) uniform texture2D t;
@@ -152,7 +152,7 @@ TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsBoth) {
 
     RETURN_IF_SKIP(Init());
 
-    char const *csSource = R"glsl(
+    const char *csSource = R"glsl(
         #version 450
         layout(local_size_x=1) in;
         layout(set=0, binding=0) uniform texture2D t;
@@ -192,7 +192,7 @@ TEST_F(PositivePipeline, CreateComputePipelineWithDerivatives) {
 
     RETURN_IF_SKIP(Init());
 
-    char const *csSource = R"glsl(
+    const char *csSource = R"glsl(
         #version 450
         layout(local_size_x=2, local_size_y=4) in;
         void main(){
@@ -663,7 +663,7 @@ TEST_F(PositivePipeline, AttachmentUnused) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(location=0) out vec4 x;
         void main(){
@@ -1014,7 +1014,7 @@ TEST_F(PositivePipeline, PervertexNVShaderAttributes) {
 
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
                 #version 450
 
                 layout(location = 0) out PerVertex {
@@ -1033,7 +1033,7 @@ TEST_F(PositivePipeline, PervertexNVShaderAttributes) {
                 }
             )glsl";
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
                 #version 450
 
                 #extension GL_NV_fragment_shader_barycentric : enable
@@ -1331,7 +1331,7 @@ TEST_F(PositivePipeline, DualBlendShader) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(location = 0, index = 0) out vec4 c1;
         layout(location = 0, index = 1) out vec4 c2;
@@ -1639,7 +1639,7 @@ TEST_F(PositivePipeline, InterpolateAtSample) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    static const char vs_src[] = R"glsl(
+    const char vs_src[] = R"glsl(
         #version 460
         layout(location = 0) out vec2 uv;
         void main() {
@@ -1647,7 +1647,7 @@ TEST_F(PositivePipeline, InterpolateAtSample) {
             gl_Position = vec4(uv, 0.0f, 1.0f);
         }
     )glsl";
-    static const char fs_src[] = R"glsl(
+    const char fs_src[] = R"glsl(
         #version 460
         layout(location = 0) out vec4 uFragColor;
         layout(location = 0) in vec2 v;
@@ -2234,7 +2234,7 @@ TEST_F(PositivePipeline, DisableShaderValidation) {
     RETURN_IF_SKIP(InitFramework(&layer_setting_ci));
     RETURN_IF_SKIP(InitState());
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer SSBO {
             uint x; // something to trigger pipeline validation
@@ -2270,7 +2270,7 @@ TEST_F(PositivePipeline, DisableShaderValidationMaintenance5) {
     RETURN_IF_SKIP(InitFramework(&layer_setting_ci));
     RETURN_IF_SKIP(InitState());
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer SSBO {
             uint x; // something to trigger pipeline validation
@@ -2321,7 +2321,7 @@ TEST_F(PositivePipeline, DisableShaderValidationGPL) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    char const *frag_shader = R"glsl(
+    const char *frag_shader = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer SSBO {
             uint x; // something to trigger pipeline validation

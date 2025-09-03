@@ -1014,7 +1014,7 @@ TEST_F(PositiveSyncVal, ImageArrayDynamicIndexing) {
     gfx_pipe.CreateGraphicsPipeline();
 
     // Read from image 2 or 3
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         #extension GL_EXT_nonuniform_qualifier : enable
         layout(set=0, binding=0, rgba8) uniform image2D image_array[];
@@ -1079,7 +1079,7 @@ TEST_F(PositiveSyncVal, ImageArrayConstantIndexing) {
     gfx_pipe.CreateGraphicsPipeline();
 
     // Read from image 1
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0, rgba8) uniform image2D image_array[];
         void main() {
@@ -1144,7 +1144,7 @@ TEST_F(PositiveSyncVal, TexelBufferArrayConstantIndexing) {
     gfx_pipe.CreateGraphicsPipeline();
 
     // Read from texel buffer 1
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0, rgba8ui) uniform uimageBuffer texel_buffer_array[];
         void main() {
@@ -1220,7 +1220,7 @@ TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage) {
     descriptor_set.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
     descriptor_set.UpdateDescriptorSets();
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0, rgba8) uniform image2D image;
         void main() {
@@ -1338,7 +1338,7 @@ TEST_F(PositiveSyncVal, QSTransitionAndRead) {
     descriptor_set.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
     descriptor_set.UpdateDescriptorSets();
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0, rgba8) uniform image2D image;
         void main() {

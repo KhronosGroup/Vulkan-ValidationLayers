@@ -359,7 +359,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitCapability) {
 
     // storageBuffer8BitAccess
     {
-        char const *vsSource = R"glsl(
+        const char *vsSource = R"glsl(
             #version 450
             #extension GL_EXT_shader_8bit_storage: enable
             #extension GL_EXT_shader_explicit_arithmetic_types_int8: enable
@@ -377,7 +377,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitCapability) {
     }
     // uniformAndStorageBuffer8BitAccess
     {
-        char const *vsSource = R"glsl(
+        const char *vsSource = R"glsl(
             #version 450
             #extension GL_EXT_shader_8bit_storage: enable
             #extension GL_EXT_shader_explicit_arithmetic_types_int8: enable
@@ -396,7 +396,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitCapability) {
 
     // storagePushConstant8
     {
-        char const *vsSource = R"glsl(
+        const char *vsSource = R"glsl(
             #version 450
             #extension GL_EXT_shader_8bit_storage: enable
             #extension GL_EXT_shader_explicit_arithmetic_types_int8: enable
@@ -415,7 +415,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitCapability) {
 
     // storageBuffer16BitAccess - Float
     {
-        char const *vsSource = R"glsl(
+        const char *vsSource = R"glsl(
             #version 450
             #extension GL_EXT_shader_16bit_storage: enable
             #extension GL_EXT_shader_explicit_arithmetic_types_float16: enable
@@ -433,7 +433,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitCapability) {
 
     // uniformAndStorageBuffer16BitAccess - Float
     {
-        char const *vsSource = R"glsl(
+        const char *vsSource = R"glsl(
             #version 450
             #extension GL_EXT_shader_16bit_storage: enable
             #extension GL_EXT_shader_explicit_arithmetic_types_float16: enable
@@ -452,7 +452,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitCapability) {
 
     // storagePushConstant16 - Float
     {
-        char const *vsSource = R"glsl(
+        const char *vsSource = R"glsl(
             #version 450
             #extension GL_EXT_shader_16bit_storage: enable
             #extension GL_EXT_shader_explicit_arithmetic_types_float16: enable
@@ -471,7 +471,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitCapability) {
 
     // storageInputOutput16 - Float
     {
-        char const *vsSource = R"glsl(
+        const char *vsSource = R"glsl(
             #version 450
             #extension GL_EXT_shader_16bit_storage: enable
             #extension GL_EXT_shader_explicit_arithmetic_types_float16: enable
@@ -488,7 +488,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitCapability) {
         m_errorMonitor->VerifyFound();
 
         // Need to match in/out
-        char const *fsSource = R"glsl(
+        const char *fsSource = R"glsl(
             #version 450
             #extension GL_EXT_shader_16bit_storage: enable
             #extension GL_EXT_shader_explicit_arithmetic_types_float16: enable
@@ -507,7 +507,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitCapability) {
 
     // storageBuffer16BitAccess - Int
     {
-        char const *vsSource = R"glsl(
+        const char *vsSource = R"glsl(
             #version 450
             #extension GL_EXT_shader_16bit_storage: enable
             #extension GL_EXT_shader_explicit_arithmetic_types_int16: enable
@@ -526,7 +526,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitCapability) {
 
     // uniformAndStorageBuffer16BitAccess - Int
     {
-        char const *vsSource = R"glsl(
+        const char *vsSource = R"glsl(
             #version 450
             #extension GL_EXT_shader_16bit_storage: enable
             #extension GL_EXT_shader_explicit_arithmetic_types_int16: enable
@@ -546,7 +546,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitCapability) {
 
     // storagePushConstant16 - Int
     {
-        char const *vsSource = R"glsl(
+        const char *vsSource = R"glsl(
             #version 450
             #extension GL_EXT_shader_16bit_storage: enable
             #extension GL_EXT_shader_explicit_arithmetic_types_int16: enable
@@ -565,7 +565,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitCapability) {
 
     // storageInputOutput16 - Int
     {
-        char const *vsSource = R"glsl(
+        const char *vsSource = R"glsl(
             #version 450
             #extension GL_EXT_shader_16bit_storage: enable
             #extension GL_EXT_shader_explicit_arithmetic_types_int16: enable
@@ -582,7 +582,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitCapability) {
         m_errorMonitor->VerifyFound();
 
         // Need to match in/out
-        char const *fsSource = R"glsl(
+        const char *fsSource = R"glsl(
             #version 450
             #extension GL_EXT_shader_16bit_storage: enable
             #extension GL_EXT_shader_explicit_arithmetic_types_int16: enable
@@ -612,7 +612,7 @@ TEST_F(NegativeShaderSpirv, SpirvStatelessMaintenance5) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
         #extension GL_EXT_shader_8bit_storage: enable
         #extension GL_EXT_shader_explicit_arithmetic_types_int8: enable
@@ -655,7 +655,7 @@ TEST_F(NegativeShaderSpirv, SpirvStatelessMaintenance5VertAndFrag) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    static const char shader[] = R"glsl(
+    const char shader[] = R"glsl(
         #version 450
         #extension GL_EXT_shader_atomic_float : enable
         #extension GL_KHR_memory_scope_semantics : enable
@@ -1159,7 +1159,7 @@ TEST_F(NegativeShaderSpirv, ReadShaderClock) {
     InitRenderTarget();
 
     // Device scope using GL_EXT_shader_realtime_clock
-    char const *vsSourceDevice = R"glsl(
+    const char *vsSourceDevice = R"glsl(
         #version 450
         #extension GL_EXT_shader_realtime_clock: enable
         void main(){
@@ -1172,7 +1172,7 @@ TEST_F(NegativeShaderSpirv, ReadShaderClock) {
     m_errorMonitor->VerifyFound();
 
     // Subgroup scope using ARB_shader_clock
-    char const *vsSourceScope = R"glsl(
+    const char *vsSourceScope = R"glsl(
         #version 450
         #extension GL_ARB_shader_clock: enable
         void main(){
@@ -1250,7 +1250,7 @@ TEST_F(NegativeShaderSpirv, SpecializationOffsetOutOfBounds) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout (constant_id = 0) const float r = 0.0f;
         layout(location = 0) out vec4 uFragColor;
@@ -1287,7 +1287,7 @@ TEST_F(NegativeShaderSpirv, SpecializationOffsetOutOfBoundsWithIdentifier) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vs_source = R"glsl(
+    const char *vs_source = R"glsl(
         #version 450
         layout (constant_id = 0) const float x = 0.0f;
         void main(){
@@ -1334,7 +1334,7 @@ TEST_F(NegativeShaderSpirv, SpecializationSizeOutOfBounds) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout (constant_id = 0) const float r = 0.0f;
         layout(location = 0) out vec4 uFragColor;
@@ -1675,7 +1675,7 @@ TEST_F(NegativeShaderSpirv, DuplicatedSpecializationConstantID) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout (constant_id = 0) const float r = 0.0f;
         layout(location = 0) out vec4 uFragColor;
@@ -1734,7 +1734,7 @@ TEST_F(NegativeShaderSpirv, ShaderNotEnabled) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(location=0) out vec4 color;
         void main(){
@@ -1752,7 +1752,7 @@ TEST_F(NegativeShaderSpirv, ShaderImageFootprintEnabled) {
     AddRequiredExtensions(VK_NV_SHADER_IMAGE_FOOTPRINT_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         #extension GL_NV_shader_texture_footprint  : require
         layout(set=0, binding=0) uniform sampler2D s;
@@ -1778,7 +1778,7 @@ TEST_F(NegativeShaderSpirv, FragmentShaderBarycentricEnabled) {
     AddRequiredExtensions(VK_NV_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         #extension GL_NV_fragment_shader_barycentric : require
         layout(location=0) out float value;
@@ -1798,7 +1798,7 @@ TEST_F(NegativeShaderSpirv, ComputeShaderDerivativesEnabled) {
     AddRequiredExtensions(VK_NV_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    char const *csSource = R"glsl(
+    const char *csSource = R"glsl(
         #version 450
         #extension GL_NV_compute_shader_derivatives : require
         layout(local_size_x=2, local_size_y=4) in;
@@ -1822,7 +1822,7 @@ TEST_F(NegativeShaderSpirv, FragmentShaderInterlockEnabled) {
     AddRequiredExtensions(VK_EXT_FRAGMENT_SHADER_INTERLOCK_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         #extension GL_ARB_fragment_shader_interlock : require
         layout(sample_interlock_ordered) in;
@@ -1841,7 +1841,7 @@ TEST_F(NegativeShaderSpirv, DemoteToHelperInvocation) {
     AddRequiredExtensions(VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         #extension GL_EXT_demote_to_helper_invocation : require
         void main(){
@@ -2028,7 +2028,7 @@ TEST_F(NegativeShaderSpirv, SubgroupRotate) {
 
     RETURN_IF_SKIP(Init());
 
-    char const *source = R"glsl(
+    const char *source = R"glsl(
         #version 450
         #extension GL_KHR_shader_subgroup_rotate: enable
         layout(binding = 0) buffer Buffers { vec4  x; } data;
@@ -2050,7 +2050,7 @@ TEST_F(NegativeShaderSpirv, SubgroupRotateClustered) {
 
     RETURN_IF_SKIP(Init());
 
-    char const *source = R"glsl(
+    const char *source = R"glsl(
         #version 450
         #extension GL_KHR_shader_subgroup_rotate: enable
         layout(binding = 0) buffer Buffers { vec4  x; } data;
@@ -2072,7 +2072,7 @@ TEST_F(NegativeShaderSpirv, DeviceMemoryScope) {
 
     RETURN_IF_SKIP(Init());
 
-    char const *csSource = R"glsl(
+    const char *csSource = R"glsl(
         #version 450
         #extension GL_KHR_memory_scope_semantics : enable
         layout(set = 0, binding = 0) buffer ssbo { uint y; };
@@ -2094,7 +2094,7 @@ TEST_F(NegativeShaderSpirv, QueueFamilyMemoryScope) {
     AddRequiredFeature(vkt::Feature::vulkanMemoryModelDeviceScope);
     RETURN_IF_SKIP(Init());
 
-    char const *csSource = R"glsl(
+    const char *csSource = R"glsl(
         #version 450
         #extension GL_KHR_memory_scope_semantics : enable
         layout(set = 0, binding = 0) buffer ssbo { uint y; };
@@ -2114,7 +2114,7 @@ TEST_F(NegativeShaderSpirv, DeviceMemoryScopeDebugInfo) {
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
     RETURN_IF_SKIP(Init());
 
-    char const *csSource = R"(
+    const char *csSource = R"(
                OpCapability Shader
           %2 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
@@ -2391,7 +2391,7 @@ TEST_F(NegativeShaderSpirv, DescriptorCountConstant) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout (set = 0, binding = 0) uniform sampler2D tex[3];
         layout (location = 0) out vec4 out_color;
@@ -2415,7 +2415,7 @@ TEST_F(NegativeShaderSpirv, DISABLED_DescriptorCountSpecConstant) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout (constant_id = 0) const int index = 2;
         layout (set = 0, binding = 0) uniform sampler2D tex[index];
@@ -2446,7 +2446,7 @@ TEST_F(NegativeShaderSpirv, DescriptorCountConstantRuntimeArray) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 460
         #extension GL_EXT_nonuniform_qualifier : enable
         layout (set = 0, binding = 0) uniform sampler2D tex[];
@@ -2595,7 +2595,7 @@ TEST_F(NegativeShaderSpirv, ScalarBlockLayoutShaderCache) {
     RETURN_IF_SKIP(Init());
 
     // Matches glsl from other ScalarBlockLayoutShaderCache test
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 460
         #extension GL_EXT_buffer_reference : require
         #extension GL_EXT_scalar_block_layout : require
@@ -2723,7 +2723,7 @@ TEST_F(NegativeShaderSpirv, ShaderViewportIndexLayerEXT) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vs_source = R"glsl(
+    const char *vs_source = R"glsl(
         #version 450
         #extension GL_ARB_shader_viewport_layer_array : enable
         void main() {
@@ -2814,7 +2814,7 @@ TEST_F(NegativeShaderSpirv, Bitwise32bitMaintenance9) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
     RETURN_IF_SKIP(Init());  // missing maintenance9
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         #extension GL_EXT_shader_explicit_arithmetic_types_int64 : enable
         void main() {

@@ -229,7 +229,7 @@ TEST_F(NegativeFragmentShadingRate, PrimitiveFragmentShadingRateWriteMultiViewpo
     }
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
         #extension GL_EXT_fragment_shading_rate : enable
         void main() {
@@ -1388,7 +1388,7 @@ TEST_F(NegativeFragmentShadingRate, PrimitiveWriteMultiViewportLimit) {
 
     // Test PrimitiveShadingRate writes with multiple viewports
     {
-        char const *vsSource = R"glsl(
+        const char *vsSource = R"glsl(
             #version 450
             #extension GL_EXT_fragment_shading_rate : enable
             void main() {
@@ -1418,12 +1418,12 @@ TEST_F(NegativeFragmentShadingRate, PrimitiveWriteMultiViewportLimit) {
 
     // Test PrimitiveShadingRate writes with ViewportIndex writes in a geometry shader
     if (features2.features.geometryShader) {
-        char const *vsSource = R"glsl(
+        const char *vsSource = R"glsl(
             #version 450
             void main() {}
         )glsl";
 
-        static char const *gsSource = R"glsl(
+        const char *gsSource = R"glsl(
             #version 450
             #extension GL_EXT_fragment_shading_rate : enable
             layout (points) in;
@@ -1453,7 +1453,7 @@ TEST_F(NegativeFragmentShadingRate, PrimitiveWriteMultiViewportLimit) {
 
     // Test PrimitiveShadingRate writes with ViewportIndex writes in a vertex shader
     if (vil_extension) {
-        char const *vsSource = R"glsl(
+        const char *vsSource = R"glsl(
             #version 450
             #extension GL_EXT_fragment_shading_rate : enable
             #extension GL_ARB_shader_viewport_layer_array : enable
@@ -1477,12 +1477,12 @@ TEST_F(NegativeFragmentShadingRate, PrimitiveWriteMultiViewportLimit) {
     if (va2_extension) {
         // Test PrimitiveShadingRate writes with ViewportIndex writes in a geometry shader
         if (features2.features.geometryShader) {
-            char const *vsSource = R"glsl(
+            const char *vsSource = R"glsl(
                 #version 450
                 void main() {}
             )glsl";
 
-            static char const *gsSource = R"glsl(
+            const char *gsSource = R"glsl(
                 #version 450
                 #extension GL_EXT_fragment_shading_rate : enable
                 #extension GL_NV_viewport_array2 : enable
@@ -1513,7 +1513,7 @@ TEST_F(NegativeFragmentShadingRate, PrimitiveWriteMultiViewportLimit) {
 
         // Test PrimitiveShadingRate writes with ViewportIndex writes in a vertex shader
         if (vil_extension) {
-            char const *vsSource = R"glsl(
+            const char *vsSource = R"glsl(
                 #version 450
                 #extension GL_EXT_fragment_shading_rate : enable
                 #extension GL_NV_viewport_array2 : enable

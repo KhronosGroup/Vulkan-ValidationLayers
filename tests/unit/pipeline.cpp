@@ -382,7 +382,7 @@ TEST_F(NegativePipeline, ShaderStageBit) {
     InitRenderTarget();
 
     // Make sure compute pipeline has a compute shader stage set
-    char const *csSource = R"glsl(
+    const char *csSource = R"glsl(
         #version 450
         layout(local_size_x=1, local_size_y=1, local_size_z=1) in;
         void main(){
@@ -580,7 +580,7 @@ TEST_F(NegativePipeline, RenderPassShaderResolveQCOM) {
     ASSERT_TRUE(renderpass2.initialized());
 
     // shader uses gl_SamplePosition which causes the SPIR-V to include SampleRateShading capability
-    static const char *sampleRateFragShaderText = R"glsl(
+    const char *sampleRateFragShaderText = R"glsl(
         #version 450
         layout(location = 0) out vec4 uFragColor;
         void main() {
@@ -997,7 +997,7 @@ TEST_F(NegativePipeline, DuplicateStageMaintenance5Vertex) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    static const char shader[] = R"glsl(
+    const char shader[] = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer ssbo { uint x; };
         void main() {
@@ -1071,7 +1071,7 @@ TEST_F(NegativePipeline, MissingEntrypoint) {
 TEST_F(NegativePipeline, MissingEntrypoint2) {
     RETURN_IF_SKIP(Init());
 
-    char const *shader_source = R"(
+    const char *shader_source = R"(
         OpCapability Shader
         OpMemoryModel Logical GLSL450
         OpEntryPoint GLCompute %foo "foo"
@@ -1842,7 +1842,7 @@ TEST_F(NegativePipeline, NotCompatibleForSet) {
     descriptor_set.WriteDescriptorBufferInfo(1, uniform_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
-    char const *csSource = R"glsl(
+    const char *csSource = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer StorageBuffer { uint index; } u_index;
         layout(set = 0, binding = 1) uniform UniformStruct { ivec4 dummy; int val; } ubo;
@@ -1881,7 +1881,7 @@ TEST_F(NegativePipeline, NotCompatibleForSetIndependent) {
                                                 VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
     const vkt::PipelineLayout pipeline_layout_2(*m_device, {&descriptor_set.layout_});
 
-    char const *csSource = R"glsl(
+    const char *csSource = R"glsl(
         #version 450
         layout(set = 0, binding = 0) uniform UniformStruct { uint dummy; } ubo;
         void main() {
@@ -1907,7 +1907,7 @@ TEST_F(NegativePipeline, NotCompatibleForSetIndependent) {
 TEST_F(NegativePipeline, DescriptorSetNotBound) {
     RETURN_IF_SKIP(Init());
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer SSBO { uint x; };
         void main() {
@@ -2084,7 +2084,7 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     vkt::ImageView imageView = image.CreateView();
 
     // maps to VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
-    char const *fs_source_combined = R"glsl(
+    const char *fs_source_combined = R"glsl(
         #version 450
         layout (set=0, binding=0) uniform sampler2D samplerColor;
         layout(location=0) out vec4 color;
@@ -2096,7 +2096,7 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     VkShaderObj fs_combined(this, fs_source_combined, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // maps to VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE and VK_DESCRIPTOR_TYPE_SAMPLER
-    char const *fs_source_seperate = R"glsl(
+    const char *fs_source_seperate = R"glsl(
         #version 450
         layout (set=0, binding=0) uniform texture2D textureColor;
         layout (set=0, binding=1) uniform sampler samplers;
@@ -2112,7 +2112,7 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     VkShaderObj fs_seperate(this, fs_source_seperate, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // maps to an unused image sampler that should not trigger validation as it is never sampled
-    char const *fs_source_unused = R"glsl(
+    const char *fs_source_unused = R"glsl(
         #version 450
         layout (set=0, binding=0) uniform sampler2D samplerColor;
         layout(location=0) out vec4 color;
@@ -2123,7 +2123,7 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     VkShaderObj fs_unused(this, fs_source_unused, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // maps to VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER but makes sure it walks function tree to find sampling
-    char const *fs_source_function = R"glsl(
+    const char *fs_source_function = R"glsl(
         #version 450
         layout (set=0, binding=0) uniform sampler2D samplerColor;
         layout(location=0) out vec4 color;
@@ -2264,7 +2264,7 @@ TEST_F(NegativePipeline, ShaderDrawParametersNotEnabled10) {
         GTEST_SKIP() << "Test requires Vulkan exactly 1.0";
     }
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 460
         void main(){
            gl_Position = vec4(float(gl_BaseVertex));
@@ -2284,7 +2284,7 @@ TEST_F(NegativePipeline, ShaderDrawParametersNotEnabled11) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 460
         void main(){
            gl_Position = vec4(float(gl_BaseVertex));
@@ -2406,7 +2406,7 @@ TEST_F(NegativePipeline, CreateComputePipelineWithBadBasePointer) {
 
     RETURN_IF_SKIP(Init());
 
-    char const *csSource = R"glsl(
+    const char *csSource = R"glsl(
         #version 450
         layout(local_size_x=2, local_size_y=4) in;
         void main(){
@@ -2439,7 +2439,7 @@ TEST_F(NegativePipeline, CreateComputePipelineWithDerivatives) {
 
     RETURN_IF_SKIP(Init());
 
-    char const *csSource = R"glsl(
+    const char *csSource = R"glsl(
         #version 450
         layout(local_size_x=2, local_size_y=4) in;
         void main(){
@@ -3006,7 +3006,7 @@ TEST_F(NegativePipeline, RasterizationOrderAttachmentAccessNoSubpassFlags) {
     }
 
     if (rasterization_order_features.rasterizationOrderDepthAttachmentAccess) {
-        char const *fsSource = R"glsl(
+        const char *fsSource = R"glsl(
             #version 450
             layout(early_fragment_tests) in;
             layout(location = 0) out vec4 uFragColor;
@@ -3042,14 +3042,14 @@ TEST_F(NegativePipeline, MismatchedRenderPassAndPipelineAttachments) {
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-07609");
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
                 #version 450
 
                 void main() {
                 }
             )glsl";
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
                 #version 450
 
                 void main() {
@@ -3609,7 +3609,7 @@ TEST_F(NegativePipeline, GeometryShaderConservativeRasterization) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    static char const *gsSource = R"glsl(
+    const char *gsSource = R"glsl(
         #version 450
         layout (triangles) in;
         layout (points) out;

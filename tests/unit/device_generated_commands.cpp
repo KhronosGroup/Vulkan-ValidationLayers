@@ -779,7 +779,7 @@ TEST_F(NegativeDeviceGeneratedCommands, UpdateIESPipelineFragmentOutput) {
     CreatePipelineHelper init_pipe(*this, &pipe_flags2);
     init_pipe.CreateGraphicsPipeline();
 
-    char const *fs_source = R"glsl(
+    const char *fs_source = R"glsl(
         #version 460
         layout(location = 1) out vec4 uFragColor;
         void main(){
@@ -813,7 +813,7 @@ TEST_F(NegativeDeviceGeneratedCommands, UpdateIESPipelineFragDepth) {
     init_pipe.CreateGraphicsPipeline();
     vkt::IndirectExecutionSet exe_set(*m_device, init_pipe, 1);
 
-    char const *fs_source = R"glsl(
+    const char *fs_source = R"glsl(
         #version 460
         layout(location = 0) out vec4 uFragColor;
         void main(){
@@ -846,7 +846,7 @@ TEST_F(NegativeDeviceGeneratedCommands, UpdateIESPipelineSampleMask) {
     init_pipe.CreateGraphicsPipeline();
     vkt::IndirectExecutionSet exe_set(*m_device, init_pipe, 1);
 
-    char const *fs_source = R"glsl(
+    const char *fs_source = R"glsl(
         #version 460
         layout(location = 0) out vec4 uFragColor;
         void main(){
@@ -880,7 +880,7 @@ TEST_F(NegativeDeviceGeneratedCommands, UpdateIESPipelineStencilExportEXT) {
     init_pipe.CreateGraphicsPipeline();
     vkt::IndirectExecutionSet exe_set(*m_device, init_pipe, 1);
 
-    char const *fs_source = R"glsl(
+    const char *fs_source = R"glsl(
         #version 460
         #extension GL_ARB_shader_stencil_export: enable
         layout(location = 0) out vec4 uFragColor;
@@ -955,7 +955,7 @@ TEST_F(NegativeDeviceGeneratedCommands, UpdateIESPipelineCompatible) {
     const vkt::PipelineLayout pipeline_layout_vert(*m_device, {&descriptor_set_vert.layout_});
     const vkt::PipelineLayout pipeline_layout_all(*m_device, {&descriptor_set_all.layout_});
 
-    char const *vs_source = R"glsl(
+    const char *vs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer StorageBuffer {
             uint a;
@@ -1202,7 +1202,7 @@ TEST_F(NegativeDeviceGeneratedCommands, UpdateIESShaderObjectFragmentOutput) {
     write_exe_set.index = 1;
 
     {
-        char const *fs_source_location = R"glsl(
+        const char *fs_source_location = R"glsl(
             #version 460
             layout(location = 1) out vec4 uFragColor;
             void main(){
@@ -1221,7 +1221,7 @@ TEST_F(NegativeDeviceGeneratedCommands, UpdateIESShaderObjectFragmentOutput) {
     }
 
     {
-        char const *fs_source_depth = R"glsl(
+        const char *fs_source_depth = R"glsl(
             #version 460
             layout(location = 0) out vec4 uFragColor;
             void main(){
@@ -1242,7 +1242,7 @@ TEST_F(NegativeDeviceGeneratedCommands, UpdateIESShaderObjectFragmentOutput) {
     }
 
     {
-        char const *fs_source_mask = R"glsl(
+        const char *fs_source_mask = R"glsl(
             #version 460
             layout(location = 0) out vec4 uFragColor;
             void main(){
@@ -1263,7 +1263,7 @@ TEST_F(NegativeDeviceGeneratedCommands, UpdateIESShaderObjectFragmentOutput) {
     }
 
     {
-        char const *fs_source_stencil = R"glsl(
+        const char *fs_source_stencil = R"glsl(
             #version 460
             #extension GL_ARB_shader_stencil_export: enable
             layout(location = 0) out vec4 uFragColor;

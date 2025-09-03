@@ -36,7 +36,7 @@ TEST_F(PositiveGpuAVRayQuery, ComputeBasic) {
     TEST_DESCRIPTION("Ray query in a compute shader");
     RETURN_IF_SKIP(InitGpuAVRayQuery());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 460
         #extension GL_EXT_ray_query : require
 
@@ -74,7 +74,7 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicTminTmax) {
     TEST_DESCRIPTION("Ray query in a compute shader, with dynamically set t_min and t_max");
     RETURN_IF_SKIP(InitGpuAVRayQuery());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 460
         #extension GL_EXT_ray_query : require
 
@@ -137,7 +137,7 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicRayFlags) {
     TEST_DESCRIPTION("Ray query in a compute shader, with dynamically set ray flags");
     RETURN_IF_SKIP(InitGpuAVRayQuery());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 460
         #extension GL_EXT_ray_query : require
 
@@ -191,7 +191,7 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicRayFlagsSkipTriangles) {
     AddRequiredFeature(vkt::Feature::rayTraversalPrimitiveCulling);
     RETURN_IF_SKIP(InitGpuAVRayQuery());
 
-    char const *shader_source = R"glsl(
+    const char *shader_source = R"glsl(
         #version 460
         #extension GL_EXT_ray_query : require
 
@@ -243,7 +243,7 @@ TEST_F(PositiveGpuAVRayQuery, GraphicsBasic) {
     RETURN_IF_SKIP(InitGpuAVRayQuery());
     InitRenderTarget();
 
-    char const *vertex_source = R"glsl(
+    const char *vertex_source = R"glsl(
         #version 460
         #extension GL_EXT_ray_query : require
 

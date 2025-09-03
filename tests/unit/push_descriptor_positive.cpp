@@ -133,7 +133,7 @@ TEST_F(PositivePushDescriptor, UnboundSet) {
     const vkt::DescriptorSetLayout push_ds_layout(*m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
 
     // Create PSO
-    char const fsSource[] = R"glsl(
+    const char fsSource[] = R"glsl(
         #version 450
         layout(location=0) out vec4 x;
         layout(set=0) layout(binding=2) uniform foo1 { float x; } bar1;
@@ -212,7 +212,7 @@ TEST_F(PositivePushDescriptor, SetUpdatingSetNumber) {
         const vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout, &ds_layout, &push_ds_layout, &ds_layout});
         ASSERT_TRUE(pipeline_layout.initialized());
 
-        char const *fsSource = R"glsl(
+        const char *fsSource = R"glsl(
             #version 450
             layout(location=0) out vec4 x;
             layout(set=2) layout(binding=0) uniform foo { vec4 y; } bar;
@@ -244,7 +244,7 @@ TEST_F(PositivePushDescriptor, SetUpdatingSetNumber) {
         const VkWriteDescriptorSet descriptor_write =
             vkt::Device::WriteDescriptorSet(vkt::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
 
-        char const *fsSource = R"glsl(
+        const char *fsSource = R"glsl(
             #version 450
             layout(location=0) out vec4 x;
             layout(set=3) layout(binding=0) uniform foo { vec4 y; } bar;

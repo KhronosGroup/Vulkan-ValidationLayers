@@ -29,7 +29,7 @@ TEST_F(NegativeAtomic, VertexStoresAndAtomicsFeatureDisable) {
 
     // Test StoreOp
     {
-        char const *vsSource = R"glsl(
+        const char *vsSource = R"glsl(
             #version 450
             layout(set=0, binding=0, rgba8) uniform image2D si0;
             void main() {
@@ -49,7 +49,7 @@ TEST_F(NegativeAtomic, VertexStoresAndAtomicsFeatureDisable) {
 
     // Test AtomicOp
     {
-        char const *vsSource = R"glsl(
+        const char *vsSource = R"glsl(
             #version 450
             layout(set=0, binding=0, r32f) uniform image2D si0;
             void main() {
@@ -80,7 +80,7 @@ TEST_F(NegativeAtomic, FragmentStoresAndAtomicsFeatureDisable) {
 
     // Test StoreOp
     {
-        char const *fsSource = R"glsl(
+        const char *fsSource = R"glsl(
             #version 450
             layout(set=0, binding=0, rgba8) uniform image2D si0;
             void main() {
@@ -100,7 +100,7 @@ TEST_F(NegativeAtomic, FragmentStoresAndAtomicsFeatureDisable) {
 
     // Test AtomicOp
     {
-        char const *fsSource = R"glsl(
+        const char *fsSource = R"glsl(
             #version 450
             layout(set=0, binding=0, r32f) uniform image2D si0;
             void main() {
@@ -127,7 +127,7 @@ TEST_F(NegativeAtomic, FragmentStoresAndAtomicsFeatureBuffer) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer ssbo { int y; };
         void main() {
@@ -155,7 +155,7 @@ TEST_F(NegativeAtomic, VertexStoresAndAtomicsFeatureDisableShaderObject) {
 
     RETURN_IF_SKIP(Init());
 
-    char const *vs_source = R"glsl(
+    const char *vs_source = R"glsl(
         #version 450
         layout(set=0, binding=0, rgba8) uniform image2D si0;
         void main() {
@@ -1338,7 +1338,7 @@ TEST_F(NegativeAtomic, InvalidStorageOperation) {
     vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
     vkt::BufferView buffer_view(*m_device, buffer, buffer_view_format);
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(set = 0, binding = 3, r32f) uniform image2D si0;
         layout(set = 0, binding = 2, r32f) uniform image2D si1[2];
@@ -1475,7 +1475,7 @@ TEST_F(NegativeAtomic, VertexPipelineStoresAndAtomics) {
     //     float a;
     //     float b;
     // } data;
-    char const *vsSource = R"(
+    const char *vsSource = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint Vertex %main "main" %o

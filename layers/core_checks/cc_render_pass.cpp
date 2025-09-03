@@ -1185,7 +1185,7 @@ enum AttachmentType {
     ATTACHMENT_RESOLVE = 16,
 };
 
-char const *StringAttachmentType(uint8_t type) {
+const char *StringAttachmentType(uint8_t type) {
     switch (type) {
         case ATTACHMENT_COLOR:
             return "color";

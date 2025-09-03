@@ -1182,7 +1182,7 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
     const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
     vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    char const *tcs_src = R"glsl(
+    const char *tcs_src = R"glsl(
         #version 450
         layout(vertices=3) out;
         void main(){
@@ -1193,7 +1193,7 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
     const auto tcs_spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, tcs_src);
     vkt::GraphicsPipelineLibraryStage tcs_stage(tcs_spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
 
-    char const *tes_src = R"glsl(
+    const char *tes_src = R"glsl(
         #version 450
         layout(triangles, equal_spacing, cw) in;
         void main(){
@@ -3715,7 +3715,7 @@ TEST_F(NegativeGraphicsLibrary, StatelessSpirvValidation) {
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
-    static const char shader[] = R"glsl(
+    const char shader[] = R"glsl(
         #version 450
         #extension GL_EXT_shader_atomic_float : enable
         #extension GL_KHR_memory_scope_semantics : enable

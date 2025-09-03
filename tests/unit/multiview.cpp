@@ -323,7 +323,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
 
     // Push constants
     {
-        char const *const vsSource = R"glsl(
+        const char *const vsSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo {
            mat3 m;
@@ -462,7 +462,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         input_attribs.format = VK_FORMAT_R32G32_SFLOAT;
         input_attribs.offset = 0;
 
-        char const *const vsSource = R"glsl(
+        const char *const vsSource = R"glsl(
         #version 450
         layout(location = 0) in vec2 input0;
         void main(){
@@ -537,7 +537,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         input_attribs.format = VK_FORMAT_R32G32_SFLOAT;
         input_attribs.offset = 0;
 
-        char const *const vsSource = R"glsl(
+        const char *const vsSource = R"glsl(
         #version 450
         layout(location = 0) in vec2 input0;
         void main(){
@@ -1075,7 +1075,7 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
 
     // tessellationShader
     {
-        char const *tcsSource = R"glsl(
+        const char *tcsSource = R"glsl(
         #version 450
         layout(vertices=3) out;
         void main(){
@@ -1083,7 +1083,7 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
            gl_TessLevelInner[0] = 1;
         }
         )glsl";
-        char const *tesSource = R"glsl(
+        const char *tesSource = R"glsl(
         #version 450
         layout(triangles, equal_spacing, cw) in;
         void main(){
@@ -1115,7 +1115,7 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
     }
     // geometryShader
     {
-        static char const *gsSource = R"glsl(
+        const char *gsSource = R"glsl(
         #version 450
         layout (points) in;
         layout (triangle_strip) out;
@@ -1200,7 +1200,7 @@ TEST_F(NegativeMultiview, ShaderLayerBuiltInRenderPass) {
     AddRequiredFeature(vkt::Feature::multiviewGeometryShader);
     RETURN_IF_SKIP(Init());
 
-    static char const *gsSource = R"glsl(
+    const char *gsSource = R"glsl(
         #version 450
         layout (triangles) in;
         layout (triangle_strip) out;
@@ -1259,7 +1259,7 @@ TEST_F(NegativeMultiview, ShaderLayerBuiltInDynamicRendering) {
     AddRequiredFeature(vkt::Feature::multiviewGeometryShader);
     RETURN_IF_SKIP(Init());
 
-    static char const *gsSource = R"glsl(
+    const char *gsSource = R"glsl(
         #version 450
         layout (triangles) in;
         layout (triangle_strip) out;

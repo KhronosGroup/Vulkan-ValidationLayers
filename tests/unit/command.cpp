@@ -297,7 +297,7 @@ TEST_F(NegativeCommand, PushConstants) {
     //
     struct PipelineLayoutTestCase {
         VkPushConstantRange const range;
-        char const *msg;
+        const char *msg;
     };
 
     const uint32_t too_big = m_device->Physical().limits_.maxPushConstantsSize + 0x4;
@@ -338,7 +338,7 @@ TEST_F(NegativeCommand, PushConstants) {
     const uint32_t ranges_per_test = 5;
     struct DuplicateStageFlagsTestCase {
         VkPushConstantRange const ranges[ranges_per_test];
-        std::vector<char const *> const msg;
+        std::vector<const char *> const msg;
     };
     // Overlapping ranges are OK, but a stage flag can appear only once.
     const std::array<DuplicateStageFlagsTestCase, 3> duplicate_stageFlags_tests = {
@@ -887,7 +887,7 @@ TEST_F(NegativeCommand, DrawTimeImageViewTypeMismatchWithPipeline) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform sampler3D s;
         layout(location=0) out vec4 color;
@@ -935,7 +935,7 @@ TEST_F(NegativeCommand, DrawTimeImageViewTypeMismatchWithPipelineFunction) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform sampler3D s;
         layout(location=0) out vec4 color;
@@ -991,7 +991,7 @@ TEST_F(NegativeCommand, DrawTimeImageComponentTypeMismatchWithPipeline) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform isampler2D s;
         layout(location=0) out vec4 color;
@@ -2524,7 +2524,7 @@ TEST_F(NegativeCommand, ImageFilterCubicSamplerInCmdDraw) {
     vkt::Sampler sampler(*m_device, sampler_ci);
     ASSERT_TRUE(sampler.initialized());
 
-    static const char fs_src[] = R"glsl(
+    const char fs_src[] = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform sampler3D s;
         layout(location=0) out vec4 x;
@@ -4090,7 +4090,7 @@ TEST_F(NegativeCommand, CommandBufferRecording) {
 TEST_F(NegativeCommand, ManyInvalidatedObjects) {
     RETURN_IF_SKIP(Init());
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer SSBO_0 {
             vec4 a;

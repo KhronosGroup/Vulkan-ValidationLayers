@@ -600,7 +600,7 @@ TEST_F(VkAmdBestPracticesLayerTest, ComputeWorkgroupSizeMaintenance5) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
 
-    char const *cs_source = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         layout(local_size_x = 4, local_size_y = 1, local_size_z = 1) in;
         void main(){}

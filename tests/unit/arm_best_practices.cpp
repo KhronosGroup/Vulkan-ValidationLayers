@@ -743,7 +743,7 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadAlignmentTest
     RETURN_IF_SKIP(InitState());
 
     {
-        char const* csSource = R"glsl(
+        const char* csSource = R"glsl(
             #version 450
             layout(local_size_x = 4, local_size_y = 1, local_size_z = 1) in;
             void main(){}
@@ -755,7 +755,7 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadAlignmentTest
     }
 
     {
-        char const* csSource = R"glsl(
+        const char* csSource = R"glsl(
             #version 450
             layout(local_size_x = 4, local_size_y = 1, local_size_z = 3) in;
             void main(){}
@@ -771,7 +771,7 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadAlignmentTest
     }
 
     if (m_device->Physical().limits_.maxComputeWorkGroupInvocations > 128) {
-        char const* csSource = R"glsl(
+        const char* csSource = R"glsl(
             #version 450
             layout(local_size_x = 16, local_size_y = 9, local_size_z = 1) in;
             void main(){}
@@ -793,7 +793,7 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadCountTest) {
 
     // these two pipelines should not cause any warning
     {
-        char const* csSource = R"glsl(
+        const char* csSource = R"glsl(
             #version 450
             layout(local_size_x = 4, local_size_y = 1, local_size_z = 1) in;
             void main(){}
@@ -805,7 +805,7 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadCountTest) {
     }
 
     {
-        char const* csSource = R"glsl(
+        const char* csSource = R"glsl(
             #version 450
             layout(local_size_x = 4, local_size_y = 1, local_size_z = 3) in;
             void main(){}
@@ -818,7 +818,7 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadCountTest) {
 
     // this pipeline should cause a warning due to the total workgroup count
     {
-        char const* csSource = R"glsl(
+        const char* csSource = R"glsl(
             #version 450
             layout(local_size_x = 16, local_size_y = 8, local_size_z = 1) in;
             void main(){}
@@ -846,7 +846,7 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadSpatialLocality) {
                                        });
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    char const* compute_sampler_2d_8_8_1 = R"glsl(
+    const char* compute_sampler_2d_8_8_1 = R"glsl(
         #version 450
         layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
         layout(set = 0, binding = 0) uniform sampler2D uSampler;
@@ -855,7 +855,7 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadSpatialLocality) {
         }
     )glsl";
 
-    char const* compute_sampler_1d_64_1_1 = R"glsl(
+    const char* compute_sampler_1d_64_1_1 = R"glsl(
         #version 450
         layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
         layout(set = 0, binding = 0) uniform sampler1D uSampler;
@@ -864,7 +864,7 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadSpatialLocality) {
         }
     )glsl";
 
-    char const* compute_sampler_2d_64_1_1 = R"glsl(
+    const char* compute_sampler_2d_64_1_1 = R"glsl(
         #version 450
         layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
         layout(set = 0, binding = 0) uniform sampler2D uSampler;
@@ -904,7 +904,7 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadSpatialLocalityMultiEntrypoi
 
     // Empty 1D compute entrypoint
     // Fragment entrypoint accesses simple 2D sampler
-    char const* cs_source = R"(
+    const char* cs_source = R"(
                OpCapability Shader
           %2 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450

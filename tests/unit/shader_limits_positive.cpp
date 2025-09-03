@@ -23,7 +23,7 @@ TEST_F(PositiveShaderLimits, MaxSampleMaskWords) {
     InitRenderTarget();
 
     // Valid input of sample mask
-    char const *fs_source = R"glsl(
+    const char *fs_source = R"glsl(
         #version 450
         layout(location = 0) out vec4 uFragColor;
         void main(){
@@ -298,7 +298,7 @@ TEST_F(PositiveShaderLimits, MaxFragmentOutputAttachments) {
         GTEST_SKIP() << "maxFragmentOutputAttachments is not 4";
     }
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(location=0) out vec4 c0;
         layout(location=1) out vec4 c1;
@@ -326,7 +326,7 @@ TEST_F(PositiveShaderLimits, MaxFragmentOutputAttachmentsArray) {
         GTEST_SKIP() << "maxFragmentOutputAttachments is not 4";
     }
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         layout(location=0) out vec4 c[4];
         void main(){

@@ -293,7 +293,7 @@ TEST_F(PositiveSparseImage, OpImageSparse) {
     ds.WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     ds.UpdateDescriptorSets();
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
         #version 450
         #extension GL_ARB_sparse_texture2 : enable
 

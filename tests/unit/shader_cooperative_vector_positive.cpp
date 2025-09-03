@@ -98,7 +98,7 @@ TEST_F(PositiveShaderCooperativeVector, CooperativeVectorSPIRV) {
         GTEST_SKIP() << "cooperativeVectorTrainingFloat16Accumulation not supported";
     }
 
-    char const *vt_source = R"glsl(
+    const char *vt_source = R"glsl(
         #version 450
         #extension GL_NV_cooperative_vector : enable
         #extension GL_KHR_shader_subgroup_basic : enable
@@ -153,7 +153,7 @@ TEST_F(PositiveShaderCooperativeVector, CooperativeVectorTraingingSPIRV) {
     const vkt::DescriptorSetLayout dsl(*m_device, bindings);
     const vkt::PipelineLayout pl(*m_device, {&dsl});
 
-    char const *vt_source = R"glsl(
+    const char *vt_source = R"glsl(
         #version 450
         #extension GL_NV_cooperative_vector : enable
         #extension GL_KHR_shader_subgroup_basic : enable

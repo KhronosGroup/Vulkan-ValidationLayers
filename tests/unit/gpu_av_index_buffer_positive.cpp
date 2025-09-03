@@ -101,7 +101,7 @@ TEST_F(PositiveGpuAVIndexBuffer, DrawIndexedDynamicStates) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
 
         layout(location=0) in vec3 pos;
@@ -207,7 +207,7 @@ TEST_F(PositiveGpuAVIndexBuffer, NoShaderInputsVertexIndex16) {
         std::array<float, 3> normal;
     };
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
 
         void main() {
@@ -272,7 +272,7 @@ TEST_F(PositiveGpuAVIndexBuffer, VertexShaderUnusedLocations) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
 
         layout(location=0) in vec3 pos;
@@ -364,7 +364,7 @@ TEST_F(PositiveGpuAVIndexBuffer, InstanceIndex) {
         std::array<float, 3> normal;
     };
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
 
         layout(location=0) in vec3 pos;
@@ -452,7 +452,7 @@ TEST_F(PositiveGpuAVIndexBuffer, CmdSetVertexInputEXT) {
         std::array<float, 3> normal;
     };
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
 
         layout(location=0) in vec3 pos;
@@ -544,7 +544,7 @@ TEST_F(PositiveGpuAVIndexBuffer, CmdSetVertexInputEXT_CmdBindVertexBuffers2EXT) 
         std::array<float, 3> normal;
     };
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
 
         layout(location=0) in vec3 pos;
@@ -631,7 +631,7 @@ TEST_F(PositiveGpuAVIndexBuffer, IndirectDrawBadVertexIndex32) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
 
         layout(location=0) in vec3 pos;
@@ -692,7 +692,7 @@ TEST_F(PositiveGpuAVIndexBuffer, VertexIndex32MultiDraw) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
 
         layout(location=0) in vec3 pos;
@@ -761,7 +761,7 @@ TEST_F(PositiveGpuAVIndexBuffer, InstanceIndexVertexAttributeDivisor) {
         std::array<float, 3> normal;
     };
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
 
         layout(location=0) in vec3 pos;
@@ -862,7 +862,7 @@ TEST_F(PositiveGpuAVIndexBuffer, InstanceIndexVertexAttributeDivisorDynamic) {
         std::array<float, 3> normal;
     };
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
 
         layout(location=0) in vec3 pos;

@@ -106,7 +106,7 @@ TEST_F(NegativeGeometryTessellation, TessellationShaderEnabled) {
         GTEST_SKIP() << "patchControlPoints not supported";
     }
 
-    char const *tcsSource = R"glsl(
+    const char *tcsSource = R"glsl(
         #version 450
         layout(location=0) out int x[];
         layout(vertices=3) out;
@@ -116,7 +116,7 @@ TEST_F(NegativeGeometryTessellation, TessellationShaderEnabled) {
            x[gl_InvocationID] = gl_InvocationID;
         }
     )glsl";
-    char const *tesSource = R"glsl(
+    const char *tesSource = R"glsl(
         #version 450
         layout(triangles, equal_spacing, cw) in;
         layout(location=0) patch in int x;
@@ -158,7 +158,7 @@ TEST_F(NegativeGeometryTessellation, PointSizeGeomShaderDontWrite) {
     InitRenderTarget();
 
     // Create GS declaring PointSize and writing to it
-    static char const *gsSource = R"glsl(
+    const char *gsSource = R"glsl(
         #version 450
         layout (points) in;
         layout (points) out;
@@ -349,7 +349,7 @@ TEST_F(NegativeGeometryTessellation, BuiltinBlockSizeMismatchVsGs) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    static const char *gsSource = R"glsl(
+    const char *gsSource = R"glsl(
         #version 450
         layout (points) in;
         layout (points) out;
@@ -390,7 +390,7 @@ TEST_F(NegativeGeometryTessellation, BuiltinBlockSizeMismatchVsGsShaderObject) {
     RETURN_IF_SKIP(Init());
     InitDynamicRenderTarget();
 
-    static const char *gsSource = R"glsl(
+    const char *gsSource = R"glsl(
         #version 450
         layout (points) in;
         layout (points) out;
@@ -798,7 +798,7 @@ TEST_F(NegativeGeometryTessellation, DISABLED_TessellationPatchDecorationMismatc
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *tcsSource = R"glsl(
+    const char *tcsSource = R"glsl(
         #version 450
         layout(location=0) out int x[];
         layout(vertices=3) out;
@@ -808,7 +808,7 @@ TEST_F(NegativeGeometryTessellation, DISABLED_TessellationPatchDecorationMismatc
            x[gl_InvocationID] = gl_InvocationID;
         }
     )glsl";
-    char const *tesSource = R"glsl(
+    const char *tesSource = R"glsl(
         #version 450
         layout(triangles, equal_spacing, cw) in;
         layout(location=0) patch in int x;
@@ -841,7 +841,7 @@ TEST_F(NegativeGeometryTessellation, Tessellation) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *tcsSource = R"glsl(
+    const char *tcsSource = R"glsl(
         #version 450
         layout(vertices=3) out;
         void main(){
@@ -849,7 +849,7 @@ TEST_F(NegativeGeometryTessellation, Tessellation) {
            gl_TessLevelInner[0] = 1;
         }
     )glsl";
-    char const *tesSource = R"glsl(
+    const char *tesSource = R"glsl(
         #version 450
         layout(triangles, equal_spacing, cw) in;
         void main(){
@@ -1052,7 +1052,7 @@ TEST_F(NegativeGeometryTessellation, IncompatiblePrimitiveTopology) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    static const char *gsSource = R"glsl(
+    const char *gsSource = R"glsl(
         #version 450
         layout (points) in;
         layout (triangle_strip) out;
@@ -1089,7 +1089,7 @@ TEST_F(NegativeGeometryTessellation, IncompatibleTessGeomPrimitiveTopology) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *tcsSource = R"glsl(
+    const char *tcsSource = R"glsl(
         #version 450
         layout(location=0) out int x[];
         layout(vertices=3) out;
@@ -1099,7 +1099,7 @@ TEST_F(NegativeGeometryTessellation, IncompatibleTessGeomPrimitiveTopology) {
            x[gl_InvocationID] = gl_InvocationID;
         }
     )glsl";
-    char const *tesSource = R"glsl(
+    const char *tesSource = R"glsl(
         #version 450
         layout(triangles, equal_spacing, cw) in;
         layout(location=0) patch in int x;
@@ -1108,7 +1108,7 @@ TEST_F(NegativeGeometryTessellation, IncompatibleTessGeomPrimitiveTopology) {
            gl_Position.w = x;
         }
     )glsl";
-    static const char *gsSource = R"glsl(
+    const char *gsSource = R"glsl(
         #version 450
         layout (points) in;
         layout (triangle_strip) out;
@@ -1151,7 +1151,7 @@ TEST_F(NegativeGeometryTessellation, PipelineTessellationMissingPointSize) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    static const char tess_src[] = R"glsl(
+    const char tess_src[] = R"glsl(
         #version 460
         layout(triangles, equal_spacing, cw, point_mode) in;
         void main() { gl_Position = vec4(1); }
@@ -1180,7 +1180,7 @@ TEST_F(NegativeGeometryTessellation, PipelineTessellationPointSize) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    static const char tess_src[] = R"glsl(
+    const char tess_src[] = R"glsl(
         #version 460
         layout(triangles, equal_spacing, cw, point_mode) in;
         void main() {
@@ -1224,7 +1224,7 @@ TEST_F(NegativeGeometryTessellation, GeometryStreamsCapability) {
         GTEST_SKIP() << "maxTransformFeedbackStreams lower than required";
     }
 
-    static char const geom_src[] = R"glsl(
+    const char geom_src[] = R"glsl(
                OpCapability Geometry
                OpCapability TransformFeedback
                OpCapability GeometryStreams
@@ -1528,7 +1528,7 @@ TEST_F(NegativeGeometryTessellation, DrawDynamicPrimitiveTopology) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    static const char *gsSource = R"glsl(
+    const char *gsSource = R"glsl(
         #version 450
         layout (points) in;
         layout (triangle_strip) out;

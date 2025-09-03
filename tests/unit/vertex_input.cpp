@@ -772,7 +772,7 @@ TEST_F(NegativeVertexInput, AttributeAlignment) {
     input_attribs[2].format = VK_FORMAT_R32G32B32A32_SFLOAT;
     input_attribs[2].offset = offsetof(VboEntry, input2);
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
         layout(location = 0) in vec2 input0;
         layout(location = 1) in vec4 input1;
@@ -1114,7 +1114,7 @@ TEST_F(NegativeVertexInput, AttributeNotProvided) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
         layout(location=0) in vec4 x; /* not provided */
         void main(){
@@ -1143,7 +1143,7 @@ TEST_F(NegativeVertexInput, AttributeTypeMismatch) {
     memset(&input_attrib, 0, sizeof(input_attrib));
     input_attrib.format = VK_FORMAT_R32_SFLOAT;
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
         layout(location=0) in int x; /* attrib provided float */
         void main(){
@@ -1180,7 +1180,7 @@ TEST_F(NegativeVertexInput, AttributeStructTypeFirstLocation) {
     //         layout(location = 4) vec4 x;
     //         layout(location = 6) uvec4 y;
     //     } x_struct;
-    char const *vsSource = R"(
+    const char *vsSource = R"(
                OpCapability Shader
                OpMemoryModel Logical Simple
                OpEntryPoint Vertex %1 "main" %2
@@ -1234,7 +1234,7 @@ TEST_F(NegativeVertexInput, AttributeStructTypeSecondLocation) {
     //         layout(location = 4) ivec4 x;
     //         layout(location = 6) uvec4 y;
     //     } x_struct;
-    char const *vsSource = R"(
+    const char *vsSource = R"(
                OpCapability Shader
                OpMemoryModel Logical Simple
                OpEntryPoint Vertex %1 "main" %2
@@ -1287,7 +1287,7 @@ TEST_F(NegativeVertexInput, AttributeStructTypeBlockLocation) {
     //         vec4 x;
     //         uvec4 y;
     //     } x_struct;
-    char const *vsSource = R"(
+    const char *vsSource = R"(
                OpCapability Shader
                OpMemoryModel Logical Simple
                OpEntryPoint Vertex %1 "main" %2
@@ -1331,7 +1331,7 @@ TEST_F(NegativeVertexInput, AttributeTypeMismatchDynamic) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
         layout(location=0) in int x; /* attrib provided float */
         void main(){
@@ -1385,7 +1385,7 @@ TEST_F(NegativeVertexInput, AttributeBindingConflict) {
     memset(&input_attrib, 0, sizeof(input_attrib));
     input_attrib.format = VK_FORMAT_R32_SFLOAT;
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
         layout(location=0) in float x; /* attrib provided float */
         void main(){
@@ -1418,7 +1418,7 @@ TEST_F(NegativeVertexInput, Attribute64bitInputAttribute) {
         GTEST_SKIP() << "Format not supported for Vertex Buffer";
     }
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450 core
         layout(location = 0) in float pos; // 32-bit
         void main() {}
@@ -1452,7 +1452,7 @@ TEST_F(NegativeVertexInput, Attribute64bitShaderInput) {
         GTEST_SKIP() << "Format not supported for Vertex Buffer";
     }
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450 core
         #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
         layout(location = 0) in float64_t pos;
@@ -1487,7 +1487,7 @@ TEST_F(NegativeVertexInput, Attribute64bitUnusedComponent) {
         GTEST_SKIP() << "Format not supported for Vertex Buffer";
     }
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450 core
         #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
         layout(location = 0) in f64vec2 pos;
@@ -1535,7 +1535,7 @@ TEST_F(NegativeVertexInput, AttributeStructTypeBlockLocation64bit) {
     //         float64 y;
     //         ivec4 z;
     //     } x_struct;
-    char const *vsSource = R"(
+    const char *vsSource = R"(
                OpCapability Shader
                OpCapability Float64
                OpMemoryModel Logical Simple
@@ -1758,7 +1758,7 @@ TEST_F(NegativeVertexInput, ResetCmdSetVertexInput) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vs_source = R"glsl(
+    const char *vs_source = R"glsl(
         #version 450
         layout(location=0) in uvec4 x;
         void main(){}
@@ -1806,7 +1806,7 @@ TEST_F(NegativeVertexInput, VertexInputRebinding) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    const char *vsSource = R"glsl(
         #version 450
         layout(location = 0) in float a;
         layout(location = 1) in float b;

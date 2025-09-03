@@ -2515,7 +2515,7 @@ TEST_F(NegativeRenderPass, SamplingFromReadOnlyDepthStencilAttachment) {
 
     vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view_handle, width, height);
 
-    char const *fsSource = R"glsl(
+    const char *fsSource = R"glsl(
             #version 450
             layout(set = 0, binding = 0) uniform sampler2D depth;
             void main(){
