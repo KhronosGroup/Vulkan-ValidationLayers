@@ -35,6 +35,7 @@
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "containers/limits.h"
+#include "error_message/error_strings.h"
 #include "utils/vk_api_utils.h"
 
 bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, const spirv::Module &module_state,
@@ -575,7 +576,7 @@ bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bou
     struct Attachment {
         const VkRenderingAttachmentInfo *rendering_attachment_info = nullptr;
         const spirv::StageInterfaceVariable *output = nullptr;
-        uint32_t mapped_location = 0;
+        std::optional<uint32_t> mapped_location = std::nullopt;
     };
     std::map<uint32_t, Attachment> location_map;
 
@@ -608,7 +609,7 @@ bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bou
         const bool has_attachment =
             attachment_info.rendering_attachment_info && attachment_info.rendering_attachment_info->imageView != VK_NULL_HANDLE;
         const spirv::StageInterfaceVariable *output = attachment_info.output;
-        uint32_t mapped_loc = attachment_info.mapped_location;
+        uint32_t mapped_loc = attachment_info.mapped_location.value_or(location);
 
         if (has_attachment && !output) {
             // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9616
@@ -619,14 +620,27 @@ bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bou
                 const bool null_image_view = attachment_info.rendering_attachment_info &&
                                              attachment_info.rendering_attachment_info->imageView == VK_NULL_HANDLE;
                 const LogObjectList objlist = last_bound_state.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
+                std::stringstream reason;
+                if (null_image_view || location >= cb_state.rendering_attachments.color_locations.size()) {
+                    reason << "there is no VkRenderingInfo::pColorAttachments[" << mapped_loc << "]";
+                    if (null_image_view) {
+                        reason << " (imageView is VK_NULL_HANDLE)";
+                    }
+                } else {
+                    reason << "none of the attachments were mapped to that location (mapping was [";
+                    for (const uint32_t &mapping : cb_state.rendering_attachments.color_locations) {
+                        if (&mapping != &cb_state.rendering_attachments.color_locations[0]) {
+                            reason << ", ";
+                        }
+                        reason << string_Attachment(mapping);
+                    }
+                    reason << "])";
+                }
                 skip |= LogUndefinedValue(
                     "Undefined-Value-ShaderOutputNotConsumed-DynamicRendering", objlist, loc,
-                    "Inside the fragment shader, it writes to output Location %s but there is no "
-                    "VkRenderingInfo::pColorAttachments[%" PRIu32
-                    "]%s and this write is unused.\n"
+                    "Inside the fragment shader, it writes to output Location %s but %s and this write is unused.\n"
                     "Spec information at https://docs.vulkan.org/spec/latest/chapters/interfaces.html#interfaces-fragmentoutput",
-                    DescribeMappedLocation(location, mapped_loc).c_str(), mapped_loc,
-                    null_image_view ? " (imageView is VK_NULL_HANDLE)" : "");
+                    DescribeMappedLocation(location, mapped_loc).c_str(), reason.str().c_str());
             }
         } else if (has_attachment && output) {
             const auto image_view_state = Get<vvl::ImageView>(attachment_info.rendering_attachment_info->imageView);
