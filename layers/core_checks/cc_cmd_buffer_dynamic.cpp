@@ -23,6 +23,7 @@
 #include "core_checks/cc_state_tracker.h"
 #include "core_validation.h"
 #include "drawdispatch/drawdispatch_vuids.h"
+#include "error_message/error_strings.h"
 #include "error_message/logging.h"
 #include "generated/dynamic_state_helper.h"
 #include "generated/error_location_helper.h"
@@ -1312,6 +1313,13 @@ bool CoreChecks::ValidateDrawRenderingAttachmentLocation(const vvl::CommandBuffe
     return skip;
 }
 
+static bool AttachmentPointersMatch(const uint32_t* a, const uint32_t* b) {
+    if (!a || !b) {
+        return a == b;
+    }
+    return *a == *b;
+}
+
 bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuffer& cb_state, const vvl::Pipeline& pipeline_state,
                                                            const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
@@ -1355,52 +1363,38 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
         }
     }
 
-    if ((!pipeline_depth_index || !cb_state.rendering_attachments.depth_index) &&
-        (pipeline_depth_index != cb_state.rendering_attachments.depth_index)) {
+    if (!AttachmentPointersMatch(pipeline_depth_index, cb_state.rendering_attachments.depth_index)) {
         const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
         if (cb_state.rendering_attachments.set_color_indexes) {
             skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(),
-                            "The pipeline VkRenderingInputAttachmentIndexInfo::pDepthInputAttachmentIndex is %p but "
-                            "vkCmdSetRenderingInputAttachmentIndices last set pDepthInputAttachmentIndex to %p",
-                            pipeline_depth_index, cb_state.rendering_attachments.depth_index);
+                            "The pipeline VkRenderingInputAttachmentIndexInfo::pDepthInputAttachmentIndex is %s but "
+                            "vkCmdSetRenderingInputAttachmentIndices last set pDepthInputAttachmentIndex to %s",
+                            string_AttachmentPointer(pipeline_depth_index).c_str(),
+                            string_AttachmentPointer(cb_state.rendering_attachments.depth_index).c_str());
         } else {
             skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(),
                             "vkCmdSetRenderingAttachmentLocations was not called in this render pass was not called "
                             "in this render pass, so its pDepthInputAttachmentIndex is implicitly NULL, "
-                            "but VkRenderingInputAttachmentIndexInfo::pDepthInputAttachmentIndex is %p",
-                            pipeline_depth_index);
+                            "but VkRenderingInputAttachmentIndexInfo::pDepthInputAttachmentIndex is %s",
+                            string_AttachmentPointer(pipeline_depth_index).c_str());
         }
-    } else if (pipeline_depth_index && cb_state.rendering_attachments.depth_index &&
-               (*pipeline_depth_index != *cb_state.rendering_attachments.depth_index)) {
-        const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
-        skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(),
-                        "The pipeline VkRenderingInputAttachmentIndexInfo::pDepthInputAttachmentIndex value is %" PRIu32
-                        " but vkCmdSetRenderingInputAttachmentIndices last set pDepthInputAttachmentIndex value to %" PRIu32 "",
-                        *pipeline_depth_index, *cb_state.rendering_attachments.depth_index);
     }
 
-    if ((!pipeline_stencil_index || !cb_state.rendering_attachments.stencil_index) &&
-        (pipeline_stencil_index != cb_state.rendering_attachments.stencil_index)) {
+    if (!AttachmentPointersMatch(pipeline_stencil_index, cb_state.rendering_attachments.stencil_index)) {
         const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
         if (cb_state.rendering_attachments.set_color_indexes) {
             skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(),
-                            "The pipeline VkRenderingInputAttachmentIndexInfo::pStencilInputAttachmentIndex is %p but "
-                            "vkCmdSetRenderingInputAttachmentIndices last set pStencilInputAttachmentIndex to %p",
-                            pipeline_stencil_index, cb_state.rendering_attachments.stencil_index);
+                            "The pipeline VkRenderingInputAttachmentIndexInfo::pStencilInputAttachmentIndex is %s but "
+                            "vkCmdSetRenderingInputAttachmentIndices last set pStencilInputAttachmentIndex to %s",
+                            string_AttachmentPointer(pipeline_stencil_index).c_str(),
+                            string_AttachmentPointer(cb_state.rendering_attachments.stencil_index).c_str());
         } else {
             skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(),
                             "vkCmdSetRenderingAttachmentLocations was not called in this render pass was not called "
                             "in this render pass, so its pStencilInputAttachmentIndex is implicitly NULL, "
-                            "but VkRenderingInputAttachmentIndexInfo::pStencilInputAttachmentIndex is %p",
-                            pipeline_stencil_index);
+                            "but VkRenderingInputAttachmentIndexInfo::pStencilInputAttachmentIndex is %s",
+                            string_AttachmentPointer(pipeline_stencil_index).c_str());
         }
-    } else if (pipeline_stencil_index && cb_state.rendering_attachments.stencil_index &&
-               (*pipeline_stencil_index != *cb_state.rendering_attachments.stencil_index)) {
-        const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
-        skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(),
-                        "The pipeline VkRenderingInputAttachmentIndexInfo::pStencilInputAttachmentIndex value is %" PRIu32
-                        " but vkCmdSetRenderingInputAttachmentIndices last set pStencilInputAttachmentIndex value to %" PRIu32 "",
-                        *pipeline_stencil_index, *cb_state.rendering_attachments.stencil_index);
     }
     return skip;
 }
