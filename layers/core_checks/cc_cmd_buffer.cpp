@@ -24,6 +24,7 @@
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/utility/vk_format_utils.h>
 #include "core_checks/cc_state_tracker.h"
+#include "error_message/error_strings.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/render_pass_state.h"
@@ -1146,21 +1147,27 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingSecondary(const vvl::
             vku::FindStructInPNextChain<VkRenderingAttachmentLocationInfo>(secondary_rp_state.inheritance_rendering_info.pNext)) {
         skip |= ValidateRenderingAttachmentLocations(*location_info, objlist, secondary_cb_loc.dot(Field::pNext));
 
-        if (location_info->colorAttachmentCount != cb_state.rendering_attachments.color_indexes.size()) {
+        const bool cmd_set = cb_state.rendering_attachments.set_color_locations;
+        if (location_info->colorAttachmentCount != cb_state.rendering_attachments.color_locations.size()) {
             skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-09504", objlist, secondary_cb_loc,
                              "was recorded with VkRenderingAttachmentLocationInfo::colorAttachmentCount (%" PRIu32
-                             ") which does not match the implicit or explicit state in the primary command buffer ("
-                             "%" PRIu32 ").",
-                             location_info->colorAttachmentCount, uint32_t(cb_state.rendering_attachments.color_indexes.size()));
-        } else {
+                             ") which does not match the primary command buffer ("
+                             "%" PRIu32 ") %s.",
+                             location_info->colorAttachmentCount, uint32_t(cb_state.rendering_attachments.color_locations.size()),
+                             cmd_set ? "explicitly set by vkCmdSetRenderingAttachmentLocationsKHR"
+                                     : "the implicit value because vkCmdSetRenderingAttachmentLocationsKHR was not recorded in the "
+                                       "current renderpass");
+        } else if (location_info->pColorAttachmentLocations) {
             for (uint32_t idx = 0; idx < location_info->colorAttachmentCount; idx++) {
-                if (location_info->pColorAttachmentLocations &&
-                    location_info->pColorAttachmentLocations[idx] != cb_state.rendering_attachments.color_locations[idx]) {
-                    skip |= LogError(
-                        "VUID-vkCmdExecuteCommands-pCommandBuffers-09504", objlist, secondary_cb_loc,
-                        "was recorded with VkRenderingAttachmentLocationInfo::pColorAttachmentLocations[%" PRIu32 "] (%" PRIu32
-                        ") which does not match the implicit or explicit state in the primary command buffer (%" PRIu32 ").",
-                        idx, location_info->pColorAttachmentLocations[idx], cb_state.rendering_attachments.color_locations[idx]);
+                if (location_info->pColorAttachmentLocations[idx] != cb_state.rendering_attachments.color_locations[idx]) {
+                    skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-09504", objlist, secondary_cb_loc,
+                                     "was recorded with VkRenderingAttachmentLocationInfo::pColorAttachmentLocations[%" PRIu32
+                                     "] (%s) which does not match the primary command buffer (%s) %s.",
+                                     idx, string_Attachment(location_info->pColorAttachmentLocations[idx]).c_str(),
+                                     string_Attachment(cb_state.rendering_attachments.color_locations[idx]).c_str(),
+                                     cmd_set ? "explicitly set by vkCmdSetRenderingAttachmentLocationsKHR"
+                                             : "the implicit value because vkCmdSetRenderingAttachmentLocationsKHR was not "
+                                               "recorded in the current renderpass");
                 }
             }
         }
@@ -1170,22 +1177,28 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingSecondary(const vvl::
             vku::FindStructInPNextChain<VkRenderingInputAttachmentIndexInfo>(secondary_rp_state.inheritance_rendering_info.pNext)) {
         skip |= ValidateRenderingInputAttachmentIndices(*index_info, objlist, secondary_cb_loc.dot(Field::pNext));
 
+        const bool cmd_set = cb_state.rendering_attachments.set_color_indexes;
         if (index_info->colorAttachmentCount != cb_state.rendering_attachments.color_indexes.size()) {
             skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-09505", objlist, secondary_cb_loc,
                              "was recorded with VkRenderingInputAttachmentIndexInfo::colorAttachmentCount (%" PRIu32
-                             ") which does not match the implicit or explicit state in the primary command buffer ("
-                             "%" PRIu32 ").",
-                             index_info->colorAttachmentCount, uint32_t(cb_state.rendering_attachments.color_indexes.size()));
-        } else {
+                             ") which does not match the primary command buffer ("
+                             "%" PRIu32 ") %s.",
+                             index_info->colorAttachmentCount, uint32_t(cb_state.rendering_attachments.color_indexes.size()),
+                             cmd_set ? "explicitly set by vkCmdSetRenderingInputAttachmentIndicesKHR"
+                                     : "the implicit value because vkCmdSetRenderingInputAttachmentIndicesKHR was not recorded in "
+                                       "the current renderpass");
+        } else if (index_info->pColorAttachmentInputIndices) {
             for (uint32_t idx = 0; idx < index_info->colorAttachmentCount; idx++) {
-                if (index_info->pColorAttachmentInputIndices &&
-                    cb_state.rendering_attachments.color_indexes[idx] != index_info->pColorAttachmentInputIndices[idx]) {
-                    skip |= LogError(
-                        "VUID-vkCmdExecuteCommands-pCommandBuffers-09505", objlist, secondary_cb_loc,
-                        "was recorded with VkRenderingInputAttachmentIndexInfo::pColorAttachmentInputIndices[%" PRIu32 "] (%" PRIu32
-                        ") which does not match the implicit or explicit state in the primary command "
-                        "buffer (%" PRIu32 ").",
-                        idx, index_info->pColorAttachmentInputIndices[idx], cb_state.rendering_attachments.color_indexes[idx]);
+                if (index_info->pColorAttachmentInputIndices[idx] != cb_state.rendering_attachments.color_indexes[idx]) {
+                    skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-09505", objlist, secondary_cb_loc,
+                                     "was recorded with VkRenderingInputAttachmentIndexInfo::pColorAttachmentInputIndices[%" PRIu32
+                                     "] (%s) which does not match the primary command "
+                                     "buffer (%s) %s.",
+                                     idx, string_Attachment(index_info->pColorAttachmentInputIndices[idx]).c_str(),
+                                     string_Attachment(cb_state.rendering_attachments.color_indexes[idx]).c_str(),
+                                     cmd_set ? "explicitly set by vkCmdSetRenderingInputAttachmentIndicesKHR"
+                                             : "the implicit value because vkCmdSetRenderingInputAttachmentIndicesKHR was not "
+                                               "recorded in the current renderpass");
                 }
             }
         }
@@ -1193,19 +1206,25 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingSecondary(const vvl::
         if (cb_state.rendering_attachments.depth_index && index_info->pDepthInputAttachmentIndex &&
             *cb_state.rendering_attachments.depth_index != *index_info->pDepthInputAttachmentIndex) {
             skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-09505", objlist, secondary_cb_loc,
-                             "was recorded with VkRenderingInputAttachmentIndexInfo::pDepthInputAttachmentIndex (%" PRIu32
-                             ") which does not match the implicit or explicit state in the primary command buffer ("
-                             "%" PRIu32 ").",
-                             *index_info->pDepthInputAttachmentIndex, *cb_state.rendering_attachments.depth_index);
+                             "was recorded with VkRenderingInputAttachmentIndexInfo::pDepthInputAttachmentIndex (%s) which does "
+                             "not match the primary command buffer (%s) %s.",
+                             string_Attachment(*index_info->pDepthInputAttachmentIndex).c_str(),
+                             string_Attachment(*cb_state.rendering_attachments.depth_index).c_str(),
+                             cmd_set ? "explicitly set by vkCmdSetRenderingInputAttachmentIndicesKHR"
+                                     : "the implicit value because vkCmdSetRenderingInputAttachmentIndicesKHR was not recorded in "
+                                       "the current renderpass");
         }
 
         if (cb_state.rendering_attachments.stencil_index && index_info->pStencilInputAttachmentIndex &&
             *cb_state.rendering_attachments.stencil_index != *index_info->pStencilInputAttachmentIndex) {
             skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-09505", objlist, secondary_cb_loc,
-                             "was recorded with VkRenderingInputAttachmentIndexInfo::pStencilInputAttachmentIndex (%" PRIu32
-                             ") which does not match the implicit or explicit state in the primary command buffer"
-                             "(%" PRIu32 ").",
-                             *index_info->pStencilInputAttachmentIndex, *cb_state.rendering_attachments.stencil_index);
+                             "was recorded with VkRenderingInputAttachmentIndexInfo::pStencilInputAttachmentIndex (%s) which does "
+                             "not match the primary command buffer (%s) %s.",
+                             string_Attachment(*index_info->pStencilInputAttachmentIndex).c_str(),
+                             string_Attachment(*cb_state.rendering_attachments.stencil_index).c_str(),
+                             cmd_set ? "explicitly set by vkCmdSetRenderingInputAttachmentIndicesKHR"
+                                     : "the implicit value because vkCmdSetRenderingInputAttachmentIndicesKHR was not recorded in "
+                                       "the current renderpass");
         }
     }
     return skip;
