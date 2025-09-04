@@ -639,7 +639,9 @@ TEST_F(NegativeDescriptorBuffer, BindingInfoUsage) {
 
 TEST_F(NegativeDescriptorBuffer, MultipleDeviceAddressBuffers) {
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
-
+    if (descriptor_buffer_properties.maxSamplerDescriptorBufferBindings < 3) {
+        GTEST_SKIP() << "maxSamplerDescriptorBufferBindings is too low";
+    }
     m_command_buffer.Begin();
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
@@ -826,7 +828,9 @@ TEST_F(NegativeDescriptorBuffer, CmdSetDescriptorBufferOffsets) {
 TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
     TEST_DESCRIPTION("Test mapping from address to buffers when validating buffer offsets");
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
-
+    if (descriptor_buffer_properties.maxSamplerDescriptorBufferBindings < 2) {
+        GTEST_SKIP() << "maxSamplerDescriptorBufferBindings is too low";
+    }
     m_command_buffer.Begin();
 
     VkDescriptorSetLayoutBinding binding1 = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr};
