@@ -463,6 +463,37 @@ TEST_F(PositiveVertexInput, VertexAttribute64bit) {
     pipe.CreateGraphicsPipeline();
 }
 
+TEST_F(PositiveVertexInput, VertexAttribute64bitExtraInput) {
+    TEST_DESCRIPTION("Agreed this was valid in https://gitlab.khronos.org/vulkan/vulkan/-/issues/3530");
+    AddRequiredFeature(vkt::Feature::shaderFloat64);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const VkFormat format = VK_FORMAT_R64G64B64A64_SFLOAT;
+    if ((m_device->FormatFeaturesBuffer(format) & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
+        GTEST_SKIP() << "Format not supported for Vertex Buffer";
+    }
+
+    const char *vsSource = R"glsl(
+        #version 450 core
+        #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
+        layout(location = 0) in float64_t pos; // Uses only 1 of the 4 components
+        void main() {}
+    )glsl";
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    VkVertexInputBindingDescription input_binding = {0, 8, VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription input_attribs = {0, 0, format, 0};
+
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = &input_attribs;
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+}
+
 TEST_F(PositiveVertexInput, AttributeStructTypeBlockLocation64bit) {
     TEST_DESCRIPTION("Input is OpTypeStruct where the Block has the Location with 64-bit Vertex format");
 
