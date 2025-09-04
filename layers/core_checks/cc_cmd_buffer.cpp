@@ -1203,25 +1203,23 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingSecondary(const vvl::
             }
         }
 
-        if (cb_state.rendering_attachments.depth_index && index_info->pDepthInputAttachmentIndex &&
-            *cb_state.rendering_attachments.depth_index != *index_info->pDepthInputAttachmentIndex) {
+        if (!EqualValuesOrBothNull(cb_state.rendering_attachments.depth_index, index_info->pDepthInputAttachmentIndex)) {
             skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-09505", objlist, secondary_cb_loc,
                              "was recorded with VkRenderingInputAttachmentIndexInfo::pDepthInputAttachmentIndex (%s) which does "
                              "not match the primary command buffer (%s) %s.",
-                             string_Attachment(*index_info->pDepthInputAttachmentIndex).c_str(),
-                             string_Attachment(*cb_state.rendering_attachments.depth_index).c_str(),
+                             string_AttachmentPointer(index_info->pDepthInputAttachmentIndex).c_str(),
+                             string_AttachmentPointer(cb_state.rendering_attachments.depth_index).c_str(),
                              cmd_set ? "explicitly set by vkCmdSetRenderingInputAttachmentIndicesKHR"
                                      : "the implicit value because vkCmdSetRenderingInputAttachmentIndicesKHR was not recorded in "
                                        "the current renderpass");
         }
 
-        if (cb_state.rendering_attachments.stencil_index && index_info->pStencilInputAttachmentIndex &&
-            *cb_state.rendering_attachments.stencil_index != *index_info->pStencilInputAttachmentIndex) {
+        if (!EqualValuesOrBothNull(cb_state.rendering_attachments.stencil_index, index_info->pStencilInputAttachmentIndex)) {
             skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-09505", objlist, secondary_cb_loc,
                              "was recorded with VkRenderingInputAttachmentIndexInfo::pStencilInputAttachmentIndex (%s) which does "
                              "not match the primary command buffer (%s) %s.",
-                             string_Attachment(*index_info->pStencilInputAttachmentIndex).c_str(),
-                             string_Attachment(*cb_state.rendering_attachments.stencil_index).c_str(),
+                             string_AttachmentPointer(index_info->pStencilInputAttachmentIndex).c_str(),
+                             string_AttachmentPointer(cb_state.rendering_attachments.stencil_index).c_str(),
                              cmd_set ? "explicitly set by vkCmdSetRenderingInputAttachmentIndicesKHR"
                                      : "the implicit value because vkCmdSetRenderingInputAttachmentIndicesKHR was not recorded in "
                                        "the current renderpass");

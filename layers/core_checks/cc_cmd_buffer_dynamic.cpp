@@ -1313,13 +1313,6 @@ bool CoreChecks::ValidateDrawRenderingAttachmentLocation(const vvl::CommandBuffe
     return skip;
 }
 
-static bool AttachmentPointersMatch(const uint32_t* a, const uint32_t* b) {
-    if (!a || !b) {
-        return a == b;
-    }
-    return *a == *b;
-}
-
 bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuffer& cb_state, const vvl::Pipeline& pipeline_state,
                                                            const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
@@ -1363,7 +1356,7 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
         }
     }
 
-    if (!AttachmentPointersMatch(pipeline_depth_index, cb_state.rendering_attachments.depth_index)) {
+    if (!EqualValuesOrBothNull(pipeline_depth_index, cb_state.rendering_attachments.depth_index)) {
         const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
         if (cb_state.rendering_attachments.set_color_indexes) {
             skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(),
@@ -1380,7 +1373,7 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
         }
     }
 
-    if (!AttachmentPointersMatch(pipeline_stencil_index, cb_state.rendering_attachments.stencil_index)) {
+    if (!EqualValuesOrBothNull(pipeline_stencil_index, cb_state.rendering_attachments.stencil_index)) {
         const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
         if (cb_state.rendering_attachments.set_color_indexes) {
             skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(),
