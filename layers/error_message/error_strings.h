@@ -29,6 +29,13 @@
     }
 }
 
+[[maybe_unused]] static std::string string_AttachmentPointer(const uint32_t *attachment) {
+    if (!attachment) {
+        return "NULL";
+    }
+    return string_Attachment(*attachment);
+}
+
 [[maybe_unused]] static std::string string_VkExtent2D(VkExtent2D extent) {
     std::stringstream ss;
     ss << "width = " << extent.width << ", height = " << extent.height;
