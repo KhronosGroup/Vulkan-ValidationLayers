@@ -78,6 +78,11 @@ class TensorView : public StateObject, public SubStateManager<TensorViewSubState
         }
     }
     TensorView(const TensorView &rh_obj) = delete;
+
+    void Destroy() override;
+    void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) override;
+    bool Invalid() const override { return Destroyed() || !tensor_state || tensor_state->Invalid(); }
+
 };
 
 class TensorViewSubState {

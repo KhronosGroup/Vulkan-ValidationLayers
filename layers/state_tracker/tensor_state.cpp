@@ -38,4 +38,22 @@ TensorView::TensorView(const std::shared_ptr<Tensor> &tensor, VkTensorViewARM ha
       create_info(*safe_create_info.ptr()),
       tensor_state(tensor) {}
 
+void TensorView::Destroy() {
+    for (auto &item : sub_states_) {
+        item.second->Destroy();
+    }
+    if (tensor_state) {
+        tensor_state->RemoveParent(this);
+        tensor_state = nullptr;
+    }
+    StateObject::Destroy();
+}
+
+void TensorView::NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {
+    for (auto &item : sub_states_) {
+        item.second->NotifyInvalidate(invalid_nodes, unlink);
+    }
+    StateObject::NotifyInvalidate(invalid_nodes, unlink);
+}
+
 }  // namespace vvl
