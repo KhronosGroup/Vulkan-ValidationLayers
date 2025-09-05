@@ -1918,7 +1918,8 @@ void BestPractices::PostCallRecordCreateDataGraphPipelinesARM(VkDevice device, V
                                                               VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                               const VkDataGraphPipelineCreateInfoARM* pCreateInfos,
                                                               const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                              const RecordObject& record_obj) {
+                                                              const RecordObject& record_obj, PipelineStates& pipeline_states,
+                                                              chassis::CreateDataGraphPipelinesARM& chassis_state) {
     bp_state::LogResult(*this, device, record_obj);
 }
 

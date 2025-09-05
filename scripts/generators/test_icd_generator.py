@@ -25,6 +25,9 @@ class TestIcdGenerator(BaseGenerator):
         self.manual_functions = [
             'vkGetClusterAccelerationStructureBuildSizesNV',
             'vkGetTensorMemoryRequirementsARM',
+            'vkGetPhysicalDeviceExternalTensorPropertiesARM',
+            'vkGetDataGraphPipelineSessionBindPointRequirementsARM',
+            'vkGetDataGraphPipelineSessionMemoryRequirementsARM',
             'vkCreateInstance',
             'vkDestroyInstance',
             'vkAllocateCommandBuffers',
