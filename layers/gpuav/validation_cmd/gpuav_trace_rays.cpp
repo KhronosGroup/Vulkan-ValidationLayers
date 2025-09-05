@@ -34,10 +34,6 @@ struct TraceRaysValidationShader {
     static const uint32_t* GetSpirv() { return validation_cmd_trace_rays_comp; }
 
     glsl::TraceRaysPushData push_constants{};
-
-    static std::vector<VkDescriptorSetLayoutBinding> GetDescriptorSetLayoutBindings() { return {}; }
-
-    std::vector<VkWriteDescriptorSet> GetDescriptorWrites(VkDescriptorSet desc_set) const { return {}; }
 };
 
 void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state,

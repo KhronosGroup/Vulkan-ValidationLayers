@@ -20,18 +20,18 @@
 #include "common.h"
 #include "push_data.h"
 
+layout(buffer_reference, buffer_reference_align = 1, scalar) buffer CountBufferAddr {
+    uint data[];
+};
+
 layout(push_constant, scalar)
 uniform PushConstants {
     CountBufferPushData pc;
 };
 
-layout(set = kValPipeDescSet, binding = kPreDrawBinding_CountBuffer, scalar) readonly buffer CountBuffer {
-    uint count_buffer[];
-};
-
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 void main() {
-    const uint draw_count = count_buffer[ pc.api_count_buffer_offset_dwords ];
+    const uint draw_count = pc.count_buffer_addr.data[ pc.api_count_buffer_offset_dwords ];
     if (draw_count == 0) return;
 
     const uint64_t draw_buffer_max_read_offset = pc.api_stride * (draw_count - 1) + pc.api_offset + pc.api_struct_size_byte;

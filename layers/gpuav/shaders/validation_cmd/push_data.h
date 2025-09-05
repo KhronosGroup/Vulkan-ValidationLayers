@@ -20,6 +20,7 @@
 #define GPU_SHADERS_PUSH_DATA_H
 
 #ifdef __cplusplus
+#include "gpuav/shaders/shader_defines.h"
 
 #include <cstdint>
 
@@ -27,6 +28,8 @@ namespace gpuav {
 namespace glsl {
 using uint = uint32_t;
 #else
+#include "shader_defines.h"
+
 #if defined(GL_ARB_gpu_shader_int64)
 #extension GL_ARB_gpu_shader_int64 : require
 #else
@@ -35,16 +38,17 @@ using uint = uint32_t;
 #extension GL_EXT_buffer_reference : require
 #endif
 
-// Bindings for all pre draw validation shader types
-const uint kPreDrawBinding_IndirectBuffer = 0;
-const uint kPreDrawBinding_CountBuffer = 1;
-const uint kPreDrawBinding_IndexBuffer = 2;
-const uint kPreDrawBinding_DispatchIndirectBuffer = 3;
+BUFFER_ADDR_FWD_DECL(CountBufferAddr)
 
 const uint kIndexedIndirectDrawFlags_DrawCountFromBuffer = uint(1) << 0;
 // Most implementations have wave sizes of 32 or 64, so 64 is a good default
 const uint DrawIndexedIndirect_LocalWorkGroupSizeX = 64;
+BUFFER_ADDR_FWD_DECL(DrawIndexedIndirectCmdsBufferAddr)
+BUFFER_ADDR_FWD_DECL(DipatchIndirectBufferAddr)
 struct DrawIndexedIndirectIndexBufferPushData {
+    BUFFER_ADDR_DECL(DrawIndexedIndirectCmdsBufferAddr) draw_indexed_indirect_cmds_addr;
+    BUFFER_ADDR_DECL(CountBufferAddr) count_buffer_addr;
+    BUFFER_ADDR_DECL(DipatchIndirectBufferAddr) dispatch_indirect_addr;
     uint flags;
     uint api_stride_dwords;
     uint bound_index_buffer_indices_count;  // Number of indices in the index buffer, taking index type in account. NOT a byte size.
@@ -54,7 +58,10 @@ struct DrawIndexedIndirectIndexBufferPushData {
 };
 
 const uint kDrawMeshFlags_DrawCountFromBuffer = uint(1) << 0;
+BUFFER_ADDR_FWD_DECL(DrawMeshTasksIndirectCmdsBufferAddr)
 struct DrawMeshPushData {
+    BUFFER_ADDR_DECL(DrawMeshTasksIndirectCmdsBufferAddr) draw_mesh_task_indirect_cmds_addr;
+    BUFFER_ADDR_DECL(CountBufferAddr) count_buffer_addr;
     uint flags;
     uint api_stride_dwords;
     uint api_draw_count;
@@ -66,8 +73,11 @@ struct DrawMeshPushData {
     uint api_count_buffer_offset_dwords;
 };
 
+BUFFER_ADDR_FWD_DECL(DrawIndexedIndirectCmdsAddr)
 const uint kFirstInstanceFlags_DrawCountFromBuffer = uint(1) << 0;
 struct FirstInstancePushData {
+    BUFFER_ADDR_DECL(DrawIndexedIndirectCmdsAddr) draw_indexed_indirect_cmds_addr;
+    BUFFER_ADDR_DECL(CountBufferAddr) count_buffer_addr;
     uint flags;
     uint api_stride_dwords;
     uint api_draw_count;
@@ -77,6 +87,7 @@ struct FirstInstancePushData {
 };
 
 struct CountBufferPushData {
+    BUFFER_ADDR_DECL(CountBufferAddr) count_buffer_addr;
     uint api_stride;
     uint64_t api_offset;
     uint64_t draw_buffer_size;
@@ -85,16 +96,21 @@ struct CountBufferPushData {
     uint api_count_buffer_offset_dwords;
 };
 
-const uint kPreDispatchBinding_DispatchIndirectBuffer = 0;
+BUFFER_ADDR_FWD_DECL(DispatchIndirectBufferAddr)
 struct DispatchPushData {
+    BUFFER_ADDR_DECL(DispatchIndirectBufferAddr) dispatch_indirect_buffer_addr;
     uint limit_x;
     uint limit_y;
     uint limit_z;
     uint indirect_x_offset;
 };
 
-const uint kPreCopyBufferToImageBinding_SrcBuffer = 0;
-const uint kPreCopyBufferToImageBinding_CopySrcRegions = 1;
+BUFFER_ADDR_FWD_DECL(SrcBufferAddr)
+BUFFER_ADDR_FWD_DECL(CopySrcRegionsAddr)
+struct CopyBufferToImagePushData {
+    BUFFER_ADDR_DECL(SrcBufferAddr) src_buffer_addr;
+    BUFFER_ADDR_DECL(CopySrcRegionsAddr) copy_src_regions_addr;
+};
 
 #ifdef __cplusplus
 using IndirectCommandReference = uint64_t;
@@ -104,8 +120,10 @@ struct VkTraceRaysIndirectCommandKHR {
     uint height;
     uint depth;
 };
-
-layout(buffer_reference, scalar) buffer IndirectCommandReference { VkTraceRaysIndirectCommandKHR trace_rays_dimensions; };
+// #ARNO_TODO address comes from user land, not sure it is aligned to 64
+layout(buffer_reference, buffer_reference_align = 4, scalar) buffer IndirectCommandReference {
+    VkTraceRaysIndirectCommandKHR trace_rays_dimensions;
+};
 #endif
 
 struct TraceRaysPushData {
