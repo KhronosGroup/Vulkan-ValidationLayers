@@ -1648,22 +1648,12 @@ bool CoreChecks::PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuff
                              "was created with %s.", string_VkBufferUsageFlags2(buffer_state->usage).c_str());
         }
 
-        // pSizes is optional and may be nullptr. Also might be VK_WHOLE_SIZE which VU don't apply
-        if ((pSizes != nullptr) && (pSizes[i] != VK_WHOLE_SIZE)) {
-            // only report one to prevent redundant error if the size is larger since adding offset will be as well
-            if (pSizes[i] > buffer_state->create_info.size) {
-                const LogObjectList objlist(commandBuffer, pBuffers[i]);
-                skip |= LogError("VUID-vkCmdBindTransformFeedbackBuffersEXT-pSizes-02362", objlist,
-                                 error_obj.location.dot(Field::pSizes, i),
-                                 "(%" PRIu64 ") is greater than the size of pBuffers[%" PRIu32 "](%" PRIu64 ").", pSizes[i], i,
-                                 buffer_state->create_info.size);
-            } else if (pOffsets[i] + pSizes[i] > buffer_state->create_info.size) {
-                const LogObjectList objlist(commandBuffer, pBuffers[i]);
-                skip |= LogError("VUID-vkCmdBindTransformFeedbackBuffersEXT-pOffsets-02363", objlist, error_obj.location,
-                                 "The sum of pOffsets[%" PRIu32 "] (%" PRIu64 ") and pSizes[%" PRIu32 "] (%" PRIu64
-                                 ") is greater than the size of pBuffers[%" PRIu32 "] (%" PRIu64 ").",
-                                 i, pOffsets[i], i, pSizes[i], i, buffer_state->create_info.size);
-            }
+        if (pSizes != nullptr && pSizes[i] != VK_WHOLE_SIZE && pOffsets[i] + pSizes[i] > buffer_state->create_info.size) {
+            const LogObjectList objlist(commandBuffer, pBuffers[i]);
+            skip |= LogError("VUID-vkCmdBindTransformFeedbackBuffersEXT-pOffsets-02363", objlist, error_obj.location,
+                             "The sum of pOffsets[%" PRIu32 "] (%" PRIu64 ") and pSizes[%" PRIu32 "] (%" PRIu64
+                             ") is greater than the size of pBuffers[%" PRIu32 "] (%" PRIu64 ").",
+                             i, pOffsets[i], i, pSizes[i], i, buffer_state->create_info.size);
         }
 
         skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, buffer_loc,
