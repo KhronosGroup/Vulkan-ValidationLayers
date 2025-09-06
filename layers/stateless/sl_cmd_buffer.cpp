@@ -141,21 +141,6 @@ bool Device::manual_PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandB
                          firstBinding, bindingCount, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers);
     }
 
-    for (uint32_t i = 0; i < bindingCount; ++i) {
-        // pSizes is optional and may be nullptr.
-        if (pSizes != nullptr) {
-            if (pSizes[i] != VK_WHOLE_SIZE &&
-                pSizes[i] > phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferSize) {
-                skip |= LogError("VUID-vkCmdBindTransformFeedbackBuffersEXT-pSize-02361", commandBuffer,
-                                 error_obj.location.dot(Field::pSizes, i),
-                                 "(%" PRIu64
-                                 ") is not VK_WHOLE_SIZE and is greater than "
-                                 "maxTransformFeedbackBufferSize (%" PRIu64 ").",
-                                 pSizes[i], phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferSize);
-            }
-        }
-    }
-
     return skip;
 }
 
