@@ -188,6 +188,24 @@ std::unique_ptr<const vku::safe_VkPipelineDepthStencilStateCreateInfo> ToSafeDep
     const VkPipelineDepthStencilStateCreateInfo &cbs) {
     return std::make_unique<const vku::safe_VkPipelineDepthStencilStateCreateInfo>(&cbs);
 }
+std::unique_ptr<const vku::safe_VkRenderingAttachmentLocationInfo> ToSafeAttachmentLocationState(
+    const vku::safe_VkRenderingAttachmentLocationInfo &cbs) {
+    // This is needlessly copied here. Might better to make this a plain pointer, with an optional "backing unique_ptr"
+    return std::make_unique<const vku::safe_VkRenderingAttachmentLocationInfo>(cbs);
+}
+std::unique_ptr<const vku::safe_VkRenderingAttachmentLocationInfo> ToSafeAttachmentLocationState(
+    const VkRenderingAttachmentLocationInfo &cbs) {
+    return std::make_unique<const vku::safe_VkRenderingAttachmentLocationInfo>(&cbs);
+}
+std::unique_ptr<const vku::safe_VkRenderingInputAttachmentIndexInfo> ToSafeAttachmentIndexState(
+    const vku::safe_VkRenderingInputAttachmentIndexInfo &cbs) {
+    // This is needlessly copied here. Might better to make this a plain pointer, with an optional "backing unique_ptr"
+    return std::make_unique<const vku::safe_VkRenderingInputAttachmentIndexInfo>(cbs);
+}
+std::unique_ptr<const vku::safe_VkRenderingInputAttachmentIndexInfo> ToSafeAttachmentIndexState(
+    const VkRenderingInputAttachmentIndexInfo &cbs) {
+    return std::make_unique<const vku::safe_VkRenderingInputAttachmentIndexInfo>(&cbs);
+}
 std::unique_ptr<const vku::safe_VkPipelineShaderStageCreateInfo> ToShaderStageCI(
     const vku::safe_VkPipelineShaderStageCreateInfo &cbs) {
     // This is needlessly copied here. Might better to make this a plain pointer, with an optional "backing unique_ptr"

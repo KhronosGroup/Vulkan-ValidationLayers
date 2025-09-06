@@ -1279,13 +1279,12 @@ bool CoreChecks::ValidateDrawRenderingAttachmentLocation(const vvl::CommandBuffe
     const uint32_t color_attachment_count = (uint32_t)cb_state.rendering_attachments.color_locations.size();
 
     // Default from spec
-    uint32_t pipeline_color_count =
-        pipeline_state.rendering_create_info ? pipeline_state.rendering_create_info->colorAttachmentCount : 0;
+    uint32_t pipeline_color_count = pipeline_state.ColorBlendState() ? pipeline_state.ColorBlendState()->attachmentCount : 0;
     const uint32_t* pipeline_color_locations = nullptr;
-    if (const auto* pipeline_location_info =
-            vku::FindStructInPNextChain<VkRenderingAttachmentLocationInfo>(pipeline_state.GetCreateInfoPNext())) {
-        pipeline_color_count = pipeline_location_info->colorAttachmentCount;
-        pipeline_color_locations = pipeline_location_info->pColorAttachmentLocations;
+    if (pipeline_state.fragment_output_state && pipeline_state.fragment_output_state->attachement_locations) {
+        const VkRenderingAttachmentLocationInfo info = *pipeline_state.fragment_output_state->attachement_locations->ptr();
+        pipeline_color_count = info.colorAttachmentCount;
+        pipeline_color_locations = info.pColorAttachmentLocations;
     }
 
     // If the count mismatches, that will either be caught by VUID-06179 or allowed,
@@ -1319,17 +1318,17 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
     const uint32_t color_index_count = (uint32_t)cb_state.rendering_attachments.color_indexes.size();
 
     // Default from spec
-    uint32_t pipeline_color_count =
-        pipeline_state.rendering_create_info ? pipeline_state.rendering_create_info->colorAttachmentCount : 0;
+    uint32_t pipeline_color_count = pipeline_state.ColorBlendState() ? pipeline_state.ColorBlendState()->attachmentCount : 0;
     const uint32_t* pipeline_color_indexes = nullptr;
     const uint32_t* pipeline_depth_index = nullptr;
     const uint32_t* pipeline_stencil_index = nullptr;
-    if (const auto* pipeline_index_info =
-            vku::FindStructInPNextChain<VkRenderingInputAttachmentIndexInfo>(pipeline_state.GetCreateInfoPNext())) {
-        pipeline_color_count = pipeline_index_info->colorAttachmentCount;
-        pipeline_color_indexes = pipeline_index_info->pColorAttachmentInputIndices;
-        pipeline_depth_index = pipeline_index_info->pDepthInputAttachmentIndex;
-        pipeline_stencil_index = pipeline_index_info->pStencilInputAttachmentIndex;
+
+    if (pipeline_state.fragment_shader_state && pipeline_state.fragment_shader_state->attachement_index) {
+        const VkRenderingInputAttachmentIndexInfo info = *pipeline_state.fragment_shader_state->attachement_index->ptr();
+        pipeline_color_count = info.colorAttachmentCount;
+        pipeline_color_indexes = info.pColorAttachmentInputIndices;
+        pipeline_depth_index = info.pDepthInputAttachmentIndex;
+        pipeline_stencil_index = info.pStencilInputAttachmentIndex;
     }
 
     // If the count mismatches, that will either be caught by VUID-06179 or allowed,
