@@ -379,3 +379,107 @@ TEST_F(PositiveDynamicRenderingLocalRead, LocationsInfoNullAttachments) {
     vk::CmdEndRenderingKHR(m_command_buffer.handle());
     m_command_buffer.End();
 }
+
+TEST_F(PositiveDynamicRenderingLocalRead, GPL) {
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
+
+    VkFormat color_formats[] = {VK_FORMAT_UNDEFINED, VK_FORMAT_UNDEFINED};
+    uint32_t locations[] = {1, 0};
+    uint32_t inputs[] = {1, 0};
+
+    VkRenderingInputAttachmentIndexInfo inputs_info = vku::InitStructHelper();
+    inputs_info.colorAttachmentCount = 2;
+    inputs_info.pColorAttachmentInputIndices = inputs;
+
+    VkRenderingAttachmentLocationInfo locations_info = vku::InitStructHelper();
+    locations_info.colorAttachmentCount = 2;
+    locations_info.pColorAttachmentLocations = locations;
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper(&locations_info);
+    pipeline_rendering_info.colorAttachmentCount = 2;
+    pipeline_rendering_info.pColorAttachmentFormats = color_formats;
+
+    std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachments(2);
+    VkPipelineColorBlendStateCreateInfo cbi = vku::InitStructHelper();
+    cbi.attachmentCount = 2u;
+    cbi.pAttachments = color_blend_attachments.data();
+
+    vkt::PipelineLayout pipeline_layout(*m_device);
+
+    CreatePipelineHelper vertex_input_lib(*this);
+    vertex_input_lib.InitVertexInputLibInfo();
+    vertex_input_lib.CreateGraphicsPipeline(false);
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    {
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
+        pre_raster_lib.gp_ci_.layout = pipeline_layout;
+        pre_raster_lib.CreateGraphicsPipeline(false);
+    }
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    {
+        VkStencilOpState stencil = {};
+        stencil.failOp = VK_STENCIL_OP_KEEP;
+        stencil.passOp = VK_STENCIL_OP_KEEP;
+        stencil.depthFailOp = VK_STENCIL_OP_KEEP;
+        stencil.compareOp = VK_COMPARE_OP_NEVER;
+
+        VkPipelineDepthStencilStateCreateInfo ds_ci = vku::InitStructHelper();
+        ds_ci.depthTestEnable = VK_FALSE;
+        ds_ci.depthWriteEnable = VK_TRUE;
+        ds_ci.depthCompareOp = VK_COMPARE_OP_NEVER;
+        ds_ci.depthBoundsTestEnable = VK_FALSE;
+        ds_ci.stencilTestEnable = VK_TRUE;
+        ds_ci.front = stencil;
+        ds_ci.back = stencil;
+
+        const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci, &inputs_info);
+        frag_shader_lib.gp_ci_.layout = pipeline_layout;
+        frag_shader_lib.gp_ci_.pDepthStencilState = &ds_ci;
+        frag_shader_lib.CreateGraphicsPipeline(false);
+    }
+
+    CreatePipelineHelper frag_out_lib(*this);
+    frag_out_lib.InitFragmentOutputLibInfo(&pipeline_rendering_info);
+    frag_out_lib.gp_ci_.pColorBlendState = &cbi;
+    frag_out_lib.CreateGraphicsPipeline(false);
+
+    VkPipeline libraries[4] = {
+        vertex_input_lib,
+        pre_raster_lib,
+        frag_shader_lib,
+        frag_out_lib,
+    };
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+    link_info.libraryCount = size32(libraries);
+    link_info.pLibraries = libraries;
+
+    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
+    exe_pipe_ci.layout = pipeline_layout;
+    vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+
+    VkRenderingAttachmentInfo color_attachment[2] = {vku::InitStructHelper(), vku::InitStructHelper()};
+    color_attachment[0].imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    color_attachment[1].imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe);
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32, 32}};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 2;
+    rendering_info.pColorAttachments = &color_attachment[0];
+    m_command_buffer.BeginRendering(rendering_info);
+
+    vk::CmdSetRenderingAttachmentLocationsKHR(m_command_buffer, &locations_info);
+    vk::CmdSetRenderingInputAttachmentIndicesKHR(m_command_buffer, &inputs_info);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+}
