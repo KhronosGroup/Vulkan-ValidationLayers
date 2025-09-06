@@ -165,7 +165,7 @@ TEST_F(NegativeTransformFeedback, CmdBindTransformFeedbackBuffersEXT) {
             VkDeviceSize const offsets[1]{};
             VkDeviceSize const sizes[1]{tf_properties.maxTransformFeedbackBufferSize + 1};
 
-            m_errorMonitor->SetDesiredError("VUID-vkCmdBindTransformFeedbackBuffersEXT-pSize-02361");
+            m_errorMonitor->SetDesiredError("VUID-vkCmdBindTransformFeedbackBuffersEXT-pOffsets-02363");
             vk::CmdBindTransformFeedbackBuffersEXT(m_command_buffer, 0, 1, &buffer_obj.handle(), offsets, sizes);
             m_errorMonitor->VerifyFound();
         }
@@ -198,7 +198,7 @@ TEST_F(NegativeTransformFeedback, CmdBindTransformFeedbackBuffersEXT) {
             VkDeviceSize const offsets[1]{};
             VkDeviceSize const sizes[1]{buffer_size + 1};
 
-            m_errorMonitor->SetDesiredError("VUID-vkCmdBindTransformFeedbackBuffersEXT-pSizes-02362");
+            m_errorMonitor->SetDesiredError("VUID-vkCmdBindTransformFeedbackBuffersEXT-pOffsets-02363");
             vk::CmdBindTransformFeedbackBuffersEXT(m_command_buffer, 0, 1, &buffer_obj.handle(), offsets, sizes);
             m_errorMonitor->VerifyFound();
         }
