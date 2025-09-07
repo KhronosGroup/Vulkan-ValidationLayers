@@ -102,14 +102,16 @@ class VkRenderFramework : public VkTestFramework {
     // Functions to modify the VkRenderFramework surface & swapchain variables
     void InitSurface();
     void InitSwapchainInfo();
-    void InitSwapchain(VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                       VkSurfaceTransformFlagBitsKHR preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
+    void InitSwapchain(VkImageUsageFlags image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     void DestroySwapchain();
+
     // Functions to create surfaces and swapchains that *aren't* member variables of VkRenderFramework
     VkResult CreateSurface(SurfaceContext &surface_context, vkt::Surface &surface, VkInstance custom_instance = VK_NULL_HANDLE);
     SurfaceInformation GetSwapchainInfo(const VkSurfaceKHR surface);
-    vkt::Swapchain CreateSwapchain(VkSurfaceKHR surface, VkImageUsageFlags imageUsage, VkSurfaceTransformFlagBitsKHR preTransform,
-                                   VkSwapchainKHR oldSwapchain = VK_NULL_HANDLE);
+    static VkSwapchainCreateInfoKHR GetDefaultSwapchainCreateInfo(VkSurfaceKHR surface, const SurfaceInformation &surface_info,
+                                                                  VkImageUsageFlags image_usage);
+    vkt::Swapchain CreateSwapchain(VkSurfaceKHR surface, VkImageUsageFlags image_usage, VkSurfaceTransformFlagBitsKHR pre_transform,
+                                   VkSwapchainKHR old_swapchain = VK_NULL_HANDLE);
 
     // Swapchain capabilities declaration to be used with RETURN_IF_SKIP
     void SupportMultiSwapchain();
