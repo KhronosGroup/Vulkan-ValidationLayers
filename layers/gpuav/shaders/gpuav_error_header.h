@@ -100,7 +100,7 @@ const int kErrorGroupMask = 0xFF << kErrorGroupShift;  // 256 slots
 // | 31 .. 27 | 26 ...... 0 |
 // | Stage Id | Instruction Id |
 // We control and know there are under 32 shader stages
-// We can assume shader don't have 128 million lines of code in them
+// We can assume shader are under 128MB
 const int kStageIdShift = 27;
 const int kStageIdMask = 0x1F << kStageIdShift;  // 32 slot
 const int kInstructionIdMask = 0x7FFFFFF;

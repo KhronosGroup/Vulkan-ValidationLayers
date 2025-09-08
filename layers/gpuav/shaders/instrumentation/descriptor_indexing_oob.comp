@@ -41,13 +41,13 @@ layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorIndexing
 
 // Unlike the bindless version, we don't need to check for Uninitialized and Destroyed descriptors.
 // At draw time on the CPU we can verify that information.
-bool inst_descriptor_indexing_oob_non_bindless(const uint inst_num, const uint desc_set, const uint binding,
+bool inst_descriptor_indexing_oob_non_bindless(const uint inst_offset, const uint desc_set, const uint binding,
                                                const uint desc_index, const uint binding_layout_size, const uint binding_layout_offset) {
     // For non-array this should hopefully optimized out as "if (0 > 1)"
     // Have seen with Mesa, that the final NIR will optimize out all of inst_descriptor_indexing_oob_non_bindless if this is false.
     if (desc_index >= binding_layout_size) {
         error_payload = ErrorPayload(
-                            inst_num,
+                            inst_offset,
                             SpecConstantLinkShaderId | (kErrorGroupInstDescriptorIndexingOOB << kErrorGroupShift) | (kErrorSubCodeDescriptorIndexingBounds << kErrorSubCodeShift),
                             (desc_set << kInstDescriptorIndexingSetShift) | desc_index,
                             binding_layout_size,
@@ -60,7 +60,7 @@ bool inst_descriptor_indexing_oob_non_bindless(const uint inst_num, const uint d
 }
 
 // Unlike the non-bindless version, bindless needs to check for Uninitialized and Destroyed descriptors.
-bool inst_descriptor_indexing_oob_bindless(const uint inst_num, const uint desc_set, const uint binding,
+bool inst_descriptor_indexing_oob_bindless(const uint inst_offset, const uint desc_set, const uint binding,
                                            const uint desc_index, const uint binding_layout_size, const uint binding_layout_offset) {
     uint error = 0u;
 
@@ -87,7 +87,7 @@ bool inst_descriptor_indexing_oob_bindless(const uint inst_num, const uint desc_
 
     if (0u != error) {
         error_payload = ErrorPayload(
-                        inst_num,
+                        inst_offset,
                         SpecConstantLinkShaderId | (kErrorGroupInstDescriptorIndexingOOB << kErrorGroupShift) | (error << kErrorSubCodeShift),
                         (desc_set << kInstDescriptorIndexingSetShift) | desc_index,
                         binding_layout_size,
@@ -99,7 +99,7 @@ bool inst_descriptor_indexing_oob_bindless(const uint inst_num, const uint desc_
 }
 
 // This version includes an extra check for Combined Image Samplers
-bool inst_descriptor_indexing_oob_bindless_combined_image_sampler(const uint inst_num, const uint desc_set, const uint binding,
+bool inst_descriptor_indexing_oob_bindless_combined_image_sampler(const uint inst_offset, const uint desc_set, const uint binding,
                                                                   const uint desc_index, const uint binding_layout_size, const uint binding_layout_offset) {
     uint error = 0u;
 
@@ -144,7 +144,7 @@ bool inst_descriptor_indexing_oob_bindless_combined_image_sampler(const uint ins
 
     if (0u != error) {
         error_payload = ErrorPayload(
-                        inst_num,
+                        inst_offset,
                         SpecConstantLinkShaderId | (kErrorGroupInstDescriptorIndexingOOB << kErrorGroupShift) | (error << kErrorSubCodeShift),
                         (desc_set << kInstDescriptorIndexingSetShift) | desc_index,
                         binding_layout_size,

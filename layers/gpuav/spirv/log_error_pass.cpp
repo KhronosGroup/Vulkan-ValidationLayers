@@ -44,7 +44,7 @@ void LogErrorPass::ClearErrorPayloadVariable(Function& function) {
         auto new_struct_inst = std::make_unique<Instruction>(7, spv::OpTypeStruct);
         new_struct_inst->Fill({
             struct_type_id,
-            uint32_type.Id(),  // uint inst_num;
+            uint32_type.Id(),  // uint inst_offset;
             uint32_type.Id(),  // uint shader_error_encoding;
             uint32_type.Id(),  // uint parameter_0;
             uint32_type.Id(),  // uint parameter_1;

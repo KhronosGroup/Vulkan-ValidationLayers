@@ -73,7 +73,7 @@ class Instruction {
     uint32_t GetBitWidth() const;
     uint32_t GetByteWidth() const { return (GetBitWidth() + 31) / 32; }
     spv::BuiltIn GetBuiltIn() const;
-    uint32_t GetPositionIndex() const { return position_index_; }
+    uint32_t GetPositionOffset() const { return position_offset_; }
     bool IsArray() const;
     bool IsNonPtrAccessChain() const;
     bool IsAccessChain() const;
@@ -89,7 +89,7 @@ class Instruction {
     bool operator!=(Instruction const& other) const { return words_ != other.words_; }
 
     // The following is only used for GPU-AV where we need to possibly update an Instruction
-    Instruction(spirv_iterator it, uint32_t position);
+    Instruction(spirv_iterator it, uint32_t position_offset);
     // Assumes caller will fill remaining words
     Instruction(uint32_t length, spv::Op opcode);
     void Fill(const std::vector<uint32_t>& words);
@@ -101,6 +101,10 @@ class Instruction {
     // searchs all operands to replace ID if found
     void ReplaceOperandId(uint32_t old_word, uint32_t new_word);
     void ReplaceLinkedId(vvl::unordered_map<uint32_t, uint32_t>& id_swap_map);
+
+    // This is only used for very specific spots that explain why where used.
+    // There really should be no need to access the raw bytes
+    const uint32_t* GetRawBytes() const { return words_.data(); }
 
   private:
     void SetResultTypeIndex();
@@ -120,7 +124,7 @@ class Instruction {
     uint32_t operand_index_ = 1;
 
     // used to find original position of instruction in shader, pre-instrumented
-    const uint32_t position_index_;
+    const uint32_t position_offset_;
     const OperandInfo& operand_info_;
 
 #ifndef NDEBUG
@@ -132,6 +136,25 @@ class Instruction {
     // helps people new to using SPIR-V spec to understand Word()
     uint32_t d_words_[12];
 #endif
+};
+
+// All information about a OpImage* instructions
+//
+// It is deliberately here to showcase how it is independent of the module itself
+struct ImageInstruction {
+    bool is_dref = false;
+    bool is_sampler_implicitLod_dref_proj = false;
+    bool is_sampler_sampled = false;  // OpImageSample* or OpImageSparseSample*
+    bool is_sampler_bias_offset = false;
+    bool is_sampler_offset = false;  // ConstOffset or Offset (not ConstOffsets)
+
+    // vkspec.html#spirvenv-image-signedness describes how SignExtend/ZeroExtend can be used per-access to adjust the Signedness
+    // Only need to check if one access has explicit signedness, mixing should be caught in spirv-val
+    bool is_sign_extended = false;
+    bool is_zero_extended = false;
+
+    explicit ImageInstruction(const uint32_t* words);
+    ImageInstruction(){};  // used for static variables to set defaults
 };
 
 }  // namespace spirv

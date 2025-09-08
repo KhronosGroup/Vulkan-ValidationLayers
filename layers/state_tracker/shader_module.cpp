@@ -630,7 +630,7 @@ std::vector<StageInterfaceVariable> EntryPoint::GetStageInterfaceVariables(const
 }
 
 std::vector<ResourceInterfaceVariable> EntryPoint::GetResourceInterfaceVariables(const Module& module_state, EntryPoint& entrypoint,
-                                                                                 const ImageAccessMap& image_access_map,
+                                                                                 const StaticImageAccessMap& image_access_map,
                                                                                  const AccessChainVariableMap& access_chain_map,
                                                                                  const VariableAccessMap& variable_access_map,
                                                                                  const DebugNameMap& debug_name_map) {
@@ -657,113 +657,29 @@ std::vector<ResourceInterfaceVariable> EntryPoint::GetResourceInterfaceVariables
     return variables;
 }
 
-static inline bool IsImageOperandsBiasOffset(uint32_t type) {
-    return (type & (spv::ImageOperandsBiasMask | spv::ImageOperandsConstOffsetMask | spv::ImageOperandsOffsetMask |
-                    spv::ImageOperandsConstOffsetsMask)) != 0;
-}
+StaticImageAccess::StaticImageAccess(const Module& module_state, const Instruction& insn,
+                                     const FuncParameterMap& func_parameter_map)
+    : image_insn(insn.GetRawBytes()) {
+    const uint32_t image_opcode = insn.Opcode();
 
-ImageAccess::ImageAccess(const Module& module_state, const Instruction& image_insn, const FuncParameterMap& func_parameter_map)
-    : image_insn(image_insn) {
-    const uint32_t image_opcode = image_insn.Opcode();
-
-    // Get properties from each access instruction
-    switch (image_opcode) {
-        case spv::OpImageDrefGather:
-        case spv::OpImageSparseDrefGather:
-            is_dref = true;
-            break;
-
-        case spv::OpImageSampleDrefImplicitLod:
-        case spv::OpImageSampleDrefExplicitLod:
-        case spv::OpImageSampleProjDrefImplicitLod:
-        case spv::OpImageSampleProjDrefExplicitLod:
-        case spv::OpImageSparseSampleDrefImplicitLod:
-        case spv::OpImageSparseSampleDrefExplicitLod:
-        case spv::OpImageSparseSampleProjDrefImplicitLod:
-        case spv::OpImageSparseSampleProjDrefExplicitLod: {
-            is_dref = true;
-            is_sampler_implicitLod_dref_proj = true;
-            is_sampler_sampled = true;
-            break;
-        }
-
-        case spv::OpImageSampleImplicitLod:
-        case spv::OpImageSampleProjImplicitLod:
-        case spv::OpImageSampleProjExplicitLod:
-        case spv::OpImageSparseSampleImplicitLod:
-        case spv::OpImageSparseSampleProjImplicitLod:
-        case spv::OpImageSparseSampleProjExplicitLod: {
-            is_sampler_implicitLod_dref_proj = true;
-            is_sampler_sampled = true;
-            break;
-        }
-
-        case spv::OpImageSampleExplicitLod:
-        case spv::OpImageSparseSampleExplicitLod: {
-            is_sampler_sampled = true;
-            break;
-        }
-
-        case spv::OpImageWrite:
-            texel_component_count = module_state.GetTexelComponentCount(image_insn);
-            break;
-
-        case spv::OpImageRead:
-        case spv::OpImageSparseRead:
-        case spv::OpImageTexelPointer:
-        case spv::OpImageFetch:
-        case spv::OpImageSparseFetch:
-        case spv::OpImageGather:
-        case spv::OpImageSparseGather:
-        case spv::OpImageQueryLod:
-        case spv::OpFragmentFetchAMD:
-        case spv::OpFragmentMaskFetchAMD:
-            break;
-
-        case spv::OpImageSparseTexelsResident:
-            assert(false);  // This is not a proper OpImage* instruction, has no OpImage operand
-            break;
-
-        default:
-            assert(false);  // This is an OpImage* we are not catching
-            break;
+    if (image_opcode == spv::OpImageWrite) {
+        texel_component_count = module_state.GetTexelComponentCount(insn);
     }
 
     // There is only one way to write to images, everything else is considered a read access
     access_mask |= (image_opcode == spv::OpImageWrite) ? AccessBit::image_write : AccessBit::image_read;
 
-    // Find any optional Image Operands
-    const uint32_t image_operand_position = OpcodeImageOperandsPosition(image_opcode);
-    if (image_insn.Length() > image_operand_position) {
-        const uint32_t image_operand_word = image_insn.Word(image_operand_position);
-
-        if (is_sampler_sampled) {
-            if (IsImageOperandsBiasOffset(image_operand_word)) {
-                is_sampler_bias_offset = true;
-            }
-            if ((image_operand_word & (spv::ImageOperandsConstOffsetMask | spv::ImageOperandsOffsetMask)) != 0) {
-                is_sampler_offset = true;
-            }
-        }
-
-        if ((image_operand_word & spv::ImageOperandsSignExtendMask) != 0) {
-            is_sign_extended = true;
-        } else if ((image_operand_word & spv::ImageOperandsZeroExtendMask) != 0) {
-            is_zero_extended = true;
-        }
-    }
-
     // Do sampler searching as seperate walk to not have the "visited" loop protection be falsly triggered
     std::vector<const Instruction*> sampler_insn_to_search;
 
-    auto walk_to_variables = [this, &module_state, &func_parameter_map, &sampler_insn_to_search](const Instruction* insn,
+    auto walk_to_variables = [this, &module_state, &func_parameter_map, &sampler_insn_to_search](const Instruction* find_insn,
                                                                                                  bool sampler) {
         // Protect from loops
         vvl::unordered_set<uint32_t> visited;
 
         // stack of function call sites to search through
         std::queue<const Instruction*> insn_to_search;
-        insn_to_search.push(insn);
+        insn_to_search.push(find_insn);
         bool new_func = false;
 
         // Keep walking down until get to variables
@@ -773,12 +689,12 @@ ImageAccess::ImageAccess(const Module& module_state, const Instruction& image_in
                 // If any function can't resolve to a variable, by design,
                 // it will kill searching other functions and those before it are now invalidated.
                 new_func = false;
-                insn = insn_to_search.front();
+                find_insn = insn_to_search.front();
                 // spirv-val makes sure functions-to-functions are not recursive
                 visited.clear();
             }
 
-            const uint32_t current_id = insn->ResultId();
+            const uint32_t current_id = find_insn->ResultId();
             const auto visited_iter = visited.find(current_id);
             if (visited_iter != visited.end()) {
                 valid_access = false;  // Caught in a loop
@@ -786,30 +702,30 @@ ImageAccess::ImageAccess(const Module& module_state, const Instruction& image_in
             }
             visited.insert(current_id);
 
-            switch (insn->Opcode()) {
+            switch (find_insn->Opcode()) {
                 case spv::OpSampledImage:
                     // If there is a OpSampledImage we will need to split off and walk down to get the sampler variable
-                    sampler_insn_to_search.push_back(module_state.FindDef(insn->Word(4)));
-                    insn = module_state.FindDef(insn->Word(3));
+                    sampler_insn_to_search.push_back(module_state.FindDef(find_insn->Word(4)));
+                    find_insn = module_state.FindDef(find_insn->Word(3));
                     break;
                 case spv::OpImage:
                     // OpImageFetch grabs OpImage before OpLoad
-                    insn = module_state.FindDef(insn->Word(3));
+                    find_insn = module_state.FindDef(find_insn->Word(3));
                     break;
                 case spv::OpLoad:
                     // Follow the pointer being loaded
-                    insn = module_state.FindDef(insn->Word(3));
+                    find_insn = module_state.FindDef(find_insn->Word(3));
                     break;
                 case spv::OpCopyObject:
                     // Follow the object being copied.
-                    insn = module_state.FindDef(insn->Word(3));
+                    find_insn = module_state.FindDef(find_insn->Word(3));
                     break;
                 case spv::OpAccessChain:
                 case spv::OpInBoundsAccessChain:
                 case spv::OpPtrAccessChain:
                 case spv::OpInBoundsPtrAccessChain: {
                     // If Image is an array (but not descriptor indexing), then need to get the index.
-                    const Instruction* const_def = module_state.GetConstantDef(insn->Word(4));
+                    const Instruction* const_def = module_state.GetConstantDef(find_insn->Word(4));
                     if (const_def) {
                         if (sampler) {
                             sampler_access_chain_index = const_def->GetConstantValue();
@@ -817,7 +733,7 @@ ImageAccess::ImageAccess(const Module& module_state, const Instruction& image_in
                             image_access_chain_index = const_def->GetConstantValue();
                         }
                     }
-                    insn = module_state.FindDef(insn->Word(3));
+                    find_insn = module_state.FindDef(find_insn->Word(3));
                     break;
                 }
                 case spv::OpFunctionParameter: {
@@ -825,7 +741,7 @@ ImageAccess::ImageAccess(const Module& module_state, const Instruction& image_in
                     insn_to_search.pop();
                     new_func = true;
 
-                    auto it = func_parameter_map.find(insn->ResultId());
+                    auto it = func_parameter_map.find(find_insn->ResultId());
                     if (it != func_parameter_map.end()) {
                         for (uint32_t arg : it->second) {
                             insn_to_search.push(module_state.FindDef(arg));
@@ -835,9 +751,9 @@ ImageAccess::ImageAccess(const Module& module_state, const Instruction& image_in
                 }
                 case spv::OpVariable: {
                     if (sampler) {
-                        variable_sampler_insn.push_back(insn);
+                        variable_sampler_insn.push_back(find_insn);
                     } else {
-                        variable_image_insn.push_back(insn);
+                        variable_image_insn.push_back(find_insn);
                     }
                     insn_to_search.pop();
                     new_func = true;  // keep searching if more functions
@@ -853,14 +769,14 @@ ImageAccess::ImageAccess(const Module& module_state, const Instruction& image_in
 
     const uint32_t image_operand = OpcodeImageAccessPosition(image_opcode);
     assert(image_operand != 0);
-    const Instruction* insn = module_state.FindDef(image_insn.Word(image_operand));
-    walk_to_variables(insn, false);
+    const Instruction* find_insn = module_state.FindDef(insn.Word(image_operand));
+    walk_to_variables(find_insn, false);
     for (const auto* sampler_insn : sampler_insn_to_search) {
         walk_to_variables(sampler_insn, true);
     }
 }
 
-EntryPoint::EntryPoint(const Module& module_state, const Instruction& entrypoint_insn, const ImageAccessMap& image_access_map,
+EntryPoint::EntryPoint(const Module& module_state, const Instruction& entrypoint_insn, const StaticImageAccessMap& image_access_map,
                        const AccessChainVariableMap& access_chain_map, const VariableAccessMap& variable_access_map,
                        const DebugNameMap& debug_name_map)
     : entrypoint_insn(entrypoint_insn),
@@ -1334,11 +1250,11 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
     }
 
     // Need to get ImageAccesses as EntryPoint's variables depend on it
-    std::vector<std::shared_ptr<ImageAccess>> image_accesses;
-    ImageAccessMap image_access_map;
+    std::vector<std::shared_ptr<StaticImageAccess>> image_accesses;
+    StaticImageAccessMap image_access_map;
 
     for (const auto& insn : image_instructions) {
-        auto new_access = image_accesses.emplace_back(std::make_shared<ImageAccess>(module_state, *insn, func_parameter_map));
+        auto new_access = image_accesses.emplace_back(std::make_shared<StaticImageAccess>(module_state, *insn, func_parameter_map));
         if (!new_access->variable_image_insn.empty() && new_access->valid_access) {
             for (const Instruction* image_insn : new_access->variable_image_insn) {
                 image_access_map[image_insn->ResultId()].push_back(new_access);
@@ -1826,7 +1742,7 @@ VariableBase::VariableBase(const Module& module_state, const Instruction& insn, 
       debug_name(FindDebugName(*this, debug_name_map)) {
     assert(insn.Opcode() == spv::OpVariable || insn.Opcode() == spv::OpUntypedVariableKHR);
 
-    // Finding the access of an image is more complex we will set that using the ImageAccessMap later
+    // Finding the access of an image is more complex we will set that using the StaticImageAccessMap later
     // (Also there are no images for push constant or stage interface variables)
     auto access_it = variable_access_map.find(id);
     if (access_it != variable_access_map.end()) {
@@ -2120,7 +2036,7 @@ bool ResourceInterfaceVariable::IsStorageBuffer(const ResourceInterfaceVariable&
 }
 
 ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state, const EntryPoint& entrypoint,
-                                                     const Instruction& insn, const ImageAccessMap& image_access_map,
+                                                     const Instruction& insn, const StaticImageAccessMap& image_access_map,
                                                      const AccessChainVariableMap& access_chain_map,
                                                      const VariableAccessMap& variable_access_map,
                                                      const DebugNameMap& debug_name_map)
@@ -2162,13 +2078,16 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
             for (const auto& image_access_ptr : image_access_it->second) {
                 const auto& image_access = *image_access_ptr;
 
-                info.is_dref |= image_access.is_dref;
-                info.is_sampler_implicitLod_dref_proj |= image_access.is_sampler_implicitLod_dref_proj;
-                info.is_sampler_sampled |= image_access.is_sampler_sampled;
-                info.is_sampler_bias_offset |= image_access.is_sampler_bias_offset;
-                info.is_sampler_offset |= image_access.is_sampler_offset;
-                info.is_sign_extended |= image_access.is_sign_extended;
-                info.is_zero_extended |= image_access.is_zero_extended;
+                // This is only needed for non-descriptor indexing where all accesses must be valid
+                // For descriptor indexing, we will override this when we know the exact image to use
+                info.image_insn.is_dref |= image_access.image_insn.is_dref;
+                info.image_insn.is_sampler_implicitLod_dref_proj |= image_access.image_insn.is_sampler_implicitLod_dref_proj;
+                info.image_insn.is_sampler_sampled |= image_access.image_insn.is_sampler_sampled;
+                info.image_insn.is_sampler_bias_offset |= image_access.image_insn.is_sampler_bias_offset;
+                info.image_insn.is_sampler_offset |= image_access.image_insn.is_sampler_offset;
+                info.image_insn.is_sign_extended |= image_access.image_insn.is_sign_extended;
+                info.image_insn.is_zero_extended |= image_access.image_insn.is_zero_extended;
+
                 access_mask |= image_access.access_mask;
 
                 const bool is_image_without_format =

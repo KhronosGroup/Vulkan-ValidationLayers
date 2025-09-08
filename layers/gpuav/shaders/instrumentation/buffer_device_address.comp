@@ -55,7 +55,7 @@ layout(set = kInstDefaultDescriptorSet, binding = kBindingInstBufferDeviceAddres
 uint index_cache;
 
 bool inst_buffer_device_address_range(
-    const uint inst_num,
+    const uint inst_offset,
     const uint64_t addr,
     const uint access_type,
     const uint access_byte_size)
@@ -90,7 +90,7 @@ bool inst_buffer_device_address_range(
     }
 
     error_payload = ErrorPayload(
-                        inst_num,
+                        inst_offset,
                         SpecConstantLinkShaderId | (kErrorGroupInstBufferDeviceAddress << kErrorGroupShift) | (kErrorSubCodeBufferDeviceAddressUnallocRef << kErrorSubCodeShift),
                         uint(addr),
                         uint(addr >> 32u),
@@ -100,7 +100,7 @@ bool inst_buffer_device_address_range(
 }
 
 bool inst_buffer_device_address_align(
-    const uint inst_num,
+    const uint inst_offset,
     const uint64_t addr,
     const uint access_type,
     const uint alignment)
@@ -109,7 +109,7 @@ bool inst_buffer_device_address_align(
     // this is a valid way in GLSL to have it do OpUConvert for us
     if ((addr & (alignment - 1)) != 0) {
         error_payload = ErrorPayload(
-                            inst_num,
+                            inst_offset,
                             SpecConstantLinkShaderId | (kErrorGroupInstBufferDeviceAddress << kErrorGroupShift) | (kErrorSubCodeBufferDeviceAddressAlignment << kErrorSubCodeShift),
                             uint(addr),
                             uint(addr >> 32u),

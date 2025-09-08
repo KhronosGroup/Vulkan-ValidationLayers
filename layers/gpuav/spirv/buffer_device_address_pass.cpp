@@ -61,7 +61,7 @@ uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, Instruct
     const Constant& access_type = module_.type_manager_.GetConstantUInt32(access_type_value);
     const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
 
-    const uint32_t inst_position = meta.target_instruction->GetPositionIndex();
+    const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
     const uint32_t inst_position_id = module_.type_manager_.CreateConstantUInt32(inst_position).Id();
 
     uint32_t function_range_result = 0;  // only take next ID if needed
@@ -223,7 +223,7 @@ bool BufferDeviceAddressPass::Instrument() {
                         if (struct_type && struct_type->spv_type_ == SpvType::kStruct) {
                             const uint32_t struct_offset = FindOffsetInStruct(struct_type->Id(), false, access_chain_insts);
                             if (struct_offset == 0) continue;
-                            uint32_t inst_position = meta.target_instruction->GetPositionIndex();
+                            uint32_t inst_position = meta.target_instruction->GetPositionOffset();
                             block_skip_list_.insert(inst_position);
 
                             Range& range = block_struct_range_map_[struct_type->Id()];

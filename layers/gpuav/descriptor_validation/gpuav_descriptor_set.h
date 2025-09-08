@@ -33,7 +33,7 @@ struct DescriptorAccess {
     uint32_t binding = vvl::kU32Max;       // binding number in the descriptor set
     uint32_t index = vvl::kU32Max;         // index into descriptor array
     uint32_t variable_id = vvl::kU32Max;   // OpVariableID
-    uint32_t instruction_position = vvl::kU32Max;  // Instruction Position to map to source
+    uint32_t instruction_position_offset = vvl::kU32Max;  // Instruction Position to map to source
     uint32_t error_logger_i = vvl::kU32Max;  // Index of error logger stored in command buffer state
 };
 

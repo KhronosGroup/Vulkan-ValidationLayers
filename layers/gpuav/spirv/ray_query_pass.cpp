@@ -44,7 +44,7 @@ uint32_t RayQueryPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst
     const uint32_t ray_direction_id = meta.target_instruction->Operand(6);
     const uint32_t ray_tmax_id = meta.target_instruction->Operand(7);
 
-    const uint32_t inst_position = meta.target_instruction->GetPositionIndex();
+    const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
     const uint32_t inst_position_id = module_.type_manager_.CreateConstantUInt32(inst_position).Id();
 
     block.CreateInstruction(spv::OpFunctionCall,

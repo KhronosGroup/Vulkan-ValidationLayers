@@ -22,6 +22,7 @@
 #include <sstream>
 #include "generated/spirv_grammar_helper.h"
 #include "generated/spirv_validation_helper.h"
+#include "state_tracker/shader_instruction.h"
 #include "state_tracker/shader_stage_state.h"
 #include "error_message/error_strings.h"
 #include "error_message/spirv_logging.h"
@@ -117,7 +118,7 @@ std::string DescriptorValidator::DescribeInstruction() const {
     // This will not work for the static version because there we care there is an OpVariable defined (not if it is used).
     if (original_spirv) {
         ss << '\n';
-        ::spirv::FindShaderSource(ss, *original_spirv, instruction_position, false);
+        ::spirv::FindShaderSource(ss, *original_spirv, instruction_position_offset, false);
     }
     return ss.str();
 }
@@ -127,13 +128,14 @@ DescriptorValidator::DescriptorValidator(vvl::DeviceProxy &dev, CommandBuffer &c
                                          const Location &loc)
     : Logger(dev.debug_report),
       dev_proxy(dev),
+      is_gpu_av(dev.container_type == LayerObjectTypeGpuAssisted),
       cb_state(cb_state),
       descriptor_set(descriptor_set),
       framebuffer(framebuffer),
       loc(loc),
       vuids(&GetDrawDispatchVuid(loc.function)),
       original_spirv(nullptr),  // chance might not find
-      instruction_position(0),
+      instruction_position_offset(0),
       set_index(set_index),
       objlist(objlist) {}
 
@@ -321,7 +323,6 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                                              VkDescriptorType descriptor_type, const ImageDescriptor &image_descriptor) const {
     // We skip various parts of checks for core check to prevent false positive when we don't know the index
     bool skip = false;
-    const bool is_gpu_av = dev_proxy.container_type == LayerObjectTypeGpuAssisted;
     std::vector<const Sampler *> sampler_states;
     const VkImageView image_view = image_descriptor.GetImageView();
     const ImageView *image_view_state = image_descriptor.GetImageViewState();
@@ -374,6 +375,11 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     const spv::Dim dim = resource_variable.info.image_dim;
     const bool is_image_array = resource_variable.info.is_image_array;
 
+    // For Descriptor Indexing, we want the exact image access, not the combination of all accesses to the OpVariable
+    spirv::ImageInstruction image_insn = (is_gpu_av && original_spirv)
+                                             ? spirv::ImageInstruction(&(*original_spirv)[instruction_position_offset])
+                                             : resource_variable.info.image_insn;
+
     // if combined sampler, this variable might not be a OpTypeImage
     // SubpassData gets validated elsewhere
     if (resource_variable.IsImage() && dim != spv::DimSubpassData) {
@@ -418,10 +424,8 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         // When the image has a external format the views format must be VK_FORMAT_UNDEFINED and it is required to use a sampler
         // Ycbcr conversion. Thus we can't extract any meaningful information from the format parameter.
         if (image_view_ci.format != VK_FORMAT_UNDEFINED && ((variable_numeric_type & view_numeric_type) == 0)) {
-            const bool signed_override =
-                ((variable_numeric_type & spirv::NumericTypeUint) && resource_variable.info.is_sign_extended);
-            const bool unsigned_override =
-                ((variable_numeric_type & spirv::NumericTypeSint) && resource_variable.info.is_zero_extended);
+            const bool signed_override = ((variable_numeric_type & spirv::NumericTypeUint) && image_insn.is_sign_extended);
+            const bool unsigned_override = ((variable_numeric_type & spirv::NumericTypeSint) && image_insn.is_zero_extended);
             if (!signed_override && !unsigned_override) {
                 const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view);
                 skip |= LogError(vuids->image_view_numeric_format_07753, objlist, loc.Get(),
@@ -584,7 +588,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             }
         }
 
-        if ((resource_variable.info.is_dref) && !(format_features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT)) {
+        if ((image_insn.is_dref) && !(format_features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT)) {
             const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view);
             skip |= LogError(vuids->depth_compare_sample_06479, objlist, loc.Get(),
                              "the %s has %s with format of %s which doesn't support "
@@ -851,7 +855,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
 
         // UnnormalizedCoordinates sampler validations
         // only check if sampled as could have a texelFetch on a combined image sampler
-        if (sampler_state->create_info.unnormalizedCoordinates && resource_variable.info.is_sampler_sampled) {
+        if (sampler_state->create_info.unnormalizedCoordinates && image_insn.is_sampler_sampled) {
             const auto &subresource_range = image_view_state->normalized_subresource_range;
 
             // If ImageView is used by a unnormalizedCoordinates sampler, it needs to check ImageView type
@@ -885,7 +889,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                                  FormatHandle(image_view).c_str(),
                                  string_LayerCount(image_state->create_info, image_view_ci.subresourceRange).c_str(),
                                  FormatHandle(sampler_state->Handle()).c_str(), DescribeInstruction().c_str());
-            } else if (resource_variable.info.is_sampler_implicitLod_dref_proj) {
+            } else if (image_insn.is_sampler_implicitLod_dref_proj) {
                 // sampler must not be used with any of the SPIR-V OpImageSample* or OpImageSparseSample*
                 // instructions with ImplicitLod, Dref or Proj in their name
                 const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view,
@@ -895,7 +899,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                                  DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
                                  FormatHandle(image_view).c_str(), FormatHandle(sampler_state->Handle()).c_str(),
                                  DescribeInstruction().c_str());
-            } else if (resource_variable.info.is_sampler_bias_offset) {
+            } else if (image_insn.is_sampler_bias_offset) {
                 // sampler must not be used with any of the SPIR-V OpImageSample* or OpImageSparseSample*
                 // instructions that includes a LOD bias or any offset values
                 const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view,
@@ -983,9 +987,12 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     const uint32_t view_numeric_type = spirv::GetFormatType(buffer_view_format);
     const uint32_t variable_numeric_type = resource_variable.info.image_sampled_type_numeric;
     if ((variable_numeric_type & view_numeric_type) == 0) {
-        const bool signed_override = ((variable_numeric_type & spirv::NumericTypeUint) && resource_variable.info.is_sign_extended);
-        const bool unsigned_override =
-            ((variable_numeric_type & spirv::NumericTypeSint) && resource_variable.info.is_zero_extended);
+        spirv::ImageInstruction image_insn = (is_gpu_av && original_spirv)
+                                                 ? spirv::ImageInstruction(&(*original_spirv)[instruction_position_offset])
+                                                 : resource_variable.info.image_insn;
+
+        const bool signed_override = ((variable_numeric_type & spirv::NumericTypeUint) && image_insn.is_sign_extended);
+        const bool unsigned_override = ((variable_numeric_type & spirv::NumericTypeSint) && image_insn.is_zero_extended);
         if (!signed_override && !unsigned_override) {
             const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), buffer_view);
             skip |= LogError(vuids->image_view_numeric_format_07753, objlist, loc.Get(),

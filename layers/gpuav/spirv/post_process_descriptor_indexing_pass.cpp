@@ -47,7 +47,7 @@ void PostProcessDescriptorIndexingPass::CreateFunctionCall(BasicBlock& block, In
     const Constant& binding_layout_offset = module_.type_manager_.GetConstantUInt32(binding_layout.start);
     const Constant& variable_id_constant = module_.type_manager_.GetConstantUInt32(meta.variable_id);
 
-    const uint32_t inst_position = meta.target_instruction->GetPositionIndex();
+    const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
     const uint32_t inst_position_id = module_.type_manager_.CreateConstantUInt32(inst_position).Id();
 
     const uint32_t function_result = module_.TakeNextId();

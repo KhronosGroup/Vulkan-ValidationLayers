@@ -27,6 +27,7 @@
 
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "gpuav/shaders/gpuav_error_codes.h"
+#include "gpuav/shaders/gpuav_error_header.h"
 #include "gpuav/spirv/log_error_pass.h"
 #include "error_message/spirv_logging.h"
 #include <spirv/unified1/NonSemanticShaderDebugInfo100.h>
@@ -1326,6 +1327,12 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     if (unique_shader_id >= glsl::kMaxInstrumentedShaders) {
         InternalWarning(device, loc, "kMaxInstrumentedShaders limit has been hit, no shaders can be instrumented.");
         return false;
+    } else if ((input_spirv.size() * sizeof(uint32_t)) > (1 << glsl::kStageIdShift)) {
+        // If we are hitting this, will need to rethink limit (if someone hits this, please raise an issue!)
+        InternalWarning(
+            device, loc,
+            "The shader is larger than 128MB and there are only 27 bits to store the offset into the spirv where an error occurs.");
+        return false;
     }
 
     if (gpuav_settings.debug_dump_instrumented_shaders) {
@@ -1634,7 +1641,7 @@ std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(VkCommandBuffer comm
     }
     ss << std::dec << std::noshowbase;
 
-    ::spirv::FindShaderSource(ss, instrumented_shader->original_spirv, shader_info.instruction_position,
+    ::spirv::FindShaderSource(ss, instrumented_shader->original_spirv, shader_info.instruction_position_offset,
                               gpuav_settings.debug_printf_only);
 
     return ss.str();

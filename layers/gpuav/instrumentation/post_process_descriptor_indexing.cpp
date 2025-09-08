@@ -195,7 +195,7 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
                             const uint32_t error_logger_i = (slot.meta_data & glsl::kPostProcessMetaMaskErrorLoggerIndex) >>
                                                             glsl::kPostProcessMetaShiftErrorLoggerIndex;
                             descriptor_access_map[shader_id].emplace_back(DescriptorAccess{
-                                binding, descriptor_i, slot.variable_id, slot.instruction_position, error_logger_i});
+                                binding, descriptor_i, slot.variable_id, slot.instruction_position_offset, error_logger_i});
                         }
                     }
                 }
@@ -256,7 +256,8 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
                         continue;
                     }
 
-                    context.SetInstructionPosition(descriptor_access.instruction_position);
+                    context.SetInstructionPositionOffset(descriptor_access.instruction_position_offset);
+
                     // This will represent the Set that was accessed in the shader, which might not match the
                     // vkCmdBindDescriptorSet index if sets are aliased
                     context.SetSetIndexForGpuAv(resource_variable->decorations.set);

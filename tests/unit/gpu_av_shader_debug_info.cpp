@@ -359,8 +359,7 @@ void main() {
                OpFunctionEnd
     )";
 
-    BasicSingleStorageBufferComputeOOB(
-        shader_source, "SPIR-V Instruction Index = 52\nShader validation error occurred at a.comp:11\n\n    x = data.indices[16];");
+    BasicSingleStorageBufferComputeOOB(shader_source, "Shader validation error occurred at a.comp:11\n\n    x = data.indices[16];");
 }
 
 TEST_F(NegativeGpuAVShaderDebugInfo, GlslLineDerective) {
@@ -542,9 +541,8 @@ TEST_F(NegativeGpuAVShaderDebugInfo, BasicGlslangShaderDebugInfo) {
                OpFunctionEnd
     )";
 
-    BasicSingleStorageBufferComputeOOB(
-        shader_source,
-        "SPIR-V Instruction Index = 95\nShader validation error occurred at a.comp:11\nNo Text operand found in DebugSource");
+    BasicSingleStorageBufferComputeOOB(shader_source,
+                                       "Shader validation error occurred at a.comp:11\nNo Text operand found in DebugSource");
 }
 
 // Manually ran:
@@ -671,9 +669,8 @@ TEST_F(NegativeGpuAVShaderDebugInfo, BasicGlslangShaderDebugInfoWithSource) {
     AddRequiredExtensions(VK_KHR_SHADER_RELAXED_EXTENDED_INSTRUCTION_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderRelaxedExtendedInstruction);
 
-    BasicSingleStorageBufferComputeOOB(
-        kBasicGlslShaderSource,
-        "SPIR-V Instruction Index = 96\nShader validation error occurred at a.comp:11\n\n11:     x = data.indices[16];");
+    BasicSingleStorageBufferComputeOOB(kBasicGlslShaderSource,
+                                       "Shader validation error occurred at a.comp:11\n\n11:     x = data.indices[16];");
 }
 
 TEST_F(NegativeGpuAVShaderDebugInfo, BasicGlslangShaderDebugInfoWithSourceShaderObject) {
@@ -712,8 +709,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, BasicGlslangShaderDebugInfoWithSourceShader
     m_command_buffer.End();
 
     // UNASSIGNED-Device address out of bounds
-    m_errorMonitor->SetDesiredError(
-        "SPIR-V Instruction Index = 96\nShader validation error occurred at a.comp:11\n\n11:     x = data.indices[16];");
+    m_errorMonitor->SetDesiredError("Shader validation error occurred at a.comp:11\n\n11:     x = data.indices[16];");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }

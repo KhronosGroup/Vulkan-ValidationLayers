@@ -2835,3 +2835,82 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, DualShaderLibraryDuplicateLayoutsImmu
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVDescriptorPostProcess, AliasDepthSamplers) {
+    TEST_DESCRIPTION("Same binding used for normal and depth samplers");
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    char const *cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : require
+
+        layout(set = 0, binding = 0) buffer SSBO {
+            uint a; // 0
+            uint b; // 1
+            uint c; // 0
+            vec4 result;
+        };
+        layout(set = 0, binding = 1) uniform texture2D tex[];
+        layout(set = 0, binding = 2) uniform sampler s[];
+        layout(set = 0, binding = 2) uniform samplerShadow ds[];
+
+        void main() {
+            vec4 texture_color = texture(sampler2D(tex[a], ds[a]), vec2(0));
+            float shadow_factor = textureLod(sampler2DShadow(tex[c], s[b]), vec3(0), 0.0f);
+
+            result = texture_color * shadow_factor;
+        }
+    )glsl";
+
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                     {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                                     {2, VK_DESCRIPTOR_TYPE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
+    buffer_ptr[0] = 0;
+    buffer_ptr[1] = 1;
+    buffer_ptr[2] = 0;
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    vkt::Sampler sampler_depth(*m_device, SafeSaneSamplerCreateInfo());
+    auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView image_view = image.CreateView();
+
+    image_ci.format = FindSupportedDepthStencilFormat(Gpu());
+    image_ci.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    vkt::Image image_depth(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView image_view_depth = image_depth.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.WriteDescriptorImageInfo(1, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
+    descriptor_set.WriteDescriptorImageInfo(1, image_view_depth, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+    descriptor_set.WriteDescriptorImageInfo(2, VK_NULL_HANDLE, sampler, VK_DESCRIPTOR_TYPE_SAMPLER, VK_IMAGE_LAYOUT_UNDEFINED, 0);
+    descriptor_set.WriteDescriptorImageInfo(2, VK_NULL_HANDLE, sampler_depth, VK_DESCRIPTOR_TYPE_SAMPLER, VK_IMAGE_LAYOUT_UNDEFINED,
+                                            1);
+    descriptor_set.UpdateDescriptorSets();
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-06479");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}

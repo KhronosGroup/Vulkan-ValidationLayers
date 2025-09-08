@@ -20,7 +20,7 @@
 namespace spirv {
 
 Instruction::Instruction(std::vector<uint32_t>::const_iterator it)
-    : position_index_(0), operand_info_(GetOperandInfo(*it & 0x0ffffu)) {
+    : position_offset_(0), operand_info_(GetOperandInfo(*it & 0x0ffffu)) {
     // Get Length manually to save allocation of vector
     const uint32_t length = (*it >> 16);
     words_.reserve(length);
@@ -31,7 +31,7 @@ Instruction::Instruction(std::vector<uint32_t>::const_iterator it)
     UpdateDebugInfo();
 }
 
-Instruction::Instruction(const uint32_t* it) : position_index_(0), operand_info_(GetOperandInfo(*it & 0x0ffffu)) {
+Instruction::Instruction(const uint32_t* it) : position_offset_(0), operand_info_(GetOperandInfo(*it & 0x0ffffu)) {
     // Get Length manually to save allocation of vector
     const uint32_t length = (*it >> 16);
     words_.reserve(length);
@@ -42,8 +42,8 @@ Instruction::Instruction(const uint32_t* it) : position_index_(0), operand_info_
     UpdateDebugInfo();
 }
 
-Instruction::Instruction(spirv_iterator it, uint32_t position)
-    : position_index_(position), operand_info_(GetOperandInfo(*it & 0x0ffffu)) {
+Instruction::Instruction(spirv_iterator it, uint32_t position_offset)
+    : position_offset_(position_offset), operand_info_(GetOperandInfo(*it & 0x0ffffu)) {
     // Get Length manually to save allocation of vector
     const uint32_t length = (*it >> 16);
     words_.reserve(length);
@@ -54,7 +54,7 @@ Instruction::Instruction(spirv_iterator it, uint32_t position)
     UpdateDebugInfo();
 }
 
-Instruction::Instruction(uint32_t length, spv::Op opcode) : position_index_(0), operand_info_(GetOperandInfo(opcode)) {
+Instruction::Instruction(uint32_t length, spv::Op opcode) : position_offset_(0), operand_info_(GetOperandInfo(opcode)) {
     words_.reserve(length);
     uint32_t first_word = (length << 16) | opcode;
     words_.emplace_back(first_word);
@@ -445,6 +445,96 @@ void Instruction::ReplaceLinkedId(vvl::unordered_map<uint32_t, uint32_t>& id_swa
     }
 
     UpdateDebugInfo();
+}
+
+static inline bool IsImageOperandsBiasOffset(uint32_t type) {
+    return (type & (spv::ImageOperandsBiasMask | spv::ImageOperandsConstOffsetMask | spv::ImageOperandsOffsetMask |
+                    spv::ImageOperandsConstOffsetsMask)) != 0;
+}
+
+// Need to do this all with a raw pointer as GPU-AV doesn't have time to recreate the Instruction class
+ImageInstruction::ImageInstruction(const uint32_t* words) {
+    const uint32_t image_opcode = words[0] & 0x0ffffu;
+    switch (image_opcode) {
+        case spv::OpImageDrefGather:
+        case spv::OpImageSparseDrefGather:
+            is_dref = true;
+            break;
+
+        case spv::OpImageSampleDrefImplicitLod:
+        case spv::OpImageSampleDrefExplicitLod:
+        case spv::OpImageSampleProjDrefImplicitLod:
+        case spv::OpImageSampleProjDrefExplicitLod:
+        case spv::OpImageSparseSampleDrefImplicitLod:
+        case spv::OpImageSparseSampleDrefExplicitLod:
+        case spv::OpImageSparseSampleProjDrefImplicitLod:
+        case spv::OpImageSparseSampleProjDrefExplicitLod: {
+            is_dref = true;
+            is_sampler_implicitLod_dref_proj = true;
+            is_sampler_sampled = true;
+            break;
+        }
+
+        case spv::OpImageSampleImplicitLod:
+        case spv::OpImageSampleProjImplicitLod:
+        case spv::OpImageSampleProjExplicitLod:
+        case spv::OpImageSparseSampleImplicitLod:
+        case spv::OpImageSparseSampleProjImplicitLod:
+        case spv::OpImageSparseSampleProjExplicitLod: {
+            is_sampler_implicitLod_dref_proj = true;
+            is_sampler_sampled = true;
+            break;
+        }
+
+        case spv::OpImageSampleExplicitLod:
+        case spv::OpImageSparseSampleExplicitLod: {
+            is_sampler_sampled = true;
+            break;
+        }
+
+        case spv::OpImageWrite:
+        case spv::OpImageRead:
+        case spv::OpImageSparseRead:
+        case spv::OpImageTexelPointer:
+        case spv::OpImageFetch:
+        case spv::OpImageSparseFetch:
+        case spv::OpImageGather:
+        case spv::OpImageSparseGather:
+        case spv::OpImageQueryLod:
+        case spv::OpFragmentFetchAMD:
+        case spv::OpFragmentMaskFetchAMD:
+            break;
+
+        case spv::OpImageSparseTexelsResident:
+            assert(false);  // This is not a proper OpImage* instruction, has no OpImage operand
+            break;
+
+        default:
+            assert(false);  // This is an OpImage* we are not catching
+            break;
+    }
+
+    // Find any optional Image Operands
+    const uint32_t image_operand_position = OpcodeImageOperandsPosition(image_opcode);
+    const uint32_t length = words[0] >> 16;
+    if (length > image_operand_position) {
+        const uint32_t image_operand_word = words[image_operand_position];
+
+        if (is_sampler_sampled) {
+            if (IsImageOperandsBiasOffset(image_operand_word)) {
+                is_sampler_bias_offset = true;
+            }
+            if ((image_operand_word & (spv::ImageOperandsConstOffsetMask | spv::ImageOperandsOffsetMask)) != 0) {
+                is_sampler_offset = true;
+            }
+        }
+
+        if ((image_operand_word & spv::ImageOperandsSignExtendMask) != 0) {
+            is_sign_extended = true;
+        } else if ((image_operand_word & spv::ImageOperandsZeroExtendMask) != 0) {
+            is_zero_extended = true;
+        }
+    }
 }
 
 }  // namespace spirv

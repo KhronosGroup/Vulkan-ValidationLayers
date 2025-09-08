@@ -19,7 +19,7 @@
 
 // TODO - Would be nice to get this down to a only 16 bytes as per-thread memory is VERY precious for runtime perf
 struct ErrorPayload {
-    uint inst_num;
+    uint inst_offset;
     uint shader_error_encoding;
     uint parameter_0;
     uint parameter_1;

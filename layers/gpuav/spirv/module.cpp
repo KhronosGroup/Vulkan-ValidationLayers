@@ -40,7 +40,6 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
       has_bindless_descriptors_(settings.has_bindless_descriptors),
       debug_report_(debug_report),
       set_index_to_bindings_layout_lut_(set_index_to_bindings_layout_lut) {
-    uint32_t instruction_count = 0;
     spirv_iterator it = words.begin();
     header_.magic_number = *it++;
     header_.version = *it++;
@@ -55,7 +54,9 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
         if (opcode == spv::OpFunction) {
             break;
         }
-        auto new_inst = std::make_unique<Instruction>(it, instruction_count++);
+
+        const uint32_t position_offset = static_cast<uint32_t>(it - words.begin());
+        auto new_inst = std::make_unique<Instruction>(it, position_offset);
 
         switch (opcode) {
             case spv::OpCapability:
@@ -172,7 +173,8 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
     while (it != words.end()) {
         const uint32_t opcode = *it & 0x0ffffu;
         const uint32_t length = *it >> 16;
-        auto new_inst = std::make_unique<Instruction>(it, instruction_count++);
+        const uint32_t position_offset = static_cast<uint32_t>(it - words.begin());
+        auto new_inst = std::make_unique<Instruction>(it, position_offset);
 
         if (opcode == spv::OpFunction) {
             const bool is_entry_point = entry_point_functions.find(new_inst->ResultId()) != entry_point_functions.end();
