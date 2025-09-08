@@ -1497,8 +1497,9 @@ bool CoreChecks::ValidateShaderInterfaceVariablePipeline(const spirv::Module &mo
                                 // Note that for YCbCr, OpImageQueryLod will query the sampler, but OpImageQuerySize only queries
                                 // the image and therefor can still be used with YCbCr.
                                 (variable.IsImage() && variable.IsImageAccessed()) &&
-                                // Quick check to prevent doing tons of sampler state lookup
-                                (variable.info.is_sampler_offset || !variable.info.is_sampler_sampled);
+                                // Quick check to prevent doing tons of sampler state lookup.
+                                // YCbCr can't be used with dynamic indexing, so can use at pipeline creation time
+                                (variable.info.image_insn.is_sampler_offset || !variable.info.image_insn.is_sampler_sampled);
     if (binding && possible_ycbcr) {
         if (variable.is_type_sampled_image) {
             // simple case if using combined image sampler
@@ -1548,7 +1549,7 @@ bool CoreChecks::ValidateShaderYcbcrSamplerAccess(const VkDescriptorSetLayoutBin
             continue;
         }
 
-        if (!image_variable.info.is_sampler_sampled) {
+        if (!image_variable.info.image_insn.is_sampler_sampled) {
             skip |= LogError("VUID-RuntimeSpirv-None-10716", objlist, loc,
                              "%s points to pImmutableSamplers[%" PRIu32
                              "] (%s) that was created with a VkSamplerYcbcrConversion, but was accessed in the SPIR-V "
@@ -1556,7 +1557,7 @@ bool CoreChecks::ValidateShaderYcbcrSamplerAccess(const VkDescriptorSetLayoutBin
                              "because it doesn't contain the sampler YCbCr conversion information for the driver.",
                              print_access_info().c_str(), i, FormatHandle(sampler_state->Handle()).c_str());
             break;  // only need to report a single descriptor
-        } else if (image_variable.info.is_sampler_offset) {
+        } else if (image_variable.info.image_insn.is_sampler_offset) {
             skip |= LogError("VUID-RuntimeSpirv-ConstOffset-10718", objlist, loc,
                              "%s points to pImmutableSamplers[%" PRIu32
                              "] (%s) that was created with a VkSamplerYcbcrConversion, but was accessed in the SPIR-V "

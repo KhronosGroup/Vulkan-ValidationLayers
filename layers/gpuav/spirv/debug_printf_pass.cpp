@@ -227,7 +227,7 @@ void DebugPrintfPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_
     // need to call to get the underlying 4 IDs (simpler to pass in as 4 uint then a uvec4)
     GetStageInfo(block_func, block, *inst_it);
 
-    const uint32_t inst_position = meta.target_instruction->GetPositionIndex();
+    const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
     auto inst_position_constant = module_.type_manager_.CreateConstantUInt32(inst_position);
 
     const uint32_t string_id = meta.target_instruction->Word(5);

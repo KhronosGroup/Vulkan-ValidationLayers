@@ -889,6 +889,10 @@ bool vvl::DescriptorSet::ValidateBindingOnGPU(const DescriptorBinding &binding,
     // Some applications (notably Doom Eternal) might have large non-bindless descriptors attached (basically doing Descriptor
     // Indexing without the extension). Trying to loop through these on the CPU will bring FPS down by over 50% so we make use of
     // the post processing to detect which descriptors were actually accessed
+    //
+    // TODO - Currently we will conflate large descriptor arrays as being "bindless" because they come out of GPU-AV. what this just
+    // means that we are miss validating non-bindless rules on these arrays if the app is doing illegal aliasing of the descriptor
+    // array, but its a non-trival perf operation to track the difference for very little ROI
     static constexpr uint32_t max_descriptor_on_cpu = 1024;
     if (GetNonInlineDescriptorCount() > max_descriptor_on_cpu) {
         // If too much CPU work

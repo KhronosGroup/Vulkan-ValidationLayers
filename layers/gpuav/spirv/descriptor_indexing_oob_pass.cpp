@@ -87,7 +87,7 @@ uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, Instru
     const Constant& binding_layout_size = module_.type_manager_.GetConstantUInt32(binding_layout.count);
     const Constant& binding_layout_offset = module_.type_manager_.GetConstantUInt32(binding_layout.start);
 
-    const uint32_t inst_position = meta.target_instruction->GetPositionIndex();
+    const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
     const uint32_t inst_position_id = module_.type_manager_.CreateConstantUInt32(inst_position).Id();
 
     uint32_t function_result = module_.TakeNextId();

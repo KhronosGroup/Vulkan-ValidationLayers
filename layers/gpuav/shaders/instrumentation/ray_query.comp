@@ -21,7 +21,7 @@
 #include "common_descriptor_sets.h"
 #include "error_payload.h"
 
-bool inst_ray_query_comp(const uint inst_num, const uint ray_flags, const vec3 ray_origin, const float ray_tmin, const vec3 ray_direction, const float ray_tmax)
+bool inst_ray_query_comp(const uint inst_offset, const uint ray_flags, const vec3 ray_origin, const float ray_tmin, const vec3 ray_direction, const float ray_tmax)
 {
     uint error = 0u;
     uint param_0 = 0u;
@@ -73,7 +73,7 @@ bool inst_ray_query_comp(const uint inst_num, const uint ray_flags, const vec3 r
 
     if (0u != error) {
          error_payload = ErrorPayload(
-                            inst_num,
+                            inst_offset,
                             SpecConstantLinkShaderId | (kErrorGroupInstRayQuery << kErrorGroupShift) | (error << kErrorSubCodeShift),
                             param_0,
                             0,

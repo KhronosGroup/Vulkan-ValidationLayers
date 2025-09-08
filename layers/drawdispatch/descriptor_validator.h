@@ -54,7 +54,7 @@ class DescriptorValidator : public Logger {
     void SetObjlistForGpuAv(const LogObjectList* objlist) { this->objlist = objlist; }
     void SetLocationForGpuAv(const Location& gpuav_loc);
     void SetOriginalSpirv(const std::vector<uint32_t>* spirv) { this->original_spirv = spirv; };
-    void SetInstructionPosition(uint32_t position) { this->instruction_position = position; };
+    void SetInstructionPositionOffset(uint32_t position_offset) { this->instruction_position_offset = position_offset; };
 
   private:
     template <typename T>
@@ -88,6 +88,7 @@ class DescriptorValidator : public Logger {
     std::string DescribeInstruction() const;
 
     vvl::DeviceProxy& dev_proxy;
+    const bool is_gpu_av;
     vvl::CommandBuffer& cb_state;
     vvl::DescriptorSet& descriptor_set;
     const VkFramebuffer framebuffer;
@@ -95,7 +96,7 @@ class DescriptorValidator : public Logger {
     const DrawDispatchVuid* vuids;
 
     const std::vector<uint32_t>* original_spirv;
-    uint32_t instruction_position;
+    uint32_t instruction_position_offset;
 
     // For GPU-AV, these can become aliased and need to be mutable between descriptor accesses
     // A descriptor set might be used between multiple shaders and need to adjust which one was found

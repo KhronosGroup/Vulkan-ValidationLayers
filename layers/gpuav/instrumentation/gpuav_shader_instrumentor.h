@@ -158,7 +158,7 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
         uint32_t stage_info_0;
         uint32_t stage_info_1;
         uint32_t stage_info_2;
-        uint32_t instruction_position;
+        uint32_t instruction_position_offset;
         uint32_t shader_id;
     };
     std::string GenerateDebugInfoMessage(VkCommandBuffer commandBuffer, const ShaderMessageInfo &shader_info,

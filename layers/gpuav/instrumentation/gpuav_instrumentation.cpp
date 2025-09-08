@@ -1159,12 +1159,12 @@ bool LogInstrumentationError(Validator &gpuav, const CommandBufferSubState &cb_s
         Location loc_with_debug_region(loc, debug_region_name);
 
         const uint32_t stage_id = error_record[glsl::kHeaderStageInstructionIdOffset] >> glsl::kStageIdShift;
-        const uint32_t instruction_position = error_record[glsl::kHeaderStageInstructionIdOffset] & glsl::kInstructionIdMask;
+        const uint32_t instruction_position_offset = error_record[glsl::kHeaderStageInstructionIdOffset] & glsl::kInstructionIdMask;
         GpuShaderInstrumentor::ShaderMessageInfo shader_info{stage_id,
                                                              error_record[glsl::kHeaderStageInfoOffset_0],
                                                              error_record[glsl::kHeaderStageInfoOffset_1],
                                                              error_record[glsl::kHeaderStageInfoOffset_2],
-                                                             instruction_position,
+                                                             instruction_position_offset,
                                                              shader_id};
         std::string debug_info_message = gpuav.GenerateDebugInfoMessage(cb_state.VkHandle(), shader_info, instrumented_shader,
                                                                         instrumentation_error_blob.pipeline_bind_point,

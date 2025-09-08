@@ -47,7 +47,7 @@ The next step is to add the `inst_bindless_descriptor` function into the SPIR-V.
 Currently, all these functions are found in `gpuav/shaders/instrumentation`
 
 ```glsl
-bool inst_bindless_descriptor(const uint inst_num, const uvec4 stage_info, const uint desc_set,
+bool inst_bindless_descriptor(const uint inst_offset, const uvec4 stage_info, const uint desc_set,
                               const uint binding, const uint desc_index, const uint byte_offset) {
     // logic
     return no_error_found;
@@ -70,7 +70,7 @@ layout(set = 0, binding = 1) uniform sampler2D tex[];
 layout(location = 0) out vec4 uFragColor;
 layout(location = 0) flat in uint index;
 
-bool inst_bindless_descriptor(uint inst_num, uvec4 stage_info, uint desc_set,
+bool inst_bindless_descriptor(uint inst_offset, uvec4 stage_info, uint desc_set,
                               uint binding, uint desc_index, uint byte_offset) {
     // logic
     return no_error_found;

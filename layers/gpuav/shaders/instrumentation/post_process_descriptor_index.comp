@@ -33,12 +33,12 @@ layout(set = kInstDefaultDescriptorSet, binding = kBindingInstPostProcess, scala
     DescriptorIndexPostProcess descriptor_index_post_process_buffers[kDebugInputBindlessMaxDescSets];
 } gpuav;
 
-void inst_post_process_descriptor_index(const uint desc_set, const uint binding, const uint desc_index, const uint binding_layout_offset, const uint variable_id, const uint inst_num) {
+void inst_post_process_descriptor_index(const uint desc_set, const uint binding, const uint desc_index, const uint binding_layout_offset, const uint variable_id, const uint inst_offset) {
     DescriptorIndexPostProcess descriptor_index_post_process = gpuav.descriptor_index_post_process_buffers[desc_set];
 
     const uint cmd_id = inst_error_logger_index_buffer.index[0] << kPostProcessMetaShiftErrorLoggerIndex;
 
     // The index has been accessed, write out for post processing
     const uint binding_layout_index = binding_layout_offset + desc_index;
-    descriptor_index_post_process.slot[binding_layout_index] = uvec3(kPostProcessMetaMaskAccessed | cmd_id | SpecConstantLinkShaderId, variable_id, inst_num);
+    descriptor_index_post_process.slot[binding_layout_index] = uvec3(kPostProcessMetaMaskAccessed | cmd_id | SpecConstantLinkShaderId, variable_id, inst_offset);
 }
