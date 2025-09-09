@@ -1281,7 +1281,9 @@ bool CoreChecks::ValidateDrawRenderingAttachmentLocation(const vvl::CommandBuffe
     // Default from spec
     uint32_t pipeline_color_count = pipeline_state.ColorBlendState() ? pipeline_state.ColorBlendState()->attachmentCount : 0;
     const uint32_t* pipeline_color_locations = nullptr;
+    bool explicit_pipeline = false;
     if (pipeline_state.fragment_output_state && pipeline_state.fragment_output_state->attachement_locations) {
+        explicit_pipeline = true;
         const VkRenderingAttachmentLocationInfo info = *pipeline_state.fragment_output_state->attachement_locations->ptr();
         pipeline_color_count = info.colorAttachmentCount;
         pipeline_color_locations = info.pColorAttachmentLocations;
@@ -1295,15 +1297,16 @@ bool CoreChecks::ValidateDrawRenderingAttachmentLocation(const vvl::CommandBuffe
         if (pipeline_color_location != cb_state.rendering_attachments.color_locations[i]) {
             const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
             std::stringstream ss;
+            ss << "The pipeline VkRenderingAttachmentLocationInfo::pColorAttachmentLocations[" << i << "] is "
+               << pipeline_color_location;
+            if (!explicit_pipeline) {
+                ss << " (implicitly because the pipeline was created without VkRenderingAttachmentLocationInfo)";
+            }
+            ss << ", but doesn't match this render pass instance because vkCmdSetRenderingAttachmentLocations ";
             if (cb_state.rendering_attachments.set_color_locations) {
-                ss << "The pipeline VkRenderingAttachmentLocationInfo::pColorAttachmentLocations[" << i << "] is "
-                   << pipeline_color_location << " but vkCmdSetRenderingAttachmentLocations last set pColorAttachmentLocations["
-                   << i << "] to " << cb_state.rendering_attachments.color_locations[i];
+                ss << "last set pColorAttachmentLocations[" << i << "] to " << cb_state.rendering_attachments.color_locations[i];
             } else {
-                ss << "vkCmdSetRenderingAttachmentLocations was not called in this render pass so the index (" << i
-                   << ") is the implicit location which doesn't match the pipeline "
-                      "VkRenderingAttachmentLocationInfo::pColorAttachmentLocations["
-                   << i << "] which is " << pipeline_color_location;
+                ss << "was not called in this render pass so the index (" << i << ") is the implicit location";
             }
             skip = LogError(vuid.dynamic_rendering_local_location_09548, objlist, vuid.loc(), "%s", ss.str().c_str());
             break;
@@ -1323,7 +1326,9 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
     const uint32_t* pipeline_depth_index = nullptr;
     const uint32_t* pipeline_stencil_index = nullptr;
 
+    bool explicit_pipeline = false;
     if (pipeline_state.fragment_shader_state && pipeline_state.fragment_shader_state->attachement_index) {
+        explicit_pipeline = true;
         const VkRenderingInputAttachmentIndexInfo info = *pipeline_state.fragment_shader_state->attachement_index->ptr();
         pipeline_color_count = info.colorAttachmentCount;
         pipeline_color_indexes = info.pColorAttachmentInputIndices;
@@ -1339,16 +1344,16 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
         if (pipeline_color_index != cb_state.rendering_attachments.color_indexes[i]) {
             const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
             std::stringstream ss;
+            ss << "The pipeline VkRenderingInputAttachmentIndexInfo::pColorAttachmentInputIndices[" << i << "] is "
+               << pipeline_color_index;
+            if (!explicit_pipeline) {
+                ss << " (implicitly because the pipeline was created without VkRenderingInputAttachmentIndexInfo)";
+            }
+            ss << ", but doesn't match this render pass instance because vkCmdSetRenderingInputAttachmentIndices ";
             if (cb_state.rendering_attachments.set_color_indexes) {
-                ss << "The pipeline VkRenderingInputAttachmentIndexInfo::pColorAttachmentInputIndices[" << i << "] is "
-                   << pipeline_color_index << " but vkCmdSetRenderingAttachmentLocations last set pColorAttachmentInputIndices["
-                   << i << "] to " << cb_state.rendering_attachments.color_indexes[i];
+                ss << "last set pColorAttachmentInputIndices[" << i << "] to " << cb_state.rendering_attachments.color_locations[i];
             } else {
-                ss << "vkCmdSetRenderingAttachmentLocations was not called in this render pass so the index ("
-                   << cb_state.rendering_attachments.color_indexes[i]
-                   << ") is the implicit location which doesn't match the pipeline "
-                      "VkRenderingInputAttachmentIndexInfo::pColorAttachmentInputIndices["
-                   << i << "] which is " << pipeline_color_index;
+                ss << "was not called in this render pass so the index (" << i << ") is the implicit location";
             }
             skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(), "%s", ss.str().c_str());
             break;
@@ -1357,36 +1362,37 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
 
     if (!EqualValuesOrBothNull(pipeline_depth_index, cb_state.rendering_attachments.depth_index)) {
         const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
-        if (cb_state.rendering_attachments.set_color_indexes) {
-            skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(),
-                            "The pipeline VkRenderingInputAttachmentIndexInfo::pDepthInputAttachmentIndex is %s but "
-                            "vkCmdSetRenderingInputAttachmentIndices last set pDepthInputAttachmentIndex to %s",
-                            string_AttachmentPointer(pipeline_depth_index).c_str(),
-                            string_AttachmentPointer(cb_state.rendering_attachments.depth_index).c_str());
-        } else {
-            skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(),
-                            "vkCmdSetRenderingAttachmentLocations was not called in this render pass was not called "
-                            "in this render pass, so its pDepthInputAttachmentIndex is implicitly NULL, "
-                            "but VkRenderingInputAttachmentIndexInfo::pDepthInputAttachmentIndex is %s",
-                            string_AttachmentPointer(pipeline_depth_index).c_str());
+        std::stringstream ss;
+        ss << "The pipeline VkRenderingInputAttachmentIndexInfo::pDepthInputAttachmentIndex is "
+           << string_AttachmentPointer(pipeline_depth_index);
+        if (!explicit_pipeline) {
+            ss << " (implicitly because the pipeline was created without VkRenderingInputAttachmentIndexInfo)";
         }
+        ss << ", but doesn't match this render pass instance because vkCmdSetRenderingInputAttachmentIndices ";
+        if (cb_state.rendering_attachments.set_color_indexes) {
+            ss << "last set pDepthInputAttachmentIndex to " << string_AttachmentPointer(cb_state.rendering_attachments.depth_index);
+        } else {
+            ss << "was not called in this render pass so pDepthInputAttachmentIndex is implicitly NULL";
+        }
+        skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(), "%s", ss.str().c_str());
     }
 
     if (!EqualValuesOrBothNull(pipeline_stencil_index, cb_state.rendering_attachments.stencil_index)) {
         const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
-        if (cb_state.rendering_attachments.set_color_indexes) {
-            skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(),
-                            "The pipeline VkRenderingInputAttachmentIndexInfo::pStencilInputAttachmentIndex is %s but "
-                            "vkCmdSetRenderingInputAttachmentIndices last set pStencilInputAttachmentIndex to %s",
-                            string_AttachmentPointer(pipeline_stencil_index).c_str(),
-                            string_AttachmentPointer(cb_state.rendering_attachments.stencil_index).c_str());
-        } else {
-            skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(),
-                            "vkCmdSetRenderingAttachmentLocations was not called in this render pass was not called "
-                            "in this render pass, so its pStencilInputAttachmentIndex is implicitly NULL, "
-                            "but VkRenderingInputAttachmentIndexInfo::pStencilInputAttachmentIndex is %s",
-                            string_AttachmentPointer(pipeline_stencil_index).c_str());
+        std::stringstream ss;
+        ss << "The pipeline VkRenderingInputAttachmentIndexInfo::pStencilInputAttachmentIndex is "
+           << string_AttachmentPointer(pipeline_stencil_index);
+        if (!explicit_pipeline) {
+            ss << " (implicitly because the pipeline was created without VkRenderingInputAttachmentIndexInfo)";
         }
+        ss << ", but doesn't match this render pass instance because vkCmdSetRenderingInputAttachmentIndices ";
+        if (cb_state.rendering_attachments.set_color_indexes) {
+            ss << "last set pStencilInputAttachmentIndex to "
+               << string_AttachmentPointer(cb_state.rendering_attachments.stencil_index);
+        } else {
+            ss << "was not called in this render pass so pStencilInputAttachmentIndex is implicitly NULL";
+        }
+        skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(), "%s", ss.str().c_str());
     }
     return skip;
 }
