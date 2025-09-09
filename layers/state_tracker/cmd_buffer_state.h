@@ -107,10 +107,7 @@ struct AttachmentInfo {
     bool IsColor() const { return type == Type::Color; }
     bool IsDepth() const;
     bool IsStencil() const;
-    bool IsDepthOrStencil() const {
-        return type == Type::DepthStencil || type == Type::Depth || type == Type::DepthResolve || type == Type::Stencil ||
-               type == Type::StencilResolve;
-    }
+    bool IsDepthOrStencil() const { return type == Type::DepthStencil || type == Type::Depth || type == Type::Stencil; }
     bool IsFragmentDensityMap() const { return type == Type::FragmentDensityMap; }
     bool IsFragmentShadingRate() const { return type == Type::FragmentShadingRate; }
 
