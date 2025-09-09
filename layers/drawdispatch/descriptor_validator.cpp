@@ -318,6 +318,23 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     return skip;
 }
 
+static const char *SuggestImageViewType(spv::Dim dim, bool is_image_array) {
+    VkImageViewType suggest = VK_IMAGE_VIEW_TYPE_MAX_ENUM;
+    if (dim == spv::Dim1D) {
+        suggest = is_image_array ? VK_IMAGE_VIEW_TYPE_1D : VK_IMAGE_VIEW_TYPE_1D_ARRAY;
+    } else if (dim == spv::Dim2D) {
+        suggest = is_image_array ? VK_IMAGE_VIEW_TYPE_2D : VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    } else if (dim == spv::Dim3D) {
+        suggest = VK_IMAGE_VIEW_TYPE_3D;
+    } else if (dim == spv::DimCube) {
+        suggest = is_image_array ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+    } else {
+        return "(No matching VkImageViewTyp)";
+    }
+
+    return string_VkImageViewType(suggest);
+}
+
 // 'index' is the index into the descriptor
 bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVariable &resource_variable, const uint32_t index,
                                              VkDescriptorType descriptor_type, const ImageDescriptor &image_descriptor) const {
@@ -412,11 +429,18 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         }
         if (!valid_dim) {
             const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view);
-            skip |= LogError(vuids->image_view_dim_07752, objlist, loc.Get(),
-                             "the %s ImageView type is %s but the OpTypeImage has (Dim = %s) and (Arrayed = %" PRIu32 ").%s",
-                             DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
-                             string_VkImageViewType(image_view_ci.viewType), string_SpvDim(dim), is_image_array,
-                             DescribeInstruction().c_str());
+            skip |= LogError(
+                vuids->image_view_dim_07752, objlist, loc.Get(),
+                "the %s VkImageViewType is %s but the OpTypeImage has (Dim = %s) and (Arrayed = %" PRIu32
+                ").\nEither fix in shader or update the VkImageViewType to %s%s%s",
+                DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
+                string_VkImageViewType(image_view_ci.viewType), string_SpvDim(dim), is_image_array,
+                SuggestImageViewType(dim, is_image_array),
+                (is_gpu_av && resource_variable.array_length > 1)
+                    ? "\nAdvice: The dimension is tied to descriptor variable, so for descriptor indexing, you might need to "
+                      "express two different arrays of different types that share the same descriptor binding."
+                    : "",
+                DescribeInstruction().c_str());
         }
 
         const uint32_t view_numeric_type = spirv::GetFormatType(image_view_ci.format);
