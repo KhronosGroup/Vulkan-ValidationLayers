@@ -21,12 +21,10 @@ static VkLayerSettingsCreateInfoEXT kDeprecationSettingCreateInfo = {VK_STRUCTUR
 class NegativeDeprecation : public DeprecationTest {};
 
 TEST_F(NegativeDeprecation, RenderPass2Extension) {
+    AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework(&kDeprecationSettingCreateInfo));
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
-    if (!DeviceExtensionSupported(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)) {
-        GTEST_SKIP() << "required extension not supported";
-    }
 
     m_errorMonitor->SetDesiredWarning("WARNING-deprecation-renderpass2");
     CreateRenderPass();
@@ -37,6 +35,8 @@ TEST_F(NegativeDeprecation, RenderPass2Extension) {
 }
 
 TEST_F(NegativeDeprecation, MultipleDifferentWarnings) {
+    AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework(&kDeprecationSettingCreateInfo));
     RETURN_IF_SKIP(InitState());
     if (IsPlatformMockICD()) {
@@ -44,10 +44,6 @@ TEST_F(NegativeDeprecation, MultipleDifferentWarnings) {
         GTEST_SKIP() << "Github Action doesn't unload VVL and static reported bool is not reset";
     }
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
-    if (!DeviceExtensionSupported(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME) ||
-        !DeviceExtensionSupported(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME)) {
-        GTEST_SKIP() << "required extension not supported";
-    }
 
     VkSubpassDescription subpass = {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -73,6 +69,8 @@ TEST_F(NegativeDeprecation, MuteSingleWarning) {
 
     VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 2, layer_settings};
 
+    AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework(&layer_setting_ci));
     RETURN_IF_SKIP(InitState());
     if (IsPlatformMockICD()) {
@@ -80,10 +78,6 @@ TEST_F(NegativeDeprecation, MuteSingleWarning) {
         GTEST_SKIP() << "Github Action doesn't unload VVL and static reported bool is not reset";
     }
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
-    if (!DeviceExtensionSupported(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME) ||
-        !DeviceExtensionSupported(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME)) {
-        GTEST_SKIP() << "required extension not supported";
-    }
 
     VkSubpassDescription subpass = {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -103,6 +97,13 @@ TEST_F(NegativeDeprecation, GetPhysicalDeviceProperties2Extension) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework(&kDeprecationSettingCreateInfo));
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
+    if (IsPlatformMockICD()) {
+        // Works locally
+        GTEST_SKIP() << "Github Action doesn't unload VVL and static reported bool is not reset";
+    }
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+    GTEST_SKIP() << "Android doesn't unload VVL and static reported bool is not reset";
+#endif
 
     m_errorMonitor->SetDesiredWarning("WARNING-deprecation-gpdp2");
     VkPhysicalDeviceFeatures features{};

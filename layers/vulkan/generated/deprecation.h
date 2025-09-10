@@ -29,16 +29,14 @@
 
 namespace deprecation {
 
+// We currently only check if the extension is enabled, if we decide in the future to check for support, instance extensions
+// we can try and use DispatchEnumerateInstanceExtensionProperties, but will likely run into many loader related issues.
 class Instance : public vvl::base::Instance {
     using BaseClass = vvl::base::Instance;
 
   public:
     Instance(vvl::dispatch::Instance* dispatch) : BaseClass(dispatch, LayerObjectTypeDeprecation) {}
 
-    void PostCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                      VkInstance* pInstance, const RecordObject& record_obj) override;
-
-    bool supported_vk_khr_get_physical_device_properties2 = false;
     bool PreCallValidateGetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* pFeatures,
                                                   const ErrorObject& error_obj) const override;
     bool PreCallValidateGetPhysicalDeviceFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
@@ -76,9 +74,6 @@ class Device : public vvl::base::Device {
     ~Device() {}
     Instance* instance;
 
-    void FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) override;
-    bool supported_vk_khr_create_renderpass2 = false;
-    bool supported_vk_khr_dynamic_rendering_local_read = false;
     bool PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
                                           const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer,
                                           const ErrorObject& error_obj) const override;

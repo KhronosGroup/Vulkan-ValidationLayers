@@ -44,41 +44,33 @@ TEST_F(PositiveDeprecation, SettingExplicitOff) {
                                              &kVkFalse};
     VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &layer_setting};
 
+    AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework(&layer_setting_ci));
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
-    if (!DeviceExtensionSupported(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)) {
-        GTEST_SKIP() << "required extension not supported";
-    }
-
     CreateRenderPass();
 }
 
 TEST_F(PositiveDeprecation, SettingDefault) {
     TEST_DESCRIPTION("Make sure default settings have no warning");
+    AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
-    if (!DeviceExtensionSupported(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)) {
-        GTEST_SKIP() << "required extension not supported";
-    }
-
     CreateRenderPass();
 }
 
 TEST_F(PositiveDeprecation, MuteMultipleWarnings) {
-    const char *ids[] = {"WARNING-deprecation-renderpass2", "WARNING-deprecation-dynamicrendering"};
-    VkLayerSettingEXT layer_settings[2] = {
+    const char *ids[] = {"WARNING-deprecation-gpdp2", "WARNING-deprecation-renderpass2", "WARNING-deprecation-dynamicrendering"};
+    VkLayerSettingEXT layer_settings[3] = {
         {OBJECT_LAYER_NAME, "deprecation_detection", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
-        {OBJECT_LAYER_NAME, "message_id_filter", VK_LAYER_SETTING_TYPE_STRING_EXT, 2, ids}};
+        {OBJECT_LAYER_NAME, "message_id_filter", VK_LAYER_SETTING_TYPE_STRING_EXT, 3, ids}};
     VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 2, layer_settings};
 
+    AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework(&layer_setting_ci));
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
-    if (!DeviceExtensionSupported(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME) ||
-        !DeviceExtensionSupported(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME)) {
-        GTEST_SKIP() << "required extension not supported";
-    }
 
     VkSubpassDescription subpass = {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
