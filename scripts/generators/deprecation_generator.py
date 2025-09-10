@@ -26,6 +26,55 @@ class DeprecationGenerator(BaseGenerator):
         self.all_device_extensions = set()
         self.all_instance_extensions = set()
 
+        # Try and provide a mapping of the "new" function to replace
+        # (This should really be in the vk.xml)
+        self.replacement = {
+            "vkGetPhysicalDeviceFeatures" : {
+                "version" : "vkGetPhysicalDeviceFeatures2",
+                "extension" : "vkGetPhysicalDeviceFeatures2KHR",
+            },
+            "vkGetPhysicalDeviceFormatProperties" : {
+                "version" : "vkGetPhysicalDeviceFormatProperties2",
+                "extension" : "vkGetPhysicalDeviceFormatProperties2KHR",
+            },
+            "vkGetPhysicalDeviceImageFormatProperties" : {
+                "version" : "vkGetPhysicalDeviceImageFormatProperties2",
+                "extension" : "vkGetPhysicalDeviceImageFormatProperties2KHR",
+            },
+            "vkGetPhysicalDeviceProperties" : {
+                "version" : "vkGetPhysicalDeviceProperties2",
+                "extension" : "vkGetPhysicalDeviceProperties2KHR",
+            },
+            "vkGetPhysicalDeviceQueueFamilyProperties" : {
+                "version" : "vkGetPhysicalDeviceQueueFamilyProperties2",
+                "extension" : "vkGetPhysicalDeviceQueueFamilyProperties2KHR",
+            },
+            "vkGetPhysicalDeviceMemoryProperties" : {
+                "version" : "vkGetPhysicalDeviceMemoryProperties2",
+                "extension" : "vkGetPhysicalDeviceMemoryProperties2KHR",
+            },
+            "vkGetPhysicalDeviceSparseImageFormatProperties" : {
+                "version" : "vkGetPhysicalDeviceSparseImageFormatProperties2",
+                "extension" : "vkGetPhysicalDeviceSparseImageFormatProperties2KHR",
+            },
+            "vkCreateRenderPass" : {
+                "version" : "vkCreateRenderPass2",
+                "extension" : "vkCreateRenderPass2KHR",
+            },
+            "vkCmdBeginRenderPass" : {
+                "version" : "vkCmdBeginRenderPass2",
+                "extension" : "vkCmdBeginRenderPass2KHR",
+            },
+            "vkCmdNextSubpass" : {
+                "version" : "vkCmdNextSubpass2",
+                "extension" : "vkCmdNextSubpass2KHR",
+            },
+            "vkCmdEndRenderPass" : {
+                "version" : "vkCmdEndRenderPass2",
+                "extension" : "vkCmdEndRenderPass2KHR",
+            },
+        }
+
     def generate(self):
         self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
             // See {os.path.basename(__file__)} for modifications
@@ -74,20 +123,15 @@ class DeprecationGenerator(BaseGenerator):
 
             namespace deprecation {
 
+            // We currently only check if the extension is enabled, if we decide in the future to check for support, instance extensions
+            // we can try and use DispatchEnumerateInstanceExtensionProperties, but will likely run into many loader related issues.
             class Instance : public vvl::base::Instance {
                 using BaseClass = vvl::base::Instance;
 
             public:
                 Instance(vvl::dispatch::Instance *dispatch) : BaseClass(dispatch, LayerObjectTypeDeprecation) {}
 
-                void PostCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                                  VkInstance* pInstance, const RecordObject& record_obj) override;
-
         ''')
-
-        for extension in sorted(self.all_instance_extensions):
-            out.append(f'bool supported_{extension.lower()} = false;')
-        out.append('\n')
 
         for command in [x for x in self.vk.commands.values() if x.deprecate and x.instance]:
             prototype = (command.cPrototype.split('VKAPI_CALL ')[1])[2:-1]
@@ -106,11 +150,8 @@ class DeprecationGenerator(BaseGenerator):
                 ~Device() {}
                 Instance *instance;
 
-                void FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) override;
         ''')
 
-        for extension in sorted(self.all_device_extensions):
-            out.append(f'bool supported_{extension.lower()} = false;')
         out.append('\n')
 
         for command in [x for x in self.vk.commands.values() if x.deprecate and x.device]:
@@ -130,52 +171,9 @@ class DeprecationGenerator(BaseGenerator):
         out = []
         out.append('''
             #include "deprecation.h"
-            #include "generated/dispatch_functions.h"
 
             namespace deprecation {
-
-            void Instance::PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-                                                            VkInstance *pInstance, const RecordObject &record_obj) {
-                if (record_obj.result != VK_SUCCESS) {
-                    return;
-                }
-
-                // Tried to use DispatchEnumerateInstanceExtensionProperties but ran into many loader related issues
-                // For now, just check if they have enabled the extension (instead of if it supported)
-
         ''')
-        for extension in sorted(self.all_instance_extensions):
-            out.append(f'''
-                if (IsExtEnabled(extensions.{extension.lower()})) {{
-                    supported_{extension.lower()} = true;
-                }}
-            ''')
-        out.append('''
-            }
-            ''')
-
-        out.append('''
-
-            void Device::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) {
-                std::vector<VkExtensionProperties> ext_props{};
-                uint32_t ext_count = 0;
-                DispatchEnumerateDeviceExtensionProperties(physical_device, nullptr, &ext_count, nullptr);
-                ext_props.resize(ext_count);
-                DispatchEnumerateDeviceExtensionProperties(physical_device, nullptr, &ext_count, ext_props.data());
-                for (const auto& prop : ext_props) {
-                    vvl::Extension extension = GetExtension(prop.extensionName);
-        ''')
-        for extension in sorted(self.all_device_extensions):
-            out.append(f'''
-                if (extension == vvl::Extension::_{extension}) {{
-                    supported_{extension.lower()} = true;
-                }}
-            ''')
-
-        out.append('''
-                }
-            }
-            ''')
 
         for command in [x for x in self.vk.commands.values() if x.deprecate]:
             # There is really no good use to warn developer both the create and destroy are deprecated
@@ -185,6 +183,7 @@ class DeprecationGenerator(BaseGenerator):
             className = 'Device' if command.device else 'Instance'
             handleName = 'VkDevice' if command.device else 'VkInstance'
             objName = 'device' if command.device else 'physicalDevice'
+            replacement = "which contains the new feature to replace it"
 
             prototype = (command.cPrototype.split('VKAPI_CALL ')[1])[2:-1]
             prePrototype = prototype.replace(')', ', const ErrorObject& error_obj)')
@@ -200,11 +199,14 @@ class DeprecationGenerator(BaseGenerator):
                 if firstCheck:
                     firstCheck = False
 
+                if command.name in self.replacement:
+                    replacement = f'which contains {self.replacement[command.name]["version"]} that can be used instead'
+
                 out.append(f'''
                     {logic} (api_version >= {command.deprecate.version.nameApi}) {{
                         reported = true;
                         LogWarning("WARNING-{command.deprecate.link}", {objName}, error_obj.location,
-                            "{command.name} is deprecated and this {handleName} supports {command.deprecate.version.name} to replace it.\\nSee more information about this deprecation in the specification: https://docs.vulkan.org/spec/latest/appendices/deprecation.html#{command.deprecate.link}");
+                            "{command.name} is deprecated and this {handleName} was created with {command.deprecate.version.name} {replacement}.\\nSee more information about this deprecation in the specification: https://docs.vulkan.org/spec/latest/appendices/deprecation.html#{command.deprecate.link}");
                     }}''')
 
             for extension in command.deprecate.extensions:
@@ -212,11 +214,14 @@ class DeprecationGenerator(BaseGenerator):
                 if firstCheck:
                     firstCheck = False
 
+                if command.name in self.replacement:
+                    replacement = f'which contains {self.replacement[command.name]["extension"]} that can be used instead'
+
                 out.append(f'''
-                    {logic} (supported_{extension.lower()}) {{
+                    {logic} (IsExtEnabled(extensions.{extension.lower()})) {{
                         reported = true;
                         LogWarning("WARNING-{command.deprecate.link}", {objName}, error_obj.location,
-                            "{command.name} is deprecated and this {handleName} supports {extension} to replace it.\\nSee more information about this deprecation in the specification: https://docs.vulkan.org/spec/latest/appendices/deprecation.html#{command.deprecate.link}");
+                            "{command.name} is deprecated and this {handleName} enabled the {extension} extension {replacement}.\\nSee more information about this deprecation in the specification: https://docs.vulkan.org/spec/latest/appendices/deprecation.html#{command.deprecate.link}");
                     }}''')
 
             # For things deprecated in Vulkan 1.0

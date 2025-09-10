@@ -15,7 +15,7 @@ This all works by first marking things with a `<deprecate>` tags in the [vk.xml]
 
 When the `Deprecation Detection` setting is enabled, it will report **warnings** when using deprecated functionality of the API in Vulkan.
 
-- It will only report if the device supports the version/extensions that deprecated the functionality.
+- It will only report if the developer has **explicitly enabled** the version/extensions that deprecated the functionality.
 - It will only report the first usage of the functionality.
     - This is to prevent getting spammed with duplicate error messages
 - These act like any other VUID, which can be muted.
