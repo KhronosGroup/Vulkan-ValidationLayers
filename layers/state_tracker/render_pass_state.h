@@ -82,6 +82,7 @@ class RenderPass : public StateObject {
     const bool rasterization_enabled{true};
     const vku::safe_VkRenderingInfo dynamic_rendering_begin_rendering_info;
     const vku::safe_VkPipelineRenderingCreateInfo dynamic_pipeline_rendering_create_info;
+    // when a secondary command buffer is recorded with VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT
     const vku::safe_VkCommandBufferInheritanceRenderingInfo inheritance_rendering_info;
     using SubpassVec = std::vector<uint32_t>;
     using SelfDepVec = std::vector<SubpassVec>;
@@ -106,7 +107,7 @@ class RenderPass : public StateObject {
 
     // vkCmdBeginRendering
     RenderPass(VkRenderingInfo const *pRenderingInfo, bool rasterization_enabled);
-    // vkBeginCommandBuffer (dynamic rendering in secondary)
+    // vkBeginCommandBuffer (dynamic rendering in secondary commadn buffer)
     explicit RenderPass(VkCommandBufferInheritanceRenderingInfo const *pInheritanceRenderingInfo);
 
     // vkCreateGraphicsPipelines (dynamic rendering state tied to pipeline state)
@@ -120,7 +121,10 @@ class RenderPass : public StateObject {
     // prefer this to checking the individual flags unless you REALLY need to check one or the other
     // Same as checking if the handle != VK_NULL_HANDLE
     bool UsesDynamicRendering() const { return use_dynamic_rendering || use_dynamic_rendering_inherited; }
+    // These helpers are because at draw time, we won't know if the values are from VkRenderingInfo or
+    // VkCommandBufferInheritanceRenderingInfo
     uint32_t GetDynamicRenderingViewMask() const;
+    VkRenderingFlags GetRenderingFlags() const;
     uint32_t GetViewMaskBits(uint32_t subpass) const;
     const VkMultisampledRenderToSingleSampledInfoEXT *GetMSRTSSInfo(uint32_t subpass) const;
 };

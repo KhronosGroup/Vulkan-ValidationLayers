@@ -5262,12 +5262,14 @@ bool CoreChecks::PreCallValidateCmdSetRenderingAttachmentLocations(VkCommandBuff
                          "vkCmdBeginRendering was not called.");
     }
 
-    if (pLocationInfo->colorAttachmentCount != rp_state.dynamic_rendering_begin_rendering_info.colorAttachmentCount) {
+    if (pLocationInfo->colorAttachmentCount != cb_state.GetDynamicRenderingColorAttachmentCount()) {
         const LogObjectList objlist(commandBuffer, rp_state.VkHandle());
         skip |= LogError("VUID-vkCmdSetRenderingAttachmentLocations-pLocationInfo-09510", objlist,
                          error_obj.location.dot(Field::pLocationInfo).dot(Field::colorAttachmentCount),
-                         "(%" PRIu32 ") is not equal to count specified in VkRenderingInfo (%" PRIu32 ").",
-                         pLocationInfo->colorAttachmentCount, rp_state.dynamic_rendering_begin_rendering_info.colorAttachmentCount);
+                         "(%" PRIu32 ") is not equal to %s::colorAttachmentCount (%" PRIu32 ") when render pass began",
+                         pLocationInfo->colorAttachmentCount,
+                         rp_state.use_dynamic_rendering_inherited ? "VkCommandBufferInheritanceRenderingInfo" : "VkRenderingInfo",
+                         cb_state.GetDynamicRenderingColorAttachmentCount());
     }
 
     skip |= ValidateRenderingAttachmentLocations(*pLocationInfo, commandBuffer, loc_info.dot(Field::pLocationInfo));
@@ -5378,13 +5380,15 @@ bool CoreChecks::PreCallValidateCmdSetRenderingInputAttachmentIndices(VkCommandB
         skip |= LogError("VUID-vkCmdSetRenderingInputAttachmentIndices-commandBuffer-09518", objlist, error_obj.location,
                          "vkCmdBeginRendering was not called.");
     }
-    if (pLocationInfo->colorAttachmentCount != rp_state.dynamic_rendering_begin_rendering_info.colorAttachmentCount) {
+    if (pLocationInfo->colorAttachmentCount != cb_state.GetDynamicRenderingColorAttachmentCount()) {
         const LogObjectList objlist(commandBuffer, rp_state.VkHandle());
         const Location loc = error_obj.location.dot(Struct::VkRenderingInputAttachmentIndexInfo, Field::colorAttachmentCount);
 
         skip |= LogError("VUID-vkCmdSetRenderingInputAttachmentIndices-pInputAttachmentIndexInfo-09517", objlist, loc,
-                         "(%" PRIu32 ") is not equal to the attachment count the render pass being begun (%" PRIu32 ")",
-                         pLocationInfo->colorAttachmentCount, rp_state.dynamic_rendering_begin_rendering_info.colorAttachmentCount);
+                         "(%" PRIu32 ") is not equal to %s::colorAttachmentCount (%" PRIu32 ") when render pass began",
+                         pLocationInfo->colorAttachmentCount,
+                         rp_state.use_dynamic_rendering_inherited ? "VkCommandBufferInheritanceRenderingInfo" : "VkRenderingInfo",
+                         cb_state.GetDynamicRenderingColorAttachmentCount());
     }
 
     skip |= ValidateRenderingInputAttachmentIndices(*pLocationInfo, commandBuffer, error_obj.location);

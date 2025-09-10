@@ -568,7 +568,7 @@ bool CoreChecks::PreCallValidateCmdExecuteGeneratedCommandsEXT(VkCommandBuffer c
     if (const vvl::RenderPass* rp_state = cb_state.active_render_pass.get()) {
         uint32_t view_mask = 0;
         if (rp_state->UsesDynamicRendering()) {
-            view_mask = rp_state->dynamic_rendering_begin_rendering_info.viewMask;
+            view_mask = rp_state->GetDynamicRenderingViewMask();
         } else {
             const auto* render_pass_info = rp_state->create_info.ptr();
             const auto subpass_desc = render_pass_info->pSubpasses[cb_state.GetActiveSubpass()];

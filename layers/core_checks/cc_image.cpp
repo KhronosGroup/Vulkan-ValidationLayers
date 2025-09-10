@@ -1176,7 +1176,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
             stencil_view_state = cb_state.GetActiveAttachmentImageViewState(
                 cb_state.GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::Stencil));
 
-            view_mask = rp_state->dynamic_rendering_begin_rendering_info.viewMask;
+            view_mask = rp_state->GetDynamicRenderingViewMask();
             external_format_resolve = cb_state.HasExternalFormatResolveAttachment();
         } else {
             const auto *renderpass_create_info = rp_state->create_info.ptr();

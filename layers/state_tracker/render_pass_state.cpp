@@ -280,6 +280,7 @@ static void InitRenderPassState(vvl::RenderPass &render_pass) {
 
 namespace vvl {
 
+// vkCreateRenderPass2
 RenderPass::RenderPass(VkRenderPass handle, VkRenderPassCreateInfo2 const *pCreateInfo)
     : StateObject(handle, kVulkanObjectTypeRenderPass),
       create_info(pCreateInfo),
@@ -294,6 +295,7 @@ static vku::safe_VkRenderPassCreateInfo2 ConvertCreateInfo(const VkRenderPassCre
     return create_info_2;
 }
 
+// vkCreateRenderPass
 RenderPass::RenderPass(VkRenderPass handle, VkRenderPassCreateInfo const *pCreateInfo)
     : StateObject(handle, kVulkanObjectTypeRenderPass),
       create_info(ConvertCreateInfo(*pCreateInfo)),
@@ -306,6 +308,7 @@ RenderPass::RenderPass(VkRenderPass handle, VkRenderPassCreateInfo const *pCreat
 const VkPipelineRenderingCreateInfo VkPipelineRenderingCreateInfo_default = {
     VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO, nullptr, 0, 0, nullptr, VK_FORMAT_UNDEFINED, VK_FORMAT_UNDEFINED};
 
+// vkCreateGraphicsPipelines (dynamic rendering state tied to pipeline state)
 RenderPass::RenderPass(VkPipelineRenderingCreateInfo const *pPipelineRenderingCreateInfo, bool rasterization_enabled)
     : StateObject(static_cast<VkRenderPass>(VK_NULL_HANDLE), kVulkanObjectTypeRenderPass),
       use_dynamic_rendering(true),
@@ -371,6 +374,15 @@ uint32_t RenderPass::GetDynamicRenderingViewMask() const {
     return 0;
 }
 
+VkRenderingFlags RenderPass::GetRenderingFlags() const {
+    if (use_dynamic_rendering_inherited) {
+        return inheritance_rendering_info.flags;
+    } else if (use_dynamic_rendering) {
+        return dynamic_rendering_begin_rendering_info.flags;
+    }
+    return 0;
+}
+
 uint32_t RenderPass::GetViewMaskBits(uint32_t subpass) const {
     if (use_dynamic_rendering_inherited) {
         return GetBitSetCount(inheritance_rendering_info.viewMask);
@@ -393,6 +405,7 @@ const VkMultisampledRenderToSingleSampledInfoEXT *RenderPass::GetMSRTSSInfo(uint
     return vku::FindStructInPNextChain<VkMultisampledRenderToSingleSampledInfoEXT>(create_info.pSubpasses[subpass].pNext);
 }
 
+// vkCmdBeginRendering
 RenderPass::RenderPass(VkRenderingInfo const *pRenderingInfo, bool rasterization_enabled)
     : StateObject(static_cast<VkRenderPass>(VK_NULL_HANDLE), kVulkanObjectTypeRenderPass),
       use_dynamic_rendering(true),
@@ -402,6 +415,7 @@ RenderPass::RenderPass(VkRenderingInfo const *pRenderingInfo, bool rasterization
       rasterization_enabled(rasterization_enabled),
       dynamic_rendering_begin_rendering_info((pRenderingInfo && rasterization_enabled) ? pRenderingInfo : nullptr) {}
 
+// vkBeginCommandBuffer (dynamic rendering in secondary commadn buffer)
 RenderPass::RenderPass(VkCommandBufferInheritanceRenderingInfo const *pInheritanceRenderingInfo)
     : StateObject(static_cast<VkRenderPass>(VK_NULL_HANDLE), kVulkanObjectTypeRenderPass),
       use_dynamic_rendering(false),
