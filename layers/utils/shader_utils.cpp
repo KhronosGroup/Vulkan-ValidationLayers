@@ -193,19 +193,19 @@ void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const Dev
 
     switch (spirv_environment) {
         case SPV_ENV_VULKAN_1_4:
-            ss << " --target_env vulkan1.4";
+            ss << " --target-env vulkan1.4";
             break;
         case SPV_ENV_VULKAN_1_3:
-            ss << " --target_env vulkan1.3";
+            ss << " --target-env vulkan1.3";
             break;
         case SPV_ENV_VULKAN_1_2:
-            ss << " --target_env vulkan1.2";
+            ss << " --target-env vulkan1.2";
             break;
         case SPV_ENV_VULKAN_1_1:
-            ss << " --target_env vulkan1.1";
+            ss << " --target-env vulkan1.1";
             break;
         case SPV_ENV_VULKAN_1_0:
-            ss << " --target_env vulkan1.0";
+            ss << " --target-env vulkan1.0";
             break;
         default:
             break;
