@@ -89,8 +89,6 @@ TEST_F(PositiveExternalMemorySync, ImportMemoryFd) {
     vkt::DeviceMemory memory_import(*m_device, alloc_info);
 }
 
-// Because of aligned_alloc
-#if defined(__linux__) && !defined(__ANDROID__)
 TEST_F(PositiveExternalMemorySync, ImportMemoryHost) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_EXTERNAL_MEMORY_HOST_EXTENSION_NAME);
@@ -100,7 +98,7 @@ TEST_F(PositiveExternalMemorySync, ImportMemoryHost) {
     GetPhysicalDeviceProperties2(memory_host_props);
 
     VkDeviceSize alloc_size = memory_host_props.minImportedHostPointerAlignment;
-    void* host_memory = aligned_alloc(alloc_size, alloc_size);
+    void *host_memory = ::operator new((size_t)alloc_size, std::align_val_t(alloc_size));
     if (!host_memory) {
         GTEST_SKIP() << "Can't allocate host memory";
     }
@@ -121,14 +119,13 @@ TEST_F(PositiveExternalMemorySync, ImportMemoryHost) {
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&import_info);
     alloc_info.allocationSize = alloc_size;
     if (!m_device->Physical().SetMemoryType(host_pointer_props.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
-        free(host_memory);
+        ::operator delete(host_memory, std::align_val_t(alloc_size));
         GTEST_SKIP() << "Failed to set memory type.";
     }
     vkt::DeviceMemory memory_import(*m_device, alloc_info);
 
-    free(host_memory);
+    ::operator delete(host_memory, std::align_val_t(alloc_size));
 }
-#endif
 
 TEST_F(PositiveExternalMemorySync, ExternalMemory) {
     TEST_DESCRIPTION("Perform a copy through a pair of buffers linked by external memory");

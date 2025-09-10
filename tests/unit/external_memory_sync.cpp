@@ -2580,8 +2580,6 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFdImageSupport) {
     m_errorMonitor->VerifyFound();
 }
 
-// Because of aligned_alloc
-#if defined(__linux__) && !defined(__ANDROID__)
 TEST_F(NegativeExternalMemorySync, GetMemoryHostHandleType) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_EXTERNAL_MEMORY_HOST_EXTENSION_NAME);
@@ -2591,7 +2589,7 @@ TEST_F(NegativeExternalMemorySync, GetMemoryHostHandleType) {
     GetPhysicalDeviceProperties2(memory_host_props);
 
     VkDeviceSize alloc_size = memory_host_props.minImportedHostPointerAlignment;
-    void *host_memory = aligned_alloc(alloc_size, alloc_size);
+    void* host_memory = ::operator new((size_t)alloc_size, std::align_val_t(alloc_size));
     if (!host_memory) {
         GTEST_SKIP() << "Can't allocate host memory";
     }
@@ -2601,7 +2599,7 @@ TEST_F(NegativeExternalMemorySync, GetMemoryHostHandleType) {
     vk::GetMemoryHostPointerPropertiesEXT(*m_device, VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT, host_memory,
                                           &host_pointer_props);
     m_errorMonitor->VerifyFound();
-    free(host_memory);
+    ::operator delete(host_memory, std::align_val_t(alloc_size));
 }
 
 TEST_F(NegativeExternalMemorySync, GetMemoryHostAlignment) {
@@ -2614,13 +2612,13 @@ TEST_F(NegativeExternalMemorySync, GetMemoryHostAlignment) {
 
     VkDeviceSize alloc_size = memory_host_props.minImportedHostPointerAlignment;
     VkDeviceSize bad_alloc_size = alloc_size / 4;
-    void *host_memory = aligned_alloc(bad_alloc_size, alloc_size);
+    void *host_memory = ::operator new((size_t)bad_alloc_size, std::align_val_t(alloc_size));
     if (!host_memory) {
         GTEST_SKIP() << "Can't allocate host memory";
     }
     const VkDeviceSize host_pointer = reinterpret_cast<VkDeviceSize>(host_memory);
     if (host_pointer % alloc_size == 0) {
-        free(host_memory);
+        ::operator delete(host_memory, std::align_val_t(bad_alloc_size));
         GTEST_SKIP() << "Can't create misaligned memory";  // when using ASAN
     }
     VkMemoryHostPointerPropertiesEXT host_pointer_props = vku::InitStructHelper();
@@ -2628,7 +2626,7 @@ TEST_F(NegativeExternalMemorySync, GetMemoryHostAlignment) {
     vk::GetMemoryHostPointerPropertiesEXT(*m_device, VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT, host_memory,
                                           &host_pointer_props);
     m_errorMonitor->VerifyFound();
-    free(host_memory);
+    ::operator delete(host_memory, std::align_val_t(bad_alloc_size));
 }
 
 TEST_F(NegativeExternalMemorySync, ImportMemoryHostDedicated) {
@@ -2641,7 +2639,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHostDedicated) {
     GetPhysicalDeviceProperties2(memory_host_props);
 
     VkDeviceSize alloc_size = memory_host_props.minImportedHostPointerAlignment;
-    void *host_memory = aligned_alloc(alloc_size, alloc_size);
+    void *host_memory = ::operator new((size_t)alloc_size, std::align_val_t(alloc_size));
     if (!host_memory) {
         GTEST_SKIP() << "Can't allocate host memory";
     }
@@ -2664,7 +2662,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHostDedicated) {
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&import_info);
     alloc_info.allocationSize = alloc_size;
     if (!m_device->Physical().SetMemoryType(host_pointer_props.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
-        free(host_memory);
+        ::operator delete(host_memory, std::align_val_t(alloc_size));
         GTEST_SKIP() << "Failed to set memory type.";
     }
 
@@ -2673,7 +2671,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHostDedicated) {
     vk::AllocateMemory(*m_device, &alloc_info, nullptr, &device_memory);
     m_errorMonitor->VerifyFound();
 
-    free(host_memory);
+    ::operator delete(host_memory, std::align_val_t(alloc_size));
 }
 
 TEST_F(NegativeExternalMemorySync, ImportMemoryHostMemoryIndex) {
@@ -2686,7 +2684,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHostMemoryIndex) {
     GetPhysicalDeviceProperties2(memory_host_props);
 
     VkDeviceSize alloc_size = memory_host_props.minImportedHostPointerAlignment;
-    void *host_memory = aligned_alloc(alloc_size, alloc_size);
+    void *host_memory = ::operator new((size_t)alloc_size, std::align_val_t(alloc_size));
     if (!host_memory) {
         GTEST_SKIP() << "Can't allocate host memory";
     }
@@ -2706,16 +2704,15 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHostMemoryIndex) {
         ((1 << m_device->Physical().memory_properties_.memoryTypeCount) - 1) & ~host_pointer_props.memoryTypeBits;
     bool found_type = m_device->Physical().SetMemoryType(unsupported_mem_type, &alloc_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     if (unsupported_mem_type == 0 || !found_type) {
-        free(host_memory);
+        ::operator delete(host_memory, std::align_val_t(alloc_size));
         GTEST_SKIP() << "Failed to find unsupported memory type.";
     }
     m_errorMonitor->SetDesiredError("VUID-VkMemoryAllocateInfo-memoryTypeIndex-01744");
     vkt::DeviceMemory memory_import(*m_device, alloc_info);
     m_errorMonitor->VerifyFound();
 
-    free(host_memory);
+    ::operator delete(host_memory, std::align_val_t(alloc_size));
 }
-#endif
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
 TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
