@@ -625,6 +625,11 @@ static VKAPI_ATTR void VKAPI_CALL FreeMemory(VkDevice device, VkDeviceMemory mem
     allocated_memory_size_map.erase(memory);
 }
 
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8776
+// things like shaderGroupBaseAlignment can be as big as 64, since these values are dynamically set in the Profile JSON, we need
+// to create the large alignment possible to satisfy them all
+static constexpr size_t memory_alignment = 64;
+
 static VKAPI_ATTR VkResult VKAPI_CALL MapMemory(VkDevice device, VkDeviceMemory memory, VkDeviceSize offset, VkDeviceSize size,
                                                 VkMemoryMapFlags flags, void** ppData) {
     unique_lock_t lock(global_lock);
@@ -635,15 +640,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL MapMemory(VkDevice device, VkDeviceMemory 
             size = 0x10000;
     }
 
-    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8776
-    // things like shaderGroupBaseAlignment can be as big as 64, since these values are dynamically set in the Profile JSON, we need
-    // to create the large alignment possible to satisfy them all
-    static const size_t memory_alignment = 64;
-#if defined(_WIN32)
-    void* map_addr = _aligned_malloc((size_t)size, memory_alignment);
-#else
-    void* map_addr = aligned_alloc(memory_alignment, (size_t)size);
-#endif
+    void* map_addr = ::operator new((size_t)size, std::align_val_t(memory_alignment));
     mapped_memory_map[memory].push_back(map_addr);
     *ppData = map_addr;
     return VK_SUCCESS;
@@ -652,11 +649,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL MapMemory(VkDevice device, VkDeviceMemory 
 static VKAPI_ATTR void VKAPI_CALL UnmapMemory(VkDevice device, VkDeviceMemory memory) {
     unique_lock_t lock(global_lock);
     for (auto map_addr : mapped_memory_map[memory]) {
-#if defined(_WIN32)
-        _aligned_free(map_addr);
-#else
-        free(map_addr);
-#endif
+        ::operator delete(map_addr, std::align_val_t(memory_alignment));
     }
     mapped_memory_map.erase(memory);
 }
