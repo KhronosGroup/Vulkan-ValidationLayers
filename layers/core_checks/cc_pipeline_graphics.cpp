@@ -4112,7 +4112,7 @@ bool CoreChecks::ValidateDrawPipelineFragmentDensityMapLayered(const vvl::Comman
     if (const auto *fragment_density_map_layered =
             vku::FindStructInPNextChain<VkPipelineFragmentDensityMapLayeredCreateInfoVALVE>(pipeline.GetCreateInfoPNext())) {
         if (rp_state.UsesDynamicRendering()) {
-            if (rp_state.dynamic_rendering_begin_rendering_info.flags & VK_RENDERING_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE) {
+            if (rp_state.GetRenderingFlags() & VK_RENDERING_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE) {
                 if (rp_state.dynamic_rendering_begin_rendering_info.layerCount >
                     fragment_density_map_layered->maxFragmentDensityMapLayers) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());

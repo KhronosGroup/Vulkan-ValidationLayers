@@ -1123,16 +1123,17 @@ bool CoreChecks::ValidateCmdExecuteCommandsRenderPass(const vvl::CommandBuffer &
         }
     }
 
-    if (cb_state.has_render_pass_instance && rp_state.UsesDynamicRendering() &&
-        !((rp_state.use_dynamic_rendering &&
-           (rp_state.dynamic_rendering_begin_rendering_info.flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT)) ||
-          (rp_state.use_dynamic_rendering_inherited &&
-           (rp_state.inheritance_rendering_info.flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT)))) {
-        const LogObjectList objlist(cb_state.Handle(), rp_state.Handle());
-        skip |= LogError("VUID-vkCmdExecuteCommands-flags-06024", objlist, loc,
-                         "VkRenderingInfo::flags must include "
+    if (cb_state.has_render_pass_instance && rp_state.UsesDynamicRendering()) {
+        const VkRenderingFlags flags = rp_state.GetRenderingFlags();
+        if ((flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT) == 0) {
+            const LogObjectList objlist(cb_state.Handle(), rp_state.Handle());
+            skip |=
+                LogError("VUID-vkCmdExecuteCommands-flags-06024", objlist, loc,
+                         "%s::flags must include "
                          "VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT when calling vkCmdExecuteCommands() within a "
-                         "render pass instance begun with vkCmdBeginRendering().");
+                         "render pass instance begun with vkCmdBeginRendering().",
+                         rp_state.use_dynamic_rendering_inherited ? "VkCommandBufferInheritanceRenderingInfo" : "VkRenderingInfo");
+        }
     }
     return skip;
 }
@@ -1305,7 +1306,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
         skip |= LogError("VUID-vkCmdExecuteCommands-flags-06026", objlist, secondary_cb_loc,
                          "(%s) is executed within a dynamic renderpass instance scope begun "
                          "by vkCmdBeginRendering(), but VkCommandBufferInheritanceRenderingInfo::flags (%s) does "
-                         "not match VkRenderingInfo::flags (%s) (excluding "
+                         "not match VkRenderingInfo::flags (%s)\n(this comparison is excluding "
                          "VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT or "
                          "VK_RENDERING_CONTENTS_INLINE_BIT_KHR).",
                          FormatHandle(secondary_cb_state.Handle()).c_str(),
