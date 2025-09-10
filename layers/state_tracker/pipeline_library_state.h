@@ -142,14 +142,6 @@ std::unique_ptr<const vku::safe_VkPipelineDepthStencilStateCreateInfo> ToSafeDep
     const vku::safe_VkPipelineDepthStencilStateCreateInfo &cbs);
 std::unique_ptr<const vku::safe_VkPipelineDepthStencilStateCreateInfo> ToSafeDepthStencilState(
     const VkPipelineDepthStencilStateCreateInfo &cbs);
-std::unique_ptr<const vku::safe_VkRenderingAttachmentLocationInfo> ToSafeAttachmentLocationState(
-    const vku::safe_VkRenderingAttachmentLocationInfo &cbs);
-std::unique_ptr<const vku::safe_VkRenderingAttachmentLocationInfo> ToSafeAttachmentLocationState(
-    const VkRenderingAttachmentLocationInfo &cbs);
-std::unique_ptr<const vku::safe_VkRenderingInputAttachmentIndexInfo> ToSafeAttachmentIndexState(
-    const vku::safe_VkRenderingInputAttachmentIndexInfo &cbs);
-std::unique_ptr<const vku::safe_VkRenderingInputAttachmentIndexInfo> ToSafeAttachmentIndexState(
-    const VkRenderingInputAttachmentIndexInfo &cbs);
 std::unique_ptr<const vku::safe_VkPipelineShaderStageCreateInfo> ToShaderStageCI(
     const vku::safe_VkPipelineShaderStageCreateInfo &cbs);
 std::unique_ptr<const vku::safe_VkPipelineShaderStageCreateInfo> ToShaderStageCI(const VkPipelineShaderStageCreateInfo &cbs);
@@ -168,9 +160,6 @@ struct FragmentShaderState : public PipelineLibraryState {
         if (create_info.pDepthStencilState) {
             ds_state = ToSafeDepthStencilState(*create_info.pDepthStencilState);
         }
-        if (const auto attachment_info = vku::FindStructInPNextChain<VkRenderingInputAttachmentIndexInfo>(create_info.pNext)) {
-            attachement_index = ToSafeAttachmentIndexState(*attachment_info);
-        }
         FragmentShaderState::SetFragmentShaderInfo(pipeline_state, *this, dev_data, create_info, stateless_data);
     }
 
@@ -182,8 +171,6 @@ struct FragmentShaderState : public PipelineLibraryState {
     std::shared_ptr<const vvl::PipelineLayout> pipeline_layout;
     std::unique_ptr<const vku::safe_VkPipelineMultisampleStateCreateInfo> ms_state;
     std::unique_ptr<const vku::safe_VkPipelineDepthStencilStateCreateInfo> ds_state;
-    // VK_KHR_dynamic_rendering_local_read
-    std::unique_ptr<const vku::safe_VkRenderingInputAttachmentIndexInfo> attachement_index;
 
     std::shared_ptr<const vvl::ShaderModule> fragment_shader;
     std::unique_ptr<const vku::safe_VkPipelineShaderStageCreateInfo> fragment_shader_ci;
@@ -228,9 +215,6 @@ struct FragmentOutputState : public PipelineLibraryState {
             legacy_dithering_enabled = (flags2->flags & VK_PIPELINE_CREATE_2_ENABLE_LEGACY_DITHERING_BIT_EXT) != 0;
         }
 
-        if (const auto attachment_info = vku::FindStructInPNextChain<VkRenderingAttachmentLocationInfo>(create_info.pNext)) {
-            attachement_locations = ToSafeAttachmentLocationState(*attachment_info);
-        }
         // TODO
         // auto format_ci = vku::FindStructInPNextChain<VkPipelineRenderingFormatCreateInfoKHR>(gpci->pNext);
     }
@@ -240,8 +224,6 @@ struct FragmentOutputState : public PipelineLibraryState {
 
     std::unique_ptr<const vku::safe_VkPipelineColorBlendStateCreateInfo> color_blend_state;
     std::unique_ptr<const vku::safe_VkPipelineMultisampleStateCreateInfo> ms_state;
-    // VK_KHR_dynamic_rendering_local_read
-    std::unique_ptr<const vku::safe_VkRenderingAttachmentLocationInfo> attachement_locations;
 
     AttachmentStateVector attachment_states;
 
