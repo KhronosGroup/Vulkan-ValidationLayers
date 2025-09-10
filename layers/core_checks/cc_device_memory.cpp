@@ -502,14 +502,13 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
             const LogObjectList objlist(device, dedicated_buffer);
             const Location buffer_loc = allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::buffer);
             if (auto buffer_state = Get<vvl::Buffer>(dedicated_buffer)) {
-                // Fix once https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7644 is approved
                 if (!IgnoreAllocationSize(*pAllocateInfo) && !is_external_memory &&
-                    (pAllocateInfo->allocationSize != buffer_state->requirements.size)) {
-                    skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-buffer-02965", objlist,
-                                     allocate_info_loc.dot(Field::allocationSize),
-                                     "(%" PRIu64 ") needs to be equal to %s (%s) VkMemoryRequirements::size (%" PRIu64 ").",
-                                     pAllocateInfo->allocationSize, buffer_loc.Fields().c_str(),
-                                     FormatHandle(dedicated_buffer).c_str(), buffer_state->requirements.size);
+                    (pAllocateInfo->allocationSize < buffer_state->requirements.size)) {
+                    skip |= LogError(
+                        "VUID-VkMemoryDedicatedAllocateInfo-buffer-02965", objlist, allocate_info_loc.dot(Field::allocationSize),
+                        "(%" PRIu64 ") needs to be greater than or equal to %s (%s) VkMemoryRequirements::size (%" PRIu64 ").",
+                        pAllocateInfo->allocationSize, buffer_loc.Fields().c_str(), FormatHandle(dedicated_buffer).c_str(),
+                        buffer_state->requirements.size);
                 }
                 if ((buffer_state->create_info.flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) != 0) {
                     skip |= LogError("VUID-VkMemoryDedicatedAllocateInfo-buffer-01436", objlist, buffer_loc,
