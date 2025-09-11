@@ -230,8 +230,8 @@ bool BufferAddressValidation<ChecksCount>::LogInvalidBuffers(const CoreChecks& v
 [[maybe_unused]] static std::string PrintBufferRanges(const CoreChecks& validator, vvl::span<vvl::Buffer* const> buffers) {
     std::ostringstream ss;
     for (const auto& buffer : buffers) {
-        ss << "  " << validator.FormatHandle(buffer->Handle()) << " : range " << string_range_hex(buffer->DeviceAddressRange())
-           << '\n';
+        ss << "  " << validator.FormatHandle(buffer->Handle()) << " : size " << buffer->create_info.size << " : range "
+           << string_range_hex(buffer->DeviceAddressRange()) << '\n';
     }
     return ss.str();
 }
