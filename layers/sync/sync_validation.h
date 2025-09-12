@@ -103,7 +103,7 @@ class SyncValidator : public vvl::DeviceProxy {
     bool ProcessUnresolvedBatch(UnresolvedBatch &unresolved_batch, SignalsUpdate &signals_update, BatchContextPtr &last_batch,
                                 bool &skip, const ErrorObject &error_obj) const;
 
-    void ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag);
+    void ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag, const LastSynchronizedPresent &last_synchronized_present);
     void ApplyAcquireWait(const AcquiredImage &acquired);
 
     std::vector<QueueBatchContext::Ptr> GetAllQueueBatchContexts();
@@ -116,6 +116,7 @@ class SyncValidator : public vvl::DeviceProxy {
     void UpdateSyncImageMemoryBindState(uint32_t count, const VkBindImageMemoryInfo *infos);
 
     std::shared_ptr<const QueueSyncState> GetQueueSyncStateShared(VkQueue queue) const;
+    std::shared_ptr<const QueueSyncState> GetQueueSyncStateShared(QueueId queue_id) const;
     QueueId GetQueueIdLimit() const { return queue_id_limit_; }
 
     std::vector<QueueBatchContext::ConstPtr> GetLastBatches(std::function<bool(const QueueBatchContext::ConstPtr &)> filter) const;
@@ -133,7 +134,8 @@ class SyncValidator : public vvl::DeviceProxy {
                                     const RecordObject &record_obj) override;
     void PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator,
                                    const RecordObject &record_obj) override;
-
+    void PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks *pAllocator,
+                                          const RecordObject &record_obj) override;
     bool SuppressedBoundDescriptorWAW(const HazardResult &hazard) const;
 
     void FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) override;
