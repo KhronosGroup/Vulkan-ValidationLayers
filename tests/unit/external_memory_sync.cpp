@@ -260,7 +260,7 @@ TEST_F(NegativeExternalMemorySync, BufferMemoryWithUnsupportedHandleType) {
     VkResult result = buffer.Memory().TryInit(*m_device, alloc_info);
     if (result != VK_SUCCESS) {
         GTEST_SKIP() << "vkAllocateMemory failed (probably due to unsupported handle type). Unable to reach vkBindBufferMemory to "
-                        "run valdiation";
+                        "run validation";
     }
 
     m_errorMonitor->SetDesiredError("VUID-VkExportMemoryAllocateInfo-handleTypes-09860");
