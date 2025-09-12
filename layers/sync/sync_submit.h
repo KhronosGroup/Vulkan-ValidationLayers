@@ -18,6 +18,7 @@
 #pragma once
 #include "sync/sync_commandbuffer.h"
 #include "state_tracker/queue_state.h"
+#include "containers/small_container.h"
 
 struct PresentedImage;
 class QueueBatchContext;
@@ -156,7 +157,7 @@ struct PresentedImage : public PresentedImageRecord {
     subresource_adapter::ImageRangeGenerator range_gen;
 
     PresentedImage() = default;
-    void UpdateMemoryAccess(SyncAccessIndex usage, ResourceUsageTag tag, AccessContext &access_context) const;
+    void UpdateMemoryAccess(SyncAccessIndex usage, ResourceUsageTag tag, AccessContext &access_context, SyncFlags flags = 0) const;
     PresentedImage(SyncValidator &sync_state, std::shared_ptr<QueueBatchContext> batch, VkSwapchainKHR swapchain,
                    uint32_t image_index, uint32_t present_index, ResourceUsageTag present_tag_);
     // For non-previsously presented images..
@@ -258,6 +259,18 @@ struct UnresolvedQueue {
     bool update_unresolved = false;
 };
 
+// Track the last synchronized presentation operation for each swapchain.
+// "Presentation is synchronized" means that we re-acquired previously
+// presented image and this batch context directly or indirectly waits for
+// the semaphore signaled by the acquire command.
+struct LastSynchronizedPresent {
+    small_vector<std::pair<VkSwapchainKHR, ResourceUsageTag>, 1> per_swapchain;
+
+    void Update(VkSwapchainKHR swapchain, ResourceUsageTag present_tag);
+    void Merge(const LastSynchronizedPresent &other);
+    void OnDestroySwapchain(VkSwapchainKHR swapchain);
+};
+
 class QueueBatchContext : public CommandExecutionContext, public std::enable_shared_from_this<QueueBatchContext> {
   public:
     class PresentResourceRecord : public AlternateResourceUsage::RecordBase {
@@ -267,6 +280,7 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
         ~PresentResourceRecord() override {}
         PresentResourceRecord(const PresentedImageRecord &presented) : presented_(presented) {}
         vvl::Func GetCommand() const override { return vvl::Func::vkQueuePresentKHR; }
+        VkSwapchainKHR GetSwapchainHandle() const override;
 
       private:
         PresentedImageRecord presented_;
@@ -279,6 +293,7 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
         AcquireResourceRecord(const PresentedImageRecord &presented, ResourceUsageTag tag, vvl::Func command)
             : presented_(presented), acquire_tag_(tag), command_(command) {}
         vvl::Func GetCommand() const override { return command_; }
+        VkSwapchainKHR GetSwapchainHandle() const override;
 
       private:
         PresentedImageRecord presented_;
@@ -331,8 +346,8 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
     VulkanTypedHandle Handle() const override;
 
     template <typename Predicate>
-    void ApplyPredicatedWait(Predicate &predicate);
-    void ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag);
+    void ApplyPredicatedWait(Predicate &predicate, const LastSynchronizedPresent &last_synchronized_present);
+    void ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag, const LastSynchronizedPresent &last_synchronized_present);
     void ApplyAcquireWait(const AcquiredImage &acquired);
     void OnResourceDestroyed(const ResourceAccessRange &resource_range);
 
@@ -347,6 +362,9 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
     void ImportTags(const QueueBatchContext &from);
 
     const AccessContext &GetAccessContext() const { return access_context_; }
+
+  public:
+    LastSynchronizedPresent last_synchronized_present;
 
   private:
     void ResolvePresentSemaphoreWait(const SignalInfo &signal_info, const PresentedImages &presented_images);
@@ -372,6 +390,8 @@ class QueueSyncState {
     QueueId GetQueueId() const { return id_; }
     // Method is const but updates mutable sumbit_index atomically.
     uint64_t ReserveSubmitId() const;
+
+    const LastSynchronizedPresent &GetLastSynchronizedPresent() const;
 
     // Last batch state management.
     // The Validate phase makes a request to update last batch by calling SetPendingLastBatch.

@@ -72,6 +72,7 @@ struct SyncFlag {
     enum : uint32_t {
         kLoadOp = 1u << 0,
         kStoreOp = 1u << 1,
+        kPresent = 1u << 2,
     };
 };
 using SyncFlags = uint32_t;
@@ -302,6 +303,7 @@ class WriteState {
     bool IsWriteHazard(const SyncAccessInfo &usage_info) const;
     bool IsOrdered(const OrderingBarrier &ordering, QueueId queue_id) const;
     bool IsLoadOp() const { return flags_ & SyncFlag::kLoadOp; }
+    bool IsPresent() const { return flags_ & SyncFlag::kPresent; }
 
     bool IsWriteBarrierHazard(QueueId queue_id, VkPipelineStageFlags2 src_exec_scope,
                               const SyncAccessFlags &src_access_scope) const;
@@ -450,8 +452,11 @@ class ResourceAccessState {
     };
     friend WaitAcquirePredicate;
 
+    // Clear read/write accesses that satisfy the predicate
+    // (predicate says which accesses should be considered synchronized).
+    // Return true if all accesses were cleared and access state is empty
     template <typename Predicate>
-    bool ApplyPredicatedWait(Predicate &predicate);
+    bool ClearPredicatedAccesses(Predicate &predicate);
 
     bool FirstAccessInTagRange(const ResourceUsageRange &tag_range) const;
 
@@ -463,6 +468,7 @@ class ResourceAccessState {
     SyncAccessIndex LastWriteOp() const { return last_write.has_value() ? last_write->Index() : SYNC_ACCESS_INDEX_NONE; }
     bool IsLastWriteOp(SyncAccessIndex access_index) const { return LastWriteOp() == access_index; }
     ResourceUsageTag LastWriteTag() const { return last_write.has_value() ? last_write->Tag() : ResourceUsageTag(0); }
+    const WriteState &LastWrite() const;
     bool operator==(const ResourceAccessState &rhs) const {
         const bool write_same = (read_execution_barriers == rhs.read_execution_barriers) &&
                                 (input_attachment_read == rhs.input_attachment_read) && (last_write == rhs.last_write);
@@ -638,9 +644,8 @@ void ResourceAccessState::ApplyBarrier(ScopeOps &&scope, const SyncBarrier &barr
     }
 }
 
-// Return if the resulting state is "empty"
 template <typename Predicate>
-bool ResourceAccessState::ApplyPredicatedWait(Predicate &predicate) {
+bool ResourceAccessState::ClearPredicatedAccesses(Predicate &predicate) {
     VkPipelineStageFlags2 sync_reads = VK_PIPELINE_STAGE_2_NONE;
 
     // Use the predicate to build a mask of the read stages we are synchronizing
