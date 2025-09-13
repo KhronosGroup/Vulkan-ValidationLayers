@@ -835,6 +835,11 @@ void ResourceAccessState::GatherReferencedTags(ResourceUsageTagSet &used) const 
     }
 }
 
+const WriteState &ResourceAccessState::LastWrite() const {
+    assert(last_write.has_value());
+    return *last_write;
+}
+
 void ResourceAccessState::UpdateStats(syncval_stats::AccessContextStats &stats) const {
 #if VVL_ENABLE_SYNCVAL_STATS != 0
     stats.read_states += (uint32_t)last_reads.size();

@@ -173,9 +173,10 @@ void SyncValidator::ApplySignalsUpdate(SignalsUpdate &update, const QueueBatchCo
     EnsureTimelineSignalsLimit(kMaxTimelineSignalsPerQueue);
 }
 
-void SyncValidator::ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag) {
+void SyncValidator::ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag,
+                                    const LastSynchronizedPresent &last_synchronized_present) {
     for (const auto &batch : GetAllQueueBatchContexts()) {
-        batch->ApplyTaggedWait(queue_id, tag);
+        batch->ApplyTaggedWait(queue_id, tag, last_synchronized_present);
         batch->Trim();
 
         // If there is a *pending* last batch then apply tagged wait for its accesses too.
@@ -185,7 +186,7 @@ void SyncValidator::ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag) {
         auto batch_queue_state = batch->GetQueueSyncState();
         auto pending_batch = batch_queue_state ? batch_queue_state->PendingLastBatch() : nullptr;
         if (pending_batch) {
-            pending_batch->ApplyTaggedWait(queue_id, tag);
+            pending_batch->ApplyTaggedWait(queue_id, tag, last_synchronized_present);
             pending_batch->Trim();
         }
     }
@@ -239,7 +240,7 @@ void SyncValidator::WaitForFence(VkFence fence) {
         FenceHostSyncPoint &wait_for = fence_it->second;
         if (wait_for.acquired.Invalid()) {
             // This is just a normal fence wait
-            ApplyTaggedWait(wait_for.queue_id, wait_for.tag);
+            ApplyTaggedWait(wait_for.queue_id, wait_for.tag, {});
         } else {
             // This a fence wait for a present operation
             ApplyAcquireWait(wait_for.acquired);
@@ -260,7 +261,9 @@ void SyncValidator::WaitForSemaphore(VkSemaphore semaphore, uint64_t value) {
     }
 
     const TimelineHostSyncPoint &sync_point = *sync_point_it;
-    ApplyTaggedWait(sync_point.queue_id, sync_point.tag);
+    const auto queue_state = GetQueueSyncStateShared(sync_point.queue_id);
+
+    ApplyTaggedWait(sync_point.queue_id, sync_point.tag, queue_state->GetLastSynchronizedPresent());
 
     // Remove signals before the resolving one (keep the resolving signal).
     std::vector<SignalInfo> &signals = timeline_signals_[semaphore];
@@ -294,6 +297,15 @@ void SyncValidator::UpdateSyncImageMemoryBindState(uint32_t count, const VkBindI
 std::shared_ptr<const QueueSyncState> SyncValidator::GetQueueSyncStateShared(VkQueue queue) const {
     for (const auto &queue_sync_state : queue_sync_states_) {
         if (queue_sync_state->GetQueueState()->VkHandle() == queue) {
+            return queue_sync_state;
+        }
+    }
+    return {};
+}
+
+std::shared_ptr<const QueueSyncState> SyncValidator::GetQueueSyncStateShared(QueueId queue_id) const {
+    for (const auto &queue_sync_state : queue_sync_states_) {
+        if (queue_sync_state->GetQueueId() == queue_id) {
             return queue_sync_state;
         }
     }
@@ -336,6 +348,13 @@ void SyncValidator::PreCallRecordDestroyImage(VkDevice device, VkImage image, co
             }
             batch->Trim();
         }
+    }
+}
+
+void SyncValidator::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
+                                                     const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
+    for (const auto &batch : GetAllQueueBatchContexts()) {
+        batch->last_synchronized_present.OnDestroySwapchain(swapchain);
     }
 }
 
@@ -2333,7 +2352,7 @@ void SyncValidator::PostCallRecordQueueWaitIdle(VkQueue queue, const RecordObjec
     const auto queue_state = GetQueueSyncStateShared(queue);
     if (!queue_state) return;  // Invalid queue
     QueueId waited_queue = queue_state->GetQueueId();
-    ApplyTaggedWait(waited_queue, ResourceUsageRecord::kMaxIndex);
+    ApplyTaggedWait(waited_queue, ResourceUsageRecord::kMaxIndex, queue_state->GetLastSynchronizedPresent());
 
     // For each timeline, remove all signals signaled on the waited queue, except the last one.
     // The last signal is needed to represent the current timeline state.
@@ -2347,9 +2366,18 @@ void SyncValidator::PostCallRecordQueueWaitIdle(VkQueue queue, const RecordObjec
 }
 
 void SyncValidator::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordObject &record_obj) {
-    // We need to treat this a fence waits for all queues... noting that present engine ops will be preserved.
-    for (const auto &batch : GetAllQueueBatchContexts()) {
-        batch->ApplyTaggedWait(kQueueAny, ResourceUsageRecord::kMaxIndex);
+    const auto batches = GetAllQueueBatchContexts();
+
+    // Collect information about last synchronized present over all queues
+    LastSynchronizedPresent global_last_synchronized_present;
+    for (const auto &batch : batches) {
+        global_last_synchronized_present.Merge(batch->last_synchronized_present);
+    }
+
+    // DeviceWaitIdle is equivalent to waiting on the fence on all queues.
+    // Tagged wait will preserve unsynchronized present operations.
+    for (const auto &batch : batches) {
+        batch->ApplyTaggedWait(kQueueAny, ResourceUsageRecord::kMaxIndex, global_last_synchronized_present);
     }
 
     // For each timeline keep only the last signal per queue.
