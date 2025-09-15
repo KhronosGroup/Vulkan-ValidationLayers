@@ -1,6 +1,6 @@
 ## Vulkan Validation Layers Repository Management
 
-# **Open Source Project – Objectives**
+# **Open Source Project - Objectives**
 
 * Alignment with the Vulkan Specification
   - The goal is for validation layer behavior to enforce the vulkan specification on applications. Questions on specification
