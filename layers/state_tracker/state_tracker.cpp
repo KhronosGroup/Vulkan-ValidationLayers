@@ -2052,11 +2052,10 @@ void DeviceState::PostCallRecordCreateComputePipelines(VkDevice device, VkPipeli
 }
 
 // TODO - Add tests and pass down StatelessData
-std::shared_ptr<Pipeline> DeviceState::CreateRayTracingPipelineState(const VkRayTracingPipelineCreateInfoNV *create_info,
+std::shared_ptr<Pipeline> DeviceState::CreateRayTracingPipelineStateNV(const VkRayTracingPipelineCreateInfoNV *create_info,
                                                                      std::shared_ptr<const PipelineCache> pipeline_cache,
-                                                                     std::shared_ptr<const PipelineLayout> &&layout,
-                                                                     spirv::StatelessData *stateless_data) const {
-    return std::make_shared<Pipeline>(*this, create_info, std::move(pipeline_cache), std::move(layout), stateless_data);
+                                                                     std::shared_ptr<const PipelineLayout> &&layout) const {
+    return std::make_shared<Pipeline>(*this, create_info, std::move(pipeline_cache), std::move(layout));
 }
 
 // PreCallValidate used here to have a single global spot to build the vvl::Pipeline object so we can use it right away
@@ -2069,7 +2068,7 @@ bool DeviceState::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, Vk
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
         pipeline_states.push_back(
-            CreateRayTracingPipelineState(&pCreateInfos[i], pipeline_cache, Get<PipelineLayout>(pCreateInfos[i].layout), nullptr));
+            CreateRayTracingPipelineStateNV(&pCreateInfos[i], pipeline_cache, Get<PipelineLayout>(pCreateInfos[i].layout)));
     }
     return false;
 }
@@ -2091,11 +2090,11 @@ void DeviceState::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkP
 }
 
 // TODO - Add tests and pass down StatelessData
-std::shared_ptr<Pipeline> DeviceState::CreateRayTracingPipelineState(const VkRayTracingPipelineCreateInfoKHR *create_info,
+std::shared_ptr<Pipeline> DeviceState::CreateRayTracingPipelineStateKHR(const VkRayTracingPipelineCreateInfoKHR *create_info,
                                                                      std::shared_ptr<const PipelineCache> pipeline_cache,
                                                                      std::shared_ptr<const PipelineLayout> &&layout,
-                                                                     spirv::StatelessData *stateless_data) const {
-    return std::make_shared<Pipeline>(*this, create_info, std::move(pipeline_cache), std::move(layout), stateless_data);
+                                                                     std::vector<spirv::StatelessData> &stateless_data) const {
+    return std::make_shared<Pipeline>(*this, create_info, std::move(pipeline_cache), std::move(layout), &stateless_data);
 }
 
 // PreCallValidate used here to have a single global spot to build the vvl::Pipeline object so we can use it right away
@@ -2110,7 +2109,7 @@ bool DeviceState::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, V
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
         pipeline_states.push_back(
-            CreateRayTracingPipelineState(&pCreateInfos[i], pipeline_cache, Get<PipelineLayout>(pCreateInfos[i].layout), nullptr));
+           CreateRayTracingPipelineStateKHR(&pCreateInfos[i], pipeline_cache, Get<PipelineLayout>(pCreateInfos[i].layout), chassis_state.stateless_data));
     }
     return false;
 }
