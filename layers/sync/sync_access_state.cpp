@@ -612,12 +612,6 @@ void ResourceAccessState::ApplyPendingBarriers(const ResourceUsageTag tag) {
 }
 
 void PendingBarriers::AddReadBarrier(ResourceAccessState *access_state, uint32_t last_reads_index, const SyncBarrier &barrier) {
-    // Do not register read barriers after a layout transition has been registered.
-    // The layout transition resets the read state (if any) and sets a write instead.
-    // This removes the need for read barriers.
-    if (!layout_transitions.empty()) {
-        return;
-    }
     size_t barrier_index = 0;
     for (; barrier_index < read_barriers.size(); barrier_index++) {
         const PendingReadBarrier &pending = read_barriers[barrier_index];
@@ -674,7 +668,7 @@ void PendingBarriers::Apply(const ResourceUsageTag exec_tag) {
     for (const PendingBarrierInfo &info : infos) {
         if (info.type == PendingBarrierType::ReadAccessBarrier) {
             const PendingReadBarrier &read_barrier = read_barriers[info.index];
-            info.access_state->ApplyReadAccessBarrier(read_barrier);
+            info.access_state->ApplyReadAccessBarrier(read_barrier, exec_tag);
         } else if (info.type == PendingBarrierType::WriteAccessBarrier) {
             const PendingWriteBarrier &write_barrier = write_barriers[info.index];
             info.access_state->ApplyWriteAccessBarrier(write_barrier);
@@ -686,7 +680,15 @@ void PendingBarriers::Apply(const ResourceUsageTag exec_tag) {
     }
 }
 
-void ResourceAccessState::ApplyReadAccessBarrier(const PendingReadBarrier &read_barrier) {
+void ResourceAccessState::ApplyReadAccessBarrier(const PendingReadBarrier &read_barrier, ResourceUsageTag tag) {
+    // Do not register read barriers if layout transition has been registered for the same barrier API command.
+    // The layout transition resets the read state (if any) and sets a write instead. By definition of our
+    // implementation the read barriers are the barriers we apply to read accesses, so without read accesses we
+    // don't need read barriers.
+    if (last_write.has_value() && last_write->Tag() == tag && last_write->Access().access_index == SYNC_IMAGE_LAYOUT_TRANSITION) {
+        return;
+    }
+
     ReadState &read_state = last_reads[read_barrier.last_reads_index];
     read_state.barriers |= read_barrier.barriers;
     read_execution_barriers |= read_barrier.barriers;
