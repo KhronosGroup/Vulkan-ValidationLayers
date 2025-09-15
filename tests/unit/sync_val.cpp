@@ -961,12 +961,11 @@ TEST_F(NegativeSyncVal, CopyOptimalMultiPlanarHazards) {
 }
 
 TEST_F(NegativeSyncVal, CopyLinearImageHazards) {
-    RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitSyncVal());
 
-    VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    const auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_LINEAR);
+    const auto image_ci =
+        vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                      VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_LINEAR);
     vkt::Image image_a(*m_device, image_ci);
     vkt::Image image_b(*m_device, image_ci);
     vkt::Image image_c(*m_device, image_ci);
@@ -975,25 +974,25 @@ TEST_F(NegativeSyncVal, CopyLinearImageHazards) {
     VkImageSubresourceRange full_subresource_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     VkOffset3D zero_offset{0, 0, 0};
     VkOffset3D half_offset{64, 64, 0};
-    VkExtent3D full_extent{128, 128, 1};  // <-- image type is 2D
-    VkExtent3D half_extent{64, 64, 1};    // <-- image type is 2D
+    VkExtent3D full_extent{128, 128, 1};
+    VkExtent3D half_extent{64, 64, 1};
 
     VkImageCopy full_region = {layers_all, zero_offset, layers_all, zero_offset, full_extent};
     VkImageCopy region_front = {layers_all, zero_offset, layers_all, zero_offset, half_extent};
     VkImageCopy region_back = {layers_all, half_offset, layers_all, half_offset, half_extent};
 
+    const VkImageLayout layout = VK_IMAGE_LAYOUT_GENERAL;
+
     m_command_buffer.Begin();
 
-    image_c.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
-    image_b.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
-    image_a.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
+    image_c.SetLayout(m_command_buffer, layout);
+    image_b.SetLayout(m_command_buffer, layout);
+    image_a.SetLayout(m_command_buffer, layout);
 
-    auto cb = m_command_buffer.handle();
-
-    vk::CmdCopyImage(cb, image_a, VK_IMAGE_LAYOUT_GENERAL, image_b, VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
+    vk::CmdCopyImage(m_command_buffer, image_a, layout, image_b, layout, 1, &full_region);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    vk::CmdCopyImage(cb, image_c, VK_IMAGE_LAYOUT_GENERAL, image_a, VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
+    vk::CmdCopyImage(m_command_buffer, image_c, layout, image_a, layout, 1, &full_region);
     m_errorMonitor->VerifyFound();
 
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
@@ -1002,28 +1001,29 @@ TEST_F(NegativeSyncVal, CopyLinearImageHazards) {
     image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     image_barrier.image = image_b;
     image_barrier.subresourceRange = full_subresource_range;
-    image_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
-    image_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1,
-                           &image_barrier);
+    image_barrier.oldLayout = layout;
+    image_barrier.newLayout = layout;
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
+                           nullptr, 1, &image_barrier);
 
-    vk::CmdCopyImage(cb, image_c, VK_IMAGE_LAYOUT_GENERAL, image_b, VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
+    vk::CmdCopyImage(m_command_buffer, image_c, layout, image_b, layout, 1, &full_region);
 
     // Use barrier to protect last reader, but not last writer...
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
     image_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;  // Protects C but not B
     image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1,
-                           &image_barrier);
-    vk::CmdCopyImage(cb, image_b, VK_IMAGE_LAYOUT_GENERAL, image_c, VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
+                           nullptr, 1, &image_barrier);
+    vk::CmdCopyImage(m_command_buffer, image_b, layout, image_c, layout, 1, &full_region);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdCopyImage(cb, image_c, VK_IMAGE_LAYOUT_GENERAL, image_a, VK_IMAGE_LAYOUT_GENERAL, 1, &region_front);
+    vk::CmdCopyImage(m_command_buffer, image_c, layout, image_a, layout, 1, &region_front);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdCopyImage(cb, image_c, VK_IMAGE_LAYOUT_GENERAL, image_a, VK_IMAGE_LAYOUT_GENERAL, 1, &region_front);
+    vk::CmdCopyImage(m_command_buffer, image_c, layout, image_a, layout, 1, &region_front);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdCopyImage(cb, image_c, VK_IMAGE_LAYOUT_GENERAL, image_a, VK_IMAGE_LAYOUT_GENERAL, 1, &region_back);
+    vk::CmdCopyImage(m_command_buffer, image_c, layout, image_a, layout, 1, &region_back);
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeSyncVal, CopyLinearMultiPlanarHazards) {
@@ -1248,12 +1248,11 @@ TEST_F(NegativeSyncVal, CopyBufferImageHazards) {
 }
 
 TEST_F(NegativeSyncVal, BlitImageHazards) {
-    RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitSyncVal());
 
-    VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    const auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 2, format, usage);
+    const VkImageCreateInfo image_ci = vkt::Image::ImageCreateInfo2D(
+        32, 32, 1, 2, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+
     vkt::Image image_a(*m_device, image_ci);
     vkt::Image image_b(*m_device, image_ci);
 
@@ -1271,23 +1270,21 @@ TEST_F(NegativeSyncVal, BlitImageHazards) {
     image_b.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
     image_a.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
 
-    auto cb = m_command_buffer.handle();
-
-    vk::CmdBlitImage(cb, image_a, VK_IMAGE_LAYOUT_GENERAL, image_b, VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_front_1_front,
-                     VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer, image_a, VK_IMAGE_LAYOUT_GENERAL, image_b, VK_IMAGE_LAYOUT_GENERAL, 1,
+                     &region_0_front_1_front, VK_FILTER_NEAREST);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdBlitImage(cb, image_a, VK_IMAGE_LAYOUT_GENERAL, image_b, VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_front_1_front,
-                     VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer, image_a, VK_IMAGE_LAYOUT_GENERAL, image_b, VK_IMAGE_LAYOUT_GENERAL, 1,
+                     &region_0_front_1_front, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    vk::CmdBlitImage(cb, image_b, VK_IMAGE_LAYOUT_GENERAL, image_a, VK_IMAGE_LAYOUT_GENERAL, 1, &region_1_front_0_front,
-                     VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer, image_b, VK_IMAGE_LAYOUT_GENERAL, image_a, VK_IMAGE_LAYOUT_GENERAL, 1,
+                     &region_1_front_0_front, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdBlitImage(cb, image_b, VK_IMAGE_LAYOUT_GENERAL, image_a, VK_IMAGE_LAYOUT_GENERAL, 1, &region_1_back_0_back,
+    vk::CmdBlitImage(m_command_buffer, image_b, VK_IMAGE_LAYOUT_GENERAL, image_a, VK_IMAGE_LAYOUT_GENERAL, 1, &region_1_back_0_back,
                      VK_FILTER_NEAREST);
 
     m_command_buffer.End();

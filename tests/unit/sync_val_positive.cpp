@@ -3229,3 +3229,95 @@ TEST_F(PositiveSyncVal, Maintenance9TransitionWithMultipleMips) {
     m_command_buffer.Barrier(layout_transition);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveSyncVal, BlitImageSync) {
+    TEST_DESCRIPTION("Synchronize BlitImage accesses using a pipeline barrier");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Image image_a(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM,
+                       VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image_b(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+
+    VkImageBlit region{};
+    region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.srcOffsets[0] = VkOffset3D{0, 0, 0};
+    region.srcOffsets[1] = VkOffset3D{32, 32, 1};
+    region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.dstOffsets[0] = VkOffset3D{0, 0, 0};
+    region.dstOffsets[1] = VkOffset3D{32, 32, 1};
+
+    const VkClearColorValue clear_color{};
+    const VkImageSubresourceRange subresource{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    VkImageMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_BLIT_BIT;
+    barrier.srcAccessMask = VK_ACCESS_2_NONE;  // Execution barrier is enough to sync blit READ access
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_CLEAR_BIT;
+    barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.image = image_a;
+    barrier.subresourceRange = subresource;
+
+    m_command_buffer.Begin();
+    vk::CmdBlitImage(m_command_buffer, image_a, VK_IMAGE_LAYOUT_GENERAL, image_b, VK_IMAGE_LAYOUT_GENERAL, 1, &region,
+                     VK_FILTER_NEAREST);
+    m_command_buffer.Barrier(barrier);
+    vk::CmdClearColorImage(m_command_buffer, image_a, VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &subresource);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncVal, BlitImageSyncWithTwoBarriers) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10667
+    TEST_DESCRIPTION("Test regression when additional barrier breaks synchronization");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    vkt::Image some_image(*m_device, 32, 32, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image_a(*m_device, 32, 32, format,
+                       VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image_b(*m_device, 32, 32, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+
+    VkImageBlit region{};
+    region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.srcOffsets[0] = VkOffset3D{0, 0, 0};
+    region.srcOffsets[1] = VkOffset3D{32, 32, 1};
+    region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.dstOffsets[0] = VkOffset3D{0, 0, 0};
+    region.dstOffsets[1] = VkOffset3D{32, 32, 1};
+
+    const VkClearColorValue clear_color{};
+    const VkImageSubresourceRange subresource{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    VkImageMemoryBarrier2 some_barrier = vku::InitStructHelper();
+    some_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    some_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    some_barrier.image = some_image;
+    some_barrier.subresourceRange = subresource;
+
+    VkImageMemoryBarrier2 blit_barrier = vku::InitStructHelper();
+    blit_barrier.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+    blit_barrier.srcAccessMask = VK_ACCESS_2_NONE;  // Execution barrier is enough to sync blit READ access
+    blit_barrier.dstStageMask = VK_PIPELINE_STAGE_2_CLEAR_BIT;
+    blit_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    blit_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    blit_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    blit_barrier.image = image_a;
+    blit_barrier.subresourceRange = subresource;
+
+    VkImageMemoryBarrier2 barriers[2] = {some_barrier, blit_barrier};
+
+    VkDependencyInfo dep_info = vku::InitStructHelper();
+    dep_info.imageMemoryBarrierCount = 2;
+    dep_info.pImageMemoryBarriers = barriers;
+
+    m_command_buffer.Begin();
+    vk::CmdBlitImage(m_command_buffer, image_a, VK_IMAGE_LAYOUT_GENERAL, image_b, VK_IMAGE_LAYOUT_GENERAL, 1, &region,
+                     VK_FILTER_NEAREST);
+    m_command_buffer.Barrier(dep_info);
+    vk::CmdClearColorImage(m_command_buffer, image_a, VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &subresource);
+    m_command_buffer.End();
+}
