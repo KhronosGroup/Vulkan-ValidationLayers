@@ -37,9 +37,11 @@ struct DedicatedBinding {
         CreateInfo(const VkBufferCreateInfo &b) : buffer(b) {}
         CreateInfo(const VkImageCreateInfo &i) : image(i) {}
         CreateInfo(const VkTensorCreateInfoARM &t) : tensor(t) {}
+        CreateInfo(const VkDataGraphPipelineSessionCreateInfoARM &s) : session(s) {}
         VkBufferCreateInfo buffer;
         VkImageCreateInfo image;
         VkTensorCreateInfoARM tensor;
+        VkDataGraphPipelineSessionCreateInfoARM session;
     } create_info;
 
     DedicatedBinding(VkBuffer buffer, const VkBufferCreateInfo &buffer_create_info)

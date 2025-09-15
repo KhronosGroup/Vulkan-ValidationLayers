@@ -55,11 +55,11 @@ const std::vector<VkQueueFamilyProperties> PhysicalDevice::GetQueueFamilyProps(V
 }
 
 VkQueueFlags PhysicalDevice::GetSupportedQueues() {
-    VkQueueFlags flag = 0;
+    VkQueueFlags flags = 0;
     for (const auto& prop : queue_family_properties) {
-        flag |= prop.queueFlags;
+        flags |= prop.queueFlags;
     }
-    return flag;
+    return flags;
 }
 
 PhysicalDevice::PhysicalDevice(VkPhysicalDevice handle)

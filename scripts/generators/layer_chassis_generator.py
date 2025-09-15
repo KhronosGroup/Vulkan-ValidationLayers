@@ -4,6 +4,7 @@
 # Copyright (c) 2015-2025 LunarG, Inc.
 # Copyright (c) 2015-2025 Google Inc.
 # Copyright (c) 2023-2024 RasterGrid Kft.
+# Copyright (C) 2025 Arm Limited.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -86,6 +87,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
         'vkCreateComputePipelines',
         'vkCreateRayTracingPipelinesNV',
         'vkCreateRayTracingPipelinesKHR',
+        'vkCreateDataGraphPipelinesARM',
         'vkCreatePipelineLayout',
         'vkCreateShaderModule',
         'vkCreateShadersEXT',

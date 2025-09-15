@@ -529,6 +529,7 @@ struct EntryPoint {
     // "A module must not have two OpEntryPoint instructions with the same Execution Model and the same Name string."
     // There is no single unique item for a single entry point
     const Instruction &entrypoint_insn;  // OpEntryPoint instruction
+    const bool is_data_graph;
     // For things like MeshNV vs MeshEXT, we need the execution_model
     const spv::ExecutionModel execution_model;
     const VkShaderStageFlagBits stage;
