@@ -1864,7 +1864,7 @@ VkResult Device::CreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperati
     // Done with this shared unwrapped_pipelines pointer
     VkPipeline *returned_pipelines = pPipelines;
     std::shared_ptr<std::vector<VkPipeline>> unwrapped_pipelines;
-    // Operation may be deffered, will know when looking at dispatch VkResult,
+    // Operation may be deferred, will know when looking at dispatch VkResult,
     // still we need to prepare
     if (deferredOperation != VK_NULL_HANDLE) {
         unwrapped_pipelines = std::make_shared<std::vector<VkPipeline>>(createInfoCount);
@@ -2620,5 +2620,47 @@ VkResult Device::CreateShadersEXT(VkDevice device, uint32_t createInfoCount, con
     return result;
 }
 
+VkResult Device::CreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                             VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                             const VkDataGraphPipelineCreateInfoARM *pCreateInfos,
+                                             const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
+    if (!wrap_handles)
+        return device_dispatch_table.CreateDataGraphPipelinesARM(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
+                                                            pPipelines);
+    vku::safe_VkDataGraphPipelineCreateInfoARM *local_pCreateInfos = nullptr;
+    {
+        pipelineCache = Unwrap(pipelineCache);
+        if (pCreateInfos) {
+            local_pCreateInfos = new vku::safe_VkDataGraphPipelineCreateInfoARM[createInfoCount];
+            for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
+                local_pCreateInfos[index0].initialize(&pCreateInfos[index0]);
+                UnwrapPnextChainHandles(local_pCreateInfos[index0].pNext);
+                if (pCreateInfos[index0].layout) {
+                    local_pCreateInfos[index0].layout = Unwrap(pCreateInfos[index0].layout);
+                }
+            }
+        }
+    }
+    VkResult result = device_dispatch_table.CreateDataGraphPipelinesARM(
+        device, deferredOperation, pipelineCache, createInfoCount, (const VkDataGraphPipelineCreateInfoARM *)local_pCreateInfos,
+        pAllocator, pPipelines);
+    for (uint32_t i = 0; i < createInfoCount; ++i) {
+        if (pCreateInfos[i].pNext != VK_NULL_HANDLE) {
+            CopyCreatePipelineFeedbackData(local_pCreateInfos[i].pNext, pCreateInfos[i].pNext);
+        }
+    }
+
+    if (local_pCreateInfos) {
+        delete[] local_pCreateInfos;
+    }
+    {
+        for (uint32_t index0 = 0; index0 < createInfoCount; index0++) {
+            if (pPipelines[index0] != VK_NULL_HANDLE) {
+                pPipelines[index0] = WrapNew(pPipelines[index0]);
+            }
+        }
+    }
+    return result;
+}
 }  // namespace dispatch
 }  // namespace vvl

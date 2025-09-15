@@ -80,6 +80,7 @@ struct ShaderModule;
 struct ShaderObject;
 class VideoSession;
 class VideoSessionParameters;
+class DataGraphPipelineSession;
 }  // namespace vvl
 
 namespace chassis {
@@ -157,6 +158,7 @@ VALSTATETRACK_STATE_OBJECT(VkBufferView, vvl::BufferView)
 VALSTATETRACK_STATE_OBJECT(VkBuffer, vvl::Buffer)
 VALSTATETRACK_STATE_OBJECT(VkPipelineCache, vvl::PipelineCache)
 VALSTATETRACK_STATE_OBJECT(VkPipeline, vvl::Pipeline)
+VALSTATETRACK_STATE_OBJECT(VkDataGraphPipelineSessionARM, vvl::DataGraphPipelineSession)
 VALSTATETRACK_STATE_OBJECT(VkShaderEXT, vvl::ShaderObject)
 VALSTATETRACK_STATE_OBJECT(VkDeviceMemory, vvl::DeviceMemory)
 VALSTATETRACK_STATE_OBJECT(VkFramebuffer, vvl::Framebuffer)
@@ -1036,6 +1038,38 @@ class DeviceState : public vvl::base::Device {
                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                     const RecordObject& record_obj, PipelineStates& pipeline_states,
                                                     std::shared_ptr<chassis::CreateRayTracingPipelinesKHR> chassis_state) override;
+    virtual std::shared_ptr<vvl::Pipeline> CreateDataGraphPipelineState(const VkDataGraphPipelineCreateInfoARM* pCreateInfo,
+                                                                        std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
+                                                                        std::shared_ptr<const vvl::PipelineLayout>&& layout,
+                                                                        spirv::StatelessData* stateless_data) const;
+    bool PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                    VkPipelineCache pipelineCache, uint32_t count,
+                                                    const VkDataGraphPipelineCreateInfoARM* pCreateInfos,
+                                                    const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                    const ErrorObject& error_obj, PipelineStates& pipeline_states,
+                                                    chassis::CreateDataGraphPipelinesARM& chassis_state) const override;
+    void PostCallRecordCreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                   VkPipelineCache pipelineCache, uint32_t count,
+                                                   const VkDataGraphPipelineCreateInfoARM* pCreateInfos,
+                                                   const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                   const RecordObject& record_obj, PipelineStates& pipeline_states,
+                                                   chassis::CreateDataGraphPipelinesARM& chassis_state) override;
+    std::shared_ptr<vvl::DataGraphPipelineSession> CreateDataGraphPipelineSessionState(
+        VkDataGraphPipelineSessionARM handle, const VkDataGraphPipelineSessionCreateInfoARM* pCreateInfo);
+    void PostCallRecordCreateDataGraphPipelineSessionARM(VkDevice device,
+                                                         const VkDataGraphPipelineSessionCreateInfoARM* pCreateInfo,
+                                                         const VkAllocationCallbacks* pAllocator,
+                                                         VkDataGraphPipelineSessionARM* pSession,
+                                                         const RecordObject& record_obj) override;
+
+    void PostCallRecordBindDataGraphPipelineSessionMemoryARM(VkDevice device, uint32_t bindInfoCount,
+                                                             const VkBindDataGraphPipelineSessionMemoryInfoARM* pBindInfos,
+                                                             const RecordObject& record_obj) override;
+    void PostCallRecordCmdDispatchDataGraphARM(VkCommandBuffer commandBuffer,
+                                               VkDataGraphPipelineSessionARM session,
+                                               const VkDataGraphPipelineDispatchInfoARM *pInfo,
+                                               const RecordObject& record_obj) override;
+
     void PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
                                         const RecordObject& record_obj) override;
@@ -1998,6 +2032,7 @@ class DeviceState : public vvl::base::Device {
     VALSTATETRACK_MAP_AND_TRAITS(VkBuffer, vvl::Buffer, buffer_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkPipelineCache, vvl::PipelineCache, pipeline_cache_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkPipeline, vvl::Pipeline, pipeline_map_)
+    VALSTATETRACK_MAP_AND_TRAITS(VkDataGraphPipelineSessionARM, vvl::DataGraphPipelineSession, pipeline_session_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkShaderEXT, vvl::ShaderObject, shader_object_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkDeviceMemory, vvl::DeviceMemory, mem_obj_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkFramebuffer, vvl::Framebuffer, frame_buffer_map_)

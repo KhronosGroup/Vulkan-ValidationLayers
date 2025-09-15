@@ -177,6 +177,21 @@ std::vector<ShaderStageState> Pipeline::GetStageStates(const DeviceState &state_
 
         stage_states.emplace_back(stage_ci, nullptr, module_state, module_state->spirv);
     }
+
+    if (VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_CREATE_INFO_ARM == pipe_state.GetCreateInfoSType()) {
+        if (auto *pipeline_shader_module =
+                vku::FindStructInPNextChain<VkDataGraphPipelineShaderModuleCreateInfoARM>(pipe_state.DataGraphCreateInfo().pNext)) {
+            if (auto module_state = state_data.Get<vvl::ShaderModule>(pipeline_shader_module->module)) {
+                VkPipelineShaderStageCreateInfo stage_ci = vku::InitStructHelper();
+                stage_ci.module = module_state->VkHandle();
+                stage_ci.stage = VK_SHADER_STAGE_ALL;
+                stage_ci.pName = pipeline_shader_module->pName;
+                vku::safe_VkPipelineShaderStageCreateInfo safe_stage_ci = &stage_ci;
+                stage_states.emplace_back(&safe_stage_ci, nullptr, module_state, module_state->spirv);
+            }
+        }
+    }
+
     return stage_states;
 }
 
@@ -559,7 +574,7 @@ static vvl::unordered_set<uint32_t> GetFSOutputLocations(const std::vector<Shade
     return result;
 }
 
-static VkPipelineCreateFlags2 GetPipelineCreateFlags(const void *pNext, VkPipelineCreateFlags flags) {
+static VkPipelineCreateFlags2 GetPipelineCreateFlags(const void *pNext, VkPipelineCreateFlags2 flags) {
     const auto flags2 = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfo>(pNext);
     if (flags2) {
         return flags2->flags;
@@ -868,6 +883,29 @@ Pipeline::Pipeline(const DeviceState &state_data, const VkRayTracingPipelineCrea
       ignore_color_attachments(IgnoreColorAttachments(state_data, *this)),
       merged_graphics_layout(std::move(layout)) {
     assert(0 == (active_shaders & ~(kShaderStageAllRayTracing)));
+}
+
+Pipeline::Pipeline(const DeviceState &state_data, const VkDataGraphPipelineCreateInfoARM *pCreateInfo,
+                   std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
+                   spirv::StatelessData *stateless_data)
+    : StateObject(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
+      create_info(pCreateInfo),
+      pipeline_cache(std::move(pipe_cache)),
+      pipeline_type(VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM),
+      create_flags(GetPipelineCreateFlags(DataGraphCreateInfo().pNext, DataGraphCreateInfo().flags)),
+      uses_shader_module_id(UsesShaderModuleId(*this)),
+      stage_states(GetStageStates(state_data, *this, stateless_data)),
+      create_info_shaders(VK_SHADER_STAGE_COMPUTE_BIT),
+      active_shaders(create_info_shaders),  // TODO: graph may have linking shaders
+      active_slots(GetActiveSlots(stage_states)),
+      max_active_slot(GetMaxActiveSlot(active_slots)),
+      dynamic_state(0),  // graph has no dynamic state
+      descriptor_buffer_mode((DataGraphCreateInfo().flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
+      uses_pipeline_robustness(UsesPipelineRobustness(DataGraphCreateInfo().pNext, *this)),
+      uses_pipeline_vertex_robustness(false),
+      ignore_color_attachments(IgnoreColorAttachments(state_data, *this)),
+      merged_graphics_layout(layout) {
+    assert(active_shaders == VK_SHADER_STAGE_COMPUTE_BIT);
 }
 
 void Pipeline::Destroy() {

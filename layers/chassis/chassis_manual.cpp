@@ -751,6 +751,62 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(VkDevice device, VkD
     return result;
 }
 
+// This API saves some core_validation pipeline state state on the stack for performance purposes
+VKAPI_ATTR VkResult VKAPI_CALL CreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                           VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                           const VkDataGraphPipelineCreateInfoARM* pCreateInfos,
+                                                           const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCreateDataGraphPipelinesARM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+
+    PipelineStates pipeline_states;
+    chassis::CreateDataGraphPipelinesARM chassis_state(pCreateInfos);
+
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const auto& vo : device_dispatch->object_dispatch) {
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCreateDataGraphPipelinesARM(device, deferredOperation, pipelineCache, createInfoCount,
+                                                                   pCreateInfos, pAllocator, pPipelines, error_obj,
+                                                                   pipeline_states, chassis_state);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+
+    RecordObject record_obj(vvl::Func::vkCreateDataGraphPipelinesARM);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (auto& vo : device_dispatch->object_dispatch) {
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCreateDataGraphPipelinesARM(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos,
+                                                         pAllocator, pPipelines, record_obj, pipeline_states,
+                                                         chassis_state);
+        }
+    }
+
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch");
+        result = device_dispatch->CreateDataGraphPipelinesARM(device, deferredOperation, pipelineCache, createInfoCount,
+                                                              chassis_state.pCreateInfos, pAllocator, pPipelines);
+    }
+    record_obj.result = result;
+
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (auto& vo : device_dispatch->object_dispatch) {
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCreateDataGraphPipelinesARM(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos,
+                                                          pAllocator, pPipelines, record_obj, pipeline_states,
+                                                          chassis_state);
+        }
+    }
+    return result;
+}
+
 // This API needs the ability to modify a down-chain parameter
 VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
                                                     const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout) {

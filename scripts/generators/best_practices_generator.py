@@ -3,6 +3,7 @@
 # Copyright (c) 2015-2025 The Khronos Group Inc.
 # Copyright (c) 2015-2025 Valve Corporation
 # Copyright (c) 2015-2025 LunarG, Inc.
+# Copyright (C) 2025 Arm Limited.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -51,6 +52,7 @@ class BestPracticesOutputGenerator(BaseGenerator):
             'vkCreateComputePipelines' : ', chassis::CreateComputePipelines& chassis_state',
             'vkCreateRayTracingPipelinesNV' : '',
             'vkCreateRayTracingPipelinesKHR' : ', std::shared_ptr<chassis::CreateRayTracingPipelinesKHR> chassis_state',
+            'vkCreateDataGraphPipelinesARM' : ', chassis::CreateDataGraphPipelinesARM& chassis_state',
         }
         # Commands that have a manually written post-call-record step which needs to be called from the autogen'd fcn
         self.manual_postcallrecord_list = [

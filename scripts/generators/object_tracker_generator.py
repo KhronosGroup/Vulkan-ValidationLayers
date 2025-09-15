@@ -223,6 +223,8 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
             "tensor-nullalloc": '"VUID-vkDestroyTensorARM-tensor-09732"',
             "tensorView-compatalloc": '"VUID-vkDestroyTensorViewARM-tensorView-09751"',
             "tensorView-nullalloc": '"VUID-vkDestroyTensorViewARM-tensorView-09752"',
+            "VkDataGraphPipelineSessionARM-session-compatalloc": '"VUID-vkDestroyDataGraphPipelineSessionARM-session-09794"',
+            "VkDataGraphPipelineSessionARM-session-nullalloc": '"VUID-vkDestroyDataGraphPipelineSessionARM-session-09795"',
            }
 
         # Structures that do not define parent/commonparent VUIDs for vulkan handles.
@@ -483,7 +485,7 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
                 postPrototype = postPrototype.replace(')', ', const RecordObject& record_obj)')
                 if command.returnType == 'VkResult':
                     # Some commands can have partial valid handles be created
-                    partial_success_commands = ['vkCreateGraphicsPipelines', 'vkCreateComputePipelines', 'vkCreateRayTracingPipelinesNV', 'vkCreateRayTracingPipelinesKHR', 'vkCreateShadersEXT']
+                    partial_success_commands = ['vkCreateGraphicsPipelines', 'vkCreateComputePipelines', 'vkCreateRayTracingPipelinesNV', 'vkCreateRayTracingPipelinesKHR', 'vkCreateShadersEXT', 'vkCreateDataGraphPipelinesARM']
                     if command.name not in partial_success_commands:
                         postPrototype = postPrototype.replace('{', '{\n    if (record_obj.result < VK_SUCCESS) return;')
                 out.append(postPrototype)
@@ -736,6 +738,12 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
         # Same as above, but memberName has naming collision so need to use struct name as well
         if commandName == 'vkCreateGraphicsPipelines' and structName == 'VkGraphicsPipelineShaderGroupsCreateInfoNV' and memberName == 'pPipelines':
             return '"UNASSIGNED-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-parent"'
+        if commandName == 'vkGetDataGraphPipelineSessionBindPointRequirementsARM' and memberName == 'session':
+            return '"VUID-vkGetDataGraphPipelineSessionBindPointRequirementsARM-session-09783"'
+
+        if structName == 'VkDataGraphPipelineInfoARM' and memberName == 'dataGraphPipeline':
+            if commandName == 'vkGetDataGraphPipelinePropertiesARM':
+                return '"VUID-vkGetDataGraphPipelinePropertiesARM-dataGraphPipeline-09802"'
 
         # These are cases where multiple commands call the struct
         if structName == 'VkPipelineExecutableInfoKHR' and memberName == 'pipeline':
@@ -1095,7 +1103,7 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
         # Handle object create operations if last parameter is created by this call
         if isCreate:
             handle_type = command.params[-1].type
-            partial_success_commands = ['vkCreateGraphicsPipelines', 'vkCreateComputePipelines', 'vkCreateRayTracingPipelinesNV', 'vkCreateRayTracingPipelinesKHR', 'vkCreateShadersEXT']
+            partial_success_commands = ['vkCreateGraphicsPipelines', 'vkCreateComputePipelines', 'vkCreateRayTracingPipelinesNV', 'vkCreateRayTracingPipelinesKHR', 'vkCreateShadersEXT', 'vkCreateDataGraphPipelinesARM']
             if handle_type in self.vk.handles:
                 # Check for special case where multiple handles are returned
                 objectArray = command.params[-1].length is not None

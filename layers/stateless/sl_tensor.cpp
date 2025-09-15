@@ -145,9 +145,6 @@ bool Device::manual_PreCallValidateCreateTensorARM(VkDevice device, const VkTens
                                                    const VkAllocationCallbacks *pAllocator, VkTensorARM *pTensor,
                                                    const Context &context) const {
     bool skip = false;
-    if (!pCreateInfo) {
-        return skip;
-    }
 
     if (!enabled_features.tensors) {
         skip |=
@@ -155,8 +152,10 @@ bool Device::manual_PreCallValidateCreateTensorARM(VkDevice device, const VkTens
     }
 
     const Location create_info_loc = context.error_obj.location.dot(Field::pCreateInfo);
+    ASSERT_AND_RETURN_SKIP(pCreateInfo->pDescription);
+    auto description = *pCreateInfo->pDescription;
 
-    skip |= ValidateTensorDescriptionARM(*pCreateInfo->pDescription, create_info_loc.dot(Field::pDescription));
+    skip |= ValidateTensorDescriptionARM(description, create_info_loc.dot(Field::pDescription));
 
     if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT) {
         if (pCreateInfo->queueFamilyIndexCount <= 1) {

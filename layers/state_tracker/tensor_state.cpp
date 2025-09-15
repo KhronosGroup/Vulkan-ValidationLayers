@@ -18,10 +18,15 @@
 #include "state_object.h"
 #include "state_tracker/state_tracker.h"
 
+static VkExternalMemoryHandleTypeFlags GetExternalHandleTypes(const VkTensorCreateInfoARM *create_info) {
+    const auto *external_memory_info = vku::FindStructInPNextChain<VkExternalMemoryTensorCreateInfoARM>(create_info->pNext);
+    return external_memory_info ? external_memory_info->handleTypes : 0;
+}
+
 namespace vvl {
 
 Tensor::Tensor(DeviceState &dev_data, VkTensorARM handle, const VkTensorCreateInfoARM *pCreateInfo)
-    : Bindable(handle, kVulkanObjectTypeTensorARM, false, (pCreateInfo->flags & VK_TENSOR_CREATE_PROTECTED_BIT_ARM) == 0, 0),
+    : Bindable(handle, kVulkanObjectTypeTensorARM, false, (pCreateInfo->flags & VK_TENSOR_CREATE_PROTECTED_BIT_ARM) == 0, GetExternalHandleTypes(pCreateInfo)),
       safe_create_info(pCreateInfo),
       create_info(*safe_create_info.ptr()),
       safe_description(pCreateInfo->pDescription),
