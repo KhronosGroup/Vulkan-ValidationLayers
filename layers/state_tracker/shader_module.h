@@ -790,6 +790,7 @@ struct Module {
         return std::any_of(static_data_.capability_list.begin(), static_data_.capability_list.end(),
                            [find_capability](const spv::Capability &capability) { return capability == find_capability; });
     }
+
 };
 
 }  // namespace spirv
@@ -818,5 +819,8 @@ struct ShaderModule : public StateObject {
     // TODO - This (and vvl::ShaderObject) could be unique, but need handle multiple ValidationObjects
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/6265/files
     std::shared_ptr<spirv::Module> spirv;
+
+    std::mutex module_mutex_;
+
 };
 }  // namespace vvl

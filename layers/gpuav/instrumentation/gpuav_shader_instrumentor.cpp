@@ -989,7 +989,9 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
     for (uint32_t stage_state_i = 0; stage_state_i < static_cast<uint32_t>(pipeline_state.stage_states.size()); ++stage_state_i) {
         const auto &stage_state = pipeline_state.stage_states[stage_state_i];
         auto modified_module_state = std::const_pointer_cast<vvl::ShaderModule>(stage_state.module_state);
+
         ASSERT_AND_CONTINUE(modified_module_state);
+        std::unique_lock<std::mutex> module_lock(modified_module_state->module_mutex_);
         auto &instrumentation_metadata = shader_instrumentation_metadata[stage_state_i];
 
         // Check pNext for inlined SPIR-V
@@ -1137,6 +1139,8 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
             const ShaderStageState &modified_stage_state = modified_lib->stage_states[stage_state_i];
             auto modified_module_state = std::const_pointer_cast<vvl::ShaderModule>(modified_stage_state.module_state);
             ASSERT_AND_CONTINUE(modified_module_state);
+            std::unique_lock<std::mutex> module_lock(modified_module_state->module_mutex_);
+
             chassis::ShaderInstrumentationMetadata &instrumentation_metadata = shader_instrumentation_metadata[shader_i++];
 
             // Check pNext for inlined SPIR-V
