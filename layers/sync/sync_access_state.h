@@ -423,7 +423,7 @@ class ResourceAccessState {
                          uint32_t layout_transition_handle_index, PendingBarriers &pending_barriers);
     void ApplyPendingBarriers(ResourceUsageTag tag);
 
-    void ApplyReadAccessBarrier(const PendingReadBarrier &read_barrier);
+    void ApplyReadAccessBarrier(const PendingReadBarrier &read_barrier, ResourceUsageTag tag);
     void ApplyWriteAccessBarrier(const PendingWriteBarrier &write_barrier);
     void ApplyLayoutTransition(const PendingLayoutTransition &layout_transition, ResourceUsageTag tag);
 
