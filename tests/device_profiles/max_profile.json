@@ -2243,6 +2243,7 @@
                 "VK_ARM_shader_core_builtins": 1,
                 "VK_ARM_shader_core_properties": 1,
                 "VK_ARM_tensors": 1,
+                "VK_ARM_data_graph": 1,
                 "VK_EXT_4444_formats": 1,
                 "VK_EXT_acquire_drm_display": 1,
                 "VK_EXT_acquire_xlib_display": 1,
@@ -8272,7 +8273,8 @@
                             "VK_QUEUE_COMPUTE_BIT",
                             "VK_QUEUE_TRANSFER_BIT",
                             "VK_QUEUE_SPARSE_BINDING_BIT",
-                            "VK_QUEUE_PROTECTED_BIT"
+                            "VK_QUEUE_PROTECTED_BIT",
+                            "VK_QUEUE_DATA_GRAPH_BIT_ARM"
                         ],
                         "queueCount": 16,
                         "timestampValidBits": 16,

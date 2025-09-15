@@ -1170,11 +1170,12 @@ bool CoreChecks::ValidateStageMasksAgainstQueueCapabilities(const LogObjectList 
         return skip;
     }
 
-    static const std::array<std::pair<VkPipelineStageFlags2KHR, VkQueueFlags>, 4> metaFlags{
+    static const std::array<std::pair<VkPipelineStageFlags2KHR, VkQueueFlags>, 5> metaFlags{
         {{VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT, VK_QUEUE_GRAPHICS_BIT},
          {VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT},
          {VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT, VK_QUEUE_GRAPHICS_BIT},
-         {VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT, VK_QUEUE_GRAPHICS_BIT}}};
+         {VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT, VK_QUEUE_GRAPHICS_BIT},
+         {VK_PIPELINE_STAGE_2_DATA_GRAPH_BIT_ARM, VK_QUEUE_DATA_GRAPH_BIT_ARM}}};
 
     for (const auto &entry : metaFlags) {
         if (((entry.first & stage_mask) != 0) && ((entry.second & queue_flags) == 0)) {

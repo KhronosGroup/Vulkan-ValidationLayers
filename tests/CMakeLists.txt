@@ -43,6 +43,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     framework/test_framework.cpp
     framework/ray_tracing_objects.h
     framework/ray_tracing_objects.cpp
+    framework/data_graph_objects.h
+    framework/data_graph_objects.cpp
     framework/ray_tracing_helper_nv.h
     framework/ray_tracing_helper_nv.cpp
     framework/external_memory_sync.h
@@ -77,6 +79,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/command_positive.cpp
     unit/copy_buffer_image.cpp
     unit/copy_buffer_image_positive.cpp
+    unit/data_graph.cpp
+    unit/data_graph_positive.cpp
     unit/debug_extensions.cpp
     unit/debug_extensions_positive.cpp
     unit/debug_printf.cpp

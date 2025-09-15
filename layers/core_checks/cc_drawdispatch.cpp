@@ -1363,7 +1363,7 @@ bool CoreChecks::ValidateActionState(const LastBound &last_bound_state, const Dr
     bool skip = false;
     skip |= ValidateCmd(cb_state, loc);
 
-    // Quick verify that if there is no pipeine, the shade object is being used
+    // Quick verify that if there is no pipeline, the shader object is being used
     if (!pipeline && !enabled_features.shaderObject) {
         return LogError(vuid.pipeline_bound_08606, cb_state.GetObjectList(bind_point), loc,
                         "A valid %s pipeline must be bound with vkCmdBindPipeline before calling this command.",

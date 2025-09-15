@@ -1,6 +1,7 @@
 /* Copyright (c) 2024-2025 The Khronos Group Inc.
  * Copyright (c) 2024-2025 Valve Corporation
  * Copyright (c) 2024-2025 LunarG, Inc.
+ * Copyright (c) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -685,7 +686,9 @@ const char *GetPipelineInterfaceVariableVUID(const vvl::Pipeline &pipeline, Pipe
                    : sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO ? "VUID-VkComputePipelineCreateInfo-layout-07990"
                    : sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR
                        ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07990"
-                       : "VUID-VkRayTracingPipelineCreateInfoNV-layout-07990";
+                       : sType == VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_CREATE_INFO_ARM
+                                ? "VUID-VkDataGraphPipelineCreateInfoARM-layout-09769"
+                                : "VUID-VkRayTracingPipelineCreateInfoNV-layout-07990";
         case PipelineInterfaceVariableError::DescriptorCount_07991:
             return sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO  ? "VUID-VkGraphicsPipelineCreateInfo-layout-07991"
                    : sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO ? "VUID-VkComputePipelineCreateInfo-layout-07991"

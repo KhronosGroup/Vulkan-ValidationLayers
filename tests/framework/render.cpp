@@ -683,6 +683,11 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
             queues.emplace_back(queue_with_transfer_caps);
         }
     }
+    for (vkt::Queue *queue_with_data_graph_caps : m_device->QueuesWithDataGraphCapability()) {
+        if (!vvl::Contains(queues, queue_with_data_graph_caps)) {
+            queues.emplace_back(queue_with_data_graph_caps);
+        }
+    }
     m_default_queue = queues[0];
     m_default_queue_caps = m_device->Physical().queue_properties_[m_default_queue->family_index].queueFlags;
     if (queues.size() > 1) {

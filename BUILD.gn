@@ -121,6 +121,7 @@ vvl_sources = [
   "layers/core_checks/cc_cmd_buffer.cpp",
   "layers/core_checks/cc_cmd_buffer_dynamic.cpp",
   "layers/core_checks/cc_copy_blit_resolve.cpp",
+  "layers/core_checks/cc_data_graph.cpp",
   "layers/core_checks/cc_descriptor.cpp",
   "layers/core_checks/cc_device.cpp",
   "layers/core_checks/cc_device_memory.cpp",

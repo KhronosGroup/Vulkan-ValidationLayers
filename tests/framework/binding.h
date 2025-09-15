@@ -241,6 +241,7 @@ class Device : public internal::Handle<VkDevice> {
     const std::vector<Queue *> &QueuesWithComputeCapability() const { return queues_[COMPUTE]; }
     const std::vector<Queue *> &QueuesWithTransferCapability() const { return queues_[TRANSFER]; }
     const std::vector<Queue *> &QueuesWithSparseCapability() const { return queues_[SPARSE]; }
+    const std::vector<Queue *> &QueuesWithDataGraphCapability() const { return queues_[DATA_GRAPH]; }
 
     using QueueFamilyQueues = std::vector<std::unique_ptr<Queue>>;
     const QueueFamilyQueues &QueuesFromFamily(uint32_t queue_family) const;
@@ -307,7 +308,8 @@ class Device : public internal::Handle<VkDevice> {
         SPARSE = 3,
         VIDEO_DECODE = 4,
         VIDEO_ENCODE = 5,
-        QUEUE_CAPABILITY_COUNT = 6,
+        DATA_GRAPH = 6,
+        QUEUE_CAPABILITY_COUNT = 7,
     };
 
     void InitQueues(const VkDeviceCreateInfo &info);
@@ -889,6 +891,7 @@ class Pipeline : public internal::NonDispHandle<VkPipeline> {
     }
     Pipeline(const Device &dev, const VkComputePipelineCreateInfo &info) { Init(dev, info); }
     Pipeline(const Device &dev, const VkRayTracingPipelineCreateInfoKHR &info) { Init(dev, info); }
+    Pipeline(const Device &dev, const VkDataGraphPipelineCreateInfoARM &info) { Init(dev, info); }
     ~Pipeline() noexcept;
     void Destroy() noexcept;
 
@@ -902,6 +905,8 @@ class Pipeline : public internal::NonDispHandle<VkPipeline> {
     void Init(const Device &dev, const VkRayTracingPipelineCreateInfoKHR &info);
     // vkCreateRayTracingPipelinesKHR with deferredOperation
     void InitDeferred(const Device &dev, const VkRayTracingPipelineCreateInfoKHR &info, VkDeferredOperationKHR deferred_op);
+    // vkCreateDataGraphPipelinesARM
+    void Init(const Device &dev, const VkDataGraphPipelineCreateInfoARM &info);
     // vkLoadPipeline()
     void Init(const Device &dev, size_t size, const void *data);
     // vkLoadPipelineDerivative()
@@ -1254,13 +1259,12 @@ class Tensor : public internal::NonDispHandle<VkTensorARM> {
     void Destroy() noexcept;
 
     // vkCreateTensor()
-    void InitNoMem(const Device &dev);
+    void InitNoMem(const Device &dev, const VkTensorCreateInfoARM &info);
 
     const VkMemoryRequirements2 &GetMemoryReqs();
     void BindToMem(VkFlags required_flags = 0, VkFlags forbidden_flags = 0);
     VkFormat Format() const { return description_.format; }
     uint32_t DimensionCount() const { return description_.dimensionCount; }
-    VkTensorDescriptionARM &Description() { return description_; }
     const VkTensorDescriptionARM &Description() const { return description_; }
 
   private:
@@ -1287,6 +1291,30 @@ class TensorView : public internal::NonDispHandle<VkTensorViewARM> {
   private:
     const Device *device_ = nullptr;
     VkTensorViewCreateInfoARM create_info_;
+};
+
+class DataGraphPipelineSession : public internal::NonDispHandle<VkDataGraphPipelineSessionARM> {
+  public:
+    explicit DataGraphPipelineSession(const Device &dev, const VkDataGraphPipelineSessionCreateInfoARM &info);
+    ~DataGraphPipelineSession() noexcept;
+    void Destroy() noexcept;
+
+    // CreateDataGraphPipelineSessionARM
+    void Init(const Device &dev);
+
+    void GetMemoryReqs();
+    void AllocSessionMem(std::vector<vkt::DeviceMemory> &device_mem, bool is_protected = false, size_t scale_factor = 1,
+                         int32_t size_modifier = 0);
+    size_t BindPointsCount() const { return bind_point_reqs_.size(); }
+
+    const std::vector<VkDataGraphPipelineSessionBindPointRequirementARM> &BindPointReqs() const { return bind_point_reqs_; }
+    const std::vector<VkMemoryRequirements2> &MemReqs() const { return mem_reqs_; }
+
+  private:
+    const Device *device_ = nullptr;
+    VkDataGraphPipelineSessionCreateInfoARM create_info_;
+    std::vector<VkDataGraphPipelineSessionBindPointRequirementARM> bind_point_reqs_;
+    std::vector<VkMemoryRequirements2> mem_reqs_;
 };
 
 inline VkEventCreateInfo Event::CreateInfo(VkFlags flags) {

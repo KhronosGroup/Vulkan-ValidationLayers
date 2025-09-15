@@ -928,6 +928,8 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidatePipelineTessellationStages(const spirv::Module& tesc_module_state, const spirv::EntryPoint& tesc_entrypoint,
                                             const spirv::Module& tese_module_state, const spirv::EntryPoint& tese_entrypoint,
                                             const Location& create_info_loc) const;
+    static void TypeToDescriptorTypeSet(const spirv::Module& module_state, uint32_t type_id, uint32_t data_type_id,
+                                        vvl::unordered_set<uint32_t>& descriptor_type_set);
     bool ValidateShaderInterfaceVariablePipeline(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                                  const vvl::Pipeline& pipeline, const spirv::ResourceInterfaceVariable& variable,
                                                  vvl::unordered_set<uint32_t>& descriptor_type_set, const Location& loc) const;
@@ -1010,6 +1012,53 @@ class CoreChecks : public vvl::DeviceProxy {
 
     bool PreCallValidateDestroyTensorARM(VkDevice device, VkTensorARM tensor, const VkAllocationCallbacks* pAllocator,
                                          const ErrorObject& error_obj) const override;
+
+    bool ValidateDataGraphPipelineCreateInfo(VkDevice device, const VkDataGraphPipelineCreateInfoARM& create_info,
+                                             const Location& create_info_loc, const vvl::Pipeline& pipeline) const;
+    bool ValidateDataGraphPipelineCreateInfoFlags(VkPipelineCreateFlags2 flags, Location flags_loc) const;
+    bool ValidateTensorSemiStructuredSparsityInfo(VkDevice device,
+                                                  const VkDataGraphPipelineConstantTensorSemiStructuredSparsityInfoARM* sparsity,
+                                                  const VkTensorDescriptionARM* tensor_desc, const Location& constant_loc,
+                                                  const vvl::Pipeline& pipeline) const;
+
+    bool PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                    VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                    const VkDataGraphPipelineCreateInfoARM* pCreateInfos,
+                                                    const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                    const ErrorObject& error_obj, PipelineStates& pipeline_states,
+                                                    chassis::CreateDataGraphPipelinesARM& chassis_state) const override;
+
+    bool PreCallValidateGetDataGraphPipelinePropertiesARM(VkDevice device, const VkDataGraphPipelineInfoARM* pPipelineInfo,
+                                                          uint32_t propertiesCount,
+                                                          VkDataGraphPipelinePropertyQueryResultARM* pProperties,
+                                                          const ErrorObject& error_obj) const override;
+
+    bool PreCallValidateCreateDataGraphPipelineSessionARM(VkDevice device,
+                                                          const VkDataGraphPipelineSessionCreateInfoARM* pCreateInfo,
+                                                          const VkAllocationCallbacks* pAllocator,
+                                                          VkDataGraphPipelineSessionARM* pSession,
+                                                          const ErrorObject& error_obj) const override;
+
+    void PostCallRecordGetDataGraphPipelineSessionBindPointRequirementsARM(VkDevice device,
+        const VkDataGraphPipelineSessionBindPointRequirementsInfoARM* pInfo, uint32_t* pBindPointRequirementCount,
+        VkDataGraphPipelineSessionBindPointRequirementARM* pBindPointRequirements, const RecordObject& record_obj) override;
+
+    bool PreCallValidateGetDataGraphPipelineSessionMemoryRequirementsARM(
+        VkDevice device, const VkDataGraphPipelineSessionMemoryRequirementsInfoARM* pInfo,
+        VkMemoryRequirements2* pMemoryRequirements, const ErrorObject& error_obj) const override;
+
+    bool ValidateBindDataGraphPipelineSessionMemoryARM(const VkBindDataGraphPipelineSessionMemoryInfoARM& bind_info,
+                                                       const Location& bind_info_loc) const;
+    bool PreCallValidateBindDataGraphPipelineSessionMemoryARM(VkDevice device, uint32_t bindInfoCount,
+                                                              const VkBindDataGraphPipelineSessionMemoryInfoARM* pBindInfos,
+                                                              const ErrorObject& error_obj) const override;
+    bool PreCallValidateDestroyDataGraphPipelineSessionARM(VkDevice device, VkDataGraphPipelineSessionARM session,
+                                                           const VkAllocationCallbacks* pAllocator,
+                                                           const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdDispatchDataGraphARM(VkCommandBuffer commandBuffer,
+                                                VkDataGraphPipelineSessionARM session,
+                                                const VkDataGraphPipelineDispatchInfoARM *pInfo,
+                                                const ErrorObject& error_obj) const override;
 
     void PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                    VkImage* pImage, const RecordObject& record_obj) override;
@@ -1342,6 +1391,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                              const Location& loc) const;
     bool ValidateImageImportedHandleANDROID(VkExternalMemoryHandleTypeFlags handle_types, VkDeviceMemory memory, VkImage image,
                                             const Location& loc) const;
+    bool ValidateTensorImportedHandleANDROID(VkExternalMemoryHandleTypeFlags handle_types, VkDeviceMemory memory, VkTensorARM tensor,
+                                             const Location &loc) const;
     bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                 const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
@@ -1476,6 +1527,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool IgnoreAllocationSize(const VkMemoryAllocateInfo& allocate_info) const;
     bool HasExternalMemoryImportSupport(const vvl::Buffer& buffer, VkExternalMemoryHandleTypeFlagBits handle_type) const;
     bool HasExternalMemoryImportSupport(const vvl::Image& image, VkExternalMemoryHandleTypeFlagBits handle_type) const;
+    bool HasExternalMemoryImportSupport(const vvl::Tensor &tensor, VkExternalMemoryHandleTypeFlagBits handle_type) const;
     bool PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
                                        const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory,
                                        const ErrorObject& error_obj) const override;
