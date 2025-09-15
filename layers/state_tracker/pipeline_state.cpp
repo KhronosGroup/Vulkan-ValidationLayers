@@ -55,7 +55,25 @@ static vku::safe_VkGraphicsPipelineCreateInfo MakeGraphicsCreateInfo(const VkGra
     return vku::safe_VkGraphicsPipelineCreateInfo(&ci, use_color, use_depth_stencil, &copy_state);
 }
 
-// static
+static std::shared_ptr<vvl::ShaderModule> GetShaderModuleFromInlinedSpirv(
+    const DeviceState &state_data, const vku::safe_VkPipelineShaderStageCreateInfo &shader_stage_ci,
+    spirv::StatelessData *stateless_data) {
+    // Using VkShaderModuleCreateInfo to inline SPIR-V with VK_KHR_maintenance5
+    if (const auto shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(shader_stage_ci.pNext)) {
+        // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10029
+        // This works for Compute because there is a single shader, but stateless_data will need to be indexed into
+        // We might have to remove (or increase) kCommonMaxGraphicsShaderStages as well
+        auto spirv_module =
+            vvl::CreateSpirvModuleState(shader_ci->codeSize, shader_ci->pCode, state_data.global_settings, stateless_data);
+        if (stateless_data) {
+            stateless_data->pipeline_pnext_module = spirv_module;
+        }
+        return std::make_shared<vvl::ShaderModule>(VK_NULL_HANDLE, spirv_module);
+    } else {
+        // VK_EXT_shader_module_identifier could legally provide a null module handle
+        return std::make_shared<vvl::ShaderModule>();
+    }
+}
 std::vector<ShaderStageState> Pipeline::GetStageStates(const DeviceState &state_data, const Pipeline &pipe_state,
                                                        spirv::StatelessData *stateless_data) {
     std::vector<ShaderStageState> stage_states;
@@ -82,31 +100,16 @@ std::vector<ShaderStageState> Pipeline::GetStageStates(const DeviceState &state_
         }
         if (!module_state) {
             // See if the module is referenced in a library state
-            module_state = pipe_state.GetLibraryStateShader(stage_ci.stage);
+            module_state = pipe_state.GetGraphicsLibraryStateShader(stage_ci.stage);
         }
 
         if (!module_state || !module_state->spirv) {
-            // Using VkShaderModuleCreateInfo to inline with VK_KHR_maintenance5
-            if (const auto shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext)) {
-                // Inlined Graphics shaders will still use GetLibraryStateShader to get module_state
-                // We can hit this only if using GPL and an invalid stage is passed in, the error will be caught elsewhere
-                if (pipe_state.pipeline_type == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-                    continue;
-                }
-
-                // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10029
-                // This works for Compute because there is a single shader, but stateless_data will need to be indexed into
-                // We might have to remove (or increase) kCommonMaxGraphicsShaderStages as well
-                auto spirv_module =
-                    CreateSpirvModuleState(shader_ci->codeSize, shader_ci->pCode, state_data.global_settings, stateless_data);
-                module_state = std::make_shared<vvl::ShaderModule>(VK_NULL_HANDLE, spirv_module);
-                if (stateless_data) {
-                    stateless_data->pipeline_pnext_module = spirv_module;
-                }
-            } else {
-                // VK_EXT_shader_module_identifier could legally provide a null module handle
-                module_state = std::make_shared<vvl::ShaderModule>();
+            // Inlined Graphics shaders will still use GetLibraryStateShader to get module_state
+            // We can hit this only if using GPL and an invalid stage is passed in, the error will be caught elsewhere
+            if (pipe_state.pipeline_type == VK_PIPELINE_BIND_POINT_GRAPHICS) {
+                continue;
             }
+            module_state = GetShaderModuleFromInlinedSpirv(state_data, stage_ci, stateless_data);
         }
 
         stage_states.emplace_back(&stage_ci, nullptr, module_state, module_state->spirv);
@@ -197,6 +200,41 @@ std::vector<ShaderStageState> Pipeline::GetStageStates(const DeviceState &state_
     }
 
     return stage_states;
+}
+
+void Pipeline::GetRayTracingStageStates(const DeviceState &state_data, const Pipeline &pipe_state,
+                                        std::vector<spirv::StatelessData> *inout_per_shader_stateless_data,
+                                        std::vector<ShaderStageState> &inout_stage_states) {
+    for (size_t stage_index = 0; stage_index < pipe_state.shader_stages_ci.size(); ++stage_index) {
+        const auto &stage_ci = pipe_state.shader_stages_ci[stage_index];
+        auto module_state = state_data.Get<vvl::ShaderModule>(stage_ci.module);
+        if (!module_state && pipe_state.pipeline_cache) {
+            // Attempt to look up the pipeline cache for shader module data
+            module_state = pipe_state.pipeline_cache->GetStageModule(pipe_state, stage_index);
+        }
+
+        if (!module_state || !module_state->spirv) {
+            if (const auto shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext)) {
+                inout_per_shader_stateless_data->resize(inout_per_shader_stateless_data->size() + 1);
+                spirv::StatelessData *stateless_data =
+                    &inout_per_shader_stateless_data->at(inout_per_shader_stateless_data->size() - 1);
+                module_state = GetShaderModuleFromInlinedSpirv(state_data, stage_ci, stateless_data);
+            }
+        }
+
+        if (module_state) {
+            inout_stage_states.emplace_back(&stage_ci, nullptr, module_state, module_state->spirv);
+        }
+    }
+
+    const vku::safe_VkRayTracingPipelineCreateInfoCommon &rt_ci = pipe_state.RayTracingCreateInfo();
+    if (rt_ci.pLibraryInfo) {
+        for (VkPipeline lib : vvl::make_span(rt_ci.pLibraryInfo->pLibraries, rt_ci.pLibraryInfo->libraryCount)) {
+            auto lib_state = state_data.Get<vvl::Pipeline>(lib);
+            ASSERT_AND_CONTINUE(lib_state);
+            GetRayTracingStageStates(state_data, *lib_state, inout_per_shader_stateless_data, inout_stage_states);
+        }
+    }
 }
 
 static uint32_t GetCreateInfoShaders(const Pipeline &pipe_state) {
@@ -714,7 +752,7 @@ std::vector<std::shared_ptr<const vvl::PipelineLayout>> Pipeline::PipelineLayout
 }
 
 // Currently will return vvl::ShaderModule with no SPIR-V
-std::shared_ptr<const vvl::ShaderModule> Pipeline::GetLibraryStateShader(VkShaderStageFlagBits state) const {
+std::shared_ptr<const vvl::ShaderModule> Pipeline::GetGraphicsLibraryStateShader(VkShaderStageFlagBits state) const {
     switch (state) {
         case VK_SHADER_STAGE_VERTEX_BIT: {
             const auto lib_state = Pipeline::GetLibraryState<VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT>(*this);
@@ -841,7 +879,7 @@ Pipeline::Pipeline(const DeviceState &state_data, const VkComputePipelineCreateI
 
 Pipeline::Pipeline(const DeviceState &state_data, const VkRayTracingPipelineCreateInfoKHR *pCreateInfo,
                    std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
-                   spirv::StatelessData *stateless_data)
+                   std::vector<spirv::StatelessData> *stateless_data)
     : StateObject(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       create_info(pCreateInfo),
       pipeline_cache(std::move(pipe_cache)),
@@ -850,7 +888,6 @@ Pipeline::Pipeline(const DeviceState &state_data, const VkRayTracingPipelineCrea
       shader_stages_ci(RayTracingCreateInfo().pStages, RayTracingCreateInfo().stageCount),
       ray_tracing_library_ci(RayTracingCreateInfo().pLibraryInfo),
       uses_shader_module_id(UsesShaderModuleId(*this)),
-      stage_states(GetStageStates(state_data, *this, stateless_data)),
       create_info_shaders(GetCreateInfoShaders(*this)),
       active_shaders(create_info_shaders),  // RTX has no linking shaders
       active_slots(GetActiveSlots(stage_states)),
@@ -861,12 +898,12 @@ Pipeline::Pipeline(const DeviceState &state_data, const VkRayTracingPipelineCrea
       uses_pipeline_vertex_robustness(false),
       ignore_color_attachments(IgnoreColorAttachments(state_data, *this)),
       merged_graphics_layout(std::move(layout)) {
+    GetRayTracingStageStates(state_data, *this, stateless_data, stage_states);
     assert(0 == (active_shaders & ~(kShaderStageAllRayTracing)));
 }
 
 Pipeline::Pipeline(const DeviceState &state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo,
-                   std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
-                   spirv::StatelessData *stateless_data)
+                   std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout)
     : StateObject(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       create_info(pCreateInfo),
       pipeline_cache(std::move(pipe_cache)),
@@ -875,7 +912,7 @@ Pipeline::Pipeline(const DeviceState &state_data, const VkRayTracingPipelineCrea
       shader_stages_ci(RayTracingCreateInfo().pStages, RayTracingCreateInfo().stageCount),
       ray_tracing_library_ci(RayTracingCreateInfo().pLibraryInfo),
       uses_shader_module_id(UsesShaderModuleId(*this)),
-      stage_states(GetStageStates(state_data, *this, stateless_data)),
+      stage_states(GetStageStates(state_data, *this, nullptr)),// #ARNO_TODO redo stage_states fill, if its needed
       create_info_shaders(GetCreateInfoShaders(*this)),
       active_shaders(create_info_shaders),  // RTX has no linking shaders
       active_slots(GetActiveSlots(stage_states)),
