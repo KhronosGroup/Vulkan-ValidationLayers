@@ -217,6 +217,7 @@ target_sources(vvl PRIVATE
     core_checks/cc_cmd_buffer.cpp
     core_checks/cc_copy_blit_resolve.cpp
     core_checks/core_validation.h
+    core_checks/cc_data_graph.cpp
     core_checks/cc_descriptor.cpp
     core_checks/cc_device.cpp
     core_checks/cc_device_memory.cpp

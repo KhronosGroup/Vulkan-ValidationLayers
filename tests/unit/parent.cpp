@@ -12,6 +12,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/shader_helper.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/data_graph_objects.h"
 
 namespace {
 VKAPI_ATTR VkBool32 VKAPI_CALL EmptyDebugReportCallback(VkDebugReportFlagsEXT message_flags, VkDebugReportObjectTypeEXT, uint64_t,
@@ -914,5 +915,77 @@ TEST_F(NegativeParent, MapMemory2) {
     uint32_t *pData = nullptr;
     m_errorMonitor->SetDesiredError("UNASSIGNED-VkMemoryMapInfo-memory-parent");
     vk::MapMemory2KHR(device(), &map_info, (void **)&pData);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeParent, DataGraphPipeline) {
+    TEST_DESCRIPTION("Test VUID-*-commonparent checks not sharing the same Device");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_ARM_DATA_GRAPH_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderTensorAccess);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    AddRequiredFeature(vkt::Feature::dataGraph);
+    AddRequiredFeature(vkt::Feature::shaderInt8);
+    AddRequiredFeature(vkt::Feature::shaderInt16);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::tensors);
+    RETURN_IF_SKIP(Init());
+
+    auto features = m_device->Physical().Features();
+    m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
+
+    vkt::dg::CreateDataGraphPipelineHelper helper(*this, true);
+    helper.CreateDataGraphPipeline();
+    VkDataGraphPipelineInfoARM pipeline_info = vku::InitStructHelper();
+    pipeline_info.dataGraphPipeline = helper.Handle();
+
+    /* query with pData null, to get back the required dataSize. Enough to trigger the VUID */
+    VkDataGraphPipelinePropertyQueryResultARM query_result = vku::InitStructHelper();
+    query_result.property = VK_DATA_GRAPH_PIPELINE_PROPERTY_CREATION_LOG_ARM;
+    query_result.pData = nullptr;
+    query_result.dataSize = 0;
+    uint32_t prop_count = 1;
+    m_errorMonitor->SetDesiredError("VUID-vkGetDataGraphPipelinePropertiesARM-dataGraphPipeline-09802");
+    vk::GetDataGraphPipelinePropertiesARM(m_second_device->handle(), &pipeline_info, prop_count, &query_result);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeParent, DataGraphPipelineSessionBindPointRequirements) {
+    TEST_DESCRIPTION(
+        "Try to get the bind point requirements for DataGraphPipelineSession using a different device than the device used to "
+        "create the session");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_ARM_DATA_GRAPH_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dataGraph);
+    AddRequiredFeature(vkt::Feature::shaderTensorAccess);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    AddRequiredFeature(vkt::Feature::shaderInt8);
+    AddRequiredFeature(vkt::Feature::shaderInt16);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::tensors);
+    RETURN_IF_SKIP(Init());
+
+    auto features = m_device->Physical().Features();
+    m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
+
+    vkt::dg::CreateDataGraphPipelineHelper pipeline(*this, true);
+    pipeline.CreateDataGraphPipeline();
+
+    VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
+    session_ci.dataGraphPipeline = pipeline.Handle();
+
+    vkt::DataGraphPipelineSession session(*m_device, session_ci);
+
+    VkDataGraphPipelineSessionBindPointRequirementsInfoARM req_info = vku::InitStructHelper();
+    req_info.session = session.handle();
+    uint32_t count = 0;
+
+    m_errorMonitor->SetDesiredError("VUID-vkGetDataGraphPipelineSessionBindPointRequirementsARM-session-09783");
+    vk::GetDataGraphPipelineSessionBindPointRequirementsARM(m_second_device->handle(), &req_info, &count, nullptr);
     m_errorMonitor->VerifyFound();
 }

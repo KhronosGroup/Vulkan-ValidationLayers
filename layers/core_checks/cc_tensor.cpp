@@ -48,11 +48,9 @@ bool CoreChecks::ValidateTensorFormatUsage(VkFormat format, VkTensorUsageFlagsAR
         auto usage_bit = element.first;
         auto feature_bit = element.second;
         if (usage & usage_bit && !(tensor_feature_flags & feature_bit)) {
-            skip |= LogError(vuid, device, loc.dot(Field::usage),
-                             "(%s) has bit (%s) set but format features (%s) does not include matching required bit (%s)",
+            skip |= LogError(vuid, device, loc.dot(Field::usage), "(%s) has bit (%s) set but format features (%s) does not include matching required bit (%s)",
                              string_VkTensorUsageFlagsARM(usage).c_str(), string_VkTensorUsageFlagsARM(usage_bit).c_str(),
-                             string_VkFormatFeatureFlags2(tensor_feature_flags).c_str(),
-                             string_VkFormatFeatureFlags2(feature_bit).c_str());
+                             string_VkTensorUsageFlagsARM(tensor_feature_flags).c_str(), string_VkTensorUsageFlagsARM(feature_bit).c_str());
         }
     }
 
@@ -97,7 +95,7 @@ bool CoreChecks::ValidateTensorCreateInfo(const VkTensorCreateInfoARM &create_in
     const auto required_bits = VK_TENSOR_USAGE_SHADER_BIT_ARM | VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM;
     if ((description.usage & required_bits) == 0) {
         skip |= ValidateTensorFormatUsage(description.format, description.usage, description.tiling,
-                                            "VUID-VkTensorCreateInfoARM-pDescription-09728", create_info_loc);
+                                          "VUID-VkTensorCreateInfoARM-pDescription-09728", create_info_loc);
     }
 
     return skip;
