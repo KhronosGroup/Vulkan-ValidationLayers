@@ -460,6 +460,21 @@ bool CoreChecks::ValidateImageImportedHandleANDROID(VkExternalMemoryHandleTypeFl
     return skip;
 }
 
+bool CoreChecks::ValidateTensorImportedHandleANDROID(VkExternalMemoryHandleTypeFlags handle_types, VkDeviceMemory memory,
+                                                     VkTensorARM tensor, const Location &loc) const {
+    bool skip = false;
+    if ((handle_types & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) == 0) {
+        const LogObjectList objlist(tensor, memory);
+        skip |= LogError("VUID-VkBindTensorMemoryInfoARM-memory-09897", objlist, loc.dot(Field::memory),
+                         "(%s) was created with an AHB import operation which is not set "
+                         "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID in the VkTensorARM (%s) "
+                         "VkExternalMemoryTensorCreateInfoARM::handleTypes (%s)",
+                         FormatHandle(memory).c_str(), FormatHandle(tensor).c_str(),
+                         string_VkExternalMemoryHandleTypeFlags(handle_types).c_str());
+    }
+    return skip;
+}
+
 // Validate creating an image with an external format
 bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo &create_info, const Location &create_info_loc) const {
     bool skip = false;
@@ -614,6 +629,11 @@ bool CoreChecks::ValidateBufferImportedHandleANDROID(VkExternalMemoryHandleTypeF
 
 bool CoreChecks::ValidateImageImportedHandleANDROID(VkExternalMemoryHandleTypeFlags handle_types, VkDeviceMemory memory,
                                                     VkImage image, const Location &loc) const {
+    return false;
+}
+
+bool CoreChecks::ValidateTensorImportedHandleANDROID(VkExternalMemoryHandleTypeFlags handle_types, VkDeviceMemory memory,
+                                                     VkTensorARM tensor, const Location &loc) const {
     return false;
 }
 

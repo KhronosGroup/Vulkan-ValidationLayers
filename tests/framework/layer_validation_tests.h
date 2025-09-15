@@ -404,6 +404,15 @@ class TensorTest : public VkLayerTest {
     )glsl";
 };
 
+class DataGraphTest : public VkLayerTest {
+  public:
+    void InitBasicDataGraph(bool init_types = false);
+    static void CheckSessionMemory(const vkt::DataGraphPipelineSession& session);
+    static std::vector<VkBindDataGraphPipelineSessionMemoryInfoARM> InitSessionBindInfo(const vkt::DataGraphPipelineSession& session, const std::vector<vkt::DeviceMemory>& device_mem);
+
+    static const std::string IncorrectSpirvMessage;
+};
+
 class WsiTest : public VkLayerTest {
   protected:
     // Find physical device group that contains physical device selected by the test framework

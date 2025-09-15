@@ -864,6 +864,29 @@ static VKAPI_ATTR void VKAPI_CALL GetTensorMemoryRequirementsARM(VkDevice device
     memReq.memoryTypeBits = 0xFFFF & ~(0x1 << 3);
 }
 
+static VKAPI_ATTR VkResult VKAPI_CALL GetDataGraphPipelineSessionBindPointRequirementsARM(
+    VkDevice device, const VkDataGraphPipelineSessionBindPointRequirementsInfoARM* pInfo, uint32_t* pBindPointRequirementCount,
+    VkDataGraphPipelineSessionBindPointRequirementARM* pBindPointRequirements) {
+    if (nullptr == pBindPointRequirements) {
+        *pBindPointRequirementCount = 1;
+    } else {
+        pBindPointRequirements->bindPoint = VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_TRANSIENT_ARM;
+        pBindPointRequirements->bindPointType = VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_TYPE_MEMORY_ARM;
+        pBindPointRequirements->numObjects = 1;
+    }
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR void VKAPI_CALL GetDataGraphPipelineSessionMemoryRequirementsARM(
+    VkDevice device, const VkDataGraphPipelineSessionMemoryRequirementsInfoARM* pInfo, VkMemoryRequirements2* pMemoryRequirements) {
+    VkMemoryRequirements& memReq = pMemoryRequirements->memoryRequirements;
+    memReq.size = 1024;
+    memReq.alignment = 32;
+    // Hard-code an unsupported memory type for negative tests.
+    // 3 is arbitrary, any value in [0,5] is acceptable, see GetPhysicalDeviceMemoryProperties.
+    memReq.memoryTypeBits = 0xFFFF & ~(0x1 << 3);
+}
+
 static VKAPI_ATTR void VKAPI_CALL GetBufferMemoryRequirements2(VkDevice device, const VkBufferMemoryRequirementsInfo2* pInfo,
                                                                VkMemoryRequirements2* pMemoryRequirements) {
     GetBufferMemoryRequirements(device, pInfo->buffer, &pMemoryRequirements->memoryRequirements);
@@ -1382,6 +1405,28 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties2(VkPhysicalD
     }
 }
 
+static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalTensorPropertiesARM(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalTensorInfoARM* pExternalTensorInfo,
+    VkExternalTensorPropertiesARM* pExternalTensorProperties) {
+
+    constexpr VkExternalMemoryHandleTypeFlags supported_flags = VK_EXTERNAL_MEMORY_HANDLE_TYPE_FLAG_BITS_MAX_ENUM;
+    if (pExternalTensorInfo->handleType & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) {
+        // Can't have dedicated memory with AHB
+        pExternalTensorProperties->externalMemoryProperties.externalMemoryFeatures =
+            VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT | VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT;
+        pExternalTensorProperties->externalMemoryProperties.exportFromImportedHandleTypes = pExternalTensorInfo->handleType;
+        pExternalTensorProperties->externalMemoryProperties.compatibleHandleTypes = pExternalTensorInfo->handleType;
+    } else if (pExternalTensorInfo->handleType & supported_flags) {
+        pExternalTensorProperties->externalMemoryProperties.externalMemoryFeatures = 0x7;
+        pExternalTensorProperties->externalMemoryProperties.exportFromImportedHandleTypes = supported_flags;
+        pExternalTensorProperties->externalMemoryProperties.compatibleHandleTypes = supported_flags;
+    } else {
+        pExternalTensorProperties->externalMemoryProperties.externalMemoryFeatures = 0;
+        pExternalTensorProperties->externalMemoryProperties.exportFromImportedHandleTypes = 0;
+        pExternalTensorProperties->externalMemoryProperties.compatibleHandleTypes = 0;
+    }
+}
+
 static VKAPI_ATTR VkResult VKAPI_CALL
 GetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice, const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
                                         VkImageFormatProperties2* pImageFormatProperties) {
@@ -1406,7 +1451,7 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties2(VkPhys
         if (*pQueueFamilyPropertyCount >= 1) {
             auto props = &pQueueFamilyProperties[0].queueFamilyProperties;
             props->queueFlags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT |
-                                VK_QUEUE_PROTECTED_BIT;
+                                VK_QUEUE_PROTECTED_BIT | VK_QUEUE_DATA_GRAPH_BIT_ARM;
             props->queueCount = 1;
             props->timestampValidBits = 16;
             props->minImageTransferGranularity = {1, 1, 1};

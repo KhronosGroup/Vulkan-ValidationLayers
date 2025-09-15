@@ -330,6 +330,10 @@ void Device::InitQueues(const VkDeviceCreateInfo &info) {
             if (queue_family_prop.queueFlags & VK_QUEUE_VIDEO_ENCODE_BIT_KHR) {
                 queues_[VIDEO_ENCODE].push_back(queue_storage.back().get());
             }
+
+            if (queue_family_prop.queueFlags & VK_QUEUE_DATA_GRAPH_BIT_ARM) {
+                queues_[DATA_GRAPH].push_back(queue_storage.back().get());
+            }
         }
     }
 }
@@ -1217,21 +1221,18 @@ Tensor::Tensor(const Device &dev, const bool is_copy_tensor) {
     create_info_.queueFamilyIndexCount = 0;
     create_info_.pQueueFamilyIndices = nullptr;
 
-    InitNoMem(dev);
+    InitNoMem(dev, create_info_);
 }
 
 Tensor::Tensor(const Device &dev, const VkTensorDescriptionARM &desc) : Tensor() {
     description_ = desc;
     create_info_.pDescription = &description_;
-
-    InitNoMem(dev);
+    InitNoMem(dev, create_info_);
 }
 
 Tensor::Tensor(const Device &dev, const VkTensorCreateInfoARM &info) {
-    create_info_ = info;
     description_ = *info.pDescription;
-
-    InitNoMem(dev);
+    InitNoMem(dev, info);
 }
 
 void Tensor::BindToMem(VkFlags required_flags, VkFlags forbidden_flags) {
@@ -1247,8 +1248,10 @@ void Tensor::BindToMem(VkFlags required_flags, VkFlags forbidden_flags) {
     vk::BindTensorMemoryARM(*device_, 1, &bind_info);
 }
 
-void Tensor::InitNoMem(const Device &dev) {
+void Tensor::InitNoMem(const Device &dev, const VkTensorCreateInfoARM &info) {
     device_ = &dev;
+    create_info_ = info;
+    description_ = *info.pDescription;
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateTensorARM, dev, &create_info_);
 }
 
@@ -1267,6 +1270,50 @@ void TensorView::Init(const Device &dev, const VkTensorViewCreateInfoARM &info) 
     device_ = &dev;
     create_info_ = info;
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateTensorViewARM, dev, &create_info_);
+}
+
+NON_DISPATCHABLE_HANDLE_DTOR(DataGraphPipelineSession, vk::DestroyDataGraphPipelineSessionARM)
+DataGraphPipelineSession::DataGraphPipelineSession(const Device &dev, const VkDataGraphPipelineSessionCreateInfoARM &info) {
+    create_info_ = info;
+    Init(dev);
+}
+void DataGraphPipelineSession::Init(const Device &dev) {
+    device_ = &dev;
+    NON_DISPATCHABLE_HANDLE_INIT(vk::CreateDataGraphPipelineSessionARM, dev, &create_info_);
+}
+
+void DataGraphPipelineSession::GetMemoryReqs() {
+    VkDataGraphPipelineSessionBindPointRequirementsInfoARM bind_info = vku::InitStructHelper();
+    bind_info.session = handle();
+    uint32_t count = 0;
+    vk::GetDataGraphPipelineSessionBindPointRequirementsARM(*device_, &bind_info, &count, nullptr);
+    bind_point_reqs_.resize(count, vku::InitStructHelper());
+    vk::GetDataGraphPipelineSessionBindPointRequirementsARM(*device_, &bind_info, &count, bind_point_reqs_.data());
+
+    mem_reqs_.resize(count);
+    for (uint32_t i = 0; i < count; i++) {
+        if (bind_point_reqs_[i].bindPointType != VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_TYPE_MEMORY_ARM) {
+            continue;
+        }
+        VkDataGraphPipelineSessionMemoryRequirementsInfoARM session_mem_reqs = vku::InitStructHelper();
+        session_mem_reqs.session = handle();
+        session_mem_reqs.bindPoint = bind_point_reqs_[i].bindPoint;
+        mem_reqs_[i] = vku::InitStructHelper();
+        vk::GetDataGraphPipelineSessionMemoryRequirementsARM(*device_, &session_mem_reqs, &mem_reqs_[i]);
+    }
+}
+
+void DataGraphPipelineSession::AllocSessionMem(std::vector<vkt::DeviceMemory> &device_mem, bool is_protected, size_t scale_factor,
+                                               int32_t size_modifier) {
+    assert(mem_reqs_.size() == device_mem.size());
+    for (size_t i = 0; i < device_mem.size(); i++) {
+        auto &mem_req = mem_reqs_[i].memoryRequirements;
+        VkMemoryAllocateInfo session_alloc_info = vku::InitStructHelper();
+        session_alloc_info.allocationSize = mem_req.size * scale_factor + size_modifier;
+        auto flags = is_protected ? VK_MEMORY_PROPERTY_PROTECTED_BIT : 0;
+        device_->Physical().SetMemoryType(mem_req.memoryTypeBits, &session_alloc_info, flags);
+        device_mem[i] = vkt::DeviceMemory(*device_, session_alloc_info);
+    }
 }
 
 NON_DISPATCHABLE_HANDLE_DTOR(Image, vk::DestroyImage)
@@ -1833,6 +1880,10 @@ void Pipeline::InitDeferred(const Device &dev, const VkRayTracingPipelineCreateI
         vk::CreateRayTracingPipelinesKHR(dev.handle(), deferred_op, VK_NULL_HANDLE, 1, &info, nullptr, &handle());
     ASSERT_TRUE(result == VK_OPERATION_DEFERRED_KHR || result == VK_OPERATION_NOT_DEFERRED_KHR || result == VK_SUCCESS);
     NonDispHandle::SetDevice(dev.handle());
+}
+
+void Pipeline::Init(const Device &dev, const VkDataGraphPipelineCreateInfoARM &info) {
+    NON_DISPATCHABLE_HANDLE_INIT(vk::CreateDataGraphPipelinesARM, dev, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &info);
 }
 
 NON_DISPATCHABLE_HANDLE_DTOR(PipelineLayout, vk::DestroyPipelineLayout)
