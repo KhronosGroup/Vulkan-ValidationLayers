@@ -1494,11 +1494,25 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties2(VkPhys
                                                     VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR;
             }
         }
-        if (*pQueueFamilyPropertyCount > 3) {
-            *pQueueFamilyPropertyCount = 3;
+        if (*pQueueFamilyPropertyCount >= 4) {
+            auto props = &pQueueFamilyProperties[3].queueFamilyProperties;
+            props->queueFlags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT;
+            props->queueCount = 1;
+            props->timestampValidBits = 16;
+            props->minImageTransferGranularity = {1, 1, 1};
+        }
+        if (*pQueueFamilyPropertyCount >= 5) {
+            auto props = &pQueueFamilyProperties[4].queueFamilyProperties;
+            props->queueFlags = VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
+            props->queueCount = 1;
+            props->timestampValidBits = 16;
+            props->minImageTransferGranularity = {1, 1, 1};
+        }
+        if (*pQueueFamilyPropertyCount > 5) {
+            *pQueueFamilyPropertyCount = 5;
         }
     } else {
-        *pQueueFamilyPropertyCount = 3;
+        *pQueueFamilyPropertyCount = 5;
     }
 }
 

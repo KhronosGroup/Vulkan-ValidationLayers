@@ -3510,7 +3510,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetDifferentOffsetCount
     rendering_info.flags = VK_RENDERING_RESUMING_BIT;
     m_command_buffer.BeginRendering(rendering_info);
     fdm_offset_end_info.fragmentDensityOffsetCount = 0u;
-    m_errorMonitor->SetDesiredError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pFragmentDensityOffsets-10730");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoKHR-pFragmentDensityOffsets-10730");
     vk::CmdEndRendering2EXT(m_command_buffer, &rendering_end_info);
     m_errorMonitor->VerifyFound();
 
@@ -3558,7 +3558,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetDifferentOffsets) {
     m_command_buffer.BeginRendering(rendering_info);
     VkOffset2D offset2 = {width * 2, height * 2};
     fdm_offset_end_info.pFragmentDensityOffsets = &offset2;
-    m_errorMonitor->SetDesiredError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pFragmentDensityOffsets-10730");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoKHR-pFragmentDensityOffsets-10730");
     vk::CmdEndRendering2EXT(m_command_buffer, &rendering_end_info);
     m_errorMonitor->VerifyFound();
 

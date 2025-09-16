@@ -2083,6 +2083,10 @@ bool CoreChecks::PreCallValidateCmdSetSampleMaskEXT(VkCommandBuffer commandBuffe
         skip |= LogError("VUID-vkCmdSetSampleMaskEXT-None-09423", commandBuffer, error_obj.location,
                          "extendedDynamicState3SampleMask and shaderObject features were not enabled.");
     }
+    if (!enabled_features.maintenance10 && !pSampleMask) {
+        skip |= LogError("VUID-vkCmdSetSampleMaskEXT-pSampleMask-10999", commandBuffer, error_obj.location.dot(Field::pSampleMask),
+                         "is NULL.");
+    }
     skip |= ValidateCmd(*cb_state, error_obj.location);
     return skip;
 }

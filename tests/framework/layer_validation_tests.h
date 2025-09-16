@@ -103,6 +103,7 @@ bool FormatIsSupported(VkPhysicalDevice gpu, VkFormat format, VkImageTiling tili
 
 // Returns true if format and *all* requested features are available.
 bool FormatFeaturesAreSupported(VkPhysicalDevice gpu, VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags features);
+bool FormatFeatures2AreSupported(VkPhysicalDevice gpu, VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags2 features);
 
 // Small wrapprer around vkGetPhysicalDeviceImageFormatProperties
 VkResult GetImageFormatProps(VkPhysicalDevice gpu, const VkImageCreateInfo &ci, VkImageFormatProperties &out_limits);
@@ -195,6 +196,9 @@ class VkLayerTest : public VkLayerTestBase {
                               const char *rp2_vuid);
     void CreateRenderPassBeginTest(const VkCommandBuffer command_buffer, const VkRenderPassBeginInfo *begin_info,
                                    bool rp2_supported, const char *rp1_vuid, const char *rp2_vuid);
+
+    VkResolveModeFlagBits FindSupportedDepthResolveMode();
+    VkResolveModeFlagBits FindSupportedStencilResolveMode();
 
   protected:
     void SetTargetApiVersion(APIVersion target_api_version);

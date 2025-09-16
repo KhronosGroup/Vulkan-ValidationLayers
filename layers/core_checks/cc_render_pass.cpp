@@ -3069,6 +3069,61 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
         }
     }
 
+    if (const auto attachment_flags = vku::FindStructInPNextChain<VkRenderingAttachmentFlagsInfoKHR>(attachment_info.pNext)) {
+        if (attachment_flags->flags & (VK_RENDERING_ATTACHMENT_RESOLVE_SKIP_TRANSFER_FUNCTION_BIT_KHR |
+                                       VK_RENDERING_ATTACHMENT_RESOLVE_ENABLE_TRANSFER_FUNCTION_BIT_KHR)) {
+            if (!vkuFormatIsSRGB(image_view_format)) {
+                const LogObjectList objlist(commandBuffer, attachment_info.imageView);
+                skip |= LogError("VUID-VkRenderingAttachmentInfo-pNext-11752", objlist,
+                                 attachment_loc.pNext(Struct::VkRenderingAttachmentFlagsInfoKHR, Field::flags),
+                                 "is %s but image view has format %s.",
+                                 string_VkRenderingAttachmentFlagsKHR(attachment_flags->flags).c_str(),
+                                 string_VkFormat(image_view_format));
+            }
+            if (attachment_info.resolveMode != VK_RESOLVE_MODE_AVERAGE_BIT) {
+                const LogObjectList objlist(commandBuffer, attachment_info.imageView);
+                skip |= LogError(
+                    "VUID-VkRenderingAttachmentInfo-pNext-11753", objlist, attachment_loc.dot(Field::resolveMode),
+                    "is %s but a VkRenderingAttachmentFlagsInfoKHR is included in the attachment pNext chain with flags (%s).",
+                    string_VkResolveModeFlags(attachment_info.resolveMode).c_str(),
+                    string_VkRenderingAttachmentFlagsKHR(attachment_flags->flags).c_str());
+            }
+        }
+        if (attachment_flags->flags & VK_RENDERING_ATTACHMENT_INPUT_ATTACHMENT_FEEDBACK_BIT_KHR) {
+            if (!(image_view_state->image_state->create_info.usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) {
+                const LogObjectList objlist(commandBuffer, attachment_info.imageView);
+                skip |=
+                    LogError("VUID-VkRenderingAttachmentInfo-pNext-11754", objlist,
+                             attachment_loc.pNext(Struct::VkRenderingAttachmentFlagsInfoKHR, Field::flags),
+                             "is %s but image has usage %s.", string_VkRenderingAttachmentFlagsKHR(attachment_flags->flags).c_str(),
+                             string_VkImageUsageFlags(image_view_state->image_state->create_info.usage).c_str());
+            }
+            if (!enabled_features.dynamicRenderingLocalRead) {
+                skip |= LogError("VUID-VkRenderingAttachmentFlagsInfoKHR-flags-11755", commandBuffer,
+                                 attachment_loc.pNext(Struct::VkRenderingAttachmentFlagsInfoKHR, Field::flags), "is %s.",
+                                 string_VkRenderingAttachmentFlagsKHR(attachment_flags->flags).c_str());
+            }
+        }
+
+        if (attachment_flags->flags & VK_RENDERING_ATTACHMENT_RESOLVE_SKIP_TRANSFER_FUNCTION_BIT_KHR) {
+            if (attachment_flags->flags & VK_RENDERING_ATTACHMENT_RESOLVE_ENABLE_TRANSFER_FUNCTION_BIT_KHR) {
+                skip |= LogError("VUID-VkRenderingAttachmentFlagsInfoKHR-flags-11756", commandBuffer,
+                                 attachment_loc.pNext(Struct::VkRenderingAttachmentFlagsInfoKHR, Field::flags), "is %s.",
+                                 string_VkRenderingAttachmentFlagsKHR(attachment_flags->flags).c_str());
+            }
+        }
+
+        if (attachment_flags->flags & (VK_RENDERING_ATTACHMENT_RESOLVE_SKIP_TRANSFER_FUNCTION_BIT_KHR |
+                                       VK_RENDERING_ATTACHMENT_RESOLVE_ENABLE_TRANSFER_FUNCTION_BIT_KHR)) {
+            if (!phys_dev_ext_props.maintenance10_props.resolveSrgbFormatSupportsTransferFunctionControl) {
+                skip |= LogError("VUID-VkRenderingAttachmentFlagsInfoKHR-flags-11757", commandBuffer,
+                                 attachment_loc.pNext(Struct::VkRenderingAttachmentFlagsInfoKHR, Field::flags),
+                                 "is %s but resolveSrgbFormatSupportsTransferFunctionControl is VK_FALSE.",
+                                 string_VkRenderingAttachmentFlagsKHR(attachment_flags->flags).c_str());
+            }
+        }
+    }
+
     return skip;
 }
 
@@ -4183,7 +4238,7 @@ bool CoreChecks::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, c
     return ValidateCmdEndRendering(cb_state, error_obj);
 }
 
-bool CoreChecks::PreCallValidateCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT *pRenderingEndInfo,
+bool CoreChecks::PreCallValidateCmdEndRendering2KHR(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR *pRenderingEndInfo,
                                                     const ErrorObject &error_obj) const {
     bool skip = false;
 
@@ -4208,7 +4263,7 @@ bool CoreChecks::PreCallValidateCmdEndRendering2EXT(VkCommandBuffer commandBuffe
         if (previous_count > 0) {
             if (fdm_offset_end_info->fragmentDensityOffsetCount != previous_count) {
                 skip |=
-                    LogError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pFragmentDensityOffsets-10730", commandBuffer,
+                    LogError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoKHR-pFragmentDensityOffsets-10730", commandBuffer,
                              error_obj.location.dot(Field::pRenderingEndInfo)
                                  .pNext(Struct::VkRenderPassFragmentDensityMapOffsetEndInfoEXT, Field::fragmentDensityOffsetCount),
                              "%" PRIu32 " does not match previous fragmentDensityOffsetCount (%" PRIu32 ") used in the render pass",
@@ -4218,7 +4273,7 @@ bool CoreChecks::PreCallValidateCmdEndRendering2EXT(VkCommandBuffer commandBuffe
                     if (fdm_offset_end_info->pFragmentDensityOffsets[i].x != cb_sub_state.fragment_density_offsets[i].x ||
                         fdm_offset_end_info->pFragmentDensityOffsets[i].y != cb_sub_state.fragment_density_offsets[i].y) {
                         skip |= LogError(
-                            "VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pFragmentDensityOffsets-10730", commandBuffer,
+                            "VUID-VkRenderPassFragmentDensityMapOffsetEndInfoKHR-pFragmentDensityOffsets-10730", commandBuffer,
                             error_obj.location.dot(Field::pRenderingEndInfo)
                                 .pNext(Struct::VkRenderPassFragmentDensityMapOffsetEndInfoEXT, Field::pFragmentDensityOffsets, i),
                             "is (%s) which does not match previous fragmentDensityOffsetCount[%" PRIu32
@@ -4233,6 +4288,11 @@ bool CoreChecks::PreCallValidateCmdEndRendering2EXT(VkCommandBuffer commandBuffe
     }
 
     return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT *pRenderingEndInfo,
+                                                    const ErrorObject &error_obj) const {
+    return PreCallValidateCmdEndRendering2KHR(commandBuffer, pRenderingEndInfo, error_obj);
 }
 
 bool CoreChecks::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const ErrorObject &error_obj) const {

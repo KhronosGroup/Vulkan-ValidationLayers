@@ -79,6 +79,15 @@ bool FormatFeaturesAreSupported(VkPhysicalDevice gpu, VkFormat format, VkImageTi
     return (features == (gpu_features & features));
 }
 
+bool FormatFeatures2AreSupported(VkPhysicalDevice phy, VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags2 features) {
+    VkFormatProperties3 fmt_props_3 = vku::InitStructHelper();
+    VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
+    vk::GetPhysicalDeviceFormatProperties2(phy, format, &fmt_props_2);
+    VkFormatFeatureFlags2 phy_features =
+        (VK_IMAGE_TILING_OPTIMAL == tiling ? fmt_props_3.optimalTilingFeatures : fmt_props_3.linearTilingFeatures);
+    return (features == (phy_features & features));
+}
+
 VkResult GetImageFormatProps(VkPhysicalDevice gpu, const VkImageCreateInfo &ci, VkImageFormatProperties &out_limits) {
     return vk::GetPhysicalDeviceImageFormatProperties(gpu, ci.format, ci.imageType, ci.tiling, ci.usage, ci.flags, &out_limits);
 }
@@ -194,6 +203,38 @@ void VkLayerTest::CreateImageViewTest(const VkImageViewCreateInfo &create_info, 
     Monitor().SetDesiredError(vuid);
     vkt::ImageView view(*m_device, create_info);
     Monitor().VerifyFound();
+}
+
+VkResolveModeFlagBits VkLayerTest::FindSupportedDepthResolveMode() {
+    VkPhysicalDeviceDepthStencilResolveProperties depth_stencil_resolve_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(depth_stencil_resolve_props);
+    VkResolveModeFlagBits depth_resolve_mode = VK_RESOLVE_MODE_NONE;
+    if (depth_stencil_resolve_props.supportedDepthResolveModes & VK_RESOLVE_MODE_SAMPLE_ZERO_BIT) {
+        depth_resolve_mode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
+    } else if (depth_stencil_resolve_props.supportedDepthResolveModes & VK_RESOLVE_MODE_AVERAGE_BIT) {
+        depth_resolve_mode = VK_RESOLVE_MODE_AVERAGE_BIT;
+    } else if (depth_stencil_resolve_props.supportedDepthResolveModes & VK_RESOLVE_MODE_MIN_BIT) {
+        depth_resolve_mode = VK_RESOLVE_MODE_MIN_BIT;
+    } else if (depth_stencil_resolve_props.supportedDepthResolveModes & VK_RESOLVE_MODE_MAX_BIT) {
+        depth_resolve_mode = VK_RESOLVE_MODE_MAX_BIT;
+    }
+    return depth_resolve_mode;
+}
+
+VkResolveModeFlagBits VkLayerTest::FindSupportedStencilResolveMode() {
+    VkPhysicalDeviceDepthStencilResolveProperties depth_stencil_resolve_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(depth_stencil_resolve_props);
+    VkResolveModeFlagBits stencil_resolve_mode = VK_RESOLVE_MODE_NONE;
+    if (depth_stencil_resolve_props.supportedStencilResolveModes & VK_RESOLVE_MODE_SAMPLE_ZERO_BIT) {
+        stencil_resolve_mode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
+    } else if (depth_stencil_resolve_props.supportedStencilResolveModes & VK_RESOLVE_MODE_AVERAGE_BIT) {
+        stencil_resolve_mode = VK_RESOLVE_MODE_AVERAGE_BIT;
+    } else if (depth_stencil_resolve_props.supportedStencilResolveModes & VK_RESOLVE_MODE_MIN_BIT) {
+        stencil_resolve_mode = VK_RESOLVE_MODE_MIN_BIT;
+    } else if (depth_stencil_resolve_props.supportedStencilResolveModes & VK_RESOLVE_MODE_MAX_BIT) {
+        stencil_resolve_mode = VK_RESOLVE_MODE_MAX_BIT;
+    }
+    return stencil_resolve_mode;
 }
 
 void VkLayerTest::CreateRenderPassTest(const VkRenderPassCreateInfo &create_info, bool rp2_supported, const char *rp1_vuid,

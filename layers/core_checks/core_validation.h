@@ -711,6 +711,9 @@ class CoreChecks : public vvl::DeviceProxy {
                                                              const vvl::RenderPass& rp_state,
                                                              const VkPipelineRenderingCreateInfo& pipeline_rendering_ci,
                                                              const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateDrawPipelineDynamicRenderingAttachmentFlags(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
+                                                             const vvl::RenderPass& rp_state,
+                                                             const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawPipeline(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
                               const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawShaderObjectNextStage(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
@@ -1187,6 +1190,8 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
                                  VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType* pRegions,
                                  const Location& loc) const;
+    bool ValidateResolveImageModeInfo(VkCommandBuffer commandBuffer, const VkResolveImageInfo2* pResolveImageInfo,
+                                      const ErrorObject& error_obj) const;
 
     bool PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                         VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
@@ -1674,6 +1679,8 @@ class CoreChecks : public vvl::DeviceProxy {
     bool PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;
     bool ValidateCmdEndRendering(const vvl::CommandBuffer& cb_state, const ErrorObject& error_obj) const;
     bool PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdEndRendering2KHR(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo,
+                                            const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT* pRenderingEndInfo,
                                             const ErrorObject& error_obj) const override;
 

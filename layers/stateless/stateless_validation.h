@@ -546,6 +546,11 @@ class Device : public vvl::base::Device {
 
     bool manual_PreCallValidateGetDeviceImageSubresourceLayout(VkDevice device, const VkDeviceImageSubresourceInfo *pInfo,
                                                                VkSubresourceLayout2 *pLayout, const Context &context) const;
+    bool manual_PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                               VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                               const VkImageResolve *pRegions, const Context &context) const;
+    bool manual_PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2 *pResolveImageInfo,
+                                                const Context &context) const;
 
     bool manual_PreCallValidateCreateTensorARM(VkDevice device, const VkTensorCreateInfoARM *pCreateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkTensorARM *pTensor,
@@ -1049,6 +1054,9 @@ class Device : public vvl::base::Device {
                                                const Location &rendering_info_loc) const;
     bool ValidateBeginRenderingStencilAttachment(VkCommandBuffer commandBuffer, const VkRenderingInfo &rendering_info,
                                                  const Location &rendering_info_loc) const;
+    bool ValidateBeginRenderingAttachmentFlagsInfo(VkCommandBuffer commandBuffer, const VkRenderingInfo &rendering_info,
+                                                   const Location &rendering_info_loc) const;
+
     bool ValidateBeginRenderingFragmentShadingRateAttachment(
         VkCommandBuffer commandBuffer, const VkRenderingInfo &rendering_info,
         const VkRenderingFragmentShadingRateAttachmentInfoKHR &rendering_fsr_attachment_info,

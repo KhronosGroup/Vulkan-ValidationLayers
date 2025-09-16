@@ -5664,6 +5664,9 @@ void DeviceState::PostCallRecordCmdSetSampleMaskEXT(VkCommandBuffer commandBuffe
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordStateCmd(CB_DYNAMIC_STATE_SAMPLE_MASK_EXT);
     cb_state->dynamic_state_value.samples_mask_samples = samples;
+    // Note from the spec, if the need to record pSampleMask rises:
+    // If the maintenance10 feature is enabled, and this (pSampleMask) parameter is set to NULL,
+    // it is treated as if the mask has all bits set to 1.
 }
 
 void DeviceState::PostCallRecordCmdSetAlphaToCoverageEnableEXT(VkCommandBuffer commandBuffer, VkBool32 alphaToCoverageEnable,

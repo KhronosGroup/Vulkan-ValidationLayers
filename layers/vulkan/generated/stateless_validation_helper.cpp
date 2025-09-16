@@ -10933,6 +10933,9 @@ bool Device::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkIma
                                           "VUID-VkImageSubresourceLayers-aspectMask-requiredbitmask", false);
         }
     }
+    if (!skip)
+        skip |= manual_PreCallValidateCmdResolveImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout,
+                                                      regionCount, pRegions, context);
     return skip;
 }
 
@@ -13777,6 +13780,7 @@ bool Device::PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffer, cons
             }
         }
     }
+    if (!skip) skip |= manual_PreCallValidateCmdResolveImage2(commandBuffer, pResolveImageInfo, context);
     return skip;
 }
 

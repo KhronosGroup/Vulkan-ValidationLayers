@@ -3504,7 +3504,7 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpass(const LastBound &last_bou
     skip |= ValidateDrawPipelineDynamicRenderpassLegacyDithering(last_bound_state, pipeline, rp_state, vuid);
     skip |= ValidateDrawPipelineDynamicRenderpassSampleCount(last_bound_state, pipeline, rp_state, vuid);
     skip |= ValidateDrawPipelineDynamicRenderpassFragmentShadingRate(last_bound_state, pipeline, rp_state, vuid);
-
+    skip |= ValidateDrawPipelineDynamicRenderingAttachmentFlags(last_bound_state, pipeline, rp_state, vuid);
     return skip;
 }
 
@@ -3636,6 +3636,44 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassFragmentFormat(const LastB
             }
         }
     }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateDrawPipelineDynamicRenderingAttachmentFlags(const LastBound &last_bound_state,
+                                                                     const vvl::Pipeline &pipeline, const vvl::RenderPass &rp_state,
+                                                                     const vvl::DrawDispatchVuid &vuid) const {
+    bool skip = false;
+
+    if (!(rp_state.dynamic_rendering_begin_rendering_info.flags & VK_RENDERING_LOCAL_READ_CONCURRENT_ACCESS_CONTROL_BIT_KHR)) {
+        return skip;
+    }
+
+    auto validate_feedback_loop = [&](const vku::safe_VkRenderingAttachmentInfo *attachment, const Location &loc) {
+        if (!attachment) {
+            return;
+        }
+
+        if (attachment->loadOp == VK_ATTACHMENT_LOAD_OP_LOAD && attachment->storeOp == VK_ATTACHMENT_STORE_OP_STORE) {
+            if (const auto flags_info = vku::FindStructInPNextChain<VkRenderingAttachmentFlagsInfoKHR>(attachment->pNext);
+                !flags_info || !(flags_info->flags & VK_RENDERING_ATTACHMENT_INPUT_ATTACHMENT_FEEDBACK_BIT_KHR)) {
+                const LogObjectList objlist(last_bound_state.cb_state.Handle());
+                skip |= LogError(vuid.dynamic_rendering_local_read_11797, objlist, vuid.loc(),
+                                 "%s is being used as a feedback loop, but it has no VkRenderingAttachmentFlagsInfoKHR or the "
+                                 "VK_RENDERING_ATTACHMENT_INPUT_ATTACHMENT_FEEDBACK_BIT_KHR flag is not set.",
+                                 loc.Fields().c_str());
+            }
+        }
+    };
+
+    for (uint32_t i = 0; i < rp_state.dynamic_rendering_begin_rendering_info.colorAttachmentCount; ++i) {
+        validate_feedback_loop(rp_state.dynamic_rendering_begin_rendering_info.pColorAttachments + i,
+                               vuid.loc().dot(vvl::Struct::VkRenderingInfo, vvl::Field::pColorAttachments, i));
+    }
+    validate_feedback_loop(rp_state.dynamic_rendering_begin_rendering_info.pDepthAttachment,
+                           vuid.loc().dot(vvl::Struct::VkRenderingInfo, vvl::Field::pDepthAttachment));
+    validate_feedback_loop(rp_state.dynamic_rendering_begin_rendering_info.pStencilAttachment,
+                           vuid.loc().dot(vvl::Struct::VkRenderingInfo, vvl::Field::pStencilAttachment));
 
     return skip;
 }

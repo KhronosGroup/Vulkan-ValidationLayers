@@ -215,6 +215,9 @@
                 "VkPhysicalDeviceMaintenance9FeaturesKHR": {
                     "maintenance9": true
                 },
+                "VkPhysicalDeviceMaintenance10FeaturesKHR": {
+                    "maintenance10": true
+                },
                 "VkPhysicalDeviceShaderDrawParametersFeatures": {
                     "shaderDrawParameters": true
                 },
@@ -1930,13 +1933,11 @@
                     "maxDescriptorSetUpdateAfterBindStorageImages": 4294967000,
                     "maxDescriptorSetUpdateAfterBindInputAttachments": 4294967000,
                     "supportedDepthResolveModes": [
-                        "VK_RESOLVE_MODE_SAMPLE_ZERO_BIT",
                         "VK_RESOLVE_MODE_AVERAGE_BIT",
                         "VK_RESOLVE_MODE_MIN_BIT",
                         "VK_RESOLVE_MODE_MAX_BIT"
                     ],
                     "supportedStencilResolveModes": [
-                        "VK_RESOLVE_MODE_SAMPLE_ZERO_BIT",
                         "VK_RESOLVE_MODE_AVERAGE_BIT",
                         "VK_RESOLVE_MODE_MIN_BIT",
                         "VK_RESOLVE_MODE_MAX_BIT"
@@ -2235,6 +2236,11 @@
                         "VK_SHADER_STAGE_MESH_BIT_EXT",
                         "VK_SHADER_STAGE_SUBPASS_SHADING_BIT_HUAWEI"
                     ]
+                },
+                "VkPhysicalDeviceMaintenance10PropertiesKHR": {
+                    "rgba4OpaqueBlackSwizzled": true,
+                    "resolveSrgbFormatAppliesTransferFunction": true,
+                    "resolveSrgbFormatSupportsTransferFunctionControl": false
                 }
             },
             "extensions": {
@@ -2488,6 +2494,7 @@
                 "VK_KHR_maintenance7": 1,
                 "VK_KHR_maintenance8": 1,
                 "VK_KHR_maintenance9": 1,
+                "VK_KHR_maintenance10": 1,
                 "VK_KHR_multiview": 1,
                 "VK_KHR_performance_query": 1,
                 "VK_KHR_pipeline_binary": 1,
@@ -4299,73 +4306,16 @@
                 "VK_FORMAT_B8G8R8A8_UINT": {
                     "VkFormatProperties3": {
                         "linearTilingFeatures": [
-                            "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT",
-                            "VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT",
-                            "VK_FORMAT_FEATURE_2_STORAGE_IMAGE_ATOMIC_BIT",
-                            "VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT",
-                            "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT",
-                            "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_ATOMIC_BIT",
-                            "VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT",
-                            "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT",
-                            "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT",
-                            "VK_FORMAT_FEATURE_2_BLIT_SRC_BIT",
-                            "VK_FORMAT_FEATURE_2_BLIT_DST_BIT",
-                            "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_LINEAR_BIT",
-                            "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_CUBIC_BIT",
                             "VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT",
-                            "VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT",
-                            "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_MINMAX_BIT",
-                            "VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT",
-                            "VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT",
-                            "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT",
-                            "VK_FORMAT_FEATURE_2_FRAGMENT_DENSITY_MAP_BIT_EXT",
-                            "VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR"
+                            "VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT"
                         ],
                         "optimalTilingFeatures": [
-                            "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT",
-                            "VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT",
-                            "VK_FORMAT_FEATURE_2_STORAGE_IMAGE_ATOMIC_BIT",
-                            "VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT",
-                            "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT",
-                            "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_ATOMIC_BIT",
-                            "VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT",
-                            "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT",
-                            "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT",
-                            "VK_FORMAT_FEATURE_2_BLIT_SRC_BIT",
-                            "VK_FORMAT_FEATURE_2_BLIT_DST_BIT",
-                            "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_LINEAR_BIT",
-                            "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_CUBIC_BIT",
                             "VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT",
-                            "VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT",
-                            "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_MINMAX_BIT",
-                            "VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT",
-                            "VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT",
-                            "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT",
-                            "VK_FORMAT_FEATURE_2_FRAGMENT_DENSITY_MAP_BIT_EXT",
-                            "VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR"
+                            "VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT"
                         ],
                         "bufferFeatures": [
-                            "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT",
-                            "VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT",
-                            "VK_FORMAT_FEATURE_2_STORAGE_IMAGE_ATOMIC_BIT",
-                            "VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT",
-                            "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT",
-                            "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_ATOMIC_BIT",
-                            "VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT",
-                            "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT",
-                            "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT",
-                            "VK_FORMAT_FEATURE_2_BLIT_SRC_BIT",
-                            "VK_FORMAT_FEATURE_2_BLIT_DST_BIT",
-                            "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_LINEAR_BIT",
-                            "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_CUBIC_BIT",
                             "VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT",
-                            "VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT",
-                            "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_MINMAX_BIT",
-                            "VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT",
-                            "VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT",
-                            "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT",
-                            "VK_FORMAT_FEATURE_2_FRAGMENT_DENSITY_MAP_BIT_EXT",
-                            "VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR"
+                            "VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT"
                         ]
                     }
                 },
