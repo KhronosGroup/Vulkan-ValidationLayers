@@ -818,5 +818,9 @@ struct ShaderModule : public StateObject {
     // TODO - This (and vvl::ShaderObject) could be unique, but need handle multiple ValidationObjects
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/6265/files
     std::shared_ptr<spirv::Module> spirv;
+
+    // Used by GPU-AV to make sure instrumentation only occurs in a single thread at a time
+    // (Currently we don't need seem to need this for ShaderObjects)
+    std::mutex module_mutex_;
 };
 }  // namespace vvl
