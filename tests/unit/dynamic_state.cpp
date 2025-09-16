@@ -1527,6 +1527,25 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState3CmdSetFeatureDisabled) {
     command_buffer.End();
 }
 
+TEST_F(NegativeDynamicState, NullSampleMask) {
+    TEST_DESCRIPTION("Call vkCmdSetSampleMaskEXT with a NULL pSampleMask and without maintenance10");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3SampleMask);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    // Check feature is enable for each set command.
+    vkt::CommandBuffer command_buffer(*m_device, m_command_pool);
+    command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetSampleMaskEXT-pSampleMask-10999");
+    vk::CmdSetSampleMaskEXT(command_buffer, VK_SAMPLE_COUNT_1_BIT, nullptr);
+    m_errorMonitor->VerifyFound();
+    command_buffer.End();
+}
+
 TEST_F(NegativeDynamicState, ExtendedDynamicState3DuplicateStatePipeline) {
     TEST_DESCRIPTION("VK_EXT_extended_dynamic_state3 Duplicate state in pipeline");
 

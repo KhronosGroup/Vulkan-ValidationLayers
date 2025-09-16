@@ -4668,13 +4668,14 @@ TEST_F(NegativeImage, ResolveDepthImage) {
     VkImageResolve region;
     region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
     region.srcOffset = {0, 0, 0};
-    region.dstSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0u, 0u, 1u};
+    region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
     region.dstOffset = {0, 0, 0};
     region.extent = {32, 32, 1};
 
     m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("VUID-VkImageResolve-aspectMask-00266");
     m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-dstImage-02003");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-srcSubresource-11800");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-dstSubresource-11801");
     vk::CmdResolveImage(m_command_buffer, image1, VK_IMAGE_LAYOUT_GENERAL, image2, VK_IMAGE_LAYOUT_GENERAL, 1u, &region);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();

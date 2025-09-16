@@ -1448,6 +1448,9 @@ TEST_F(NegativeDynamicRendering, AttachmentInfo) {
         GTEST_SKIP() << "VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT not supported";
     }
 
+    VkPhysicalDeviceDepthStencilResolveProperties depth_stencil_resolve_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(depth_stencil_resolve_props);
+
     VkImageCreateInfo image_create_info = vkt::Image::ImageCreateInfo2D(
         64, 64, 1, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT);
     vkt::Image image(*m_device, image_create_info, vkt::set_layout);
@@ -1455,10 +1458,11 @@ TEST_F(NegativeDynamicRendering, AttachmentInfo) {
     vkt::ImageView depth_image_view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     vkt::ImageView depth_image_view_fragment = image_fragment.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
+    const VkResolveModeFlagBits resolve_mode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
     VkRenderingAttachmentInfo depth_attachment = vku::InitStructHelper();
     depth_attachment.imageLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     depth_attachment.imageView = depth_image_view;
-    depth_attachment.resolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
+    depth_attachment.resolveMode = resolve_mode;
     depth_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
     VkRenderingFragmentDensityMapAttachmentInfoEXT fragment_density_map =
@@ -1472,16 +1476,23 @@ TEST_F(NegativeDynamicRendering, AttachmentInfo) {
     begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
+    if (!(depth_stencil_resolve_props.supportedDepthResolveModes & resolve_mode)) {
+        m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pDepthAttachment-06102");
+    }
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-imageView-06116");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
     fragment_density_map.imageView = depth_image_view_fragment;
 
-    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06145");
-    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06146");
-    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06861");
-    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06862");
-    m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-imageView-06107");
+    if (!(depth_stencil_resolve_props.supportedDepthResolveModes & resolve_mode)) {
+        m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pDepthAttachment-06102");
+    } else {
+        m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06145");
+        m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06146");
+        m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06861");
+        m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06862");
+        m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-imageView-06107");
+    }
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 }
@@ -6456,6 +6467,8 @@ TEST_F(NegativeDynamicRendering, IdentitySwizzleFragmentDensityMap) {
 TEST_F(NegativeDynamicRendering, ResolveAttachmentUsage) {
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
+    VkPhysicalDeviceDepthStencilResolveProperties depth_stencil_resolve_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(depth_stencil_resolve_props);
     const VkFormat depth_format = FindSupportedDepthStencilFormat(Gpu());
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
@@ -6486,15 +6499,24 @@ TEST_F(NegativeDynamicRendering, ResolveAttachmentUsage) {
     rendering_info.pDepthAttachment = &attachment;
 
     m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06865");
-    m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pDepthAttachment-09477");
+
+    if (!(depth_stencil_resolve_props.supportedDepthResolveModes & VK_RESOLVE_MODE_SAMPLE_ZERO_BIT)) {
+        m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pDepthAttachment-06102");
+    } else {
+        m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06865");
+        m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pDepthAttachment-09477");
+    }
     m_command_buffer.BeginRendering(rendering_info);
     m_errorMonitor->VerifyFound();
 
     rendering_info.pStencilAttachment = &attachment;
     rendering_info.pDepthAttachment = nullptr;
-    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06865");
-    m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pStencilAttachment-09478");
+    if (!(depth_stencil_resolve_props.supportedStencilResolveModes & VK_RESOLVE_MODE_SAMPLE_ZERO_BIT)) {
+        m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pStencilAttachment-06103");
+    } else {
+        m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06865");
+        m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pStencilAttachment-09478");
+    }
     m_command_buffer.BeginRendering(rendering_info);
     m_errorMonitor->VerifyFound();
 }
@@ -6954,6 +6976,419 @@ TEST_F(NegativeDynamicRendering, AttachmentFeedbackLoopInfoInvalidUsage) {
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-10780");
+    vk::CmdBeginRenderingKHR(m_command_buffer, &rendering_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDynamicRendering, RenderingAttachmentFlags) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_10_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance10);
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    VkPhysicalDeviceMaintenance10PropertiesKHR maintenance10_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(maintenance10_props);
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView image_view = image.CreateView();
+
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    vkt::Image resolve_image(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView resolve_image_view = resolve_image.CreateView();
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &image_ci.format;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingAttachmentFlagsInfoKHR attachment_flags = vku::InitStructHelper();
+    attachment_flags.flags = VK_RENDERING_ATTACHMENT_RESOLVE_SKIP_TRANSFER_FUNCTION_BIT_KHR;
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper(&attachment_flags);
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    color_attachment.clearValue.color = m_clear_color;
+    color_attachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+    color_attachment.resolveImageView = resolve_image_view;
+    color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32u, 32u}};
+    rendering_info.layerCount = 1u;
+    rendering_info.colorAttachmentCount = 1u;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-pNext-11752");
+    if (!maintenance10_props.resolveSrgbFormatSupportsTransferFunctionControl) {
+        m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentFlagsInfoKHR-flags-11757");
+    }
+    vk::CmdBeginRenderingKHR(m_command_buffer, &rendering_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDynamicRendering, RenderingAttachmentResolveMode) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_10_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance10);
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    VkPhysicalDeviceMaintenance10PropertiesKHR maintenance10_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(maintenance10_props);
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8_SRGB, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView image_view = image.CreateView();
+
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    vkt::Image resolve_image(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView resolve_image_view = resolve_image.CreateView();
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &image_ci.format;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingAttachmentFlagsInfoKHR attachment_flags = vku::InitStructHelper();
+    attachment_flags.flags = VK_RENDERING_ATTACHMENT_RESOLVE_SKIP_TRANSFER_FUNCTION_BIT_KHR;
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper(&attachment_flags);
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    color_attachment.clearValue.color = m_clear_color;
+    color_attachment.resolveMode = VK_RESOLVE_MODE_MIN_BIT;
+    color_attachment.resolveImageView = resolve_image_view;
+    color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32u, 32u}};
+    rendering_info.layerCount = 1u;
+    rendering_info.colorAttachmentCount = 1u;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06129");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-pNext-11753");
+    if (!maintenance10_props.resolveSrgbFormatSupportsTransferFunctionControl) {
+        m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentFlagsInfoKHR-flags-11757");
+    }
+    vk::CmdBeginRenderingKHR(m_command_buffer, &rendering_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDynamicRendering, RenderingAttachmentImageUsage) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_10_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance10);
+    AddRequiredFeature(vkt::Feature::dynamicRenderingLocalRead);
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8_SRGB, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView image_view = image.CreateView();
+
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    vkt::Image resolve_image(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView resolve_image_view = resolve_image.CreateView();
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &image_ci.format;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingAttachmentFlagsInfoKHR attachment_flags = vku::InitStructHelper();
+    attachment_flags.flags = VK_RENDERING_ATTACHMENT_INPUT_ATTACHMENT_FEEDBACK_BIT_KHR;
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper(&attachment_flags);
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    color_attachment.clearValue.color = m_clear_color;
+    color_attachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+    color_attachment.resolveImageView = resolve_image_view;
+    color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.flags = VK_RENDERING_LOCAL_READ_CONCURRENT_ACCESS_CONTROL_BIT_KHR;
+    rendering_info.renderArea = {{0, 0}, {32u, 32u}};
+    rendering_info.layerCount = 1u;
+    rendering_info.colorAttachmentCount = 1u;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-colorAttachmentCount-06087");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-pNext-11754");
+    vk::CmdBeginRenderingKHR(m_command_buffer, &rendering_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDynamicRendering, RenderingAttachmentDynamicRenderingLocalRead) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_10_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance10);
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8_SRGB,
+                                                  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView image_view = image.CreateView();
+
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    vkt::Image resolve_image(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView resolve_image_view = resolve_image.CreateView();
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &image_ci.format;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingAttachmentFlagsInfoKHR attachment_flags = vku::InitStructHelper();
+    attachment_flags.flags = VK_RENDERING_ATTACHMENT_INPUT_ATTACHMENT_FEEDBACK_BIT_KHR;
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper(&attachment_flags);
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    color_attachment.clearValue.color = m_clear_color;
+    color_attachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+    color_attachment.resolveImageView = resolve_image_view;
+    color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.flags = VK_RENDERING_LOCAL_READ_CONCURRENT_ACCESS_CONTROL_BIT_KHR;
+    rendering_info.renderArea = {{0, 0}, {32u, 32u}};
+    rendering_info.layerCount = 1u;
+    rendering_info.colorAttachmentCount = 1u;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentFlagsInfoKHR-flags-11755");
+    vk::CmdBeginRenderingKHR(m_command_buffer, &rendering_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDynamicRendering, RenderingAttachmentFeedbackLoopMissingFlags) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_10_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance10);
+    AddRequiredFeature(vkt::Feature::dynamicRenderingLocalRead);
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(
+        32, 32, 1, 1, VK_FORMAT_R8_SRGB,
+        VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView image_view = image.CreateView();
+
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    vkt::Image resolve_image(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView resolve_image_view = resolve_image.CreateView();
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &image_ci.format;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingAttachmentFlagsInfoKHR attachment_flags = vku::InitStructHelper();
+    attachment_flags.flags = 0;
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper(&attachment_flags);
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    color_attachment.clearValue.color = m_clear_color;
+    color_attachment.resolveMode = VK_RESOLVE_MODE_NONE;
+    color_attachment.resolveImageView = VK_NULL_HANDLE;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.flags = VK_RENDERING_LOCAL_READ_CONCURRENT_ACCESS_CONTROL_BIT_KHR;
+    rendering_info.renderArea = {{0, 0}, {32u, 32u}};
+    rendering_info.layerCount = 1u;
+    rendering_info.colorAttachmentCount = 1u;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    m_command_buffer.Begin();
+    vk::CmdBeginRenderingKHR(m_command_buffer, &rendering_info);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-dynamicRenderingLocalRead-11797");
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    vk::CmdEndRenderingKHR(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDynamicRendering, RenderingAttachmentIncompatibleFlags) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_10_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance10);
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    VkPhysicalDeviceMaintenance10PropertiesKHR maintenance10_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(maintenance10_props);
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8_SRGB, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView image_view = image.CreateView();
+
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    vkt::Image resolve_image(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView resolve_image_view = resolve_image.CreateView();
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &image_ci.format;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingAttachmentFlagsInfoKHR attachment_flags = vku::InitStructHelper();
+    attachment_flags.flags = VK_RENDERING_ATTACHMENT_RESOLVE_SKIP_TRANSFER_FUNCTION_BIT_KHR |
+                             VK_RENDERING_ATTACHMENT_RESOLVE_ENABLE_TRANSFER_FUNCTION_BIT_KHR;
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper(&attachment_flags);
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    color_attachment.clearValue.color = m_clear_color;
+    color_attachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+    color_attachment.resolveImageView = resolve_image_view;
+    color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32u, 32u}};
+    rendering_info.layerCount = 1u;
+    rendering_info.colorAttachmentCount = 1u;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentFlagsInfoKHR-flags-11756");
+    if (!maintenance10_props.resolveSrgbFormatSupportsTransferFunctionControl) {
+        m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentFlagsInfoKHR-flags-11757");
+    }
+    vk::CmdBeginRenderingKHR(m_command_buffer, &rendering_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDynamicRendering, RenderingAttachmentResolveSrgbFormatSupportsTransferFunctionControl) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_10_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance10);
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    VkPhysicalDeviceMaintenance10PropertiesKHR maintenance_10_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(maintenance_10_props);
+
+    if (maintenance_10_props.resolveSrgbFormatSupportsTransferFunctionControl) {
+        GTEST_SKIP() << "Need driver to not support resolveSrgbFormatSupportsTransferFunctionControl";
+    }
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8_SRGB, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView image_view = image.CreateView();
+
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    vkt::Image resolve_image(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView resolve_image_view = resolve_image.CreateView();
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &image_ci.format;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingAttachmentFlagsInfoKHR attachment_flags = vku::InitStructHelper();
+    attachment_flags.flags = VK_RENDERING_ATTACHMENT_RESOLVE_ENABLE_TRANSFER_FUNCTION_BIT_KHR;
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper(&attachment_flags);
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    color_attachment.clearValue.color = m_clear_color;
+    color_attachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+    color_attachment.resolveImageView = resolve_image_view;
+    color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32u, 32u}};
+    rendering_info.layerCount = 1u;
+    rendering_info.colorAttachmentCount = 1u;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentFlagsInfoKHR-flags-11757");
+    vk::CmdBeginRenderingKHR(m_command_buffer, &rendering_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDynamicRendering, RenderingAttachmentFlagsInputAttachmentFeedback) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_10_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance10);
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    VkPhysicalDeviceMaintenance10PropertiesKHR maintenance10_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(maintenance10_props);
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView image_view = image.CreateView();
+
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    vkt::Image resolve_image(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView resolve_image_view = resolve_image.CreateView();
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &image_ci.format;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingAttachmentFlagsInfoKHR attachment_flags = vku::InitStructHelper();
+    attachment_flags.flags = VK_RENDERING_ATTACHMENT_INPUT_ATTACHMENT_FEEDBACK_BIT_KHR;
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper(&attachment_flags);
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    color_attachment.clearValue.color = m_clear_color;
+    color_attachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+    color_attachment.resolveImageView = resolve_image_view;
+    color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32u, 32u}};
+    rendering_info.layerCount = 1u;
+    rendering_info.colorAttachmentCount = 1u;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginRendering-pRenderingInfo-11751");
     vk::CmdBeginRenderingKHR(m_command_buffer, &rendering_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();

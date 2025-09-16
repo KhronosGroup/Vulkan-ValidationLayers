@@ -669,6 +669,15 @@ TEST_F(NegativeImagelessFramebuffer, DepthStencilResolveAttachment) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
+    const VkResolveModeFlagBits depth_resolve_mode = FindSupportedDepthResolveMode();
+    if (depth_resolve_mode == VK_RESOLVE_MODE_NONE) {
+        GTEST_SKIP() << "Could not find a supported depth resolve mode.";
+    }
+    const VkResolveModeFlagBits stencil_resolve_mode = FindSupportedStencilResolveMode();
+    if (stencil_resolve_mode == VK_RESOLVE_MODE_NONE) {
+        GTEST_SKIP() << "Could not find a supported stencil resolve mode.";
+    }
+
     uint32_t attachmentWidth = 512;
     uint32_t attachmentHeight = 512;
     VkFormat attachmentFormat = FindSupportedDepthStencilFormat(Gpu());
@@ -679,7 +688,7 @@ TEST_F(NegativeImagelessFramebuffer, DepthStencilResolveAttachment) {
     rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.AddAttachmentReference(1, VK_IMAGE_LAYOUT_GENERAL);
     rp.AddDepthStencilAttachment(0);
-    rp.AddDepthStencilResolveAttachment(1, VK_RESOLVE_MODE_SAMPLE_ZERO_BIT, VK_RESOLVE_MODE_SAMPLE_ZERO_BIT);
+    rp.AddDepthStencilResolveAttachment(1, depth_resolve_mode, stencil_resolve_mode);
     rp.SetViewMask(0x3u);
     rp.CreateRenderPass();
 
