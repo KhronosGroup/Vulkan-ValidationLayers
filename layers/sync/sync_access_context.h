@@ -288,6 +288,7 @@ class AccessContext {
 
     HazardResult DetectFirstUseHazard(QueueId queue_id, const ResourceUsageRange &tag_range,
                                       const AccessContext &access_context) const;
+    HazardResult DetectMarkerHazard(const vvl::Buffer &buffer, const ResourceAccessRange &range) const;
 
     const TrackBack &GetDstExternalTrackBack() const { return dst_external_; }
     void Reset() {
@@ -312,7 +313,7 @@ class AccessContext {
                             bool recur_to_infill = false);
 
     void UpdateAccessState(const vvl::Buffer &buffer, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
-                           const ResourceAccessRange &range, ResourceUsageTagEx tag_ex);
+                           const ResourceAccessRange &range, ResourceUsageTagEx tag_ex, SyncFlags flags = 0);
     void UpdateAccessState(const vvl::Image &image, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
                            const VkImageSubresourceRange &subresource_range, const ResourceUsageTag &tag);
     void UpdateAccessState(const vvl::Image &image, SyncAccessIndex current_usage, SyncOrdering ordering_rule,

@@ -75,6 +75,18 @@ HazardResult ResourceAccessState::DetectHazard(const SyncAccessInfo &usage_info)
     return {};
 }
 
+HazardResult ResourceAccessState::DetectMarkerHazard() const {
+    // Check for special case with two consecutive marker acceses.
+    // Markers specify memory dependency betweem themselves, so this is not a hazard.
+    if (last_reads.empty() && last_write.has_value() && (last_write->flags_ & SyncFlag::kMarker) != 0) {
+        return {};
+    }
+
+    // Go back to regular hazard detection
+    const SyncAccessInfo &marker_access_info = GetAccessInfo(SYNC_COPY_TRANSFER_WRITE);
+    return DetectHazard(marker_access_info);
+}
+
 HazardResult ResourceAccessState::DetectHazard(const SyncAccessInfo &usage_info, const OrderingBarrier &ordering, SyncFlags flags,
                                                QueueId queue_id) const {
     // The ordering guarantees act as barriers to the last accesses, independent of synchronization operations
@@ -109,38 +121,55 @@ HazardResult ResourceAccessState::DetectHazard(const SyncAccessInfo &usage_info,
         if (is_raw_hazard) {
             return HazardResult::HazardVsPriorWrite(this, usage_info, READ_AFTER_WRITE, *last_write);
         }
-    } else if (access_index == SyncAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION) {
+        return {};
+    }
+
+    if (access_index == SyncAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION) {
         // For Image layout transitions, the barrier represents the first synchronization/access scope of the layout transition
         return DetectBarrierHazard(usage_info, queue_id, ordering.exec_scope, ordering.access_scope);
-    } else {
-        // Only check for WAW if there are no reads since last_write
-        const bool usage_write_is_ordered = (usage_info.access_bit & ordering.access_scope).any();
-        if (last_reads.size()) {
-            // Look for any WAR hazards outside the ordered set of stages
-            VkPipelineStageFlags2 ordered_stages = VK_PIPELINE_STAGE_2_NONE;
-            if (usage_write_is_ordered) {
-                // If the usage is ordered, we can ignore all ordered read stages w.r.t. WAR)
-                ordered_stages = GetOrderedStages(queue_id, ordering, flags);
-            }
-            // If we're tracking any reads that aren't ordered against the current write, got to check 'em all.
-            if ((ordered_stages & last_read_stages) != last_read_stages) {
-                for (const auto &read_access : last_reads) {
-                    if (read_access.stage & ordered_stages) continue;  // but we can skip the ordered ones
-                    if (IsReadHazard(usage_stage, read_access)) {
-                        return HazardResult::HazardVsPriorRead(this, usage_info, WRITE_AFTER_READ, read_access);
-                    }
+    }
+
+    // Check WAR before WAW
+    const bool usage_write_is_ordered = (usage_info.access_bit & ordering.access_scope).any();
+    if (last_reads.size()) {
+        // Look for any WAR hazards outside the ordered set of stages
+        VkPipelineStageFlags2 ordered_stages = VK_PIPELINE_STAGE_2_NONE;
+        if (usage_write_is_ordered) {
+            // If the usage is ordered, we can ignore all ordered read stages w.r.t. WAR)
+            ordered_stages = GetOrderedStages(queue_id, ordering, flags);
+        }
+        // If we're tracking any reads that aren't ordered against the current write, got to check 'em all.
+        if ((ordered_stages & last_read_stages) != last_read_stages) {
+            for (const auto &read_access : last_reads) {
+                if (read_access.stage & ordered_stages) continue;  // but we can skip the ordered ones
+                if (IsReadHazard(usage_stage, read_access)) {
+                    return HazardResult::HazardVsPriorRead(this, usage_info, WRITE_AFTER_READ, read_access);
                 }
             }
-        } else if (last_write.has_value() && !(last_write->IsOrdered(ordering, queue_id) && usage_write_is_ordered)) {
-            bool ilt_ilt_hazard = false;
-            if ((access_index == SYNC_IMAGE_LAYOUT_TRANSITION) && (last_write->IsIndex(SYNC_IMAGE_LAYOUT_TRANSITION))) {
-                // ILT after ILT is a special case where we check the 2nd access scope of the first ILT against the first access
-                // scope of the second ILT, which has been passed (smuggled?) in the ordering barrier
-                ilt_ilt_hazard = !(last_write->Barriers() & ordering.access_scope).any();
-            }
-            if (ilt_ilt_hazard || last_write->IsWriteHazard(usage_info)) {
-                return HazardResult::HazardVsPriorWrite(this, usage_info, WRITE_AFTER_WRITE, *last_write);
-            }
+        }
+        return {};
+    }
+
+    // Only check for WAW if there are no reads since last_write
+    if (last_write.has_value()) {
+        if (last_write->IsOrdered(ordering, queue_id) && usage_write_is_ordered) {
+            return {};
+        }
+
+        // Special case: marker accesses define memory dependency betweem themsevles
+        if ((last_write->flags_ & SyncFlag::kMarker) != 0 && (flags & SyncFlag::kMarker) != 0) {
+            return {};
+        }
+
+        // ILT after ILT is a special case where we check the 2nd access scope of the first ILT against the first access
+        // scope of the second ILT, which has been passed (smuggled?) in the ordering barrier
+        bool ilt_ilt_hazard = false;
+        if ((access_index == SYNC_IMAGE_LAYOUT_TRANSITION) && (last_write->IsIndex(SYNC_IMAGE_LAYOUT_TRANSITION))) {
+            ilt_ilt_hazard = !(last_write->Barriers() & ordering.access_scope).any();
+        }
+
+        if (ilt_ilt_hazard || last_write->IsWriteHazard(usage_info)) {
+            return HazardResult::HazardVsPriorWrite(this, usage_info, WRITE_AFTER_WRITE, *last_write);
         }
     }
     return {};
@@ -199,7 +228,7 @@ HazardResult ResourceAccessState::DetectHazard(const ResourceAccessState &record
                     // if there are any first use reads, we suppress WAW by injecting the active context write in the ordering rule
                     barrier.access_scope |= last_access.usage_info->access_bit;
                 }
-                hazard = DetectHazard(*last_access.usage_info, barrier, 0, queue_id);
+                hazard = DetectHazard(*last_access.usage_info, barrier, last_access.flags, queue_id);
                 if (hazard.IsHazard()) {
                     hazard.AddRecordedAccess(last_access);
                 }
@@ -436,13 +465,13 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
         for (auto &b : other.first_accesses_) {
             // TODO: Determine whether some tag offset will be needed for PHASE II
             while ((a != a_end) && (a->tag < b.tag)) {
-                UpdateFirst(a->TagEx(), *a->usage_info, a->ordering_rule);
+                UpdateFirst(a->TagEx(), *a->usage_info, a->ordering_rule, a->flags);
                 ++a;
             }
-            UpdateFirst(b.TagEx(), *b.usage_info, b.ordering_rule);
+            UpdateFirst(b.TagEx(), *b.usage_info, b.ordering_rule, a->flags);
         }
         for (; a != a_end; ++a) {
-            UpdateFirst(a->TagEx(), *a->usage_info, a->ordering_rule);
+            UpdateFirst(a->TagEx(), *a->usage_info, a->ordering_rule, a->flags);
         }
     }
 }
@@ -489,7 +518,7 @@ void ResourceAccessState::Update(const SyncAccessInfo &usage_info, SyncOrdering 
         // TODO determine what to do with READ-WRITE operations if any
         SetWrite(usage_info, tag_ex, flags);
     }
-    UpdateFirst(tag_ex, usage_info, ordering_rule);
+    UpdateFirst(tag_ex, usage_info, ordering_rule, flags);
 }
 
 HazardResult HazardResult::HazardVsPriorWrite(const ResourceAccessState *access_state, const SyncAccessInfo &usage_info,
@@ -897,8 +926,8 @@ VkPipelineStageFlags2 ResourceAccessState::GetOrderedStages(QueueId queue_id, co
     return ordered_stages;
 }
 
-void ResourceAccessState::UpdateFirst(const ResourceUsageTagEx tag_ex, const SyncAccessInfo &usage_info,
-                                      SyncOrdering ordering_rule) {
+void ResourceAccessState::UpdateFirst(const ResourceUsageTagEx tag_ex, const SyncAccessInfo &usage_info, SyncOrdering ordering_rule,
+                                      SyncFlags flags) {
     // Only record until we record a write.
     if (!first_access_closed_) {
         const bool is_read = IsRead(usage_info.access_index);
@@ -909,7 +938,7 @@ void ResourceAccessState::UpdateFirst(const ResourceUsageTagEx tag_ex, const Syn
             first_read_stages_ |= usage_stage;
             if (0 == (read_execution_barriers & usage_stage)) {
                 // If this stage isn't masked then we add it (since writes map to usage_stage 0, this also records writes)
-                first_accesses_.emplace_back(usage_info, tag_ex, ordering_rule);
+                first_accesses_.emplace_back(usage_info, tag_ex, ordering_rule, flags);
                 first_access_closed_ = !is_read;
             }
         }

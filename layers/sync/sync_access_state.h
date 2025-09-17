@@ -70,9 +70,10 @@ enum class SyncOrdering : uint8_t {
 
 struct SyncFlag {
     enum : uint32_t {
-        kLoadOp = 1u << 0,
-        kStoreOp = 1u << 1,
-        kPresent = 1u << 2,
+        kLoadOp = 0x01,
+        kStoreOp = 0x02,
+        kPresent = 0x04,
+        kMarker = 0x08,
     };
 };
 using SyncFlags = uint32_t;
@@ -177,11 +178,12 @@ struct ResourceFirstAccess {
     ResourceUsageTag tag;
     uint32_t handle_index;
     SyncOrdering ordering_rule;
+    SyncFlags flags;
 
-    ResourceFirstAccess(const SyncAccessInfo &usage_info, ResourceUsageTagEx tag_ex, SyncOrdering ordering_rule)
-        : usage_info(&usage_info), tag(tag_ex.tag), handle_index(tag_ex.handle_index), ordering_rule(ordering_rule) {}
+    ResourceFirstAccess(const SyncAccessInfo &usage_info, ResourceUsageTagEx tag_ex, SyncOrdering ordering_rule, SyncFlags flags)
+        : usage_info(&usage_info), tag(tag_ex.tag), handle_index(tag_ex.handle_index), ordering_rule(ordering_rule), flags(flags) {}
     bool operator==(const ResourceFirstAccess &rhs) const {
-        return (tag == rhs.tag) && (usage_info == rhs.usage_info) && (ordering_rule == rhs.ordering_rule);
+        return (tag == rhs.tag) && (usage_info == rhs.usage_info) && (ordering_rule == rhs.ordering_rule) && flags == rhs.flags;
     }
     ResourceUsageTagEx TagEx() const { return {tag, handle_index}; }
 };
@@ -393,6 +395,8 @@ class ResourceAccessState {
 
   public:
     HazardResult DetectHazard(const SyncAccessInfo &usage_info) const;
+    HazardResult DetectMarkerHazard() const;
+
     HazardResult DetectHazard(const SyncAccessInfo &usage_info, const OrderingBarrier &ordering, SyncFlags flags,
                               QueueId queue_id) const;
     HazardResult DetectHazard(const ResourceAccessState &recorded_use, QueueId queue_id, const ResourceUsageRange &tag_range) const;
@@ -551,7 +555,7 @@ class ResourceAccessState {
     }
     VkPipelineStageFlags2 GetOrderedStages(QueueId queue_id, const OrderingBarrier &ordering, SyncFlags flags) const;
 
-    void UpdateFirst(ResourceUsageTagEx tag_ex, const SyncAccessInfo &usage_info, SyncOrdering ordering_rule);
+    void UpdateFirst(ResourceUsageTagEx tag_ex, const SyncAccessInfo &usage_info, SyncOrdering ordering_rule, SyncFlags flags = 0);
     void TouchupFirstForLayoutTransition(ResourceUsageTag tag, const OrderingBarrier &layout_ordering);
     void MergePending(const ResourceAccessState &other);
     void MergeReads(const ResourceAccessState &other);

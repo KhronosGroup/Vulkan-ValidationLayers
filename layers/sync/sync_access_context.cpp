@@ -73,6 +73,14 @@ class HazardDetectFirstUse {
     const ResourceUsageRange &tag_range_;
 };
 
+struct HazardDetectorMarker {
+    HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const { return pos->second.DetectMarkerHazard(); }
+    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag,
+                             QueueId queue_id) const {
+        return pos->second.DetectAsyncHazard(GetAccessInfo(SYNC_COPY_TRANSFER_WRITE), start_tag, queue_id);
+    }
+};
+
 AccessContext::AccessContext(uint32_t subpass, VkQueueFlags queue_flags,
                              const std::vector<SubpassDependencyGraphNode> &dependencies,
                              const std::vector<AccessContext> &contexts, const AccessContext *external_context) {
@@ -182,7 +190,7 @@ void AccessContext::ResolvePreviousAccesses() {
 }
 
 void AccessContext::UpdateAccessState(const vvl::Buffer &buffer, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
-                                      const ResourceAccessRange &range, ResourceUsageTagEx tag_ex) {
+                                      const ResourceAccessRange &range, ResourceUsageTagEx tag_ex, SyncFlags flags) {
     if (current_usage == SYNC_ACCESS_INDEX_NONE) {
         return;
     }
@@ -190,7 +198,7 @@ void AccessContext::UpdateAccessState(const vvl::Buffer &buffer, SyncAccessIndex
         return;
     }
     const auto base_address = ResourceBaseAddress(buffer);
-    UpdateMemoryAccessStateFunctor action(*this, current_usage, ordering_rule, tag_ex);
+    UpdateMemoryAccessStateFunctor action(*this, current_usage, ordering_rule, tag_ex, flags);
     UpdateMemoryAccessRangeState(action, range + base_address);
 }
 
@@ -554,6 +562,15 @@ HazardResult AccessContext::DetectFirstUseHazard(QueueId queue_id, const Resourc
         }
     }
     return {};
+}
+
+HazardResult AccessContext::DetectMarkerHazard(const vvl::Buffer &buffer, const ResourceAccessRange &range) const {
+    if (!SimpleBinding(buffer)) {
+        return HazardResult();
+    }
+    const VkDeviceSize base_address = ResourceBaseAddress(buffer);
+    HazardDetectorMarker detector;
+    return DetectHazardRange(detector, (range + base_address), DetectOptions::kDetectAll);
 }
 
 // For RenderPass time validation this is "start tag", for QueueSubmit, this is the earliest
