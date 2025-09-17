@@ -109,7 +109,7 @@ if (VVL_ENABLE_TRACY)
 endif()
 
 
-find_package(VulkanHeaders CONFIG QUIET)
+find_package(VulkanHeaders ${CMAKE_PROJECT_VERSION} CONFIG QUIET)
 
 find_package(VulkanUtilityLibraries CONFIG QUIET)
 
