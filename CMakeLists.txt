@@ -16,6 +16,9 @@
 # ~~~
 cmake_minimum_required(VERSION 3.22.1)
 
+# The VERSION field is generated with the "--generated-version" flag in the generate_source.py script
+#
+# If working with unreleased extensions, make sure the header and validation version are all on the same header version
 project(VVL VERSION 1.4.326 LANGUAGES CXX)
 
 # This variable enables downstream users to customize the target API
@@ -107,7 +110,6 @@ if (VVL_ENABLE_TRACY)
         )
     endif()
 endif()
-
 
 find_package(VulkanHeaders ${CMAKE_PROJECT_VERSION} CONFIG QUIET)
 
