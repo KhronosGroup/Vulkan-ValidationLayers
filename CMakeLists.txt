@@ -16,7 +16,7 @@
 # ~~~
 cmake_minimum_required(VERSION 3.22.1)
 
-project(VVL LANGUAGES CXX)
+project(VVL VERSION 1.4.326 LANGUAGES CXX)
 
 # This variable enables downstream users to customize the target API
 # variant (e.g. Vulkan SC)
