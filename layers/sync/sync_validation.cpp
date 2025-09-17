@@ -1784,19 +1784,13 @@ bool SyncValidator::PreCallValidateCmdWriteBufferMarkerAMD(VkCommandBuffer comma
                                                            const ErrorObject &error_obj) const {
     bool skip = false;
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
-    if (!cb_state) return skip;
+    ASSERT_AND_RETURN_SKIP(cb_state);
     const auto *cb_access_context = syncval_state::AccessContext(*cb_state);
+    const AccessContext &context = *cb_access_context->GetCurrentAccessContext();
 
-    const auto *context = cb_access_context->GetCurrentAccessContext();
-    assert(context);
-    if (!context) return skip;
-
-    auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
-
-    if (dst_buffer) {
+    if (auto dst_buffer = Get<vvl::Buffer>(dstBuffer)) {
         const ResourceAccessRange range = MakeRange(dstOffset, 4);
-        auto hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, range);
+        auto hazard = context.DetectMarkerHazard(*dst_buffer, range);
         if (hazard.IsHazard()) {
             const std::string resource_description = "dstBuffer " + FormatHandle(dstBuffer);
             const auto error =
@@ -1811,19 +1805,16 @@ void SyncValidator::PostCallRecordCmdWriteBufferMarkerAMD(VkCommandBuffer comman
                                                           VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker,
                                                           const RecordObject &record_obj) {
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
-    if (!cb_state) return;
+    ASSERT_AND_RETURN(cb_state);
     auto *cb_access_context = syncval_state::AccessContext(*cb_state);
     const auto tag = cb_access_context->NextCommandTag(record_obj.location.function);
-    auto *context = cb_access_context->GetCurrentAccessContext();
-    assert(context);
+    AccessContext &context = *cb_access_context->GetCurrentAccessContext();
 
-    auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
-
-    if (dst_buffer) {
+    if (auto dst_buffer = Get<vvl::Buffer>(dstBuffer)) {
         const ResourceAccessRange range = MakeRange(dstOffset, 4);
         const ResourceUsageTagEx tag_ex = cb_access_context->AddCommandHandle(tag, dst_buffer->Handle());
-        context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag_ex);
+        context.UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag_ex,
+                                  SyncFlag::kMarker);
     }
 }
 
