@@ -112,13 +112,10 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
     std::memcpy(mapped_aabb_buffer_data, (uint8_t *)aabbs.data(), static_cast<std::size_t>(aabb_buffer_size));
     aabb_buffer.Memory().Unmap();
 
-    VkGeometryNV geometry = {};
-    geometry.sType = VK_STRUCTURE_TYPE_GEOMETRY_NV;
+    VkGeometryNV geometry = vku::InitStructHelper();
     geometry.geometryType = VK_GEOMETRY_TYPE_AABBS_NV;
-    geometry.geometry.triangles = {};
-    geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV;
-    geometry.geometry.aabbs = {};
-    geometry.geometry.aabbs.sType = VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV;
+    geometry.geometry.triangles = vku::InitStructHelper();
+    geometry.geometry.aabbs = vku::InitStructHelper();
     geometry.geometry.aabbs.aabbData = aabb_buffer;
     geometry.geometry.aabbs.numAABBs = static_cast<uint32_t>(aabbs.size());
     geometry.geometry.aabbs.offset = 0;

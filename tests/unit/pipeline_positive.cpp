@@ -1258,7 +1258,7 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineRasterizationOrderAttachmentAcces
         subpass.pDepthStencilAttachment = &dsAttachRef;
         subpass.flags = subpass_flags;
 
-        VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO};
+        VkRenderPassCreateInfo rpci = vku::InitStructHelper();
         rpci.attachmentCount = 2;
         rpci.pAttachments = attachments;
         rpci.subpassCount = 1;

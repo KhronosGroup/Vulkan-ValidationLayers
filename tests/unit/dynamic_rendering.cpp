@@ -5607,7 +5607,7 @@ TEST_F(NegativeDynamicRendering, EndRenderpassWithBeginRenderingRenderpassInstan
     m_command_buffer.EndRenderPass();
     m_errorMonitor->VerifyFound();
 
-    VkSubpassEndInfo subpassEndInfo = {VK_STRUCTURE_TYPE_SUBPASS_END_INFO_KHR, nullptr};
+    VkSubpassEndInfo subpassEndInfo = vku::InitStructHelper();
 
     vkt::CommandBuffer primary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 

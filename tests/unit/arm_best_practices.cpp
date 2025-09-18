@@ -153,8 +153,7 @@ TEST_F(VkArmBestPracticesLayerTest, SamplerCreation) {
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-Arm-vkCreateSampler-border-clamp-color");
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-Arm-vkCreateSampler-unnormalized-coordinates");
 
-    VkSamplerCreateInfo sampler_info{};
-    sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    VkSamplerCreateInfo sampler_info = vku::InitStructHelper();
     sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
     sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
     sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
@@ -194,8 +193,7 @@ TEST_F(VkArmBestPracticesLayerTest, MultisampledBlending) {
     subpass.pColorAttachments = &color_ref;
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
-    VkRenderPassCreateInfo rp_info{};
-    rp_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    VkRenderPassCreateInfo rp_info = vku::InitStructHelper();
     rp_info.attachmentCount = 1;
     rp_info.pAttachments = &attachment;
     rp_info.subpassCount = 1;
@@ -203,8 +201,7 @@ TEST_F(VkArmBestPracticesLayerTest, MultisampledBlending) {
 
     vk::CreateRenderPass(device(), &rp_info, nullptr, &m_renderPass);
 
-    VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = {};
-    pipe_ms_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = vku::InitStructHelper();
     pipe_ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
 
     VkPipelineColorBlendAttachmentState blend_att = {};
@@ -212,8 +209,7 @@ TEST_F(VkArmBestPracticesLayerTest, MultisampledBlending) {
     blend_att.colorWriteMask =
         VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 
-    VkPipelineColorBlendStateCreateInfo pipe_cb_state_ci = {};
-    pipe_cb_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    VkPipelineColorBlendStateCreateInfo pipe_cb_state_ci = vku::InitStructHelper();
     pipe_cb_state_ci.attachmentCount = 1;
     pipe_cb_state_ci.pAttachments = &blend_att;
 
@@ -264,9 +260,7 @@ TEST_F(VkArmBestPracticesLayerTest, ManySmallIndexedDrawcalls) {
 
     vkt::Buffer index_buffer(*m_device, sizeof(uint32_t) * 3, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
-    VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = {};
-    pipe_ms_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    pipe_ms_state_ci.pNext = NULL;
+    VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = vku::InitStructHelper();
     pipe_ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     pipe_ms_state_ci.sampleShadingEnable = 0;
     pipe_ms_state_ci.minSampleShading = 1.0;
@@ -303,9 +297,7 @@ TEST_F(VkArmBestPracticesLayerTest, SuboptimalDescriptorReuseTest) {
     ds_type_count.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     ds_type_count.descriptorCount = 6;
 
-    VkDescriptorPoolCreateInfo ds_pool_ci = {};
-    ds_pool_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    ds_pool_ci.pNext = NULL;
+    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.maxSets = 6;
     ds_pool_ci.poolSizeCount = 1;
     ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
@@ -318,8 +310,7 @@ TEST_F(VkArmBestPracticesLayerTest, SuboptimalDescriptorReuseTest) {
     ds_binding.descriptorCount = 1;
     ds_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 
-    VkDescriptorSetLayoutCreateInfo ds_layout_info = {};
-    ds_layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    VkDescriptorSetLayoutCreateInfo ds_layout_info = vku::InitStructHelper();
     ds_layout_info.bindingCount = 1;
     ds_layout_info.pBindings = &ds_binding;
 
@@ -331,8 +322,7 @@ TEST_F(VkArmBestPracticesLayerTest, SuboptimalDescriptorReuseTest) {
     descriptor_sets.resize(ds_layouts.size());
 
     // allocate N/2 descriptor sets
-    VkDescriptorSetAllocateInfo alloc_info = {};
-    alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.descriptorPool = ds_pool;
     alloc_info.descriptorSetCount = descriptor_sets.size() / 2;
     alloc_info.pSetLayouts = ds_layouts.data();
@@ -348,8 +338,7 @@ TEST_F(VkArmBestPracticesLayerTest, SuboptimalDescriptorReuseTest) {
     ASSERT_EQ(VK_SUCCESS, err);
 
     // allocate the previously freed descriptor set
-    alloc_info = {};
-    alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    alloc_info = vku::InitStructHelper();
     alloc_info.descriptorPool = ds_pool;
     alloc_info.descriptorSetCount = 1;
     alloc_info.pSetLayouts = ds_layouts.data();
@@ -552,9 +541,7 @@ TEST_F(VkArmBestPracticesLayerTest, PresentModeTest) {
     VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     VkSurfaceTransformFlagBitsKHR preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
 
-    VkSwapchainCreateInfoKHR swapchain_create_info = {};
-    swapchain_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    swapchain_create_info.pNext = 0;
+    VkSwapchainCreateInfoKHR swapchain_create_info = vku::InitStructHelper();
     swapchain_create_info.surface = m_surface.Handle();
     swapchain_create_info.minImageCount = m_surface_capabilities.minImageCount;
     swapchain_create_info.imageFormat = m_surface_formats[0].format;
@@ -619,16 +606,12 @@ TEST_F(VkArmBestPracticesLayerTest, RobustBufferAccessTest) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
 
     VkDevice local_device;
-    VkDeviceQueueCreateInfo queue_info = {};
-    queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queue_info.pNext = nullptr;
+    VkDeviceQueueCreateInfo queue_info = vku::InitStructHelper();
     queue_info.queueFamilyIndex = 0;
     queue_info.queueCount = 1;
     float qp = 1.f;
     queue_info.pQueuePriorities = &qp;
-    VkDeviceCreateInfo dev_info = {};
-    dev_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    dev_info.pNext = nullptr;
+    VkDeviceCreateInfo dev_info = vku::InitStructHelper();
     dev_info.queueCreateInfoCount = 1;
     dev_info.pQueueCreateInfos = &queue_info;
     dev_info.enabledLayerCount = 0;
@@ -664,24 +647,20 @@ TEST_F(VkArmBestPracticesLayerTest, DepthPrePassUsage) {
     VkPipelineColorBlendAttachmentState color_write_on = {};
     color_write_on.colorWriteMask = 0xF;
 
-    VkPipelineColorBlendStateCreateInfo cb_depth_only_ci = {};
-    cb_depth_only_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    VkPipelineColorBlendStateCreateInfo cb_depth_only_ci = vku::InitStructHelper();
     cb_depth_only_ci.attachmentCount = 1;
     cb_depth_only_ci.pAttachments = &color_write_off;
 
-    VkPipelineColorBlendStateCreateInfo cb_depth_equal_ci = {};
-    cb_depth_equal_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    VkPipelineColorBlendStateCreateInfo cb_depth_equal_ci = vku::InitStructHelper();
     cb_depth_equal_ci.attachmentCount = 1;
     cb_depth_equal_ci.pAttachments = &color_write_on;
 
-    VkPipelineDepthStencilStateCreateInfo ds_depth_only_ci = {};
-    ds_depth_only_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    VkPipelineDepthStencilStateCreateInfo ds_depth_only_ci = vku::InitStructHelper();
     ds_depth_only_ci.depthTestEnable = VK_TRUE;
     ds_depth_only_ci.depthWriteEnable = VK_TRUE;
     ds_depth_only_ci.depthCompareOp = VK_COMPARE_OP_LESS;
 
-    VkPipelineDepthStencilStateCreateInfo ds_depth_equal_ci = {};
-    ds_depth_equal_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    VkPipelineDepthStencilStateCreateInfo ds_depth_equal_ci = vku::InitStructHelper();
     ds_depth_equal_ci.depthTestEnable = VK_TRUE;
     ds_depth_equal_ci.depthWriteEnable = VK_FALSE;
     ds_depth_equal_ci.depthCompareOp = VK_COMPARE_OP_EQUAL;
@@ -1292,14 +1271,14 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     pool_sizes[1].descriptorCount = 4;
     pool_sizes[1].type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 
-    VkDescriptorPoolCreateInfo descriptor_pool_create_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
+    VkDescriptorPoolCreateInfo descriptor_pool_create_info = vku::InitStructHelper();
     descriptor_pool_create_info.maxSets = 1;
     descriptor_pool_create_info.poolSizeCount = 2;
     descriptor_pool_create_info.pPoolSizes = pool_sizes;
     vkt::DescriptorPool pool(*m_device, descriptor_pool_create_info);
 
     VkDescriptorSet descriptor_set{VK_NULL_HANDLE};
-    VkDescriptorSetAllocateInfo descriptor_set_allocate_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
+    VkDescriptorSetAllocateInfo descriptor_set_allocate_info = vku::InitStructHelper();
     descriptor_set_allocate_info.descriptorPool = pool;
     descriptor_set_allocate_info.descriptorSetCount = 1;
     descriptor_set_allocate_info.pSetLayouts = &graphics_pipeline.descriptor_set_->layout_.handle();
@@ -1310,7 +1289,7 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     image_info.sampler = VK_NULL_HANDLE;
     image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    VkWriteDescriptorSet write = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+    VkWriteDescriptorSet write = vku::InitStructHelper();
     write.descriptorCount = 1;
     write.dstBinding = 10;
     write.dstArrayElement = 1;
@@ -1505,7 +1484,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantAttachment) {
 
     CreatePipelineHelper pipe_all(*this);
     pipe_all.cb_attachments_.colorWriteMask = 0xf;
-    pipe_all.ds_ci_ = {VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
+    pipe_all.ds_ci_ = vku::InitStructHelper();
     pipe_all.gp_ci_.pDepthStencilState = &pipe_all.ds_ci_;
     pipe_all.ds_ci_.depthTestEnable = VK_TRUE;
     pipe_all.ds_ci_.stencilTestEnable = VK_TRUE;
@@ -1513,20 +1492,20 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantAttachment) {
 
     CreatePipelineHelper pipe_color(*this);
     pipe_color.cb_attachments_.colorWriteMask = 0xf;
-    pipe_color.ds_ci_ = {VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
+    pipe_color.ds_ci_ = vku::InitStructHelper();
     pipe_color.gp_ci_.pDepthStencilState = &pipe_color.ds_ci_;
     pipe_color.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe_depth(*this);
     pipe_depth.cb_attachments_.colorWriteMask = 0;
-    pipe_depth.ds_ci_ = {VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
+    pipe_depth.ds_ci_ = vku::InitStructHelper();
     pipe_depth.gp_ci_.pDepthStencilState = &pipe_depth.ds_ci_;
     pipe_depth.ds_ci_.depthTestEnable = VK_TRUE;
     pipe_depth.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe_stencil(*this);
     pipe_stencil.cb_attachments_.colorWriteMask = 0;
-    pipe_stencil.ds_ci_ = {VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
+    pipe_stencil.ds_ci_ = vku::InitStructHelper();
     pipe_stencil.gp_ci_.pDepthStencilState = &pipe_stencil.ds_ci_;
     pipe_stencil.ds_ci_.stencilTestEnable = VK_TRUE;
     pipe_stencil.CreateGraphicsPipeline();
