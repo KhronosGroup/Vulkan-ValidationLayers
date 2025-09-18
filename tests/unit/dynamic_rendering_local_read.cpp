@@ -1234,6 +1234,33 @@ TEST_F(NegativeDynamicRenderingLocalRead, CmdSetRenderingAttachmentLocations) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDynamicRenderingLocalRead, CmdSetRenderingAttachmentLocationsSecondary) {
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
+
+    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkCommandBufferInheritanceRenderingInfo cbiri = vku::InitStructHelper();
+    cbiri.colorAttachmentCount = 1;
+    cbiri.pColorAttachmentFormats = &color_format;
+    cbiri.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+    VkCommandBufferInheritanceInfo cbii = vku::InitStructHelper(&cbiri);
+    VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();
+    cbbi.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    cbbi.pInheritanceInfo = &cbii;
+
+    uint32_t locations = 0;
+    VkRenderingAttachmentLocationInfo location_info = vku::InitStructHelper();
+    location_info.colorAttachmentCount = 1;
+    location_info.pColorAttachmentLocations = &locations;
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin(&cbbi);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetRenderingAttachmentLocations-commandBuffer-09511");
+    vk::CmdSetRenderingAttachmentLocationsKHR(secondary, &location_info);
+    m_errorMonitor->VerifyFound();
+    secondary.End();
+}
+
 TEST_F(NegativeDynamicRenderingLocalRead, AttachmentLocationsValidity) {
     TEST_DESCRIPTION(
         "If the feature is not enabled all pColorAttachmentLocations must be set to its index within the array and unique");
