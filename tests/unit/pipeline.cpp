@@ -3457,14 +3457,7 @@ TEST_F(NegativePipeline, MissingPipelineFormat) {
     rendering_info.pDepthAttachment = &ds_attachment;
     rendering_info.pStencilAttachment = &ds_attachment;
 
-    VkPipelineColorBlendAttachmentState color_blend_attachment_state = {};
-    color_blend_attachment_state.blendEnable = VK_TRUE;
-    color_blend_attachment_state.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_COLOR;
-    color_blend_attachment_state.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
-    color_blend_attachment_state.colorBlendOp = VK_BLEND_OP_ADD;
-    color_blend_attachment_state.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-    color_blend_attachment_state.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-    color_blend_attachment_state.alphaBlendOp = VK_BLEND_OP_ADD;
+    VkPipelineColorBlendAttachmentState color_blend_attachment_state = DefaultColorBlendAttachmentState();
     color_blend_attachment_state.colorWriteMask =
         VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 
@@ -3487,7 +3480,6 @@ TEST_F(NegativePipeline, MissingPipelineFormat) {
 
     CreatePipelineHelper depth_pipe(*this, &pipeline_rendering_info);
     depth_pipe.ds_ci_ = ds_state;
-    color_pipe.cb_ci_ = color_blend_state;
     depth_pipe.CreateGraphicsPipeline();
 
     pipeline_rendering_info.depthAttachmentFormat = ds_format;
@@ -3495,7 +3487,6 @@ TEST_F(NegativePipeline, MissingPipelineFormat) {
 
     CreatePipelineHelper stencil_pipe(*this, &pipeline_rendering_info);
     stencil_pipe.ds_ci_ = ds_state;
-    color_pipe.cb_ci_ = color_blend_state;
     stencil_pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();

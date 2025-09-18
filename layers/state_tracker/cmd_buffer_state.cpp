@@ -73,13 +73,13 @@ std::string AttachmentInfo::Describe(const vvl::CommandBuffer &cb_state, uint32_
             // This assumes the caller calculated the correct index with GetDynamicRenderingColorResolveAttachmentIndex
             ss << "pColorAttachments[" << rp_index << "].resolveImageView";
         } else if (type == Type::Depth) {
-            ss << "pDepthAttachment.imageView";
+            ss << "pDepthAttachment->imageView";
         } else if (type == Type::DepthResolve) {
-            ss << "pStencilAttachment.resolveImageView";
+            ss << "pStencilAttachment->resolveImageView";
         } else if (type == Type::Stencil) {
-            ss << "pStencilAttachment.imageView";
+            ss << "pStencilAttachment->imageView";
         } else if (type == Type::StencilResolve) {
-            ss << "pStencilAttachment.resolveImageView";
+            ss << "pStencilAttachment->resolveImageView";
         } else if (type == Type::FragmentDensityMap) {
             ss << "pNext<VkRenderingFragmentDensityMapAttachmentInfoEXT>.imageView";
         } else if (type == Type::FragmentShadingRate) {
