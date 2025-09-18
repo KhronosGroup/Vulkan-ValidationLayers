@@ -2035,15 +2035,7 @@ void CommandBuffer::SubmitTimeValidate(Queue &queue_state, uint32_t perf_submit_
 }
 
 uint32_t CommandBuffer::GetDynamicRenderingColorAttachmentCount() const {
-    if (active_render_pass) {
-        if (active_render_pass->use_dynamic_rendering_inherited) {
-            return active_render_pass->inheritance_rendering_info.colorAttachmentCount;
-        }
-        if (active_render_pass->use_dynamic_rendering) {
-            return active_render_pass->dynamic_rendering_begin_rendering_info.colorAttachmentCount;
-        }
-    }
-    return 0;
+    return active_render_pass ? active_render_pass->dynamic_rendering_color_attachment_count : 0;
 }
 
 uint32_t CommandBuffer::GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type type) const {
