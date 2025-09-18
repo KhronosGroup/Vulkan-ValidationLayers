@@ -5239,32 +5239,37 @@ bool CoreChecks::PreCallValidateCmdSetRenderingAttachmentLocations(VkCommandBuff
                                                                    const VkRenderingAttachmentLocationInfo *pLocationInfo,
                                                                    const ErrorObject &error_obj) const {
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
-    const Location loc_info = error_obj.location;
     bool skip = false;
 
     if (!enabled_features.dynamicRenderingLocalRead) {
-        skip |= LogError("VUID-vkCmdSetRenderingAttachmentLocations-dynamicRenderingLocalRead-09509", commandBuffer, loc_info,
-                         "dynamicRenderingLocalRead was not enabled.");
+        skip |= LogError("VUID-vkCmdSetRenderingAttachmentLocations-dynamicRenderingLocalRead-09509", commandBuffer,
+                         error_obj.location, "dynamicRenderingLocalRead was not enabled.");
     }
 
-    skip |= ValidateCmd(cb_state, loc_info);
+    skip |= ValidateCmd(cb_state, error_obj.location);
 
     const auto *rp_state_ptr = cb_state.active_render_pass.get();
     if (!rp_state_ptr) {
-        return skip;
+        return skip;  // called outside a render pass (validated elsewhere)
     }
 
     const auto &rp_state = *rp_state_ptr;
-
-    if (!rp_state.UsesDynamicRendering()) {
+    if (!rp_state.use_dynamic_rendering) {
         const LogObjectList objlist(commandBuffer, rp_state.VkHandle());
-        skip |= LogError("VUID-vkCmdSetRenderingAttachmentLocations-commandBuffer-09511", objlist, loc_info,
-                         "vkCmdBeginRendering was not called.");
+        if (!rp_state.use_dynamic_rendering_inherited) {
+            skip |= LogError("VUID-vkCmdSetRenderingAttachmentLocations-commandBuffer-09511", commandBuffer, error_obj.location,
+                             "is called inside vkCmdBeginRenderPass, but this command is only used for dynamic rendering "
+                             "(vkCmdBeginRendering).");
+        } else {
+            assert(cb_state.IsSecondary());
+            skip |= LogError("VUID-vkCmdSetRenderingAttachmentLocations-commandBuffer-09511", objlist, error_obj.location,
+                             "is not allowed in secondary command buffers using an inherited (VkCommandBufferInheritanceInfo) "
+                             "render pass, vkCmdBeginRendering needs to have been called prior to this command.");
+        }
     }
 
     if (pLocationInfo->colorAttachmentCount != cb_state.GetDynamicRenderingColorAttachmentCount()) {
-        const LogObjectList objlist(commandBuffer, rp_state.VkHandle());
-        skip |= LogError("VUID-vkCmdSetRenderingAttachmentLocations-pLocationInfo-09510", objlist,
+        skip |= LogError("VUID-vkCmdSetRenderingAttachmentLocations-pLocationInfo-09510", commandBuffer,
                          error_obj.location.dot(Field::pLocationInfo).dot(Field::colorAttachmentCount),
                          "(%" PRIu32 ") is not equal to %s::colorAttachmentCount (%" PRIu32 ") when render pass began",
                          pLocationInfo->colorAttachmentCount,
@@ -5272,7 +5277,7 @@ bool CoreChecks::PreCallValidateCmdSetRenderingAttachmentLocations(VkCommandBuff
                          cb_state.GetDynamicRenderingColorAttachmentCount());
     }
 
-    skip |= ValidateRenderingAttachmentLocations(*pLocationInfo, commandBuffer, loc_info.dot(Field::pLocationInfo));
+    skip |= ValidateRenderingAttachmentLocations(*pLocationInfo, commandBuffer, error_obj.location.dot(Field::pLocationInfo));
 
     return skip;
 }
@@ -5370,21 +5375,28 @@ bool CoreChecks::PreCallValidateCmdSetRenderingInputAttachmentIndices(VkCommandB
 
     const auto *rp_state_ptr = cb_state.active_render_pass.get();
     if (!rp_state_ptr) {
-        return skip;
+        return skip;  // called outside a render pass (validated elsewhere)
     }
 
     const auto &rp_state = *rp_state_ptr;
-    if (!rp_state.UsesDynamicRendering()) {
-        const LogObjectList objlist =
-            rp_state_ptr ? LogObjectList(commandBuffer, rp_state_ptr->VkHandle()) : LogObjectList(commandBuffer);
-        skip |= LogError("VUID-vkCmdSetRenderingInputAttachmentIndices-commandBuffer-09518", objlist, error_obj.location,
-                         "vkCmdBeginRendering was not called.");
-    }
-    if (pLocationInfo->colorAttachmentCount != cb_state.GetDynamicRenderingColorAttachmentCount()) {
+    if (!rp_state.use_dynamic_rendering) {
         const LogObjectList objlist(commandBuffer, rp_state.VkHandle());
+        if (!rp_state.use_dynamic_rendering_inherited) {
+            skip |= LogError("VUID-vkCmdSetRenderingInputAttachmentIndices-commandBuffer-09518", objlist, error_obj.location,
+                             "is called inside vkCmdBeginRenderPass, but this command is only used for dynamic rendering "
+                             "(vkCmdBeginRendering).");
+        } else {
+            assert(cb_state.IsSecondary());
+            skip |= LogError("VUID-vkCmdSetRenderingInputAttachmentIndices-commandBuffer-09518", objlist, error_obj.location,
+                             "is not allowed in secondary command buffers using an inherited (VkCommandBufferInheritanceInfo) "
+                             "render pass, vkCmdBeginRendering needs to have been called prior to this command.");
+        }
+    }
+
+    if (pLocationInfo->colorAttachmentCount != cb_state.GetDynamicRenderingColorAttachmentCount()) {
         const Location loc = error_obj.location.dot(Struct::VkRenderingInputAttachmentIndexInfo, Field::colorAttachmentCount);
 
-        skip |= LogError("VUID-vkCmdSetRenderingInputAttachmentIndices-pInputAttachmentIndexInfo-09517", objlist, loc,
+        skip |= LogError("VUID-vkCmdSetRenderingInputAttachmentIndices-pInputAttachmentIndexInfo-09517", commandBuffer, loc,
                          "(%" PRIu32 ") is not equal to %s::colorAttachmentCount (%" PRIu32 ") when render pass began",
                          pLocationInfo->colorAttachmentCount,
                          rp_state.use_dynamic_rendering_inherited ? "VkCommandBufferInheritanceRenderingInfo" : "VkRenderingInfo",
