@@ -222,10 +222,9 @@ void GetSimpleGeometryForAccelerationStructureTests(const vkt::Device &device, v
     std::memcpy(mapped_ibo_buffer_data + offset, (uint8_t *)indicies.data(), sizeof(uint32_t) * indicies.size());
     ibo->Memory().Unmap();
 
-    *geometry = {};
-    geometry->sType = VK_STRUCTURE_TYPE_GEOMETRY_NV;
+    *geometry = vku::InitStructHelper();
     geometry->geometryType = VK_GEOMETRY_TYPE_TRIANGLES_NV;
-    geometry->geometry.triangles.sType = VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV;
+    geometry->geometry.triangles = vku::InitStructHelper();
     geometry->geometry.triangles.vertexData = vbo->handle();
     geometry->geometry.triangles.vertexOffset = 0;
     geometry->geometry.triangles.vertexCount = 3;
@@ -237,8 +236,7 @@ void GetSimpleGeometryForAccelerationStructureTests(const vkt::Device &device, v
     geometry->geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
     geometry->geometry.triangles.transformData = VK_NULL_HANDLE;
     geometry->geometry.triangles.transformOffset = 0;
-    geometry->geometry.aabbs = {};
-    geometry->geometry.aabbs.sType = VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV;
+    geometry->geometry.aabbs = vku::InitStructHelper();
 }
 }  // namespace rt
 }  // namespace nv

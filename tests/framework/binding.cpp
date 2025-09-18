@@ -1188,8 +1188,7 @@ Tensor::Tensor() {
     description_.pStrides = nullptr;
     description_.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
 
-    create_info_.sType = VK_STRUCTURE_TYPE_TENSOR_CREATE_INFO_ARM;
-    create_info_.pNext = nullptr;
+    create_info_ = vku::InitStructHelper();
     create_info_.flags = 0;
     create_info_.pDescription = &description_;
     create_info_.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -1199,8 +1198,7 @@ Tensor::Tensor() {
 
 Tensor::Tensor(const Device &dev, const bool is_copy_tensor) {
     dimensions_ = std::vector<int64_t>{1, 8, 8, 8};
-    description_.sType = VK_STRUCTURE_TYPE_TENSOR_DESCRIPTION_ARM;
-    description_.pNext = nullptr;
+    description_ = vku::InitStructHelper();
     description_.tiling = VK_TENSOR_TILING_LINEAR_ARM;
     description_.format = VK_FORMAT_R32_SINT;
     description_.dimensionCount = dimensions_.size();
@@ -1212,8 +1210,7 @@ Tensor::Tensor(const Device &dev, const bool is_copy_tensor) {
         description_.usage |= VK_TENSOR_USAGE_TRANSFER_SRC_BIT_ARM | VK_TENSOR_USAGE_TRANSFER_DST_BIT_ARM;
     }
 
-    create_info_.sType = VK_STRUCTURE_TYPE_TENSOR_CREATE_INFO_ARM;
-    create_info_.pNext = nullptr;
+    create_info_ = vku::InitStructHelper();
     create_info_.flags = 0;
     create_info_.pDescription = &description_;
     create_info_.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -1656,13 +1653,11 @@ void AccelerationStructureNV::Init(const Device &dev, const VkAccelerationStruct
 Buffer AccelerationStructureNV::CreateScratchBuffer(const Device &device, VkBufferCreateInfo *pCreateInfo /*= nullptr*/,
                                                     bool buffer_device_address /*= false*/) const {
     VkMemoryRequirements scratch_buffer_memory_requirements = BuildScratchMemoryRequirements().memoryRequirements;
-    VkBufferCreateInfo create_info = {};
+    VkBufferCreateInfo create_info = vku::InitStructHelper();
     create_info.size = scratch_buffer_memory_requirements.size;
     if (pCreateInfo) {
-        create_info.sType = pCreateInfo->sType;
         create_info.usage = pCreateInfo->usage;
     } else {
-        create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         create_info.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
         if (buffer_device_address) create_info.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     }

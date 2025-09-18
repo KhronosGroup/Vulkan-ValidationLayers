@@ -2823,8 +2823,7 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
     vkt::ImageView view(*m_device, ivci);
 
     // Test pipeline creation
-    VkPipelineViewportShadingRateImageStateCreateInfoNV vsrisci = {
-        VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SHADING_RATE_IMAGE_STATE_CREATE_INFO_NV};
+    VkPipelineViewportShadingRateImageStateCreateInfoNV vsrisci = vku::InitStructHelper();
 
     VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
     VkViewport viewports[20] = {viewport, viewport};
@@ -2948,8 +2947,7 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
         VkCoarseSampleOrderCustomNV sampOrdGood = {VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_1X2_PIXELS_NV, 2, 1 * 2 * 2,
                                                    &locations[0]};
 
-        VkPipelineViewportCoarseSampleOrderStateCreateInfoNV csosci = {
-            VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_COARSE_SAMPLE_ORDER_STATE_CREATE_INFO_NV};
+        VkPipelineViewportCoarseSampleOrderStateCreateInfoNV csosci = vku::InitStructHelper();
         csosci.sampleOrderType = VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV;
         csosci.customSampleOrderCount = 1;
 
@@ -3024,8 +3022,7 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNVViewportCount) {
     vkt::Image image(*m_device, image_create_info, vkt::set_layout);
     vkt::ImageView view = image.CreateView();
 
-    VkPipelineViewportShadingRateImageStateCreateInfoNV vsrisci = {
-        VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SHADING_RATE_IMAGE_STATE_CREATE_INFO_NV};
+    VkPipelineViewportShadingRateImageStateCreateInfoNV vsrisci = vku::InitStructHelper();
 
     VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
     VkViewport viewports[20] = {viewport, viewport};

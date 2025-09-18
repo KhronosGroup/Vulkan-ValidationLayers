@@ -3794,7 +3794,7 @@ TEST_F(NegativeRayTracing, OpacityMicromapFeatureDisable) {
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_MICROMAP_STORAGE_BIT_EXT);
 
     VkMicromapEXT micromap;
-    VkMicromapCreateInfoEXT maCreateInfo = {VK_STRUCTURE_TYPE_MICROMAP_CREATE_INFO_EXT};
+    VkMicromapCreateInfoEXT maCreateInfo = vku::InitStructHelper();
 
     maCreateInfo.createFlags = 0;
     maCreateInfo.buffer = buffer;
@@ -3823,7 +3823,7 @@ TEST_F(NegativeRayTracing, OpacityMicromapCaptureReplayFeatureDisable) {
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_MICROMAP_STORAGE_BIT_EXT);
 
     VkMicromapEXT micromap;
-    VkMicromapCreateInfoEXT maCreateInfo = {VK_STRUCTURE_TYPE_MICROMAP_CREATE_INFO_EXT};
+    VkMicromapCreateInfoEXT maCreateInfo = vku::InitStructHelper();
 
     maCreateInfo.createFlags = 0;
     maCreateInfo.buffer = buffer;

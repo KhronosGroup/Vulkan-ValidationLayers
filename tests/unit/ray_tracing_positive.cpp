@@ -1268,7 +1268,7 @@ TEST_F(PositiveRayTracing, BasicOpacityMicromapBuild) {
         data[IndexOffset / 4] = 0;
     }
 
-    VkMicromapBuildInfoEXT mmBuildInfo = {VK_STRUCTURE_TYPE_MICROMAP_BUILD_INFO_EXT};
+    VkMicromapBuildInfoEXT mmBuildInfo = vku::InitStructHelper();
 
     mmBuildInfo.type = VK_MICROMAP_TYPE_OPACITY_MICROMAP_EXT;
     mmBuildInfo.flags = 0;
@@ -1280,7 +1280,7 @@ TEST_F(PositiveRayTracing, BasicOpacityMicromapBuild) {
     mmBuildInfo.triangleArray.deviceAddress = 0ull;
     mmBuildInfo.triangleArrayStride = 0;
 
-    VkMicromapBuildSizesInfoEXT sizeInfo = {VK_STRUCTURE_TYPE_MICROMAP_BUILD_SIZES_INFO_EXT};
+    VkMicromapBuildSizesInfoEXT sizeInfo = vku::InitStructHelper();
 
     vk::GetMicromapBuildSizesEXT(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &mmBuildInfo, &sizeInfo);
 
@@ -1295,7 +1295,7 @@ TEST_F(PositiveRayTracing, BasicOpacityMicromapBuild) {
 
     VkMicromapEXT micromap;
 
-    VkMicromapCreateInfoEXT maCreateInfo = {VK_STRUCTURE_TYPE_MICROMAP_CREATE_INFO_EXT};
+    VkMicromapCreateInfoEXT maCreateInfo = vku::InitStructHelper();
 
     maCreateInfo.createFlags = 0;
     maCreateInfo.buffer = micromapBuffer;
@@ -1359,11 +1359,11 @@ TEST_F(PositiveRayTracing, BasicOpacityMicromapBuild) {
         vk::UnmapMemory(device(), vertexBuffer.Memory());
     }
 
-    VkAccelerationStructureBuildSizesInfoKHR bottomASBuildSizesInfo{VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR};
-    VkAccelerationStructureBuildSizesInfoKHR topASBuildSizesInfo{VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR};
+    VkAccelerationStructureBuildSizesInfoKHR bottomASBuildSizesInfo = vku::InitStructHelper();
+    VkAccelerationStructureBuildSizesInfoKHR topASBuildSizesInfo = vku::InitStructHelper();
 
     // Create a bottom-level acceleration structure with one triangle
-    VkAccelerationStructureGeometryKHR bottomASGeometry = {VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR};
+    VkAccelerationStructureGeometryKHR bottomASGeometry = vku::InitStructHelper();
 
     bottomASGeometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
     bottomASGeometry.geometry.triangles = vku::InitStructHelper();
@@ -1376,8 +1376,7 @@ TEST_F(PositiveRayTracing, BasicOpacityMicromapBuild) {
     bottomASGeometry.geometry.triangles.transformData.deviceAddress = 0;
     bottomASGeometry.flags = 0;
 
-    VkAccelerationStructureTrianglesOpacityMicromapEXT opacityGeometryMicromap = {
-        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_TRIANGLES_OPACITY_MICROMAP_EXT};
+    VkAccelerationStructureTrianglesOpacityMicromapEXT opacityGeometryMicromap = vku::InitStructHelper();
 
     opacityGeometryMicromap.indexType = VK_INDEX_TYPE_UINT32;
     opacityGeometryMicromap.indexBuffer.deviceAddress = micromapAddress + IndexOffset;
@@ -1386,7 +1385,7 @@ TEST_F(PositiveRayTracing, BasicOpacityMicromapBuild) {
     opacityGeometryMicromap.micromap = micromap;
     bottomASGeometry.geometry.triangles.pNext = &opacityGeometryMicromap;
 
-    VkAccelerationStructureBuildGeometryInfoKHR bottomASInfo = {VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR};
+    VkAccelerationStructureBuildGeometryInfoKHR bottomASInfo = vku::InitStructHelper();
     bottomASInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
     bottomASInfo.flags = 0;
     bottomASInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
@@ -1406,7 +1405,7 @@ TEST_F(PositiveRayTracing, BasicOpacityMicromapBuild) {
                                VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &allocate_da_flag_info);
 
-    VkAccelerationStructureCreateInfoKHR asCreateInfo = {VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR};
+    VkAccelerationStructureCreateInfoKHR asCreateInfo = vku::InitStructHelper();
 
     asCreateInfo.createFlags = 0;
     asCreateInfo.buffer = bottomASBuffer;
@@ -1452,22 +1451,20 @@ TEST_F(PositiveRayTracing, BasicOpacityMicromapBuild) {
         instance[0].instanceShaderBindingTableRecordOffset = 0;
         instance[0].flags = 0;
 
-        VkAccelerationStructureDeviceAddressInfoKHR asDeviceAddressInfo = {
-            VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR};
+        VkAccelerationStructureDeviceAddressInfoKHR asDeviceAddressInfo = vku::InitStructHelper();
         asDeviceAddressInfo.accelerationStructure = bottomAS;
         instance[0].accelerationStructureReference = vk::GetAccelerationStructureDeviceAddressKHR(device(), &asDeviceAddressInfo);
     }
 
-    VkAccelerationStructureGeometryKHR topASGeometry = {VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR};
+    VkAccelerationStructureGeometryKHR topASGeometry = vku::InitStructHelper();
 
     topASGeometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
     topASGeometry.geometry.instances = vku::InitStructHelper();
-    topASGeometry.geometry.instances.pNext = NULL;
     topASGeometry.geometry.instances.arrayOfPointers = VK_FALSE;
     topASGeometry.geometry.instances.data.deviceAddress = instanceAddress;
     topASGeometry.flags = 0;
 
-    VkAccelerationStructureBuildGeometryInfoKHR topASInfo = {VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR};
+    VkAccelerationStructureBuildGeometryInfoKHR topASInfo = vku::InitStructHelper();
     topASInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
     topASInfo.flags = 0;
     topASInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
