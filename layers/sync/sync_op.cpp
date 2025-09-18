@@ -403,18 +403,20 @@ ResourceUsageTag SyncOpPipelineBarrier::Record(CommandBufferAccessContext *cb_co
 }
 
 struct ApplyGlobalBarrierFunctor {
-    ApplyGlobalBarrierFunctor(QueueId queue_id, const SyncBarrier &barrier) : scope(queue_id), barrier(barrier) {}
+    ApplyGlobalBarrierFunctor(QueueId queue_id, const SyncBarrier &barrier) : barrier_scope(barrier, queue_id), barrier(barrier) {}
 
     using Iterator = ResourceAccessRangeMap::iterator;
-    Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos, const ResourceAccessRange &range) const { return pos; }
+    Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos_hint, const ResourceAccessRange &range) const {
+        return pos_hint;
+    }
 
     void operator()(const Iterator &pos) const {
         ResourceAccessState &access_state = pos->second;
-        access_state.ApplyBarrier(scope, barrier, false);
+        access_state.ApplyBarrier(barrier_scope, barrier, false);
         access_state.ApplyPendingBarriers(kInvalidTag);
     }
 
-    const ResourceAccessState::QueueScopeOps scope;
+    const BarrierScope barrier_scope;
     SyncBarrier barrier;
 };
 
@@ -753,7 +755,7 @@ static SyncBarrier RestrictToEvent(const SyncBarrier &barrier, const SyncEventSt
 struct ApplyEventBarrierFunctor {
     ApplyEventBarrierFunctor(const QueueId scope_queue, const ResourceUsageTag scope_tag, const SyncBarrier &barrier,
                              bool layout_transition)
-        : scope(scope_queue, scope_tag), barrier(barrier), layout_transition(layout_transition) {
+        : barrier_scope(barrier, scope_queue, scope_tag), barrier(barrier), layout_transition(layout_transition) {
         // Suppress layout transition during submit time application.
         // It add write access but this is necessary only during recording.
         if (scope_queue != kQueueIdInvalid) {
@@ -762,35 +764,39 @@ struct ApplyEventBarrierFunctor {
     }
 
     using Iterator = ResourceAccessRangeMap::iterator;
-    Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos, const ResourceAccessRange &range) const {
+    Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos_hint, const ResourceAccessRange &range) const {
         assert(!layout_transition);  // MarkupFunctor infills gaps for layout transtion, so we should never get here in that case
-        return pos;
+        return pos_hint;
     }
 
     void operator()(const Iterator &pos) const {
         ResourceAccessState &access_state = pos->second;
-        access_state.ApplyBarrier(scope, barrier, layout_transition);
+        access_state.ApplyBarrier(barrier_scope, barrier, layout_transition);
     }
 
-    const ResourceAccessState::EventScopeOps scope;
+    const BarrierScope barrier_scope;
     const SyncBarrier barrier;
     bool layout_transition;
 };
 
 struct ApplyEventGlobalBarrierFunctor {
-    ApplyEventGlobalBarrierFunctor(const QueueId scope_queue, const ResourceUsageTag scope_tag) : scope(scope_queue, scope_tag) {}
+    ApplyEventGlobalBarrierFunctor(const QueueId scope_queue, const ResourceUsageTag scope_tag)
+        : scope_queue(scope_queue), scope_tag(scope_tag) {}
 
     using Iterator = ResourceAccessRangeMap::iterator;
-    Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos, const ResourceAccessRange &range) const { return pos; }
+    Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos_hint, const ResourceAccessRange &range) const {
+        return pos_hint;
+    }
 
     void operator()(const Iterator &pos) const {
         ResourceAccessState &access_state = pos->second;
         for (const SyncBarrier &barrier : barriers) {
-            access_state.ApplyBarrier(scope, barrier, false);
+            access_state.ApplyBarrier(BarrierScope(barrier, scope_queue, scope_tag), barrier, false);
         }
     }
 
-    const ResourceAccessState::EventScopeOps scope;
+    QueueId scope_queue;
+    ResourceUsageTag scope_tag;
     small_vector<SyncBarrier, 1> barriers;
 };
 

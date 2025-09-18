@@ -126,7 +126,7 @@ struct ApplyMarkupFunctor {
 struct CollectBarriersFunctor {
     CollectBarriersFunctor(QueueId queue_id, const SyncBarrier &barrier, bool layout_transition,
                            uint32_t layout_transition_handle_index, PendingBarriers &pending_barriers)
-        : scope(queue_id),
+        : barrier_scope(barrier, queue_id),
           barrier(barrier),
           layout_transition(layout_transition),
           layout_transition_handle_index(layout_transition_handle_index),
@@ -140,17 +140,17 @@ struct CollectBarriersFunctor {
     }
 
     using Iterator = ResourceAccessRangeMap::iterator;
-    Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos, const ResourceAccessRange &range) const {
+    Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos_hint, const ResourceAccessRange &range) const {
         assert(!layout_transition);  // MarkupFunctor infills gaps for layout transtion, so we should never get here in that case
-        return pos;
+        return pos_hint;
     }
 
     void operator()(const Iterator &pos) const {
         ResourceAccessState &access_state = pos->second;
-        access_state.CollectBarriers(scope, barrier, layout_transition, layout_transition_handle_index, pending_barriers);
+        access_state.CollectBarriers(barrier_scope, barrier, layout_transition, layout_transition_handle_index, pending_barriers);
     }
 
-    const ResourceAccessState::QueueScopeOps scope;
+    const BarrierScope barrier_scope;
     const SyncBarrier barrier;
     bool layout_transition;
     uint32_t layout_transition_handle_index;
@@ -162,7 +162,9 @@ struct ResolvePendingBarrierFunctor {
     ResolvePendingBarrierFunctor(ResourceUsageTag tag) : tag(tag) {}
     using Iterator = ResourceAccessRangeMap::iterator;
 
-    Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos, const ResourceAccessRange &range) const { return pos; }
+    Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos_hint, const ResourceAccessRange &range) const {
+        return pos_hint;
+    }
 
     void operator()(const Iterator &pos) const {
         ResourceAccessState &access_state = pos->second;
@@ -397,7 +399,7 @@ class AccessContext {
 
     struct UpdateMemoryAccessStateFunctor {
         using Iterator = ResourceAccessRangeMap::iterator;
-        Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos, const ResourceAccessRange &range) const;
+        Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos_hint, const ResourceAccessRange &range) const;
         void operator()(const Iterator &pos) const;
         UpdateMemoryAccessStateFunctor(const AccessContext &context_, SyncAccessIndex usage_, SyncOrdering ordering_rule_,
                                        ResourceUsageTagEx tag_ex, SyncFlags flags = 0)
