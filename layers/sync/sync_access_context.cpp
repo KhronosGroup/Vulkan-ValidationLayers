@@ -536,7 +536,7 @@ HazardResult AccessContext::DetectImageBarrierHazard(const vvl::Image &image, Vk
 }
 
 ResourceAccessRangeMap::iterator AccessContext::UpdateMemoryAccessStateFunctor::Infill(ResourceAccessRangeMap *accesses,
-                                                                                       const Iterator &pos,
+                                                                                       const Iterator &pos_hint,
                                                                                        const ResourceAccessRange &range) const {
     // this is only called on gaps, and never returns a gap.
     ResourceAccessState default_state;

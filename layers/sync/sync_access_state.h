@@ -173,6 +173,26 @@ struct SyncBarrier {
     SyncBarrier(const std::vector<SyncBarrier> &barriers);
 };
 
+// Defines the source scope of the barrier.
+// ReadState and WriteState have InBarrierSourceScope() that checks if corresponding access is in the barrier source scope.
+struct BarrierScope {
+    VkPipelineStageFlagBits2 src_exec_scope;
+    SyncAccessFlags src_access_scope;
+
+    // Scope queue is used to include accesses only from the specific queue.
+    // The check against queue scope is unified for all cases. During record time the scope queue
+    // has default value (Invalid). This matches how the queue member of read/write accesses is
+    // initialized during recording, so (access_queue == scope_queue) evaluates to true during record time.
+    QueueId scope_queue = kQueueIdInvalid;
+
+    // The tag is needed for the event scope logic. The scope tag is defined by the "set event" command.
+    // The check against scope tag is unified for all cases. For non event code the scope tag is uint64-max
+    // value, so (access_tag < scope_tag) evaluates to true for non event code.
+    ResourceUsageTag scope_tag = kInvalidTag;
+
+    BarrierScope(const SyncBarrier &barrier, QueueId scope_queue = kQueueIdInvalid, ResourceUsageTag scope_tag = kInvalidTag);
+};
+
 struct ResourceFirstAccess {
     const SyncAccessInfo *usage_info;
     ResourceUsageTag tag;
@@ -260,17 +280,9 @@ struct ReadState {
 
         return (src_exec_scope & (queue_ordered_stage | barriers)) == 0;
     }
-    bool ReadInScopeOrChain(VkPipelineStageFlags2 exec_scope) const { return (exec_scope & (stage | barriers)) != 0; }
-    bool ReadInQueueScopeOrChain(QueueId queue, VkPipelineStageFlags2 exec_scope) const;
-    bool ReadInEventScope(VkPipelineStageFlags2 exec_scope, QueueId scope_queue, ResourceUsageTag scope_tag) const {
-        // If this read is the same one we included in the set event and in scope, then apply the execution barrier...
-        // NOTE: That's not really correct... this read stage might *not* have been included in the setevent, and the barriers
-        // representing the chain might have changed since then (that would be an odd usage), so as a first approximation
-        // we'll assume the barriers *haven't* been changed since (if the tag hasn't), and while this could be a false
-        // positive in the case of Set; SomeBarrier; Wait; we'll live with it until we can add more state to the first scope
-        // capture (the specific write and read stages that *were* in scope at the moment of SetEvents.
-        return (tag < scope_tag) && ReadInQueueScopeOrChain(scope_queue, exec_scope);
-    }
+    bool ReadOrDependencyChainInSourceScope(QueueId queue, VkPipelineStageFlags2 src_exec_scope) const;
+    bool InBarrierSourceScope(const BarrierScope &barrier_scope) const;
+
     void ApplyReadBarrier(VkPipelineStageFlags2 dst_scope) { pending_dep_chain |= dst_scope; }
     VkPipelineStageFlags2 ApplyPendingBarriers();
 };
@@ -286,14 +298,11 @@ class WriteState {
         return (access_ == rhs.access_) && (barriers_ == rhs.barriers_) && (tag_ == rhs.tag_) && (queue_ == rhs.queue_) &&
                (dependency_chain_ == rhs.dependency_chain_);
     }
-    bool WriteInChain(VkPipelineStageFlags2 src_exec_scope) const;
-    bool WriteInScope(const SyncAccessFlags &src_access_scope) const;
-    bool WriteInSourceScopeOrChain(VkPipelineStageFlags2 src_exec_scope, SyncAccessFlags src_access_scope) const;
-    bool WriteInQueueSourceScopeOrChain(QueueId queue, VkPipelineStageFlags2 src_exec_scope,
-                                        const SyncAccessFlags &src_access_scope) const;
-
-    bool WriteInEventScope(VkPipelineStageFlags2 src_exec_scope, const SyncAccessFlags &src_access_scope, QueueId scope_queue,
-                           ResourceUsageTag scope_tag) const;
+    bool DependencyChainInSourceScope(VkPipelineStageFlags2 src_exec_scope) const;
+    bool WriteInSourceScope(const SyncAccessFlags &src_access_scope) const;
+    bool WriteOrDependencyChainInSourceScope(QueueId queue, VkPipelineStageFlags2 src_exec_scope,
+                                             const SyncAccessFlags &src_access_scope) const;
+    bool InBarrierSourceScope(const BarrierScope &barrier_scope) const;
 
     SyncAccessIndex Index() const { return access_->access_index; }
     bool IsIndex(SyncAccessIndex access_index) const { return Index() == access_index; }
@@ -321,7 +330,6 @@ class WriteState {
     void UpdatePendingLayoutOrdering(const SyncBarrier &barrier);
     const OrderingBarrier &GetPendingLayoutOrdering() const { return pending_layout_ordering_; }
 
-  private:
     const SyncAccessInfo *access_;
     SyncAccessFlags barriers_;  // union of applicable barrier masks since last write
     ResourceUsageTag tag_;
@@ -335,8 +343,6 @@ class WriteState {
     OrderingBarrier pending_layout_ordering_;
     VkPipelineStageFlags2 pending_dep_chain_;
     SyncAccessFlags pending_barriers_;
-
-    friend ResourceAccessState;
 };
 
 static_assert(std::is_trivially_copyable_v<WriteState>);
@@ -419,11 +425,9 @@ class ResourceAccessState {
     void Resolve(const ResourceAccessState &other);
     void ApplyBarriers(const std::vector<SyncBarrier> &barriers, bool layout_transition);
     void ApplyBarriersImmediate(const SyncBarrier &barriers);
-    template <typename ScopeOps>
-    void ApplyBarrier(ScopeOps &&scope, const SyncBarrier &barrier, bool layout_transition,
+    void ApplyBarrier(const BarrierScope &barrier_scope, const SyncBarrier &barrier, bool layout_transition,
                       uint32_t layout_transition_handle_index = vvl::kNoIndex32);
-    struct QueueScopeOps;
-    void CollectBarriers(const QueueScopeOps &scope, const SyncBarrier &barrier, bool layout_transition,
+    void CollectBarriers(const BarrierScope &barrier_scope, const SyncBarrier &barrier, bool layout_transition,
                          uint32_t layout_transition_handle_index, PendingBarriers &pending_barriers);
     void ApplyPendingBarriers(ResourceUsageTag tag);
 
@@ -492,40 +496,6 @@ class ResourceAccessState {
 
     bool IsWriteBarrierHazard(QueueId queue_id, VkPipelineStageFlags2 src_exec_scope,
                               const SyncAccessFlags &src_access_scope) const;
-
-    struct UntaggedScopeOps {
-        bool WriteInScope(const SyncBarrier &barrier, const WriteState &write_state) const {
-            return write_state.WriteInSourceScopeOrChain(barrier.src_exec_scope.exec_scope, barrier.src_access_scope);
-        }
-        bool ReadInScope(const SyncBarrier &barrier, const ReadState &read_state) const {
-            return read_state.ReadInScopeOrChain(barrier.src_exec_scope.exec_scope);
-        }
-    };
-
-    struct QueueScopeOps {
-        bool WriteInScope(const SyncBarrier &barrier, const WriteState &write_state) const {
-            return write_state.WriteInQueueSourceScopeOrChain(queue, barrier.src_exec_scope.exec_scope, barrier.src_access_scope);
-        }
-        bool ReadInScope(const SyncBarrier &barrier, const ReadState &read_state) const {
-            return read_state.ReadInQueueScopeOrChain(queue, barrier.src_exec_scope.exec_scope);
-        }
-        QueueScopeOps(QueueId scope_queue) : queue(scope_queue) {}
-        QueueId queue;
-    };
-
-    struct EventScopeOps {
-        bool WriteInScope(const SyncBarrier &barrier, const WriteState &write_state) const {
-            return write_state.WriteInEventScope(barrier.src_exec_scope.exec_scope, barrier.src_access_scope, scope_queue,
-                                                 scope_tag);
-        }
-        bool ReadInScope(const SyncBarrier &barrier, const ReadState &read_state) const {
-            return read_state.ReadInEventScope(barrier.src_exec_scope.exec_scope, scope_queue, scope_tag);
-        }
-        EventScopeOps(QueueId qid, ResourceUsageTag event_tag) : scope_queue(qid), scope_tag(event_tag) {}
-        QueueId scope_queue;
-        ResourceUsageTag scope_tag;
-    };
-
     void Normalize();
     void GatherReferencedTags(ResourceUsageTagSet &used) const;
 
@@ -538,13 +508,6 @@ class ResourceAccessState {
   private:
     static constexpr VkPipelineStageFlags2 kInvalidAttachmentStage = ~VkPipelineStageFlags2(0);
     bool IsRAWHazard(const SyncAccessInfo &usage_info) const;
-
-    bool WriteInScope(const SyncAccessFlags &src_access_scope) const;
-    // Apply ordering scope to write hazard detection
-
-    bool ReadInSourceScopeOrChain(VkPipelineStageFlags2 src_exec_scope) const {
-        return (0 != (src_exec_scope & (last_read_stages | read_execution_barriers)));
-    }
 
     static bool IsReadHazard(VkPipelineStageFlags2 stage_mask, const VkPipelineStageFlags2 barriers) {
         return stage_mask != (stage_mask & barriers);
@@ -594,59 +557,6 @@ class ResourceAccessState {
 using ResourceAccessStateFunction = std::function<void(ResourceAccessState *)>;
 using ResourceAccessRangeMap = sparse_container::range_map<ResourceAddress, ResourceAccessState>;
 using ResourceRangeMergeIterator = sparse_container::parallel_iterator<ResourceAccessRangeMap, const ResourceAccessRangeMap>;
-
-// Apply the memory barrier without updating the existing barriers.  The execution barrier
-// changes the "chaining" state, but to keep barriers independent, we defer this until all barriers
-// of the batch have been processed. Also, depending on whether layout transition happens, we'll either
-// replace the current write barriers or add to them, so accumulate to pending as well.
-template <typename ScopeOps>
-void ResourceAccessState::ApplyBarrier(ScopeOps &&scope, const SyncBarrier &barrier, bool layout_transition,
-                                       uint32_t layout_transition_handle_index) {
-    // For independent barriers we need to track what the new barriers and dependency chain *will* be when we're done
-    // applying the memory barriers
-    // NOTE: We update the write barrier if the write is in the first access scope or if there is a layout
-    //       transistion, under the theory of "most recent access".  If the resource acces  *isn't* safe
-    //       vs. this layout transition DetectBarrierHazard should report it.  We treat the layout
-    //       transistion *as* a write and in scope with the barrier (it's before visibility).
-    if (layout_transition) {
-        if (!last_write.has_value()) {
-            last_write.emplace(GetAccessInfo(SYNC_ACCESS_INDEX_NONE), ResourceUsageTagEx{0U});
-        }
-        last_write->UpdatePendingBarriers(barrier);
-        last_write->UpdatePendingLayoutOrdering(barrier);
-        pending_layout_transition = true;
-        pending_layout_transition_handle_index = layout_transition_handle_index;
-    } else {
-        if (last_write.has_value() && scope.WriteInScope(barrier, *last_write)) {
-            last_write->UpdatePendingBarriers(barrier);
-        }
-
-        if (!pending_layout_transition) {
-            // Once we're dealing with a layout transition (which is modelled as a *write*) then the last reads/chains
-            // don't need to be tracked as we're just going to clear them.
-            VkPipelineStageFlags2 stages_in_scope = VK_PIPELINE_STAGE_2_NONE;
-
-            for (auto &read_access : last_reads) {
-                // The | implements the "dependency chain" logic for this access, as the barriers field stores the second sync
-                // scope
-                if (scope.ReadInScope(barrier, read_access)) {
-                    // We'll apply the barrier in the next loop, because it's DRY'r to do it one place.
-                    stages_in_scope |= read_access.stage;
-                }
-            }
-
-            for (auto &read_access : last_reads) {
-                if (0 != ((read_access.stage | read_access.sync_stages) & stages_in_scope)) {
-                    // If this stage, or any stage known to be synchronized after it are in scope, apply the barrier to this
-                    // read NOTE: Forwarding barriers to known prior stages changes the sync_stages from shallow to deep,
-                    // because the
-                    //       barriers used to determine sync_stages have been propagated to all known earlier stages
-                    read_access.ApplyReadBarrier(barrier.dst_exec_scope.exec_scope);
-                }
-            }
-        }
-    }
-}
 
 template <typename Predicate>
 bool ResourceAccessState::ClearPredicatedAccesses(Predicate &predicate) {

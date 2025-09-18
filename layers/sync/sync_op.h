@@ -332,12 +332,12 @@ class SyncOpEndRenderPass : public SyncOpBase {
 // Batch barrier ops don't modify in place, and thus don't need to hold pending state, and also are *never* layout transitions.
 struct BatchBarrierOp {
     SyncBarrier barrier;
-    ResourceAccessState::QueueScopeOps scope;
+    BarrierScope barrier_scope;
 
-    BatchBarrierOp(QueueId queue_id, const SyncBarrier &barrier) : barrier(barrier), scope(queue_id) {}
+    BatchBarrierOp(QueueId queue_id, const SyncBarrier &barrier) : barrier(barrier), barrier_scope(barrier, queue_id) {}
 
     void operator()(ResourceAccessState *access_state) const {
-        access_state->ApplyBarrier(scope, barrier, false);
+        access_state->ApplyBarrier(barrier_scope, barrier, false);
         access_state->ApplyPendingBarriers(kInvalidTag);  // There can't be any need for this tag
     }
 };
