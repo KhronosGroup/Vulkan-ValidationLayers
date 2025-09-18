@@ -696,7 +696,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     // [all color, all color resolve, depth, depth resolve, stencil, stencil resolve, FragmentDensityMap]
     uint32_t GetDynamicRenderingColorAttachmentCount() const;
     // Used to keep naming convention consistent
-    inline uint32_t GetDynamicRenderingColorAttachmentIndex(uint32_t index) const { return index; }
+    uint32_t GetDynamicRenderingColorAttachmentIndex(uint32_t index) const { return index; }
     uint32_t GetDynamicRenderingColorResolveAttachmentIndex(uint32_t index) const {
         return index + GetDynamicRenderingColorAttachmentCount();
     }

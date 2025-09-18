@@ -6530,6 +6530,7 @@ TEST_F(NegativeDynamicRendering, InheritanceRenderingInfoViewMask) {
     inheritance_rendering_info.colorAttachmentCount = 1u;
     inheritance_rendering_info.pColorAttachmentFormats = &color_format;
     inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    inheritance_rendering_info.viewMask = 0;
     VkCommandBufferInheritanceInfo inheritance_info = vku::InitStructHelper(&inheritance_rendering_info);
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
