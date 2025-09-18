@@ -76,14 +76,19 @@ class RenderPass : public StateObject {
             : prev_pass(prev_pass_), attachment(attachment_), old_layout(old_layout_), new_layout(new_layout_) {}
     };
     const vku::safe_VkRenderPassCreateInfo2 create_info;
+
     const bool use_dynamic_rendering;
     const bool use_dynamic_rendering_inherited;
     const bool has_multiview_enabled;
-    const bool rasterization_enabled{true};
+    const bool rasterization_enabled;
+
     const vku::safe_VkRenderingInfo dynamic_rendering_begin_rendering_info;
     const vku::safe_VkPipelineRenderingCreateInfo dynamic_pipeline_rendering_create_info;
     // when a secondary command buffer is recorded with VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT
     const vku::safe_VkCommandBufferInheritanceRenderingInfo inheritance_rendering_info;
+    // because colorAttachmentCount is needed to calculate everything, save it.
+    const uint32_t dynamic_rendering_color_attachment_count;
+
     using SubpassVec = std::vector<uint32_t>;
     using SelfDepVec = std::vector<SubpassVec>;
     const std::vector<SubpassVec> self_dependencies;
