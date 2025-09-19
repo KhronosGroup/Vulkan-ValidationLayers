@@ -769,12 +769,13 @@ bool CoreChecks::ValidateInsertMemoryRange(const VulkanTypedHandle &typed_handle
     bool skip = false;
 
     if (!IgnoreAllocationSize(mem_info.allocate_info) && memoryOffset >= mem_info.allocate_info.allocationSize) {
-        const bool bind_2 = (loc.function != Func::vkBindBufferMemory) && (loc.function != Func::vkBindImageMemory);
         const char *vuid = nullptr;
         if (typed_handle.type == kVulkanObjectTypeBuffer) {
-            vuid = bind_2 ? "VUID-VkBindBufferMemoryInfo-memoryOffset-01031" : "VUID-vkBindBufferMemory-memoryOffset-01031";
+            vuid = loc.function == Func::vkBindBufferMemory ? "VUID-vkBindBufferMemory-memoryOffset-01031"
+                                                            : "VUID-VkBindBufferMemoryInfo-memoryOffset-01031";
         } else if (typed_handle.type == kVulkanObjectTypeImage) {
-            vuid = bind_2 ? "VUID-VkBindImageMemoryInfo-memoryOffset-01046" : "VUID-vkBindImageMemory-memoryOffset-01046";
+            vuid = loc.function == Func::vkBindImageMemory ? "VUID-vkBindImageMemory-memoryOffset-01046"
+                                                           : "VUID-VkBindImageMemoryInfo-memoryOffset-01046";
         } else if (typed_handle.type == kVulkanObjectTypeAccelerationStructureNV) {
             vuid = "VUID-VkBindAccelerationStructureMemoryInfoNV-memoryOffset-03621";
         } else if (typed_handle.type == kVulkanObjectTypeTensorARM) {
@@ -785,23 +786,13 @@ bool CoreChecks::ValidateInsertMemoryRange(const VulkanTypedHandle &typed_handle
 
         LogObjectList objlist(mem_info.Handle(), typed_handle);
         skip |= LogError(vuid, objlist, loc,
-                         "attempting to bind %s to %s, memoryOffset (%" PRIu64
+                         "attempting to bind %s to %s, but the memoryOffset (%" PRIu64
                          ") must be less than the memory allocation size (%" PRIu64 ").",
                          FormatHandle(mem_info.Handle()).c_str(), FormatHandle(typed_handle).c_str(), memoryOffset,
                          mem_info.allocate_info.allocationSize);
     }
 
     return skip;
-}
-
-bool CoreChecks::ValidateInsertImageMemoryRange(VkImage image, const vvl::DeviceMemory &mem_info, VkDeviceSize mem_offset,
-                                                const Location &loc) const {
-    return ValidateInsertMemoryRange(VulkanTypedHandle(image, kVulkanObjectTypeImage), mem_info, mem_offset, loc);
-}
-
-bool CoreChecks::ValidateInsertBufferMemoryRange(VkBuffer buffer, const vvl::DeviceMemory &mem_info, VkDeviceSize mem_offset,
-                                                 const Location &loc) const {
-    return ValidateInsertMemoryRange(VulkanTypedHandle(buffer, kVulkanObjectTypeBuffer), mem_info, mem_offset, loc);
 }
 
 bool CoreChecks::ValidateMemoryTypes(const vvl::DeviceMemory &mem_info, const uint32_t memory_type_bits,
@@ -922,7 +913,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
         }
 
         // Validate bound memory range information
-        skip |= ValidateInsertBufferMemoryRange(buffer, *mem_info, memoryOffset, loc);
+        skip |= ValidateInsertMemoryRange(VulkanTypedHandle(buffer, kVulkanObjectTypeBuffer), *mem_info, memoryOffset, loc);
 
         const char *mem_type_vuid =
             bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-01035" : "VUID-vkBindBufferMemory-memory-01035";
@@ -1757,7 +1748,8 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 // if memory is exported to an AHB then the mem_info->allocationSize must be zero and this check is not needed
                 if ((mem_info->IsExport() == false) ||
                     ((mem_info->export_handle_types & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) == 0)) {
-                    skip |= ValidateInsertImageMemoryRange(bind_info.image, *mem_info, bind_info.memoryOffset, loc);
+                    skip |= ValidateInsertMemoryRange(VulkanTypedHandle(bind_info.image, kVulkanObjectTypeImage), *mem_info,
+                                                      bind_info.memoryOffset, loc);
                 }
 
                 // Validate dedicated allocation
