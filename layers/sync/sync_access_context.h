@@ -124,16 +124,16 @@ struct ApplyMarkupFunctor {
 // This functor populates PendingBarriers with the results of independent barrier appication (pending barriers).
 // After this functor finished its work then PendingBarriers::Apply() can be used to update the access states.
 struct CollectBarriersFunctor {
-    CollectBarriersFunctor(QueueId queue_id, const SyncBarrier &barrier, bool layout_transition,
+    CollectBarriersFunctor(const BarrierScope &barrier_scope, const SyncBarrier &barrier, bool layout_transition,
                            uint32_t layout_transition_handle_index, PendingBarriers &pending_barriers)
-        : barrier_scope(barrier, queue_id),
+        : barrier_scope(barrier_scope),
           barrier(barrier),
           layout_transition(layout_transition),
           layout_transition_handle_index(layout_transition_handle_index),
           pending_barriers(pending_barriers) {
         // Suppress layout transition during submit time application.
         // It add write access but this is necessary only during recording.
-        if (queue_id != kQueueIdInvalid) {
+        if (barrier_scope.scope_queue != kQueueIdInvalid) {
             this->layout_transition = false;
             this->layout_transition_handle_index = vvl::kNoIndex32;
         }

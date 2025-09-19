@@ -910,7 +910,8 @@ void RenderPassAccessContext::RecordEndRenderPass(AccessContext *external_contex
             ImageRangeGen range_gen(*ref_range_gen);
             PendingBarriers pending_barriers;
             for (const auto &barrier : last_trackback.barriers) {
-                CollectBarriersFunctor collect_barriers(kQueueIdInvalid, barrier, true, vvl::kNoIndex32, pending_barriers);
+                const BarrierScope barrier_scope(barrier);
+                CollectBarriersFunctor collect_barriers(barrier_scope, barrier, true, vvl::kNoIndex32, pending_barriers);
                 external_context->UpdateMemoryAccessState(collect_barriers, range_gen);
             }
             pending_barriers.Apply(barrier_tag);
