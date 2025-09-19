@@ -1317,11 +1317,9 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
     if (inheritance_rendering_info.colorAttachmentCount != rendering_info.colorAttachmentCount) {
         const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
         skip |= LogError("VUID-vkCmdExecuteCommands-colorAttachmentCount-06027", objlist, secondary_cb_loc,
-                         "(%s) is executed within a dynamic renderpass instance scope begun "
-                         "by vkCmdBeginRendering(), but "
-                         "VkCommandBufferInheritanceRenderingInfo::colorAttachmentCount (%" PRIu32
-                         ") does "
-                         "not match VkRenderingInfo::colorAttachmentCount (%" PRIu32 ").",
+                         "(%s) was recorded with VkCommandBufferInheritanceRenderingInfo::colorAttachmentCount (%" PRIu32
+                         ") which does not match the current render pass that called vkCmdBeginRendering with "
+                         "VkRenderingInfo::colorAttachmentCount (%" PRIu32 ").",
                          FormatHandle(secondary_cb_state.Handle()).c_str(), inheritance_rendering_info.colorAttachmentCount,
                          rendering_info.colorAttachmentCount);
     }
@@ -1334,13 +1332,11 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
             if (inheritance_rendering_info.pColorAttachmentFormats[color_i] != VK_FORMAT_UNDEFINED) {
                 const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
                 skip |= LogError("VUID-vkCmdExecuteCommands-imageView-07606", objlist, secondary_cb_loc,
-                                 "(%s) is executed within a dynamic render pass instance "
-                                 "scope begun "
-                                 "by vkCmdBeginRendering(), VkRenderingInfo::pColorAttachments[%" PRIu32
-                                 "].imageView is VK_NULL_HANDLE but "
-                                 "VkCommandBufferInheritanceRenderingInfo::pColorAttachmentFormats[%" PRIu32 "] is %s.",
-                                 FormatHandle(secondary_cb_state.Handle()).c_str(), color_i, color_i,
-                                 string_VkFormat(inheritance_rendering_info.pColorAttachmentFormats[color_i]));
+                                 "(%s) was recorded with VkCommandBufferInheritanceRenderingInfo::pColorAttachmentFormats[%" PRIu32
+                                 "] (%s) which does not match the current render pass that called vkCmdBeginRendering with "
+                                 "VkRenderingInfo::pColorAttachments[%" PRIu32 "].imageView of VK_NULL_HANDLE.",
+                                 FormatHandle(secondary_cb_state.Handle()).c_str(), color_i,
+                                 string_VkFormat(inheritance_rendering_info.pColorAttachmentFormats[color_i]), color_i);
             }
         } else {
             auto image_view_state = Get<vvl::ImageView>(color_image_view);
@@ -1348,14 +1344,12 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
                 image_view_state->create_info.format != inheritance_rendering_info.pColorAttachmentFormats[color_i]) {
                 const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
                 skip |= LogError("VUID-vkCmdExecuteCommands-imageView-06028", objlist, secondary_cb_loc,
-                                 "(%s) is executed within a dynamic render pass instance "
-                                 "scope begun "
-                                 "by vkCmdBeginRendering(), VkRenderingInfo::pColorAttachments[%" PRIu32
-                                 "].imageView format is %s but "
-                                 "VkCommandBufferInheritanceRenderingInfo::pColorAttachmentFormats[%" PRIu32 "] is %s.",
+                                 "(%s) was recorded with VkCommandBufferInheritanceRenderingInfo::pColorAttachmentFormats[%" PRIu32
+                                 "] (%s) which does not match the current render pass that called vkCmdBeginRendering with "
+                                 "VkRenderingInfo::pColorAttachments[%" PRIu32 "].imageView (%s).",
                                  FormatHandle(secondary_cb_state.Handle()).c_str(), color_i,
-                                 string_VkFormat(image_view_state->create_info.format), color_i,
-                                 string_VkFormat(inheritance_rendering_info.pColorAttachmentFormats[color_i]));
+                                 string_VkFormat(inheritance_rendering_info.pColorAttachmentFormats[color_i]), color_i,
+                                 string_VkFormat(image_view_state->create_info.format));
             }
         }
     }
@@ -1365,13 +1359,13 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
 
         if (image_view_state && image_view_state->create_info.format != inheritance_rendering_info.depthAttachmentFormat) {
             const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
-            skip |= LogError("VUID-vkCmdExecuteCommands-pDepthAttachment-06029", objlist, secondary_cb_loc,
-                             "(%s) is executed within a dynamic renderpass "
-                             "instance scope begun "
-                             "by vkCmdBeginRendering(), but "
-                             "VkCommandBufferInheritanceRenderingInfo::depthAttachmentFormat does "
-                             "not match the format of the imageView in VkRenderingInfo::pDepthAttachment.",
-                             FormatHandle(secondary_cb_state.Handle()).c_str());
+            skip |= LogError(
+                "VUID-vkCmdExecuteCommands-pDepthAttachment-06029", objlist, secondary_cb_loc,
+                "(%s) was recorded with VkCommandBufferInheritanceRenderingInfo::depthAttachmentFormat (%s) which does not match "
+                "the current render pass that called vkCmdBeginRendering with VkRenderingInfo::pDepthAttachment->imageView (%s).",
+                FormatHandle(secondary_cb_state.Handle()).c_str(),
+                string_VkFormat(inheritance_rendering_info.depthAttachmentFormat),
+                string_VkFormat(image_view_state->create_info.format));
         }
     }
 
@@ -1380,13 +1374,13 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
 
         if (image_view_state && image_view_state->create_info.format != inheritance_rendering_info.stencilAttachmentFormat) {
             const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
-            skip |= LogError("VUID-vkCmdExecuteCommands-pStencilAttachment-06030", objlist, secondary_cb_loc,
-                             "(%s) is executed within a dynamic renderpass "
-                             "instance scope begun "
-                             "by vkCmdBeginRendering(), but "
-                             "VkCommandBufferInheritanceRenderingInfo::stencilAttachmentFormat does "
-                             "not match the format of the imageView in VkRenderingInfo::pStencilAttachment.",
-                             FormatHandle(secondary_cb_state.Handle()).c_str());
+            skip |= LogError(
+                "VUID-vkCmdExecuteCommands-pStencilAttachment-06030", objlist, secondary_cb_loc,
+                "(%s) was recorded with VkCommandBufferInheritanceRenderingInfo::stencilAttachmentFormat (%s) which does not match "
+                "the current render pass that called vkCmdBeginRendering with VkRenderingInfo::pStencilAttachment->imageView (%s).",
+                FormatHandle(secondary_cb_state.Handle()).c_str(),
+                string_VkFormat(inheritance_rendering_info.stencilAttachmentFormat),
+                string_VkFormat(image_view_state->create_info.format));
         }
     }
 
@@ -1395,11 +1389,9 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
         if (format != VK_FORMAT_UNDEFINED) {
             const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
             skip |= LogError("VUID-vkCmdExecuteCommands-pDepthAttachment-06774", objlist, secondary_cb_loc,
-                             "(%s) is executed within a dynamic renderpass "
-                             "instance scope begun by vkCmdBeginRendering(), and "
-                             "VkRenderingInfo::pDepthAttachment does not define an "
-                             "image view but VkCommandBufferInheritanceRenderingInfo::depthAttachmentFormat "
-                             "is %s instead of VK_FORMAT_UNDEFINED.",
+                             "(%s) was recorded with VkCommandBufferInheritanceRenderingInfo::depthAttachmentFormat (%s) instead "
+                             "of VK_FORMAT_UNDEFINED since the current render pass called vkCmdBeginRendering with "
+                             "VkRenderingInfo::pDepthAttachment as NULL.",
                              FormatHandle(secondary_cb_state.Handle()).c_str(), string_VkFormat(format));
         }
     }
@@ -1409,11 +1401,9 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
         if (format != VK_FORMAT_UNDEFINED) {
             const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
             skip |= LogError("VUID-vkCmdExecuteCommands-pStencilAttachment-06775", objlist, secondary_cb_loc,
-                             "(%s) is executed within a dynamic renderpass "
-                             "instance scope begun by vkCmdBeginRendering(), and "
-                             "VkRenderingInfo::pStencilAttachment does not define an "
-                             "image view but VkCommandBufferInheritanceRenderingInfo::stencilAttachmentFormat "
-                             "is %s instead of VK_FORMAT_UNDEFINED.",
+                             "(%s) was recorded with VkCommandBufferInheritanceRenderingInfo::stencilAttachmentFormat (%s) instead "
+                             "of VK_FORMAT_UNDEFINED since the current render pass called vkCmdBeginRendering with "
+                             "VkRenderingInfo::pStencilAttachment as NULL.",
                              FormatHandle(secondary_cb_state.Handle()).c_str(), string_VkFormat(format));
         }
     }
@@ -1421,11 +1411,9 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const vvl::
     if (rendering_info.viewMask != inheritance_rendering_info.viewMask) {
         const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
         skip |= LogError("VUID-vkCmdExecuteCommands-viewMask-06031", objlist, secondary_cb_loc,
-                         "(%s) is executed within a dynamic renderpass instance scope begun "
-                         "by vkCmdBeginRendering(), but "
-                         "VkCommandBufferInheritanceRenderingInfo::viewMask (%" PRIu32
-                         ") does "
-                         "not match VkRenderingInfo::viewMask (0x%" PRIx32 ").",
+                         "(%s) was recorded with VkCommandBufferInheritanceRenderingInfo::viewMask (0x%" PRIx32
+                         ") which does not match the current render pass called vkCmdBeginRendering with "
+                         "VkRenderingInfo::viewMask (0x%" PRIx32 ").",
                          FormatHandle(secondary_cb_state.Handle()).c_str(), inheritance_rendering_info.viewMask,
                          rendering_info.viewMask);
     }
