@@ -36,11 +36,6 @@
 
 #include <algorithm>
 
-bool CoreChecks::ValidateInsertAccelerationStructureMemoryRange(VkAccelerationStructureNV as, const vvl::DeviceMemory &mem_info,
-                                                                VkDeviceSize mem_offset, const Location &loc) const {
-    return ValidateInsertMemoryRange(VulkanTypedHandle(as, kVulkanObjectTypeAccelerationStructureNV), mem_info, mem_offset, loc);
-}
-
 bool CoreChecks::PreCallValidateCreateAccelerationStructureNV(VkDevice device,
                                                               const VkAccelerationStructureCreateInfoNV *pCreateInfo,
                                                               const VkAllocationCallbacks *pAllocator,
@@ -102,8 +97,9 @@ bool CoreChecks::PreCallValidateBindAccelerationStructureMemoryNV(VkDevice devic
         // Validate bound memory range information
         auto mem_info = Get<vvl::DeviceMemory>(info.memory);
         if (mem_info) {
-            skip |= ValidateInsertAccelerationStructureMemoryRange(info.accelerationStructure, *mem_info, info.memoryOffset,
-                                                                   bind_info_loc.dot(Field::memoryOffset));
+            skip |=
+                ValidateInsertMemoryRange(VulkanTypedHandle(info.accelerationStructure, kVulkanObjectTypeAccelerationStructureNV),
+                                          *mem_info, info.memoryOffset, bind_info_loc);
             skip |= ValidateMemoryTypes(*mem_info, as_state->memory_requirements.memoryTypeBits,
                                         bind_info_loc.dot(Field::accelerationStructure),
                                         "VUID-VkBindAccelerationStructureMemoryInfoNV-memory-03622");
