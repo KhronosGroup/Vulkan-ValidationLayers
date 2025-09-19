@@ -21,268 +21,484 @@ from base_generator import BaseGenerator
 # This is a representation of all the dynamic state information
 dynamic_state_map = {
     "VK_DYNAMIC_STATE_VIEWPORT" : {
-        "command" : ["vkCmdSetViewport"]
+        "command" : ["vkCmdSetViewport"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineViewportStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_SCISSOR" : {
-        "command" : ["vkCmdSetScissor"]
+        "command" : ["vkCmdSetScissor"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineViewportStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_LINE_WIDTH" : {
-        "command" : ["vkCmdSetLineWidth"]
+        "command" : ["vkCmdSetLineWidth"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineRasterizationStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_DEPTH_BIAS" : {
         "command" : ["vkCmdSetDepthBias", "vkCmdSetDepthBias2EXT"],
-        "dependency" : ["rasterizerDiscardEnable", "depthBiasEnable"]
+        "dependency" : ["rasterizerDiscardEnable", "depthBiasEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineRasterizationStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_BLEND_CONSTANTS" : {
         "command" : ["vkCmdSetBlendConstants"],
-        "dependency" : ["rasterizerDiscardEnable"]
+        "dependency" : ["rasterizerDiscardEnable"],
+        "stages" : "VK_SHADER_STAGE_FRAGMENT_BIT",
+        "gpl" : ["FragmentOutput"],
+        "pipeline" : "VkPipelineColorBlendStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_DEPTH_BOUNDS" : {
         "command" : ["vkCmdSetDepthBounds"],
-        "dependency" : ["rasterizerDiscardEnable", "depthBoundsTestEnable"]
+        "dependency" : ["rasterizerDiscardEnable", "depthBoundsTestEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["FragmentShader"],
+        "pipeline" : "VkPipelineDepthStencilStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK" : {
         "command" : ["vkCmdSetStencilCompareMask"],
-        "dependency" : ["rasterizerDiscardEnable", "stencilTestEnable"]
+        "dependency" : ["rasterizerDiscardEnable", "stencilTestEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["FragmentShader"],
+        "pipeline" : "VkPipelineDepthStencilStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_STENCIL_WRITE_MASK" : {
         "command" : ["vkCmdSetStencilWriteMask"],
-        "dependency" : ["rasterizerDiscardEnable", "stencilTestEnable"]
+        "dependency" : ["rasterizerDiscardEnable", "stencilTestEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["FragmentShader"],
+        "pipeline" : "VkPipelineDepthStencilStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_STENCIL_REFERENCE" : {
         "command" : ["vkCmdSetStencilReference"],
-        "dependency" : ["rasterizerDiscardEnable", "stencilTestEnable"]
+        "dependency" : ["rasterizerDiscardEnable", "stencilTestEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["FragmentShader"],
+        "pipeline" : "VkPipelineDepthStencilStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_CULL_MODE" : {
         "command" : ["vkCmdSetCullMode"],
-        "dependency" : ["rasterizerDiscardEnable"]
+        "dependency" : ["rasterizerDiscardEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineRasterizationStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_FRONT_FACE" : {
         "command" : ["vkCmdSetFrontFace"],
-        "dependency" : ["rasterizerDiscardEnable"]
+        "dependency" : ["rasterizerDiscardEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineRasterizationStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY" : {
-        "command" : ["vkCmdSetPrimitiveTopology"]
+        "command" : ["vkCmdSetPrimitiveTopology"],
+        "stages" : "VK_SHADER_STAGE_VERTEX_BIT",
+        "gpl" : ["VertexInput"],
+        "pipeline" : "VkPipelineInputAssemblyStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT" : {
-        "command" : ["vkCmdSetViewportWithCount"]
+        "command" : ["vkCmdSetViewportWithCount"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineViewportStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT" : {
-        "command" : ["vkCmdSetScissorWithCount"]
+        "command" : ["vkCmdSetScissorWithCount"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineViewportStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE" : {
-        "command" : ["vkCmdBindVertexBuffers2"]
+        "command" : ["vkCmdBindVertexBuffers2"],
+        "stages" : "VK_SHADER_STAGE_VERTEX_BIT",
+        "gpl" : ["VertexInput"],
+        "pipeline" : "VkPipelineVertexInputStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE" : {
         "command" : ["vkCmdSetDepthTestEnable"],
-        "dependency" : ["rasterizerDiscardEnable"]
+        "dependency" : ["rasterizerDiscardEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["FragmentShader"],
+        "pipeline" : "VkPipelineDepthStencilStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE" : {
         "command" : ["vkCmdSetDepthWriteEnable"],
-        "dependency" : ["rasterizerDiscardEnable", "depthTestEnable"]
+        "dependency" : ["rasterizerDiscardEnable", "depthTestEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["FragmentShader"],
+        "pipeline" : "VkPipelineDepthStencilStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_DEPTH_COMPARE_OP" : {
         "command" : ["vkCmdSetDepthCompareOp"],
-        "dependency" : ["rasterizerDiscardEnable", "depthTestEnable"]
+        "dependency" : ["rasterizerDiscardEnable", "depthTestEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["FragmentShader"],
+        "pipeline" : "VkPipelineDepthStencilStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE" : {
         "command" : ["vkCmdSetDepthBoundsTestEnable"],
-        "dependency" : ["rasterizerDiscardEnable"]
+        "dependency" : ["rasterizerDiscardEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["FragmentShader"],
+        "pipeline" : "VkPipelineDepthStencilStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE" : {
         "command" : ["vkCmdSetStencilTestEnable"],
-        "dependency" : ["rasterizerDiscardEnable"]
+        "dependency" : ["rasterizerDiscardEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["FragmentShader"],
+        "pipeline" : "VkPipelineDepthStencilStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_STENCIL_OP" : {
         "command" : ["vkCmdSetStencilOp"],
-        "dependency" : ["rasterizerDiscardEnable", "stencilTestEnable"]
+        "dependency" : ["rasterizerDiscardEnable", "stencilTestEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["FragmentShader"],
+        "pipeline" : "VkPipelineDepthStencilStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE" : {
-        "command" : ["vkCmdSetRasterizerDiscardEnable"]
+        "command" : ["vkCmdSetRasterizerDiscardEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineRasterizationStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE" : {
         "command" : ["vkCmdSetDepthBiasEnable"],
-        "dependency" : ["rasterizerDiscardEnable"]
+        "dependency" : ["rasterizerDiscardEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineRasterizationStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE" : {
-        "command" : ["vkCmdSetPrimitiveRestartEnable"]
+        "command" : ["vkCmdSetPrimitiveRestartEnable"],
+        "stages" : "VK_SHADER_STAGE_VERTEX_BIT",
+        "gpl" : ["VertexInput"],
+        "pipeline" : "VkPipelineInputAssemblyStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV" : {
         "command" : ["vkCmdSetViewportWScalingNV"],
-        "dependency" : ["viewportWScalingEnable"]
+        "dependency" : ["viewportWScalingEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineViewportWScalingStateCreateInfoNV",
     },
     "VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT" : {
         "command" : ["vkCmdSetDiscardRectangleEXT"],
-        "dependency" : ["rasterizerDiscardEnable", "discardRectangleEnable"]
+        "dependency" : ["rasterizerDiscardEnable", "discardRectangleEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineDiscardRectangleStateCreateInfoEXT",
     },
     "VK_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT" : {
         "command" : ["vkCmdSetDiscardRectangleEnableEXT"],
-        "dependency" : ["rasterizerDiscardEnable"]
+        "dependency" : ["rasterizerDiscardEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineDiscardRectangleStateCreateInfoEXT",
     },
     "VK_DYNAMIC_STATE_DISCARD_RECTANGLE_MODE_EXT" : {
         "command" : ["vkCmdSetDiscardRectangleModeEXT"],
-        "dependency" : ["rasterizerDiscardEnable", "discardRectangleEnable"]
+        "dependency" : ["rasterizerDiscardEnable", "discardRectangleEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineDiscardRectangleStateCreateInfoEXT",
     },
     "VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT" : {
         "command" : ["vkCmdSetSampleLocationsEXT"],
-        "dependency" : ["rasterizerDiscardEnable", "sampleLocationsEnable"]
+        "dependency" : ["rasterizerDiscardEnable", "sampleLocationsEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["FragmentShader", "FragmentOutput"],
+        "pipeline" : "VkPipelineSampleLocationsStateCreateInfoEXT",
     },
     "VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV" : {
         "command" : ["vkCmdSetViewportShadingRatePaletteNV"],
-        "dependency" : ["rasterizerDiscardEnable", "shadingRateImageEnable"]
+        "dependency" : ["rasterizerDiscardEnable", "shadingRateImageEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineViewportShadingRateImageStateCreateInfoNV",
     },
     "VK_DYNAMIC_STATE_VIEWPORT_COARSE_SAMPLE_ORDER_NV" : {
         "command" : ["vkCmdSetCoarseSampleOrderNV"],
-        "dependency" : ["rasterizerDiscardEnable"]
+        "dependency" : ["rasterizerDiscardEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineViewportCoarseSampleOrderStateCreateInfoNV",
     },
     "VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV" : {
-        "command" : ["vkCmdSetExclusiveScissorEnableNV"]
+        "command" : ["vkCmdSetExclusiveScissorEnableNV"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineViewportExclusiveScissorStateCreateInfoNV",
     },
     "VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV" : {
         "command" : ["vkCmdSetExclusiveScissorNV"],
-        "dependency" : ["pExclusiveScissorEnables"]
+        "dependency" : ["pExclusiveScissorEnables"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineViewportExclusiveScissorStateCreateInfoNV",
     },
     "VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR" : {
         "command" : ["vkCmdSetFragmentShadingRateKHR"],
-        "dependency" : ["rasterizerDiscardEnable"]
+        "dependency" : ["rasterizerDiscardEnable"],
+        "stages" : "VK_SHADER_STAGE_FRAGMENT_BIT",
+        "gpl" : ["PreRasterization", "FragmentShader"],
+        "pipeline" : "VkPipelineFragmentShadingRateStateCreateInfoKHR",
     },
     "VK_DYNAMIC_STATE_LINE_STIPPLE" : {
         "command" : ["vkCmdSetLineStipple"],
-        "dependency" : ["rasterizerDiscardEnable", "stippledLineEnable"]
+        "dependency" : ["rasterizerDiscardEnable", "stippledLineEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineRasterizationLineStateCreateInfoKHR",
     },
     "VK_DYNAMIC_STATE_VERTEX_INPUT_EXT" : {
-        "command" : ["vkCmdSetVertexInputEXT"]
+        "command" : ["vkCmdSetVertexInputEXT"],
+        "stages" : "VK_SHADER_STAGE_VERTEX_BIT",
+        "gpl" : ["VertexInput"],
+        "pipeline" : "VkPipelineVertexInputStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT" : {
-        "command" : ["vkCmdSetPatchControlPointsEXT"]
+        "command" : ["vkCmdSetPatchControlPointsEXT"],
+        "stages" : "VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineTessellationStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_LOGIC_OP_EXT" : {
         "command" : ["vkCmdSetLogicOpEXT"],
-        "dependency" : ["rasterizerDiscardEnable", "logicOpEnable"]
+        "dependency" : ["rasterizerDiscardEnable", "logicOpEnable"],
+        "stages" : "VK_SHADER_STAGE_FRAGMENT_BIT",
+        "gpl" : ["FragmentOutput"],
+        "pipeline" : "VkPipelineColorBlendStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT" : {
         "command" : ["vkCmdSetColorWriteEnableEXT"],
-        "dependency" : ["rasterizerDiscardEnable"]
+        "dependency" : ["rasterizerDiscardEnable"],
+        "stages" : "VK_SHADER_STAGE_FRAGMENT_BIT",
+        "gpl" : ["FragmentOutput"],
+        "pipeline" : "VkPipelineColorWriteCreateInfoEXT",
     },
     "VK_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT" : {
-        "command" : ["vkCmdSetTessellationDomainOriginEXT"]
+        "command" : ["vkCmdSetTessellationDomainOriginEXT"],
+        "stages" : "VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineTessellationDomainOriginStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT" : {
-        "command" : ["vkCmdSetDepthClampEnableEXT"]
+        "command" : ["vkCmdSetDepthClampEnableEXT"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineRasterizationStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_POLYGON_MODE_EXT" : {
-        "command" : ["vkCmdSetPolygonModeEXT"]
+        "command" : ["vkCmdSetPolygonModeEXT"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineRasterizationStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT" : {
-        "command" : ["vkCmdSetRasterizationSamplesEXT"]
+        "command" : ["vkCmdSetRasterizationSamplesEXT"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["FragmentShader", "FragmentOutput"],
+        "pipeline" : "VkPipelineMultisampleStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_SAMPLE_MASK_EXT" : {
-        "command" : ["vkCmdSetSampleMaskEXT"]
+        "command" : ["vkCmdSetSampleMaskEXT"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["FragmentShader", "FragmentOutput"],
+        "pipeline" : "VkPipelineMultisampleStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT" : {
         "command" : ["vkCmdSetAlphaToCoverageEnableEXT"],
-        "dependency" : ["rasterizerDiscardEnable"]
+        "dependency" : ["rasterizerDiscardEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["FragmentShader", "FragmentOutput"],
+        "pipeline" : "VkPipelineMultisampleStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT" : {
         "command" : ["vkCmdSetAlphaToOneEnableEXT"],
-        "dependency" : ["rasterizerDiscardEnable"]
+        "dependency" : ["rasterizerDiscardEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["FragmentShader", "FragmentOutput"],
+        "pipeline" : "VkPipelineMultisampleStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT" : {
         "command" : ["vkCmdSetLogicOpEnableEXT"],
-        "dependency" : ["rasterizerDiscardEnable"]
+        "dependency" : ["rasterizerDiscardEnable"],
+        "stages" : "VK_SHADER_STAGE_FRAGMENT_BIT",
+        "gpl" : ["FragmentOutput"],
+        "pipeline" : "VkPipelineColorBlendStateCreateInfo",
     },
     "VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT" : {
         "command" : ["vkCmdSetColorBlendEnableEXT"],
-        "dependency" : ["rasterizerDiscardEnable"]
+        "dependency" : ["rasterizerDiscardEnable"],
+        "stages" : "VK_SHADER_STAGE_FRAGMENT_BIT",
+        "gpl" : ["FragmentOutput"],
+        "pipeline" : "VkPipelineColorBlendAttachmentState",
     },
     "VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT" : {
         "command" : ["vkCmdSetColorBlendEquationEXT"],
-        "dependency" : ["rasterizerDiscardEnable"]
+        "dependency" : ["rasterizerDiscardEnable"],
+        "stages" : "VK_SHADER_STAGE_FRAGMENT_BIT",
+        "gpl" : ["FragmentOutput"],
+        "pipeline" : "VkPipelineColorBlendAttachmentState",
     },
     "VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT" : {
         "command" : ["vkCmdSetColorWriteMaskEXT"],
-        "dependency" : ["rasterizerDiscardEnable"]
+        "dependency" : ["rasterizerDiscardEnable"],
+        "stages" : "VK_SHADER_STAGE_FRAGMENT_BIT",
+        "gpl" : ["FragmentOutput"],
+        "pipeline" : "VkPipelineColorBlendAttachmentState",
     },
     "VK_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT" : {
-        "command" : ["vkCmdSetRasterizationStreamEXT"]
+        "command" : ["vkCmdSetRasterizationStreamEXT"],
+        "stages" : "VK_SHADER_STAGE_GEOMETRY_BIT",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineRasterizationStateStreamCreateInfoEXT",
     },
     "VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT" : {
         "command" : ["vkCmdSetConservativeRasterizationModeEXT"],
-        "dependency" : ["rasterizerDiscardEnable"]
+        "dependency" : ["rasterizerDiscardEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineRasterizationConservativeStateCreateInfoEXT",
     },
     "VK_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT" : {
         "command" : ["vkCmdSetExtraPrimitiveOverestimationSizeEXT"],
-        "dependency" : ["rasterizerDiscardEnable"]
+        "dependency" : ["rasterizerDiscardEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineRasterizationConservativeStateCreateInfoEXT",
     },
     "VK_DYNAMIC_STATE_DEPTH_CLIP_ENABLE_EXT" : {
-        "command" : ["vkCmdSetDepthClipEnableEXT"]
+        "command" : ["vkCmdSetDepthClipEnableEXT"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineRasterizationDepthClipStateCreateInfoEXT",
     },
     "VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT" : {
         "command" : ["vkCmdSetSampleLocationsEnableEXT"],
-        "dependency" : ["rasterizerDiscardEnable"]
+        "dependency" : ["rasterizerDiscardEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["FragmentShader", "FragmentOutput"],
+        "pipeline" : "VkPipelineSampleLocationsStateCreateInfoEXT",
     },
     "VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT" : {
         "command" : ["vkCmdSetColorBlendAdvancedEXT"],
-        "dependency" : ["rasterizerDiscardEnable"]
+        "dependency" : ["rasterizerDiscardEnable"],
+        "stages" : "VK_SHADER_STAGE_FRAGMENT_BIT",
+        "gpl" : ["FragmentOutput"],
+        "pipeline" : "VkPipelineColorBlendAdvancedStateCreateInfoEXT",
     },
     "VK_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT" : {
         "command" : ["vkCmdSetProvokingVertexModeEXT"],
+        "stages" : "VK_SHADER_STAGE_VERTEX_BIT",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineRasterizationProvokingVertexStateCreateInfoEXT",
     },
     "VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT" : {
         "command" : ["vkCmdSetLineRasterizationModeEXT"],
-        "dependency" : ["rasterizerDiscardEnable"]
+        "dependency" : ["rasterizerDiscardEnable"],
+        "stages" : "VK_SHADER_STAGE_VERTEX_BIT",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineRasterizationLineStateCreateInfoEXT",
     },
     "VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT" : {
         "command" : ["vkCmdSetLineStippleEnableEXT"],
-        "dependency" : ["rasterizerDiscardEnable"]
+        "dependency" : ["rasterizerDiscardEnable"],
+        "stages" : "VK_SHADER_STAGE_VERTEX_BIT",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineRasterizationLineStateCreateInfoEXT",
     },
     "VK_DYNAMIC_STATE_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT" : {
         "command" : ["vkCmdSetDepthClipNegativeOneToOneEXT"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineViewportDepthClipControlCreateInfoEXT",
     },
     "VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV" : {
         "command" : ["vkCmdSetViewportWScalingEnableNV"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineViewportWScalingStateCreateInfoNV",
     },
     "VK_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV" : {
         "command" : ["vkCmdSetViewportSwizzleNV"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineViewportSwizzleStateCreateInfoNV",
     },
     "VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV" : {
         "command" : ["vkCmdSetCoverageToColorEnableNV"],
-        "dependency" : ["rasterizerDiscardEnable"]
+        "dependency" : ["rasterizerDiscardEnable"],
+        "stages" : "VK_SHADER_STAGE_FRAGMENT_BIT",
+        "gpl" : ["FragmentShader", "FragmentOutput"],
+        "pipeline" : "VkPipelineCoverageToColorStateCreateInfoNV",
     },
     "VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV" : {
         "command" : ["vkCmdSetCoverageToColorLocationNV"],
-        "dependency" : ["rasterizerDiscardEnable"]
+        "dependency" : ["rasterizerDiscardEnable"],
+        "stages" : "VK_SHADER_STAGE_FRAGMENT_BIT",
+        "gpl" : ["FragmentShader", "FragmentOutput"],
+        "pipeline" : "VkPipelineCoverageToColorStateCreateInfoNV",
     },
     "VK_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV" : {
         "command" : ["vkCmdSetCoverageModulationModeNV"],
-        "dependency" : ["rasterizerDiscardEnable"]
+        "dependency" : ["rasterizerDiscardEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["FragmentShader", "FragmentOutput"],
+        "pipeline" : "VkPipelineCoverageModulationStateCreateInfoNV",
     },
     "VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV" : {
         "command" : ["vkCmdSetCoverageModulationTableEnableNV"],
-        "dependency" : ["rasterizerDiscardEnable"]
+        "dependency" : ["rasterizerDiscardEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["FragmentShader", "FragmentOutput"],
+        "pipeline" : "VkPipelineCoverageModulationStateCreateInfoNV",
     },
     "VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_NV" : {
         "command" : ["vkCmdSetCoverageModulationTableNV"],
-        "dependency" : ["rasterizerDiscardEnable", "coverageModulationTableEnable"]
+        "dependency" : ["rasterizerDiscardEnable", "coverageModulationTableEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["FragmentShader", "FragmentOutput"],
+        "pipeline" : "VkPipelineCoverageModulationStateCreateInfoNV",
     },
     "VK_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV" : {
         "command" : ["vkCmdSetShadingRateImageEnableNV"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineViewportShadingRateImageStateCreateInfoNV",
     },
     "VK_DYNAMIC_STATE_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV" : {
         "command" : ["vkCmdSetRepresentativeFragmentTestEnableNV"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["FragmentShader"],
+        "pipeline" : "VkPipelineRepresentativeFragmentTestStateCreateInfoNV",
     },
     "VK_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV" : {
         "command" : ["vkCmdSetCoverageReductionModeNV"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["FragmentShader", "FragmentOutput"],
+        "pipeline" : "VkPipelineCoverageReductionStateCreateInfoNV",
     },
     "VK_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT" : {
         "command" : ["vkCmdSetAttachmentFeedbackLoopEnableEXT"],
+        "stages" : "VK_SHADER_STAGE_FRAGMENT_BIT",
+        "gpl" : ["PreRasterization", "FragmentShader", "FragmentOutput"],
     },
     "VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR" : {
         "command" : ["vkCmdSetRayTracingPipelineStackSizeKHR"],
+        "stages" : "VK_SHADER_STAGE_ALL",
     },
     "VK_DYNAMIC_STATE_DEPTH_CLAMP_RANGE_EXT" : {
         "command" : ["vkCmdSetDepthClampRangeEXT"],
-        "dependency" : ["depthClampEnable"]
+        "dependency" : ["depthClampEnable"],
+        "stages" : "VK_SHADER_STAGE_ALL",
+        "gpl" : ["PreRasterization"],
+        "pipeline" : "VkPipelineViewportDepthClampControlCreateInfoEXT"
     },
 }
 
