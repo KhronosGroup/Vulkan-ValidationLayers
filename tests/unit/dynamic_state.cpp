@@ -6214,3 +6214,101 @@ TEST_F(NegativeDynamicState, LineRasterization) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeDynamicState, MultiviewInvalidate) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10699");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Image color_image(*m_device, m_width, m_height, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView color_image_view = color_image.CreateView();
+
+    VkAttachmentDescription2 attachment_description = vku::InitStructHelper();
+    attachment_description.flags = 0u;
+    attachment_description.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attachment_description.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment_description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachment_description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment_description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachment_description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachment_description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachment_description.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference2 attachment_reference = vku::InitStructHelper();
+    attachment_reference.attachment = 0u;
+    attachment_reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription2 subpass_descriptions[2];
+    subpass_descriptions[0] = vku::InitStructHelper();
+    subpass_descriptions[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass_descriptions[0].colorAttachmentCount = 1u;
+    subpass_descriptions[0].pColorAttachments = &attachment_reference;
+    subpass_descriptions[0].viewMask = 0x1u;
+    subpass_descriptions[1] = vku::InitStructHelper();
+    subpass_descriptions[1].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass_descriptions[1].colorAttachmentCount = 1u;
+    subpass_descriptions[1].pColorAttachments = &attachment_reference;
+    subpass_descriptions[1].viewMask = 0x1u;
+
+    VkRenderPassCreateInfo2 rpci = vku::InitStructHelper();
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = &attachment_description;
+    rpci.subpassCount = 2u;
+    rpci.pSubpasses = subpass_descriptions;
+
+    vkt::RenderPass render_pass(*m_device, rpci);
+    vkt::Framebuffer framebuffer(*m_device, render_pass, 1u, &color_image_view.handle(), m_width, m_height);
+
+    VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
+
+    VkPipelineViewportStateCreateInfo viewport_state_ci = vku::InitStructHelper();
+    viewport_state_ci.viewportCount = 1u;
+    viewport_state_ci.pViewports = &viewport;
+
+    CreatePipelineHelper pipe1(*this);
+    pipe1.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
+    pipe1.gp_ci_.renderPass = render_pass;
+    pipe1.gp_ci_.pViewportState = &viewport_state_ci;
+    pipe1.CreateGraphicsPipeline();
+
+    CreatePipelineHelper pipe2(*this);
+    pipe2.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
+    pipe2.gp_ci_.renderPass = render_pass;
+    pipe2.gp_ci_.pViewportState = &viewport_state_ci;
+    pipe2.gp_ci_.subpass = 1u;
+    pipe2.CreateGraphicsPipeline();
+
+    VkClearValue clear_value = {};
+    clear_value.color.float32[0] = 0.0f;
+    clear_value.color.float32[1] = 0.0f;
+    clear_value.color.float32[2] = 0.0f;
+    clear_value.color.float32[3] = 1.0f;
+
+    VkRenderPassBeginInfo render_pass_bi = vku::InitStructHelper();
+    render_pass_bi.renderPass = render_pass;
+    render_pass_bi.framebuffer = framebuffer;
+    render_pass_bi.renderArea = {{0, 0}, {m_width, m_height}};
+    render_pass_bi.clearValueCount = 1u;
+    render_pass_bi.pClearValues = &clear_value;
+
+    VkRect2D scissor = {{0, 0}, {64, 64}};
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(render_pass_bi);
+    vk::CmdSetScissorWithCountEXT(m_command_buffer, 1u, &scissor);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1);
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
+    // invalidated with multiview
+    vk::CmdNextSubpass(m_command_buffer, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2);
+    // VUID-vkCmdDraw-scissorCount-03418
+    m_errorMonitor->SetDesiredError("When multiview is enabled, vkCmdNextSubpass will invalidate all dynamic state");
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
