@@ -2210,6 +2210,18 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceVideoEncodeRgbConversionFeaturesVALVE structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_ENCODE_RGB_CONVERSION_FEATURES_VALVE: {  // Covers
+                                                                                              // VUID-VkPhysicalDeviceVideoEncodeRgbConversionFeaturesVALVE-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc =
+                    loc.pNext(Struct::VkPhysicalDeviceVideoEncodeRgbConversionFeaturesVALVE);
+                VkPhysicalDeviceVideoEncodeRgbConversionFeaturesVALVE* structure =
+                    (VkPhysicalDeviceVideoEncodeRgbConversionFeaturesVALVE*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::videoEncodeRgbConversion), structure->videoEncodeRgbConversion);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceImageViewMinLodFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_VIEW_MIN_LOD_FEATURES_EXT: {  // Covers
                                                                                    // VUID-VkPhysicalDeviceImageViewMinLodFeaturesEXT-sType-sType
@@ -4067,9 +4079,8 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPipelineCreateFlags2CreateInfo);
                 VkPipelineCreateFlags2CreateInfo* structure = (VkPipelineCreateFlags2CreateInfo*)header;
                 skip |= ValidateFlags(pNext_loc.dot(Field::flags), vvl::FlagBitmask::VkPipelineCreateFlagBits2,
-                                      AllVkPipelineCreateFlagBits2, structure->flags, kRequiredFlags,
-                                      "VUID-VkPipelineCreateFlags2CreateInfo-flags-parameter",
-                                      "VUID-VkPipelineCreateFlags2CreateInfo-flags-requiredbitmask");
+                                      AllVkPipelineCreateFlagBits2, structure->flags, kOptionalFlags,
+                                      "VUID-VkPipelineCreateFlags2CreateInfo-flags-parameter");
             }
         } break;
 
@@ -6679,6 +6690,52 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
             }
         } break;
 
+        // No Validation code for VkVideoEncodeRgbConversionCapabilitiesVALVE structure members  -- Covers
+        // VUID-VkVideoEncodeRgbConversionCapabilitiesVALVE-sType-sType
+
+        // Validation code for VkVideoEncodeProfileRgbConversionInfoVALVE structure members
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_PROFILE_RGB_CONVERSION_INFO_VALVE: {  // Covers
+                                                                                  // VUID-VkVideoEncodeProfileRgbConversionInfoVALVE-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkVideoEncodeProfileRgbConversionInfoVALVE);
+                VkVideoEncodeProfileRgbConversionInfoVALVE* structure = (VkVideoEncodeProfileRgbConversionInfoVALVE*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::performEncodeRgbConversion), structure->performEncodeRgbConversion);
+            }
+        } break;
+
+        // Validation code for VkVideoEncodeSessionRgbConversionCreateInfoVALVE structure members
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_SESSION_RGB_CONVERSION_CREATE_INFO_VALVE: {  // Covers
+                                                                                         // VUID-VkVideoEncodeSessionRgbConversionCreateInfoVALVE-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkVideoEncodeSessionRgbConversionCreateInfoVALVE);
+                VkVideoEncodeSessionRgbConversionCreateInfoVALVE* structure =
+                    (VkVideoEncodeSessionRgbConversionCreateInfoVALVE*)header;
+                skip |=
+                    ValidateFlags(pNext_loc.dot(Field::rgbModel), vvl::FlagBitmask::VkVideoEncodeRgbModelConversionFlagBitsVALVE,
+                                  AllVkVideoEncodeRgbModelConversionFlagBitsVALVE, structure->rgbModel, kRequiredSingleBit,
+                                  "VUID-VkVideoEncodeSessionRgbConversionCreateInfoVALVE-rgbModel-parameter",
+                                  "VUID-VkVideoEncodeSessionRgbConversionCreateInfoVALVE-rgbModel-parameter");
+
+                skip |=
+                    ValidateFlags(pNext_loc.dot(Field::rgbRange), vvl::FlagBitmask::VkVideoEncodeRgbRangeCompressionFlagBitsVALVE,
+                                  AllVkVideoEncodeRgbRangeCompressionFlagBitsVALVE, structure->rgbRange, kRequiredSingleBit,
+                                  "VUID-VkVideoEncodeSessionRgbConversionCreateInfoVALVE-rgbRange-parameter",
+                                  "VUID-VkVideoEncodeSessionRgbConversionCreateInfoVALVE-rgbRange-parameter");
+
+                skip |=
+                    ValidateFlags(pNext_loc.dot(Field::xChromaOffset), vvl::FlagBitmask::VkVideoEncodeRgbChromaOffsetFlagBitsVALVE,
+                                  AllVkVideoEncodeRgbChromaOffsetFlagBitsVALVE, structure->xChromaOffset, kRequiredSingleBit,
+                                  "VUID-VkVideoEncodeSessionRgbConversionCreateInfoVALVE-xChromaOffset-parameter",
+                                  "VUID-VkVideoEncodeSessionRgbConversionCreateInfoVALVE-xChromaOffset-parameter");
+
+                skip |=
+                    ValidateFlags(pNext_loc.dot(Field::yChromaOffset), vvl::FlagBitmask::VkVideoEncodeRgbChromaOffsetFlagBitsVALVE,
+                                  AllVkVideoEncodeRgbChromaOffsetFlagBitsVALVE, structure->yChromaOffset, kRequiredSingleBit,
+                                  "VUID-VkVideoEncodeSessionRgbConversionCreateInfoVALVE-yChromaOffset-parameter",
+                                  "VUID-VkVideoEncodeSessionRgbConversionCreateInfoVALVE-yChromaOffset-parameter");
+            }
+        } break;
+
         // No Validation code for VkImageViewMinLodCreateInfoEXT structure members  -- Covers
         // VUID-VkImageViewMinLodCreateInfoEXT-sType-sType
 
@@ -7864,6 +7921,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_ENCODE_AV1_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_ENCODE_INTRA_REFRESH_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_ENCODE_QUANTIZATION_MAP_FEATURES_KHR,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_ENCODE_RGB_CONVERSION_FEATURES_VALVE,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_MAINTENANCE_1_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_MAINTENANCE_2_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
@@ -15372,7 +15430,8 @@ bool Instance::PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDe
             VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_CAPABILITIES_KHR,
             VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_QUANTIZATION_MAP_CAPABILITIES_KHR,
             VK_STRUCTURE_TYPE_VIDEO_ENCODE_INTRA_REFRESH_CAPABILITIES_KHR,
-            VK_STRUCTURE_TYPE_VIDEO_ENCODE_QUANTIZATION_MAP_CAPABILITIES_KHR};
+            VK_STRUCTURE_TYPE_VIDEO_ENCODE_QUANTIZATION_MAP_CAPABILITIES_KHR,
+            VK_STRUCTURE_TYPE_VIDEO_ENCODE_RGB_CONVERSION_CAPABILITIES_VALVE};
 
         skip |= context.ValidateStructPnext(pCapabilities_loc, pCapabilities->pNext, allowed_structs_VkVideoCapabilitiesKHR.size(),
                                             allowed_structs_VkVideoCapabilitiesKHR.data(), GeneratedVulkanHeaderVersion,
@@ -15455,7 +15514,8 @@ bool Device::PreCallValidateCreateVideoSessionKHR(VkDevice device, const VkVideo
         constexpr std::array allowed_structs_VkVideoSessionCreateInfoKHR = {
             VK_STRUCTURE_TYPE_VIDEO_ENCODE_AV1_SESSION_CREATE_INFO_KHR, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_CREATE_INFO_KHR,
             VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_CREATE_INFO_KHR,
-            VK_STRUCTURE_TYPE_VIDEO_ENCODE_SESSION_INTRA_REFRESH_CREATE_INFO_KHR};
+            VK_STRUCTURE_TYPE_VIDEO_ENCODE_SESSION_INTRA_REFRESH_CREATE_INFO_KHR,
+            VK_STRUCTURE_TYPE_VIDEO_ENCODE_SESSION_RGB_CONVERSION_CREATE_INFO_VALVE};
 
         skip |= context.ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, allowed_structs_VkVideoSessionCreateInfoKHR.size(),
                                             allowed_structs_VkVideoSessionCreateInfoKHR.data(), GeneratedVulkanHeaderVersion,
@@ -24239,21 +24299,6 @@ bool Device::PreCallValidateCmdCopyTensorARM(VkCommandBuffer commandBuffer, cons
                 skip |= context.ValidateStructPnext(pRegions_loc, pCopyTensorInfo->pRegions[regionIndex].pNext, 0, nullptr,
                                                     GeneratedVulkanHeaderVersion, "VUID-VkTensorCopyARM-pNext-pNext",
                                                     kVUIDUndefined, true);
-
-                skip |= context.ValidateArray(
-                    pRegions_loc.dot(Field::dimensionCount), pRegions_loc.dot(Field::pSrcOffset),
-                    pCopyTensorInfo->pRegions[regionIndex].dimensionCount, &pCopyTensorInfo->pRegions[regionIndex].pSrcOffset, true,
-                    false, "VUID-VkTensorCopyARM-dimensionCount-arraylength", "VUID-VkTensorCopyARM-pSrcOffset-parameter");
-
-                skip |= context.ValidateArray(
-                    pRegions_loc.dot(Field::dimensionCount), pRegions_loc.dot(Field::pDstOffset),
-                    pCopyTensorInfo->pRegions[regionIndex].dimensionCount, &pCopyTensorInfo->pRegions[regionIndex].pDstOffset, true,
-                    false, "VUID-VkTensorCopyARM-dimensionCount-arraylength", "VUID-VkTensorCopyARM-pDstOffset-parameter");
-
-                skip |= context.ValidateArray(
-                    pRegions_loc.dot(Field::dimensionCount), pRegions_loc.dot(Field::pExtent),
-                    pCopyTensorInfo->pRegions[regionIndex].dimensionCount, &pCopyTensorInfo->pRegions[regionIndex].pExtent, true,
-                    false, "VUID-VkTensorCopyARM-dimensionCount-arraylength", "VUID-VkTensorCopyARM-pExtent-parameter");
             }
         }
     }

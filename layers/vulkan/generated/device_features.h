@@ -990,6 +990,8 @@ struct DeviceFeatures {
     bool videoEncodeIntraRefresh;
     // VkPhysicalDeviceVideoEncodeQuantizationMapFeaturesKHR
     bool videoEncodeQuantizationMap;
+    // VkPhysicalDeviceVideoEncodeRgbConversionFeaturesVALVE
+    bool videoEncodeRgbConversion;
     // VkPhysicalDeviceVideoMaintenance1FeaturesKHR
     bool videoMaintenance1;
     // VkPhysicalDeviceVideoMaintenance2FeaturesKHR

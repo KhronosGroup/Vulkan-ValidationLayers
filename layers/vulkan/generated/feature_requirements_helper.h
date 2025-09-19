@@ -980,6 +980,8 @@ enum class Feature {
     videoEncodeIntraRefresh,
     // VkPhysicalDeviceVideoEncodeQuantizationMapFeaturesKHR
     videoEncodeQuantizationMap,
+    // VkPhysicalDeviceVideoEncodeRgbConversionFeaturesVALVE
+    videoEncodeRgbConversion,
     // VkPhysicalDeviceVideoMaintenance1FeaturesKHR
     videoMaintenance1,
     // VkPhysicalDeviceVideoMaintenance2FeaturesKHR
