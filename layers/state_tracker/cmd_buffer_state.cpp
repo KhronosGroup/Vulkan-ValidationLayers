@@ -2208,6 +2208,9 @@ std::string CommandBuffer::DescribeInvalidatedState(CBDynamicState dynamic_state
         ss << " that didn't have " << DynamicStateToString(dynamic_state) << " and invalidated the prior "
            << DescribeDynamicStateCommand(dynamic_state) << " call)";
     }
+    if (GetActiveSubpass() != 0 && active_render_pass->has_multiview_enabled) {
+        ss << " (When multiview is enabled, vkCmdNextSubpass will invalidate all dynamic state)";
+    }
     return ss.str();
 }
 
