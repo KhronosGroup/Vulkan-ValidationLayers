@@ -1399,6 +1399,12 @@ std::string stateless::Context::DescribeFlagBitmaskValue(vvl::FlagBitmask flag_b
 #endif  // VK_USE_PLATFORM_FUCHSIA
         case vvl::FlagBitmask::VkFrameBoundaryFlagBitsEXT:
             return string_VkFrameBoundaryFlagsEXT(value);
+        case vvl::FlagBitmask::VkVideoEncodeRgbModelConversionFlagBitsVALVE:
+            return string_VkVideoEncodeRgbModelConversionFlagsVALVE(value);
+        case vvl::FlagBitmask::VkVideoEncodeRgbRangeCompressionFlagBitsVALVE:
+            return string_VkVideoEncodeRgbRangeCompressionFlagsVALVE(value);
+        case vvl::FlagBitmask::VkVideoEncodeRgbChromaOffsetFlagBitsVALVE:
+            return string_VkVideoEncodeRgbChromaOffsetFlagsVALVE(value);
         case vvl::FlagBitmask::VkBuildMicromapFlagBitsEXT:
             return string_VkBuildMicromapFlagsEXT(value);
         case vvl::FlagBitmask::VkMicromapCreateFlagBitsEXT:

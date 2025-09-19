@@ -442,6 +442,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_color_write_enable{kNotEnabled};
     ExtEnabled vk_ext_primitives_generated_query{kNotEnabled};
     ExtEnabled vk_ext_global_priority_query{kNotEnabled};
+    ExtEnabled vk_valve_video_encode_rgb_conversion{kNotEnabled};
     ExtEnabled vk_ext_image_view_min_lod{kNotEnabled};
     ExtEnabled vk_ext_multi_draw{kNotEnabled};
     ExtEnabled vk_ext_image_2d_view_of_3d{kNotEnabled};
@@ -902,6 +903,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_EXT_color_write_enable:
         case vvl::Extension::_VK_EXT_primitives_generated_query:
         case vvl::Extension::_VK_EXT_global_priority_query:
+        case vvl::Extension::_VK_VALVE_video_encode_rgb_conversion:
         case vvl::Extension::_VK_EXT_image_view_min_lod:
         case vvl::Extension::_VK_EXT_multi_draw:
         case vvl::Extension::_VK_EXT_image_2d_view_of_3d:

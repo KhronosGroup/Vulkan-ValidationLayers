@@ -1669,6 +1669,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceVideoEncodeIntraRefreshFeaturesKHR", 51},
     {"VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR", 47},
     {"VkPhysicalDeviceVideoEncodeQuantizationMapFeaturesKHR", 54},
+    {"VkPhysicalDeviceVideoEncodeRgbConversionFeaturesVALVE", 54},
     {"VkPhysicalDeviceVideoFormatInfoKHR", 35},
     {"VkPhysicalDeviceVideoMaintenance1FeaturesKHR", 45},
     {"VkPhysicalDeviceVideoMaintenance2FeaturesKHR", 45},
@@ -2023,6 +2024,7 @@ const char* String(Struct structure) {
     {"VkVideoEncodeInfoKHR", 21},
     {"VkVideoEncodeIntraRefreshCapabilitiesKHR", 41},
     {"VkVideoEncodeIntraRefreshInfoKHR", 33},
+    {"VkVideoEncodeProfileRgbConversionInfoVALVE", 43},
     {"VkVideoEncodeQualityLevelInfoKHR", 33},
     {"VkVideoEncodeQualityLevelPropertiesKHR", 39},
     {"VkVideoEncodeQuantizationMapCapabilitiesKHR", 44},
@@ -2030,9 +2032,11 @@ const char* String(Struct structure) {
     {"VkVideoEncodeQuantizationMapSessionParametersCreateInfoKHR", 59},
     {"VkVideoEncodeRateControlInfoKHR", 32},
     {"VkVideoEncodeRateControlLayerInfoKHR", 37},
+    {"VkVideoEncodeRgbConversionCapabilitiesVALVE", 44},
     {"VkVideoEncodeSessionIntraRefreshCreateInfoKHR", 46},
     {"VkVideoEncodeSessionParametersFeedbackInfoKHR", 46},
     {"VkVideoEncodeSessionParametersGetInfoKHR", 41},
+    {"VkVideoEncodeSessionRgbConversionCreateInfoVALVE", 49},
     {"VkVideoEncodeUsageInfoKHR", 26},
     {"VkVideoEndCodingInfoKHR", 24},
     {"VkVideoFormatAV1QuantizationMapPropertiesKHR", 45},
@@ -4180,6 +4184,7 @@ const char* String(Field field) {
     {"perViewAttributesPositionXOnly", 31},
     {"perViewPositionAllComponents", 29},
     {"perViewRenderAreaCount", 23},
+    {"performEncodeRgbConversion", 27},
     {"performanceCounterMultipleQueryPools", 37},
     {"performanceCounterQueryPools", 29},
     {"performanceCountersSampling", 28},
@@ -4481,6 +4486,10 @@ const char* String(Field field) {
     {"resourceOffset", 15},
     {"resourceUsage", 14},
     {"resultType", 11},
+    {"rgbModel", 9},
+    {"rgbModels", 10},
+    {"rgbRange", 9},
+    {"rgbRanges", 10},
     {"robustBufferAccess", 19},
     {"robustBufferAccess2", 20},
     {"robustBufferAccessUpdateAfterBind", 34},
@@ -5087,6 +5096,7 @@ const char* String(Field field) {
     {"videoEncodeAV1", 15},
     {"videoEncodeIntraRefresh", 24},
     {"videoEncodeQuantizationMap", 27},
+    {"videoEncodeRgbConversion", 25},
     {"videoMaintenance1", 18},
     {"videoMaintenance2", 18},
     {"videoSession", 13},
@@ -5136,9 +5146,11 @@ const char* String(Field field) {
     {"writeStdVPS", 12},
     {"x", 2},
     {"xChromaOffset", 14},
+    {"xChromaOffsets", 15},
     {"xcoeff", 7},
     {"y", 2},
     {"yChromaOffset", 14},
+    {"yChromaOffsets", 15},
     {"ycbcr2plane444Formats", 22},
     {"ycbcrConversion", 16},
     {"ycbcrDegamma", 13},
@@ -5465,6 +5477,9 @@ const char* String(FlagBitmask value) {
     {"VkVideoEncodeH265TransformBlockSizeFlagBitsKHR", 47},
     {"VkVideoEncodeIntraRefreshModeFlagBitsKHR", 41},
     {"VkVideoEncodeRateControlModeFlagBitsKHR", 40},
+    {"VkVideoEncodeRgbChromaOffsetFlagBitsVALVE", 42},
+    {"VkVideoEncodeRgbModelConversionFlagBitsVALVE", 45},
+    {"VkVideoEncodeRgbRangeCompressionFlagBitsVALVE", 46},
     {"VkVideoEncodeUsageFlagBitsKHR", 30},
     {"VkVideoSessionCreateFlagBitsKHR", 32},
     {"VkVideoSessionParametersCreateFlagBitsKHR", 42},
@@ -5898,6 +5913,7 @@ const char* String(Extension extension) {
     {"VK_VALVE_descriptor_set_host_mapping", 37},
     {"VK_VALVE_fragment_density_map_layered", 38},
     {"VK_VALVE_mutable_descriptor_type", 33},
+    {"VK_VALVE_video_encode_rgb_conversion", 37},
     };
     return table[(int)extension].data();
 }
@@ -8129,6 +8145,14 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPipelineColorWriteCreateInfoEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVES_GENERATED_QUERY_FEATURES_EXT:
        return Struct::VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_ENCODE_RGB_CONVERSION_FEATURES_VALVE:
+       return Struct::VkPhysicalDeviceVideoEncodeRgbConversionFeaturesVALVE;
+    case VK_STRUCTURE_TYPE_VIDEO_ENCODE_RGB_CONVERSION_CAPABILITIES_VALVE:
+       return Struct::VkVideoEncodeRgbConversionCapabilitiesVALVE;
+    case VK_STRUCTURE_TYPE_VIDEO_ENCODE_PROFILE_RGB_CONVERSION_INFO_VALVE:
+       return Struct::VkVideoEncodeProfileRgbConversionInfoVALVE;
+    case VK_STRUCTURE_TYPE_VIDEO_ENCODE_SESSION_RGB_CONVERSION_CREATE_INFO_VALVE:
+       return Struct::VkVideoEncodeSessionRgbConversionCreateInfoVALVE;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_VIEW_MIN_LOD_FEATURES_EXT:
        return Struct::VkPhysicalDeviceImageViewMinLodFeaturesEXT;
     case VK_STRUCTURE_TYPE_IMAGE_VIEW_MIN_LOD_CREATE_INFO_EXT:

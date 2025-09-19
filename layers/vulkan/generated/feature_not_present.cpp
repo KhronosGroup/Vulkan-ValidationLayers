@@ -3362,6 +3362,17 @@ void Instance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDevice
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_ENCODE_RGB_CONVERSION_FEATURES_VALVE: {
+                VkPhysicalDeviceVideoEncodeRgbConversionFeaturesVALVE supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceVideoEncodeRgbConversionFeaturesVALVE *enabling =
+                    reinterpret_cast<const VkPhysicalDeviceVideoEncodeRgbConversionFeaturesVALVE *>(current);
+                if (enabling->videoEncodeRgbConversion && !supported.videoEncodeRgbConversion) {
+                    ss << "VkPhysicalDeviceVideoEncodeRgbConversionFeaturesVALVE::videoEncodeRgbConversion is not supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_MAINTENANCE_1_FEATURES_KHR: {
                 VkPhysicalDeviceVideoMaintenance1FeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;

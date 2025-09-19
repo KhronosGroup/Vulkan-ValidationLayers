@@ -1290,6 +1290,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                     enabled->primitivesGeneratedQueryWithNonZeroStreams == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_ENCODE_RGB_CONVERSION_FEATURES_VALVE: {
+                const VkPhysicalDeviceVideoEncodeRgbConversionFeaturesVALVE *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceVideoEncodeRgbConversionFeaturesVALVE *>(pNext);
+                features->videoEncodeRgbConversion |= enabled->videoEncodeRgbConversion == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_VIEW_MIN_LOD_FEATURES_EXT: {
                 const VkPhysicalDeviceImageViewMinLodFeaturesEXT *enabled =
                     reinterpret_cast<const VkPhysicalDeviceImageViewMinLodFeaturesEXT *>(pNext);
