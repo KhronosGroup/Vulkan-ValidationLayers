@@ -1295,7 +1295,7 @@ bool CoreChecks::ValidateDrawRenderingAttachmentLocation(const vvl::CommandBuffe
         pipeline_color_locations = info->pColorAttachmentLocations;
     }
 
-    // If the count mismatches, that will either be caught by VUID-06179 or allowed,
+    // If the count mismatches, that will either be caught by 06179 or allowed,
     // and we should only check the attachments that will be rendered to
     uint32_t count = std::min(pipeline_color_count, color_attachment_count);
     for (uint32_t i = 0; i < count; i++) {
@@ -1347,7 +1347,7 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
         pipeline_stencil_index = info->pStencilInputAttachmentIndex;
     }
 
-    // If the count mismatches, that will either be caught by VUID-06179 or allowed,
+    // If the count mismatches, that will either be caught by 06179 or allowed,
     // and we should only check the attachments that will be rendered to
     uint32_t count = std::min(pipeline_color_count, color_index_count);
     for (uint32_t i = 0; i < count; i++) {
@@ -1385,7 +1385,7 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
         } else {
             ss << "was not called in this render pass so pDepthInputAttachmentIndex is implicitly NULL";
         }
-        skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(), "%s", ss.str().c_str());
+        skip = LogError(vuid.dynamic_rendering_local_index_10927, objlist, vuid.loc(), "%s", ss.str().c_str());
     }
 
     if (!EqualValuesOrBothNull(pipeline_stencil_index, cb_state.rendering_attachments.stencil_index)) {
@@ -1403,7 +1403,7 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
         } else {
             ss << "was not called in this render pass so pStencilInputAttachmentIndex is implicitly NULL";
         }
-        skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(), "%s", ss.str().c_str());
+        skip = LogError(vuid.dynamic_rendering_local_index_10928, objlist, vuid.loc(), "%s", ss.str().c_str());
     }
     return skip;
 }

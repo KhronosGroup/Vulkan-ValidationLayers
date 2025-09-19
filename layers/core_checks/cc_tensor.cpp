@@ -197,7 +197,7 @@ bool CoreChecks::PreCallValidateCmdCopyTensorARM(VkCommandBuffer commandBuffer, 
     auto *regions = pCopyTensorInfo->pRegions;
     skip |= ValidateCmd(cb_state, error_obj.location);
     if (src_tensor_state.description.dimensionCount != dst_tensor_state.description.dimensionCount) {
-        skip |= LogError("VUID-VkCopyTensorInfoARM-srcTensor-09684", tensors_objlist, copy_info_loc,
+        skip |= LogError("VUID-VkCopyTensorInfoARM-dimensionCount-09684", tensors_objlist, copy_info_loc,
                          "dimensionCount for srcTensor (%d) and dstTensor (%d) are different",
                          src_tensor_state.description.dimensionCount, dst_tensor_state.description.dimensionCount);
     } else {
@@ -209,7 +209,7 @@ bool CoreChecks::PreCallValidateCmdCopyTensorARM(VkCommandBuffer commandBuffer, 
             } else {
                 if (regions->pExtent) {
                     if (static_cast<int64_t>(regions->pExtent[i]) != src_tensor_state.description.pDimensions[i]) {
-                        skip |= LogError("VUID-VkCopyTensorInfoARM-pExtent-09689", src_objlist,
+                        skip |= LogError("VUID-VkCopyTensorInfoARM-pRegions-09689", src_objlist,
                                          copy_info_loc.dot(Field::pRegions).dot(Field::pExtent, i),
                                          "(%" PRIu64 ") is not equal to srcTensor::pDimensions[%d] (%" PRIi64 ")",
                                          regions->pExtent[i], i, src_tensor_state.description.pDimensions[i]);
@@ -225,7 +225,7 @@ bool CoreChecks::PreCallValidateCmdCopyTensorARM(VkCommandBuffer commandBuffer, 
     if (regions->pSrcOffset) {
         for (uint32_t i = 0; i < regions->dimensionCount; i++) {
             if (regions->pSrcOffset[i] != 0) {
-                skip |= LogError("VUID-VkCopyTensorInfoARM-pSrcOffset-09687", src_objlist, copy_info_loc.dot(Field::pSrcOffset, i),
+                skip |= LogError("VUID-VkCopyTensorInfoARM-pRegions-09687", src_objlist, copy_info_loc.dot(Field::pSrcOffset, i),
                                  "(%" PRIu64 ") is not zero", regions->pSrcOffset[i]);
                 break;
             }
@@ -234,7 +234,7 @@ bool CoreChecks::PreCallValidateCmdCopyTensorARM(VkCommandBuffer commandBuffer, 
     if (regions->pDstOffset) {
         for (uint32_t i = 0; i < regions->dimensionCount; i++) {
             if (regions->pDstOffset[i] != 0) {
-                skip |= LogError("VUID-VkCopyTensorInfoARM-pDstOffset-09688", dst_objlist, copy_info_loc.dot(Field::pDstOffset, i),
+                skip |= LogError("VUID-VkCopyTensorInfoARM-pRegions-09688", dst_objlist, copy_info_loc.dot(Field::pDstOffset, i),
                                  "(%" PRIu64 ") is not zero", regions->pDstOffset[i]);
                 break;
             }

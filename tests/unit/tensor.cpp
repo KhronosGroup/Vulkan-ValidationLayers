@@ -882,7 +882,7 @@ TEST_F(NegativeTensor, CopyTensorDifferentDimensionCounts) {
     copy_info.pRegions = &regions;
 
     m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("VUID-VkCopyTensorInfoARM-srcTensor-09684");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyTensorInfoARM-dimensionCount-09684");
     vk::CmdCopyTensorARM(m_command_buffer.handle(), &copy_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -978,7 +978,7 @@ TEST_F(NegativeTensor, CopyTensorSrcOffsetNotAllZero) {
     copy_info.pRegions = &regions;
 
     m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("VUID-VkCopyTensorInfoARM-pSrcOffset-09687");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyTensorInfoARM-pRegions-09687");
     vk::CmdCopyTensorARM(m_command_buffer.handle(), &copy_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -1007,7 +1007,7 @@ TEST_F(NegativeTensor, CopyTensorDstOffsetNotAllZero) {
     copy_info.pRegions = &regions;
 
     m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("VUID-VkCopyTensorInfoARM-pDstOffset-09688");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyTensorInfoARM-pRegions-09688");
     vk::CmdCopyTensorARM(m_command_buffer.handle(), &copy_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -1037,10 +1037,10 @@ TEST_F(NegativeTensor, CopyTensorExtentDifferentToDimensions) {
 
     m_command_buffer.Begin();
     // The extent is wrong for each of the 4 dimensions
-    m_errorMonitor->SetDesiredError("VUID-VkCopyTensorInfoARM-pExtent-09689");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyTensorInfoARM-pExtent-09689");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyTensorInfoARM-pExtent-09689");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyTensorInfoARM-pExtent-09689");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyTensorInfoARM-pRegions-09689");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyTensorInfoARM-pRegions-09689");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyTensorInfoARM-pRegions-09689");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyTensorInfoARM-pRegions-09689");
     vk::CmdCopyTensorARM(m_command_buffer.handle(), &copy_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
