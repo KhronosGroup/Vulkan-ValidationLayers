@@ -499,12 +499,17 @@ bool CoreChecks::ValidateGraphicsPipelineVertexInputState(const vvl::Pipeline &p
         // Failed to defined a Vertex Input State
         if (!pipeline.pre_raster_state) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-08898", device, create_info_loc,
-                             "pVertexInputState and pInputAssemblyState are both NULL so this is an invalid Vertex Input State (no "
-                             "dynamic state or mesh shaders were used to ignore them).");
+                             "pVertexInputState and pInputAssemblyState are both NULL which means this is an invalid Vertex Input "
+                             "State.\npVertexInputState can be ignored with VK_DYNAMIC_STATE_VERTEX_INPUT_EXT\npInputAssemblyState "
+                             "can be ignored with VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE, VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY, "
+                             "and dynamicPrimitiveTopologyUnrestricted set to VK_TRUE\nIf there is a mesh stage, these are also "
+                             "ignored, but the Vertex Input library can just be skipped if creating a mesh pipeline.");
         } else if ((pipeline.active_shaders & VK_SHADER_STAGE_VERTEX_BIT)) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-08897", device, create_info_loc,
-                             "pVertexInputState and pInputAssemblyState are both NULL so this is an invalid Vertex Input State (no "
-                             "dynamic state were used to ignore them).");
+                             "pVertexInputState and pInputAssemblyState are both NULL which means this is an invalid Vertex Input "
+                             "State.\npVertexInputState can be ignored with VK_DYNAMIC_STATE_VERTEX_INPUT_EXT\npInputAssemblyState "
+                             "can be ignored with VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE,  VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY, "
+                             "and dynamicPrimitiveTopologyUnrestricted set to VK_TRUE");
         }
     } else if (invalid_input_state) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-02097", device, create_info_loc.dot(Field::pVertexInputState),
