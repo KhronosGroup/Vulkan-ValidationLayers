@@ -368,6 +368,9 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures(VkPhysicalDevice phy
     SetBoolArrayTrue(bool_array, num_bools);
 }
 
+// When using profiles, the format features are found in tests/device_profiles/max_profile.json
+//
+// Updating this function is not how to add specific format support for the "normal" case
 static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
                                                                     VkFormatProperties* pFormatProperties) {
     if (VK_FORMAT_UNDEFINED == format) {
@@ -1339,6 +1342,9 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties2(VkPhysicalDevice 
     }
 }
 
+// When using profiles, the format features are found in tests/device_profiles/max_profile.json
+//
+// Updating this function is not how to add specific format support for the "normal" case
 static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice, VkFormat format,
                                                                      VkFormatProperties2* pFormatProperties) {
     GetPhysicalDeviceFormatProperties(physicalDevice, format, &pFormatProperties->formatProperties);
