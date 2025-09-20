@@ -533,16 +533,21 @@ vvl::concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> HandleWrapper
 bool HandleWrapper::wrap_handles{true};
 
 // Generally we expect to get the same device and instance, so we keep them handy
+static thread_local Instance *last_used_instance_data = nullptr;
 static std::shared_mutex instance_mutex;
 static vvl::unordered_map<void *, std::unique_ptr<Instance>> instance_data;
 
+static thread_local Device *last_used_device_data = nullptr;
 static std::shared_mutex device_mutex;
 static vvl::unordered_map<void *, std::unique_ptr<Device>> device_data;
-static std::atomic<Device *> last_used_device = nullptr;
 
 static Instance *GetInstanceFromKey(void *key) {
+    if (last_used_instance_data && GetDispatchKey(last_used_instance_data->instance) == key) {
+        return last_used_instance_data;
+    }
     ReadLockGuard lock(instance_mutex);
-    return instance_data[key].get();
+    last_used_instance_data = instance_data[key].get();
+    return last_used_instance_data;
 }
 
 Instance *GetData(VkInstance instance) { return GetInstanceFromKey(GetDispatchKey(instance)); }
@@ -558,17 +563,16 @@ void SetData(VkInstance instance, std::unique_ptr<Instance> &&data) {
 void FreeData(void *key, VkInstance instance) {
     WriteLockGuard lock(instance_mutex);
     instance_data.erase(key);
+    last_used_instance_data = nullptr;
 }
 
 static Device *GetDeviceFromKey(void *key) {
-    Device *last_device = last_used_device.load();
-    if (last_device && GetDispatchKey(last_device->device) == key) {
-        return last_device;
+    if (last_used_device_data && GetDispatchKey(last_used_device_data->device) == key) {
+        return last_used_device_data;
     }
     ReadLockGuard lock(device_mutex);
-    last_device = device_data[key].get();
-    last_used_device.store(last_device);
-    if (!last_device) {
+    last_used_device_data = device_data[key].get();
+    if (!last_used_device_data) {
         // If this occurs from atexit() using the layer, it would be better to provide a location where this happened, but
         // everything is tore down and there is not much to do. Also this is the single location where can detect this, so having it
         // here makes sure we don't miss a spot.
@@ -584,7 +588,7 @@ static Device *GetDeviceFromKey(void *key) {
         // is printed (and a stacktrace points them here first).
         std::abort();
     }
-    return last_device;
+    return last_used_device_data;
 }
 
 Device *GetData(VkDevice device) { return GetDeviceFromKey(GetDispatchKey(device)); }
@@ -602,14 +606,13 @@ void SetData(VkDevice device, std::unique_ptr<Device> &&data) {
 }
 
 void FreeData(void *key, VkDevice device) {
-    last_used_device.store(nullptr);
     WriteLockGuard lock(device_mutex);
     device_data.erase(key);
+    last_used_device_data = nullptr;
 }
 
 void FreeAllData() {
     {
-        last_used_device.store(nullptr);
         WriteLockGuard lock(device_mutex);
         device_data.clear();
     }
