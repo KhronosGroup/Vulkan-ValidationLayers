@@ -5613,10 +5613,6 @@ static VKAPI_ATTR void VKAPI_CALL GetDeviceTensorMemoryRequirementsARM(VkDevice 
 
 static VKAPI_ATTR void VKAPI_CALL CmdCopyTensorARM(VkCommandBuffer commandBuffer, const VkCopyTensorInfoARM* pCopyTensorInfo) {}
 
-static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalTensorPropertiesARM(
-    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalTensorInfoARM* pExternalTensorInfo,
-    VkExternalTensorPropertiesARM* pExternalTensorProperties) {}
-
 static VKAPI_ATTR VkResult VKAPI_CALL GetTensorOpaqueCaptureDescriptorDataARM(VkDevice device,
                                                                               const VkTensorCaptureDescriptorDataInfoARM* pInfo,
                                                                               void* pData) {
@@ -5738,16 +5734,6 @@ static VKAPI_ATTR VkResult VKAPI_CALL CreateDataGraphPipelineSessionARM(VkDevice
     unique_lock_t lock(global_lock);
     *pSession = (VkDataGraphPipelineSessionARM)global_unique_handle++;
     return VK_SUCCESS;
-}
-
-static VKAPI_ATTR VkResult VKAPI_CALL GetDataGraphPipelineSessionBindPointRequirementsARM(
-    VkDevice device, const VkDataGraphPipelineSessionBindPointRequirementsInfoARM* pInfo, uint32_t* pBindPointRequirementCount,
-    VkDataGraphPipelineSessionBindPointRequirementARM* pBindPointRequirements) {
-    return VK_SUCCESS;
-}
-
-static VKAPI_ATTR void VKAPI_CALL GetDataGraphPipelineSessionMemoryRequirementsARM(
-    VkDevice device, const VkDataGraphPipelineSessionMemoryRequirementsInfoARM* pInfo, VkMemoryRequirements2* pMemoryRequirements) {
 }
 
 static VKAPI_ATTR VkResult VKAPI_CALL BindDataGraphPipelineSessionMemoryARM(

@@ -771,6 +771,10 @@ bool CoreChecks::ValidateDeviceQueueSupport(const Location &loc) const {
             vuid = "VUID-vkCreateGraphicsPipelines-device-09662";
             flags = VK_QUEUE_GRAPHICS_BIT;
             break;
+        case Func::vkCreateDataGraphPipelinesARM:
+            vuid = "VUID-vkCreateDataGraphPipelinesARM-device-09927";
+            flags = VK_QUEUE_DATA_GRAPH_BIT_ARM;
+            break;
         case Func::vkCreateQueryPool:
             vuid = "VUID-vkCreateQueryPool-device-09663";
             flags = VK_QUEUE_VIDEO_ENCODE_BIT_KHR | VK_QUEUE_VIDEO_DECODE_BIT_KHR | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT;
