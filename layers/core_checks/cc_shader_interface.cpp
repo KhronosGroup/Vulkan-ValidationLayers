@@ -570,7 +570,9 @@ bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bou
     if (global_settings.only_report_errors) {
         return skip;
     }
-
+    if (last_bound_state.IsRasterizationDisabled()) {
+        return skip;
+    }
     const spirv::EntryPoint *entrypoint = last_bound_state.GetFragmentEntryPoint();
     if (!entrypoint) {
         return skip;
