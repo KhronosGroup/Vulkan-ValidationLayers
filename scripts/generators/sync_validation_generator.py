@@ -331,13 +331,13 @@ const vvl::unordered_map<VkPipelineStageFlagBits2, VkPipelineStageFlags2>& syncL
             'VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT',
             'VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT',
         ]
-        for queue in [x for x in self.vk.queueBits.keys()]:
-            stages = [x.flag.name for x in self.vk.syncStage if x.support.queues is not None and (x.support.queues & queue) and x.flag.name not in ignoreQueueFlag and x.equivalent.max]
+        for queue in [x.name for x in self.vk.bitmasks['VkQueueFlagBits'].flags]:
+            stages = [x.flag.name for x in self.vk.syncStage if x.support.queues is not None and (queue in x.support.queues) and x.flag.name not in ignoreQueueFlag and x.equivalent.max]
             # These are possible for every queue
             for s in ['VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT', 'VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT']:
                 if s not in stages:
                     stages.append(s)
-            out.append(f'    {{ {self.vk.queueBits[queue]}, (\n        {separator.join(stages)}\n    )}},\n')
+            out.append(f'    {{ {queue}, (\n        {separator.join(stages)}\n    )}},\n')
         out.append('    };\n')
         out.append('    return variable;\n')
         out.append('}\n\n')

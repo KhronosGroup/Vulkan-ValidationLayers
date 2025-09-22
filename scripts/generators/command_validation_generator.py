@@ -17,7 +17,7 @@
 import os
 import sys
 from generators.generator_utils import buildListVUID, getVUID
-from vulkan_object import Queues, CommandScope
+from vulkan_object import CommandScope
 from base_generator import BaseGenerator
 #
 # CommandValidationOutputGenerator - Generate implicit vkCmd validation for CoreChecks
@@ -121,23 +121,7 @@ class CommandValidationOutputGenerator(BaseGenerator):
                 print('cmdbufferlevel attribute was and not known, need to update generation code')
                 sys.exit(1)
 
-            # queue_flags / queue_vuid
-            queue_flags = []
-            queue_flags.extend(["VK_QUEUE_GRAPHICS_BIT"] if Queues.GRAPHICS & command.queues else [])
-            queue_flags.extend(["VK_QUEUE_COMPUTE_BIT"] if Queues.COMPUTE & command.queues else [])
-            queue_flags.extend(["VK_QUEUE_TRANSFER_BIT"] if Queues.TRANSFER & command.queues else [])
-            queue_flags.extend(["VK_QUEUE_SPARSE_BINDING_BIT"] if Queues.SPARSE_BINDING & command.queues else [])
-            queue_flags.extend(["VK_QUEUE_PROTECTED_BIT"] if Queues.PROTECTED & command.queues else [])
-            queue_flags.extend(["VK_QUEUE_VIDEO_DECODE_BIT_KHR"] if Queues.DECODE & command.queues else [])
-            queue_flags.extend(["VK_QUEUE_VIDEO_ENCODE_BIT_KHR"] if Queues.ENCODE & command.queues else [])
-            queue_flags.extend(["VK_QUEUE_OPTICAL_FLOW_BIT_NV"] if Queues.OPTICAL_FLOW & command.queues else [])
-            queue_flags.extend(["VK_QUEUE_DATA_GRAPH_BIT_ARM"] if Queues.DATA_GRAPH & command.queues else [])
-            queue_flags = ' | '.join(queue_flags)
-
-            if not queue_flags:
-                print('Warning: No queue flags found for command', command.name)
-                queue_flags = '0'
-
+            queue_flags = ' | '.join(command.queues)
             vuid = getVUID(self.valid_vuids, f'VUID-{alias_name}-commandBuffer-cmdpool')
             out.append(f'    {queue_flags}, {vuid},\n')
 
