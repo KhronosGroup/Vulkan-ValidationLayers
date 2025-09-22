@@ -488,6 +488,17 @@ void RenderPassAccessContext::UpdateAttachmentStoreAccess(const vvl::RenderPass 
     }
 }
 
+struct ApplySubpassTransitionBarriersAction {
+    explicit ApplySubpassTransitionBarriersAction(const std::vector<SyncBarrier> &barriers, ResourceUsageTag layout_transition_tag)
+        : barriers(barriers), layout_transition_tag(layout_transition_tag) {}
+    void operator()(ResourceAccessState *access) const {
+        assert(access);
+        ApplyBarriers(*access, barriers, true, layout_transition_tag);
+    }
+    const std::vector<SyncBarrier> &barriers;
+    const ResourceUsageTag layout_transition_tag;
+};
+
 void RenderPassAccessContext::RecordLayoutTransitions(const vvl::RenderPass &rp_state, uint32_t subpass,
                                                       const AttachmentViewGenVector &attachment_views, const ResourceUsageTag tag,
                                                       AccessContext &access_context) {
@@ -504,19 +515,13 @@ void RenderPassAccessContext::RecordLayoutTransitions(const vvl::RenderPass &rp_
         // Import the attachments into the current context
         const auto *prev_context = trackback->source_subpass;
         assert(prev_context);
-        ApplySubpassTransitionBarriersAction barrier_action(trackback->barriers);
+        ApplySubpassTransitionBarriersAction barrier_action(trackback->barriers, tag);
         const std::optional<ImageRangeGen> &attachment_gen = view_gen.GetRangeGen(AttachmentViewGen::Gen::kViewSubresource);
         assert(attachment_gen);
 
         access_context.ResolveFromContext(barrier_action, *prev_context, *attachment_gen, &empty_infill,
                                           true /* recur to infill */);
         assert(attachment_gen);
-    }
-
-    // If there were no transitions skip this global map walk
-    if (transitions.size()) {
-        ResolvePendingBarrierFunctor apply_pending_action(tag);
-        access_context.ApplyToContext(apply_pending_action);
     }
 }
 

@@ -284,7 +284,6 @@ struct ReadState {
     bool InBarrierSourceScope(const BarrierScope &barrier_scope) const;
 
     void ApplyReadBarrier(VkPipelineStageFlags2 dst_scope) { pending_dep_chain |= dst_scope; }
-    VkPipelineStageFlags2 ApplyPendingBarriers();
 };
 
 static_assert(std::is_trivially_copyable_v<ReadState>);
@@ -326,7 +325,6 @@ class WriteState {
 
     bool HasPendingState() const { return pending_barriers_.any() || (0 != pending_dep_chain_); }
     void UpdatePendingBarriers(const SyncBarrier &barrier);
-    void ApplyPendingBarriers();
     void UpdatePendingLayoutOrdering(const SyncBarrier &barrier);
     const OrderingBarrier &GetPendingLayoutOrdering() const { return pending_layout_ordering_; }
 
@@ -423,17 +421,23 @@ class ResourceAccessState {
     void ClearRead();
     void ClearFirstUse();
     void Resolve(const ResourceAccessState &other);
-    void ApplyBarriers(const std::vector<SyncBarrier> &barriers, bool layout_transition);
-    void ApplyBarriersImmediate(const SyncBarrier &barriers);
-    void ApplyBarrier(const BarrierScope &barrier_scope, const SyncBarrier &barrier, bool layout_transition,
-                      uint32_t layout_transition_handle_index = vvl::kNoIndex32);
-    void CollectBarriers(const BarrierScope &barrier_scope, const SyncBarrier &barrier, bool layout_transition,
-                         uint32_t layout_transition_handle_index, PendingBarriers &pending_barriers);
-    void ApplyPendingBarriers(ResourceUsageTag tag);
 
-    void ApplyReadAccessBarrier(const PendingReadBarrier &read_barrier, ResourceUsageTag tag);
-    void ApplyWriteAccessBarrier(const PendingWriteBarrier &write_barrier);
-    void ApplyLayoutTransition(const PendingLayoutTransition &layout_transition, ResourceUsageTag tag);
+    // Apply a single barrier to the access state
+    void ApplyBarrier(const BarrierScope &barrier_scope, const SyncBarrier &barrier, bool layout_transition = false,
+                      uint32_t layout_transition_handle_index = vvl::kNoIndex32,
+                      ResourceUsageTag layout_transition_tag = kInvalidTag);
+
+    // Store the result of barrier application in PendingBarriers.
+    // Does not update the access state (as ApplyBarrier does).
+    // Used for applying multiple barriers independently.
+    void CollectPendingBarriers(const BarrierScope &barrier_scope, const SyncBarrier &barrier, bool layout_transition,
+                                uint32_t layout_transition_handle_index, PendingBarriers &pending_barriers);
+
+    // Apply pending barriers to the access state.
+    // Called after all barrier application results are collected in PendingBarriers.
+    void ApplyPendingReadBarrier(const PendingReadBarrier &read_barrier, ResourceUsageTag tag);
+    void ApplyPendingWriteBarrier(const PendingWriteBarrier &write_barrier);
+    void ApplyPendingLayoutTransition(const PendingLayoutTransition &layout_transition, ResourceUsageTag layout_transition_tag);
 
     void ApplySemaphore(const SemaphoreScope &signal, const SemaphoreScope wait);
 
@@ -617,3 +621,9 @@ bool ResourceAccessState::ClearPredicatedAccesses(Predicate &predicate) {
     }
     return all_clear;
 }
+
+// A helper function to apply multiple barriers.
+// NOTE: That's for use cases when BarrierScope does not use queue id or tag (record time, not-event barriers).
+// This can be extended if necessary to provide BarrierScope for each barrier.
+void ApplyBarriers(ResourceAccessState &access_state, const std::vector<SyncBarrier> &barriers, bool layout_transition = false,
+                   ResourceUsageTag layout_transition_tag = kInvalidTag);

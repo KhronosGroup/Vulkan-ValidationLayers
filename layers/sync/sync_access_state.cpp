@@ -27,74 +27,6 @@ ResourceAccessState::OrderingBarriers ResourceAccessState::kOrderingRules = {
      {kDepthStencilAttachmentExecScope, kDepthStencilAttachmentAccessScope},
      {kRasterAttachmentExecScope, kRasterAttachmentAccessScope}}};
 
-// Apply a list of barriers, without resolving pending state, useful for subpass layout transitions
-void ResourceAccessState::ApplyBarriers(const std::vector<SyncBarrier> &barriers, bool layout_transition) {
-    for (const auto &barrier : barriers) {
-        ApplyBarrier(BarrierScope(barrier), barrier, layout_transition);
-    }
-}
-
-// ApplyBarriers is design for *fully* inclusive barrier lists without layout tranistions.  Designed use was for
-// inter-subpass barriers for lazy-evaluation of parent context memory ranges.  Subpass layout transistions are *not* done
-// lazily, s.t. no previous access reports should need layout transitions.
-void ResourceAccessState::ApplyBarriersImmediate(const SyncBarrier &barrier) {
-    assert(!HasPendingState());  // This should never be call in the middle of another barrier application
-    ApplyBarrier(BarrierScope(barrier), barrier, false);
-    ApplyPendingBarriers(kInvalidTag);  // There can't be any need for this tag
-}
-
-// Apply the memory barrier without updating the existing barriers.  The execution barrier
-// changes the "chaining" state, but to keep barriers independent, we defer this until all barriers
-// of the batch have been processed. Also, depending on whether layout transition happens, we'll either
-// replace the current write barriers or add to them, so accumulate to pending as well.
-void ResourceAccessState::ApplyBarrier(const BarrierScope &barrier_scope, const SyncBarrier &barrier, bool layout_transition,
-                                       uint32_t layout_transition_handle_index) {
-    // For independent barriers we need to track what the new barriers and dependency chain *will* be when we're done
-    // applying the memory barriers
-    // NOTE: We update the write barrier if the write is in the first access scope or if there is a layout
-    //       transistion, under the theory of "most recent access".  If the resource acces  *isn't* safe
-    //       vs. this layout transition DetectBarrierHazard should report it.  We treat the layout
-    //       transistion *as* a write and in scope with the barrier (it's before visibility).
-    if (layout_transition) {
-        if (!last_write.has_value()) {
-            last_write.emplace(GetAccessInfo(SYNC_ACCESS_INDEX_NONE), ResourceUsageTagEx{0U});
-        }
-        last_write->UpdatePendingBarriers(barrier);
-        last_write->UpdatePendingLayoutOrdering(barrier);
-        pending_layout_transition = true;
-        pending_layout_transition_handle_index = layout_transition_handle_index;
-    } else {
-        if (last_write.has_value() && last_write->InBarrierSourceScope(barrier_scope)) {
-            last_write->UpdatePendingBarriers(barrier);
-        }
-
-        if (!pending_layout_transition) {
-            // Once we're dealing with a layout transition (which is modelled as a *write*) then the last reads/chains
-            // don't need to be tracked as we're just going to clear them.
-            VkPipelineStageFlags2 stages_in_scope = VK_PIPELINE_STAGE_2_NONE;
-
-            for (auto &read_access : last_reads) {
-                // The | implements the "dependency chain" logic for this access, as the barriers field stores the second sync
-                // scope
-                if (read_access.InBarrierSourceScope(barrier_scope)) {
-                    // We'll apply the barrier in the next loop, because it's DRY'r to do it one place.
-                    stages_in_scope |= read_access.stage;
-                }
-            }
-
-            for (auto &read_access : last_reads) {
-                if (0 != ((read_access.stage | read_access.sync_stages) & stages_in_scope)) {
-                    // If this stage, or any stage known to be synchronized after it are in scope, apply the barrier to this
-                    // read NOTE: Forwarding barriers to known prior stages changes the sync_stages from shallow to deep,
-                    // because the
-                    //       barriers used to determine sync_stages have been propagated to all known earlier stages
-                    read_access.ApplyReadBarrier(barrier.dst_exec_scope.exec_scope);
-                }
-            }
-        }
-    }
-}
-
 HazardResult ResourceAccessState::DetectHazard(const SyncAccessInfo &usage_info) const {
     const auto &usage_stage = usage_info.stage_mask;
     if (IsRead(usage_info.access_index)) {
@@ -408,6 +340,7 @@ void ResourceAccessState::MergePending(const ResourceAccessState &other) {
     assert(other.pending_layout_transition == false);
     assert(pending_layout_transition == false);
     pending_layout_transition |= other.pending_layout_transition;
+    pending_layout_transition_handle_index = other.pending_layout_transition_handle_index;
 }
 
 void ResourceAccessState::MergeReads(const ResourceAccessState &other) {
@@ -599,8 +532,6 @@ bool HazardResult::IsWAWHazard() const {
 // Clobber last read and all barriers... because all we have is DANGER, DANGER, WILL ROBINSON!!!
 // if the last_reads/last_write were unsafe, we've reported them, in either case the prior access is irrelevant.
 // We can overwrite them as *this* write is now after them.
-//
-// Note: intentionally ignore pending barriers and chains (i.e. don't apply or clear them), let ApplyPendingBarriers handle them.
 void ResourceAccessState::SetWrite(const SyncAccessInfo &usage_info, ResourceUsageTagEx tag_ex, SyncFlags flags) {
     ClearRead();
     if (last_write.has_value()) {
@@ -626,12 +557,54 @@ void ResourceAccessState::ClearFirstUse() {
     first_access_closed_ = false;
 }
 
-void ResourceAccessState::CollectBarriers(const BarrierScope &barrier_scope, const SyncBarrier &barrier, bool layout_transition,
-                                          uint32_t layout_transition_handle_index, PendingBarriers &pending_barriers) {
+void ResourceAccessState::ApplyBarrier(const BarrierScope &barrier_scope, const SyncBarrier &barrier, bool layout_transition,
+                                       uint32_t layout_transition_handle_index, ResourceUsageTag layout_transition_tag) {
+    // Dedicated layout transition barrier logic
     if (layout_transition) {
-        if (!last_write.has_value()) {
-            last_write.emplace(GetAccessInfo(SYNC_ACCESS_INDEX_NONE), ResourceUsageTagEx{0});
+        const SyncAccessInfo &layout_transition_access_info = GetAccessInfo(SYNC_IMAGE_LAYOUT_TRANSITION);
+        const ResourceUsageTagEx tag_ex = ResourceUsageTagEx{layout_transition_tag, layout_transition_handle_index};
+        const OrderingBarrier layout_ordering(barrier.src_exec_scope.exec_scope, barrier.src_access_scope);
+
+        // Register write access that models layout transition writes
+        SetWrite(layout_transition_access_info, tag_ex);
+        UpdateFirst(tag_ex, layout_transition_access_info, SyncOrdering::kNonAttachment);
+        TouchupFirstForLayoutTransition(layout_transition_tag, layout_ordering);
+
+        last_write->barriers_ |= barrier.dst_access_scope;
+        last_write->dependency_chain_ |= barrier.dst_exec_scope.exec_scope;
+        return;
+    }
+
+    // Apply barriers over write access
+    if (last_write.has_value() && last_write->InBarrierSourceScope(barrier_scope)) {
+        last_write->barriers_ |= barrier.dst_access_scope;
+        last_write->dependency_chain_ |= barrier.dst_exec_scope.exec_scope;
+    }
+    // Apply barriers over read accesses
+    VkPipelineStageFlags2 stages_in_scope = VK_PIPELINE_STAGE_2_NONE;
+    for (ReadState &read_access : last_reads) {
+        // The | implements the "dependency chain" logic for this access,
+        // as the barriers field stores the second sync scope
+        if (read_access.InBarrierSourceScope(barrier_scope)) {
+            // We will apply the barrier in the next loop to have this in one place
+            stages_in_scope |= read_access.stage;
         }
+    }
+    for (ReadState &read_access : last_reads) {
+        if ((read_access.stage | read_access.sync_stages) & stages_in_scope) {
+            // If this stage, or any stage known to be synchronized after it are in scope, apply the barrier to this read.
+            // NOTE: Forwarding barriers to known prior stages changes the sync_stages from shallow to deep, because the
+            // barriers used to determine sync_stages have been propagated to all known earlier stages
+            read_access.barriers |= barrier.dst_exec_scope.exec_scope;
+            read_execution_barriers |= barrier.dst_exec_scope.exec_scope;
+        }
+    }
+}
+
+void ResourceAccessState::CollectPendingBarriers(const BarrierScope &barrier_scope, const SyncBarrier &barrier,
+                                                 bool layout_transition, uint32_t layout_transition_handle_index,
+                                                 PendingBarriers &pending_barriers) {
+    if (layout_transition) {
         // Schedule layout transition first: layout transition creates WriteState if necessary
         pending_barriers.AddLayoutTransition(this, barrier, layout_transition_handle_index);
         // Apply barrier over layout trasition's write access
@@ -646,7 +619,7 @@ void ResourceAccessState::CollectBarriers(const BarrierScope &barrier_scope, con
 
     // Collect barriers over read accesses
     VkPipelineStageFlags2 stages_in_scope = VK_PIPELINE_STAGE_2_NONE;
-    for (auto &read_access : last_reads) {
+    for (ReadState &read_access : last_reads) {
         // The | implements the "dependency chain" logic for this access,
         // as the barriers field stores the second sync scope
         if (read_access.InBarrierSourceScope(barrier_scope)) {
@@ -654,38 +627,12 @@ void ResourceAccessState::CollectBarriers(const BarrierScope &barrier_scope, con
             stages_in_scope |= read_access.stage;
         }
     }
-    for (auto &read_access : last_reads) {
+    for (ReadState &read_access : last_reads) {
         if ((read_access.stage | read_access.sync_stages) & stages_in_scope) {
             // If this stage, or any stage known to be synchronized after it are in scope, apply the barrier to this read.
             // NOTE: Forwarding barriers to known prior stages changes the sync_stages from shallow to deep, because the
             // barriers used to determine sync_stages have been propagated to all known earlier stages
             pending_barriers.AddReadBarrier(this, (uint32_t)(&read_access - last_reads.data()), barrier);
-        }
-    }
-}
-
-void ResourceAccessState::ApplyPendingBarriers(const ResourceUsageTag tag) {
-    if (pending_layout_transition) {
-        // SetWrite clobbers the last_reads array, and thus we don't have to clear the read_state out.
-        const SyncAccessInfo &layout_usage_info = GetAccessInfo(SYNC_IMAGE_LAYOUT_TRANSITION);
-        const ResourceUsageTagEx tag_ex = ResourceUsageTagEx{tag, pending_layout_transition_handle_index};
-        SetWrite(layout_usage_info, tag_ex);  // Side effect notes below
-        UpdateFirst(tag_ex, layout_usage_info, SyncOrdering::kNonAttachment);
-        TouchupFirstForLayoutTransition(tag, last_write->GetPendingLayoutOrdering());
-
-        last_write->ApplyPendingBarriers();
-        pending_layout_transition = false;
-        pending_layout_transition_handle_index = vvl::kNoIndex32;
-    } else {
-        // Apply the accumulate execution barriers (and thus update chaining information)
-        // for layout transition, last_reads is reset by SetWrite, so this will be skipped.
-        for (auto &read_access : last_reads) {
-            read_execution_barriers |= read_access.ApplyPendingBarriers();
-        }
-
-        // We OR in the accumulated write chain and barriers even in the case of a layout transition as SetWrite zeros them.
-        if (last_write.has_value()) {
-            last_write->ApplyPendingBarriers();
         }
     }
 }
@@ -747,16 +694,38 @@ void PendingBarriers::Apply(const ResourceUsageTag exec_tag) {
     for (const PendingBarrierInfo &info : infos) {
         if (info.type == PendingBarrierType::ReadAccessBarrier) {
             const PendingReadBarrier &read_barrier = read_barriers[info.index];
-            info.access_state->ApplyReadAccessBarrier(read_barrier, exec_tag);
+            info.access_state->ApplyPendingReadBarrier(read_barrier, exec_tag);
         } else if (info.type == PendingBarrierType::WriteAccessBarrier) {
             const PendingWriteBarrier &write_barrier = write_barriers[info.index];
-            info.access_state->ApplyWriteAccessBarrier(write_barrier);
+            info.access_state->ApplyPendingWriteBarrier(write_barrier);
         } else {
             assert(info.type == PendingBarrierType::LayoutTransition);
             const PendingLayoutTransition &layout_transition = layout_transitions[info.index];
-            info.access_state->ApplyLayoutTransition(layout_transition, exec_tag);
+            info.access_state->ApplyPendingLayoutTransition(layout_transition, exec_tag);
         }
     }
+}
+
+void ApplyBarriers(ResourceAccessState &access_state, const std::vector<SyncBarrier> &barriers, bool layout_transition,
+                   ResourceUsageTag layout_transition_tag) {
+    // The common case of a single barrier.
+    // The pending barrier helper is unnecessary because there are no independent barriers to track.
+    // The barrier can be applied directly to the access state.
+    if (barriers.size() == 1) {
+        access_state.ApplyBarrier(BarrierScope(barriers[0]), barriers[0], layout_transition, vvl::kNoIndex32,
+                                  layout_transition_tag);
+        return;
+    }
+
+    // There are multiple barriers. We can't apply them sequentially because they can form dependencies
+    // between themselves (result of the previous barrier might affect application of the next barrier).
+    // The APIs we are dealing require that the barriers in a set of barriers are applied independently.
+    // That's the intended use case of PendingBarriers helper.
+    PendingBarriers pending_barriers;
+    for (const SyncBarrier &barrier : barriers) {
+        access_state.CollectPendingBarriers(BarrierScope(barrier), barrier, layout_transition, vvl::kNoIndex32, pending_barriers);
+    }
+    pending_barriers.Apply(layout_transition_tag);
 }
 
 BarrierScope::BarrierScope(const SyncBarrier &barrier, QueueId scope_queue, ResourceUsageTag scope_tag)
@@ -765,7 +734,7 @@ BarrierScope::BarrierScope(const SyncBarrier &barrier, QueueId scope_queue, Reso
       scope_queue(scope_queue),
       scope_tag(scope_tag) {}
 
-void ResourceAccessState::ApplyReadAccessBarrier(const PendingReadBarrier &read_barrier, ResourceUsageTag tag) {
+void ResourceAccessState::ApplyPendingReadBarrier(const PendingReadBarrier &read_barrier, ResourceUsageTag tag) {
     // Do not register read barriers if layout transition has been registered for the same barrier API command.
     // The layout transition resets the read state (if any) and sets a write instead. By definition of our
     // implementation the read barriers are the barriers we apply to read accesses, so without read accesses we
@@ -779,14 +748,14 @@ void ResourceAccessState::ApplyReadAccessBarrier(const PendingReadBarrier &read_
     read_execution_barriers |= read_barrier.barriers;
 }
 
-void ResourceAccessState::ApplyWriteAccessBarrier(const PendingWriteBarrier &write_barrier) {
+void ResourceAccessState::ApplyPendingWriteBarrier(const PendingWriteBarrier &write_barrier) {
     if (last_write.has_value()) {
         last_write->dependency_chain_ |= write_barrier.dependency_chain;
         last_write->barriers_ |= write_barrier.barriers;
     }
 }
 
-void ResourceAccessState::ApplyLayoutTransition(const PendingLayoutTransition &layout_transition, ResourceUsageTag tag) {
+void ResourceAccessState::ApplyPendingLayoutTransition(const PendingLayoutTransition &layout_transition, ResourceUsageTag tag) {
     const SyncAccessInfo &layout_usage_info = GetAccessInfo(SYNC_IMAGE_LAYOUT_TRANSITION);
     const ResourceUsageTagEx tag_ex = ResourceUsageTagEx{tag, layout_transition.handle_index};
     SetWrite(layout_usage_info, tag_ex);
@@ -1060,12 +1029,6 @@ bool ReadState::InBarrierSourceScope(const BarrierScope &barrier_scope) const {
     return ReadOrDependencyChainInSourceScope(barrier_scope.scope_queue, barrier_scope.src_exec_scope);
 }
 
-VkPipelineStageFlags2 ReadState::ApplyPendingBarriers() {
-    barriers |= pending_dep_chain;
-    pending_dep_chain = VK_PIPELINE_STAGE_2_NONE;
-    return barriers;
-}
-
 WriteState::WriteState(const SyncAccessInfo &usage_info, ResourceUsageTagEx tag_ex, SyncFlags flags)
     : access_(&usage_info),
       barriers_(),
@@ -1149,16 +1112,6 @@ void WriteState::MergeBarriers(const WriteState &other) {
 void WriteState::UpdatePendingBarriers(const SyncBarrier &barrier) {
     pending_barriers_ |= barrier.dst_access_scope;
     pending_dep_chain_ |= barrier.dst_exec_scope.exec_scope;
-}
-
-void WriteState::ApplyPendingBarriers() {
-    dependency_chain_ |= pending_dep_chain_;
-    barriers_ |= pending_barriers_;
-
-    // Reset pending state
-    pending_dep_chain_ = VK_PIPELINE_STAGE_2_NONE;
-    pending_barriers_.reset();
-    pending_layout_ordering_ = OrderingBarrier();
 }
 
 void WriteState::UpdatePendingLayoutOrdering(const SyncBarrier &barrier) {

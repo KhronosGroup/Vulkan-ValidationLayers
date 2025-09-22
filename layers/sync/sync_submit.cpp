@@ -206,7 +206,7 @@ class ApplyAcquireNextSemaphoreAction {
         // Note that the present operations may or may not be present, given that the fence wait may have cleared them out.
         // Also, if a subsequent present has happened, we *don't* want to protect that...
         if (access->LastWriteTag() <= acq_tag_) {
-            access->ApplyBarriersImmediate(barrier_);
+            access->ApplyBarrier(BarrierScope(barrier_), barrier_);
         }
     }
 
