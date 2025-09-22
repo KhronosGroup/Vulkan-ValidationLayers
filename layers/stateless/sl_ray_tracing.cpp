@@ -402,6 +402,8 @@ bool Device::manual_PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, 
         if (!create_flags_2) {
             skip |= context.ValidateFlags(flags_loc, vvl::FlagBitmask::VkPipelineCreateFlagBits, AllVkPipelineCreateFlagBits,
                                           create_info.flags, kOptionalFlags, "VUID-VkRayTracingPipelineCreateInfoNV-None-09497");
+        } else {
+            skip |= ValidateCreatePipelinesFlags2(create_info.flags, flags, flags_loc);
         }
         skip |= ValidateCreateRayTracingPipelinesFlagsNV(flags, flags_loc);
 
@@ -512,6 +514,8 @@ bool Device::manual_PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device,
         if (!create_flags_2) {
             skip |= context.ValidateFlags(flags_loc, vvl::FlagBitmask::VkPipelineCreateFlagBits, AllVkPipelineCreateFlagBits,
                                           create_info.flags, kOptionalFlags, "VUID-VkRayTracingPipelineCreateInfoKHR-None-09497");
+        } else {
+            skip |= ValidateCreatePipelinesFlags2(create_info.flags, flags, flags_loc);
         }
         skip |= ValidateCreateRayTracingPipelinesFlagsKHR(flags, flags_loc);
 

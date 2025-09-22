@@ -1411,6 +1411,21 @@ TEST_F(VkLayerTest, MissingExtensionPipelineCreateFlags2) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, OverridePipelineCreateFlags2) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(Init());
+
+    VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();
+    flags2.flags = 0;
+
+    CreateComputePipelineHelper pipe(*this, &flags2);
+    pipe.cp_ci_.flags = VK_PIPELINE_CREATE_2_DISABLE_OPTIMIZATION_BIT;
+    m_errorMonitor->SetDesiredWarning("WARNING-VkPipelineCreateFlags2-flags1-zero");
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, UnkonwnStructType) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
