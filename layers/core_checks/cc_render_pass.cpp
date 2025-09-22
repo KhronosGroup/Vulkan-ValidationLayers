@@ -4099,12 +4099,24 @@ bool CoreChecks::ValidateBeginRenderingDepthAndStencilAttachment(VkCommandBuffer
 // Flags validation error if the associated call is made inside a render pass. The apiName routine should ONLY be called outside a
 // render pass.
 bool CoreChecks::InsideRenderPass(const vvl::CommandBuffer &cb_state, const Location &loc, const char *vuid) const {
-    bool inside = false;
+    bool skip = false;
     if (cb_state.active_render_pass) {
-        inside = LogError(vuid, cb_state.Handle(), loc, "It is invalid to issue this call inside an active %s.",
-                          FormatHandle(cb_state.active_render_pass->Handle()).c_str());
+        if (cb_state.active_render_pass->use_dynamic_rendering) {
+            skip =
+                LogError(vuid, cb_state.Handle(), loc,
+                         "It is invalid to issue this call inside an active render pass instance begun with vkCmdBeginRendering.");
+        } else if (cb_state.active_render_pass->use_dynamic_rendering_inherited) {
+            skip |=
+                LogError(vuid, cb_state.Handle(), loc,
+                         "It is invalid to issue this call inside this secondary command buffer as it was begun with "
+                         "VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT and viewed as being inside a render pass instance begun "
+                         "with vkCmdBeginRendering.");
+        } else {
+            skip = LogError(vuid, cb_state.Handle(), loc, "It is invalid to issue this call inside an active %s.",
+                            FormatHandle(cb_state.active_render_pass->Handle()).c_str());
+        }
     }
-    return inside;
+    return skip;
 }
 
 // Flags validation error if the associated call is made outside a render pass. The apiName
