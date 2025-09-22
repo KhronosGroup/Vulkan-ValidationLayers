@@ -212,24 +212,21 @@ struct ApplyTrackbackStackAction {
     const ResourceAccessStateFunction *previous_barrier;
 };
 
-template <typename SubpassNode>
+class AccessContext;
+
 struct SubpassBarrierTrackback {
     std::vector<SyncBarrier> barriers;
-    const SubpassNode *source_subpass = nullptr;
+    const AccessContext *source_subpass = nullptr;
     SubpassBarrierTrackback() = default;
-    SubpassBarrierTrackback(const SubpassBarrierTrackback &) = default;
-    SubpassBarrierTrackback(const SubpassNode *source_subpass_, VkQueueFlags queue_flags_,
-                            const std::vector<const VkSubpassDependency2 *> &subpass_dependencies_)
-        : barriers(), source_subpass(source_subpass_) {
-        barriers.reserve(subpass_dependencies_.size());
-        for (const VkSubpassDependency2 *dependency : subpass_dependencies_) {
+    SubpassBarrierTrackback(const AccessContext *source_subpass, VkQueueFlags queue_flags,
+                            const std::vector<const VkSubpassDependency2 *> &subpass_dependencies)
+        : source_subpass(source_subpass) {
+        barriers.reserve(subpass_dependencies.size());
+        for (const VkSubpassDependency2 *dependency : subpass_dependencies) {
             assert(dependency);
-            barriers.emplace_back(queue_flags_, *dependency);
+            barriers.emplace_back(queue_flags, *dependency);
         }
     }
-    SubpassBarrierTrackback(const SubpassNode *source_subpass_, const SyncBarrier &barrier_)
-        : barriers(1, barrier_), source_subpass(source_subpass_) {}
-    SubpassBarrierTrackback &operator=(const SubpassBarrierTrackback &) = default;
 };
 
 class AttachmentViewGen {
@@ -259,8 +256,6 @@ class AccessContext {
         kDetectAll = (kDetectPrevious | kDetectAsync)
     };
 
-    using TrackBack = SubpassBarrierTrackback<AccessContext>;
-
     HazardResult DetectHazard(const vvl::Buffer &buffer, SyncAccessIndex access_index, const ResourceAccessRange &range) const;
     HazardResult DetectHazard(const vvl::Image &image, SyncAccessIndex current_usage,
                               const VkImageSubresourceRange &subresource_range, bool is_depth_sliced) const;
@@ -286,19 +281,20 @@ class AccessContext {
     HazardResult DetectImageBarrierHazard(const vvl::Image &image, VkPipelineStageFlags2 src_exec_scope,
                                           const SyncAccessFlags &src_access_scope, const VkImageSubresourceRange &subresource_range,
                                           bool is_depth_sliced, DetectOptions options) const;
-    HazardResult DetectSubpassTransitionHazard(const TrackBack &track_back, const AttachmentViewGen &attach_view) const;
+    HazardResult DetectSubpassTransitionHazard(const SubpassBarrierTrackback &track_back,
+                                               const AttachmentViewGen &attach_view) const;
 
     HazardResult DetectFirstUseHazard(QueueId queue_id, const ResourceUsageRange &tag_range,
                                       const AccessContext &access_context) const;
     HazardResult DetectMarkerHazard(const vvl::Buffer &buffer, const ResourceAccessRange &range) const;
 
-    const TrackBack &GetDstExternalTrackBack() const { return dst_external_; }
+    const SubpassBarrierTrackback &GetDstExternalTrackBack() const { return dst_external_; }
     void Reset() {
         prev_.clear();
         prev_by_subpass_.clear();
         async_.clear();
         src_external_ = nullptr;
-        dst_external_ = TrackBack();
+        dst_external_ = SubpassBarrierTrackback();
         start_tag_ = ResourceUsageTag();
         access_state_map_.clear();
     }
@@ -351,7 +347,7 @@ class AccessContext {
 
     ResourceAccessRangeMap &GetAccessStateMap() { return access_state_map_; }
     const ResourceAccessRangeMap &GetAccessStateMap() const { return access_state_map_; }
-    const TrackBack *GetTrackBackFromSubpass(uint32_t subpass) const {
+    const SubpassBarrierTrackback *GetTrackBackFromSubpass(uint32_t subpass) const {
         if (subpass == VK_SUBPASS_EXTERNAL) {
             return src_external_;
         } else {
@@ -461,12 +457,12 @@ class AccessContext {
     HazardResult DetectPreviousHazard(Detector &detector, const ResourceAccessRange &range) const;
 
     ResourceAccessRangeMap access_state_map_;
-    std::vector<TrackBack> prev_;
-    std::vector<TrackBack *> prev_by_subpass_;
+    std::vector<SubpassBarrierTrackback> prev_;
+    std::vector<SubpassBarrierTrackback *> prev_by_subpass_;
     // These contexts *must* have the same lifespan as this context, or be cleared, before the referenced contexts can expire
     std::vector<AsyncReference> async_;
-    TrackBack *src_external_;
-    TrackBack dst_external_;
+    SubpassBarrierTrackback *src_external_;
+    SubpassBarrierTrackback dst_external_;
     ResourceUsageTag start_tag_;
 };
 
