@@ -1,7 +1,7 @@
 {
     "$schema": "https://schema.khronos.org/vulkan/profiles-0.8.0-latest.json#",
     "profiles": {
-        "MIN_CORE": {
+        "VP_MIN_CORE": {
             "version": 1,
             "api-version": "1.0.266",
             "label": "Min Vulkan Core",
