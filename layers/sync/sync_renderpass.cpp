@@ -150,7 +150,7 @@ bool RenderPassAccessContext::ValidateLayoutTransitions(const CommandBufferAcces
     // Note: we could be more efficient by tracking whether or not we actually *have* any changes (e.g. attachment resolve)
     // to apply and only copy then, if this proves a hot spot.
     std::unique_ptr<AccessContext> proxy_for_prev;
-    AccessContext::TrackBack proxy_track_back;
+    SubpassBarrierTrackback proxy_track_back;
 
     const auto &transitions = rp_state.subpass_transitions[subpass];
     for (const auto &transition : transitions) {

@@ -109,7 +109,7 @@ AccessContext::AccessContext(uint32_t subpass, VkQueueFlags queue_flags,
         src_external_ = &prev_.back();
     }
     if (subpass_dep.barrier_to_external.size()) {
-        dst_external_ = TrackBack(this, queue_flags, subpass_dep.barrier_to_external);
+        dst_external_ = SubpassBarrierTrackback(this, queue_flags, subpass_dep.barrier_to_external);
     }
 }
 
@@ -281,7 +281,8 @@ void AccessContext::ImportAsyncContexts(const AccessContext &from) {
 }
 
 // Suitable only for *subpass* access contexts
-HazardResult AccessContext::DetectSubpassTransitionHazard(const TrackBack &track_back, const AttachmentViewGen &attach_view) const {
+HazardResult AccessContext::DetectSubpassTransitionHazard(const SubpassBarrierTrackback &track_back,
+                                                          const AttachmentViewGen &attach_view) const {
     if (!attach_view.IsValid()) return HazardResult();
 
     // We should never ask for a transition from a context we don't have
