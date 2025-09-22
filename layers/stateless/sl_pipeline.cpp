@@ -264,6 +264,20 @@ bool Device::ValidatePipelineRenderingCreateInfo(const Context &context, const V
     return skip;
 }
 
+bool Device::ValidateCreatePipelinesFlags2(const VkPipelineCreateFlags flags1, const VkPipelineCreateFlags2 flags2,
+                                           const Location &flags1_loc) const {
+    bool skip = false;
+    // Discussed in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7607
+    // Some wrappers include empty pNext structs which might be undesired here
+    if (flags2 == 0 && flags1 != 0) {
+        skip |= LogWarning("WARNING-VkPipelineCreateFlags2-flags1-zero", device, flags1_loc,
+                           "is %s but is actually now ignored as there is a chained VkPipelineCreateFlags2CreateInfo struct that "
+                           "has flags set to zero.",
+                           string_VkPipelineCreateFlags(flags1).c_str());
+    }
+    return skip;
+}
+
 bool Device::ValidateCreateGraphicsPipelinesFlags(const VkPipelineCreateFlags2 flags, const Location &flags_loc) const {
     bool skip = false;
     if ((flags & VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT) != 0 &&
@@ -382,6 +396,8 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
         if (!create_flags_2) {
             skip |= context.ValidateFlags(flags_loc, vvl::FlagBitmask::VkPipelineCreateFlagBits, AllVkPipelineCreateFlagBits,
                                           create_info.flags, kOptionalFlags, "VUID-VkGraphicsPipelineCreateInfo-None-09497");
+        } else {
+            skip |= ValidateCreatePipelinesFlags2(create_info.flags, flags, flags_loc);
         }
         skip |= ValidateCreateGraphicsPipelinesFlags(flags, flags_loc);
 
@@ -1345,6 +1361,8 @@ bool Device::manual_PreCallValidateCreateComputePipelines(VkDevice device, VkPip
         if (!create_flags_2) {
             skip |= context.ValidateFlags(flags_loc, vvl::FlagBitmask::VkPipelineCreateFlagBits, AllVkPipelineCreateFlagBits,
                                           create_info.flags, kOptionalFlags, "VUID-VkComputePipelineCreateInfo-None-09497");
+        } else {
+            skip |= ValidateCreatePipelinesFlags2(create_info.flags, flags, flags_loc);
         }
         skip |= ValidateCreateComputePipelinesFlags(flags, flags_loc);
 
