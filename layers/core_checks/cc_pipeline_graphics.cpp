@@ -498,18 +498,41 @@ bool CoreChecks::ValidateGraphicsPipelineVertexInputState(const vvl::Pipeline &p
     if (invalid_input_state && invalid_assembly_state && pipeline.IsGraphicsLibrary()) {
         // Failed to defined a Vertex Input State
         if (!pipeline.pre_raster_state) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-08898", device, create_info_loc,
-                             "pVertexInputState and pInputAssemblyState are both NULL which means this is an invalid Vertex Input "
-                             "State.\npVertexInputState can be ignored with VK_DYNAMIC_STATE_VERTEX_INPUT_EXT\npInputAssemblyState "
-                             "can be ignored with VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE, VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY, "
-                             "and dynamicPrimitiveTopologyUnrestricted set to VK_TRUE\nIf there is a mesh stage, these are also "
-                             "ignored, but the Vertex Input library can just be skipped if creating a mesh pipeline.");
+            skip |= LogError(
+                "VUID-VkGraphicsPipelineCreateInfo-flags-08898", device, create_info_loc,
+                "pVertexInputState and pInputAssemblyState are both NULL which means this is an invalid Vertex Input "
+                "State.%s"
+                "\npInputAssemblyState can be NULL if all the following set:"
+                "\n  Enable VK_EXT_extended_dynamic_state3 (%senabled)"
+                "\n  Use VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE (%s)"
+                "\n  Use VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY (%s)"
+                "\n  dynamicPrimitiveTopologyUnrestricted is VK_TRUE (%s)"
+                "\nIf there is a mesh stage, these can also be NULL, but the Vertex Input library can also just be skipped if "
+                "creating a mesh pipeline.",
+                pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)
+                    ? ""
+                    : "\npVertexInputState can be NULL if using VK_DYNAMIC_STATE_VERTEX_INPUT_EXT",
+                IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) ? "" : "not ",
+                pipeline.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE) ? "set" : "not set",
+                pipeline.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) ? "set" : "not set",
+                phys_dev_ext_props.extended_dynamic_state3_props.dynamicPrimitiveTopologyUnrestricted ? "VK_TRUE" : "VK_FALSE");
         } else if ((pipeline.active_shaders & VK_SHADER_STAGE_VERTEX_BIT)) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-08897", device, create_info_loc,
-                             "pVertexInputState and pInputAssemblyState are both NULL which means this is an invalid Vertex Input "
-                             "State.\npVertexInputState can be ignored with VK_DYNAMIC_STATE_VERTEX_INPUT_EXT\npInputAssemblyState "
-                             "can be ignored with VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE,  VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY, "
-                             "and dynamicPrimitiveTopologyUnrestricted set to VK_TRUE");
+            skip |= LogError(
+                "VUID-VkGraphicsPipelineCreateInfo-flags-08897", device, create_info_loc,
+                "pVertexInputState and pInputAssemblyState are both NULL which means this is an invalid Vertex Input "
+                "State.%s"
+                "\npInputAssemblyState can be NULL if all the following set:"
+                "\n  Enable VK_EXT_extended_dynamic_state3 (%senabled)"
+                "\n  Use VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE (%s)"
+                "\n  Use VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY (%s)"
+                "\n  dynamicPrimitiveTopologyUnrestricted is VK_TRUE (%s)",
+                pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)
+                    ? ""
+                    : "\npVertexInputState can be NULL if using VK_DYNAMIC_STATE_VERTEX_INPUT_EXT",
+                IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) ? "" : "not ",
+                pipeline.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE) ? "set" : "not set",
+                pipeline.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) ? "set" : "not set",
+                phys_dev_ext_props.extended_dynamic_state3_props.dynamicPrimitiveTopologyUnrestricted ? "VK_TRUE" : "VK_FALSE");
         }
     } else if (invalid_input_state) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-02097", device, create_info_loc.dot(Field::pVertexInputState),
@@ -1519,7 +1542,12 @@ bool CoreChecks::ValidateGraphicsPipelineTessellationState(const vvl::Pipeline &
         if (!pipeline.TessellationState() && (!pipeline.IsDynamic(CB_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT) ||
                                               !IsExtEnabled(extensions.vk_ext_extended_dynamic_state3))) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-09022", device, create_info_loc.dot(Field::pStages),
-                             "includes a tessellation control shader stage, but pTessellationState is NULL.");
+                             "includes a tessellation control shader stage, but pTessellationState is NULL."
+                             "\nIf the following are all set, it can be NULL"
+                             "\n  Enable VK_EXT_extended_dynamic_state3 (%senabled)"
+                             "\n  Use VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT (%s)\n",
+                             IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) ? "" : "not ",
+                             pipeline.IsDynamic(CB_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT) ? "set" : "not set");
         }
     }
     return skip;
@@ -2438,14 +2466,27 @@ bool CoreChecks::ValidateGraphicsPipelineNullState(const vvl::Pipeline &pipeline
 
     const auto &pipeline_ci = pipeline.GraphicsCreateInfo();
     if (!pipeline_ci.pMultisampleState && pipeline.OwnsLibState(pipeline.fragment_output_state)) {
-        // Don't need to check for VK_EXT_extended_dynamic_state3 since it would be on if using these VkDynamicState
         const bool dynamic_alpha_to_one =
             pipeline.IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT) || !enabled_features.alphaToOne;
-        if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) ||
+        if (!IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) ||
+            !pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) ||
             !pipeline.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_MASK_EXT) ||
             !pipeline.IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT) || !dynamic_alpha_to_one) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pMultisampleState-09026", device,
-                             create_info_loc.dot(Field::pMultisampleState), "is NULL.");
+                             create_info_loc.dot(Field::pMultisampleState),
+                             "is NULL."
+                             "\nIf the following are all set, it can be NULL"
+                             "\n  Enable VK_EXT_extended_dynamic_state3 (%senabled)"
+                             "\n  Use VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT (%s)"
+                             "\n  Use VK_DYNAMIC_STATE_SAMPLE_MASK_EXT (%s)"
+                             "\n  Use VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT (%s)"
+                             "\n  Use CB_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT (%s) or enable alphaToOne feature (%s)\n",
+                             IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) ? "" : "not ",
+                             pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) ? "set" : "not set",
+                             pipeline.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_MASK_EXT) ? "set" : "not set",
+                             pipeline.IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT) ? "set" : "not set",
+                             pipeline.IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT) ? "set" : "not set",
+                             enabled_features.alphaToOne ? "VK_TRUE" : "VK_FALSE");
         }
     }
 
@@ -2459,7 +2500,27 @@ bool CoreChecks::ValidateGraphicsPipelineNullState(const vvl::Pipeline &pipeline
                 !pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_BIAS_ENABLE) || !pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_BIAS) ||
                 !pipeline.IsDynamic(CB_DYNAMIC_STATE_LINE_WIDTH)) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pRasterizationState-06601", device,
-                                 create_info_loc.dot(Field::pRasterizationState), "is NULL.");
+                                 create_info_loc.dot(Field::pRasterizationState),
+                                 "is NULL."
+                                 "\nIf the following are all set, it can be NULL"
+                                 "\n  Enable VK_EXT_extended_dynamic_state3 (%senabled)"
+                                 "\n  Use VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT (%s)"
+                                 "\n  Use VK_DYNAMIC_STATE_POLYGON_MODE_EXT (%s)"
+                                 "\n  Use VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE (%s)"
+                                 "\n  Use VK_DYNAMIC_STATE_CULL_MODE (%s)"
+                                 "\n  Use VK_DYNAMIC_STATE_FRONT_FACE (%s)"
+                                 "\n  Use VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE (%s)"
+                                 "\n  Use VK_DYNAMIC_STATE_DEPTH_BIAS (%s)"
+                                 "\n  Use VK_DYNAMIC_STATE_LINE_WIDTH (%s)\n",
+                                 IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) ? "" : "not ",
+                                 pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT) ? "set" : "not set",
+                                 pipeline.IsDynamic(CB_DYNAMIC_STATE_POLYGON_MODE_EXT) ? "set" : "not set",
+                                 pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE) ? "set" : "not set",
+                                 pipeline.IsDynamic(CB_DYNAMIC_STATE_CULL_MODE) ? "set" : "not set",
+                                 pipeline.IsDynamic(CB_DYNAMIC_STATE_FRONT_FACE) ? "set" : "not set",
+                                 pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_BIAS_ENABLE) ? "set" : "not set",
+                                 pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_BIAS) ? "set" : "not set",
+                                 pipeline.IsDynamic(CB_DYNAMIC_STATE_LINE_WIDTH) ? "set" : "not set");
             }
         }
     }

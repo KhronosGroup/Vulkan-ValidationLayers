@@ -1007,8 +1007,14 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-09024", device, create_info_loc,
                                  "Rasterization is enabled (pCreateInfos[%" PRIu32
                                  "].pRasterizationState->rasterizerDiscardEnable is VK_FALSE), but pCreateInfos[%" PRIu32
-                                 "].pViewportState is NULL.",
-                                 i, i);
+                                 "].pViewportState is NULL."
+                                 "\nIf the following are all set, it can be NULL"
+                                 "\n  Enable VK_EXT_extended_dynamic_state3 (%senabled)"
+                                 "\n  Use VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT (%s)"
+                                 "\n  Use VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT (%s)\n",
+                                 i, i, IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) ? "" : "not ",
+                                 has_dynamic_viewport_with_count ? "set" : "not set",
+                                 has_dynamic_scissor_with_count ? "set" : "not set");
             }
 
             // It is possible for pCreateInfos[i].pMultisampleState to be null when creating a graphics library
