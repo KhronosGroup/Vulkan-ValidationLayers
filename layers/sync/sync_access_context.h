@@ -147,7 +147,8 @@ struct CollectBarriersFunctor {
 
     void operator()(const Iterator &pos) const {
         ResourceAccessState &access_state = pos->second;
-        access_state.CollectBarriers(barrier_scope, barrier, layout_transition, layout_transition_handle_index, pending_barriers);
+        access_state.CollectPendingBarriers(barrier_scope, barrier, layout_transition, layout_transition_handle_index,
+                                            pending_barriers);
     }
 
     const BarrierScope barrier_scope;
@@ -155,32 +156,6 @@ struct CollectBarriersFunctor {
     bool layout_transition;
     uint32_t layout_transition_handle_index;
     PendingBarriers &pending_barriers;
-};
-
-// This functor resolves the barrier's pending state
-struct ResolvePendingBarrierFunctor {
-    ResolvePendingBarrierFunctor(ResourceUsageTag tag) : tag(tag) {}
-    using Iterator = ResourceAccessRangeMap::iterator;
-
-    Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos_hint, const ResourceAccessRange &range) const {
-        return pos_hint;
-    }
-
-    void operator()(const Iterator &pos) const {
-        ResourceAccessState &access_state = pos->second;
-        access_state.ApplyPendingBarriers(tag);
-    }
-
-    const ResourceUsageTag tag;
-};
-
-struct ApplySubpassTransitionBarriersAction {
-    explicit ApplySubpassTransitionBarriersAction(const std::vector<SyncBarrier> &barriers_) : barriers(barriers_) {}
-    void operator()(ResourceAccessState *access) const {
-        assert(access);
-        access->ApplyBarriers(barriers, true);
-    }
-    const std::vector<SyncBarrier> &barriers;
 };
 
 struct QueueTagOffsetBarrierAction {
@@ -200,9 +175,7 @@ struct ApplyTrackbackStackAction {
     void operator()(ResourceAccessState *access) const {
         assert(access);
         assert(!access->HasPendingState());
-        access->ApplyBarriers(barriers, false);
-        // NOTE: We can use invalid tag, as these barriers do no include layout transitions (would assert in SetWrite)
-        access->ApplyPendingBarriers(kInvalidTag);
+        ApplyBarriers(*access, barriers);
         if (previous_barrier) {
             assert(bool(*previous_barrier));
             (*previous_barrier)(access);
@@ -333,8 +306,6 @@ class AccessContext {
 
     void ImportAsyncContexts(const AccessContext &from);
     void ClearAsyncContexts() { async_.clear(); }
-    template <typename Action>
-    void ApplyToContext(const Action &barrier_action);
 
     AccessContext(uint32_t subpass, VkQueueFlags queue_flags, const std::vector<SubpassDependencyGraphNode> &dependencies,
                   const std::vector<AccessContext> &contexts, const AccessContext *external_context);
@@ -490,12 +461,6 @@ struct ActionToOpsAdapter {
     void update(const Iterator &pos) const { action(pos); }
     const Action &action;
 };
-
-template <typename Action>
-void AccessContext::ApplyToContext(const Action &barrier_action) {
-    // Note: Barriers do *not* cross context boundaries, applying to accessess within.... (at least for renderpass subpasses)
-    UpdateMemoryAccessRangeState(barrier_action, kFullRange);
-}
 
 template <typename Action>
 void AccessContext::UpdateMemoryAccessRangeState(Action &action, const ResourceAccessRange &range) {

@@ -412,8 +412,7 @@ struct ApplyGlobalBarrierFunctor {
 
     void operator()(const Iterator &pos) const {
         ResourceAccessState &access_state = pos->second;
-        access_state.ApplyBarrier(barrier_scope, barrier, false);
-        access_state.ApplyPendingBarriers(kInvalidTag);
+        access_state.ApplyBarrier(barrier_scope, barrier);
     }
 
     const BarrierScope barrier_scope;
