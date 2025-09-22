@@ -1,7 +1,7 @@
 {
     "$schema": "https://schema.khronos.org/vulkan/profiles-0.8.0-latest.json#",
     "profiles": {
-        "MAX_CORE": {
+        "VP_MAX_CORE": {
             "version": 1,
             "api-version": "1.4.304",
             "label": "Max Vulkan Core",
@@ -149,7 +149,7 @@
                     "descriptorBindingInlineUniformBlockUpdateAfterBind": true,
                     "pipelineCreationCacheControl": true,
                     "privateData": true,
-                    "robustImageshaderDemoteToHelperInvocationAccess": true,
+                    "shaderDemoteToHelperInvocation": true,
                     "shaderTerminateInvocation": true,
                     "subgroupSizeControl": true,
                     "computeFullSubgroups": true,
