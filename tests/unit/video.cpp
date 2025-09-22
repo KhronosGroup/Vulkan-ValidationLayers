@@ -1664,11 +1664,9 @@ TEST_F(NegativeVideo, CreateImageViewInvalidViewType) {
     }
 }
 
-TEST_F(NegativeVideo, CreateImageViewProfileIndependent) {
-    TEST_DESCRIPTION("vkCreateImageView - video usage not supported in view created from video profile independent image");
+TEST_F(NegativeVideo, CreateImageViewInvalidUsage) {
+    TEST_DESCRIPTION("vkCreateImageView - video usage not supported in view per the format feature requirements");
 
-    AddRequiredExtensions(VK_KHR_VIDEO_MAINTENANCE_1_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::videoMaintenance1);
     RETURN_IF_SKIP(Init());
 
     VideoConfig decode_config = GetConfig(GetConfigsWithReferences(GetConfigsDecode()));
@@ -1709,7 +1707,7 @@ TEST_F(NegativeVideo, CreateImageViewProfileIndependent) {
         }
 
         auto image_ci = vku::InitStruct<VkImageCreateInfo>();
-        image_ci.flags = VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT;
+        image_ci.flags = VK_IMAGE_CREATE_EXTENDED_USAGE_BIT;
         image_ci.imageType = VK_IMAGE_TYPE_2D;
         image_ci.format = format;
         image_ci.extent = {1024, 1024, 1};
