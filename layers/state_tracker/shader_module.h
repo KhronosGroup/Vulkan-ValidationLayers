@@ -172,7 +172,7 @@ struct ExecutionModeSet {
     // SPIR-V spec says only LocalSize or LocalSizeId can be used, so can share
     LocalSize local_size = {kInvalidValue, kInvalidValue, kInvalidValue};
 
-    uint32_t output_vertices = vvl::kU32Max;
+    uint32_t output_vertices = kInvalidValue;
     uint32_t output_primitives = 0;
     uint32_t invocations = 0;
 

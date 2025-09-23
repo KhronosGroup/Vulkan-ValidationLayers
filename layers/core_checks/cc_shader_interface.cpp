@@ -699,6 +699,8 @@ bool CoreChecks::ValidatePipelineTessellationStages(const spirv::Module &tesc_mo
                                                     const Location &create_info_loc) const {
     bool skip = false;
 
+    // The other tessellation modes (PointMode, Spacing, Orientation) can be in either stage.
+    // OutputVertices needs to be in TESC and Subdivision in TESE, but they can be in the other stage, but needs to match
     const uint32_t tesc_subdivision = tesc_entrypoint.execution_mode.GetTessellationSubdivision();
     const uint32_t tese_subdivision = tese_entrypoint.execution_mode.GetTessellationSubdivision();
     const uint32_t tesc_patch_size = tesc_entrypoint.execution_mode.output_vertices;
@@ -706,22 +708,23 @@ bool CoreChecks::ValidatePipelineTessellationStages(const spirv::Module &tesc_mo
     if (tesc_subdivision == 0 && tese_subdivision == 0) {
         const LogObjectList objlist(tesc_module_state.handle(), tese_module_state.handle());
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00732", objlist, create_info_loc,
-                         "Subdivision type is not specified in either of tessellation stages");
+                         "Subdivision (Triangles/Quads/IsoLines) is not specified in either of tessellation stages");
     } else if (tesc_subdivision != 0 && tese_subdivision != 0 && tesc_subdivision != tese_subdivision) {
         const LogObjectList objlist(tesc_module_state.handle(), tese_module_state.handle());
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00733", objlist, create_info_loc,
-                         "Subdivision type specified in tessellation control shader is %s, but subdivison type specified in "
+                         "Subdivision specified in tessellation control shader is %s, but subdivison type specified in "
                          "tessellation evaluation shader is %s",
                          string_SpvExecutionMode(tesc_subdivision), string_SpvExecutionMode(tese_subdivision));
     }
-    if (tesc_patch_size == vvl::kU32Max && tese_patch_size == vvl::kU32Max) {
+    if (tesc_patch_size == spirv::kInvalidValue && tese_patch_size == spirv::kInvalidValue) {
         const LogObjectList objlist(tesc_module_state.handle(), tese_module_state.handle());
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00734", objlist, create_info_loc,
-                         "Output patch size is not specified in either of tessellation stages");
-    } else if (tesc_patch_size != vvl::kU32Max && tese_patch_size != vvl::kU32Max && tesc_patch_size != tese_patch_size) {
+                         "OutputVertices (patch size) is not specified in either of tessellation stages");
+    } else if (tesc_patch_size != spirv::kInvalidValue && tese_patch_size != spirv::kInvalidValue &&
+               tesc_patch_size != tese_patch_size) {
         const LogObjectList objlist(tesc_module_state.handle(), tese_module_state.handle());
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00735", objlist, create_info_loc,
-                         "Output patch size specified in tessellation control shader is %" PRIu32
+                         "OutputVertices (patch size) specified in tessellation control shader is %" PRIu32
                          ", but subdivison type specified in tessellation evaluation shader is %" PRIu32,
                          tesc_patch_size, tese_patch_size);
     }
