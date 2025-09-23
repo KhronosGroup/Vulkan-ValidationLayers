@@ -174,7 +174,6 @@ struct ApplyTrackbackStackAction {
         : barriers(barriers_), previous_barrier(previous_barrier_) {}
     void operator()(ResourceAccessState *access) const {
         assert(access);
-        assert(!access->HasPendingState());
         ApplyBarriers(*access, barriers);
         if (previous_barrier) {
             assert(bool(*previous_barrier));
@@ -379,7 +378,8 @@ class AccessContext {
     };
 
     // Follow the context previous to access the access state, supporting "lazy" import into the context. Not intended for
-    // subpass layout transition, as the pending state handling is more complex
+    // subpass layout transition, as the pending state handling is more complex (TODO: check if previous statement is
+    // still true after pending barriers rework).
     // TODO: See if returning the lower_bound would be useful from a performance POV -- look at the lower_bound overhead
     // Would need to add a "hint" overload to parallel_iterator::invalidate_[AB] call, if so.
     void ResolvePreviousAccess(const ResourceAccessRange &range, ResourceAccessRangeMap *descent_map,

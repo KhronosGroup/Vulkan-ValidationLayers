@@ -336,13 +336,6 @@ HazardResult ResourceAccessState::DetectBarrierHazard(const SyncAccessInfo &usag
     return {};
 }
 
-void ResourceAccessState::MergePending(const ResourceAccessState &other) {
-    assert(other.pending_layout_transition == false);
-    assert(pending_layout_transition == false);
-    pending_layout_transition |= other.pending_layout_transition;
-    pending_layout_transition_handle_index = other.pending_layout_transition_handle_index;
-}
-
 void ResourceAccessState::MergeReads(const ResourceAccessState &other) {
     // Merge the read states
     const auto pre_merge_count = last_reads.size();
@@ -356,8 +349,6 @@ void ResourceAccessState::MergeReads(const ResourceAccessState &other) {
             for (uint32_t my_read_index = 0; my_read_index < pre_merge_count; my_read_index++) {
                 auto &my_read = last_reads[my_read_index];
                 if (other_read.stage == my_read.stage) {
-                    assert(my_read.pending_dep_chain == 0);
-                    assert(other_read.pending_dep_chain == 0);
                     if (my_read.tag < other_read.tag) {
                         // Other is more recent, copy in the state
                         my_read.access_index = other_read.access_index;
@@ -414,7 +405,6 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
                 // In the *equals* case for write operations, we merged the write barriers and the read state (but without the
                 // dependency chaining logic or any stage expansion)
                 last_write->MergeBarriers(*other.last_write);
-                MergePending(other);
                 MergeReads(other);
             } else {
                 // other write is before this write... in which case we keep this instead of other
@@ -432,7 +422,6 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
         skip_first = true;
     } else {  // not this->last_write OR other.last_write
         // Neither state has a write, just merge the reads
-        MergePending(other);
         MergeReads(other);
     }
 
@@ -844,7 +833,6 @@ ResourceAccessState::ResourceAccessState()
       read_execution_barriers(VK_PIPELINE_STAGE_2_NONE),
       last_reads(),
       input_attachment_read(false),
-      pending_layout_transition(false),
       first_accesses_(),
       first_read_stages_(VK_PIPELINE_STAGE_2_NONE),
       first_write_layout_ordering_(),
@@ -989,11 +977,6 @@ void ReadState::Set(VkPipelineStageFlagBits2 stage, SyncAccessIndex access_index
     tag = tag_ex.tag;
     handle_index = tag_ex.handle_index;
     queue = kQueueIdInvalid;
-
-    // We have pending state during short duration of specific API calls and it should already
-    // be applied when ResourceAccessState::Update is called (which calls ReadState::Set)
-    assert(pending_dep_chain == VK_PIPELINE_STAGE_2_NONE);
-    pending_dep_chain = VK_PIPELINE_STAGE_2_NONE;
 }
 
 // Scope test including "queue submission order" effects.  Specifically, accesses from a different queue are not
@@ -1036,10 +1019,7 @@ WriteState::WriteState(const SyncAccessInfo &usage_info, ResourceUsageTagEx tag_
       handle_index_(tag_ex.handle_index),
       queue_(kQueueIdInvalid),
       flags_(flags),
-      dependency_chain_(VK_PIPELINE_STAGE_2_NONE),
-      pending_layout_ordering_(),
-      pending_dep_chain_(VK_PIPELINE_STAGE_2_NONE),
-      pending_barriers_() {}
+      dependency_chain_(VK_PIPELINE_STAGE_2_NONE) {}
 
 bool WriteState::IsWriteHazard(const SyncAccessInfo &usage_info) const { return !barriers_[usage_info.access_index]; }
 
@@ -1096,26 +1076,6 @@ void WriteState::Set(const SyncAccessInfo &usage_info, ResourceUsageTagEx tag_ex
 void WriteState::MergeBarriers(const WriteState &other) {
     barriers_ |= other.barriers_;
     dependency_chain_ |= other.dependency_chain_;
-
-    assert(pending_barriers_.none());
-    assert(other.pending_barriers_.none());
-    assert(pending_dep_chain_ == 0);
-    assert(other.pending_dep_chain_ == 0);
-    assert(pending_layout_ordering_ == OrderingBarrier{});
-    assert(other.pending_layout_ordering_ == OrderingBarrier{});
-
-    pending_barriers_ |= other.pending_barriers_;
-    pending_dep_chain_ |= other.pending_dep_chain_;
-    pending_layout_ordering_ |= other.pending_layout_ordering_;
-}
-
-void WriteState::UpdatePendingBarriers(const SyncBarrier &barrier) {
-    pending_barriers_ |= barrier.dst_access_scope;
-    pending_dep_chain_ |= barrier.dst_exec_scope.exec_scope;
-}
-
-void WriteState::UpdatePendingLayoutOrdering(const SyncBarrier &barrier) {
-    pending_layout_ordering_ |= OrderingBarrier(barrier.src_exec_scope.exec_scope, barrier.src_access_scope);
 }
 
 void WriteState::SetQueueId(QueueId id) {

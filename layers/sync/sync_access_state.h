@@ -240,15 +240,11 @@ struct ReadState {
     ResourceUsageTag tag;
     uint32_t handle_index;
     QueueId queue;
-    VkPipelineStageFlags2 pending_dep_chain;  // Should be zero except during barrier application
-                                              // Excluded from comparison
 
     void Set(VkPipelineStageFlagBits2 stage, SyncAccessIndex access_index, ResourceUsageTagEx tag_ex);
 
     ResourceUsageTagEx TagEx() const { return {tag, handle_index}; }
     bool operator==(const ReadState &rhs) const {
-        assert(pending_dep_chain == 0);
-        assert(rhs.pending_dep_chain == 0);
         return (stage == rhs.stage) && (access_index == rhs.access_index) && (barriers == rhs.barriers) &&
                (sync_stages == rhs.sync_stages) && (tag == rhs.tag) && (queue == rhs.queue);
     }
@@ -282,8 +278,6 @@ struct ReadState {
     }
     bool ReadOrDependencyChainInSourceScope(QueueId queue, VkPipelineStageFlags2 src_exec_scope) const;
     bool InBarrierSourceScope(const BarrierScope &barrier_scope) const;
-
-    void ApplyReadBarrier(VkPipelineStageFlags2 dst_scope) { pending_dep_chain |= dst_scope; }
 };
 
 static_assert(std::is_trivially_copyable_v<ReadState>);
@@ -323,11 +317,6 @@ class WriteState {
     void MergeBarriers(const WriteState &other);
     void OffsetTag(ResourceUsageTag offset) { tag_ += offset; }
 
-    bool HasPendingState() const { return pending_barriers_.any() || (0 != pending_dep_chain_); }
-    void UpdatePendingBarriers(const SyncBarrier &barrier);
-    void UpdatePendingLayoutOrdering(const SyncBarrier &barrier);
-    const OrderingBarrier &GetPendingLayoutOrdering() const { return pending_layout_ordering_; }
-
     const SyncAccessInfo *access_;
     SyncAccessFlags barriers_;  // union of applicable barrier masks since last write
     ResourceUsageTag tag_;
@@ -336,11 +325,6 @@ class WriteState {
     SyncFlags flags_;
     // intially zero, but accumulating the dstStages of barriers if they chain.
     VkPipelineStageFlags2 dependency_chain_;
-
-    // Write specific layout state
-    OrderingBarrier pending_layout_ordering_;
-    VkPipelineStageFlags2 pending_dep_chain_;
-    SyncAccessFlags pending_barriers_;
 };
 
 static_assert(std::is_trivially_copyable_v<WriteState>);
@@ -475,7 +459,6 @@ class ResourceAccessState {
     void OffsetTag(ResourceUsageTag offset);
     ResourceAccessState();
 
-    bool HasPendingState() const { return (0 != pending_layout_transition) || (last_write && last_write->HasPendingState()); }
     bool HasWriteOp() const { return last_write.has_value(); }
     SyncAccessIndex LastWriteOp() const { return last_write.has_value() ? last_write->Index() : SYNC_ACCESS_INDEX_NONE; }
     bool IsLastWriteOp(SyncAccessIndex access_index) const { return LastWriteOp() == access_index; }
@@ -524,7 +507,6 @@ class ResourceAccessState {
 
     void UpdateFirst(ResourceUsageTagEx tag_ex, const SyncAccessInfo &usage_info, SyncOrdering ordering_rule, SyncFlags flags = 0);
     void TouchupFirstForLayoutTransition(ResourceUsageTag tag, const OrderingBarrier &layout_ordering);
-    void MergePending(const ResourceAccessState &other);
     void MergeReads(const ResourceAccessState &other);
 
     // TODO: Add a NONE (zero) enum to SyncStageAccessFlags for input_attachment_read and last_write
@@ -545,11 +527,6 @@ class ResourceAccessState {
     // TODO Input Attachment cleanup for multiple reads in a given stage
     // Tracks whether the fragment shader read is input attachment read
     bool input_attachment_read;
-
-    // Not part of the write state, logically.  Can exist when !last_write
-    // Pending execution state to support independent parallel barriers
-    bool pending_layout_transition;
-    uint32_t pending_layout_transition_handle_index = vvl::kNoIndex32;
 
     FirstAccesses first_accesses_;
     VkPipelineStageFlags2 first_read_stages_;
