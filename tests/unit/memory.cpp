@@ -2441,3 +2441,59 @@ TEST_F(NegativeMemory, RequiredDedicatedAllocationImage) {
         m_errorMonitor->VerifyFound();
     }
 }
+
+TEST_F(NegativeMemory, DedicatedAllocationWrongObject) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+
+    auto buffer_info = vkt::Buffer::CreateInfo(4096u, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    vkt::Buffer buffer(*m_device, buffer_info, vkt::no_mem);
+
+    auto image_info = vkt::Image::ImageCreateInfo2D(32u, 32u, 1u, 1u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_device, image_info, vkt::no_mem);
+
+    VkBufferMemoryRequirementsInfo2 buffer_memory_requirements_info = vku::InitStructHelper();
+    buffer_memory_requirements_info.buffer = buffer;
+    VkMemoryDedicatedRequirements buffer_memory_dedicated_requirements = vku::InitStructHelper();
+    VkMemoryRequirements2 buffer_memory_requirements = vku::InitStructHelper(&buffer_memory_dedicated_requirements);
+    vk::GetBufferMemoryRequirements2(device(), &buffer_memory_requirements_info, &buffer_memory_requirements);
+
+    VkImageMemoryRequirementsInfo2 image_memory_requirements_info = vku::InitStructHelper();
+    image_memory_requirements_info.image = image;
+    VkMemoryDedicatedRequirements image_memory_dedicated_requirements = vku::InitStructHelper();
+    VkMemoryRequirements2 image_memory_requirements = vku::InitStructHelper(&image_memory_dedicated_requirements);
+    vk::GetImageMemoryRequirements2(device(), &image_memory_requirements_info, &image_memory_requirements);
+
+    VkDeviceSize memory_size =
+        std::max(buffer_memory_requirements.memoryRequirements.size, image_memory_requirements.memoryRequirements.size);
+
+    {
+        VkMemoryDedicatedAllocateInfo memory_dedicated_allocate_info = vku::InitStructHelper();
+        memory_dedicated_allocate_info.image = VK_NULL_HANDLE;
+        memory_dedicated_allocate_info.buffer = buffer;
+        VkMemoryAllocateInfo memory_info = vku::InitStructHelper(&memory_dedicated_allocate_info);
+        memory_info.allocationSize = memory_size;
+        bool pass = m_device->Physical().SetMemoryType(image_memory_requirements.memoryRequirements.memoryTypeBits, &memory_info,
+                                                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        ASSERT_TRUE(pass);
+        vkt::DeviceMemory device_memory(*m_device, memory_info);
+        m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-memory-10926");
+        vk::BindImageMemory(device(), image, device_memory, 0u);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        VkMemoryDedicatedAllocateInfo memory_dedicated_allocate_info = vku::InitStructHelper();
+        memory_dedicated_allocate_info.image = image;
+        memory_dedicated_allocate_info.buffer = VK_NULL_HANDLE;
+        VkMemoryAllocateInfo memory_info = vku::InitStructHelper(&memory_dedicated_allocate_info);
+        memory_info.allocationSize = memory_size;
+        bool pass = m_device->Physical().SetMemoryType(buffer_memory_requirements.memoryRequirements.memoryTypeBits, &memory_info,
+                                                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        ASSERT_TRUE(pass);
+        vkt::DeviceMemory device_memory(*m_device, memory_info);
+        m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-memory-10925");
+        vk::BindBufferMemory(device(), buffer, device_memory, 0u);
+        m_errorMonitor->VerifyFound();
+    }
+}
