@@ -705,11 +705,12 @@ bool CoreChecks::ValidatePipelineTessellationStages(const spirv::Module &tesc_mo
     const uint32_t tese_subdivision = tese_entrypoint.execution_mode.GetTessellationSubdivision();
     const uint32_t tesc_patch_size = tesc_entrypoint.execution_mode.output_vertices;
     const uint32_t tese_patch_size = tese_entrypoint.execution_mode.output_vertices;
-    if (tesc_subdivision == 0 && tese_subdivision == 0) {
+    if (tesc_subdivision == spirv::kInvalidValue && tese_subdivision == spirv::kInvalidValue) {
         const LogObjectList objlist(tesc_module_state.handle(), tese_module_state.handle());
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00732", objlist, create_info_loc,
                          "Subdivision (Triangles/Quads/IsoLines) is not specified in either of tessellation stages");
-    } else if (tesc_subdivision != 0 && tese_subdivision != 0 && tesc_subdivision != tese_subdivision) {
+    } else if (tesc_subdivision != spirv::kInvalidValue && tese_subdivision != spirv::kInvalidValue &&
+               tesc_subdivision != tese_subdivision) {
         const LogObjectList objlist(tesc_module_state.handle(), tese_module_state.handle());
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00733", objlist, create_info_loc,
                          "Subdivision specified in tessellation control shader is %s, but subdivison type specified in "
@@ -725,7 +726,7 @@ bool CoreChecks::ValidatePipelineTessellationStages(const spirv::Module &tesc_mo
         const LogObjectList objlist(tesc_module_state.handle(), tese_module_state.handle());
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00735", objlist, create_info_loc,
                          "OutputVertices (patch size) specified in tessellation control shader is %" PRIu32
-                         ", but subdivison type specified in tessellation evaluation shader is %" PRIu32,
+                         ", but OutputVertices specified in tessellation evaluation shader is %" PRIu32,
                          tesc_patch_size, tese_patch_size);
     }
     return skip;

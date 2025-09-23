@@ -294,7 +294,7 @@ void ExecutionModeSet::Add(const Instruction& insn) {
 }
 
 uint32_t ExecutionModeSet::GetTessellationSubdivision() const {
-    uint32_t tessellation_subdivision = 0;
+    uint32_t tessellation_subdivision = kInvalidValue;
     if (Has(subdivision_iso_lines_bit)) {
         tessellation_subdivision = spv::ExecutionModeIsolines;
     } else if (Has(subdivision_triangle_bit)) {
@@ -306,7 +306,7 @@ uint32_t ExecutionModeSet::GetTessellationSubdivision() const {
 }
 
 uint32_t ExecutionModeSet::GetTessellationOrientation() const {
-    uint32_t tessellation_orientation = 0;
+    uint32_t tessellation_orientation = kInvalidValue;
     if (Has(vertex_order_cw_bit)) {
         tessellation_orientation = spv::ExecutionModeVertexOrderCw;
     } else if (Has(vertex_order_ccw_bit)) {
@@ -316,7 +316,7 @@ uint32_t ExecutionModeSet::GetTessellationOrientation() const {
 }
 
 uint32_t ExecutionModeSet::GetTessellationSpacing() const {
-    uint32_t tessellation_spacing = 0;
+    uint32_t tessellation_spacing = kInvalidValue;
     if (Has(spacing_equal_bit)) {
         tessellation_spacing = spv::ExecutionModeSpacingEqual;
     } else if (Has(spacing_fractional_even_bit)) {

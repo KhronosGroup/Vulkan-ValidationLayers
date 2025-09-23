@@ -348,7 +348,7 @@ bool CoreChecks::ValidateCreateShadersSpirv(uint32_t createInfoCount, const VkSh
             const uint32_t tessellation_subdivision = execution_mode.GetTessellationSubdivision();
 
             if (create_info.stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
-                if (tessellation_subdivision == 0) {
+                if (tessellation_subdivision == spirv::kInvalidValue) {
                     skip |= LogError("VUID-VkShaderCreateInfoEXT-codeType-08872", device, create_info_loc.dot(Field::stage),
                                      "is VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, but subdivision is not specified "
                                      "(Triangles/Quads/IsoLines).");
@@ -388,19 +388,21 @@ bool CoreChecks::ValidateCreateShadersSpirv(uint32_t createInfoCount, const VkSh
     }
 
     if (tesc.is_linked && tese.is_linked) {
-        if (tesc.subdivision != 0 && tese.subdivision != 0 && tesc.subdivision != tese.subdivision) {
+        if (tesc.subdivision != spirv::kInvalidValue && tese.subdivision != spirv::kInvalidValue &&
+            tesc.subdivision != tese.subdivision) {
             skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08867", device, loc,
                              "The subdivision specified in tessellation control shader (%s) does not match the subdivision in "
                              "tessellation evaluation shader (%s).",
                              string_SpvExecutionMode(tesc.subdivision), string_SpvExecutionMode(tese.subdivision));
         }
-        if (tesc.orientation != 0 && tese.orientation != 0 && tesc.orientation != tese.orientation) {
+        if (tesc.orientation != spirv::kInvalidValue && tese.orientation != spirv::kInvalidValue &&
+            tesc.orientation != tese.orientation) {
             skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08868", device, loc,
                              "The orientation specified in tessellation control shader (%s) does not match the orientation in "
                              "tessellation evaluation shader (%s).",
                              string_SpvExecutionMode(tesc.orientation), string_SpvExecutionMode(tese.orientation));
         }
-        if (tesc.spacing != 0 && tese.spacing != 0 && tesc.spacing != tese.spacing) {
+        if (tesc.spacing != spirv::kInvalidValue && tese.spacing != spirv::kInvalidValue && tesc.spacing != tese.spacing) {
             skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08870", device, loc,
                              "The spacing specified in tessellation control shader (%s) does not match the spacing in "
                              "tessellation evaluation shader (%s).",
