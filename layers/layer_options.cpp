@@ -1041,7 +1041,8 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         SetValidationSetting(layer_setting_set, settings_data->enabled, vendor_specific_nvidia,
                              VK_LAYER_VALIDATE_BEST_PRACTICES_NVIDIA);
         SetValidationSetting(layer_setting_set, settings_data->enabled, sync_validation, VK_LAYER_VALIDATE_SYNC);
-        SetValidationSetting(layer_setting_set, settings_data->enabled, deprecation_detection, VK_LAYER_DEPRECATION_DETECTION);
+        // This is turned off until WG decides on naming and how this should work
+        // SetValidationSetting(layer_setting_set, settings_data->enabled, deprecation_detection, VK_LAYER_DEPRECATION_DETECTION);
     }
 
     // Only read the legacy disables flags when used, not their replacement.

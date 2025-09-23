@@ -7,6 +7,8 @@
 
 # Deprecation Detection
 
+⚠️⚠️ This section is still WIP and not ready for use today! ⚠️⚠️
+
 The Vulkan Working Group plans to continue to grow the list of what is [deprecated functionality](https://docs.vulkan.org/spec/latest/appendices/deprecation.html#_deprecated_functionality). These are things that will **not** be removed from the API, but have a "newer" way to use that developers should try to use instead.
 
 This all works by first marking things with a `<deprecate>` tags in the [vk.xml](https://github.com/KhronosGroup/Vulkan-Docs/blob/main/xml/vk.xml). From here the Validation Layers can generated the [deprecation.cpp](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/layers/vulkan/generated/deprecation.cpp) file.
