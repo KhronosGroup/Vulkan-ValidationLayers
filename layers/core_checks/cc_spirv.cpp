@@ -1177,14 +1177,15 @@ bool CoreChecks::ValidateShaderExecutionModes(const spirv::Module &module_state,
     if (entrypoint.stage == VK_SHADER_STAGE_GEOMETRY_BIT) {
         const uint32_t vertices_out = entrypoint.execution_mode.output_vertices;
         const uint32_t invocations = entrypoint.execution_mode.invocations;
-        if (vertices_out == 0 || vertices_out > phys_dev_props.limits.maxGeometryOutputVertices) {
+        if (vertices_out != spirv::kInvalidValue &&
+            (vertices_out == 0 || vertices_out > phys_dev_props.limits.maxGeometryOutputVertices)) {
             const char *vuid =
                 pipeline ? "VUID-VkPipelineShaderStageCreateInfo-stage-00714" : "VUID-VkShaderCreateInfoEXT-pCode-08454";
             skip |= LogError(vuid, module_state.handle(), loc,
                              "SPIR-V (Geometry stage) entry point must have an OpExecutionMode instruction that "
                              "specifies a maximum output vertex count that is greater than 0 and less "
-                             "than or equal to maxGeometryOutputVertices. "
-                             "OutputVertices=%" PRIu32 ", maxGeometryOutputVertices=%" PRIu32 ".",
+                             "than or equal to maxGeometryOutputVertices.\n"
+                             "OutputVertices = %" PRIu32 "\nmaxGeometryOutputVertices = %" PRIu32 "\n",
                              vertices_out, phys_dev_props.limits.maxGeometryOutputVertices);
         }
 
@@ -1194,8 +1195,8 @@ bool CoreChecks::ValidateShaderExecutionModes(const spirv::Module &module_state,
             skip |= LogError(vuid, module_state.handle(), loc,
                              "SPIR-V (Geometry stage) entry point must have an OpExecutionMode instruction that "
                              "specifies an invocation count that is greater than 0 and less "
-                             "than or equal to maxGeometryShaderInvocations. "
-                             "Invocations=%" PRIu32 ", maxGeometryShaderInvocations=%" PRIu32 ".",
+                             "than or equal to maxGeometryShaderInvocations.\n"
+                             "Invocations = %" PRIu32 "\nmaxGeometryShaderInvocations = %" PRIu32 "\n",
                              invocations, phys_dev_props.limits.maxGeometryShaderInvocations);
         }
     } else if (entrypoint.stage == VK_SHADER_STAGE_FRAGMENT_BIT &&
