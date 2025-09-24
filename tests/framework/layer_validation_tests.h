@@ -105,8 +105,7 @@ bool FormatIsSupported(VkPhysicalDevice phy, VkFormat format, VkImageTiling tili
 bool FormatFeaturesAreSupported(VkPhysicalDevice phy, VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags features);
 
 // Returns true if format and *all* requested features are available.
-bool ImageFormatIsSupported(const VkInstance inst, const VkPhysicalDevice phy, const VkImageCreateInfo info,
-                            const VkFormatFeatureFlags features);
+bool ImageFormatIsSupported(const VkPhysicalDevice phy, const VkImageCreateInfo info, const VkFormatFeatureFlags features);
 
 // Returns true if format and *all* requested features are available.
 bool BufferFormatAndFeaturesSupported(VkPhysicalDevice phy, VkFormat format, VkFormatFeatureFlags features);
@@ -442,8 +441,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsCallback(VkDebugUtilsMessageSeverityFla
 
 void TestRenderPassCreate(ErrorMonitor *error_monitor, const vkt::Device &device, const VkRenderPassCreateInfo &create_info,
                           bool rp2_supported, const char *rp1_vuid, const char *rp2_vuid);
-void PositiveTestRenderPassCreate(ErrorMonitor *error_monitor, const vkt::Device &device, const VkRenderPassCreateInfo &create_info,
-                                  bool rp2_supported);
+void PositiveTestRenderPassCreate(const vkt::Device &device, const VkRenderPassCreateInfo &create_info, bool rp2_supported);
 void PositiveTestRenderPass2KHRCreate(const vkt::Device &device, const VkRenderPassCreateInfo2KHR &create_info);
 void TestRenderPass2KHRCreate(ErrorMonitor &error_monitor, const vkt::Device &device, const VkRenderPassCreateInfo2KHR &create_info,
                               const std::vector<const char *> &vuids);

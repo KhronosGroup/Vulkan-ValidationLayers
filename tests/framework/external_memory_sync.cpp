@@ -223,7 +223,7 @@ bool SemaphoreExportImportSupported(VkPhysicalDevice gpu, VkSemaphoreType semaph
         VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT | VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT;
 
     VkSemaphoreTypeCreateInfo type_info = vku::InitStructHelper();
-    type_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+    type_info.semaphoreType = semaphore_type;
 
     VkPhysicalDeviceExternalSemaphoreInfo external_info = vku::InitStructHelper(&type_info);
     external_info.handleType = handle_type;

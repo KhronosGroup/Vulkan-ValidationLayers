@@ -808,7 +808,7 @@ TEST_F(NegativeCopyBufferImage, CopyBufferCompressedMipLevels) {
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+    if (!ImageFormatIsSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
         GTEST_SKIP() << "image format not supported";
     }
     vkt::Image dst_image(*m_device, image_ci);
@@ -972,7 +972,7 @@ TEST_F(NegativeCopyBufferImage, CopyBufferSizePlanar) {
     image_ci.arrayLayers = 1;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
 
-    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, kSrcDstFeature)) {
+    if (!ImageFormatIsSupported(Gpu(), image_ci, kSrcDstFeature)) {
         // Assume there's low ROI on searching for different mp formats
         GTEST_SKIP() << "Multiplane image format not supported";
     }
@@ -4236,7 +4236,7 @@ TEST_F(NegativeCopyBufferImage, CopyBufferToCompressedNonFullTexelBlock) {
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+    if (!ImageFormatIsSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
         GTEST_SKIP() << "image format not supported";
     }
     vkt::Image dst_image(*m_device, image_ci);
@@ -4319,7 +4319,7 @@ TEST_F(NegativeCopyBufferImage, CopyCompress2DTo1D) {
     RETURN_IF_SKIP(Init());
 
     auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_BC1_RGBA_UNORM_BLOCK, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)) {
+    if (!ImageFormatIsSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)) {
         GTEST_SKIP() << "image format not supported";
     }
     vkt::Image src_image(*m_device, image_ci);
@@ -4327,7 +4327,7 @@ TEST_F(NegativeCopyBufferImage, CopyCompress2DTo1D) {
     image_ci.imageType = VK_IMAGE_TYPE_1D;
     image_ci.extent = {1024u, 1u, 1u};
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+    if (!ImageFormatIsSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
         GTEST_SKIP() << "image format not supported";
     }
     vkt::Image dst_image(*m_device, image_ci);
@@ -4364,7 +4364,7 @@ TEST_F(NegativeCopyBufferImage, CopyCompressToCompress) {
     image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_ci.extent = {30, 30, 1};
     image_ci.usage = kSrcDstUsage;
-    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, kSrcDstFeature)) {
+    if (!ImageFormatIsSupported(Gpu(), image_ci, kSrcDstFeature)) {
         GTEST_SKIP() << "image format not supported";
     }
     vkt::Image src_image(*m_device, image_ci);

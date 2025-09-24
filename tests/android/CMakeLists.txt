@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2023 Valve Corporation
-# Copyright (c) 2023 LunarG, Inc.
+# Copyright (c) 2023-2025 Valve Corporation
+# Copyright (c) 2023-2025 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
 #
 # To run our tests without issue we can inform the linker to not unload VVL at runtime.
 # This will prevent VVL from being unloaded by dlclose which will avoid the issue.
-# 
+#
 # https://github.com/android/ndk/issues/360
 # https://github.com/android/ndk/issues/360#issuecomment-339107521
 # https://github.com/android/ndk/releases/tag/r26-beta1
@@ -45,10 +45,18 @@ target_sources(android_glue PRIVATE
     ${native_app_glue_dir}/android_native_app_glue.h
 )
 
-target_link_libraries(vk_layer_validation_tests PRIVATE android_glue)
+# vk_test_framework needs this because that is where we have #include <android_native_app_glue.h>
+#
+# Because vk_test_framework is a static library, we still need vk_layer_validation_tests to have it order to resolve the symbols
+#
+# Likely a better way to do this
+target_link_libraries(vk_test_framework PUBLIC android_glue)
+target_link_libraries(vk_layer_validation_tests PUBLIC android_glue)
 
 target_link_options(vk_layer_validation_tests PUBLIC LINKER:--version-script=${CMAKE_CURRENT_SOURCE_DIR}/android.map)
 
+# Change libvk_layer_validation_tests.so to libVulkanLayerValidationTests.so
+# (honestly not sure for convention or required by something)
 set_target_properties(vk_layer_validation_tests PROPERTIES OUTPUT_NAME "VulkanLayerValidationTests")
 
 install(TARGETS vk_layer_validation_tests DESTINATION ${CMAKE_INSTALL_LIBDIR})
