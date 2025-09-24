@@ -608,15 +608,13 @@ void FreeData(void *key, VkDevice device) {
 }
 
 void FreeAllData() {
-    {
-        last_used_device.store(nullptr);
-        WriteLockGuard lock(device_mutex);
-        device_data.clear();
-    }
-    {
-        WriteLockGuard lock(instance_mutex);
-        instance_data.clear();
-    }
+    // We use to have a WriteLockGuard here, but ran into threading issues.
+    // This function is solely called from the atexit() handler, there shouldn't be anything vulkan related going on any more in any
+    // application threads. See https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10659
+    last_used_device.store(nullptr);
+    device_data.clear();
+
+    instance_data.clear();
 }
 
 HandleWrapper::HandleWrapper(DebugReport *dr) : Logger(dr) {}
