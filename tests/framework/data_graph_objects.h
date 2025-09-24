@@ -71,8 +71,7 @@ class CreateDataGraphPipelineHelper {
     // info_override can be any callable that takes a CreatePipelineHelper &
     // flags, error can be any args accepted by "SetDesiredFailure".
     template <typename Test, typename OverrideFunc, typename Error>
-    static void OneshotTest(Test &test, const OverrideFunc &info_override, const VkFlags flags, const std::vector<Error> &errors,
-                            bool positive_test = false) {
+    static void OneshotTest(Test &test, const OverrideFunc &info_override, const VkFlags flags, const std::vector<Error> &errors) {
         CreateDataGraphPipelineHelper helper(test);
         info_override(helper);
         // Allow lambda to decide if to skip trying to compile pipeline to prevent crashing

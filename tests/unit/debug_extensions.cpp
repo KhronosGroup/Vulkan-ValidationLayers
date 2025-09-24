@@ -139,9 +139,7 @@ TEST_F(NegativeDebugExtensions, DebugUtilsName) {
     }
 
     DebugUtilsLabelCheckData callback_data;
-    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, DebugUtilsLabelCheckData *data) {
-        data->count++;
-    };
+    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *, DebugUtilsLabelCheckData *data) { data->count++; };
     callback_data.count = 0;
     callback_data.callback = empty_callback;
 
@@ -308,9 +306,7 @@ TEST_F(NegativeDebugExtensions, DebugUtilsParameterFlags) {
     RETURN_IF_SKIP(Init());
 
     DebugUtilsLabelCheckData callback_data;
-    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, DebugUtilsLabelCheckData *data) {
-        data->count++;
-    };
+    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *, DebugUtilsLabelCheckData *data) { data->count++; };
     callback_data.count = 0;
     callback_data.callback = empty_callback;
 
@@ -383,9 +379,7 @@ TEST_F(NegativeDebugExtensions, SetDebugUtilsObjectSecondDevice) {
     vkt::Device second_device(gpu_, m_device_extension_names, &features);
 
     DebugUtilsLabelCheckData callback_data;
-    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, DebugUtilsLabelCheckData *data) {
-        data->count++;
-    };
+    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *, DebugUtilsLabelCheckData *data) { data->count++; };
     callback_data.count = 0;
     callback_data.callback = empty_callback;
 
@@ -421,9 +415,7 @@ TEST_F(NegativeDebugExtensions, SetDebugUtilsObjectDestroyedHandle) {
     }
 
     DebugUtilsLabelCheckData callback_data;
-    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, DebugUtilsLabelCheckData *data) {
-        data->count++;
-    };
+    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *, DebugUtilsLabelCheckData *data) { data->count++; };
     callback_data.count = 0;
     callback_data.callback = empty_callback;
 

@@ -63,7 +63,7 @@ struct SurfaceContext {
     void Resize(uint32_t width, uint32_t height);
 #else
     static bool CanResize() { return false; }
-    void Resize(uint32_t width, uint32_t height) {}
+    void Resize(uint32_t, uint32_t) {}
 #endif
     void Destroy();
     ~SurfaceContext() { Destroy(); }

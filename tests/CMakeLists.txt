@@ -15,54 +15,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ~~~
+
+add_subdirectory(framework)
+
 if (ANDROID)
     add_library(vk_layer_validation_tests MODULE)
 else()
     add_executable(vk_layer_validation_tests)
 endif()
 target_sources(vk_layer_validation_tests PRIVATE
-    framework/android_hardware_buffer.h
-    framework/layer_validation_tests.h
-    framework/layer_validation_tests.cpp
-    framework/pipeline_helper.h
-    framework/pipeline_helper.cpp
-    framework/shader_helper.h
-    framework/shader_helper.cpp
-    framework/shader_object_helper.h
-    framework/shader_object_helper.cpp
-    framework/test_common.h
-    framework/shader_templates.h
-    framework/error_monitor.cpp
-    framework/error_monitor.h
-    framework/video_objects.h
-    framework/render.cpp
-    framework/render.h
-    framework/binding.h
-    framework/binding.cpp
-    framework/buffer_helper.h
-    framework/test_framework.cpp
-    framework/ray_tracing_objects.h
-    framework/ray_tracing_objects.cpp
-    framework/data_graph_objects.h
-    framework/data_graph_objects.cpp
-    framework/ray_tracing_helper_nv.h
-    framework/ray_tracing_helper_nv.cpp
-    framework/external_memory_sync.h
-    framework/external_memory_sync.cpp
-    framework/sync_helper.h
-    framework/sync_helper.cpp
-    framework/sync_val_tests.h
-    framework/descriptor_helper.h
-    framework/descriptor_helper.cpp
-    framework/thread_helper.h
-    framework/thread_helper.cpp
-    framework/gpu_av_helper.h
-    framework/render_pass_helper.h
-    framework/render_pass_helper.cpp
-    framework/feature_requirements.h
-    framework/feature_requirements.cpp
-    framework/queue_submit_context.h
-    framework/queue_submit_context.cpp
     unit/amd_best_practices.cpp
     unit/android_hardware_buffer.cpp
     unit/android_hardware_buffer_positive.cpp
@@ -295,49 +256,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     vvl_utils/small_vector.cpp
     vvl_utils/pnext_chain_extraction.cpp
 )
-if (APPLE)
-    target_sources(vk_layer_validation_tests PRIVATE
-        framework/apple_wsi.h
-        framework/apple_wsi.mm
-    )
-    # QuartzCore framework is needed for minimal Metal interaction
-    target_link_libraries(vk_layer_validation_tests PRIVATE "-framework QuartzCore")
-endif()
 
-get_target_property(TEST_SOURCES vk_layer_validation_tests SOURCES)
-source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${TEST_SOURCES})
-
-add_dependencies(vk_layer_validation_tests vvl)
-
-target_compile_options(vk_layer_validation_tests PRIVATE "$<IF:$<CXX_COMPILER_ID:MSVC>,/wd4100,-Wno-unused-parameter>")
-
-if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
-    target_compile_options(vk_layer_validation_tests PRIVATE
-        -Wno-sign-compare
-        -Wno-shorten-64-to-32
-        -Wno-missing-field-initializers
-    )
-    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        target_compile_options(vk_layer_validation_tests PRIVATE
-            -Wno-sign-conversion
-            -Wno-implicit-int-conversion
-        )
-    endif()
-elseif(MSVC)
-    target_compile_options(vk_layer_validation_tests PRIVATE
-        /wd4389 # signed/unsigned mismatch
-        /wd4267 # Disable some signed/unsigned mismatch warnings.
-    )
-
-    if (CMAKE_SIZEOF_VOID_P EQUAL 4)
-        # Due to IHV driver issues, we need the extra 2GB of virtual address space for 32 bit testing
-        target_link_options(vk_layer_validation_tests PRIVATE /LARGEADDRESSAWARE)
-    endif()
-endif()
-
-find_package(GTest CONFIG)
-find_package(glslang CONFIG)
-find_package(SPIRV-Tools CONFIG)
+# TODO - This slang stuff is a mess and currently need in both spots
 
 # Slang
 # ---
@@ -426,9 +346,6 @@ if(DEFINED SLANG_INSTALL_DIR)
             endif()
         endforeach()
     endif()
-
-    # Create an imported target for easier usage
-    add_library(slang SHARED IMPORTED GLOBAL)
 
     set_target_properties(slang PROPERTIES
         INTERFACE_INCLUDE_DIRECTORIES ${SLANG_INCLUDE_DIR}
@@ -529,29 +446,13 @@ else()
     set(USE_SLANG FALSE)
 endif()
 
+get_target_property(TEST_SOURCES vk_layer_validation_tests SOURCES)
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${TEST_SOURCES})
+
+add_dependencies(vk_layer_validation_tests vvl)
+
 target_link_libraries(vk_layer_validation_tests PRIVATE
-    VkLayer_utils
-    $<$<BOOL:${USE_SLANG}>:slang>
-    glslang::SPIRV
-    SPIRV-Tools-static
-    SPIRV-Headers::SPIRV-Headers
-    GTest::gtest
-    GTest::gtest_main
-    $<TARGET_NAME_IF_EXISTS:PkgConfig::XCB>
-    $<TARGET_NAME_IF_EXISTS:PkgConfig::X11>
-    $<TARGET_NAME_IF_EXISTS:PkgConfig::WAYlAND_CLIENT>
-)
-
-# setup framework/config.h using framework/config.h.in as a source
-file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/config_$<CONFIG>.h" INPUT "${CMAKE_CURRENT_SOURCE_DIR}/framework/config.h.in")
-
-# Since config_$<CONFIG>.h differs per build, set a compiler definition that files can use to include it
-target_compile_definitions(vk_layer_validation_tests PRIVATE CONFIG_HEADER_FILE="config_$<CONFIG>.h")
-
-target_sources(vk_layer_validation_tests PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/config_$<CONFIG>.h)
-target_include_directories(vk_layer_validation_tests PRIVATE
-    ${CMAKE_CURRENT_BINARY_DIR}
-    ${VVL_SOURCE_DIR}/layers/external
+    vk_test_framework
 )
 
 # More details in tests/android/mock/README.md
@@ -567,8 +468,8 @@ elseif (ANDROID)
 endif()
 
 install(TARGETS vk_layer_validation_tests)
+
 if(USE_SLANG)
-    target_compile_definitions(vk_layer_validation_tests PRIVATE VVL_USE_SLANG)
     install_slang_with_target(vk_layer_validation_tests lib)
 endif()
 

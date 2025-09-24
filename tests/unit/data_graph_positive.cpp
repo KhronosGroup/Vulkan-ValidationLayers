@@ -14,7 +14,7 @@
 
 class PositiveDataGraph : public DataGraphTest {};
 
-void DataGraphTest::InitBasicDataGraph(bool init_types) {
+void DataGraphTest::InitBasicDataGraph() {
     SetTargetApiVersion(VK_API_VERSION_1_4);
     AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
     AddRequiredExtensions(VK_ARM_DATA_GRAPH_EXTENSION_NAME);

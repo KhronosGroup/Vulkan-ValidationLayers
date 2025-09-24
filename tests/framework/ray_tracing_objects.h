@@ -189,7 +189,7 @@ class BuildGeometryInfoKHR {
 
     // Those functions call Build() on internal resources (geometries, src and dst acceleration structures, scratch buffer),
     // then will build/update an acceleration structure.
-    void BuildCmdBuffer(VkCommandBuffer cmd_buffer, bool use_ppGeometries = true);
+    void BuildCmdBuffer(VkCommandBuffer cmd_buffer);
     void BuildCmdBufferIndirect(VkCommandBuffer cmd_buffer);
     void BuildHost();
 
