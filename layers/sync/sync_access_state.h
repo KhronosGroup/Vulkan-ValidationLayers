@@ -521,7 +521,15 @@ class ResourceAccessState {
 
     VkPipelineStageFlags2 last_read_stages;
     VkPipelineStageFlags2 read_execution_barriers;
-    using ReadStates = small_vector<ReadState, 3, uint32_t>;
+
+    // NOTE: default capacity is set to 2. A single read is the most common case.
+    // Two reads occur sometimes and more than two is rare in practice.
+    // Syncval performance is sensitive to memory usage (there are many access objects).
+    // The early tests show that capacity of 1 can further improve performance and in some
+    // apps reduced memory bandwidth outweight the cost of additional allocations.
+    // More testing is needed.
+    using ReadStates = small_vector<ReadState, 2, uint32_t>;
+
     ReadStates last_reads;
 
     // TODO Input Attachment cleanup for multiple reads in a given stage
