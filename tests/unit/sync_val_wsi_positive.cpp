@@ -841,3 +841,101 @@ TEST_F(PositiveSyncValWsi, ResyncWithSwapchain4) {
 
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveSyncValWsi, PresentWithPrimaryLayoutTransitions) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddSurfaceExtension();
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    vkt::Semaphore acquire_semaphore(*m_device);
+    vkt::Semaphore submit_semaphore(*m_device);
+    const auto swapchain_images = m_swapchain.GetImages();
+    const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+
+    VkImageMemoryBarrier2 layout_transition_write = vku::InitStructHelper();
+    layout_transition_write.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    layout_transition_write.srcAccessMask = VK_ACCESS_2_NONE;
+    layout_transition_write.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    layout_transition_write.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+    layout_transition_write.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    layout_transition_write.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    layout_transition_write.image = swapchain_images[image_index];
+    layout_transition_write.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    VkImageMemoryBarrier2 layout_transition_present = vku::InitStructHelper();
+    layout_transition_present.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    layout_transition_present.srcAccessMask = VK_ACCESS_2_NONE;
+    layout_transition_present.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    layout_transition_present.dstAccessMask = VK_ACCESS_2_NONE;
+    layout_transition_present.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    layout_transition_present.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    layout_transition_present.image = swapchain_images[image_index];
+    layout_transition_present.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+    m_command_buffer.Barrier(layout_transition_write);
+    m_command_buffer.Barrier(layout_transition_present);
+    m_command_buffer.End();
+
+    m_default_queue->Submit2(m_command_buffer, vkt::Wait(acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT),
+                             vkt::Signal(submit_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT));
+    m_default_queue->Present(m_swapchain, image_index, submit_semaphore);
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveSyncValWsi, PresentWithSecondaryLayoutTransitions) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10693
+    TEST_DESCRIPTION("Test propagation of layout transition barriers in the context of submit time validation (ExecuteCommands)");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddSurfaceExtension();
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    vkt::Semaphore acquire_semaphore(*m_device);
+    vkt::Semaphore submit_semaphore(*m_device);
+    const auto swapchain_images = m_swapchain.GetImages();
+    const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+
+    VkImageMemoryBarrier2 layout_transition_write = vku::InitStructHelper();
+    layout_transition_write.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    layout_transition_write.srcAccessMask = VK_ACCESS_2_NONE;
+    layout_transition_write.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    layout_transition_write.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+    layout_transition_write.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    layout_transition_write.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    layout_transition_write.image = swapchain_images[image_index];
+    layout_transition_write.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    VkImageMemoryBarrier2 layout_transition_present = vku::InitStructHelper();
+    layout_transition_present.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    layout_transition_present.srcAccessMask = VK_ACCESS_2_NONE;
+    layout_transition_present.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    layout_transition_present.dstAccessMask = VK_ACCESS_2_NONE;
+    layout_transition_present.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    layout_transition_present.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    layout_transition_present.image = swapchain_images[image_index];
+    layout_transition_present.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    vkt::CommandBuffer cmd_barrier_write(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    cmd_barrier_write.Begin();
+    cmd_barrier_write.Barrier(layout_transition_write);
+    cmd_barrier_write.End();
+
+    vkt::CommandBuffer cmd_barrier_present(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    cmd_barrier_present.Begin();
+    cmd_barrier_present.Barrier(layout_transition_present);
+    cmd_barrier_present.End();
+
+    m_command_buffer.Begin();
+    m_command_buffer.ExecuteCommands(cmd_barrier_write);
+    m_command_buffer.ExecuteCommands(cmd_barrier_present);
+    m_command_buffer.End();
+
+    m_default_queue->Submit2(m_command_buffer, vkt::Wait(acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT),
+                             vkt::Signal(submit_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT));
+    m_default_queue->Present(m_swapchain, image_index, submit_semaphore);
+    m_default_queue->Wait();
+}
