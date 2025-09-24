@@ -398,19 +398,19 @@ TEST_F(PositiveRenderPass, ValidStages) {
     dependency.dstSubpass = 1;
     dependency.srcStageMask = kGraphicsStages;
     dependency.dstStageMask = kGraphicsStages;
-    PositiveTestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported);
+    PositiveTestRenderPassCreate(*m_device, rpci, rp2_supported);
 
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
     dependency.dstSubpass = 0;
     dependency.srcStageMask = kGraphicsStages | VK_PIPELINE_STAGE_HOST_BIT;
     dependency.dstStageMask = kGraphicsStages;
-    PositiveTestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported);
+    PositiveTestRenderPassCreate(*m_device, rpci, rp2_supported);
 
     dependency.srcSubpass = 0;
     dependency.dstSubpass = VK_SUBPASS_EXTERNAL;
     dependency.srcStageMask = kGraphicsStages;
     dependency.dstStageMask = VK_PIPELINE_STAGE_HOST_BIT;
-    PositiveTestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported);
+    PositiveTestRenderPassCreate(*m_device, rpci, rp2_supported);
 }
 
 TEST_F(PositiveRenderPass, SingleMipTransition) {
@@ -1020,7 +1020,7 @@ TEST_F(PositiveRenderPass, InputResolve) {
     rp.AddColorAttachment(1);
     rp.AddResolveAttachment(2);
 
-    PositiveTestRenderPassCreate(m_errorMonitor, *m_device, rp.GetCreateInfo(), rp2Supported);
+    PositiveTestRenderPassCreate(*m_device, rp.GetCreateInfo(), rp2Supported);
 }
 
 TEST_F(PositiveRenderPass, TestDepthStencilRenderPassTransition) {

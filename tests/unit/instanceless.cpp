@@ -218,6 +218,7 @@ void* VKAPI_PTR DummyAlloc(void*, size_t size, size_t alignment, VkSystemAllocat
     return std::align(alignment, size, mem_ptr, space);
 }
 void VKAPI_PTR DummyFree(void*, void* pMemory) {
+    (void)pMemory;
 // The test which uses DummyFree plays foul of the nature of memory allocation on Windows. Because it doesn't use
 // a VkAllocationCallback during vkCreateInstance then passes one in during vkDestroyInstance, the memory that is
 // allocated during vkCreateInstance lives in a different 'heap'. Trying to free it from the application with the

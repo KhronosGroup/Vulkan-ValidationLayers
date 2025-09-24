@@ -958,7 +958,7 @@ TEST_F(NegativeSubpass, InputAttachmentLayout) {
                                                       subpasses.data(), size32(deps), deps.data());
 
     // Current setup should be OK -- no attachment is both input and output in same subpass
-    PositiveTestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported);
+    PositiveTestRenderPassCreate(*m_device, rpci, rp2_supported);
 
     vkt::RenderPass render_pass(*m_device, rpci);
 }

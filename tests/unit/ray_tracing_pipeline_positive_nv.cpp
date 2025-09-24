@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,6 @@ TEST_F(PositiveRayTracingPipelineNV, BasicUsage) {
 
     RETURN_IF_SKIP(InitState());
 
-    auto ignore_update = [](nv::rt::RayTracingPipelineHelper &helper) {};
+    auto ignore_update = [](nv::rt::RayTracingPipelineHelper &) {};
     nv::rt::RayTracingPipelineHelper::OneshotPositiveTest(*this, ignore_update);
 }

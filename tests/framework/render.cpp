@@ -736,6 +736,7 @@ void SurfaceContext::Resize(uint32_t width, uint32_t height) {
 VkResult VkRenderFramework::CreateSurface(SurfaceContext &surface_context, vkt::Surface &surface, VkInstance custom_instance) {
     const VkInstance surface_instance = (custom_instance != VK_NULL_HANDLE) ? custom_instance : instance();
     (void)surface_instance;
+    (void)surface_context;
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
     if (IsExtensionsEnabled(VK_KHR_WIN32_SURFACE_EXTENSION_NAME)) {
         HINSTANCE window_instance = GetModuleHandle(nullptr);

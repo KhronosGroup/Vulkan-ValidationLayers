@@ -289,7 +289,7 @@ TEST_F(PositiveCommand, ThreadedCommandBuffersWithLabels) {
     constexpr int worker_count = 8;
     ThreadTimeoutHelper timeout_helper(worker_count);
 
-    auto worker_thread = [&](int worker_index) {
+    auto worker_thread = [&]() {
         auto timeout_guard = timeout_helper.ThreadGuard();
         // Command pool per worker thread
         vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
@@ -318,7 +318,7 @@ TEST_F(PositiveCommand, ThreadedCommandBuffersWithLabels) {
         }
     };
     std::vector<std::thread> workers;
-    for (int i = 0; i < worker_count; i++) workers.emplace_back(worker_thread, i);
+    for (int i = 0; i < worker_count; i++) workers.emplace_back(worker_thread);
     constexpr int wait_time = 60;
     if (!timeout_helper.WaitForThreads(wait_time))
         ADD_FAILURE() << "The waiting time for the worker threads exceeded the maximum limit: " << wait_time << " seconds.";

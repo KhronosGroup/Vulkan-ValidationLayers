@@ -21,12 +21,13 @@ void CreateDataGraphPipelineHelper::CreateShaderModule(const char* spirv_source)
     spvtools::SpirvTools tools{SPV_ENV_UNIVERSAL_1_6};
 
     std::string error_msg;
-    tools.SetMessageConsumer([&](spv_message_level_t level, const char*, const spv_position_t& position, const char* message) {
+    tools.SetMessageConsumer([&](spv_message_level_t, const char*, const spv_position_t& position, const char* message) {
         std::stringstream ss;
         ss << "on line " << position.line << ", column " << position.column << ": " << message;
         error_msg = ss.str();
     });
 
+    // TODO - Replace with ASMtoSPV
     std::vector<uint32_t> spirv_binary;
     if (!tools.Assemble(spirv_source, &spirv_binary)) {
         GTEST_FAIL() << "Failed to compile SPIRV shader module. Error:\n" << error_msg << std::endl

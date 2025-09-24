@@ -3361,11 +3361,8 @@ class VkVideoLayerTest : public VkLayerTest {
 
   private:
     // InitFramework and InitState is explicitly hidden because there is a custom Init that should be used instead
-    void InitFramework(void* instance_pnext = NULL) { assert(false); }
-    void InitState(VkPhysicalDeviceFeatures* features = nullptr, void* create_device_pnext = nullptr,
-                   const VkCommandPoolCreateFlags flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT) {
-        assert(false);
-    }
+    void InitFramework(void*) { assert(false); }
+    void InitState(VkPhysicalDeviceFeatures*, void*, const VkCommandPoolCreateFlags) { assert(false); }
 
     uint32_t FindQueueFamilySupportingCodecOp(VkVideoCodecOperationFlagBitsKHR codec_op) {
         uint32_t qfi = VK_QUEUE_FAMILY_IGNORED;

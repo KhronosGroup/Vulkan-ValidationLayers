@@ -15,8 +15,8 @@
 #include "../framework/data_graph_objects.h"
 
 namespace {
-VKAPI_ATTR VkBool32 VKAPI_CALL EmptyDebugReportCallback(VkDebugReportFlagsEXT message_flags, VkDebugReportObjectTypeEXT, uint64_t,
-                                                        size_t, int32_t, const char *, const char *message, void *user_data) {
+VKAPI_ATTR VkBool32 VKAPI_CALL EmptyDebugReportCallback(VkDebugReportFlagsEXT, VkDebugReportObjectTypeEXT, uint64_t, size_t,
+                                                        int32_t, const char *, const char *, void *) {
     return VK_FALSE;
 }
 }  // namespace
@@ -431,7 +431,7 @@ TEST_F(NegativeParent, Instance_DebugUtilsMessenger) {
     RETURN_IF_SKIP(Init());
     vkt::Instance instance2(GetInstanceCreateInfo());
 
-    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, DebugUtilsLabelCheckData *data) {};
+    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *, DebugUtilsLabelCheckData *) {};
     DebugUtilsLabelCheckData callback_data{};
     callback_data.callback = empty_callback;
 

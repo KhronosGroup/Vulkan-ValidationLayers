@@ -27,8 +27,10 @@ TEST_F(NegativeDataGraph, CreateDataGraphPipelinesFeatureNotEnabled) {
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
     RETURN_IF_SKIP(Init());
 
-    auto set_info = [](vkt::dg::CreateDataGraphPipelineHelper &helper) {};
-    vkt::dg::CreateDataGraphPipelineHelper::OneshotTest(*this, set_info, 0, "VUID-vkCreateDataGraphPipelinesARM-dataGraph-09760");
+    vkt::dg::CreateDataGraphPipelineHelper pipe(*this);
+    m_errorMonitor->SetDesiredError("VUID-vkCreateDataGraphPipelinesARM-dataGraph-09760");
+    pipe.CreateDataGraphPipeline();
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDataGraph, CreateDataGraphPipelinesDeferredOperationNotNull) {

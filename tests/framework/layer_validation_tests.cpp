@@ -79,8 +79,7 @@ bool FormatFeaturesAreSupported(VkPhysicalDevice phy, VkFormat format, VkImageTi
     return (features == (phy_features & features));
 }
 
-bool ImageFormatIsSupported(const VkInstance inst, const VkPhysicalDevice phy, const VkImageCreateInfo info,
-                            const VkFormatFeatureFlags features) {
+bool ImageFormatIsSupported(const VkPhysicalDevice phy, const VkImageCreateInfo info, const VkFormatFeatureFlags features) {
     // Verify physical device support of format features
     if (!FormatFeaturesAreSupported(phy, info.format, info.tiling, features)) {
         return false;
@@ -120,8 +119,7 @@ bool operator==(const VkDebugUtilsLabelEXT &rhs, const VkDebugUtilsLabelEXT &lhs
     return is_equal;
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                                  VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsCallback(VkDebugUtilsMessageSeverityFlagBitsEXT, VkDebugUtilsMessageTypeFlagsEXT,
                                                   const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData) {
     auto *data = reinterpret_cast<DebugUtilsLabelCheckData *>(pUserData);
     data->callback(pCallbackData, data);
@@ -151,8 +149,7 @@ void TestRenderPassCreate(ErrorMonitor *error_monitor, const vkt::Device &device
     }
 }
 
-void PositiveTestRenderPassCreate(ErrorMonitor *error_monitor, const vkt::Device &device, const VkRenderPassCreateInfo &create_info,
-                                  bool rp2_supported) {
+void PositiveTestRenderPassCreate(const vkt::Device &device, const VkRenderPassCreateInfo &create_info, bool rp2_supported) {
     vkt::RenderPass rp(device, create_info);
     if (rp2_supported) {
         vkt::RenderPass rp2(device, *ConvertVkRenderPassCreateInfoToV2KHR(create_info).ptr());
@@ -537,6 +534,7 @@ bool VkLayerTest::LoadDeviceProfileLayer(PFN_VkSetPhysicalDeviceProperties2EXT &
 }
 
 void PrintAndroid(const char *c) {
+    (void)c;
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     __android_log_print(ANDROID_LOG_INFO, "VulkanLayerValidationTests", "%s", c);
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
@@ -641,7 +639,7 @@ class LogcatPrinter : public ::testing::EmptyTestEventListener {
     };
 };
 
-static int32_t processInput(struct android_app *app, AInputEvent *event) { return 0; }
+static int32_t processInput(struct android_app *, AInputEvent *) { return 0; }
 
 static void processCommand(struct android_app *app, int32_t cmd) {
     switch (cmd) {
