@@ -102,8 +102,11 @@ std::string DescriptorValidator::DescribeDescriptor(const spirv::ResourceInterfa
             break;
     }
 
-    ss << "descriptor [" << FormatHandle(descriptor_set.Handle()) << ", Set " << set_index << ", Binding "
-       << resource_variable.decorations.binding << ", Index " << index;
+    ss << "descriptor [";
+    if (!descriptor_set.IsPushDescriptor()) {
+        ss << FormatHandle(descriptor_set.Handle()) << ", ";
+    }
+    ss << "Set " << set_index << ", Binding " << resource_variable.decorations.binding << ", Index " << index;
 
     // If multiple variables tied to a binding, don't attempt to detect which one
     if (!resource_variable.debug_name.empty()) {
@@ -534,21 +537,28 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         // Verify Image Layout
         // No "invalid layout" VUID required for this call, since the optimal_layout parameter is UNDEFINED.
         bool hit_error = false;
-        dev_proxy.VerifyImageLayout(cb_state, *image_view_state, image_layout, loc.Get(),
-                                    "VUID-VkDescriptorImageInfo-imageLayout-00344", &hit_error);
-        if (hit_error) {
-            std::stringstream msg;
-            if (!descriptor_set.IsPushDescriptor()) {
-                msg << "Descriptor set " << FormatHandle(descriptor_set.Handle())
-                    << " Image layout specified by vkCmdBindDescriptorSets doesn't match actual image layout at time "
-                       "descriptor is used.";
-            } else {
-                msg << "Image layout specified by vkCmdPushDescriptorSet doesn't match actual image layout at time "
-                       "descriptor is used.";
+        if (const auto image_layout_map = cb_state.GetImageLayoutMap(image_state->VkHandle())) {
+            dev_proxy.VerifyImageLayoutRange(cb_state, *image_state, image_view_state->create_info.subresourceRange.aspectMask,
+                                             image_layout, *image_layout_map,
+                                             subresource_adapter::RangeGenerator(image_view_state->range_generator), loc.Get(),
+                                             "VUID-VkDescriptorImageInfo-imageLayout-00344", &hit_error);
+
+            if (hit_error) {
+                std::stringstream msg;
+                if (!descriptor_set.IsPushDescriptor()) {
+                    msg << "Descriptor set " << FormatHandle(descriptor_set.Handle())
+                        << " Image layout specified by vkCmdBindDescriptorSets ";
+                } else {
+                    msg << "Image layout specified by vkCmdPushDescriptorSet ";
+                }
+                msg << "doesn't match actual image layout at time descriptor ("
+                    << DescribeDescriptor(resource_variable, index, descriptor_type) << ") is used.";
+                // TODO - This is bad, VerifyImageLayoutRange should be able to return a bool (or pass info into it) and only have a
+                // single VU here https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10730
+                msg << " See previous error callback for specific details." << DescribeInstruction();
+                const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view);
+                skip |= LogError(vuids->descriptor_buffer_bit_set_08114, objlist, loc.Get(), "%s.", msg.str().c_str());
             }
-            msg << " See previous error callback for specific details." << DescribeInstruction();
-            const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view);
-            skip |= LogError(vuids->descriptor_buffer_bit_set_08114, objlist, loc.Get(), "%s.", msg.str().c_str());
         }
     }
 

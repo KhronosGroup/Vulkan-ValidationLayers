@@ -91,6 +91,12 @@ namespace spirv {
 struct StatelessData;
 }  // namespace spirv
 
+namespace subresource_adapter {
+class RangeGenerator;
+}  // namespace subresource_adapter
+
+class CommandBufferImageLayoutMap;
+
 #define VALSTATETRACK_MAP_AND_TRAITS(handle_type, state_type, map_member)                 \
     vvl::concurrent_unordered_map<handle_type, std::shared_ptr<state_type>> map_member;   \
     template <typename Dummy>                                                             \
@@ -2191,9 +2197,11 @@ class DeviceProxy : public vvl::base::Device {
     }
 
     // Currently no GPU-AV check
-    virtual bool VerifyImageLayout(const vvl::CommandBuffer& cb_state, const vvl::ImageView& image_view_state,
-                                   VkImageLayout explicit_layout, const Location& image_loc, const char* mismatch_layout_vuid,
-                                   bool* error) const {
+    virtual bool VerifyImageLayoutRange(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
+                                        VkImageAspectFlags aspect_mask, VkImageLayout explicit_layout,
+                                        const CommandBufferImageLayoutMap& cb_layout_map,
+                                        subresource_adapter::RangeGenerator&& range_gen, const Location& image_loc,
+                                        const char* mismatch_layout_vuid, bool* error) const {
         return false;
     }
 

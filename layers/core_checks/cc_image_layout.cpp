@@ -90,7 +90,7 @@ bool CoreChecks::VerifyImageLayoutRange(const vvl::CommandBuffer &cb_state, cons
                 const subresource_adapter::Subresource subresource = image_state.subresource_encoder.Decode(range.begin);
                 const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
                 local_skip |= LogError(mismatch_layout_vuid, objlist, loc,
-                                       "Cannot use %s (layer=%" PRIu32 " mip=%" PRIu32
+                                       "Cannot use %s (layer %" PRIu32 ", mip %" PRIu32
                                        ") with specific layout %s that doesn't match the "
                                        "%s layout %s.",
                                        FormatHandle(image_state).c_str(), subresource.arrayLayer, subresource.mipLevel,
@@ -128,22 +128,6 @@ bool CoreChecks::VerifyImageLayoutSubresource(const vvl::CommandBuffer &cb_state
 
     return VerifyImageLayoutRange(cb_state, image_state, normalized_subresource_range.aspectMask, explicit_layout,
                                   *image_layout_map, std::move(range_gen), loc, vuid, nullptr);
-}
-
-bool CoreChecks::VerifyImageLayout(const vvl::CommandBuffer &cb_state, const vvl::ImageView &image_view_state,
-                                   VkImageLayout explicit_layout, const Location &loc, const char *mismatch_layout_vuid,
-                                   bool *error) const {
-    if (disabled[image_layout_validation]) {
-        return false;
-    }
-    const auto image_layout_map = cb_state.GetImageLayoutMap(image_view_state.image_state->VkHandle());
-    if (!image_layout_map) {
-        return false;
-    }
-
-    return VerifyImageLayoutRange(cb_state, *image_view_state.image_state, image_view_state.create_info.subresourceRange.aspectMask,
-                                  explicit_layout, *image_layout_map, RangeGenerator(image_view_state.range_generator), loc,
-                                  mismatch_layout_vuid, error);
 }
 
 bool CoreChecks::VerifyVideoImageLayout(const vvl::CommandBuffer &cb_state, const vvl::Image &image_state,
