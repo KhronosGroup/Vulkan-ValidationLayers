@@ -1631,14 +1631,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     {
         m_command_buffer.Begin();
         auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
-        blas.BuildCmdBuffer(m_command_buffer, true);
-        m_command_buffer.End();
-    }
-
-    {
-        m_command_buffer.Begin();
-        auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
-        blas.BuildCmdBuffer(m_command_buffer, false);
+        blas.BuildCmdBuffer(m_command_buffer);
         m_command_buffer.End();
     }
 

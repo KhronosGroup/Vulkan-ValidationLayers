@@ -95,17 +95,16 @@ class Barrier2QueueFamilyTestHelper : public BarrierQueueFamilyBase {
     VkBufferMemoryBarrier2 buffer_barrier_;
 };
 
-void ValidOwnershipTransferOp(ErrorMonitor *monitor, vkt::Queue *queue, vkt::CommandBuffer &cb, VkPipelineStageFlags src_stages,
+void ValidOwnershipTransferOp(vkt::Queue *queue, vkt::CommandBuffer &cb, VkPipelineStageFlags src_stages,
                               VkPipelineStageFlags dst_stages, const VkBufferMemoryBarrier *buf_barrier,
                               const VkImageMemoryBarrier *img_barrier);
 
-void ValidOwnershipTransferOp(ErrorMonitor *monitor, vkt::Queue *queue, vkt::CommandBuffer &cb,
-                              const VkBufferMemoryBarrier2 *buf_barrier, const VkImageMemoryBarrier2 *img_barrier);
+void ValidOwnershipTransferOp(vkt::Queue *queue, vkt::CommandBuffer &cb, const VkBufferMemoryBarrier2 *buf_barrier,
+                              const VkImageMemoryBarrier2 *img_barrier);
 
-void ValidOwnershipTransfer(ErrorMonitor *monitor, vkt::Queue *queue_from, vkt::CommandBuffer &cb_from, vkt::Queue *queue_to,
-                            vkt::CommandBuffer &cb_to, VkPipelineStageFlags src_stages, VkPipelineStageFlags dst_stages,
+void ValidOwnershipTransfer(vkt::Queue *queue_from, vkt::CommandBuffer &cb_from, vkt::Queue *queue_to, vkt::CommandBuffer &cb_to,
+                            VkPipelineStageFlags src_stages, VkPipelineStageFlags dst_stages,
                             const VkBufferMemoryBarrier *buf_barrier, const VkImageMemoryBarrier *img_barrier);
 
-void ValidOwnershipTransfer(ErrorMonitor *monitor, vkt::Queue *queue_from, vkt::CommandBuffer &cb_from, vkt::Queue *queue_to,
-                            vkt::CommandBuffer &cb_to, const VkBufferMemoryBarrier2 *buf_barrier,
-                            const VkImageMemoryBarrier2 *img_barrier);
+void ValidOwnershipTransfer(vkt::Queue *queue_from, vkt::CommandBuffer &cb_from, vkt::Queue *queue_to, vkt::CommandBuffer &cb_to,
+                            const VkBufferMemoryBarrier2 *buf_barrier, const VkImageMemoryBarrier2 *img_barrier);

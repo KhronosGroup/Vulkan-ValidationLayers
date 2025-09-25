@@ -248,7 +248,7 @@ void Barrier2QueueFamilyTestHelper::operator()(const std::string &img_err, const
     context_->Reset();
 }
 
-void ValidOwnershipTransferOp(ErrorMonitor *monitor, vkt::Queue *queue, vkt::CommandBuffer &cb, VkPipelineStageFlags src_stages,
+void ValidOwnershipTransferOp(vkt::Queue *queue, vkt::CommandBuffer &cb, VkPipelineStageFlags src_stages,
                               VkPipelineStageFlags dst_stages, const VkBufferMemoryBarrier *buf_barrier,
                               const VkImageMemoryBarrier *img_barrier) {
     cb.Begin();
@@ -260,16 +260,15 @@ void ValidOwnershipTransferOp(ErrorMonitor *monitor, vkt::Queue *queue, vkt::Com
     queue->Wait();
 }
 
-void ValidOwnershipTransfer(ErrorMonitor *monitor, vkt::Queue *queue_from, vkt::CommandBuffer &cb_from, vkt::Queue *queue_to,
-                            vkt::CommandBuffer &cb_to, VkPipelineStageFlags src_stages, VkPipelineStageFlags dst_stages,
+void ValidOwnershipTransfer(vkt::Queue *queue_from, vkt::CommandBuffer &cb_from, vkt::Queue *queue_to, vkt::CommandBuffer &cb_to,
+                            VkPipelineStageFlags src_stages, VkPipelineStageFlags dst_stages,
                             const VkBufferMemoryBarrier *buf_barrier, const VkImageMemoryBarrier *img_barrier) {
-    ValidOwnershipTransferOp(monitor, queue_from, cb_from, src_stages, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, buf_barrier,
-                             img_barrier);
-    ValidOwnershipTransferOp(monitor, queue_to, cb_to, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, dst_stages, buf_barrier, img_barrier);
+    ValidOwnershipTransferOp(queue_from, cb_from, src_stages, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, buf_barrier, img_barrier);
+    ValidOwnershipTransferOp(queue_to, cb_to, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, dst_stages, buf_barrier, img_barrier);
 }
 
-void ValidOwnershipTransferOp(ErrorMonitor *monitor, vkt::Queue *queue, vkt::CommandBuffer &cb,
-                              const VkBufferMemoryBarrier2 *buf_barrier, const VkImageMemoryBarrier2 *img_barrier) {
+void ValidOwnershipTransferOp(vkt::Queue *queue, vkt::CommandBuffer &cb, const VkBufferMemoryBarrier2 *buf_barrier,
+                              const VkImageMemoryBarrier2 *img_barrier) {
     cb.Begin();
     VkDependencyInfo dep_info = vku::InitStructHelper();
     dep_info.bufferMemoryBarrierCount = (buf_barrier) ? 1 : 0;
@@ -282,9 +281,8 @@ void ValidOwnershipTransferOp(ErrorMonitor *monitor, vkt::Queue *queue, vkt::Com
     queue->Wait();
 }
 
-void ValidOwnershipTransfer(ErrorMonitor *monitor, vkt::Queue *queue_from, vkt::CommandBuffer &cb_from, vkt::Queue *queue_to,
-                            vkt::CommandBuffer &cb_to, const VkBufferMemoryBarrier2 *buf_barrier,
-                            const VkImageMemoryBarrier2 *img_barrier) {
+void ValidOwnershipTransfer(vkt::Queue *queue_from, vkt::CommandBuffer &cb_from, vkt::Queue *queue_to, vkt::CommandBuffer &cb_to,
+                            const VkBufferMemoryBarrier2 *buf_barrier, const VkImageMemoryBarrier2 *img_barrier) {
     VkBufferMemoryBarrier2 fixup_buf_barrier;
     VkImageMemoryBarrier2 fixup_img_barrier;
     if (buf_barrier) {
@@ -298,7 +296,7 @@ void ValidOwnershipTransfer(ErrorMonitor *monitor, vkt::Queue *queue_from, vkt::
         fixup_img_barrier.dstAccessMask = 0;
     }
 
-    ValidOwnershipTransferOp(monitor, queue_from, cb_from, buf_barrier ? &fixup_buf_barrier : nullptr,
+    ValidOwnershipTransferOp(queue_from, cb_from, buf_barrier ? &fixup_buf_barrier : nullptr,
                              img_barrier ? &fixup_img_barrier : nullptr);
 
     if (buf_barrier) {
@@ -311,6 +309,6 @@ void ValidOwnershipTransfer(ErrorMonitor *monitor, vkt::Queue *queue_from, vkt::
         fixup_img_barrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
         fixup_img_barrier.srcAccessMask = 0;
     }
-    ValidOwnershipTransferOp(monitor, queue_to, cb_to, buf_barrier ? &fixup_buf_barrier : nullptr,
+    ValidOwnershipTransferOp(queue_to, cb_to, buf_barrier ? &fixup_buf_barrier : nullptr,
                              img_barrier ? &fixup_img_barrier : nullptr);
 }
