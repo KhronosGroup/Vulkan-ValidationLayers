@@ -1082,16 +1082,12 @@ class CoreChecks : public vvl::DeviceProxy {
     bool VerifyImageLayoutRange(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, VkImageAspectFlags aspect_mask,
                                 VkImageLayout explicit_layout, const CommandBufferImageLayoutMap& cb_layout_map,
                                 subresource_adapter::RangeGenerator&& range_gen, const Location& image_loc,
-                                const char* mismatch_layout_vuid, bool* error) const;
+                                const char* mismatch_layout_vuid, bool* error) const override;
 
     // NOTE: depth_offset/depth_extent parameters are used to support per-slice image layout transitions in 3d image
     bool VerifyImageLayoutSubresource(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
                                       const VkImageSubresourceLayers& subLayers, int32_t depth_offset, uint32_t depth_extent,
                                       VkImageLayout explicit_layout, const Location& image_loc, const char* vuid) const;
-
-    bool VerifyImageLayout(const vvl::CommandBuffer& cb_state, const vvl::ImageView& image_view_state,
-                           VkImageLayout explicit_layout, const Location& image_loc, const char* mismatch_layout_vuid,
-                           bool* error) const override;
 
     bool VerifyVideoImageLayout(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
                                 const VkImageSubresourceRange& normalized_subresource_range, VkImageLayout explicit_layout,
