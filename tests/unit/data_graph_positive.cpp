@@ -10,9 +10,7 @@
  */
 
 #include "../framework/layer_validation_tests.h"
-#include "../framework/pipeline_helper.h"
 #include "../framework/data_graph_objects.h"
-#include "generated/pnext_chain_extraction.h"
 
 class PositiveDataGraph : public DataGraphTest {};
 

@@ -2808,14 +2808,15 @@ bool CoreChecks::ValidateBindDataGraphPipelineSessionMemoryARM(const VkBindDataG
                 mem_info->allocate_info.allocationSize, bind_info.memoryOffset, mem_reqs.size);
         }
     }
+
     // Validate compatible protected session and memory
-    if ((session_state->Unprotected() == false) && (mem_info->unprotected == true)) {
+    if (!session_state->Unprotected() && mem_info->unprotected) {
         const char *vuid = "VUID-VkBindDataGraphPipelineSessionMemoryInfoARM-session-09791";
         skip |= LogError(vuid, objlist, bind_info_loc.dot(Field::memory),
                          "(%s) was not created with protected memory but the VkDataGraphPipelineSessionARM (%s) was "
                          "set to use protected memory.",
                          FormatHandle(bind_info.memory).c_str(), FormatHandle(bind_info.session).c_str());
-    } else if ((session_state->Unprotected() == true) && (mem_info->unprotected == false)) {
+    } else if (session_state->Unprotected() && !mem_info->unprotected) {
         const char *vuid = "VUID-VkBindDataGraphPipelineSessionMemoryInfoARM-session-09792";
         skip |= LogError(vuid, objlist, bind_info_loc.dot(Field::memory),
                          "(%s) was created with protected memory but the VkDataGraphPipelineSessionARM (%s) was not "

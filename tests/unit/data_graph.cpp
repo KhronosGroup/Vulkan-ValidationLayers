@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2025 The Khronos Group Inc.
  * Copyright (C) 2025 Arm Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -9,12 +9,10 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include "containers/container_utils.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/data_graph_objects.h"
-#include "generated/pnext_chain_extraction.h"
 #include <vector>
 
 class NegativeDataGraph : public DataGraphTest {};
