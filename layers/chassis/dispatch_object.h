@@ -236,6 +236,7 @@ class Instance : public HandleWrapper {
     ~Instance();
 
     void InitValidationObjects();
+    void FindSupportedExtensions();
 
     // VkDisplayKHR objects are statically created in the driver at VkCreateInstance.
     // They live with the PhyiscalDevice and apps never created/destroy them.

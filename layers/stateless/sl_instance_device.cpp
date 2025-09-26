@@ -91,7 +91,7 @@ bool Instance::ValidateExtensionReqs(const ExtensionState &extensions, const cha
     // Check against the required list in the info
     std::vector<const char *> missing;
     for (const auto &req : info.requirements) {
-        if (!(extensions.*(req.enabled))) {
+        if (!IsExtEnabled(extensions.*(req.enabled))) {
             missing.push_back(req.name);
         }
     }
@@ -108,7 +108,7 @@ bool Instance::ValidateExtensionReqs(const ExtensionState &extensions, const cha
 ExtEnabled ExtensionStateByName(const DeviceExtensions &extensions, vvl::Extension extension) {
     auto info = extensions.GetInfo(extension);
     // unknown extensions can't be enabled in extension struct
-    ExtEnabled state = info.state ? extensions.*(info.state) : kNotEnabled;
+    ExtEnabled state = info.state ? extensions.*(info.state) : kNotSupported;
     return state;
 }
 

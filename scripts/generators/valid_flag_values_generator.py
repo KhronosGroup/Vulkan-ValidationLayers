@@ -77,7 +77,7 @@ class ValidFlagValuesOutputGenerator(BaseGenerator):
             ''')
 
         out.append('''
-            vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitmask, VkFlags value) const {
+            vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitmask, VkFlags value, bool instance_function) const {
                 switch(flag_bitmask) {
             ''')
         for bitmask in [x for x in self.vk.bitmasks.values() if x.name not in self.ignoreList and not x.returnedOnly and x.bitWidth == 32]:
@@ -101,17 +101,23 @@ class ValidFlagValuesOutputGenerator(BaseGenerator):
 
             for expression, names in expressionMap.items():
                 extensions = expression.split(',')
-                checkExpression = []
+                checkExpressionInstance = []
+                checkExpressionDevice = []
                 for extension in extensions:
-                    checkExpression.append(f'!IsExtEnabled(extensions.{extension.lower()})')
-                checkExpression = " && ".join(checkExpression)
+                    if (self.vk.extensions[extension].device):
+                        checkExpressionInstance.append(f'!IsExtSupported(extensions.{extension.lower()})')
+                    else:
+                        checkExpressionInstance.append(f'!IsExtEnabled(extensions.{extension.lower()})')
+                    checkExpressionDevice.append(f'!IsExtEnabled(extensions.{extension.lower()})')
+                checkExpressionInstance = " && ".join(checkExpressionInstance)
+                checkExpressionDevice = " && ".join(checkExpressionDevice)
                 resultExpression = []
                 for extension in extensions:
                     resultExpression.append(f'vvl::Extension::_{extension}')
                 resultExpression = ", ".join(resultExpression)
 
                 out.append(f'if (value & ({" | ".join(names)})) {{\n')
-                out.append(f'   if ({checkExpression}) {{\n')
+                out.append(f'   if ((instance_function && {checkExpressionInstance}) || (!instance_function && {checkExpressionDevice})) {{\n')
                 out.append(f'       return {{{resultExpression}}};\n')
                 out.append('    }')
                 out.append('}')
@@ -125,7 +131,7 @@ class ValidFlagValuesOutputGenerator(BaseGenerator):
             ''')
 
         out.append('''
-            vvl::Extensions stateless::Context::IsValidFlag64Value(vvl::FlagBitmask flag_bitmask, VkFlags64 value) const {
+            vvl::Extensions stateless::Context::IsValidFlag64Value(vvl::FlagBitmask flag_bitmask, VkFlags64 value, bool instance_function) const {
                 switch(flag_bitmask) {
             ''')
         for bitmask in [x for x in self.vk.bitmasks.values() if x.name not in self.ignoreList and not x.returnedOnly and x.bitWidth == 64]:

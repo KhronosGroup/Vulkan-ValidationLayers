@@ -391,7 +391,7 @@ bool Context::ValidateFlagsImplementation(const Location &loc, vvl::FlagBitmask 
 }
 
 bool Context::ValidateFlags(const Location &loc, vvl::FlagBitmask flag_bitmask, VkFlags all_flags, VkFlags value,
-                            const FlagType flag_type, const char *vuid, const char *flags_zero_vuid) const {
+                            const FlagType flag_type, const char *vuid, const char *flags_zero_vuid, bool instance_function) const {
     bool skip = false;
     skip |= ValidateFlagsImplementation<VkFlags>(loc, flag_bitmask, all_flags, value, flag_type, vuid, flags_zero_vuid);
 
@@ -406,7 +406,7 @@ bool Context::ValidateFlags(const Location &loc, vvl::FlagBitmask flag_bitmask, 
     }
 
     if (!skip && value != 0) {
-        vvl::Extensions required = IsValidFlagValue(flag_bitmask, value);
+        vvl::Extensions required = IsValidFlagValue(flag_bitmask, value, instance_function);
         if (!required.empty()) {
             skip |=
                 log.LogError(vuid, error_obj.handle, loc, "has %s values (%s) that requires the extensions %s.",
@@ -417,7 +417,7 @@ bool Context::ValidateFlags(const Location &loc, vvl::FlagBitmask flag_bitmask, 
 }
 
 bool Context::ValidateFlags(const Location &loc, vvl::FlagBitmask flag_bitmask, VkFlags64 all_flags, VkFlags64 value,
-                            const FlagType flag_type, const char *vuid, const char *flags_zero_vuid) const {
+                            const FlagType flag_type, const char *vuid, const char *flags_zero_vuid, bool instance_function) const {
     bool skip = false;
     skip |= ValidateFlagsImplementation<VkFlags64>(loc, flag_bitmask, all_flags, value, flag_type, vuid, flags_zero_vuid);
 
@@ -432,7 +432,7 @@ bool Context::ValidateFlags(const Location &loc, vvl::FlagBitmask flag_bitmask, 
     }
 
     if (!skip && value != 0) {
-        vvl::Extensions required = IsValidFlag64Value(flag_bitmask, value);
+        vvl::Extensions required = IsValidFlag64Value(flag_bitmask, value, instance_function);
         if (!required.empty()) {
             skip |= log.LogError(vuid, error_obj.handle, loc, "has %s values (%s) that requires the extensions %s.",
                                  String(flag_bitmask), DescribeFlagBitmaskValue64(flag_bitmask, value).c_str(),

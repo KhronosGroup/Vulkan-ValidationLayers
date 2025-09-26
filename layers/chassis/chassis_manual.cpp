@@ -239,6 +239,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
 
     OutputLayerStatusInfo(instance_dispatch.get());
     InstanceExtensionWhitelist(instance_dispatch.get(), pCreateInfo, *pInstance);
+    instance_dispatch->FindSupportedExtensions();
+
     // save a raw pointer since the unique_ptr will be invalidate by the move() below
     auto* id = instance_dispatch.get();
     vvl::dispatch::SetData(*pInstance, std::move(instance_dispatch));
@@ -248,6 +250,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
             continue;
         }
         vo->PostCallRecordCreateInstance(pCreateInfo, pAllocator, pInstance, record_obj);
+        vo->CopyExtensions();
     }
 
     DeactivateInstanceDebugCallbacks(id->debug_report);
