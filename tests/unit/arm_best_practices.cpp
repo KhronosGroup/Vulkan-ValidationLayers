@@ -366,6 +366,7 @@ TEST_F(VkArmBestPracticesLayerTest, SparseIndexBufferTest) {
     InitRenderTarget();
 
     if (IsPlatformMockICD()) {
+        // works locally, fails on github CI, would need to investigate more
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
@@ -469,6 +470,7 @@ TEST_F(VkArmBestPracticesLayerTest, PostTransformVertexCacheThrashingIndicesTest
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
+    // algorithm too complex for mock driver
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
