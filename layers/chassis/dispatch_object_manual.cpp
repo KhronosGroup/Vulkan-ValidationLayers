@@ -264,9 +264,9 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
         phys_dev_props_core14.pCopyDstLayouts = nullptr;
         instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_feature_version_1_4, &phys_dev_props_core14);
         host_image_copy_props_copy_src_layouts.resize(phys_dev_props_core14.copySrcLayoutCount);
-        host_imape_copy_props_copy_dst_layouts.resize(phys_dev_props_core14.copyDstLayoutCount);
+        host_image_copy_props_copy_dst_layouts.resize(phys_dev_props_core14.copyDstLayoutCount);
         phys_dev_props_core14.pCopySrcLayouts = host_image_copy_props_copy_src_layouts.data();
-        phys_dev_props_core14.pCopyDstLayouts = host_imape_copy_props_copy_dst_layouts.data();
+        phys_dev_props_core14.pCopyDstLayouts = host_image_copy_props_copy_dst_layouts.data();
         instance->GetPhysicalDeviceExtProperties<false>(physical_device, extensions.vk_feature_version_1_4, &phys_dev_props_core14);
     } else {
         if (extensions.vk_khr_line_rasterization) {
@@ -340,16 +340,16 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
             // First call, get copySrcLayoutCount and copyDstLayoutCount
             instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_host_image_copy, &host_image_copy_props);
             host_image_copy_props_copy_src_layouts.resize(host_image_copy_props.copySrcLayoutCount);
-            host_imape_copy_props_copy_dst_layouts.resize(host_image_copy_props.copyDstLayoutCount);
+            host_image_copy_props_copy_dst_layouts.resize(host_image_copy_props.copyDstLayoutCount);
             host_image_copy_props.pCopySrcLayouts = host_image_copy_props_copy_src_layouts.data();
-            host_image_copy_props.pCopyDstLayouts = host_imape_copy_props_copy_dst_layouts.data();
+            host_image_copy_props.pCopyDstLayouts = host_image_copy_props_copy_dst_layouts.data();
             instance->GetPhysicalDeviceExtProperties<false>(physical_device, extensions.vk_ext_host_image_copy,
                                                             &host_image_copy_props);
 
             phys_dev_props_core14.copySrcLayoutCount = host_image_copy_props.copySrcLayoutCount;
             phys_dev_props_core14.pCopySrcLayouts = host_image_copy_props_copy_src_layouts.data();
             phys_dev_props_core14.copyDstLayoutCount = host_image_copy_props.copyDstLayoutCount;
-            phys_dev_props_core14.pCopyDstLayouts = host_imape_copy_props_copy_dst_layouts.data();
+            phys_dev_props_core14.pCopyDstLayouts = host_image_copy_props_copy_dst_layouts.data();
             std::memcpy(phys_dev_props_core14.optimalTilingLayoutUUID, host_image_copy_props.optimalTilingLayoutUUID,
                         sizeof(host_image_copy_props.optimalTilingLayoutUUID));
             phys_dev_props_core14.identicalMemoryTypeRequirements = host_image_copy_props.identicalMemoryTypeRequirements;
@@ -809,7 +809,7 @@ Device::Device(Instance *instance, VkPhysicalDevice gpu, const VkDeviceCreateInf
       phys_dev_props_core13(stateless_device_data.phys_dev_props_core13),
       phys_dev_props_core14(stateless_device_data.phys_dev_props_core14),
       host_image_copy_props_copy_src_layouts(stateless_device_data.host_image_copy_props_copy_src_layouts),
-      host_imape_copy_props_copy_dst_layouts(stateless_device_data.host_imape_copy_props_copy_dst_layouts),
+      host_imape_copy_props_copy_dst_layouts(stateless_device_data.host_image_copy_props_copy_dst_layouts),
       phys_dev_ext_props(stateless_device_data.phys_dev_ext_props),
       physical_device(gpu) {
     InitValidationObjects();

@@ -133,7 +133,7 @@ class StatelessDeviceData {
     VkPhysicalDeviceVulkan14Properties phys_dev_props_core14{};
     // To store the 2 lists from VkPhysicalDeviceHostImageCopyProperties
     std::vector<VkImageLayout> host_image_copy_props_copy_src_layouts{};
-    std::vector<VkImageLayout> host_imape_copy_props_copy_dst_layouts{};
+    std::vector<VkImageLayout> host_image_copy_props_copy_dst_layouts{};
     DeviceExtensionProperties phys_dev_ext_props = {};
 
     SpecialSupported special_supported;
