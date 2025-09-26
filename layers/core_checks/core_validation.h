@@ -1016,6 +1016,8 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateDataGraphPipelineCreateInfo(VkDevice device, const VkDataGraphPipelineCreateInfoARM& create_info,
                                              const Location& create_info_loc, const vvl::Pipeline& pipeline) const;
     bool ValidateDataGraphPipelineCreateInfoFlags(VkPipelineCreateFlags2 flags, Location flags_loc) const;
+    bool ValidateDataGraphPipelineShaderModuleCreateInfo(VkDevice device, const VkDataGraphPipelineCreateInfoARM& create_info,
+                                                         const Location& create_info_loc, const vvl::Pipeline& pipeline) const;
     bool ValidateTensorSemiStructuredSparsityInfo(VkDevice device,
                                                   const VkDataGraphPipelineConstantTensorSemiStructuredSparsityInfoARM* sparsity,
                                                   const VkTensorDescriptionARM* tensor_desc, const Location& constant_loc,

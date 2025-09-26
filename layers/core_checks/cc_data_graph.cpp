@@ -24,8 +24,10 @@
 #include "state_tracker/pipeline_layout_state.h"
 #include "state_tracker/pipeline_state.h"
 
-bool CoreChecks::ValidateDataGraphPipelineCreateInfo(VkDevice device, const VkDataGraphPipelineCreateInfoARM& create_info,
-                                                     const Location& create_info_loc, const vvl::Pipeline& pipeline) const {
+bool CoreChecks::ValidateDataGraphPipelineShaderModuleCreateInfo(VkDevice device,
+                                                                 const VkDataGraphPipelineCreateInfoARM& create_info,
+                                                                 const Location& create_info_loc,
+                                                                 const vvl::Pipeline& pipeline) const {
     bool skip = false;
     const auto* dg_pipeline_shader_module_ci =
         vku::FindStructInPNextChain<VkDataGraphPipelineShaderModuleCreateInfoARM>(create_info.pNext);
@@ -56,6 +58,7 @@ bool CoreChecks::ValidateDataGraphPipelineCreateInfo(VkDevice device, const VkDa
         }
     }
 
+    // The shader module can also be defined via a VkShaderModuleCreateInfo structure
     if (const auto* shader_module_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(create_info.pNext)) {
         if (dg_pipeline_shader_module_ci->module != VK_NULL_HANDLE) {
             skip |= LogError(
@@ -71,6 +74,13 @@ bool CoreChecks::ValidateDataGraphPipelineCreateInfo(VkDevice device, const VkDa
                      "(%p) is not a valid VkShaderModule and there is no VkShaderModuleCreateInfo in the pNext chain",
                      reinterpret_cast<const void*>(dg_pipeline_shader_module_ci->module));
     }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateDataGraphPipelineCreateInfo(VkDevice device, const VkDataGraphPipelineCreateInfoARM& create_info,
+                                                     const Location& create_info_loc, const vvl::Pipeline& pipeline) const {
+    bool skip = false;
 
     if (const auto* pipeline_feedback = vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfo>(create_info.pNext)) {
         if (pipeline_feedback->pipelineStageCreationFeedbackCount != 0) {
@@ -214,6 +224,7 @@ bool CoreChecks::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkD
 
         skip |= ValidateDataGraphPipelineCreateInfo(device, create_info, create_info_loc, *pipeline);
         skip |= ValidateDataGraphPipelineCreateInfoFlags(create_info.flags, create_info_loc.dot(Field::flags));
+        skip |= ValidateDataGraphPipelineShaderModuleCreateInfo(device, create_info, create_info_loc, *pipeline);
     }
 
     return skip;
