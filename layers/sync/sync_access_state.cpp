@@ -909,6 +909,7 @@ void ResourceAccessState::UpdateStats(syncval_stats::AccessContextStats &stats) 
         is_dynamic_allocation = true;
     }
     stats.access_states_with_dynamic_allocations += is_dynamic_allocation;
+    stats.max_first_accesses_size = std::max(stats.max_first_accesses_size, (uint32_t)first_accesses_.size());
 #endif
 }
 

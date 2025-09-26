@@ -211,6 +211,13 @@ std::string Stats::CreateReport() {
     print_access_state_stats("Queue", access_stats.max_queue_access_stats);
     print_access_state_stats("Subpass", access_stats.max_subpass_access_stats);
 
+    ss << "\n";
+    ss << "Max first accesses";
+    ss << ": CB: " << access_stats.cb_access_stats.max_first_accesses_size;
+    ss << ", Queue: " << access_stats.queue_access_stats.max_first_accesses_size;
+    ss << ", Subpass: " << access_stats.subpass_access_stats.max_first_accesses_size;
+    ss << "\n";
+
 #if defined(USE_MIMALLOC_STATS)
     // Print allocation counts (these are not reported by mi_stats_print_out)
     ss << "\n";
