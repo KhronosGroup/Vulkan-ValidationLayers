@@ -618,6 +618,9 @@
                 "VkPhysicalDeviceAntiLagFeaturesAMD": {
                     "antiLag": true
                 },
+                "VkPhysicalDeviceDescriptorBufferTensorFeaturesARM": {
+                    "descriptorBufferTensorDescriptors": true
+                },
                 "VkPhysicalDeviceDataGraphFeaturesARM": {
                     "dataGraph": true,
                     "dataGraphUpdateAfterBind": true,

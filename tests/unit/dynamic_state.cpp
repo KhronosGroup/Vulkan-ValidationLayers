@@ -5860,10 +5860,6 @@ TEST_F(NegativeDynamicState, RebindSamePipeline) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "Test not supported by MockICD";
-    }
-
     VkPhysicalDeviceDriverProperties driver_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(driver_properties);
     if (driver_properties.conformanceVersion.major > 1 || driver_properties.conformanceVersion.minor > 3 ||
@@ -5871,7 +5867,7 @@ TEST_F(NegativeDynamicState, RebindSamePipeline) {
         GTEST_SKIP() << "conformanceVersion is greater than the version the test requires";
     }
     if (driver_properties.conformanceVersion.major == 0) {
-        GTEST_SKIP() << "conformanceVersion is invalid";  // happens in some non-conformant mesa drivers
+        GTEST_SKIP() << "conformanceVersion is invalid";  // happens in some non-conformant mesa drivers/MockICD
     }
 
     CreatePipelineHelper pipe(*this);
