@@ -19,7 +19,7 @@
 #include "sync/sync_common.h"
 
 class ResourceAccessState;
-class WriteState;
+struct WriteState;
 struct ReadState;
 struct ResourceFirstAccess;
 
@@ -282,49 +282,41 @@ struct ReadState {
 
 static_assert(std::is_trivially_copyable_v<ReadState>);
 
-class WriteState {
-  public:
-    WriteState() = default;
-    WriteState(const SyncAccessInfo &usage_info, ResourceUsageTagEx tag_ex, SyncFlags flags = 0);
+struct WriteState {
+    SyncAccessIndex access_index;
+    SyncFlags flags;
 
-    bool operator==(const WriteState &rhs) const {
-        return (access_ == rhs.access_) && (barriers_ == rhs.barriers_) && (tag_ == rhs.tag_) && (queue_ == rhs.queue_) &&
-               (dependency_chain_ == rhs.dependency_chain_);
-    }
+    // Union of applicable barrier masks since last write
+    SyncAccessFlags barriers;
+
+    // Accumulates the dstStages of barriers if they chain
+    VkPipelineStageFlags2 dependency_chain;
+
+    ResourceUsageTag tag;
+    uint32_t handle_index;
+    QueueId queue;
+
+    void Set(SyncAccessIndex access_index, ResourceUsageTagEx tag_ex, SyncFlags flags);
+    void SetQueueId(QueueId id);
+    void MergeBarriers(const WriteState &other);
+
+    bool operator==(const WriteState &rhs) const;
+
     bool DependencyChainInSourceScope(VkPipelineStageFlags2 src_exec_scope) const;
     bool WriteInSourceScope(const SyncAccessFlags &src_access_scope) const;
-    bool WriteOrDependencyChainInSourceScope(QueueId queue, VkPipelineStageFlags2 src_exec_scope,
+    bool WriteOrDependencyChainInSourceScope(QueueId queue_id, VkPipelineStageFlags2 src_exec_scope,
                                              const SyncAccessFlags &src_access_scope) const;
     bool InBarrierSourceScope(const BarrierScope &barrier_scope) const;
 
-    SyncAccessIndex Index() const { return access_->access_index; }
-    bool IsIndex(SyncAccessIndex access_index) const { return Index() == access_index; }
-    bool IsQueue(QueueId other_queue) const { return queue_ == other_queue; }
-    const SyncAccessInfo &Access() const { return *access_; }
-    const SyncAccessFlags &Barriers() const { return barriers_; }
-    ResourceUsageTag Tag() const { return tag_; }
-    ResourceUsageTagEx TagEx() const { return {tag_, handle_index_}; }
     bool IsWriteHazard(const SyncAccessInfo &usage_info) const;
-    bool IsOrdered(const OrderingBarrier &ordering, QueueId queue_id) const;
-    bool IsLoadOp() const { return flags_ & SyncFlag::kLoadOp; }
-    bool IsPresent() const { return flags_ & SyncFlag::kPresent; }
-
     bool IsWriteBarrierHazard(QueueId queue_id, VkPipelineStageFlags2 src_exec_scope,
                               const SyncAccessFlags &src_access_scope) const;
 
-    void SetQueueId(QueueId id);
-    void Set(const SyncAccessInfo &usage_info, ResourceUsageTagEx tag_ex, SyncFlags flags);
-    void MergeBarriers(const WriteState &other);
-    void OffsetTag(ResourceUsageTag offset) { tag_ += offset; }
+    bool IsOrdered(const OrderingBarrier &ordering, QueueId queue_id) const;
+    bool IsLoadOp() const { return flags & SyncFlag::kLoadOp; }
+    bool IsPresent() const { return flags & SyncFlag::kPresent; }
 
-    const SyncAccessInfo *access_;
-    SyncAccessFlags barriers_;  // union of applicable barrier masks since last write
-    ResourceUsageTag tag_;
-    uint32_t handle_index_;
-    QueueId queue_;
-    SyncFlags flags_;
-    // intially zero, but accumulating the dstStages of barriers if they chain.
-    VkPipelineStageFlags2 dependency_chain_;
+    ResourceUsageTagEx TagEx() const { return {tag, handle_index}; }
 };
 
 static_assert(std::is_trivially_copyable_v<WriteState>);
@@ -400,7 +392,7 @@ class ResourceAccessState {
                                      QueueId event_queue, ResourceUsageTag event_tag) const;
 
     void Update(const SyncAccessInfo &usage_info, SyncOrdering ordering_rule, ResourceUsageTagEx tag_ex, SyncFlags flags = 0);
-    void SetWrite(const SyncAccessInfo &usage_info, ResourceUsageTagEx tag_ex, SyncFlags flags = 0);
+    void SetWrite(SyncAccessIndex access_index, ResourceUsageTagEx tag_ex, SyncFlags flags = 0);
     void ClearWrite();
     void ClearRead();
     void ClearFirstUse();
@@ -460,9 +452,10 @@ class ResourceAccessState {
     ResourceAccessState();
 
     bool HasWriteOp() const { return last_write.has_value(); }
-    SyncAccessIndex LastWriteOp() const { return last_write.has_value() ? last_write->Index() : SYNC_ACCESS_INDEX_NONE; }
-    bool IsLastWriteOp(SyncAccessIndex access_index) const { return LastWriteOp() == access_index; }
-    ResourceUsageTag LastWriteTag() const { return last_write.has_value() ? last_write->Tag() : ResourceUsageTag(0); }
+    bool IsLastWriteOp(SyncAccessIndex access_index) const {
+        return last_write.has_value() && last_write->access_index == access_index;
+    }
+    ResourceUsageTag LastWriteTag() const { return last_write.has_value() ? last_write->tag : ResourceUsageTag(0); }
     const WriteState &LastWrite() const;
     bool operator==(const ResourceAccessState &rhs) const {
         const bool write_same = (read_execution_barriers == rhs.read_execution_barriers) &&
@@ -478,7 +471,7 @@ class ResourceAccessState {
     }
     bool operator!=(const ResourceAccessState &rhs) const { return !(*this == rhs); }
     VkPipelineStageFlags2 GetReadBarriers(SyncAccessIndex access_index) const;
-    SyncAccessFlags GetWriteBarriers() const { return last_write.has_value() ? last_write->Barriers() : SyncAccessFlags(); }
+    SyncAccessFlags GetWriteBarriers() const { return last_write.has_value() ? last_write->barriers : SyncAccessFlags(); }
     void SetQueueId(QueueId id);
 
     bool IsWriteBarrierHazard(QueueId queue_id, VkPipelineStageFlags2 src_exec_scope,
