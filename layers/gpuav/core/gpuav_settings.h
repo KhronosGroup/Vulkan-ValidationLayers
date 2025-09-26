@@ -44,6 +44,8 @@ struct GpuAVSettings {
     uint32_t debug_max_instrumentations_count = 0;  // zero is same as "unlimited"
     bool debug_print_instrumentation_info = false;
 
+    bool descriptor_buffer_override = false;
+
     // Note - even though DebugPrintf basically fits in here, from the user point of view they are different and that is reflected
     // in the settings (which are reflected in VkConfig). To make our lives easier, we just make these settings with the hierarchy
     // of the settings exposed
