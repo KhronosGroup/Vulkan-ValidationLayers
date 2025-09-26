@@ -121,6 +121,7 @@ TEST_F(NegativeShaderCooperativeMatrix, UnsupportedStageFloat16) {
     TEST_DESCRIPTION("Test error using cooperative matrix in unsupported stage");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
     RETURN_IF_SKIP(InitCooperativeMatrixKHR());
     InitRenderTarget();
 
