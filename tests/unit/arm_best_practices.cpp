@@ -365,10 +365,6 @@ TEST_F(VkArmBestPracticesLayerTest, SparseIndexBufferTest) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "Test not supported by MockICD";
-    }
-
     // create a non-sparse index buffer
     std::vector<uint16_t> nonsparse_indices;
     nonsparse_indices.resize(128);
@@ -469,6 +465,7 @@ TEST_F(VkArmBestPracticesLayerTest, PostTransformVertexCacheThrashingIndicesTest
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
+    // algorithm too complex for mock driver
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
