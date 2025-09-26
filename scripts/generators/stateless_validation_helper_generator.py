@@ -1044,9 +1044,18 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                             invalidVuid = self.GetVuid(callerName, f"{member.name}-parameter")
                             zeroVuid = invalidVuid
                         allFlagsName = 'All' + flagBitsName
-                        zeroVuidArg = '' if member.optional else ', ' + zeroVuid
+                        zeroVuidArg = ', nullptr' if member.optional else ', ' + zeroVuid
                         condition = [item for item in self.structMemberValidationConditions if (item['struct'] == structTypeName and item['field'] == flagBitsName)]
-                        usedLines.append(f'skip |= {context}ValidateFlags({errorLoc}.dot(Field::{member.name}), vvl::FlagBitmask::{flagBitsName}, {allFlagsName}, {valuePrefix}{member.name}, {flagsType}, {invalidVuid}{zeroVuidArg});\n')
+                        isInstanceFunction = 'false'
+                        if (struct):
+                            extensions = self.vk.structs[struct.name].extensions
+                            for extension in extensions:
+                                if self.vk.extensions[extension].instance:
+                                    isInstanceFunction = 'true'
+                        else:
+                            if self.vk.commands[funcName].instance:
+                                isInstanceFunction = 'true'
+                        usedLines.append(f'skip |= {context}ValidateFlags({errorLoc}.dot(Field::{member.name}), vvl::FlagBitmask::{flagBitsName}, {allFlagsName}, {valuePrefix}{member.name}, {flagsType}, {invalidVuid}{zeroVuidArg}, {isInstanceFunction});\n')
                     elif member.type == 'VkBool32':
                         usedLines.append(f'skip |= {context}ValidateBool32({errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.name});\n')
                     elif member.type == 'VkDeviceAddress' and not member.optional:

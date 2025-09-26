@@ -671,7 +671,7 @@ DeviceExtensions::DeviceExtensions(const InstanceExtensions& instance_ext, APIVe
         };
         auto info = GetInfo(vvl::Extension::_VK_EXT_shader_object);
         if (info.state) {
-            if (this->*(info.state) != kNotEnabled) {
+            if (IsExtEnabled(this->*(info.state))) {
                 for (auto interaction_ext : shader_object_interactions) {
                     info = GetInfo(interaction_ext);
                     assert(info.state);
@@ -720,7 +720,7 @@ DeviceExtensions::DeviceExtensions(const InstanceExtensions& instance_ext, APIVe
         };
         auto info = GetInfo(vvl::Extension::_VK_EXT_shader_object);
         if (info.state) {
-            if (this->*(info.state) != kNotEnabled) {
+            if (IsExtEnabled(this->*(info.state))) {
                 for (auto interaction_ext : shader_object_interactions) {
                     info = GetInfo(interaction_ext);
                     assert(info.state);

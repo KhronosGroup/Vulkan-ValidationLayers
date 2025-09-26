@@ -32,6 +32,17 @@
 
 namespace vvl {
 
+void MarkSupportedExtensionsAsNotEnabled(const std::vector<VkExtensionProperties> &supported_extensions,
+                                         DeviceExtensions extensions) {
+    for (size_t i = 0; i < supported_extensions.size(); i++) {
+        vvl::Extension extension = GetExtension(supported_extensions[i].extensionName);
+        auto &info = extensions.GetInfo(extension);
+        if (info.state && (extensions.*(info.state)) == kNotSupported) {
+            extensions.*(info.state) = kNotEnabled;
+        }
+    }
+}
+
 StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPhysicalDevice physical_device,
                                          const VkDeviceCreateInfo *pCreateInfo) {
     // Get physical device limits for device
@@ -42,6 +53,12 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
     api_version = std::min(APIVersion(device_properties.apiVersion), instance->api_version);
 
     extensions = DeviceExtensions(instance->extensions, api_version, pCreateInfo);
+    uint32_t extension_count = 0u;
+    DispatchEnumerateDeviceExtensionProperties(physical_device, nullptr, &extension_count, nullptr);
+    std::vector<VkExtensionProperties> supported_extensions(extension_count);
+    DispatchEnumerateDeviceExtensionProperties(physical_device, nullptr, &extension_count, supported_extensions.data());
+    MarkSupportedExtensionsAsNotEnabled(supported_extensions, extensions);
+
     GetEnabledDeviceFeatures(pCreateInfo, &enabled_features, api_version);
 
     instance->GetPhysicalDeviceMemoryProperties(physical_device, &phys_dev_mem_props);
@@ -49,7 +66,7 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
 
     // Vulkan 1.1 and later can get properties from single struct.
     // The goal is to only use the phys_dev_props_core field and funnel the properties from promoted extensions
-    if (extensions.vk_feature_version_1_2) {
+    if (IsExtEnabled(extensions.vk_feature_version_1_2)) {
         // 1.1 struct wasn't available until 1.2
         instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_feature_version_1_2, &phys_dev_props_core11);
         instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_feature_version_1_2, &phys_dev_props_core12);
@@ -58,14 +75,14 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
         //
         // Can ingnore VkPhysicalDeviceIDProperties as it has no validation purpose
 
-        if (extensions.vk_khr_multiview) {
+        if (IsExtEnabled(extensions.vk_khr_multiview)) {
             VkPhysicalDeviceMultiviewProperties multiview_props = vku::InitStructHelper();
             instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_multiview, &multiview_props);
             phys_dev_props_core11.maxMultiviewViewCount = multiview_props.maxMultiviewViewCount;
             phys_dev_props_core11.maxMultiviewInstanceIndex = multiview_props.maxMultiviewInstanceIndex;
         }
 
-        if (extensions.vk_khr_maintenance3) {
+        if (IsExtEnabled(extensions.vk_khr_maintenance3)) {
             VkPhysicalDeviceMaintenance3Properties maintenance3_props = vku::InitStructHelper();
             instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_maintenance3, &maintenance3_props);
             phys_dev_props_core11.maxPerSetDescriptors = maintenance3_props.maxPerSetDescriptors;
@@ -89,7 +106,7 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
 
         // VkPhysicalDeviceVulkan12Properties
 
-        if (extensions.vk_khr_driver_properties) {
+        if (IsExtEnabled(extensions.vk_khr_driver_properties)) {
             VkPhysicalDeviceDriverProperties driver_properties = vku::InitStructHelper();
             instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_driver_properties, &driver_properties);
             phys_dev_props_core12.driverID = driver_properties.driverID;
@@ -98,7 +115,7 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
             phys_dev_props_core12.conformanceVersion = driver_properties.conformanceVersion;
         }
 
-        if (extensions.vk_ext_descriptor_indexing) {
+        if (IsExtEnabled(extensions.vk_ext_descriptor_indexing)) {
             VkPhysicalDeviceDescriptorIndexingProperties descriptor_indexing_prop = vku::InitStructHelper();
             instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_descriptor_indexing,
                                                      &descriptor_indexing_prop);
@@ -148,7 +165,7 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
                 descriptor_indexing_prop.maxDescriptorSetUpdateAfterBindInputAttachments;
         }
 
-        if (extensions.vk_khr_depth_stencil_resolve) {
+        if (IsExtEnabled(extensions.vk_khr_depth_stencil_resolve)) {
             VkPhysicalDeviceDepthStencilResolveProperties depth_stencil_resolve_props = vku::InitStructHelper();
             instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_depth_stencil_resolve,
                                                      &depth_stencil_resolve_props);
@@ -158,7 +175,7 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
             phys_dev_props_core12.independentResolve = depth_stencil_resolve_props.independentResolve;
         }
 
-        if (extensions.vk_khr_timeline_semaphore) {
+        if (IsExtEnabled(extensions.vk_khr_timeline_semaphore)) {
             VkPhysicalDeviceTimelineSemaphoreProperties timeline_semaphore_props = vku::InitStructHelper();
             instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_timeline_semaphore,
                                                      &timeline_semaphore_props);
@@ -166,7 +183,7 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
                 timeline_semaphore_props.maxTimelineSemaphoreValueDifference;
         }
 
-        if (extensions.vk_ext_sampler_filter_minmax) {
+        if (IsExtEnabled(extensions.vk_ext_sampler_filter_minmax)) {
             VkPhysicalDeviceSamplerFilterMinmaxProperties sampler_filter_minmax_props = vku::InitStructHelper();
             instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_sampler_filter_minmax,
                                                      &sampler_filter_minmax_props);
@@ -175,7 +192,7 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
             phys_dev_props_core12.filterMinmaxImageComponentMapping = sampler_filter_minmax_props.filterMinmaxImageComponentMapping;
         }
 
-        if (extensions.vk_khr_shader_float_controls) {
+        if (IsExtEnabled(extensions.vk_khr_shader_float_controls)) {
             VkPhysicalDeviceFloatControlsProperties float_controls_props = vku::InitStructHelper();
             instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_shader_float_controls,
                                                      &float_controls_props);
@@ -205,10 +222,10 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
     // funnel promoted extensions into a VkPhysicalDeviceVulkan13Properties
     //
     // Can ingnore VkPhysicalDeviceShaderIntegerDotProductProperties as it has no validation purpose
-    if (extensions.vk_feature_version_1_3) {
+    if (IsExtEnabled(extensions.vk_feature_version_1_3)) {
         instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_feature_version_1_3, &phys_dev_props_core13);
     } else {
-        if (extensions.vk_ext_subgroup_size_control) {
+        if (IsExtEnabled(extensions.vk_ext_subgroup_size_control)) {
             VkPhysicalDeviceSubgroupSizeControlProperties subgroup_size_props = vku::InitStructHelper();
             instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_subgroup_size_control,
                                                      &subgroup_size_props);
@@ -218,7 +235,7 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
             phys_dev_props_core13.requiredSubgroupSizeStages = subgroup_size_props.requiredSubgroupSizeStages;
         }
 
-        if (extensions.vk_ext_inline_uniform_block) {
+        if (IsExtEnabled(extensions.vk_ext_inline_uniform_block)) {
             VkPhysicalDeviceInlineUniformBlockProperties inline_uniform_block_props = vku::InitStructHelper();
             instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_inline_uniform_block,
                                                      &inline_uniform_block_props);
@@ -233,7 +250,7 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
                 inline_uniform_block_props.maxDescriptorSetUpdateAfterBindInlineUniformBlocks;
         }
 
-        if (extensions.vk_ext_texel_buffer_alignment) {
+        if (IsExtEnabled(extensions.vk_ext_texel_buffer_alignment)) {
             VkPhysicalDeviceTexelBufferAlignmentProperties texel_buffer_alignment_props = vku::InitStructHelper();
             instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_texel_buffer_alignment,
                                                      &texel_buffer_alignment_props);
@@ -247,7 +264,7 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
                 texel_buffer_alignment_props.uniformTexelBufferOffsetSingleTexelAlignment;
         }
 
-        if (extensions.vk_khr_maintenance4) {
+        if (IsExtEnabled(extensions.vk_khr_maintenance4)) {
             VkPhysicalDeviceMaintenance4Properties maintenance4_props = vku::InitStructHelper();
             instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_maintenance4, &maintenance4_props);
             phys_dev_props_core13.maxBufferSize = maintenance4_props.maxBufferSize;
@@ -255,7 +272,7 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
     }
 
     // funnel promoted extensions into a VkPhysicalDeviceVulkan14Properties
-    if (extensions.vk_feature_version_1_4) {
+    if (IsExtEnabled(extensions.vk_feature_version_1_4)) {
         // First query to get list properties size from host image copy extension,
         // second to get actual properties
         phys_dev_props_core14.copySrcLayoutCount = 0;
@@ -269,38 +286,38 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
         phys_dev_props_core14.pCopyDstLayouts = host_image_copy_props_copy_dst_layouts.data();
         instance->GetPhysicalDeviceExtProperties<false>(physical_device, extensions.vk_feature_version_1_4, &phys_dev_props_core14);
     } else {
-        if (extensions.vk_khr_line_rasterization) {
+        if (IsExtEnabled(extensions.vk_khr_line_rasterization)) {
             VkPhysicalDeviceLineRasterizationPropertiesKHR line_rasterization_props = vku::InitStructHelper();
             instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_line_rasterization,
                                                      &line_rasterization_props);
             phys_dev_props_core14.lineSubPixelPrecisionBits = line_rasterization_props.lineSubPixelPrecisionBits;
-        } else if (extensions.vk_ext_line_rasterization) {
+        } else if (IsExtEnabled(extensions.vk_ext_line_rasterization)) {
             VkPhysicalDeviceLineRasterizationPropertiesEXT line_rasterization_props = vku::InitStructHelper();
             instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_line_rasterization,
                                                      &line_rasterization_props);
             phys_dev_props_core14.lineSubPixelPrecisionBits = line_rasterization_props.lineSubPixelPrecisionBits;
         }
 
-        if (extensions.vk_khr_vertex_attribute_divisor) {
+        if (IsExtEnabled(extensions.vk_khr_vertex_attribute_divisor)) {
             VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR vtx_attrib_divisor_props_khr;
             instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_vertex_attribute_divisor,
                                                      &vtx_attrib_divisor_props_khr);
             phys_dev_props_core14.maxVertexAttribDivisor = vtx_attrib_divisor_props_khr.maxVertexAttribDivisor;
             phys_dev_props_core14.supportsNonZeroFirstInstance = vtx_attrib_divisor_props_khr.supportsNonZeroFirstInstance;
-        } else if (extensions.vk_ext_vertex_attribute_divisor) {
+        } else if (IsExtEnabled(extensions.vk_ext_vertex_attribute_divisor)) {
             VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT vtx_attrib_divisor_props_ext;
             instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_vertex_attribute_divisor,
                                                      &vtx_attrib_divisor_props_ext);
             phys_dev_props_core14.maxVertexAttribDivisor = vtx_attrib_divisor_props_ext.maxVertexAttribDivisor;
         }
 
-        if (extensions.vk_khr_push_descriptor) {
+        if (IsExtEnabled(extensions.vk_khr_push_descriptor)) {
             VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor_props = vku::InitStructHelper();
             instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_push_descriptor, &push_descriptor_props);
             phys_dev_props_core14.maxPushDescriptors = push_descriptor_props.maxPushDescriptors;
         }
 
-        if (extensions.vk_khr_maintenance5) {
+        if (IsExtEnabled(extensions.vk_khr_maintenance5)) {
             VkPhysicalDeviceMaintenance5PropertiesKHR maintenance_5_props = vku::InitStructHelper();
             instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_maintenance5, &maintenance_5_props);
             phys_dev_props_core14.earlyFragmentMultisampleCoverageAfterSampleCounting =
@@ -314,7 +331,7 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
             phys_dev_props_core14.nonStrictWideLinesUseParallelogram = maintenance_5_props.nonStrictWideLinesUseParallelogram;
         }
 
-        if (extensions.vk_khr_maintenance6) {
+        if (IsExtEnabled(extensions.vk_khr_maintenance6)) {
             VkPhysicalDeviceMaintenance6PropertiesKHR maintenance_6_props = vku::InitStructHelper();
             instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_maintenance6, &maintenance_6_props);
             phys_dev_props_core14.blockTexelViewCompatibleMultipleLayers =
@@ -325,7 +342,7 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
                 maintenance_6_props.fragmentShadingRateClampCombinerInputs;
         }
 
-        if (extensions.vk_ext_pipeline_robustness) {
+        if (IsExtEnabled(extensions.vk_ext_pipeline_robustness)) {
             VkPhysicalDevicePipelineRobustnessProperties pipeline_robustness_props = vku::InitStructHelper();
             instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_pipeline_robustness,
                                                      &pipeline_robustness_props);
@@ -335,7 +352,7 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
             phys_dev_props_core14.defaultRobustnessImages = pipeline_robustness_props.defaultRobustnessImages;
         }
 
-        if (extensions.vk_ext_host_image_copy) {
+        if (IsExtEnabled(extensions.vk_ext_host_image_copy)) {
             VkPhysicalDeviceHostImageCopyPropertiesEXT host_image_copy_props = vku::InitStructHelper();
             // First call, get copySrcLayoutCount and copyDstLayoutCount
             instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_host_image_copy, &host_image_copy_props);
@@ -665,6 +682,21 @@ Instance::~Instance() {
     }
     vku::FreePnextChain(debug_report->instance_pnext_chain);
     delete debug_report;
+}
+
+void Instance::FindSupportedExtensions() {
+    uint32_t physical_device_count = 0u;
+    instance_dispatch_table.EnumeratePhysicalDevices(instance, &physical_device_count, nullptr);
+    std::vector<VkPhysicalDevice> physical_devices(physical_device_count);
+    instance_dispatch_table.EnumeratePhysicalDevices(instance, &physical_device_count, physical_devices.data());
+    for (const auto physical_device : physical_devices) {
+        uint32_t extension_count = 0u;
+        instance_dispatch_table.EnumerateDeviceExtensionProperties(physical_device, nullptr, &extension_count, nullptr);
+        std::vector<VkExtensionProperties> supported_extensions(extension_count);
+        instance_dispatch_table.EnumerateDeviceExtensionProperties(physical_device, nullptr, &extension_count,
+                                                                   supported_extensions.data());
+        MarkSupportedExtensionsAsNotEnabled(supported_extensions, extensions);
+    }
 }
 
 VkResult Instance::GetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
