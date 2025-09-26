@@ -119,6 +119,7 @@ class Instance : public Logger {
         PreCallRecordCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice, record_obj);
     }
     void CopyDispatchState() { instance = dispatch_instance_->instance; }
+    void CopyExtensions() { extensions = dispatch_instance_->extensions; }
     VkInstance VkHandle() const { return instance; }
 
 #if defined(DEBUG_CAPTURE_KEYBOARD)

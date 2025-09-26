@@ -153,10 +153,11 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
             vvl::Extension GetExtension(std::string extension);
 
             enum ExtEnabled : unsigned char {
-                kNotEnabled,
+                kNotSupported,
+                kNotEnabled,            // Extension is supported, but not enabled
                 kEnabledByCreateinfo,  // Extension is passed at vkCreateDevice/vkCreateInstance time
                 kEnabledByApiLevel,  // the API version implicitly enabled it
-                kEnabledByInteraction,  // is implicity enabled by anthoer extension
+                kEnabledByInteraction,  // is implicity enabled by another extension
             };
 
             // Map of promoted extension information per version (a separate map exists for instance and device extensions).
@@ -187,7 +188,9 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                   is enabled, then we already validated that extension is enabled.
                 - Some variables (ex. viewMask) require the extension to be used if non-zero
             */
-            [[maybe_unused]] static bool IsExtEnabled(ExtEnabled extension) { return (extension != kNotEnabled); }
+            [[maybe_unused]] static bool IsExtEnabled(ExtEnabled extension) { return (extension == kEnabledByCreateinfo || extension == kEnabledByApiLevel || extension == kEnabledByInteraction); }
+
+            [[maybe_unused]] static bool IsExtSupported(ExtEnabled extension) { return (extension != kNotSupported); }
 
             [[maybe_unused]] static bool IsExtEnabledByCreateinfo(ExtEnabled extension) { return (extension == kEnabledByCreateinfo); }
             ''')
@@ -195,9 +198,9 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
         out.append('\nstruct InstanceExtensions {\n')
         out.append('    APIVersion api_version{};\n')
         for version in self.vk.versions.keys():
-            out.append(f'    ExtEnabled {self.fieldName[version]}{{kNotEnabled}};\n')
+            out.append(f'    ExtEnabled {self.fieldName[version]}{{kNotSupported}};\n')
 
-        out.extend([f'    ExtEnabled {ext.name.lower()}{{kNotEnabled}};\n' for ext in self.vk.extensions.values() if ext.instance])
+        out.extend([f'    ExtEnabled {ext.name.lower()}{{kNotSupported}};\n' for ext in self.vk.extensions.values() if ext.instance])
 
         out.append('''
             struct Requirement {
@@ -222,9 +225,9 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
 
         out.append('\nstruct DeviceExtensions : public InstanceExtensions {\n')
         for version in self.vk.versions.keys():
-            out.append(f'    ExtEnabled {self.fieldName[version]}{{kNotEnabled}};\n')
+            out.append(f'    ExtEnabled {self.fieldName[version]}{{kNotSupported}};\n')
 
-        out.extend([f'    ExtEnabled {ext.name.lower()}{{kNotEnabled}};\n' for ext in self.vk.extensions.values() if ext.device])
+        out.extend([f'    ExtEnabled {ext.name.lower()}{{kNotSupported}};\n' for ext in self.vk.extensions.values() if ext.device])
 
         out.append('''
             struct Requirement {
@@ -418,7 +421,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                     };
                     auto info = GetInfo(vvl::Extension::_VK_EXT_shader_object);
                     if (info.state) {
-                        if (this->*(info.state) != kNotEnabled) {
+                        if (IsExtEnabled(this->*(info.state))) {
                             for (auto interaction_ext : shader_object_interactions) {
                                 info = GetInfo(interaction_ext);
                                 assert(info.state);
@@ -469,7 +472,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                     };
                     auto info = GetInfo(vvl::Extension::_VK_EXT_shader_object);
                     if (info.state) {
-                        if (this->*(info.state) != kNotEnabled) {
+                        if (IsExtEnabled(this->*(info.state))) {
                             for (auto interaction_ext : shader_object_interactions) {
                                 info = GetInfo(interaction_ext);
                                 assert(info.state);
