@@ -122,6 +122,10 @@ enum class Feature {
     cooperativeVector,
     // VkPhysicalDeviceCooperativeVectorFeaturesNV
     cooperativeVectorTraining,
+    // VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR
+    indirectMemoryCopy,
+    // VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR
+    indirectMemoryToImageCopy,
     // VkPhysicalDeviceCopyMemoryIndirectFeaturesNV
     indirectCopy,
     // VkPhysicalDeviceCornerSampledImageFeaturesNV

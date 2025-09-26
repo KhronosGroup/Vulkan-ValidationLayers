@@ -17892,6 +17892,97 @@ VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorBufferEmbeddedSamplers2EXT(
     }
 }
 
+VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer,
+                                                    const VkCopyMemoryIndirectInfoKHR* pCopyMemoryIndirectInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdCopyMemoryIndirectKHR, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkCmdCopyMemoryIndirectKHR");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdCopyMemoryIndirectKHR]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdCopyMemoryIndirectKHR(commandBuffer, pCopyMemoryIndirectInfo, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCmdCopyMemoryIndirectKHR);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkCmdCopyMemoryIndirectKHR");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCmdCopyMemoryIndirectKHR]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdCopyMemoryIndirectKHR(commandBuffer, pCopyMemoryIndirectInfo, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkCmdCopyMemoryIndirectKHR");
+        device_dispatch->CmdCopyMemoryIndirectKHR(commandBuffer, pCopyMemoryIndirectInfo);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkCmdCopyMemoryIndirectKHR");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdCopyMemoryIndirectKHR]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdCopyMemoryIndirectKHR(commandBuffer, pCopyMemoryIndirectInfo, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToImageIndirectKHR(
+    VkCommandBuffer commandBuffer, const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdCopyMemoryToImageIndirectKHR,
+                          VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkCmdCopyMemoryToImageIndirectKHR");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdCopyMemoryToImageIndirectKHR]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdCopyMemoryToImageIndirectKHR(commandBuffer, pCopyMemoryToImageIndirectInfo, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCmdCopyMemoryToImageIndirectKHR);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkCmdCopyMemoryToImageIndirectKHR");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCmdCopyMemoryToImageIndirectKHR]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdCopyMemoryToImageIndirectKHR(commandBuffer, pCopyMemoryToImageIndirectInfo, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkCmdCopyMemoryToImageIndirectKHR");
+        device_dispatch->CmdCopyMemoryToImageIndirectKHR(commandBuffer, pCopyMemoryToImageIndirectInfo);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkCmdCopyMemoryToImageIndirectKHR");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdCopyMemoryToImageIndirectKHR]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdCopyMemoryToImageIndirectKHR(commandBuffer, pCopyMemoryToImageIndirectInfo, record_obj);
+        }
+    }
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(VkInstance instance,
                                                             const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
                                                             const VkAllocationCallbacks* pAllocator,
@@ -34994,6 +35085,8 @@ const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap() {
         {"vkCmdPushDescriptorSetWithTemplate2KHR", {kFuncTypeDev, (void*)CmdPushDescriptorSetWithTemplate2KHR}},
         {"vkCmdSetDescriptorBufferOffsets2EXT", {kFuncTypeDev, (void*)CmdSetDescriptorBufferOffsets2EXT}},
         {"vkCmdBindDescriptorBufferEmbeddedSamplers2EXT", {kFuncTypeDev, (void*)CmdBindDescriptorBufferEmbeddedSamplers2EXT}},
+        {"vkCmdCopyMemoryIndirectKHR", {kFuncTypeDev, (void*)CmdCopyMemoryIndirectKHR}},
+        {"vkCmdCopyMemoryToImageIndirectKHR", {kFuncTypeDev, (void*)CmdCopyMemoryToImageIndirectKHR}},
         {"vkCreateDebugReportCallbackEXT", {kFuncTypeInst, (void*)CreateDebugReportCallbackEXT}},
         {"vkDestroyDebugReportCallbackEXT", {kFuncTypeInst, (void*)DestroyDebugReportCallbackEXT}},
         {"vkDebugReportMessageEXT", {kFuncTypeInst, (void*)DebugReportMessageEXT}},

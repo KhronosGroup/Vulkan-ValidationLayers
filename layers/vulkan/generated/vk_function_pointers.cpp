@@ -490,6 +490,8 @@ PFN_vkCmdPushDescriptorSet2KHR CmdPushDescriptorSet2KHR;
 PFN_vkCmdPushDescriptorSetWithTemplate2KHR CmdPushDescriptorSetWithTemplate2KHR;
 PFN_vkCmdSetDescriptorBufferOffsets2EXT CmdSetDescriptorBufferOffsets2EXT;
 PFN_vkCmdBindDescriptorBufferEmbeddedSamplers2EXT CmdBindDescriptorBufferEmbeddedSamplers2EXT;
+PFN_vkCmdCopyMemoryIndirectKHR CmdCopyMemoryIndirectKHR;
+PFN_vkCmdCopyMemoryToImageIndirectKHR CmdCopyMemoryToImageIndirectKHR;
 PFN_vkCreateDebugReportCallbackEXT CreateDebugReportCallbackEXT;
 PFN_vkDestroyDebugReportCallbackEXT DestroyDebugReportCallbackEXT;
 PFN_vkDebugReportMessageEXT DebugReportMessageEXT;
@@ -1398,6 +1400,10 @@ void InitExtensionFromCore(const char* extension_name) {
                 CmdSetPrimitiveRestartEnableEXT = CmdSetPrimitiveRestartEnable;
             }
         },
+        {
+            "VK_NV_copy_memory_indirect", []() {
+            }
+        },
 
     };
 
@@ -1953,6 +1959,12 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 CmdPushDescriptorSetWithTemplate2KHR = reinterpret_cast<PFN_vkCmdPushDescriptorSetWithTemplate2KHR>(GetDeviceProcAddr(device, "vkCmdPushDescriptorSetWithTemplate2KHR"));
                 CmdSetDescriptorBufferOffsets2EXT = reinterpret_cast<PFN_vkCmdSetDescriptorBufferOffsets2EXT>(GetDeviceProcAddr(device, "vkCmdSetDescriptorBufferOffsets2EXT"));
                 CmdBindDescriptorBufferEmbeddedSamplers2EXT = reinterpret_cast<PFN_vkCmdBindDescriptorBufferEmbeddedSamplers2EXT>(GetDeviceProcAddr(device, "vkCmdBindDescriptorBufferEmbeddedSamplers2EXT"));
+            }
+        },
+        {
+            "VK_KHR_copy_memory_indirect", [](VkInstance , VkDevice device) {
+                CmdCopyMemoryIndirectKHR = reinterpret_cast<PFN_vkCmdCopyMemoryIndirectKHR>(GetDeviceProcAddr(device, "vkCmdCopyMemoryIndirectKHR"));
+                CmdCopyMemoryToImageIndirectKHR = reinterpret_cast<PFN_vkCmdCopyMemoryToImageIndirectKHR>(GetDeviceProcAddr(device, "vkCmdCopyMemoryToImageIndirectKHR"));
             }
         },
         {
@@ -2905,6 +2917,8 @@ void ResetAllExtensions() {
     CmdPushDescriptorSetWithTemplate2KHR = nullptr;
     CmdSetDescriptorBufferOffsets2EXT = nullptr;
     CmdBindDescriptorBufferEmbeddedSamplers2EXT = nullptr;
+    CmdCopyMemoryIndirectKHR = nullptr;
+    CmdCopyMemoryToImageIndirectKHR = nullptr;
     CreateDebugReportCallbackEXT = nullptr;
     DestroyDebugReportCallbackEXT = nullptr;
     DebugReportMessageEXT = nullptr;

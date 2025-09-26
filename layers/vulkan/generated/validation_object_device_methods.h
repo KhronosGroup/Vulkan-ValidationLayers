@@ -2982,6 +2982,28 @@ virtual void PreCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(
 virtual void PostCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(
     VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo,
     const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer,
+                                                     const VkCopyMemoryIndirectInfoKHR* pCopyMemoryIndirectInfo,
+                                                     const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer,
+                                                   const VkCopyMemoryIndirectInfoKHR* pCopyMemoryIndirectInfo,
+                                                   const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer,
+                                                    const VkCopyMemoryIndirectInfoKHR* pCopyMemoryIndirectInfo,
+                                                    const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdCopyMemoryToImageIndirectKHR(
+    VkCommandBuffer commandBuffer, const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo,
+    const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer,
+                                                          const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo,
+                                                          const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer,
+                                                           const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo,
+                                                           const RecordObject& record_obj) {}
 virtual bool PreCallValidateDebugMarkerSetObjectTagEXT(VkDevice device, const VkDebugMarkerObjectTagInfoEXT* pTagInfo,
                                                        const ErrorObject& error_obj) const {
     return false;

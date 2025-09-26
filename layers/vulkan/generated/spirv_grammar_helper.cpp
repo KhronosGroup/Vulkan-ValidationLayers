@@ -867,8 +867,8 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpTypeAccelerationStructureKHR";
         case spv::OpExecuteCallableNV:
             return "OpExecuteCallableNV";
-        case spv::OpRayQueryGetClusterIdNV:
-            return "OpRayQueryGetClusterIdNV";
+        case spv::OpRayQueryGetIntersectionClusterIdNV:
+            return "OpRayQueryGetIntersectionClusterIdNV";
         case spv::OpHitObjectGetClusterIdNV:
             return "OpHitObjectGetClusterIdNV";
         case spv::OpTypeCooperativeMatrixNV:
@@ -2488,7 +2488,7 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpRayQueryGetIntersectionTriangleVertexPositionsKHR, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpTypeAccelerationStructureKHR, {{}}},
         {spv::OpExecuteCallableNV, {{OperandKind::Id, OperandKind::Id}}},
-        {spv::OpRayQueryGetClusterIdNV, {{OperandKind::Id, OperandKind::Id}}},
+        {spv::OpRayQueryGetIntersectionClusterIdNV, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpHitObjectGetClusterIdNV, {{OperandKind::Id}}},
         {spv::OpTypeCooperativeMatrixNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpCooperativeMatrixLoadNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},

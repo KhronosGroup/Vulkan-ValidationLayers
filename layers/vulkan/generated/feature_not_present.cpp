@@ -568,6 +568,20 @@ void Instance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDevice
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_FEATURES_KHR: {
+                VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR *enabling =
+                    reinterpret_cast<const VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR *>(current);
+                if (enabling->indirectMemoryCopy && !supported.indirectMemoryCopy) {
+                    ss << "VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR::indirectMemoryCopy is not supported\n";
+                }
+                if (enabling->indirectMemoryToImageCopy && !supported.indirectMemoryToImageCopy) {
+                    ss << "VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR::indirectMemoryToImageCopy is not supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_FEATURES_NV: {
                 VkPhysicalDeviceCopyMemoryIndirectFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;

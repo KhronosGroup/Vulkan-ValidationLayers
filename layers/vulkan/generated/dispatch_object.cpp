@@ -5183,6 +5183,29 @@ void Device::CmdBindDescriptorBufferEmbeddedSamplers2EXT(
         commandBuffer, (const VkBindDescriptorBufferEmbeddedSamplersInfoEXT*)local_pBindDescriptorBufferEmbeddedSamplersInfo);
 }
 
+void Device::CmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer, const VkCopyMemoryIndirectInfoKHR* pCopyMemoryIndirectInfo) {
+    device_dispatch_table.CmdCopyMemoryIndirectKHR(commandBuffer, pCopyMemoryIndirectInfo);
+}
+
+void Device::CmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer,
+                                             const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo) {
+    if (!wrap_handles) return device_dispatch_table.CmdCopyMemoryToImageIndirectKHR(commandBuffer, pCopyMemoryToImageIndirectInfo);
+    vku::safe_VkCopyMemoryToImageIndirectInfoKHR var_local_pCopyMemoryToImageIndirectInfo;
+    vku::safe_VkCopyMemoryToImageIndirectInfoKHR* local_pCopyMemoryToImageIndirectInfo = nullptr;
+    {
+        if (pCopyMemoryToImageIndirectInfo) {
+            local_pCopyMemoryToImageIndirectInfo = &var_local_pCopyMemoryToImageIndirectInfo;
+            local_pCopyMemoryToImageIndirectInfo->initialize(pCopyMemoryToImageIndirectInfo);
+
+            if (pCopyMemoryToImageIndirectInfo->dstImage) {
+                local_pCopyMemoryToImageIndirectInfo->dstImage = Unwrap(pCopyMemoryToImageIndirectInfo->dstImage);
+            }
+        }
+    }
+    device_dispatch_table.CmdCopyMemoryToImageIndirectKHR(
+        commandBuffer, (const VkCopyMemoryToImageIndirectInfoKHR*)local_pCopyMemoryToImageIndirectInfo);
+}
+
 VkResult Instance::CreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback) {
     if (!wrap_handles) return instance_dispatch_table.CreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback);
