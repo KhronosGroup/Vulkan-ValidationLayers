@@ -204,6 +204,9 @@ const char *VK_LAYER_GPUAV_INDIRECT_TRACE_RAYS_BUFFERS = "gpuav_indirect_trace_r
 const char *VK_LAYER_GPUAV_BUFFER_COPIES = "gpuav_buffer_copies";
 const char *VK_LAYER_GPUAV_INDEX_BUFFERS = "gpuav_index_buffers";
 
+// A temporary workaround until we get proper Descriptor Buffer support
+const char *VK_LAYER_GPUAV_DESCRIPTOR_BUFFER_OVERRIDE = "gpuav_descriptor_buffer_override";
+
 // Keep removed warning until October 2025 SDK is released
 const char *REMOVED_GPUAV_IMAGE_LAYOUT = "gpuav_image_layout";
 
@@ -936,6 +939,11 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_INDEX_BUFFERS)) {
             vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_INDEX_BUFFERS, gpuav_settings.validate_index_buffers);
         }
+    }
+
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_DESCRIPTOR_BUFFER_OVERRIDE)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_DESCRIPTOR_BUFFER_OVERRIDE,
+                                gpuav_settings.descriptor_buffer_override);
     }
 
     if (vkuHasLayerSetting(layer_setting_set, REMOVED_GPUAV_IMAGE_LAYOUT)) {

@@ -364,11 +364,13 @@ void Validator::InitSettings(const Location &loc) {
         }
     }
 
-    if (IsExtEnabled(extensions.vk_ext_descriptor_buffer)) {
+    if (IsExtEnabled(extensions.vk_ext_descriptor_buffer) && !gpuav_settings.descriptor_buffer_override) {
         InternalWarning(
             device, loc,
             "VK_EXT_descriptor_buffer is enabled, but GPU-AV does not currently support validation of descriptor buffers. "
-            "[Disabling all shader instrumentation checks]");
+            "[Disabling all shader instrumentation checks]"
+            "\nThere is a VK_LAYER_GPUAV_DESCRIPTOR_BUFFER_OVERRIDE that can be set to bypass this if you know you are not going "
+            "to use descriptor buffers.");
         // Because of VUs like VUID-VkPipelineLayoutCreateInfo-pSetLayouts-08008 we currently would need to rework the entire shader
         // instrumentation logic
         gpuav_settings.DisableShaderInstrumentationAndOptions();
@@ -376,7 +378,9 @@ void Validator::InitSettings(const Location &loc) {
         if (gpuav_settings.debug_printf_enabled) {
             InternalWarning(device, loc,
                             "VK_EXT_descriptor_buffer is enabled, but DebugPrintf uses a normal descriptor and currently can't "
-                            "exist with descriptor buffers. [Disabling debug_printf]");
+                            "exist with descriptor buffers. [Disabling debug_printf]"
+                            "\nThere is a VK_LAYER_GPUAV_DESCRIPTOR_BUFFER_OVERRIDE that can be set to bypass this if you know you "
+                            "are not going to use descriptor buffers.");
             gpuav_settings.debug_printf_enabled = false;
         }
     }
