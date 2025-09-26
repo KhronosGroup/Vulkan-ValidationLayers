@@ -2326,6 +2326,22 @@ void PostCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(
     VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo,
     const RecordObject& record_obj) override;
 
+void PreCallRecordCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer,
+                                           const VkCopyMemoryIndirectInfoKHR* pCopyMemoryIndirectInfo,
+                                           const RecordObject& record_obj) override;
+
+void PostCallRecordCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer,
+                                            const VkCopyMemoryIndirectInfoKHR* pCopyMemoryIndirectInfo,
+                                            const RecordObject& record_obj) override;
+
+void PreCallRecordCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer,
+                                                  const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo,
+                                                  const RecordObject& record_obj) override;
+
+void PostCallRecordCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer,
+                                                   const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo,
+                                                   const RecordObject& record_obj) override;
+
 void PreCallRecordCmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
                                                      const VkBuffer* pBuffers, const VkDeviceSize* pOffsets,
                                                      const VkDeviceSize* pSizes, const RecordObject& record_obj) override;

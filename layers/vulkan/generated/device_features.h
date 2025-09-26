@@ -130,6 +130,10 @@ struct DeviceFeatures {
     bool cooperativeVector;
     // VkPhysicalDeviceCooperativeVectorFeaturesNV
     bool cooperativeVectorTraining;
+    // VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR
+    bool indirectMemoryCopy;
+    // VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR
+    bool indirectMemoryToImageCopy;
     // VkPhysicalDeviceCopyMemoryIndirectFeaturesNV
     bool indirectCopy;
     // VkPhysicalDeviceCornerSampledImageFeaturesNV

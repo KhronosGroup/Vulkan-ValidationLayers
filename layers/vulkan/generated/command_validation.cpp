@@ -941,6 +941,20 @@ static const vvl::unordered_map<Func, CommandValidationInfo> kCommandValidationT
     CMD_SCOPE_BOTH, "kVUIDUndefined",
     CMD_SCOPE_OUTSIDE, "VUID-vkCmdBindDescriptorBufferEmbeddedSamplers2EXT-videocoding",
 }},
+{Func::vkCmdCopyMemoryIndirectKHR, {
+    "VUID-vkCmdCopyMemoryIndirectKHR-commandBuffer-recording",
+    nullptr,
+    VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT, "VUID-vkCmdCopyMemoryIndirectKHR-commandBuffer-cmdpool",
+    CMD_SCOPE_OUTSIDE, "VUID-vkCmdCopyMemoryIndirectKHR-renderpass",
+    CMD_SCOPE_OUTSIDE, "VUID-vkCmdCopyMemoryIndirectKHR-videocoding",
+}},
+{Func::vkCmdCopyMemoryToImageIndirectKHR, {
+    "VUID-vkCmdCopyMemoryToImageIndirectKHR-commandBuffer-recording",
+    nullptr,
+    VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT, "VUID-vkCmdCopyMemoryToImageIndirectKHR-commandBuffer-cmdpool",
+    CMD_SCOPE_OUTSIDE, "VUID-vkCmdCopyMemoryToImageIndirectKHR-renderpass",
+    CMD_SCOPE_OUTSIDE, "VUID-vkCmdCopyMemoryToImageIndirectKHR-videocoding",
+}},
 {Func::vkCmdDebugMarkerBeginEXT, {
     "VUID-vkCmdDebugMarkerBeginEXT-commandBuffer-recording",
     nullptr,

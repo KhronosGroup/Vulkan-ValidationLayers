@@ -514,6 +514,8 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdPushDescriptorSetWithTemplate2KHR CmdPushDescriptorSetWithTemplate2KHR;
     PFN_vkCmdSetDescriptorBufferOffsets2EXT CmdSetDescriptorBufferOffsets2EXT;
     PFN_vkCmdBindDescriptorBufferEmbeddedSamplers2EXT CmdBindDescriptorBufferEmbeddedSamplers2EXT;
+    PFN_vkCmdCopyMemoryIndirectKHR CmdCopyMemoryIndirectKHR;
+    PFN_vkCmdCopyMemoryToImageIndirectKHR CmdCopyMemoryToImageIndirectKHR;
     PFN_vkDebugMarkerSetObjectTagEXT DebugMarkerSetObjectTagEXT;
     PFN_vkDebugMarkerSetObjectNameEXT DebugMarkerSetObjectNameEXT;
     PFN_vkCmdDebugMarkerBeginEXT CmdDebugMarkerBeginEXT;

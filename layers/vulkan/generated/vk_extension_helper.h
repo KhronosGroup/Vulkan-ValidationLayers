@@ -258,6 +258,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_calibrated_timestamps{kNotEnabled};
     ExtEnabled vk_khr_shader_expect_assume{kNotEnabled};
     ExtEnabled vk_khr_maintenance6{kNotEnabled};
+    ExtEnabled vk_khr_copy_memory_indirect{kNotEnabled};
     ExtEnabled vk_khr_video_encode_intra_refresh{kNotEnabled};
     ExtEnabled vk_khr_video_encode_quantization_map{kNotEnabled};
     ExtEnabled vk_khr_shader_relaxed_extended_instruction{kNotEnabled};
@@ -719,6 +720,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_KHR_calibrated_timestamps:
         case vvl::Extension::_VK_KHR_shader_expect_assume:
         case vvl::Extension::_VK_KHR_maintenance6:
+        case vvl::Extension::_VK_KHR_copy_memory_indirect:
         case vvl::Extension::_VK_KHR_video_encode_intra_refresh:
         case vvl::Extension::_VK_KHR_video_encode_quantization_map:
         case vvl::Extension::_VK_KHR_shader_relaxed_extended_instruction:

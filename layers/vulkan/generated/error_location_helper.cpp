@@ -118,8 +118,10 @@ const char* String(Func func) {
     {"vkCmdCopyImageToBuffer", 23},
     {"vkCmdCopyImageToBuffer2", 24},
     {"vkCmdCopyImageToBuffer2KHR", 27},
+    {"vkCmdCopyMemoryIndirectKHR", 27},
     {"vkCmdCopyMemoryIndirectNV", 26},
     {"vkCmdCopyMemoryToAccelerationStructureKHR", 42},
+    {"vkCmdCopyMemoryToImageIndirectKHR", 34},
     {"vkCmdCopyMemoryToImageIndirectNV", 33},
     {"vkCmdCopyMemoryToMicromapEXT", 29},
     {"vkCmdCopyMicromapEXT", 21},
@@ -948,9 +950,11 @@ const char* String(Struct structure) {
     {"VkCopyImageToBufferInfo2", 25},
     {"VkCopyImageToImageInfo", 23},
     {"VkCopyImageToMemoryInfo", 24},
-    {"VkCopyMemoryIndirectCommandNV", 30},
+    {"VkCopyMemoryIndirectCommandKHR", 31},
+    {"VkCopyMemoryIndirectInfoKHR", 28},
     {"VkCopyMemoryToAccelerationStructureInfoKHR", 43},
-    {"VkCopyMemoryToImageIndirectCommandNV", 37},
+    {"VkCopyMemoryToImageIndirectCommandKHR", 38},
+    {"VkCopyMemoryToImageIndirectInfoKHR", 35},
     {"VkCopyMemoryToImageInfo", 24},
     {"VkCopyMemoryToMicromapInfoEXT", 30},
     {"VkCopyMicromapInfoEXT", 22},
@@ -1354,8 +1358,9 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceCooperativeMatrixPropertiesNV", 46},
     {"VkPhysicalDeviceCooperativeVectorFeaturesNV", 44},
     {"VkPhysicalDeviceCooperativeVectorPropertiesNV", 46},
+    {"VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR", 46},
     {"VkPhysicalDeviceCopyMemoryIndirectFeaturesNV", 45},
-    {"VkPhysicalDeviceCopyMemoryIndirectPropertiesNV", 47},
+    {"VkPhysicalDeviceCopyMemoryIndirectPropertiesKHR", 48},
     {"VkPhysicalDeviceCornerSampledImageFeaturesNV", 45},
     {"VkPhysicalDeviceCoverageReductionModeFeaturesNV", 48},
     {"VkPhysicalDeviceCubicClampFeaturesQCOM", 39},
@@ -1874,6 +1879,7 @@ const char* String(Struct structure) {
     {"VkStencilOpState", 17},
     {"VkStreamDescriptorSurfaceCreateInfoGGP", 39},
     {"VkStridedDeviceAddressNV", 25},
+    {"VkStridedDeviceAddressRangeKHR", 31},
     {"VkStridedDeviceAddressRegionKHR", 32},
     {"VkSubmitInfo", 13},
     {"VkSubmitInfo2", 14},
@@ -2339,6 +2345,7 @@ const char* String(Field field) {
     {"cooperativeVectorTraining", 26},
     {"cooperativeVectorTrainingFloat16Accumulation", 45},
     {"cooperativeVectorTrainingFloat32Accumulation", 45},
+    {"copyAddressRange", 17},
     {"copyBufferAddress", 18},
     {"copyCount", 10},
     {"copyDstLayoutCount", 19},
@@ -2569,6 +2576,7 @@ const char* String(Field field) {
     {"dstCache", 9},
     {"dstColorBlendFactor", 20},
     {"dstComponentType", 17},
+    {"dstCopyFlags", 13},
     {"dstData", 8},
     {"dstImage", 9},
     {"dstImageLayout", 15},
@@ -2940,6 +2948,8 @@ const char* String(Field field) {
     {"indirectCopy", 13},
     {"indirectDeviceAddress", 22},
     {"indirectExecutionSet", 21},
+    {"indirectMemoryCopy", 19},
+    {"indirectMemoryToImageCopy", 26},
     {"indirectStateFlags", 19},
     {"indirectStride", 15},
     {"info", 5},
@@ -3686,6 +3696,8 @@ const char* String(Field field) {
     {"pCopyImageToBufferInfo", 23},
     {"pCopyImageToImageInfo", 22},
     {"pCopyImageToMemoryInfo", 23},
+    {"pCopyMemoryIndirectInfo", 24},
+    {"pCopyMemoryToImageIndirectInfo", 31},
     {"pCopyMemoryToImageInfo", 23},
     {"pCopySrcLayouts", 16},
     {"pCopyTensorInfo", 16},
@@ -4776,6 +4788,7 @@ const char* String(Field field) {
     {"srcCacheCount", 14},
     {"srcColorBlendFactor", 20},
     {"srcComponentType", 17},
+    {"srcCopyFlags", 13},
     {"srcData", 8},
     {"srcImage", 9},
     {"srcImageLayout", 15},
@@ -5330,6 +5343,7 @@ const char* String(FlagBitmask value) {
     {"VkAccessFlagBits2", 18},
     {"VkAccessFlagBits3KHR", 21},
     {"VkAcquireProfilingLockFlagBitsKHR", 34},
+    {"VkAddressCopyFlagBitsKHR", 25},
     {"VkAttachmentDescriptionFlagBits", 32},
     {"VkBufferCreateFlagBits", 23},
     {"VkBufferUsageFlagBits", 22},
@@ -5692,6 +5706,7 @@ const char* String(Extension extension) {
     {"VK_KHR_compute_shader_derivatives", 34},
     {"VK_KHR_cooperative_matrix", 26},
     {"VK_KHR_copy_commands2", 22},
+    {"VK_KHR_copy_memory_indirect", 28},
     {"VK_KHR_create_renderpass2", 26},
     {"VK_KHR_dedicated_allocation", 28},
     {"VK_KHR_deferred_host_operations", 32},
@@ -6019,6 +6034,8 @@ bool IsFieldPointer(Field field) {
     case Field::pCopyImageToBufferInfo:
     case Field::pCopyImageToImageInfo:
     case Field::pCopyImageToMemoryInfo:
+    case Field::pCopyMemoryIndirectInfo:
+    case Field::pCopyMemoryToImageIndirectInfo:
     case Field::pCopyMemoryToImageInfo:
     case Field::pCopySrcLayouts:
     case Field::pCopyTensorInfo:
@@ -7465,6 +7482,14 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkSetDescriptorBufferOffsetsInfoEXT;
     case VK_STRUCTURE_TYPE_BIND_DESCRIPTOR_BUFFER_EMBEDDED_SAMPLERS_INFO_EXT:
        return Struct::VkBindDescriptorBufferEmbeddedSamplersInfoEXT;
+    case VK_STRUCTURE_TYPE_COPY_MEMORY_INDIRECT_INFO_KHR:
+       return Struct::VkCopyMemoryIndirectInfoKHR;
+    case VK_STRUCTURE_TYPE_COPY_MEMORY_TO_IMAGE_INDIRECT_INFO_KHR:
+       return Struct::VkCopyMemoryToImageIndirectInfoKHR;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_FEATURES_KHR:
+       return Struct::VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_PROPERTIES_KHR:
+       return Struct::VkPhysicalDeviceCopyMemoryIndirectPropertiesKHR;
     case VK_STRUCTURE_TYPE_VIDEO_ENCODE_INTRA_REFRESH_CAPABILITIES_KHR:
        return Struct::VkVideoEncodeIntraRefreshCapabilitiesKHR;
     case VK_STRUCTURE_TYPE_VIDEO_ENCODE_SESSION_INTRA_REFRESH_CREATE_INFO_KHR:
@@ -8243,8 +8268,6 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkRenderPassFragmentDensityMapOffsetEndInfoEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_FEATURES_NV:
        return Struct::VkPhysicalDeviceCopyMemoryIndirectFeaturesNV;
-    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_PROPERTIES_NV:
-       return Struct::VkPhysicalDeviceCopyMemoryIndirectPropertiesNV;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_DECOMPRESSION_FEATURES_NV:
        return Struct::VkPhysicalDeviceMemoryDecompressionFeaturesNV;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_DECOMPRESSION_PROPERTIES_NV:

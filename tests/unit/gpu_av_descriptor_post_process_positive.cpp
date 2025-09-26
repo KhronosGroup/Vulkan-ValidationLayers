@@ -1284,7 +1284,7 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasDepthSamplersSlang) {
         SamplerComparisonState g_shadowSamplers[] : register(s2, space0);
 
         [shader("compute")]
-        [numthreads(1, 1, 1)]
+        [numthreads(2, 2, 1)]
         void main() {
             uint a = g_ssbo[0].a;
             uint b = g_ssbo[0].b;

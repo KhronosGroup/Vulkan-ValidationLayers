@@ -352,7 +352,7 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpCooperativeVectorLoadNV:
         case spv::OpReportIntersectionKHR:
         case spv::OpRayQueryGetIntersectionTriangleVertexPositionsKHR:
-        case spv::OpRayQueryGetClusterIdNV:
+        case spv::OpRayQueryGetIntersectionClusterIdNV:
         case spv::OpHitObjectGetClusterIdNV:
         case spv::OpCooperativeMatrixLoadNV:
         case spv::OpCooperativeMatrixMulAddNV:
@@ -802,7 +802,7 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpReportIntersectionKHR:
         case spv::OpRayQueryGetIntersectionTriangleVertexPositionsKHR:
         case spv::OpTypeAccelerationStructureKHR:
-        case spv::OpRayQueryGetClusterIdNV:
+        case spv::OpRayQueryGetIntersectionClusterIdNV:
         case spv::OpHitObjectGetClusterIdNV:
         case spv::OpTypeCooperativeMatrixNV:
         case spv::OpCooperativeMatrixLoadNV:

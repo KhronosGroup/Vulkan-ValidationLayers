@@ -4737,6 +4737,26 @@ bool Device::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT(
     return skip;
 }
 
+// vkCmdCopyMemoryIndirectKHR:
+// Checked by chassis: commandBuffer: "VUID-vkCmdCopyMemoryIndirectKHR-commandBuffer-parameter"
+
+bool Device::PreCallValidateCmdCopyMemoryToImageIndirectKHR(
+    VkCommandBuffer commandBuffer, const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo,
+    const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: commandBuffer: "VUID-vkCmdCopyMemoryToImageIndirectKHR-commandBuffer-parameter"
+    if (pCopyMemoryToImageIndirectInfo) {
+        [[maybe_unused]] const Location pCopyMemoryToImageIndirectInfo_loc =
+            error_obj.location.dot(Field::pCopyMemoryToImageIndirectInfo);
+        skip |= ValidateObject(pCopyMemoryToImageIndirectInfo->dstImage, kVulkanObjectTypeImage, false,
+                               "VUID-VkCopyMemoryToImageIndirectInfoKHR-dstImage-parameter",
+                               "UNASSIGNED-VkCopyMemoryToImageIndirectInfoKHR-dstImage-parent",
+                               pCopyMemoryToImageIndirectInfo_loc.dot(Field::dstImage));
+    }
+
+    return skip;
+}
+
 // vkCreateDebugReportCallbackEXT:
 // Checked by chassis: instance: "VUID-vkCreateDebugReportCallbackEXT-instance-parameter"
 

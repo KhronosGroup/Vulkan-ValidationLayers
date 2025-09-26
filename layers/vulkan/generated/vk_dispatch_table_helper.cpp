@@ -614,6 +614,8 @@ static VKAPI_ATTR void VKAPI_CALL StubCmdSetDescriptorBufferOffsets2EXT(VkComman
                                                                         const VkSetDescriptorBufferOffsetsInfoEXT*) {}
 static VKAPI_ATTR void VKAPI_CALL
 StubCmdBindDescriptorBufferEmbeddedSamplers2EXT(VkCommandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT*) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdCopyMemoryIndirectKHR(VkCommandBuffer, const VkCopyMemoryIndirectInfoKHR*) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer, const VkCopyMemoryToImageIndirectInfoKHR*) {}
 static VKAPI_ATTR VkResult VKAPI_CALL StubCreateDebugReportCallbackEXT(VkInstance, const VkDebugReportCallbackCreateInfoEXT*,
                                                                        const VkAllocationCallbacks*, VkDebugReportCallbackEXT*) {
     return VK_SUCCESS;
@@ -1734,6 +1736,8 @@ const auto& GetApiExtensionMap() {
         {"vkCmdPushDescriptorSetWithTemplate2KHR", {vvl::Extension::_VK_KHR_maintenance6}},
         {"vkCmdSetDescriptorBufferOffsets2EXT", {vvl::Extension::_VK_KHR_maintenance6}},
         {"vkCmdBindDescriptorBufferEmbeddedSamplers2EXT", {vvl::Extension::_VK_KHR_maintenance6}},
+        {"vkCmdCopyMemoryIndirectKHR", {vvl::Extension::_VK_KHR_copy_memory_indirect}},
+        {"vkCmdCopyMemoryToImageIndirectKHR", {vvl::Extension::_VK_KHR_copy_memory_indirect}},
         {"vkDebugMarkerSetObjectTagEXT", {vvl::Extension::_VK_EXT_debug_marker}},
         {"vkDebugMarkerSetObjectNameEXT", {vvl::Extension::_VK_EXT_debug_marker}},
         {"vkCmdDebugMarkerBeginEXT", {vvl::Extension::_VK_EXT_debug_marker}},
@@ -3131,6 +3135,15 @@ void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* tab
     if (table->CmdBindDescriptorBufferEmbeddedSamplers2EXT == nullptr) {
         table->CmdBindDescriptorBufferEmbeddedSamplers2EXT =
             (PFN_vkCmdBindDescriptorBufferEmbeddedSamplers2EXT)StubCmdBindDescriptorBufferEmbeddedSamplers2EXT;
+    }
+    table->CmdCopyMemoryIndirectKHR = (PFN_vkCmdCopyMemoryIndirectKHR)gpa(device, "vkCmdCopyMemoryIndirectKHR");
+    if (table->CmdCopyMemoryIndirectKHR == nullptr) {
+        table->CmdCopyMemoryIndirectKHR = (PFN_vkCmdCopyMemoryIndirectKHR)StubCmdCopyMemoryIndirectKHR;
+    }
+    table->CmdCopyMemoryToImageIndirectKHR =
+        (PFN_vkCmdCopyMemoryToImageIndirectKHR)gpa(device, "vkCmdCopyMemoryToImageIndirectKHR");
+    if (table->CmdCopyMemoryToImageIndirectKHR == nullptr) {
+        table->CmdCopyMemoryToImageIndirectKHR = (PFN_vkCmdCopyMemoryToImageIndirectKHR)StubCmdCopyMemoryToImageIndirectKHR;
     }
     table->DebugMarkerSetObjectTagEXT = (PFN_vkDebugMarkerSetObjectTagEXT)gpa(device, "vkDebugMarkerSetObjectTagEXT");
     if (table->DebugMarkerSetObjectTagEXT == nullptr) {

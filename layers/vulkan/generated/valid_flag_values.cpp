@@ -1068,6 +1068,11 @@ vvl::Extensions stateless::Context::IsValidFlag64Value(vvl::FlagBitmask flag_bit
                     return {vvl::Extension::_VK_ARM_data_graph};
                 }
             }
+            if (value & (VK_PIPELINE_STAGE_2_COPY_INDIRECT_BIT_KHR)) {
+                if (!IsExtEnabled(extensions.vk_khr_copy_memory_indirect)) {
+                    return {vvl::Extension::_VK_KHR_copy_memory_indirect};
+                }
+            }
             return {};
         case vvl::FlagBitmask::VkAccessFlagBits2:
             if (value & (VK_ACCESS_2_VIDEO_DECODE_READ_BIT_KHR | VK_ACCESS_2_VIDEO_DECODE_WRITE_BIT_KHR)) {
@@ -1353,6 +1358,8 @@ std::string stateless::Context::DescribeFlagBitmaskValue(vvl::FlagBitmask flag_b
             return string_VkPresentGravityFlagsKHR(value);
         case vvl::FlagBitmask::VkVideoEncodeAV1RateControlFlagBitsKHR:
             return string_VkVideoEncodeAV1RateControlFlagsKHR(value);
+        case vvl::FlagBitmask::VkAddressCopyFlagBitsKHR:
+            return string_VkAddressCopyFlagsKHR(value);
         case vvl::FlagBitmask::VkVideoEncodeIntraRefreshModeFlagBitsKHR:
             return string_VkVideoEncodeIntraRefreshModeFlagsKHR(value);
         case vvl::FlagBitmask::VkDebugReportFlagBitsEXT:

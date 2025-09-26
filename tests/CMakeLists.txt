@@ -533,7 +533,6 @@ target_link_libraries(vk_layer_validation_tests PRIVATE
     VkLayer_utils
     $<$<BOOL:${USE_SLANG}>:slang>
     glslang::SPIRV
-    glslang::SPVRemapper
     SPIRV-Tools-static
     SPIRV-Headers::SPIRV-Headers
     GTest::gtest
