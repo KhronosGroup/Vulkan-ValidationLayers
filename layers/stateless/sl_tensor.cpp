@@ -118,7 +118,7 @@ bool Device::ValidateTensorDescriptionARM(const VkTensorDescriptionARM &descript
         }
         if (static_cast<uint64_t>(total_elements) > phys_dev_ext_props.tensor_properties.maxTensorElements || would_overflow) {
             skip |= LogError("VUID-VkTensorCreateInfoARM-tensorElements-09721", device, description_loc.dot(Field::pDimensions),
-                             "tensorElements (%" PRIi64 ") > maxTensorElements (%" PRIu64 ")", total_elements,
+                             "the total number of elements (%" PRIi64 ") is greater than maxTensorElements (%" PRIu64 ")", total_elements,
                              phys_dev_ext_props.tensor_properties.maxTensorElements);
         }
     }
