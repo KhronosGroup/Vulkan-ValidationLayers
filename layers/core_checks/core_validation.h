@@ -2318,6 +2318,21 @@ class CoreChecks : public vvl::DeviceProxy {
                                                                    uint32_t firstQuery,
                                                                    const ErrorObject& error_obj) const override;
 
+    bool ValidateStridedDeviceAddressRange(VkCommandBuffer command_buffer, const VkStridedDeviceAddressRangeKHR& strided_range,
+                                           const Location& strided_range_loc) const;
+    bool ValidateCopyMemoryIndirectInfo(VkCommandBuffer command_buffer, const VkCopyMemoryIndirectInfoKHR& memory_indirect_info,
+                                        const Location& info_loc) const;
+    bool PreCallValidateCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer,
+                                                 const VkCopyMemoryIndirectInfoKHR* pCopyMemoryIndirectInfo,
+                                                 const ErrorObject& error_obj) const override;
+
+    bool ValidateCopyMemoryToImageIndirectInfo(const vvl::CommandBuffer& cb_state,
+                                               const VkCopyMemoryToImageIndirectInfoKHR& indirect_info,
+                                               const Location& info_loc) const;
+    bool PreCallValidateCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer,
+                                                        const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo,
+                                                        const ErrorObject& error_obj) const override;
+
     bool PreCallValidateGetRayTracingShaderGroupHandlesKHR(VkDevice device, VkPipeline pipeline, uint32_t firstGroup,
                                                            uint32_t groupCount, size_t dataSize, void* pData,
                                                            const ErrorObject& error_obj) const override;

@@ -108,6 +108,7 @@ struct DeviceExtensionProperties {
     VkPhysicalDeviceExternalMemoryHostPropertiesEXT external_memory_host_props;
     VkPhysicalDeviceMaintenance9PropertiesKHR maintenance9_props;
     VkPhysicalDeviceTensorPropertiesARM tensor_properties;
+    VkPhysicalDeviceCopyMemoryIndirectPropertiesKHR copy_memory_indirect_props;
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
     VkPhysicalDeviceExternalFormatResolvePropertiesANDROID android_format_resolve_props;
 #endif
