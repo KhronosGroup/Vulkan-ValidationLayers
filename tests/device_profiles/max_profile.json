@@ -104,6 +104,10 @@
                     "multiviewGeometryShader": true,
                     "multiviewTessellationShader": true
                 },
+                "VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR": {
+                    "indirectMemoryCopy": true,
+                    "indirectMemoryToImageCopy": true
+                },
                 "VkPhysicalDevicePresentIdFeaturesKHR": {
                     "presentId": true
                 },
@@ -1397,6 +1401,13 @@
                 "VkPhysicalDeviceMultiDrawPropertiesEXT": {
                     "maxMultiDrawCount": 1024
                 },
+                "VkPhysicalDeviceCopyMemoryIndirectPropertiesKHR": {
+                    "supportedQueues": [
+                        "VK_QUEUE_GRAPHICS_BIT",
+                        "VK_QUEUE_COMPUTE_BIT",
+                        "VK_QUEUE_TRANSFER_BIT"
+                    ]
+                },
                 "VkPhysicalDevicePushDescriptorPropertiesKHR": {
                     "maxPushDescriptors": 4294967000
                 },
@@ -2413,6 +2424,7 @@
                 "VK_KHR_buffer_device_address": 1,
                 "VK_KHR_cooperative_matrix": 1,
                 "VK_KHR_copy_commands2": 1,
+                "VK_KHR_copy_memory_indirect": 1,
                 "VK_KHR_compute_shader_derivatives": 1,
                 "VK_KHR_create_renderpass2": 1,
                 "VK_KHR_dedicated_allocation": 1,
@@ -3648,6 +3660,7 @@
                             "VK_FORMAT_FEATURE_2_VIDEO_DECODE_DPB_BIT_KHR",
                             "VK_FORMAT_FEATURE_2_VIDEO_ENCODE_INPUT_BIT_KHR",
                             "VK_FORMAT_FEATURE_2_VIDEO_ENCODE_DPB_BIT_KHR",
+                            "VK_FORMAT_FEATURE_2_COPY_IMAGE_INDIRECT_DST_BIT_KHR",
                             "VK_FORMAT_FEATURE_2_WEIGHT_SAMPLED_IMAGE_BIT_QCOM"
                         ],
                         "bufferFeatures": [
@@ -4166,6 +4179,7 @@
                             "VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT",
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT",
                             "VK_FORMAT_FEATURE_2_FRAGMENT_DENSITY_MAP_BIT_EXT",
+                            "VK_FORMAT_FEATURE_2_COPY_IMAGE_INDIRECT_DST_BIT_KHR",
                             "VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR"
                         ],
                         "bufferFeatures": [

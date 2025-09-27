@@ -1793,3 +1793,111 @@ TEST_F(PositiveCopyBufferImage, Transition3dImageSlices) {
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
+
+TEST_F(PositiveCopyBufferImage, MemoryIndirect) {
+    AddRequiredExtensions(VK_KHR_COPY_MEMORY_INDIRECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::indirectMemoryCopy);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
+
+    VkCopyMemoryIndirectCommandKHR cmds[2] = {
+        {4, 4, 0},
+        {0, 0, 0},
+    };
+    const VkDeviceSize buffer_size = sizeof(cmds);
+
+    vkt::Buffer indirect_buffer(*m_device, buffer_size, 0, vkt::device_address);
+    void *indirect_buffer_data = indirect_buffer.Memory().Map();
+    memcpy(indirect_buffer_data, cmds, buffer_size);
+
+    VkStridedDeviceAddressRangeKHR address_range = {};
+    address_range.address = indirect_buffer.Address();
+    address_range.size = buffer_size;
+    address_range.stride = sizeof(VkCopyMemoryIndirectCommandKHR);
+
+    VkCopyMemoryIndirectInfoKHR copy_info = vku::InitStructHelper();
+    copy_info.copyCount = 2;
+    copy_info.copyAddressRange = address_range;
+    copy_info.srcCopyFlags = VK_ADDRESS_COPY_DEVICE_LOCAL_BIT_KHR;
+    copy_info.dstCopyFlags = VK_ADDRESS_COPY_DEVICE_LOCAL_BIT_KHR;
+
+    m_command_buffer.Begin();
+    vk::CmdCopyMemoryIndirectKHR(m_command_buffer, &copy_info);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveCopyBufferImage, MemoryToImageIndirect) {
+    AddRequiredExtensions(VK_KHR_COPY_MEMORY_INDIRECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::indirectMemoryToImageCopy);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
+
+    VkCopyMemoryToImageIndirectCommandKHR cmd1 = {};
+    cmd1.srcAddress = 0;
+    cmd1.bufferRowLength = 8;
+    cmd1.bufferImageHeight = 8;
+    cmd1.imageSubresource = {};
+    cmd1.imageOffset = {0, 0, 0};
+    cmd1.imageExtent = {8, 8, 1};
+
+    VkCopyMemoryToImageIndirectCommandKHR cmd2 = {};
+    cmd2.srcAddress = 1024;
+    cmd2.bufferRowLength = 4;
+    cmd2.bufferImageHeight = 4;
+    cmd2.imageSubresource = {};
+    cmd2.imageOffset = {0, 0, 0};
+    cmd2.imageExtent = {4, 4, 1};
+
+    VkCopyMemoryToImageIndirectCommandKHR cmds[2] = {cmd1, cmd2};
+
+    vkt::Buffer indirect_buffer(*m_device, sizeof(cmds), 0, vkt::device_address);
+    void *indirect_buffer_data = indirect_buffer.Memory().Map();
+    memcpy(indirect_buffer_data, cmds, sizeof(cmds));
+
+    VkImageSubresourceLayers res_layer = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    VkImageSubresourceLayers res_layers[2] = {res_layer, res_layer};
+
+    m_command_buffer.Begin();
+
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_create_info.extent = {32, 32, 1};
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 4;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_create_info.flags = 0;
+    vkt::Image src_image(*m_device, image_create_info, vkt::set_layout);
+
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    vkt::Image dst_image(*m_device, image_create_info, vkt::set_layout);
+
+    VkImageCopy copy_region;
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.dstSubresource = copy_region.srcSubresource;
+    copy_region.srcOffset = {0, 0, 0};
+    copy_region.dstOffset = {0, 0, 0};
+    copy_region.extent = {1, 1, 1};
+
+    const uint32_t stride = sizeof(VkCopyMemoryToImageIndirectCommandKHR);
+
+    VkStridedDeviceAddressRangeKHR address_range = {};
+    address_range.address = indirect_buffer.Address();
+    address_range.size = sizeof(cmds);
+    address_range.stride = stride;
+
+    VkCopyMemoryToImageIndirectInfoKHR copy_info = vku::InitStructHelper();
+    copy_info.copyCount = 2;
+    copy_info.copyAddressRange = address_range;
+    copy_info.srcCopyFlags = VK_ADDRESS_COPY_DEVICE_LOCAL_BIT_KHR;
+    copy_info.dstImage = dst_image;
+    copy_info.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    copy_info.pImageSubresources = res_layers;
+
+    vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_GENERAL, dst_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer, &copy_info);
+    m_command_buffer.End();
+}
