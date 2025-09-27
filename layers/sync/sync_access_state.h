@@ -226,6 +226,8 @@ struct OrderingBarrier {
     }
 };
 
+const OrderingBarrier &GetOrderingRules(SyncOrdering ordering_enum);
+
 using ResourceUsageTagSet = CachedInsertSet<ResourceUsageTag, 4>;
 
 // Mutliple read operations can be simlutaneously (and independently) synchronized,
@@ -369,10 +371,6 @@ struct PendingBarriers {
 };
 
 class ResourceAccessState {
-  protected:
-    using OrderingBarriers = std::array<OrderingBarrier, static_cast<size_t>(SyncOrdering::kNumOrderings)>;
-    using FirstAccesses = small_vector<ResourceFirstAccess, 3>;
-
   public:
     HazardResult DetectHazard(const SyncAccessInfo &usage_info) const;
     HazardResult DetectMarkerHazard() const;
@@ -479,10 +477,6 @@ class ResourceAccessState {
     void Normalize();
     void GatherReferencedTags(ResourceUsageTagSet &used) const;
 
-    static const OrderingBarrier &GetOrderingRules(SyncOrdering ordering_enum) {
-        return kOrderingRules[static_cast<size_t>(ordering_enum)];
-    }
-
     void UpdateStats(syncval_stats::AccessContextStats &stats) const;
 
   private:
@@ -529,12 +523,13 @@ class ResourceAccessState {
     // Tracks whether the fragment shader read is input attachment read
     bool input_attachment_read;
 
+    // Reserve capacity for 2 first accesses, more than that is not very common
+    using FirstAccesses = small_vector<ResourceFirstAccess, 2>;
+
     FirstAccesses first_accesses_;
     VkPipelineStageFlags2 first_read_stages_;
     OrderingBarrier first_write_layout_ordering_;
     bool first_access_closed_;
-
-    static OrderingBarriers kOrderingRules;
 };
 using ResourceAccessStateFunction = std::function<void(ResourceAccessState *)>;
 using ResourceAccessRangeMap = sparse_container::range_map<ResourceAddress, ResourceAccessState>;

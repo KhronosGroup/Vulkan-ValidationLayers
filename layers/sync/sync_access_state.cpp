@@ -21,11 +21,13 @@
 
 static bool IsRead(SyncAccessIndex access) { return syncAccessReadMask[access]; }
 
-ResourceAccessState::OrderingBarriers ResourceAccessState::kOrderingRules = {
+static const std::array<OrderingBarrier, static_cast<size_t>(SyncOrdering::kNumOrderings)> kOrderingRules = {
     {{VK_PIPELINE_STAGE_2_NONE, SyncAccessFlags()},
      {kColorAttachmentExecScope, kColorAttachmentAccessScope},
      {kDepthStencilAttachmentExecScope, kDepthStencilAttachmentAccessScope},
      {kRasterAttachmentExecScope, kRasterAttachmentAccessScope}}};
+
+const OrderingBarrier &GetOrderingRules(SyncOrdering ordering_enum) { return kOrderingRules[static_cast<size_t>(ordering_enum)]; }
 
 HazardResult ResourceAccessState::DetectHazard(const SyncAccessInfo &usage_info) const {
     const auto &usage_stage = usage_info.stage_mask;
@@ -160,9 +162,8 @@ HazardResult ResourceAccessState::DetectHazard(const SyncAccessInfo &usage_info,
 HazardResult ResourceAccessState::DetectHazard(const ResourceAccessState &recorded_use, QueueId queue_id,
                                                const ResourceUsageRange &tag_range) const {
     HazardResult hazard;
-    using Size = FirstAccesses::size_type;
     const auto &recorded_accesses = recorded_use.first_accesses_;
-    Size count = recorded_accesses.size();
+    uint32_t count = recorded_accesses.size();
     if (count) {
         // First access is only closed if the last is a write
         bool do_write_last = recorded_use.first_access_closed_;
@@ -171,7 +172,7 @@ HazardResult ResourceAccessState::DetectHazard(const ResourceAccessState &record
             --count;
         }
 
-        for (Size i = 0; i < count; ++i) {
+        for (uint32_t i = 0; i < count; ++i) {
             const auto &first = recorded_accesses[i];
             // Skip and quit logic
             if (first.tag < tag_range.begin) continue;

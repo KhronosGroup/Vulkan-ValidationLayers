@@ -44,7 +44,7 @@ class HazardDetectorWithOrdering {
 
   public:
     HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const {
-        const OrderingBarrier &ordering = ResourceAccessState::GetOrderingRules(ordering_rule_);
+        const OrderingBarrier &ordering = GetOrderingRules(ordering_rule_);
         return pos->second.DetectHazard(access_info_, ordering, flags_, kQueueIdInvalid);
     }
     HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag,
