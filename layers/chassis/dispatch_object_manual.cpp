@@ -409,6 +409,9 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
                                              &phys_dev_ext_props.blend_operation_advanced_props);
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_conservative_rasterization,
                                              &phys_dev_ext_props.conservative_rasterization_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_copy_memory_indirect,
+                                             &phys_dev_ext_props.copy_memory_indirect_props);
+
     if (api_version >= VK_API_VERSION_1_1) {
         instance->GetPhysicalDeviceExtProperties(physical_device, kEnabledByCreateinfo, &phys_dev_ext_props.subgroup_props);
     }
