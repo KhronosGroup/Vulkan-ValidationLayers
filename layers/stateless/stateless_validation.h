@@ -284,10 +284,12 @@ class Context {
                                      const FlagType flag_type, const char *vuid, const char *flags_zero_vuid = nullptr) const;
 
     bool ValidateFlags(const Location &loc, vvl::FlagBitmask flag_bitmask, VkFlags all_flags, VkFlags value,
-                       const FlagType flag_type, const char *vuid, const char *flags_zero_vuid = nullptr) const;
+                       const FlagType flag_type, const char *vuid, const char *flags_zero_vuid = nullptr,
+                       bool instance_function = false) const;
 
     bool ValidateFlags(const Location &loc, vvl::FlagBitmask flag_bitmask, VkFlags64 all_flags, VkFlags64 value,
-                       const FlagType flag_type, const char *vuid, const char *flags_zero_vuid = nullptr) const;
+                       const FlagType flag_type, const char *vuid, const char *flags_zero_vuid = nullptr,
+                       bool instance_function = false) const;
 
     bool ValidateFlagsArray(const Location &count_loc, const Location &array_loc, vvl::FlagBitmask flag_bitmask, VkFlags all_flags,
                             uint32_t count, const VkFlags *array, bool count_required, const char *count_required_vuid,
@@ -303,8 +305,8 @@ class Context {
     bool IsDuplicatePnext(VkStructureType input_value) const;
 
     // VkFlags values don't have a way overload, so need to use vvl::FlagBitmask
-    vvl::Extensions IsValidFlagValue(vvl::FlagBitmask flag_bitmask, VkFlags value) const;
-    vvl::Extensions IsValidFlag64Value(vvl::FlagBitmask flag_bitmask, VkFlags64 value) const;
+    vvl::Extensions IsValidFlagValue(vvl::FlagBitmask flag_bitmask, VkFlags value, bool instance_function) const;
+    vvl::Extensions IsValidFlag64Value(vvl::FlagBitmask flag_bitmask, VkFlags64 value, bool instance_function) const;
     std::string DescribeFlagBitmaskValue(vvl::FlagBitmask flag_bitmask, VkFlags value) const;
     std::string DescribeFlagBitmaskValue64(vvl::FlagBitmask flag_bitmask, VkFlags64 value) const;
 };
