@@ -2416,10 +2416,13 @@ VkResult Device::CreateIndirectExecutionSetEXT(VkDevice device, const VkIndirect
                     shader_info.initialize(pCreateInfo->info.pShaderInfo);
 
                     for (uint32_t index0 = 0; index0 < local_pCreateInfo.info.pShaderInfo->shaderCount; ++index0) {
-                        const auto &set_layout = local_pCreateInfo.info.pShaderInfo->pSetLayoutInfos[index0];
-                        if (set_layout.pSetLayouts) {
-                            for (uint32_t index1 = 0; index1 < set_layout.setLayoutCount; ++index1) {
-                                shader_info.pSetLayoutInfos[index0].pSetLayouts[index1] = Unwrap(set_layout.pSetLayouts[index1]);
+                        if (local_pCreateInfo.info.pShaderInfo->pSetLayoutInfos) {
+                            const auto &set_layout = local_pCreateInfo.info.pShaderInfo->pSetLayoutInfos[index0];
+                            if (set_layout.pSetLayouts) {
+                                for (uint32_t index1 = 0; index1 < set_layout.setLayoutCount; ++index1) {
+                                    shader_info.pSetLayoutInfos[index0].pSetLayouts[index1] =
+                                        Unwrap(set_layout.pSetLayouts[index1]);
+                                }
                             }
                         }
                         shader_info.pInitialShaders[index0] = Unwrap(local_pCreateInfo.info.pShaderInfo->pInitialShaders[index0]);

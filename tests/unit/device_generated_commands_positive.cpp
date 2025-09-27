@@ -407,3 +407,69 @@ TEST_F(PositiveDeviceGeneratedCommands, ExecuteShaderObjectVertex) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveDeviceGeneratedCommands, IndirectExecutionSetNullLayout) {
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
+    InitRenderTarget();
+
+    const char comp_src[] = R"glsl(
+        #version 460
+        layout (local_size_x=64, local_size_y=1, local_size_z=1) in;
+        layout (set=0, binding=0, std430) buffer OutputBlock { uint values[]; } outputBuffer;
+        layout (set=0, binding=1, std430) readonly buffer InputBlock { uint values[]; } inputBuffer;
+        layout (push_constant, std430) uniform PushConstantBlock { uint bufferOffset; } pc;
+        void main(void) {
+            const uint idx = gl_LocalInvocationIndex + pc.bufferOffset;
+            outputBuffer.values[idx] = inputBuffer.values[idx];
+        }
+    )glsl";
+
+    std::vector<uint32_t> spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src);
+
+    vkt::Buffer buffer1(*m_device, 512, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    vkt::Buffer buffer2(*m_device, 512, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+    vkt::DescriptorSetLayout descriptor_set_layout(
+        *m_device, {
+                       {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                       {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                   });
+
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_layout});
+
+    VkPushConstantRange push_constant_range;
+    push_constant_range.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    push_constant_range.offset = 0u;
+    push_constant_range.size = 4u;
+
+    VkShaderCreateInfoEXT shader_ci = vku::InitStructHelper();
+    shader_ci.flags = VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT;
+    shader_ci.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    shader_ci.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+    shader_ci.codeSize = spv.size() * sizeof(uint32_t);
+    shader_ci.pCode = spv.data();
+    shader_ci.pName = "main";
+    shader_ci.setLayoutCount = 1u;
+    shader_ci.pSetLayouts = &descriptor_set_layout.handle();
+    shader_ci.pushConstantRangeCount = 1u;
+    shader_ci.pPushConstantRanges = &push_constant_range;
+    vkt::Shader shader(*m_device, shader_ci);
+
+    VkIndirectExecutionSetShaderInfoEXT shader_info = vku::InitStructHelper();
+    shader_info.shaderCount = 1u;
+    shader_info.pInitialShaders = &shader.handle();
+    shader_info.pSetLayoutInfos = nullptr;
+    shader_info.maxShaderCount = 2u;
+    shader_info.pushConstantRangeCount = 1u;
+    shader_info.pPushConstantRanges = &push_constant_range;
+
+    VkIndirectExecutionSetCreateInfoEXT indirect_execution_set_ci = vku::InitStructHelper();
+    indirect_execution_set_ci.type = VK_INDIRECT_EXECUTION_SET_INFO_TYPE_SHADER_OBJECTS_EXT;
+    indirect_execution_set_ci.info.pShaderInfo = &shader_info;
+
+    VkIndirectExecutionSetEXT indirect_execution_set;
+    vk::CreateIndirectExecutionSetEXT(*m_device, &indirect_execution_set_ci, nullptr, &indirect_execution_set);
+    vk::DestroyIndirectExecutionSetEXT(*m_device, indirect_execution_set, nullptr);
+}
