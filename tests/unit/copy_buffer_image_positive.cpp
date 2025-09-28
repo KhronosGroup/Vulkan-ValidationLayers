@@ -1861,7 +1861,7 @@ TEST_F(PositiveCopyBufferImage, MemoryToImageIndirect) {
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_create_info.extent = {32, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 4;
