@@ -933,7 +933,7 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
         const Location range_loc = error_obj.location.dot(Field::pRanges, i);
         skip |= ValidateCmdClearColorSubresourceRange(image_state.create_info, pRanges[i], objlist, range_loc);
         skip |= ValidateClearImageSubresourceRange(objlist, pRanges[i], range_loc);
-        skip |= VerifyClearImageLayout(cb_state, image_state, pRanges[i], imageLayout, range_loc);
+        skip |= ValidateClearImageLayout(cb_state, image_state, pRanges[i], imageLayout, range_loc);
     }
 
     const VkFormat format = image_state.create_info.format;
@@ -1013,7 +1013,7 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
     for (uint32_t i = 0; i < rangeCount; ++i) {
         const Location range_loc = error_obj.location.dot(Field::pRanges, i);
         skip |= ValidateCmdClearDepthSubresourceRange(image_state.create_info, pRanges[i], objlist, range_loc);
-        skip |= VerifyClearImageLayout(cb_state, image_state, pRanges[i], imageLayout, range_loc);
+        skip |= ValidateClearImageLayout(cb_state, image_state, pRanges[i], imageLayout, range_loc);
         // Image aspect must be depth or stencil or both
         VkImageAspectFlags valid_aspects = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
         if (((pRanges[i].aspectMask & valid_aspects) == 0) || ((pRanges[i].aspectMask & ~valid_aspects) != 0)) {

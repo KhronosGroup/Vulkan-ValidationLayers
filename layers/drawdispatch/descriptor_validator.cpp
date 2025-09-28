@@ -533,32 +533,23 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     }
 
     if (!dev_proxy.disabled[image_layout_validation]) {
-        VkImageLayout image_layout = image_descriptor.GetImageLayout();
-        // Verify Image Layout
-        // No "invalid layout" VUID required for this call, since the optimal_layout parameter is UNDEFINED.
-        bool hit_error = false;
         if (const auto image_layout_map = cb_state.GetImageLayoutMap(image_state->VkHandle())) {
-            dev_proxy.VerifyImageLayoutRange(cb_state, *image_state, image_view_state->create_info.subresourceRange.aspectMask,
-                                             image_layout, *image_layout_map,
-                                             subresource_adapter::RangeGenerator(image_view_state->range_generator), loc.Get(),
-                                             "VUID-VkDescriptorImageInfo-imageLayout-00344", &hit_error);
-
-            if (hit_error) {
-                std::stringstream msg;
-                if (!descriptor_set.IsPushDescriptor()) {
-                    msg << "Descriptor set " << FormatHandle(descriptor_set.Handle())
-                        << " Image layout specified by vkCmdBindDescriptorSets ";
-                } else {
-                    msg << "Image layout specified by vkCmdPushDescriptorSet ";
+            auto describe_descriptor_callback = [this, &resource_variable, index, descriptor_type]() {
+                std::stringstream ss;
+                ss << DescribeDescriptor(resource_variable, index, descriptor_type);
+                if (descriptor_set.IsPushDescriptor()) {
+                    ss << " updated by vkCmdPushDescriptorSet";
                 }
-                msg << "doesn't match actual image layout at time descriptor ("
-                    << DescribeDescriptor(resource_variable, index, descriptor_type) << ") is used.";
-                // TODO - This is bad, VerifyImageLayoutRange should be able to return a bool (or pass info into it) and only have a
-                // single VU here https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10730
-                msg << " See previous error callback for specific details." << DescribeInstruction();
-                const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view);
-                skip |= LogError(vuids->descriptor_buffer_bit_set_08114, objlist, loc.Get(), "%s.", msg.str().c_str());
-            }
+                return ss.str();
+            };
+            const VkImageLayout image_layout = image_descriptor.GetImageLayout();
+            const VkImageAspectFlags aspect_flags = image_view_state->create_info.subresourceRange.aspectMask;
+            const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_state->Handle(),
+                                        VulkanTypedHandle(image_view, kVulkanObjectTypeImageView));
+
+            skip |= dev_proxy.ValidateDescriptorImageLayout(objlist, *image_state, aspect_flags, image_layout, *image_layout_map,
+                                                            subresource_adapter::RangeGenerator(image_view_state->range_generator),
+                                                            loc.Get(), describe_descriptor_callback);
         }
     }
 

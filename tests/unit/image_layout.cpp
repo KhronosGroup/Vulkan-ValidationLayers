@@ -385,34 +385,34 @@ TEST_F(NegativeImageLayout, PushDescriptor) {
     descriptor_write.dstArrayElement = 0;
     descriptor_write.dstBinding = 0;
 
-    for (uint32_t i = 0; i < 2; i++) {
-        m_command_buffer.Begin();
-        if (i == 1) {
-            // Test path where image layout in command buffer is known at draw time
-            image.ImageMemoryBarrier(m_command_buffer, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_WRITE_BIT,
-                                     VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
-        }
-        m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-        vk::CmdPushDescriptorSetKHR(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_write);
+    // Image layout is known at submit time
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdPushDescriptorSetKHR(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_write);
+    vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
 
-        if (i == 1) {
-            // Test path where image layout in command buffer is known at draw time
-            m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114");
-            m_errorMonitor->SetDesiredError("VUID-VkDescriptorImageInfo-imageLayout-00344");
-            vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
-            m_errorMonitor->VerifyFound();
-            break;
-        }
-        m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
-        vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
-        m_command_buffer.EndRenderPass();
-        m_command_buffer.End();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
 
-        m_default_queue->SubmitAndWait(m_command_buffer);
-        m_errorMonitor->VerifyFound();
-    }
+    // Image layout is known at record time
+    m_command_buffer.Begin();
+    image.ImageMemoryBarrier(m_command_buffer, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_WRITE_BIT, VK_IMAGE_LAYOUT_GENERAL,
+                             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdPushDescriptorSetKHR(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_write);
+
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorImageInfo-imageLayout-00344");
+    vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
 }
 
 // INVALID_IMAGE_LAYOUT tests (one other case is hit by MapMemWithoutHostVisibleBit and not here)
