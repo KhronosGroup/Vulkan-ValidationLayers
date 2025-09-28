@@ -1883,7 +1883,7 @@ bool CoreChecks::ValidateImageBarrierAgainstImage(const vvl::CommandBuffer &cb_s
         && !IsQueueFamilyExternal(barrier.srcQueueFamilyIndex);  // do not validate layouts of external resources
 
     if (validate_barrier_layouts) {
-        skip |= VerifyImageBarrierLayouts(cb_state, image_state, image_loc, barrier, local_layout_registry);
+        skip |= ValidateImageBarrierLayouts(cb_state, image_state, image_loc, barrier, local_layout_registry);
     }
 
     const vvl::RenderPass *rp_state = cb_state.active_render_pass.get();

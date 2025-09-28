@@ -1283,7 +1283,7 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
         kExternal   // Image layout mismatch is with the current state of the image, found at QueueSubmit
     };
     constexpr std::array test_list = {kInternal, kExternal};
-    constexpr std::array internal_errors = {"VUID-VkDescriptorImageInfo-imageLayout-00344", "VUID-vkCmdDraw-None-08114"};
+    constexpr std::array internal_errors = {"VUID-VkDescriptorImageInfo-imageLayout-00344"};
     constexpr std::array external_errors = {"VUID-vkCmdDraw-None-09600"};
 
     // Common steps to create the two classes of errors (or two classes of positives)

@@ -2197,11 +2197,11 @@ class DeviceProxy : public vvl::base::Device {
     }
 
     // Currently no GPU-AV check
-    virtual bool VerifyImageLayoutRange(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
-                                        VkImageAspectFlags aspect_mask, VkImageLayout explicit_layout,
-                                        const CommandBufferImageLayoutMap& cb_layout_map,
-                                        subresource_adapter::RangeGenerator&& range_gen, const Location& image_loc,
-                                        const char* mismatch_layout_vuid, bool* error) const {
+    virtual bool ValidateDescriptorImageLayout(const LogObjectList& objlist, const vvl::Image& image_state,
+                                               VkImageAspectFlags aspect_mask, VkImageLayout explicit_layout,
+                                               const CommandBufferImageLayoutMap& cb_layout_map,
+                                               subresource_adapter::RangeGenerator&& range_gen, const Location& image_loc,
+                                               std::function<std::string()> describe_descriptor_callback) const {
         return false;
     }
 

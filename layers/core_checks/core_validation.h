@@ -1076,22 +1076,22 @@ class CoreChecks : public vvl::DeviceProxy {
                                        uint32_t render_pass_layer_count, uint32_t rect_count, const VkClearRect* clear_rects,
                                        const Location& loc) const;
 
-    bool VerifyClearImageLayout(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
-                                const VkImageSubresourceRange& range, VkImageLayout dest_image_layout, const Location& loc) const;
+    bool ValidateClearImageLayout(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
+                                  const VkImageSubresourceRange& range, VkImageLayout dest_image_layout, const Location& loc) const;
 
-    bool VerifyImageLayoutRange(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, VkImageAspectFlags aspect_mask,
-                                VkImageLayout explicit_layout, const CommandBufferImageLayoutMap& cb_layout_map,
-                                subresource_adapter::RangeGenerator&& range_gen, const Location& image_loc,
-                                const char* mismatch_layout_vuid, bool* error) const override;
+    bool ValidateDescriptorImageLayout(const LogObjectList& objlist, const vvl::Image& image_state, VkImageAspectFlags aspect_mask,
+                                       VkImageLayout explicit_layout, const CommandBufferImageLayoutMap& cb_layout_map,
+                                       subresource_adapter::RangeGenerator&& range_gen, const Location& image_loc,
+                                       std::function<std::string()> describe_descriptor_callback) const override;
 
     // NOTE: depth_offset/depth_extent parameters are used to support per-slice image layout transitions in 3d image
-    bool VerifyImageLayoutSubresource(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
-                                      const VkImageSubresourceLayers& subLayers, int32_t depth_offset, uint32_t depth_extent,
-                                      VkImageLayout explicit_layout, const Location& image_loc, const char* vuid) const;
+    bool ValidateSubresourceImageLayout(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
+                                        const VkImageSubresourceLayers& subLayers, int32_t depth_offset, uint32_t depth_extent,
+                                        VkImageLayout explicit_layout, const Location& image_loc, const char* vuid) const;
 
-    bool VerifyVideoImageLayout(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
-                                const VkImageSubresourceRange& normalized_subresource_range, VkImageLayout explicit_layout,
-                                const Location& image_loc, const char* mismatch_layout_vuid, bool* error) const;
+    bool ValidateVideoImageLayout(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
+                                  const VkImageSubresourceRange& normalized_subresource_range, VkImageLayout explicit_layout,
+                                  const Location& image_loc, const char* mismatch_layout_vuid) const;
 
     bool ValidateTransferGranularityExtent(const LogObjectList& objlist, const VkExtent3D& region_extent,
                                            const VkOffset3D& region_offset, const VkExtent3D& granularity,
@@ -1114,17 +1114,17 @@ class CoreChecks : public vvl::DeviceProxy {
                                                   const VkImageSubresourceRange* pRanges,
                                                   const ErrorObject& error_obj) const override;
 
-    bool VerifyFramebufferAndRenderPassLayouts(const vvl::CommandBuffer& cb_state, const VkRenderPassBeginInfo& begin_info,
-                                               const vvl::RenderPass& render_pass_state, const vvl::Framebuffer& framebuffer_state,
-                                               const Location& rp_begin_loc) const;
+    bool ValidateFramebufferAndRenderPassLayouts(const vvl::CommandBuffer& cb_state, const VkRenderPassBeginInfo& begin_info,
+                                                 const vvl::RenderPass& render_pass_state,
+                                                 const vvl::Framebuffer& framebuffer_state, const Location& rp_begin_loc) const;
     void TransitionAttachmentRefLayout(vvl::CommandBuffer& cb_state, const vku::safe_VkAttachmentReference2& ref);
 
     void TransitionSubpassLayouts(vvl::CommandBuffer& cb_state, const vvl::RenderPass& render_pass_state, const int);
 
     void TransitionBeginRenderPassLayouts(vvl::CommandBuffer& cb_state, const vvl::RenderPass& render_pass_state);
 
-    bool VerifyImageBarrierLayouts(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, const Location& image_loc,
-                                   const ImageBarrier& image_barrier, ImageLayoutRegistry& local_layout_registry) const;
+    bool ValidateImageBarrierLayouts(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, const Location& image_loc,
+                                     const ImageBarrier& image_barrier, ImageLayoutRegistry& local_layout_registry) const;
 
     bool VerifyDynamicRenderingImageBarrierLayouts(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
                                                    const VkRenderingInfo& rendering_info, const Location& barrier_loc) const;
