@@ -24,11 +24,11 @@
 #pragma once
 
 #include <array>
-#include <bitset>
 #include <map>
 #include <stdint.h>
 #include <vulkan/vulkan.h>
 #include "containers/custom_containers.h"
+#include "sync/sync_access_flags.h"
 // clang-format off
 static constexpr VkAccessFlags2 kShaderReadExpandBits = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT|VK_ACCESS_2_SHADER_STORAGE_READ_BIT|VK_ACCESS_2_SHADER_TILE_ATTACHMENT_READ_BIT_QCOM|VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR;
 static constexpr VkAccessFlags2 kShaderWriteExpandBits = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT|VK_ACCESS_2_SHADER_TILE_ATTACHMENT_WRITE_BIT_QCOM;
@@ -188,7 +188,6 @@ enum SyncAccessIndex {
     SYNC_QUEUE_FAMILY_OWNERSHIP_TRANSFER = 145,
 };
 
-using SyncAccessFlags = std::bitset<192>;
 // Unique bit for each stage/access combination
 static const SyncAccessFlags SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ_BIT = (SyncAccessFlags(1) << SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ);
 static const SyncAccessFlags SYNC_DRAW_INDIRECT_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT = (SyncAccessFlags(1) << SYNC_DRAW_INDIRECT_TRANSFORM_FEEDBACK_COUNTER_READ_EXT);
