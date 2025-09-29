@@ -177,6 +177,12 @@ struct LabelCommand {
     std::string label_name;  // used when begin == true
 };
 
+enum class DescriptorMode {
+    Unknown,           // Has not been set yet
+    Classic,           // Vulkan 1.0
+    DescriptorBuffer,  // VK_EXT_descriptor_buffer
+};
+
 class CommandBuffer : public RefcountedStateObject, public SubStateManager<CommandBufferSubState> {
     using Func = vvl::Func;
 
@@ -518,6 +524,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
 
     std::vector<VkDescriptorBufferBindingInfoEXT> descriptor_buffer_binding_info;
     bool descriptor_buffer_ever_bound{false};
+    DescriptorMode descriptor_mode = DescriptorMode::Unknown;
 
     mutable std::shared_mutex lock;
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock); }
