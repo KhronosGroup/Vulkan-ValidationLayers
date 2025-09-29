@@ -21,6 +21,7 @@
 #include <vulkan/vulkan_core.h>
 #include <cassert>
 #include "containers/container_utils.h"
+#include "state_tracker/descriptor_mode.h"
 #include "state_tracker/pipeline_state.h"
 #include "generated/dynamic_state_helper.h"
 #include "state_tracker/descriptor_sets.h"
@@ -53,6 +54,7 @@ void LastBound::Reset() {
     }
     push_descriptor_set.reset();
     ds_slots.clear();
+    descriptor_mode = vvl::DescriptorModeUnknown;
 }
 
 bool LastBound::IsDepthTestEnable() const {
@@ -899,4 +901,35 @@ const spirv::EntryPoint *LastBound::GetFragmentEntryPoint() const {
         return shader_object->entrypoint.get();
     }
     return nullptr;
+}
+
+vvl::DescriptorMode LastBound::GetActionDescriptorMode() const {
+    if (descriptor_mode != vvl::DescriptorModeUnknown) {
+        return descriptor_mode;  // Most common case
+    }
+
+    // This is only needed  at draw/dispatch time when there is a chance there is not bound descriptor, but can still find from a
+    // pipeline/layout
+    if (pipeline_state) {
+        if (pipeline_state->create_flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
+            return vvl::DescriptorModeBuffer;
+        } else {
+            return vvl::DescriptorModeClassic;
+        }
+    } else {
+        // Shader Object
+        if (desc_set_pipeline_layout) {
+            for (uint32_t i = 0; i < desc_set_pipeline_layout->set_layouts.size(); i++) {
+                if (const auto set_layout_state = desc_set_pipeline_layout->set_layouts[i]) {
+                    if (set_layout_state->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
+                        return vvl::DescriptorModeBuffer;
+                    } else {
+                        return vvl::DescriptorModeClassic;
+                    }
+                }
+            }
+        }
+    }
+    // Not sure how to find it if in this situation, so resort to a safe choice
+    return vvl::DescriptorModeClassic;
 }

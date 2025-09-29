@@ -260,6 +260,7 @@ vvl_sources = [
   "layers/state_tracker/cmd_buffer_state.h",
   "layers/state_tracker/data_graph_pipeline_session_state.cpp",
   "layers/state_tracker/data_graph_pipeline_session_state.h",
+  "layers/state_tracker/descriptor_mode.h",
   "layers/state_tracker/descriptor_sets.cpp",
   "layers/state_tracker/descriptor_sets.h",
   "layers/state_tracker/device_generated_commands_state.cpp",

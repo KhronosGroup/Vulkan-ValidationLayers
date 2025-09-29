@@ -90,9 +90,9 @@ void CommandBufferSubState::AllocateResources(const Location &loc) {
 }
 
 // Common logic after any draw/dispatch/traceRays
-void CommandBufferSubState::RecordActionCommand(LastBound &last_bound, const Location &loc) {
-    PostCallSetupShaderInstrumentationResources(gpuav_, *this, last_bound, loc);
-    IncrementActionCommandCount(last_bound.bind_point, loc);
+void CommandBufferSubState::RecordActionCommand(LastBound &last_bound, const Location &) {
+    PostCallSetupShaderInstrumentationResources(gpuav_, *this, last_bound);
+    IncrementActionCommandCount(last_bound.bind_point);
 }
 
 void CommandBufferSubState::UpdateLastBoundDescriptorSets(VkPipelineBindPoint bind_point, const Location &loc) {
@@ -165,6 +165,7 @@ void CommandBufferSubState::ResetCBState(bool should_destroy) {
     // Free or return to cache GPU resources
 
     on_instrumentation_desc_set_update_functions.clear();
+    on_instrumentation_desc_buffer_update_functions.clear();
     on_cb_completion_functions.clear();
     on_post_cb_submission_functions.clear();
     on_pre_cb_submission_functions.clear();
@@ -194,7 +195,7 @@ void CommandBufferSubState::ResetCBState(bool should_destroy) {
     ClearPushConstants();
 }
 
-void CommandBufferSubState::IncrementActionCommandCount(VkPipelineBindPoint bind_point, const Location &loc) {
+void CommandBufferSubState::IncrementActionCommandCount(VkPipelineBindPoint bind_point) {
     if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
         draw_index++;
         if (draw_index > cst::invalid_index_command) {
@@ -656,7 +657,7 @@ ShaderObjectSubState::ShaderObjectSubState(vvl::ShaderObject &obj) : vvl::Shader
 
 PipelineSubState::PipelineSubState(Validator &gpuav, vvl::Pipeline &pipeline) : vvl::PipelineSubState(pipeline), gpuav_(gpuav) {}
 
-VkPipelineLayout PipelineSubState::GetPipelineLayoutUnion(const Location &loc) const {
+VkPipelineLayout PipelineSubState::GetPipelineLayoutUnion(const Location &loc, vvl::DescriptorMode mode) const {
     if (recreated_layout != VK_NULL_HANDLE) {
         return recreated_layout;
     }
@@ -690,9 +691,9 @@ VkPipelineLayout PipelineSubState::GetPipelineLayoutUnion(const Location &loc) c
     }
 
     for (size_t i = set_layout_handles.size(); i < gpuav_.instrumentation_desc_set_bind_index_; ++i) {
-        set_layout_handles.emplace_back(gpuav_.dummy_desc_layout_);
+        set_layout_handles.emplace_back(gpuav_.dummy_desc_layout_[mode]);
     }
-    set_layout_handles.emplace_back(gpuav_.GetInstrumentationDescriptorSetLayout());
+    set_layout_handles.emplace_back(gpuav_.GetInstrumentationDescriptorSetLayout(mode));
 
     VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
     pipeline_layout_ci.flags = base.PipelineLayoutState()->create_flags;

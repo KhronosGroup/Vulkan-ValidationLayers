@@ -22,6 +22,7 @@
 #include "containers/limits.h"
 #include "state_tracker/vertex_index_buffer_state.h"
 
+#include <memory>
 #include <string>
 #include <vector>
 #include <optional>
@@ -34,6 +35,7 @@ struct LogObjectList;
 namespace vvl {
 struct LabelCommand;
 class DescriptorSet;
+class PipelineLayout;
 }
 
 namespace gpuav {
@@ -43,14 +45,31 @@ class CommandBufferSubState;
 class Queue;
 struct InstrumentationErrorBlob;
 
+enum class PipelineLayoutSource { NoPipelineLayout, LastBoundPipeline, LastBoundDescriptorSet, LastPushedConstants };
+struct InstBindingPipeLayout {
+    std::shared_ptr<const vvl::PipelineLayout> state;
+    VkPipelineLayout handle = VK_NULL_HANDLE;
+    PipelineLayoutSource source = PipelineLayoutSource::NoPipelineLayout;
+};
+
 void UpdateInstrumentationDescSet(Validator& gpuav, CommandBufferSubState& cb_state, VkPipelineBindPoint bind_point,
                                   VkDescriptorSet instrumentation_desc_set, const Location& loc,
                                   InstrumentationErrorBlob& out_instrumentation_error_blob);
+void UpdateInstrumentationDescBuffer(Validator& gpuav, CommandBufferSubState& cb_state, VkPipelineBindPoint bind_point,
+                                     const Location& loc, InstrumentationErrorBlob& out_instrumentation_error_blob);
 
 void PreCallSetupShaderInstrumentationResources(Validator& gpuav, CommandBufferSubState& cb_state, VkPipelineBindPoint bind_point,
                                                 const Location& loc);
-void PostCallSetupShaderInstrumentationResources(Validator& gpuav, CommandBufferSubState& cb_state, const LastBound& last_bound,
-                                                 const Location& loc);
+void PreCallSetupShaderInstrumentationResourcesClassic(Validator& gpuav, CommandBufferSubState& cb_state,
+                                                       const LastBound& last_bound,
+                                                       const InstBindingPipeLayout& inst_binding_pipe_layout, const Location& loc);
+void PreCallSetupShaderInstrumentationResourcesDescriptorBuffer(Validator& gpuav, CommandBufferSubState& cb_state,
+                                                                const LastBound& last_bound,
+                                                                const InstBindingPipeLayout& inst_binding_pipe_layout,
+                                                                const Location& loc);
+void PostCallSetupShaderInstrumentationResources(Validator& gpuav, CommandBufferSubState& cb_state, const LastBound& last_bound);
+void PostCallSetupShaderInstrumentationResourcesClassic(Validator& gpuav, CommandBufferSubState& cb_state,
+                                                        const LastBound& last_bound);
 
 struct VertexAttributeFetchLimit {
     // Default value indicates that no vertex buffer attribute fetching will be OOB

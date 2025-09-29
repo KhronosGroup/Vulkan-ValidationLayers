@@ -488,8 +488,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabledDescriptorBufferCaptureReplayAS) {
     uint32_t data[128];
     const auto ocddci = vku::InitStruct<VkOpaqueCaptureDescriptorDataCreateInfoEXT>(nullptr, &data);
 
-    vkt::Buffer as_buffer(*m_device, 4096, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR,
-                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    vkt::Buffer as_buffer(*m_device, 4096, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR, vkt::device_address);
 
     VkAccelerationStructureKHR as;
     VkAccelerationStructureCreateInfoKHR asci = vku::InitStructHelper();

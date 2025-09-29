@@ -59,7 +59,10 @@ class DispatchVectorGenerator(BaseGenerator):
         'vkGetShaderBinaryDataEXT',
     )
     skip_intercept_id_post_record = (
-        'vkAllocateDescriptorSets'
+        'vkAllocateDescriptorSets',
+        'vkGetBufferDeviceAddress',
+        'vkGetBufferDeviceAddressKHR',
+        'vkGetBufferDeviceAddressEXT',
     )
 
     def __init__(self):

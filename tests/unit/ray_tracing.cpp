@@ -709,7 +709,8 @@ TEST_F(NegativeRayTracing, CmdCopyUnboundAccelerationStructure) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeRayTracing, CopyAccelerationStructureNoHostMem) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10756
+TEST_F(NegativeRayTracing, DISABLED_CopyAccelerationStructureNoHostMem) {
     TEST_DESCRIPTION("Test CmdCopyAccelerationStructureKHR with buffers not bound to memory");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1123,7 +1124,9 @@ TEST_F(NegativeRayTracing, CreateAccelerationStructureKHRReplayFeature) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeRayTracing, GetAccelerationStructureAddressBabBuffer) {
+// Not possible to hit  VUID-vkGetAccelerationStructureDeviceAddressKHR-pInfo-09542 because we are adding it in CoreChecks
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10756
+TEST_F(NegativeRayTracing, DISABLED_GetAccelerationStructureAddressBabBuffer) {
     TEST_DESCRIPTION(
         "Call vkGetAccelerationStructureDeviceAddressKHR on an acceleration structure whose buffer is missing usage "
         "VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, and whose memory has been destroyed");
@@ -2262,7 +2265,8 @@ TEST_F(NegativeRayTracing, CmdCopyAccelerationStructureToMemoryKHR) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeRayTracing, CopyAccelerationStructureToMemoryKHR) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10756
+TEST_F(NegativeRayTracing, DISABLED_CopyAccelerationStructureToMemoryKHR) {
     TEST_DESCRIPTION("vkCopyAccelerationStructureToMemoryKHR with src acceleration structure not bound to host visible memory");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -2696,7 +2700,8 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesMaintenance1Devi
     m_command_buffer.End();
 }
 
-TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesDataSizeTooSmall) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10756
+TEST_F(NegativeRayTracing, DISABLED_WriteAccelerationStructuresPropertiesDataSizeTooSmall) {
     TEST_DESCRIPTION(
         "Call vkWriteAccelerationStructuresPropertiesKHR with a dataSize that is smaller that VkDeviceSize for relevant query "
         "types");
