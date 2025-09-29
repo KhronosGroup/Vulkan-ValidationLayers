@@ -149,11 +149,11 @@ class SyncValidationOutputGenerator(BaseGenerator):
             #pragma once
 
             #include <array>
-            #include <bitset>
             #include <map>
             #include <stdint.h>
             #include <vulkan/vulkan.h>
             #include "containers/custom_containers.h"
+            #include "sync/sync_access_flags.h"
             ''')
         out.append('// clang-format off\n')
 
@@ -185,7 +185,6 @@ static const VkAccessFlagBits2 VK_ACCESS_2_PRESENT_PRESENTED_BIT_SYNCVAL = 0x{(s
         out.append('\n')
 
         syncStageAccessFlagsSize = 192
-        out.append(f'using SyncAccessFlags = std::bitset<{syncStageAccessFlagsSize}>;\n')
         out.append('// Unique bit for each stage/access combination\n')
         for access in [x for x in self.stageAccessCombo if x['access_bit'] is not None]:
             out.append(f'static const SyncAccessFlags {access["access_bit"]} = (SyncAccessFlags(1) << {access["stage_access"]});\n')
