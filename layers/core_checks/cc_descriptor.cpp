@@ -4126,36 +4126,45 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
     std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>> set_layouts(pCreateInfo->setLayoutCount, nullptr);
-    uint32_t descriptor_buffer_set_count = 0;
-    uint32_t valid_set_count = 0;
     uint32_t push_descriptor_set_found = pCreateInfo->setLayoutCount;
+
+    bool first_layout_is_descriptor_buffer = false;
+    uint32_t first_layout_index = vvl::kNoIndex32;
     for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
         set_layouts[i] = Get<vvl::DescriptorSetLayout>(pCreateInfo->pSetLayouts[i]);
-        if (!set_layouts[i]) continue;
+        if (!set_layouts[i]) {
+            continue;
+        }
 
         if (set_layouts[i]->IsPushDescriptor()) {
             if (push_descriptor_set_found < pCreateInfo->setLayoutCount) {
-                skip |= LogError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00293", set_layouts[i]->VkHandle(),
+                const LogObjectList objlist(set_layouts[i]->VkHandle(), set_layouts[push_descriptor_set_found]->VkHandle());
+                skip |= LogError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00293", objlist,
                                  create_info_loc.dot(Field::pSetLayouts, i),
                                  "and pSetLayouts[%" PRIu32 "] both have push descriptor sets.", push_descriptor_set_found);
             }
             push_descriptor_set_found = i;
         }
-        if (set_layouts[i]->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT) {
+        const VkDescriptorSetLayoutCreateFlags dsl_flags = set_layouts[i]->GetCreateFlags();
+        if (dsl_flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT) {
             skip |= LogError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-04606", set_layouts[i]->VkHandle(),
                              create_info_loc.dot(Field::pSetLayouts, i),
                              "was created with VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT bit.");
         }
-        ++valid_set_count;
-        if (set_layouts[i]->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
-            ++descriptor_buffer_set_count;
-        }
-    }
 
-    if ((descriptor_buffer_set_count != 0) && (valid_set_count != descriptor_buffer_set_count)) {
-        skip |= LogError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-08008", device, error_obj.location,
-                         "All sets must be created with "
-                         "VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT or none of them.");
+        bool is_descriptor_buffer = (dsl_flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0;
+        if (first_layout_index != vvl::kNoIndex32 && first_layout_is_descriptor_buffer != is_descriptor_buffer) {
+            const LogObjectList objlist(set_layouts[i]->VkHandle(), set_layouts[first_layout_index]->VkHandle());
+            skip |=
+                LogError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-08008", objlist, create_info_loc.dot(Field::pSetLayouts, i),
+                         "%s created with VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT but pSetLayouts[%" PRIu32 "] %s.",
+                         is_descriptor_buffer ? "was" : "was not", first_layout_index, is_descriptor_buffer ? "was not" : "was");
+        }
+
+        if (first_layout_index == vvl::kNoIndex32) {
+            first_layout_index = i;
+            first_layout_is_descriptor_buffer = is_descriptor_buffer;
+        }
     }
 
     // Max descriptors by type, within a single pipeline stage
