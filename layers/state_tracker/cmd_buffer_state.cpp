@@ -301,7 +301,6 @@ void CommandBuffer::ResetCBState() {
 
     descriptor_buffer_binding_info.clear();
     descriptor_buffer_ever_bound = false;
-    descriptor_mode = DescriptorMode::Unknown;
 
     // Clean up the label data
     label_stack_depth_ = 0;
@@ -1463,6 +1462,7 @@ void CommandBuffer::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_b
     auto &last_bound = lastBound[ConvertToVvlBindPoint(pipeline_bind_point)];
     last_bound.desc_set_pipeline_layout = pipeline_layout;
     last_bound.desc_set_bound_command = loc.function;
+    last_bound.SetDescriptorMode(DescriptorModeClassic);
     auto &pipe_compat_ids = pipeline_layout->set_compat_ids;
     // Resize binding arrays
     if (last_binding_index >= last_bound.ds_slots.size()) {

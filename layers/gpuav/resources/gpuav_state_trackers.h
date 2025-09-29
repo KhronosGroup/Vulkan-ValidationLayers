@@ -37,6 +37,7 @@
 #include "state_tracker/sampler_state.h"
 #include "state_tracker/shader_object_state.h"
 #include "state_tracker/tensor_state.h"
+#include "state_tracker/descriptor_mode.h"
 
 namespace gpuav {
 
@@ -53,6 +54,10 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
         stdext::inplace_function<void(CommandBufferSubState &cb, VkPipelineBindPoint bind_point,
                                       VkDescriptorBufferInfo &out_buffer_info, uint32_t &out_dst_binding),
                                  48>;
+    using OnInstrumentionDescBufferUpdate =
+        stdext::inplace_function<void(CommandBufferSubState &cb, VkPipelineBindPoint bind_point,
+                                      VkDescriptorAddressInfoEXT &out_address_info, uint32_t &out_dst_binding),
+                                 48>;
     using OnCommandBufferSubmission =
         stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb, VkCommandBuffer per_submission_cb)>;
     using OnCommandBufferCompletion =
@@ -64,6 +69,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     using OnPostCommandBufferSubmission =
         stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb, VkCommandBuffer per_post_submission_cb)>;
     std::vector<OnInstrumentionDescSetUpdate> on_instrumentation_desc_set_update_functions;
+    std::vector<OnInstrumentionDescBufferUpdate> on_instrumentation_desc_buffer_update_functions;
     std::vector<OnPreCommandBufferSubmission> on_pre_cb_submission_functions;
     std::vector<OnPostCommandBufferSubmission> on_post_cb_submission_functions;
     std::vector<OnCommandBufferCompletion> on_cb_completion_functions;
@@ -75,7 +81,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     uint32_t compute_index = 0;
     uint32_t trace_rays_index = 0;
     uint32_t GetActionCommandIndex(VkPipelineBindPoint bind_point) const;
-    void IncrementActionCommandCount(VkPipelineBindPoint bind_point, const Location &loc);
+    void IncrementActionCommandCount(VkPipelineBindPoint bind_point);
 
     std::vector<PushConstantData> push_constant_data_chunks;
     std::array<VkPipelineLayout, vvl::BindPointCount> push_constant_latest_used_layout{};
@@ -366,7 +372,7 @@ class PipelineSubState : public vvl::PipelineSubState {
 
     void Destroy() override;
 
-    VkPipelineLayout GetPipelineLayoutUnion(const Location &loc) const;
+    VkPipelineLayout GetPipelineLayoutUnion(const Location &loc, vvl::DescriptorMode mode) const;
 
   private:
     mutable VkPipelineLayout recreated_layout = VK_NULL_HANDLE;

@@ -347,6 +347,7 @@ target_sources(vvl PRIVATE
     state_tracker/cmd_buffer_state.h
     state_tracker/data_graph_pipeline_session_state.cpp
     state_tracker/data_graph_pipeline_session_state.h
+    state_tracker/descriptor_mode.h
     state_tracker/descriptor_sets.cpp
     state_tracker/descriptor_sets.h
     state_tracker/device_generated_commands_state.cpp

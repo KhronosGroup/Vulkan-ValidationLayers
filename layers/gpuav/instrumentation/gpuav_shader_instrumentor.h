@@ -17,6 +17,7 @@
 #pragma once
 
 #include "error_message/error_location.h"
+#include "state_tracker/descriptor_mode.h"
 #include "state_tracker/shader_instruction.h"
 #include "state_tracker/state_tracker.h"
 #include "gpuav/spirv/interface.h"
@@ -71,7 +72,13 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
 
   public:
     GpuShaderInstrumentor(vvl::dispatch::Device *dev, vvl::InstanceProxy *instance, LayerObjectTypeId type)
-        : BaseClass(dev, instance, type) {}
+        : BaseClass(dev, instance, type) {
+        for (uint32_t i = 0; i < vvl::DescriptorModeCount; i++) {
+            dummy_desc_layout_[i] = VK_NULL_HANDLE;
+            instrumentation_desc_layout_[i] = VK_NULL_HANDLE;
+            instrumentation_pipeline_layout_[i] = VK_NULL_HANDLE;
+        }
+    }
 
     ReadLockGuard ReadLock() const override;
     WriteLockGuard WriteLock() override;
@@ -208,8 +215,10 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
                           std::vector<uint32_t> &out_instrumented_spirv);
 
   public:
-    VkDescriptorSetLayout GetInstrumentationDescriptorSetLayout() { return instrumentation_desc_layout_; }
-    VkPipelineLayout GetInstrumentationPipelineLayout() { return instrumentation_pipeline_layout_; }
+    VkDescriptorSetLayout GetInstrumentationDescriptorSetLayout(vvl::DescriptorMode mode) {
+        return instrumentation_desc_layout_[mode];
+    }
+    VkPipelineLayout GetInstrumentationPipelineLayout(vvl::DescriptorMode mode) { return instrumentation_pipeline_layout_[mode]; }
 
     // When aborting we will disconnect all future chassis calls.
     // If we are deep into a call stack, we can use this to return up to the chassis call.
@@ -221,11 +230,16 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
     // The descriptor slot we will be injecting our error buffer into
     uint32_t instrumentation_desc_set_bind_index_ = 0;
     // This is a layout used to "pad" a pipeline layout to fill in any gaps to the selected bind index
-    VkDescriptorSetLayout dummy_desc_layout_ = VK_NULL_HANDLE;
+    VkDescriptorSetLayout dummy_desc_layout_[vvl::DescriptorModeCount];
     vvl::concurrent_unordered_map<uint32_t, InstrumentedShader> instrumented_shaders_map_;
     std::vector<VkDescriptorSetLayoutBinding> instrumentation_bindings_;
 
     std::vector<spirv::InternalOnlyDebugPrintf> intenral_only_debug_printf_;
+
+    // Size to reserve in front of every resource descriptor buffer
+    VkDeviceSize resource_descriptor_buffer_reserved_ = 0;
+    // Each vector index maps to the binding number with the offset to map to (with the start offset included)
+    std::vector<VkDeviceSize> resource_descriptor_buffer_offsets_;
 
     // These are the same as enabled_features, but may have been altered at setup time. This should be use for any feature GPU-AV
     // might force on. We need to track these changes separately so that they don't influence non-GPU-AV parts of validation.
@@ -237,9 +251,8 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
     bool IsShaderSelectedForInstrumentation(vku::safe_VkShaderModuleCreateInfo *modified_shader_module_ci,
                                             VkShaderModule modified_shader, const Location &loc);
     void Cleanup();
-    // These are objects used to inject our descriptor set into the command buffer
-    VkDescriptorSetLayout instrumentation_desc_layout_ = VK_NULL_HANDLE;
-    VkPipelineLayout instrumentation_pipeline_layout_ = VK_NULL_HANDLE;
+    VkDescriptorSetLayout instrumentation_desc_layout_[vvl::DescriptorModeCount];
+    VkPipelineLayout instrumentation_pipeline_layout_[vvl::DescriptorModeCount];
 
     // Pass select_instrumented_shaders from vkCreateShaderModule to CreatePipeline time
     vvl::unordered_set<VkShaderModule> selected_instrumented_shaders;

@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "containers/custom_containers.h"
 #include "gpuav/descriptor_validation/gpuav_descriptor_set.h"
 #include "gpuav/resources/gpuav_vulkan_objects.h"
 #include "gpuav/instrumentation/gpuav_shader_instrumentor.h"
@@ -67,7 +68,9 @@ class Validator : public GpuShaderInstrumentor {
 
   public:
     Validator(vvl::dispatch::Device* dev, Instance* instance_vo)
-        : BaseClass(dev, instance_vo, LayerObjectTypeGpuAssisted), global_indices_buffer_(*this) {}
+        : BaseClass(dev, instance_vo, LayerObjectTypeGpuAssisted),
+          global_indices_buffer_(*this),
+          resource_descriptor_buffer_backup_(*this) {}
 
     // gpuav_setup.cpp
     // -------------
@@ -79,6 +82,8 @@ class Validator : public GpuShaderInstrumentor {
   private:
     void InitSettings(const Location& loc);
     void DestroySubstate();
+    void BindBufferMemory(VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize offset);
+    void MapMemory(VkDeviceMemory memory, void** ppData);
 
     // gpuav_record.cpp
     // --------------
@@ -88,6 +93,45 @@ class Validator : public GpuShaderInstrumentor {
                                    VkBuffer* pBuffer, const RecordObject& record_obj, chassis::CreateBuffer& chassis_state) final;
     void PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo,
                                          const RecordObject& record_obj) final;
+
+    void PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+                                    VkBuffer* pBuffer, const RecordObject& record_obj) final;
+    void PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator,
+                                    const RecordObject& record_obj) final;
+    void PostCallRecordGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
+                                              const RecordObject& record_obj, VkDeviceAddress& out_address) final;
+    void PostCallRecordGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
+                                                 const RecordObject& record_obj, VkDeviceAddress& out_address) final;
+    void PostCallRecordGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
+                                                 const RecordObject& record_obj, VkDeviceAddress& out_address) final;
+    void PostCallRecordMapMemory(VkDevice device, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, VkFlags flags,
+                                 void** ppData, const RecordObject& record_obj) final;
+    void PostCallRecordMapMemory2(VkDevice device, const VkMemoryMapInfo* pMemoryMapInfo, void** ppData,
+                                  const RecordObject& record_obj) final;
+    void PostCallRecordMapMemory2KHR(VkDevice device, const VkMemoryMapInfoKHR* pMemoryMapInfo, void** ppData,
+                                     const RecordObject& record_obj) final;
+    void PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator,
+                                 const RecordObject& record_obj) final;
+    void PostCallRecordBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize memoryOffset,
+                                        const RecordObject& record_obj) final;
+    void PostCallRecordBindBufferMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfo* pBindInfos,
+                                         const RecordObject& record_obj) final;
+    void PostCallRecordBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfo* pBindInfos,
+                                            const RecordObject& record_obj) final;
+    void PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
+                                                  const VkDescriptorBufferBindingInfoEXT* pBindingInfos,
+                                                  const RecordObject& record_obj) final;
+    void PostCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
+                                                   const VkDescriptorBufferBindingInfoEXT* pBindingInfos,
+                                                   const RecordObject& record_obj) final;
+    void PreCallRecordCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                       VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
+                                                       const uint32_t* pBufferIndices, const VkDeviceSize* pOffsets,
+                                                       const RecordObject& record_obj) override;
+    void PostCallRecordCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                        VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
+                                                        const uint32_t* pBufferIndices, const VkDeviceSize* pOffsets,
+                                                        const RecordObject& record_obj) override;
 
     void PreCallActionCommand(Validator& gpuav, CommandBufferSubState& cb_state, VkPipelineBindPoint bind_point,
                               const Location& loc);
@@ -226,6 +270,20 @@ class Validator : public GpuShaderInstrumentor {
     // (draw/dispatch) to know where it came from
     vko::Buffer global_indices_buffer_;
     uint32_t indices_buffer_alignment_ = 0;
+
+    // VK_EXT_descriptor_buffer global tracking
+    //
+    // There might be multiple resource buffers bound, only need to track one.
+    uint32_t resource_descriptor_buffer_index_ = 0;
+    // Most common apps will have few, but large descriptor buffers
+    vvl::unordered_set<VkBuffer> resource_descriptor_buffer_handles_;
+    // We need to track handles in order to adjust vkMapMemory calls
+    vvl::unordered_set<VkDeviceMemory> resource_descriptor_buffer_memory_handles_;
+    // This is the "linking" pointer that we infer from vkCmdBindDescriptorBuffersEXT to know which MapMemory pointer of the buffer
+    // we have our injected descriptors
+    void* resource_descriptor_buffer_host_ptr_ = nullptr;
+    // Only used if last second need one because the app doesn't
+    vko::Buffer resource_descriptor_buffer_backup_;
 
   private:
     std::string instrumented_shader_cache_path_{};

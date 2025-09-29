@@ -39,6 +39,7 @@
 #include "state_tracker/shader_object_state.h"
 #include "state_tracker/device_generated_commands_state.h"
 #include "state_tracker/wsi_state.h"
+#include "state_tracker/descriptor_mode.h"
 #include "chassis/chassis_modification_state.h"
 #include "spirv-tools/optimizer.hpp"
 
@@ -486,6 +487,9 @@ void DeviceState::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreat
         // => Enforce it.
         // Doing so will not modify VVL state tracking, and if the application forgot to set
         // this flag, it will still be detected.
+        //
+        // TODO https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10756
+        // because we set this flags, we also now need to ensure VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT is bound with all memory
         chassis_state.modified_create_info.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     }
 }
@@ -2830,7 +2834,6 @@ void DeviceState::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuf
 
     // legacy descriptor binding invalidates any previous call to vkCmdBindDescriptorBuffersEXT
     cb_state->descriptor_buffer_binding_info.clear();
-    cb_state->descriptor_mode = DescriptorMode::Classic;
 
     std::shared_ptr<DescriptorSet> no_push_desc;
 
@@ -2849,7 +2852,6 @@ void DeviceState::PostCallRecordCmdBindDescriptorSets2(VkCommandBuffer commandBu
 
     // legacy descriptor binding invalidates any previous call to vkCmdBindDescriptorBuffersEXT
     cb_state->descriptor_buffer_binding_info.clear();
-    cb_state->descriptor_mode = DescriptorMode::Classic;
 
     std::shared_ptr<DescriptorSet> no_push_desc;
 
@@ -2934,7 +2936,12 @@ void DeviceState::PostCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
 
     cb_state->descriptor_buffer_binding_info.resize(bufferCount);
     cb_state->descriptor_buffer_ever_bound = true;
-    cb_state->descriptor_mode = DescriptorMode::DescriptorBuffer;
+
+    // So really this should be set at vkCmdSetDescriptorBufferOffsetsEXT time where the bindpoint is known.
+    // In practice, setting it here is better as if the app messes up, it might crash things.
+    for (uint32_t i = 0; i < vvl::BindPointCount; i++) {
+        cb_state->lastBound[i].SetDescriptorMode(DescriptorModeBuffer);
+    }
 
     std::copy(pBindingInfos, pBindingInfos + bufferCount, cb_state->descriptor_buffer_binding_info.data());
 }

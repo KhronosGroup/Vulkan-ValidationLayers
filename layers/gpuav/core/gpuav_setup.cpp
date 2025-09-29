@@ -231,6 +231,7 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const L
         // Vertex attribute fetch limits
         {glsl::kBindingInstVertexAttributeFetchLimits, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
     };
+    assert(instrumentation_bindings_.size() == glsl::kTotalBindings);
 
     // TODO - Now that GPU-AV and DebugPrintf are merged, we should just have a single FinishDeviceSetup if possible (or at least
     // better divide what belongs where as it is easy to mess)
@@ -369,25 +370,14 @@ void Validator::InitSettings(const Location &loc) {
     }
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_buffer) && !gpuav_settings.descriptor_buffer_override) {
+        // "can" work, just need more testing now
         AdjustmentWarning(
             device, loc,
             "VK_EXT_descriptor_buffer is enabled, but GPU-AV does not currently support validation of descriptor buffers. "
-            "[Disabling all shader instrumentation checks]"
+            "[Disabling all shader instrumentation checks] (this does NOT include debug print)"
             "\nThere is a VK_LAYER_GPUAV_DESCRIPTOR_BUFFER_OVERRIDE that can be set to bypass this if you know you are not going "
             "to use descriptor buffers.");
-        // Because of VUs like VUID-VkPipelineLayoutCreateInfo-pSetLayouts-08008 we currently would need to rework the entire shader
-        // instrumentation logic
         gpuav_settings.DisableShaderInstrumentationAndOptions();
-
-        if (gpuav_settings.debug_printf_enabled) {
-            AdjustmentWarning(
-                device, loc,
-                "VK_EXT_descriptor_buffer is enabled, but DebugPrintf uses a normal descriptor and currently can't "
-                "exist with descriptor buffers. [Disabling debug_printf]"
-                "\nThere is a VK_LAYER_GPUAV_DESCRIPTOR_BUFFER_OVERRIDE that can be set to bypass this if you know you "
-                "are not going to use descriptor buffers.");
-            gpuav_settings.debug_printf_enabled = false;
-        }
     }
 
     // If we have turned off all the possible things to instrument, turn off everything fully

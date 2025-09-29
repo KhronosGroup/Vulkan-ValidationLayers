@@ -37,6 +37,7 @@
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/shader_object_state.h"
+#include "state_tracker/descriptor_mode.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 
 #include "gpuav/spirv/module.h"
@@ -133,7 +134,8 @@ void GpuShaderInstrumentor::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateI
                                                                     static_cast<uint32_t>(instrumentation_bindings_.size()),
                                                                     instrumentation_bindings_.data()};
 
-    VkResult result = DispatchCreateDescriptorSetLayout(device, &debug_desc_layout_info, nullptr, &instrumentation_desc_layout_);
+    VkResult result = DispatchCreateDescriptorSetLayout(device, &debug_desc_layout_info, nullptr,
+                                                        &instrumentation_desc_layout_[vvl::DescriptorModeClassic]);
     if (result != VK_SUCCESS) {
         InternalError(device, loc, "vkCreateDescriptorSetLayout failed for internal descriptor set");
         Cleanup();
@@ -142,7 +144,8 @@ void GpuShaderInstrumentor::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateI
 
     const VkDescriptorSetLayoutCreateInfo dummy_desc_layout_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, nullptr, 0,
                                                                     0, nullptr};
-    result = DispatchCreateDescriptorSetLayout(device, &dummy_desc_layout_info, nullptr, &dummy_desc_layout_);
+    result = DispatchCreateDescriptorSetLayout(device, &dummy_desc_layout_info, nullptr,
+                                               &dummy_desc_layout_[vvl::DescriptorModeClassic]);
     if (result != VK_SUCCESS) {
         InternalError(device, loc, "vkCreateDescriptorSetLayout failed for internal dummy descriptor set");
         Cleanup();
@@ -151,9 +154,9 @@ void GpuShaderInstrumentor::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateI
 
     std::vector<VkDescriptorSetLayout> debug_layouts;
     for (uint32_t j = 0; j < instrumentation_desc_set_bind_index_; ++j) {
-        debug_layouts.push_back(dummy_desc_layout_);
+        debug_layouts.push_back(dummy_desc_layout_[vvl::DescriptorModeClassic]);
     }
-    debug_layouts.push_back(instrumentation_desc_layout_);
+    debug_layouts.push_back(instrumentation_desc_layout_[vvl::DescriptorModeClassic]);
 
     const VkPipelineLayoutCreateInfo debug_pipeline_layout_info = {VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
                                                                    nullptr,
@@ -162,27 +165,107 @@ void GpuShaderInstrumentor::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateI
                                                                    debug_layouts.data(),
                                                                    0u,
                                                                    nullptr};
-    result = DispatchCreatePipelineLayout(device, &debug_pipeline_layout_info, nullptr, &instrumentation_pipeline_layout_);
+    result = DispatchCreatePipelineLayout(device, &debug_pipeline_layout_info, nullptr,
+                                          &instrumentation_pipeline_layout_[vvl::DescriptorModeClassic]);
     if (result != VK_SUCCESS) {
         InternalError(device, loc, "vkCreateDescriptorSetLayout failed for internal pipeline layout");
         Cleanup();
         return;
     }
+
+    if (IsExtEnabled(extensions.vk_ext_descriptor_buffer)) {
+        // We don't use dynamic offset in descriptor buffer, instead we just map the offset each call
+        // This isn't ideal to set like this, will not be a problem when we get Root Node working
+        instrumentation_bindings_[glsl::kBindingInstActionIndex].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        instrumentation_bindings_[glsl::kBindingInstCmdResourceIndex].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+
+        const VkDescriptorSetLayoutCreateInfo descriptor_buffer_dsl_info = {
+            VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, nullptr, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT,
+            static_cast<uint32_t>(instrumentation_bindings_.size()), instrumentation_bindings_.data()};
+
+        result = DispatchCreateDescriptorSetLayout(device, &descriptor_buffer_dsl_info, nullptr,
+                                                   &instrumentation_desc_layout_[vvl::DescriptorModeBuffer]);
+        if (result != VK_SUCCESS) {
+            InternalError(device, loc, "vkCreateDescriptorSetLayout failed for internal descriptor set for descriptor buffer");
+            Cleanup();
+            return;
+        }
+
+        const VkDescriptorSetLayoutCreateInfo descriptor_buffer_dummy_dsl_info = {
+            VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, nullptr, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT,
+            0, nullptr};
+        result = DispatchCreateDescriptorSetLayout(device, &descriptor_buffer_dummy_dsl_info, nullptr,
+                                                   &dummy_desc_layout_[vvl::DescriptorModeBuffer]);
+        if (result != VK_SUCCESS) {
+            InternalError(device, loc,
+                          "vkCreateDescriptorSetLayout failed for internal dummy descriptor set for descriptor buffer");
+            Cleanup();
+            return;
+        }
+
+        debug_layouts.clear();
+        for (uint32_t j = 0; j < instrumentation_desc_set_bind_index_; ++j) {
+            debug_layouts.push_back(dummy_desc_layout_[vvl::DescriptorModeBuffer]);
+        }
+        debug_layouts.push_back(instrumentation_desc_layout_[vvl::DescriptorModeBuffer]);
+
+        const VkPipelineLayoutCreateInfo debug_pipeline_layout_db_info = {VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+                                                                          nullptr,
+                                                                          0u,
+                                                                          static_cast<uint32_t>(debug_layouts.size()),
+                                                                          debug_layouts.data(),
+                                                                          0u,
+                                                                          nullptr};
+        result = DispatchCreatePipelineLayout(device, &debug_pipeline_layout_db_info, nullptr,
+                                              &instrumentation_pipeline_layout_[vvl::DescriptorModeBuffer]);
+        if (result != VK_SUCCESS) {
+            InternalError(device, loc, "vkCreateDescriptorSetLayout failed for internal pipeline layout for descriptor buffer");
+            Cleanup();
+            return;
+        }
+
+        const VkPhysicalDeviceDescriptorBufferPropertiesEXT &descriptor_buffer_props = phys_dev_ext_props.descriptor_buffer_props;
+        VkDeviceSize bytes_to_reserve = 0;
+        DispatchGetDescriptorSetLayoutSizeEXT(device, instrumentation_desc_layout_[vvl::DescriptorModeBuffer], &bytes_to_reserve);
+
+        const VkDeviceSize assumed_size = descriptor_buffer_props.storageBufferDescriptorSize * glsl::kTotalBindings;
+        if (bytes_to_reserve > assumed_size) {
+            std::stringstream ss;
+            ss << "Prior we set VkPhysicalDeviceDescriptorBufferPropertiesEXT::maxResourceDescriptorBufferRange to "
+               << (descriptor_buffer_props.maxResourceDescriptorBufferRange - assumed_size)
+               << " thinking we needed to only reserve " << assumed_size << " bytes, but actually " << bytes_to_reserve
+               << " bytes are required so maxResourceDescriptorBufferRange is now effectively "
+               << (descriptor_buffer_props.maxResourceDescriptorBufferRange - bytes_to_reserve);
+            InternalWarning(physical_device, loc, ss.str().c_str());
+        }
+
+        resource_descriptor_buffer_reserved_ = bytes_to_reserve;
+        resource_descriptor_buffer_offsets_.resize(glsl::kTotalBindings);
+        for (uint32_t i = 0; i < glsl::kTotalBindings; i++) {
+            DispatchGetDescriptorSetLayoutBindingOffsetEXT(device, instrumentation_desc_layout_[vvl::DescriptorModeBuffer], i,
+                                                           &resource_descriptor_buffer_offsets_[i]);
+        }
+
+        // Revert, because classic needs for fixing disturbed pipelines
+        instrumentation_bindings_[glsl::kBindingInstActionIndex].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
+        instrumentation_bindings_[6].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
+    }
 }
 
 void GpuShaderInstrumentor::Cleanup() {
-    if (instrumentation_desc_layout_) {
-        DispatchDestroyDescriptorSetLayout(device, instrumentation_desc_layout_, nullptr);
-        instrumentation_desc_layout_ = VK_NULL_HANDLE;
-    }
-    if (dummy_desc_layout_) {
-        DispatchDestroyDescriptorSetLayout(device, dummy_desc_layout_, nullptr);
-        dummy_desc_layout_ = VK_NULL_HANDLE;
-    }
-
-    if (instrumentation_pipeline_layout_) {
-        DispatchDestroyPipelineLayout(device, instrumentation_pipeline_layout_, nullptr);
-        instrumentation_pipeline_layout_ = VK_NULL_HANDLE;
+    for (uint32_t i = 0; i < vvl::DescriptorModeCount; i++) {
+        if (instrumentation_desc_layout_[i]) {
+            DispatchDestroyDescriptorSetLayout(device, instrumentation_desc_layout_[i], nullptr);
+            instrumentation_desc_layout_[i] = VK_NULL_HANDLE;
+        }
+        if (dummy_desc_layout_[i]) {
+            DispatchDestroyDescriptorSetLayout(device, dummy_desc_layout_[i], nullptr);
+            dummy_desc_layout_[i] = VK_NULL_HANDLE;
+        }
+        if (instrumentation_pipeline_layout_[i]) {
+            DispatchDestroyPipelineLayout(device, instrumentation_pipeline_layout_[i], nullptr);
+            instrumentation_pipeline_layout_[i] = VK_NULL_HANDLE;
+        }
     }
 }
 
@@ -245,6 +328,15 @@ void GpuShaderInstrumentor::PreCallRecordCreatePipelineLayout(VkDevice device, c
                     "for pipelines created with it, therefore no validation error will be repored for them by GPU-AV at runtime.";
             InternalWarning(device, record_obj.location, strm.str().c_str());
         } else {
+            vvl::DescriptorMode mode = vvl::DescriptorModeClassic;
+            if (IsExtEnabled(extensions.vk_ext_descriptor_buffer) && pCreateInfo->setLayoutCount > 0) {
+                // Only need to check the first one because they all have to be or not-be descriptor buffer
+                const auto &dsl_state = Get<vvl::DescriptorSetLayout>(pCreateInfo->pSetLayouts[0]);
+                if (dsl_state->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
+                    mode = vvl::DescriptorModeBuffer;
+                }
+            }
+
             // Modify the pipeline layout by:
             // 1. Copying the caller's descriptor set desc_layouts
             // 2. Fill in dummy descriptor layouts up to the max binding
@@ -253,9 +345,9 @@ void GpuShaderInstrumentor::PreCallRecordCreatePipelineLayout(VkDevice device, c
             chassis_state.new_layouts.insert(chassis_state.new_layouts.end(), &pCreateInfo->pSetLayouts[0],
                                              &pCreateInfo->pSetLayouts[pCreateInfo->setLayoutCount]);
             for (uint32_t i = pCreateInfo->setLayoutCount; i < instrumentation_desc_set_bind_index_; ++i) {
-                chassis_state.new_layouts.push_back(dummy_desc_layout_);
+                chassis_state.new_layouts.push_back(dummy_desc_layout_[mode]);
             }
-            chassis_state.new_layouts.push_back(instrumentation_desc_layout_);
+            chassis_state.new_layouts.push_back(instrumentation_desc_layout_[mode]);
             chassis_state.modified_create_info.pSetLayouts = chassis_state.new_layouts.data();
             chassis_state.modified_create_info.setLayoutCount = instrumentation_desc_set_bind_index_ + 1;
         }
@@ -390,6 +482,15 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
             // 3. Fill in with the debug descriptor layout at the max binding slot
             const VkShaderCreateInfoEXT &original_create_info = pCreateInfos[i];
 
+            vvl::DescriptorMode mode = vvl::DescriptorModeClassic;
+            if (IsExtEnabled(extensions.vk_ext_descriptor_buffer) && original_create_info.setLayoutCount > 0) {
+                // Only need to check the first one because they all have to be or not-be descriptor buffer
+                const auto &dsl_state = Get<vvl::DescriptorSetLayout>(original_create_info.pSetLayouts[0]);
+                if (dsl_state->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
+                    mode = vvl::DescriptorModeBuffer;
+                }
+            }
+
             // We need to remove the old layouts we copied in safe_VkShaderCreateInfoEXT::initialize
             if (new_create_info.pSetLayouts) {
                 delete[] new_create_info.pSetLayouts;
@@ -401,9 +502,9 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
                 new_create_info.pSetLayouts[k] = original_create_info.pSetLayouts[k];
             }
             for (uint32_t k = original_create_info.setLayoutCount; k < instrumentation_desc_set_bind_index_; ++k) {
-                new_create_info.pSetLayouts[k] = dummy_desc_layout_;
+                new_create_info.pSetLayouts[k] = dummy_desc_layout_[mode];
             }
-            new_create_info.pSetLayouts[instrumentation_desc_set_bind_index_] = instrumentation_desc_layout_;
+            new_create_info.pSetLayouts[instrumentation_desc_set_bind_index_] = instrumentation_desc_layout_[mode];
 
             chassis_state.is_modified |=
                 PreCallRecordShaderObjectInstrumentation(new_create_info, create_info_loc, instrumentation_data);

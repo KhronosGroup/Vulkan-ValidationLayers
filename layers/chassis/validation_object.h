@@ -439,6 +439,21 @@ class Device : public Logger {
         PreCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, record_obj);
     }
 
+    virtual void PostCallRecordGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
+                                                      const RecordObject& record_obj, VkDeviceAddress& out_address) {
+        PostCallRecordGetBufferDeviceAddress(device, pInfo, record_obj);
+    }
+
+    virtual void PostCallRecordGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
+                                                         const RecordObject& record_obj, VkDeviceAddress& out_address) {
+        PostCallRecordGetBufferDeviceAddressKHR(device, pInfo, record_obj);
+    }
+
+    virtual void PostCallRecordGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
+                                                         const RecordObject& record_obj, VkDeviceAddress& out_address) {
+        PostCallRecordGetBufferDeviceAddressEXT(device, pInfo, record_obj);
+    }
+
 #include "generated/validation_object_device_methods.h"
 };
 

@@ -1093,6 +1093,10 @@ TEST_F(PositiveGpuAVIndexBuffer, SsboDescriptorBuffer) {
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
 
+    if (descriptor_buffer_properties.maxResourceDescriptorBufferBindings < 2) {
+        GTEST_SKIP() << "maxResourceDescriptorBufferBindings is not 2";
+    }
+
     const char *vsSource = R"glsl(
         #version 450
 

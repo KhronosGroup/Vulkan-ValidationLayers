@@ -19,6 +19,7 @@
 #pragma once
 
 #include "state_tracker/pipeline_layout_state.h"
+#include "state_tracker/descriptor_mode.h"
 #include "utils/vk_api_utils.h"
 #include "utils/shader_utils.h"
 #include "generated/dynamic_state_helper.h"
@@ -151,6 +152,15 @@ struct LastBound {
 
     const spirv::EntryPoint *GetVertexEntryPoint() const;
     const spirv::EntryPoint *GetFragmentEntryPoint() const;
+
+    // Since GPU-AV uses this to access an array, force a getter to ensure people use this correctly.
+    vvl::DescriptorMode GetActionDescriptorMode() const;
+    vvl::DescriptorMode GetDescriptorMode() const { return descriptor_mode; };
+    void SetDescriptorMode(vvl::DescriptorMode mode) { descriptor_mode = mode; };
+
+  private:
+    // While Descriptor Buffer are bound to all bindpoint, Classic is only tied to a single bind point.
+    vvl::DescriptorMode descriptor_mode = vvl::DescriptorModeUnknown;
 };
 
 namespace vvl {
