@@ -77,9 +77,6 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
         const uint64_t ray_query_dimension_max_depth =
             static_cast<uint64_t>(gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[2]) *
             static_cast<uint64_t>(gpuav.phys_dev_props.limits.maxComputeWorkGroupSize[2]);
-        VkPhysicalDeviceRayTracingPipelinePropertiesKHR rt_pipeline_props = vku::InitStructHelper();
-        VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&rt_pipeline_props);
-        DispatchGetPhysicalDeviceProperties2(gpuav.physical_device, &props2);
 
         TraceRaysValidationShader shader_resources;
         shader_resources.push_constants.indirect_data = indirect_data_address;
@@ -89,7 +86,8 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
             static_cast<uint32_t>(std::min<uint64_t>(ray_query_dimension_max_height, vvl::kU32Max));
         shader_resources.push_constants.trace_rays_depth_limit =
             static_cast<uint32_t>(std::min<uint64_t>(ray_query_dimension_max_depth, vvl::kU32Max));
-        shader_resources.push_constants.max_ray_dispatch_invocation_count = rt_pipeline_props.maxRayDispatchInvocationCount;
+        shader_resources.push_constants.max_ray_dispatch_invocation_count =
+            gpuav.phys_dev_ext_props.ray_tracing_props_khr.maxRayDispatchInvocationCount;
 
         if (!BindShaderResources(validation_pipeline, gpuav, cb_state, cb_state.compute_index,
                                  uint32_t(cb_state.command_error_loggers.size()), shader_resources)) {
@@ -151,10 +149,6 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
                 break;
             }
             case kErrorSubCodePreTraceRaysLimitVolume: {
-                VkPhysicalDeviceRayTracingPipelinePropertiesKHR rt_pipeline_props = vku::InitStructHelper();
-                VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&rt_pipeline_props);
-                DispatchGetPhysicalDeviceProperties2(gpuav.physical_device, &props2);
-
                 const VkExtent3D trace_rays_extent = {error_record[kPreActionParamOffset_0], error_record[kPreActionParamOffset_1],
                                                       error_record[kPreActionParamOffset_2]};
                 const uint64_t rays_volume = trace_rays_extent.width * trace_rays_extent.height * trace_rays_extent.depth;
@@ -163,7 +157,8 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
                     "Indirect trace rays of volume %" PRIu64
                     " (%s) would exceed VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxRayDispatchInvocationCount "
                     "limit of %" PRIu32 ".",
-                    rays_volume, string_VkExtent3D(trace_rays_extent).c_str(), rt_pipeline_props.maxRayDispatchInvocationCount);
+                    rays_volume, string_VkExtent3D(trace_rays_extent).c_str(),
+                    gpuav.phys_dev_ext_props.ray_tracing_props_khr.maxRayDispatchInvocationCount);
                 break;
             }
             default:
