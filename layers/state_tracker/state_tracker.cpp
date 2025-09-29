@@ -2830,6 +2830,7 @@ void DeviceState::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuf
 
     // legacy descriptor binding invalidates any previous call to vkCmdBindDescriptorBuffersEXT
     cb_state->descriptor_buffer_binding_info.clear();
+    cb_state->descriptor_mode = DescriptorMode::Classic;
 
     std::shared_ptr<DescriptorSet> no_push_desc;
 
@@ -2848,6 +2849,7 @@ void DeviceState::PostCallRecordCmdBindDescriptorSets2(VkCommandBuffer commandBu
 
     // legacy descriptor binding invalidates any previous call to vkCmdBindDescriptorBuffersEXT
     cb_state->descriptor_buffer_binding_info.clear();
+    cb_state->descriptor_mode = DescriptorMode::Classic;
 
     std::shared_ptr<DescriptorSet> no_push_desc;
 
@@ -2932,6 +2934,7 @@ void DeviceState::PostCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
 
     cb_state->descriptor_buffer_binding_info.resize(bufferCount);
     cb_state->descriptor_buffer_ever_bound = true;
+    cb_state->descriptor_mode = DescriptorMode::DescriptorBuffer;
 
     std::copy(pBindingInfos, pBindingInfos + bufferCount, cb_state->descriptor_buffer_binding_info.data());
 }

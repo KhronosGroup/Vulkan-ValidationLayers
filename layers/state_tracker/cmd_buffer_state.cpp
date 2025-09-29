@@ -299,6 +299,10 @@ void CommandBuffer::ResetCBState() {
     video_encode_quality_level.reset();
     video_session_updates.clear();
 
+    descriptor_buffer_binding_info.clear();
+    descriptor_buffer_ever_bound = false;
+    descriptor_mode = DescriptorMode::Unknown;
+
     // Clean up the label data
     label_stack_depth_ = 0;
     label_commands_.clear();

@@ -485,7 +485,7 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
 
     // Pathetic way of trying to make sure we take care of updating all
     // bindings of the instrumentation descriptor set
-    assert(gpuav.instrumentation_bindings_.size() == 9);
+    assert(gpuav.instrumentation_bindings_.size() == glsl::kTotalBindings);
 
     InstrumentationErrorBlob instrumentation_error_blob;
     UpdateInstrumentationDescSet(gpuav, cb_state, bind_point, instrumentation_desc_set, loc, instrumentation_error_blob);
