@@ -4102,14 +4102,22 @@ bool CoreChecks::PreCallValidateCreateVideoSessionKHR(VkDevice device, const VkV
                              pCreateInfo->maxDpbSlots, pCreateInfo->maxActiveReferencePictures);
         }
 
-        if (profile_desc.IsDecode() && pCreateInfo->maxActiveReferencePictures > 0 &&
-            !IsVideoFormatSupported(pCreateInfo->referencePictureFormat, VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR,
-                                    pCreateInfo->pVideoProfile)) {
-            skip |= LogError("VUID-VkVideoSessionCreateInfoKHR-referencePictureFormat-04852", device,
+        if (profile_desc.IsDecode() && pCreateInfo->maxActiveReferencePictures > 0) {
+            VkImageUsageFlags image_usage = VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR;
+            // When the decoder capability doesn't expose DISTINCT for DPB and output,
+            // the reference picture needs both DPB and DST usage.
+            if (!(profile_caps.decode.flags & VK_VIDEO_DECODE_CAPABILITY_DPB_AND_OUTPUT_DISTINCT_BIT_KHR)) {
+                image_usage |= VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR;
+            }
+
+            if (!IsVideoFormatSupported(pCreateInfo->referencePictureFormat, image_usage, pCreateInfo->pVideoProfile)) {
+                skip |=
+                    LogError("VUID-VkVideoSessionCreateInfoKHR-referencePictureFormat-04852", device,
                              create_info_loc.dot(Field::referencePictureFormat),
                              "(%s) is not a supported "
                              "decode DPB format for the video profile (%s) specified in pCreateInfo->pVideoProfile.",
                              string_VkFormat(pCreateInfo->referencePictureFormat), string_VideoProfileDesc(profile_desc).c_str());
+            }
         }
 
         if (profile_desc.IsEncode() && pCreateInfo->maxActiveReferencePictures > 0 &&
@@ -4122,13 +4130,21 @@ bool CoreChecks::PreCallValidateCreateVideoSessionKHR(VkDevice device, const VkV
                              string_VkFormat(pCreateInfo->referencePictureFormat), string_VideoProfileDesc(profile_desc).c_str());
         }
 
-        if (profile_desc.IsDecode() && !IsVideoFormatSupported(pCreateInfo->pictureFormat, VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR,
-                                                               pCreateInfo->pVideoProfile)) {
-            skip |=
-                LogError("VUID-VkVideoSessionCreateInfoKHR-pictureFormat-04853", device, create_info_loc.dot(Field::pictureFormat),
-                         "(%s) is not a supported "
-                         "decode output format for the video profile (%s) specified in pCreateInfo->pVideoProfile.",
-                         string_VkFormat(pCreateInfo->pictureFormat), string_VideoProfileDesc(profile_desc).c_str());
+        if (profile_desc.IsDecode()) {
+            VkImageUsageFlags image_usage = VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR;
+            // When the decoder capability doesn't expose DISTINCT for DPB and output,
+            // the reference picture needs both DPB and DST usage.
+            if (!(profile_caps.decode.flags & VK_VIDEO_DECODE_CAPABILITY_DPB_AND_OUTPUT_DISTINCT_BIT_KHR)) {
+                image_usage |= VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR;
+            }
+
+            if (!IsVideoFormatSupported(pCreateInfo->pictureFormat, image_usage, pCreateInfo->pVideoProfile)) {
+                skip |= LogError("VUID-VkVideoSessionCreateInfoKHR-pictureFormat-04853", device,
+                                 create_info_loc.dot(Field::pictureFormat),
+                                 "(%s) is not a supported "
+                                 "decode output format for the video profile (%s) specified in pCreateInfo->pVideoProfile.",
+                                 string_VkFormat(pCreateInfo->pictureFormat), string_VideoProfileDesc(profile_desc).c_str());
+            }
         }
 
         if (profile_desc.IsEncode() && !IsVideoFormatSupported(pCreateInfo->pictureFormat, VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR,
