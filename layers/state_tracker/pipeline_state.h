@@ -142,14 +142,12 @@ class Pipeline : public StateObject, public SubStateManager<PipelineSubState> {
     // state objects of the pipeline This is to make it clear that while currently everyone has to allocate this memory, it is only
     // meant for GPU-AV
     struct InstrumentationData {
-        // < unique_shader_id, instrumented_shader_module_handle >
-        // We create a VkShaderModule that is instrumented and need to delete before leaving the pipeline call
-        std::vector<std::pair<uint32_t, VkShaderModule>> instrumented_shader_modules;
-        // TODO - For GPL, this doesn't get passed down from linked shaders
+        // We create a VkShaderModule that is instrumented and it needs to be destroyed before leaving the pipeline call
+        std::vector<VkShaderModule> shader_modules;
         bool was_instrumented = false;
-        // When we instrument GPL at link time, we need to hold the new libraries until they are done
-        VkPipeline pre_raster_lib = VK_NULL_HANDLE;
-        VkPipeline frag_out_lib = VK_NULL_HANDLE;
+        // When we instrument GPL at link time, we need to hold the libraries created by GPU-AV
+        // so they can be re-used
+        VkPipeline instrumented_pipeline_lib = VK_NULL_HANDLE;
     } instrumentation_data;
 
     Pipeline(const DeviceState &state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
