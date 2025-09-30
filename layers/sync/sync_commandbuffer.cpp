@@ -1229,7 +1229,7 @@ void CommandBufferAccessContext::ImportRecordedAccessLog(const CommandBufferAcce
         const uint32_t command_offset = static_cast<uint32_t>(label_commands.size() - recorded_label_commands.size());
         for (size_t i = 0; i < recorded_context.access_log_->size(); i++) {
             size_t index = (access_log_->size() - 1) - i;
-            assert((*access_log_)[index].label_command_index != vvl::kU32Max);
+            assert((*access_log_)[index].label_command_index != vvl::kNoIndex32);
             (*access_log_)[index].label_command_index += command_offset;
         }
     }

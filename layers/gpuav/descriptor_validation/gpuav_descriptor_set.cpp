@@ -71,7 +71,7 @@ static glsl::DescriptorState GetInData(const vvl::BufferDescriptor &desc) {
 
 static glsl::DescriptorState GetInData(const vvl::TexelDescriptor &desc) {
     auto *buffer_view_state = desc.GetBufferViewState();
-    uint32_t res_size = vvl::kU32Max;
+    uint32_t res_size = vvl::kNoIndex32;
     if (buffer_view_state) {
         auto view_size = buffer_view_state->Size();
         res_size = static_cast<uint32_t>(view_size / GetTexelBufferFormatSize(buffer_view_state->create_info.format));
@@ -109,11 +109,11 @@ static glsl::DescriptorState GetInData(const vvl::MutableDescriptor &desc) {
         case DescriptorClass::GeneralBuffer: {
             auto buffer_state = desc.GetSharedBufferState();
             return glsl::DescriptorState(desc_class, GetId(buffer_state.get()),
-                                         buffer_state ? static_cast<uint32_t>(buffer_state->create_info.size) : vvl::kU32Max);
+                                         buffer_state ? static_cast<uint32_t>(buffer_state->create_info.size) : vvl::kNoIndex32);
         }
         case DescriptorClass::TexelBuffer: {
             auto buffer_view_state = desc.GetSharedBufferViewState();
-            uint32_t res_size = vvl::kU32Max;
+            uint32_t res_size = vvl::kNoIndex32;
             if (buffer_view_state) {
                 auto view_size = buffer_view_state->Size();
                 res_size = static_cast<uint32_t>(view_size / GetTexelBufferFormatSize(buffer_view_state->create_info.format));
@@ -147,7 +147,7 @@ static glsl::DescriptorState GetInData(const vvl::MutableDescriptor &desc) {
             break;
     }
     // If unsupported descriptor, act as if it is null and skip
-    return glsl::DescriptorState(desc_class, glsl::kNullDescriptor, vvl::kU32Max);
+    return glsl::DescriptorState(desc_class, glsl::kNullDescriptor, vvl::kNoIndex32);
 }
 
 template <typename Binding>
@@ -165,7 +165,7 @@ void FillBindingInData(const Binding &binding, glsl::DescriptorState *data, uint
 template <>
 void FillBindingInData(const vvl::InlineUniformBinding &binding, glsl::DescriptorState *data, uint32_t &index) {
     // While not techincally a "null descriptor" we want to skip it as if it is one
-    data[index++] = glsl::DescriptorState(DescriptorClass::InlineUniform, glsl::kNullDescriptor, vvl::kU32Max);
+    data[index++] = glsl::DescriptorState(DescriptorClass::InlineUniform, glsl::kNullDescriptor, vvl::kNoIndex32);
 }
 
 VkDeviceAddress DescriptorSetSubState::GetTypeAddress(Validator &gpuav) {

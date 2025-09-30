@@ -624,7 +624,7 @@ TEST_F(NegativePushDescriptor, SetLayoutMaxPushDescriptors) {
     ds_layout_ci.bindingCount = 1;
     ds_layout_ci.pBindings = &binding;
 
-    if (push_descriptor_prop.maxPushDescriptors == std::numeric_limits<uint32_t>::max()) {
+    if (push_descriptor_prop.maxPushDescriptors == vvl::kU32Max) {
         GTEST_SKIP() << "maxPushDescriptors is set to maximum unit32_t value";
     }
 

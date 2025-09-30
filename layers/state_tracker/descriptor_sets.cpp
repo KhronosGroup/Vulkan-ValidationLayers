@@ -710,7 +710,7 @@ void vvl::DescriptorSet::NotifyInvalidate(const NodeList &invalid_nodes, bool un
 uint32_t vvl::DescriptorSet::GetDynamicOffsetIndexFromBinding(uint32_t dynamic_binding) const {
     const uint32_t index = layout_->GetIndexFromBinding(dynamic_binding);
     if (index == bindings_.size()) {  // binding not found
-        return vvl::kU32Max;
+        return vvl::kNoIndex32;
     }
     assert(IsDynamicDescriptor(bindings_[index]->type));
     uint32_t dynamic_offset_index = 0;
@@ -1376,7 +1376,7 @@ void vvl::MutableDescriptor::CopyUpdate(DescriptorSet &set_state, const vvl::Dev
         case DescriptorClass::TexelBuffer: {
             ReplaceStatePtr(set_state, buffer_view_state_, static_cast<const TexelDescriptor &>(src).GetSharedBufferViewState(),
                             is_bindless);
-            buffer_size = buffer_view_state_ ? buffer_view_state_->Size() : vvl::kU32Max;
+            buffer_size = buffer_view_state_ ? buffer_view_state_->Size() : vvl::kNoIndex32;
             break;
         }
         case DescriptorClass::GeneralBuffer: {

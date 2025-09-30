@@ -57,7 +57,7 @@ struct VertexAttributeFetchLimit {
     VkDeviceSize max_vertex_attributes_count = std::numeric_limits<VkDeviceSize>::max();
     vvl::VertexBufferBinding binding_info{};
     VkVertexInputAttributeDescription attribute{};
-    uint32_t instance_rate_divisor = std::numeric_limits<uint32_t>::max();
+    uint32_t instance_rate_divisor = vvl::kNoIndex32;
 };
 
 // This is data we capture in our lambda at command buffer recording time.
@@ -68,9 +68,9 @@ struct InstrumentationErrorBlob {
     std::optional<vvl::IndexBufferBinding> index_buffer_binding{};
 
     // indexing into the VkDebugUtilsLabelEXT
-    uint32_t label_command_i = vvl::kU32Max;
+    uint32_t label_command_i = vvl::kNoIndex32;
     // used to know which action command this occured at
-    uint32_t action_command_i = vvl::kU32Max;
+    uint32_t action_command_i = vvl::kNoIndex32;
 
     // Used to know if from draw, dispatch, or traceRays
     VkPipelineBindPoint pipeline_bind_point = VK_PIPELINE_BIND_POINT_MAX_ENUM;
@@ -78,7 +78,7 @@ struct InstrumentationErrorBlob {
     bool uses_shader_object = false;
 
     // index into the last vkCmdBindDescriptors prior to a draw/dispatch
-    uint32_t descriptor_binding_index = vvl::kU32Max;
+    uint32_t descriptor_binding_index = vvl::kNoIndex32;
 };
 
 // Return true iff an error has been found

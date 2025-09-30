@@ -3616,7 +3616,7 @@ TEST_F(NegativeRayTracing, TooManyInstances) {
     m_device->Wait();
 
     auto tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, *blas.GetDstAS());
-    tlas.GetGeometries()[0].SetPrimitiveCount(std::numeric_limits<uint32_t>::max());
+    tlas.GetGeometries()[0].SetPrimitiveCount(vvl::kU32Max);
     m_errorMonitor->SetDesiredError("VUID-vkGetAccelerationStructureBuildSizesKHR-pBuildInfo-03785");
     tlas.GetSizeInfo();
     m_errorMonitor->VerifyFound();

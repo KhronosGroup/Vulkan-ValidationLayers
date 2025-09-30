@@ -439,7 +439,7 @@ TEST_F(NegativeDeviceGeneratedCommands, TokenOffsetLimit) {
     VkPhysicalDeviceDeviceGeneratedCommandsPropertiesEXT dgc_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(dgc_props);
 
-    if (dgc_props.maxIndirectCommandsTokenOffset == std::numeric_limits<uint32_t>::max()) {
+    if (dgc_props.maxIndirectCommandsTokenOffset == vvl::kU32Max) {
         GTEST_SKIP() << "maxIndirectCommandsTokenOffset is too large";
     }
 

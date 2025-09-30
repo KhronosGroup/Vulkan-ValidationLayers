@@ -4726,7 +4726,7 @@ TEST_F(NegativeDescriptors, DISABLED_AllocatingVariableDescriptorSets) {
 
     VkDescriptorSetLayoutBinding bindings[2] = {
         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-        {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, std::numeric_limits<uint32_t>::max() / 64, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+        {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, vvl::kU32Max / 64, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper(&flags_create_info);
     ds_layout_ci.bindingCount = 2;
     ds_layout_ci.pBindings = bindings;
@@ -5659,7 +5659,7 @@ TEST_F(NegativeDescriptors, MaxInlineUniformTotalSize) {
     GetPhysicalDeviceProperties2(properties13);
     const uint32_t limit = properties13.maxInlineUniformTotalSize;
 
-    if (limit == std::numeric_limits<uint32_t>::max()) {
+    if (limit == vvl::kU32Max) {
         GTEST_SKIP() << "maxInlineUniformTotalSize is too large";
     }
 

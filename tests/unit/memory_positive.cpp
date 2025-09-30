@@ -347,7 +347,7 @@ TEST_F(PositiveMemory, MappingWithMultiInstanceHeapFlag) {
     VkPhysicalDeviceMemoryProperties memory_info;
     vk::GetPhysicalDeviceMemoryProperties(Gpu(), &memory_info);
 
-    uint32_t memory_index = std::numeric_limits<uint32_t>::max();
+    uint32_t memory_index = vvl::kU32Max;
     for (uint32_t i = 0; i < memory_info.memoryTypeCount; ++i) {
         if ((memory_info.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
             if (memory_info.memoryHeaps[memory_info.memoryTypes[i].heapIndex].flags & VK_MEMORY_HEAP_MULTI_INSTANCE_BIT) {
@@ -357,7 +357,7 @@ TEST_F(PositiveMemory, MappingWithMultiInstanceHeapFlag) {
         }
     }
 
-    if (memory_index == std::numeric_limits<uint32_t>::max()) {
+    if (memory_index == vvl::kU32Max) {
         GTEST_SKIP() << "Did not host visible memory from memory heap with VK_MEMORY_HEAP_MULTI_INSTANCE_BIT bit";
     }
 

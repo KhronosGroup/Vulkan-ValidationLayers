@@ -241,7 +241,7 @@ static std::string GetSemaphoreInUseBySwapchainMessage(const vvl::Semaphore::Swa
 
             // If the last semaphore usage is within the history then print corresponding image index in brackets
             const bool show_last_semaphore_usage = (swapchain.acquire_count - swapchain_info.acquire_counter_value) < print_count;
-            uint32_t marked_history_index = vvl::kU32Max;
+            uint32_t marked_history_index = vvl::kNoIndex32;
             if (show_last_semaphore_usage) {
                 marked_history_index = (history_length - 1) - (swapchain.acquire_count - swapchain_info.acquire_counter_value);
             }

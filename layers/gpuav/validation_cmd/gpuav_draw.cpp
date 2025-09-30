@@ -248,7 +248,7 @@ void FirstInstance(Validator &gpuav, CommandBufferSubState &cb_state, const Loca
     // Register error logger. Happens per command GPU-AV intercepts
     // ---
     const uint32_t label_command_i =
-        !cb_state.base.GetLabelCommands().empty() ? uint32_t(cb_state.base.GetLabelCommands().size() - 1) : vvl::kU32Max;
+        !cb_state.base.GetLabelCommands().empty() ? uint32_t(cb_state.base.GetLabelCommands().size() - 1) : vvl::kNoIndex32;
     ErrorLoggerFunc error_logger = [&gpuav, &cb_state, vuid, api_struct_name, label_command_i](
                                        const uint32_t *error_record, const Location &loc, const LogObjectList &objlist,
                                        const std::vector<std::string> &initial_label_stack) {
@@ -413,7 +413,7 @@ void CountBuffer(Validator &gpuav, CommandBufferSubState &cb_state, const Locati
     // Register error logger
     // ---
     const uint32_t label_command_i =
-        !cb_state.base.GetLabelCommands().empty() ? uint32_t(cb_state.base.GetLabelCommands().size() - 1) : vvl::kU32Max;
+        !cb_state.base.GetLabelCommands().empty() ? uint32_t(cb_state.base.GetLabelCommands().size() - 1) : vvl::kNoIndex32;
     ErrorLoggerFunc error_logger = [&gpuav, &cb_state, api_buffer, draw_buffer_size = draw_buffer_state->create_info.size,
                                     api_offset, api_struct_size_byte, api_stride, api_struct_name, vuid, label_command_i](
                                        const uint32_t *error_record, const Location &loc, const LogObjectList &objlist,
@@ -629,7 +629,7 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
     // Register error logger
     // ---
     const uint32_t label_command_i =
-        !cb_state.base.GetLabelCommands().empty() ? uint32_t(cb_state.base.GetLabelCommands().size() - 1) : vvl::kU32Max;
+        !cb_state.base.GetLabelCommands().empty() ? uint32_t(cb_state.base.GetLabelCommands().size() - 1) : vvl::kNoIndex32;
     ErrorLoggerFunc error_logger = [&gpuav, &cb_state, is_task_shader, label_command_i](
                                        const uint32_t *error_record, const Location &loc, const LogObjectList &objlist,
                                        const std::vector<std::string> &initial_label_stack) {
@@ -992,7 +992,7 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
     val_cmd_cb_state.per_render_pass_validation_commands.emplace_back(std::move(validation_cmd));
 
     const uint32_t label_command_i =
-        !cb_state.base.GetLabelCommands().empty() ? uint32_t(cb_state.base.GetLabelCommands().size() - 1) : vvl::kU32Max;
+        !cb_state.base.GetLabelCommands().empty() ? uint32_t(cb_state.base.GetLabelCommands().size() - 1) : vvl::kNoIndex32;
     ErrorLoggerFunc error_logger = [&gpuav, &cb_state, vuid, api_buffer, api_offset, api_stride,
                                     index_buffer_binding = cb_state.base.index_buffer_binding, label_command_i](
                                        const uint32_t *error_record, const Location &loc, const LogObjectList &objlist,

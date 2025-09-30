@@ -179,7 +179,6 @@ bool core::Instance::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice &p
                                                     const VkDeviceQueueCreateInfo *infos, const Location &loc) const {
     bool skip = false;
 
-    const uint32_t not_used = std::numeric_limits<uint32_t>::max();
     struct create_flags {
         // uint32_t is to represent the queue family index to allow for better error messages
         uint32_t unprocted_index;
@@ -203,7 +202,7 @@ bool core::Instance::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice &p
 
         if (api_version == VK_API_VERSION_1_0) {
             // Vulkan 1.0 didn't have protected memory so always needed unique info
-            create_flags flags = {requested_queue_family, not_used};
+            create_flags flags = {requested_queue_family, vvl::kNoIndex32};
             if (queue_family_map.emplace(requested_queue_family, flags).second == false) {
                 skip |= LogError("VUID-VkDeviceCreateInfo-queueFamilyIndex-02802", pd_state.Handle(),
                                  info_loc.dot(Field::queueFamilyIndex),
@@ -215,7 +214,7 @@ bool core::Instance::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice &p
             auto it = queue_family_map.find(requested_queue_family);
             if (it == queue_family_map.end()) {
                 // Add first time seeing queue family index and what the create flags were
-                create_flags new_flags = {not_used, not_used};
+                create_flags new_flags = {vvl::kNoIndex32, vvl::kNoIndex32};
                 if (protected_create_bit) {
                     new_flags.protected_index = requested_queue_family;
                 } else {
@@ -225,7 +224,7 @@ bool core::Instance::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice &p
             } else {
                 // The queue family was seen, so now need to make sure the flags were different
                 if (protected_create_bit) {
-                    if (it->second.protected_index != not_used) {
+                    if (it->second.protected_index != vvl::kNoIndex32) {
                         skip |= LogError("VUID-VkDeviceCreateInfo-queueFamilyIndex-02802", pd_state.Handle(),
                                          info_loc.dot(Field::queueFamilyIndex),
                                          "(%" PRIu32 ") is not unique and was also used in pCreateInfo->pQueueCreateInfos[%" PRIu32
@@ -236,7 +235,7 @@ bool core::Instance::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice &p
                         it->second.protected_index = requested_queue_family;
                     }
                 } else {
-                    if (it->second.unprocted_index != not_used) {
+                    if (it->second.unprocted_index != vvl::kNoIndex32) {
                         skip |= LogError("VUID-VkDeviceCreateInfo-queueFamilyIndex-02802", pd_state.Handle(),
                                          info_loc.dot(Field::queueFamilyIndex),
                                          "(%" PRIu32 ") is not unique and was also used in pCreateInfo->pQueueCreateInfos[%" PRIu32

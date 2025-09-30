@@ -265,7 +265,7 @@ class Device : public internal::Handle<VkDevice> {
     std::optional<uint32_t> NonGraphicsQueueFamily() const;
     Queue *NonGraphicsQueue() const;
 
-    uint32_t graphics_queue_node_index_ = vvl::kU32Max;
+    uint32_t graphics_queue_node_index_ = vvl::kNoIndex32;
 
     const PhysicalDevice physical_device_;
 

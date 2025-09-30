@@ -54,7 +54,7 @@ class BufferDeviceAddressPass : public Pass {
     // (example https://godbolt.org/z/v6boos6Yr)
     struct Range {
         uint32_t min_instruction = 0;  // used to only instrument at the lowest offset
-        uint32_t min_struct_offsets = vvl::kU32Max;
+        uint32_t min_struct_offsets = vvl::kNoIndex32;
         uint32_t max_struct_offsets = 0;
     };
     vvl::unordered_map<uint32_t, Range> block_struct_range_map_;

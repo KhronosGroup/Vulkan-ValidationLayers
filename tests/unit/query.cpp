@@ -2133,7 +2133,7 @@ TEST_F(NegativeQuery, PerformanceQueryReset) {
     vkt::QueryPool query_pool(*m_device, query_pool_ci);
 
     auto acquire_profiling_lock_info = vku::InitStruct<VkAcquireProfilingLockInfoKHR>();
-    acquire_profiling_lock_info.timeout = std::numeric_limits<uint64_t>::max();
+    acquire_profiling_lock_info.timeout = vvl::kU64Max;
     vk::AcquireProfilingLockKHR(*m_device, &acquire_profiling_lock_info);
 
     {
@@ -2438,7 +2438,7 @@ TEST_F(NegativeQuery, PerfQueryQueueFamilyIndex) {
     vkt::CommandBuffer cb(*m_device, command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     auto acquire_profiling_lock_info = vku::InitStruct<VkAcquireProfilingLockInfoKHR>();
-    acquire_profiling_lock_info.timeout = std::numeric_limits<uint64_t>::max();
+    acquire_profiling_lock_info.timeout = vvl::kU64Max;
     vk::AcquireProfilingLockKHR(*m_device, &acquire_profiling_lock_info);
 
     cb.Begin();

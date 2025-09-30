@@ -39,7 +39,7 @@ TEST_F(PositiveGpuAVIndexBuffer, BadVertexIndex) {
     m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, {0, std::numeric_limits<uint32_t>::max(), 42});
+    vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, {0, vvl::kU32Max, 42});
 
     vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
     vk::CmdDrawIndexedIndirect(m_command_buffer, draw_params_buffer, 0, 1, 0);
@@ -184,7 +184,7 @@ TEST_F(PositiveGpuAVIndexBuffer, IndexedIndirectRobustness) {
     m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, {0, std::numeric_limits<uint32_t>::max(), 42});
+    vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, {0, vvl::kU32Max, 42});
 
     vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
     vk::CmdDrawIndexedIndirect(m_command_buffer, draw_params_buffer, 0, 1, 0);
@@ -988,7 +988,7 @@ TEST_F(PositiveGpuAVIndexBuffer, DrawIndexedIndirectWithOffset) {
     m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, {0, std::numeric_limits<uint32_t>::max(), 42});
+    vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, {0, vvl::kU32Max, 42});
 
     vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
     vk::CmdDrawIndexedIndirect(m_command_buffer, draw_params_buffer, offset, 1u, 0u);

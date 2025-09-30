@@ -61,11 +61,10 @@ bool CoreChecks::PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice device,
     auto pipeline_layout_state = Get<vvl::PipelineLayout>(pCreateInfo->pipelineLayout);
     auto* dynamic_layout_create = vku::FindStructInPNextChain<VkPipelineLayoutCreateInfo>(pCreateInfo->pNext);
 
-    const uint32_t kNotFound = vvl::kU32Max;
-    uint32_t execution_set_token_index = kNotFound;
-    uint32_t vertex_buffer_token_index = kNotFound;
-    uint32_t index_buffer_token_index = kNotFound;
-    uint32_t sequence_index_token_index = kNotFound;
+    uint32_t execution_set_token_index = vvl::kNoIndex32;
+    uint32_t vertex_buffer_token_index = vvl::kNoIndex32;
+    uint32_t index_buffer_token_index = vvl::kNoIndex32;
+    uint32_t sequence_index_token_index = vvl::kNoIndex32;
 
     vvl::unordered_map<uint32_t, uint32_t> vertex_binding_unit_unique;
     vvl::unordered_map<uint32_t, VkPushConstantRange> token_ranges;
@@ -126,7 +125,7 @@ bool CoreChecks::PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice device,
         // Check for duplicate tokens
         if (token.type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_EXECUTION_SET_EXT) {
             // currently these 2 VUs overlap but can be helpful to catch in different times
-            if (execution_set_token_index == kNotFound) {
+            if (execution_set_token_index == vvl::kNoIndex32) {
                 execution_set_token_index = i;
                 if (i != 0) {
                     skip |= LogError(
@@ -140,7 +139,7 @@ bool CoreChecks::PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice device,
                                  execution_set_token_index);
             }
         } else if (token.type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_INDEX_BUFFER_EXT) {
-            if (index_buffer_token_index == kNotFound) {
+            if (index_buffer_token_index == vvl::kNoIndex32) {
                 index_buffer_token_index = i;
             } else {
                 skip |= LogError("VUID-VkIndirectCommandsLayoutCreateInfoEXT-pTokens-11094", device, token_loc.dot(Field::type),
@@ -149,7 +148,7 @@ bool CoreChecks::PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice device,
                                  index_buffer_token_index);
             }
         } else if (token.type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_SEQUENCE_INDEX_EXT) {
-            if (sequence_index_token_index == kNotFound) {
+            if (sequence_index_token_index == vvl::kNoIndex32) {
                 sequence_index_token_index = i;
             } else {
                 skip |= LogError("VUID-VkIndirectCommandsLayoutCreateInfoEXT-pTokens-11145", device, token_loc.dot(Field::type),
@@ -204,7 +203,7 @@ bool CoreChecks::PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice device,
     } else {
         if (!IsValueIn(final_token_type, {VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_INDEXED_EXT,
                                           VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_INDEXED_COUNT_EXT}) &&
-            index_buffer_token_index != kNotFound) {
+            index_buffer_token_index != vvl::kNoIndex32) {
             skip |= LogError("VUID-VkIndirectCommandsLayoutCreateInfoEXT-pTokens-11095", device,
                              create_info_loc.dot(Field::pTokens, final_token_index).dot(Field::type),
                              "is %s (not an index draw token), but pTokens[%" PRIu32
@@ -214,7 +213,7 @@ bool CoreChecks::PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice device,
         if (!IsValueIn(final_token_type,
                        {VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_INDEXED_EXT, VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_EXT,
                         VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_INDEXED_COUNT_EXT, VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_COUNT_EXT}) &&
-            vertex_buffer_token_index != kNotFound) {
+            vertex_buffer_token_index != vvl::kNoIndex32) {
             skip |= LogError("VUID-VkIndirectCommandsLayoutCreateInfoEXT-pTokens-11096", device,
                              create_info_loc.dot(Field::pTokens, final_token_index).dot(Field::type),
                              "is %s (not a non-mesh draw token), but pTokens[%" PRIu32

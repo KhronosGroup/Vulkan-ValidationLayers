@@ -29,7 +29,7 @@
 namespace gpuav {
 namespace spirv {
 
-static constexpr uint32_t kLinkedInstruction = std::numeric_limits<uint32_t>::max();
+static constexpr uint32_t kLinkedInstruction = vvl::kNoIndex32;
 
 Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const Settings& settings,
                const DeviceFeatures& enabled_features,
