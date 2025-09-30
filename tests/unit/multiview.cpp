@@ -31,7 +31,7 @@ TEST_F(NegativeMultiview, MaxInstanceIndex) {
 
     VkPhysicalDeviceMultiviewProperties multiview_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(multiview_props);
-    if (multiview_props.maxMultiviewInstanceIndex == std::numeric_limits<uint32_t>::max()) {
+    if (multiview_props.maxMultiviewInstanceIndex == vvl::kU32Max) {
         GTEST_SKIP() << "maxMultiviewInstanceIndex is uint32_t max";
     }
 

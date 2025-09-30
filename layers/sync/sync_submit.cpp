@@ -905,7 +905,7 @@ BatchAccessLog::AccessRecord BatchAccessLog::CBSubmitLog::GetAccessRecord(Resour
     assert(log_);
     assert(index < log_->size());
     const ResourceUsageRecord* record = &(*log_)[index];
-    const auto debug_name_provider = (record->label_command_index == vvl::kU32Max) ? nullptr : this;
+    const auto debug_name_provider = (record->label_command_index == vvl::kNoIndex32) ? nullptr : this;
     return AccessRecord{&batch_, record, debug_name_provider};
 }
 

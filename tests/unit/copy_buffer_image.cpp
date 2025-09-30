@@ -3993,7 +3993,7 @@ TEST_F(NegativeCopyBufferImage, ImageCopyWidthOverflow) {
     copy_region.srcOffset = {32, 0, 0};
     copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
     copy_region.dstOffset = {32, 0, 0};
-    copy_region.extent = {std::numeric_limits<uint32_t>::max(), 32u, 1u};
+    copy_region.extent = {vvl::kU32Max, 32u, 1u};
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcOffset-00144");
@@ -4006,7 +4006,7 @@ TEST_F(NegativeCopyBufferImage, ImageCopyWidthOverflow) {
     copy_region.extent.width = 1u;
     copy_region.srcOffset.y = 32;
     copy_region.dstOffset.y = 32;
-    copy_region.extent.height = std::numeric_limits<uint32_t>::max();
+    copy_region.extent.height = vvl::kU32Max;
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcOffset-00145");
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-dstOffset-00151");
@@ -4018,7 +4018,7 @@ TEST_F(NegativeCopyBufferImage, ImageCopyWidthOverflow) {
     copy_region.extent.height = 1u;
     copy_region.srcOffset.z = 8u;
     copy_region.dstOffset.z = 8u;
-    copy_region.extent.depth = std::numeric_limits<uint32_t>::max();
+    copy_region.extent.depth = vvl::kU32Max;
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcOffset-00147");
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-dstOffset-00153");
     vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_GENERAL, dst_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);

@@ -3614,7 +3614,7 @@ TEST_F(NegativeDynamicState, CmdSetDiscardRectangleEXTRectangleCountOverflow) {
     VkRect2D discard_rectangles = {};
     discard_rectangles.offset.x = 1;
     discard_rectangles.offset.y = 0;
-    discard_rectangles.extent.width = static_cast<uint32_t>(std::numeric_limits<int32_t>::max());
+    discard_rectangles.extent.width = vvl::kU32Max;
     discard_rectangles.extent.height = 64;
 
     m_command_buffer.Begin();
@@ -3623,7 +3623,7 @@ TEST_F(NegativeDynamicState, CmdSetDiscardRectangleEXTRectangleCountOverflow) {
     m_errorMonitor->VerifyFound();
 
     discard_rectangles.offset.x = 0;
-    discard_rectangles.offset.y = std::numeric_limits<int32_t>::max();
+    discard_rectangles.offset.y = vvl::kI32Max;
     discard_rectangles.extent.width = 64;
     discard_rectangles.extent.height = 1;
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetDiscardRectangleEXT-offset-00589");

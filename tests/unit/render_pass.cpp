@@ -1170,17 +1170,17 @@ TEST_F(NegativeRenderPass, BeginRenderArea) {
     TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer, &m_renderPassBeginInfo, rp2Supported, vuid, vuid);
 
     m_renderPassBeginInfo.renderArea.offset.x = 1;
-    m_renderPassBeginInfo.renderArea.extent.width = vvl::MaxTypeValue(m_renderPassBeginInfo.renderArea.extent.width) - 1;
+    m_renderPassBeginInfo.renderArea.extent.width = vvl::kU32Max - 1;
     TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer, &m_renderPassBeginInfo, rp2Supported, vuid, vuid);
 
-    m_renderPassBeginInfo.renderArea.offset.x = vvl::MaxTypeValue(m_renderPassBeginInfo.renderArea.offset.x);
-    m_renderPassBeginInfo.renderArea.extent.width = vvl::MaxTypeValue(m_renderPassBeginInfo.renderArea.extent.width);
+    m_renderPassBeginInfo.renderArea.offset.x = vvl::kI32Max;
+    m_renderPassBeginInfo.renderArea.extent.width = vvl::kU32Max;
     TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer, &m_renderPassBeginInfo, rp2Supported, vuid, vuid);
 
     m_renderPassBeginInfo.renderArea.offset.x = 0;
     m_renderPassBeginInfo.renderArea.extent.width = 256;
     m_renderPassBeginInfo.renderArea.offset.y = 1;
-    m_renderPassBeginInfo.renderArea.extent.height = vvl::MaxTypeValue(m_renderPassBeginInfo.renderArea.extent.height) - 1;
+    m_renderPassBeginInfo.renderArea.extent.height = vvl::kU32Max - 1;
     TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer, &m_renderPassBeginInfo, rp2Supported,
                         "VUID-VkRenderPassBeginInfo-pNext-02853", "VUID-VkRenderPassBeginInfo-pNext-02853");
 }

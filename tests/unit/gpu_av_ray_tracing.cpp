@@ -62,7 +62,7 @@ TEST_F(NegativeGpuAVRayTracing, CmdTraceRaysIndirect) {
     VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&rt_pipeline_props);
     vk::GetPhysicalDeviceProperties2(Gpu(), &props2);
 
-    if (rt_pipeline_props.maxRayDispatchInvocationCount == std::numeric_limits<uint32_t>::max()) {
+    if (rt_pipeline_props.maxRayDispatchInvocationCount == vvl::kU32Max) {
         GTEST_SKIP() << "maxRayDispatchInvocationCount is maxed out, cannot go past it, skipping test";
     }
 

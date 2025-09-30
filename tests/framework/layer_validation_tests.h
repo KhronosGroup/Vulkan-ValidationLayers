@@ -462,7 +462,7 @@ void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkDevice device, con
 VkResult GPDIFPHelper(VkPhysicalDevice dev, const VkImageCreateInfo *ci, VkImageFormatProperties *limits = nullptr);
 
 VkFormat FindFormatWithoutFeatures(VkPhysicalDevice gpu, VkImageTiling tiling,
-                                   VkFormatFeatureFlags undesired_features = vvl::kU32Max);
+                                   VkFormatFeatureFlags undesired_features = vvl::kNoIndex32);
 
 VkFormat FindFormatWithoutFeatures2(VkPhysicalDevice gpu, VkImageTiling tiling, VkFormatFeatureFlags2 undesired_features);
 

@@ -2172,7 +2172,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
 
 PushConstantVariable::PushConstantVariable(const Module& module_state, const Instruction& insn, VkShaderStageFlagBits stage,
                                            const VariableAccessMap& variable_access_map, const DebugNameMap& debug_name_map)
-    : VariableBase(module_state, insn, stage, variable_access_map, debug_name_map), offset(vvl::kU32Max), size(0) {
+    : VariableBase(module_state, insn, stage, variable_access_map, debug_name_map), offset(vvl::kNoIndex32), size(0) {
     assert(type_struct_info != nullptr);  // Push Constants need to be structs
 
     auto struct_size = type_struct_info->GetSize(module_state);
@@ -2208,7 +2208,7 @@ TypeStructInfo::TypeStructInfo(const Module& module_state, const Instruction& st
 }
 
 TypeStructSize TypeStructInfo::GetSize(const Module& module_state) const {
-    uint32_t offset = vvl::kU32Max;
+    uint32_t offset = vvl::kNoIndex32;
     uint32_t size = 0;
 
     // Non-Blocks don't have offset so can get packed size

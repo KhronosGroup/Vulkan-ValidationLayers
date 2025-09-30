@@ -1729,7 +1729,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                     // since its a non-disjoint image, finding VkImage in map is a duplicate
                     auto it = resources_bound.find(image_state->VkHandle());
                     if (it == resources_bound.end()) {
-                        std::array<uint32_t, 3> bound_index = {i, vvl::kU32Max, vvl::kU32Max};
+                        std::array<uint32_t, 3> bound_index = {i, vvl::kNoIndex32, vvl::kNoIndex32};
                         resources_bound.emplace(image_state->VkHandle(), bound_index);
                     } else {
                         const LogObjectList objlist(bind_info.image, bind_info.memory);
@@ -1783,11 +1783,11 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
 
                 auto it = resources_bound.find(image_state->VkHandle());
                 if (it == resources_bound.end()) {
-                    std::array<uint32_t, 3> bound_index = {vvl::kU32Max, vvl::kU32Max, vvl::kU32Max};
+                    std::array<uint32_t, 3> bound_index = {vvl::kNoIndex32, vvl::kNoIndex32, vvl::kNoIndex32};
                     bound_index[plane] = i;
                     resources_bound.emplace(image_state->VkHandle(), bound_index);
                 } else {
-                    if (it->second[plane] == vvl::kU32Max) {
+                    if (it->second[plane] == vvl::kNoIndex32) {
                         it->second[plane] = i;
                     } else {
                         const LogObjectList objlist(bind_info.image, bind_info.memory);
@@ -2221,7 +2221,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
         if (image_state && image_state->disjoint == true && !is_drm) {
             uint32_t total_planes = vkuFormatPlaneCount(image_state->create_info.format);
             for (uint32_t i = 0; i < total_planes; i++) {
-                if (resource.second[i] == vvl::kU32Max) {
+                if (resource.second[i] == vvl::kNoIndex32) {
                     skip |= LogError("VUID-vkBindImageMemory2-pBindInfos-02858", resource.first, error_obj.location,
                                      "Plane %" PRIu32
                                      " of the disjoint image was not bound. All %d planes need to bound individually "

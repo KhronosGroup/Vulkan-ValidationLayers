@@ -149,7 +149,7 @@ TEST_F(NegativeTransformFeedback, CmdBindTransformFeedbackBuffersEXT) {
         }
 
         // Request too many bindings.
-        if (tf_properties.maxTransformFeedbackBuffers < std::numeric_limits<uint32_t>::max()) {
+        if (tf_properties.maxTransformFeedbackBuffers < vvl::kU32Max) {
             auto const bindingCount = tf_properties.maxTransformFeedbackBuffers + 1;
             std::vector<VkBuffer> buffers(bindingCount, buffer_obj);
 
@@ -283,7 +283,7 @@ TEST_F(NegativeTransformFeedback, CmdBeginTransformFeedbackEXT) {
         }
 
         // Request too many buffers.
-        if (tf_properties.maxTransformFeedbackBuffers < std::numeric_limits<uint32_t>::max()) {
+        if (tf_properties.maxTransformFeedbackBuffers < vvl::kU32Max) {
             auto const counterBufferCount = tf_properties.maxTransformFeedbackBuffers + 1;
 
             m_errorMonitor->SetDesiredError("VUID-vkCmdBeginTransformFeedbackEXT-firstCounterBuffer-02369");
@@ -373,7 +373,7 @@ TEST_F(NegativeTransformFeedback, CmdEndTransformFeedbackEXT) {
             }
 
             // Request too many buffers.
-            if (tf_properties.maxTransformFeedbackBuffers < std::numeric_limits<uint32_t>::max()) {
+            if (tf_properties.maxTransformFeedbackBuffers < vvl::kU32Max) {
                 auto const counterBufferCount = tf_properties.maxTransformFeedbackBuffers + 1;
 
                 m_errorMonitor->SetDesiredError("VUID-vkCmdEndTransformFeedbackEXT-firstCounterBuffer-02377");

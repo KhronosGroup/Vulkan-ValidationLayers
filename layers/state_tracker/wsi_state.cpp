@@ -99,7 +99,7 @@ Swapchain::Swapchain(vvl::DeviceState &dev_data_, const VkSwapchainCreateInfoKHR
       dev_data(dev_data_) {
     // Initialize with visible values for debugging purposes.
     // This helps to show used slots during the first few frames.
-    acquire_history.fill(vvl::kU32Max);
+    acquire_history.fill(vvl::kNoIndex32);
 }
 
 void Swapchain::PresentImage(uint32_t image_index, uint64_t present_id, const SubmissionReference &present_submission_ref,
@@ -233,7 +233,7 @@ uint32_t Swapchain::GetAcquiredImageIndexFromHistory(uint32_t acquire_history_in
     const uint32_t ring_buffer_index = global_index % acquire_history_max_length;
 
     const uint32_t acquire_image_index = acquire_history[ring_buffer_index];
-    assert(acquire_image_index != vvl::kU32Max);
+    assert(acquire_image_index != vvl::kNoIndex32);
     return acquire_image_index;
 }
 

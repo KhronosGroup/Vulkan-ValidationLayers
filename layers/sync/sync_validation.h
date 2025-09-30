@@ -74,7 +74,7 @@ class SyncValidator : public vvl::DeviceProxy {
     vvl::unordered_map<VkFence, FenceHostSyncPoint> waitable_fences_;
     vvl::unordered_map<VkSemaphore, std::deque<TimelineHostSyncPoint>> host_waitable_semaphores_;
 
-    uint32_t debug_command_number = vvl::kU32Max;
+    uint32_t debug_command_number = vvl::kNoIndex32;
     uint32_t debug_reset_count = 1;
     std::string debug_cmdbuf_pattern;
 

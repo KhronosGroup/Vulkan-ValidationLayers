@@ -1317,7 +1317,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevi
     if (original_pToolProperties != nullptr) {
         pToolProperties = original_pToolProperties;
     }
-    assert(*pToolCount != std::numeric_limits<uint32_t>::max());
+    assert(*pToolCount != vvl::kU32Max);
     (*pToolCount)++;
 
     for (auto& vo : instance_dispatch->object_dispatch) {
@@ -1366,7 +1366,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolProperties(VkPhysicalDevice 
     if (original_pToolProperties != nullptr) {
         pToolProperties = original_pToolProperties;
     }
-    assert(*pToolCount != std::numeric_limits<uint32_t>::max());
+    assert(*pToolCount != vvl::kU32Max);
     (*pToolCount)++;
 
     for (auto& vo : instance_dispatch->object_dispatch) {

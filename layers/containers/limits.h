@@ -34,14 +34,4 @@ constexpr auto kI64Max = std::numeric_limits<int64_t>::max();
 constexpr auto kNoIndex32 = kU32Max;
 constexpr auto kNoIndex64 = kU64Max;
 
-template <typename T>
-constexpr T MaxTypeValue([[maybe_unused]] T) {
-    return std::numeric_limits<T>::max();
-}
-
-template <typename T>
-constexpr T MinTypeValue([[maybe_unused]] T) {
-    return std::numeric_limits<T>::min();
-}
-
 }  // namespace vvl

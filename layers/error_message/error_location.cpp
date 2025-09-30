@@ -22,14 +22,14 @@ void Location::AppendFields(std::ostream& out) const {
     if (prev) {
         // When apply a .dot(sub_index) we duplicate the field item
         // Instead of dealing with partial non-const Location, just do the check here
-        const Location& prev_loc = (prev->field == field && prev->index == kNoIndex && prev->prev) ? *prev->prev : *prev;
+        const Location& prev_loc = (prev->field == field && prev->index == vvl::kNoIndex32 && prev->prev) ? *prev->prev : *prev;
 
         // Work back and print for Locaiton first
         prev_loc.AppendFields(out);
 
         // check if need connector from last item
         if (prev_loc.structure != vvl::Struct::Empty || prev_loc.field != vvl::Field::Empty) {
-            out << ((prev_loc.index == kNoIndex && IsFieldPointer(prev_loc.field)) ? "->" : ".");
+            out << ((prev_loc.index == vvl::kNoIndex32 && IsFieldPointer(prev_loc.field)) ? "->" : ".");
         }
     }
     if (isPNext && structure != vvl::Struct::Empty) {
@@ -37,7 +37,7 @@ void Location::AppendFields(std::ostream& out) const {
     }
     if (field != vvl::Field::Empty) {
         out << vvl::String(field);
-        if (index != kNoIndex) {
+        if (index != vvl::kNoIndex32) {
             out << "[" << index << "]";
         }
     }

@@ -779,7 +779,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const vvl::Pipeline &pipeli
     // chained together in the pipeline. Note, we could be in the PreRaster GPL path, so there may not be a Fragment Shader see
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8443
     if (pipeline.stage_states.size() > 1) {
-        const size_t not_found = vvl::kU32Max;
+        const size_t not_found = vvl::kNoIndex32;
         auto get_stage = [&pipeline, not_found = not_found](VkShaderStageFlagBits stage) {
             for (size_t i = 0; i < pipeline.stage_states.size(); i++) {
                 if (pipeline.stage_states[i].GetStage() == stage) {

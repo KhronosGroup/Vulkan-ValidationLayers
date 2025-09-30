@@ -174,7 +174,7 @@ TEST_F(NegativeWsi, BindImageMemorySwapchain) {
 
     bind_info.memory = mem;
     bind_swapchain_info.swapchain = m_swapchain;
-    bind_swapchain_info.imageIndex = std::numeric_limits<uint32_t>::max();
+    bind_swapchain_info.imageIndex = vvl::kU32Max;
 
     if (mem.initialized()) {
         m_errorMonitor->SetDesiredError("VUID-VkBindImageMemoryInfo-pNext-01631");

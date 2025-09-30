@@ -38,7 +38,7 @@ class CommandBufferSubState;
 namespace valpipe {
 
 struct BoundStorageBuffer {
-    uint32_t binding = vvl::kU32Max;
+    uint32_t binding = vvl::kNoIndex32;
     VkDescriptorBufferInfo info{VK_NULL_HANDLE, vvl::kU64Max, 0};
 };
 

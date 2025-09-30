@@ -50,7 +50,7 @@ class BarrierQueueFamilyBase {
         DOUBLE_COMMAND_BUFFER,
     };
 
-    static const uint32_t kInvalidQueueFamily = vvl::kU32Max;
+    static const uint32_t kInvalidQueueFamily = vvl::kNoIndex32;
     Context *context_;
     vkt::Image image_;
     vkt::Buffer buffer_;

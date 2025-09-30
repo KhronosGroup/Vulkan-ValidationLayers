@@ -415,7 +415,7 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBufferSubState &cb_st
     for (size_t func_i = 0; func_i < cb_state.on_instrumentation_desc_set_update_functions.size(); ++func_i) {
         VkWriteDescriptorSet wds = vku::InitStructHelper();
         wds.dstSet = instrumentation_desc_set;
-        wds.dstBinding = vvl::kU32Max;
+        wds.dstBinding = vvl::kNoIndex32;
         wds.descriptorCount = 1;
         wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         wds.pBufferInfo = &buffer_infos[func_i];
@@ -423,7 +423,7 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBufferSubState &cb_st
         cb_state.on_instrumentation_desc_set_update_functions[func_i](cb_state, bind_point, buffer_infos[func_i], wds.dstBinding);
 
         assert(buffer_infos[func_i].buffer != VK_NULL_HANDLE);
-        assert(wds.dstBinding != vvl::kU32Max);
+        assert(wds.dstBinding != vvl::kNoIndex32);
 
         desc_writes.emplace_back(wds);
     }
@@ -613,7 +613,7 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
     // We want to grab the last (current) element in descriptor_binding_commands, but as a std::vector, the reference might be
     // garbage later, so just hold the index for later. It is possible to have no descriptor sets bound, for example if using push
     // constants.
-    instrumentation_error_blob.descriptor_binding_index = vvl::kU32Max;
+    instrumentation_error_blob.descriptor_binding_index = vvl::kNoIndex32;
     DescriptorSetBindings *desc_set_bindings = cb_state.shared_resources_cache.TryGet<DescriptorSetBindings>();
     if (desc_set_bindings && !desc_set_bindings->descriptor_set_binding_commands.empty()) {
         instrumentation_error_blob.descriptor_binding_index =
@@ -621,7 +621,7 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
     }
 
     instrumentation_error_blob.label_command_i =
-        !cb_state.base.GetLabelCommands().empty() ? uint32_t(cb_state.base.GetLabelCommands().size() - 1) : vvl::kU32Max;
+        !cb_state.base.GetLabelCommands().empty() ? uint32_t(cb_state.base.GetLabelCommands().size() - 1) : vvl::kNoIndex32;
 
     CommandBufferSubState::ErrorLoggerFunc error_logger = [&gpuav, &cb_state, instrumentation_error_blob](
                                                               const uint32_t *error_record, const Location &loc,
@@ -692,7 +692,7 @@ bool LogMessageInstDescriptorIndexingOOB(Validator &gpuav, const CommandBufferSu
     std::ostringstream strm;
     const GpuVuid &vuid = GetGpuVuid(loc.function);
 
-    if (instrumentation_error_blob.descriptor_binding_index == vvl::kU32Max) {
+    if (instrumentation_error_blob.descriptor_binding_index == vvl::kNoIndex32) {
         assert(false);  // This means we have hit a situtation where there are no descriptors bound
         return false;
     }
@@ -767,7 +767,7 @@ bool LogMessageInstDescriptorClass(Validator &gpuav, const CommandBufferSubState
     std::ostringstream strm;
     const GpuVuid &vuid = GetGpuVuid(loc.function);
 
-    if (instrumentation_error_blob.descriptor_binding_index == vvl::kU32Max) {
+    if (instrumentation_error_blob.descriptor_binding_index == vvl::kNoIndex32) {
         assert(false);  // This means we have hit a situtation where there are no descriptors bound
         return false;
     }
@@ -1012,7 +1012,7 @@ bool LogMessageInstIndexedDraw(Validator &gpuav, const uint32_t *error_record, s
         out += std::to_string(vertex_attribute_fetch_limit.max_vertex_attributes_count);
         out += '\n';
         if (error_sub_code == glsl::kErrorSubCode_IndexedDraw_OOBInstanceIndex) {
-            if (vertex_attribute_fetch_limit.instance_rate_divisor != vvl::kU32Max) {
+            if (vertex_attribute_fetch_limit.instance_rate_divisor != vvl::kNoIndex32) {
                 out += "- Instance rate divisor: ";
                 out += std::to_string(vertex_attribute_fetch_limit.instance_rate_divisor);
                 out += '\n';
@@ -1046,7 +1046,7 @@ bool LogMessageInstIndexedDraw(Validator &gpuav, const uint32_t *error_record, s
         out_error_msg += std::to_string(oob_instance_index);
         const uint32_t instance_rate_divisor =
             inst_error_blob.vertex_attribute_fetch_limit_instance_input_rate->instance_rate_divisor;
-        if (instance_rate_divisor > 1 && instance_rate_divisor != vvl::kU32Max) {
+        if (instance_rate_divisor > 1 && instance_rate_divisor != vvl::kNoIndex32) {
             out_error_msg += " (or ";
             out_error_msg += std::to_string(oob_instance_index / instance_rate_divisor);
             out_error_msg += " if divided by instance rate divisor of ";

@@ -2103,14 +2103,14 @@ TEST_F(NegativeDynamicRendering, TestFragmentDensityMapRenderArea) {
     m_errorMonitor->VerifyFound();
 
     begin_rendering_info.renderArea.offset.x = 1;
-    begin_rendering_info.renderArea.extent.width = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.width) - 1;
+    begin_rendering_info.renderArea.extent.width = vvl::kU32Max - 1;
     m_errorMonitor->SetUnexpectedError("VUID-VkRenderingInfo-pNext-07815");  // if over max
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-06112");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
-    begin_rendering_info.renderArea.offset.x = vvl::MaxTypeValue(begin_rendering_info.renderArea.offset.x);
-    begin_rendering_info.renderArea.extent.width = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.width);
+    begin_rendering_info.renderArea.offset.x = vvl::kI32Max;
+    begin_rendering_info.renderArea.extent.width = vvl::kU32Max;
     m_errorMonitor->SetUnexpectedError("VUID-VkRenderingInfo-pNext-07815");  // if over max
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-06112");
     m_command_buffer.BeginRendering(begin_rendering_info);
@@ -2125,14 +2125,14 @@ TEST_F(NegativeDynamicRendering, TestFragmentDensityMapRenderArea) {
     m_errorMonitor->VerifyFound();
 
     begin_rendering_info.renderArea.offset.y = 1;
-    begin_rendering_info.renderArea.extent.height = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.height) - 1;
+    begin_rendering_info.renderArea.extent.height = vvl::kU32Max - 1;
     m_errorMonitor->SetUnexpectedError("VUID-VkRenderingInfo-pNext-07816");  // if over max
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-06114");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
-    begin_rendering_info.renderArea.offset.y = vvl::MaxTypeValue(begin_rendering_info.renderArea.offset.y);
-    begin_rendering_info.renderArea.extent.height = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.height);
+    begin_rendering_info.renderArea.offset.y = vvl::kI32Max;
+    begin_rendering_info.renderArea.extent.height = vvl::kU32Max;
     m_errorMonitor->SetUnexpectedError("VUID-VkRenderingInfo-pNext-07816");  // if over max
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-06114");
     m_command_buffer.BeginRendering(begin_rendering_info);
@@ -2572,14 +2572,14 @@ TEST_F(NegativeDynamicRendering, AreaGreaterThanAttachmentExtent) {
     m_errorMonitor->VerifyFound();
 
     begin_rendering_info.renderArea.offset.x = 1;
-    begin_rendering_info.renderArea.extent.width = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.width) - 1;
+    begin_rendering_info.renderArea.extent.width = vvl::kU32Max - 1;
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-06079");
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-07815");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
-    begin_rendering_info.renderArea.offset.x = vvl::MaxTypeValue(begin_rendering_info.renderArea.offset.x);
-    begin_rendering_info.renderArea.extent.width = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.width);
+    begin_rendering_info.renderArea.offset.x = vvl::kI32Max;
+    begin_rendering_info.renderArea.extent.width = vvl::kU32Max;
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-06079");
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-07815");
     m_command_buffer.BeginRendering(begin_rendering_info);
@@ -2594,14 +2594,14 @@ TEST_F(NegativeDynamicRendering, AreaGreaterThanAttachmentExtent) {
     m_errorMonitor->VerifyFound();
 
     begin_rendering_info.renderArea.offset.y = 1;
-    begin_rendering_info.renderArea.extent.height = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.height) - 1;
+    begin_rendering_info.renderArea.extent.height = vvl::kU32Max - 1;
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-06080");
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-07816");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
-    begin_rendering_info.renderArea.offset.y = vvl::MaxTypeValue(begin_rendering_info.renderArea.offset.y);
-    begin_rendering_info.renderArea.extent.height = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.height);
+    begin_rendering_info.renderArea.offset.y = vvl::kI32Max;
+    begin_rendering_info.renderArea.extent.height = vvl::kU32Max;
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-06080");
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-07816");
     m_command_buffer.BeginRendering(begin_rendering_info);
@@ -2655,14 +2655,14 @@ TEST_F(NegativeDynamicRendering, DeviceGroupAreaGreaterThanAttachmentExtent) {
     m_errorMonitor->VerifyFound();
 
     begin_rendering_info.renderArea.offset.x = 1;
-    begin_rendering_info.renderArea.extent.width = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.width) - 1;
+    begin_rendering_info.renderArea.extent.width = vvl::kU32Max - 1;
     m_errorMonitor->SetUnexpectedError("VUID-VkRenderingInfo-pNext-07815");  // if over max
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-06079");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
-    begin_rendering_info.renderArea.offset.x = vvl::MaxTypeValue(begin_rendering_info.renderArea.offset.x);
-    begin_rendering_info.renderArea.extent.width = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.width);
+    begin_rendering_info.renderArea.offset.x = vvl::kI32Max;
+    begin_rendering_info.renderArea.extent.width = vvl::kU32Max;
     m_errorMonitor->SetUnexpectedError("VUID-VkRenderingInfo-pNext-07815");  // if over max
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-06079");
     m_command_buffer.BeginRendering(begin_rendering_info);
@@ -2677,14 +2677,14 @@ TEST_F(NegativeDynamicRendering, DeviceGroupAreaGreaterThanAttachmentExtent) {
     m_errorMonitor->VerifyFound();
 
     begin_rendering_info.renderArea.offset.y = 1;
-    begin_rendering_info.renderArea.extent.height = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.height) - 1;
+    begin_rendering_info.renderArea.extent.height = vvl::kU32Max - 1;
     m_errorMonitor->SetUnexpectedError("VUID-VkRenderingInfo-pNext-07816");  // if over max
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-06080");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
-    begin_rendering_info.renderArea.offset.y = vvl::MaxTypeValue(begin_rendering_info.renderArea.offset.y);
-    begin_rendering_info.renderArea.extent.height = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.height);
+    begin_rendering_info.renderArea.offset.y = vvl::kI32Max;
+    begin_rendering_info.renderArea.extent.height = vvl::kU32Max;
     m_errorMonitor->SetUnexpectedError("VUID-VkRenderingInfo-pNext-07816");  // if over max
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-06080");
     m_command_buffer.BeginRendering(begin_rendering_info);
@@ -3330,13 +3330,13 @@ TEST_F(NegativeDynamicRendering, RenderArea) {
     m_errorMonitor->VerifyFound();
 
     begin_rendering_info.renderArea.offset.x = 1;
-    begin_rendering_info.renderArea.extent.width = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.width) - 1;
+    begin_rendering_info.renderArea.extent.width = vvl::kU32Max - 1;
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-07815");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
-    begin_rendering_info.renderArea.offset.x = vvl::MaxTypeValue(begin_rendering_info.renderArea.offset.x);
-    begin_rendering_info.renderArea.extent.width = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.width);
+    begin_rendering_info.renderArea.offset.x = vvl::kI32Max;
+    begin_rendering_info.renderArea.extent.width = vvl::kU32Max;
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-07815");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
@@ -3349,13 +3349,13 @@ TEST_F(NegativeDynamicRendering, RenderArea) {
     m_errorMonitor->VerifyFound();
 
     begin_rendering_info.renderArea.offset.y = 1;
-    begin_rendering_info.renderArea.extent.height = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.height) - 1;
+    begin_rendering_info.renderArea.extent.height = vvl::kU32Max - 1;
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-07816");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
-    begin_rendering_info.renderArea.offset.y = vvl::MaxTypeValue(begin_rendering_info.renderArea.offset.y);
-    begin_rendering_info.renderArea.extent.height = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.height);
+    begin_rendering_info.renderArea.offset.y = vvl::kI32Max;
+    begin_rendering_info.renderArea.extent.height = vvl::kU32Max;
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-07816");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
@@ -4436,14 +4436,14 @@ TEST_F(NegativeDynamicRendering, FragmentShadingRateAttachmentSizeWithDeviceGrou
     m_errorMonitor->VerifyFound();
 
     begin_rendering_info.renderArea.offset.x = 1;
-    begin_rendering_info.renderArea.extent.width = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.width) - 1;
+    begin_rendering_info.renderArea.extent.width = vvl::kU32Max - 1;
     m_errorMonitor->SetUnexpectedError("VUID-VkRenderingInfo-pNext-07815");  // if over max
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-06119");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
-    begin_rendering_info.renderArea.offset.x = vvl::MaxTypeValue(begin_rendering_info.renderArea.offset.x);
-    begin_rendering_info.renderArea.extent.width = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.width);
+    begin_rendering_info.renderArea.offset.x = vvl::kI32Max;
+    begin_rendering_info.renderArea.extent.width = vvl::kU32Max;
     m_errorMonitor->SetUnexpectedError("VUID-VkRenderingInfo-pNext-07815");  // if over max
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-06119");
     m_command_buffer.BeginRendering(begin_rendering_info);
@@ -4469,13 +4469,13 @@ TEST_F(NegativeDynamicRendering, FragmentShadingRateAttachmentSizeWithDeviceGrou
     m_errorMonitor->VerifyFound();
 
     begin_rendering_info.renderArea.offset.y = 1;
-    begin_rendering_info.renderArea.extent.height = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.height) - 1;
+    begin_rendering_info.renderArea.extent.height = vvl::kU32Max - 1;
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-06120");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
-    begin_rendering_info.renderArea.offset.y = vvl::MaxTypeValue(begin_rendering_info.renderArea.offset.y);
-    begin_rendering_info.renderArea.extent.height = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.height);
+    begin_rendering_info.renderArea.offset.y = vvl::kI32Max;
+    begin_rendering_info.renderArea.extent.height = vvl::kU32Max;
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pNext-06120");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();

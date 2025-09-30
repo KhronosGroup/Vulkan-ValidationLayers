@@ -40,10 +40,10 @@ namespace spirv {
 struct EntryPoint;
 struct Module;
 
-static constexpr uint32_t kInvalidValue = std::numeric_limits<uint32_t>::max();
+static constexpr uint32_t kInvalidValue = vvl::kNoIndex32;
 
 // Need to find a way to know if actually array length of zero, or a runtime array.
-static constexpr uint32_t kRuntimeArray = std::numeric_limits<uint32_t>::max();
+static constexpr uint32_t kRuntimeArray = vvl::kNoIndex32;
 
 struct LocalSize {
     uint32_t x = 0;

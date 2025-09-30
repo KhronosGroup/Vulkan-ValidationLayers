@@ -213,33 +213,33 @@ TEST_F(NegativeMesh, RuntimeSpirv) {
     uint32_t max_mesh_workgroup_size_y = mesh_shader_properties.maxMeshWorkGroupSize[1];
     uint32_t max_mesh_workgroup_size_z = mesh_shader_properties.maxMeshWorkGroupSize[2];
 
-    if (max_task_workgroup_size_x < vvl::MaxTypeValue(max_task_workgroup_size_x)) {
+    if (max_task_workgroup_size_x < vvl::kU32Max) {
         error_vuids.emplace_back("VUID-RuntimeSpirv-TaskEXT-07291");
         max_task_workgroup_size_x += 1;
     }
 
-    if (max_task_workgroup_size_y < vvl::MaxTypeValue(max_task_workgroup_size_y)) {
+    if (max_task_workgroup_size_y < vvl::kU32Max) {
         error_vuids.emplace_back("VUID-RuntimeSpirv-TaskEXT-07292");
         max_task_workgroup_size_y += 1;
     }
 
-    if (max_task_workgroup_size_z < vvl::MaxTypeValue(max_task_workgroup_size_z)) {
+    if (max_task_workgroup_size_z < vvl::kU32Max) {
         error_vuids.emplace_back("VUID-RuntimeSpirv-TaskEXT-07293");
         max_task_workgroup_size_z += 1;
     }
     error_vuids.emplace_back("VUID-RuntimeSpirv-TaskEXT-07294");
 
-    if (max_mesh_workgroup_size_x < vvl::MaxTypeValue(max_mesh_workgroup_size_x)) {
+    if (max_mesh_workgroup_size_x < vvl::kU32Max) {
         error_vuids.emplace_back("VUID-RuntimeSpirv-MeshEXT-07295");
         max_mesh_workgroup_size_x += 1;
     }
 
-    if (max_mesh_workgroup_size_y < vvl::MaxTypeValue(max_mesh_workgroup_size_y)) {
+    if (max_mesh_workgroup_size_y < vvl::kU32Max) {
         error_vuids.emplace_back("VUID-RuntimeSpirv-MeshEXT-07296");
         max_mesh_workgroup_size_y += 1;
     }
 
-    if (max_mesh_workgroup_size_z < vvl::MaxTypeValue(max_mesh_workgroup_size_z)) {
+    if (max_mesh_workgroup_size_z < vvl::kU32Max) {
         error_vuids.emplace_back("VUID-RuntimeSpirv-MeshEXT-07297");
         max_mesh_workgroup_size_z += 1;
     }
@@ -327,13 +327,13 @@ TEST_F(NegativeMesh, RuntimeSpirv2) {
     uint32_t max_mesh_output_primitives = mesh_shader_properties.maxMeshOutputPrimitives;
 
     bool skip = true;
-    if (max_mesh_output_vertices < vvl::MaxTypeValue(max_mesh_output_vertices)) {
+    if (max_mesh_output_vertices < vvl::kU32Max) {
         m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-MeshEXT-07115");
         skip = false;
         max_mesh_output_vertices += 1;
     }
 
-    if (max_mesh_output_primitives < vvl::MaxTypeValue(max_mesh_output_primitives)) {
+    if (max_mesh_output_primitives < vvl::kU32Max) {
         m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-MeshEXT-07116");
         skip = false;
         max_mesh_output_primitives += 1;
@@ -749,19 +749,19 @@ TEST_F(NegativeMesh, DrawCmds) {
     uint32_t max_group_count_Y = mesh_shader_properties.maxTaskWorkGroupCount[1];
     uint32_t max_group_count_Z = mesh_shader_properties.maxTaskWorkGroupCount[2];
 
-    if (max_group_count_X < vvl::MaxTypeValue(max_group_count_X)) {
+    if (max_group_count_X < vvl::kU32Max) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07322");
-        max_group_count_X = vvl::MaxTypeValue(max_group_count_X);
+        max_group_count_X = vvl::kU32Max;
     }
 
-    if (max_group_count_Y < vvl::MaxTypeValue(max_group_count_Y)) {
+    if (max_group_count_Y < vvl::kU32Max) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07323");
-        max_group_count_Y = vvl::MaxTypeValue(max_group_count_Y);
+        max_group_count_Y = vvl::kU32Max;
     }
 
-    if (max_group_count_Z < vvl::MaxTypeValue(max_group_count_Z)) {
+    if (max_group_count_Z < vvl::kU32Max) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07324");
-        max_group_count_Z = vvl::MaxTypeValue(max_group_count_Z);
+        max_group_count_Z = vvl::kU32Max;
     }
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07325");
@@ -772,7 +772,7 @@ TEST_F(NegativeMesh, DrawCmds) {
     vk::CmdDrawMeshTasksIndirectEXT(m_command_buffer, buffer, 0, 2, sizeof(VkDrawMeshTasksIndirectCommandEXT));
     m_errorMonitor->VerifyFound();
 
-    if (m_device->Physical().limits_.maxDrawIndirectCount < vvl::MaxTypeValue(m_device->Physical().limits_.maxDrawIndirectCount)) {
+    if (m_device->Physical().limits_.maxDrawIndirectCount < vvl::kU32Max) {
         m_errorMonitor->SetUnexpectedError("VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-02718");
         m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-07090");
         m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-02719");
@@ -1089,13 +1089,13 @@ TEST_F(NegativeMesh, MeshTasksWorkgroupCount) {
     if (mesh_shader_properties.maxMeshWorkGroupCount[0] == mesh_shader_properties.maxMeshWorkGroupTotalCount) {
         vuids.emplace_back("VUID-RuntimeSpirv-TaskEXT-07302");
     }
-    if (mesh_shader_properties.maxMeshWorkGroupCount[0] != std::numeric_limits<uint32_t>::max()) {
+    if (mesh_shader_properties.maxMeshWorkGroupCount[0] != vvl::kU32Max) {
         CreatePipelineHelper::OneshotTest(*this, mesh_tasks_x, kErrorBit, vuids);
     }
-    if (mesh_shader_properties.maxMeshWorkGroupCount[1] != std::numeric_limits<uint32_t>::max()) {
+    if (mesh_shader_properties.maxMeshWorkGroupCount[1] != vvl::kU32Max) {
         CreatePipelineHelper::OneshotTest(*this, mesh_tasks_y, kErrorBit, "VUID-RuntimeSpirv-TaskEXT-07300");
     }
-    if (mesh_shader_properties.maxMeshWorkGroupCount[2] != std::numeric_limits<uint32_t>::max()) {
+    if (mesh_shader_properties.maxMeshWorkGroupCount[2] != vvl::kU32Max) {
         CreatePipelineHelper::OneshotTest(*this, mesh_tasks_z, kErrorBit, "VUID-RuntimeSpirv-TaskEXT-07301");
     }
 }

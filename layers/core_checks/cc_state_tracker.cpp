@@ -1001,9 +1001,9 @@ void CommandBufferSubState::RecordExecuteCommand(vvl::CommandBuffer& secondary_c
 
     // State is trashed after executing secondary command buffers.
     // Importantly, this function runs after CoreChecks::PreCallValidateCmdExecuteCommands.
-    viewport.trashed_mask = vvl::MaxTypeValue(viewport.trashed_mask);
+    viewport.trashed_mask = vvl::kU32Max;
     viewport.trashed_count = true;
-    scissor.trashed_mask = vvl::MaxTypeValue(scissor.trashed_mask);
+    scissor.trashed_mask = vvl::kU32Max;
     scissor.trashed_count = true;
 
     // Add a query update that runs all the query updates that happen in the sub command buffer.
