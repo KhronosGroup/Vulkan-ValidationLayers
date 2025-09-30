@@ -17,6 +17,8 @@
 
 #pragma once
 #include "sync/sync_common.h"
+#include "containers/span.h"
+#include <cstring>  // memcpy
 
 class ResourceAccessState;
 struct WriteState;
@@ -372,6 +374,13 @@ struct PendingBarriers {
 
 class ResourceAccessState {
   public:
+    ResourceAccessState() = default;
+    ~ResourceAccessState();
+    ResourceAccessState(const ResourceAccessState &other);
+    ResourceAccessState &operator=(const ResourceAccessState &other);
+    ResourceAccessState(ResourceAccessState &&other);
+    ResourceAccessState &operator=(ResourceAccessState &&other);
+
     HazardResult DetectHazard(const SyncAccessInfo &usage_info) const;
     HazardResult DetectMarkerHazard() const;
 
@@ -447,7 +456,6 @@ class ResourceAccessState {
     bool FirstAccessInTagRange(const ResourceUsageRange &tag_range) const;
 
     void OffsetTag(ResourceUsageTag offset);
-    ResourceAccessState();
 
     bool HasWriteOp() const { return last_write.has_value(); }
     bool IsLastWriteOp(SyncAccessIndex access_index) const {
@@ -459,7 +467,14 @@ class ResourceAccessState {
         const bool write_same = (read_execution_barriers == rhs.read_execution_barriers) &&
                                 (input_attachment_read == rhs.input_attachment_read) && (last_write == rhs.last_write);
 
-        const bool read_write_same = write_same && (last_read_stages == rhs.last_read_stages) && (last_reads == rhs.last_reads);
+        bool read_same = (last_read_stages == rhs.last_read_stages) && (last_read_count == rhs.last_read_count);
+        if (read_same) {
+            for (uint32_t i = 0; i < last_read_count; i++) {
+                read_same = read_same && (last_reads[i] == rhs.last_reads[i]);
+            }
+        }
+
+        const bool read_write_same = write_same && read_same;
 
         const bool same = read_write_same && (first_accesses_ == rhs.first_accesses_) &&
                           (first_read_stages_ == rhs.first_read_stages_) &&
@@ -480,56 +495,54 @@ class ResourceAccessState {
     void UpdateStats(syncval_stats::AccessContextStats &stats) const;
 
   private:
-    static constexpr VkPipelineStageFlags2 kInvalidAttachmentStage = ~VkPipelineStageFlags2(0);
+    void CopySimpleMembers(const ResourceAccessState &other);
     bool IsRAWHazard(const SyncAccessInfo &usage_info) const;
 
-    static bool IsReadHazard(VkPipelineStageFlags2 stage_mask, const VkPipelineStageFlags2 barriers) {
-        return stage_mask != (stage_mask & barriers);
-    }
-
     bool IsReadHazard(VkPipelineStageFlags2 stage_mask, const ReadState &read_access) const {
-        return IsReadHazard(stage_mask, read_access.barriers);
+        return stage_mask != (stage_mask & read_access.barriers);
     }
     VkPipelineStageFlags2 GetOrderedStages(QueueId queue_id, const OrderingBarrier &ordering, SyncFlags flags) const;
 
     void UpdateFirst(ResourceUsageTagEx tag_ex, const SyncAccessInfo &usage_info, SyncOrdering ordering_rule, SyncFlags flags = 0);
     void TouchupFirstForLayoutTransition(ResourceUsageTag tag, const OrderingBarrier &layout_ordering);
+
+    bool HasReads() const { return last_read_count != 0; }
+    vvl::span<ReadState> GetReads() { return vvl::make_span(last_reads, last_read_count); }
+    vvl::span<ReadState> GetReads() const { return vvl::make_span(last_reads, last_read_count); }
+    void AddRead(const ReadState &read);
     void MergeReads(const ResourceAccessState &other);
+    void ClearReadStates();
 
-    // TODO: Add a NONE (zero) enum to SyncStageAccessFlags for input_attachment_read and last_write
+    // The most recent write.
+    // NOTE: For reads, each must be "safe" relative to its prior write, so we need
+    // only to save the most recent write operation, since anything *transitively*
+    // unsafe would already be included.
+    std::optional<WriteState> last_write;
 
-    // With reads, each must be "safe" relative to it's prior write, so we need only
-    // save the most recent write operation (as anything *transitively* unsafe would arleady
-    // be included
-    // SyncStageAccessFlags write_barriers;              // union of applicable barrier masks since last write
-    // VkPipelineStageFlags2 write_dependency_chain;  // intiially zero, but accumulating the dstStages of barriers if they
-    // chain. ResourceUsageTag write_tag; QueueId write_queue;
-    std::optional<WriteState> last_write;  // only the most recent write
+    uint32_t last_read_count = 0;
 
-    VkPipelineStageFlags2 last_read_stages;
-    VkPipelineStageFlags2 read_execution_barriers;
+    // Points to the last_read_count read states
+    ReadState *last_reads = nullptr;
 
-    // NOTE: default capacity is set to 2. A single read is the most common case.
-    // Two reads occur sometimes and more than two is rare in practice.
-    // Syncval performance is sensitive to memory usage (there are many access objects).
-    // The early tests show that capacity of 1 can further improve performance and in some
-    // apps reduced memory bandwidth outweight the cost of additional allocations.
-    // More testing is needed.
-    using ReadStates = small_vector<ReadState, 2, uint32_t>;
+    // The common case is a single read. In that case, last_reads points to this object
+    // and last_read_count is 1.
+    ReadState single_last_read;
 
-    ReadStates last_reads;
+    VkPipelineStageFlags2 last_read_stages = VK_PIPELINE_STAGE_2_NONE;
+    VkPipelineStageFlags2 read_execution_barriers = VK_PIPELINE_STAGE_2_NONE;
+
+    // NOTE: Reserve capacity for 2 first accesses, more than that is not very common
+    using FirstAccesses = small_vector<ResourceFirstAccess, 2>;
+    FirstAccesses first_accesses_;
+    VkPipelineStageFlags2 first_read_stages_ = VK_PIPELINE_STAGE_2_NONE;
+    OrderingBarrier first_write_layout_ordering_;
+    bool first_access_closed_ = false;
 
     // TODO Input Attachment cleanup for multiple reads in a given stage
     // Tracks whether the fragment shader read is input attachment read
-    bool input_attachment_read;
-
-    // Reserve capacity for 2 first accesses, more than that is not very common
-    using FirstAccesses = small_vector<ResourceFirstAccess, 2>;
-
-    FirstAccesses first_accesses_;
-    VkPipelineStageFlags2 first_read_stages_;
-    OrderingBarrier first_write_layout_ordering_;
-    bool first_access_closed_;
+    // TODO: Add a NONE (zero) enum to SyncStageAccessFlags for
+    // input_attachment_read and last_write
+    bool input_attachment_read = false;
 };
 using ResourceAccessStateFunction = std::function<void(ResourceAccessState *)>;
 using ResourceAccessRangeMap = sparse_container::range_map<ResourceAddress, ResourceAccessState>;
@@ -541,7 +554,7 @@ bool ResourceAccessState::ClearPredicatedAccesses(Predicate &predicate) {
 
     // Use the predicate to build a mask of the read stages we are synchronizing
     // Use the sync_stages to also detect reads known to be before any synchronized reads (first pass)
-    for (const auto &read_access : last_reads) {
+    for (const auto &read_access : GetReads()) {
         if (predicate(read_access)) {
             // If we know this stage is before any stage we syncing, or if the predicate tells us that we are waited for..
             sync_reads |= read_access.stage;
@@ -551,7 +564,7 @@ bool ResourceAccessState::ClearPredicatedAccesses(Predicate &predicate) {
     // Now that we know the reads directly in scopejust need to go over the list again to pick up the "known earlier" stages.
     // NOTE: sync_stages is "deep" catching all stages synchronized after it because we forward barriers
     uint32_t unsync_count = 0;
-    for (const auto &read_access : last_reads) {
+    for (const auto &read_access : GetReads()) {
         if (0 != ((read_access.stage | read_access.sync_stages) & sync_reads)) {
             // This is redundant in the "stage" case, but avoids a second branch to get an accurate count
             sync_reads |= read_access.stage;
@@ -563,24 +576,27 @@ bool ResourceAccessState::ClearPredicatedAccesses(Predicate &predicate) {
     if (unsync_count) {
         if (sync_reads) {
             // When have some remaining unsynchronized reads, we have to rewrite the last_reads array.
-            ReadStates unsync_reads;
+            small_vector<ReadState, 4> unsync_reads;
             unsync_reads.reserve(unsync_count);
             VkPipelineStageFlags2 unsync_read_stages = VK_PIPELINE_STAGE_2_NONE;
-            for (auto &read_access : last_reads) {
-                if (0 == (read_access.stage & sync_reads)) {
+            for (auto &read_access : GetReads()) {
+                if ((read_access.stage & sync_reads) == 0) {
                     unsync_reads.emplace_back(read_access);
                     unsync_read_stages |= read_access.stage;
                 }
             }
             last_read_stages = unsync_read_stages;
-            last_reads = std::move(unsync_reads);
+            ClearReadStates();
+            for (const ReadState &read : unsync_reads) {
+                AddRead(read);
+            }
         }
     } else {
         // Nothing remains (or it was empty to begin with)
         ClearRead();
     }
 
-    bool all_clear = last_reads.empty();
+    bool all_clear = !HasReads();
     if (last_write.has_value()) {
         if (predicate(*this) || sync_reads) {
             // Clear any predicated write, or any the write from any any access with synchronized reads.
