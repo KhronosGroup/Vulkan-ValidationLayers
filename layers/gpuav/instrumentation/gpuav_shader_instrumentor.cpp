@@ -712,7 +712,7 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR(
                                                              pipeline_state->ray_tracing_library_ci->libraryCount)) {
                             auto lib_state = ((GpuShaderInstrumentor *)this)->Get<vvl::Pipeline>(lib);
                             ASSERT_AND_CONTINUE(lib_state);
-                            pipeline_state->instrumentation_data.was_instrumented =
+                            pipeline_state->instrumentation_data.was_instrumented |=
                                 lib_state->instrumentation_data.was_instrumented;
                         }
                     }
@@ -737,7 +737,7 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR(
                                                      pipeline_state->ray_tracing_library_ci->libraryCount)) {
                     auto lib_state = Get<vvl::Pipeline>(lib);
                     ASSERT_AND_CONTINUE(lib_state);
-                    pipeline_state->instrumentation_data.was_instrumented = lib_state->instrumentation_data.was_instrumented;
+                    pipeline_state->instrumentation_data.was_instrumented |= lib_state->instrumentation_data.was_instrumented;
                 }
             }
 
@@ -751,15 +751,11 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR(
 void GpuShaderInstrumentor::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline,
                                                          const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
     if (auto pipeline_state = Get<vvl::Pipeline>(pipeline)) {
-        for (auto [unique_shader_id, shader_module_handle] : pipeline_state->instrumentation_data.instrumented_shader_modules) {
-            instrumented_shaders_map_.pop(unique_shader_id);
+        for (auto shader_module_handle : pipeline_state->instrumentation_data.shader_modules) {
             DispatchDestroyShaderModule(device, shader_module_handle, pAllocator);
         }
-        if (pipeline_state->instrumentation_data.pre_raster_lib != VK_NULL_HANDLE) {
-            DispatchDestroyPipeline(device, pipeline_state->instrumentation_data.pre_raster_lib, pAllocator);
-        }
-        if (pipeline_state->instrumentation_data.frag_out_lib != VK_NULL_HANDLE) {
-            DispatchDestroyPipeline(device, pipeline_state->instrumentation_data.frag_out_lib, pAllocator);
+        if (pipeline_state->instrumentation_data.instrumented_pipeline_lib != VK_NULL_HANDLE) {
+            DispatchDestroyPipeline(device, pipeline_state->instrumentation_data.instrumented_pipeline_lib, pAllocator);
         }
     }
 }
@@ -1030,8 +1026,8 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
                     SetShaderModule(modified_pipeline_ci, *stage_state.pipeline_create_info, instrumented_shader_module,
                                     stage_state_i);
 
-                    pipeline_state.instrumentation_data.instrumented_shader_modules.emplace_back(
-                        std::pair<uint32_t, VkShaderModule>{unique_shader_id, instrumented_shader_module});
+                    pipeline_state.instrumentation_data.shader_modules.emplace_back(instrumented_shader_module);
+                    pipeline_state.instrumentation_data.was_instrumented = true;
                 } else {
                     InternalError(device, loc, "Unable to replace non-instrumented shader with instrumented one.");
                     return false;
@@ -1094,15 +1090,15 @@ void GpuShaderInstrumentor::PostCallRecordPipelineCreationShaderInstrumentation(
 // Graphics, Compute, and Ray Tracing. GPL is only for graphics, so we end up needing this "side code path" for graphics only and it
 // doesn't fit in the "all pipeline" templated flow.
 bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGPL(
-    const VkAllocationCallbacks *pAllocator, vvl::Pipeline &pipeline_state,
+    const VkAllocationCallbacks *pAllocator, vvl::Pipeline &linked_pipeline_state,
     vku::safe_VkGraphicsPipelineCreateInfo &modified_pipeline_ci, const Location &loc,
     std::vector<chassis::ShaderInstrumentationMetadata> &shader_instrumentation_metadata) {
     // Init here instead of in chassis so we don't pay cost when GPU-AV is not used
-    const size_t total_stages = pipeline_state.stage_states.size();
+    const size_t total_stages = linked_pipeline_state.stage_states.size();
     shader_instrumentation_metadata.resize(total_stages);
 
     InstrumentationDescriptorSetLayouts instrumentation_dsl;
-    BuildDescriptorSetLayoutInfo(pipeline_state, instrumentation_dsl);
+    BuildDescriptorSetLayoutInfo(linked_pipeline_state, instrumentation_dsl);
 
     auto modified_library_ci = const_cast<VkPipelineLibraryCreateInfoKHR *>(
         vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(modified_pipeline_ci.pNext));
@@ -1120,8 +1116,17 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
             continue;
         }
 
-        // If a library is used to create multiple executable pipelines, we don't want to instrument it again
-        if (modified_lib->instrumentation_data.was_instrumented) {
+        // If a library is used to create multiple executable pipelines, we don't want to instrument it again.
+        // Check that there is indeed an instrumented_pipeline_lib:
+        // The library could be considered instrumented if itself it was made up of instrumented libraries,
+        // but in this case instrumented_pipeline_lib would not have been set.
+        // Note: Well in this case we could use modified_lib->VkHandle()?
+        if (modified_lib->instrumentation_data.was_instrumented &&
+            (modified_lib->instrumentation_data.instrumented_pipeline_lib != VK_NULL_HANDLE)) {
+            assert(modified_lib->instrumentation_data.instrumented_pipeline_lib != VK_NULL_HANDLE);
+            const_cast<VkPipeline *>(modified_library_ci->pLibraries)[modified_lib_i] =
+                modified_lib->instrumentation_data.instrumented_pipeline_lib;
+            linked_pipeline_state.instrumentation_data.was_instrumented = true;
             continue;
         }
 
@@ -1202,8 +1207,8 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
                     new_lib_ci.pStages[stage_state_i] = *modified_stage_state.pipeline_create_info;
                     new_lib_ci.pStages[stage_state_i].module = instrumented_shader_module;
 
-                    modified_lib->instrumentation_data.instrumented_shader_modules.emplace_back(
-                        std::pair<uint32_t, VkShaderModule>{unique_shader_id, instrumented_shader_module});
+                    modified_lib->instrumentation_data.shader_modules.emplace_back(instrumented_shader_module);
+
                 } else {
                     InternalError(device, loc, "Unable to replace non-instrumented shader with instrumented one.");
                     return false;
@@ -1243,12 +1248,9 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
                 return false;
             }
 
-            // Even if active_shaders has both a vertex and fragment, this is ok because as the goal is just to destroy these later
-            if (modified_lib->active_shaders & VK_SHADER_STAGE_FRAGMENT_BIT) {
-                pipeline_state.instrumentation_data.frag_out_lib = instrumented_pipeline_lib;
-            } else {
-                pipeline_state.instrumentation_data.pre_raster_lib = instrumented_pipeline_lib;
-            }
+            modified_lib->instrumentation_data.instrumented_pipeline_lib = instrumented_pipeline_lib;
+            modified_lib->instrumentation_data.was_instrumented = true;
+            linked_pipeline_state.instrumentation_data.was_instrumented = true;
 
             const_cast<VkPipeline *>(modified_library_ci->pLibraries)[modified_lib_i] = instrumented_pipeline_lib;
         }
@@ -1264,7 +1266,8 @@ void GpuShaderInstrumentor::PostCallRecordPipelineCreationShaderInstrumentationG
     }
 
     uint32_t shader_index = 0;
-    // This outer loop is the main difference between the GPL and non-GPL version and why its hard to merge them
+    // Update instrumented_shaders_map_
+    // #ARNO_TODO should be done at instrumentation time, why postpone? We don't need the linked pipeline handle
     for (uint32_t library_i = 0; library_i < pipeline_state.library_create_info->libraryCount; ++library_i) {
         const auto lib = Get<vvl::Pipeline>(pipeline_state.library_create_info->pLibraries[library_i]);
         if (!lib) {
@@ -1284,8 +1287,6 @@ void GpuShaderInstrumentor::PostCallRecordPipelineCreationShaderInstrumentationG
                 continue;
             }
 
-            pipeline_state.instrumentation_data.was_instrumented = true;
-
             const auto &stage_state = lib->stage_states[stage_state_i];
             auto &module_state = stage_state.module_state;
 
@@ -1295,7 +1296,9 @@ void GpuShaderInstrumentor::PostCallRecordPipelineCreationShaderInstrumentationG
             // TODO - in the instrumentation, instead of printing the instruction number only, if we print out debug info, we
             // can remove this copy
             std::vector<uint32_t> code;
-            if (module_state && module_state->spirv) code = module_state->spirv->words_;
+            if (module_state && module_state->spirv) {
+                code = module_state->spirv->words_;
+            }
 
             VkShaderModule shader_module_handle = module_state->VkHandle();
             if (shader_module_handle == VK_NULL_HANDLE && instrumentation_metadata.passed_in_shader_stage_ci) {
