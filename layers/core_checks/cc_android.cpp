@@ -77,9 +77,51 @@ static inline const char *string_AHardwareBufferGpuUsage(uint64_t usage) {
         return "AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP";
     } else if (usage & AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE) {
         return "AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE";
+    } else if (usage & AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT) {
+        return "AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT";
     } else {
         return "Unknown AHARDWAREBUFFER_USAGE_GPU";
     }
+}
+
+static inline const char *string_AHardwareBufferFormat(uint32_t format) {
+    switch (format) {
+        case (uint32_t)AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM:
+            return "AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM";
+        case (uint32_t)AHARDWAREBUFFER_FORMAT_R8G8B8X8_UNORM:
+            return "AHARDWAREBUFFER_FORMAT_R8G8B8X8_UNORM";
+        case (uint32_t)AHARDWAREBUFFER_FORMAT_R8G8B8_UNORM:
+            return "AHARDWAREBUFFER_FORMAT_R8G8B8_UNORM";
+        case (uint32_t)AHARDWAREBUFFER_FORMAT_R5G6B5_UNORM:
+            return "AHARDWAREBUFFER_FORMAT_R5G6B5_UNORM";
+        case (uint32_t)AHARDWAREBUFFER_FORMAT_R16G16B16A16_FLOAT:
+            return "AHARDWAREBUFFER_FORMAT_R16G16B16A16_FLOAT";
+        case (uint32_t)AHARDWAREBUFFER_FORMAT_R10G10B10A2_UNORM:
+            return "AHARDWAREBUFFER_FORMAT_R10G10B10A2_UNORM";
+        case (uint32_t)AHARDWAREBUFFER_FORMAT_BLOB:
+            return "AHARDWAREBUFFER_FORMAT_BLOB";
+        case (uint32_t)AHARDWAREBUFFER_FORMAT_D16_UNORM:
+            return "AHARDWAREBUFFER_FORMAT_D16_UNORM";
+        case (uint32_t)AHARDWAREBUFFER_FORMAT_D24_UNORM:
+            return "AHARDWAREBUFFER_FORMAT_D24_UNORM";
+        case (uint32_t)AHARDWAREBUFFER_FORMAT_D24_UNORM_S8_UINT:
+            return "AHARDWAREBUFFER_FORMAT_D24_UNORM_S8_UINT";
+        case (uint32_t)AHARDWAREBUFFER_FORMAT_D32_FLOAT:
+            return "AHARDWAREBUFFER_FORMAT_D32_FLOAT";
+        case (uint32_t)AHARDWAREBUFFER_FORMAT_D32_FLOAT_S8_UINT:
+            return "AHARDWAREBUFFER_FORMAT_D32_FLOAT_S8_UINT";
+        case (uint32_t)AHARDWAREBUFFER_FORMAT_S8_UINT:
+            return "AHARDWAREBUFFER_FORMAT_S8_UINT";
+        case (uint32_t)AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420:
+            return "AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420";
+        case (uint32_t)AHARDWAREBUFFER_FORMAT_YCbCr_P010:
+            return "AHARDWAREBUFFER_FORMAT_YCbCr_P010";
+        case (uint32_t)AHARDWAREBUFFER_FORMAT_R8_UNORM:
+            return "AHARDWAREBUFFER_FORMAT_R8_UNORM";
+        default:
+            break;
+    }
+    return "Unkown AHardwareBuffer_Format";
 }
 
 static uint32_t FullMipChainLevels(VkExtent3D extent) {
@@ -163,22 +205,6 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &alloc
         AHardwareBuffer_Desc ahb_desc = {};
         AHardwareBuffer_describe(import_ahb_info->buffer, &ahb_desc);
 
-        //  Validate AHardwareBuffer_Desc::usage is a valid usage for imported AHB
-        //
-        //  BLOB & GPU_DATA_BUFFER combo specifically allowed
-        if ((AHARDWAREBUFFER_FORMAT_BLOB != ahb_desc.format) || (0 == (ahb_desc.usage & AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER))) {
-            // Otherwise, must be a combination from the AHardwareBuffer Format and Usage Equivalence tables
-            // Usage must have at least one bit from the table. It may have additional bits not in the table
-            uint64_t ahb_equiv_usage_bits = AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE | AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER |
-                                            AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP | AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE |
-                                            AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT;
-            if (0 == (ahb_desc.usage & ahb_equiv_usage_bits)) {
-                skip |= LogError("VUID-VkImportAndroidHardwareBufferInfoANDROID-buffer-01881", device, ahb_loc,
-                                 "AHardwareBuffer_Desc's usage (0x%" PRIx64 ") is not compatible with Vulkan. (AHB = %p).",
-                                 ahb_desc.usage, import_ahb_info->buffer);
-            }
-        }
-
         // Collect external buffer info
         VkPhysicalDeviceExternalBufferInfo pdebi = vku::InitStructHelper();
         pdebi.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
@@ -254,18 +280,21 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &alloc
                 allocate_info.memoryTypeIndex, ahb_loc.Fields().c_str(), ahb_props.memoryTypeBits, import_ahb_info->buffer);
         }
 
+        VkImageUsageFlags dedicated_image_usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;  // dummy init value
+
         // Checks for allocations without a dedicated allocation requirement
         if ((nullptr == mem_ded_alloc_info) || (VK_NULL_HANDLE == mem_ded_alloc_info->image)) {
             // the Android hardware buffer must have a format of AHARDWAREBUFFER_FORMAT_BLOB and a usage that includes
             // AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER
             if ((uint64_t)AHARDWAREBUFFER_FORMAT_BLOB != ahb_desc.format) {
                 skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-02384", device, ahb_loc,
-                                 "AHardwareBuffer_Desc's format (%" PRIu32 ") is not AHARDWAREBUFFER_FORMAT_BLOB. (AHB = %p).",
-                                 ahb_desc.format, import_ahb_info->buffer);
+                                 "AHardwareBuffer_Desc's format %s (%" PRIu32
+                                 ") is not AHARDWAREBUFFER_FORMAT_BLOB (0x21). (AHB = %p).",
+                                 string_AHardwareBufferFormat(ahb_desc.format), ahb_desc.format, import_ahb_info->buffer);
             } else if ((ahb_desc.usage & AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER) == 0) {
                 skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-02384", device, ahb_loc,
                                  "AHardwareBuffer's usage (0x%" PRIx64
-                                 ") does not include AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER. (AHB = %p).",
+                                 ") does not include AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER (0x1000000). (AHB = %p).",
                                  ahb_desc.usage, import_ahb_info->buffer);
             }
         } else {  // Checks specific to import with a dedicated allocation requirement
@@ -281,6 +310,8 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &alloc
             ASSERT_AND_RETURN_SKIP(image_state);
             const auto *ici = &image_state->create_info;
             const Location &dedicated_image_loc = allocate_info_loc.dot(Struct::VkMemoryDedicatedAllocateInfo, Field::image);
+
+            dedicated_image_usage = ici->usage;
 
             //  the format of image must be VK_FORMAT_UNDEFINED or the format returned by
             //  vkGetAndroidHardwareBufferPropertiesANDROID
@@ -312,19 +343,21 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &alloc
 
             if ((ahb_desc.usage & AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE) != 0) {
                 if ((ici->mipLevels != 1) && (ici->mipLevels != FullMipChainLevels(ici->extent))) {
-                    skip |= LogError(
-                        "VUID-VkMemoryAllocateInfo-pNext-02389", mem_ded_alloc_info->image, ahb_loc,
-                        "AHardwareBuffer_Desc's usage includes AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE but %s mipLevels (%" PRIu32
-                        ") is neither 1 nor full mip "
-                        "chain levels (%" PRIu32 "). (AHB = %p).",
-                        dedicated_image_loc.Fields().c_str(), ici->mipLevels, FullMipChainLevels(ici->extent),
-                        import_ahb_info->buffer);
+                    skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-02389", mem_ded_alloc_info->image, ahb_loc,
+                                     "AHardwareBuffer_Desc's usage (0x%" PRIx64
+                                     ") includes AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE but %s mipLevels (%" PRIu32
+                                     ") is neither 1 nor full mip chain levels (%" PRIu32 "). (AHB = %p).",
+                                     ahb_desc.usage, dedicated_image_loc.Fields().c_str(), ici->mipLevels,
+                                     FullMipChainLevels(ici->extent), import_ahb_info->buffer);
                 }
             } else {
                 if (ici->mipLevels != 1) {
-                    skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-02586", mem_ded_alloc_info->image, ahb_loc,
-                                     "AHardwareBuffer_Desc's  usage is 0x%" PRIx64 " but %s mipLevels is %" PRIu32 ". (AHB = %p).",
-                                     ahb_desc.usage, dedicated_image_loc.Fields().c_str(), ici->mipLevels, import_ahb_info->buffer);
+                    skip |=
+                        LogError("VUID-VkMemoryAllocateInfo-pNext-02586", mem_ded_alloc_info->image, ahb_loc,
+                                 "AHardwareBuffer_Desc's usage (0x%" PRIx64
+                                 ") is missing 0x4000000 (AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE) but %s mipLevels is %" PRIu32
+                                 ". (AHB = %p).",
+                                 ahb_desc.usage, dedicated_image_loc.Fields().c_str(), ici->mipLevels, import_ahb_info->buffer);
                 }
             }
 
@@ -352,16 +385,40 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &alloc
             for (const auto &[vk_usage, ahb_usage] : ahb_usage_map_v2a) {
                 if (ici->usage & vk_usage) {
                     if (0 == (ahb_usage & ahb_desc.usage)) {
-                        skip |= LogError(
-                            "VUID-VkMemoryAllocateInfo-pNext-02390", mem_ded_alloc_info->image, dedicated_image_loc,
-                            "was created with %s, but the AHB equivalent (%s) is not in AHardwareBuffer_Desc.usage (0x%" PRIx64
-                            "). (AHB = %p).",
-                            string_VkImageUsageFlags(vk_usage).c_str(), string_AHardwareBufferGpuUsage(ahb_usage), ahb_desc.usage,
-                            import_ahb_info->buffer);
+                        skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-02390", mem_ded_alloc_info->image, dedicated_image_loc,
+                                         "was created with %s, but the AHB equivalent 0x%" PRIx64
+                                         " (%s) is not in AHardwareBuffer_Desc.usage (0x%" PRIx64 "). (AHB = %p).",
+                                         string_VkImageUsageFlags(vk_usage).c_str(), ahb_usage,
+                                         string_AHardwareBufferGpuUsage(ahb_usage), ahb_desc.usage, import_ahb_info->buffer);
                     }
                 }
             }
         }
+
+        // Validate AHardwareBuffer_Desc::usage is a valid usage for imported AHB
+        const bool is_gpu_data = ((ahb_desc.usage & AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER) != 0);
+        // BLOB & GPU_DATA_BUFFER combo specifically allowed
+        bool usage_exception_1 = is_gpu_data && AHARDWAREBUFFER_FORMAT_BLOB == ahb_desc.format;
+        // Recently using VK_IMAGE_USAGE_STORAGE_BIT was also allowed
+        bool usage_exception_2 = is_gpu_data && ((dedicated_image_usage & VK_IMAGE_USAGE_STORAGE_BIT) != 0);
+        if (!usage_exception_1 && !usage_exception_2) {
+            // Otherwise, must be a combination from the AHardwareBuffer Format and Usage Equivalence tables
+            // Usage must have at least one bit from the table. It may have additional bits not in the table
+            uint64_t ahb_equiv_usage_bits = AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE | AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER |
+                                            AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP | AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE |
+                                            AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT;
+            if (0 == (ahb_desc.usage & ahb_equiv_usage_bits)) {
+                skip |= LogError(
+                    "VUID-VkImportAndroidHardwareBufferInfoANDROID-buffer-01881", device, ahb_loc,
+                    "AHardwareBuffer_Desc's usage (0x%" PRIx64
+                    ") is not compatible with Vulkan. (Format = %s) (AHB = %p). There are 3 valid combinations:\n"
+                    "1. Use FORMAT_BLOB with USAGE_GPU_DATA_BUFFER\n"
+                    "2. Use USAGE_GPU_DATA_BUFFER with a dedicated VkImage with VK_IMAGE_USAGE_STORAGE_BIT\n"
+                    "3. Use AHB usage GPU_SAMPLED_IMAGE, GPU_FRAMEBUFFER, GPU_CUBE_MAP, GPU_MIPMAP_COMPLETE, or PROTECTED_CONTENT",
+                    ahb_desc.usage, string_AHardwareBufferFormat(ahb_desc.format), import_ahb_info->buffer);
+            }
+        }
+
     } else {  // Not an import
               // auto exp_mem_alloc_info = vku::FindStructInPNextChain<VkExportMemoryAllocateInfo>(allocate_info.pNext);
               // auto mem_ded_alloc_info = vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfo>(allocate_info.pNext);
