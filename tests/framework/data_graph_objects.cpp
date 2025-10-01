@@ -46,10 +46,14 @@ void CreateDataGraphPipelineHelper::CreateShaderModule(const char* spirv_source)
     vvl::PnextChainAdd(&pipeline_ci_, &shader_module_ci_);
 }
 
-// playing with `inserted_line` we can cause different errors
+// Spirv source. For testing purposes it includes:
+// - unused OpEntryPoint and other Compute sections
+// - unused OpGraphConstantARM
+// - `inserted_line` to cause different errors
 std::string CreateDataGraphPipelineHelper::GetGraphSpirvSource(const char* inserted_line) {
     std::stringstream ss;
     ss << R"(
+; Commmon Compute and DataGraph section
                                   OpCapability GraphARM
                                   OpCapability TensorsARM
                                   OpCapability Int8
@@ -63,12 +67,20 @@ std::string CreateDataGraphPipelineHelper::GetGraphSpirvSource(const char* inser
                                   OpExtension "SPV_KHR_vulkan_memory_model"
                           %tosa = OpExtInstImport "TOSA.001000.1"
                                   OpMemoryModel Logical Vulkan
+; Compute shader type declarations
+                                  OpEntryPoint GLCompute %main "main"
+                                  OpExecutionMode %main LocalSize 1 1 1
+; DataGraph type declarations
                                   OpName %main_arg_0 "main_arg_0"
                                   OpName %main_res_0 "main_res_0"
                                   OpDecorate %main_arg_0 Binding 0
                                   OpDecorate %main_arg_0 DescriptorSet 0
                                   OpDecorate %main_res_0 Binding 1
                                   OpDecorate %main_res_0 DescriptorSet 0
+; Compute shader types
+                          %void = OpTypeVoid
+                             %3 = OpTypeFunction %void
+; DataGraph types
                          %uchar = OpTypeInt 8 0
                           %uint = OpTypeInt 32 0
                         %uint_4 = OpConstant %uint 4
@@ -90,7 +102,8 @@ std::string CreateDataGraphPipelineHelper::GetGraphSpirvSource(const char* inser
                  %uint_2_tensor = OpTypeTensorARM %uint %uint_1 %uint_arr_1_2
                  %uint_4_tensor = OpTypeTensorARM %uint %uint_1 %uint_arr_1_4
 )" << inserted_line << R"(
-                      %constant = OpGraphConstantARM %uint_2_tensor 0
+                     %constant0 = OpGraphConstantARM %uint_2_tensor 1
+                     %constant1 = OpGraphConstantARM %uint_4_tensor 0
              %uint_2_tensor_2_2 = OpConstantComposite %uint_2_tensor %uint_2 %uint_2
          %uint_4_tensor_0_0_0_0 = OpConstantComposite %uint_4_tensor %uint_0 %uint_0 %uint_0 %uint_0
      %uchar_1_8_16_4_tensor_ptr = OpTypePointer UniformConstant %uchar_1_8_16_4_tensor
@@ -98,6 +111,12 @@ std::string CreateDataGraphPipelineHelper::GetGraphSpirvSource(const char* inser
                     %main_arg_0 = OpVariable %uchar_1_8_16_4_tensor_ptr UniformConstant
                     %main_res_0 = OpVariable %uchar_1_2_4_4_tensor_ptr UniformConstant
                     %graph_type = OpTypeGraphARM 1 %uchar_1_8_16_4_tensor %uchar_1_2_4_4_tensor
+; Compute shader function definition
+                          %main = OpFunction %void None %3
+                             %5 = OpLabel
+                                  OpReturn
+                                  OpFunctionEnd
+; DataGraph graph definition
                                   OpGraphEntryPointARM %graph_0 "main" %main_arg_0 %main_res_0
                        %graph_0 = OpGraphARM %graph_type
                           %in_0 = OpGraphInputARM %uchar_1_8_16_4_tensor %uint_0
@@ -189,7 +208,6 @@ void CreateDataGraphPipelineHelper::InitPipelineResources(const std::vector<vkt:
 void CreateDataGraphPipelineHelper::CreatePipelineLayout(const std::vector<VkPushConstantRange>& push_constant_ranges) {
     pipeline_layout_ci_ = vku::InitStructHelper();
     pipeline_layout_ci_.flags = 0;
-
     pipeline_layout_ci_.pushConstantRangeCount = push_constant_ranges.size();
     pipeline_layout_ci_.pPushConstantRanges = push_constant_ranges.data();
     pipeline_layout_ = vkt::PipelineLayout(*device_, pipeline_layout_ci_, {&descriptor_set_->layout_});
@@ -229,21 +247,23 @@ void CreateDataGraphPipelineHelper::InitTensor(vkt::Tensor &tensor, vkt::TensorV
     tensor_view.Init(*device_, tensor_view_ci);
 }
 
-CreateDataGraphPipelineHelper::CreateDataGraphPipelineHelper(VkLayerTest& test, bool is_data_graph, bool protected_tensors, const char *inserted_line) : layer_test_(test) {
+CreateDataGraphPipelineHelper::CreateDataGraphPipelineHelper(VkLayerTest& test, bool protected_tensors, bool is_data_graph,
+                                                             const char* inserted_line)
+    : layer_test_(test) {
     device_ = layer_test_.DeviceObj();
 
     pipeline_ci_ = vku::InitStructHelper();
 
-    InitTensor(in_tensor_, in_tensor_view_, in_tensor_dims, protected_tensors);
-    InitTensor(out_tensor_, out_tensor_view_, out_tensor_dims, protected_tensors);
-
-    if (!is_data_graph) {
-        CreateComputeShaderModule();
-        InitPipelineResources({&in_tensor_});
-    } else {
+    if (is_data_graph) {
+        InitTensor(in_tensor_, in_tensor_view_, in_tensor_dims, protected_tensors);
+        InitTensor(out_tensor_, out_tensor_view_, out_tensor_dims, protected_tensors);
         std::string spirv_source = GetGraphSpirvSource(inserted_line);
         CreateShaderModule(spirv_source.c_str());
         InitPipelineResources({&in_tensor_, &out_tensor_});
+    } else {
+        InitTensor(in_tensor_, in_tensor_view_, in_tensor_dims, protected_tensors);
+        CreateComputeShaderModule();
+        InitPipelineResources({&in_tensor_});
     }
 
     // Check that the initialisation of the pipeline has been successful

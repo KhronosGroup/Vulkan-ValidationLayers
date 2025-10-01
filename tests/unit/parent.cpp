@@ -937,7 +937,7 @@ TEST_F(NegativeParent, DataGraphPipeline) {
     auto features = m_device->Physical().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
-    vkt::dg::CreateDataGraphPipelineHelper helper(*this, true);
+    vkt::dg::CreateDataGraphPipelineHelper helper(*this);
     helper.CreateDataGraphPipeline();
     VkDataGraphPipelineInfoARM pipeline_info = vku::InitStructHelper();
     pipeline_info.dataGraphPipeline = helper.Handle();
@@ -973,7 +973,7 @@ TEST_F(NegativeParent, DataGraphPipelineSessionBindPointRequirements) {
     auto features = m_device->Physical().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
-    vkt::dg::CreateDataGraphPipelineHelper pipeline(*this, true);
+    vkt::dg::CreateDataGraphPipelineHelper pipeline(*this);
     pipeline.CreateDataGraphPipeline();
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
