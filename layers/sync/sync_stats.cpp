@@ -99,7 +99,9 @@ void AccessContextStats::UpdateMax(const AccessContextStats& cur_stats) {
     UPDATE_MAX(access_states);
     UPDATE_MAX(read_states);
     UPDATE_MAX(write_states);
+    UPDATE_MAX(first_accesses);
     UPDATE_MAX(access_states_with_multiple_reads);
+    UPDATE_MAX(access_states_with_multiple_firsts);
     UPDATE_MAX(access_states_with_dynamic_allocations);
     UPDATE_MAX(access_states_dynamic_allocation_size);
 #undef UPDATE_MAX
@@ -163,17 +165,24 @@ std::string Stats::CreateReport() {
         ss << "\n";
     };
     auto print_access_state_stats = [&ss](const char* context_type, const AccessContextStats& stats) {
-        ss << std::setw(15) << std::string(context_type) + "(" + std::to_string(stats.access_contexts) + ")";
+        ss << std::setw(13) << std::string(context_type) + "(" + std::to_string(stats.access_contexts) + ")";
+        ss << std::setw(11) << stats.access_states;
+
+        const uint64_t access_state_objects_size = sizeof(ResourceAccessState) * stats.access_states;
+        const double size_mb = ((double)access_state_objects_size / 1024.0 / 1024.0);
+        ss << std::fixed << std::setprecision(2) << std::setw(11) << size_mb;
+        ss.unsetf(std::ios::floatfield);
+
+        ss << std::setw(2) << "| ";
         ss << std::setw(10) << stats.read_states;
         ss << std::setw(10) << stats.write_states;
-        ss << std::setw(16) << stats.access_states;
-        ss << std::setw(18) << stats.access_states_with_multiple_reads;
-        ss << std::setw(14) << stats.access_states_with_dynamic_allocations;
+        ss << std::setw(9) << stats.first_accesses;
 
-        uint64_t access_state_objects_size = sizeof(ResourceAccessState) * stats.access_states;
-        ss << std::setw(16) << access_state_objects_size;
-
-        ss << std::setw(14) << stats.access_states_dynamic_allocation_size;
+        ss << std::setw(2) << "| ";
+        ss << std::setw(12) << stats.access_states_with_multiple_reads;
+        ss << std::setw(13) << stats.access_states_with_multiple_firsts;
+        ss << std::setw(13) << stats.access_states_with_dynamic_allocations;
+        ss << std::setw(15) << stats.access_states_dynamic_allocation_size;
         ss << "\n";
     };
 
@@ -191,7 +200,7 @@ std::string Stats::CreateReport() {
     print_common_stats64("HandleRecord bytes", handle_record_memory, handle_record_max_memory);
 
     const char* access_stats_header =
-        "context        reads     writes    access_states   with_multi_read   with_allocs   size (bytes)    alloc_size (bytes)\n";
+        "context      accesses   size (MB)  | reads     writes    firsts   | many_reads  many_firsts  have_allocs  allocated (B)\n";
 
     ss << "\n";
     ss << "-----------------------\n";
@@ -212,7 +221,12 @@ std::string Stats::CreateReport() {
     print_access_state_stats("Subpass", access_stats.max_subpass_access_stats);
 
     ss << "\n";
-    ss << "Max first accesses";
+    ss << "Max last reads array size";
+    ss << ": CB: " << access_stats.cb_access_stats.max_last_reads_count;
+    ss << ", Queue: " << access_stats.queue_access_stats.max_last_reads_count;
+    ss << ", Subpass: " << access_stats.subpass_access_stats.max_last_reads_count;
+    ss << "\n";
+    ss << "Max first accesses array size";
     ss << ": CB: " << access_stats.cb_access_stats.max_first_accesses_size;
     ss << ", Queue: " << access_stats.queue_access_stats.max_first_accesses_size;
     ss << ", Subpass: " << access_stats.subpass_access_stats.max_first_accesses_size;
