@@ -225,6 +225,7 @@ bool CoreChecks::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkD
         skip |= ValidateDataGraphPipelineCreateInfo(device, create_info, create_info_loc, *pipeline);
         skip |= ValidateDataGraphPipelineCreateInfoFlags(create_info.flags, create_info_loc.dot(Field::flags));
         skip |= ValidateDataGraphPipelineShaderModuleCreateInfo(device, create_info, create_info_loc, *pipeline);
+        skip |= ValidateDataGraphPipelineShaderModuleSpirv(device, create_info, create_info_loc, *pipeline);
     }
 
     return skip;

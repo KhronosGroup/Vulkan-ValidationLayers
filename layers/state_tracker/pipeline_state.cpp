@@ -182,12 +182,16 @@ std::vector<ShaderStageState> Pipeline::GetStageStates(const DeviceState &state_
         if (auto *pipeline_shader_module =
                 vku::FindStructInPNextChain<VkDataGraphPipelineShaderModuleCreateInfoARM>(pipe_state.DataGraphCreateInfo().pNext)) {
             if (auto module_state = state_data.Get<vvl::ShaderModule>(pipeline_shader_module->module)) {
-                VkPipelineShaderStageCreateInfo stage_ci = vku::InitStructHelper();
-                stage_ci.module = module_state->VkHandle();
-                stage_ci.stage = VK_SHADER_STAGE_ALL;
-                stage_ci.pName = pipeline_shader_module->pName;
-                vku::safe_VkPipelineShaderStageCreateInfo safe_stage_ci = &stage_ci;
-                stage_states.emplace_back(&safe_stage_ci, nullptr, module_state, module_state->spirv);
+                for (auto &entry_point : module_state->spirv->static_data_.entry_points) {
+                    if (entry_point->is_data_graph) {
+                        VkPipelineShaderStageCreateInfo stage_ci = vku::InitStructHelper();
+                        stage_ci.module = module_state->VkHandle();
+                        stage_ci.pName = pipeline_shader_module->pName;
+                        stage_ci.stage = entry_point->stage;
+                        vku::safe_VkPipelineShaderStageCreateInfo safe_stage_ci = &stage_ci;
+                        stage_states.emplace_back(&safe_stage_ci, nullptr, module_state, module_state->spirv);
+                    }
+                }
             }
         }
     }

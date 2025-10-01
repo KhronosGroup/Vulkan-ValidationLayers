@@ -937,10 +937,10 @@ TEST_F(NegativeParent, DataGraphPipeline) {
     auto features = m_device->Physical().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
-    vkt::dg::CreateDataGraphPipelineHelper helper(*this, true);
-    helper.CreateDataGraphPipeline();
+    vkt::dg::DataGraphPipelineHelper pipeline(*this);
+    pipeline.CreateDataGraphPipeline();
     VkDataGraphPipelineInfoARM pipeline_info = vku::InitStructHelper();
-    pipeline_info.dataGraphPipeline = helper.Handle();
+    pipeline_info.dataGraphPipeline = pipeline.Handle();
 
     /* query with pData null, to get back the required dataSize. Enough to trigger the VUID */
     VkDataGraphPipelinePropertyQueryResultARM query_result = vku::InitStructHelper();
@@ -973,7 +973,7 @@ TEST_F(NegativeParent, DataGraphPipelineSessionBindPointRequirements) {
     auto features = m_device->Physical().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
-    vkt::dg::CreateDataGraphPipelineHelper pipeline(*this, true);
+    vkt::dg::DataGraphPipelineHelper pipeline(*this);
     pipeline.CreateDataGraphPipeline();
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
