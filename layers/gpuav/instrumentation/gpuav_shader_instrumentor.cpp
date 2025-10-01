@@ -1125,6 +1125,9 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
         }
 
         vku::safe_VkGraphicsPipelineCreateInfo new_lib_ci(modified_lib->GraphicsCreateInfo());
+        // TODO - Clearly from DifferentShaderLibraryWithIntermediateLibraryGPL test we show this is possible
+        // Will need to rework how we handle libraries
+        assert(new_lib_ci.stageCount != 0);
         // If the application supplied pipeline might be interested in failing to be created
         // if the driver does not find it in its cache, GPU-AV needs to succeed in the instrumented pipeline library
         // creation process no matter caching state.

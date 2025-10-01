@@ -2292,3 +2292,71 @@ TEST_F(PositiveGpuAV, DualShaderLibraryDestroyLayout) {
     exe_pipe_ci.layout = pipeline_layout_link;
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
 }
+
+TEST_F(PositiveGpuAV, DISABLED_DifferentShaderLibraryWithIntermediateLibrary) {
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    vkt::Buffer uniform_buffer(*m_device, 8, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    descriptor_set.WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE);
+    descriptor_set.UpdateDescriptorSets();
+
+    CreatePipelineHelper vertex_input_lib(*this);
+    vertex_input_lib.InitVertexInputLibInfo();
+    vertex_input_lib.CreateGraphicsPipeline(false);
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    {
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
+        pre_raster_lib.gp_ci_.layout = pipeline_layout;
+        pre_raster_lib.CreateGraphicsPipeline();
+    }
+
+    VkPipeline intermediate_libraries[2] = {
+        vertex_input_lib,
+        pre_raster_lib,
+    };
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+    link_info.libraryCount = size32(intermediate_libraries);
+    link_info.pLibraries = intermediate_libraries;
+
+    VkGraphicsPipelineCreateInfo intermediate_pipe_ci = vku::InitStructHelper(&link_info);
+    intermediate_pipe_ci.layout = pipeline_layout;
+    intermediate_pipe_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
+    vkt::Pipeline intermediate_pipe(*m_device, intermediate_pipe_ci);
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    {
+        const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
+        frag_shader_lib.gp_ci_.layout = pipeline_layout;
+        frag_shader_lib.CreateGraphicsPipeline(false);
+    }
+
+    CreatePipelineHelper frag_out_lib(*this);
+    frag_out_lib.InitFragmentOutputLibInfo();
+    frag_out_lib.CreateGraphicsPipeline(false);
+
+    VkPipeline exe_libraries[3] = {
+        intermediate_pipe,
+        frag_shader_lib,
+        frag_out_lib,
+    };
+    link_info.libraryCount = size32(exe_libraries);
+    link_info.pLibraries = exe_libraries;
+
+    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
+    exe_pipe_ci.layout = pipeline_layout;
+    vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+}
