@@ -927,8 +927,6 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidatePipelineTessellationStages(const spirv::Module& tesc_module_state, const spirv::EntryPoint& tesc_entrypoint,
                                             const spirv::Module& tese_module_state, const spirv::EntryPoint& tese_entrypoint,
                                             const Location& create_info_loc) const;
-    static void TypeToDescriptorTypeSet(const spirv::Module& module_state, uint32_t type_id, uint32_t data_type_id,
-                                        vvl::unordered_set<uint32_t>& descriptor_type_set);
     bool ValidateShaderInterfaceVariablePipeline(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                                  const vvl::Pipeline& pipeline, const spirv::ResourceInterfaceVariable& variable,
                                                  vvl::unordered_set<uint32_t>& descriptor_type_set, const Location& loc) const;
@@ -1021,6 +1019,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                                   const VkDataGraphPipelineConstantTensorSemiStructuredSparsityInfoARM* sparsity,
                                                   const VkTensorDescriptionARM* tensor_desc, const Location& constant_loc,
                                                   const vvl::Pipeline& pipeline) const;
+    bool ValidateDataGraphPipelineShaderModuleSpirv(VkDevice device, const VkDataGraphPipelineCreateInfoARM& create_info,
+                                                    const Location& create_info_loc, const vvl::Pipeline& pipeline) const;
 
     bool PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                     VkPipelineCache pipelineCache, uint32_t createInfoCount,

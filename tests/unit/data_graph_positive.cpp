@@ -68,7 +68,7 @@ TEST_F(PositiveDataGraph, ExecuteDataGraph) {
     InitBasicDataGraph();
     RETURN_IF_SKIP(Init());
 
-    vkt::dg::CreateDataGraphPipelineHelper pipeline(*this, true);
+    vkt::dg::DataGraphPipelineHelper pipeline(*this);
     pipeline.CreateDataGraphPipeline();
 
     VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
@@ -105,7 +105,10 @@ TEST_F(PositiveDataGraph, DISABLED_ProtectedMemoryDataGraph) {
     RETURN_IF_SKIP(InitFramework());
     RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_PROTECTED_BIT));
 
-    vkt::dg::CreateDataGraphPipelineHelper pipeline(*this, true, true /*protected_tensors*/);
+    vkt::dg::HelperParameters params;
+    params.protected_tensors = true;
+    vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
+
     pipeline.pipeline_ci_.flags = VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT_EXT;
     pipeline.CreateDataGraphPipeline();
 
@@ -135,4 +138,95 @@ TEST_F(PositiveDataGraph, DISABLED_ProtectedMemoryDataGraph) {
     m_command_buffer.End();
 
     m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveDataGraph, ShaderModuleInPNext) {
+    TEST_DESCRIPTION(
+        "Pass a VkShaderModuleCreateInfo in the pNext chain of pipeline info, not as "
+        "VkDataGraphPipelineShaderModuleCreateInfoARM::module.");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    // create a ShaderModule to add in the pNext chain
+    spvtools::SpirvTools tools{SPV_ENV_UNIVERSAL_1_6};
+    const std::string& spirv_source = vkt::dg::DataGraphPipelineHelper::GetSpirvSourceGraph();
+    std::vector<uint32_t> spirv_binary;
+    if (!tools.Assemble(spirv_source, &spirv_binary)) {
+        Monitor().SetError("Failed to compile SPIRV shader module");
+        return;
+    }
+    VkShaderModuleCreateInfo shader_module_create_info = vku::InitStructHelper();
+    shader_module_create_info.codeSize = spirv_binary.size() * sizeof(uint32_t);
+    shader_module_create_info.pCode = spirv_binary.data();
+
+    // 2 variants, adding the shader in different places in the pipeline's pNext chain, both must work
+
+    {
+        vkt::dg::DataGraphPipelineHelper pipeline(*this);
+        // the helper constructor adds the shader module as VkDataGraphPipelineShaderModuleCreateInfoARM::module, get rid of it
+        pipeline.shader_module_ci_.module = VK_NULL_HANDLE;
+
+        // add the shader info in VkDataGraphPipelineShaderModuleCreateInfoARM::pNext
+        pipeline.shader_module_ci_.pNext = &shader_module_create_info;
+        pipeline.CreateDataGraphPipeline();
+    }
+
+    {
+        vkt::dg::DataGraphPipelineHelper pipeline(*this);
+        // the helper constructor adds the shader module as VkDataGraphPipelineShaderModuleCreateInfoARM::module, get rid of it
+        pipeline.shader_module_ci_.module = VK_NULL_HANDLE;
+
+        // add the shader info in VkDataGraphPipelineCreateInfoARM::pNext
+        pipeline.pipeline_ci_.pNext = &shader_module_create_info;
+        shader_module_create_info.pNext = &pipeline.shader_module_ci_;
+        pipeline.shader_module_ci_.pNext = nullptr;
+        pipeline.CreateDataGraphPipeline();
+    }
+}
+
+TEST_F(PositiveDataGraph, DataGraphAndComputeEntrypoints) {
+    TEST_DESCRIPTION("Create datagraph from spirv including Compute entrypoint.");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    // get spirv with 1 DataGraph and 1 Compute entrypoints
+    // NOTE: both OpEntrypoint and OpGraphEntryPointARM are named 'main'
+    const std::string mixed_entrypoints_spirv = vkt::dg::DataGraphPipelineHelper::GetSpirvMultiEntryComputeAndDataGraph();
+
+    // create graph at datagraph entrypoint
+    {
+        vkt::dg::HelperParameters params;
+        params.spirv_source = mixed_entrypoints_spirv.c_str();
+        params.entrypoint = "main";
+        vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
+
+        pipeline.CreateDataGraphPipeline();
+    }
+}
+
+TEST_F(PositiveDataGraph, DataGraphMultipleEntrypoints) {
+    TEST_DESCRIPTION("Execute 2 different entrypoints in the datagraph's spirv.");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    // get spirv with 2 entrypoints
+    const std::string two_entrypoint_spirv = vkt::dg::DataGraphPipelineHelper::GetSpirvMultiEntryTwoDataGraph();
+
+    // create graph at entrypoint 1
+    {
+        vkt::dg::HelperParameters params;
+        params.spirv_source = two_entrypoint_spirv.c_str();
+        params.entrypoint = "entrypoint_1";
+        vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
+        pipeline.CreateDataGraphPipeline();
+    }
+
+    // create graph at entrypoint 2
+    {
+        vkt::dg::HelperParameters params;
+        params.spirv_source = two_entrypoint_spirv.c_str();
+        params.entrypoint = "entrypoint_2";
+        vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
+        pipeline.CreateDataGraphPipeline();
+    }
 }

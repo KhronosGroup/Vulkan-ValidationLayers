@@ -32,7 +32,13 @@
 namespace vkt {
 namespace dg {
 
-class CreateDataGraphPipelineHelper {
+struct HelperParameters {
+    bool protected_tensors = false;
+    const char *spirv_source = nullptr;
+    const char *entrypoint = "main";
+};
+
+class DataGraphPipelineHelper {
   public:
     std::vector<VkDescriptorSetLayoutBinding> descriptor_set_layout_bindings_;
     std::unique_ptr<OneOffDescriptorSet> descriptor_set_;
@@ -50,29 +56,26 @@ class CreateDataGraphPipelineHelper {
     VkLayerTest &layer_test_;
     vkt::Device *device_;
 
-    explicit CreateDataGraphPipelineHelper(VkLayerTest &test, bool is_data_graph = false, bool protected_tensors = false, const char *inserted_line = "");
-    virtual ~CreateDataGraphPipelineHelper();
+    explicit DataGraphPipelineHelper(VkLayerTest &test, const HelperParameters &params = HelperParameters());
+    virtual ~DataGraphPipelineHelper();
     void Destroy();
 
-    static std::string GetGraphSpirvSource(const char *inserted_line = "");
-    void CreateComputeShaderModule();
-    void CreateGraphShaderModule(const char *spirv_text);
+    static std::string GetSpirvSourceGraph(const char *inserted_line = "");
+    static std::string GetSpirvMultiEntryComputeAndDataGraph();
+    static std::string GetSpirvMultiEntryTwoDataGraph();
     void InitPipelineResources(const std::vector<vkt::Tensor *> &tensors = {},
                                VkDescriptorType desc_type = VK_DESCRIPTOR_TYPE_TENSOR_ARM,
                                VkDescriptorSetLayoutCreateFlags layout_flags = 0);
     void CreatePipelineLayout(const std::vector<VkPushConstantRange> &push_constant_ranges = {});
-
+    VkResult CreateDataGraphPipeline();
     const VkPipeline &Handle() const { return pipeline_; }
 
-    VkResult CreateDataGraphPipeline();
-
-    // Helper function to create a simple test case (positive or negative)
-    //
-    // info_override can be any callable that takes a CreatePipelineHelper &
-    // flags, error can be any args accepted by "SetDesiredFailure".
+    // Helper function to create a simple test case
+    // info_override can be any callable that takes a DataGraphPipelineHelper, error can be any args accepted by
+    // "SetDesiredFailureMsg".
     template <typename Test, typename OverrideFunc, typename Error>
     static void OneshotTest(Test &test, const OverrideFunc &info_override, const VkFlags flags, const std::vector<Error> &errors) {
-        CreateDataGraphPipelineHelper helper(test);
+        DataGraphPipelineHelper helper(test);
         info_override(helper);
         // Allow lambda to decide if to skip trying to compile pipeline to prevent crashing
         for (const auto &error : errors) {
@@ -96,7 +99,7 @@ class CreateDataGraphPipelineHelper {
     }
 
   private:
-    void CreateShaderModule(const char *spirv_source);
+    void CreateShaderModule(const char *spirv_source, const char *entrypoint = "main");
     void InitTensor(vkt::Tensor &tensor, vkt::TensorView &tensor_view, const std::vector<int64_t> &tensor_dims, bool is_protected);
 
     VkPipeline pipeline_ = VK_NULL_HANDLE;
