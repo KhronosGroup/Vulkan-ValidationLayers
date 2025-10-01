@@ -3480,11 +3480,15 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpass(const LastBound &last_bou
     const VkRenderingFlags render_flags = rp_state.GetRenderingFlags();
     if ((render_flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT) != 0 &&
         (render_flags & VK_RENDERING_CONTENTS_INLINE_BIT_KHR) == 0) {
-        skip |= LogError(vuid.rendering_contents_10582, cb_state.Handle(), vuid.loc(),
-                         "the render pass is %s::flags %s (missing VK_RENDERING_CONTENTS_INLINE_BIT_KHR)",
-                         rp_state.use_dynamic_rendering_inherited ? "inherited with VkCommandBufferInheritanceRenderingInfo"
-                                                                  : "begun with VkRenderingInfo",
-                         string_VkRenderingFlags(render_flags).c_str());
+        // Being discussed if this is correct or not
+        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10761
+        if (!rp_state.use_dynamic_rendering_inherited) {
+            skip |= LogError(vuid.rendering_contents_10582, cb_state.Handle(), vuid.loc(),
+                             "the render pass is %s::flags %s (missing VK_RENDERING_CONTENTS_INLINE_BIT_KHR)",
+                             rp_state.use_dynamic_rendering_inherited ? "inherited with VkCommandBufferInheritanceRenderingInfo"
+                                                                      : "begun with VkRenderingInfo",
+                             string_VkRenderingFlags(render_flags).c_str());
+        }
     }
 
     const VkPipelineRenderingCreateInfo &pipeline_rendering_ci = *(pipeline_rp_state->dynamic_pipeline_rendering_create_info.ptr());
