@@ -959,14 +959,16 @@ const WriteState &ResourceAccessState::LastWrite() const {
 
 void ResourceAccessState::UpdateStats(syncval_stats::AccessContextStats &stats) const {
 #if VVL_ENABLE_SYNCVAL_STATS != 0
-    stats.read_states += (uint32_t)last_reads.size();
+    stats.read_states += last_read_count;
     stats.write_states += last_write.has_value();
-    stats.access_states_with_multiple_reads += (last_reads.size() > 1);
+    stats.first_accesses += first_accesses_.size();
+    stats.access_states_with_multiple_reads += (last_read_count > 1);
+    stats.access_states_with_multiple_firsts += (first_accesses_.size() > 1);
 
     bool is_dynamic_allocation = false;
     // check if last reads allocate
-    if (last_reads.size() > last_reads.kSmallCapacity) {
-        stats.access_states_dynamic_allocation_size += uint64_t(sizeof(ReadState) * last_reads.size());
+    if (last_read_count > 1) {
+        stats.access_states_dynamic_allocation_size += uint64_t(sizeof(ReadState) * last_read_count);
         is_dynamic_allocation = true;
     }
     // check if first accesses allocate
@@ -976,6 +978,7 @@ void ResourceAccessState::UpdateStats(syncval_stats::AccessContextStats &stats) 
     }
     stats.access_states_with_dynamic_allocations += is_dynamic_allocation;
     stats.max_first_accesses_size = std::max(stats.max_first_accesses_size, (uint32_t)first_accesses_.size());
+    stats.max_last_reads_count = std::max(stats.max_last_reads_count, last_read_count);
 #endif
 }
 
