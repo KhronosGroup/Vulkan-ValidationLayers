@@ -926,7 +926,8 @@ TEST_F(NegativeSecondaryCommandBuffer, NestedDrawWithoutInline) {
     secondary.End();
 }
 
-TEST_F(NegativeSecondaryCommandBuffer, NestedDrawWithoutInline2) {
+// http://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10761
+TEST_F(NegativeSecondaryCommandBuffer, DISABLED_NestedDrawWithoutInline2) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
