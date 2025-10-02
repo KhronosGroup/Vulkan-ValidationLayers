@@ -498,20 +498,12 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
 
     // App uses regular pipelines or graphics pipeline libraries
     if (last_bound.pipeline_state) {
-        // Regular pipeline, and its pipeline layout has not been destroyed: pick it
-        const auto last_bound_pipe_layout = last_bound.pipeline_state->PipelineLayoutState();
-        if (!last_bound.pipeline_state->library_create_info && last_bound_pipe_layout && !last_bound_pipe_layout->Destroyed()) {
-            inst_binding_pipe_layout.handle = last_bound.pipeline_state->PipelineLayoutState()->VkHandle();
-        }
-        // Pipeline layout has been destroyed, or pipeline is a graphics pipeline library
-        else {
-            const PipelineSubState &pipeline_sub_state = SubState(*last_bound.pipeline_state);
-            vvl::DescriptorMode mode = last_bound.GetActionDescriptorMode();
-            inst_binding_pipe_layout.handle = pipeline_sub_state.GetPipelineLayoutUnion(loc, mode);
-            assert(inst_binding_pipe_layout.handle != VK_NULL_HANDLE);
-            if (gpuav.aborted_) {
-                return;
-            }
+        const PipelineSubState &pipeline_sub_state = SubState(*last_bound.pipeline_state);
+        const vvl::DescriptorMode mode = last_bound.GetActionDescriptorMode();
+        inst_binding_pipe_layout.handle = pipeline_sub_state.GetPipelineLayoutUnion(loc, mode);
+        assert(inst_binding_pipe_layout.handle != VK_NULL_HANDLE);
+        if (gpuav.aborted_) {
+            return;
         }
         inst_binding_pipe_layout.source = PipelineLayoutSource::LastBoundPipeline;
     }
