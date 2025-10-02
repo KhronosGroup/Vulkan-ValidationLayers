@@ -75,6 +75,9 @@ class FunctionPointersOutputGenerator(BaseGenerator):
 #ifdef CreateEvent
 #undef CreateEvent
 #endif
+#ifdef GetObject
+#undef GetObject
+#endif
 #endif
 
 namespace vk {

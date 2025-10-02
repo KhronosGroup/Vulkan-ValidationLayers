@@ -16,6 +16,7 @@
  */
 #include "sync/sync_access_state.h"
 #include "sync/sync_stats.h"
+#include "utils/hash_util.h"
 #include "utils/sync_utils.h"
 #include <vulkan/utility/vk_struct_helper.hpp>
 
@@ -28,6 +29,20 @@ static const std::array<OrderingBarrier, static_cast<size_t>(SyncOrdering::kNumO
      {kRasterAttachmentExecScope, kRasterAttachmentAccessScope}}};
 
 const OrderingBarrier &GetOrderingRules(SyncOrdering ordering_enum) { return kOrderingRules[static_cast<size_t>(ordering_enum)]; }
+
+static ThreadSafeLookupTable<OrderingBarrier> layout_ordering_barrier_lookup;
+ThreadSafeLookupTable<OrderingBarrier> &GetLayoutOrderingBarrierLookup() { return layout_ordering_barrier_lookup; }
+
+bool OrderingBarrier::operator==(const OrderingBarrier &rhs) const {
+    return exec_scope == rhs.exec_scope && access_scope == rhs.access_scope;
+}
+
+size_t OrderingBarrier::Hash() const {
+    hash_util::HashCombiner hc;
+    hc << exec_scope;
+    access_scope.HashCombine(hc);
+    return hc.Value();
+}
 
 HazardResult ResourceAccessState::DetectHazard(const SyncAccessInfo &usage_info) const {
     const auto &usage_stage = usage_info.stage_mask;
@@ -198,7 +213,12 @@ HazardResult ResourceAccessState::DetectHazard(const ResourceAccessState &record
                     // Or in the layout first access scope as a barrier... IFF the usage is an ILT
                     // this was saved off in the "apply barriers" logic to simplify ILT access checks as they straddle
                     // the barrier that applies them
-                    barrier |= recorded_use.first_write_layout_ordering_;
+                    const auto &layout_ordering_lookup = GetLayoutOrderingBarrierLookup();
+                    const OrderingBarrier layout_ordering =
+                        layout_ordering_lookup.GetObject(recorded_use.first_write_layout_ordering_index);
+
+                    barrier.exec_scope |= layout_ordering.exec_scope;
+                    barrier.access_scope |= layout_ordering.access_scope;
                 }
                 // Any read stages present in the recorded context (this) are most recent to the write, and thus mask those stages
                 // in the active context
@@ -445,7 +465,9 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
     // Merge first access information by merging this and other first accesses (similar to how merge sort works)
     if (!skip_first && !(first_accesses_ == other.first_accesses_) && !other.first_accesses_.empty()) {
         FirstAccesses firsts(std::move(first_accesses_));
-        const OrderingBarrier this_first_write_layout_ordering = first_write_layout_ordering_;
+
+        // Make a copy because ClearFirstUse clears first access state
+        const uint32_t this_first_write_layout_ordering_index = first_write_layout_ordering_index;
 
         // Select layout transition barrier from the write that goes first (the later write will be
         // ignored since the first access gets closed after the first write).
@@ -454,8 +476,8 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
 
         ClearFirstUse();
 
-        first_write_layout_ordering_ =
-            resolve_to_this_layout_ordering ? this_first_write_layout_ordering : other.first_write_layout_ordering_;
+        first_write_layout_ordering_index =
+            resolve_to_this_layout_ordering ? this_first_write_layout_ordering_index : other.first_write_layout_ordering_index;
 
         auto a = firsts.begin();
         auto a_end = firsts.end();
@@ -575,7 +597,7 @@ void ResourceAccessState::ClearRead() {
 void ResourceAccessState::ClearFirstUse() {
     first_accesses_.clear();
     first_read_stages_ = VK_PIPELINE_STAGE_2_NONE;
-    first_write_layout_ordering_ = OrderingBarrier();
+    first_write_layout_ordering_index = vvl::kNoIndex32;
     first_access_closed_ = false;
 }
 
@@ -585,7 +607,7 @@ void ResourceAccessState::ApplyBarrier(const BarrierScope &barrier_scope, const 
     if (layout_transition) {
         const SyncAccessInfo &layout_transition_access_info = GetAccessInfo(SYNC_IMAGE_LAYOUT_TRANSITION);
         const ResourceUsageTagEx tag_ex = ResourceUsageTagEx{layout_transition_tag, layout_transition_handle_index};
-        const OrderingBarrier layout_ordering(barrier.src_exec_scope.exec_scope, barrier.src_access_scope);
+        const OrderingBarrier layout_ordering{barrier.src_exec_scope.exec_scope, barrier.src_access_scope};
 
         // Register write access that models layout transition writes
         SetWrite(SYNC_IMAGE_LAYOUT_TRANSITION, tag_ex);
@@ -708,7 +730,7 @@ void PendingBarriers::AddLayoutTransition(ResourceAccessState *access_state, con
     info.access_state = access_state;
 
     PendingLayoutTransition &layout_transition = layout_transitions.emplace_back();
-    layout_transition.ordering = OrderingBarrier(barrier.src_exec_scope.exec_scope, barrier.src_access_scope);
+    layout_transition.ordering = OrderingBarrier{barrier.src_exec_scope.exec_scope, barrier.src_access_scope};
     layout_transition.handle_index = layout_transition_handle_index;
 }
 
@@ -870,7 +892,7 @@ void ResourceAccessState::CopySimpleMembers(const ResourceAccessState &other) {
 
     first_accesses_ = other.first_accesses_;
     first_read_stages_ = other.first_read_stages_;
-    first_write_layout_ordering_ = other.first_write_layout_ordering_;
+    first_write_layout_ordering_index = other.first_write_layout_ordering_index;
     first_access_closed_ = other.first_access_closed_;
 
     input_attachment_read = other.input_attachment_read;
@@ -1041,7 +1063,8 @@ void ResourceAccessState::TouchupFirstForLayoutTransition(ResourceUsageTag tag, 
     if (first_accesses_.back().tag == tag) {
         // If this layout transition is the the first write, add the additional ordering rules that guard the ILT
         assert(first_accesses_.back().usage_info->access_index == SyncAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION);
-        first_write_layout_ordering_ = layout_ordering;
+        auto &layout_ordering_lookup = GetLayoutOrderingBarrierLookup();
+        first_write_layout_ordering_index = layout_ordering_lookup.GetIndexAndMaybeInsert(layout_ordering);
     }
 }
 

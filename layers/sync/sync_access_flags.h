@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "utils/hash_util.h"
 #include <cstring>  // memset
 
 // NOTE: SyncAccessFlags struct replaces what was originally defined via std::bitset<>.
@@ -105,4 +106,10 @@ struct SyncAccessFlags {
     bool none() const { return words[0] == 0 && words[1] == 0 && words[2] == 0; }
     bool any() const { return !none(); }
     size_t size() const { return kBitCount; }
+
+    void HashCombine(hash_util::HashCombiner& hc) const {
+        hc << words[0];
+        hc << words[1];
+        hc << words[2];
+    }
 };

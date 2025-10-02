@@ -221,6 +221,8 @@ std::string Stats::CreateReport() {
     print_access_state_stats("Subpass", access_stats.max_subpass_access_stats);
 
     ss << "\n";
+    ss << "Layout ordering barrier registry size: " << GetLayoutOrderingBarrierLookup().ObjectCount();
+    ss << "\n";
     ss << "Max last reads array size";
     ss << ": CB: " << access_stats.cb_access_stats.max_last_reads_count;
     ss << ", Queue: " << access_stats.queue_access_stats.max_last_reads_count;

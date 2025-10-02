@@ -211,22 +211,21 @@ struct ResourceFirstAccess {
 };
 
 using QueueId = uint32_t;
+
 struct OrderingBarrier {
-    VkPipelineStageFlags2 exec_scope;
+    VkPipelineStageFlags2 exec_scope = VK_PIPELINE_STAGE_2_NONE;
     SyncAccessFlags access_scope;
-    OrderingBarrier() = default;
-    OrderingBarrier(const OrderingBarrier &) = default;
-    OrderingBarrier(VkPipelineStageFlags2 es, SyncAccessFlags as) : exec_scope(es), access_scope(as) {}
-    OrderingBarrier &operator=(const OrderingBarrier &) = default;
-    OrderingBarrier &operator|=(const OrderingBarrier &rhs) {
-        exec_scope |= rhs.exec_scope;
-        access_scope |= rhs.access_scope;
-        return *this;
-    }
-    bool operator==(const OrderingBarrier &rhs) const {
-        return (exec_scope == rhs.exec_scope) && (access_scope == rhs.access_scope);
-    }
+
+    bool operator==(const OrderingBarrier &rhs) const;
+    size_t Hash() const;
 };
+
+namespace std {
+template <>
+struct hash<OrderingBarrier> {
+    size_t operator()(const OrderingBarrier &ordering_barrier) const { return ordering_barrier.Hash(); }
+};
+}  // namespace std
 
 const OrderingBarrier &GetOrderingRules(SyncOrdering ordering_enum);
 
@@ -478,7 +477,7 @@ class ResourceAccessState {
 
         const bool same = read_write_same && (first_accesses_ == rhs.first_accesses_) &&
                           (first_read_stages_ == rhs.first_read_stages_) &&
-                          (first_write_layout_ordering_ == rhs.first_write_layout_ordering_);
+                          (first_write_layout_ordering_index == rhs.first_write_layout_ordering_index);
 
         return same;
     }
@@ -535,7 +534,7 @@ class ResourceAccessState {
     using FirstAccesses = small_vector<ResourceFirstAccess, 2>;
     FirstAccesses first_accesses_;
     VkPipelineStageFlags2 first_read_stages_ = VK_PIPELINE_STAGE_2_NONE;
-    OrderingBarrier first_write_layout_ordering_;
+    uint32_t first_write_layout_ordering_index = vvl::kNoIndex32;
     bool first_access_closed_ = false;
 
     // TODO Input Attachment cleanup for multiple reads in a given stage
@@ -616,3 +615,6 @@ bool ResourceAccessState::ClearPredicatedAccesses(Predicate &predicate) {
 // This can be extended if necessary to provide BarrierScope for each barrier.
 void ApplyBarriers(ResourceAccessState &access_state, const std::vector<SyncBarrier> &barriers, bool layout_transition = false,
                    ResourceUsageTag layout_transition_tag = kInvalidTag);
+
+// Global registry of layout transition ordering barriers
+ThreadSafeLookupTable<OrderingBarrier> &GetLayoutOrderingBarrierLookup();

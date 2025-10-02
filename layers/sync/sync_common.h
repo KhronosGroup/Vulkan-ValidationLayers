@@ -91,3 +91,81 @@ class CachedInsertSet : public std::set<IntegralKey> {
     key_type entries_[kSize];
 };
 
+// The ThreadSafeLookupTable supports fast object lookup in multithreaded environment.
+// The insertions are slow. The idea is that you have relatively small amount of
+// objects and you need to put them into a container in multithreaded environment.
+// In return you get an index of the inserted object. After that initial insertion all
+// further operations are the queries and they are fast (single atomic load in addition to
+// regular vector/hashmap lookup). You can query an object given its index or you can get
+// an index of already registered object.
+template <typename ObjectType>
+class ThreadSafeLookupTable {
+  public:
+    ThreadSafeLookupTable() { std::atomic_store(&snapshot_, std::make_shared<const Snapshot>()); }
+
+    // Returns the object with the given index.
+    // The object index is from the previous call to GetOrInsert.
+    // This operation uses single atomic load.
+    ObjectType GetObject(uint32_t object_index) const {
+        auto snapshot = std::atomic_load(&snapshot_);
+        return snapshot->objects[object_index];
+    }
+
+    // Returns the index of the given object. If the object is seen for the first time, it is registered.
+    // For already registerd objects the function performs single atomic load and hash map access (fast path).
+    // In order to register new object the follow expensive operations are performed (slow path):
+    // mutex lock, repeat the search, allocate new snapshot object, copy all data from the old snapshot.
+    uint32_t GetIndexAndMaybeInsert(const ObjectType &object) {
+        //
+        // Fast path: object was already registered
+        //
+        auto snapshot = std::atomic_load(&snapshot_);
+        if (auto it = snapshot->object_to_index.find(object); it != snapshot->object_to_index.end()) {
+            return it->second;
+        }
+
+        //
+        // Slow path: register new object
+        //
+        std::unique_lock<std::mutex> lock(snapshot_mutex_);
+
+        // Search again since another thread could have registered the object just before we locked the mutex
+        snapshot = std::atomic_load(&snapshot_);
+        if (auto it = snapshot->object_to_index.find(object); it != snapshot->object_to_index.end()) {
+            return it->second;
+        }
+
+        // Create a new snapshot. Copy constructor copies data from the old snapshot.
+        // The old snapshot is not allowed to be modified (so no move).
+        auto new_snapshot = std::make_shared<Snapshot>(*snapshot);
+
+        // Add new object
+        new_snapshot->objects.emplace_back(object);
+        const uint32_t index = uint32_t(new_snapshot->objects.size()) - 1;
+        new_snapshot->object_to_index.insert(std::make_pair(object, index));
+
+        // Update snapshot holder
+        std::atomic_store(&snapshot_, std::shared_ptr<const Snapshot>(std::move(new_snapshot)));
+
+        return index;
+    }
+
+    uint32_t ObjectCount() const {
+        auto snapshot = std::atomic_load(&snapshot_);
+        return (uint32_t)snapshot->objects.size();
+    }
+
+  private:
+    struct Snapshot {
+        std::vector<ObjectType> objects;
+        vvl::unordered_map<ObjectType, uint32_t> object_to_index;
+    };
+
+    // Once snapshot is created it must never be modified (other threads can access it at any time).
+    // New objects are added by replacing entire snapshot with an updated version.
+    // TODO: C++ 20: use std::atomic<std::shared_ptr<T>. Until then we use std::atomic_load/atomic_store.
+    std::shared_ptr<const Snapshot> snapshot_;
+
+    // Locks snapshot during rare insert events
+    std::mutex snapshot_mutex_;
+};
