@@ -23,6 +23,7 @@
 #include "generated/vk_extension_helper.h"
 #include "generated/dispatch_functions.h"
 #include "chassis/chassis_modification_state.h"
+#include "gpuav/core/gpuav_constants.h"
 #include "utils/shader_utils.h"
 
 #include "gpuav/shaders/gpuav_shaders_constants.h"
@@ -1603,7 +1604,7 @@ static void GenerateStageMessage(std::ostringstream &ss, const GpuShaderInstrume
 std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(VkCommandBuffer commandBuffer, const ShaderMessageInfo &shader_info,
                                                             const InstrumentedShader *instrumented_shader,
                                                             VkPipelineBindPoint pipeline_bind_point,
-                                                            uint32_t operation_index) const {
+                                                            uint32_t action_command_index) const {
     std::ostringstream ss;
     if (!instrumented_shader || instrumented_shader->original_spirv.empty()) {
         ss << "[Internal Error] - Can't get instructions from shader_map\n";
@@ -1635,7 +1636,12 @@ std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(VkCommandBuffer comm
             assert(false);
             ss << "Unknown Pipeline Operation ";
         }
-        ss << "Index " << operation_index << '\n';
+
+        if (action_command_index == cst::invalid_index_command) {
+            ss << "Index Unknown (After " << cst::invalid_index_command << " commands, we stop tracking) \n";
+        } else {
+            ss << "Index " << action_command_index << '\n';
+        }
         ss << std::hex << std::noshowbase;
 
         if (instrumented_shader->shader_module == VK_NULL_HANDLE) {

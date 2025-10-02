@@ -67,7 +67,7 @@ class Validator : public GpuShaderInstrumentor {
 
   public:
     Validator(vvl::dispatch::Device* dev, Instance* instance_vo)
-        : BaseClass(dev, instance_vo, LayerObjectTypeGpuAssisted), indices_buffer_(*this) {}
+        : BaseClass(dev, instance_vo, LayerObjectTypeGpuAssisted), global_indices_buffer_(*this) {}
 
     // gpuav_setup.cpp
     // -------------
@@ -222,7 +222,9 @@ class Validator : public GpuShaderInstrumentor {
     std::unique_ptr<vko::DescriptorSetManager> desc_set_manager_;
 
     // This is so universally used, that we decided currently to not be in vko::SharedResourcesCache
-    vko::Buffer indices_buffer_;
+    // This is just a buffer with a uint32_t value from [0, cts::indices_count - 1] so we can update prior to an action command
+    // (draw/dispatch) to know where it came from
+    vko::Buffer global_indices_buffer_;
     uint32_t indices_buffer_alignment_ = 0;
 
   private:

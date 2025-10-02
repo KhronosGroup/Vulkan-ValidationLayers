@@ -28,6 +28,7 @@
 #include "gpuav/shaders/gpuav_error_header.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "utils/dispatch_utils.h"
+#include "utils/math_utils.h"
 
 namespace gpuav {
 
@@ -221,7 +222,7 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const L
         {glsl::kBindingInstDescriptorIndexingOOB, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
         // Buffer holding buffer device addresses
         {glsl::kBindingInstBufferDeviceAddress, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-        // Buffer holding action command index in command buffer
+        // Buffer holding action command index in command buffer (a global buffer is used)
         {glsl::kBindingInstActionIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_ALL, nullptr},
         // Buffer holding a resource index from the per command buffer command resources list
         {glsl::kBindingInstCmdResourceIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -278,22 +279,25 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const L
 
     // Create command indices buffer
     {
-        indices_buffer_alignment_ = sizeof(uint32_t) * static_cast<uint32_t>(phys_dev_props.limits.minStorageBufferOffsetAlignment);
+        const uint32_t index_size = sizeof(uint32_t);
+        indices_buffer_alignment_ = Align(index_size, (uint32_t)phys_dev_props.limits.minStorageBufferOffsetAlignment);
+
         VkBufferCreateInfo buffer_info = vku::InitStructHelper();
         buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         buffer_info.size = cst::indices_count * indices_buffer_alignment_;
         VmaAllocationCreateInfo alloc_info = {};
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
         alloc_info.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-        const bool success = indices_buffer_.Create(&buffer_info, &alloc_info);
+        const bool success = global_indices_buffer_.Create(&buffer_info, &alloc_info);
         if (!success) {
             return;
         }
 
-        auto indices_ptr = (uint32_t *)indices_buffer_.GetMappedPtr();
-
-        for (uint32_t i = 0; i < buffer_info.size / sizeof(uint32_t); ++i) {
-            indices_ptr[i] = i / (indices_buffer_alignment_ / sizeof(uint32_t));
+        uint32_t stride = indices_buffer_alignment_ / sizeof(uint32_t);
+        uint32_t *indices_ptr = (uint32_t *)global_indices_buffer_.GetMappedPtr();
+        for (uint32_t i = 0; i < cst::indices_count; ++i) {
+            const uint32_t offset = i * stride;
+            indices_ptr[offset] = i;
         }
     }
 }

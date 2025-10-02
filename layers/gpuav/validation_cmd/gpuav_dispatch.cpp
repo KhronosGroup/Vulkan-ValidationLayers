@@ -64,10 +64,6 @@ void DispatchIndirect(Validator &gpuav, const Location &loc, CommandBufferSubSta
         return;
     }
 
-    if (cb_state.max_actions_cmd_validation_reached_) {
-        return;
-    }
-
     ValidationCommandsCommon &val_cmd_common =
         cb_state.shared_resources_cache.GetOrCreate<ValidationCommandsCommon>(gpuav, cb_state, loc);
 
@@ -91,8 +87,8 @@ void DispatchIndirect(Validator &gpuav, const Location &loc, CommandBufferSubSta
 
         shader_resources.indirect_buffer_binding.info = {indirect_buffer, 0, VK_WHOLE_SIZE};
 
-        if (!BindShaderResources(validation_pipeline, gpuav, cb_state, cb_state.compute_index,
-                                 uint32_t(cb_state.command_error_loggers.size()), shader_resources)) {
+        if (!BindShaderResources(validation_pipeline, gpuav, cb_state, cb_state.compute_index, cb_state.GetErrorLoggerIndex(),
+                                 shader_resources)) {
             return;
         }
     }
@@ -105,51 +101,50 @@ void DispatchIndirect(Validator &gpuav, const Location &loc, CommandBufferSubSta
         DispatchCmdDispatch(cb_state.VkHandle(), 1, 1, 1);
     }
 
-    CommandBufferSubState::ErrorLoggerFunc error_logger = [&gpuav](const uint32_t *error_record, const Location &loc,
-                                                                   const LogObjectList &objlist, const std::vector<std::string> &) {
-        bool skip = false;
-        using namespace glsl;
+    CommandBufferSubState::ErrorLoggerFunc error_logger =
+        [&gpuav](const uint32_t *error_record, const Location &loc_with_debug_region, const LogObjectList &objlist) {
+            bool skip = false;
+            using namespace glsl;
 
-        const uint32_t error_group = error_record[kHeaderShaderIdErrorOffset] >> kErrorGroupShift;
-        if (error_group != kErrorGroupGpuPreDispatch) {
+            const uint32_t error_group = error_record[kHeaderShaderIdErrorOffset] >> kErrorGroupShift;
+            if (error_group != kErrorGroupGpuPreDispatch) {
+                return skip;
+            }
+
+            const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
+            switch (error_sub_code) {
+                case kErrorSubCodePreDispatchCountLimitX: {
+                    uint32_t count = error_record[kPreActionParamOffset_0];
+                    skip |= gpuav.LogError("VUID-VkDispatchIndirectCommand-x-00417", objlist, loc_with_debug_region,
+                                           "Indirect dispatch VkDispatchIndirectCommand::x of %" PRIu32
+                                           " would exceed maxComputeWorkGroupCount[0] limit of %" PRIu32 ".",
+                                           count, gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[0]);
+                    break;
+                }
+                case kErrorSubCodePreDispatchCountLimitY: {
+                    uint32_t count = error_record[kPreActionParamOffset_0];
+                    skip |= gpuav.LogError("VUID-VkDispatchIndirectCommand-y-00418", objlist, loc_with_debug_region,
+                                           "Indirect dispatch VkDispatchIndirectCommand::y of %" PRIu32
+                                           " would exceed maxComputeWorkGroupCount[1] limit of %" PRIu32 ".",
+                                           count, gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[1]);
+                    break;
+                }
+                case kErrorSubCodePreDispatchCountLimitZ: {
+                    uint32_t count = error_record[kPreActionParamOffset_0];
+                    skip |= gpuav.LogError("VUID-VkDispatchIndirectCommand-z-00419", objlist, loc_with_debug_region,
+                                           "Indirect dispatch VkDispatchIndirectCommand::z of %" PRIu32
+                                           " would exceed maxComputeWorkGroupCount[2] limit of %" PRIu32 ".",
+                                           count, gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[0]);
+                    break;
+                }
+                default:
+                    break;
+            }
+
             return skip;
-        }
+        };
 
-        const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
-        switch (error_sub_code) {
-            case kErrorSubCodePreDispatchCountLimitX: {
-                uint32_t count = error_record[kPreActionParamOffset_0];
-                skip |= gpuav.LogError("VUID-VkDispatchIndirectCommand-x-00417", objlist, loc,
-                                       "Indirect dispatch VkDispatchIndirectCommand::x of %" PRIu32
-                                       " would exceed maxComputeWorkGroupCount[0] limit of %" PRIu32 ".",
-                                       count, gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[0]);
-                break;
-            }
-            case kErrorSubCodePreDispatchCountLimitY: {
-                uint32_t count = error_record[kPreActionParamOffset_0];
-                skip |= gpuav.LogError("VUID-VkDispatchIndirectCommand-y-00418", objlist, loc,
-                                       "Indirect dispatch VkDispatchIndirectCommand::y of %" PRIu32
-                                       " would exceed maxComputeWorkGroupCount[1] limit of %" PRIu32 ".",
-                                       count, gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[1]);
-                break;
-            }
-            case kErrorSubCodePreDispatchCountLimitZ: {
-                uint32_t count = error_record[kPreActionParamOffset_0];
-                skip |= gpuav.LogError("VUID-VkDispatchIndirectCommand-z-00419", objlist, loc,
-                                       "Indirect dispatch VkDispatchIndirectCommand::z of %" PRIu32
-                                       " would exceed maxComputeWorkGroupCount[2] limit of %" PRIu32 ".",
-                                       count, gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[0]);
-                break;
-            }
-            default:
-                break;
-        }
-
-        return skip;
-    };
-
-    cb_state.command_error_loggers.emplace_back(
-        CommandBufferSubState::CommandErrorLogger{loc, LogObjectList{}, std::move(error_logger)});
+    cb_state.AddCommandErrorLogger(loc, LogObjectList{}, std::move(error_logger));
 }
 }  // namespace valcmd
 }  // namespace gpuav

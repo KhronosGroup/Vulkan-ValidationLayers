@@ -2268,6 +2268,149 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel7) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeGpuAVShaderDebugInfo, PostProcessingDebugLabelMultipleCommandBuffers) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorBindingPartiallyBound);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    const char *cs_source = R"glsl(
+        #version 460
+        #extension GL_EXT_samplerless_texture_functions : require
+
+        layout(set = 0, binding = 0) uniform texture2DMS BaseTextureMS;
+        layout(set = 0, binding = 1) uniform sampler BaseTextureSampler;
+        layout(set = 0, binding = 2) buffer SSBO { vec4 dummy; };
+
+        void main() {
+            dummy = texelFetch(BaseTextureMS, ivec2(0), 0); // invalid
+        }
+    )glsl";
+
+    OneOffDescriptorIndexingSet descriptor_set(
+        m_device,
+        {
+            {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT},
+            {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr, 0},
+            {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr, 0},
+        });
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView image_view = image.CreateView();
+
+    descriptor_set.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+    descriptor_set.WriteDescriptorImageInfo(1, VK_NULL_HANDLE, sampler, VK_DESCRIPTOR_TYPE_SAMPLER);
+    descriptor_set.WriteDescriptorBufferInfo(2, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    vkt::CommandBuffer cb_2_label_beginnings(*m_device, m_command_pool);
+
+    cb_2_label_beginnings.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    VkDebugUtilsLabelEXT region_0_label = vku::InitStructHelper();
+    region_0_label.pLabelName = "region_0";
+    vk::CmdBeginDebugUtilsLabelEXT(cb_2_label_beginnings, &region_0_label);
+
+    VkDebugUtilsLabelEXT region_1_label = vku::InitStructHelper();
+    region_1_label.pLabelName = "region_1";
+    vk::CmdBeginDebugUtilsLabelEXT(cb_2_label_beginnings, &region_1_label);
+
+    cb_2_label_beginnings.End();
+
+    vkt::CommandBuffer cb_4_label_ends(*m_device, m_command_pool);
+    cb_4_label_ends.Begin();
+
+    vk::CmdBindDescriptorSets(cb_4_label_ends, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdBindPipeline(cb_4_label_ends, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(cb_4_label_ends, 1, 1, 1);
+
+    vk::CmdEndDebugUtilsLabelEXT(cb_4_label_ends);
+    vk::CmdEndDebugUtilsLabelEXT(cb_4_label_ends);
+    vk::CmdEndDebugUtilsLabelEXT(cb_4_label_ends);
+    vk::CmdEndDebugUtilsLabelEXT(cb_4_label_ends);
+    cb_4_label_ends.End();
+
+    // VUID-RuntimeSpirv-samples-08726
+    m_errorMonitor->SetDesiredError("region_0::region_1::region_0::region_1");
+    m_default_queue->Submit({cb_2_label_beginnings, cb_2_label_beginnings, cb_4_label_ends});
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVShaderDebugInfo, IndirectCommandDebugLabel) {
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
+    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
+    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
+        GTEST_SKIP() << "Failed to load device profile layer.";
+    }
+
+    VkPhysicalDeviceProperties props;
+    fpvkGetOriginalPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
+    props.limits.maxComputeWorkGroupCount[0] = 2;
+    props.limits.maxComputeWorkGroupCount[1] = 2;
+    props.limits.maxComputeWorkGroupCount[2] = 2;
+    fpvkSetPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
+
+    RETURN_IF_SKIP(InitState());
+
+    vkt::Buffer indirect_buffer(*m_device, 1024, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
+    VkDispatchIndirectCommand *ptr = static_cast<VkDispatchIndirectCommand *>(indirect_buffer.Memory().Map());
+    ptr[0].x = 1;
+    ptr[0].y = 1;
+    ptr[0].z = 1;
+    ptr[1].x = 1;
+    ptr[1].y = 1;
+    ptr[1].z = 1;
+    ptr[2].x = 4;  // over
+    ptr[2].y = 2;
+    ptr[2].z = 1;
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.CreateComputePipeline();
+
+    VkDebugUtilsLabelEXT region_0_label = vku::InitStructHelper();
+    region_0_label.pLabelName = "region_0";
+    VkDebugUtilsLabelEXT region_1_label = vku::InitStructHelper();
+    region_1_label.pLabelName = "region_1";
+    VkDebugUtilsLabelEXT region_2_label = vku::InitStructHelper();
+    region_2_label.pLabelName = "region_2";
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatchIndirect(m_command_buffer, indirect_buffer, 0);
+
+    vk::CmdBeginDebugUtilsLabelEXT(m_command_buffer, &region_0_label);
+    vk::CmdDispatchIndirect(m_command_buffer, indirect_buffer, sizeof(VkDispatchIndirectCommand));
+
+    vk::CmdBeginDebugUtilsLabelEXT(m_command_buffer, &region_1_label);
+    vk::CmdDispatchIndirect(m_command_buffer, indirect_buffer, sizeof(VkDispatchIndirectCommand) * 2);  // bad
+
+    vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
+    vk::CmdBeginDebugUtilsLabelEXT(m_command_buffer, &region_2_label);
+    vk::CmdDispatchIndirect(m_command_buffer, indirect_buffer, 0);
+    vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
+    vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
+    m_command_buffer.End();
+
+    // VUID-VkDispatchIndirectCommand-x-00417
+    m_errorMonitor->SetDesiredError("Debug region: region_0::region_1");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeGpuAVShaderDebugInfo, ShaderInternalId) {
     TEST_DESCRIPTION("Make sure we print the shader id used internally correctly");
     RETURN_IF_SKIP(InitGpuAvFramework());
@@ -2646,6 +2789,97 @@ float4 main() : SV_Target {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("bad_code.slang:8:5\n\n8:     color += x.Sample(s, float3(0.0f, 0.0f, 0.0f));");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVShaderDebugInfo, ReachMaxActionsCommandValidationLimitUnknown) {
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    const char *cs_source = R"glsl(
+        #version 450
+
+        layout(set = 0, binding = 0) buffer foo {
+            uint x[32];
+        };
+
+        void main() {
+            x[31] = 0;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.CreateComputePipeline();
+
+    CreateComputePipelineHelper pipe_empty(*this);
+    pipe_empty.CreateComputePipeline();
+
+    vkt::Buffer buffer(*m_device, 8, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_empty);
+    for (int i = 0; i < 20000; ++i) {
+        vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    }
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    // VUID-vkCmdDispatch-storageBuffers-06936
+    m_errorMonitor->SetDesiredError("Compute Dispatch Index Unknown");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVShaderDebugInfo, ReachMaxErrorLoggerLimitUnkown) {
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
+    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
+    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
+        GTEST_SKIP() << "Failed to load device profile layer.";
+    }
+
+    VkPhysicalDeviceProperties props;
+    fpvkGetOriginalPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
+    props.limits.maxComputeWorkGroupCount[0] = 2;
+    props.limits.maxComputeWorkGroupCount[1] = 2;
+    props.limits.maxComputeWorkGroupCount[2] = 2;
+    fpvkSetPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
+
+    RETURN_IF_SKIP(InitState());
+
+    vkt::Buffer indirect_buffer(*m_device, 1024, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
+    VkDispatchIndirectCommand *ptr = static_cast<VkDispatchIndirectCommand *>(indirect_buffer.Memory().Map());
+    ptr[0].x = 1;
+    ptr[0].y = 1;
+    ptr[0].z = 1;
+    ptr[1].x = 4;  // over
+    ptr[1].y = 2;
+    ptr[1].z = 1;
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    for (int i = 0; i < 10000; ++i) {
+        vk::CmdDispatchIndirect(m_command_buffer, indirect_buffer, 0);
+    }
+
+    vk::CmdDispatchIndirect(m_command_buffer, indirect_buffer, sizeof(VkDispatchIndirectCommand));  // bad
+    m_command_buffer.End();
+
+    // VUID-VkDispatchIndirectCommand-x-00417
+    m_errorMonitor->SetDesiredError("GPUAV-Oveflow-Unknown");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }

@@ -50,10 +50,6 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
         return;
     }
 
-    if (cb_state.max_actions_cmd_validation_reached_) {
-        return;
-    }
-
     valpipe::RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
 
     ValidationCommandsCommon& val_cmd_common =
@@ -89,8 +85,8 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
         shader_resources.push_constants.max_ray_dispatch_invocation_count =
             gpuav.phys_dev_ext_props.ray_tracing_props_khr.maxRayDispatchInvocationCount;
 
-        if (!BindShaderResources(validation_pipeline, gpuav, cb_state, cb_state.compute_index,
-                                 uint32_t(cb_state.command_error_loggers.size()), shader_resources)) {
+        if (!BindShaderResources(validation_pipeline, gpuav, cb_state, cb_state.compute_index, cb_state.GetErrorLoggerIndex(),
+                                 shader_resources)) {
             return;
         }
     }
@@ -103,8 +99,9 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
         DispatchCmdDispatch(cb_state.VkHandle(), 1, 1, 1);
     }
 
-    CommandBufferSubState::ErrorLoggerFunc error_logger = [&gpuav](const uint32_t* error_record, const Location& loc,
-                                                                   const LogObjectList& objlist, const std::vector<std::string>&) {
+    CommandBufferSubState::ErrorLoggerFunc error_logger = [&gpuav](const uint32_t* error_record,
+                                                                   const Location& loc_with_debug_region,
+                                                                   const LogObjectList& objlist) {
         bool skip = false;
         using namespace glsl;
 
@@ -117,7 +114,7 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
         switch (error_sub_code) {
             case kErrorSubCodePreTraceRaysLimitWidth: {
                 const uint32_t width = error_record[kPreActionParamOffset_0];
-                skip |= gpuav.LogError("VUID-VkTraceRaysIndirectCommandKHR-width-03638", objlist, loc,
+                skip |= gpuav.LogError("VUID-VkTraceRaysIndirectCommandKHR-width-03638", objlist, loc_with_debug_region,
                                        "Indirect trace rays of VkTraceRaysIndirectCommandKHR::width of %" PRIu32
                                        " would exceed VkPhysicalDeviceLimits::maxComputeWorkGroupCount[0] * "
                                        "VkPhysicalDeviceLimits::maxComputeWorkGroupSize[0] limit of %" PRIu64 ".",
@@ -128,7 +125,7 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
             }
             case kErrorSubCodePreTraceRaysLimitHeight: {
                 const uint32_t height = error_record[kPreActionParamOffset_0];
-                skip |= gpuav.LogError("VUID-VkTraceRaysIndirectCommandKHR-height-03639", objlist, loc,
+                skip |= gpuav.LogError("VUID-VkTraceRaysIndirectCommandKHR-height-03639", objlist, loc_with_debug_region,
                                        "Indirect trace rays of VkTraceRaysIndirectCommandKHR::height of %" PRIu32
                                        " would exceed VkPhysicalDeviceLimits::maxComputeWorkGroupCount[1] * "
                                        "VkPhysicalDeviceLimits::maxComputeWorkGroupSize[1] limit of %" PRIu64 ".",
@@ -139,7 +136,7 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
             }
             case kErrorSubCodePreTraceRaysLimitDepth: {
                 const uint32_t depth = error_record[kPreActionParamOffset_0];
-                skip |= gpuav.LogError("VUID-VkTraceRaysIndirectCommandKHR-depth-03640", objlist, loc,
+                skip |= gpuav.LogError("VUID-VkTraceRaysIndirectCommandKHR-depth-03640", objlist, loc_with_debug_region,
                                        "Indirect trace rays of VkTraceRaysIndirectCommandKHR::height of %" PRIu32
                                        " would exceed VkPhysicalDeviceLimits::maxComputeWorkGroupCount[2] * "
                                        "VkPhysicalDeviceLimits::maxComputeWorkGroupSize[2] limit of %" PRIu64 ".",
@@ -153,7 +150,7 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
                                                       error_record[kPreActionParamOffset_2]};
                 const uint64_t rays_volume = trace_rays_extent.width * trace_rays_extent.height * trace_rays_extent.depth;
                 skip |= gpuav.LogError(
-                    "VUID-VkTraceRaysIndirectCommandKHR-width-03641", objlist, loc,
+                    "VUID-VkTraceRaysIndirectCommandKHR-width-03641", objlist, loc_with_debug_region,
                     "Indirect trace rays of volume %" PRIu64
                     " (%s) would exceed VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxRayDispatchInvocationCount "
                     "limit of %" PRIu32 ".",
@@ -168,8 +165,7 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
         return skip;
     };
 
-    cb_state.command_error_loggers.emplace_back(
-        CommandBufferSubState::CommandErrorLogger{loc, LogObjectList{}, std::move(error_logger)});
+    cb_state.AddCommandErrorLogger(loc, LogObjectList{}, std::move(error_logger));
 }
 }  // namespace valcmd
 }  // namespace gpuav

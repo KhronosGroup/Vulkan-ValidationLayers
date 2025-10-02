@@ -263,12 +263,10 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
                     context.SetSetIndexForGpuAv(resource_variable->decorations.set);
 
                     const CommandBufferSubState::CommandErrorLogger& cmd_error_logger =
-                        cb.command_error_loggers[descriptor_access.error_logger_i];
+                        cb.GetErrorLogger(descriptor_access.error_logger_i);
                     context.SetObjlistForGpuAv(&cmd_error_logger.objlist);
-                    std::string debug_region_name;
-                    if (cmd_error_logger.label_cmd_i >= 0) {
-                        debug_region_name = cb.GetDebugLabelRegion(cmd_error_logger.label_cmd_i, label_logging.initial_label_stack);
-                    }
+                    std::string debug_region_name =
+                        cb.GetDebugLabelRegion(cmd_error_logger.label_cmd_i, label_logging.initial_label_stack);
 
                     Location access_loc(cmd_error_logger.loc.Get(), debug_region_name);
                     context.SetLocationForGpuAv(access_loc);

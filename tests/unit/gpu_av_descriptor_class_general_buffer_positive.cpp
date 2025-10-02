@@ -1583,3 +1583,71 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, InternalPipelineLayoutSelectio
 
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
+
+TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ReachMaxActionsCommandValidationLimit) {
+    TEST_DESCRIPTION(
+        "Within a single command buffer, add a number of draws that goes above the cst::indices_count GPU-AV limit. "
+        "Expect a warning.");
+    AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::nullDescriptor);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+    vkt::Buffer offset_buffer(*m_device, 4, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+    vkt::Buffer write_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    vkt::Buffer storage_texel_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, kHostVisibleMemProps);
+    vkt::BufferView storage_buffer_view(*m_device, storage_texel_buffer, VK_FORMAT_R32_SFLOAT);
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {3, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorBufferInfo(0, offset_buffer, 0, 4);
+    descriptor_set.WriteDescriptorBufferInfo(1, write_buffer, 0, 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.WriteDescriptorBufferInfo(2, VK_NULL_HANDLE, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.WriteDescriptorBufferView(3, storage_buffer_view, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+    const char vs_source[] = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform ufoo { uint index[]; } u_index;      // index[1]
+        layout(set = 0, binding = 1) buffer StorageBuffer { uint data[]; } Data;  // data[4]
+        layout(set = 0, binding = 2) buffer NullBuffer { uint data[]; } Null;     // VK_NULL_HANDLE
+        layout(set = 0, binding = 3, r32f) uniform imageBuffer s_buffer;          // texel_buffer[4]
+        void main() {
+            vec4 x;
+            if (u_index.index[0] == 1) {
+                Data.data[0] = Null.data[40]; // won't crash with nullDescriptor
+            } else if (u_index.index[0] == 2) {
+                imageStore(s_buffer, 0, x);
+            } else if (u_index.index[0] == 3) {
+                x = imageLoad(s_buffer, 0);
+            }
+        }
+        )glsl";
+
+    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_[0] = vs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pipeline_layout;
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    for (uint32_t i = 0; i < 10'000; ++i) {
+        vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    }
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    uint32_t *data = (uint32_t *)offset_buffer.Memory().Map();
+    *data = 1;
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}

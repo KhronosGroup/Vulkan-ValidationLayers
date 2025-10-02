@@ -110,7 +110,7 @@ const int kInstructionIdMask = 0x7FFFFFF;
 // This dword is split up as
 // | 31 ..... 16 | 15 ................. 0 |
 // | Error Group | Instrumented Shader Id |
-// Note we have a limit (kMaxActionsPerCommandBuffer) but for simplicity, divide in half until find need to adjust.
+// Note we have a limit (cst::indices_count) but for simplicity, divide in half until find need to adjust.
 const int kActionIdShift = 16;
 const int kActionIdMask = 0xFFFF << kActionIdShift;  // 64k slot
 const int kErrorLoggerIdMask = 0xFFFF;

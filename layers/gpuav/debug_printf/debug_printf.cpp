@@ -417,7 +417,8 @@ void RegisterDebugPrintf(Validator &gpuav, CommandBufferSubState &cb_state) {
             out_dst_binding = glsl::kBindingInstDebugPrintf;
 
             DebugPrintfCbState &debug_printf_cb_state = cb.shared_resources_cache.GetOrCreate<DebugPrintfCbState>();
-            debug_printf_cb_state.buffer_infos.emplace_back(debug_printf_output_buffer, bind_point, cb.action_command_count);
+            debug_printf_cb_state.buffer_infos.emplace_back(debug_printf_output_buffer, bind_point,
+                                                            cb.GetActionCommandIndex(bind_point));
         });
 
     cb_state.on_cb_completion_functions.emplace_back([](Validator &gpuav, CommandBufferSubState &cb,
