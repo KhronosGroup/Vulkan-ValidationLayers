@@ -86,20 +86,20 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
 
         if (modified_features) {
             if (supported_features.fragmentStoresAndAtomics && !modified_features->fragmentStoresAndAtomics) {
-                InternalWarning(kNoObjects, loc, "Forcing fragmentStoresAndAtomics to VK_TRUE");
+                AdjustmentWarning(kNoObjects, loc, "Forcing fragmentStoresAndAtomics to VK_TRUE");
                 modified_features->fragmentStoresAndAtomics = VK_TRUE;
             }
             if (supported_features.vertexPipelineStoresAndAtomics && !modified_features->vertexPipelineStoresAndAtomics) {
-                InternalWarning(kNoObjects, loc, "Forcing vertexPipelineStoresAndAtomics to VK_TRUE");
+                AdjustmentWarning(kNoObjects, loc, "Forcing vertexPipelineStoresAndAtomics to VK_TRUE");
                 modified_features->vertexPipelineStoresAndAtomics = VK_TRUE;
             }
             if (supported_features.shaderInt64 && !modified_features->shaderInt64) {
-                InternalWarning(kNoObjects, loc, "Forcing shaderInt64 to VK_TRUE");
+                AdjustmentWarning(kNoObjects, loc, "Forcing shaderInt64 to VK_TRUE");
                 modified_features->shaderInt64 = VK_TRUE;
             }
             if (gpuav_settings.force_on_robustness && supported_features.robustBufferAccess &&
                 !modified_features->robustBufferAccess) {
-                InternalWarning(kNoObjects, loc, "Forcing robustBufferAccess to VK_TRUE");
+                AdjustmentWarning(kNoObjects, loc, "Forcing robustBufferAccess to VK_TRUE");
                 modified_features->robustBufferAccess = VK_TRUE;
             }
         }
@@ -113,12 +113,12 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
             if (auto *ts_features = const_cast<VkPhysicalDeviceTimelineSemaphoreFeatures *>(
                     vku::FindStructInPNextChain<VkPhysicalDeviceTimelineSemaphoreFeatures>(modified_create_info))) {
                 if (ts_features->timelineSemaphore == VK_FALSE) {
-                    InternalWarning(kNoObjects, loc,
-                                    "Forcing VkPhysicalDeviceTimelineSemaphoreFeatures::timelineSemaphore to VK_TRUE");
+                    AdjustmentWarning(kNoObjects, loc,
+                                      "Forcing VkPhysicalDeviceTimelineSemaphoreFeatures::timelineSemaphore to VK_TRUE");
                     ts_features->timelineSemaphore = VK_TRUE;
                 }
             } else {
-                InternalWarning(
+                AdjustmentWarning(
                     kNoObjects, loc,
                     "Adding a VkPhysicalDeviceTimelineSemaphoreFeatures to pNext with timelineSemaphore set to VK_TRUE");
                 VkPhysicalDeviceTimelineSemaphoreFeatures new_ts_features = vku::InitStructHelper();
@@ -131,7 +131,7 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
             if (auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
                     vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext))) {
                 if (features12->timelineSemaphore == VK_FALSE) {
-                    InternalWarning(kNoObjects, loc, "Forcing VkPhysicalDeviceVulkan12Features::timelineSemaphore to VK_TRUE");
+                    AdjustmentWarning(kNoObjects, loc, "Forcing VkPhysicalDeviceVulkan12Features::timelineSemaphore to VK_TRUE");
                     features12->timelineSemaphore = VK_TRUE;
                 }
             } else {
@@ -150,19 +150,19 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
             if (auto *mm_features = const_cast<VkPhysicalDeviceVulkanMemoryModelFeatures *>(
                     vku::FindStructInPNextChain<VkPhysicalDeviceVulkanMemoryModelFeatures>(modified_create_info))) {
                 if (mm_features->vulkanMemoryModel == VK_FALSE) {
-                    InternalWarning(kNoObjects, loc,
-                                    "Forcing VkPhysicalDeviceVulkanMemoryModelFeatures::vulkanMemoryModel to VK_TRUE");
+                    AdjustmentWarning(kNoObjects, loc,
+                                      "Forcing VkPhysicalDeviceVulkanMemoryModelFeatures::vulkanMemoryModel to VK_TRUE");
                     mm_features->vulkanMemoryModel = VK_TRUE;
                 }
                 if (mm_features->vulkanMemoryModelDeviceScope == VK_FALSE) {
-                    InternalWarning(kNoObjects, loc,
-                                    "Forcing VkPhysicalDeviceVulkanMemoryModelFeatures::vulkanMemoryModelDeviceScope to VK_TRUE");
+                    AdjustmentWarning(kNoObjects, loc,
+                                      "Forcing VkPhysicalDeviceVulkanMemoryModelFeatures::vulkanMemoryModelDeviceScope to VK_TRUE");
                     mm_features->vulkanMemoryModelDeviceScope = VK_TRUE;
                 }
             } else {
-                InternalWarning(kNoObjects, loc,
-                                "Adding a VkPhysicalDeviceVulkanMemoryModelFeatures to pNext with vulkanMemoryModel and "
-                                "vulkanMemoryModelDeviceScope set to VK_TRUE");
+                AdjustmentWarning(kNoObjects, loc,
+                                  "Adding a VkPhysicalDeviceVulkanMemoryModelFeatures to pNext with vulkanMemoryModel and "
+                                  "vulkanMemoryModelDeviceScope set to VK_TRUE");
                 VkPhysicalDeviceVulkanMemoryModelFeatures new_mm_features = vku::InitStructHelper();
                 new_mm_features.vulkanMemoryModel = VK_TRUE;
                 new_mm_features.vulkanMemoryModelDeviceScope = VK_TRUE;
@@ -174,12 +174,12 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
             if (auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
                     vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext))) {
                 if (features12->vulkanMemoryModel == VK_FALSE) {
-                    InternalWarning(kNoObjects, loc, "Forcing VkPhysicalDeviceVulkan12Features::vulkanMemoryModel to VK_TRUE");
+                    AdjustmentWarning(kNoObjects, loc, "Forcing VkPhysicalDeviceVulkan12Features::vulkanMemoryModel to VK_TRUE");
                     features12->vulkanMemoryModel = VK_TRUE;
                 }
                 if (features12->vulkanMemoryModelDeviceScope == VK_FALSE) {
-                    InternalWarning(kNoObjects, loc,
-                                    "Forcing VkPhysicalDeviceVulkan12Features::vulkanMemoryModelDeviceScope to VK_TRUE");
+                    AdjustmentWarning(kNoObjects, loc,
+                                      "Forcing VkPhysicalDeviceVulkan12Features::vulkanMemoryModelDeviceScope to VK_TRUE");
                     features12->vulkanMemoryModelDeviceScope = VK_TRUE;
                 }
             } else {
@@ -198,12 +198,12 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
             if (auto *bda_features = const_cast<VkPhysicalDeviceBufferDeviceAddressFeatures *>(
                     vku::FindStructInPNextChain<VkPhysicalDeviceBufferDeviceAddressFeatures>(modified_create_info))) {
                 if (!bda_features->bufferDeviceAddress) {
-                    InternalWarning(kNoObjects, loc,
-                                    "Forcing VkPhysicalDeviceBufferDeviceAddressFeatures::bufferDeviceAddress to VK_TRUE");
+                    AdjustmentWarning(kNoObjects, loc,
+                                      "Forcing VkPhysicalDeviceBufferDeviceAddressFeatures::bufferDeviceAddress to VK_TRUE");
                     bda_features->bufferDeviceAddress = VK_TRUE;
                 }
             } else {
-                InternalWarning(
+                AdjustmentWarning(
                     kNoObjects, loc,
                     "Adding a VkPhysicalDeviceBufferDeviceAddressFeatures to pNext with bufferDeviceAddress set to VK_TRUE");
                 VkPhysicalDeviceBufferDeviceAddressFeatures new_bda_features = vku::InitStructHelper();
@@ -216,7 +216,7 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
             if (auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
                     vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext))) {
                 if (!features12->bufferDeviceAddress) {
-                    InternalWarning(kNoObjects, loc, "Forcing VkPhysicalDeviceVulkan12Features::bufferDeviceAddress to VK_TRUE");
+                    AdjustmentWarning(kNoObjects, loc, "Forcing VkPhysicalDeviceVulkan12Features::bufferDeviceAddress to VK_TRUE");
                     features12->bufferDeviceAddress = VK_TRUE;
                 }
             } else {
@@ -234,12 +234,12 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
             if (auto *bda_features = const_cast<VkPhysicalDeviceScalarBlockLayoutFeatures *>(
                     vku::FindStructInPNextChain<VkPhysicalDeviceScalarBlockLayoutFeatures>(modified_create_info))) {
                 if (!bda_features->scalarBlockLayout) {
-                    InternalWarning(kNoObjects, loc,
-                                    "Forcing VkPhysicalDeviceScalarBlockLayoutFeatures::scalarBlockLayout to VK_TRUE");
+                    AdjustmentWarning(kNoObjects, loc,
+                                      "Forcing VkPhysicalDeviceScalarBlockLayoutFeatures::scalarBlockLayout to VK_TRUE");
                     bda_features->scalarBlockLayout = VK_TRUE;
                 }
             } else {
-                InternalWarning(
+                AdjustmentWarning(
                     kNoObjects, loc,
                     "Adding a VkPhysicalDeviceScalarBlockLayoutFeatures to pNext with scalarBlockLayout set to VK_TRUE");
                 VkPhysicalDeviceScalarBlockLayoutFeatures new_bda_features = vku::InitStructHelper();
@@ -252,7 +252,7 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
             if (auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
                     vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext))) {
                 if (!features12->scalarBlockLayout) {
-                    InternalWarning(kNoObjects, loc, "Forcing VkPhysicalDeviceVulkan12Features::scalarBlockLayout to VK_TRUE");
+                    AdjustmentWarning(kNoObjects, loc, "Forcing VkPhysicalDeviceVulkan12Features::scalarBlockLayout to VK_TRUE");
                     features12->scalarBlockLayout = VK_TRUE;
                 }
             } else {
@@ -271,14 +271,14 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
             if (auto *eight_bit_access_feature = const_cast<VkPhysicalDevice8BitStorageFeatures *>(
                     vku::FindStructInPNextChain<VkPhysicalDevice8BitStorageFeatures>(modified_create_info))) {
                 if (!eight_bit_access_feature->storageBuffer8BitAccess) {
-                    InternalWarning(kNoObjects, loc,
-                                    "Forcing VkPhysicalDevice8BitStorageFeatures::storageBuffer8BitAccess to VK_TRUE");
+                    AdjustmentWarning(kNoObjects, loc,
+                                      "Forcing VkPhysicalDevice8BitStorageFeatures::storageBuffer8BitAccess to VK_TRUE");
                     eight_bit_access_feature->storageBuffer8BitAccess = VK_TRUE;
                 }
             } else {
-                InternalWarning(kNoObjects, loc,
-                                "Adding a VkPhysicalDevice8BitStorageFeatures to pNext with storageBuffer8BitAccess "
-                                "set to VK_TRUE");
+                AdjustmentWarning(kNoObjects, loc,
+                                  "Adding a VkPhysicalDevice8BitStorageFeatures to pNext with storageBuffer8BitAccess "
+                                  "set to VK_TRUE");
                 VkPhysicalDevice8BitStorageFeatures new_8bit_features = vku::InitStructHelper();
                 new_8bit_features.storageBuffer8BitAccess = VK_TRUE;
                 vku::AddToPnext(*modified_create_info, new_8bit_features);
@@ -289,8 +289,8 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
             if (auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
                     vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext))) {
                 if (!features12->storageBuffer8BitAccess) {
-                    InternalWarning(kNoObjects, loc,
-                                    "Forcing VkPhysicalDeviceVulkan12Features::storageBuffer8BitAccess to VK_TRUE");
+                    AdjustmentWarning(kNoObjects, loc,
+                                      "Forcing VkPhysicalDeviceVulkan12Features::storageBuffer8BitAccess to VK_TRUE");
                     features12->storageBuffer8BitAccess = VK_TRUE;
                 }
             } else {
@@ -328,25 +328,25 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
             if (auto *robust_buffer_2_feature = const_cast<VkPhysicalDeviceRobustness2FeaturesKHR *>(
                     vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesKHR>(modified_create_info))) {
                 if (!robust_buffer_2_feature->robustBufferAccess2 && supported_robustness2_feature.robustBufferAccess2) {
-                    InternalWarning(kNoObjects, loc,
-                                    "Forcing VkPhysicalDeviceRobustness2FeaturesKHR::robustBufferAccess2 to VK_TRUE");
+                    AdjustmentWarning(kNoObjects, loc,
+                                      "Forcing VkPhysicalDeviceRobustness2FeaturesKHR::robustBufferAccess2 to VK_TRUE");
                     robust_buffer_2_feature->robustBufferAccess2 = VK_TRUE;
                 }
                 if (!robust_buffer_2_feature->robustImageAccess2 && supported_robustness2_feature.robustImageAccess2) {
-                    InternalWarning(kNoObjects, loc,
-                                    "Forcing VkPhysicalDeviceRobustness2FeaturesKHR::robustImageAccess2 to VK_TRUE");
+                    AdjustmentWarning(kNoObjects, loc,
+                                      "Forcing VkPhysicalDeviceRobustness2FeaturesKHR::robustImageAccess2 to VK_TRUE");
                     robust_buffer_2_feature->robustImageAccess2 = VK_TRUE;
                 }
             } else {
                 VkPhysicalDeviceRobustness2FeaturesKHR new_robust_buffer_2_feature = vku::InitStructHelper();
                 if (supported_robustness2_feature.robustBufferAccess2) {
-                    InternalWarning(
+                    AdjustmentWarning(
                         kNoObjects, loc,
                         "Adding a VkPhysicalDeviceRobustness2FeaturesKHR to pNext with robustBufferAccess2 set to VK_TRUE");
                     new_robust_buffer_2_feature.robustBufferAccess2 = VK_TRUE;
                 }
                 if (supported_robustness2_feature.robustImageAccess2) {
-                    InternalWarning(
+                    AdjustmentWarning(
                         kNoObjects, loc,
                         "Adding a VkPhysicalDeviceRobustness2FeaturesKHR to pNext with robustImageAccess2 set to VK_TRUE");
                     new_robust_buffer_2_feature.robustImageAccess2 = VK_TRUE;

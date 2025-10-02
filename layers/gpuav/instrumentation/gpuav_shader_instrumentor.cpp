@@ -304,10 +304,11 @@ void GpuShaderInstrumentor::PreCallRecordGetShaderBinaryDataEXT(VkDevice device,
 
     // Only warn on the first call to query the size
     if (pData == nullptr) {
-        LogWarning("WARNING-vkGetShaderBinaryDataEXT-GPU-AV", shader, record_obj.location,
-                   "GPU-AV instruments all shaders at vkCreateShadersEXT time, this means there are embedded descriptors bound "
-                   "that we can't detect if needed or not later.\nWe will be calling vkCreateShadersEXT again now to create the "
-                   "original shader to pass down to the drivere.");
+        InternalWarning(
+            shader, record_obj.location,
+            "GPU-AV instruments all shaders at vkCreateShadersEXT time, this means there are embedded descriptors bound "
+            "that we can't detect if needed or not later.\nWe will be calling vkCreateShadersEXT again now to create the "
+            "original shader to pass down to the drivere.");
     }
 
     // vkGetShaderBinaryDataEXT will be called twice, only need to re-created once
@@ -1480,6 +1481,13 @@ void GpuShaderInstrumentor::InternalError(LogObjectList objlist, const Location 
     // This prevents need to check "if (aborted)" (which is awful when we easily forget to check somewhere and the user gets spammed
     // with errors making it hard to see the first error with the real source of the problem).
     dispatch_device_->ReleaseValidationObject(LayerObjectTypeGpuAssisted);
+}
+
+// Dedicated warning VUID that likely can be ignored. We want to always warn the user when adjusting settings/limits/features/etc on
+// them
+void GpuShaderInstrumentor::AdjustmentWarning(LogObjectList objlist, const Location &loc,
+                                              const char *const specific_message) const {
+    LogWarning("WARNING-Setting-Limit-Adjusted", objlist, loc, "Internal Warning: %s", specific_message);
 }
 
 void GpuShaderInstrumentor::InternalWarning(LogObjectList objlist, const Location &loc, const char *const specific_message) const {

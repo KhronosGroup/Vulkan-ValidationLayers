@@ -149,6 +149,7 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
 
     void InternalError(LogObjectList objlist, const Location &loc, const char *const specific_message) const;
     void InternalWarning(LogObjectList objlist, const Location &loc, const char *const specific_message) const;
+    void AdjustmentWarning(LogObjectList objlist, const Location &loc, const char *const specific_message) const;
     void InternalInfo(LogObjectList objlist, const Location &loc, const char *const specific_message) const;
 
     bool IsSelectiveInstrumentationEnabled(const void *pNext);
