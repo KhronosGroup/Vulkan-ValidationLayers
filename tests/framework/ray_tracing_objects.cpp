@@ -494,7 +494,7 @@ BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetIndirectDeviceAddress(std::option
 
 void BuildGeometryInfoKHR::BuildCmdBuffer(VkCommandBuffer cmd_buffer, bool use_ppGeometries /*= true*/) {
     SetupBuild(true);
-    VkCmdBuildAccelerationStructuresKHR(cmd_buffer, true);
+    VkCmdBuildAccelerationStructuresKHR(cmd_buffer, use_ppGeometries);
 }
 
 void BuildGeometryInfoKHR::BuildCmdBufferIndirect(VkCommandBuffer cmd_buffer) {
