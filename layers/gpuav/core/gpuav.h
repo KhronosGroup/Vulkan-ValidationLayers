@@ -54,6 +54,7 @@ class Instance : public vvl::InstanceProxy {
                                                     const RecordObject& record_obj) final;
 
     void InternalWarning(LogObjectList objlist, const Location& loc, const char* const specific_message) const;
+    void AdjustmentWarning(LogObjectList objlist, const Location& loc, const char* const specific_message) const;
     void AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceCreateInfo* modified_create_info, const Location& loc);
     bool timeline_khr_{false};
 };

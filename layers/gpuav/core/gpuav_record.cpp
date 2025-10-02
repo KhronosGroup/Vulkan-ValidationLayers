@@ -81,6 +81,12 @@ void Validator::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, c
     debug_printf::RegisterDebugPrintf(*this, gpuav_cb_state);
 }
 
+// Dedicated warning VUID that likely can be ignored. We want to always warn the user when adjusting settings/limits/features/etc on
+// them
+void Instance::AdjustmentWarning(LogObjectList objlist, const Location &loc, const char *const specific_message) const {
+    LogWarning("WARNING-Setting-Limit-Adjusted", objlist, loc, "Internal Warning: %s", specific_message);
+}
+
 void Instance::InternalWarning(LogObjectList objlist, const Location &loc, const char *const specific_message) const {
     const char *vuid = gpuav_settings.debug_printf_only ? "WARNING-DEBUG-PRINTF" : "WARNING-GPU-Assisted-Validation";
     LogWarning(vuid, objlist, loc, "Internal Warning: %s", specific_message);
@@ -122,7 +128,7 @@ void Instance::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physi
         std::stringstream ss;
         ss << "Setting VkPhysicalDeviceDescriptorIndexingProperties::maxUpdateAfterBindDescriptorsInAllPools to "
            << glsl::kDebugInputBindlessMaxDescriptors;
-        InternalWarning(physicalDevice, record_obj.location, ss.str().c_str());
+        AdjustmentWarning(physicalDevice, record_obj.location, ss.str().c_str());
         desc_indexing_props->maxUpdateAfterBindDescriptorsInAllPools = glsl::kDebugInputBindlessMaxDescriptors;
     }
 
@@ -131,7 +137,7 @@ void Instance::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physi
         std::stringstream ss;
         ss << "Setting VkPhysicalDeviceVulkan12Properties::maxUpdateAfterBindDescriptorsInAllPools to "
            << glsl::kDebugInputBindlessMaxDescriptors;
-        InternalWarning(physicalDevice, record_obj.location, ss.str().c_str());
+        AdjustmentWarning(physicalDevice, record_obj.location, ss.str().c_str());
         vk12_props->maxUpdateAfterBindDescriptorsInAllPools = glsl::kDebugInputBindlessMaxDescriptors;
     }
 
