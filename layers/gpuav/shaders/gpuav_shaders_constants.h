@@ -140,8 +140,10 @@ const uint kShaderIdMask = 0x3FFFF;
 //
 // We make some assumptions from profiling that we can maintain these limits and squeeze all this information in a single dword
 // these values are asserted for and can be adjusted if we edge cases that matter
-const uint kMaxActionsPerCommandBuffer = 1u << 13;  // 8,192
-// We use a single bit mark if this descriptor was accessed or not
+//
+// cst::indices_count is set at 1u << 13 (8192) used to set the action cmd index
+//
+// // We use a single bit mark if this descriptor was accessed or not
 const uint kPostProcessMetaMaskAccessed = 1u << 31;
 const uint kPostProcessMetaShiftErrorLoggerIndex = 18;
 const uint kPostProcessMetaMaskErrorLoggerIndex = 0x1FFF << kPostProcessMetaShiftErrorLoggerIndex;

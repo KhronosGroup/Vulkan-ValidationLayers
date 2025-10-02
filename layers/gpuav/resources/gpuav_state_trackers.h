@@ -71,11 +71,11 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     vko::SharedResourcesCache shared_resources_cache;
 
     // Used to track which spot in the command buffer the error came from
-    bool max_actions_cmd_validation_reached_ = false;
     uint32_t draw_index = 0;
     uint32_t compute_index = 0;
     uint32_t trace_rays_index = 0;
-    uint32_t action_command_count = 0;
+    uint32_t GetActionCommandIndex(VkPipelineBindPoint bind_point) const;
+    void IncrementActionCommandCount(VkPipelineBindPoint bind_point, const Location &loc);
 
     std::vector<PushConstantData> push_constant_data_chunks;
     std::array<VkPipelineLayout, vvl::BindPointCount> push_constant_latest_used_layout{};
@@ -104,8 +104,6 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
         return cmd_errors_counts_buffer_.VkHandle();
     }
 
-    void IncrementCommandCount(VkPipelineBindPoint bind_point, const Location &loc);
-
     std::string GetDebugLabelRegion(uint32_t label_command_i, const std::vector<std::string> &initial_label_stack) const;
 
     void Destroy() final;
@@ -125,16 +123,18 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
     // Using stdext::inplace_function over std::function to allocate memory in place
     using ErrorLoggerFunc =
-        stdext::inplace_function<bool(const uint32_t *error_record, const Location &loc, const LogObjectList &objlist,
-                                      const std::vector<std::string> &initial_label_stack),
-                                 288 /*lambda storage size (bytes), large enough to store biggest error lambda*/>;
+        stdext::inplace_function<bool(const uint32_t *error_record, const Location &loc_with_debug_region,
+                                      const LogObjectList &objlist),
+                                 248 /*lambda storage size (bytes), large enough to store biggest error lambda*/>;
     struct CommandErrorLogger {
         vvl::LocationCapture loc;
         LogObjectList objlist;
         ErrorLoggerFunc error_logger_func;
-        int32_t label_cmd_i = -1;
+        uint32_t label_cmd_i;
     };
-    std::vector<CommandErrorLogger> command_error_loggers;
+    void AddCommandErrorLogger(const Location &loc, const LogObjectList &objlist, ErrorLoggerFunc error_logger_func);
+    uint32_t GetErrorLoggerIndex() { return (uint32_t)command_error_loggers_.size(); }
+    const CommandErrorLogger &GetErrorLogger(uint32_t i) { return command_error_loggers_[i]; }
 
     // Buffer storing GPU-AV errors
     vko::BufferRange error_output_buffer_range_;
@@ -149,6 +149,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
     Validator &gpuav_;
     VkDescriptorSetLayout instrumentation_desc_set_layout_ = VK_NULL_HANDLE;
+    std::vector<CommandErrorLogger> command_error_loggers_;
 };
 
 static inline CommandBufferSubState &SubState(vvl::CommandBuffer &cb) {

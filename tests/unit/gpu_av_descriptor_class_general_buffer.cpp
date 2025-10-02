@@ -25,73 +25,84 @@ class NegativeGpuAVDescriptorClassGeneralBuffer : public GpuAVDescriptorClassGen
 
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ReachMaxActionsCommandValidationLimit) {
     TEST_DESCRIPTION(
-        "Within a single command buffer, add a number of draws that goes above the glsl::kMaxActionsPerCommandBuffer GPU-AV limit. "
-        "Expect a warning.");
-    AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::nullDescriptor);
+        "Within a single command buffer, add a number of draws that goes above the cst::indices_count GPU-AV limit. "
+        "Expect a warning, and no self validation error due to GPU-AV stopping part of its CPU work.");
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
-
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
+
     vkt::Buffer offset_buffer(*m_device, 4, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
     vkt::Buffer write_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-    vkt::Buffer storage_texel_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, kHostVisibleMemProps);
-    vkt::BufferView storage_buffer_view(*m_device, storage_texel_buffer, VK_FORMAT_R32_SFLOAT);
 
-    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                  {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                  {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                  {3, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    OneOffDescriptorSet desc_set_1(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                              {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::PipelineLayout pipeline_layout_1(*m_device, {&desc_set_1.layout_});
+    desc_set_1.WriteDescriptorBufferInfo(0, offset_buffer, 0, 4);
+    desc_set_1.WriteDescriptorBufferInfo(1, write_buffer, 0, 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    desc_set_1.UpdateDescriptorSets();
 
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
-    descriptor_set.WriteDescriptorBufferInfo(0, offset_buffer, 0, 4);
-    descriptor_set.WriteDescriptorBufferInfo(1, write_buffer, 0, 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    descriptor_set.WriteDescriptorBufferInfo(2, VK_NULL_HANDLE, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    descriptor_set.WriteDescriptorBufferView(3, storage_buffer_view, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
-    descriptor_set.UpdateDescriptorSets();
-    const char vs_source[] = R"glsl(
+    const char vs_source_1[] = R"glsl(
         #version 450
         layout(set = 0, binding = 0) uniform ufoo { uint index[]; } u_index;      // index[1]
         layout(set = 0, binding = 1) buffer StorageBuffer { uint data[]; } Data;  // data[4]
-        layout(set = 0, binding = 2) buffer NullBuffer { uint data[]; } Null;     // VK_NULL_HANDLE
-        layout(set = 0, binding = 3, r32f) uniform imageBuffer s_buffer;          // texel_buffer[4]
         void main() {
-        vec4 x;
-        if (u_index.index[0] == 1) {
-        Data.data[0] = Null.data[40];
+            Data.data[u_index.index[0]] = 0xdeadca71;
         }
-        else if (u_index.index[0] == 2) {
-        imageStore(s_buffer, 0, x);
-        }
-        else if (u_index.index[0] == 3) {
-        x = imageLoad(s_buffer, 0);
-        }
-        }
-        )glsl";
+    )glsl";
 
-    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
-    CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_[0] = vs.GetStageCreateInfo();
-    pipe.gp_ci_.layout = pipeline_layout;
-    pipe.CreateGraphicsPipeline();
+    VkShaderObj vs_1(this, vs_source_1, VK_SHADER_STAGE_VERTEX_BIT);
+    CreatePipelineHelper pipe_1(*this);
+    pipe_1.shader_stages_[0] = vs_1.GetStageCreateInfo();
+    pipe_1.gp_ci_.layout = pipeline_layout_1;
+    pipe_1.CreateGraphicsPipeline();
+
+    const char vs_source_2[] = R"glsl(
+        #version 450
+            layout(set = 0, binding = 0, rgba8) uniform image2D image;
+            layout(set = 1, binding = 0, rgba8) uniform image2D image2;
+        void main() {}
+    )glsl";
+
+    VkShaderObj vs_2(this, vs_source_2, VK_SHADER_STAGE_VERTEX_BIT);
+
+    auto image_create_info = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_device, image_create_info, vkt::set_layout);
+    vkt::ImageView image_view = image.CreateView();
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    OneOffDescriptorSet desc_set_2(m_device, {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::PipelineLayout pipeline_layout_2(*m_device, {&desc_set_2.layout_, &desc_set_2.layout_});
+
+    desc_set_2.WriteDescriptorImageInfo(0, image_view, sampler);
+    desc_set_2.UpdateDescriptorSets();
+
+    CreatePipelineHelper pipe_2(*this);
+    pipe_2.shader_stages_[0] = vs_2.GetStageCreateInfo();
+    pipe_2.gp_ci_.layout = pipeline_layout_2;
+    pipe_2.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
-                              nullptr);
-    m_errorMonitor->SetDesiredWarning("GPU-AV::Max action per command buffer reached");
-    for (uint32_t i = 0; i < 10'000; ++i) {
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_1);
+    for (int i = 0; i < 9'000; ++i) {
+        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_1, 0, 1, &desc_set_1.set_, 0,
+                                  nullptr);
         vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+
+        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_2, 0, 1, &desc_set_2.set_, 0,
+                                  nullptr);
     }
-    m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
     uint32_t *data = (uint32_t *)offset_buffer.Memory().Map();
-    *data = 1;
+    *data = 8;
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-storageBuffers-06936", std::max(gpuav::glsl::kMaxErrorsPerCmd, 10u));
+
     m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, RobustBuffer) {

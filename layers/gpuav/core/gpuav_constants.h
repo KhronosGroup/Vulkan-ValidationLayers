@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2024 The Khronos Group Inc.
- * Copyright (c) 2018-2024 Valve Corporation
- * Copyright (c) 2018-2024 LunarG, Inc.
+/* Copyright (c) 2018-2025 The Khronos Group Inc.
+ * Copyright (c) 2018-2025 Valve Corporation
+ * Copyright (c) 2018-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,14 @@
 #include <cstdint>
 
 namespace gpuav {
+// constant
 namespace cst {
 
 // Number of indices held in the buffer used to index commands and validation resources
-inline constexpr uint32_t indices_count = 16384;
+inline constexpr uint32_t indices_count = 1u << 13;  // 8192
+// If we hit our limit, we will use this to signal to the app what they are seeing is likely garbage.
+// This is required because we still need to bind our descriptors regardless.
+inline constexpr uint32_t invalid_index_command = indices_count - 1;
 
 // Stream Output Buffer Offsets
 //

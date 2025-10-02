@@ -46,7 +46,7 @@ struct Location {
         : function(func), structure(vvl::Struct::Empty), field(f), index(i), isPNext(false), prev(nullptr) {}
     Location(const Location& prev_loc, vvl::Struct s, vvl::Field f, uint32_t i, bool p)
         : function(prev_loc.function), structure(s), field(f), index(i), isPNext(p), prev(&prev_loc) {}
-    Location(const Location& loc, std::string& debug_region)
+    Location(const Location& loc, const std::string& debug_region)
         : function(loc.function),
           structure(loc.structure),
           field(loc.field),

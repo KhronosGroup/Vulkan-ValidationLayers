@@ -81,10 +81,6 @@ void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubSt
         return;
     }
 
-    if (cb_state.max_actions_cmd_validation_reached_) {
-        return;
-    }
-
     auto image_state = gpuav.Get<vvl::Image>(copy_buffer_to_img_info->dstImage);
     if (!image_state) {
         gpuav.InternalError(cb_state.VkHandle(), loc, "AllocatePreCopyBufferToImageValidationResources: Unrecognized image.");
@@ -208,8 +204,8 @@ void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubSt
                                                                  copy_src_regions_mem_buffer_range.offset,
                                                                  copy_src_regions_mem_buffer_range.size};
 
-        if (!BindShaderResources(validation_pipeline, gpuav, cb_state, cb_state.compute_index,
-                                 uint32_t(cb_state.command_error_loggers.size()), shader_resources)) {
+        if (!BindShaderResources(validation_pipeline, gpuav, cb_state, cb_state.compute_index, cb_state.GetErrorLoggerIndex(),
+                                 shader_resources)) {
             return;
         }
 
@@ -225,8 +221,8 @@ void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubSt
     }
 
     CommandBufferSubState::ErrorLoggerFunc error_logger = [&gpuav, src_buffer = copy_buffer_to_img_info->srcBuffer](
-                                                              const uint32_t *error_record, const Location &loc,
-                                                              const LogObjectList &objlist, const std::vector<std::string> &) {
+                                                              const uint32_t *error_record, const Location &loc_with_debug_region,
+                                                              const LogObjectList &objlist) {
         bool skip = false;
         using namespace glsl;
 
@@ -241,10 +237,10 @@ void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubSt
                 const uint32_t texel_offset = error_record[kPreActionParamOffset_0];
                 LogObjectList objlist_and_src_buffer = objlist;
                 objlist_and_src_buffer.add(src_buffer);
-                const char *vuid = loc.function == vvl::Func::vkCmdCopyBufferToImage
+                const char *vuid = loc_with_debug_region.function == vvl::Func::vkCmdCopyBufferToImage
                                        ? "VUID-vkCmdCopyBufferToImage-pRegions-07931"
                                        : "VUID-VkCopyBufferToImageInfo2-pRegions-07931";
-                skip |= gpuav.LogError(vuid, objlist_and_src_buffer, loc,
+                skip |= gpuav.LogError(vuid, objlist_and_src_buffer, loc_with_debug_region,
                                        "Source buffer %s has a float value at offset %" PRIu32 " that is not in the range [0, 1].",
                                        gpuav.FormatHandle(src_buffer).c_str(), texel_offset);
 
@@ -257,8 +253,7 @@ void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubSt
         return skip;
     };
 
-    cb_state.command_error_loggers.emplace_back(
-        CommandBufferSubState::CommandErrorLogger{loc, LogObjectList{}, std::move(error_logger)});
+    cb_state.AddCommandErrorLogger(loc, LogObjectList{}, std::move(error_logger));
 }
 }  // namespace valcmd
 }  // namespace gpuav

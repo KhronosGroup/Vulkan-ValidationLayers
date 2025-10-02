@@ -118,8 +118,8 @@ ValidationCommandsCommon::ValidationCommandsCommon(Validator &gpuav, CommandBuff
 
     VkDescriptorBufferInfo cmd_indices_buffer_desc_info = {};
 
-    assert(!gpuav_.indices_buffer_.IsDestroyed());
-    cmd_indices_buffer_desc_info.buffer = gpuav_.indices_buffer_.VkHandle();
+    assert(!gpuav_.global_indices_buffer_.IsDestroyed());
+    cmd_indices_buffer_desc_info.buffer = gpuav_.global_indices_buffer_.VkHandle();
     cmd_indices_buffer_desc_info.offset = 0;
     cmd_indices_buffer_desc_info.range = sizeof(uint32_t);
 

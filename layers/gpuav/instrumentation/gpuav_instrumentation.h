@@ -67,10 +67,8 @@ struct InstrumentationErrorBlob {
     std::optional<VertexAttributeFetchLimit> vertex_attribute_fetch_limit_instance_input_rate{};
     std::optional<vvl::IndexBufferBinding> index_buffer_binding{};
 
-    // indexing into the VkDebugUtilsLabelEXT
-    uint32_t label_command_i = vvl::kNoIndex32;
     // used to know which action command this occured at
-    uint32_t action_command_i = vvl::kNoIndex32;
+    uint32_t action_command_index = vvl::kNoIndex32;
 
     // Used to know if from draw, dispatch, or traceRays
     VkPipelineBindPoint pipeline_bind_point = VK_PIPELINE_BIND_POINT_MAX_ENUM;
@@ -83,9 +81,8 @@ struct InstrumentationErrorBlob {
 
 // Return true iff an error has been found
 bool LogInstrumentationError(Validator& gpuav, const CommandBufferSubState& cb_state, const LogObjectList& objlist,
-                             const InstrumentationErrorBlob& instrumentation_error_blob,
-                             const std::vector<std::string>& initial_label_stack, const uint32_t* error_record,
-                             const Location& loc);
+                             const InstrumentationErrorBlob& instrumentation_error_blob, const uint32_t* error_record,
+                             const Location& loc_with_debug_region);
 
 // Return true iff an error has been found in error_record, among the list of errors this function manages
 bool LogMessageInstDescriptorIndexingOOB(Validator& gpuav, const CommandBufferSubState& cb_state, const uint32_t* error_record,

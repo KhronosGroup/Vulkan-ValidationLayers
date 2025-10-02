@@ -152,7 +152,7 @@ void Validator::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCa
 
     shared_resources_manager.Clear();
 
-    indices_buffer_.Destroy();
+    global_indices_buffer_.Destroy();
 
     BaseClass::PreCallRecordDestroyDevice(device, pAllocator, record_obj);
 
@@ -167,9 +167,6 @@ void Validator::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCa
 // Common logic before any draw/dispatch/traceRays
 void Validator::PreCallActionCommand(Validator &gpuav, CommandBufferSubState &cb_state, VkPipelineBindPoint bind_point,
                                      const Location &loc) {
-    if (cb_state.max_actions_cmd_validation_reached_) {
-        return;
-    }
     PreCallSetupShaderInstrumentationResources(gpuav, cb_state, bind_point, loc);
 }
 

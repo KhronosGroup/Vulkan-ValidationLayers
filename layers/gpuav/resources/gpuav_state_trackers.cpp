@@ -91,11 +91,8 @@ void CommandBufferSubState::AllocateResources(const Location &loc) {
 
 // Common logic after any draw/dispatch/traceRays
 void CommandBufferSubState::RecordActionCommand(LastBound &last_bound, const Location &loc) {
-    if (max_actions_cmd_validation_reached_) {
-        return;
-    }
     PostCallSetupShaderInstrumentationResources(gpuav_, *this, last_bound, loc);
-    IncrementCommandCount(last_bound.bind_point, loc);
+    IncrementActionCommandCount(last_bound.bind_point, loc);
 }
 
 void CommandBufferSubState::UpdateLastBoundDescriptorSets(VkPipelineBindPoint bind_point, const Location &loc) {
@@ -152,10 +149,20 @@ void CommandBufferSubState::RecordEndRenderPass(const VkSubpassEndInfo *, const 
     valcmd::FlushValidationCmds(gpuav_, *this);
 }
 
+void CommandBufferSubState::AddCommandErrorLogger(const Location &loc, const LogObjectList &objlist,
+                                                  ErrorLoggerFunc error_logger_func) {
+    if (command_error_loggers_.size() == cst::invalid_index_command) {
+        return;
+    }
+
+    const uint32_t label_command_i =
+        base.GetLabelCommands().empty() ? vvl::kNoIndex32 : uint32_t(base.GetLabelCommands().size() - 1);
+    command_error_loggers_.emplace_back(
+        CommandBufferSubState::CommandErrorLogger{loc, objlist, std::move(error_logger_func), label_command_i});
+}
+
 void CommandBufferSubState::ResetCBState(bool should_destroy) {
     // Free or return to cache GPU resources
-
-    max_actions_cmd_validation_reached_ = false;
 
     on_instrumentation_desc_set_update_functions.clear();
     on_cb_completion_functions.clear();
@@ -168,7 +175,7 @@ void CommandBufferSubState::ResetCBState(bool should_destroy) {
     } else {
         gpu_resources_manager.ReturnResources();
     }
-    command_error_loggers.clear();
+    command_error_loggers_.clear();
 
     if (should_destroy && instrumentation_desc_set_layout_ != VK_NULL_HANDLE) {
         DispatchDestroyDescriptorSetLayout(gpuav_.device, instrumentation_desc_set_layout_, nullptr);
@@ -183,29 +190,34 @@ void CommandBufferSubState::ResetCBState(bool should_destroy) {
     draw_index = 0;
     compute_index = 0;
     trace_rays_index = 0;
-    action_command_count = 0;
 
     ClearPushConstants();
 }
 
-void CommandBufferSubState::IncrementCommandCount(VkPipelineBindPoint bind_point, const Location &loc) {
-    action_command_count++;
-    if (action_command_count >= glsl::kMaxActionsPerCommandBuffer) {
-        if (action_command_count == glsl::kMaxActionsPerCommandBuffer) {
-            gpuav_.LogWarning("GPU-AV::Max action per command buffer reached", VkHandle(), loc,
-                              "Reached maximum validation commands count for command buffer ( %" PRIu32
-                              " ). No more draw/dispatch/trace rays commands will be validated inside this command buffer.",
-                              glsl::kMaxActionsPerCommandBuffer);
-        }
-        max_actions_cmd_validation_reached_ = true;
-    }
+void CommandBufferSubState::IncrementActionCommandCount(VkPipelineBindPoint bind_point, const Location &loc) {
     if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
         draw_index++;
+        if (draw_index > cst::invalid_index_command) {
+            draw_index = cst::invalid_index_command;
+        }
     } else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
         compute_index++;
+        if (compute_index > cst::invalid_index_command) {
+            compute_index = cst::invalid_index_command;
+        }
     } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
         trace_rays_index++;
+        if (trace_rays_index > cst::invalid_index_command) {
+            trace_rays_index = cst::invalid_index_command;
+        }
     }
+}
+
+uint32_t CommandBufferSubState::GetActionCommandIndex(VkPipelineBindPoint bind_point) const {
+    return (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS)          ? draw_index
+           : (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE)         ? compute_index
+           : (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) ? trace_rays_index
+                                                                    : 0;
 }
 
 std::string CommandBufferSubState::GetDebugLabelRegion(uint32_t label_command_i,
@@ -332,10 +344,24 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, const std::vector<std::s
             while (record_size > 0 && (error_record_ptr + record_size) <= error_records_end) {
                 const uint32_t error_logger_i =
                     error_record_ptr[glsl::kHeaderActionIdErrorLoggerIdOffset] & glsl::kErrorLoggerIdMask;
-                assert(error_logger_i < command_error_loggers.size());
-                CommandErrorLogger &error_logger = command_error_loggers[error_logger_i];
-                const LogObjectList objlist(queue, VkHandle(), error_logger.objlist);
-                error_logger.error_logger_func(error_record_ptr, error_logger.loc.Get(), objlist, initial_label_stack);
+
+                assert(error_logger_i < cst::indices_count);
+                if (error_logger_i == cst::invalid_index_command) {
+                    const LogObjectList objlist(queue, VkHandle());
+                    gpuav_.LogError(
+                        "GPUAV-Oveflow-Unknown", queue, loc,
+                        "An error was detected, but after internal limit of %" PRIu32
+                        " draw/dispatch/traceRays in a command buffer, we are unable to track which validation error occured.",
+                        cst::indices_count);
+                } else {
+                    // normal case
+                    CommandErrorLogger &error_logger = command_error_loggers_[error_logger_i];
+                    const LogObjectList objlist(queue, VkHandle(), error_logger.objlist);
+
+                    std::string debug_region_name = GetDebugLabelRegion(error_logger.label_cmd_i, initial_label_stack);
+                    Location loc_with_debug_region(error_logger.loc.Get(), debug_region_name);
+                    error_logger.error_logger_func(error_record_ptr, loc_with_debug_region, objlist);
+                }
 
                 // Next record
                 error_record_ptr += record_size;
