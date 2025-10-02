@@ -375,6 +375,9 @@ class PipelineSubState : public vvl::PipelineSubState {
     VkPipelineLayout GetPipelineLayoutUnion(const Location &loc, vvl::DescriptorMode mode) const;
 
   private:
+    // Multiple threads can record multiple commands using the same pipeline,
+    // so pipeline layout recreation has to be thread safe
+    mutable std::mutex recreated_layout_mutex{};
     mutable VkPipelineLayout recreated_layout = VK_NULL_HANDLE;
     Validator &gpuav_;
 };
