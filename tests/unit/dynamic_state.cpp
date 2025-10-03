@@ -772,6 +772,13 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateSetViewportScissor) {
     std::vector<VkBuffer> buffers(m_device->Physical().limits_.maxVertexInputBindings + 1ull, buffer);
     std::vector<VkDeviceSize> offsets(buffers.size(), 0);
 
+    const char *vs_source = R"glsl(
+        #version 450
+        layout(location=0) in vec4 x;
+        void main(){}
+    )glsl";
+    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
@@ -780,11 +787,12 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateSetViewportScissor) {
     pipe.vp_state_ci_.viewportCount = 0;
     pipe.vp_state_ci_.scissorCount = 0;
     pipe.vi_ci_.vertexBindingDescriptionCount = 1;
-    VkVertexInputBindingDescription inputBinding = {0, sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
-    pipe.vi_ci_.pVertexBindingDescriptions = &inputBinding;
+    VkVertexInputBindingDescription input_binding = {0, sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
+    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
     VkVertexInputAttributeDescription attribute = {0, 0, VK_FORMAT_R32_SFLOAT, 0};
     pipe.vi_ci_.pVertexAttributeDescriptions = &attribute;
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
