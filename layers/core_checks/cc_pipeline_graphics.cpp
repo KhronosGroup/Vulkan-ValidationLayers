@@ -25,9 +25,11 @@
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vulkan_core.h>
+#include "containers/custom_containers.h"
 #include "core_checks/cc_state_tracker.h"
 #include "error_message/logging.h"
 #include "state_tracker/last_bound_state.h"
+#include "utils/assert_utils.h"
 #include "utils/math_utils.h"
 #include "utils/vk_struct_compare.h"
 #include "core_validation.h"
@@ -3403,7 +3405,7 @@ bool CoreChecks::ValidateDrawPipeline(const LastBound &last_bound_state, const v
     }
 
     skip |= ValidateDrawPipelineFramebuffer(cb_state, pipeline, vuid);
-    skip |= ValidateDrawPipelineVertexBinding(cb_state, pipeline, vuid);
+    skip |= ValidateDrawPipelineVertexBinding(cb_state, last_bound_state, pipeline, vuid);
     skip |= ValidateDrawPipelineFragmentDensityMapLayered(cb_state, pipeline, *rp_state, vuid);
     skip |= ValidateDrawPipelineRasterizationState(last_bound_state, pipeline, vuid);
 
@@ -4213,10 +4215,18 @@ bool CoreChecks::ValidateDrawPipelineFragmentDensityMapLayered(const vvl::Comman
     return skip;
 }
 
-bool CoreChecks::ValidateDrawPipelineVertexBinding(const vvl::CommandBuffer &cb_state, const vvl::Pipeline &pipeline,
-                                                   const vvl::DrawDispatchVuid &vuid) const {
+bool CoreChecks::ValidateDrawPipelineVertexBinding(const vvl::CommandBuffer &cb_state, const LastBound &last_bound,
+                                                   const vvl::Pipeline &pipeline, const vvl::DrawDispatchVuid &vuid) const {
     bool skip = false;
-    if (!pipeline.vertex_input_state) return skip;
+    // TODO - Seems even if using mesh shaders, the vertex_input_state is non-null (but emmpty)
+    if (!pipeline.vertex_input_state || ((pipeline.active_shaders & VK_SHADER_STAGE_VERTEX_BIT) == 0)) {
+        return skip;
+    }
+    // Since we need to know if the Vertex shader actually declares/uses the Input Location, if the shader validation was disabled,
+    // there will no SPIR-V to reflect the information from.
+    if (disabled[shader_validation]) {
+        return skip;
+    }
 
     const bool has_dynamic_descriptions = pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT);
     const auto &vertex_bindings =
@@ -4230,14 +4240,41 @@ bool CoreChecks::ValidateDrawPipelineVertexBinding(const vvl::CommandBuffer &cb_
             ss << "the last bound pipeline";
         }
         ss << " has pVertexBindingDescriptions[" << binding_description.index << "].binding (" << binding_description.desc.binding
-           << ")";
+           << ") (pointing to Locations [";
+        const char *separator = "";
+        for (const auto &location : binding_description.locations) {
+            ss << separator << location.first;
+            separator = ", ";
+        }
+        ss << "])";
         return ss.str();
     };
+
+    const spirv::EntryPoint *vertex_entry_point = last_bound.GetVertexEntryPoint();
+    ASSERT_AND_RETURN_SKIP(vertex_entry_point);
+    vvl::unordered_set<uint32_t> spirv_input_locations;
+    for (const auto &pair : vertex_entry_point->input_interface_slots) {
+        spirv_input_locations.emplace(pair.first.Location());
+    }
 
     // It is ok to have binding descriptions not used, them and find if there is matching buffer tied to it or not
     for (const auto &[binding_index, binding_description] : vertex_bindings) {
         // If no attribute points to a binding, it is unused
-        if (binding_description.locations.empty()) continue;
+        if (binding_description.locations.empty()) {
+            continue;
+        }
+
+        bool shader_has_location = false;
+        for (const auto &location : binding_description.locations) {
+            if (spirv_input_locations.find(location.first) != spirv_input_locations.end()) {
+                shader_has_location = true;
+                break;
+            }
+        }
+        if (!shader_has_location) {
+            // If the Vertex shader doesn't declare the vertex input, there can be invalid/unbound bindings
+            continue;
+        }
 
         const auto *vertex_buffer_binding = vvl::Find(cb_state.current_vertex_buffer_binding_info, binding_index);
         if (!vertex_buffer_binding || !vertex_buffer_binding->bound) {

@@ -1371,3 +1371,32 @@ TEST_F(PositiveVertexInput, AttributeNotProvided) {
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
+
+TEST_F(PositiveVertexInput, NoInputLocation) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10771");
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    // binding at index 1
+    VkVertexInputBindingDescription bindings = {1, 4, VK_VERTEX_INPUT_RATE_VERTEX};
+    // Location 1 no used, so can be ignored
+    VkVertexInputAttributeDescription attributes = {1, 1, VK_FORMAT_R8G8B8A8_UNORM, 0};
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexBindingDescriptions = &bindings;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = &attributes;
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+
+    VkDeviceSize offset = 0;
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    // only bind at index 0
+    vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &buffer.handle(), &offset);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 1);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
