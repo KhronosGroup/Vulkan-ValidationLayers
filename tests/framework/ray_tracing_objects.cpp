@@ -2182,7 +2182,7 @@ std::vector<uint8_t> Pipeline::GetRayTracingCaptureReplayShaderGroupHandles() {
 
     // Get shader group handles to fill ray gen shader binding table (SBT)
     const uint32_t handle_size_aligned =
-        Align(rt_pipeline_props.shaderGroupHandleSize, rt_pipeline_props.shaderGroupHandleAlignment);
+        Align(rt_pipeline_props.shaderGroupHandleCaptureReplaySize, rt_pipeline_props.shaderGroupHandleAlignment);
     const uint32_t sbt_size = shader_group_cis_.size() * handle_size_aligned;
     std::vector<uint8_t> sbt_host_storage(sbt_size);
 
