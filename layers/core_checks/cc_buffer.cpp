@@ -88,39 +88,39 @@ bool CoreChecks::ValidateCreateBufferDescriptorBuffer(const VkBufferCreateInfo &
     bool skip = false;
 
     if (usage & VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) {
-        if (create_info.size + device_state->samplerDescriptorBufferAddressSpaceSize >
+        if (create_info.size + device_state->descriptor_buffer_address_space.sampler >
             phys_dev_ext_props.descriptor_buffer_props.samplerDescriptorBufferAddressSpaceSize) {
             skip |= LogError(
                 "VUID-VkBufferCreateInfo-usage-08097", device, create_info_loc.dot(Field::size),
                 "(%" PRIuLEAST64 ") + current total (%" PRIuLEAST64
                 ") is greater than specified in properties field samplerDescriptorBufferAddressSpaceSize (%" PRIuLEAST64 ").",
-                create_info.size, device_state->samplerDescriptorBufferAddressSpaceSize.load(),
+                create_info.size, device_state->descriptor_buffer_address_space.sampler.load(),
                 phys_dev_ext_props.descriptor_buffer_props.samplerDescriptorBufferAddressSpaceSize);
-        } else if (create_info.size + device_state->descriptorBufferAddressSpaceSize >
+        } else if (create_info.size + device_state->descriptor_buffer_address_space.all >
                    phys_dev_ext_props.descriptor_buffer_props.descriptorBufferAddressSpaceSize) {
             skip |= LogError("VUID-VkBufferCreateInfo-usage-08097", device, create_info_loc.dot(Field::size),
                              "(%" PRIuLEAST64 ") + current total (%" PRIuLEAST64
                              ") is greater than specified in properties field descriptorBufferAddressSpaceSize (%" PRIuLEAST64 ")",
-                             create_info.size, device_state->descriptorBufferAddressSpaceSize.load(),
+                             create_info.size, device_state->descriptor_buffer_address_space.all.load(),
                              phys_dev_ext_props.descriptor_buffer_props.descriptorBufferAddressSpaceSize);
         }
     }
 
     if (usage & VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) {
-        if (create_info.size + device_state->resourceDescriptorBufferAddressSpaceSize >
+        if (create_info.size + device_state->descriptor_buffer_address_space.resource >
             phys_dev_ext_props.descriptor_buffer_props.resourceDescriptorBufferAddressSpaceSize) {
             skip |= LogError(
                 "VUID-VkBufferCreateInfo-usage-08098", device, create_info_loc.dot(Field::size),
                 "(%" PRIuLEAST64 ") + current total (%" PRIuLEAST64
                 ") is greater than specified in properties field resourceDescriptorBufferAddressSpaceSize (%" PRIuLEAST64 ").",
-                create_info.size, device_state->resourceDescriptorBufferAddressSpaceSize.load(),
+                create_info.size, device_state->descriptor_buffer_address_space.resource.load(),
                 phys_dev_ext_props.descriptor_buffer_props.resourceDescriptorBufferAddressSpaceSize);
-        } else if (create_info.size + device_state->descriptorBufferAddressSpaceSize >
+        } else if (create_info.size + device_state->descriptor_buffer_address_space.all >
                    phys_dev_ext_props.descriptor_buffer_props.descriptorBufferAddressSpaceSize) {
             skip |= LogError("VUID-VkBufferCreateInfo-usage-08098", device, create_info_loc.dot(Field::size),
                              "(%" PRIuLEAST64 ") + current total (%" PRIuLEAST64
                              ") is greater than specified in properties field descriptorBufferAddressSpaceSize (%" PRIuLEAST64 ").",
-                             create_info.size, device_state->descriptorBufferAddressSpaceSize.load(),
+                             create_info.size, device_state->descriptor_buffer_address_space.all.load(),
                              phys_dev_ext_props.descriptor_buffer_props.descriptorBufferAddressSpaceSize);
         }
     }

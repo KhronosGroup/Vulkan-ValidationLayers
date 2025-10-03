@@ -2007,9 +2007,12 @@ class DeviceState : public vvl::base::Device {
     // < external format, colorAttachmentFormat > (VK_ANDROID_external_format_resolve)
     vvl::concurrent_unordered_map<uint64_t, VkFormat> ahb_ext_resolve_formats_map;
 
-    std::atomic<VkDeviceSize> descriptorBufferAddressSpaceSize = {0u};
-    std::atomic<VkDeviceSize> resourceDescriptorBufferAddressSpaceSize = {0u};
-    std::atomic<VkDeviceSize> samplerDescriptorBufferAddressSpaceSize = {0u};
+    // For VK_EXT_descriptor_buffer need to track global buffer size allocated
+    struct DescriptorBufferAddressSpace {
+        std::atomic<VkDeviceSize> all = {0u};
+        std::atomic<VkDeviceSize> resource = {0u};
+        std::atomic<VkDeviceSize> sampler = {0u};
+    } descriptor_buffer_address_space;
 
     // Keep track of identifier -> state
     vvl::unordered_map<VkShaderModuleIdentifierEXT, std::shared_ptr<vvl::ShaderModule>> shader_identifier_map_;

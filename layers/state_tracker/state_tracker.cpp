@@ -541,14 +541,14 @@ void DeviceState::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCrea
         VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
 
     if ((buffer_state->usage & descriptor_buffer_usages) != 0) {
-        descriptorBufferAddressSpaceSize += pCreateInfo->size;
+        descriptor_buffer_address_space.all += pCreateInfo->size;
 
         if ((buffer_state->usage & VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) != 0) {
-            resourceDescriptorBufferAddressSpaceSize += pCreateInfo->size;
+            descriptor_buffer_address_space.resource += pCreateInfo->size;
         }
 
         if ((buffer_state->usage & VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) != 0) {
-            samplerDescriptorBufferAddressSpaceSize += pCreateInfo->size;
+            descriptor_buffer_address_space.sampler += pCreateInfo->size;
         }
     }
     Add(std::move(buffer_state));
@@ -737,14 +737,14 @@ void DeviceState::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, c
             VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
 
         if ((buffer_state->usage & descriptor_buffer_usages) != 0) {
-            descriptorBufferAddressSpaceSize -= buffer_state->create_info.size;
+            descriptor_buffer_address_space.all -= buffer_state->create_info.size;
 
             if (buffer_state->usage & VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) {
-                resourceDescriptorBufferAddressSpaceSize -= buffer_state->create_info.size;
+                descriptor_buffer_address_space.resource -= buffer_state->create_info.size;
             }
 
             if (buffer_state->usage & VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) {
-                samplerDescriptorBufferAddressSpaceSize -= buffer_state->create_info.size;
+                descriptor_buffer_address_space.sampler -= buffer_state->create_info.size;
             }
         }
 
