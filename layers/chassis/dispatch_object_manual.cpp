@@ -33,7 +33,7 @@
 namespace vvl {
 
 void MarkSupportedExtensionsAsNotEnabled(const std::vector<VkExtensionProperties> &supported_extensions,
-                                         DeviceExtensions extensions) {
+                                         DeviceExtensions &extensions) {
     for (size_t i = 0; i < supported_extensions.size(); i++) {
         vvl::Extension extension = GetExtension(supported_extensions[i].extensionName);
         auto &info = extensions.GetInfo(extension);
@@ -480,16 +480,6 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
         for (const auto &ext_prop : props) {
             phys_dev_extensions.insert(GetExtension(ext_prop.extensionName));
         }
-
-        // promoted to 1.3
-        special_supported.vk_khr_format_feature_flags2 =
-            api_version >= VK_API_VERSION_1_3 ||
-            phys_dev_extensions.find(Extension::_VK_KHR_format_feature_flags2) != phys_dev_extensions.end();
-
-        // robustImageAccess is required if 1.3 or VK_EXT_image_robustness supported
-        special_supported.robust_image_access =
-            api_version >= VK_API_VERSION_1_3 ||
-            phys_dev_extensions.find(Extension::_VK_EXT_image_robustness) != phys_dev_extensions.end();
 
         if (phys_dev_extensions.find(Extension::_VK_KHR_robustness2) != phys_dev_extensions.end() ||
             phys_dev_extensions.find(Extension::_VK_EXT_robustness2) != phys_dev_extensions.end()) {

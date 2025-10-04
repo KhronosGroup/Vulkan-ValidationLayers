@@ -388,7 +388,7 @@ bool SpirvValidator::ValidateVariables(const spirv::Module &module_state, const 
             // The other checks need to take into account the format features and so
             // we apply that in the descriptor set matching validation code (see
             // descriptor_sets.cpp).
-            if (!special_supported.vk_khr_format_feature_flags2) {
+            if (!IsExtSupported(extensions.vk_khr_format_feature_flags2)) {
                 skip |= ValidateShaderStorageImageFormatsVariables(module_state, *insn, loc);
             }
         }
