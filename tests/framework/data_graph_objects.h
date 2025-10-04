@@ -50,7 +50,8 @@ class CreateDataGraphPipelineHelper {
     VkLayerTest &layer_test_;
     vkt::Device *device_;
 
-    explicit CreateDataGraphPipelineHelper(VkLayerTest &test, bool is_data_graph = false, bool protected_tensors = false, const char *inserted_line = "");
+    explicit CreateDataGraphPipelineHelper(VkLayerTest &test, bool protected_tensors = false, bool is_data_graph = true,
+                                           const char *inserted_line = "");
     virtual ~CreateDataGraphPipelineHelper();
     void Destroy();
 
@@ -66,7 +67,7 @@ class CreateDataGraphPipelineHelper {
 
     VkResult CreateDataGraphPipeline();
 
-    // Helper function to create a simple test case (positive or negative)
+    // Helper function to create a simple test case
     //
     // info_override can be any callable that takes a CreatePipelineHelper &
     // flags, error can be any args accepted by "SetDesiredFailure".
