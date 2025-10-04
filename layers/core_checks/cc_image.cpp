@@ -79,7 +79,7 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo &create_inf
             }
         }
 
-        if (device_state->special_supported.vk_khr_format_feature_flags2) {
+        if (IsExtSupported(extensions.vk_khr_format_feature_flags2)) {
             VkDrmFormatModifierPropertiesList2EXT fmt_drm_props = vku::InitStructHelper();
             VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_drm_props);
             DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, image_format, &fmt_props_2);
@@ -1637,7 +1637,7 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const vvl::Image &image_state, 
         VkImageDrmFormatModifierPropertiesEXT drm_format_properties = vku::InitStructHelper();
         DispatchGetImageDrmFormatModifierPropertiesEXT(device, image_state.VkHandle(), &drm_format_properties);
 
-        if (device_state->special_supported.vk_khr_format_feature_flags2) {
+        if (IsExtSupported(extensions.vk_khr_format_feature_flags2)) {
             VkDrmFormatModifierPropertiesList2EXT fmt_drm_props = vku::InitStructHelper();
             VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_drm_props);
             DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, view_format, &fmt_props_2);
