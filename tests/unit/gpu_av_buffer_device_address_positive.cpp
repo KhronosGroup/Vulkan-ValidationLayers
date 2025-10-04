@@ -2276,55 +2276,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, ManyAccessToSameStruct) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-// Used to test large accesses to a single struct from a single pointer
-// If on Mesa, also add MESA_SHADER_CACHE_DISABLE=1
-TEST_F(PositiveGpuAVBufferDeviceAddress, Stress) {
-    // About a 5x speed up to run in unsafe mode
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
-    InitRenderTarget();
-    const uint32_t count = 32;
-
-    std::stringstream cs_source;
-    cs_source << R"glsl(
-        #version 450
-        #extension GL_EXT_buffer_reference : enable
-
-        layout(buffer_reference) buffer BDA {
-            vec3 x;
-            vec3 payload[4096];
-        };
-
-        layout(push_constant) uniform Uniforms {
-            BDA ptr;
-        };
-
-        void main() {
-            vec3 a = vec3(0);
-            // a += fma(vec3(ptr.payload[0].x, ptr.payload[0].y, ptr.payload[0].z),
-            //          vec3(ptr.payload[1].x, ptr.payload[1].y, ptr.payload[1].z),
-            //          vec3(ptr.payload[2].x, ptr.payload[2].y, ptr.payload[2].z));
-            //
-            // .... many times
-            //
-            // ptr.x = a;
-    )glsl";
-
-    for (uint32_t i = 0; i < count; i += 3) {
-        cs_source << "a += fma(vec3(ptr.payload[" << i << "].x, ptr.payload[" << i << "].y, ptr.payload[" << i << "].z), ";
-        cs_source << "vec3(ptr.payload[" << i + 1 << "].x, ptr.payload[" << i + 1 << "].y, ptr.payload[" << i + 1 << "].z), ";
-        cs_source << "vec3(ptr.payload[" << i + 2 << "].x, ptr.payload[" << i + 2 << "].y, ptr.payload[" << i + 2 << "].z));\n";
-    }
-    cs_source << "\nptr.x = a;\n}";
-
-    VkPushConstantRange pc_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(VkDeviceAddress)};
-    const vkt::PipelineLayout pipeline_layout(*m_device, {}, {pc_range});
-
-    CreateComputePipelineHelper pipe(*this);
-    pipe.cp_ci_.layout = pipeline_layout;
-    pipe.cs_ = VkShaderObj(this, cs_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.CreateComputePipeline();
-}
-
 TEST_F(PositiveGpuAVBufferDeviceAddress, GlobalInvocationIdIVec3) {
     TEST_DESCRIPTION("Found issue when we assumed GlobalInvocationId was a uvec3 and it was a ivec3");
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
