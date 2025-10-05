@@ -79,6 +79,16 @@ bool FormatFeaturesAreSupported(VkPhysicalDevice phy, VkFormat format, VkImageTi
     return (features == (phy_features & features));
 }
 
+bool FormatFeatures2AreSupported(VkPhysicalDevice phy, VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags2 features) {
+    VkFormatProperties3 format_props_3 = vku::InitStructHelper();
+    VkFormatProperties2 format_props = vku::InitStructHelper(&format_props_3);
+
+    vk::GetPhysicalDeviceFormatProperties2(phy, format, &format_props);
+    VkFormatFeatureFlags2 phy_features =
+        (VK_IMAGE_TILING_OPTIMAL == tiling ? format_props_3.optimalTilingFeatures : format_props_3.linearTilingFeatures);
+    return (features == (phy_features & features));
+}
+
 bool ImageFormatIsSupported(const VkPhysicalDevice phy, const VkImageCreateInfo info, const VkFormatFeatureFlags features) {
     // Verify physical device support of format features
     if (!FormatFeaturesAreSupported(phy, info.format, info.tiling, features)) {

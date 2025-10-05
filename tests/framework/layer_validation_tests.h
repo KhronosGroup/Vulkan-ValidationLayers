@@ -103,6 +103,7 @@ bool FormatIsSupported(VkPhysicalDevice phy, VkFormat format, VkImageTiling tili
 
 // Returns true if format and *all* requested features are available.
 bool FormatFeaturesAreSupported(VkPhysicalDevice phy, VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags features);
+bool FormatFeatures2AreSupported(VkPhysicalDevice phy, VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags2 features);
 
 // Returns true if format and *all* requested features are available.
 bool ImageFormatIsSupported(const VkPhysicalDevice phy, const VkImageCreateInfo info, const VkFormatFeatureFlags features);

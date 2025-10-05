@@ -4365,12 +4365,17 @@ TEST_F(NegativeDescriptors, MutableDescriptorSetLayoutMissingFeature) {
 
 TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescriptorSets) {
     TEST_DESCRIPTION("Validate if attachments in render pass and descriptor set use the same image subresources");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredFeature(vkt::Feature::shaderStorageImageWriteWithoutFormat);
     AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    if (!FormatFeatures2AreSupported(Gpu(), format, VK_IMAGE_TILING_OPTIMAL,
+                                     VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT)) {
+        GTEST_SKIP() << "Format doesn't support storage without format";
+    }
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(format, VK_IMAGE_LAYOUT_UNDEFINED);
     rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
