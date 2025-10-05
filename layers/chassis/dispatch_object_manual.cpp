@@ -33,7 +33,7 @@
 namespace vvl {
 
 void MarkSupportedExtensionsAsNotEnabled(const std::vector<VkExtensionProperties> &supported_extensions,
-                                         DeviceExtensions extensions) {
+                                         DeviceExtensions &extensions) {
     for (size_t i = 0; i < supported_extensions.size(); i++) {
         vvl::Extension extension = GetExtension(supported_extensions[i].extensionName);
         auto &info = extensions.GetInfo(extension);
