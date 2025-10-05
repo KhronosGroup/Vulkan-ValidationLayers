@@ -153,7 +153,7 @@ bool CoreChecks::ValidateCreateBufferDescriptorBuffer(const VkBufferCreateInfo &
             skip |=
                 LogError("VUID-VkBufferCreateInfo-usage-08102", device, create_info_loc.dot(Field::usage),
                          "has VK_BUFFER_USAGE_2_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT set but the bufferlessPushDescriptors "
-                         "device feature is enabled.");
+                         "device property is VK_TRUE.");
         }
 
         if (!(usage &
