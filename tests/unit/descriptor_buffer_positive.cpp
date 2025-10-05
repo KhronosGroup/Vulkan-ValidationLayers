@@ -12,6 +12,7 @@
 #include <cstdint>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/render_pass_helper.h"
 
 void DescriptorBufferTest::InitBasicDescriptorBuffer(void *instance_pnext) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -1356,6 +1357,357 @@ TEST_F(PositiveDescriptorBuffer, EmbeddedSamplers) {
     if (!IsPlatformMockICD()) {
         for (uint32_t i = 0; i < 4; i++) {
             ASSERT_NEAR(data[i], clear_color_value.float32[i], 0.0001f);
+        }
+    }
+}
+
+TEST_F(PositiveDescriptorBuffer, InputAttachment) {
+    TEST_DESCRIPTION("Test reading from a descriptor that uses same image view as framebuffer input attachment");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+    InitRenderTarget();
+
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(format, VK_IMAGE_LAYOUT_UNDEFINED);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddInputAttachment(0);
+    rp.CreateRenderPass();
+
+    auto image_create_info =
+        vkt::Image::ImageCreateInfo2D(32, 32, 1, 3, format, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
+    vkt::Image image(*m_device, image_create_info, vkt::set_layout);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 0, 1, 0, 1);
+    VkImageView image_view_handle = image_view;
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view_handle);
+
+    const char *fsSource = R"glsl(
+            #version 450
+            layout(location = 0) out vec4 color;
+            layout(set = 0, binding = 0, rgba8) readonly uniform image2D image1;
+            layout(set = 1, binding = 0, input_attachment_index = 0) uniform subpassInput inputColor;
+            void main(){
+                color = subpassLoad(inputColor) + imageLoad(image1, ivec2(0));
+            }
+        )glsl";
+
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
+    ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    ds_layout_ci.bindingCount = 1u;
+    ds_layout_ci.pBindings = &binding;
+    vkt::DescriptorSetLayout descriptor_set_layout(*m_device, ds_layout_ci);
+    binding.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+    vkt::DescriptorSetLayout descriptor_set_layout2(*m_device, ds_layout_ci);
+
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_layout, &descriptor_set_layout2});
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pipeline_layout;
+    pipe.gp_ci_.renderPass = rp;
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Buffer descriptor_buffer(*m_device, 4096, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
+    uint8_t *descriptor_data = reinterpret_cast<uint8_t *>(descriptor_buffer.Memory().Map());
+    VkDeviceSize image_offset = descriptor_set_layout.GetDescriptorBufferBindingOffset(0);
+    VkDeviceSize input_attachment_offset =
+        descriptor_set_layout2.GetDescriptorBufferBindingOffset(0) + descriptor_buffer_properties.storageImageDescriptorSize;
+
+    vkt::DescriptorGetInfo image_get_info(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, sampler, image_view, VK_IMAGE_LAYOUT_GENERAL);
+    vk::GetDescriptorEXT(*m_device, image_get_info, descriptor_buffer_properties.storageImageDescriptorSize,
+                         descriptor_data + image_offset);
+    vkt::DescriptorGetInfo input_attachment_get_info(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, sampler, image_view,
+                                                     VK_IMAGE_LAYOUT_GENERAL);
+    vk::GetDescriptorEXT(*m_device, input_attachment_get_info, descriptor_buffer_properties.inputAttachmentDescriptorSize,
+                         descriptor_data + input_attachment_offset);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp, framebuffer, 32, 32, 1, m_renderPassClearValues.data());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+
+    VkDescriptorBufferBindingInfoEXT buffer_binding_info = vku::InitStructHelper();
+    buffer_binding_info.address = descriptor_buffer.Address();
+    buffer_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &buffer_binding_info);
+    uint32_t buffer_index = 0u;
+    VkDeviceSize offset = 0u;
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0u, 1u,
+                                         &buffer_index, &offset);
+
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveDescriptorBuffer, ImageLayoutIgnored) {
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+    AddRequiredFeature(vkt::Feature::descriptorBufferImageLayoutIgnored);
+    InitRenderTarget();
+
+    const VkFormat format = FindSupportedDepthStencilFormat(gpu_);
+
+    auto image_create_info = vkt::Image::ImageCreateInfo2D(32, 32, 1, 3, format, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_device, image_create_info, vkt::set_layout);
+    vkt::ImageView image_view =
+        image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 0, 1, 0, 1, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    const char *fsSource = R"glsl(
+            #version 450
+            layout(location = 0) out vec4 color;
+            layout(set = 0, binding = 0, rgba8) readonly uniform image2D image1;
+            void main(){
+                color = imageLoad(image1, ivec2(0));
+            }
+        )glsl";
+
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
+    ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    ds_layout_ci.bindingCount = 1u;
+    ds_layout_ci.pBindings = &binding;
+    vkt::DescriptorSetLayout descriptor_set_layout(*m_device, ds_layout_ci);
+
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_layout});
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pipeline_layout;
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Buffer descriptor_buffer(*m_device, 4096, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
+    uint8_t *descriptor_data = reinterpret_cast<uint8_t *>(descriptor_buffer.Memory().Map());
+    VkDeviceSize image_offset = descriptor_set_layout.GetDescriptorBufferBindingOffset(0);
+
+    vkt::DescriptorGetInfo image_get_info(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, sampler, image_view,
+                                          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    vk::GetDescriptorEXT(*m_device, image_get_info, descriptor_buffer_properties.storageImageDescriptorSize,
+                         descriptor_data + image_offset);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+
+    VkDescriptorBufferBindingInfoEXT buffer_binding_info = vku::InitStructHelper();
+    buffer_binding_info.address = descriptor_buffer.Address();
+    buffer_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &buffer_binding_info);
+    uint32_t buffer_index = 0u;
+    VkDeviceSize offset = 0u;
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0u, 1u,
+                                         &buffer_index, &offset);
+
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveDescriptorBuffer, ComputeAndGraphics) {
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+    InitRenderTarget();
+
+    vkt::Buffer buffer1(*m_device, sizeof(float) * 4u, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer buffer2(*m_device, sizeof(float) * 4u, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+
+    vkt::Buffer descriptor_buffer(*m_device, 4096, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
+
+    VkDescriptorBufferBindingInfoEXT buffer_binding_info = vku::InitStructHelper();
+    buffer_binding_info.address = descriptor_buffer.Address();
+    buffer_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+
+    const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
+                                                  VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
+    const vkt::DescriptorSetLayout set_layout(*m_device, {binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&set_layout});
+
+    vkt::DescriptorGetInfo get_info1(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer1, 16u);
+    vkt::DescriptorGetInfo get_info2(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer2, 16u);
+
+    const VkDeviceSize offset1 = 0;
+    VkDeviceSize offset2 = descriptor_buffer_properties.storageBufferDescriptorSize;
+    if (offset2 % descriptor_buffer_properties.descriptorBufferOffsetAlignment != 0) {
+        offset2 += descriptor_buffer_properties.descriptorBufferOffsetAlignment -
+                   (offset2 % descriptor_buffer_properties.descriptorBufferOffsetAlignment);
+    }
+
+    uint8_t *mapped_descriptor_data = (uint8_t*)descriptor_buffer.Memory().Map();
+    vk::GetDescriptorEXT(device(), get_info1, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data + offset1);
+    vk::GetDescriptorEXT(device(), get_info2, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data + offset2);
+
+    const char *vsSource = R"glsl(
+            #version 450
+            layout (set = 0, binding = 0) buffer Buf {
+                vec4 data;
+            } buf;
+            void main() {
+                vec2 pos = vec2(float(gl_VertexIndex & 1), float((gl_VertexIndex >> 1) & 1));
+                gl_Position = vec4(pos, 0.0f, 1.0f);
+                buf.data[gl_VertexIndex] = 1.0f;
+            }
+        )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    pipe.shader_stages_[0] = vs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pipeline_layout;
+    pipe.CreateGraphicsPipeline();
+
+    const char *cs_source = R"glsl(
+        #version 450
+        layout (set = 0, binding = 0) buffer Buf {
+            vec4 data;
+        } buf;
+
+        void main() {
+            buf.data.x = gl_LocalInvocationIndex + 1.0f;
+            buf.data.y = gl_LocalInvocationIndex + 2.0f;
+            buf.data.z = gl_LocalInvocationIndex + 3.0f;
+            buf.data.w = gl_LocalInvocationIndex + 4.0f;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe2(*this);
+    pipe2.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe2.cp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    pipe2.cp_ci_.layout = pipeline_layout;
+    pipe2.CreateComputePipeline();
+
+    const uint32_t index = 0;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &buffer_binding_info);
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &index, &offset1);
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe2);
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &index, &offset2);
+    vk::CmdDispatch(m_command_buffer, 1u, 1u, 1u);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    float *data1 = (float *)buffer1.Memory().Map();
+    float *data2 = (float *)buffer2.Memory().Map();
+    if (!IsPlatformMockICD()) {
+        for (uint32_t i = 0; i < 4; i++) {
+            ASSERT_EQ(data1[i], 1.0f);
+            ASSERT_EQ(data2[i], float(i + 1));
+        }
+    }
+}
+
+TEST_F(PositiveDescriptorBuffer, ComputeAndGraphics2) {
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+    InitRenderTarget();
+
+    vkt::Buffer buffer(*m_device, sizeof(float) * 8u, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+
+    vkt::Buffer descriptor_buffer(*m_device, 4096, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
+
+    VkDescriptorBufferBindingInfoEXT buffer_binding_info = vku::InitStructHelper();
+    buffer_binding_info.address = descriptor_buffer.Address();
+    buffer_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+
+    const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
+                                                  VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
+    const vkt::DescriptorSetLayout set_layout(*m_device, {binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&set_layout, &set_layout});
+
+    vkt::DescriptorGetInfo get_info(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer, 32u);
+
+    uint8_t *mapped_descriptor_data = (uint8_t *)descriptor_buffer.Memory().Map();
+    vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize,
+                         mapped_descriptor_data);
+
+    const char *vsSource = R"glsl(
+            #version 450
+            layout (set = 0, binding = 0) buffer Buf {
+                vec4 data[2];
+            } buf;
+            void main() {
+                vec2 pos = vec2(float(gl_VertexIndex & 1), float((gl_VertexIndex >> 1) & 1));
+                gl_Position = vec4(pos, 0.0f, 1.0f);
+                buf.data[0][gl_VertexIndex] = 1.0f;
+            }
+        )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    pipe.shader_stages_[0] = vs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pipeline_layout;
+    pipe.CreateGraphicsPipeline();
+
+    const char *cs_source = R"glsl(
+        #version 450
+        layout (set = 1, binding = 0) buffer Buf {
+            vec4 data[2];
+        } buf;
+
+        void main() {
+            buf.data[1].x = gl_LocalInvocationIndex + 1.0f;
+            buf.data[1].y = gl_LocalInvocationIndex + 2.0f;
+            buf.data[1].z = gl_LocalInvocationIndex + 3.0f;
+            buf.data[1].w = gl_LocalInvocationIndex + 4.0f;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe2(*this);
+    pipe2.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe2.cp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    pipe2.cp_ci_.layout = pipeline_layout;
+    pipe2.CreateComputePipeline();
+
+    const uint32_t index = 0;
+    const VkDeviceSize offset = 0;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &buffer_binding_info);
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &index,
+                                         &offset);
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe2);
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 1, 1, &index, &offset);
+    vk::CmdDispatch(m_command_buffer, 1u, 1u, 1u);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    float *data = (float *)buffer.Memory().Map();
+    if (!IsPlatformMockICD()) {
+        for (uint32_t i = 0; i < 4; i++) {
+            ASSERT_EQ(data[i], 1.0f);
+            ASSERT_EQ(data[i + 4], float(i + 1));
         }
     }
 }
