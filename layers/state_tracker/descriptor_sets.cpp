@@ -295,19 +295,6 @@ vvl::DescriptorSetLayoutDef::DescriptorSetLayoutDef(vvl::DeviceState &device_sta
         sorted_bindings.emplace(p_create_info->pBindings + i, flags);
     }
 
-    const auto *mutable_descriptor_type_create_info = vku::FindStructInPNextChain<VkMutableDescriptorTypeCreateInfoEXT>(p_create_info->pNext);
-    if (mutable_descriptor_type_create_info) {
-        mutable_types_.resize(mutable_descriptor_type_create_info->mutableDescriptorTypeListCount);
-        for (uint32_t i = 0; i < mutable_descriptor_type_create_info->mutableDescriptorTypeListCount; ++i) {
-            const auto &list = mutable_descriptor_type_create_info->pMutableDescriptorTypeLists[i];
-            mutable_types_[i].reserve(list.descriptorTypeCount);
-            for (uint32_t j = 0; j < list.descriptorTypeCount; ++j) {
-                mutable_types_[i].push_back(list.pDescriptorTypes[j]);
-            }
-            std::sort(mutable_types_[i].begin(), mutable_types_[i].end());
-        }
-    }
-
     // Store the create info in the sorted order from above
     uint32_t binding_index = 0;
     binding_count_ = static_cast<uint32_t>(sorted_bindings.size());
@@ -371,6 +358,24 @@ vvl::DescriptorSetLayoutDef::DescriptorSetLayoutDef(vvl::DeviceState &device_sta
         auto final_index = global_index + bindings_[i].descriptorCount;
         global_index_range_.emplace_back(global_index, final_index);
         global_index = final_index;
+    }
+
+    // Need to do after because of the way we sort above, the |index| in pMutableDescriptorTypeLists[index] is based on the create
+    // info, but this information is lost and we have changed to a sorted list based on bindings.
+    if (const auto *mutable_descriptor_type_create_info =
+            vku::FindStructInPNextChain<VkMutableDescriptorTypeCreateInfoEXT>(p_create_info->pNext)) {
+        mutable_bindings_.resize(mutable_descriptor_type_create_info->mutableDescriptorTypeListCount);
+        for (uint32_t i = 0; i < mutable_descriptor_type_create_info->mutableDescriptorTypeListCount; ++i) {
+            const auto &list = mutable_descriptor_type_create_info->pMutableDescriptorTypeLists[i];
+            const uint32_t mutable_index = binding_to_index_map_[p_create_info->pBindings[i].binding];
+            mutable_bindings_[mutable_index].original_index = i;
+            mutable_bindings_[mutable_index].types.resize(list.descriptorTypeCount);
+            for (uint32_t j = 0; j < list.descriptorTypeCount; ++j) {
+                mutable_bindings_[mutable_index].types[j] = list.pDescriptorTypes[j];
+            }
+            // Sort so we can do a quick compare if list is same later
+            std::sort(mutable_bindings_[mutable_index].types.begin(), mutable_bindings_[mutable_index].types.end());
+        }
     }
 }
 
@@ -452,9 +457,10 @@ size_t DescriptorSetLayoutDef::GetImmutableSamplersCombinedHashFromIndex(uint32_
 }
 
 bool vvl::DescriptorSetLayoutDef::IsTypeMutable(const VkDescriptorType type, uint32_t binding) const {
-    if (binding < mutable_types_.size()) {
-        if (mutable_types_[binding].size() > 0) {
-            for (const auto mutable_type : mutable_types_[binding]) {
+    const uint32_t index = GetIndexFromBinding(binding);
+    if (index < mutable_bindings_.size()) {
+        if (mutable_bindings_[index].types.size() > 0) {
+            for (const VkDescriptorType &mutable_type : mutable_bindings_[index].types) {
                 if (type == mutable_type) {
                     return true;
                 }
@@ -468,30 +474,37 @@ bool vvl::DescriptorSetLayoutDef::IsTypeMutable(const VkDescriptorType type, uin
 }
 
 std::string vvl::DescriptorSetLayoutDef::PrintMutableTypes(uint32_t binding) const {
-    if (binding >= mutable_types_.size()) {
-        return "no Mutable Type list at this binding";
-    }
     std::ostringstream ss;
-    const auto mutable_types = mutable_types_[binding];
-    if (mutable_types.empty()) {
-        ss << "pMutableDescriptorTypeLists is empty";
+    const uint32_t index = GetIndexFromBinding(binding);
+    if (index >= mutable_bindings_.size()) {
+        ss << "no Mutable Type list at this binding " << binding;
     } else {
-        for (uint32_t i = 0; i < mutable_types.size(); i++) {
-            ss << string_VkDescriptorType(mutable_types[i]);
-            if (i + 1 != mutable_types.size()) {
-                ss << ", ";
+        ss << "pMutableDescriptorTypeLists[" << mutable_bindings_[index].original_index << "].pDescriptorTypes is ";
+        const std::vector<VkDescriptorType> &mutable_types = mutable_bindings_[index].types;
+        if (mutable_types.empty()) {
+            ss << "empty";
+        } else {
+            ss << "[";
+            for (uint32_t i = 0; i < mutable_types.size(); i++) {
+                ss << string_VkDescriptorType(mutable_types[i]);
+                if (i + 1 != mutable_types.size()) {
+                    ss << ", ";
+                }
             }
+            ss << "]";
         }
     }
+
     return ss.str();
 }
 
 const std::vector<VkDescriptorType> &vvl::DescriptorSetLayoutDef::GetMutableTypes(uint32_t binding) const {
-    if (binding >= mutable_types_.size()) {
+    const uint32_t index = GetIndexFromBinding(binding);
+    if (index >= mutable_bindings_.size()) {
         static const std::vector<VkDescriptorType> empty = {};
         return empty;
     }
-    return mutable_types_[binding];
+    return mutable_bindings_[index].types;
 }
 
 std::string vvl::DescriptorSetLayoutDef::DescribeDescriptorBufferSizeAndOffests(VkDevice device,

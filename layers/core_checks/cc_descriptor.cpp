@@ -1088,8 +1088,7 @@ bool CoreChecks::ValidateCopyUpdateDescriptorTypes(const VkCopyDescriptorSet &up
                 const LogObjectList objlist(update.srcSet, update.dstSet, src_layout.Handle(), dst_layout.Handle());
                 skip |= LogError("VUID-VkCopyDescriptorSet-dstSet-04612", objlist, copy_loc.dot(Field::dstBinding),
                                  "(%" PRIu32 ") descriptor type is VK_DESCRIPTOR_TYPE_MUTABLE_EXT, but the srcBinding (%" PRIu32
-                                 ") descriptor type (%s) is "
-                                 "not found in pMutableDescriptorTypeLists list [%s].",
+                                 ") descriptor type (%s) is not found in %s.",
                                  update.dstBinding, update.srcBinding, string_VkDescriptorType(src_type),
                                  dst_layout.PrintMutableTypes(update.dstBinding).c_str());
             }
@@ -1123,7 +1122,7 @@ bool CoreChecks::ValidateCopyUpdateDescriptorTypes(const VkCopyDescriptorSet &up
             skip |= LogError("VUID-VkCopyDescriptorSet-dstSet-04614", objlist, copy_loc.dot(Field::srcBinding),
                              "(%" PRIu32 ") and dstBinding (%" PRIu32
                              ") are both VK_DESCRIPTOR_TYPE_MUTABLE_EXT, but their corresponding pMutableDescriptorTypeLists do "
-                             "not match.\nsrc [%s]\ndst [%s]\n",
+                             "not match.\nsrc %s\ndst %s\n",
                              update.srcBinding, update.dstBinding, src_layout.PrintMutableTypes(update.srcBinding).c_str(),
                              dst_layout.PrintMutableTypes(update.dstBinding).c_str());
         }
@@ -1688,13 +1687,11 @@ bool CoreChecks::ValidateWriteUpdate(const vvl::DescriptorSet &dst_set, const Vk
     if (dst_binding->type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
         // Check if the new descriptor descriptor type is in the list of allowed mutable types for this binding
         if (!dst_layout->IsTypeMutable(update.descriptorType, update.dstBinding)) {
-            skip |=
-                LogError("VUID-VkWriteDescriptorSet-dstSet-04611", dst_layout->Handle(), write_loc.dot(Field::dstBinding),
-                         "(%" PRIu32
-                         ") is of type VK_DESCRIPTOR_TYPE_MUTABLE_EXT, but the new descriptorType (%s) was not in "
-                         "VkMutableDescriptorTypeListEXT::pDescriptorTypes (%s).\n%s",
-                         update.dstBinding, string_VkDescriptorType(update.descriptorType),
-                         dst_layout->PrintMutableTypes(update.dstBinding).c_str(), dsl_error_source.PrintMessage(*this).c_str());
+            skip |= LogError(
+                "VUID-VkWriteDescriptorSet-dstSet-04611", dst_layout->Handle(), write_loc.dot(Field::dstBinding),
+                "(%" PRIu32 ") is of type VK_DESCRIPTOR_TYPE_MUTABLE_EXT, but the new descriptorType (%s) was not in %s.\n%s",
+                update.dstBinding, string_VkDescriptorType(update.descriptorType),
+                dst_layout->PrintMutableTypes(update.dstBinding).c_str(), dsl_error_source.PrintMessage(*this).c_str());
         }
     } else if (dst_binding->type != update.descriptorType) {
         skip |=
