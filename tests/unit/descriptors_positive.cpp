@@ -1516,6 +1516,150 @@ TEST_F(PositiveDescriptors, CopyDestroyedMutableDescriptors) {
     vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_set);
 }
 
+TEST_F(PositiveDescriptors, WriteMutableDescriptorSet) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10785");
+    AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::mutableDescriptorType);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkDescriptorPoolSize ds_type_count = {};
+    ds_type_count.type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
+    ds_type_count.descriptorCount = 2;
+
+    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
+    ds_pool_ci.maxSets = 1;
+    ds_pool_ci.poolSizeCount = 1;
+    ds_pool_ci.pPoolSizes = &ds_type_count;
+
+    vkt::DescriptorPool pool(*m_device, ds_pool_ci);
+
+    VkDescriptorSetLayoutBinding dsl_bindings[2]{{0, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                 {2, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1, VK_SHADER_STAGE_ALL, nullptr}};
+
+    VkDescriptorType types_0[1] = {VK_DESCRIPTOR_TYPE_SAMPLER};
+    VkDescriptorType types_2[2] = {
+        VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+        VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+    };
+
+    VkMutableDescriptorTypeListEXT type_list[2] = {
+        {1, types_0},
+        {2, types_2},
+    };
+
+    VkMutableDescriptorTypeCreateInfoEXT mdtci = vku::InitStructHelper();
+    mdtci.mutableDescriptorTypeListCount = 2;
+    mdtci.pMutableDescriptorTypeLists = type_list;
+
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper(&mdtci);
+    ds_layout_ci.bindingCount = 2;
+    ds_layout_ci.pBindings = dsl_bindings;
+
+    vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+    VkDescriptorSetLayout ds_layout_handle = ds_layout;
+
+    VkDescriptorSetAllocateInfo allocate_info = vku::InitStructHelper();
+    allocate_info.descriptorPool = pool;
+    allocate_info.descriptorSetCount = 1;
+    allocate_info.pSetLayouts = &ds_layout_handle;
+
+    VkDescriptorSet descriptor_set;
+    VkResult err = vk::AllocateDescriptorSets(device(), &allocate_info, &descriptor_set);
+    ASSERT_EQ(VK_SUCCESS, err);
+
+    vkt::Image image(*m_device, 16, 16, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkDescriptorImageInfo image_info = {};
+    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    image_info.imageView = image_view;
+    image_info.sampler = VK_NULL_HANDLE;
+
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstSet = descriptor_set;
+    descriptor_write.dstBinding = 2;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    descriptor_write.pImageInfo = &image_info;
+
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+}
+
+TEST_F(PositiveDescriptors, WriteMutableDescriptorSet2) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10785");
+    AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::mutableDescriptorType);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkDescriptorPoolSize ds_type_count = {};
+    ds_type_count.type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
+    ds_type_count.descriptorCount = 2;
+
+    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
+    ds_pool_ci.maxSets = 1;
+    ds_pool_ci.poolSizeCount = 1;
+    ds_pool_ci.pPoolSizes = &ds_type_count;
+
+    vkt::DescriptorPool pool(*m_device, ds_pool_ci);
+
+    VkDescriptorSetLayoutBinding dsl_bindings[2]{{1, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                 {0, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1, VK_SHADER_STAGE_ALL, nullptr}};
+
+    // map to binding 1
+    VkDescriptorType types_0[2] = {
+        VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+        VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+    };
+    // map to binding 0
+    VkDescriptorType types_1[1] = {VK_DESCRIPTOR_TYPE_SAMPLER};
+
+    VkMutableDescriptorTypeListEXT type_list[2] = {
+        {2, types_0},
+        {1, types_1},
+    };
+
+    VkMutableDescriptorTypeCreateInfoEXT mdtci = vku::InitStructHelper();
+    mdtci.mutableDescriptorTypeListCount = 2;
+    mdtci.pMutableDescriptorTypeLists = type_list;
+
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper(&mdtci);
+    ds_layout_ci.bindingCount = 2;
+    ds_layout_ci.pBindings = dsl_bindings;
+
+    vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+    VkDescriptorSetLayout ds_layout_handle = ds_layout;
+
+    VkDescriptorSetAllocateInfo allocate_info = vku::InitStructHelper();
+    allocate_info.descriptorPool = pool;
+    allocate_info.descriptorSetCount = 1;
+    allocate_info.pSetLayouts = &ds_layout_handle;
+
+    VkDescriptorSet descriptor_set;
+    VkResult err = vk::AllocateDescriptorSets(device(), &allocate_info, &descriptor_set);
+    ASSERT_EQ(VK_SUCCESS, err);
+
+    vkt::Image image(*m_device, 16, 16, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkDescriptorImageInfo image_info = {};
+    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    image_info.imageView = image_view;
+    image_info.sampler = VK_NULL_HANDLE;
+
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstSet = descriptor_set;
+    descriptor_write.dstBinding = 1;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    descriptor_write.pImageInfo = &image_info;
+
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+}
+
 TEST_F(PositiveDescriptors, WriteDescriptorSetTypeStageMatch) {
     TEST_DESCRIPTION("Overstep the current binding to another valid binding");
     RETURN_IF_SKIP(Init());

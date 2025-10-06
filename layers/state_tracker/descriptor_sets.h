@@ -185,7 +185,8 @@ class DescriptorSetLayoutDef {
     uint32_t GetBindingCount() const { return binding_count_; };
     // Return true if given binding is present in this layout
     bool HasBinding(const uint32_t binding) const { return binding_to_index_map_.count(binding) > 0; };
-    // Return true if binding 1 beyond given exists and has same type, stageFlags & immutable sampler use
+    // Return the index into the sorted list of bindings
+    // **NOT** the index VkDescriptorSetLayoutCreateInfo::pBindings, as we sort the bindings
     uint32_t GetIndexFromBinding(uint32_t binding) const;
     // Various Get functions that can either be passed a binding#, which will
     //  be automatically translated into the appropriate index, or the index# can be passed in directly
@@ -262,8 +263,13 @@ class DescriptorSetLayoutDef {
     // The vector is allocated only if there is at least one binding with immutable samplers
     std::vector<size_t> immutable_sampler_combined_hashes_;
 
-    // List of mutable types for each binding: [binding][mutable type]
-    std::vector<std::vector<VkDescriptorType>> mutable_types_;
+    struct MutableBindingCreation {
+        uint32_t original_index;  // into VkDescriptorSetLayoutCreateInfo::pBindings
+        std::vector<VkDescriptorType> types;
+    };
+    // List of mutable types for each binding: [index][mutable type]
+    // Will need to use GetIndexFromBinding() to get [index]
+    std::vector<MutableBindingCreation> mutable_bindings_;
 
     // Containing non-emtpy bindings in numerical order
     std::set<uint32_t> non_empty_bindings_;
