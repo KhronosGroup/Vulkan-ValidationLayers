@@ -2391,7 +2391,7 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer 
             continue;  // the buffer is not valid
         }
 
-        const VkDescriptorBufferBindingInfoEXT &binding_info = cb_state.descriptor_buffer_binding_info[buffer_index];
+        const auto &binding_info = cb_state.descriptor_buffer_binding_info[buffer_index];
         const VkDeviceAddress start = binding_info.address;
         const auto buffer_states = GetBuffersByAddress(start);
 
@@ -2410,6 +2410,30 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer 
         const VkDeviceAddress offset = pOffsets[i];
         if (offset == 0) {
             continue;  // is by definition small enough as it is at the start
+        }
+        if (binding_info.usage & VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) {
+            if (offset > phys_dev_ext_props.descriptor_buffer_props.maxResourceDescriptorBufferRange) {
+                const char *vuid = is_2 ? "VUID-VkSetDescriptorBufferOffsetsInfoEXT-pOffsets-08127"
+                                        : "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pOffsets-08127";
+                const LogObjectList objlist(cb_state.Handle(), set_layout->Handle(), pipeline_layout->Handle());
+                skip |= LogError(vuid, objlist, loc.dot(Field::pOffset, i),
+                                 "(%" PRIu64 ") is greater than maxResourceDescriptorBufferRange (%" PRIu64
+                                 ").\nThis can be fixed by updating VkDescriptorBufferBindingInfoEXT::address (0x%" PRIxLEAST64
+                                 ") such that the offset can be lowered.",
+                                 offset, phys_dev_ext_props.descriptor_buffer_props.maxResourceDescriptorBufferRange, start);
+            }
+        }
+        if (binding_info.usage & VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) {
+            if (offset > phys_dev_ext_props.descriptor_buffer_props.maxSamplerDescriptorBufferRange) {
+                const char *vuid = is_2 ? "VUID-VkSetDescriptorBufferOffsetsInfoEXT-pOffsets-08126"
+                                        : "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pOffsets-08126";
+                const LogObjectList objlist(cb_state.Handle(), set_layout->Handle(), pipeline_layout->Handle());
+                skip |= LogError(vuid, objlist, loc.dot(Field::pOffset, i),
+                                 "(%" PRIu64 ") is greater than maxSamplerDescriptorBufferRange (%" PRIu64
+                                 ").\nThis can be fixed by updating VkDescriptorBufferBindingInfoEXT::address (0x%" PRIxLEAST64
+                                 ") such that the offset can be lowered.",
+                                 offset, phys_dev_ext_props.descriptor_buffer_props.maxSamplerDescriptorBufferRange, start);
+            }
         }
 
         bool valid_binding = false;
@@ -2598,6 +2622,8 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
         BufferAddressValidation<4> buffer_address_validator = {{{
             {"VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08055",
              [buffer_usage](const vvl::Buffer &buffer_state) {
+                 // TODO - This check seems wrong, being looked inside WG
+                 // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4469
                  if ((buffer_state.usage &
                       (VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT |
                        VK_BUFFER_USAGE_2_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT)) !=
