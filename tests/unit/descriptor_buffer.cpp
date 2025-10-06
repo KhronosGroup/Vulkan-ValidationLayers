@@ -944,6 +944,50 @@ TEST_F(NegativeDescriptorBuffer, BindingOffsetFirst) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDescriptorBuffer, MaxDescriptorBufferRange) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+    if (!IsPlatformMockICD()) {
+        GTEST_SKIP() << "Hard to write a test that will reasonably work everywhere";
+    }
+
+    std::vector<VkDescriptorSetLayoutBinding> bindings = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                          {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    vkt::DescriptorSetLayout dsl(*m_device, bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
+    vkt::PipelineLayout pipeline_layout(*m_device, {&dsl});
+
+    vkt::Buffer buffer_s(*m_device, descriptor_buffer_properties.maxSamplerDescriptorBufferRange + 512,
+                         VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
+    vkt::Buffer buffer_r(*m_device, descriptor_buffer_properties.maxResourceDescriptorBufferRange + 512,
+                         VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
+
+    VkBufferUsageFlags2CreateInfo buffer_usage_flags = vku::InitStructHelper();
+    buffer_usage_flags.usage = VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+
+    VkDescriptorBufferBindingInfoEXT buffer_bindings[2];
+    buffer_bindings[0] = vku::InitStructHelper();
+    buffer_bindings[0].address = buffer_s.Address();
+    buffer_bindings[0].usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
+    buffer_bindings[1] = vku::InitStructHelper(&buffer_usage_flags);
+    buffer_bindings[1].address = buffer_r.Address();
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 2, buffer_bindings);
+
+    uint32_t index = 0;
+    VkDeviceSize offset = descriptor_buffer_properties.maxSamplerDescriptorBufferRange + 256;
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetDescriptorBufferOffsetsEXT-pOffsets-08126");
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &index, &offset);
+    m_errorMonitor->VerifyFound();
+
+    index = 1;
+    offset = descriptor_buffer_properties.maxResourceDescriptorBufferRange + 256;
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetDescriptorBufferOffsetsEXT-pOffsets-08127");
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &index, &offset);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDescriptorBuffer, DescriptorBufferAddress) {
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
