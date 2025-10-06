@@ -22,6 +22,7 @@
 #include <vulkan/vulkan_core.h>
 #include <vulkan/utility/vk_format_utils.h>
 #include "error_message/error_location.h"
+#include "generated/command_validation.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/last_bound_state.h"
 #include "state_tracker/render_pass_state.h"
@@ -438,6 +439,17 @@ std::shared_ptr<CommandBufferImageLayoutMap> CommandBuffer::GetOrCreateImageLayo
     return image_layout_map;
 }
 
+void CommandBuffer::RecordCommand(const Location &loc) {
+    command_count++;
+
+    if (first_action_or_sync_command == Func::Empty) {
+        const CommandValidationInfo &info = GetCommandValidationInfo(loc.function);
+        if (info.action || info.synchronization) {
+            first_action_or_sync_command = loc.function;
+        }
+    }
+}
+
 void CommandBuffer::RecordBeginQuery(const QueryObject &query_obj, const Location &loc) {
     active_queries.insert(query_obj);
     started_queries.insert(query_obj);
@@ -489,7 +501,7 @@ void CommandBuffer::RecordEndQueries(VkQueryPool queryPool, uint32_t firstQuery,
 }
 
 void CommandBuffer::RecordWriteTimestamp(VkQueryPool queryPool, uint32_t slot, const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     if (dev_data.disabled[query_validation]) {
         return;
     }
@@ -513,7 +525,7 @@ void CommandBuffer::RecordWriteTimestamp(VkQueryPool queryPool, uint32_t slot, c
 }
 
 void CommandBuffer::RecordResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     if (dev_data.disabled[query_validation]) {
         return;
     }
@@ -538,7 +550,7 @@ void CommandBuffer::RecordResetQueryPool(VkQueryPool queryPool, uint32_t firstQu
 void CommandBuffer::RecordCopyQueryPoolResults(VkQueryPool queryPool, VkBuffer dstBuffer, uint32_t firstQuery, uint32_t queryCount,
                                                VkDeviceSize dstOffset, VkDeviceSize stride, VkQueryResultFlags flags,
                                                const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     if (dev_data.disabled[query_validation]) {
         return;
     }
@@ -558,7 +570,7 @@ void CommandBuffer::RecordCopyQueryPoolResults(VkQueryPool queryPool, VkBuffer d
 
 void CommandBuffer::RecordWriteAccelerationStructuresProperties(VkQueryPool queryPool, uint32_t firstQuery,
                                                                 uint32_t accelerationStructureCount, const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     if (dev_data.disabled[query_validation]) {
         return;
     }
@@ -689,7 +701,7 @@ void CommandBuffer::UpdateAttachmentsView(const VkRenderPassBeginInfo *pRenderPa
 
 void CommandBuffer::RecordBeginRenderPass(const VkRenderPassBeginInfo &render_pass_begin,
                                           const VkSubpassBeginInfo &subpass_begin_info, const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     active_framebuffer = dev_data.Get<vvl::Framebuffer>(render_pass_begin.framebuffer);
     active_render_pass = dev_data.Get<vvl::RenderPass>(render_pass_begin.renderPass);
     render_area = render_pass_begin.renderArea;
@@ -740,7 +752,7 @@ void CommandBuffer::RecordBeginRenderPass(const VkRenderPassBeginInfo &render_pa
 
 void CommandBuffer::RecordNextSubpass(const VkSubpassBeginInfo &subpass_begin_info, const VkSubpassEndInfo *subpass_end_info,
                                       const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     SetActiveSubpass(GetActiveSubpass() + 1);
     active_subpass_contents = subpass_begin_info.contents;
     ASSERT_AND_RETURN(active_render_pass);
@@ -770,7 +782,7 @@ void CommandBuffer::RecordEndRenderPass(const VkSubpassEndInfo *subpass_end_info
         item.second->RecordEndRenderPass(subpass_end_info, loc);
     }
 
-    command_count++;
+    RecordCommand(loc);
     active_render_pass = nullptr;
     attachment_source = AttachmentSource::Empty;
     active_attachments.clear();
@@ -796,7 +808,7 @@ static void InitDefaultRenderingAttachments(CommandBuffer::RenderingAttachment &
 }
 
 void CommandBuffer::RecordBeginRendering(const VkRenderingInfo &rendering_info, const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     active_render_pass = std::make_shared<vvl::RenderPass>(&rendering_info, true);
     render_area = rendering_info.renderArea;
     render_pass_queries.clear();
@@ -819,6 +831,12 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo &rendering_info, 
     // Track if the first render pass instance does resume
     if (!has_render_pass_instance && (rendering_info.flags & VK_RENDERING_RESUMING_BIT)) {
         resumes_render_pass_instance = true;
+
+        // There are no earlier action/sync commands only if the current BeginRendering
+        // is the first action command (since BeginRendering itself is an action command).
+        if (first_action_or_sync_command != loc.function) {
+            action_or_sync_command_before_first_resume = true;
+        }
     }
     // Track the last suspension state. Notice that both RESUMING/SUSPENDING flags can be specified.
     // The ordering is that suspension action goes after resuming action.
@@ -902,19 +920,19 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo &rendering_info, 
     }
 }
 
-void CommandBuffer::RecordEndRendering(const VkRenderingEndInfoEXT *pRenderingEndInfo) {
+void CommandBuffer::RecordEndRendering(const VkRenderingEndInfoEXT *pRenderingEndInfo, const Location &loc) {
     // Call first so SubState can use render pass object before we destroy it
     for (auto &item : sub_states_) {
         item.second->RecordEndRendering(pRenderingEndInfo);
     }
 
-    command_count++;
+    RecordCommand(loc);
     active_render_pass = nullptr;
     active_color_attachments_index.clear();
 }
 
 void CommandBuffer::RecordBeginVideoCoding(const VkVideoBeginCodingInfoKHR &begin_info, const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     bound_video_session = dev_data.Get<vvl::VideoSession>(begin_info.videoSession);
     ASSERT_AND_RETURN(bound_video_session);
     bound_video_session_parameters = dev_data.Get<vvl::VideoSessionParameters>(begin_info.videoSessionParameters);
@@ -978,8 +996,8 @@ void CommandBuffer::RecordBeginVideoCoding(const VkVideoBeginCodingInfoKHR &begi
     }
 }
 
-void CommandBuffer::RecordEndVideoCoding() {
-    command_count++;
+void CommandBuffer::RecordEndVideoCoding(const Location &loc) {
+    RecordCommand(loc);
     bound_video_session = nullptr;
     bound_video_session_parameters = nullptr;
     bound_video_picture_resources.clear();
@@ -987,7 +1005,7 @@ void CommandBuffer::RecordEndVideoCoding() {
 }
 
 void CommandBuffer::RecordControlVideoCoding(const VkVideoCodingControlInfoKHR &control_info, const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     if (!bound_video_session) {
         return;
     }
@@ -1052,7 +1070,7 @@ void vvl::CommandBuffer::RecordVideoInlineQueries(const VkVideoInlineQueryInfoKH
 }
 
 void CommandBuffer::RecordDecodeVideo(const VkVideoDecodeInfoKHR &decode_info, const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     if (!bound_video_session) {
         return;
     }
@@ -1098,7 +1116,7 @@ void CommandBuffer::RecordDecodeVideo(const VkVideoDecodeInfoKHR &decode_info, c
 }
 
 void vvl::CommandBuffer::RecordEncodeVideo(const VkVideoEncodeInfoKHR &encode_info, const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     if (!bound_video_session) {
         return;
     }
@@ -1253,7 +1271,7 @@ void CommandBuffer::End(VkResult result) {
 }
 
 void CommandBuffer::RecordExecuteCommands(vvl::span<const VkCommandBuffer> secondary_command_buffers, const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     uint32_t cmd_index = 0;
     for (const VkCommandBuffer sub_command_buffer : secondary_command_buffers) {
         auto secondary_cb_state = dev_data.GetWrite<CommandBuffer>(sub_command_buffer);
@@ -1349,7 +1367,7 @@ void CommandBuffer::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint
 
 // Generic function to handle state update for all CmdDraw* type functions
 void CommandBuffer::RecordDraw(const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     LastBound &last_bound = lastBound[vvl::BindPointGraphics];
     for (auto &item : sub_states_) {
         item.second->RecordActionCommand(last_bound, loc);
@@ -1358,7 +1376,7 @@ void CommandBuffer::RecordDraw(const Location &loc) {
 
 // Generic function to handle state update for all CmdDispatch* type functions
 void CommandBuffer::RecordDispatch(const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     LastBound &last_bound = lastBound[vvl::BindPointCompute];
     for (auto &item : sub_states_) {
         item.second->RecordActionCommand(last_bound, loc);
@@ -1367,7 +1385,7 @@ void CommandBuffer::RecordDispatch(const Location &loc) {
 
 // Generic function to handle state update for all CmdTraceRay* type functions
 void CommandBuffer::RecordTraceRay(const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     LastBound &last_bound = lastBound[vvl::BindPointRayTracing];
     for (auto &item : sub_states_) {
         item.second->RecordActionCommand(last_bound, loc);
@@ -1670,6 +1688,7 @@ void CommandBuffer::SetImageViewLayout(const vvl::ImageView &view_state, VkImage
 }
 
 void CommandBuffer::RecordStateCmd(CBDynamicState state) {
+    // NOTE: this can be extended to use RecordCommand for state commands if needed (currently not needed)
     command_count++;
     RecordDynamicState(state);
 
@@ -1742,7 +1761,7 @@ void CommandBuffer::RecordSetDepthTestEnable(VkBool32 depth_test_enable) {
 
 void CommandBuffer::RecordCopyBuffer(vvl::Buffer &src_buffer_state, vvl::Buffer &dst_buffer_state, uint32_t region_count,
                                      const VkBufferCopy *regions, const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     for (auto &item : sub_states_) {
         item.second->RecordCopyBuffer(src_buffer_state, dst_buffer_state, region_count, regions, loc);
     }
@@ -1750,7 +1769,7 @@ void CommandBuffer::RecordCopyBuffer(vvl::Buffer &src_buffer_state, vvl::Buffer 
 
 void CommandBuffer::RecordCopyBuffer2(vvl::Buffer &src_buffer_state, vvl::Buffer &dst_buffer_state, uint32_t region_count,
                                       const VkBufferCopy2 *regions, const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     for (auto &item : sub_states_) {
         item.second->RecordCopyBuffer2(src_buffer_state, dst_buffer_state, region_count, regions, loc);
     }
@@ -1759,7 +1778,7 @@ void CommandBuffer::RecordCopyBuffer2(vvl::Buffer &src_buffer_state, vvl::Buffer
 void CommandBuffer::RecordCopyImage(vvl::Image &src_image_state, vvl::Image &dst_image_state, VkImageLayout src_image_layout,
                                     VkImageLayout dst_image_layout, uint32_t region_count, const VkImageCopy *regions,
                                     const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     for (auto &item : sub_states_) {
         item.second->RecordCopyImage(src_image_state, dst_image_state, src_image_layout, dst_image_layout, region_count, regions,
                                      loc);
@@ -1769,7 +1788,7 @@ void CommandBuffer::RecordCopyImage(vvl::Image &src_image_state, vvl::Image &dst
 void CommandBuffer::RecordCopyImage2(vvl::Image &src_image_state, vvl::Image &dst_image_state, VkImageLayout src_image_layout,
                                      VkImageLayout dst_image_layout, uint32_t region_count, const VkImageCopy2 *regions,
                                      const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     for (auto &item : sub_states_) {
         item.second->RecordCopyImage2(src_image_state, dst_image_state, src_image_layout, dst_image_layout, region_count, regions,
                                       loc);
@@ -1779,7 +1798,7 @@ void CommandBuffer::RecordCopyImage2(vvl::Image &src_image_state, vvl::Image &ds
 void CommandBuffer::RecordCopyBufferToImage(vvl::Buffer &src_buffer_state, vvl::Image &dst_image_state,
                                             VkImageLayout dst_image_layout, uint32_t region_count, const VkBufferImageCopy *regions,
                                             const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     for (auto &item : sub_states_) {
         item.second->RecordCopyBufferToImage(src_buffer_state, dst_image_state, dst_image_layout, region_count, regions, loc);
     }
@@ -1788,7 +1807,7 @@ void CommandBuffer::RecordCopyBufferToImage(vvl::Buffer &src_buffer_state, vvl::
 void CommandBuffer::RecordCopyBufferToImage2(vvl::Buffer &src_buffer_state, vvl::Image &dst_image_state,
                                              VkImageLayout dst_image_layout, uint32_t region_count,
                                              const VkBufferImageCopy2 *regions, const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     for (auto &item : sub_states_) {
         item.second->RecordCopyBufferToImage2(src_buffer_state, dst_image_state, dst_image_layout, region_count, regions, loc);
     }
@@ -1797,7 +1816,7 @@ void CommandBuffer::RecordCopyBufferToImage2(vvl::Buffer &src_buffer_state, vvl:
 void CommandBuffer::RecordCopyImageToBuffer(vvl::Image &src_image_state, vvl::Buffer &dst_buffer_state,
                                             VkImageLayout src_image_layout, uint32_t region_count, const VkBufferImageCopy *regions,
                                             const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     for (auto &item : sub_states_) {
         item.second->RecordCopyImageToBuffer(src_image_state, dst_buffer_state, src_image_layout, region_count, regions, loc);
     }
@@ -1806,7 +1825,7 @@ void CommandBuffer::RecordCopyImageToBuffer(vvl::Image &src_image_state, vvl::Bu
 void CommandBuffer::RecordCopyImageToBuffer2(vvl::Image &src_image_state, vvl::Buffer &dst_buffer_state,
                                              VkImageLayout src_image_layout, uint32_t region_count,
                                              const VkBufferImageCopy2 *regions, const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     for (auto &item : sub_states_) {
         item.second->RecordCopyImageToBuffer2(src_image_state, dst_buffer_state, src_image_layout, region_count, regions, loc);
     }
@@ -1815,7 +1834,7 @@ void CommandBuffer::RecordCopyImageToBuffer2(vvl::Image &src_image_state, vvl::B
 void CommandBuffer::RecordBlitImage(vvl::Image &src_image_state, vvl::Image &dst_image_state, VkImageLayout src_image_layout,
                                     VkImageLayout dst_image_layout, uint32_t region_count, const VkImageBlit *regions,
                                     const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     for (auto &item : sub_states_) {
         item.second->RecordBlitImage(src_image_state, dst_image_state, src_image_layout, dst_image_layout, region_count, regions,
                                      loc);
@@ -1825,7 +1844,7 @@ void CommandBuffer::RecordBlitImage(vvl::Image &src_image_state, vvl::Image &dst
 void CommandBuffer::RecordBlitImage2(vvl::Image &src_image_state, vvl::Image &dst_image_state, VkImageLayout src_image_layout,
                                      VkImageLayout dst_image_layout, uint32_t region_count, const VkImageBlit2 *regions,
                                      const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     for (auto &item : sub_states_) {
         item.second->RecordBlitImage2(src_image_state, dst_image_state, src_image_layout, dst_image_layout, region_count, regions,
                                       loc);
@@ -1834,7 +1853,7 @@ void CommandBuffer::RecordBlitImage2(vvl::Image &src_image_state, vvl::Image &ds
 
 void CommandBuffer::RecordResolveImage(vvl::Image &src_image_state, vvl::Image &dst_image_state, uint32_t region_count,
                                        const VkImageResolve *regions, const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     for (auto &item : sub_states_) {
         item.second->RecordResolveImage(src_image_state, dst_image_state, region_count, regions, loc);
     }
@@ -1842,7 +1861,7 @@ void CommandBuffer::RecordResolveImage(vvl::Image &src_image_state, vvl::Image &
 
 void CommandBuffer::RecordResolveImage2(vvl::Image &src_image_state, vvl::Image &dst_image_state, uint32_t region_count,
                                         const VkImageResolve2 *regions, const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     for (auto &item : sub_states_) {
         item.second->RecordResolveImage2(src_image_state, dst_image_state, region_count, regions, loc);
     }
@@ -1851,7 +1870,7 @@ void CommandBuffer::RecordResolveImage2(vvl::Image &src_image_state, vvl::Image 
 void CommandBuffer::RecordClearColorImage(vvl::Image &image_state, VkImageLayout image_layout,
                                           const VkClearColorValue *color_values, uint32_t range_count,
                                           const VkImageSubresourceRange *ranges, const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     for (auto &item : sub_states_) {
         item.second->RecordClearColorImage(image_state, image_layout, color_values, range_count, ranges, loc);
     }
@@ -1860,7 +1879,7 @@ void CommandBuffer::RecordClearColorImage(vvl::Image &image_state, VkImageLayout
 void CommandBuffer::RecordClearDepthStencilImage(vvl::Image &image_state, VkImageLayout image_layout,
                                                  const VkClearDepthStencilValue *depth_stencil_values, uint32_t range_count,
                                                  const VkImageSubresourceRange *ranges, const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     for (auto &item : sub_states_) {
         item.second->RecordClearDepthStencilImage(image_state, image_layout, depth_stencil_values, range_count, ranges, loc);
     }
@@ -1868,28 +1887,29 @@ void CommandBuffer::RecordClearDepthStencilImage(vvl::Image &image_state, VkImag
 
 void CommandBuffer::RecordClearAttachments(uint32_t attachment_count, const VkClearAttachment *pAttachments, uint32_t rect_count,
                                            const VkClearRect *pRects, const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     for (auto &item : sub_states_) {
         item.second->RecordClearAttachments(attachment_count, pAttachments, rect_count, pRects, loc);
     }
 }
 
 void CommandBuffer::RecordFillBuffer(vvl::Buffer &buffer_state, VkDeviceSize offset, VkDeviceSize size, const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     for (auto &item : sub_states_) {
         item.second->RecordFillBuffer(buffer_state, offset, size, loc);
     }
 }
 
 void CommandBuffer::RecordUpdateBuffer(vvl::Buffer &buffer_state, VkDeviceSize offset, VkDeviceSize size, const Location &loc) {
-    command_count++;
+    RecordCommand(loc);
     for (auto &item : sub_states_) {
         item.second->RecordUpdateBuffer(buffer_state, offset, size, loc);
     }
 }
 
-void CommandBuffer::RecordSetEvent(VkEvent event, VkPipelineStageFlags2 stage_mask, const VkDependencyInfo *dependency_info) {
-    command_count++;
+void CommandBuffer::RecordSetEvent(VkEvent event, VkPipelineStageFlags2 stage_mask, const VkDependencyInfo *dependency_info,
+                                   const Location &loc) {
+    RecordCommand(loc);
     for (auto &item : sub_states_) {
         item.second->RecordSetEvent(event, stage_mask, dependency_info);
     }
@@ -1905,8 +1925,8 @@ void CommandBuffer::RecordSetEvent(VkEvent event, VkPipelineStageFlags2 stage_ma
     }
 }
 
-void CommandBuffer::RecordResetEvent(VkEvent event, VkPipelineStageFlags2 stage_mask) {
-    command_count++;
+void CommandBuffer::RecordResetEvent(VkEvent event, VkPipelineStageFlags2 stage_mask, const Location &loc) {
+    RecordCommand(loc);
     for (auto &item : sub_states_) {
         item.second->RecordResetEvent(event, stage_mask);
     }
@@ -2008,28 +2028,30 @@ void CommandBuffer::RecordPushConstants(const vvl::PipelineLayout &pipeline_layo
     }
 }
 
-void CommandBuffer::RecordBeginConditionalRendering() {
-    command_count++;
+void CommandBuffer::RecordBeginConditionalRendering(const Location &loc) {
+    RecordCommand(loc);
     conditional_rendering_active = true;
     conditional_rendering_inside_render_pass = active_render_pass != nullptr;
     conditional_rendering_subpass = GetActiveSubpass();
 }
 
-void CommandBuffer::RecordEndConditionalRendering() {
-    command_count++;
+void CommandBuffer::RecordEndConditionalRendering(const Location &loc) {
+    RecordCommand(loc);
     conditional_rendering_active = false;
     conditional_rendering_inside_render_pass = false;
     conditional_rendering_subpass = 0;
 }
 
-void CommandBuffer::RecordSetRenderingAttachmentLocations(const VkRenderingAttachmentLocationInfo *pLocationInfo) {
-    command_count++;
+void CommandBuffer::RecordSetRenderingAttachmentLocations(const VkRenderingAttachmentLocationInfo *pLocationInfo,
+                                                          const Location &loc) {
+    RecordCommand(loc);
     rendering_attachments.set_color_locations = true;
     SetRenderingAttachmentLocations(rendering_attachments, pLocationInfo);
 }
 
-void CommandBuffer::RecordSetRenderingInputAttachmentIndices(const VkRenderingInputAttachmentIndexInfo *pLocationInfo) {
-    command_count++;
+void CommandBuffer::RecordSetRenderingInputAttachmentIndices(const VkRenderingInputAttachmentIndexInfo *pLocationInfo,
+                                                             const Location &loc) {
+    RecordCommand(loc);
     rendering_attachments.set_color_indexes = true;
     SetRenderingInputAttachmentIndices(rendering_attachments, pLocationInfo);
 }

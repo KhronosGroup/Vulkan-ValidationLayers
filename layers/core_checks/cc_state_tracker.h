@@ -168,7 +168,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     }
 
     // used for VK_EXT_fragment_density_map_offset
-    // currently need to hold in Command buffer because it can be a suspended renderpassss
+    // currently need to hold in Command buffer because it can be a suspended renderpass
     std::vector<VkOffset2D> fragment_density_offsets;
 
     // Validation functions run at primary CB queue submit time
