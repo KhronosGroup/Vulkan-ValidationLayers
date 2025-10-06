@@ -51,21 +51,23 @@ class CommandValidationOutputGenerator(BaseGenerator):
             ****************************************************************************/\n''')
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
-        if self.filename == 'command_validation.cpp':
+        if self.filename == 'command_validation.h':
+            self.generateHeader()
+        elif self.filename == 'command_validation.cpp':
             self.generateSource()
         else:
             self.write(f'\nFile name {self.filename} has no code to generate\n')
 
         self.write('// NOLINTEND') # Wrap for clang-tidy to ignore
 
-    def generateSource(self):
+    def generateHeader(self):
         out = []
         out.append('''
-            #include "error_message/logging.h"
-            #include "core_checks/core_validation.h"
-            #include "state_tracker/cmd_buffer_state.h"
+            #pragma once
 
-            enum CMD_SCOPE_TYPE { CMD_SCOPE_INSIDE, CMD_SCOPE_OUTSIDE, CMD_SCOPE_BOTH };
+            #include "generated/error_location_helper.h"
+
+            enum class CommandScope { Inside, Outside, Both };
 
             struct CommandValidationInfo {
                 const char* recording_vuid;
@@ -74,17 +76,33 @@ class CommandValidationOutputGenerator(BaseGenerator):
                 VkQueueFlags queue_flags;
                 const char* queue_vuid;
 
-                CMD_SCOPE_TYPE render_pass;
+                CommandScope render_pass_scope;
                 const char* render_pass_vuid;
 
-                CMD_SCOPE_TYPE video_coding;
+                CommandScope video_coding_scope;
                 const char* video_coding_vuid;
+
+                bool state;
+                bool action;
+                bool synchronization;
             };
+
+            const CommandValidationInfo& GetCommandValidationInfo(vvl::Func command);
+            ''')
+        self.write("".join(out))
+
+    def generateSource(self):
+        out = []
+        out.append('''
+            #include "command_validation.h"
+            #include "error_message/logging.h"
+            #include "core_checks/core_validation.h"
+            #include "state_tracker/cmd_buffer_state.h"
 
             using Func = vvl::Func;
             ''')
         out.append('// clang-format off\n')
-        out.append('const auto &GetCommandValidationTable() {\n')
+        out.append('static const auto &GetCommandValidationTable() {\n')
         out.append('static const vvl::unordered_map<Func, CommandValidationInfo> kCommandValidationTable {\n')
         for command in [x for x in self.vk.commands.values() if x.name.startswith('vkCmd')]:
             out.append(f'{{Func::{command.name}, {{\n')
@@ -126,26 +144,32 @@ class CommandValidationOutputGenerator(BaseGenerator):
             out.append(f'    {queue_flags}, {vuid},\n')
 
             # render_pass / render_pass_vuid
-            renderPassType = 'CMD_SCOPE_BOTH'
+            renderPassType = 'CommandScope::Both'
             vuid = '"kVUIDUndefined"' # Only will be a VUID if not BOTH
             if command.renderPass is CommandScope.INSIDE:
-                renderPassType = 'CMD_SCOPE_INSIDE'
+                renderPassType = 'CommandScope::Inside'
                 vuid = getVUID(self.valid_vuids, f'VUID-{alias_name}-renderpass')
             elif command.renderPass is CommandScope.OUTSIDE:
-                renderPassType = 'CMD_SCOPE_OUTSIDE'
+                renderPassType = 'CommandScope::Outside'
                 vuid = getVUID(self.valid_vuids, f'VUID-{alias_name}-renderpass')
             out.append(f'    {renderPassType}, {vuid},\n')
 
             # video_coding / video_coding_vuid
-            videoCodingType = 'CMD_SCOPE_BOTH'
+            videoCodingType = 'CommandScope::Both'
             vuid = '"kVUIDUndefined"' # Only will be a VUID if not BOTH
             if command.videoCoding is CommandScope.INSIDE:
-                videoCodingType = 'CMD_SCOPE_INSIDE'
+                videoCodingType = 'CommandScope::Inside'
                 vuid = getVUID(self.valid_vuids, f'VUID-{alias_name}-videocoding')
             elif command.videoCoding is CommandScope.OUTSIDE or command.videoCoding is CommandScope.NONE:
-                videoCodingType = 'CMD_SCOPE_OUTSIDE'
+                videoCodingType = 'CommandScope::Outside'
                 vuid = getVUID(self.valid_vuids, f'VUID-{alias_name}-videocoding')
             out.append(f'    {videoCodingType}, {vuid},\n')
+
+            # command type
+            is_state = 'true' if 'state' in command.tasks else 'false'
+            is_action = 'true' if 'action' in command.tasks else 'false'
+            is_synchronization = 'true' if 'synchronization' in command.tasks else 'false'
+            out.append(f'    {is_state}, {is_action}, {is_synchronization},\n')
 
             out.append('}},\n')
         out.append('};\n')
@@ -153,71 +177,11 @@ class CommandValidationOutputGenerator(BaseGenerator):
         out.append('}\n')
         out.append('// clang-format on\n')
 
-        #
-        # The main function to validate all the commands
-        # TODO - Remove C++ code from being a single python string
         out.append('''
-            // Ran on all vkCmd* commands
-            // Because it validate the implicit VUs that stateless can't, if this fails, it is likely
-            // the input is very bad and other checks will crash dereferencing null pointers
-            bool CoreChecks::ValidateCmd(const vvl::CommandBuffer& cb_state, const Location& loc) const {
-                bool skip = false;
-
-                auto info_it = GetCommandValidationTable().find(loc.function);
-                if (info_it == GetCommandValidationTable().end()) {
-                    assert(false);
-                }
-                const auto& info = info_it->second;
-
-                // Validate the given command being added to the specified cmd buffer,
-                // flagging errors if CB is not in the recording state or if there's an issue with the Cmd ordering
-                switch (cb_state.state) {
-                    case CbState::Recording:
-                        skip |= ValidateCmdSubpassState(cb_state, loc, info.recording_vuid);
-                        break;
-
-                    case CbState::InvalidIncomplete:
-                        skip |= ReportInvalidCommandBuffer(cb_state, loc, info.recording_vuid);
-                        break;
-
-                    case CbState::New:
-                        skip |= LogError(info.recording_vuid, cb_state.Handle(), loc, "was called before vkBeginCommandBuffer().");
-                        break;
-
-                    case CbState::Recorded:
-                    case CbState::InvalidComplete:
-                        assert(loc.function != Func::Empty);
-                        skip |= LogError(info.recording_vuid, cb_state.Handle(), loc,
-                                        "was recorded, but vkBeginCommandBuffer() was not called prior to this command.");
-                        break;
-                }
-
-                // Validate the command pool from which the command buffer is from that the command is allowed for queue type
-                if (!HasRequiredQueueFlags(cb_state, *physical_device_state, info.queue_flags)) {
-                    const LogObjectList objlist(cb_state.Handle(), cb_state.command_pool->Handle());
-                    skip |= LogError(info.queue_vuid, objlist, loc,
-                                "%s", DescribeRequiredQueueFlag(cb_state, *physical_device_state, info.queue_flags).c_str());
-                }
-
-                // Validate if command is inside or outside a render pass if applicable
-                if (info.render_pass == CMD_SCOPE_INSIDE) {
-                    skip |= OutsideRenderPass(cb_state, loc, info.render_pass_vuid);
-                } else if (info.render_pass == CMD_SCOPE_OUTSIDE) {
-                    skip |= InsideRenderPass(cb_state, loc, info.render_pass_vuid);
-                }
-
-                // Validate if command is inside or outside a video coding scope if applicable
-                if (info.video_coding == CMD_SCOPE_INSIDE) {
-                    skip |= OutsideVideoCodingScope(cb_state, loc, info.video_coding_vuid);
-                } else if (info.video_coding == CMD_SCOPE_OUTSIDE) {
-                    skip |= InsideVideoCodingScope(cb_state, loc, info.video_coding_vuid);
-                }
-
-                // Validate if command has to be recorded in a primary command buffer
-                if (info.buffer_level_vuid != nullptr) {
-                    skip |= ValidatePrimaryCommandBuffer(cb_state, loc, info.buffer_level_vuid);
-                }
-
-                return skip;
-            }''')
+            const CommandValidationInfo& GetCommandValidationInfo(vvl::Func command) {
+                auto info_it = GetCommandValidationTable().find(command);
+                assert(info_it != GetCommandValidationTable().end());
+                return info_it->second;
+            }
+            ''')
         self.write("".join(out))

@@ -32,9 +32,70 @@
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "core_validation.h"
+#include "generated/command_validation.h"
 #include "generated/enum_flag_bits.h"
 #include "utils/image_layout_utils.h"
 #include "utils/math_utils.h"
+
+// Ran on all vkCmd* commands
+// Because it validate the implicit VUs that stateless can't, if this fails, it is likely
+// the input is very bad and other checks will crash dereferencing null pointers
+bool CoreChecks::ValidateCmd(const vvl::CommandBuffer &cb_state, const Location &loc) const {
+    bool skip = false;
+
+    const CommandValidationInfo &info = GetCommandValidationInfo(loc.function);
+
+    // Validate the given command being added to the specified cmd buffer,
+    // flagging errors if CB is not in the recording state or if there's an issue with the Cmd ordering
+    switch (cb_state.state) {
+        case CbState::Recording:
+            skip |= ValidateCmdSubpassState(cb_state, loc, info.recording_vuid);
+            break;
+
+        case CbState::InvalidIncomplete:
+            skip |= ReportInvalidCommandBuffer(cb_state, loc, info.recording_vuid);
+            break;
+
+        case CbState::New:
+            skip |= LogError(info.recording_vuid, cb_state.Handle(), loc, "was called before vkBeginCommandBuffer().");
+            break;
+
+        case CbState::Recorded:
+        case CbState::InvalidComplete:
+            assert(loc.function != Func::Empty);
+            skip |= LogError(info.recording_vuid, cb_state.Handle(), loc,
+                             "was recorded, but vkBeginCommandBuffer() was not called prior to this command.");
+            break;
+    }
+
+    // Validate the command pool from which the command buffer is from that the command is allowed for queue type
+    if (!HasRequiredQueueFlags(cb_state, *physical_device_state, info.queue_flags)) {
+        const LogObjectList objlist(cb_state.Handle(), cb_state.command_pool->Handle());
+        skip |= LogError(info.queue_vuid, objlist, loc, "%s",
+                         DescribeRequiredQueueFlag(cb_state, *physical_device_state, info.queue_flags).c_str());
+    }
+
+    // Validate if command is inside or outside a render pass if applicable
+    if (info.render_pass_scope == CommandScope::Inside) {
+        skip |= OutsideRenderPass(cb_state, loc, info.render_pass_vuid);
+    } else if (info.render_pass_scope == CommandScope::Outside) {
+        skip |= InsideRenderPass(cb_state, loc, info.render_pass_vuid);
+    }
+
+    // Validate if command is inside or outside a video coding scope if applicable
+    if (info.video_coding_scope == CommandScope::Inside) {
+        skip |= OutsideVideoCodingScope(cb_state, loc, info.video_coding_vuid);
+    } else if (info.video_coding_scope == CommandScope::Outside) {
+        skip |= InsideVideoCodingScope(cb_state, loc, info.video_coding_vuid);
+    }
+
+    // Validate if command has to be recorded in a primary command buffer
+    if (info.buffer_level_vuid != nullptr) {
+        skip |= ValidatePrimaryCommandBuffer(cb_state, loc, info.buffer_level_vuid);
+    }
+
+    return skip;
+}
 
 // This is a single location to report when a command buffer is invalid (which means it is not in a "recording state")
 bool CoreChecks::ReportInvalidCommandBuffer(const vvl::CommandBuffer &cb_state, const Location &loc, const char *vuid) const {

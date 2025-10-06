@@ -431,6 +431,16 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     enum class SuspendState { Empty, Suspended, Resumed };
     SuspendState last_suspend_state;
 
+    // If there is an action or sync command before the *first* resume of render pass instance.
+    // This is used by submit time validation to check for allowed commands.
+    //
+    // NOTE: only at submit time we can distingiush between two invalid usages:
+    //  a) not allowed command is used between suspend and resume
+    //  b) render pass is resumed without being suspended
+    bool action_or_sync_command_before_first_resume = false;
+
+    vvl::Func first_action_or_sync_command = vvl::Func::Empty;
+
     // This is null if we are outside a renderPass/rendering
     //
     // There are 4 ways we populate this pointer
@@ -586,6 +596,8 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void Begin(const VkCommandBufferBeginInfo *pBeginInfo);
     void End(VkResult result);
 
+    void RecordCommand(const Location &loc);
+
     void RecordBeginQuery(const QueryObject &query_obj, const Location &loc);
     void RecordEndQuery(const QueryObject &query_obj, const Location &loc);
     void RecordEndQueries(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount);
@@ -603,11 +615,11 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordNextSubpass(const VkSubpassBeginInfo &subpass_begin_info, const VkSubpassEndInfo *subpass_end_info,
                            const Location &loc);
     void UpdateSubpassAttachments();
-    void RecordEndRendering(const VkRenderingEndInfoEXT *pRenderingEndInfo);
+    void RecordEndRendering(const VkRenderingEndInfoEXT *pRenderingEndInfo, const Location &loc);
     void RecordEndRenderPass(const VkSubpassEndInfo *subpass_end_info, const Location &loc);
 
     void RecordBeginVideoCoding(const VkVideoBeginCodingInfoKHR &begin_info, const Location &loc);
-    void RecordEndVideoCoding();
+    void RecordEndVideoCoding(const Location &loc);
     void RecordControlVideoCoding(const VkVideoCodingControlInfoKHR &control_info, const Location &loc);
     void RecordDecodeVideo(const VkVideoDecodeInfoKHR &decode_info, const Location &loc);
     void RecordEncodeVideo(const VkVideoEncodeInfoKHR &encode_info, const Location &loc);
@@ -676,18 +688,19 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordFillBuffer(vvl::Buffer &buffer_state, VkDeviceSize offset, VkDeviceSize size, const Location &loc);
     void RecordUpdateBuffer(vvl::Buffer &buffer_state, VkDeviceSize offset, VkDeviceSize size, const Location &loc);
 
-    void RecordSetEvent(VkEvent event, VkPipelineStageFlags2KHR stageMask, const VkDependencyInfo *dependency_info);
-    void RecordResetEvent(VkEvent event, VkPipelineStageFlags2KHR stageMask);
+    void RecordSetEvent(VkEvent event, VkPipelineStageFlags2KHR stageMask, const VkDependencyInfo *dependency_info,
+                        const Location &loc);
+    void RecordResetEvent(VkEvent event, VkPipelineStageFlags2KHR stageMask, const Location &loc);
     void RecordWaitEvents(uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags2KHR src_stage_mask,
                           const VkDependencyInfo *dependency_info, const Location &loc);
     void RecordPushConstants(const vvl::PipelineLayout &pipeline_layout_state, VkShaderStageFlags stage_flags, uint32_t offset,
                              uint32_t size, const void *values);
 
-    void RecordBeginConditionalRendering();
-    void RecordEndConditionalRendering();
+    void RecordBeginConditionalRendering(const Location &loc);
+    void RecordEndConditionalRendering(const Location &loc);
 
-    void RecordSetRenderingAttachmentLocations(const VkRenderingAttachmentLocationInfo *pLocationInfo);
-    void RecordSetRenderingInputAttachmentIndices(const VkRenderingInputAttachmentIndexInfo *pLocationInfo);
+    void RecordSetRenderingAttachmentLocations(const VkRenderingAttachmentLocationInfo *pLocationInfo, const Location &loc);
+    void RecordSetRenderingInputAttachmentIndices(const VkRenderingInputAttachmentIndexInfo *pLocationInfo, const Location &loc);
 
     void RecordBarrierObjects(uint32_t buffer_barrier_count, const VkBufferMemoryBarrier *buffer_barriers,
                               uint32_t image_barrier_count, const VkImageMemoryBarrier *image_barriers,

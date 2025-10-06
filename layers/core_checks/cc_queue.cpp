@@ -214,6 +214,12 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
             }
 
             // Validate flags for dynamic rendering
+            if (suspended_render_pass_instance && cb_state->action_or_sync_command_before_first_resume) {
+                skip |= LogError("VUID-VkSubmitInfo-pCommandBuffers-06015", queue, submit_loc,
+                                 "has a suspended render pass instance, but pCommandBuffers[%" PRIu32
+                                 "] records %s before that instance is resumed.",
+                                 i, vvl::String(cb_state->first_action_or_sync_command));
+            }
             if (suspended_render_pass_instance && cb_state->has_render_pass_instance && !cb_state->resumes_render_pass_instance) {
                 skip |= LogError("VUID-VkSubmitInfo-pCommandBuffers-06016", queue, submit_loc,
                                  "has a suspended render pass instance, but pCommandBuffers[%" PRIu32
