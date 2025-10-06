@@ -695,7 +695,7 @@ TEST_F(NegativeSubgroup, MeshLocalWorkgroupSize) {
     VkPipelineShaderStageRequiredSubgroupSizeCreateInfo subgroup_size_control = vku::InitStructHelper();
     subgroup_size_control.requiredSubgroupSize = subgroup_properties.minSubgroupSize;
 
-    if (subgroup_size_control.requiredSubgroupSize * subgroup_properties.maxComputeWorkgroupSubgroups >
+    if (subgroup_size_control.requiredSubgroupSize * subgroup_properties.maxComputeWorkgroupSubgroups >=
         mesh_properties.maxTaskWorkGroupInvocations) {
         GTEST_SKIP() << "maxTaskWorkGroupSize smaller than required";
     }

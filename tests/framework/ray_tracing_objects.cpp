@@ -1727,8 +1727,9 @@ void Pipeline::BuildSbt() {
         Align(rt_pipeline_props.shaderGroupHandleSize, rt_pipeline_props.shaderGroupHandleAlignment);
 
     // Since every ray generation entry in the ray tracing shader headers buffer can be the start of the ray gen SBT,
-    // they all have to be aligned to shaderGroupBaseAlignment
-    const VkDeviceSize ray_gen_shaders_sbt_entry_byte_size = GetRayGenShadersCount() * rt_pipeline_props.shaderGroupBaseAlignment;
+    // they all have to be aligned to shaderGroupBaseAlignment (which may be smaller than the handle size)
+    const VkDeviceSize ray_gen_shaders_sbt_entry_byte_size =
+        GetRayGenShadersCount() * Align(rt_pipeline_props.shaderGroupHandleSize, rt_pipeline_props.shaderGroupBaseAlignment);
     // For miss and closest hit shaders, we consider that the corresponding SBTs always start at the first miss/closest hit entry
     // => only it needs to be aligned to shaderGroupBaseAlignment,
     // and within miss/closes hit entries alignment is shaderGroupHandleAlignment
