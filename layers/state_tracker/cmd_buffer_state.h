@@ -192,10 +192,8 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     // since command buffers can only be destroyed by their command pool, this does not need to be a shared_ptr
     const vvl::CommandPool *command_pool;
     DeviceState &dev_data;
-    bool unprotected;  // can't be used for protected memory
-    bool has_render_pass_instance;
-    bool suspends_render_pass_instance;
-    bool resumes_render_pass_instance;
+
+    const bool unprotected;  // can't be used for protected memory
 
     CbState state;           // Track cmd buffer update state
     uint64_t command_count;  // Number of commands recorded. Currently only used with VK_KHR_performance_query
@@ -419,6 +417,18 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     uint32_t initial_device_mask;
     // Device mask from vkCmdBeginRenderPass/vkCmdBeginRendering
     uint32_t render_pass_device_mask;
+
+    // Set to true when the first render pass instance is encountered during recording.
+    // When recording is finished, it indicates if command buffer has render pass instances.
+    bool has_render_pass_instance;
+
+    // True if the *first* render pass instance specifies VK_RENDERING_RESUMING_BIT
+    bool resumes_render_pass_instance;
+
+    // The suspension state at the end of the command buffer, based on previous render pass instances.
+    // Regular render pass instances (without RESUMING/SUSPENDING) do not change the suspend state.
+    enum class SuspendState { Empty, Suspended, Resumed };
+    SuspendState last_suspend_state;
 
     // This is null if we are outside a renderPass/rendering
     //
