@@ -1249,7 +1249,11 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                 const LogObjectList objlist(commandBuffer, rp_state->Handle());
                 skip |= LogError("VUID-vkCmdClearAttachments-aspectMask-07271", objlist, attachment_loc.dot(Field::colorAttachment),
                                  "is VK_ATTACHMENT_UNUSED, but aspectMask is VK_IMAGE_ASPECT_COLOR_BIT.");
-            } else if (clear_desc->colorAttachment >= color_attachment_count && color_attachment_count > 0) {
+            } else if (color_attachment_count == 0) {
+                const LogObjectList objlist(commandBuffer, rp_state->Handle());
+                skip |= LogError("VUID-vkCmdClearAttachments-aspectMask-07271", objlist, attachment_loc.dot(Field::aspectMask),
+                                 "VK_IMAGE_ASPECT_COLOR_BIT but there are no color attachments in the renderpass.");
+            } else if (clear_desc->colorAttachment >= color_attachment_count) {
                 auto describe_color_count = [is_dynamic_rendering, &cb_state]() {
                     std::stringstream ss;
                     if (is_dynamic_rendering) {
