@@ -315,6 +315,27 @@ bool GpuShaderInstrumentor::PreCallValidateCmdWaitEvents2(VkCommandBuffer comman
     return ValidateCmdWaitEvents(commandBuffer, src_stage_mask, error_obj.location);
 }
 
+vvl::DescriptorMode GpuShaderInstrumentor::SelectDescriptorModeFromDSL(uint32_t set_layout_count,
+                                                                       const VkDescriptorSetLayout *set_layouts) const {
+    vvl::DescriptorMode mode = vvl::DescriptorModeClassic;
+    if (IsExtEnabled(extensions.vk_ext_descriptor_buffer)) {
+        if (set_layout_count > 0) {
+            // Only need to check the first one because they all have to be or not-be descriptor buffer
+            const auto &dsl_state = Get<vvl::DescriptorSetLayout>(set_layouts[0]);
+            if (dsl_state->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
+                mode = vvl::DescriptorModeBuffer;
+            }
+        } else if (enabled_features.descriptorBuffer) {
+            // At this point, we have actually zero way to know how this VkPipelineLayout/VkShaderEXT is going to be used because
+            // the extension never added a flag for creation time here.... so assume that if the descriptorBuffer feature is
+            // enabled, app is using it. This is such a rare case it likely is good enough of a solution for now, otherwise we will
+            // have to create 2 versions a modified handle and swap it out later.
+            mode = vvl::DescriptorModeBuffer;
+        }
+    }
+    return mode;
+}
+
 void GpuShaderInstrumentor::PreCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                                               const VkAllocationCallbacks *pAllocator,
                                                               VkPipelineLayout *pPipelineLayout, const RecordObject &record_obj,
@@ -328,14 +349,7 @@ void GpuShaderInstrumentor::PreCallRecordCreatePipelineLayout(VkDevice device, c
                     "for pipelines created with it, therefore no validation error will be repored for them by GPU-AV at runtime.";
             InternalWarning(device, record_obj.location, strm.str().c_str());
         } else {
-            vvl::DescriptorMode mode = vvl::DescriptorModeClassic;
-            if (IsExtEnabled(extensions.vk_ext_descriptor_buffer) && pCreateInfo->setLayoutCount > 0) {
-                // Only need to check the first one because they all have to be or not-be descriptor buffer
-                const auto &dsl_state = Get<vvl::DescriptorSetLayout>(pCreateInfo->pSetLayouts[0]);
-                if (dsl_state->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
-                    mode = vvl::DescriptorModeBuffer;
-                }
-            }
+            vvl::DescriptorMode mode = SelectDescriptorModeFromDSL(pCreateInfo->setLayoutCount, pCreateInfo->pSetLayouts);
 
             // Modify the pipeline layout by:
             // 1. Copying the caller's descriptor set desc_layouts
@@ -482,14 +496,8 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
             // 3. Fill in with the debug descriptor layout at the max binding slot
             const VkShaderCreateInfoEXT &original_create_info = pCreateInfos[i];
 
-            vvl::DescriptorMode mode = vvl::DescriptorModeClassic;
-            if (IsExtEnabled(extensions.vk_ext_descriptor_buffer) && original_create_info.setLayoutCount > 0) {
-                // Only need to check the first one because they all have to be or not-be descriptor buffer
-                const auto &dsl_state = Get<vvl::DescriptorSetLayout>(original_create_info.pSetLayouts[0]);
-                if (dsl_state->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
-                    mode = vvl::DescriptorModeBuffer;
-                }
-            }
+            vvl::DescriptorMode mode =
+                SelectDescriptorModeFromDSL(original_create_info.setLayoutCount, original_create_info.pSetLayouts);
 
             // We need to remove the old layouts we copied in safe_VkShaderCreateInfoEXT::initialize
             if (new_create_info.pSetLayouts) {

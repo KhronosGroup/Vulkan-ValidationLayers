@@ -31,6 +31,7 @@
 #include "gpuav/validation_cmd/gpuav_dispatch.h"
 #include "gpuav/validation_cmd/gpuav_draw.h"
 #include "gpuav/validation_cmd/gpuav_trace_rays.h"
+#include "state_tracker/device_memory_state.h"
 #include "utils/math_utils.h"
 
 namespace gpuav {
@@ -183,13 +184,7 @@ void Validator::PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer command
                     InternalWarning(commandBuffer, record_obj.location.dot(Field::pBindingInfos, i),
                                     "address points to multiple VkBuffer, taking first one");
                 }
-                const auto &memory_state = *buffer_states[0]->MemoryState();
-                resource_descriptor_buffer_host_ptr_ = memory_state.p_driver_data;
-                // App has unmapped memory on us (or never mapped yet)
-                if (!resource_descriptor_buffer_host_ptr_) {
-                    DispatchMapMemory(device, memory_state.VkHandle(), 0, VK_WHOLE_SIZE, 0, &resource_descriptor_buffer_host_ptr_);
-                    DispatchUnmapMemory(device, memory_state.VkHandle());
-                }
+                resource_descriptor_buffer_memory_state_ = buffer_states[0]->MemoryState();
             }
 
             // The invalidate/unbounding rules of vkCmdBindDescriptorBuffersEXT allow us to just grab the first resource binding

@@ -220,6 +220,9 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
     }
     VkPipelineLayout GetInstrumentationPipelineLayout(vvl::DescriptorMode mode) { return instrumentation_pipeline_layout_[mode]; }
 
+    // Used for both creating VkPipelineLayout and VkShaderEXT
+    vvl::DescriptorMode SelectDescriptorModeFromDSL(uint32_t set_layout_count, const VkDescriptorSetLayout *set_layouts) const;
+
     // When aborting we will disconnect all future chassis calls.
     // If we are deep into a call stack, we can use this to return up to the chassis call.
     // It should only be used after calls that might abort, not to be used for guarding a function (unless a case is found that make
