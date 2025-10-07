@@ -20,14 +20,16 @@
 #include <vulkan/vulkan.h>
 
 struct Location;
+struct LastBound;
 
 namespace gpuav {
 class Validator;
+class CommandBufferSubState;
 
 namespace valcmd {
 
-void DispatchIndirect(Validator &gpuav, const Location &loc, CommandBufferSubState &cb_state, VkBuffer indirect_buffer,
-                      VkDeviceSize indirect_offset);
+void DispatchIndirect(Validator &gpuav, const Location &loc, CommandBufferSubState &cb_state, const LastBound &last_bound,
+                      VkBuffer indirect_buffer, VkDeviceSize indirect_offset);
 }
 
 }  // namespace gpuav

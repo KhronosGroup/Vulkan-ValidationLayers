@@ -124,9 +124,10 @@ struct FirstInstanceValidationShader {
 
 // Use "api_" prefix to make it clear which buffer/offset/etc we are talking about
 // "api" helps to distinguish it is input from the user at the API level
-void FirstInstance(Validator &gpuav, CommandBufferSubState &cb_state, const Location &loc, VkBuffer api_buffer,
-                   VkDeviceSize api_offset, uint32_t api_stride, vvl::Struct api_struct_name, uint32_t first_instance_member_pos,
-                   uint32_t api_draw_count, VkBuffer api_count_buffer, VkDeviceSize api_count_buffer_offset, const char *vuid) {
+void FirstInstance(Validator &gpuav, CommandBufferSubState &cb_state, const Location &loc, const LastBound &last_bound,
+                   VkBuffer api_buffer, VkDeviceSize api_offset, uint32_t api_stride, vvl::Struct api_struct_name,
+                   uint32_t first_instance_member_pos, uint32_t api_draw_count, VkBuffer api_count_buffer,
+                   VkDeviceSize api_count_buffer_offset, const char *vuid) {
     if (!gpuav.gpuav_settings.validate_indirect_draws_buffers) {
         return;
     }
@@ -269,22 +270,23 @@ void FirstInstance(Validator &gpuav, CommandBufferSubState &cb_state, const Loca
         return skip;
     };
 
-    cb_state.AddCommandErrorLogger(loc, LogObjectList{}, std::move(error_logger));
+    cb_state.AddCommandErrorLogger(loc, &last_bound, std::move(error_logger));
 }
 
 template <>
-void FirstInstance<VkDrawIndirectCommand>(Validator &gpuav, CommandBufferSubState &cb_state, const Location &loc, VkBuffer buffer,
-                                          VkDeviceSize offset, uint32_t draw_count, VkBuffer count_buffer,
-                                          VkDeviceSize count_buffer_offset, const char *vuid) {
-    FirstInstance(gpuav, cb_state, loc, buffer, offset, sizeof(VkDrawIndirectCommand), vvl::Struct::VkDrawIndirectCommand, 3,
-                  draw_count, count_buffer, count_buffer_offset, vuid);
+void FirstInstance<VkDrawIndirectCommand>(Validator &gpuav, CommandBufferSubState &cb_state, const Location &loc,
+                                          const LastBound &last_bound, VkBuffer buffer, VkDeviceSize offset, uint32_t draw_count,
+                                          VkBuffer count_buffer, VkDeviceSize count_buffer_offset, const char *vuid) {
+    FirstInstance(gpuav, cb_state, loc, last_bound, buffer, offset, sizeof(VkDrawIndirectCommand),
+                  vvl::Struct::VkDrawIndirectCommand, 3, draw_count, count_buffer, count_buffer_offset, vuid);
 }
 
 template <>
 void FirstInstance<VkDrawIndexedIndirectCommand>(Validator &gpuav, CommandBufferSubState &cb_state, const Location &loc,
-                                                 VkBuffer buffer, VkDeviceSize offset, uint32_t draw_count, VkBuffer count_buffer,
-                                                 VkDeviceSize count_buffer_offset, const char *vuid) {
-    FirstInstance(gpuav, cb_state, loc, buffer, offset, sizeof(VkDrawIndexedIndirectCommand),
+                                                 const LastBound &last_bound, VkBuffer buffer, VkDeviceSize offset,
+                                                 uint32_t draw_count, VkBuffer count_buffer, VkDeviceSize count_buffer_offset,
+                                                 const char *vuid) {
+    FirstInstance(gpuav, cb_state, loc, last_bound, buffer, offset, sizeof(VkDrawIndexedIndirectCommand),
                   vvl::Struct::VkDrawIndexedIndirectCommand, 4, draw_count, count_buffer, count_buffer_offset, vuid);
 }
 
@@ -319,9 +321,9 @@ struct CountBufferValidationShader {
     }
 };
 
-void CountBuffer(Validator &gpuav, CommandBufferSubState &cb_state, const Location &loc, VkBuffer api_buffer,
-                 VkDeviceSize api_offset, uint32_t api_struct_size_byte, vvl::Struct api_struct_name, uint32_t api_stride,
-                 VkBuffer api_count_buffer, VkDeviceSize api_count_buffer_offset, const char *vuid) {
+void CountBuffer(Validator &gpuav, CommandBufferSubState &cb_state, const Location &loc, const LastBound &last_bound,
+                 VkBuffer api_buffer, VkDeviceSize api_offset, uint32_t api_struct_size_byte, vvl::Struct api_struct_name,
+                 uint32_t api_stride, VkBuffer api_count_buffer, VkDeviceSize api_count_buffer_offset, const char *vuid) {
     if (!gpuav.gpuav_settings.validate_indirect_draws_buffers) {
         return;
     }
@@ -438,7 +440,7 @@ void CountBuffer(Validator &gpuav, CommandBufferSubState &cb_state, const Locati
         return skip;
     };
 
-    cb_state.AddCommandErrorLogger(loc, LogObjectList{}, std::move(error_logger));
+    cb_state.AddCommandErrorLogger(loc, &last_bound, std::move(error_logger));
 }
 
 struct MeshValidationShader {
@@ -483,9 +485,9 @@ struct MeshValidationShader {
     }
 };
 
-void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const Location &loc, VkBuffer api_buffer,
-                      VkDeviceSize api_offset, uint32_t api_stride, VkBuffer api_count_buffer, VkDeviceSize api_count_buffer_offset,
-                      uint32_t api_draw_count) {
+void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const Location &loc, const LastBound &last_bound,
+                      VkBuffer api_buffer, VkDeviceSize api_offset, uint32_t api_stride, VkBuffer api_count_buffer,
+                      VkDeviceSize api_count_buffer_offset, uint32_t api_draw_count) {
     if (!gpuav.gpuav_settings.validate_indirect_draws_buffers) {
         return;
     }
@@ -496,7 +498,6 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
         return;
     }
 
-    const LastBound &last_bound = cb_state.base.GetLastBoundGraphics();
     const VkShaderStageFlags stages = last_bound.GetAllActiveBoundStages();
     const bool is_task_shader = (stages & VK_SHADER_STAGE_TASK_BIT_EXT) == VK_SHADER_STAGE_TASK_BIT_EXT;
 
@@ -687,7 +688,7 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
         return skip;
     };
 
-    cb_state.AddCommandErrorLogger(loc, LogObjectList{}, std::move(error_logger));
+    cb_state.AddCommandErrorLogger(loc, &last_bound, std::move(error_logger));
 }
 
 struct DrawIndexedIndirectIndexBufferShader {
@@ -773,9 +774,10 @@ struct SetupDrawCountDispatchIndirectShader {
 
 // Use "api_" prefix to make it clear which buffer/offset/etc we are talking about
 // "api" helps to distinguish it is input from the user at the API level
-void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_state, const Location &loc, VkBuffer api_buffer,
-                                    VkDeviceSize api_offset, uint32_t api_stride, uint32_t api_draw_count,
-                                    VkBuffer api_count_buffer, VkDeviceSize api_count_buffer_offset, const char *vuid) {
+void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_state, const Location &loc,
+                                    const LastBound &last_bound, VkBuffer api_buffer, VkDeviceSize api_offset, uint32_t api_stride,
+                                    uint32_t api_draw_count, VkBuffer api_count_buffer, VkDeviceSize api_count_buffer_offset,
+                                    const char *vuid) {
     if (!gpuav.gpuav_settings.validate_index_buffers) {
         return;
     }
@@ -784,15 +786,11 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
         return;
     }
 
-    if (gpuav.enabled_features.pipelineRobustness) {
-        const LastBound &last_bound = cb_state.base.GetLastBoundGraphics();
-        const vvl::Pipeline *pipeline_state = last_bound.pipeline_state;
-        if (pipeline_state) {
-            const auto robustness_ci =
-                vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfo>(pipeline_state->GraphicsCreateInfo().pNext);
-            if (robustness_ci && robustness_ci->vertexInputs) {
-                return;
-            }
+    if (gpuav.enabled_features.pipelineRobustness && last_bound.pipeline_state) {
+        const auto robustness_ci =
+            vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfo>(last_bound.pipeline_state->GraphicsCreateInfo().pNext);
+        if (robustness_ci && robustness_ci->vertexInputs) {
+            return;
         }
     }
 
@@ -1015,7 +1013,7 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
         return skip;
     };
 
-    cb_state.AddCommandErrorLogger(loc, LogObjectList{}, std::move(error_logger));
+    cb_state.AddCommandErrorLogger(loc, &last_bound, std::move(error_logger));
 }
 
 }  // namespace valcmd

@@ -28,6 +28,7 @@
 #include "gpuav/validation_cmd/gpuav_draw.h"
 
 #include "profiling/profiling.h"
+#include "state_tracker/last_bound_state.h"
 
 namespace gpuav {
 
@@ -149,7 +150,8 @@ void CommandBufferSubState::RecordEndRenderPass(const VkSubpassEndInfo *, const 
     valcmd::FlushValidationCmds(gpuav_, *this);
 }
 
-void CommandBufferSubState::AddCommandErrorLogger(const Location &loc, const LogObjectList &objlist,
+// For things like vkCmdCopyImage there is no "last bound" as not shaders are attached to it
+void CommandBufferSubState::AddCommandErrorLogger(const Location &loc, const LastBound *last_bound,
                                                   ErrorLoggerFunc error_logger_func) {
     if (command_error_loggers_.size() == cst::invalid_index_command) {
         return;
@@ -157,8 +159,9 @@ void CommandBufferSubState::AddCommandErrorLogger(const Location &loc, const Log
 
     const uint32_t label_command_i =
         base.GetLabelCommands().empty() ? vvl::kNoIndex32 : uint32_t(base.GetLabelCommands().size() - 1);
-    command_error_loggers_.emplace_back(
-        CommandBufferSubState::CommandErrorLogger{loc, objlist, std::move(error_logger_func), label_command_i});
+    command_error_loggers_.emplace_back(CommandBufferSubState::CommandErrorLogger{
+        loc, last_bound ? last_bound->cb_state.GetObjectList(last_bound->bind_point) : LogObjectList{VkHandle()},
+        std::move(error_logger_func), label_command_i});
 }
 
 void CommandBufferSubState::ResetCBState(bool should_destroy) {
@@ -357,7 +360,7 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, const std::vector<std::s
                 } else {
                     // normal case
                     CommandErrorLogger &error_logger = command_error_loggers_[error_logger_i];
-                    const LogObjectList objlist(queue, VkHandle(), error_logger.objlist);
+                    const LogObjectList objlist(queue, error_logger.objlist);
 
                     std::string debug_region_name = GetDebugLabelRegion(error_logger.label_cmd_i, initial_label_stack);
                     Location loc_with_debug_region(error_logger.loc.Get(), debug_region_name);

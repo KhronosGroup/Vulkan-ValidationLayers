@@ -472,17 +472,11 @@ static bool WasInstrumented(const LastBound &last_bound) {
     }
     return false;
 }
-void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferSubState &cb_state, VkPipelineBindPoint bind_point,
+void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferSubState &cb_state, const LastBound &last_bound,
                                                 const Location &loc) {
     if (!gpuav.gpuav_settings.IsSpirvModified()) {
         return;
     }
-
-    assert(bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS || bind_point == VK_PIPELINE_BIND_POINT_COMPUTE ||
-           bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
-
-    const vvl::BindPoint vvl_bind_point = ConvertToVvlBindPoint(bind_point);
-    const LastBound &last_bound = cb_state.base.lastBound[vvl_bind_point];
 
     // If nothing was updated, we don't want to bind anything
     if (!WasInstrumented(last_bound)) {
@@ -509,6 +503,7 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
     }
     // App uses shader objects
     else {
+        const vvl::BindPoint vvl_bind_point = ConvertToVvlBindPoint(last_bound.bind_point);
         if (last_bound.desc_set_pipeline_layout) {
             inst_binding_pipe_layout.state = last_bound.desc_set_pipeline_layout;
             inst_binding_pipe_layout.handle = inst_binding_pipe_layout.state->VkHandle();
@@ -644,9 +639,7 @@ void PreCallSetupShaderInstrumentationResourcesClassic(Validator &gpuav, Command
         return skip;
     };
 
-    cb_state.AddCommandErrorLogger(
-        loc, last_bound.pipeline_state ? LogObjectList(last_bound.pipeline_state->VkHandle()) : LogObjectList{},
-        std::move(error_logger));
+    cb_state.AddCommandErrorLogger(loc, &last_bound, std::move(error_logger));
 }
 
 void PreCallSetupShaderInstrumentationResourcesDescriptorBuffer(Validator &gpuav, CommandBufferSubState &cb_state,

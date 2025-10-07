@@ -40,7 +40,7 @@ struct TraceRaysValidationShader {
     std::vector<VkWriteDescriptorSet> GetDescriptorWrites(VkDescriptorSet desc_set) const { return {}; }
 };
 
-void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state,
+void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state, const LastBound& last_bound,
                        VkDeviceAddress indirect_data_address) {
     if (!gpuav.gpuav_settings.validate_indirect_trace_rays_buffers) {
         return;
@@ -165,7 +165,7 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
         return skip;
     };
 
-    cb_state.AddCommandErrorLogger(loc, LogObjectList{}, std::move(error_logger));
+    cb_state.AddCommandErrorLogger(loc, &last_bound, std::move(error_logger));
 }
 }  // namespace valcmd
 }  // namespace gpuav
