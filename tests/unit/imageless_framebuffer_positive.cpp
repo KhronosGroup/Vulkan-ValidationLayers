@@ -192,7 +192,7 @@ TEST_F(PositiveImagelessFramebuffer, SecondaryCmdBuffer) {
     clearRect.layerCount = 1u;
 
     VkClearAttachment clearAttachment;
-    clearAttachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    clearAttachment.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     clearAttachment.clearValue.color.float32[0] = 0.0f;
     clearAttachment.clearValue.color.float32[1] = 0.0f;
     clearAttachment.clearValue.color.float32[2] = 0.0f;
