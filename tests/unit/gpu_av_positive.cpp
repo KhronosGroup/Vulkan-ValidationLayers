@@ -2293,7 +2293,7 @@ TEST_F(PositiveGpuAV, DualShaderLibraryDestroyLayout) {
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
 }
 
-TEST_F(PositiveGpuAV, DISABLED_DifferentShaderLibraryWithIntermediateLibrary) {
+TEST_F(PositiveGpuAV, DifferentShaderLibraryWithIntermediateLibrary) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
     RETURN_IF_SKIP(InitGpuAvFramework());
@@ -2333,7 +2333,7 @@ TEST_F(PositiveGpuAV, DISABLED_DifferentShaderLibraryWithIntermediateLibrary) {
     VkGraphicsPipelineCreateInfo intermediate_pipe_ci = vku::InitStructHelper(&link_info);
     intermediate_pipe_ci.layout = pipeline_layout;
     intermediate_pipe_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
-    vkt::Pipeline intermediate_pipe(*m_device, intermediate_pipe_ci);
+    vkt::Pipeline intermediate_lib(*m_device, intermediate_pipe_ci);
 
     CreatePipelineHelper frag_shader_lib(*this);
     {
@@ -2349,7 +2349,7 @@ TEST_F(PositiveGpuAV, DISABLED_DifferentShaderLibraryWithIntermediateLibrary) {
     frag_out_lib.CreateGraphicsPipeline(false);
 
     VkPipeline exe_libraries[3] = {
-        intermediate_pipe,
+        intermediate_lib,
         frag_shader_lib,
         frag_out_lib,
     };

@@ -942,7 +942,7 @@ bool GpuShaderInstrumentor::NeedPipelineCreationShaderInstrumentation(vvl::Pipel
     // For ray tracing pipeline, because shader binding tables can be built from the libraries before
     // linking the exe pipeline, no choice but to always instrument libraries: SBT have to point to instrumented shaders
     if (pipeline_state.pipeline_type != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR &&
-        pipeline_state.create_flags & VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR) {
+        (pipeline_state.create_flags & VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR) && pipeline_state.linking_shaders == 0) {
         return false;
     }
 
@@ -1262,7 +1262,15 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
                         modified_stage_ci = &new_lib_ci.pStages[i];
                     }
                 }
-                assert(modified_stage_ci);
+
+                // Getting here means that the currently explored stage state comes
+                // from a sub library, one used to composed the currently explored library.
+                // This sub library itself went through the linking process, thus has
+                // already been instrumented.
+                // => Just proceed to the next shader stage.
+                if (!modified_stage_ci) {
+                    continue;
+                }
 
                 modified_shader_module_ci =
                     const_cast<vku::safe_VkShaderModuleCreateInfo *>(reinterpret_cast<const vku::safe_VkShaderModuleCreateInfo *>(
