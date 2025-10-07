@@ -476,24 +476,6 @@ std::shared_ptr<Buffer> DeviceState::CreateBufferState(VkBuffer handle, const Vk
     return std::make_shared<Buffer>(*this, handle, create_info);
 }
 
-void DeviceState::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
-                                            const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
-                                            const RecordObject &record_obj, chassis::CreateBuffer &chassis_state) {
-    if (pCreateInfo->usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR) {
-        // When it comes to validation acceleration memory overlaps, it is much faster to
-        // work on device address ranges directly, but for that to be possible,
-        // buffers used to back acceleration structures must have been created with the
-        // VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT usage flag
-        // => Enforce it.
-        // Doing so will not modify VVL state tracking, and if the application forgot to set
-        // this flag, it will still be detected.
-        //
-        // TODO https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10756
-        // because we set this flags, we also now need to ensure VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT is bound with all memory
-        chassis_state.modified_create_info.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-    }
-}
-
 std::shared_ptr<vvl::Tensor> DeviceState::CreateTensorState(VkTensorARM handle, const VkTensorCreateInfoARM *create_info) {
     return std::make_shared<vvl::Tensor>(*this, handle, create_info);
 }
