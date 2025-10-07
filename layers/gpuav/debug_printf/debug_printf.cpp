@@ -183,14 +183,20 @@ struct OutputRecord {
 };
 
 struct DebugPrintfBufferInfo {
+    // The buffer where DebugPrintf data was written to (and need to report)
     vko::BufferRange output_mem_buffer;
+    // Same as GPU-AV, we need these to generate details in error message where error occured in the CmdBuffer
     VkPipelineBindPoint pipeline_bind_point;
     uint32_t action_command_index;
+    // Before the draw/dispatch/etc we can save the pipeline/shaderObject that are being used
+    LogObjectList objlist;
+
     DebugPrintfBufferInfo(vko::BufferRange output_mem_buffer, VkPipelineBindPoint pipeline_bind_point,
-                          uint32_t action_command_index)
+                          uint32_t action_command_index, const LogObjectList &objlist)
         : output_mem_buffer(output_mem_buffer),
           pipeline_bind_point(pipeline_bind_point),
-          action_command_index(action_command_index){};
+          action_command_index(action_command_index),
+          objlist(objlist){};
 };
 
 struct DebugPrintfCbState {
@@ -217,7 +223,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
 
         // without the instrumented spirv, there is nothing valuable to print out
         if (!instrumented_shader || instrumented_shader->original_spirv.empty()) {
-            gpuav.InternalWarning(LogObjectList(), loc, "Can't find instructions from any handles in shader_map");
+            gpuav.InternalWarning(buffer_info.objlist, loc, "Can't find instructions from any handles in shader_map");
             return;
         }
 
@@ -271,7 +277,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
                         if (ld_pos != std::string::npos) {
                             substring.string.replace(ld_pos + 1, 2, PRId64);
                         } else {
-                            gpuav.InternalWarning(command_buffer, loc,
+                            gpuav.InternalWarning(buffer_info.objlist, loc,
                                                   "Trying to DebugPrintf a 64-bit signed int but not using \"%%ld\" to print it.");
                         }
 
@@ -364,8 +370,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
             if (use_stdout) {
                 std::cout << "VVL-DEBUG-PRINTF " << shader_message.str() << '\n' << debug_info_message;
             } else {
-                LogObjectList objlist(command_buffer);
-                gpuav.LogInfo("VVL-DEBUG-PRINTF", objlist, loc, "DebugPrintf:\n%s\n%s", shader_message.str().c_str(),
+                gpuav.LogInfo("VVL-DEBUG-PRINTF", buffer_info.objlist, loc, "DebugPrintf:\n%s\n%s", shader_message.str().c_str(),
                               debug_info_message.c_str());
             }
 
@@ -373,7 +378,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
             if (use_stdout) {
                 std::cout << shader_message.str();
             } else {
-                gpuav.LogInfo("VVL-DEBUG-PRINTF", gpuav.device, loc, "DebugPrintf:\n%s", shader_message.str().c_str());
+                gpuav.LogInfo("VVL-DEBUG-PRINTF", buffer_info.objlist, loc, "DebugPrintf:\n%s", shader_message.str().c_str());
             }
         }
         output_record_i += debug_record->size;
@@ -382,7 +387,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
         std::stringstream message;
         message << "Debug Printf message was truncated due to a buffer size (" << gpuav.gpuav_settings.debug_printf_buffer_size
                 << ") being too small for the messages. (This can be adjusted with VK_LAYER_PRINTF_BUFFER_SIZE or vkconfig)";
-        gpuav.InternalWarning(command_buffer, loc, message.str().c_str());
+        gpuav.InternalWarning(buffer_info.objlist, loc, message.str().c_str());
     }
 
     // Only memset what is needed, in case we are only using a small portion of a large buffer_size.
@@ -417,8 +422,8 @@ void RegisterDebugPrintf(Validator &gpuav, CommandBufferSubState &cb_state) {
             out_dst_binding = glsl::kBindingInstDebugPrintf;
 
             DebugPrintfCbState &debug_printf_cb_state = cb.shared_resources_cache.GetOrCreate<DebugPrintfCbState>();
-            debug_printf_cb_state.buffer_infos.emplace_back(debug_printf_output_buffer, bind_point,
-                                                            cb.GetActionCommandIndex(bind_point));
+            debug_printf_cb_state.buffer_infos.emplace_back(
+                debug_printf_output_buffer, bind_point, cb.GetActionCommandIndex(bind_point), cb.base.GetObjectList(bind_point));
         });
 
     cb_state.on_instrumentation_desc_buffer_update_functions.emplace_back(
@@ -435,8 +440,8 @@ void RegisterDebugPrintf(Validator &gpuav, CommandBufferSubState &cb_state) {
             out_dst_binding = glsl::kBindingInstDebugPrintf;
 
             DebugPrintfCbState &debug_printf_cb_state = cb.shared_resources_cache.GetOrCreate<DebugPrintfCbState>();
-            debug_printf_cb_state.buffer_infos.emplace_back(debug_printf_output_buffer, bind_point,
-                                                            cb.GetActionCommandIndex(bind_point));
+            debug_printf_cb_state.buffer_infos.emplace_back(
+                debug_printf_output_buffer, bind_point, cb.GetActionCommandIndex(bind_point), cb.base.GetObjectList(bind_point));
         });
 
     cb_state.on_cb_completion_functions.emplace_back([](Validator &gpuav, CommandBufferSubState &cb,
