@@ -242,9 +242,6 @@ void CommandBuffer::ResetCBState() {
     begin_info_flags = 0;
     has_inheritance = false;
 
-    has_render_pass_instance = false;
-    suspends_render_pass_instance = false;
-    resumes_render_pass_instance = false;
     state = CbState::New;
     command_count = 0;
     submit_count = 0;
@@ -261,6 +258,9 @@ void CommandBuffer::ResetCBState() {
 
     dirty_static_state = false;
 
+    has_render_pass_instance = false;
+    resumes_render_pass_instance = false;
+    last_suspend_state = SuspendState::Empty;
     active_render_pass = nullptr;
     sample_locations_begin_info = {};
     attachment_source = AttachmentSource::Empty;
@@ -816,11 +816,19 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo &rendering_info, 
                                    ? VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS
                                    : VK_SUBPASS_CONTENTS_INLINE);
 
-    // Handle flags for dynamic rendering
-    if (!has_render_pass_instance && rendering_info.flags & VK_RENDERING_RESUMING_BIT) {
+    // Track if the first render pass instance does resume
+    if (!has_render_pass_instance && (rendering_info.flags & VK_RENDERING_RESUMING_BIT)) {
         resumes_render_pass_instance = true;
     }
-    suspends_render_pass_instance = (rendering_info.flags & VK_RENDERING_SUSPENDING_BIT) > 0;
+    // Track the last suspension state. Notice that both RESUMING/SUSPENDING flags can be specified.
+    // The ordering is that suspension action goes after resuming action.
+    if (rendering_info.flags & VK_RENDERING_RESUMING_BIT) {
+        last_suspend_state = SuspendState::Resumed;
+    }
+    if (rendering_info.flags & VK_RENDERING_SUSPENDING_BIT) {
+        last_suspend_state = SuspendState::Suspended;
+    }
+
     has_render_pass_instance = true;
 
     attachment_source = AttachmentSource::DynamicRendering;
@@ -1296,7 +1304,9 @@ void CommandBuffer::RecordExecuteCommands(vvl::span<const VkCommandBuffer> secon
             resumes_render_pass_instance = secondary_cb_state->resumes_render_pass_instance;
         }
         if (!secondary_cb_state->active_render_pass) {
-            suspends_render_pass_instance = secondary_cb_state->suspends_render_pass_instance;
+            if (secondary_cb_state->last_suspend_state != SuspendState::Empty) {
+                last_suspend_state = secondary_cb_state->last_suspend_state;
+            }
             has_render_pass_instance |= secondary_cb_state->has_render_pass_instance;
         }
 
