@@ -58,7 +58,7 @@ void UpdateInstrumentationDescSet(Validator& gpuav, CommandBufferSubState& cb_st
 void UpdateInstrumentationDescBuffer(Validator& gpuav, CommandBufferSubState& cb_state, VkPipelineBindPoint bind_point,
                                      const Location& loc, InstrumentationErrorBlob& out_instrumentation_error_blob);
 
-void PreCallSetupShaderInstrumentationResources(Validator& gpuav, CommandBufferSubState& cb_state, VkPipelineBindPoint bind_point,
+void PreCallSetupShaderInstrumentationResources(Validator& gpuav, CommandBufferSubState& cb_state, const LastBound& last_bound,
                                                 const Location& loc);
 void PreCallSetupShaderInstrumentationResourcesClassic(Validator& gpuav, CommandBufferSubState& cb_state,
                                                        const LastBound& last_bound,

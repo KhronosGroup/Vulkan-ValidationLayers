@@ -138,7 +138,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
         ErrorLoggerFunc error_logger_func;
         uint32_t label_cmd_i;
     };
-    void AddCommandErrorLogger(const Location &loc, const LogObjectList &objlist, ErrorLoggerFunc error_logger_func);
+    void AddCommandErrorLogger(const Location &loc, const LastBound *last_bound, ErrorLoggerFunc error_logger_func);
     uint32_t GetErrorLoggerIndex() { return (uint32_t)command_error_loggers_.size(); }
     const CommandErrorLogger &GetErrorLogger(uint32_t i) { return command_error_loggers_[i]; }
 

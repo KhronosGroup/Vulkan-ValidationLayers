@@ -1506,11 +1506,17 @@ TEST_F(NegativeGpuAVShaderDebugInfo, PipelineHandles) {
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
     pipe.CreateComputePipeline();
 
-    const char *object_name = "bad_pipeline";
+    const char *pipe_name = "bad_pipeline";
     VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
     name_info.objectType = VK_OBJECT_TYPE_PIPELINE;
     name_info.objectHandle = (uint64_t)pipe.Handle();
-    name_info.pObjectName = object_name;
+    name_info.pObjectName = pipe_name;
+    vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
+
+    const char *cb_name = "bad_command_buffer";
+    name_info.objectType = VK_OBJECT_TYPE_COMMAND_BUFFER;
+    name_info.objectHandle = (uint64_t)m_command_buffer.handle();
+    name_info.pObjectName = cb_name;
     vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
 
     vkt::Buffer block_buffer(*m_device, 16, 0, vkt::device_address);
@@ -1529,7 +1535,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, PipelineHandles) {
     m_command_buffer.End();
 
     // UNASSIGNED-Device address out of bounds
-    m_errorMonitor->SetDesiredErrorRegex("", "VkPipeline.*bad_pipeline");
+    m_errorMonitor->SetDesiredErrorRegex("", "VkCommandBuffer.*bad_command_buffer.*\n.*VkPipeline.*bad_pipeline");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }

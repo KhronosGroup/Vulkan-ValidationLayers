@@ -22,6 +22,7 @@
 #include "gpuav/shaders/gpuav_error_header.h"
 #include "gpuav/shaders/validation_cmd/push_data.h"
 #include "generated/gpuav_offline_spirv.h"
+#include "state_tracker/last_bound_state.h"
 
 namespace gpuav {
 namespace valcmd {
@@ -58,8 +59,8 @@ struct DispatchValidationShader {
     }
 };
 
-void DispatchIndirect(Validator &gpuav, const Location &loc, CommandBufferSubState &cb_state, VkBuffer indirect_buffer,
-                      VkDeviceSize indirect_offset) {
+void DispatchIndirect(Validator &gpuav, const Location &loc, CommandBufferSubState &cb_state, const LastBound &last_bound,
+                      VkBuffer indirect_buffer, VkDeviceSize indirect_offset) {
     if (!gpuav.gpuav_settings.validate_indirect_dispatches_buffers) {
         return;
     }
@@ -144,7 +145,7 @@ void DispatchIndirect(Validator &gpuav, const Location &loc, CommandBufferSubSta
             return skip;
         };
 
-    cb_state.AddCommandErrorLogger(loc, LogObjectList{}, std::move(error_logger));
+    cb_state.AddCommandErrorLogger(loc, &last_bound, std::move(error_logger));
 }
 }  // namespace valcmd
 }  // namespace gpuav
