@@ -246,10 +246,10 @@ bool Context::ValidateStructPnext(const Location &loc, const void *next, size_t 
 
         const Location pNext_loc = loc.dot(Field::pNext);
         if ((allowed_type_count == 0) && (GetCustomStypeInfo().empty())) {
-            std::string message = "must be NULL.\n%s\n";
+            std::string message = "must be NULL.\n";
             message += disclaimer;
-            skip |= log.LogError(pnext_vuid, error_obj.handle, pNext_loc, message.c_str(),
-                                 PrintPNextChain(Struct::Empty, next).c_str(), header_version, pNext_loc.Fields().c_str());
+            skip |=
+                log.LogError(pnext_vuid, error_obj.handle, pNext_loc, message.c_str(), header_version, pNext_loc.Fields().c_str());
         } else {
             const VkStructureType *start = allowed_types;
             const VkStructureType *end = allowed_types + allowed_type_count;
