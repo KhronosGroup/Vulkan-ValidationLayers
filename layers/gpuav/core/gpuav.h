@@ -29,6 +29,10 @@ namespace chassis {
 struct ShaderObject;
 }  // namespace chassis
 
+namespace vvl {
+class DeviceMemory;
+}  // namespace vvl
+
 namespace gpuav {
 class CommandBufferSubState;
 class DescriptorSetSubState;
@@ -278,9 +282,9 @@ class Validator : public GpuShaderInstrumentor {
     vvl::unordered_set<VkBuffer> resource_descriptor_buffer_handles_;
     // We need to track handles in order to adjust vkMapMemory calls
     vvl::unordered_set<VkDeviceMemory> resource_descriptor_buffer_memory_handles_;
-    // This is the "linking" pointer that we infer from vkCmdBindDescriptorBuffersEXT to know which MapMemory pointer of the buffer
-    // we have our injected descriptors
-    void* resource_descriptor_buffer_host_ptr_ = nullptr;
+    // We keep track of the state object as we don't know when the app will map/unmap the memory on us
+    const vvl::DeviceMemory* resource_descriptor_buffer_memory_state_;
+
     // Only used if last second need one because the app doesn't
     vko::Buffer resource_descriptor_buffer_backup_;
 

@@ -286,22 +286,43 @@ static std::pair<std::optional<VertexAttributeFetchLimit>, std::optional<VertexA
     return {vertex_attribute_fetch_limit_vertex_input_rate, vertex_attribute_fetch_limit_instance_input_rate};
 }
 
-void UpdateInstrumentationDescBuffer(Validator &gpuav, CommandBufferSubState &cb_state, VkPipelineBindPoint bind_point,
+void UpdateInstrumentationDescBuffer(Validator &gpuav, CommandBufferSubState &cb_state, const LastBound &last_bound,
                                      const Location &loc, InstrumentationErrorBlob &out_instrumentation_error_blob) {
+    // There is a chance the app doesn't have the descriptor buffer mapped, so we manage the mapping to this function scope
+    bool need_to_unmap = false;
+
+    void *descriptor_start = nullptr;
+
+    if (last_bound.GetDescriptorMode() == vvl::DescriptorModeUnknown) {
+        descriptor_start = gpuav.resource_descriptor_buffer_backup_.GetMappedPtr();
+    } else {
+        descriptor_start = gpuav.resource_descriptor_buffer_memory_state_->p_driver_data;
+        // If null, means they have never mapped (or unmapped on us)
+        if (!descriptor_start) {
+            need_to_unmap = true;
+            DispatchMapMemory(gpuav.device, gpuav.resource_descriptor_buffer_memory_state_->VkHandle(), 0, VK_WHOLE_SIZE, 0,
+                              &descriptor_start);
+        }
+    }
+
     for (size_t func_i = 0; func_i < cb_state.on_instrumentation_desc_buffer_update_functions.size(); ++func_i) {
+        VkDescriptorGetInfoEXT get_info = vku::InitStructHelper();
+        get_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+
         VkDescriptorAddressInfoEXT address_info = vku::InitStructHelper();
         uint32_t binding = 0;
 
-        cb_state.on_instrumentation_desc_buffer_update_functions[func_i](cb_state, bind_point, address_info, binding);
-
-        VkDescriptorGetInfoEXT get_info = vku::InitStructHelper();
-        get_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        cb_state.on_instrumentation_desc_buffer_update_functions[func_i](cb_state, last_bound.bind_point, address_info, binding);
         get_info.data.pStorageBuffer = &address_info;
 
-        uint8_t *descriptor = (uint8_t *)gpuav.resource_descriptor_buffer_host_ptr_;
-        descriptor += gpuav.resource_descriptor_buffer_offsets_[binding];
+        const VkDeviceSize binding_offset = gpuav.resource_descriptor_buffer_offsets_[binding];
+        uint8_t *descriptor_offset = (uint8_t *)descriptor_start + binding_offset;
         DispatchGetDescriptorEXT(gpuav.device, &get_info,
-                                 gpuav.phys_dev_ext_props.descriptor_buffer_props.storageBufferDescriptorSize, descriptor);
+                                 gpuav.phys_dev_ext_props.descriptor_buffer_props.storageBufferDescriptorSize, descriptor_offset);
+    }
+
+    if (need_to_unmap) {
+        DispatchUnmapMemory(gpuav.device, gpuav.resource_descriptor_buffer_memory_state_->VkHandle());
     }
 }
 
@@ -686,7 +707,6 @@ void PreCallSetupShaderInstrumentationResourcesDescriptorBuffer(Validator &gpuav
         DispatchCmdBindDescriptorBuffersEXT(cb_state.VkHandle(), 1, &binding_info);
 
         gpuav.resource_descriptor_buffer_index_ = 0;
-        gpuav.resource_descriptor_buffer_host_ptr_ = gpuav.resource_descriptor_buffer_backup_.GetMappedPtr();
     }
 
     // We have injected memory in front of the buffer for the user to make it easy to point to here
@@ -696,7 +716,7 @@ void PreCallSetupShaderInstrumentationResourcesDescriptorBuffer(Validator &gpuav
                                              &gpuav.resource_descriptor_buffer_index_, &front_offset);
 
     InstrumentationErrorBlob instrumentation_error_blob;
-    UpdateInstrumentationDescBuffer(gpuav, cb_state, last_bound.bind_point, loc, instrumentation_error_blob);
+    UpdateInstrumentationDescBuffer(gpuav, cb_state, last_bound, loc, instrumentation_error_blob);
 
     // TODO - Add callback for non-DebugPrintf checks
     (void)instrumentation_error_blob;

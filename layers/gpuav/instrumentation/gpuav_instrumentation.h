@@ -24,7 +24,6 @@
 
 #include <memory>
 #include <string>
-#include <vector>
 #include <optional>
 #include <limits>
 
@@ -55,7 +54,7 @@ struct InstBindingPipeLayout {
 void UpdateInstrumentationDescSet(Validator& gpuav, CommandBufferSubState& cb_state, VkPipelineBindPoint bind_point,
                                   VkDescriptorSet instrumentation_desc_set, const Location& loc,
                                   InstrumentationErrorBlob& out_instrumentation_error_blob);
-void UpdateInstrumentationDescBuffer(Validator& gpuav, CommandBufferSubState& cb_state, VkPipelineBindPoint bind_point,
+void UpdateInstrumentationDescBuffer(Validator& gpuav, CommandBufferSubState& cb_state, const LastBound& last_bound,
                                      const Location& loc, InstrumentationErrorBlob& out_instrumentation_error_blob);
 
 void PreCallSetupShaderInstrumentationResources(Validator& gpuav, CommandBufferSubState& cb_state, const LastBound& last_bound,
