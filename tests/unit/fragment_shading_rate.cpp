@@ -3708,3 +3708,17 @@ TEST_F(NegativeFragmentShadingRate, MaxFragmentDensityMapLayersDraw) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeFragmentShadingRate, InvalidPNext) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
+    RETURN_IF_SKIP(Init());
+
+    uint32_t count = 1u;
+    VkPhysicalDeviceFragmentShadingRateKHR fsr = vku::InitStructHelper();
+    fsr.pNext = (void *)0x200000002;  // invalid
+    m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceFragmentShadingRateKHR-pNext-pNext");
+    vk::GetPhysicalDeviceFragmentShadingRatesKHR(gpu_, &count, &fsr);
+    m_errorMonitor->VerifyFound();
+}
