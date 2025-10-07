@@ -2681,7 +2681,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, BothShaderInSamePipelineFinalLinkGPL) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_DifferentShaderLibraryWithIntermediateLibraryGPL) {
+TEST_F(NegativeGpuAVBufferDeviceAddress, DifferentShaderLibraryWithIntermediateLibraryGPL) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
@@ -2723,7 +2723,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_DifferentShaderLibraryWithInte
     VkGraphicsPipelineCreateInfo intermediate_pipe_ci = vku::InitStructHelper(&link_info);
     intermediate_pipe_ci.layout = pipeline_layout;
     intermediate_pipe_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
-    vkt::Pipeline intermediate_pipe(*m_device, intermediate_pipe_ci);
+    vkt::Pipeline intermediate_lib(*m_device, intermediate_pipe_ci);
 
     CreatePipelineHelper frag_shader_lib(*this);
     {
@@ -2737,7 +2737,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_DifferentShaderLibraryWithInte
     frag_out_lib.CreateGraphicsPipeline(false);
 
     VkPipeline exe_libraries[3] = {
-        intermediate_pipe,
+        intermediate_lib,
         frag_shader_lib,
         frag_out_lib,
     };
