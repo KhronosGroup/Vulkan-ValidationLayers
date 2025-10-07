@@ -2265,7 +2265,10 @@ bool CoreChecks::ValidateDrawVertexBinding(const LastBound &last_bound, const vv
     };
 
     const spirv::EntryPoint *vertex_entry_point = last_bound.GetVertexEntryPoint();
-    ASSERT_AND_RETURN_SKIP(vertex_entry_point);
+    // Can be NULL if pipeline binaries are used
+    if (!vertex_entry_point) {
+        return skip;
+    }
     vvl::unordered_set<uint32_t> spirv_input_locations;
     for (const auto &pair : vertex_entry_point->input_interface_slots) {
         spirv_input_locations.emplace(pair.first.Location());
