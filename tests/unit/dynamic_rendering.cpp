@@ -4565,6 +4565,47 @@ TEST_F(NegativeDynamicRendering, SuspendingRenderPassInstance) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDynamicRendering, SuspendingRenderPassInstance2) {
+    TEST_DESCRIPTION("Test suspending render pass instance.");
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    vkt::CommandBuffer command_buffers[2] = {{*m_device, m_command_pool}, {*m_device, m_command_pool}};
+
+    VkRenderingInfo suspend_rendering_info = vku::InitStructHelper();
+    suspend_rendering_info.flags = VK_RENDERING_SUSPENDING_BIT;
+    suspend_rendering_info.layerCount = 1;
+    suspend_rendering_info.renderArea = {{0, 0}, {1, 1}};
+
+    VkRenderingInfo resume_rendering_info = vku::InitStructHelper();
+    resume_rendering_info.flags = VK_RENDERING_RESUMING_BIT;
+    resume_rendering_info.layerCount = 1;
+    resume_rendering_info.renderArea = {{0, 0}, {1, 1}};
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.layerCount = 1;
+    rendering_info.renderArea = {{0, 0}, {1, 1}};
+
+    command_buffers[0].Begin();
+    command_buffers[0].BeginRendering(suspend_rendering_info);
+    command_buffers[0].EndRendering();
+    command_buffers[0].End();
+
+    command_buffers[1].Begin();
+    // We can't begin new render pass instance and only later resume the suspended one.
+    // This will be detected during submit time validation.
+    command_buffers[1].BeginRendering(rendering_info);
+    command_buffers[1].EndRendering();
+
+    command_buffers[1].BeginRendering(resume_rendering_info);
+    command_buffers[1].EndRendering();
+    command_buffers[1].End();
+
+    m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-pCommandBuffers-06016");
+    m_default_queue->Submit({command_buffers[0], command_buffers[1]});
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
 TEST_F(NegativeDynamicRendering, SuspendingRenderPassInstanceQueueSubmit2) {
     TEST_DESCRIPTION("Test suspending render pass instance with QueueSubmit2.");
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);

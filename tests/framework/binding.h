@@ -1086,9 +1086,8 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
     void Destroy() noexcept;
 
     explicit CommandBuffer() : Handle() {}
-    explicit CommandBuffer(const Device &dev, const VkCommandBufferAllocateInfo &info) { Init(dev, info); }
-    explicit CommandBuffer(const Device &dev, const CommandPool &pool,
-                           VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
+    CommandBuffer(const Device &dev, const VkCommandBufferAllocateInfo &info) { Init(dev, info); }
+    CommandBuffer(const Device &dev, const CommandPool &pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
         Init(dev, pool, level);
     }
     CommandBuffer(CommandBuffer &&rhs) noexcept : Handle(std::move(rhs)) {
