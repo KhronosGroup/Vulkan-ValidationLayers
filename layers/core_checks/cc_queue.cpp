@@ -213,7 +213,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
                                                        : "no VkProtectedSubmitInfo in the pNext chain");
             }
 
-            // Validate flags for dynamic rendering
+            // Validate dynamic rendering suspended state
             if (suspended_render_pass_instance && cb_state->action_or_sync_command_before_first_resume) {
                 skip |= LogError("VUID-VkSubmitInfo-pCommandBuffers-06015", queue, submit_loc,
                                  "has a suspended render pass instance, but pCommandBuffers[%" PRIu32
@@ -387,6 +387,13 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
                                  submit_loc.Fields().c_str(), string_VkSubmitFlags(submit.flags).c_str());
             }
 
+            // Validate dynamic rendering suspended state
+            if (suspended_render_pass_instance && cb_state->action_or_sync_command_before_first_resume) {
+                skip |= LogError("VUID-VkSubmitInfo2-commandBuffer-06011", queue, submit_loc,
+                                 "has a suspended render pass instance, but pCommandBuffers[%" PRIu32
+                                 "] records %s before that instance is resumed.",
+                                 i, vvl::String(cb_state->first_action_or_sync_command));
+            }
             if (suspended_render_pass_instance && cb_state->has_render_pass_instance && !cb_state->resumes_render_pass_instance) {
                 skip |= LogError("VUID-VkSubmitInfo2-commandBuffer-06012", queue, submit_loc,
                                  "has a suspended render pass instance, but pCommandBuffers[%" PRIu32

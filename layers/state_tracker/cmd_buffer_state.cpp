@@ -1317,16 +1317,19 @@ void CommandBuffer::RecordExecuteCommands(vvl::span<const VkCommandBuffer> secon
             events.push_back(event);
         }
 
-        // Handle secondary command buffer updates for dynamic rendering
+        if (first_action_or_sync_command == Func::Empty) {
+            first_action_or_sync_command = secondary_cb_state->first_action_or_sync_command;
+        }
+
+        // Handle secondary command buffer updates for dynamic rendering.
         if (!has_render_pass_instance) {
             resumes_render_pass_instance = secondary_cb_state->resumes_render_pass_instance;
+            action_or_sync_command_before_first_resume = secondary_cb_state->action_or_sync_command_before_first_resume;
         }
-        if (!secondary_cb_state->active_render_pass) {
-            if (secondary_cb_state->last_suspend_state != SuspendState::Empty) {
-                last_suspend_state = secondary_cb_state->last_suspend_state;
-            }
-            has_render_pass_instance |= secondary_cb_state->has_render_pass_instance;
+        if (secondary_cb_state->last_suspend_state != SuspendState::Empty) {
+            last_suspend_state = secondary_cb_state->last_suspend_state;
         }
+        has_render_pass_instance |= secondary_cb_state->has_render_pass_instance;
 
         label_stack_depth_ += secondary_cb_state->label_stack_depth_;
         label_commands_.insert(label_commands_.end(), secondary_cb_state->label_commands_.begin(),
