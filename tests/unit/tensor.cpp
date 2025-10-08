@@ -2096,3 +2096,30 @@ TEST_F(NegativeTensor, MutableDescriptors) {
     vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeTensor, DescriptorBindingUpdateAfterBindTensorNoFeature) {
+    TEST_DESCRIPTION("Call UpdateAfterBind on tensor but feature is not enabled.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tensors);
+    // intentionally missing: Feature::descriptorBindingStorageTensorUpdateAfterBind
+    RETURN_IF_SKIP(Init());
+
+    VkDescriptorSetLayoutBinding binding{0, VK_DESCRIPTOR_TYPE_TENSOR_ARM, 1, VK_SHADER_STAGE_ALL, nullptr};
+
+    constexpr VkDescriptorBindingFlags flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+    VkDescriptorSetLayoutBindingFlagsCreateInfo flags_create_info = vku::InitStructHelper();
+    flags_create_info.bindingCount = 1;
+    flags_create_info.pBindingFlags = &flags;
+
+    VkDescriptorSetLayoutCreateInfo create_info = vku::InitStructHelper(&flags_create_info);
+    create_info.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+    create_info.bindingCount = 1;
+    create_info.pBindings = &binding;
+
+    m_errorMonitor->SetDesiredError(
+        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingStorageTensorUpdateAfterBind-09697");
+    vkt::DescriptorSetLayout(*m_device, create_info);
+    m_errorMonitor->VerifyFound();
+}

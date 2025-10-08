@@ -584,6 +584,16 @@ bool CoreChecks::ValidateDescriptorSetLayoutBindingFlags(const VkDescriptorSetLa
                     "].descriptorType is %s, but the descriptorBindingAccelerationStructureUpdateAfterBind was not enabled.",
                     i, string_VkDescriptorType(binding_info.descriptorType));
             }
+
+            if ((binding_info.descriptorType == VK_DESCRIPTOR_TYPE_TENSOR_ARM) &&
+                !enabled_features.descriptorBindingStorageTensorUpdateAfterBind) {
+                skip |= LogError(
+                    "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingStorageTensorUpdateAfterBind-09697",
+                    device, binding_flags_loc,
+                    "includes VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT but pBindings[%" PRIu32
+                    "].descriptorType is %s, but the descriptorBindingStorageTensorUpdateAfterBind was not enabled.",
+                    i, string_VkDescriptorType(binding_info.descriptorType));
+            }
         }
 
         if (flags_info->pBindingFlags[i] & VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT) {
