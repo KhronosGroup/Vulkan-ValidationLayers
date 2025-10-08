@@ -21,6 +21,7 @@
 #include "gpuav/core/gpuav.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
+#include "state_tracker/bind_point.h"
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/render_pass_state.h"
 

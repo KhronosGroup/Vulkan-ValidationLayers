@@ -24,6 +24,7 @@
 #include "state_tracker/pipeline_library_state.h"
 #include "state_tracker/video_session_state.h"
 #include "state_tracker/last_bound_state.h"
+#include "state_tracker/bind_point.h"
 #include "state_tracker/query_state.h"
 #include "state_tracker/vertex_index_buffer_state.h"
 #include "utils/sync_utils.h"
