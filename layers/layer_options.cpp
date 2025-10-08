@@ -207,9 +207,6 @@ const char *VK_LAYER_GPUAV_INDEX_BUFFERS = "gpuav_index_buffers";
 // A temporary workaround until we get proper Descriptor Buffer support
 const char *VK_LAYER_GPUAV_DESCRIPTOR_BUFFER_OVERRIDE = "gpuav_descriptor_buffer_override";
 
-// Keep removed warning until October 2025 SDK is released
-const char *REMOVED_GPUAV_IMAGE_LAYOUT = "gpuav_image_layout";
-
 const char *VK_LAYER_GPUAV_FORCE_ON_ROBUSTNESS = "gpuav_force_on_robustness";
 
 const char *VK_LAYER_GPUAV_DEBUG_DISABLE_ALL = "gpuav_debug_disable_all";
@@ -944,10 +941,6 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_DESCRIPTOR_BUFFER_OVERRIDE)) {
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_DESCRIPTOR_BUFFER_OVERRIDE,
                                 gpuav_settings.descriptor_buffer_override);
-    }
-
-    if (vkuHasLayerSetting(layer_setting_set, REMOVED_GPUAV_IMAGE_LAYOUT)) {
-        setting_warnings.emplace_back("Deprecated " + std::string(REMOVED_GPUAV_IMAGE_LAYOUT) + " setting was removed.");
     }
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_FORCE_ON_ROBUSTNESS)) {
