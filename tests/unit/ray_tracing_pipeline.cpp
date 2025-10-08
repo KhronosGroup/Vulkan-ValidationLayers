@@ -1253,6 +1253,52 @@ TEST_F(NegativeRayTracingPipeline, GetRayTracingShaderGroupStackSizeUnusedGroup)
     m_device->Wait();
 }
 
+TEST_F(NegativeRayTracingPipeline, GetRayTracingShaderGroupStackSizeUnusedGroupPipelineLibraries) {
+    TEST_DESCRIPTION(
+        "Call vkGetRayTracingShaderGroupStackSizeKHR on an unused shader in a shader group coming from a RT pipeline created from "
+        "libraries");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    AddRequiredFeature(vkt::Feature::pipelineLibraryGroupHandles);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::rt::Pipeline rt_pipe_lib(*this, m_device);
+    rt_pipe_lib.InitLibraryInfo(sizeof(float), false);
+    rt_pipe_lib.SetGlslRayGenShader(kRayTracingMinimalGlsl);
+    rt_pipe_lib.AddGlslMissShader(kRayTracingMinimalGlsl);
+    rt_pipe_lib.Build();
+
+    vkt::rt::Pipeline rt_pipe(*this, m_device);
+    rt_pipe.InitLibraryInfo(sizeof(float), true);
+    rt_pipe.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
+    rt_pipe.CreateDescriptorSet();
+    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
+    rt_pipe.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
+    rt_pipe.GetDescriptorSet().UpdateDescriptorSets();
+
+    rt_pipe.SetGlslRayGenShader(kRayTracingMinimalGlsl);
+    rt_pipe.AddLibrary(rt_pipe_lib);
+    rt_pipe.Build();
+
+    m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingShaderGroupStackSizeKHR-group-03608");
+    vk::GetRayTracingShaderGroupStackSizeKHR(*m_device, rt_pipe, 42, VK_SHADER_GROUP_SHADER_GENERAL_KHR);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingShaderGroupStackSizeKHR-groupShader-03609");
+    vk::GetRayTracingShaderGroupStackSizeKHR(*m_device, rt_pipe, 0, VK_SHADER_GROUP_SHADER_ANY_HIT_KHR);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingShaderGroupStackSizeKHR-groupShader-03609");
+    vk::GetRayTracingShaderGroupStackSizeKHR(*m_device, rt_pipe, 1, VK_SHADER_GROUP_SHADER_CLOSEST_HIT_KHR);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeRayTracingPipeline, PipelineTypeGroupHandles) {
     TEST_DESCRIPTION("Use a compute pipeline in GetRayTracingShaderGroupHandlesKHR");
 
