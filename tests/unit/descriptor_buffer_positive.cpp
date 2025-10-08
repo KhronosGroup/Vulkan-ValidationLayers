@@ -1712,3 +1712,96 @@ TEST_F(PositiveDescriptorBuffer, ComputeAndGraphics2) {
         }
     }
 }
+
+TEST_F(PositiveDescriptorBuffer, PushDescriptor) {
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorBufferPushDescriptors);
+    AddRequiredFeature(vkt::Feature::pushDescriptor);
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+
+    vkt::Buffer buffer_data(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    uint32_t *data = (uint32_t *)buffer_data.Memory().Map();
+    data[0] = 8;
+    data[1] = 12;
+    data[2] = 1;
+
+    OneOffDescriptorSet descriptor_set(
+        m_device,
+        {
+            {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+        },
+        VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT | VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    VkDeviceSize ds_layout_size = descriptor_set.layout_.GetDescriptorBufferSize();
+    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4473
+    ds_layout_size = std::max(ds_layout_size, descriptor_buffer_properties.descriptorBufferOffsetAlignment);
+    VkBufferUsageFlags descriptor_buffer_usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+    if (!descriptor_buffer_properties.bufferlessPushDescriptors) {
+        descriptor_buffer_usage |= VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT;
+    }
+    vkt::Buffer descriptor_buffer(*m_device, ds_layout_size, descriptor_buffer_usage, vkt::device_address);
+
+    const char *cs_source = R"glsl(
+        #version 450
+        layout (set = 0, binding = 0) buffer SSBO_0 {
+            uint a;
+            uint b;
+            uint c;
+        };
+
+        void main() {
+            c = a + b;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+
+    VkDescriptorBufferBindingPushDescriptorBufferHandleEXT descriptor_buffer_push_descriptor_buffer_handle = {
+        VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_PUSH_DESCRIPTOR_BUFFER_HANDLE_EXT,
+        NULL,
+        descriptor_buffer,
+    };
+
+    VkDescriptorBufferBindingInfoEXT descriptor_buffer_binding_info = vku::InitStructHelper();
+    if (!descriptor_buffer_properties.bufferlessPushDescriptors) {
+        descriptor_buffer_binding_info.pNext = &descriptor_buffer_push_descriptor_buffer_handle;
+    }
+    descriptor_buffer_binding_info.address = descriptor_buffer.Address();
+    descriptor_buffer_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &descriptor_buffer_binding_info);
+
+    uint32_t buffer_index = 0;
+    VkDeviceSize buffer_offset = 0;
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &buffer_index,
+                                         &buffer_offset);
+    VkDescriptorBufferInfo buffer_info = {};
+    buffer_info.buffer = buffer_data.handle();
+    buffer_info.offset = 0;
+    buffer_info.range = VK_WHOLE_SIZE;
+
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstSet = VK_NULL_HANDLE;
+    descriptor_write.dstBinding = 0u;
+    descriptor_write.dstArrayElement = 0u;
+    descriptor_write.descriptorCount = 1u;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_write.pBufferInfo = &buffer_info;
+    vk::CmdPushDescriptorSetKHR(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0u, 1u,
+                                &descriptor_write);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    if (!IsPlatformMockICD()) {
+        ASSERT_TRUE(data[2] == 20);
+    }
+}
