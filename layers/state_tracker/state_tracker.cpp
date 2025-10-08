@@ -50,6 +50,15 @@
 #include "chassis/chassis.h"
 
 namespace vvl {
+
+DeviceState::DeviceState(vvl::dispatch::Device *dev, InstanceState *instance)
+    : BaseClass(dev, instance, LayerObjectTypeStateTracker),
+      instance_state(instance),
+      special_supported(dev->stateless_device_data.special_supported) {
+    physical_device_state = instance_state->Get<vvl::PhysicalDevice>(physical_device).get();
+    physical_device_state->has_maintenance9 = dev->stateless_device_data.special_supported.has_maintenance9;
+}
+
 DeviceState::~DeviceState() { DestroyObjectMaps(); }
 
 void DeviceState::AddProxy(DeviceProxy &proxy) { proxies.emplace(proxy.container_type, proxy); }
@@ -519,20 +528,8 @@ void DeviceState::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCrea
         sparse_container::infill_update_range(buffer_address_map_, address_range, ops);
     }
 
-    const VkBufferUsageFlags2 descriptor_buffer_usages =
-        VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
+    RecordCreateDescriptorBuffer(*buffer_state, *pCreateInfo);
 
-    if ((buffer_state->usage & descriptor_buffer_usages) != 0) {
-        descriptor_buffer_address_space.all += pCreateInfo->size;
-
-        if ((buffer_state->usage & VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) != 0) {
-            descriptor_buffer_address_space.resource += pCreateInfo->size;
-        }
-
-        if ((buffer_state->usage & VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) != 0) {
-            descriptor_buffer_address_space.sampler += pCreateInfo->size;
-        }
-    }
     Add(std::move(buffer_state));
 }
 
@@ -715,20 +712,7 @@ void DeviceState::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, c
     if (auto buffer_state = Get<Buffer>(buffer)) {
         WriteLockGuard guard(buffer_address_lock_);
 
-        const VkBufferUsageFlags2 descriptor_buffer_usages =
-            VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
-
-        if ((buffer_state->usage & descriptor_buffer_usages) != 0) {
-            descriptor_buffer_address_space.all -= buffer_state->create_info.size;
-
-            if (buffer_state->usage & VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) {
-                descriptor_buffer_address_space.resource -= buffer_state->create_info.size;
-            }
-
-            if (buffer_state->usage & VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) {
-                descriptor_buffer_address_space.sampler -= buffer_state->create_info.size;
-            }
-        }
+        RecordDestoryDescriptorBuffer(*buffer_state);
 
         if (buffer_state->deviceAddress != 0) {
             const auto address_range = buffer_state->DeviceAddressRange();
@@ -762,6 +746,39 @@ void DeviceState::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, c
 void DeviceState::PreCallRecordDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks *pAllocator,
                                                  const RecordObject &record_obj) {
     Destroy<BufferView>(bufferView);
+}
+
+static constexpr VkBufferUsageFlags2 kDescriptorBufferUsages =
+    VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
+
+void DeviceState::RecordCreateDescriptorBuffer(const vvl::Buffer &buffer_state, const VkBufferCreateInfo &create_info) {
+    if ((buffer_state.usage & kDescriptorBufferUsages) != 0) {
+        const VkDeviceSize size = create_info.size;
+        descriptor_buffer_address_space.all += size;
+
+        if ((buffer_state.usage & VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) != 0) {
+            descriptor_buffer_address_space.resource += size;
+        }
+
+        if ((buffer_state.usage & VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) != 0) {
+            descriptor_buffer_address_space.sampler += size;
+        }
+    }
+}
+
+void DeviceState::RecordDestoryDescriptorBuffer(const vvl::Buffer &buffer_state) {
+    if ((buffer_state.usage & kDescriptorBufferUsages) != 0) {
+        const VkDeviceSize size = buffer_state.create_info.size;
+        descriptor_buffer_address_space.all -= size;
+
+        if (buffer_state.usage & VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) {
+            descriptor_buffer_address_space.resource -= size;
+        }
+
+        if (buffer_state.usage & VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) {
+            descriptor_buffer_address_space.sampler -= size;
+        }
+    }
 }
 
 void DeviceState::PostCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
@@ -2815,7 +2832,7 @@ void DeviceState::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuf
     cb_state->RecordCommand(record_obj.location);
 
     // legacy descriptor binding invalidates any previous call to vkCmdBindDescriptorBuffersEXT
-    cb_state->descriptor_buffer_binding_info.clear();
+    cb_state->descriptor_buffer.binding_info.clear();
 
     std::shared_ptr<DescriptorSet> no_push_desc;
 
@@ -2833,7 +2850,7 @@ void DeviceState::PostCallRecordCmdBindDescriptorSets2(VkCommandBuffer commandBu
     cb_state->RecordCommand(record_obj.location);
 
     // legacy descriptor binding invalidates any previous call to vkCmdBindDescriptorBuffersEXT
-    cb_state->descriptor_buffer_binding_info.clear();
+    cb_state->descriptor_buffer.binding_info.clear();
 
     std::shared_ptr<DescriptorSet> no_push_desc;
 
@@ -2915,9 +2932,9 @@ void DeviceState::PostCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                                                             const VkDescriptorBufferBindingInfoEXT *pBindingInfos,
                                                             const RecordObject &record_obj) {
     auto cb_state = Get<CommandBuffer>(commandBuffer);
-    cb_state->descriptor_buffer_ever_bound = true;
+    cb_state->descriptor_buffer.ever_bound = true;
 
-    cb_state->descriptor_buffer_binding_info.resize(bufferCount);
+    cb_state->descriptor_buffer.binding_info.resize(bufferCount);
     for (uint32_t i = 0; i < bufferCount; i++) {
         const VkDescriptorBufferBindingInfoEXT &binding_info = pBindingInfos[i];
         VkBufferUsageFlags2 buffer_usage = binding_info.usage;
@@ -2925,7 +2942,7 @@ void DeviceState::PostCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
             buffer_usage = usage_flags2->usage;
         }
 
-        cb_state->descriptor_buffer_binding_info[i] = {binding_info.address, buffer_usage};
+        cb_state->descriptor_buffer.binding_info[i] = {binding_info.address, buffer_usage};
     }
 
     // So really this should be set at vkCmdSetDescriptorBufferOffsetsEXT time where the bindpoint is known.

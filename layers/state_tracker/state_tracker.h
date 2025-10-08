@@ -545,13 +545,7 @@ class DeviceState : public vvl::base::Device {
     void DestroyObjectMaps();
 
   public:
-    DeviceState(vvl::dispatch::Device* dev, InstanceState* instance)
-        : BaseClass(dev, instance, LayerObjectTypeStateTracker),
-          instance_state(instance),
-          special_supported(dev->stateless_device_data.special_supported) {
-        physical_device_state = instance_state->Get<vvl::PhysicalDevice>(physical_device).get();
-        physical_device_state->has_maintenance9 = dev->stateless_device_data.special_supported.has_maintenance9;
-    }
+    DeviceState(vvl::dispatch::Device* dev, InstanceState* instance);
     ~DeviceState();
 
     void AddProxy(DeviceProxy& proxy);
@@ -856,6 +850,8 @@ class DeviceState : public vvl::base::Device {
                                     VkBuffer* pBuffer, const RecordObject& record_obj) override;
     void PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator,
                                     const RecordObject& record_obj) override;
+    void RecordCreateDescriptorBuffer(const vvl::Buffer& buffer_state, const VkBufferCreateInfo& create_info);
+    void RecordDestoryDescriptorBuffer(const vvl::Buffer& buffer_state);
 
     virtual std::shared_ptr<vvl::BufferView> CreateBufferViewState(const std::shared_ptr<vvl::Buffer>& buffer, VkBufferView handle,
                                                                    const VkBufferViewCreateInfo* create_info,

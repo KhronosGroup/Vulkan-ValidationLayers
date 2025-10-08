@@ -538,12 +538,21 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     uint32_t conditional_rendering_subpass{0};
 
     // VK_EXT_descriptor_buffer
-    struct DescriptorBufferBindingInfo {
-        VkDeviceAddress address;
-        VkBufferUsageFlags2 usage;
-    };
-    std::vector<DescriptorBufferBindingInfo> descriptor_buffer_binding_info;
-    bool descriptor_buffer_ever_bound{false};
+    struct DescriptorBuffer {
+        struct BindingInfo {
+            VkDeviceAddress address;
+            VkBufferUsageFlags2 usage;
+        };
+
+        // This information is always tracked
+        std::vector<BindingInfo> binding_info;
+        bool ever_bound{false};
+
+        void Reset() {
+            binding_info.clear();
+            ever_bound = false;
+        }
+    } descriptor_buffer;
 
     mutable std::shared_mutex lock;
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock); }
