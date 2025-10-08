@@ -341,6 +341,7 @@ target_sources(vvl PRIVATE
     gpuav/shaders/validation_cmd/push_data.h
     object_tracker/object_lifetime_validation.h
     object_tracker/object_tracker_utils.cpp
+    state_tracker/bind_point.h
     state_tracker/buffer_state.cpp
     state_tracker/buffer_state.h
     state_tracker/cmd_buffer_state.cpp
