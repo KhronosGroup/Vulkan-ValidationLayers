@@ -2360,3 +2360,102 @@ TEST_F(PositiveGpuAV, DifferentShaderLibraryWithIntermediateLibrary) {
     exe_pipe_ci.layout = pipeline_layout;
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
 }
+
+TEST_F(PositiveGpuAV, PipelineBinariesDraw) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    AddRequiredExtensions(VK_KHR_PIPELINE_BINARY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::pipelineBinaries);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Pipeline binaries not supported on MockICD";
+    }
+
+    VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();
+    flags2.flags = VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR;
+
+    std::vector<uint8_t> binary_data[2];
+    size_t data_size[2];
+    VkPipelineBinaryKeyKHR binary_key[2];
+    binary_key[0] = vku::InitStructHelper();
+    binary_key[1] = vku::InitStructHelper();
+
+    // create binary from pipeline
+    {
+        CreatePipelineHelper pipe(*this, &flags2);
+        pipe.CreateGraphicsPipeline(true, true);
+
+        VkPipelineBinaryCreateInfoKHR binary_create_info = vku::InitStructHelper();
+        binary_create_info.pipeline = pipe;
+
+        VkPipelineBinaryHandlesInfoKHR handles_info = vku::InitStructHelper();
+        handles_info.pPipelineBinaries = nullptr;
+
+        vk::CreatePipelineBinariesKHR(device(), &binary_create_info, nullptr, &handles_info);
+        std::vector<VkPipelineBinaryKHR> pipeline_binaries(handles_info.pipelineBinaryCount);
+        handles_info.pPipelineBinaries = pipeline_binaries.data();
+        vk::CreatePipelineBinariesKHR(device(), &binary_create_info, nullptr, &handles_info);
+
+        pipe.Destroy();
+
+        for (uint32_t i = 0; i < handles_info.pipelineBinaryCount; i++) {
+            VkPipelineBinaryDataInfoKHR data_info = vku::InitStructHelper();
+            data_info.pipelineBinary = handles_info.pPipelineBinaries[i];
+            vk::GetPipelineBinaryDataKHR(device(), &data_info, &binary_key[i], &data_size[i], nullptr);
+            binary_data[i].resize(data_size[i]);
+            vk::GetPipelineBinaryDataKHR(device(), &data_info, &binary_key[i], &data_size[i], binary_data[i].data());
+            vk::DestroyPipelineBinaryKHR(device(), handles_info.pPipelineBinaries[i], nullptr);
+        }
+    }
+
+    // create binary from data, then create pipeline from binary
+    {
+        VkPipelineBinaryKHR pipeline_binaries[2];
+
+        VkPipelineBinaryDataKHR data[2];
+        data[0].dataSize = data_size[0];
+        data[0].pData = binary_data[0].data();
+        data[1].dataSize = data_size[1];
+        data[1].pData = binary_data[1].data();
+
+        VkPipelineBinaryKeysAndDataKHR keys_data_info;
+        keys_data_info.binaryCount = 2u;
+        keys_data_info.pPipelineBinaryKeys = binary_key;
+        keys_data_info.pPipelineBinaryData = data;
+
+        VkPipelineBinaryCreateInfoKHR binary_create_info = vku::InitStructHelper();
+        binary_create_info.pKeysAndDataInfo = &keys_data_info;
+
+        VkPipelineBinaryHandlesInfoKHR handles_info = vku::InitStructHelper();
+        handles_info.pipelineBinaryCount = 2u;
+        handles_info.pPipelineBinaries = pipeline_binaries;
+
+        vk::CreatePipelineBinariesKHR(device(), &binary_create_info, nullptr, &handles_info);
+
+        VkPipelineBinaryInfoKHR binary_info = vku::InitStructHelper();
+
+        binary_info.binaryCount = 2u;
+        binary_info.pPipelineBinaries = pipeline_binaries;
+
+        flags2.pNext = &binary_info;
+
+        CreatePipelineHelper pipe2(*this, &flags2);
+        pipe2.shader_stages_[0].module = VK_NULL_HANDLE;
+        pipe2.shader_stages_[1].module = VK_NULL_HANDLE;
+        pipe2.CreateGraphicsPipeline(true, true);
+
+        m_command_buffer.Begin();
+        m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2);
+        vk::CmdDraw(m_command_buffer.handle(), 3u, 1u, 0u, 0u);
+        m_command_buffer.EndRenderPass();
+        m_command_buffer.End();
+
+        vk::DestroyPipelineBinaryKHR(device(), pipeline_binaries[0], nullptr);
+        vk::DestroyPipelineBinaryKHR(device(), pipeline_binaries[1], nullptr);
+    }
+}
