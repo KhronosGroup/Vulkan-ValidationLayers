@@ -1416,7 +1416,7 @@ bool CoreChecks::ValidateActionState(const LastBound &last_bound_state, const Dr
 
     if (pipeline) {
         skip |= ValidateActionStateDescriptorsPipeline(last_bound_state, bind_point, *pipeline, vuid);
-    } else if (last_bound_state.cb_state.descriptor_buffer_binding_info.empty()) {
+    } else if (last_bound_state.cb_state.descriptor_buffer.binding_info.empty()) {
         // TODO - VkPipeline have VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT (descriptor_buffer_mode) to know if using descriptor
         // buffers, but VK_EXT_shader_object has no flag. For now, if the command buffer ever calls vkCmdBindDescriptorBuffersEXT,
         // we just assume things are bound until we add some form of GPU side tracking for descriptor buffers

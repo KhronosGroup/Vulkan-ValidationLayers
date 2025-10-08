@@ -2349,7 +2349,7 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer 
         setCount = std::min(setCount, static_cast<uint32_t>(pipeline_layout->set_layouts.size()));
     }
 
-    if (cb_state.descriptor_buffer_binding_info.empty()) {
+    if (cb_state.descriptor_buffer.binding_info.empty()) {
         const char *vuid = is_2 ? "VUID-VkSetDescriptorBufferOffsetsInfoEXT-pBufferIndices-08065"
                                 : "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pBufferIndices-08065";
         const LogObjectList objlist(cb_state.Handle(), pipeline_layout->Handle());
@@ -2357,7 +2357,7 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer 
             LogError(vuid, objlist, loc,
                      "There have been no calls to vkCmdBindDescriptorBuffersEXT and no descriptor buffers are bound. Any "
                      "future call will vkCmdBindDescriptorBuffersEXT would invalidate these offsets anyway.%s",
-                     cb_state.descriptor_buffer_ever_bound
+                     cb_state.descriptor_buffer.ever_bound
                          ? "\nThere was a legacy vkCmdBindDescriptorSets command recorded which invalidates all descriptor buffers."
                          : "");
         // everything else won't make sense
@@ -2378,17 +2378,17 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer 
         }
 
         const uint32_t buffer_index = pBufferIndices[i];
-        if (buffer_index >= cb_state.descriptor_buffer_binding_info.size()) {
+        if (buffer_index >= cb_state.descriptor_buffer.binding_info.size()) {
             const char *vuid = is_2 ? "VUID-VkSetDescriptorBufferOffsetsInfoEXT-pBufferIndices-08065"
                                     : "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pBufferIndices-08065";
             const LogObjectList objlist(cb_state.Handle(), set_layout->Handle(), pipeline_layout->Handle());
             skip |= LogError(vuid, objlist, loc.dot(Field::pBufferIndices, i),
                              "is %" PRIu32 " but the command buffer only has had %zu bound descriptor buffers", pBufferIndices[i],
-                             cb_state.descriptor_buffer_binding_info.size());
+                             cb_state.descriptor_buffer.binding_info.size());
             continue;  // the buffer is not valid
         }
 
-        const auto &binding_info = cb_state.descriptor_buffer_binding_info[buffer_index];
+        const auto &binding_info = cb_state.descriptor_buffer.binding_info[buffer_index];
         const VkDeviceAddress start = binding_info.address;
         const auto buffer_states = GetBuffersByAddress(start);
 

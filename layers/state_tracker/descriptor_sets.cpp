@@ -596,12 +596,15 @@ vvl::DescriptorSetLayout::DescriptorSetLayout(vvl::DeviceState &device_state, co
     : StateObject(handle, kVulkanObjectTypeDescriptorSetLayout),
       layout_id_(GetCanonicalId(pCreateInfo, device_state)),
       desc_set_layout_ci(pCreateInfo) {
-    if (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
+    const bool is_descriptor_buffer = (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0;
+    if (is_descriptor_buffer) {
         DispatchGetDescriptorSetLayoutSizeEXT(device_state.VkHandle(), handle, &layout_size_in_bytes_);
     }
+
     if (pCreateInfo->pBindings) {
         for (uint32_t i = 0; i < pCreateInfo->bindingCount; i++) {
-            binding_to_original_index_map_[pCreateInfo->pBindings[i].binding] = i;
+            const uint32_t binding = pCreateInfo->pBindings[i].binding;
+            binding_to_original_index_map_[binding] = i;
         }
     }
 }

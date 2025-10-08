@@ -394,6 +394,7 @@ class DescriptorSetLayout : public StateObject {
 
   private:
     DescriptorSetLayoutId layout_id_{};
+    // according to vkGetDescriptorSetLayoutSizeEXT
     VkDeviceSize layout_size_in_bytes_ = 0;
     vku::safe_VkDescriptorSetLayoutCreateInfo desc_set_layout_ci{};
 

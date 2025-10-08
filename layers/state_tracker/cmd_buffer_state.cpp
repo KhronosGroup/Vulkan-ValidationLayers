@@ -299,8 +299,7 @@ void CommandBuffer::ResetCBState() {
     video_encode_quality_level.reset();
     video_session_updates.clear();
 
-    descriptor_buffer_binding_info.clear();
-    descriptor_buffer_ever_bound = false;
+    descriptor_buffer.Reset();
 
     // Clean up the label data
     label_stack_depth_ = 0;
@@ -1554,7 +1553,8 @@ void CommandBuffer::UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipelin
     const uint32_t last_binding_index = required_size - 1;
     assert(last_binding_index < pipeline_layout->set_compat_ids.size());
 
-    auto &last_bound = lastBound[ConvertToVvlBindPoint(pipeline_bind_point)];
+    const vvl::BindPoint vvl_bind_point = ConvertToVvlBindPoint(pipeline_bind_point);
+    auto &last_bound = lastBound[vvl_bind_point];
     last_bound.desc_set_pipeline_layout = pipeline_layout;
     auto &pipe_compat_ids = pipeline_layout->set_compat_ids;
     // Resize binding arrays
