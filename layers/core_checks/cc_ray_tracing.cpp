@@ -1920,7 +1920,9 @@ static vku::safe_VkRayTracingShaderGroupCreateInfoKHR *GetRayTracingShaderGroup(
     if (create_info.pLibraryInfo) {
         for (uint32_t i = 0; i < create_info.pLibraryInfo->libraryCount; ++i) {
             auto library_pipeline_state = validator.Get<vvl::Pipeline>(create_info.pLibraryInfo->pLibraries[i]);
-            if (!library_pipeline_state) continue;
+            if (!library_pipeline_state) {
+                continue;
+            }
             return GetRayTracingShaderGroup(validator, *library_pipeline_state.get(), group_i - create_info.groupCount);
         }
     }
