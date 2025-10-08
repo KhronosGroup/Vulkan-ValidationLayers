@@ -209,7 +209,7 @@ class ValidationTests:
                     if 'DISABLED_' in testname:
                         continue
                     if any(prefix in line for prefix in vuid_prefixes):
-                        line_list = re.split('[\s{}[\]()"]+',line)
+                        line_list = re.split(r'[\s{}[\]()"]+', line)
                         for sub_str in line_list:
                             if any(prefix in sub_str for prefix in vuid_prefixes):
                                 vuid_str = sub_str.strip(',);:"*')
