@@ -39,7 +39,7 @@ class ValidationJSON:
         # A set of specific regular expression substitutions needed to clean up VUID text
         self.regex_dict = {}
         self.regex_dict[re.compile(r'<sup>(.*?)</sup>')] = r'^\1'
-        self.regex_dict[re.compile('<.*?>|&(amp;)+lt;|&(amp;)+gt;')] = ""
+        self.regex_dict[re.compile(r'<.*?>|&(amp;)+lt;|&(amp;)+gt;')] = ""
         self.regex_dict[re.compile(r'\\\(codeSize \\over 4\\\)')] = "(codeSize/4)"
         self.regex_dict[re.compile(r'\\\(\\lceil\{\\mathit\{rasterizationSamples} \\over 32}\\rceil\\\)')] = "(rasterizationSamples/32)"
         self.regex_dict[re.compile(r'\\\(\\left\\lceil{\\frac{maxFramebufferWidth}{minFragmentDensityTexelSize_{width}}}\\right\\rceil\\\)')] = "the ceiling of maxFramebufferWidth/minFragmentDensityTexelSize.width"
@@ -49,7 +49,7 @@ class ValidationJSON:
         self.regex_dict[re.compile(r'\\\(\\textrm\{codeSize} \\over 4\\\)')] = "(codeSize/4)"
 
         # Regular expression for characters outside ascii range
-        self.unicode_regex = re.compile('[^\x00-\x7f]')
+        self.unicode_regex = re.compile(r'[^\x00-\x7f]')
         # Mapping from unicode char to ascii approximation
         self.unicode_dict = {
             '\u002b' : '+',  # PLUS SIGN
@@ -224,7 +224,7 @@ const vvl::unordered_map<std::string_view, vuid_info> &GetVuidMap() {{
 
         # Escape quotes and backslashes when generating C strings for source code
         db_text = db_entry['text'].replace('\\', '\\\\').replace('"', '\\"').strip()
-        html_remove_tags = re.compile('<.*?>|&([a-z0-9]+|#[0-9]{1,6}|#x[0-9a-f]{1,6});')
+        html_remove_tags = re.compile(r'<.*?>|&([a-z0-9]+|#[0-9]{1,6}|#x[0-9a-f]{1,6});')
         db_text = re.sub(html_remove_tags, '', db_text)
         # In future we could use the `/n` to add new lines to a pretty print in the console
         db_text = db_text.replace('\n', ' ')

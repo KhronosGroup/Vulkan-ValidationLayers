@@ -146,13 +146,13 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                     self.atomicsOps.append(opname)
                 if instruction['class'] == 'Non-Uniform':
                     self.groupOps.append(opname)
-                if re.search("OpImage.*Gather", opname) is not None:
+                if re.search(r'OpImage.*Gather', opname) is not None:
                     self.imageGatherOps.append(opname)
-                if re.search("OpImageFetch.*", opname) is not None:
+                if re.search(r'OpImageFetch.*', opname) is not None:
                     self.imageFetchOps.append(opname)
-                if re.search("OpImageSample.*", opname) is not None:
+                if re.search(r'OpImageSample.*', opname) is not None:
                     self.imageSampleOps.append(opname)
-                if re.search("OpType.*", opname) is not None:
+                if re.search(r'OpType.*', opname) is not None:
                     # Currently this is for GPU-AV which doesn't supporrt provisional extensions
                     if opname not in self.provisionalList:
                         self.typeOps.append(opname)
@@ -206,7 +206,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                             elif operand['name'] == 'Sampled Image':
                                 self.opcodes[opcode]['sampledImageRefPosition'] = index + 1
 
-                if re.search("OpImage*", opname) is not None:
+                if re.search(r'OpImage*', opname) is not None:
                     info = self.opcodes[opcode]
                     imageRef = info['imageRefPosition']
                     sampledImageRef = info['sampledImageRefPosition']
