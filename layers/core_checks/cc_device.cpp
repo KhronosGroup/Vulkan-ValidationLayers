@@ -542,7 +542,8 @@ VkFormatProperties3 CoreChecks::GetPDFormatProperties(const VkFormat format) con
     VkFormatProperties3 fmt_props_3 = vku::InitStructHelper();
     VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
 
-    if (device_state->special_supported.vk_khr_format_feature_flags2) {
+    if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2) &&
+        IsExtSupported(device_state->extensions.vk_khr_format_feature_flags2)) {
         DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, format, &fmt_props_2);
         fmt_props_3.linearTilingFeatures |= fmt_props_2.formatProperties.linearTilingFeatures;
         fmt_props_3.optimalTilingFeatures |= fmt_props_2.formatProperties.optimalTilingFeatures;
