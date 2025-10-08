@@ -138,7 +138,6 @@ const char* unimplementable_validation[] = {
     "VUID-VkBufferImageCopy2-imageSubresource-parameter",
     "VUID-VkMemoryToImageCopy-imageSubresource-parameter",
     "VUID-VkImageToMemoryCopy-imageSubresource-parameter",
-    "VUID-VkCopyMemoryToImageIndirectCommandNV-imageSubresource-parameter",
     // VkImageSubresourceRange
     "VUID-VkImageMemoryBarrier-subresourceRange-parameter",
     "VUID-VkImageMemoryBarrier2-subresourceRange-parameter",
@@ -446,7 +445,6 @@ const char* unimplementable_validation[] = {
     "VUID-VkPhysicalDeviceCooperativeMatrix2PropertiesNV-sType-sType",
     "VUID-VkPhysicalDeviceCooperativeMatrixPropertiesKHR-sType-sType",
     "VUID-VkPhysicalDeviceCooperativeMatrixPropertiesNV-sType-sType",
-    "VUID-VkPhysicalDeviceCopyMemoryIndirectPropertiesNV-sType-sType",
     "VUID-VkPhysicalDeviceCudaKernelLaunchPropertiesNV-sType-sType",
     "VUID-VkPhysicalDeviceCustomBorderColorPropertiesEXT-sType-sType",
     "VUID-VkPhysicalDeviceDepthStencilResolveProperties-sType-sType",

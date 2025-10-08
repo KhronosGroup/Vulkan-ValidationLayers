@@ -849,6 +849,8 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
             return '"UNASSIGNED-VkDataGraphPipelineSessionMemoryRequirementsInfoARM-session-parent"'
         if structName == 'VkDataGraphPipelineInfoARM' and memberName == 'dataGraphPipeline':
             return '"UNASSIGNED-VkDataGraphPipelineInfoARM-dataGraphPipeline-parent"'
+        if structName == 'VkCopyMemoryToImageIndirectInfoKHR' and memberName == 'dstImage':
+            return '"UNASSIGNED-VkCopyMemoryToImageIndirectInfoKHR-dstImage-parent"'
 
         # Common parents because the structs have more then one handle that needs to be check
         if (structName == 'VkBufferMemoryBarrier' and memberName == 'buffer') or (structName == 'VkImageMemoryBarrier' and memberName == 'image'):
