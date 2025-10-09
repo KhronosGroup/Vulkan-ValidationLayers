@@ -524,7 +524,13 @@ bool SpirvValidator::Validate8And16BitStorage(const spirv::Module &module_state,
                              untyped_access ? "access" : "OpVariable", insn.Describe().c_str());
         }
 
-        // Input and Output are disallowed to have 8-bit storage, but there is a missing VU.
+        if (storage_class == spv::StorageClassInput || storage_class == spv::StorageClassOutput) {
+            // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7709
+            skip |= LogError(
+                "UNASSIGNED-RuntimeSpirv-storageInputOutput8", module_state.handle(), loc,
+                "SPIR-V contains a 8-bit %s with %s Storage Class, but 8-bit Input/Output are not allowed in Vulkan.\n%s\n",
+                untyped_access ? "access" : "OpVariable", string_SpvStorageClass(storage_class), insn.Describe().c_str());
+        }
     }
 
     if (info.has_16bit) {

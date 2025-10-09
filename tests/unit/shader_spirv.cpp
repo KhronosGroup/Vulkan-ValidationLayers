@@ -600,6 +600,42 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitCapability) {
     }
 }
 
+TEST_F(NegativeShaderSpirv, InputOutput8Bit) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-Docs/issues/2595");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderInt8);
+    RETURN_IF_SKIP(Init());
+
+    const char *vsSource = R"glsl(
+        #version 450
+        #extension GL_EXT_shader_8bit_storage: enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_int8: enable
+        layout(location = 0) in int8_t inData;
+        void main(){
+            gl_Position = vec4(float(inData));
+        }
+    )glsl";
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-RuntimeSpirv-storageInputOutput8");
+    VkShaderObj const vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0);
+    m_errorMonitor->VerifyFound();
+
+    const char *fsSource = R"glsl(
+        #version 450
+        #extension GL_EXT_shader_8bit_storage: enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_int8: enable
+        layout(location = 0) out uint8_t outData;
+        void main(){
+            outData = uint8_t(3);
+        }
+    )glsl";
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-RuntimeSpirv-storageInputOutput8");
+    VkShaderObj const fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeShaderSpirv, SpirvStatelessMaintenance5) {
     TEST_DESCRIPTION("Test SPIRV is still checked if using new pNext in VkPipelineShaderStageCreateInfo");
     SetTargetApiVersion(VK_API_VERSION_1_2);
