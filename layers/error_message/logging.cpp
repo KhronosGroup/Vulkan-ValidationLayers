@@ -120,6 +120,10 @@ bool DebugReport::LogMessage(VkFlags msg_flags, std::string_view vuid_text, cons
         // GPU-AV gives lots of warnings on setup to inform user which settings we are adjusting under them
         (vuid_hash == 0x24b5c69f);
 
+    // This lock needs to be here, duplicate_message_count_map is not safe to update on multiple threads
+    // see https://issues.angleproject.org/issues/450466850
+    std::unique_lock<std::mutex> lock(debug_output_mutex);
+
     // Count for this particular message is over the limit, ignore it
     bool at_message_limit = false;
     if (duplicate_message_limit > 0 && !skip_checking_limit) {
@@ -138,8 +142,6 @@ bool DebugReport::LogMessage(VkFlags msg_flags, std::string_view vuid_text, cons
             }
         }
     }
-
-    std::unique_lock<std::mutex> lock(debug_output_mutex);
 
     std::vector<VkDebugUtilsLabelEXT> queue_labels;
     std::vector<VkDebugUtilsLabelEXT> cmd_buf_labels;
