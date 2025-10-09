@@ -4498,34 +4498,18 @@ TEST_F(NegativeDynamicRendering, SuspendingRenderPassInstance) {
     vkt::CommandBuffer cmd_buffer2(*m_device, command_pool);
     vkt::CommandBuffer cmd_buffer3(*m_device, command_pool);
 
-    VkRenderingInfo suspend_rendering_info = vku::InitStructHelper();
-    suspend_rendering_info.flags = VK_RENDERING_SUSPENDING_BIT;
-    suspend_rendering_info.layerCount = 1;
-    suspend_rendering_info.renderArea = {{0, 0}, {1, 1}};
-
-    VkRenderingInfo resume_rendering_info = vku::InitStructHelper();
-    resume_rendering_info.flags = VK_RENDERING_RESUMING_BIT;
-    resume_rendering_info.layerCount = 1;
-    resume_rendering_info.renderArea = {{0, 0}, {1, 1}};
-
-    VkRenderingInfo rendering_info = vku::InitStructHelper();
-    rendering_info.layerCount = 1;
-    rendering_info.renderArea = {{0, 0}, {1, 1}};
-
-    VkCommandBufferBeginInfo cmd_begin = vku::InitStructHelper();
-
-    cmd_buffer1.Begin(&cmd_begin);
-    cmd_buffer1.BeginRendering(suspend_rendering_info);
+    cmd_buffer1.Begin();
+    cmd_buffer1.BeginRendering(GetSimpleSuspendInfo());
     cmd_buffer1.EndRendering();
     cmd_buffer1.End();
 
-    cmd_buffer2.Begin(&cmd_begin);
-    cmd_buffer2.BeginRendering(resume_rendering_info);
+    cmd_buffer2.Begin();
+    cmd_buffer2.BeginRendering(GetSimpleResumeInfo());
     cmd_buffer2.EndRendering();
     cmd_buffer2.End();
 
-    cmd_buffer3.Begin(&cmd_begin);
-    cmd_buffer3.BeginRendering(rendering_info);
+    cmd_buffer3.Begin();
+    cmd_buffer3.BeginRendering(GetSimpleRenderingInfo());
     cmd_buffer3.EndRendering();
     cmd_buffer3.End();
 
@@ -4571,32 +4555,18 @@ TEST_F(NegativeDynamicRendering, SuspendingRenderPassInstance2) {
 
     vkt::CommandBuffer command_buffers[2] = {{*m_device, m_command_pool}, {*m_device, m_command_pool}};
 
-    VkRenderingInfo suspend_rendering_info = vku::InitStructHelper();
-    suspend_rendering_info.flags = VK_RENDERING_SUSPENDING_BIT;
-    suspend_rendering_info.layerCount = 1;
-    suspend_rendering_info.renderArea = {{0, 0}, {1, 1}};
-
-    VkRenderingInfo resume_rendering_info = vku::InitStructHelper();
-    resume_rendering_info.flags = VK_RENDERING_RESUMING_BIT;
-    resume_rendering_info.layerCount = 1;
-    resume_rendering_info.renderArea = {{0, 0}, {1, 1}};
-
-    VkRenderingInfo rendering_info = vku::InitStructHelper();
-    rendering_info.layerCount = 1;
-    rendering_info.renderArea = {{0, 0}, {1, 1}};
-
     command_buffers[0].Begin();
-    command_buffers[0].BeginRendering(suspend_rendering_info);
+    command_buffers[0].BeginRendering(GetSimpleSuspendInfo());
     command_buffers[0].EndRendering();
     command_buffers[0].End();
 
     command_buffers[1].Begin();
     // We can't begin new render pass instance and only later resume the suspended one.
     // This will be detected during submit time validation.
-    command_buffers[1].BeginRendering(rendering_info);
+    command_buffers[1].BeginRendering(GetSimpleRenderingInfo());
     command_buffers[1].EndRendering();
 
-    command_buffers[1].BeginRendering(resume_rendering_info);
+    command_buffers[1].BeginRendering(GetSimpleResumeInfo());
     command_buffers[1].EndRendering();
     command_buffers[1].End();
 
@@ -4606,7 +4576,7 @@ TEST_F(NegativeDynamicRendering, SuspendingRenderPassInstance2) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeDynamicRendering, SuspendingRenderPassInstanceQueueSubmit2) {
+TEST_F(NegativeDynamicRendering, SuspendingRenderPassInstance3) {
     TEST_DESCRIPTION("Test suspending render pass instance with QueueSubmit2.");
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
@@ -4617,34 +4587,18 @@ TEST_F(NegativeDynamicRendering, SuspendingRenderPassInstanceQueueSubmit2) {
     vkt::CommandBuffer cmd_buffer2(*m_device, command_pool);
     vkt::CommandBuffer cmd_buffer3(*m_device, command_pool);
 
-    VkRenderingInfo suspend_rendering_info = vku::InitStructHelper();
-    suspend_rendering_info.flags = VK_RENDERING_SUSPENDING_BIT;
-    suspend_rendering_info.layerCount = 1;
-    suspend_rendering_info.renderArea = {{0, 0}, {1, 1}};
-
-    VkRenderingInfo resume_rendering_info = vku::InitStructHelper();
-    resume_rendering_info.flags = VK_RENDERING_RESUMING_BIT;
-    resume_rendering_info.layerCount = 1;
-    resume_rendering_info.renderArea = {{0, 0}, {1, 1}};
-
-    VkRenderingInfo rendering_info = vku::InitStructHelper();
-    rendering_info.layerCount = 1;
-    rendering_info.renderArea = {{0, 0}, {1, 1}};
-
-    VkCommandBufferBeginInfo cmd_begin = vku::InitStructHelper();
-
-    cmd_buffer1.Begin(&cmd_begin);
-    cmd_buffer1.BeginRendering(suspend_rendering_info);
+    cmd_buffer1.Begin();
+    cmd_buffer1.BeginRendering(GetSimpleSuspendInfo());
     cmd_buffer1.EndRendering();
     cmd_buffer1.End();
 
-    cmd_buffer2.Begin(&cmd_begin);
-    cmd_buffer2.BeginRendering(resume_rendering_info);
+    cmd_buffer2.Begin();
+    cmd_buffer2.BeginRendering(GetSimpleResumeInfo());
     cmd_buffer2.EndRendering();
     cmd_buffer2.End();
 
-    cmd_buffer3.Begin(&cmd_begin);
-    cmd_buffer3.BeginRendering(rendering_info);
+    cmd_buffer3.Begin();
+    cmd_buffer3.BeginRendering(GetSimpleRenderingInfo());
     cmd_buffer3.EndRendering();
     cmd_buffer3.End();
 
@@ -4690,31 +4644,125 @@ TEST_F(NegativeDynamicRendering, SuspendingRenderPassInstanceQueueSubmit2) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDynamicRendering, SuspendedRenderingNoActionCommandsSync1) {
+TEST_F(NegativeDynamicRendering, SuspendThenActionCommand) {
+    TEST_DESCRIPTION("Run action command when render pass instance is suspended");
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(GetSimpleSuspendInfo());
+    m_command_buffer.EndRendering();
+    // TODO: temporary use submit time vuid: https://gitlab.khronos.org/vulkan/vulkan/-/issues/4468
+    m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-pCommandBuffers-06015");
+    vk::CmdFillBuffer(m_command_buffer, buffer, 0, 4, 0x42);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDynamicRendering, SuspendThenActionCommandSecondary) {
+    TEST_DESCRIPTION("Run action command when render pass instance is suspended");
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    secondary.Begin();
+    secondary.BeginRendering(GetSimpleSuspendInfo());
+    secondary.EndRendering();
+    // TODO: temporary use submit time vuid: https://gitlab.khronos.org/vulkan/vulkan/-/issues/4468
+    m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-pCommandBuffers-06015");
+    vk::CmdFillBuffer(secondary, buffer, 0, 4, 0x42);
+    m_errorMonitor->VerifyFound();
+    secondary.End();
+}
+
+TEST_F(NegativeDynamicRendering, SuspendThenActionCommandSecondary2) {
+    TEST_DESCRIPTION("Run action command when render pass instance is suspended");
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    secondary.Begin();
+    vk::CmdFillBuffer(secondary, buffer, 0, 4, 0x42);
+    secondary.End();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(GetSimpleSuspendInfo());
+    m_command_buffer.EndRendering();
+    // TODO: temporary use submit time vuid: https://gitlab.khronos.org/vulkan/vulkan/-/issues/4468
+    m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-pCommandBuffers-06015");
+    m_command_buffer.ExecuteCommands(secondary);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDynamicRendering, SuspendThenActionCommandSecondary3) {
+    TEST_DESCRIPTION("Run action command when render pass instance is suspended");
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::CommandBuffer secondaries[2] = {{*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY},
+                                         {*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY}};
+    VkCommandBuffer secondary_handles[2] = {secondaries[0], secondaries[1]};
+
+    secondaries[0].Begin();
+    secondaries[0].End();
+
+    secondaries[1].Begin();
+    vk::CmdFillBuffer(secondaries[1], buffer, 0, 4, 0x42);
+    secondaries[1].End();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(GetSimpleSuspendInfo());
+    m_command_buffer.EndRendering();
+    // TODO: temporary use submit time vuid: https://gitlab.khronos.org/vulkan/vulkan/-/issues/4468
+    m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-pCommandBuffers-06015");
+    vk::CmdExecuteCommands(m_command_buffer, 2, secondary_handles);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDynamicRendering, SuspendThenActionCommandSecondary4) {
+    TEST_DESCRIPTION("Run action command when render pass instance is suspended");
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::CommandBuffer secondaries[2] = {{*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY},
+                                         {*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY}};
+    VkCommandBuffer secondary_handles[2] = {secondaries[0], secondaries[1]};
+
+    secondaries[0].Begin();
+    secondaries[0].BeginRendering(GetSimpleSuspendInfo());
+    secondaries[0].EndRendering();
+    secondaries[0].End();
+
+    secondaries[1].Begin();
+    vk::CmdFillBuffer(secondaries[1], buffer, 0, 4, 0x42);
+    secondaries[1].End();
+
+    m_command_buffer.Begin();
+    // TODO: temporary use submit time vuid: https://gitlab.khronos.org/vulkan/vulkan/-/issues/4468
+    m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-pCommandBuffers-06015");
+    vk::CmdExecuteCommands(m_command_buffer, 2, secondary_handles);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDynamicRendering, SuspendThenActionCommandSubmit) {
     TEST_DESCRIPTION("Run action command when render pass instance is suspended");
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     vkt::CommandBuffer command_buffers[2] = {{*m_device, m_command_pool}, {*m_device, m_command_pool}};
 
-    VkRenderingInfo suspend_rendering_info = vku::InitStructHelper();
-    suspend_rendering_info.flags = VK_RENDERING_SUSPENDING_BIT;
-    suspend_rendering_info.layerCount = 1;
-    suspend_rendering_info.renderArea = {{0, 0}, {1, 1}};
-
-    VkRenderingInfo resume_rendering_info = vku::InitStructHelper();
-    resume_rendering_info.flags = VK_RENDERING_RESUMING_BIT;
-    resume_rendering_info.layerCount = 1;
-    resume_rendering_info.renderArea = {{0, 0}, {1, 1}};
-
     command_buffers[0].Begin();
-    command_buffers[0].BeginRendering(suspend_rendering_info);
+    command_buffers[0].BeginRendering(GetSimpleSuspendInfo());
     command_buffers[0].EndRendering();
     command_buffers[0].End();
 
     command_buffers[1].Begin();
     vk::CmdFillBuffer(command_buffers[1], buffer, 0, 4, 0x42);
-    command_buffers[1].BeginRendering(resume_rendering_info);
+    command_buffers[1].BeginRendering(GetSimpleResumeInfo());
     command_buffers[1].EndRendering();
     command_buffers[1].End();
 
@@ -4724,44 +4772,7 @@ TEST_F(NegativeDynamicRendering, SuspendedRenderingNoActionCommandsSync1) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeDynamicRendering, SuspendedRenderingNoSyncCommandsSync1) {
-    TEST_DESCRIPTION("Run synchronization command when render pass instance is suspended");
-    RETURN_IF_SKIP(InitBasicDynamicRendering());
-
-    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-    vkt::CommandBuffer command_buffers[2] = {{*m_device, m_command_pool}, {*m_device, m_command_pool}};
-
-    VkMemoryBarrier barrier = vku::InitStructHelper();
-
-    VkRenderingInfo suspend_rendering_info = vku::InitStructHelper();
-    suspend_rendering_info.flags = VK_RENDERING_SUSPENDING_BIT;
-    suspend_rendering_info.layerCount = 1;
-    suspend_rendering_info.renderArea = {{0, 0}, {1, 1}};
-
-    VkRenderingInfo resume_rendering_info = vku::InitStructHelper();
-    resume_rendering_info.flags = VK_RENDERING_RESUMING_BIT;
-    resume_rendering_info.layerCount = 1;
-    resume_rendering_info.renderArea = {{0, 0}, {1, 1}};
-
-    command_buffers[0].Begin();
-    command_buffers[0].BeginRendering(suspend_rendering_info);
-    command_buffers[0].EndRendering();
-    command_buffers[0].End();
-
-    command_buffers[1].Begin();
-    vk::CmdPipelineBarrier(command_buffers[1], VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 1,
-                           &barrier, 0, nullptr, 0, nullptr);
-    command_buffers[1].BeginRendering(resume_rendering_info);
-    command_buffers[1].EndRendering();
-    command_buffers[1].End();
-
-    m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-pCommandBuffers-06015");
-    m_default_queue->Submit({command_buffers[0], command_buffers[1]});
-    m_errorMonitor->VerifyFound();
-    m_default_queue->Wait();
-}
-
-TEST_F(NegativeDynamicRendering, SuspendedRenderingNoActionCommandsSync2) {
+TEST_F(NegativeDynamicRendering, SuspendThenActionCommandSubmit2) {
     TEST_DESCRIPTION("Run action command when render pass instance is suspended");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
@@ -4771,24 +4782,14 @@ TEST_F(NegativeDynamicRendering, SuspendedRenderingNoActionCommandsSync2) {
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     vkt::CommandBuffer command_buffers[2] = {{*m_device, m_command_pool}, {*m_device, m_command_pool}};
 
-    VkRenderingInfo suspend_rendering_info = vku::InitStructHelper();
-    suspend_rendering_info.flags = VK_RENDERING_SUSPENDING_BIT;
-    suspend_rendering_info.layerCount = 1;
-    suspend_rendering_info.renderArea = {{0, 0}, {1, 1}};
-
-    VkRenderingInfo resume_rendering_info = vku::InitStructHelper();
-    resume_rendering_info.flags = VK_RENDERING_RESUMING_BIT;
-    resume_rendering_info.layerCount = 1;
-    resume_rendering_info.renderArea = {{0, 0}, {1, 1}};
-
     command_buffers[0].Begin();
-    command_buffers[0].BeginRendering(suspend_rendering_info);
+    command_buffers[0].BeginRendering(GetSimpleSuspendInfo());
     command_buffers[0].EndRendering();
     command_buffers[0].End();
 
     command_buffers[1].Begin();
     vk::CmdFillBuffer(command_buffers[1], buffer, 0, 4, 0x42);
-    command_buffers[1].BeginRendering(resume_rendering_info);
+    command_buffers[1].BeginRendering(GetSimpleResumeInfo());
     command_buffers[1].EndRendering();
     command_buffers[1].End();
 
@@ -4798,7 +4799,91 @@ TEST_F(NegativeDynamicRendering, SuspendedRenderingNoActionCommandsSync2) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeDynamicRendering, SuspendedRenderingNoSyncCommandsSync2) {
+TEST_F(NegativeDynamicRendering, SuspendThenActionCommandSubmit3) {
+    TEST_DESCRIPTION("Run action command when render pass instance is suspended");
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::CommandBuffer command_buffers[3] = {{*m_device, m_command_pool}, {*m_device, m_command_pool}, {*m_device, m_command_pool}};
+
+    command_buffers[0].Begin();
+    command_buffers[0].BeginRendering(GetSimpleSuspendInfo());
+    command_buffers[0].EndRendering();
+    command_buffers[0].End();
+
+    command_buffers[1].Begin();
+    vk::CmdFillBuffer(command_buffers[1], buffer, 0, 4, 0x42);
+    command_buffers[1].End();
+
+    command_buffers[2].Begin();
+    command_buffers[2].BeginRendering(GetSimpleResumeInfo());
+    command_buffers[2].EndRendering();
+    command_buffers[2].End();
+
+    m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-pCommandBuffers-06015");
+    m_default_queue->Submit({command_buffers[0], command_buffers[1], command_buffers[2]});
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeDynamicRendering, SuspendThenActionCommandSubmit4) {
+    TEST_DESCRIPTION("Run action command when render pass instance is suspended");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::CommandBuffer command_buffers[3] = {{*m_device, m_command_pool}, {*m_device, m_command_pool}, {*m_device, m_command_pool}};
+
+    command_buffers[0].Begin();
+    command_buffers[0].BeginRendering(GetSimpleSuspendInfo());
+    command_buffers[0].EndRendering();
+    command_buffers[0].End();
+
+    command_buffers[1].Begin();
+    vk::CmdFillBuffer(command_buffers[1], buffer, 0, 4, 0x42);
+    command_buffers[1].End();
+
+    command_buffers[2].Begin();
+    command_buffers[2].BeginRendering(GetSimpleResumeInfo());
+    command_buffers[2].EndRendering();
+    command_buffers[2].End();
+
+    m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo2-commandBuffer-06011");
+    m_default_queue->Submit2({command_buffers[0], command_buffers[1], command_buffers[2]});
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeDynamicRendering, SuspendThenSyncCommandSubmit) {
+    TEST_DESCRIPTION("Run synchronization command when render pass instance is suspended");
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::CommandBuffer command_buffers[2] = {{*m_device, m_command_pool}, {*m_device, m_command_pool}};
+
+    VkMemoryBarrier barrier = vku::InitStructHelper();
+
+    command_buffers[0].Begin();
+    command_buffers[0].BeginRendering(GetSimpleSuspendInfo());
+    command_buffers[0].EndRendering();
+    command_buffers[0].End();
+
+    command_buffers[1].Begin();
+    vk::CmdPipelineBarrier(command_buffers[1], VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 1,
+                           &barrier, 0, nullptr, 0, nullptr);
+    command_buffers[1].BeginRendering(GetSimpleResumeInfo());
+    command_buffers[1].EndRendering();
+    command_buffers[1].End();
+
+    m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-pCommandBuffers-06015");
+    m_default_queue->Submit({command_buffers[0], command_buffers[1]});
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeDynamicRendering, SuspendThenSyncCommandSubmit2) {
     TEST_DESCRIPTION("Run synchronization command when render pass instance is suspended");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
@@ -4810,24 +4895,14 @@ TEST_F(NegativeDynamicRendering, SuspendedRenderingNoSyncCommandsSync2) {
 
     VkMemoryBarrier2 barrier = vku::InitStructHelper();
 
-    VkRenderingInfo suspend_rendering_info = vku::InitStructHelper();
-    suspend_rendering_info.flags = VK_RENDERING_SUSPENDING_BIT;
-    suspend_rendering_info.layerCount = 1;
-    suspend_rendering_info.renderArea = {{0, 0}, {1, 1}};
-
-    VkRenderingInfo resume_rendering_info = vku::InitStructHelper();
-    resume_rendering_info.flags = VK_RENDERING_RESUMING_BIT;
-    resume_rendering_info.layerCount = 1;
-    resume_rendering_info.renderArea = {{0, 0}, {1, 1}};
-
     command_buffers[0].Begin();
-    command_buffers[0].BeginRendering(suspend_rendering_info);
+    command_buffers[0].BeginRendering(GetSimpleSuspendInfo());
     command_buffers[0].EndRendering();
     command_buffers[0].End();
 
     command_buffers[1].Begin();
     command_buffers[1].Barrier(barrier);
-    command_buffers[1].BeginRendering(resume_rendering_info);
+    command_buffers[1].BeginRendering(GetSimpleResumeInfo());
     command_buffers[1].EndRendering();
     command_buffers[1].End();
 
@@ -4837,7 +4912,7 @@ TEST_F(NegativeDynamicRendering, SuspendedRenderingNoSyncCommandsSync2) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeDynamicRendering, SuspendedRenderingWithSecondary) {
+TEST_F(NegativeDynamicRendering, SuspendThenActionCommandSecondarySubmit) {
     TEST_DESCRIPTION("Run action command when render pass instance is suspended");
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
@@ -4845,28 +4920,18 @@ TEST_F(NegativeDynamicRendering, SuspendedRenderingWithSecondary) {
     vkt::CommandBuffer command_buffers[2] = {{*m_device, m_command_pool}, {*m_device, m_command_pool}};
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
-    VkRenderingInfo suspend_rendering_info = vku::InitStructHelper();
-    suspend_rendering_info.flags = VK_RENDERING_SUSPENDING_BIT;
-    suspend_rendering_info.layerCount = 1;
-    suspend_rendering_info.renderArea = {{0, 0}, {1, 1}};
-
-    VkRenderingInfo resume_rendering_info = vku::InitStructHelper();
-    resume_rendering_info.flags = VK_RENDERING_RESUMING_BIT;
-    resume_rendering_info.layerCount = 1;
-    resume_rendering_info.renderArea = {{0, 0}, {1, 1}};
-
     secondary.Begin();
     vk::CmdFillBuffer(secondary, buffer, 0, 4, 0x42);
     secondary.End();
 
     command_buffers[0].Begin();
-    command_buffers[0].BeginRendering(suspend_rendering_info);
+    command_buffers[0].BeginRendering(GetSimpleSuspendInfo());
     command_buffers[0].EndRendering();
     command_buffers[0].End();
 
     command_buffers[1].Begin();
     command_buffers[1].ExecuteCommands(secondary);
-    command_buffers[1].BeginRendering(resume_rendering_info);
+    command_buffers[1].BeginRendering(GetSimpleResumeInfo());
     command_buffers[1].EndRendering();
     command_buffers[1].End();
 
@@ -4876,7 +4941,7 @@ TEST_F(NegativeDynamicRendering, SuspendedRenderingWithSecondary) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeDynamicRendering, SuspendedRenderingWithSecondary2) {
+TEST_F(NegativeDynamicRendering, SuspendThenActionCommandSecondarySubmit2) {
     TEST_DESCRIPTION("Run action command when render pass instance is suspended");
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
@@ -4884,24 +4949,14 @@ TEST_F(NegativeDynamicRendering, SuspendedRenderingWithSecondary2) {
     vkt::CommandBuffer command_buffers[2] = {{*m_device, m_command_pool}, {*m_device, m_command_pool}};
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
-    VkRenderingInfo suspend_rendering_info = vku::InitStructHelper();
-    suspend_rendering_info.flags = VK_RENDERING_SUSPENDING_BIT;
-    suspend_rendering_info.layerCount = 1;
-    suspend_rendering_info.renderArea = {{0, 0}, {1, 1}};
-
-    VkRenderingInfo resume_rendering_info = vku::InitStructHelper();
-    resume_rendering_info.flags = VK_RENDERING_RESUMING_BIT;
-    resume_rendering_info.layerCount = 1;
-    resume_rendering_info.renderArea = {{0, 0}, {1, 1}};
-
     secondary.Begin();
     vk::CmdFillBuffer(secondary, buffer, 0, 4, 0x42);
-    secondary.BeginRendering(resume_rendering_info);
+    secondary.BeginRendering(GetSimpleResumeInfo());
     secondary.EndRendering();
     secondary.End();
 
     command_buffers[0].Begin();
-    command_buffers[0].BeginRendering(suspend_rendering_info);
+    command_buffers[0].BeginRendering(GetSimpleSuspendInfo());
     command_buffers[0].EndRendering();
     command_buffers[0].End();
 
