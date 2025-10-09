@@ -1867,13 +1867,12 @@ bool CoreChecks::PreCallValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR(
         return skip;
     }
 
-    const auto &create_info = pipeline_state->RayTracingCreateInfo();
-    if (create_info.flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) {
+    if (pipeline_state->create_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) {
         if (!enabled_features.pipelineLibraryGroupHandles) {
             skip |= LogError("VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-pipeline-07829", pipeline,
                              error_obj.location.dot(Field::pipeline),
                              "was created with %s, but the pipelineLibraryGroupHandles feature was not enabled.",
-                             string_VkPipelineCreateFlags(create_info.flags).c_str());
+                             string_VkPipelineCreateFlags2(pipeline_state->create_flags).c_str());
         }
     }
 
@@ -1894,10 +1893,10 @@ bool CoreChecks::PreCallValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR(
                          ") must be less than or equal to the number of shader groups in pipeline (%" PRIu32 ").",
                          firstGroup, groupCount, total_group_count);
     }
-    if (!(create_info.flags & VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR)) {
+    if (!(pipeline_state->create_flags & VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR)) {
         skip |= LogError("VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-pipeline-03607", pipeline,
                          error_obj.location.dot(Field::pipeline), "was created with %s.",
-                         string_VkPipelineCreateFlags(create_info.flags).c_str());
+                         string_VkPipelineCreateFlags2(pipeline_state->create_flags).c_str());
     }
     return skip;
 }
