@@ -108,7 +108,7 @@ class Pipeline : public StateObject, public SubStateManager<PipelineSubState> {
     const std::shared_ptr<FragmentOutputState> fragment_output_state;
 
     // Additional metadata needed by pipeline_state initialization and validation
-    std::vector<ShaderStageState> stage_states;
+    const std::vector<ShaderStageState> stage_states;
 
     // Shaders from the pipeline create info
     // Normally used for validating pipeline creation, if stages are linked, they will already have been validated
@@ -446,9 +446,9 @@ class Pipeline : public StateObject, public SubStateManager<PipelineSubState> {
 
     static std::vector<ShaderStageState> GetStageStates(const DeviceState &state_data, const Pipeline &pipe_state,
                                                         spirv::StatelessData *stateless_data);
-    static void GetRayTracingStageStates(const DeviceState &state_data, const Pipeline &pipe_state,
-                                         std::vector<spirv::StatelessData> *inout_per_shader_stateless_data,
-                                         std::vector<ShaderStageState> &inout_stage_states);
+    static std::vector<ShaderStageState> GetRayTracingStageStates(
+        const DeviceState &state_data, const Pipeline &pipe_state,
+        std::vector<spirv::StatelessData> *inout_per_shader_stateless_data);
 
     // Return true if for a given PSO, the given state enum is dynamic, else return false
     bool IsDynamic(const CBDynamicState state) const { return dynamic_state[state]; }

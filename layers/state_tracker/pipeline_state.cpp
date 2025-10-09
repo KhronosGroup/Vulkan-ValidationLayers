@@ -202,9 +202,10 @@ std::vector<ShaderStageState> Pipeline::GetStageStates(const DeviceState &state_
     return stage_states;
 }
 
-void Pipeline::GetRayTracingStageStates(const DeviceState &state_data, const Pipeline &pipe_state,
-                                        std::vector<spirv::StatelessData> *inout_per_shader_stateless_data,
-                                        std::vector<ShaderStageState> &inout_stage_states) {
+std::vector<ShaderStageState> Pipeline::GetRayTracingStageStates(
+    const DeviceState &state_data, const Pipeline &pipe_state, std::vector<spirv::StatelessData> *inout_per_shader_stateless_data) {
+    std::vector<ShaderStageState> stage_states;
+
     for (size_t stage_index = 0; stage_index < pipe_state.shader_stages_ci.size(); ++stage_index) {
         const auto &stage_ci = pipe_state.shader_stages_ci[stage_index];
         auto module_state = state_data.Get<vvl::ShaderModule>(stage_ci.module);
@@ -215,6 +216,7 @@ void Pipeline::GetRayTracingStageStates(const DeviceState &state_data, const Pip
 
         if (!module_state || !module_state->spirv) {
             if (const auto shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext)) {
+                (void)shader_ci;
                 inout_per_shader_stateless_data->resize(inout_per_shader_stateless_data->size() + 1);
                 spirv::StatelessData *stateless_data =
                     &inout_per_shader_stateless_data->at(inout_per_shader_stateless_data->size() - 1);
@@ -223,7 +225,7 @@ void Pipeline::GetRayTracingStageStates(const DeviceState &state_data, const Pip
         }
 
         if (module_state) {
-            inout_stage_states.emplace_back(&stage_ci, nullptr, module_state, module_state->spirv);
+            stage_states.emplace_back(&stage_ci, nullptr, module_state, module_state->spirv);
         }
     }
 
@@ -232,9 +234,15 @@ void Pipeline::GetRayTracingStageStates(const DeviceState &state_data, const Pip
         for (VkPipeline lib : vvl::make_span(rt_ci.pLibraryInfo->pLibraries, rt_ci.pLibraryInfo->libraryCount)) {
             auto lib_state = state_data.Get<vvl::Pipeline>(lib);
             ASSERT_AND_CONTINUE(lib_state);
-            GetRayTracingStageStates(state_data, *lib_state, inout_per_shader_stateless_data, inout_stage_states);
+            std::vector<ShaderStageState> lib_stage_stages =
+                GetRayTracingStageStates(state_data, *lib_state, inout_per_shader_stateless_data);
+            for (size_t i = 0; i < lib_stage_stages.size(); ++i) {
+                stage_states.emplace_back(lib_stage_stages[i]);
+            }
         }
     }
+
+    return stage_states;
 }
 
 static uint32_t GetCreateInfoShaders(const Pipeline &pipe_state) {
@@ -888,6 +896,7 @@ Pipeline::Pipeline(const DeviceState &state_data, const VkRayTracingPipelineCrea
       shader_stages_ci(RayTracingCreateInfo().pStages, RayTracingCreateInfo().stageCount),
       ray_tracing_library_ci(RayTracingCreateInfo().pLibraryInfo),
       uses_shader_module_id(UsesShaderModuleId(*this)),
+      stage_states(GetRayTracingStageStates(state_data, *this, stateless_data)),
       create_info_shaders(GetCreateInfoShaders(*this)),
       active_shaders(create_info_shaders),  // RTX has no linking shaders
       active_slots(GetActiveSlots(stage_states)),
@@ -898,7 +907,6 @@ Pipeline::Pipeline(const DeviceState &state_data, const VkRayTracingPipelineCrea
       uses_pipeline_vertex_robustness(false),
       ignore_color_attachments(IgnoreColorAttachments(state_data, *this)),
       merged_graphics_layout(std::move(layout)) {
-    GetRayTracingStageStates(state_data, *this, stateless_data, stage_states);
     assert(0 == (active_shaders & ~(kShaderStageAllRayTracing)));
 }
 
