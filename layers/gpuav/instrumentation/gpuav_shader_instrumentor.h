@@ -196,9 +196,11 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
     template <typename SafeCreateInfo>
     [[nodiscard]] bool PreCallRecordPipelineCreationShaderInstrumentation(
         const VkAllocationCallbacks *pAllocator, vvl::Pipeline &pipeline_state, SafeCreateInfo &modified_pipeline_ci,
-        const Location &loc, std::vector<chassis::ShaderInstrumentationMetadata> &shader_instrumentation_metadata);
+        uint32_t stages_count, const Location &loc,
+        std::vector<chassis::ShaderInstrumentationMetadata> &shader_instrumentation_metadata);
     void PostCallRecordPipelineCreationShaderInstrumentation(
-        vvl::Pipeline &pipeline_state, std::vector<chassis::ShaderInstrumentationMetadata> &shader_instrumentation_metadata);
+        vvl::Pipeline &pipeline_state, uint32_t stages_count,
+        std::vector<chassis::ShaderInstrumentationMetadata> &shader_instrumentation_metadata);
 
     // We have GPL variations for graphics as they defer instrumentation until linking
     [[nodiscard]] bool PreCallRecordPipelineCreationShaderInstrumentationGPL(
