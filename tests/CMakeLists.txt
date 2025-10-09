@@ -367,7 +367,6 @@ if(DEFINED SLANG_INSTALL_DIR)
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
                     ${SLANG_DLL}
                     $<TARGET_FILE_DIR:${TARGET_NAME}>
-                COMMENT "Copying Slang DLL to output directory for ${TARGET_NAME}"
             )
 
             get_target_property(TARGET_OUTPUT_DIR ${TARGET_NAME} RUNTIME_OUTPUT_DIRECTORY)
@@ -381,7 +380,6 @@ if(DEFINED SLANG_INSTALL_DIR)
                     COMMAND ${CMAKE_COMMAND} -E copy_if_different
                         ${DEP_DLL}
                         $<TARGET_FILE_DIR:${TARGET_NAME}>
-                    COMMENT "Copying dependency DLL ${DEP_DLL_NAME} to output directory for ${TARGET_NAME}"
                 )
             endforeach()
         else()
@@ -390,7 +388,6 @@ if(DEFINED SLANG_INSTALL_DIR)
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
                     ${SLANG_LIBRARY}
                     $<TARGET_FILE_DIR:${TARGET_NAME}>/${SLANG_SONAME}
-                COMMENT "Copying Slang shared library to output directory for ${TARGET_NAME}"
             )
 
             get_target_property(TARGET_OUTPUT_DIR ${TARGET_NAME} RUNTIME_OUTPUT_DIRECTORY)
@@ -405,7 +402,6 @@ if(DEFINED SLANG_INSTALL_DIR)
                     COMMAND ${CMAKE_COMMAND} -E copy_if_different
                         ${DEP_LIB}
                         $<TARGET_FILE_DIR:${TARGET_NAME}>/${DEP_LIB_NAME}
-                    COMMENT "Copying dependency library ${DEP_LIB_NAME} to output directory for ${TARGET_NAME}"
                 )
             endforeach()
 
@@ -417,7 +413,6 @@ if(DEFINED SLANG_INSTALL_DIR)
 
             # Add post-build step to verify the library was copied and is executable
             add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E echo "Verifying slang library path: $<TARGET_FILE_DIR:${TARGET_NAME}>/${SLANG_SONAME}"
                 COMMAND test -f "$<TARGET_FILE_DIR:${TARGET_NAME}>/${SLANG_SONAME}" || echo "Library not copied correctly"
             )
         endif()
