@@ -359,9 +359,9 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
                         const LogObjectList objlist(producer.handle(), consumer.handle());
                         skip |= LogError("VUID-RuntimeSpirv-maintenance4-06817", objlist, create_info_loc,
                                          "(SPIR-V Interface) starting at Location %" PRIu32 " Component %" PRIu32
-                                         " the Output (%s) has a Vec%" PRIu32 " while Input (%s) as a Vec%" PRIu32
-                                         ". Enable VK_KHR_maintenance4 device extension to allow relaxed interface matching "
-                                         "between input and output vectors.",
+                                         "\nThe output (%s) has a Vec%" PRIu32 "\nThe input (%s) has a Vec%" PRIu32
+                                         "\nThis mismatch between vector sizes is not allowed, but can be relaxed by enabling "
+                                         "VK_KHR_maintenance4.",
                                          location, component, string_VkShaderStageFlagBits(producer_stage), output_vec_size,
                                          string_VkShaderStageFlagBits(consumer_stage), input_vec_size);
                         break;  // Only need to report for the first component found
@@ -370,15 +370,16 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
             } else if ((input_var == nullptr) && (output_var != nullptr)) {
                 // Missing input slot
                 // It is not an error if a stage does not consume all outputs from the previous stage
-                // The values will be undefined, but still legal
                 // Don't give any warning if maintenance4 with vectors
                 if (!enabled_features.maintenance4 && (output_var->base_type.Opcode() != spv::OpTypeVector)) {
                     const LogObjectList objlist(producer.handle(), consumer.handle());
-                    skip |= LogPerformanceWarning("WARNING-Shader-OutputNotConsumed", objlist, create_info_loc,
-                                                  "(SPIR-V Interface) %s declared to output location %" PRIu32 " Component %" PRIu32
-                                                  " but is not an Input declared by %s.",
-                                                  string_VkShaderStageFlagBits(producer_stage), location, component,
-                                                  string_VkShaderStageFlagBits(consumer_stage));
+                    skip |= LogPerformanceWarning(
+                        "WARNING-Shader-OutputNotConsumed", objlist, create_info_loc,
+                        "(SPIR-V Interface) %s has an Output value declared at Location %" PRIu32 " Component %" PRIu32
+                        ", but there is no corresponding Input declared in %s.\nThis is not invalid, but might the write to to the "
+                        "unused Output is discarded.\nThe Output variable is:\n  %s",
+                        string_VkShaderStageFlagBits(producer_stage), location, component,
+                        string_VkShaderStageFlagBits(consumer_stage), producer.DescribeType(output_var->type_id).c_str());
                 }
             } else if ((input_var != nullptr) && (output_var == nullptr)) {
                 // Missing output slot
@@ -389,10 +390,11 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
                 }
                 const LogObjectList objlist(producer.handle(), consumer.handle());
                 skip |= LogError("VUID-RuntimeSpirv-OpEntryPoint-08743", objlist, create_info_loc,
-                                 "(SPIR-V Interface) %s declared input at Location %" PRIu32 " Component %" PRIu32
-                                 " %sbut it is not an Output declared in %s",
+                                 "(SPIR-V Interface) %s has a declared Input at Location %" PRIu32 " Component %" PRIu32
+                                 " %s but the previous stage (%s) has no Output declared there.\nThe input variable is:\n  %s",
                                  string_VkShaderStageFlagBits(consumer_stage), location, component,
-                                 input_var->is_patch ? "(Tessellation Patch) " : "", string_VkShaderStageFlagBits(producer_stage));
+                                 input_var->is_patch ? "(Tessellation Patch) " : "", string_VkShaderStageFlagBits(producer_stage),
+                                 consumer.DescribeType(input_var->type_id).c_str());
                 break;  // Only need to report for the first component found
             }
         }
