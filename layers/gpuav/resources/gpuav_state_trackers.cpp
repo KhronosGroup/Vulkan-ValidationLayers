@@ -353,7 +353,7 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, const std::vector<std::s
                 if (error_logger_i == cst::invalid_index_command) {
                     const LogObjectList objlist(queue, VkHandle());
                     gpuav_.LogError(
-                        "GPUAV-Oveflow-Unknown", queue, loc,
+                        "GPUAV-Overflow-Unknown", queue, loc,
                         "An error was detected, but after internal limit of %" PRIu32
                         " draw/dispatch/traceRays in a command buffer, we are unable to track which validation error occured.",
                         cst::indices_count);

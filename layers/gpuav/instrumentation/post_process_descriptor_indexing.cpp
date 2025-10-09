@@ -17,6 +17,7 @@
 
 #include "drawdispatch/descriptor_validator.h"
 #include "gpuav/core/gpuav.h"
+#include "gpuav/core/gpuav_constants.h"
 #include "gpuav/resources/gpuav_shader_resources.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "state_tracker/pipeline_state.h"
@@ -226,6 +227,14 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
                 context.SetOriginalSpirv(&it->second.original_spirv);
 
                 for (const DescriptorAccess& descriptor_access : descriptor_accesses) {
+                    if (descriptor_access.error_logger_i == cst::invalid_index_command) {
+                        gpuav.LogError("GPUAV-Overflow-Unknown", LogObjectList(), Location(vvl::Func::Empty),
+                                       "Cannot perform runtime descriptor access validation, access was done in a command past the "
+                                       "internal limit of %" PRIu32 " draw/dispatch/traceRays in a command buffer.",
+                                       cst::indices_count);
+                        continue;
+                    }
+
                     auto descriptor_binding = desc_set->GetBinding(descriptor_access.binding);
                     ASSERT_AND_CONTINUE(descriptor_binding);
 

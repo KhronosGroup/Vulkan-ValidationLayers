@@ -2885,7 +2885,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, ReachMaxErrorLoggerLimitUnkown) {
     m_command_buffer.End();
 
     // VUID-VkDispatchIndirectCommand-x-00417
-    m_errorMonitor->SetDesiredError("GPUAV-Oveflow-Unknown");
+    m_errorMonitor->SetDesiredError("GPUAV-Overflow-Unknown");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
