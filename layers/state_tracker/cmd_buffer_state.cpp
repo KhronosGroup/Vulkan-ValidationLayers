@@ -262,6 +262,7 @@ void CommandBuffer::ResetCBState() {
     has_render_pass_instance = false;
     resumes_render_pass_instance = false;
     last_suspend_state = SuspendState::Empty;
+    first_action_or_sync_command = Func::Empty;
     active_render_pass = nullptr;
     sample_locations_begin_info = {};
     attachment_source = AttachmentSource::Empty;
@@ -830,12 +831,6 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo &rendering_info, 
     // Track if the first render pass instance does resume
     if (!has_render_pass_instance && (rendering_info.flags & VK_RENDERING_RESUMING_BIT)) {
         resumes_render_pass_instance = true;
-
-        // There are no earlier action/sync commands only if the current BeginRendering
-        // is the first action command (since BeginRendering itself is an action command).
-        if (first_action_or_sync_command != loc.function) {
-            action_or_sync_command_before_first_resume = true;
-        }
     }
     // Track the last suspension state. Notice that both RESUMING/SUSPENDING flags can be specified.
     // The ordering is that suspension action goes after resuming action.
@@ -1323,13 +1318,13 @@ void CommandBuffer::RecordExecuteCommands(vvl::span<const VkCommandBuffer> secon
         // Handle secondary command buffer updates for dynamic rendering.
         if (!has_render_pass_instance) {
             resumes_render_pass_instance = secondary_cb_state->resumes_render_pass_instance;
-            action_or_sync_command_before_first_resume = secondary_cb_state->action_or_sync_command_before_first_resume;
         }
         if (secondary_cb_state->last_suspend_state != SuspendState::Empty) {
             last_suspend_state = secondary_cb_state->last_suspend_state;
         }
         has_render_pass_instance |= secondary_cb_state->has_render_pass_instance;
 
+        // Handle debug labels
         label_stack_depth_ += secondary_cb_state->label_stack_depth_;
         label_commands_.insert(label_commands_.end(), secondary_cb_state->label_commands_.begin(),
                                secondary_cb_state->label_commands_.end());

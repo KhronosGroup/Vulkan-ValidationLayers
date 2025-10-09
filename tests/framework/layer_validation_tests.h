@@ -282,6 +282,10 @@ class DynamicRenderingTest : public VkLayerTest {
   public:
     void InitBasicDynamicRendering();
     void InitBasicDynamicRenderingLocalRead();
+
+    VkRenderingInfo GetSimpleRenderingInfo();
+    VkRenderingInfo GetSimpleSuspendInfo();
+    VkRenderingInfo GetSimpleResumeInfo();
 };
 
 class DynamicStateTest : public VkLayerTest {
