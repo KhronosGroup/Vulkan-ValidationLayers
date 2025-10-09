@@ -23,6 +23,29 @@ void DynamicRenderingTest::InitBasicDynamicRendering() {
     RETURN_IF_SKIP(Init());
 }
 
+VkRenderingInfo DynamicRenderingTest::GetSimpleRenderingInfo() {
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.layerCount = 1;
+    rendering_info.renderArea = {{0, 0}, {1, 1}};
+    return rendering_info;
+}
+
+VkRenderingInfo DynamicRenderingTest::GetSimpleSuspendInfo() {
+    VkRenderingInfo suspend_rendering_info = vku::InitStructHelper();
+    suspend_rendering_info.flags = VK_RENDERING_SUSPENDING_BIT;
+    suspend_rendering_info.layerCount = 1;
+    suspend_rendering_info.renderArea = {{0, 0}, {1, 1}};
+    return suspend_rendering_info;
+}
+
+VkRenderingInfo DynamicRenderingTest::GetSimpleResumeInfo() {
+    VkRenderingInfo resume_rendering_info = vku::InitStructHelper();
+    resume_rendering_info.flags = VK_RENDERING_RESUMING_BIT;
+    resume_rendering_info.layerCount = 1;
+    resume_rendering_info.renderArea = {{0, 0}, {1, 1}};
+    return resume_rendering_info;
+}
+
 class PositiveDynamicRendering : public DynamicRenderingTest {};
 
 TEST_F(PositiveDynamicRendering, BasicUsage) {
@@ -347,6 +370,18 @@ TEST_F(PositiveDynamicRendering, FragmentDensityMapSubsampledBit) {
     m_command_buffer.BeginRendering(begin_rendering_info);
 }
 
+TEST_F(PositiveDynamicRendering, SuspendResume) {
+    TEST_DESCRIPTION("Suspend and then resume in the same command buffer");
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(GetSimpleSuspendInfo());
+    m_command_buffer.EndRendering();
+    m_command_buffer.BeginRendering(GetSimpleResumeInfo());
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveDynamicRendering, SuspendResumeDraw) {
     TEST_DESCRIPTION("Resume and suspend at vkCmdBeginRendering time");
     RETURN_IF_SKIP(InitBasicDynamicRendering());
@@ -398,6 +433,53 @@ TEST_F(PositiveDynamicRendering, SuspendResumeDraw) {
 
     m_default_queue->Submit({m_command_buffer, cb1, cb2});
     m_default_queue->Wait();
+}
+
+TEST_F(PositiveDynamicRendering, ResumeThenActionCommand) {
+    TEST_DESCRIPTION("Run action command after render pass instance is resumed");
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::CommandBuffer command_buffers[2] = {{*m_device, m_command_pool}, {*m_device, m_command_pool}};
+
+    command_buffers[0].Begin();
+    command_buffers[0].BeginRendering(GetSimpleSuspendInfo());
+    command_buffers[0].EndRendering();
+    command_buffers[0].End();
+
+    command_buffers[1].Begin();
+    command_buffers[1].BeginRendering(GetSimpleResumeInfo());
+    command_buffers[1].EndRendering();
+    vk::CmdFillBuffer(command_buffers[1], buffer, 0, 4, 0x42);
+    command_buffers[1].End();
+
+    m_default_queue->Submit({command_buffers[0], command_buffers[1]});
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveDynamicRendering, ResumeThenActionCommandSecondary) {
+    TEST_DESCRIPTION("Run action command after render pass instance is resumed");
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::CommandBuffer secondaries[2] = {{*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY},
+                                         {*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY}};
+
+    secondaries[0].Begin();
+    secondaries[0].BeginRendering(GetSimpleSuspendInfo());
+    secondaries[0].EndRendering();
+    secondaries[0].End();
+
+    secondaries[1].Begin();
+    secondaries[1].BeginRendering(GetSimpleResumeInfo());
+    secondaries[1].EndRendering();
+    vk::CmdFillBuffer(secondaries[1], buffer, 0, 4, 0x42);
+    secondaries[1].End();
+
+    m_command_buffer.Begin();
+    VkCommandBuffer secondary_handles[2] = {secondaries[0], secondaries[1]};
+    vk::CmdExecuteCommands(m_command_buffer, 2, secondary_handles);
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDynamicRendering, CreateGraphicsPipeline) {
