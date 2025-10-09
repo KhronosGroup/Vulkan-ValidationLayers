@@ -75,6 +75,11 @@ bool CoreChecks::ValidateCmd(const vvl::CommandBuffer &cb_state, const Location 
                          DescribeRequiredQueueFlag(cb_state, *physical_device_state, info.queue_flags).c_str());
     }
 
+    // Validate if command has to be recorded in a primary command buffer
+    if (info.buffer_level_vuid != nullptr) {
+        skip |= ValidatePrimaryCommandBuffer(cb_state, loc, info.buffer_level_vuid);
+    }
+
     // Validate if command is inside or outside a render pass if applicable
     if (info.render_pass_scope == CommandScope::Inside) {
         skip |= OutsideRenderPass(cb_state, loc, info.render_pass_vuid);
@@ -82,16 +87,21 @@ bool CoreChecks::ValidateCmd(const vvl::CommandBuffer &cb_state, const Location 
         skip |= InsideRenderPass(cb_state, loc, info.render_pass_vuid);
     }
 
+    // Check for allowed commands when render pass instance is suspended.
+    const bool is_command_between_suspend_and_resume = cb_state.last_suspend_state == vvl::CommandBuffer::SuspendState::Suspended &&
+                                                       !cb_state.active_render_pass &&
+                                                       HasActionOrSyncCommandBeforeBeginRendering(loc.function);
+    if (is_command_between_suspend_and_resume && (info.action || info.synchronization)) {
+        // TODO: temporary use submit time vuid: https://gitlab.khronos.org/vulkan/vulkan/-/issues/4468
+        skip |= LogError("VUID-VkSubmitInfo-pCommandBuffers-06015", cb_state.Handle(), loc,
+                         "was recorded, but there is a suspended render pass instance.");
+    }
+
     // Validate if command is inside or outside a video coding scope if applicable
     if (info.video_coding_scope == CommandScope::Inside) {
         skip |= OutsideVideoCodingScope(cb_state, loc, info.video_coding_vuid);
     } else if (info.video_coding_scope == CommandScope::Outside) {
         skip |= InsideVideoCodingScope(cb_state, loc, info.video_coding_vuid);
-    }
-
-    // Validate if command has to be recorded in a primary command buffer
-    if (info.buffer_level_vuid != nullptr) {
-        skip |= ValidatePrimaryCommandBuffer(cb_state, loc, info.buffer_level_vuid);
     }
 
     return skip;
@@ -1073,6 +1083,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
     }
 
     vvl::unordered_map<VkCommandBuffer, uint32_t> duplicate_secondary_cb;
+    bool suspended_render_pass_instance = (cb_state.last_suspend_state == vvl::CommandBuffer::SuspendState::Suspended);
     for (uint32_t i = 0; i < commandBuffersCount; i++) {
         const VkCommandBuffer secondary_cb = pCommandBuffers[i];
         const auto &secondary_cb_state = *GetRead<vvl::CommandBuffer>(secondary_cb);
@@ -1145,6 +1156,18 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                  "pCommandBuffers[%" PRIu32 "].",
                                  FormatHandle(secondary_cb).c_str(), it->second);
             }
+        }
+
+        // Validate dynamic rendering suspended state
+        if (suspended_render_pass_instance &&
+            HasActionOrSyncCommandBeforeBeginRendering(secondary_cb_state.first_action_or_sync_command)) {
+            const LogObjectList objlist(commandBuffer, secondary_cb);
+            skip |= LogError("VUID-VkSubmitInfo-pCommandBuffers-06015", objlist, secondary_cb_loc,
+                             "records %s while a render pass instance is suspended.",
+                             vvl::String(secondary_cb_state.first_action_or_sync_command));
+        }
+        if (secondary_cb_state.last_suspend_state != vvl::CommandBuffer::SuspendState::Empty) {
+            suspended_render_pass_instance = (secondary_cb_state.last_suspend_state == vvl::CommandBuffer::SuspendState::Suspended);
         }
 
         skip |= ValidateSecondaryCommandBufferState(cb_state, secondary_cb_state, secondary_cb_loc);

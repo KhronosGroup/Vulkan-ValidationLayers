@@ -57,6 +57,14 @@ static inline bool IsRecorded(CbState state) { return state == CbState::Recorded
 
 static inline bool IsRecording(CbState state) { return state == CbState::Recording || state == CbState::InvalidIncomplete; }
 
+// Submit time validation helper. Since CmdBeginRendering is itself an action command,
+// if the first detected action or sync command is CmdBeginRendering, it means there are
+// no other action commands before it.
+static inline bool HasActionOrSyncCommandBeforeBeginRendering(vvl::Func first_action_or_sync_command) {
+    return first_action_or_sync_command != vvl::Func::Empty &&
+           !IsValueIn(first_action_or_sync_command, {vvl::Func::vkCmdBeginRendering, vvl::Func::vkCmdBeginRenderingKHR});
+}
+
 enum class AttachmentSource {
     Empty = 0,
     RenderPass,
@@ -431,15 +439,8 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     enum class SuspendState { Empty, Suspended, Resumed };
     SuspendState last_suspend_state;
 
-    // If there is an action or sync command before the *first* resume of render pass instance.
-    // This is used by submit time validation to check for allowed commands.
-    //
-    // NOTE: only at submit time we can distingiush between two invalid usages:
-    //  a) not allowed command is used between suspend and resume
-    //  b) render pass is resumed without being suspended
-    bool action_or_sync_command_before_first_resume = false;
-
-    vvl::Func first_action_or_sync_command = vvl::Func::Empty;
+    // Used by submit time validation to check for invalild commands when render pass instance is suspended.
+    vvl::Func first_action_or_sync_command;
 
     // This is null if we are outside a renderPass/rendering
     //
