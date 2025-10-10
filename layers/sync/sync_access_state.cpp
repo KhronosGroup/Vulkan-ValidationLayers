@@ -650,7 +650,9 @@ void ResourceAccessState::CollectPendingBarriers(const BarrierScope &barrier_sco
                                                  PendingBarriers &pending_barriers) {
     if (layout_transition) {
         // Schedule layout transition first: layout transition creates WriteState if necessary
-        pending_barriers.AddLayoutTransition(this, barrier, layout_transition_handle_index);
+        const OrderingBarrier layout_transition_ordering_barrier{barrier.src_exec_scope.exec_scope, barrier.src_access_scope};
+        pending_barriers.AddLayoutTransition(this, layout_transition_ordering_barrier, layout_transition_handle_index);
+
         // Apply barrier over layout trasition's write access
         pending_barriers.AddWriteBarrier(this, barrier);
         return;
@@ -719,7 +721,8 @@ void PendingBarriers::AddWriteBarrier(ResourceAccessState *access_state, const S
     info.access_state = access_state;
 }
 
-void PendingBarriers::AddLayoutTransition(ResourceAccessState *access_state, const SyncBarrier &barrier,
+void PendingBarriers::AddLayoutTransition(ResourceAccessState *access_state,
+                                          const OrderingBarrier &layout_transition_ordering_barrier,
                                           uint32_t layout_transition_handle_index) {
     // NOTE: in contrast to read/write barriers, we don't do reuse search here,
     // mostly because we didn't see a beneficial use case yet.
@@ -730,7 +733,7 @@ void PendingBarriers::AddLayoutTransition(ResourceAccessState *access_state, con
     info.access_state = access_state;
 
     PendingLayoutTransition &layout_transition = layout_transitions.emplace_back();
-    layout_transition.ordering = OrderingBarrier{barrier.src_exec_scope.exec_scope, barrier.src_access_scope};
+    layout_transition.ordering = layout_transition_ordering_barrier;
     layout_transition.handle_index = layout_transition_handle_index;
 }
 
@@ -761,13 +764,32 @@ void ApplyBarriers(ResourceAccessState &access_state, const std::vector<SyncBarr
         return;
     }
 
-    // There are multiple barriers. We can't apply them sequentially because they can form dependencies
-    // between themselves (result of the previous barrier might affect application of the next barrier).
-    // The APIs we are dealing require that the barriers in a set of barriers are applied independently.
-    // That's the intended use case of PendingBarriers helper.
     PendingBarriers pending_barriers;
-    for (const SyncBarrier &barrier : barriers) {
-        access_state.CollectPendingBarriers(BarrierScope(barrier), barrier, layout_transition, vvl::kNoIndex32, pending_barriers);
+    if (layout_transition) {
+        // When layout transition is bundled with multiple barriers (e.g. multiple subpass dependencies
+        // can be associated with the same layout transition) we need to ensure that AddLayoutTransition()
+        // is called only once (it resets write state including applied barriers). That's the reason
+        // CollectPendingBarriers can't be used in this scenario.
+        // NOTE: CollectPendingBarriers works correctly for a common case when layout transition is defined
+        // by a single barrier
+        OrderingBarrier layout_ordering_barrier;
+        for (const SyncBarrier &barrier : barriers) {
+            layout_ordering_barrier.exec_scope |= barrier.src_exec_scope.exec_scope;
+            layout_ordering_barrier.access_scope |= barrier.src_access_scope;
+        }
+        pending_barriers.AddLayoutTransition(&access_state, layout_ordering_barrier, vvl::kNoIndex32);
+
+        for (const SyncBarrier &barrier : barriers) {
+            pending_barriers.AddWriteBarrier(&access_state, barrier);
+        }
+    } else {
+        // There are multiple barriers. We can't apply them sequentially because they can form dependencies
+        // between themselves (result of the previous barrier might affect application of the next barrier).
+        // The APIs we are dealing require that the barriers in a set of barriers are applied independently.
+        // That's the intended use case of PendingBarriers helper.
+        for (const SyncBarrier &barrier : barriers) {
+            access_state.CollectPendingBarriers(BarrierScope(barrier), barrier, false, vvl::kNoIndex32, pending_barriers);
+        }
     }
     pending_barriers.Apply(layout_transition_tag);
 }

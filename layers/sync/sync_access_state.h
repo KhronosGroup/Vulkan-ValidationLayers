@@ -364,7 +364,7 @@ struct PendingBarriers {
     // Store result of barrier application as PendingBarriers state
     void AddReadBarrier(ResourceAccessState *access_state, uint32_t last_reads_index, const SyncBarrier &barrier);
     void AddWriteBarrier(ResourceAccessState *access_state, const SyncBarrier &barrier);
-    void AddLayoutTransition(ResourceAccessState *access_state, const SyncBarrier &barrier,
+    void AddLayoutTransition(ResourceAccessState *access_state, const OrderingBarrier &layout_transition_ordering_barrier,
                              uint32_t layout_transition_handle_index);
 
     // Update accesss state with collected barriers
