@@ -2519,8 +2519,15 @@ bool CoreChecks::ValidateSparseImageMemoryBind(vvl::Image const *image_state, Vk
     skip |=
         ValidateImageSubresourceSparseImageMemoryBind(*image_state, bind.subresource, bind_loc, memory_loc.dot(Field::subresource));
 
-    for (auto const &requirements : image_state->sparse_requirements) {
-        VkExtent3D const &granularity = requirements.formatProperties.imageGranularity;
+    const VkSparseImageMemoryRequirements *requirements = nullptr;
+    for (size_t memoryReqNdx = 0; memoryReqNdx < image_state->sparse_requirements.size(); ++memoryReqNdx) {
+        if (image_state->sparse_requirements[memoryReqNdx].formatProperties.aspectMask & bind.subresource.aspectMask) {
+            requirements = &image_state->sparse_requirements[memoryReqNdx];
+            break;
+        }
+    }
+    if (requirements) {
+        VkExtent3D const &granularity = requirements->formatProperties.imageGranularity;
         if (SafeModulo(bind.offset.x, granularity.width) != 0) {
             skip |= LogError("VUID-VkSparseImageMemoryBind-offset-01107", image_state->Handle(),
                              bind_loc.dot(Field::offset).dot(Field::x),
