@@ -276,6 +276,7 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpUntypedPtrAccessChainKHR:
         case spv::OpUntypedInBoundsPtrAccessChainKHR:
         case spv::OpUntypedArrayLengthKHR:
+        case spv::OpFmaKHR:
         case spv::OpSubgroupAllKHR:
         case spv::OpSubgroupAnyKHR:
         case spv::OpSubgroupAllEqualKHR:
@@ -721,6 +722,7 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpUntypedPtrAccessChainKHR:
         case spv::OpUntypedInBoundsPtrAccessChainKHR:
         case spv::OpUntypedArrayLengthKHR:
+        case spv::OpFmaKHR:
         case spv::OpSubgroupAllKHR:
         case spv::OpSubgroupAnyKHR:
         case spv::OpSubgroupAllEqualKHR:

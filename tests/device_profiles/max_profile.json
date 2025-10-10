@@ -142,6 +142,11 @@
                     "shaderFloat8": true,
                     "shaderFloat8CooperativeMatrix": true
                 },
+                "VkPhysicalDeviceShaderFmaFeaturesKHR": {
+                    "shaderFmaFloat16": true,
+                    "shaderFmaFloat32": true,
+                    "shaderFmaFloat64": true
+                },
                 "VkPhysicalDeviceShaderBfloat16FeaturesKHR": {
                     "shaderBFloat16Type": true,
                     "shaderBFloat16DotProduct": true,
@@ -2501,6 +2506,7 @@
                 "VK_KHR_shader_float16_int8": 1,
                 "VK_KHR_shader_float_controls": 1,
                 "VK_KHR_shader_float_controls2": 1,
+                "VK_KHR_shader_fma": 1,
                 "VK_KHR_shader_integer_dot_product": 1,
                 "VK_KHR_shader_maximal_reconvergence": 1,
                 "VK_KHR_shader_non_semantic_info": 1,

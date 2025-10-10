@@ -2415,3 +2415,55 @@ TEST_F(PositiveShaderSpirv, Bitwise32bitMaintenance9) {
     )glsl";
     VkShaderObj cs(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
 }
+
+TEST_F(PositiveShaderSpirv, ShaderFma) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SHADER_FMA_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderFmaFloat32);
+    RETURN_IF_SKIP(Init());
+
+    const char *spv_source = R"(
+               OpCapability Shader
+               OpCapability FMAKHR
+               OpExtension "SPV_KHR_fma"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %SSBO Block
+               OpMemberDecorate %SSBO 0 Offset 0
+               OpDecorate %_ Binding 0
+               OpDecorate %_ DescriptorSet 0
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+%_ptr_Function_float = OpTypePointer Function %float
+    %float_1 = OpConstant %float 1
+       %SSBO = OpTypeStruct %float
+%_ptr_StorageBuffer_SSBO = OpTypePointer StorageBuffer %SSBO
+          %_ = OpVariable %_ptr_StorageBuffer_SSBO StorageBuffer
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+%_ptr_StorageBuffer_float = OpTypePointer StorageBuffer %float
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+          %a = OpVariable %_ptr_Function_float Function
+          %b = OpVariable %_ptr_Function_float Function
+          %c = OpVariable %_ptr_Function_float Function
+               OpStore %a %float_1
+               OpStore %b %float_1
+               OpStore %c %float_1
+     %load_a = OpLoad %float %a
+     %load_b = OpLoad %float %b
+     %load_c = OpLoad %float %c
+         %24 = OpFmaKHR %float %load_a %load_b %load_c
+         %26 = OpAccessChain %_ptr_StorageBuffer_float %_ %int_0
+               OpStore %26 %24
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
+    pipe.cs_ = VkShaderObj(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM);
+    pipe.CreateComputePipeline();
+}

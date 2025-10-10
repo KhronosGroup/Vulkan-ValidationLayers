@@ -3509,6 +3509,11 @@ bool CoreChecks::ValidateStridedDeviceAddressRange(VkCommandBuffer command_buffe
                          "(%" PRIu64 ") must be less than size (%" PRIu64 ")", strided_range.stride, strided_range.size);
     }
 
+    if (strided_range.size != 0 && strided_range.address == 0) {
+        skip |= LogError("VUID-VkStridedDeviceAddressRangeKHR-size-11411", command_buffer, strided_range_loc.dot(Field::address),
+                         "is zero, but size is non-zero (%" PRIu64 ")", strided_range.size);
+    }
+
     BufferAddressValidation<1> buffer_address_validator = {{{{
         "VUID-VkStridedDeviceAddressRangeKHR-address-11365",
         [&strided_range](const vvl::Buffer &buffer_state) {

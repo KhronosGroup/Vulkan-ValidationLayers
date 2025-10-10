@@ -407,7 +407,7 @@ TEST_F(NegativeImageLayout, PushDescriptor) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdPushDescriptorSetKHR(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_write);
 
-    m_errorMonitor->SetDesiredError("VUID-VkDescriptorImageInfo-imageLayout-00344");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-imageLayout-00344");
     vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
