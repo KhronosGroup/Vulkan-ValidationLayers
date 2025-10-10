@@ -2213,14 +2213,20 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
                 }
 
                 if (multisample_state) {
-                    if ((raster_samples > subpass_color_samples) && (multisample_state->sampleShadingEnable == VK_TRUE)) {
-                        skip |= LogError("VUID-VkPipelineMultisampleStateCreateInfo-rasterizationSamples-01415", device,
-                                         ms_loc.dot(Field::rasterizationSamples),
-                                         "(%" PRIu32
-                                         ") is greater than the number of "
-                                         "samples of the "
-                                         "subpass color attachment (%" PRIu32 ") and sampleShadingEnable is VK_TRUE.",
-                                         raster_samples, subpass_color_samples);
+                    bool truncate_mode = false;
+                    if (const auto *coverage_reduction_mode_state =
+                            vku::FindStructInPNextChain<VkPipelineCoverageReductionStateCreateInfoNV>(multisample_state->pNext)) {
+                        truncate_mode =
+                            enabled_features.coverageReductionMode &&
+                            coverage_reduction_mode_state->coverageReductionMode == VK_COVERAGE_REDUCTION_MODE_TRUNCATE_NV;
+                    }
+                    if (raster_samples > subpass_color_samples && multisample_state->sampleShadingEnable && !truncate_mode) {
+                        skip |=
+                            LogError("VUID-VkPipelineMultisampleStateCreateInfo-rasterizationSamples-01415", device,
+                                     ms_loc.dot(Field::rasterizationSamples),
+                                     "(%" PRIu32 ") is greater than the number of samples of the subpass color attachment (%" PRIu32
+                                     ") and sampleShadingEnable is VK_TRUE.",
+                                     raster_samples, subpass_color_samples);
                     }
 
                     const auto *coverage_modulation_state =
