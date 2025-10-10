@@ -22,7 +22,6 @@ RenderPassSingleSubpass::RenderPassSingleSubpass(VkLayerTest& test, vkt::Device*
     rp_create_info_ = vku::InitStructHelper();
 
     rp_create_info_.dependencyCount = 0;  // default to not having one
-    rp_create_info_.pDependencies = &subpass_dependency_;
 
     subpass_description_.flags = 0;
     subpass_description_.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -41,6 +40,7 @@ RenderPassSingleSubpass::RenderPassSingleSubpass(VkLayerTest& test, vkt::Device*
 VkRenderPassCreateInfo RenderPassSingleSubpass::GetCreateInfo() {
     rp_create_info_.attachmentCount = attachment_descriptions_.size();
     rp_create_info_.pAttachments = attachment_descriptions_.data();
+    rp_create_info_.pDependencies = subpass_dependencies_.data();
     return rp_create_info_;
 }
 
@@ -85,22 +85,23 @@ void RenderPassSingleSubpass::AddDepthStencilAttachment(uint32_t index) {
 }
 
 void RenderPassSingleSubpass::AddSubpassDependency(VkSubpassDependency dependency) {
-    subpass_dependency_ = dependency;
-    rp_create_info_.dependencyCount = 1;
+    subpass_dependencies_.push_back(dependency);
+    rp_create_info_.dependencyCount = (uint32_t)subpass_dependencies_.size();
 }
 
 void RenderPassSingleSubpass::AddSubpassDependency(VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
                                                    VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
                                                    VkDependencyFlags dependencyFlags) {
-    subpass_dependency_.srcSubpass = 0;
-    subpass_dependency_.dstSubpass = 0;
-    subpass_dependency_.srcStageMask = srcStageMask;
-    subpass_dependency_.srcStageMask = srcStageMask;
-    subpass_dependency_.dstStageMask = dstStageMask;
-    subpass_dependency_.srcAccessMask = srcAccessMask;
-    subpass_dependency_.dstAccessMask = dstAccessMask;
-    subpass_dependency_.dependencyFlags = dependencyFlags;
-    rp_create_info_.dependencyCount = 1;
+    VkSubpassDependency subpass_dependency{};
+    subpass_dependency.srcSubpass = 0;
+    subpass_dependency.dstSubpass = 0;
+    subpass_dependency.srcStageMask = srcStageMask;
+    subpass_dependency.srcStageMask = srcStageMask;
+    subpass_dependency.dstStageMask = dstStageMask;
+    subpass_dependency.srcAccessMask = srcAccessMask;
+    subpass_dependency.dstAccessMask = dstAccessMask;
+    subpass_dependency.dependencyFlags = dependencyFlags;
+    AddSubpassDependency(subpass_dependency);
 }
 
 void RenderPassSingleSubpass::CreateRenderPass(void* pNext, VkRenderPassCreateFlags flags) {
@@ -115,7 +116,6 @@ RenderPass2SingleSubpass::RenderPass2SingleSubpass(VkLayerTest& test, vkt::Devic
     rp_create_info_ = vku::InitStructHelper();
 
     rp_create_info_.dependencyCount = 0;  // default to not having one
-    rp_create_info_.pDependencies = &subpass_dependency_;
 
     subpass_description_ = vku::InitStructHelper();
     subpass_description_.flags = 0;
@@ -136,6 +136,7 @@ RenderPass2SingleSubpass::RenderPass2SingleSubpass(VkLayerTest& test, vkt::Devic
 VkRenderPassCreateInfo2 RenderPass2SingleSubpass::GetCreateInfo() {
     rp_create_info_.attachmentCount = attachment_descriptions_.size();
     rp_create_info_.pAttachments = attachment_descriptions_.data();
+    rp_create_info_.pDependencies = subpass_dependencies_.data();
     return rp_create_info_;
 }
 
@@ -201,23 +202,23 @@ void RenderPass2SingleSubpass::AddFragmentShadingRateAttachment(uint32_t index, 
 }
 
 void RenderPass2SingleSubpass::AddSubpassDependency(VkSubpassDependency2 dependency) {
-    subpass_dependency_ = dependency;
-    rp_create_info_.dependencyCount = 1;
+    subpass_dependencies_.push_back(dependency);
+    rp_create_info_.dependencyCount = (uint32_t)subpass_dependencies_.size();
 }
 
 void RenderPass2SingleSubpass::AddSubpassDependency(VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
                                                     VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
                                                     VkDependencyFlags dependencyFlags) {
-    subpass_dependency_ = vku::InitStructHelper();
-    subpass_dependency_.srcSubpass = 0;
-    subpass_dependency_.dstSubpass = 0;
-    subpass_dependency_.srcStageMask = srcStageMask;
-    subpass_dependency_.srcStageMask = srcStageMask;
-    subpass_dependency_.dstStageMask = dstStageMask;
-    subpass_dependency_.srcAccessMask = srcAccessMask;
-    subpass_dependency_.dstAccessMask = dstAccessMask;
-    subpass_dependency_.dependencyFlags = dependencyFlags;
-    rp_create_info_.dependencyCount = 1;
+    VkSubpassDependency2 subpass_dependency = vku::InitStructHelper();
+    subpass_dependency.srcSubpass = 0;
+    subpass_dependency.dstSubpass = 0;
+    subpass_dependency.srcStageMask = srcStageMask;
+    subpass_dependency.srcStageMask = srcStageMask;
+    subpass_dependency.dstStageMask = dstStageMask;
+    subpass_dependency.srcAccessMask = srcAccessMask;
+    subpass_dependency.dstAccessMask = dstAccessMask;
+    subpass_dependency.dependencyFlags = dependencyFlags;
+    AddSubpassDependency(subpass_dependency);
 }
 
 void RenderPass2SingleSubpass::CreateRenderPass(void* pNext, VkRenderPassCreateFlags flags) {
