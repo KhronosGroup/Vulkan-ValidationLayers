@@ -2476,3 +2476,58 @@ TEST_F(PositivePipeline, DepthBounds) {
     pipe.ds_ci_ = ds_ci;
     pipe.CreateGraphicsPipeline();
 }
+
+TEST_F(PositivePipeline, FramebufferMixedSamplesWithCoverageReductionTruncateNV) {
+    AddRequiredExtensions(VK_NV_COVERAGE_REDUCTION_MODE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::coverageReductionMode);
+    AddRequiredFeature(vkt::Feature::sampleRateShading);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    struct TestCase {
+        VkSampleCountFlagBits color_samples;
+        VkSampleCountFlagBits depth_samples;
+        VkSampleCountFlagBits raster_samples;
+        VkBool32 depth_test;
+        VkBool32 sample_shading;
+        uint32_t table_count;
+        bool positiveTest;
+        std::string vuid;
+    };
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_PREINITIALIZED,
+                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddAttachmentDescription(VK_FORMAT_D24_UNORM_S8_UINT, VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_LAYOUT_PREINITIALIZED,
+                                VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
+    rp.AddColorAttachment(0);
+    rp.AddDepthStencilAttachment(1);
+    rp.CreateRenderPass();
+
+    VkPipelineDepthStencilStateCreateInfo ds = vku::InitStructHelper();
+    ds.depthTestEnable = VK_FALSE;
+
+    VkPipelineCoverageReductionStateCreateInfoNV cri = vku::InitStructHelper();
+    cri.coverageReductionMode = VK_COVERAGE_REDUCTION_MODE_TRUNCATE_NV;
+
+    float cm_table = 0.0f;
+    VkPipelineCoverageModulationStateCreateInfoNV cmi = vku::InitStructHelper(&cri);
+    cmi.flags = 0;
+    cmi.coverageModulationTableEnable = false;
+    cmi.coverageModulationTableCount = 1;
+    cmi.pCoverageModulationTable = &cm_table;
+
+    const auto break_samples = [&cmi, &rp, &ds](CreatePipelineHelper &helper) {
+        helper.ms_ci_.pNext = &cmi;
+        helper.ms_ci_.rasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
+        helper.ms_ci_.sampleShadingEnable = VK_TRUE;
+
+        helper.gp_ci_.renderPass = rp;
+        helper.gp_ci_.pDepthStencilState = &ds;
+    };
+
+    CreatePipelineHelper::OneshotTest(*this, break_samples, kErrorBit);
+}
