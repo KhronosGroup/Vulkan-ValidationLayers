@@ -2376,6 +2376,20 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer 
                              FormatHandle(set_layout->Handle()).c_str(), firstSet + i);
             continue;
         }
+        if ((set_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR) != 0) {
+            const LogObjectList objlist(cb_state.Handle(), set_layout->Handle(), pipeline_layout->Handle());
+            // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7721
+            const char *vuid = is_2 ? "UNASSIGNED-VkSetDescriptorBufferOffsetsInfoEXT-push-descriptor-flags"
+                                    : "UNASSIGNED-vkCmdSetDescriptorBufferOffsetsEXT-push-descriptor-flags";
+            skip |= LogError(
+                vuid, objlist, loc,
+                "Descriptor set layout (%s) for set %" PRIu32
+                " was created with VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR flag set.\n"
+                "When using Push Descriptor with Descriptor Buffers, there is a single set created with PUSH_DESCRIPTOR_BIT, to "
+                "update it, call vkCmdPushDescriptorSetKHR with the same VkPipelineLayout and set index.",
+                FormatHandle(set_layout->Handle()).c_str(), firstSet + i);
+            continue;
+        }
 
         const uint32_t buffer_index = pBufferIndices[i];
         if (buffer_index >= cb_state.descriptor_buffer.binding_info.size()) {
