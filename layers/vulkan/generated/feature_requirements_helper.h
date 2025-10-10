@@ -846,6 +846,12 @@ enum class Feature {
     shaderFloat8CooperativeMatrix,
     // VkPhysicalDeviceShaderFloatControls2Features, VkPhysicalDeviceVulkan14Features
     shaderFloatControls2,
+    // VkPhysicalDeviceShaderFmaFeaturesKHR
+    shaderFmaFloat16,
+    // VkPhysicalDeviceShaderFmaFeaturesKHR
+    shaderFmaFloat32,
+    // VkPhysicalDeviceShaderFmaFeaturesKHR
+    shaderFmaFloat64,
     // VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT
     shaderImageInt64Atomics,
     // VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT

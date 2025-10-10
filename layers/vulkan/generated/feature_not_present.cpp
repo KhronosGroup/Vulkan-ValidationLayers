@@ -2837,6 +2837,23 @@ void Instance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDevice
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FMA_FEATURES_KHR: {
+                VkPhysicalDeviceShaderFmaFeaturesKHR supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceShaderFmaFeaturesKHR *enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderFmaFeaturesKHR *>(current);
+                if (enabling->shaderFmaFloat16 && !supported.shaderFmaFloat16) {
+                    ss << "VkPhysicalDeviceShaderFmaFeaturesKHR::shaderFmaFloat16 is not supported\n";
+                }
+                if (enabling->shaderFmaFloat32 && !supported.shaderFmaFloat32) {
+                    ss << "VkPhysicalDeviceShaderFmaFeaturesKHR::shaderFmaFloat32 is not supported\n";
+                }
+                if (enabling->shaderFmaFloat64 && !supported.shaderFmaFloat64) {
+                    ss << "VkPhysicalDeviceShaderFmaFeaturesKHR::shaderFmaFloat64 is not supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_ATOMIC_INT64_FEATURES_EXT: {
                 VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;

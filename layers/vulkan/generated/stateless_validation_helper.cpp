@@ -1282,6 +1282,20 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceShaderFmaFeaturesKHR structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FMA_FEATURES_KHR: {  // Covers
+                                                                           // VUID-VkPhysicalDeviceShaderFmaFeaturesKHR-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceShaderFmaFeaturesKHR);
+                VkPhysicalDeviceShaderFmaFeaturesKHR* structure = (VkPhysicalDeviceShaderFmaFeaturesKHR*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::shaderFmaFloat16), structure->shaderFmaFloat16);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::shaderFmaFloat32), structure->shaderFmaFloat32);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::shaderFmaFloat64), structure->shaderFmaFloat64);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceMaintenance9FeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_9_FEATURES_KHR: {  // Covers
                                                                               // VUID-VkPhysicalDeviceMaintenance9FeaturesKHR-sType-sType
@@ -7898,6 +7912,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT8_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT_CONTROLS_2_FEATURES,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FMA_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_ATOMIC_INT64_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_FOOTPRINT_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_FEATURES,
@@ -18395,10 +18410,6 @@ bool Device::PreCallValidateCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuff
                                   AllVkAddressCopyFlagBitsKHR, pCopyMemoryIndirectInfo->dstCopyFlags, kRequiredFlags,
                                   "VUID-VkCopyMemoryIndirectInfoKHR-dstCopyFlags-parameter",
                                   "VUID-VkCopyMemoryIndirectInfoKHR-dstCopyFlags-requiredbitmask", false);
-
-        skip |= context.ValidateNotZero(pCopyMemoryIndirectInfo->copyAddressRange.address == 0,
-                                        "VUID-VkStridedDeviceAddressRangeKHR-address-parameter",
-                                        pCopyMemoryIndirectInfo_loc.dot(Field::address));
     }
     return skip;
 }
@@ -18426,10 +18437,6 @@ bool Device::PreCallValidateCmdCopyMemoryToImageIndirectKHR(
                                       pCopyMemoryToImageIndirectInfo->srcCopyFlags, kRequiredFlags,
                                       "VUID-VkCopyMemoryToImageIndirectInfoKHR-srcCopyFlags-parameter",
                                       "VUID-VkCopyMemoryToImageIndirectInfoKHR-srcCopyFlags-requiredbitmask", false);
-
-        skip |= context.ValidateNotZero(pCopyMemoryToImageIndirectInfo->copyAddressRange.address == 0,
-                                        "VUID-VkStridedDeviceAddressRangeKHR-address-parameter",
-                                        pCopyMemoryToImageIndirectInfo_loc.dot(Field::address));
 
         skip |= context.ValidateRequiredHandle(pCopyMemoryToImageIndirectInfo_loc.dot(Field::dstImage),
                                                pCopyMemoryToImageIndirectInfo->dstImage);

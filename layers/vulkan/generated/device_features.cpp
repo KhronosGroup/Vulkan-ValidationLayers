@@ -784,6 +784,14 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->maintenance8 |= enabled->maintenance8 == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FMA_FEATURES_KHR: {
+                const VkPhysicalDeviceShaderFmaFeaturesKHR *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceShaderFmaFeaturesKHR *>(pNext);
+                features->shaderFmaFloat16 |= enabled->shaderFmaFloat16 == VK_TRUE;
+                features->shaderFmaFloat32 |= enabled->shaderFmaFloat32 == VK_TRUE;
+                features->shaderFmaFloat64 |= enabled->shaderFmaFloat64 == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_9_FEATURES_KHR: {
                 const VkPhysicalDeviceMaintenance9FeaturesKHR *enabled =
                     reinterpret_cast<const VkPhysicalDeviceMaintenance9FeaturesKHR *>(pNext);
