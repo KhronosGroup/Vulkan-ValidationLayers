@@ -2476,3 +2476,73 @@ TEST_F(PositivePipeline, DepthBounds) {
     pipe.ds_ci_ = ds_ci;
     pipe.CreateGraphicsPipeline();
 }
+
+TEST_F(PositivePipeline, FramebufferMixedSamplesWithCoverageReductionTruncateNV) {
+    AddRequiredExtensions(VK_NV_COVERAGE_REDUCTION_MODE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::coverageReductionMode);
+    AddRequiredFeature(vkt::Feature::sampleRateShading);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    uint32_t combination_count = 0u;
+    vk::GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(gpu_, &combination_count, nullptr);
+    std::vector<VkFramebufferMixedSamplesCombinationNV> combinations(combination_count);
+    for (auto &combination : combinations) {
+        combination = vku::InitStructHelper();
+    }
+    vk::GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(gpu_, &combination_count, combinations.data());
+
+    VkCoverageReductionModeNV coverage_reduction_mode = VK_COVERAGE_REDUCTION_MODE_TRUNCATE_NV;
+    VkSampleCountFlagBits rasterization_samples = VK_SAMPLE_COUNT_4_BIT;
+    VkSampleCountFlagBits ds_samples = VK_SAMPLE_COUNT_4_BIT;
+    VkSampleCountFlagBits color_samples = VK_SAMPLE_COUNT_1_BIT;
+
+    bool found = false;
+    for (const auto &combination : combinations) {
+        if (combination.coverageReductionMode == coverage_reduction_mode &&
+            combination.rasterizationSamples == rasterization_samples &&
+            (combination.depthStencilSamples == VK_SAMPLE_COUNT_4_BIT) && (combination.colorSamples == VK_SAMPLE_COUNT_1_BIT)) {
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        GTEST_SKIP() << "Required combination of mixed samples not supported";
+    }
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, color_samples, VK_IMAGE_LAYOUT_PREINITIALIZED,
+                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddAttachmentDescription(VK_FORMAT_D24_UNORM_S8_UINT, ds_samples, VK_IMAGE_LAYOUT_PREINITIALIZED,
+                                VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
+    rp.AddColorAttachment(0);
+    rp.AddDepthStencilAttachment(1);
+    rp.CreateRenderPass();
+
+    VkPipelineDepthStencilStateCreateInfo ds = vku::InitStructHelper();
+    ds.depthTestEnable = VK_FALSE;
+
+    VkPipelineCoverageReductionStateCreateInfoNV cri = vku::InitStructHelper();
+    cri.coverageReductionMode = coverage_reduction_mode;
+
+    float cm_table = 0.0f;
+    VkPipelineCoverageModulationStateCreateInfoNV cmi = vku::InitStructHelper(&cri);
+    cmi.flags = 0;
+    cmi.coverageModulationTableEnable = false;
+    cmi.coverageModulationTableCount = 1;
+    cmi.pCoverageModulationTable = &cm_table;
+
+    const auto break_samples = [&cmi, &rp, &ds, &rasterization_samples](CreatePipelineHelper &helper) {
+        helper.ms_ci_.pNext = &cmi;
+        helper.ms_ci_.rasterizationSamples = rasterization_samples;
+        helper.ms_ci_.sampleShadingEnable = VK_TRUE;
+
+        helper.gp_ci_.renderPass = rp;
+        helper.gp_ci_.pDepthStencilState = &ds;
+    };
+
+    CreatePipelineHelper::OneshotTest(*this, break_samples, kErrorBit);
+}
