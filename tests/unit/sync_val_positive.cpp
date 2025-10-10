@@ -3256,3 +3256,44 @@ TEST_F(PositiveSyncVal, BlitImageSyncWithTwoBarriers) {
     vk::CmdClearColorImage(m_command_buffer, image_a, VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &subresource);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveSyncVal, MultipleExternalSubpassDependencies) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10828
+    TEST_DESCRIPTION("Multiple external subpass dependencies should get merged correctly");
+    RETURN_IF_SKIP(InitSyncVal());
+
+    VkSubpassDependency subpass_dependency_color{};
+    subpass_dependency_color.srcSubpass = VK_SUBPASS_EXTERNAL;
+    subpass_dependency_color.dstSubpass = 0;
+    subpass_dependency_color.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    subpass_dependency_color.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpass_dependency_color.srcAccessMask = 0;
+    subpass_dependency_color.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+    VkSubpassDependency subpass_dependency_depth{};
+    subpass_dependency_depth.srcSubpass = VK_SUBPASS_EXTERNAL;
+    subpass_dependency_depth.dstSubpass = 0;
+    subpass_dependency_depth.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    subpass_dependency_depth.dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    subpass_dependency_depth.srcAccessMask = 0;
+    subpass_dependency_depth.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
+                                VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.AddSubpassDependency(subpass_dependency_color);
+    rp.AddSubpassDependency(subpass_dependency_depth);
+    rp.CreateRenderPass();
+
+    vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view.handle(), 64, 64);
+    VkClearValue clear_value{};
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp, framebuffer, 64, 64, 1, &clear_value);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}

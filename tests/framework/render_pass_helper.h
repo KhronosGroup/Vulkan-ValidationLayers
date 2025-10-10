@@ -118,7 +118,7 @@ class RenderPassSingleSubpass : public InterfaceRenderPassSingleSubpass {
     VkAttachmentReference ds_attachment_;
 
     VkSubpassDescription subpass_description_;
-    VkSubpassDependency subpass_dependency_;
+    std::vector<VkSubpassDependency> subpass_dependencies_;
 };
 
 class RenderPass2SingleSubpass : public InterfaceRenderPassSingleSubpass {
@@ -180,5 +180,5 @@ class RenderPass2SingleSubpass : public InterfaceRenderPassSingleSubpass {
     VkFragmentShadingRateAttachmentInfoKHR fsr_attachment_;
 
     VkSubpassDescription2 subpass_description_;
-    VkSubpassDependency2 subpass_dependency_;
+    std::vector<VkSubpassDependency2> subpass_dependencies_;
 };
