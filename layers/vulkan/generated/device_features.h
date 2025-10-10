@@ -856,6 +856,12 @@ struct DeviceFeatures {
     bool shaderFloat8CooperativeMatrix;
     // VkPhysicalDeviceShaderFloatControls2Features, VkPhysicalDeviceVulkan14Features
     bool shaderFloatControls2;
+    // VkPhysicalDeviceShaderFmaFeaturesKHR
+    bool shaderFmaFloat16;
+    // VkPhysicalDeviceShaderFmaFeaturesKHR
+    bool shaderFmaFloat32;
+    // VkPhysicalDeviceShaderFmaFeaturesKHR
+    bool shaderFmaFloat64;
     // VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT
     bool shaderImageInt64Atomics;
     // VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT

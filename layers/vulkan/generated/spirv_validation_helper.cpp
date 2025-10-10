@@ -284,6 +284,12 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites(
         {spv::CapabilityFloat8CooperativeMatrixEXT, {0, &DeviceFeatures::shaderFloat8CooperativeMatrix, nullptr, ""}},
         {spv::CapabilityGraphARM, {0, &DeviceFeatures::dataGraph, nullptr, ""}},
         {spv::CapabilityUntypedPointersKHR, {0, &DeviceFeatures::shaderUntypedPointers, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityFMAKHR, {0, &DeviceFeatures::shaderFmaFloat16, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityFMAKHR, {0, &DeviceFeatures::shaderFmaFloat32, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityFMAKHR, {0, &DeviceFeatures::shaderFmaFloat64, nullptr, ""}},
     };
     // clang-format on
     return spirv_capabilities;
@@ -395,6 +401,7 @@ const std::unordered_multimap<std::string_view, RequiredSpirvInfo>& GetSpirvExte
         {"SPV_KHR_expect_assume", {0, nullptr, &DeviceExtensions::vk_khr_shader_expect_assume, ""}},
         {"SPV_KHR_float_controls2", {VK_API_VERSION_1_4, nullptr, nullptr, ""}},
         {"SPV_KHR_float_controls2", {0, nullptr, &DeviceExtensions::vk_khr_shader_float_controls2, ""}},
+        {"SPV_KHR_fma", {0, nullptr, &DeviceExtensions::vk_khr_shader_fma, ""}},
         {"SPV_KHR_quad_control", {0, nullptr, &DeviceExtensions::vk_khr_shader_quad_control, ""}},
         {"SPV_KHR_bfloat16", {0, nullptr, &DeviceExtensions::vk_khr_shader_bfloat16, ""}},
         {"SPV_NV_raw_access_chains", {0, nullptr, &DeviceExtensions::vk_nv_raw_access_chains, ""}},
@@ -1308,6 +1315,7 @@ static inline std::string SpvExtensionRequirements(std::string_view extension) {
     {"SPV_KHR_subgroup_rotate", {{vvl::Version::_VK_VERSION_1_4}, {vvl::Extension::_VK_KHR_shader_subgroup_rotate}}},
     {"SPV_KHR_expect_assume", {{vvl::Version::_VK_VERSION_1_4}, {vvl::Extension::_VK_KHR_shader_expect_assume}}},
     {"SPV_KHR_float_controls2", {{vvl::Version::_VK_VERSION_1_4}, {vvl::Extension::_VK_KHR_shader_float_controls2}}},
+    {"SPV_KHR_fma", {{vvl::Extension::_VK_KHR_shader_fma}}},
     {"SPV_KHR_quad_control", {{vvl::Extension::_VK_KHR_shader_quad_control}}},
     {"SPV_KHR_bfloat16", {{vvl::Extension::_VK_KHR_shader_bfloat16}}},
     {"SPV_NV_raw_access_chains", {{vvl::Extension::_VK_NV_raw_access_chains}}},

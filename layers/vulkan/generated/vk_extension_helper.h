@@ -269,6 +269,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_shader_relaxed_extended_instruction{kNotSupported};
     ExtEnabled vk_khr_maintenance7{kNotSupported};
     ExtEnabled vk_khr_maintenance8{kNotSupported};
+    ExtEnabled vk_khr_shader_fma{kNotSupported};
     ExtEnabled vk_khr_maintenance9{kNotSupported};
     ExtEnabled vk_khr_video_maintenance2{kNotSupported};
     ExtEnabled vk_khr_depth_clamp_zero_one{kNotSupported};
@@ -731,6 +732,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_KHR_shader_relaxed_extended_instruction:
         case vvl::Extension::_VK_KHR_maintenance7:
         case vvl::Extension::_VK_KHR_maintenance8:
+        case vvl::Extension::_VK_KHR_shader_fma:
         case vvl::Extension::_VK_KHR_maintenance9:
         case vvl::Extension::_VK_KHR_video_maintenance2:
         case vvl::Extension::_VK_KHR_depth_clamp_zero_one:

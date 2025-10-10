@@ -6495,6 +6495,51 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
                 }
                 return {&vk_struct->shaderFloatControls2, "VkPhysicalDeviceShaderFloatControls2Features::shaderFloatControls2"};
             }
+        case Feature::shaderFmaFloat16: {
+            auto vk_struct = const_cast<VkPhysicalDeviceShaderFmaFeaturesKHR *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceShaderFmaFeaturesKHR>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceShaderFmaFeaturesKHR;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->shaderFmaFloat16, "VkPhysicalDeviceShaderFmaFeaturesKHR::shaderFmaFloat16"};
+        }
+
+        case Feature::shaderFmaFloat32: {
+            auto vk_struct = const_cast<VkPhysicalDeviceShaderFmaFeaturesKHR *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceShaderFmaFeaturesKHR>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceShaderFmaFeaturesKHR;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->shaderFmaFloat32, "VkPhysicalDeviceShaderFmaFeaturesKHR::shaderFmaFloat32"};
+        }
+
+        case Feature::shaderFmaFloat64: {
+            auto vk_struct = const_cast<VkPhysicalDeviceShaderFmaFeaturesKHR *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceShaderFmaFeaturesKHR>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceShaderFmaFeaturesKHR;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->shaderFmaFloat64, "VkPhysicalDeviceShaderFmaFeaturesKHR::shaderFmaFloat64"};
+        }
+
         case Feature::shaderImageInt64Atomics: {
             auto vk_struct = const_cast<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>(*inout_pnext_chain));

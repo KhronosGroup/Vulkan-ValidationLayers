@@ -1611,6 +1611,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceShaderFloat16Int8Features", 42},
     {"VkPhysicalDeviceShaderFloat8FeaturesEXT", 40},
     {"VkPhysicalDeviceShaderFloatControls2Features", 45},
+    {"VkPhysicalDeviceShaderFmaFeaturesKHR", 37},
     {"VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT", 50},
     {"VkPhysicalDeviceShaderImageFootprintFeaturesNV", 47},
     {"VkPhysicalDeviceShaderIntegerDotProductFeatures", 48},
@@ -4628,6 +4629,9 @@ const char* String(Field field) {
     {"shaderFloat8", 13},
     {"shaderFloat8CooperativeMatrix", 30},
     {"shaderFloatControls2", 21},
+    {"shaderFmaFloat16", 17},
+    {"shaderFmaFloat32", 17},
+    {"shaderFmaFloat64", 17},
     {"shaderGroupBaseAlignment", 25},
     {"shaderGroupHandleAlignment", 27},
     {"shaderGroupHandleCaptureReplaySize", 35},
@@ -5787,6 +5791,7 @@ const char* String(Extension extension) {
     {"VK_KHR_shader_float16_int8", 27},
     {"VK_KHR_shader_float_controls", 29},
     {"VK_KHR_shader_float_controls2", 30},
+    {"VK_KHR_shader_fma", 18},
     {"VK_KHR_shader_integer_dot_product", 34},
     {"VK_KHR_shader_maximal_reconvergence", 36},
     {"VK_KHR_shader_non_semantic_info", 32},
@@ -7536,6 +7541,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkMemoryBarrierAccessFlags3KHR;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_8_FEATURES_KHR:
        return Struct::VkPhysicalDeviceMaintenance8FeaturesKHR;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FMA_FEATURES_KHR:
+       return Struct::VkPhysicalDeviceShaderFmaFeaturesKHR;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_9_FEATURES_KHR:
        return Struct::VkPhysicalDeviceMaintenance9FeaturesKHR;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_9_PROPERTIES_KHR:
