@@ -617,7 +617,7 @@ TEST_F(NegativeShaderSpirv, InputOutput8Bit) {
         }
     )glsl";
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-RuntimeSpirv-storageInputOutput8");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-10980");
     VkShaderObj const vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0);
     m_errorMonitor->VerifyFound();
 
@@ -631,7 +631,7 @@ TEST_F(NegativeShaderSpirv, InputOutput8Bit) {
         }
     )glsl";
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-RuntimeSpirv-storageInputOutput8");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-10980");
     VkShaderObj const fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0);
     m_errorMonitor->VerifyFound();
 }

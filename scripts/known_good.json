@@ -29,7 +29,7 @@
             "sub_dir": "SPIRV-Headers",
             "build_dir": "SPIRV-Headers/build",
             "install_dir": "SPIRV-Headers/build/install",
-            "commit": "01e0577914a75a2569c846778c2f93aa8e6feddd"
+            "commit": "9268f3057354a2cb65991ba5f38b16d81e803692"
         },
         {
             "name": "SPIRV-Tools",
@@ -43,7 +43,7 @@
                 "-DSPIRV_SKIP_TESTS=ON",
                 "-DSPIRV_SKIP_EXECUTABLES=OFF"
             ],
-            "commit": "7f2d9ee926f98fc77a3ed1e1e0f113b8c9c49458"
+            "commit": "6d43afe9a0ef71712d8cec5b0ce0cd3570d1fd41"
         },
         {
             "name": "mimalloc",
@@ -84,7 +84,7 @@
             "sub_dir": "glslang",
             "build_dir": "glslang/build",
             "install_dir": "glslang/build/install",
-            "commit": "a57276bf558f5cf94d3a9854ebdf5a2236849a5a",
+            "commit": "8e1494f9d742a27b54193ecd9475dcb2ef23b8b7",
             "cmake_options": [
                 "-DENABLE_OPT=OFF"
             ],
@@ -112,7 +112,7 @@
             "sub_dir": "Vulkan-Profiles",
             "build_dir": "Vulkan-Profiles/build",
             "install_dir": "Vulkan-Profiles/build/install",
-            "commit": "v1.4.328",
+            "commit": "v1.4.329",
             "build_step": "skip",
             "optional": [
                 "tests"

@@ -75,18 +75,18 @@ struct LayoutUseCheckAndMessage {
 bool CoreChecks::ValidateDescriptorImageLayout(const LogObjectList &objlist, const vvl::Image &image_state,
                                                VkImageAspectFlags aspect_mask, VkImageLayout explicit_layout,
                                                const CommandBufferImageLayoutMap &cb_layout_map, RangeGenerator &&range_gen,
-                                               const Location &loc,
+                                               const vvl::DrawDispatchVuid &vuids,
                                                std::function<std::string()> describe_descriptor_callback) const {
     bool skip = false;
     LayoutUseCheckAndMessage layout_check(explicit_layout, aspect_mask);
     skip |= ForEachMatchingLayoutMapRange(
         cb_layout_map, std::move(range_gen),
-        [this, &objlist, &image_state, &layout_check, &describe_descriptor_callback, loc](const LayoutRange &range,
-                                                                                          const ImageLayoutState &state) {
+        [this, &objlist, &image_state, &layout_check, &describe_descriptor_callback, vuids](const LayoutRange &range,
+                                                                                            const ImageLayoutState &state) {
             bool local_skip = false;
             if (!layout_check.Check(state)) {
                 const subresource_adapter::Subresource subresource = image_state.subresource_encoder.Decode(range.begin);
-                local_skip |= LogError("VUID-VkDescriptorImageInfo-imageLayout-00344", objlist, loc,
+                local_skip |= LogError(vuids.image_layout_00344, objlist, vuids.loc(),
                                        "Cannot use %s (layer %" PRIu32 ", mip %" PRIu32
                                        ") with specific layout %s (specified by %s) that doesn't match the "
                                        "%s layout %s.",

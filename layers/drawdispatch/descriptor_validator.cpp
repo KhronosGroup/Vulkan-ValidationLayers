@@ -549,7 +549,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
 
             skip |= dev_proxy.ValidateDescriptorImageLayout(objlist, *image_state, aspect_flags, image_layout, *image_layout_map,
                                                             subresource_adapter::RangeGenerator(image_view_state->range_generator),
-                                                            loc.Get(), describe_descriptor_callback);
+                                                            *vuids, describe_descriptor_callback);
         }
     }
 

@@ -637,6 +637,8 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpUntypedArrayLengthKHR";
         case spv::OpUntypedPrefetchKHR:
             return "OpUntypedPrefetchKHR";
+        case spv::OpFmaKHR:
+            return "OpFmaKHR";
         case spv::OpSubgroupAllKHR:
             return "OpSubgroupAllKHR";
         case spv::OpSubgroupAnyKHR:
@@ -2373,6 +2375,7 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpUntypedInBoundsPtrAccessChainKHR, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpUntypedArrayLengthKHR, {{OperandKind::Id, OperandKind::Id, OperandKind::Literal}}},
         {spv::OpUntypedPrefetchKHR, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpFmaKHR, {{OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpSubgroupAllKHR, {{OperandKind::Id}}},
         {spv::OpSubgroupAnyKHR, {{OperandKind::Id}}},
         {spv::OpSubgroupAllEqualKHR, {{OperandKind::Id}}},

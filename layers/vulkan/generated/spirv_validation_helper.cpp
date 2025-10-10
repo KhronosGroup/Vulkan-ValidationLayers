@@ -284,12 +284,9 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites(
         {spv::CapabilityFloat8CooperativeMatrixEXT, {0, &DeviceFeatures::shaderFloat8CooperativeMatrix, nullptr, ""}},
         {spv::CapabilityGraphARM, {0, &DeviceFeatures::dataGraph, nullptr, ""}},
         {spv::CapabilityUntypedPointersKHR, {0, &DeviceFeatures::shaderUntypedPointers, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityFMAKHR, {0, &DeviceFeatures::shaderFmaFloat16, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityFMAKHR, {0, &DeviceFeatures::shaderFmaFloat32, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityFMAKHR, {0, &DeviceFeatures::shaderFmaFloat64, nullptr, ""}},
+        {spv::CapabilityFMAKHR, {0, &DeviceFeatures::shaderFmaFloat16, nullptr, ""}},
+        {spv::CapabilityFMAKHR, {0, &DeviceFeatures::shaderFmaFloat32, nullptr, ""}},
+        {spv::CapabilityFMAKHR, {0, &DeviceFeatures::shaderFmaFloat64, nullptr, ""}},
     };
     // clang-format on
     return spirv_capabilities;
@@ -815,6 +812,8 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "GroupNonUniformRotateKHR";
         case spv::CapabilityFloatControls2:
             return "FloatControls2";
+        case spv::CapabilityFMAKHR:
+            return "FMAKHR";
         case spv::CapabilityAtomicFloat32AddEXT:
             return "AtomicFloat32AddEXT";
         case spv::CapabilityAtomicFloat64AddEXT:
@@ -1224,6 +1223,7 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityFloat8CooperativeMatrixEXT, "VkPhysicalDeviceShaderFloat8FeaturesEXT::shaderFloat8CooperativeMatrix"},
     {spv::CapabilityGraphARM, "VkPhysicalDeviceDataGraphFeaturesARM::dataGraph"},
     {spv::CapabilityUntypedPointersKHR, "VkPhysicalDeviceShaderUntypedPointersFeaturesKHR::shaderUntypedPointers"},
+    {spv::CapabilityFMAKHR, "VkPhysicalDeviceShaderFmaFeaturesKHR::shaderFmaFloat16 OR VkPhysicalDeviceShaderFmaFeaturesKHR::shaderFmaFloat32 OR VkPhysicalDeviceShaderFmaFeaturesKHR::shaderFmaFloat64"},
     };
 
     // VUs before catch unknown capabilities

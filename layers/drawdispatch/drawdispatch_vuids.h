@@ -289,6 +289,7 @@ struct DrawDispatchVuid {
     const char* vertex_input_09462 = kVUIDUndefined;
     const char* color_blend_enable_07627 = kVUIDUndefined;
     const char* color_write_mask_07629 = kVUIDUndefined;
+    const char* image_layout_00344 = kVUIDUndefined;
     const char* image_layout_09600 = kVUIDUndefined;
     const char* rendering_contents_10582 = kVUIDUndefined;
     const char* line_rasterization_10608 = kVUIDUndefined;
