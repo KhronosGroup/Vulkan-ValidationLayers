@@ -1222,8 +1222,15 @@ bool WriteState::InBarrierSourceScope(const BarrierScope &barrier_scope) const {
     if (tag > barrier_scope.scope_tag) {
         return false;
     }
-    return WriteOrDependencyChainInSourceScope(barrier_scope.scope_queue, barrier_scope.src_exec_scope,
-                                               barrier_scope.src_access_scope);
+
+    QueueId scope_queue = barrier_scope.scope_queue;
+
+    // Ensure that queue test in InSourceScope passes when barrier scope does not define a queue
+    if (scope_queue == kQueueIdInvalid) {
+        scope_queue = queue;
+    }
+
+    return WriteOrDependencyChainInSourceScope(scope_queue, barrier_scope.src_exec_scope, barrier_scope.src_access_scope);
 }
 
 HazardResult::HazardState::HazardState(const ResourceAccessState *access_state_, const SyncAccessInfo &access_info_,
