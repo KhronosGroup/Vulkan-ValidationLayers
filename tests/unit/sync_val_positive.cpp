@@ -3297,3 +3297,50 @@ TEST_F(PositiveSyncVal, MultipleExternalSubpassDependencies) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveSyncVal, QSSubpassDependency) {
+    TEST_DESCRIPTION("Subpass dependency is used during submit time validation");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM,
+                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkSubpassDependency subpass_dependency{};
+    subpass_dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    subpass_dependency.dstSubpass = 0;
+    subpass_dependency.srcStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    subpass_dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpass_dependency.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    subpass_dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
+                                VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_NONE);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.AddSubpassDependency(subpass_dependency);
+    rp.CreateRenderPass();
+
+    vkt::Framebuffer fb(*m_device, rp, 1, &image_view.handle(), 64, 64);
+
+    vkt::CommandBuffer cb0(*m_device, m_command_pool);
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
+
+    VkImageSubresourceRange subresource{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    VkClearColorValue clear_color{};
+
+    cb0.Begin();
+    vk::CmdClearColorImage(cb0, image, VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &subresource);
+    cb0.End();
+
+    cb1.Begin();
+    cb1.BeginRenderPass(rp, fb, 64, 64);
+    cb1.EndRenderPass();
+    cb1.End();
+
+    m_default_queue->Submit({cb0, cb1});
+    m_device->Wait();
+}
