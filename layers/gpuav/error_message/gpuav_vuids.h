@@ -16,7 +16,8 @@
  */
 
 #include "generated/error_location_helper.h"
-#include "error_message/logging.h"
+
+extern const char* kVUIDUndefined;
 
 #pragma once
 
