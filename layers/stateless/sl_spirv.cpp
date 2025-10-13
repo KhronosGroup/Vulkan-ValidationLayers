@@ -84,6 +84,7 @@ bool SpirvValidator::Validate(const spirv::Module &module_state, const spirv::St
 
     skip |= ValidateShaderClock(module_state, stateless_data, loc);
     skip |= ValidateAtomicsTypes(module_state, stateless_data, loc);
+    skip |= ValidateFma(module_state, stateless_data, loc);
     skip |= ValidateVariables(module_state, loc);
 
     skip |= ValidateTransformFeedbackDecorations(module_state, loc);
@@ -356,6 +357,32 @@ bool SpirvValidator::ValidateAtomicsTypes(const spirv::Module &module_state, con
                     "SPIR-V is using 64-bit float atomics operations but none of the required features were enabled.\n%s\n",
                     module_state.DescribeInstruction(atomic_def).c_str());
             }
+        }
+    }
+    return skip;
+}
+
+bool SpirvValidator::ValidateFma(const spirv::Module &module_state, const spirv::StatelessData &stateless_data,
+                                 const Location &loc) const {
+    bool skip = false;
+
+    // spirv-val enforces the Result Type must be a scalar or vector of floats
+    for (const spirv::Instruction *fma_inst : stateless_data.fma_inst) {
+        const spirv::Instruction &insn = *fma_inst;
+        const uint32_t bit_width = module_state.GetBaseTypeInstruction(insn.TypeId())->GetBitWidth();
+        if (bit_width == 16 && !enabled_features.shaderFmaFloat16) {
+            skip |= LogError("VUID-RuntimeSpirv-shaderFmaFloat16-10977", module_state.handle(), loc,
+                             "SPIR-V uses OpFmaKHR with 16-bit floats but shaderFmaFloat16 was not enabled.\n%s\n",
+                             module_state.DescribeInstruction(insn).c_str());
+        } else if (bit_width == 32 && !enabled_features.shaderFmaFloat32) {
+            skip |= LogError("VUID-RuntimeSpirv-shaderFmaFloat32-10978", module_state.handle(), loc,
+                             "SPIR-V uses OpFmaKHR with 32-bit floats but shaderFmaFloat32 was not enabled. (shaderFmaFloat32 is "
+                             "required to be supported if VK_KHR_shader_fma is supported)\n%s\n",
+                             module_state.DescribeInstruction(insn).c_str());
+        } else if (bit_width == 64 && !enabled_features.shaderFmaFloat64) {
+            skip |= LogError("VUID-RuntimeSpirv-shaderFmaFloat64-10979", module_state.handle(), loc,
+                             "SPIR-V uses OpFmaKHR with 64-bit floats but shaderFmaFloat64 was not enabled.\n%s\n",
+                             module_state.DescribeInstruction(insn).c_str());
         }
     }
     return skip;

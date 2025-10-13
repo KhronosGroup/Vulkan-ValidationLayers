@@ -65,6 +65,7 @@ class SpirvValidator : public Logger {
                              const Location& loc) const;
     bool ValidateAtomicsTypes(const spirv::Module& module_state, const spirv::StatelessData& stateless_data,
                               const Location& loc) const;
+    bool ValidateFma(const spirv::Module& module_state, const spirv::StatelessData& stateless_data, const Location& loc) const;
     bool ValidateVariables(const spirv::Module& module_state, const Location& loc) const;
     bool Validate8And16BitStorage(const spirv::Module& module_state, const spirv::Instruction& var_refsn,
                                   const Location& loc) const;

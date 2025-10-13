@@ -1107,6 +1107,12 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
                 }
                 break;
             }
+            case spv::OpFmaKHR: {
+                if (stateless_data) {
+                    stateless_data->fma_inst.push_back(&insn);
+                }
+                break;
+            }
             case spv::OpTypeCooperativeMatrixNV:
             case spv::OpCooperativeMatrixMulAddNV:
             case spv::OpTypeCooperativeMatrixKHR:
