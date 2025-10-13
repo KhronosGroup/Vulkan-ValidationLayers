@@ -86,6 +86,16 @@ TEST_F(PositiveLayerUtils, GetEffectiveExtent) {
         ASSERT_TRUE(extent.width == 2);
         ASSERT_TRUE(extent.height == 4);
         ASSERT_TRUE(extent.depth == 8);
+
+        // Mipmap extents round up
+        ci.flags = VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV;
+        ci.imageType = VK_IMAGE_TYPE_3D;
+        ci.mipLevels = 2;
+        ci.extent = {5, 5, 5};
+        extent = GetEffectiveExtent(ci, VK_IMAGE_ASPECT_NONE, 1);
+        ASSERT_TRUE(extent.width == 3);
+        ASSERT_TRUE(extent.height == 3);
+        ASSERT_TRUE(extent.depth == 3);
     }
 }
 
