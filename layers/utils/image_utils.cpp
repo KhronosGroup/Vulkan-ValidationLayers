@@ -73,17 +73,18 @@ VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFl
     {
         const uint32_t corner = (ci.flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) ? 1 : 0;
         const uint32_t min_size = 1 + corner;
+        const uint32_t round_up_nudge = corner ? static_cast<uint32_t>((1 << mip_level) - 1) : 0u;
 
         if (extent.width != 0) {
-            extent.width >>= mip_level;
+            extent.width = (extent.width + round_up_nudge) >> mip_level;
             extent.width = std::max({min_size, extent.width});
         }
         if (extent.height != 0) {
-            extent.height >>= mip_level;
+            extent.height = (extent.height + round_up_nudge) >> mip_level;
             extent.height = std::max({min_size, extent.height});
         }
         if (extent.depth != 0) {
-            extent.depth >>= mip_level;
+            extent.depth = (extent.depth + round_up_nudge) >> mip_level;
             extent.depth = std::max({min_size, extent.depth});
         }
     }
