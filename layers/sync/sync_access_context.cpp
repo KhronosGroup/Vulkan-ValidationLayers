@@ -81,10 +81,9 @@ struct HazardDetectorMarker {
     }
 };
 
-AccessContext::AccessContext(uint32_t subpass, VkQueueFlags queue_flags,
-                             const std::vector<SubpassDependencyGraphNode> &dependencies,
-                             const std::vector<AccessContext> &contexts, const AccessContext *external_context) {
-    Reset();
+void AccessContext::InitFrom(uint32_t subpass, VkQueueFlags queue_flags,
+                             const std::vector<SubpassDependencyGraphNode> &dependencies, const AccessContext *contexts,
+                             const AccessContext *external_context) {
     const auto &subpass_dep = dependencies[subpass];
     const bool has_barrier_from_external = subpass_dep.barrier_from_external.size() > 0U;
     prev_.reserve(subpass_dep.prev.size() + (has_barrier_from_external ? 1U : 0U));
@@ -113,41 +112,36 @@ AccessContext::AccessContext(uint32_t subpass, VkQueueFlags queue_flags,
     }
 }
 
-template <typename NormalizeOp>
-void AccessContext::Trim(NormalizeOp &&normalize) {
-    ForAll(std::forward<NormalizeOp>(normalize));
-    sparse_container::consolidate(access_state_map_);
+void AccessContext::InitFrom(const AccessContext &other) {
+    access_state_map_ = other.access_state_map_;
+    prev_ = other.prev_;
+    prev_by_subpass_ = other.prev_by_subpass_;
+    async_ = other.async_;
+    src_external_ = other.src_external_;
+    dst_external_ = other.dst_external_;
+    start_tag_ = other.start_tag_;
 }
 
-void AccessContext::Trim() {
-    auto normalize = [](ResourceAccessRangeMap::value_type &access) { access.second.Normalize(); };
-    Trim(normalize);
+void AccessContext::Reset() {
+    access_state_map_.clear();
+    prev_.clear();
+    prev_by_subpass_.clear();
+    async_.clear();
+    src_external_ = nullptr;
+    dst_external_ = {};
+    start_tag_ = {};
 }
 
 void AccessContext::TrimAndClearFirstAccess() {
-    auto normalize = [](ResourceAccessRangeMap::value_type &access) {
-        access.second.Normalize();
-        access.second.ClearFirstUse();
-    };
-    Trim(normalize);
+    for (auto &[range, access] : access_state_map_) {
+        access.Normalize();
+    }
+    sparse_container::consolidate(access_state_map_);
 }
 
 void AccessContext::AddReferencedTags(ResourceUsageTagSet &used) const {
-    auto gather = [&used](const ResourceAccessRangeMap::value_type &access) { access.second.GatherReferencedTags(used); };
-    ConstForAll(gather);
-}
-
-template <typename Action>
-void AccessContext::ForAll(Action &&action) {
-    for (auto &access : access_state_map_) {
-        action(access);
-    }
-}
-
-template <typename Action>
-void AccessContext::ConstForAll(Action &&action) const {
-    for (auto &access : access_state_map_) {
-        action(access);
+    for (const auto &[range, access] : access_state_map_) {
+        access.GatherReferencedTags(used);
     }
 }
 
@@ -267,9 +261,8 @@ void AccessContext::UpdateAccessState(const ImageRangeGen &range_gen, SyncAccess
     UpdateAccessState(mutable_range_gen, current_usage, ordering_rule, tag_ex, flags);
 }
 
-void AccessContext::ResolveChildContexts(const std::vector<AccessContext> &contexts) {
-    for (uint32_t subpass_index = 0; subpass_index < contexts.size(); subpass_index++) {
-        auto &context = contexts[subpass_index];
+void AccessContext::ResolveChildContexts(vvl::span<AccessContext> subpass_contexts) {
+    for (AccessContext &context : subpass_contexts) {
         ApplyTrackbackStackAction barrier_action(context.GetDstExternalTrackBack().barriers);
         context.ResolveAccessRange(kFullRange, barrier_action, &access_state_map_, nullptr, false);
     }
