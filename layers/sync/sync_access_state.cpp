@@ -887,9 +887,18 @@ bool ResourceAccessState::WaitAcquirePredicate::operator()(const ResourceAccessS
     return (write_state.tag == present_tag) && write_state.access_index == SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_PRESENTED_SYNCVAL;
 }
 
+ResourceUsageRange ResourceAccessState::GetFirstAccessRange() const {
+    if (first_accesses_.empty()) {
+        return {};
+    }
+    return ResourceUsageRange(first_accesses_.front().tag, first_accesses_.back().tag + 1);
+}
+
 bool ResourceAccessState::FirstAccessInTagRange(const ResourceUsageRange &tag_range) const {
-    if (!first_accesses_.size()) return false;
-    const ResourceUsageRange first_access_range = {first_accesses_.front().tag, first_accesses_.back().tag + 1};
+    if (first_accesses_.empty()) {
+        return false;
+    }
+    const ResourceUsageRange first_access_range = GetFirstAccessRange();
     return tag_range.intersects(first_access_range);
 }
 

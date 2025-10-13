@@ -120,6 +120,12 @@ void AccessContext::InitFrom(const AccessContext &other) {
     src_external_ = other.src_external_;
     dst_external_ = other.dst_external_;
     start_tag_ = other.start_tag_;
+
+    // Even though the "other" context may be finalized, we might still need to update "this" copy.
+    // Therefore, the copied context cannot be marked as finalized yet.
+    finalized_ = false;
+
+    sorted_first_accesses_.Clear();
 }
 
 void AccessContext::Reset() {
@@ -130,9 +136,18 @@ void AccessContext::Reset() {
     src_external_ = nullptr;
     dst_external_ = {};
     start_tag_ = {};
+    finalized_ = false;
+    sorted_first_accesses_.Clear();
+}
+
+void AccessContext::Finalize() {
+    assert(!finalized_);  // no need to finalize finalized
+    sorted_first_accesses_.Init(access_state_map_);
+    finalized_ = true;
 }
 
 void AccessContext::TrimAndClearFirstAccess() {
+    assert(!finalized_);
     for (auto &[range, access] : access_state_map_) {
         access.Normalize();
     }
@@ -140,12 +155,14 @@ void AccessContext::TrimAndClearFirstAccess() {
 }
 
 void AccessContext::AddReferencedTags(ResourceUsageTagSet &used) const {
+    assert(!finalized_);
     for (const auto &[range, access] : access_state_map_) {
         access.GatherReferencedTags(used);
     }
 }
 
 void AccessContext::ResolveFromContext(const AccessContext &from) {
+    assert(!finalized_);
     auto noop_action = [](ResourceAccessState *access) {};
     from.ResolveAccessRange(kFullRange, noop_action, &access_state_map_, nullptr);
 }
@@ -177,9 +194,11 @@ void AccessContext::ResolvePreviousAccess(const ResourceAccessRange &range, Reso
 
 // Non-lazy import of all accesses, WaitEvents needs this.
 void AccessContext::ResolvePreviousAccesses() {
+    assert(!finalized_);
+    if (!prev_.size()) {
+        return;  // If no previous contexts, nothing to do
+    }
     ResourceAccessState default_state;
-    if (!prev_.size()) return;  // If no previous contexts, nothing to do
-
     ResolvePreviousAccess(kFullRange, &access_state_map_, &default_state);
 }
 
@@ -262,6 +281,7 @@ void AccessContext::UpdateAccessState(const ImageRangeGen &range_gen, SyncAccess
 }
 
 void AccessContext::ResolveChildContexts(vvl::span<AccessContext> subpass_contexts) {
+    assert(!finalized_);
     for (AccessContext &context : subpass_contexts) {
         ApplyTrackbackStackAction barrier_action(context.GetDstExternalTrackBack().barriers);
         context.ResolveAccessRange(kFullRange, barrier_action, &access_state_map_, nullptr, false);
@@ -546,13 +566,50 @@ void AccessContext::UpdateMemoryAccessStateFunctor::operator()(const ResourceAcc
 // hazards will be detected
 HazardResult AccessContext::DetectFirstUseHazard(QueueId queue_id, const ResourceUsageRange &tag_range,
                                                  const AccessContext &access_context) const {
-    for (const auto &recorded_access : access_state_map_) {
-        // Cull any entries not in the current tag range
-        if (!recorded_access.second.FirstAccessInTagRange(tag_range)) continue;
-        HazardDetectFirstUse detector(recorded_access.second, queue_id, tag_range);
-        HazardResult hazard = access_context.DetectHazardRange(detector, recorded_access.first, DetectOptions::kDetectAll);
-        if (hazard.IsHazard()) {
-            return hazard;
+    // If the context is finalized we have a fast path to find first accesses within a range
+    if (finalized_) {
+        for (const auto &single_tag : sorted_first_accesses_.IterateSingleTagFirstAccesses(tag_range)) {
+            const ResourceAccessRange access_range = single_tag.p_key_value->first;
+            const ResourceAccessState &access = single_tag.p_key_value->second;
+
+            // For single tag first accesses we have exact search and can assert the find
+            assert(access.FirstAccessInTagRange(tag_range));
+
+            HazardDetectFirstUse detector(access, queue_id, tag_range);
+            HazardResult hazard = access_context.DetectHazardRange(detector, access_range, DetectOptions::kDetectAll);
+            if (hazard.IsHazard()) {
+                return hazard;
+            }
+        }
+        for (const auto &multi_tag : sorted_first_accesses_.IterateMultiTagFirstAccesses(tag_range)) {
+            const ResourceAccessRange access_range = multi_tag.p_key_value->first;
+            const ResourceAccessState &access = multi_tag.p_key_value->second;
+
+            // For multi tag first accesses the search is not exact, so we need to check for range inclusion
+            // (on average multi tag search is faster than going over the entire access map)
+            if (!access.FirstAccessInTagRange(tag_range)) {
+                continue;
+            }
+
+            HazardDetectFirstUse detector(access, queue_id, tag_range);
+            HazardResult hazard = access_context.DetectHazardRange(detector, access_range, DetectOptions::kDetectAll);
+            if (hazard.IsHazard()) {
+                return hazard;
+            }
+        }
+    }
+    // The context is not finalized. We have to iterate over the entire access map
+    else {
+        for (const auto &recorded_access : access_state_map_) {
+            // Cull any entries not in the current tag range
+            if (!recorded_access.second.FirstAccessInTagRange(tag_range)) {
+                continue;
+            }
+            HazardDetectFirstUse detector(recorded_access.second, queue_id, tag_range);
+            HazardResult hazard = access_context.DetectHazardRange(detector, recorded_access.first, DetectOptions::kDetectAll);
+            if (hazard.IsHazard()) {
+                return hazard;
+            }
         }
     }
     return {};
@@ -565,6 +622,58 @@ HazardResult AccessContext::DetectMarkerHazard(const vvl::Buffer &buffer, const 
     const VkDeviceSize base_address = ResourceBaseAddress(buffer);
     HazardDetectorMarker detector;
     return DetectHazardRange(detector, (range + base_address), DetectOptions::kDetectAll);
+}
+
+void SortedFirstAccesses::Init(const ResourceAccessRangeMap &finalized_access_map) {
+    for (const auto &entry : finalized_access_map) {
+        const ResourceAccessState &access = entry.second;
+        const ResourceUsageRange range = access.GetFirstAccessRange();
+        if (range.empty()) {
+            continue;
+        }
+        // Access map is not going to be updated (finalized) and we can store references to map entries
+        if (range.size() == 1) {
+            sorted_single_tags.emplace_back(SingleTag{range.begin, &entry});
+        } else {
+            sorted_multi_tags.emplace_back(MultiTag{range, &entry});
+        }
+    }
+    std::sort(sorted_single_tags.begin(), sorted_single_tags.end(),
+              [](const SingleTag &a, const SingleTag &b) { return a.tag < b.tag; });
+    std::sort(sorted_multi_tags.begin(), sorted_multi_tags.end(),
+              [](const auto &a, const auto &b) { return a.range.begin < b.range.begin; });
+}
+
+void SortedFirstAccesses::Clear() {
+    sorted_single_tags.clear();
+    sorted_multi_tags.clear();
+}
+
+std::vector<SortedFirstAccesses::SingleTag>::const_iterator SortedFirstAccesses::SingleTagRange::begin() {
+    return std::lower_bound(sorted_single_tags.begin(), sorted_single_tags.end(), tag_range.begin,
+                            [](const SingleTag &single_tag, ResourceUsageTag tag) { return single_tag.tag < tag; });
+}
+
+std::vector<SortedFirstAccesses::SingleTag>::const_iterator SortedFirstAccesses::SingleTagRange::end() {
+    return std::lower_bound(sorted_single_tags.begin(), sorted_single_tags.end(), tag_range.end,
+                            [](const SingleTag &single_tag, ResourceUsageTag tag) { return single_tag.tag < tag; });
+}
+
+SortedFirstAccesses::SingleTagRange SortedFirstAccesses::IterateSingleTagFirstAccesses(const ResourceUsageRange &tag_range) const {
+    return SingleTagRange{this->sorted_single_tags, tag_range};
+}
+
+std::vector<SortedFirstAccesses::MultiTag>::const_iterator SortedFirstAccesses::MultiTagRange::begin() {
+    return sorted_multi_tags.begin();
+}
+
+std::vector<SortedFirstAccesses::MultiTag>::const_iterator SortedFirstAccesses::MultiTagRange::end() {
+    return std::lower_bound(sorted_multi_tags.begin(), sorted_multi_tags.end(), tag_range.end,
+                            [](const MultiTag &multi_tag, ResourceUsageTag tag) { return multi_tag.range.begin < tag; });
+}
+
+SortedFirstAccesses::MultiTagRange SortedFirstAccesses::IterateMultiTagFirstAccesses(const ResourceUsageRange &tag_range) const {
+    return MultiTagRange{this->sorted_multi_tags, tag_range};
 }
 
 // For RenderPass time validation this is "start tag", for QueueSubmit, this is the earliest
