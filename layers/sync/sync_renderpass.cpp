@@ -446,7 +446,7 @@ bool RenderPassAccessContext::ValidateResolveOperations(const CommandBufferAcces
 
 void RenderPassAccessContext::UpdateAttachmentResolveAccess(const vvl::RenderPass &rp_state,
                                                             const AttachmentViewGenVector &attachment_views, uint32_t subpass,
-                                                            const ResourceUsageTag tag, AccessContext access_context) {
+                                                            const ResourceUsageTag tag, AccessContext &access_context) {
     UpdateStateResolveAction update(access_context, tag);
     ResolveOperation(update, rp_state, attachment_views, subpass);
 }
