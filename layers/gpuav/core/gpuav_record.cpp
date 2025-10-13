@@ -17,7 +17,6 @@
 
 #include <cstdint>
 #include "chassis/chassis_modification_state.h"
-#include "generated/dispatch_functions.h"
 #include "gpuav/core/gpuav.h"
 #include "gpuav/debug_printf/debug_printf.h"
 #include "gpuav/descriptor_validation/gpuav_descriptor_validation.h"
@@ -31,7 +30,6 @@
 #include "gpuav/validation_cmd/gpuav_dispatch.h"
 #include "gpuav/validation_cmd/gpuav_draw.h"
 #include "gpuav/validation_cmd/gpuav_trace_rays.h"
-#include "state_tracker/device_memory_state.h"
 #include "utils/math_utils.h"
 
 namespace gpuav {
