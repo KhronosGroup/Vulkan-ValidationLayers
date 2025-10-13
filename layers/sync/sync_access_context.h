@@ -219,6 +219,49 @@ class AttachmentViewGen {
 
 using AttachmentViewGenVector = std::vector<AttachmentViewGen>;
 
+// Provides ordering among all first accesses in the AccessContext.
+// This accelerates the search of the first accesses that intersect a given tag range.
+struct SortedFirstAccesses {
+    void Init(const ResourceAccessRangeMap &finalized_access_map);
+    void Clear();
+
+    // Access objects with first accesses that cover only single tag.
+    // This is a separate case because it allows to quickly find a range
+    // of such first accesses that belong to a given tag range.
+    struct SingleTag {
+        // The only tag referenced by the first accesses of the access object
+        ResourceUsageTag tag{};
+        const ResourceAccessRangeMap::value_type *p_key_value = nullptr;
+    };
+    std::vector<SingleTag> sorted_single_tags;
+
+    // Access objects with first accesses that cover more than one tag
+    struct MultiTag {
+        // range.begin: tag of the first first_access.
+        // range.end: tag of the last first_access plus one.
+        ResourceUsageRange range;
+        const ResourceAccessRangeMap::value_type *p_key_value = nullptr;
+    };
+    std::vector<MultiTag> sorted_multi_tags;
+
+    // Ranged-for loop iterator helpers
+    struct SingleTagRange {
+        const std::vector<SingleTag> &sorted_single_tags;
+        const ResourceUsageRange tag_range;
+        std::vector<SingleTag>::const_iterator begin();
+        std::vector<SingleTag>::const_iterator end();
+    };
+    SingleTagRange IterateSingleTagFirstAccesses(const ResourceUsageRange &tag_range) const;
+
+    struct MultiTagRange {
+        const std::vector<MultiTag> &sorted_multi_tags;
+        const ResourceUsageRange tag_range;
+        std::vector<MultiTag>::const_iterator begin();
+        std::vector<MultiTag>::const_iterator end();
+    };
+    MultiTagRange IterateMultiTagFirstAccesses(const ResourceUsageRange &tag_range) const;
+};
+
 class AccessContext {
   public:
     using ScopeMap = ResourceAccessRangeMap;
@@ -313,7 +356,6 @@ class AccessContext {
     void TrimAndClearFirstAccess();
     void AddReferencedTags(ResourceUsageTagSet &referenced) const;
 
-    ResourceAccessRangeMap &GetAccessStateMap() { return access_state_map_; }
     const ResourceAccessRangeMap &GetAccessStateMap() const { return access_state_map_; }
     const SubpassBarrierTrackback *GetTrackBackFromSubpass(uint32_t subpass) const {
         if (subpass == VK_SUBPASS_EXTERNAL) {
@@ -355,8 +397,12 @@ class AccessContext {
     template <typename Action, typename RangeGen>
     void UpdateMemoryAccessState(const Action &action, RangeGen &range_gen);
 
-  private:
+    // Called when all accesses are recorded. This can be used for preprocessing
+    // or caching purposes. After finalization, it is save to keep persistent
+    // references to individual accesses (until context is destroyed).
+    void Finalize();
 
+  private:
     struct UpdateMemoryAccessStateFunctor {
         using Iterator = ResourceAccessRangeMap::iterator;
         Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos_hint, const ResourceAccessRange &range) const;
@@ -418,14 +464,27 @@ class AccessContext {
     template <typename Detector>
     HazardResult DetectPreviousHazard(Detector &detector, const ResourceAccessRange &range) const;
 
+  private:
     ResourceAccessRangeMap access_state_map_;
+
     std::vector<SubpassBarrierTrackback> prev_;
     std::vector<SubpassBarrierTrackback *> prev_by_subpass_;
+
     // These contexts *must* have the same lifespan as this context, or be cleared, before the referenced contexts can expire
     std::vector<AsyncReference> async_;
-    SubpassBarrierTrackback *src_external_;
+
+    SubpassBarrierTrackback *src_external_ = nullptr;
     SubpassBarrierTrackback dst_external_;
-    ResourceUsageTag start_tag_;
+    ResourceUsageTag start_tag_ = 0;
+
+    // True if access map won't be modified anymore.
+    // NOTE: In the current implementation we mark only command buffer contexts as finalized.
+    // TODO: mark other contexts as finalized too if needed.
+    bool finalized_ = false;
+
+    // Provides ordering of the context's first accesses based on tag values.
+    // Only available for finalized contexts.
+    SortedFirstAccesses sorted_first_accesses_;
 };
 
 // The semantics of the InfillUpdateOps of infill_update_range are slightly different than for the UpdateMemoryAccessState Action
@@ -455,12 +514,14 @@ struct ActionToOpsAdapter {
 
 template <typename Action>
 void AccessContext::UpdateMemoryAccessRangeState(Action &action, const ResourceAccessRange &range) {
+    assert(!finalized_);
     ActionToOpsAdapter<Action> ops{action};
     infill_update_range(access_state_map_, range, ops);
 }
 
 template <typename Action, typename RangeGen>
 void AccessContext::UpdateMemoryAccessState(const Action &action, RangeGen &range_gen) {
+    assert(!finalized_);
     ActionToOpsAdapter<Action> ops{action};
     auto pos = access_state_map_.lower_bound(*range_gen);
     for (; range_gen->non_empty(); ++range_gen) {
@@ -666,6 +727,7 @@ HazardResult AccessContext::DetectPreviousHazard(Detector &detector, const Resou
 
 template <typename Predicate>
 void AccessContext::EraseIf(Predicate &&pred) {
+    assert(!finalized_);
     // Note: Don't forward, we don't want r-values moved, since we're going to make multiple calls.
     vvl::EraseIf(access_state_map_, pred);
 }
@@ -673,6 +735,7 @@ void AccessContext::EraseIf(Predicate &&pred) {
 template <typename ResolveOp>
 void AccessContext::ResolveFromContext(ResolveOp &&resolve_op, const AccessContext &from_context,
                                        const ResourceAccessState *infill_state, bool recur_to_infill) {
+    assert(!finalized_);
     from_context.ResolveAccessRange(kFullRange, resolve_op, &access_state_map_, infill_state, recur_to_infill);
 }
 
@@ -684,6 +747,7 @@ template <typename ResolveOp>
 void AccessContext::ResolveFromContext(ResolveOp &&resolve_op, const AccessContext &from_context,
                                        subresource_adapter::ImageRangeGenerator range_gen, const ResourceAccessState *infill_state,
                                        bool recur_to_infill) {
+    assert(!finalized_);
     for (; range_gen->non_empty(); ++range_gen) {
         from_context.ResolveAccessRange(*range_gen, resolve_op, &access_state_map_, infill_state, recur_to_infill);
     }

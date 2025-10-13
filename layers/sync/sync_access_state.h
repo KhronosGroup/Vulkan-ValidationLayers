@@ -452,6 +452,7 @@ class ResourceAccessState {
     template <typename Predicate>
     bool ClearPredicatedAccesses(Predicate &predicate);
 
+    ResourceUsageRange GetFirstAccessRange() const;
     bool FirstAccessInTagRange(const ResourceUsageRange &tag_range) const;
 
     void OffsetTag(ResourceUsageTag offset);
