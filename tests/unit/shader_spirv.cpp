@@ -2863,3 +2863,138 @@ TEST_F(NegativeShaderSpirv, Bitwise32bitMaintenance9) {
     VkShaderObj cs(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeShaderSpirv, ShaderFma32) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SHADER_FMA_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderFmaFloat64);
+    AddRequiredFeature(vkt::Feature::shaderFloat64);
+    RETURN_IF_SKIP(Init());
+
+    const char *spv_source = R"(
+               OpCapability Shader
+               OpCapability FMAKHR
+               OpExtension "SPV_KHR_fma"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %_
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %SSBO Block
+               OpMemberDecorate %SSBO 0 Offset 0
+               OpDecorate %_ Binding 0
+               OpDecorate %_ DescriptorSet 0
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+%_ptr_Function_float = OpTypePointer Function %float
+    %float_1 = OpConstant %float 1
+       %SSBO = OpTypeStruct %float
+%_ptr_StorageBuffer_SSBO = OpTypePointer StorageBuffer %SSBO
+          %_ = OpVariable %_ptr_StorageBuffer_SSBO StorageBuffer
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+%_ptr_StorageBuffer_float = OpTypePointer StorageBuffer %float
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+          %a = OpVariable %_ptr_Function_float Function
+          %b = OpVariable %_ptr_Function_float Function
+          %c = OpVariable %_ptr_Function_float Function
+               OpStore %a %float_1
+               OpStore %b %float_1
+               OpStore %c %float_1
+     %load_a = OpLoad %float %a
+     %load_b = OpLoad %float %b
+     %load_c = OpLoad %float %c
+         %24 = OpFmaKHR %float %load_a %load_b %load_c
+         %26 = OpAccessChain %_ptr_StorageBuffer_float %_ %int_0
+               OpStore %26 %24
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-shaderFmaFloat32-10978");
+    VkShaderObj cs(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderSpirv, ShaderFmaNon32) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SHADER_FMA_EXTENSION_NAME);
+    // Missing 16 and 64 support for FMA
+    AddRequiredFeature(vkt::Feature::shaderFmaFloat32);
+    AddRequiredFeature(vkt::Feature::shaderFloat64);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    RETURN_IF_SKIP(Init());
+
+    const char *spv_source = R"(
+               OpCapability Shader
+               OpCapability Float16
+               OpCapability Float64
+               OpCapability FMAKHR
+               OpExtension "SPV_KHR_fma"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %_
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %SSBO Block
+               OpMemberDecorate %SSBO 0 Offset 0
+               OpDecorate %_ Binding 0
+               OpDecorate %_ DescriptorSet 0
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+      %float16 = OpTypeFloat 16
+      %float64 = OpTypeFloat 64
+%_ptr_Function_float = OpTypePointer Function %float
+%_ptr_Function_float16 = OpTypePointer Function %float16
+%_ptr_Function_float64 = OpTypePointer Function %float64
+    %float_1 = OpConstant %float 1
+  %float16_1 = OpConstant %float16 1
+  %float64_1 = OpConstant %float64 1
+       %SSBO = OpTypeStruct %float
+%_ptr_StorageBuffer_SSBO = OpTypePointer StorageBuffer %SSBO
+          %_ = OpVariable %_ptr_StorageBuffer_SSBO StorageBuffer
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+          %a = OpVariable %_ptr_Function_float Function
+          %b = OpVariable %_ptr_Function_float Function
+          %c = OpVariable %_ptr_Function_float Function
+        %a16 = OpVariable %_ptr_Function_float16 Function
+        %b16 = OpVariable %_ptr_Function_float16 Function
+        %c16 = OpVariable %_ptr_Function_float16 Function
+        %a64 = OpVariable %_ptr_Function_float64 Function
+        %b64 = OpVariable %_ptr_Function_float64 Function
+        %c64 = OpVariable %_ptr_Function_float64 Function
+
+               OpStore %a %float_1
+               OpStore %b %float_1
+               OpStore %c %float_1
+     %load_a = OpLoad %float %a
+     %load_b = OpLoad %float %b
+     %load_c = OpLoad %float %c
+      %fma32 = OpFmaKHR %float %load_a %load_b %load_c
+
+               OpStore %a16 %float16_1
+               OpStore %b16 %float16_1
+               OpStore %c16 %float16_1
+   %load_a16 = OpLoad %float16 %a16
+   %load_b16 = OpLoad %float16 %b16
+   %load_c16 = OpLoad %float16 %c16
+      %fma16 = OpFmaKHR %float16 %load_a16 %load_b16 %load_c16
+
+               OpStore %a64 %float64_1
+               OpStore %b64 %float64_1
+               OpStore %c64 %float64_1
+   %load_a64 = OpLoad %float64 %a64
+   %load_b64 = OpLoad %float64 %b64
+   %load_c64 = OpLoad %float64 %c64
+      %fma64 = OpFmaKHR %float64 %load_a64 %load_b64 %load_c64
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-shaderFmaFloat16-10977");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-shaderFmaFloat64-10979");
+    VkShaderObj cs(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    m_errorMonitor->VerifyFound();
+}
