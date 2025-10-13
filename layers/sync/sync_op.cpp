@@ -984,7 +984,6 @@ SyncOpSetEvent::SyncOpSetEvent(vvl::Func command, const SyncValidator &sync_stat
                                VkPipelineStageFlags2 stageMask, const AccessContext *access_context)
     : SyncOpBase(command),
       event_(sync_state.Get<vvl::Event>(event)),
-      recorded_context_(),
       src_exec_scope_(SyncExecScope::MakeSrc(queue_flags, stageMask)),
       dep_info_() {
     // Snapshot the current access_context for later inspection at wait time.
@@ -992,7 +991,9 @@ SyncOpSetEvent::SyncOpSetEvent(vvl::Func command, const SyncValidator &sync_stat
     //       access context (include barrier state for chaining) won't necessarily contain the needed information at Wait
     //       or Submit time reference.
     if (access_context) {
-        recorded_context_ = std::make_shared<const AccessContext>(*access_context);
+        auto new_context = std::make_shared<AccessContext>();
+        new_context->InitFrom(*access_context);
+        recorded_context_ = new_context;
     }
 }
 
@@ -1000,11 +1001,12 @@ SyncOpSetEvent::SyncOpSetEvent(vvl::Func command, const SyncValidator &sync_stat
                                const VkDependencyInfo &dep_info, const AccessContext *access_context)
     : SyncOpBase(command),
       event_(sync_state.Get<vvl::Event>(event)),
-      recorded_context_(),
       src_exec_scope_(SyncExecScope::MakeSrc(queue_flags, sync_utils::GetExecScopes(dep_info).src)),
       dep_info_(new vku::safe_VkDependencyInfo(&dep_info)) {
     if (access_context) {
-        recorded_context_ = std::make_shared<const AccessContext>(*access_context);
+        auto new_context = std::make_shared<AccessContext>();
+        new_context->InitFrom(*access_context);
+        recorded_context_ = new_context;
     }
 }
 
@@ -1098,7 +1100,8 @@ void SyncOpSetEvent::ReplayRecord(CommandExecutionContext &exec_context, Resourc
     const QueueId queue_id = exec_context.GetQueueId();
 
     // Note: merged_context is a copy of the access_context, combined with the recorded context
-    auto merged_context = std::make_shared<AccessContext>(*access_context);
+    auto merged_context = std::make_shared<AccessContext>();
+    merged_context->InitFrom(*access_context);
     merged_context->ResolveFromContext(QueueTagOffsetBarrierAction(queue_id, exec_tag), *recorded_context_);
     merged_context->TrimAndClearFirstAccess();  // Ensure the copy is minimal and normalized
     DoRecord(queue_id, exec_tag, merged_context, events_context);
@@ -1169,11 +1172,13 @@ bool SyncOpBeginRenderPass::Validate(const CommandBufferAccessContext &cb_contex
 
     const uint32_t subpass = 0;
 
-    // Construct the state we can use to validate against... (since validation is const and RecordCmdBeginRenderPass
-    // hasn't happened yet)
-    const std::vector<AccessContext> empty_context_vector;
-    AccessContext temp_context(subpass, cb_context.GetQueueFlags(), rp_state.subpass_dependencies, empty_context_vector,
-                               cb_context.GetCurrentAccessContext());
+    // Construct the state to validate against (since validation is const and RecordCmdBeginRenderPass hasn't happened yet).
+    // TODO: investigate if using nullptr in InitFrom is safe (this just follows the initial implementation - it assumes
+    // that array of subpass dependencies won't be indexed, but it's not obvious).
+    AccessContext temp_context;
+
+    temp_context.InitFrom(subpass, cb_context.GetQueueFlags(), rp_state.subpass_dependencies, nullptr,
+                          cb_context.GetCurrentAccessContext());
 
     // Validate attachment operations
     if (attachments_.empty()) return skip;
@@ -1319,7 +1324,7 @@ AccessContext *ReplayState::ReplayStateRenderPassNext() { return rp_replay_.Next
 void ReplayState::ReplayStateRenderPassEnd(AccessContext &external_context) { rp_replay_.End(external_context); }
 
 const AccessContext *ReplayState::GetRecordedAccessContext() const {
-    if (rp_replay_) {
+    if (rp_replay_.begin_op) {
         return rp_replay_.replay_context;
     }
     return recorded_context_.GetCurrentAccessContext();
@@ -1371,20 +1376,17 @@ bool ReplayState::ValidateFirstUse() {
 }
 AccessContext *ReplayState::RenderPassReplayState::Begin(VkQueueFlags queue_flags, const SyncOpBeginRenderPass &begin_op_,
                                                          const AccessContext &external_context) {
-    Reset();
+    const RenderPassAccessContext *rp_context = begin_op_.GetRenderPassAccessContext();
+    assert(rp_context);
 
     begin_op = &begin_op_;
+    replay_context = &rp_context->GetSubpassContexts()[0];
     subpass = 0;
-
-    const RenderPassAccessContext *rp_context = begin_op->GetRenderPassAccessContext();
-    assert(rp_context);
-    replay_context = &rp_context->GetContexts()[0];
-
-    InitSubpassContexts(queue_flags, *rp_context->GetRenderPassState(), &external_context, subpass_contexts);
+    subpass_contexts = InitSubpassContexts(queue_flags, *rp_context->GetRenderPassState(), &external_context);
 
     // Replace the Async contexts with the the async context of the "external" context
     // For replay we don't care about async subpasses, just async queue batches
-    for (auto &context : subpass_contexts) {
+    for (AccessContext &context : GetSubpassContexts()) {
         context.ClearAsyncContexts();
         context.ImportAsyncContexts(external_context);
     }
@@ -1397,13 +1399,18 @@ AccessContext *ReplayState::RenderPassReplayState::Next() {
 
     const RenderPassAccessContext *rp_context = begin_op->GetRenderPassAccessContext();
 
-    replay_context = &rp_context->GetContexts()[subpass];
+    replay_context = &rp_context->GetSubpassContexts()[subpass];
     return &subpass_contexts[subpass];
 }
 
 void ReplayState::RenderPassReplayState::End(AccessContext &external_context) {
-    external_context.ResolveChildContexts(subpass_contexts);
-    Reset();
+    external_context.ResolveChildContexts(GetSubpassContexts());
+    *this = RenderPassReplayState{};
+}
+
+vvl::span<AccessContext> ReplayState::RenderPassReplayState::GetSubpassContexts() {
+    return vvl::make_span(subpass_contexts.get(),
+                          begin_op->GetRenderPassAccessContext()->GetRenderPassState()->create_info.subpassCount);
 }
 
 void SyncEventsContext::ApplyBarrier(const SyncExecScope &src, const SyncExecScope &dst, ResourceUsageTag tag) {

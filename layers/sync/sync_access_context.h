@@ -261,15 +261,6 @@ class AccessContext {
     HazardResult DetectMarkerHazard(const vvl::Buffer &buffer, const ResourceAccessRange &range) const;
 
     const SubpassBarrierTrackback &GetDstExternalTrackBack() const { return dst_external_; }
-    void Reset() {
-        prev_.clear();
-        prev_by_subpass_.clear();
-        async_.clear();
-        src_external_ = nullptr;
-        dst_external_ = SubpassBarrierTrackback();
-        start_tag_ = ResourceUsageTag();
-        access_state_map_.clear();
-    }
 
     void ResolvePreviousAccesses();
     void ResolveFromContext(const AccessContext &from);
@@ -301,17 +292,24 @@ class AccessContext {
                            ResourceUsageTagEx tag_ex, SyncFlags flags = 0);
     void UpdateAccessState(const vvl::VideoSession &vs_state, const vvl::VideoPictureResource &resource,
                            SyncAccessIndex current_usage, ResourceUsageTag tag);
-    void ResolveChildContexts(const std::vector<AccessContext> &contexts);
+    void ResolveChildContexts(vvl::span<AccessContext> subpass_contexts);
 
     void ImportAsyncContexts(const AccessContext &from);
     void ClearAsyncContexts() { async_.clear(); }
 
-    AccessContext(uint32_t subpass, VkQueueFlags queue_flags, const std::vector<SubpassDependencyGraphNode> &dependencies,
-                  const std::vector<AccessContext> &contexts, const AccessContext *external_context);
+    AccessContext() = default;
 
-    AccessContext() { Reset(); }
-    AccessContext(const AccessContext &copy_from) = default;
-    void Trim();
+    // Disable implicit copy operations and rely on explicit InitFrom.
+    // AccessContext is a heavy object and there must be no possibility of an accidental copy.
+    // Copy operations must be searchable (InitFrom function).
+    AccessContext(const AccessContext &other) = delete;
+    AccessContext &operator=(const AccessContext &) = delete;
+
+    void InitFrom(uint32_t subpass, VkQueueFlags queue_flags, const std::vector<SubpassDependencyGraphNode> &dependencies,
+                  const AccessContext *contexts, const AccessContext *external_context);
+    void InitFrom(const AccessContext &other);
+    void Reset();
+
     void TrimAndClearFirstAccess();
     void AddReferencedTags(ResourceUsageTagSet &referenced) const;
 
@@ -329,10 +327,6 @@ class AccessContext {
     void SetStartTag(ResourceUsageTag tag) { start_tag_ = tag; }
     ResourceUsageTag StartTag() const { return start_tag_; }
 
-    template <typename Action>
-    void ForAll(Action &&action);
-    template <typename Action>
-    void ConstForAll(Action &&action) const;
     template <typename Predicate>
     void EraseIf(Predicate &&pred);
 
@@ -420,9 +414,6 @@ class AccessContext {
     template <typename Detector, typename RangeGen>
     HazardResult DetectAsyncHazard(const Detector &detector, const RangeGen &const_range_gen, ResourceUsageTag async_tag,
                                    QueueId async_queue_id) const;
-
-    template <typename NormalizeOp>
-    void Trim(NormalizeOp &&normalize);
 
     template <typename Detector>
     HazardResult DetectPreviousHazard(Detector &detector, const ResourceAccessRange &range) const;

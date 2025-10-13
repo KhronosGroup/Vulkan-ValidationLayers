@@ -74,8 +74,8 @@ struct BeginRenderingCmdState {
 };
 }  // namespace syncval_state
 
-void InitSubpassContexts(VkQueueFlags queue_flags, const vvl::RenderPass &rp_state, const AccessContext *external_context,
-                         std::vector<AccessContext> &subpass_contexts);
+std::unique_ptr<AccessContext[]> InitSubpassContexts(VkQueueFlags queue_flags, const vvl::RenderPass &rp_state,
+                                                     const AccessContext *external_context);
 
 class RenderPassAccessContext {
   public:
@@ -121,10 +121,11 @@ class RenderPassAccessContext {
     void RecordNextSubpass(ResourceUsageTag store_tag, ResourceUsageTag barrier_tag, ResourceUsageTag load_tag);
     void RecordEndRenderPass(AccessContext *external_context, ResourceUsageTag store_tag, ResourceUsageTag barrier_tag);
 
-    AccessContext &CurrentContext() { return subpass_contexts_[current_subpass_]; }
-    const AccessContext &CurrentContext() const { return subpass_contexts_[current_subpass_]; }
-    const std::vector<AccessContext> &GetContexts() const { return subpass_contexts_; }
     uint32_t GetCurrentSubpass() const { return current_subpass_; }
+    AccessContext &CurrentContext();
+    const AccessContext &CurrentContext() const;
+    vvl::span<const AccessContext> GetSubpassContexts() const;
+    vvl::span<AccessContext> GetSubpassContexts();
     const vvl::RenderPass *GetRenderPassState() const { return rp_state_; }
     AccessContext *CreateStoreResolveProxy() const;
 
@@ -132,6 +133,6 @@ class RenderPassAccessContext {
     const vvl::RenderPass *rp_state_;
     const VkRect2D render_area_;
     uint32_t current_subpass_;
-    std::vector<AccessContext> subpass_contexts_;
+    std::unique_ptr<AccessContext[]> subpass_contexts_;
     AttachmentViewGenVector attachment_views_;
 };

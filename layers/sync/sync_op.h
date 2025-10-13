@@ -344,26 +344,19 @@ struct BatchBarrierOp {
 // Allow keep track of the exec contexts replay state
 class ReplayState {
   public:
+    // A minimal subset of the functionality present in the RenderPassAccessContext. Since the accesses are recorded in the
+    // first_use information of the recorded access contexts, s.t. all we need to support is the barrier/resolve operations
     struct RenderPassReplayState {
-        // A minimal subset of the functionality present in the RenderPassAccessContext. Since the accesses are recorded in the
-        // first_use information of the recorded access contexts, s.t. all we need to support is the barrier/resolve operations
-        RenderPassReplayState() { Reset(); }
         AccessContext *Begin(VkQueueFlags queue_flags, const SyncOpBeginRenderPass &begin_op_,
                              const AccessContext &external_context);
         AccessContext *Next();
         void End(AccessContext &external_context);
+        vvl::span<AccessContext> GetSubpassContexts();
 
         const SyncOpBeginRenderPass *begin_op = nullptr;
         const AccessContext *replay_context = nullptr;
         uint32_t subpass = VK_SUBPASS_EXTERNAL;
-        std::vector<AccessContext> subpass_contexts;
-        void Reset() {
-            begin_op = nullptr;
-            replay_context = nullptr;
-            subpass = VK_SUBPASS_EXTERNAL;
-            subpass_contexts.clear();
-        }
-        operator bool() const { return begin_op != nullptr; }
+        std::unique_ptr<AccessContext[]> subpass_contexts;
     };
 
     bool ValidateFirstUse();

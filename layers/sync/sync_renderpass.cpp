@@ -84,15 +84,15 @@ class UpdateStateResolveAction {
     const ResourceUsageTag tag_;
 };
 
-void InitSubpassContexts(VkQueueFlags queue_flags, const vvl::RenderPass &rp_state, const AccessContext *external_context,
-                         std::vector<AccessContext> &subpass_contexts) {
-    const auto &create_info = rp_state.create_info;
+std::unique_ptr<AccessContext[]> InitSubpassContexts(VkQueueFlags queue_flags, const vvl::RenderPass &rp_state,
+                                                     const AccessContext *external_context) {
+    const uint32_t subpass_count = rp_state.create_info.subpassCount;
+    auto subpass_contexts = std::make_unique<AccessContext[]>(subpass_count);
     // Add this for all subpasses here so that they exsist during next subpass validation
-    subpass_contexts.clear();
-    subpass_contexts.reserve(create_info.subpassCount);
-    for (uint32_t pass = 0; pass < create_info.subpassCount; pass++) {
-        subpass_contexts.emplace_back(pass, queue_flags, rp_state.subpass_dependencies, subpass_contexts, external_context);
+    for (uint32_t pass = 0; pass < subpass_count; pass++) {
+        subpass_contexts[pass].InitFrom(pass, queue_flags, rp_state.subpass_dependencies, subpass_contexts.get(), external_context);
     }
+    return subpass_contexts;
 }
 
 static SyncAccessIndex GetLoadOpUsageIndex(VkAttachmentLoadOp load_op, syncval_state::AttachmentType type) {
@@ -131,7 +131,8 @@ static SyncAccessIndex DepthStencilLoadUsage(VkAttachmentLoadOp load_op) {
 // Caller must manage returned pointer
 static AccessContext *CreateStoreResolveProxyContext(const AccessContext &context, const vvl::RenderPass &rp_state,
                                                      uint32_t subpass, const AttachmentViewGenVector &attachment_views) {
-    auto *proxy = new AccessContext(context);
+    auto *proxy = new AccessContext();
+    proxy->InitFrom(context);
     RenderPassAccessContext::UpdateAttachmentResolveAccess(rp_state, attachment_views, subpass, kInvalidTag, *proxy);
     RenderPassAccessContext::UpdateAttachmentStoreAccess(rp_state, attachment_views, subpass, kInvalidTag, *proxy);
     return proxy;
@@ -708,7 +709,7 @@ bool RenderPassAccessContext::ValidateNextSubpass(const CommandBufferAccessConte
     skip |= ValidateStoreOperation(cb_context, command);
 
     const auto next_subpass = current_subpass_ + 1;
-    if (next_subpass >= subpass_contexts_.size()) {
+    if (next_subpass >= rp_state_->create_info.subpassCount) {
         return skip;
     }
     const auto &next_context = subpass_contexts_[next_subpass];
@@ -717,7 +718,8 @@ bool RenderPassAccessContext::ValidateNextSubpass(const CommandBufferAccessConte
         // To avoid complex (and buggy) duplication of the affect of layout transitions on load operations, we'll record them
         // on a copy of the (empty) next context.
         // Note: The resource access map should be empty so hopefully this copy isn't too horrible from a perf POV.
-        AccessContext temp_context(next_context);
+        AccessContext temp_context;
+        temp_context.InitFrom(next_context);
         RecordLayoutTransitions(*rp_state_, next_subpass, attachment_views_, kInvalidTag, temp_context);
         skip |= ValidateLoadOperation(cb_context, temp_context, *rp_state_, render_area_, next_subpass, attachment_views_, command);
     }
@@ -796,12 +798,12 @@ bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const Comman
 
 void RenderPassAccessContext::RecordLayoutTransitions(const ResourceUsageTag tag) {
     // Add layout transitions...
-    RecordLayoutTransitions(*rp_state_, current_subpass_, attachment_views_, tag, subpass_contexts_[current_subpass_]);
+    RecordLayoutTransitions(*rp_state_, current_subpass_, attachment_views_, tag, CurrentContext());
 }
 
 void RenderPassAccessContext::RecordLoadOperations(const ResourceUsageTag tag) {
     const auto *attachment_ci = rp_state_->create_info.pAttachments;
-    auto &subpass_context = subpass_contexts_[current_subpass_];
+    auto &subpass_context = CurrentContext();
 
     for (uint32_t i = 0; i < rp_state_->create_info.attachmentCount; i++) {
         if (rp_state_->attachment_first_subpass[i] == current_subpass_) {
@@ -855,12 +857,12 @@ RenderPassAccessContext::RenderPassAccessContext(const vvl::RenderPass &rp_state
                                                  const AccessContext *external_context)
     : rp_state_(&rp_state), render_area_(render_area), current_subpass_(0U), attachment_views_() {
     // Add this for all subpasses here so that they exist during next subpass validation
-    InitSubpassContexts(queue_flags, rp_state, external_context, subpass_contexts_);
+    subpass_contexts_ = InitSubpassContexts(queue_flags, rp_state, external_context);
     attachment_views_ = CreateAttachmentViewGen(render_area, attachment_views);
 }
 void RenderPassAccessContext::RecordBeginRenderPass(const ResourceUsageTag barrier_tag, const ResourceUsageTag load_tag) {
     assert(0 == current_subpass_);
-    AccessContext &current_context = subpass_contexts_[current_subpass_];
+    AccessContext &current_context = CurrentContext();
     current_context.SetStartTag(barrier_tag);
 
     RecordLayoutTransitions(barrier_tag);
@@ -873,13 +875,13 @@ void RenderPassAccessContext::RecordNextSubpass(const ResourceUsageTag store_tag
     UpdateAttachmentResolveAccess(*rp_state_, attachment_views_, current_subpass_, store_tag, CurrentContext());
     UpdateAttachmentStoreAccess(*rp_state_, attachment_views_, current_subpass_, store_tag, CurrentContext());
 
-    if (current_subpass_ + 1 >= subpass_contexts_.size()) {
+    if (current_subpass_ + 1 >= rp_state_->create_info.subpassCount) {
         return;
     }
     // Move to the next sub-command for the new subpass. The resolve and store are logically part of the previous
     // subpass, so their tag needs to be different from the layout and load operations below.
     current_subpass_++;
-    AccessContext &current_context = subpass_contexts_[current_subpass_];
+    AccessContext &current_context = CurrentContext();
     current_context.SetStartTag(barrier_tag);
 
     RecordLayoutTransitions(barrier_tag);
@@ -893,7 +895,7 @@ void RenderPassAccessContext::RecordEndRenderPass(AccessContext *external_contex
     UpdateAttachmentStoreAccess(*rp_state_, attachment_views_, current_subpass_, store_tag, CurrentContext());
 
     // Export the accesses from the renderpass...
-    external_context->ResolveChildContexts(subpass_contexts_);
+    external_context->ResolveChildContexts(GetSubpassContexts());
 
     // Add the "finalLayout" transitions to external
     // Get them from where there we're hidding in the extra entry.
@@ -922,6 +924,24 @@ void RenderPassAccessContext::RecordEndRenderPass(AccessContext *external_contex
             pending_barriers.Apply(barrier_tag);
         }
     }
+}
+
+AccessContext &RenderPassAccessContext::CurrentContext() {
+    assert(current_subpass_ < rp_state_->create_info.subpassCount);
+    return subpass_contexts_[current_subpass_];
+}
+
+const AccessContext &RenderPassAccessContext::CurrentContext() const {
+    assert(current_subpass_ < rp_state_->create_info.subpassCount);
+    return subpass_contexts_[current_subpass_];
+}
+
+vvl::span<const AccessContext> RenderPassAccessContext::GetSubpassContexts() const {
+    return vvl::make_span<const AccessContext>(subpass_contexts_.get(), rp_state_->create_info.subpassCount);
+}
+
+vvl::span<AccessContext> RenderPassAccessContext::GetSubpassContexts() {
+    return vvl::make_span<AccessContext>(subpass_contexts_.get(), rp_state_->create_info.subpassCount);
 }
 
 void syncval_state::BeginRenderingCmdState::AddRenderingInfo(const SyncValidator &state, const VkRenderingInfo &rendering_info) {
