@@ -412,6 +412,10 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
             }
         }
 
+        if (enabled_features.pipelineFragmentShadingRate) {
+            skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR, vuid);
+        }
+
         const VkPrimitiveTopology topology = last_bound_state.GetRasterizationInputTopology();
         if (IsLineTopology(topology)) {
             skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_LINE_WIDTH, vuid);
@@ -436,10 +440,6 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
         if (fragment_shader_bound) {
             if (enabled_features.logicOp) {
                 skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT, vuid);
-            }
-            if (enabled_features.pipelineFragmentShadingRate) {
-                skip |=
-                    ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR, vuid);
             }
             if (last_bound_state.IsLogicOpEnabled()) {
                 skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_LOGIC_OP_EXT, vuid);
