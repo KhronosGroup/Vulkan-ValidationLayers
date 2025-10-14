@@ -393,12 +393,12 @@ TEST_F(NegativeShaderObject, InvalidStage) {
     createInfo.pName = "main";
 
     VkShaderEXT shader;
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderCreateInfoEXT-stage-parameter");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderCreateInfoEXT-stage-parameter");  // skip stateless
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-stage-08425");
     vk::CreateShadersEXT(*m_device, 1u, &createInfo, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderCreateInfoEXT-stage-parameter");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderCreateInfoEXT-stage-parameter");  // skip stateless
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-stage-08426");
 
     createInfo.stage = VK_SHADER_STAGE_CLUSTER_CULLING_BIT_HUAWEI;
@@ -2262,7 +2262,6 @@ TEST_F(NegativeShaderObject, MissingCmdSetViewportWScalingNV) {
     m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewportCount-04138");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDraw-None-08636");
     vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 

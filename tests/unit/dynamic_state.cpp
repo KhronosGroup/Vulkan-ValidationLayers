@@ -2332,7 +2332,7 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
                                                            VK_FORMAT_R32G32B32A32_SFLOAT,
                                                            0};
         m_errorMonitor->SetDesiredError("VUID-VkVertexInputAttributeDescription2EXT-binding-06229");
-        m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdSetVertexInputEXT-binding-04793");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdSetVertexInputEXT-binding-04793");
         vk::CmdSetVertexInputEXT(m_command_buffer, 1, &binding, 1, &attribute);
         m_errorMonitor->VerifyFound();
     }

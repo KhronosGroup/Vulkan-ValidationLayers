@@ -301,6 +301,7 @@ TEST_F(NegativeMesh, RuntimeSpirv) {
                OpFunctionEnd
     )";
 
+    // lazy way to not check limits
     m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-MeshEXT-07115");
     m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-MeshEXT-07116");
     VkShaderObj task_shader(this, task_src.c_str(), VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM);

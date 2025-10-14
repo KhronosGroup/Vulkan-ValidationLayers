@@ -929,6 +929,7 @@ TEST_F(NegativeFragmentShadingRate, Attachments) {
     VkRenderPass rp;
 
     rpci.flags = VK_RENDER_PASS_CREATE_TRANSFORM_BIT_QCOM;
+    // skip stateless so we can test core checks
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkRenderPassCreateInfo2-flags-parameter");
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassCreateInfo2-flags-04521");
     vk::CreateRenderPass2KHR(device(), &rpci, NULL, &rp);

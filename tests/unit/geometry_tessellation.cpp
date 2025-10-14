@@ -81,6 +81,7 @@ TEST_F(NegativeGeometryTessellation, GeometryShaderEnabled) {
     }
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    // ignore statless validation
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderModuleCreateInfo-pCode-08740");
     VkShaderObj gs(this, kGeometryMinimalGlsl, VK_SHADER_STAGE_GEOMETRY_BIT);
 
@@ -126,6 +127,7 @@ TEST_F(NegativeGeometryTessellation, TessellationShaderEnabled) {
         }
     )glsl";
 
+    // ignore statless validation
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderModuleCreateInfo-pCode-08740");
     VkShaderObj tcs(this, tcsSource, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderModuleCreateInfo-pCode-08740");
@@ -1189,6 +1191,7 @@ TEST_F(NegativeGeometryTessellation, PipelineTessellationPointSize) {
         }
     )glsl";
 
+    // ignore statless validation
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderModuleCreateInfo-pCode-08740");
     VkShaderObj tcs(this, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderModuleCreateInfo-pCode-08740");
@@ -1293,6 +1296,7 @@ TEST_F(NegativeGeometryTessellation, GeometryStreamsCapability) {
                OpFunctionEnd
     )glsl";
 
+    // ignore statless validation
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderModuleCreateInfo-pCode-08740");
     VkShaderObj gs(this, geom_src, VK_SHADER_STAGE_GEOMETRY_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 

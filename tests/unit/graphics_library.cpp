@@ -1509,6 +1509,7 @@ TEST_F(NegativeGraphicsLibrary, BindEmptyDS) {
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = pipeline_layout;
     exe_pipe_ci.renderPass = RenderPass();
+    // TODO - shouldn't need an invalid pipeline to get to the next VU
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkGraphicsPipelineCreateInfo-pLibraries-06681");
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());

@@ -106,17 +106,21 @@ VkRenderPass VkArmBestPracticesLayerTest::CreateRenderPass(VkFormat format, VkAt
 
 TEST_F(VkArmBestPracticesLayerTest, TooManySamples) {
     TEST_DESCRIPTION("Test for multisampled images with too many samples");
-
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
     RETURN_IF_SKIP(InitState());
-
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-Arm-vkCreateImage-too-large-sample-count");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-samples-02258");
 
     auto image_ci = vkt::Image::ImageCreateInfo2D(1920, 1080, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
                                                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT);
     image_ci.samples = VK_SAMPLE_COUNT_8_BIT;
+
+    VkImageFormatProperties img_limits;
+    VkResult res = GPDIFPHelper(Gpu(), &image_ci, &img_limits);
+    if (res != VK_SUCCESS || (img_limits.sampleCounts & VK_SAMPLE_COUNT_8_BIT) == 0) {
+        GTEST_SKIP() << "Required format not supported";
+    }
+
     VkImage image = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-Arm-vkCreateImage-too-large-sample-count");
     vk::CreateImage(device(), &image_ci, nullptr, &image);
     m_errorMonitor->VerifyFound();
 
@@ -702,7 +706,7 @@ TEST_F(VkArmBestPracticesLayerTest, DepthPrePassUsage) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkCmdEndRenderPass-depth-pre-pass-usage");
-    m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkCmdEndRenderPass-redundant-attachment-on-tile");
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkCmdEndRenderPass-redundant-attachment-on-tile");
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_depth_only);
     for (size_t i = 0; i < 30; i++) vk::CmdDrawIndexed(m_command_buffer, indices.size(), 1000, 0, 0, 0);
@@ -760,8 +764,12 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadAlignmentTest
 
         CreateComputePipelineHelper pipe(*this);
         pipe.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
-        m_errorMonitor->SetAllowedFailureMsg("BestPractices-Arm-vkCreateComputePipelines-compute-work-group-size");
+        m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
+                                             "BestPractices-Arm-vkCreateComputePipelines-compute-thread-group-alignment");
+        m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
+                                             "BestPractices-Arm-vkCreateComputePipelines-compute-work-group-size");
         pipe.CreateComputePipeline();
+        m_errorMonitor->VerifyFound();
     }
 }
 
@@ -793,7 +801,8 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadCountTest) {
         )glsl";
         CreateComputePipelineHelper pipe(*this);
         pipe.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
-        m_errorMonitor->SetAllowedFailureMsg("BestPractices-Arm-vkCreateComputePipelines-compute-thread-group-alignment");
+        m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
+                                             "BestPractices-Arm-vkCreateComputePipelines-compute-thread-group-alignment");
         pipe.CreateComputePipeline();
     }
 
@@ -949,6 +958,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
     RETURN_IF_SKIP(InitState());
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-RenderPass-redundant-store");
+    // TODO - remove, test may need to be rewritten
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkCmdEndRenderPass-redundant-attachment-on-tile");
 
     const VkFormat FMT = VK_FORMAT_R8G8B8A8_UNORM;
@@ -961,6 +971,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
     renderpasses.push_back(CreateRenderPass(FMT, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE));
     framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, view0, renderpasses[0]));
 
+    // TODO - remove, test may need to be rewritten
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkBindImageMemory-non-lazy-transient-image");
     auto img = std::unique_ptr<vkt::Image>(new vkt::Image(
         *m_device, WIDTH, HEIGHT, FMT, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
@@ -1124,10 +1135,6 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
     RETURN_IF_SKIP(InitState());
 
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-RenderPass-inefficient-clear");
-
-    m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkCmdBeginRenderPass-attachment-needs-readback");
-
     const VkFormat FMT = VK_FORMAT_R8G8B8A8_UNORM;
     const uint32_t WIDTH = 512, HEIGHT = 512;
 
@@ -1181,6 +1188,9 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
     subresource_range.levelCount = VK_REMAINING_MIP_LEVELS;
     vk::CmdClearColorImage(m_command_buffer, image->handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_color_value, 1, &subresource_range);
 
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-RenderPass-inefficient-clear");
+    // skip this warning to see the next warning
+    m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkCmdBeginRenderPass-attachment-needs-readback");
     m_command_buffer.BeginRenderPass(rp, fb, 1, 1, 3, clear_values);
 
     VkViewport viewport;
@@ -1362,8 +1372,8 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
     RETURN_IF_SKIP(InitState());
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-RenderPass-blitimage-loadopload");
-    m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkBindImageMemory-small-dedicated-allocation");
     // On tiled renderers, this can also trigger a warning about LOAD_OP_LOAD causing a readback
+    m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkBindImageMemory-small-dedicated-allocation");
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkCmdBeginRenderPass-attachment-needs-readback");
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkCmdEndRenderPass-redundant-attachment-on-tile");
     m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);

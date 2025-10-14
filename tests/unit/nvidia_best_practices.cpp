@@ -570,7 +570,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, CreatePipelineLayout_LargePipelineLayout)
     }
 }
 
-TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_SwitchTessGeometryMesh) {
+TEST_F(VkNvidiaBestPracticesLayerTest, BindPipelineSwitchTessGeometryMesh) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
@@ -612,12 +612,13 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_SwitchTessGeometryMesh) {
     m_command_buffer.Begin();
 
     {
-        m_errorMonitor->SetAllowedFailureMsg("BestPractices-Pipeline-SortAndBind");
+        m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-Pipeline-SortAndBind");
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-NVIDIA-BindPipeline-SwitchTessGeometryMesh");
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vsPipe);
         m_errorMonitor->Finish();
     }
     {
+        // will trigger every loop, but SwitchTessGeometryMesh will only trigger once
         m_errorMonitor->SetAllowedFailureMsg("BestPractices-Pipeline-SortAndBind");
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-NVIDIA-BindPipeline-SwitchTessGeometryMesh");
         for (int i = 0; i < 10; ++i) {
@@ -1133,7 +1134,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipelineZcullDirectionSubresource) {
     m_command_buffer.End();
 }
 
-TEST_F(VkNvidiaBestPracticesLayerTest, ClearColor_NotCompressed) {
+TEST_F(VkNvidiaBestPracticesLayerTest, ClearColorNotCompressed) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
@@ -1142,7 +1143,6 @@ TEST_F(VkNvidiaBestPracticesLayerTest, ClearColor_NotCompressed) {
     auto set_desired = [this] {
         m_errorMonitor->Finish();
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-NVIDIA-ClearColor-NotCompressed");
-        m_errorMonitor->SetAllowedFailureMsg("BestPractices-DrawState-ClearCmdBeforeDraw");
     };
 
     vkt::Image image(*m_device, m_width, m_height, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);

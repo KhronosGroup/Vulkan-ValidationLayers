@@ -414,16 +414,8 @@ TEST_F(VkBestPracticesLayerTest, MSImageRequiresMemory) {
 
 TEST_F(VkBestPracticesLayerTest, AttachmentShouldNotBeTransient) {
     TEST_DESCRIPTION("Test for non-lazy multisampled images");
-
     RETURN_IF_SKIP(InitBestPracticesFramework());
     RETURN_IF_SKIP(InitState());
-
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
-                                         "BestPractices-vkCreateFramebuffer-attachment-should-not-be-transient");
-
-    m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkBindImageMemory-small-dedicated-allocation");
-    m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkBindImageMemory-non-lazy-transient-image");
-    m_errorMonitor->SetAllowedFailureMsg("BestPractices-AMD-vkImage-AvoidGeneral");
 
     VkAttachmentDescription attachment{};
     attachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -447,8 +439,9 @@ TEST_F(VkBestPracticesLayerTest, AttachmentShouldNotBeTransient) {
     vkt::Image image(*m_device, image_info, vkt::set_layout);
     vkt::ImageView image_view = image.CreateView();
 
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
+                                         "BestPractices-vkCreateFramebuffer-attachment-should-not-be-transient");
     vkt::Framebuffer fb(*m_device, rp, 1, &image_view.handle(), 1920, 1080);
-
     m_errorMonitor->VerifyFound();
 }
 
@@ -688,8 +681,6 @@ TEST_F(VkBestPracticesLayerTest, TripleBufferingTest) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(InitBestPracticesFramework());
     RETURN_IF_SKIP(InitState());
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
-                                         "BestPractices-vkCreateSwapchainKHR-suboptimal-swapchain-image-count");
     RETURN_IF_SKIP(InitSurface());
     InitSwapchainInfo();
 
@@ -728,10 +719,14 @@ TEST_F(VkBestPracticesLayerTest, TripleBufferingTest) {
     swapchain_create_info.clipped = VK_FALSE;
     swapchain_create_info.oldSwapchain = 0;
 
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
+                                         "BestPractices-vkCreateSwapchainKHR-suboptimal-swapchain-image-count");
+    // skip core checks
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCreateInfoKHR-presentMode-02839");
     m_swapchain.Init(*m_device, swapchain_create_info);
     m_errorMonitor->VerifyFound();
 
+    // Lazy way to not query
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCreateInfoKHR-presentMode-02839");
     swapchain_create_info.minImageCount = 3;
     m_swapchain.Init(*m_device, swapchain_create_info);
@@ -790,14 +785,14 @@ TEST_F(VkBestPracticesLayerTest, SwapchainCreationTest) {
 
     // present mode might not be supported
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCreateInfoKHR-presentMode-01281");
-
+    // Lazy way to not query
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCreateInfoKHR-presentMode-02839");
     m_swapchain.Init(*m_device, swapchain_create_info);
     m_errorMonitor->VerifyFound();
 
-    swapchain_create_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
-
+    // Lazy way to not query
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCreateInfoKHR-presentMode-02839");
+    swapchain_create_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
     m_swapchain.Init(*m_device, swapchain_create_info);
 }
 
@@ -1047,7 +1042,7 @@ TEST_F(VkBestPracticesLayerTest, TransitionFromUndefinedToReadOnly) {
 
     vk::CmdClearColorImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, &color_clear_value, 1, &clear_range);
 
-    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdPipelineBarrier-pImageMemoryBarriers-02820");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdPipelineBarrier-pImageMemoryBarriers-02820");  // skip core checks
     m_errorMonitor->SetDesiredWarning("BestPractices-ImageMemoryBarrier-TransitionUndefinedToReadOnly");
     vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr,
                            0, nullptr, 1, &img_barrier);
@@ -1656,7 +1651,7 @@ TEST_F(VkBestPracticesLayerTest, ImageMemoryBarrierAccessLayoutCombinations) {
 
         img_barrier2.dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
         img_barrier2.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageMemoryBarrier2-dstAccessMask-03903");
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageMemoryBarrier2-dstAccessMask-03903");  // skip core checks
         m_errorMonitor->SetDesiredWarning("BestPractices-ImageBarrierAccessLayout");
         m_command_buffer.BarrierKHR(img_barrier2);
         m_errorMonitor->VerifyFound();
@@ -1664,7 +1659,7 @@ TEST_F(VkBestPracticesLayerTest, ImageMemoryBarrierAccessLayoutCombinations) {
         // make sure bits above UINT32_MAX are detected
         img_barrier2.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
         img_barrier2.dstAccessMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT;
-        m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageMemoryBarrier2-dstAccessMask-03907");
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageMemoryBarrier2-dstAccessMask-03907");  // skip core checks
         m_errorMonitor->SetDesiredWarning("BestPractices-ImageBarrierAccessLayout");
         m_command_buffer.BarrierKHR(img_barrier2);
         m_errorMonitor->VerifyFound();
@@ -1710,7 +1705,7 @@ TEST_F(VkBestPracticesLayerTest, NoCreateSwapchainPresentModes) {
 
     RETURN_IF_SKIP(InitState());
     RETURN_IF_SKIP(InitSurface());
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCreateInfoKHR-presentMode-02839");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCreateInfoKHR-presentMode-02839");  // skip core checks
     m_errorMonitor->SetDesiredWarning("BestPractices-vkCreateSwapchainKHR-no-VkSwapchainPresentModesCreateInfoKHR-provided");
     m_swapchain = CreateSwapchain(m_surface.Handle(), VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
     m_errorMonitor->VerifyFound();

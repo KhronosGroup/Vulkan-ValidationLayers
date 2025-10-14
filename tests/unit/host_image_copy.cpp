@@ -1525,6 +1525,7 @@ TEST_F(NegativeHostImageCopy, CopyImageToImageAspectMask2) {
 
     // No aspect plane bits
     image_copy_2.srcSubresource.aspectMask = VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT;
+    // Skip stateless to test core checks
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageSubresourceLayers-aspectMask-parameter");
     m_errorMonitor->SetDesiredError("VUID-VkImageSubresourceLayers-aspectMask-02247");
     // Also get aspect not present in image
