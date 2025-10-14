@@ -5387,6 +5387,103 @@ TEST_F(NegativeDebugPrintf, DescriptorBufferMixClassic) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDebugPrintf, DescriptorBufferMultipleCommandBuffers) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorBuffer);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+
+    VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(descriptor_buffer_properties);
+
+    vkt::Buffer buffer1_data(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer buffer2_data(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    uint32_t *data = (uint32_t *)buffer1_data.Memory().Map();
+    data[0] = 8;
+    data[1] = 12;
+    data[2] = 1;
+    data = (uint32_t *)buffer2_data.Memory().Map();
+    data[0] = 7;
+    data[1] = 3;
+    data[2] = 1;
+
+    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    vkt::DescriptorSetLayout ds_layout(*m_device, binding, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
+
+    VkPipelineLayoutCreateInfo pipe_layout_ci = vku::InitStructHelper();
+    pipe_layout_ci.setLayoutCount = 1;
+    pipe_layout_ci.pSetLayouts = &ds_layout.handle();
+    vkt::PipelineLayout pipeline_layout(*m_device, pipe_layout_ci);
+
+    VkDeviceSize ds_layout_size = ds_layout.GetDescriptorBufferSize();
+    ds_layout_size = Align(ds_layout_size, descriptor_buffer_properties.descriptorBufferOffsetAlignment);
+    vkt::Buffer descriptor_buffer(*m_device, ds_layout_size * 2, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT,
+                                  vkt::device_address);
+
+    uint8_t *mapped_descriptor_data = (uint8_t *)descriptor_buffer.Memory().Map();
+    {
+        vkt::DescriptorGetInfo get_info(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer1_data, 16);
+        vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data);
+    }
+    {
+        vkt::DescriptorGetInfo get_info(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer2_data, 16);
+        vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize,
+                             mapped_descriptor_data + ds_layout_size);
+    }
+
+    const char *cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        layout (set = 0, binding = 0) buffer SSBO_0 {
+            uint a;
+            uint b;
+            uint c;
+        };
+
+        void main() {
+            c = a + b;
+            debugPrintfEXT("c == %u\n", c);
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    VkDescriptorBufferBindingInfoEXT descriptor_buffer_binding_info = vku::InitStructHelper();
+    descriptor_buffer_binding_info.address = descriptor_buffer.Address();
+    descriptor_buffer_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+    uint32_t buffer_index = 0;
+    VkDeviceSize buffer_offset = 0;
+
+    vkt::CommandBuffer cb0(*m_device, m_command_pool);
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
+
+    cb0.Begin();
+    vk::CmdBindPipeline(cb0, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorBuffersEXT(cb0, 1, &descriptor_buffer_binding_info);
+    vk::CmdSetDescriptorBufferOffsetsEXT(cb0, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &buffer_index, &buffer_offset);
+    vk::CmdDispatch(cb0, 1, 1, 1);
+    cb0.End();
+    cb1.Begin();
+    vk::CmdBindPipeline(cb1, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorBuffersEXT(cb1, 1, &descriptor_buffer_binding_info);
+    buffer_offset = ds_layout_size;
+    vk::CmdSetDescriptorBufferOffsetsEXT(cb1, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &buffer_index, &buffer_offset);
+    vk::CmdDispatch(cb1, 1, 1, 1);
+    cb1.End();
+
+    m_errorMonitor->SetDesiredInfo("c == 20");
+    m_errorMonitor->SetDesiredInfo("c == 10");
+    m_default_queue->Submit({cb0, cb1});
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDebugPrintf, DrawMeshTasksIndirectCountEXT) {
     TEST_DESCRIPTION("Test debug printf in mesh shaders.");
     SetTargetApiVersion(VK_API_VERSION_1_2);

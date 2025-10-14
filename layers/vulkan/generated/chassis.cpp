@@ -7451,6 +7451,53 @@ VKAPI_ATTR VkResult VKAPI_CALL SignalSemaphore(VkDevice device, const VkSemaphor
     return result;
 }
 
+VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetBufferDeviceAddress, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkGetBufferDeviceAddress");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateGetBufferDeviceAddress]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateGetBufferDeviceAddress(device, pInfo, error_obj);
+            if (skip) return 0;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetBufferDeviceAddress);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkGetBufferDeviceAddress");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordGetBufferDeviceAddress]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordGetBufferDeviceAddress(device, pInfo, record_obj);
+        }
+    }
+    VkDeviceAddress result;
+    {
+        VVL_ZoneScopedN("Dispatch_vkGetBufferDeviceAddress");
+        result = device_dispatch->GetBufferDeviceAddress(device, pInfo);
+    }
+    record_obj.device_address = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkGetBufferDeviceAddress");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetBufferDeviceAddress]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordGetBufferDeviceAddress(device, pInfo, record_obj);
+        }
+    }
+    return result;
+}
+
 VKAPI_ATTR uint64_t VKAPI_CALL GetBufferOpaqueCaptureAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) {
     VVL_ZoneScoped;
 
@@ -15331,6 +15378,53 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitForPresentKHR(VkDevice device, VkSwapchainKHR
     return result;
 }
 
+VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetBufferDeviceAddressKHR, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkGetBufferDeviceAddressKHR");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateGetBufferDeviceAddressKHR]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateGetBufferDeviceAddressKHR(device, pInfo, error_obj);
+            if (skip) return 0;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetBufferDeviceAddressKHR);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkGetBufferDeviceAddressKHR");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordGetBufferDeviceAddressKHR]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordGetBufferDeviceAddressKHR(device, pInfo, record_obj);
+        }
+    }
+    VkDeviceAddress result;
+    {
+        VVL_ZoneScopedN("Dispatch_vkGetBufferDeviceAddressKHR");
+        result = device_dispatch->GetBufferDeviceAddressKHR(device, pInfo);
+    }
+    record_obj.device_address = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkGetBufferDeviceAddressKHR");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetBufferDeviceAddressKHR]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordGetBufferDeviceAddressKHR(device, pInfo, record_obj);
+        }
+    }
+    return result;
+}
+
 VKAPI_ATTR uint64_t VKAPI_CALL GetBufferOpaqueCaptureAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) {
     VVL_ZoneScoped;
 
@@ -23193,6 +23287,53 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateMetalSurfaceEXT(VkInstance instance, const 
 }
 
 #endif  // VK_USE_PLATFORM_METAL_EXT
+VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetBufferDeviceAddressEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkGetBufferDeviceAddressEXT");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateGetBufferDeviceAddressEXT]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateGetBufferDeviceAddressEXT(device, pInfo, error_obj);
+            if (skip) return 0;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetBufferDeviceAddressEXT);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkGetBufferDeviceAddressEXT");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordGetBufferDeviceAddressEXT]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordGetBufferDeviceAddressEXT(device, pInfo, record_obj);
+        }
+    }
+    VkDeviceAddress result;
+    {
+        VVL_ZoneScopedN("Dispatch_vkGetBufferDeviceAddressEXT");
+        result = device_dispatch->GetBufferDeviceAddressEXT(device, pInfo);
+    }
+    record_obj.device_address = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkGetBufferDeviceAddressEXT");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetBufferDeviceAddressEXT]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordGetBufferDeviceAddressEXT(device, pInfo, record_obj);
+        }
+    }
+    return result;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixPropertiesNV(VkPhysicalDevice physicalDevice,
                                                                               uint32_t* pPropertyCount,
                                                                               VkCooperativeMatrixPropertiesNV* pProperties) {
@@ -25641,52 +25782,6 @@ VKAPI_ATTR void VKAPI_CALL GetDescriptorEXT(VkDevice device, const VkDescriptorG
             }
             auto lock = vo->WriteLock();
             vo->PostCallRecordGetDescriptorEXT(device, pDescriptorInfo, dataSize, pDescriptor, record_obj);
-        }
-    }
-}
-
-VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
-                                                       const VkDescriptorBufferBindingInfoEXT* pBindingInfos) {
-    VVL_ZoneScoped;
-
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
-    bool skip = false;
-    ErrorObject error_obj(vvl::Func::vkCmdBindDescriptorBuffersEXT,
-                          VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
-    {
-        VVL_ZoneScopedN("PreCallValidate_vkCmdBindDescriptorBuffersEXT");
-        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdBindDescriptorBuffersEXT]) {
-            if (!vo) {
-                continue;
-            }
-            auto lock = vo->ReadLock();
-            skip |= vo->PreCallValidateCmdBindDescriptorBuffersEXT(commandBuffer, bufferCount, pBindingInfos, error_obj);
-            if (skip) return;
-        }
-    }
-    RecordObject record_obj(vvl::Func::vkCmdBindDescriptorBuffersEXT);
-    {
-        VVL_ZoneScopedN("PreCallRecord_vkCmdBindDescriptorBuffersEXT");
-        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCmdBindDescriptorBuffersEXT]) {
-            if (!vo) {
-                continue;
-            }
-            auto lock = vo->WriteLock();
-            vo->PreCallRecordCmdBindDescriptorBuffersEXT(commandBuffer, bufferCount, pBindingInfos, record_obj);
-        }
-    }
-    {
-        VVL_ZoneScopedN("Dispatch_vkCmdBindDescriptorBuffersEXT");
-        device_dispatch->CmdBindDescriptorBuffersEXT(commandBuffer, bufferCount, pBindingInfos);
-    }
-    {
-        VVL_ZoneScopedN("PostCallRecord_vkCmdBindDescriptorBuffersEXT");
-        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdBindDescriptorBuffersEXT]) {
-            if (!vo) {
-                continue;
-            }
-            auto lock = vo->WriteLock();
-            vo->PostCallRecordCmdBindDescriptorBuffersEXT(commandBuffer, bufferCount, pBindingInfos, record_obj);
         }
     }
 }

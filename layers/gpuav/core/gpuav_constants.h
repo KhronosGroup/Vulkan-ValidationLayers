@@ -29,6 +29,10 @@ inline constexpr uint32_t indices_count = 1u << 13;  // 8192
 // This is required because we still need to bind our descriptors regardless.
 inline constexpr uint32_t invalid_index_command = indices_count - 1;
 
+// TODO - Need to develop a proper way to gather ALL binding between shader instrumentation and command validation
+// For now we get enough for DebugPrintf
+inline constexpr uint32_t total_internal_descriptors = 64;
+
 // Stream Output Buffer Offsets
 //
 // The following values provide offsets into the output buffer struct

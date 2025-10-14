@@ -140,6 +140,17 @@ struct CreatePipelineLayout {
     VkPipelineLayoutCreateInfo modified_create_info;
 };
 
+// Goal is to reduce cost on CoreChecks as GPU-AV should only pay the cost to resize this
+struct CmdBindDescriptorBuffers {
+    std::vector<vku::safe_VkDescriptorBufferBindingInfoEXT> modified_binding_infos;
+    const VkDescriptorBufferBindingInfoEXT* pBindInfos = nullptr;
+
+    CmdBindDescriptorBuffers(uint32_t binding_count, const VkDescriptorBufferBindingInfoEXT* binding_info) {
+        pBindInfos = binding_info;
+        modified_binding_infos.resize(binding_count);
+    }
+};
+
 struct ShaderBinaryData {
     VkShaderEXT modified_shader_handle;
 };

@@ -84,4 +84,6 @@ For Classic descriptors we use the dynamic offset in `vkCmdBindDescriptorSets` t
 
 ## What we decided
 
-TODO :smile:
+So after **lots** of discussions, we found the easiest thing to do is just have our own Descriptor Buffer and bind it ourselves. Those who read closly above might have noticed the concern around `maxResourceDescriptorBufferBindings`, well it seems that [very few](https://vulkan.gpuinfo.org/displayextensionproperty.php?platform=all&extensionname=VK_EXT_descriptor_buffer&extensionproperty=maxResourceDescriptorBufferBindings) devices only have the spec minimum limit of `1` and as of this writing, they are all [older Intel devices](https://vulkan.gpuinfo.org/listdevicescoverage.php?extensionname=VK_EXT_descriptor_buffer&extensionproperty=maxResourceDescriptorBufferBindings&extensionpropertyvalue=1&platform=all)
+
+The plan forward is to take 1 `maxResourceDescriptorBufferBindings` away from the user and if the device only support 1 binding, fallback to something that likely will work. The goal here is to sacrifice a few older device to the sanity of the GPU-AV code development.

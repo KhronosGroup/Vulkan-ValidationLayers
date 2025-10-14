@@ -301,6 +301,21 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const L
             indices_ptr[offset] = i;
         }
     }
+
+    // Create our own Descriptor Buffer we will bind if the user decides to use it
+    if (IsExtEnabled(extensions.vk_ext_descriptor_buffer)) {
+        VkBufferCreateInfo buffer_info = vku::InitStructHelper();
+        buffer_info.size = phys_dev_ext_props.descriptor_buffer_props.storageBufferDescriptorSize * cst::total_internal_descriptors;
+        buffer_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+        VmaAllocationCreateInfo alloc_info = {};
+        alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        alloc_info.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+        const bool success = global_resource_descriptor_buffer_.Create(&buffer_info, &alloc_info);
+        if (!success) {
+            InternalVmaError(device, result, "Failed to create an internal resource Descriptor Buffer.");
+            return;
+        }
+    }
 }
 
 namespace setting {
@@ -378,6 +393,18 @@ void Validator::InitSettings(const Location &loc) {
             "\nThere is a VK_LAYER_GPUAV_DESCRIPTOR_BUFFER_OVERRIDE that can be set to bypass this if you know you are not going "
             "to use descriptor buffers.");
         gpuav_settings.DisableShaderInstrumentationAndOptions();
+
+        if (phys_dev_ext_props.descriptor_buffer_props.maxResourceDescriptorBufferBindings == 1) {
+            if (gpuav_settings.debug_printf_enabled) {
+                AdjustmentWarning(
+                    device, loc,
+                    "VK_EXT_descriptor_buffer is enabled with a device that only supports maxResourceDescriptorBufferBindings of "
+                    "1\nNeed to disable DebugPrintf as we currently don't have a fallback path. [Disabling debug_printf]"
+                    "\nThere is a VK_LAYER_GPUAV_DESCRIPTOR_BUFFER_OVERRIDE that can be set to bypass this if you know you "
+                    "are not going to use descriptor buffers.");
+                gpuav_settings.debug_printf_enabled = false;
+            }
+        }
     }
 
     // If we have turned off all the possible things to instrument, turn off everything fully

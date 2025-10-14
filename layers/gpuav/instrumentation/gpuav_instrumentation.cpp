@@ -288,22 +288,7 @@ static std::pair<std::optional<VertexAttributeFetchLimit>, std::optional<VertexA
 
 void UpdateInstrumentationDescBuffer(Validator &gpuav, CommandBufferSubState &cb_state, const LastBound &last_bound,
                                      const Location &loc, InstrumentationErrorBlob &out_instrumentation_error_blob) {
-    // There is a chance the app doesn't have the descriptor buffer mapped, so we manage the mapping to this function scope
-    bool need_to_unmap = false;
-
-    void *descriptor_start = nullptr;
-
-    if (last_bound.GetDescriptorMode() == vvl::DescriptorModeUnknown) {
-        descriptor_start = gpuav.resource_descriptor_buffer_backup_.GetMappedPtr();
-    } else {
-        descriptor_start = gpuav.resource_descriptor_buffer_memory_state_->p_driver_data;
-        // If null, means they have never mapped (or unmapped on us)
-        if (!descriptor_start) {
-            need_to_unmap = true;
-            DispatchMapMemory(gpuav.device, gpuav.resource_descriptor_buffer_memory_state_->VkHandle(), 0, VK_WHOLE_SIZE, 0,
-                              &descriptor_start);
-        }
-    }
+    void *descriptor_start = gpuav.global_resource_descriptor_buffer_.GetMappedPtr();
 
     for (size_t func_i = 0; func_i < cb_state.on_instrumentation_desc_buffer_update_functions.size(); ++func_i) {
         VkDescriptorGetInfoEXT get_info = vku::InitStructHelper();
@@ -319,10 +304,6 @@ void UpdateInstrumentationDescBuffer(Validator &gpuav, CommandBufferSubState &cb
         uint8_t *descriptor_offset = (uint8_t *)descriptor_start + binding_offset;
         DispatchGetDescriptorEXT(gpuav.device, &get_info,
                                  gpuav.phys_dev_ext_props.descriptor_buffer_props.storageBufferDescriptorSize, descriptor_offset);
-    }
-
-    if (need_to_unmap) {
-        DispatchUnmapMemory(gpuav.device, gpuav.resource_descriptor_buffer_memory_state_->VkHandle());
     }
 }
 
@@ -687,33 +668,19 @@ void PreCallSetupShaderInstrumentationResourcesDescriptorBuffer(Validator &gpuav
     // There likely is only Push Constants (and BDA) used, but because the VkDescriptorSetLayout is using VK_EXT_descriptor_buffer,
     // and GPU-AV requires using a previous vkCmdBindDescriptorBuffersEXT to inject our code, so we have to inject it ourselves
     if (last_bound.GetDescriptorMode() == vvl::DescriptorModeUnknown) {
-        if (gpuav.resource_descriptor_buffer_backup_.IsDestroyed()) {
-            VkBufferCreateInfo buffer_info = vku::InitStructHelper();
-            buffer_info.size = gpuav.resource_descriptor_buffer_reserved_;
-            buffer_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-            VmaAllocationCreateInfo alloc_info = {};
-            alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-            alloc_info.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-            const bool success = gpuav.resource_descriptor_buffer_backup_.Create(&buffer_info, &alloc_info);
-            if (!success) {
-                gpuav.InternalError(cb_state.Handle(), loc, "Failed to create backup Descriptor Buffer for the app");
-                return;
-            }
-        }
-
         VkDescriptorBufferBindingInfoEXT binding_info = vku::InitStructHelper();
         binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
-        binding_info.address = gpuav.resource_descriptor_buffer_backup_.Address();
+        binding_info.address = gpuav.global_resource_descriptor_buffer_.Address();
         DispatchCmdBindDescriptorBuffersEXT(cb_state.VkHandle(), 1, &binding_info);
 
-        gpuav.resource_descriptor_buffer_index_ = 0;
+        cb_state.resource_descriptor_buffer_index_ = 0;
     }
 
-    // We have injected memory in front of the buffer for the user to make it easy to point to here
+    // Currently only DebugPrintf is using the Descriptor Buffer so we just put our information in front
     const VkDeviceSize front_offset = 0;
     DispatchCmdSetDescriptorBufferOffsetsEXT(cb_state.VkHandle(), last_bound.bind_point, bind_pipeline_layout_handle,
                                              gpuav.instrumentation_desc_set_bind_index_, 1,
-                                             &gpuav.resource_descriptor_buffer_index_, &front_offset);
+                                             &cb_state.resource_descriptor_buffer_index_, &front_offset);
 
     InstrumentationErrorBlob instrumentation_error_blob;
     UpdateInstrumentationDescBuffer(gpuav, cb_state, last_bound, loc, instrumentation_error_blob);

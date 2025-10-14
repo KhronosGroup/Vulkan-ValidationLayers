@@ -95,12 +95,9 @@ class LayerChassisOutputGenerator(BaseGenerator):
         'vkAllocateDescriptorSets',
         'vkCreateBuffer',
         'vkQueuePresentKHR',
+        'vkCmdBindDescriptorBuffersEXT',
         # Need to inject HandleData logic
         'vkBeginCommandBuffer',
-        # Need to sometime (GPU-AV) return back a different address
-        'vkGetBufferDeviceAddress',
-        'vkGetBufferDeviceAddressKHR',
-        'vkGetBufferDeviceAddressEXT',
         # ValidationCache functions do not get dispatched
         'vkCreateValidationCacheEXT',
         'vkDestroyValidationCacheEXT',
