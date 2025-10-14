@@ -235,6 +235,7 @@ void ErrorMonitor::SetDesiredInfo(const char *msg, uint32_t count /*= 1*/) {
     }
 }
 
+// If you are using this, please leave a comment why, otherwise its hard to remove these once added
 void ErrorMonitor::SetAllowedFailureMsg(const char *const msg) {
     auto guard = Lock();
     allowed_message_strings_.emplace_back(msg);

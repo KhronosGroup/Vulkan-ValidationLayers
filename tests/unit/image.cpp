@@ -2233,7 +2233,7 @@ TEST_F(NegativeImage, ImageMisc) {
         image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
         image_ci.mipLevels = 2;
         image_ci.flags = VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT;
-        m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-flags-parameter");
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-flags-parameter");  // skip stateless
         CreateImageTest(image_ci, "VUID-VkImageCreateInfo-flags-02259");
 
         image_ci = safe_image_ci;
@@ -2242,7 +2242,7 @@ TEST_F(NegativeImage, ImageMisc) {
         image_ci.mipLevels = 1;
         image_ci.flags = VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT;
         image_ci.tiling = VK_IMAGE_TILING_LINEAR;
-        m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-flags-parameter");
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-flags-parameter");  // skip stateless
         CreateImageTest(image_ci, "VUID-VkImageCreateInfo-flags-02259");
     }
 

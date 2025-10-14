@@ -414,6 +414,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, CreateFifoRelaxedSwapchain) {
     swapchain_create_info.clipped = VK_FALSE;
     swapchain_create_info.oldSwapchain = 0;
 
+    // lazy way to not query
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCreateInfoKHR-presentMode-02839");
     m_swapchain.Init(*m_device, swapchain_create_info);
 }

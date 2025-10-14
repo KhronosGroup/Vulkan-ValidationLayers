@@ -4929,10 +4929,11 @@ TEST_F(NegativeDescriptors, DescriptorSetLayoutBinding) {
     create_info.bindingCount = 1;
     create_info.pBindings = &binding;
 
-    VkDescriptorSetLayout setLayout;
+    VkDescriptorSetLayout dsl;
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutBinding-descriptorType-04605");
+    // need to skip to allow hitting the above error
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkDescriptorSetLayoutCreateInfo-descriptorType-04594");
-    vk::CreateDescriptorSetLayout(*m_device, &create_info, nullptr, &setLayout);
+    vk::CreateDescriptorSetLayout(*m_device, &create_info, nullptr, &dsl);
     m_errorMonitor->VerifyFound();
 }
 

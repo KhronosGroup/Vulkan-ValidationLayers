@@ -1985,7 +1985,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
 
     surface_info.pNext = &present_mode;
     m_errorMonitor->SetDesiredError("VUID-VkSurfacePresentModeKHR-presentMode-07780");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSurfacePresentModeKHR-presentMode-parameter");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSurfacePresentModeKHR-presentMode-parameter");  // skip stateless
     vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
     m_errorMonitor->VerifyFound();
 
@@ -2021,6 +2021,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
         // Each entry in QueuePresent->vkPresentInfoKHR->pNext->SwapchainPresentModesCreateInfo->pPresentModes must be one of the
         // VkPresentModeKHR values returned by vkGetPhysicalDeviceSurfacePresentModesKHR for the surface
         m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentModesCreateInfoKHR-None-07762");
+        // lazy way to not query properties
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentModesCreateInfoKHR-pPresentModes-07763");
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentModesCreateInfoKHR-presentMode-07764");
         m_swapchain.Init(*m_device, swapchain_create_info);
@@ -2038,6 +2039,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     }
     if (mismatched_present_mode != VK_PRESENT_MODE_MAX_ENUM_KHR) {
         m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentModesCreateInfoKHR-pPresentModes-07763");
+        // lazy way to not query properties
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentModesCreateInfoKHR-None-07762");
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainPresentModesCreateInfoKHR-presentMode-07764");
         present_modes_ci.pPresentModes = &mismatched_present_mode;
@@ -2862,6 +2864,7 @@ TEST_F(NegativeWsi, CreatingSwapchainWithExtent) {
     InitSwapchainInfo();
 
     m_errorMonitor->SetDesiredError("VUID-VkSwapchainCreateInfoKHR-pNext-07781");
+    // lazy way to not query properties
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCreateInfoKHR-imageFormat-01778");
 
     VkSurfaceCapabilitiesKHR surface_capabilities;

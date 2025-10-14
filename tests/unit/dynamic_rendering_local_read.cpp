@@ -252,14 +252,14 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrier) {
                                                         VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
 
     m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-dynamicRenderingLocalRead-09552");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdPipelineBarrier2-None-09554");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdPipelineBarrier2-oldLayout-01181");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-None-09554");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-oldLayout-01181");
     m_command_buffer.Barrier(*img_barrier2.ptr(), VK_DEPENDENCY_BY_REGION_BIT);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier-dynamicRenderingLocalRead-09552");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdPipelineBarrier-None-09554");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdPipelineBarrier-oldLayout-01181");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-None-09554");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-oldLayout-01181");
     vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1,
                            &img_barrier);
@@ -271,8 +271,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrier) {
     img_barrier2.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
     m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-dynamicRenderingLocalRead-09551");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdPipelineBarrier2-None-09554");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdPipelineBarrier2-oldLayout-01181");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-None-09554");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-oldLayout-01181");
     m_command_buffer.Barrier(*img_barrier2.ptr(), VK_DEPENDENCY_BY_REGION_BIT);
     m_errorMonitor->VerifyFound();
 
@@ -282,8 +282,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrier) {
     img_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
     m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier-dynamicRenderingLocalRead-09551");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdPipelineBarrier-None-09554");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdPipelineBarrier-oldLayout-01181");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-None-09554");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-oldLayout-01181");
     vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1,
                            &img_barrier);
@@ -329,16 +329,16 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierOwnership) {
                                                         VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
 
     m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-09550");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageMemoryBarrier2-dynamicRenderingLocalRead-09552");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdPipelineBarrier2-None-09554");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdPipelineBarrier2-oldLayout-01181");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-None-09554");
+    m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-dynamicRenderingLocalRead-09552");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-oldLayout-01181");
     m_command_buffer.Barrier(*img_barrier2.ptr(), VK_DEPENDENCY_BY_REGION_BIT);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-09550");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageMemoryBarrier-dynamicRenderingLocalRead-09552");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdPipelineBarrier-None-09554");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdPipelineBarrier-oldLayout-01181");
+    m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier-dynamicRenderingLocalRead-09552");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-None-09554");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-oldLayout-01181");
     vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1,
                            &img_barrier);
@@ -382,12 +382,12 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierNoBufferOrImage) {
                                                         VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-None-09554");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdPipelineBarrier2-oldLayout-01181");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-oldLayout-01181");
     m_command_buffer.Barrier(*img_barrier2.ptr(), VK_DEPENDENCY_BY_REGION_BIT);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-None-09554");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdPipelineBarrier-oldLayout-01181");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-oldLayout-01181");
     vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1,
                            &img_barrier);
@@ -957,7 +957,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, InputAttachmentIndexColorAttachmentCou
     CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
 
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkGraphicsPipelineCreateInfo-renderPass-09531");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09531");
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInputAttachmentIndexInfo-colorAttachmentCount-09525");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
@@ -1082,7 +1082,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, InputAttachmentIndexSetToUnused) {
                            "VUID-VkRenderingInputAttachmentIndexInfo-dynamicRenderingLocalRead-09521"};
 
     for (uint32_t i = 0; i < 3; i++) {
-        m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdSetRenderingInputAttachmentIndices-dynamicRenderingLocalRead-09516");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdSetRenderingInputAttachmentIndices-dynamicRenderingLocalRead-09516");
         m_errorMonitor->SetDesiredError(vuids[i]);
         vk::CmdSetRenderingInputAttachmentIndicesKHR(m_command_buffer, &input_info[i]);
         m_errorMonitor->VerifyFound();
@@ -1299,7 +1299,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, AttachmentLocationsValidity) {
     location_info.colorAttachmentCount = 2;
     location_info.pColorAttachmentLocations = color_attachment_locations;
 
-    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdSetRenderingAttachmentLocations-dynamicRenderingLocalRead-09509");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetRenderingAttachmentLocations-dynamicRenderingLocalRead-09509");
     m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentLocationInfo-pColorAttachmentLocations-09513");
     m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentLocationInfo-dynamicRenderingLocalRead-09512");
     vk::CmdSetRenderingAttachmentLocationsKHR(m_command_buffer, &location_info);
@@ -1340,7 +1340,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, AttachmentLocationsMax) {
 
     m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentLocationInfo-colorAttachmentCount-09514");
     m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentLocationInfo-pColorAttachmentLocations-09515");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdSetRenderingAttachmentLocations-pLocationInfo-09510");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetRenderingAttachmentLocations-pLocationInfo-09510");
     vk::CmdSetRenderingAttachmentLocationsKHR(m_command_buffer, &location_info);
     m_errorMonitor->VerifyFound();
 }

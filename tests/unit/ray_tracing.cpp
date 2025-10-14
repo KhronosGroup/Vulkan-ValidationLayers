@@ -326,6 +326,7 @@ TEST_F(NegativeRayTracing, MaxPerStageDescriptorAccelerationStructures) {
     pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03571");
+    // Lazy way to not query
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03572");
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03573");
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03574");
@@ -379,7 +380,7 @@ TEST_F(NegativeRayTracing, MaxPerStageDescriptorUpdateAfterBindAccelerationStruc
     pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03572");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03574");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03574");
     vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
     m_errorMonitor->VerifyFound();
 }
@@ -429,6 +430,7 @@ TEST_F(NegativeRayTracing, MaxDescriptorSetAccelerationStructures) {
     pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03573");
+    // Lazy way to not query
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03571");
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03572");
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03574");
@@ -482,6 +484,7 @@ TEST_F(NegativeRayTracing, MaxDescriptorSetUpdateAfterBindAccelerationStructures
     pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03574");
+    // Lazy way to not query
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03572");
     vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
     m_errorMonitor->VerifyFound();
@@ -1375,19 +1378,19 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirectKHR) {
             invalid_stride.stride = ray_tracing_properties.maxShaderGroupStride + 1;
 
             m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirectKHR-stride-04041");
-            m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdTraceRaysIndirectKHR-stride-03694");
+            m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirectKHR-stride-03694");
             vk::CmdTraceRaysIndirectKHR(m_command_buffer, &stridebufregion, &stridebufregion, &stridebufregion, &invalid_stride,
                                         device_address);
             m_errorMonitor->VerifyFound();
 
             m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirectKHR-stride-04035");
-            m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdTraceRaysIndirectKHR-stride-03690");
+            m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirectKHR-stride-03690");
             vk::CmdTraceRaysIndirectKHR(m_command_buffer, &stridebufregion, &stridebufregion, &invalid_stride, &stridebufregion,
                                         device_address);
             m_errorMonitor->VerifyFound();
 
             m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirectKHR-stride-04029");
-            m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdTraceRaysIndirectKHR-stride-03686");
+            m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirectKHR-stride-03686");
             vk::CmdTraceRaysIndirectKHR(m_command_buffer, &stridebufregion, &invalid_stride, &stridebufregion, &stridebufregion,
                                         device_address);
             m_errorMonitor->VerifyFound();
