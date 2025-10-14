@@ -59,7 +59,7 @@ void CommandBufferSubState::AllocateResources(const Location &loc) {
 
     // Error output buffer
     {
-        error_output_buffer_range_ = gpu_resources_manager.GetHostVisibleBufferRange(glsl::kErrorBufferByteSize);
+        error_output_buffer_range_ = gpu_resources_manager.GetHostCoherentBufferRange(glsl::kErrorBufferByteSize);
         if (error_output_buffer_range_.buffer == VK_NULL_HANDLE) {
             return;
         }

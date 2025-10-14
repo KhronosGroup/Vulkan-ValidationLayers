@@ -401,7 +401,7 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBufferSubState &cb_st
             // This check is only for indexed draws
             if (vvl::IsCommandDrawVertexIndexed(loc.function)) {
                 vko::BufferRange vertex_attribute_fetch_limits_buffer_range =
-                    cb_state.gpu_resources_manager.GetHostVisibleBufferRange(4 * sizeof(uint32_t));
+                    cb_state.gpu_resources_manager.GetHostCoherentBufferRange(4 * sizeof(uint32_t));
                 if (vertex_attribute_fetch_limits_buffer_range.buffer == VK_NULL_HANDLE) {
                     return;
                 }

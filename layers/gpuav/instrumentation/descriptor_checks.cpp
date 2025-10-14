@@ -119,7 +119,7 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
         [](Validator& gpuav, CommandBufferSubState& cb, DescriptorSetBindings::BindingCommand& desc_binding_cmd) {
             DescriptorChecksCbState& dc_cb_state = cb.shared_resources_cache.GetOrCreate<DescriptorChecksCbState>();
             dc_cb_state.last_bound_desc_sets_state_ssbo =
-                cb.gpu_resources_manager.GetHostVisibleBufferRange(sizeof(glsl::BoundDescriptorSetsStateSSBO));
+                cb.gpu_resources_manager.GetHostCoherentBufferRange(sizeof(glsl::BoundDescriptorSetsStateSSBO));
             dc_cb_state.last_bound_desc_sets_state_ssbo.Clear();
             auto desc_state_ssbo =
                 static_cast<glsl::BoundDescriptorSetsStateSSBO*>(dc_cb_state.last_bound_desc_sets_state_ssbo.offset_mapped_ptr);

@@ -412,7 +412,7 @@ void RegisterDebugPrintf(Validator &gpuav, CommandBufferSubState &cb_state) {
             CommandBufferSubState &cb, VkPipelineBindPoint bind_point, VkDescriptorBufferInfo &out_buffer_info,
             uint32_t &out_dst_binding) {
             vko::BufferRange debug_printf_output_buffer =
-                cb.gpu_resources_manager.GetHostVisibleBufferRange(debug_printf_buffer_size);
+                cb.gpu_resources_manager.GetHostCoherentBufferRange(debug_printf_buffer_size);
             std::memset(debug_printf_output_buffer.offset_mapped_ptr, 0, (size_t)debug_printf_buffer_size);
 
             out_buffer_info.buffer = debug_printf_output_buffer.buffer;
@@ -431,7 +431,7 @@ void RegisterDebugPrintf(Validator &gpuav, CommandBufferSubState &cb_state) {
             CommandBufferSubState &cb, VkPipelineBindPoint bind_point, VkDescriptorAddressInfoEXT &out_address_info,
             uint32_t &out_dst_binding) {
             vko::BufferRange debug_printf_output_buffer =
-                cb.gpu_resources_manager.GetHostVisibleBufferRange(debug_printf_buffer_size);
+                cb.gpu_resources_manager.GetHostCoherentBufferRange(debug_printf_buffer_size);
             std::memset(debug_printf_output_buffer.offset_mapped_ptr, 0, (size_t)debug_printf_buffer_size);
 
             out_address_info.address = debug_printf_output_buffer.offset_address;
