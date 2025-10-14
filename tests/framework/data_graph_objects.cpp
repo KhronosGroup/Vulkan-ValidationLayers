@@ -144,6 +144,7 @@ std::string DataGraphPipelineHelper::GetSpirvMultiEntryTwoDataGraph() {
                                   OpDecorate %main_res_0 DescriptorSet 0
                          %uchar = OpTypeInt 8 0
                           %uint = OpTypeInt 32 0
+                       %uchar_0 = OpConstant %uchar 0
                         %uint_4 = OpConstant %uint 4
                         %uint_1 = OpConstant %uint 1
                         %uint_8 = OpConstant %uint 8
@@ -155,15 +156,18 @@ std::string DataGraphPipelineHelper::GetSpirvMultiEntryTwoDataGraph() {
            %uint_arr_4_1_8_16_4 = OpConstantComposite %uint_arr_4 %uint_1 %uint_8 %uint_16 %uint_4
             %uint_arr_4_1_2_4_4 = OpConstantComposite %uint_arr_4 %uint_1 %uint_2 %uint_4 %uint_4
             %uint_arr_4_1_4_8_4 = OpConstantComposite %uint_arr_4 %uint_1 %uint_4 %uint_8 %uint_4
+                  %uint_arr_1_1 = OpConstantComposite %uint_arr_1 %uint_1
                   %uint_arr_1_2 = OpConstantComposite %uint_arr_1 %uint_2
                   %uint_arr_1_4 = OpConstantComposite %uint_arr_1 %uint_4
          %uchar_1_8_16_4_tensor = OpTypeTensorARM %uchar %uint_4 %uint_arr_4_1_8_16_4
           %uchar_1_2_4_4_tensor = OpTypeTensorARM %uchar %uint_4 %uint_arr_4_1_2_4_4
           %uchar_1_4_8_4_tensor = OpTypeTensorARM %uchar %uint_4 %uint_arr_4_1_4_8_4
+                %uchar_1_tensor = OpTypeTensorARM %uchar %uint_1 %uint_arr_1_1
                  %uint_2_tensor = OpTypeTensorARM %uint %uint_1 %uint_arr_1_2
                  %uint_4_tensor = OpTypeTensorARM %uint %uint_1 %uint_arr_1_4
              %uint_2_tensor_2_2 = OpConstantComposite %uint_2_tensor %uint_2 %uint_2
          %uint_4_tensor_0_0_0_0 = OpConstantComposite %uint_4_tensor %uint_0 %uint_0 %uint_0 %uint_0
+              %uchar_1_tensor_0 = OpConstantComposite %uchar_1_tensor %uchar_0
      %uchar_1_8_16_4_tensor_ptr = OpTypePointer UniformConstant %uchar_1_8_16_4_tensor
       %uchar_1_2_4_4_tensor_ptr = OpTypePointer UniformConstant %uchar_1_2_4_4_tensor
                     %main_arg_0 = OpVariable %uchar_1_8_16_4_tensor_ptr UniformConstant
@@ -180,8 +184,8 @@ std::string DataGraphPipelineHelper::GetSpirvMultiEntryTwoDataGraph() {
 ; entrypoint 2: AVG_POOL2D -> AVG_POOL2D
                        %graph_2 = OpGraphARM %graph_type
                           %in_1 = OpGraphInputARM %uchar_1_8_16_4_tensor %uint_0
-                          %op_2 = OpExtInst %uchar_1_4_8_4_tensor %tosa AVG_POOL2D %uint_2_tensor_2_2 %uint_2_tensor_2_2 %uint_4_tensor_0_0_0_0 %uint_0 %in_1 %uint_0 %uint_0
-                          %op_3 = OpExtInst %uchar_1_2_4_4_tensor %tosa AVG_POOL2D %uint_2_tensor_2_2 %uint_2_tensor_2_2 %uint_4_tensor_0_0_0_0 %uint_0 %op_2 %uint_0 %uint_0
+                          %op_2 = OpExtInst %uchar_1_4_8_4_tensor %tosa AVG_POOL2D %uint_2_tensor_2_2 %uint_2_tensor_2_2 %uint_4_tensor_0_0_0_0 %uint_1 %in_1 %uchar_1_tensor_0 %uchar_1_tensor_0
+                          %op_3 = OpExtInst %uchar_1_2_4_4_tensor %tosa AVG_POOL2D %uint_2_tensor_2_2 %uint_2_tensor_2_2 %uint_4_tensor_0_0_0_0 %uint_1 %op_2 %uchar_1_tensor_0 %uchar_1_tensor_0
                                   OpGraphSetOutputARM %op_3 %uint_0
                                   OpGraphEndARM
                                   OpGraphEntryPointARM %graph_2 "entrypoint_2" %main_arg_0 %main_res_0
