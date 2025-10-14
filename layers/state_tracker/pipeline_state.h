@@ -129,6 +129,11 @@ class Pipeline : public StateObject, public SubStateManager<PipelineSubState> {
 
     // Which state is dynamic from pipeline creation, factors in GPL library state as well
     CBDynamicFlags dynamic_state;
+    // There are really 3 states [static, dynamic, ignored] where |ignored| is based on which stages are not part of the pipeline.
+    // To keep all the logic still using a bitset, we just create a mask here.
+    // It is applied both when we need to invalidate things at vkCmdBindPipleine time and at draw/dispatch time to know if the user
+    // forgot to call vkCmdSet* on some state
+    CBDynamicFlags ignored_dynamic_state;
 
     const VkPrimitiveTopology topology_at_rasterizer = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
     const bool descriptor_buffer_mode = false;

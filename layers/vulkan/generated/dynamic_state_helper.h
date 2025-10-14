@@ -22,6 +22,7 @@
 // NOLINTBEGIN
 
 #pragma once
+#include <vulkan/vulkan_core.h>
 #include <bitset>
 
 namespace vvl {
@@ -115,5 +116,34 @@ std::string DynamicStatesCommandsToString(CBDynamicFlags const& dynamic_states);
 
 std::string DescribeDynamicStateCommand(CBDynamicState dynamic_state);
 std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const vvl::Pipeline* pipeline);
+
+// We build these up at code gen time to quickly use at runtime
+// TODO - tried to make these constexpr, but seems bitset over 64 bits doesn't like that it seems
+//
+// All state is only tied to VK_SHADER_STAGE_FRAGMENT_BIT
+const CBDynamicFlags kFragmentDynamicState =
+    CBDynamicFlags(1) << CB_DYNAMIC_STATE_BLEND_CONSTANTS | CBDynamicFlags(1) << CB_DYNAMIC_STATE_LOGIC_OP_EXT |
+    CBDynamicFlags(1) << CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT | CBDynamicFlags(1) << CB_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT |
+    CBDynamicFlags(1) << CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT | CBDynamicFlags(1) << CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT |
+    CBDynamicFlags(1) << CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT | CBDynamicFlags(1) << CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT |
+    CBDynamicFlags(1) << CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV |
+    CBDynamicFlags(1) << CB_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT;
+
+// All state is only tied to VK_SHADER_STAGE_GEOMETRY_BIT
+const CBDynamicFlags kGeometryDynamicState = CBDynamicFlags(1) << CB_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT;
+
+// All state is only tied to VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT
+const CBDynamicFlags kTessControlDynamicState = CBDynamicFlags(1) << CB_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT;
+
+// All state is only tied to VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT
+const CBDynamicFlags kTessEvalDynamicState = CBDynamicFlags(1) << CB_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT;
+
+// All state is only tied to VK_SHADER_STAGE_VERTEX_BIT
+const CBDynamicFlags kVertexDynamicState =
+    CBDynamicFlags(1) << CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY | CBDynamicFlags(1) << CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE |
+    CBDynamicFlags(1) << CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE | CBDynamicFlags(1) << CB_DYNAMIC_STATE_VERTEX_INPUT_EXT |
+    CBDynamicFlags(1) << CB_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT |
+    CBDynamicFlags(1) << CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT |
+    CBDynamicFlags(1) << CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT;
 
 // NOLINTEND
