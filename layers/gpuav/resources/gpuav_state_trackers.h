@@ -148,6 +148,9 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     // Used to limit the number of errors a single command can emit.
     vko::Buffer cmd_errors_counts_buffer_;
 
+    // Track which index we have bound our Descriptor Buffer in CmdBindDescriptorBuffersEXT
+    uint32_t resource_descriptor_buffer_index_;
+
   private:
     void AllocateResources(const Location &loc);
     void ResetCBState(bool should_destroy);

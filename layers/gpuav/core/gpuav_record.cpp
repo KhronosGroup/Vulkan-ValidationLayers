@@ -16,8 +16,10 @@
  */
 
 #include <cstdint>
+#include <vulkan/utility/vk_safe_struct.hpp>
 #include "chassis/chassis_modification_state.h"
 #include "gpuav/core/gpuav.h"
+#include "gpuav/core/gpuav_constants.h"
 #include "gpuav/debug_printf/debug_printf.h"
 #include "gpuav/descriptor_validation/gpuav_descriptor_validation.h"
 #include "gpuav/instrumentation/buffer_device_address.h"
@@ -65,10 +67,6 @@ void Validator::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateI
     if (gpuav_settings.IsBufferValidationEnabled() && (in_usage & (VK_BUFFER_USAGE_2_INDEX_BUFFER_BIT_KHR))) {
         chassis_state.modified_create_info.size = Align<VkDeviceSize>(chassis_state.modified_create_info.size, 4);
     }
-
-    if (in_usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) {
-        chassis_state.modified_create_info.size += resource_descriptor_buffer_reserved_;
-    }
 }
 
 void Validator::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
@@ -85,46 +83,6 @@ void Validator::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreate
 void Validator::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator,
                                            const RecordObject &record_obj) {
     resource_descriptor_buffer_handles_.erase(buffer);
-}
-
-void Validator::PostCallRecordGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
-                                                     const RecordObject &record_obj, VkDeviceAddress &out_address) {
-    if (resource_descriptor_buffer_handles_.find(pInfo->buffer) != resource_descriptor_buffer_handles_.end()) {
-        out_address += resource_descriptor_buffer_reserved_;
-    }
-}
-
-void Validator::PostCallRecordGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
-                                                        const RecordObject &record_obj, VkDeviceAddress &out_address) {
-    PostCallRecordGetBufferDeviceAddress(device, pInfo, record_obj, out_address);
-}
-
-void Validator::PostCallRecordGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
-                                                        const RecordObject &record_obj, VkDeviceAddress &out_address) {
-    PostCallRecordGetBufferDeviceAddress(device, pInfo, record_obj, out_address);
-}
-
-void Validator::MapMemory(VkDeviceMemory memory, void **ppData) {
-    if (resource_descriptor_buffer_memory_handles_.find(memory) != resource_descriptor_buffer_memory_handles_.end()) {
-        uint8_t *pData = (uint8_t *)*ppData;
-        pData += resource_descriptor_buffer_reserved_;
-        *ppData = pData;
-    }
-}
-
-void Validator::PostCallRecordMapMemory(VkDevice device, VkDeviceMemory memory, VkDeviceSize offset, VkDeviceSize size,
-                                        VkFlags flags, void **ppData, const RecordObject &record_obj) {
-    MapMemory(memory, ppData);
-}
-
-void Validator::PostCallRecordMapMemory2(VkDevice device, const VkMemoryMapInfo *pMemoryMapInfo, void **ppData,
-                                         const RecordObject &record_obj) {
-    MapMemory(pMemoryMapInfo->memory, ppData);
-}
-
-void Validator::PostCallRecordMapMemory2KHR(VkDevice device, const VkMemoryMapInfoKHR *pMemoryMapInfo, void **ppData,
-                                            const RecordObject &record_obj) {
-    PostCallRecordMapMemory2(device, pMemoryMapInfo, ppData, record_obj);
 }
 
 void Validator::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks *pAllocator,
@@ -159,80 +117,25 @@ void Validator::PostCallRecordBindBufferMemory2KHR(VkDevice device, uint32_t bin
 
 void Validator::PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
                                                          const VkDescriptorBufferBindingInfoEXT *pBindingInfos,
-                                                         const RecordObject &record_obj) {
-    // When you bind, you invalidate older bound descriptor buffers, so grabbing the last bound Resource Descriptor Buffer should
-    // always yield us a valid index to bind an offset to later
-    for (uint32_t i = 0; i < bufferCount; i++) {
-        const VkDescriptorBufferBindingInfoEXT &binding_info = pBindingInfos[i];
-        if (binding_info.usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) {
-            resource_descriptor_buffer_index_ = i;
-
-            // All buffers were created with padding infront, so need to adjust it for the one we are injecting into so offset zero
-            // is our descriptors
-            // (use const_cast instead of safe struct in chassis_modification_state.h because simple to revert in PostCall)
-            auto modified_binding_info = const_cast<VkDescriptorBufferBindingInfoEXT *>(&pBindingInfos[i]);
-            // Valid because we added the reserved range in vkGetBufferDeviceAddress
-            modified_binding_info->address -= resource_descriptor_buffer_reserved_;
-
-            const auto buffer_states = GetBuffersByAddress(modified_binding_info->address);
-            if (buffer_states.empty()) {
-                InternalError(commandBuffer, record_obj.location.dot(Field::pBindingInfos, i), "address points to no VkBuffer");
-            } else {
-                if (buffer_states.size() > 1) {
-                    InternalWarning(commandBuffer, record_obj.location.dot(Field::pBindingInfos, i),
-                                    "address points to multiple VkBuffer, taking first one");
-                }
-                resource_descriptor_buffer_memory_state_ = buffer_states[0]->MemoryState();
-            }
-
-            // The invalidate/unbounding rules of vkCmdBindDescriptorBuffersEXT allow us to just grab the first resource binding
-            // (There is no reasonable way to only have sampler bindings)
-            break;
-        }
+                                                         const RecordObject &record_obj,
+                                                         chassis::CmdBindDescriptorBuffers &chassis_state) {
+    // Resize here so if using just CoreCheck we don't waste time allocating this
+    chassis_state.modified_binding_infos.resize(bufferCount + 1);
+    for (uint32_t i = 0; i < bufferCount; ++i) {
+        vku::safe_VkDescriptorBufferBindingInfoEXT &new_bind_info = chassis_state.modified_binding_infos[i];
+        new_bind_info.initialize(&pBindingInfos[i]);
     }
-}
 
-void Validator::PostCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
-                                                          const VkDescriptorBufferBindingInfoEXT *pBindingInfos,
-                                                          const RecordObject &record_obj) {
-    // undo modifications
-    if (resource_descriptor_buffer_index_ < bufferCount) {
-        const VkDescriptorBufferBindingInfoEXT &binding_info = pBindingInfos[resource_descriptor_buffer_index_];
-        // sanity check
-        if (binding_info.usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) {
-            auto modified_binding_info = const_cast<VkDescriptorBufferBindingInfoEXT *>(&binding_info);
-            modified_binding_info->address += resource_descriptor_buffer_reserved_;
-        }
-    }
-}
+    vku::safe_VkDescriptorBufferBindingInfoEXT &modified_binding_info = chassis_state.modified_binding_infos[bufferCount];
+    modified_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+    modified_binding_info.address = global_resource_descriptor_buffer_.Address();
 
-void Validator::PreCallRecordCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                              VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
-                                                              const uint32_t *pBufferIndices, const VkDeviceSize *pOffsets,
-                                                              const RecordObject &record_obj) {
-    for (uint32_t i = 0; i < setCount; i++) {
-        if (pBufferIndices[i] != resource_descriptor_buffer_index_) {
-            continue;
-        }
-        // now need to adjust offsets to where they thought they were binding
-        // (use const_cast instead of safe struct in chassis_modification_state.h because simple to revert in PostCall)
-        auto modified_offsets = const_cast<VkDeviceSize *>(&pOffsets[i]);
-        *modified_offsets += resource_descriptor_buffer_reserved_;
-    }
-}
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    CommandBufferSubState &gpuav_cb_state = SubState(*cb_state);
+    gpuav_cb_state.resource_descriptor_buffer_index_ = bufferCount;
 
-void Validator::PostCallRecordCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                               VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
-                                                               const uint32_t *pBufferIndices, const VkDeviceSize *pOffsets,
-                                                               const RecordObject &record_obj) {
-    for (uint32_t i = 0; i < setCount; i++) {
-        if (pBufferIndices[i] != resource_descriptor_buffer_index_) {
-            continue;
-        }
-        // undo modifications
-        auto modified_offsets = const_cast<VkDeviceSize *>(&pOffsets[i]);
-        *modified_offsets -= resource_descriptor_buffer_reserved_;
-    }
+    // Set the pointer the chassis will use
+    chassis_state.pBindInfos = reinterpret_cast<VkDescriptorBufferBindingInfoEXT *>(chassis_state.modified_binding_infos.data());
 }
 
 void Validator::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo,
@@ -312,18 +215,32 @@ void Instance::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physi
 
     if (auto *desc_buffer_props =
             vku::FindStructInPNextChain<VkPhysicalDeviceDescriptorBufferPropertiesEXT>(device_props2->pNext)) {
-        // This is only a best estimate, we really need to match it up with the value returned from vkGetDescriptorSetLayoutSizeEXT,
-        // but can't at this point. The goal is if the app create a VkBuffer blindly with the size of
-        // maxResourceDescriptorBufferRange it will still give us room to inject our stuff
-        const VkDeviceSize bytes_to_reserve = desc_buffer_props->storageBufferDescriptorSize * glsl::kTotalBindings;
-        VkDeviceSize new_limit = desc_buffer_props->maxResourceDescriptorBufferRange - bytes_to_reserve;
+        if (desc_buffer_props->maxResourceDescriptorBufferBindings > 1) {
+            desc_buffer_props->maxResourceDescriptorBufferBindings -= 1;
 
-        std::stringstream ss;
-        ss << "Setting VkPhysicalDeviceDescriptorBufferPropertiesEXT::maxResourceDescriptorBufferRange to " << new_limit
-           << " (reserving " << (desc_buffer_props->maxResourceDescriptorBufferRange - new_limit) << " bytes)";
-        InternalWarning(physicalDevice, record_obj.location, ss.str().c_str());
+            std::stringstream ss;
+            ss << "Setting VkPhysicalDeviceDescriptorBufferPropertiesEXT::maxResourceDescriptorBufferBindings to "
+               << desc_buffer_props->maxResourceDescriptorBufferBindings;
+            AdjustmentWarning(physicalDevice, record_obj.location, ss.str().c_str());
+        }
 
-        desc_buffer_props->maxResourceDescriptorBufferRange = new_limit;
+        // Currently set regardless if we fallback on maxResourceDescriptorBufferBindings only being 1
+        {
+            // This is only a best estimate, we really need to match it up with the value returned from
+            // vkGetDescriptorSetLayoutSizeEXT, but can't at this point. This in practice shouldn't be an issue unless they try to
+            // allocate every possible byte on the GPU and our estimate is too small.
+            //
+            // storageBufferDescriptorSize is almost always 64 bytes
+            const VkDeviceSize bytes_to_reserve = desc_buffer_props->storageBufferDescriptorSize * cst::total_internal_descriptors;
+            desc_buffer_props->resourceDescriptorBufferAddressSpaceSize -= bytes_to_reserve;
+            desc_buffer_props->descriptorBufferAddressSpaceSize -= bytes_to_reserve;
+
+            std::stringstream ss;
+            ss << "Setting VkPhysicalDeviceDescriptorBufferPropertiesEXT::descriptorBufferAddressSpaceSize to "
+               << desc_buffer_props->resourceDescriptorBufferAddressSpaceSize << "and resourceDescriptorBufferAddressSpaceSize to "
+               << desc_buffer_props->descriptorBufferAddressSpaceSize << " (reserving " << bytes_to_reserve << " bytes)";
+            AdjustmentWarning(physicalDevice, record_obj.location, ss.str().c_str());
+        }
     }
 
     ReserveBindingSlot(physicalDevice, device_props2->properties.limits, record_obj.location);
@@ -338,7 +255,7 @@ void Validator::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCa
     shared_resources_manager.Clear();
 
     global_indices_buffer_.Destroy();
-    resource_descriptor_buffer_backup_.Destroy();
+    global_resource_descriptor_buffer_.Destroy();
 
     BaseClass::PreCallRecordDestroyDevice(device, pAllocator, record_obj);
 

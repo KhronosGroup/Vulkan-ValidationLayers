@@ -555,6 +555,7 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PostCallRecordSignalSemaphore);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetBufferDeviceAddress);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetBufferDeviceAddress);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetBufferDeviceAddress);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetBufferOpaqueCaptureAddress);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetBufferOpaqueCaptureAddress);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetBufferOpaqueCaptureAddress);
@@ -935,6 +936,7 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PostCallRecordWaitForPresentKHR);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetBufferDeviceAddressKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetBufferDeviceAddressKHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetBufferDeviceAddressKHR);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetBufferOpaqueCaptureAddressKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetBufferOpaqueCaptureAddressKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetBufferOpaqueCaptureAddressKHR);
@@ -1372,6 +1374,7 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PostCallRecordSetLocalDimmingAMD);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetBufferDeviceAddressEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetBufferDeviceAddressEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetBufferDeviceAddressEXT);
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     BUILD_DISPATCH_VECTOR(PreCallValidateAcquireFullScreenExclusiveModeEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordAcquireFullScreenExclusiveModeEXT);
@@ -1520,7 +1523,6 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallRecordGetDescriptorEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetDescriptorEXT);
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdBindDescriptorBuffersEXT);
-    BUILD_DISPATCH_VECTOR(PreCallRecordCmdBindDescriptorBuffersEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdBindDescriptorBuffersEXT);
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetDescriptorBufferOffsetsEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetDescriptorBufferOffsetsEXT);

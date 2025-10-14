@@ -195,6 +195,8 @@ void CommandBufferSubState::ResetCBState(bool should_destroy) {
     compute_index = 0;
     trace_rays_index = 0;
 
+    resource_descriptor_buffer_index_ = 0;
+
     ClearPushConstants();
 }
 

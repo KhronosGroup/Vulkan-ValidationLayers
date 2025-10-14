@@ -217,6 +217,9 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
                           std::vector<uint32_t> &out_instrumented_spirv);
 
   public:
+    void SetupClassicDescriptor(const Location &loc);
+    void SetupDescriptorBuffers(const Location &loc);
+
     VkDescriptorSetLayout GetInstrumentationDescriptorSetLayout(vvl::DescriptorMode mode) {
         return instrumentation_desc_layout_[mode];
     }
@@ -242,7 +245,7 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
     std::vector<spirv::InternalOnlyDebugPrintf> intenral_only_debug_printf_;
 
     // Size to reserve in front of every resource descriptor buffer
-    VkDeviceSize resource_descriptor_buffer_reserved_ = 0;
+    VkDeviceSize resource_descriptor_buffer_size_ = 0;
     // Each vector index maps to the binding number with the offset to map to (with the start offset included)
     std::vector<VkDeviceSize> resource_descriptor_buffer_offsets_;
 

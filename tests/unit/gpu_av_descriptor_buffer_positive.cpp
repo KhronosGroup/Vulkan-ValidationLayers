@@ -25,7 +25,7 @@ TEST_F(PositiveGpuAVDescriptorBuffer, BasicCompute) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
-    m_errorMonitor->SetAllowedFailureMsg("Setting VkPhysicalDeviceDescriptorBufferPropertiesEXT::maxResourceDescriptorBufferRange");
+    m_errorMonitor->SetAllowedFailureMsg("WARNING-Setting-Limit-Adjusted");
 
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
@@ -107,7 +107,7 @@ TEST_F(PositiveGpuAVDescriptorBuffer, BasicGraphics) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
-    m_errorMonitor->SetAllowedFailureMsg("Setting VkPhysicalDeviceDescriptorBufferPropertiesEXT::maxResourceDescriptorBufferRange");
+    m_errorMonitor->SetAllowedFailureMsg("WARNING-Setting-Limit-Adjusted");
 
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
