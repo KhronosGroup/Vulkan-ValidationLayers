@@ -118,6 +118,7 @@ class AccelerationStructureKHR : public StateObject, public SubStateManager<Acce
     virtual ~AccelerationStructureKHR() {
         if (!Destroyed()) {
             Destroy();
+            build_info_khr = std::nullopt;
         }
     }
 
