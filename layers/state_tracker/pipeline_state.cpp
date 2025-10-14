@@ -440,6 +440,29 @@ static CBDynamicFlags GetGraphicsDynamicState(Pipeline &pipe_state) {
     return flags;
 }
 
+// We "view" things as being dynamic if the pipeline does not have those shader stages, the spec says:
+// "If the state is not included ... in the new pipeline object, then that command buffer state is not disturbed. For example, mesh
+// shading pipelines do not include vertex input state and therefore do not disturb any such command buffer state."
+static CBDynamicFlags GetIgnoredDynamicState(Pipeline &pipe_state) {
+    CBDynamicFlags flags = 0;
+    if ((pipe_state.active_shaders & VK_SHADER_STAGE_VERTEX_BIT) == 0) {
+        flags |= kVertexDynamicState;
+    }
+    if ((pipe_state.active_shaders & VK_SHADER_STAGE_FRAGMENT_BIT) == 0) {
+        flags |= kFragmentDynamicState;
+    }
+    if ((pipe_state.active_shaders & VK_SHADER_STAGE_GEOMETRY_BIT) == 0) {
+        flags |= kGeometryDynamicState;
+    }
+    if ((pipe_state.active_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) == 0) {
+        flags |= kTessControlDynamicState;
+    }
+    if ((pipe_state.active_shaders & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) == 0) {
+        flags |= kTessEvalDynamicState;
+    }
+    return flags;
+}
+
 // This will only get the topology if possible
 static VkPrimitiveTopology GetRasterizationInputTopology(const Pipeline &pipe_state, const DeviceState &state) {
     VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
@@ -830,6 +853,7 @@ Pipeline::Pipeline(const DeviceState &state_data, const VkGraphicsPipelineCreate
       active_slots(GetActiveSlots(stage_states)),
       max_active_slot(GetMaxActiveSlot(active_slots)),
       dynamic_state(GetGraphicsDynamicState(*this)),
+      ignored_dynamic_state(GetIgnoredDynamicState(*this)),
       topology_at_rasterizer(GetRasterizationInputTopology(*this, state_data)),
       descriptor_buffer_mode((create_flags & VK_PIPELINE_CREATE_2_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(GraphicsCreateInfo().pNext, *this)),
@@ -876,7 +900,8 @@ Pipeline::Pipeline(const DeviceState &state_data, const VkComputePipelineCreateI
       active_shaders(create_info_shaders),  // compute has no linking shaders
       active_slots(GetActiveSlots(stage_states)),
       max_active_slot(GetMaxActiveSlot(active_slots)),
-      dynamic_state(0),  // compute has no dynamic state
+      dynamic_state(0),          // compute has no dynamic state
+      ignored_dynamic_state(0),  // compute has no dynamic state
       descriptor_buffer_mode((create_flags & VK_PIPELINE_CREATE_2_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(ComputeCreateInfo().pNext, *this)),
       uses_pipeline_vertex_robustness(false),
@@ -902,6 +927,7 @@ Pipeline::Pipeline(const DeviceState &state_data, const VkRayTracingPipelineCrea
       active_slots(GetActiveSlots(stage_states)),
       max_active_slot(GetMaxActiveSlot(active_slots)),
       dynamic_state(GetRayTracingDynamicState(*this)),
+      ignored_dynamic_state(0),  // RTX has no ignored dynamic state
       descriptor_buffer_mode((RayTracingCreateInfo().flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(RayTracingCreateInfo().pNext, *this)),
       uses_pipeline_vertex_robustness(false),
@@ -920,12 +946,13 @@ Pipeline::Pipeline(const DeviceState &state_data, const VkRayTracingPipelineCrea
       shader_stages_ci(RayTracingCreateInfo().pStages, RayTracingCreateInfo().stageCount),
       ray_tracing_library_ci(RayTracingCreateInfo().pLibraryInfo),
       uses_shader_module_id(UsesShaderModuleId(*this)),
-      stage_states(GetStageStates(state_data, *this, nullptr)),// #ARNO_TODO redo stage_states fill, if its needed
+      stage_states(GetStageStates(state_data, *this, nullptr)),  // #ARNO_TODO redo stage_states fill, if its needed
       create_info_shaders(GetCreateInfoShaders(*this)),
       active_shaders(create_info_shaders),  // RTX has no linking shaders
       active_slots(GetActiveSlots(stage_states)),
       max_active_slot(GetMaxActiveSlot(active_slots)),
       dynamic_state(GetRayTracingDynamicState(*this)),
+      ignored_dynamic_state(0),  // RTX has no ignored dynamic state
       descriptor_buffer_mode((RayTracingCreateInfo().flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(RayTracingCreateInfo().pNext, *this)),
       uses_pipeline_vertex_robustness(false),
@@ -948,7 +975,8 @@ Pipeline::Pipeline(const DeviceState &state_data, const VkDataGraphPipelineCreat
       active_shaders(create_info_shaders),  // TODO: graph may have linking shaders
       active_slots(GetActiveSlots(stage_states)),
       max_active_slot(GetMaxActiveSlot(active_slots)),
-      dynamic_state(0),  // graph has no dynamic state
+      dynamic_state(0),          // graph has no dynamic state
+      ignored_dynamic_state(0),  // graph has no dynamic state
       descriptor_buffer_mode((DataGraphCreateInfo().flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(DataGraphCreateInfo().pNext, *this)),
       uses_pipeline_vertex_robustness(false),

@@ -261,6 +261,16 @@ bool CoreChecks::ValidateDynamicStateIsSet(const LastBound& last_bound_state, co
     return false;
 }
 
+static CBDynamicFlags GetDrawTimeDynamicStatus(const vvl::CommandBuffer& cb_state, const vvl::Pipeline* pipeline) {
+    if (pipeline) {
+        // build the mask of what has been set in the Pipeline, but yet to be set in the Command
+        return cb_state.dynamic_state_status.cb | ~pipeline->dynamic_state | pipeline->ignored_dynamic_state;
+    } else {
+        // for Shader Object, everything is dynamic don't need a mask
+        return cb_state.dynamic_state_status.cb;
+    }
+}
+
 bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
@@ -275,12 +285,8 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
     const bool tesc_shader_bound = (bound_stages & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) != 0;
     const bool tese_shader_bound = (bound_stages & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) != 0;
 
-    // build the mask of what has been set in the Pipeline, but yet to be set in the Command Buffer,
-    // for Shader Object, everything is dynamic don't need a mask
-    const CBDynamicFlags state_status_cb =
-        has_pipeline ? (~((cb_state.dynamic_state_status.cb ^ last_bound_state.pipeline_state->dynamic_state) &
-                          last_bound_state.pipeline_state->dynamic_state))
-                     : cb_state.dynamic_state_status.cb;
+    // every bit set here represents the command buffer has called vkCmdSet*() for that state
+    const CBDynamicFlags state_status_cb = GetDrawTimeDynamicStatus(cb_state, last_bound_state.pipeline_state);
 
     skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE, vuid);
     if (!last_bound_state.IsRasterizationDisabled()) {

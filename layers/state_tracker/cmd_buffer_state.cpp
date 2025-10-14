@@ -1404,8 +1404,8 @@ void CommandBuffer::RecordBindPipeline(VkPipelineBindPoint bind_point, vvl::Pipe
         CBDynamicFlags invalidated_state = dynamic_state_status.cb;
 
         // Spec: "[dynamic state] made invalid by another pipeline bind with that state specified as static"
-        // So unset the bitmask for the command buffer lifetime tracking
-        dynamic_state_status.cb &= pipeline.dynamic_state;
+        // So unset the bitmask for the command buffer lifetime tracking (unless ignored, keep set)
+        dynamic_state_status.cb &= (pipeline.dynamic_state | pipeline.ignored_dynamic_state);
 
         invalidated_state ^= dynamic_state_status.cb;
         if (invalidated_state.any()) {
