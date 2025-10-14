@@ -81,7 +81,7 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
         DescriptorSetBindings& desc_set_bindings = cb.shared_resources_cache.Get<DescriptorSetBindings>();
 
         for (const DescriptorSetBindings::BindingCommand& desc_binding_cmd : desc_set_bindings.descriptor_set_binding_commands) {
-            vko::BufferRange desc_set_buffer_lut_buffer_range = cb.gpu_resources_manager.GetHostVisibleBufferRange(
+            vko::BufferRange desc_set_buffer_lut_buffer_range = cb.gpu_resources_manager.GetHostCoherentBufferRange(
                 32 * sizeof(VkDeviceAddress));  // No driver offers more than 32 descriptor set bindings
 
             // For each unique bound descriptor set in this command buffer,

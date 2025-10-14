@@ -100,7 +100,7 @@ class GpuResourcesManager {
 
     VkDescriptorSet GetManagedDescriptorSet(VkDescriptorSetLayout desc_set_layout);
 
-    vko::BufferRange GetHostVisibleBufferRange(VkDeviceSize size);
+    vko::BufferRange GetHostCoherentBufferRange(VkDeviceSize size);
     vko::BufferRange GetHostCachedBufferRange(VkDeviceSize size);
     void FlushAllocation(const vko::BufferRange &buffer_range);
     void InvalidateAllocation(const vko::BufferRange &buffer_range);
@@ -153,9 +153,9 @@ class GpuResourcesManager {
 
     // One cache per buffer type: having them mixed in just one would make cache lookups worse
     struct BufferCaches {
-        // Will have HOST_VISIBLE
-        BufferCache host_visible;
-        // Will have HOST_VISIBLE and HOST_CACHED
+        // Will have HOST_VISIBLE and HOST_COHERENT (may be HOST_CACHED)
+        BufferCache host_coherent;
+        // Will have HOST_VISIBLE and HOST_CACHED (may be HOST_COHERENT)
         BufferCache host_cached;
         // Will have DEVICE_LOCAL
         BufferCache device_local;
@@ -165,7 +165,7 @@ class GpuResourcesManager {
         BufferCache staging;
 
         void ReturnBuffers() {
-            host_visible.ReturnBuffers();
+            host_coherent.ReturnBuffers();
             host_cached.ReturnBuffers();
             device_local.ReturnBuffers();
             device_local_indirect.ReturnBuffers();
@@ -173,7 +173,7 @@ class GpuResourcesManager {
         }
 
         void DestroyBuffers() {
-            host_visible.DestroyBuffers();
+            host_coherent.DestroyBuffers();
             host_cached.DestroyBuffers();
             device_local.DestroyBuffers();
             device_local_indirect.DestroyBuffers();
