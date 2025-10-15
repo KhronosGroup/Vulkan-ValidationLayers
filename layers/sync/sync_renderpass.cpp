@@ -504,7 +504,6 @@ void RenderPassAccessContext::RecordLayoutTransitions(const vvl::RenderPass &rp_
                                                       const AttachmentViewGenVector &attachment_views, const ResourceUsageTag tag,
                                                       AccessContext &access_context) {
     const auto &transitions = rp_state.subpass_transitions[subpass];
-    const ResourceAccessState empty_infill{};
     for (const auto &transition : transitions) {
         const auto prev_pass = transition.prev_pass;
         const auto &view_gen = attachment_views[transition.attachment];
@@ -520,7 +519,7 @@ void RenderPassAccessContext::RecordLayoutTransitions(const vvl::RenderPass &rp_
         const std::optional<ImageRangeGen> &attachment_gen = view_gen.GetRangeGen(AttachmentViewGen::Gen::kViewSubresource);
         assert(attachment_gen);
 
-        access_context.ResolveFromContext(barrier_action, *prev_context, *attachment_gen, &empty_infill,
+        access_context.ResolveFromContext(barrier_action, *prev_context, *attachment_gen, true /* infill */,
                                           true /* recur to infill */);
         assert(attachment_gen);
     }
