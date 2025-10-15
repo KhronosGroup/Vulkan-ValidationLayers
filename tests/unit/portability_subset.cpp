@@ -456,11 +456,7 @@ TEST_F(VkPortabilitySubsetTest, UpdateDescriptorSets) {
     auto image_view_create_info = image.BasicViewCreatInfo();
     vkt::ImageView view(*m_device, image_view_create_info);
 
-    VkDescriptorImageInfo img_info = {};
-    img_info.sampler = sampler;
-    img_info.imageView = view;
-    img_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
+    VkDescriptorImageInfo img_info = {sampler, view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
     VkWriteDescriptorSet descriptor_writes[2] = {};
     descriptor_writes[0] = vku::InitStructHelper();
     descriptor_writes[0].dstSet = descriptor_set.set_;

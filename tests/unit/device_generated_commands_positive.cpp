@@ -439,11 +439,7 @@ TEST_F(PositiveDeviceGeneratedCommands, IndirectExecutionSetNullLayout) {
 
     vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_layout});
 
-    VkPushConstantRange push_constant_range;
-    push_constant_range.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
-    push_constant_range.offset = 0u;
-    push_constant_range.size = 4u;
-
+    VkPushConstantRange push_constant_range{VK_SHADER_STAGE_COMPUTE_BIT, 0, 4};
     VkShaderCreateInfoEXT shader_ci = vku::InitStructHelper();
     shader_ci.flags = VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT;
     shader_ci.stage = VK_SHADER_STAGE_COMPUTE_BIT;

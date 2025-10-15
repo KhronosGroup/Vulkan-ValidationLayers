@@ -2135,19 +2135,16 @@ void RenderPassCreatePotentialFormatFeaturesTest::Test(bool const useLinearColor
 
 TEST_F(RenderPassCreatePotentialFormatFeaturesTest, Core) {
     TEST_DESCRIPTION("Validate PotentialFormatFeatures in renderpass create");
-
     Test(false);
 }
 
 TEST_F(RenderPassCreatePotentialFormatFeaturesTest, LinearColorAttachment) {
     TEST_DESCRIPTION("Validate PotentialFormatFeatures in renderpass create with linearColorAttachment");
-
     Test(true);
 }
 
 TEST_F(NegativeRenderPass, DepthStencilResolveMode) {
     TEST_DESCRIPTION("Test valid usage of the VkResolveModeFlagBits");
-
     AddRequiredExtensions(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
@@ -2305,7 +2302,6 @@ TEST_F(NegativeRenderPass, DepthStencilResolveMode) {
 
 TEST_F(NegativeRenderPass, RenderArea) {
     TEST_DESCRIPTION("Begin render pass with render area that is not within the framebuffer.");
-
     AddOptionalExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -2351,7 +2347,6 @@ TEST_F(NegativeRenderPass, RenderArea) {
 
 TEST_F(NegativeRenderPass, DeviceGroupRenderArea) {
     TEST_DESCRIPTION("Begin render pass with device group render area that is not within the framebuffer.");
-
     AddRequiredExtensions(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
@@ -2412,7 +2407,6 @@ TEST_F(NegativeRenderPass, RenderPassBeginNullValues) {
 
 TEST_F(NegativeRenderPass, DepthStencilResolveAttachmentFormat) {
     TEST_DESCRIPTION("Create subpass with VkSubpassDescriptionDepthStencilResolve that has an ");
-
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
@@ -2434,7 +2428,6 @@ TEST_F(NegativeRenderPass, DepthStencilResolveAttachmentFormat) {
 
 TEST_F(NegativeRenderPass, RenderPassAttachmentFormat) {
     TEST_DESCRIPTION("Test creating render pass with attachment format VK_FORMAT_UNDEFINED");
-
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
@@ -2483,7 +2476,6 @@ TEST_F(NegativeRenderPass, RenderPassAttachmentFormat) {
 
 TEST_F(NegativeRenderPass, SamplingFromReadOnlyDepthStencilAttachment) {
     TEST_DESCRIPTION("Use same image as depth stencil attachment in read only layer and as sampler");
-
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -2554,7 +2546,6 @@ TEST_F(NegativeRenderPass, SamplingFromReadOnlyDepthStencilAttachment) {
 
 TEST_F(NegativeRenderPass, ColorAttachmentImageViewUsage) {
     TEST_DESCRIPTION("Create image view with missing usage bits.");
-
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -2570,11 +2561,7 @@ TEST_F(NegativeRenderPass, ColorAttachmentImageViewUsage) {
     vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_COLOR_BIT, &image_view_usage);
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    VkDescriptorImageInfo image_info = {};
-    image_info.sampler = sampler;
-    image_info.imageView = image_view;
-    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
+    VkDescriptorImageInfo image_info = {sampler, image_view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = descriptor_set.set_;
     descriptor_write.dstBinding = 0;
@@ -2588,7 +2575,6 @@ TEST_F(NegativeRenderPass, ColorAttachmentImageViewUsage) {
 
 TEST_F(NegativeRenderPass, StencilLoadOp) {
     TEST_DESCRIPTION("Create render pass with invalid stencil load op.");
-
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);

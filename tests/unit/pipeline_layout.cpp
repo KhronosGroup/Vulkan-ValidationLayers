@@ -22,20 +22,9 @@ class NegativePipelineLayout : public VkLayerTest {};
 
 TEST_F(NegativePipelineLayout, ExceedsSetLimit) {
     TEST_DESCRIPTION("Attempt to create a pipeline layout using more than the physical limit of SetLayouts.");
-
     RETURN_IF_SKIP(Init());
 
-    VkDescriptorSetLayoutBinding layout_binding = {};
-    layout_binding.binding = 0;
-    layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    layout_binding.descriptorCount = 1;
-    layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    layout_binding.pImmutableSamplers = NULL;
-
-    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
-    ds_layout_ci.bindingCount = 1;
-    ds_layout_ci.pBindings = &layout_binding;
-    vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+    vkt::DescriptorSetLayout ds_layout(*m_device, {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr});
 
     // Create an array of DSLs, one larger than the physical limit
     const auto excess_layouts = 1 + m_device->Physical().limits_.maxBoundDescriptorSets;
@@ -955,15 +944,9 @@ TEST_F(NegativePipelineLayout, MissingDescriptor) {
 
 TEST_F(NegativePipelineLayout, MultiplePushDescriptorSets) {
     TEST_DESCRIPTION("Verify an error message for multiple push descriptor sets.");
-
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
-    VkDescriptorSetLayoutBinding dsl_binding = {};
-    dsl_binding.binding = 0;
-    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    dsl_binding.descriptorCount = 1;
-    dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    dsl_binding.pImmutableSamplers = NULL;
+    VkDescriptorSetLayoutBinding dsl_binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
 
     const unsigned int descriptor_set_layout_count = 2;
     std::vector<vkt::DescriptorSetLayout> ds_layouts;
@@ -991,17 +974,11 @@ TEST_F(NegativePipelineLayout, MultiplePushDescriptorSets) {
 
 TEST_F(NegativePipelineLayout, SetLayoutFlags) {
     TEST_DESCRIPTION("Validate setLayout flags in create pipeline layout.");
-
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::mutableDescriptorType);
     RETURN_IF_SKIP(Init());
 
-    VkDescriptorSetLayoutBinding layout_binding = {};
-    layout_binding.binding = 0;
-    layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    layout_binding.descriptorCount = 1;
-    layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    layout_binding.pImmutableSamplers = nullptr;
+    VkDescriptorSetLayoutBinding layout_binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr};
 
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
     ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT;

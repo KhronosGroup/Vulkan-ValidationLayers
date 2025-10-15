@@ -292,9 +292,7 @@ TEST_F(NegativeCommand, PushConstants) {
     pipeline_layout_ci.pushConstantRangeCount = 1;
     pipeline_layout_ci.pPushConstantRanges = &pc_range;
 
-    //
     // Check for invalid push constant ranges in pipeline layouts.
-    //
     struct PipelineLayoutTestCase {
         VkPushConstantRange const range;
         const char *msg;

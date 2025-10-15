@@ -20,9 +20,7 @@ class NegativeShaderCooperativeMatrix : public CooperativeMatrixTest {};
 
 TEST_F(NegativeShaderCooperativeMatrix, SpecInfo) {
     TEST_DESCRIPTION("Test VK_KHR_cooperative_matrix.");
-
     SetTargetApiVersion(VK_API_VERSION_1_3);
-
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderFloat16);
     RETURN_IF_SKIP(InitCooperativeMatrixKHR());

@@ -6087,8 +6087,8 @@ TEST_F(NegativeDynamicRendering, CreateGraphicsPipeline) {
     )glsl";
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
+    const vkt::DescriptorSetLayout dsl(*m_device,
+                                       {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
     const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -6118,8 +6118,8 @@ TEST_F(NegativeDynamicRendering, CreateGraphicsPipelineNoInfo) {
     )glsl";
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
+    const vkt::DescriptorSetLayout dsl(*m_device,
+                                       {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
     const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06061");

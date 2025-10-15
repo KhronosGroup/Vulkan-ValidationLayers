@@ -12,6 +12,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <vulkan/vulkan_core.h>
 #include <thread>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/descriptor_helper.h"
@@ -178,10 +179,7 @@ TEST_F(PositiveThreading, DebugObjectNames) {
     RETURN_IF_SKIP(InitState());
 
     constexpr uint32_t count = 10000u;
-
-    VkDescriptorPoolSize pool_size;
-    pool_size.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    pool_size.descriptorCount = count;
+    VkDescriptorPoolSize pool_size{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, count};
 
     VkDescriptorPoolCreateInfo descriptor_pool_ci = vku::InitStructHelper();
     descriptor_pool_ci.maxSets = count;
@@ -189,13 +187,7 @@ TEST_F(PositiveThreading, DebugObjectNames) {
     descriptor_pool_ci.pPoolSizes = &pool_size;
     vkt::DescriptorPool descriptor_pool(*m_device, descriptor_pool_ci);
 
-    VkDescriptorSetLayoutBinding binding;
-    binding.binding = 0u;
-    binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    binding.descriptorCount = 1u;
-    binding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
-    binding.pImmutableSamplers = nullptr;
-
+    VkDescriptorSetLayoutBinding binding{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
     VkDescriptorSetLayoutCreateInfo set_layout_ci = vku::InitStructHelper();
     set_layout_ci.bindingCount = 1u;
     set_layout_ci.pBindings = &binding;
@@ -218,11 +210,7 @@ TEST_F(PositiveThreading, DebugObjectNames) {
 
     vkt::Buffer buffer(*m_device, 256u, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
-    VkDescriptorBufferInfo buffer_info;
-    buffer_info.buffer = buffer;
-    buffer_info.offset = 0u;
-    buffer_info.range = 256u;
-
+    VkDescriptorBufferInfo buffer_info{buffer, 0, VK_WHOLE_SIZE};
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstBinding = 0u;
     descriptor_write.dstArrayElement = 0u;

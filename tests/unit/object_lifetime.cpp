@@ -12,6 +12,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <vulkan/vulkan_core.h>
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
@@ -391,10 +392,7 @@ TEST_F(NegativeObjectLifetime, DISABLED_DescriptorSetMutableBufferDestroyed) {
         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
     };
 
-    VkMutableDescriptorTypeListEXT type_list = {};
-    type_list.descriptorTypeCount = 2;
-    type_list.pDescriptorTypes = desc_types;
-
+    VkMutableDescriptorTypeListEXT type_list = {2, desc_types};
     VkMutableDescriptorTypeCreateInfoEXT mdtci = vku::InitStructHelper();
     mdtci.mutableDescriptorTypeListCount = 1;
     mdtci.pMutableDescriptorTypeLists = &type_list;
@@ -443,10 +441,7 @@ TEST_F(NegativeObjectLifetime, DISABLED_DescriptorSetMutableBufferArrayDestroyed
         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
     };
 
-    VkMutableDescriptorTypeListEXT type_list = {};
-    type_list.descriptorTypeCount = 2;
-    type_list.pDescriptorTypes = desc_types;
-
+    VkMutableDescriptorTypeListEXT type_list = {2, desc_types};
     VkMutableDescriptorTypeCreateInfoEXT mdtci = vku::InitStructHelper();
     mdtci.mutableDescriptorTypeListCount = 1;
     mdtci.pMutableDescriptorTypeLists = &type_list;
@@ -725,18 +720,11 @@ TEST_F(NegativeObjectLifetime, FramebufferInUseDestroyedSignaled) {
 
 TEST_F(NegativeObjectLifetime, PushDescriptorUniformDestroySignaled) {
     TEST_DESCRIPTION("Destroy a uniform buffer in use by a push descriptor set");
-
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkDescriptorSetLayoutBinding dsl_binding = {};
-    dsl_binding.binding = 2;
-    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    dsl_binding.descriptorCount = 1;
-    dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    dsl_binding.pImmutableSamplers = NULL;
-
+    VkDescriptorSetLayoutBinding dsl_binding = {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
     // Create push descriptor set layout
     const vkt::DescriptorSetLayout push_ds_layout(*m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
@@ -749,10 +737,7 @@ TEST_F(NegativeObjectLifetime, PushDescriptorUniformDestroySignaled) {
     const uint32_t data_size = sizeof(float) * 3;
     vkt::Buffer vbo(*m_device, data_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
-    VkDescriptorBufferInfo buff_info;
-    buff_info.buffer = vbo;
-    buff_info.offset = 0;
-    buff_info.range = data_size;
+    VkDescriptorBufferInfo buff_info{vbo, 0, data_size};
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstBinding = 2;
     descriptor_write.descriptorCount = 1;

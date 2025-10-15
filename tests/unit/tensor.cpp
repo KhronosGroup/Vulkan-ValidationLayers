@@ -9,6 +9,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <vulkan/vulkan_core.h>
 #include "containers/container_utils.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
@@ -2078,19 +2079,10 @@ TEST_F(NegativeTensor, MutableDescriptors) {
     AddRequiredFeature(vkt::Feature::mutableDescriptorType);
     RETURN_IF_SKIP(InitBasicTensor());
 
-    VkDescriptorSetLayoutBinding dsl_binding = {};
-    dsl_binding.binding = 0;
-    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
-    dsl_binding.descriptorCount = 1;
-    dsl_binding.stageFlags = VK_SHADER_STAGE_ALL;
-    dsl_binding.pImmutableSamplers = nullptr;
-
+    VkDescriptorSetLayoutBinding dsl_binding = {0, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1, VK_SHADER_STAGE_ALL, nullptr};
     VkDescriptorType descriptor_types[] = {VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_TENSOR_ARM};
 
-    VkMutableDescriptorTypeListEXT mutable_descriptor_type_list = {};
-    mutable_descriptor_type_list.descriptorTypeCount = 2;
-    mutable_descriptor_type_list.pDescriptorTypes = descriptor_types;
-
+    VkMutableDescriptorTypeListEXT mutable_descriptor_type_list = {2, descriptor_types};
     VkMutableDescriptorTypeCreateInfoEXT mutable_descriptor_type_ci = vku::InitStructHelper();
     mutable_descriptor_type_ci.mutableDescriptorTypeListCount = 1;
     mutable_descriptor_type_ci.pMutableDescriptorTypeLists = &mutable_descriptor_type_list;
@@ -2100,7 +2092,6 @@ TEST_F(NegativeTensor, MutableDescriptors) {
     ds_layout_ci.pBindings = &dsl_binding;
 
     VkDescriptorSetLayout ds_layout;
-
     m_errorMonitor->SetDesiredError("VUID-VkMutableDescriptorTypeListEXT-pDescriptorTypes-09696");
     vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();

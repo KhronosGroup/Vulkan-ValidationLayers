@@ -348,20 +348,8 @@ TEST_F(NegativeDescriptorIndexing, SetLayoutBindings) {
     AddRequiredFeature(vkt::Feature::descriptorBindingUniformBufferUpdateAfterBind);
     RETURN_IF_SKIP(Init());
 
-    VkDescriptorSetLayoutBinding update_binding = {};
-    update_binding.binding = 0;
-    update_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    update_binding.descriptorCount = 1;
-    update_binding.stageFlags = VK_SHADER_STAGE_ALL;
-    update_binding.pImmutableSamplers = nullptr;
-
-    VkDescriptorSetLayoutBinding dynamic_binding = {};
-    dynamic_binding.binding = 1;
-    dynamic_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
-    dynamic_binding.descriptorCount = 1;
-    dynamic_binding.stageFlags = VK_SHADER_STAGE_ALL;
-    dynamic_binding.pImmutableSamplers = nullptr;
-
+    VkDescriptorSetLayoutBinding update_binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    VkDescriptorSetLayoutBinding dynamic_binding = {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_ALL, nullptr};
     VkDescriptorSetLayoutBinding bindings[2] = {update_binding, dynamic_binding};
 
     VkDescriptorBindingFlags flags[2] = {VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT, 0};
@@ -376,8 +364,8 @@ TEST_F(NegativeDescriptorIndexing, SetLayoutBindings) {
     create_info.pBindings = bindings;
 
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutCreateInfo-descriptorType-03001");
-    VkDescriptorSetLayout setLayout;
-    vk::CreateDescriptorSetLayout(*m_device, &create_info, nullptr, &setLayout);
+    VkDescriptorSetLayout set_layout;
+    vk::CreateDescriptorSetLayout(*m_device, &create_info, nullptr, &set_layout);
     m_errorMonitor->VerifyFound();
 }
 

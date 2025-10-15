@@ -3464,7 +3464,6 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthBoundsTestEnable) {
 
 TEST_F(NegativeShaderObject, MissingCmdSetStencilTestEnable) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetStencilTestEnable.");
-
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
     CreateMinimalShaders();
@@ -3484,7 +3483,6 @@ TEST_F(NegativeShaderObject, MissingCmdSetStencilTestEnable) {
 
 TEST_F(NegativeShaderObject, MissingCmdSetStencilOp) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetStencilOp.");
-
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
     CreateMinimalShaders();
@@ -3505,7 +3503,6 @@ TEST_F(NegativeShaderObject, MissingCmdSetStencilOp) {
 
 TEST_F(NegativeShaderObject, ComputeShaderGroupCount) {
     TEST_DESCRIPTION("Dispatch with group count higher than maxComputeWorkGroupCount.");
-
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     uint32_t x_count_limit = m_device->Physical().limits_.maxComputeWorkGroupCount[0];
@@ -3541,13 +3538,9 @@ TEST_F(NegativeShaderObject, ComputeShaderGroupCount) {
 
 TEST_F(NegativeShaderObject, ComputeShaderMissingPushConst) {
     TEST_DESCRIPTION("Dispatch with a shader object using push const, but not setting it.");
-
     RETURN_IF_SKIP(InitBasicShaderObject());
 
-    VkPushConstantRange push_const_range;
-    push_const_range.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
-    push_const_range.offset = 0u;
-    push_const_range.size = sizeof(int);
+    VkPushConstantRange push_const_range{VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(int)};
 
     const char kComputeShaderGlsl[] = R"glsl(
         #version 460
@@ -3590,7 +3583,6 @@ TEST_F(NegativeShaderObject, ComputeShaderMissingPushConst) {
 
 TEST_F(NegativeShaderObject, SharedMemoryOverLimit) {
     TEST_DESCRIPTION("Validate compute shader shared memory does not exceed maxComputeSharedMemorySize");
-
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const uint32_t max_shared_memory_size = m_device->Physical().limits_.maxComputeSharedMemorySize;
@@ -3619,7 +3611,6 @@ TEST_F(NegativeShaderObject, SharedMemoryOverLimit) {
 
 TEST_F(NegativeShaderObject, InvalidRequireFullSubgroupsFlag) {
     TEST_DESCRIPTION("Create shader with invalid spirv code size.");
-
     RETURN_IF_SKIP(InitBasicShaderObject());
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
     VkShaderCreateInfoEXT create_info =
@@ -3633,7 +3624,6 @@ TEST_F(NegativeShaderObject, InvalidRequireFullSubgroupsFlag) {
 
 TEST_F(NegativeShaderObject, SpecializationMapEntryOffset) {
     TEST_DESCRIPTION("Create shader with invalid specialization map entry offset.");
-
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const char kVertexSource[] = R"glsl(
@@ -3670,7 +3660,6 @@ TEST_F(NegativeShaderObject, SpecializationMapEntryOffset) {
 
 TEST_F(NegativeShaderObject, SpecializationMapEntrySize) {
     TEST_DESCRIPTION("Create shader with specialization map entry out of bounds.");
-
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const char kVertexSource[] = R"glsl(
@@ -3707,7 +3696,6 @@ TEST_F(NegativeShaderObject, SpecializationMapEntrySize) {
 
 TEST_F(NegativeShaderObject, SpecializationMismatch) {
     TEST_DESCRIPTION("Create shader with invalid spirv code size.");
-
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const char kVertexSource[] = R"glsl(
@@ -3744,7 +3732,6 @@ TEST_F(NegativeShaderObject, SpecializationMismatch) {
 
 TEST_F(NegativeShaderObject, SpecializationSameConstantId) {
     TEST_DESCRIPTION("Create shader with non unique specialization map entries.");
-
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const char kVertexSource[] = R"glsl(
@@ -3784,7 +3771,6 @@ TEST_F(NegativeShaderObject, SpecializationSameConstantId) {
 
 TEST_F(NegativeShaderObject, MissingEntrypoint) {
     TEST_DESCRIPTION("Create shader with invalid spirv code size.");
-
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
@@ -3800,7 +3786,6 @@ TEST_F(NegativeShaderObject, MissingEntrypoint) {
 TEST_F(NegativeShaderObject, SpecializationApplied) {
     TEST_DESCRIPTION(
         "Make sure specialization constants get applied during shader validation by using a value that breaks compilation.");
-
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     // Size an array using a specialization constant of default value equal to 1.
@@ -3855,7 +3840,6 @@ TEST_F(NegativeShaderObject, SpecializationApplied) {
 
 TEST_F(NegativeShaderObject, MinTexelGatherOffset) {
     TEST_DESCRIPTION("Create shader with texel gather offset lower than minimum.");
-
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     // Size an array using a specialization constant of default value equal to 1.
@@ -3928,7 +3912,6 @@ TEST_F(NegativeShaderObject, MinTexelGatherOffset) {
 
 TEST_F(NegativeShaderObject, UnsupportedSpirvCapability) {
     TEST_DESCRIPTION("Create shader with unsupported spirv capability.");
-
     SetTargetApiVersion(VK_API_VERSION_1_0);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
@@ -3992,7 +3975,6 @@ TEST_F(NegativeShaderObject, UnsupportedSpirvCapability) {
 
 TEST_F(NegativeShaderObject, UnsupportedSpirvExtension) {
     TEST_DESCRIPTION("Create shader with unsupported spirv extension.");
-
     SetTargetApiVersion(VK_API_VERSION_1_0);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
@@ -4025,7 +4007,6 @@ TEST_F(NegativeShaderObject, UnsupportedSpirvExtension) {
 
 TEST_F(NegativeShaderObject, SpirvExtensionRequirementsNotMet) {
     TEST_DESCRIPTION("Create shader with extension requirements not met.");
-
     SetTargetApiVersion(VK_API_VERSION_1_0);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
@@ -4059,7 +4040,6 @@ TEST_F(NegativeShaderObject, SpirvExtensionRequirementsNotMet) {
 
 TEST_F(NegativeShaderObject, MemoryModelNotEnabled) {
     TEST_DESCRIPTION("Create shader with unsupported spirv extension.");
-
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderObject);
@@ -4089,7 +4069,6 @@ TEST_F(NegativeShaderObject, MemoryModelNotEnabled) {
 
 TEST_F(NegativeShaderObject, MaxTransformFeedbackStream) {
     TEST_DESCRIPTION("Test maxTransformFeedbackStream with shader objects.");
-
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::geometryShader);
     AddRequiredFeature(vkt::Feature::transformFeedback);
@@ -4155,7 +4134,6 @@ TEST_F(NegativeShaderObject, MaxTransformFeedbackStream) {
 
 TEST_F(NegativeShaderObject, TransformFeedbackStride) {
     TEST_DESCRIPTION("Test maxTransformFeedbackStream with shader objects.");
-
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::geometryShader);
     AddRequiredFeature(vkt::Feature::transformFeedback);
@@ -4211,7 +4189,6 @@ TEST_F(NegativeShaderObject, TransformFeedbackStride) {
 
 TEST_F(NegativeShaderObject, MeshOutputVertices) {
     TEST_DESCRIPTION("Create mesh shader with output vertices higher than max.");
-
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_3));
 
     VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
@@ -4253,7 +4230,6 @@ TEST_F(NegativeShaderObject, MeshOutputVertices) {
 
 TEST_F(NegativeShaderObject, Atomics) {
     TEST_DESCRIPTION("Test atomics with shader objects.");
-
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::shaderInt64);
     AddRequiredFeature(vkt::Feature::shaderSharedInt64Atomics);  // to allow OpCapability Int64Atomics
@@ -4283,7 +4259,6 @@ TEST_F(NegativeShaderObject, Atomics) {
 
 TEST_F(NegativeShaderObject, ExtendedTypesDisabled) {
     TEST_DESCRIPTION("Test VK_KHR_shader_subgroup_extended_types.");
-
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME);
@@ -4324,7 +4299,6 @@ TEST_F(NegativeShaderObject, ExtendedTypesDisabled) {
 
 TEST_F(NegativeShaderObject, ReadShaderClock) {
     TEST_DESCRIPTION("Test VK_KHR_shader_clock");
-
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_SHADER_CLOCK_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -4349,7 +4323,6 @@ TEST_F(NegativeShaderObject, ReadShaderClock) {
 
 TEST_F(NegativeShaderObject, WriteLessComponent) {
     TEST_DESCRIPTION("Test writing to image with less components.");
-
     SetTargetApiVersion(VK_API_VERSION_1_3);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
@@ -4394,7 +4367,6 @@ TEST_F(NegativeShaderObject, WriteLessComponent) {
 
 TEST_F(NegativeShaderObject, LocalSizeIdExecutionMode) {
     TEST_DESCRIPTION("Test LocalSizeId spirv execution mode.");
-
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
 
@@ -4427,7 +4399,6 @@ TEST_F(NegativeShaderObject, LocalSizeIdExecutionMode) {
 
 TEST_F(NegativeShaderObject, ZeroInitializeWorkgroupMemory) {
     TEST_DESCRIPTION("Test initializing workgroup memory in compute shader.");
-
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -4461,7 +4432,6 @@ TEST_F(NegativeShaderObject, ZeroInitializeWorkgroupMemory) {
 
 TEST_F(NegativeShaderObject, MissingNonReadableDecorationFormatRead) {
     TEST_DESCRIPTION("Create a shader with a storage image without an image format not marked as non readable.");
-
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     if (DeviceExtensionSupported(Gpu(), nullptr, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
@@ -4512,7 +4482,6 @@ TEST_F(NegativeShaderObject, MissingNonReadableDecorationFormatRead) {
 
 TEST_F(NegativeShaderObject, MaxSampleMaskWords) {
     TEST_DESCRIPTION("Test limit of maxSampleMaskWords");
-
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
@@ -4590,7 +4559,6 @@ TEST_F(NegativeShaderObject, MaxSampleMaskWords) {
 
 TEST_F(NegativeShaderObject, ConservativeRasterizationPostDepthCoverage) {
     TEST_DESCRIPTION("Make sure conservativeRasterizationPostDepthCoverage is set if needed.");
-
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
@@ -4638,7 +4606,6 @@ TEST_F(NegativeShaderObject, ConservativeRasterizationPostDepthCoverage) {
 
 TEST_F(NegativeShaderObject, LocalSizeExceedLimits) {
     TEST_DESCRIPTION("Create shader where local size exceeds limits.");
-
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     uint32_t x_count_limit = m_device->Physical().limits_.maxComputeWorkGroupCount[0];
@@ -4682,7 +4649,6 @@ TEST_F(NegativeShaderObject, LocalSizeExceedLimits) {
 
 TEST_F(NegativeShaderObject, MissingLineWidthSet) {
     TEST_DESCRIPTION("Draw with shaders outputing lines but not setting line width dynamic state.");
-
     AddRequiredFeature(vkt::Feature::geometryShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -4766,7 +4732,6 @@ TEST_F(NegativeShaderObject, InvalidViewportCount) {
 
 TEST_F(NegativeShaderObject, AlphaToCoverage) {
     TEST_DESCRIPTION("Draw with fragment shader missing alpha to coverage.");
-
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
@@ -4797,7 +4762,6 @@ TEST_F(NegativeShaderObject, AlphaToCoverage) {
 
 TEST_F(NegativeShaderObject, MissingLineRasterizationMode) {
     TEST_DESCRIPTION("Draw with shaders outputing lines but not setting line rasterization mode dynamic state.");
-
     AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::stippledRectangularLines);
     AddRequiredFeature(vkt::Feature::geometryShader);

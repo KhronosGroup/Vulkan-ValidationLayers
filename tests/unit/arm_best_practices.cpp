@@ -224,15 +224,11 @@ TEST_F(VkArmBestPracticesLayerTest, ManySmallIndexedDrawcalls) {
 
 TEST_F(VkArmBestPracticesLayerTest, SuboptimalDescriptorReuseTest) {
     TEST_DESCRIPTION("Test for validation warnings of potentially suboptimal re-use of descriptor set allocations");
-
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    VkDescriptorPoolSize ds_type_count = {};
-    ds_type_count.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-    ds_type_count.descriptorCount = 6;
-
+    VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 6};
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.maxSets = 6;
     ds_pool_ci.poolSizeCount = 1;
@@ -240,17 +236,7 @@ TEST_F(VkArmBestPracticesLayerTest, SuboptimalDescriptorReuseTest) {
     ds_pool_ci.pPoolSizes = &ds_type_count;
 
     vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
-
-    VkDescriptorSetLayoutBinding ds_binding = {};
-    ds_binding.binding = 0;
-    ds_binding.descriptorCount = 1;
-    ds_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-
-    VkDescriptorSetLayoutCreateInfo ds_layout_info = vku::InitStructHelper();
-    ds_layout_info.bindingCount = 1;
-    ds_layout_info.pBindings = &ds_binding;
-
-    vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_info);
+    vkt::DescriptorSetLayout ds_layout(*m_device, {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_ALL, nullptr});
 
     auto ds_layouts = std::vector<VkDescriptorSetLayout>(ds_pool_ci.maxSets, ds_layout);
 
@@ -1202,18 +1188,11 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     graphics_pipeline.dsl_bindings_[1].binding = 10;
     graphics_pipeline.dsl_bindings_[1].descriptorCount = 4;
     graphics_pipeline.cb_attachments_.colorWriteMask = 0xf;
-
     graphics_pipeline.gp_ci_.renderPass = rp;
     graphics_pipeline.gp_ci_.flags = 0;
-
     graphics_pipeline.CreateGraphicsPipeline();
 
-    VkDescriptorPoolSize pool_sizes[2] = {};
-    pool_sizes[0].descriptorCount = 1;
-    pool_sizes[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    pool_sizes[1].descriptorCount = 4;
-    pool_sizes[1].type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-
+    VkDescriptorPoolSize pool_sizes[2] = {{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1}, {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 4}};
     VkDescriptorPoolCreateInfo descriptor_pool_create_info = vku::InitStructHelper();
     descriptor_pool_create_info.maxSets = 1;
     descriptor_pool_create_info.poolSizeCount = 2;
@@ -1227,11 +1206,7 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     descriptor_set_allocate_info.pSetLayouts = &graphics_pipeline.descriptor_set_->layout_.handle();
     vk::AllocateDescriptorSets(*m_device, &descriptor_set_allocate_info, &descriptor_set);
 
-    VkDescriptorImageInfo image_info = {};
-    image_info.imageView = view1;
-    image_info.sampler = VK_NULL_HANDLE;
-    image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-
+    VkDescriptorImageInfo image_info = {VK_NULL_HANDLE, view1, VK_IMAGE_LAYOUT_GENERAL};
     VkWriteDescriptorSet write = vku::InitStructHelper();
     write.descriptorCount = 1;
     write.dstBinding = 10;

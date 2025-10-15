@@ -1038,10 +1038,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, ConcurrentAccessesToBdaBuffer) {
     )glsl";
     VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT);
 
-    VkPushConstantRange pc;
-    pc.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    pc.offset = 0;
-    pc.size = sizeof(VkDeviceAddress);
+    VkPushConstantRange pc{VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(VkDeviceAddress)};
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo()};

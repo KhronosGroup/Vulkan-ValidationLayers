@@ -269,11 +269,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
     write_descript_set_as.accelerationStructureCount = 1;
     write_descript_set_as.pAccelerationStructures = &top_level_as_handle;
 
-    VkDescriptorBufferInfo descriptor_buffer_info = {};
-    descriptor_buffer_info.buffer = storage_buffer;
-    descriptor_buffer_info.offset = 0;
-    descriptor_buffer_info.range = storage_buffer_size;
-
+    VkDescriptorBufferInfo descriptor_buffer_info = {storage_buffer, 0, storage_buffer_size};
     VkDescriptorImageInfo descriptor_image_infos[6] = {};
     for (int i = 0; i < 6; i++) {
         descriptor_image_infos[i] = {sampler, imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};

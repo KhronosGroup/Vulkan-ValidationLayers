@@ -116,13 +116,7 @@ TEST_F(PositiveMultiview, PushDescriptor) {
     vkt::ImageView view = image.CreateView();
     vkt::Framebuffer fb(*m_device, render_pass, 1, &view.handle());
 
-    VkDescriptorSetLayoutBinding dsl_binding = {};
-    dsl_binding.binding = 2;
-    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    dsl_binding.descriptorCount = 1;
-    dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    dsl_binding.pImmutableSamplers = nullptr;
-
+    VkDescriptorSetLayoutBinding dsl_binding = {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
     // Create push descriptor set layout
     const vkt::DescriptorSetLayout push_ds_layout(*m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);

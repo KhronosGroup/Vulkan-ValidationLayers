@@ -11,6 +11,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <vulkan/vulkan_core.h>
 #include <chrono>
 #include <thread>
 
@@ -469,27 +470,16 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_StaticPriority) {
     m_errorMonitor->Finish();
 }
 
-static VkDescriptorSetLayoutBinding CreateSingleDescriptorBinding(VkDescriptorType type, uint32_t binding) {
-    VkDescriptorSetLayoutBinding layout_binding = {};
-    layout_binding.binding = binding;
-    layout_binding.descriptorType = type;
-    layout_binding.descriptorCount = 1;
-    layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    layout_binding.pImmutableSamplers = nullptr;
-    return layout_binding;
-}
-
 TEST_F(VkNvidiaBestPracticesLayerTest, CreatePipelineLayout_SeparateSampler) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
     RETURN_IF_SKIP(InitState());
 
     VkDescriptorSetLayoutBinding separate_bindings[] = {
-        CreateSingleDescriptorBinding(VK_DESCRIPTOR_TYPE_SAMPLER, 0),
-        CreateSingleDescriptorBinding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1),
+        {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
     };
     VkDescriptorSetLayoutBinding combined_bindings[] = {
-        CreateSingleDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0),
-    };
+        {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}};
 
     VkDescriptorSetLayoutCreateInfo separate_set_layout_ci = vku::InitStructHelper();
     separate_set_layout_ci.flags = 0;

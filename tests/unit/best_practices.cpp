@@ -1053,16 +1053,12 @@ TEST_F(VkBestPracticesLayerTest, TransitionFromUndefinedToReadOnly) {
 
 TEST_F(VkBestPracticesLayerTest, OverAllocateFromDescriptorPool) {
     TEST_DESCRIPTION("Attempt to allocate more sets and descriptors than descriptor pool has available.");
-
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(InitBestPracticesFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    VkDescriptorPoolSize ds_type_count = {};
-    ds_type_count.type = VK_DESCRIPTOR_TYPE_SAMPLER;
-    ds_type_count.descriptorCount = 8;
-
+    VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_SAMPLER, 8};
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.flags = 0;
     ds_pool_ci.maxSets = 3;
@@ -1070,15 +1066,7 @@ TEST_F(VkBestPracticesLayerTest, OverAllocateFromDescriptorPool) {
     ds_pool_ci.pPoolSizes = &ds_type_count;
 
     vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
-
-    VkDescriptorSetLayoutBinding dsl_binding_samp = {};
-    dsl_binding_samp.binding = 0;
-    dsl_binding_samp.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-    dsl_binding_samp.descriptorCount = 1;
-    dsl_binding_samp.stageFlags = VK_SHADER_STAGE_ALL;
-    dsl_binding_samp.pImmutableSamplers = NULL;
-
-    const vkt::DescriptorSetLayout ds_layout_samp(*m_device, {dsl_binding_samp});
+    const vkt::DescriptorSetLayout ds_layout_samp(*m_device, {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr});
 
     // Try to allocate 2 sets when pool only has 1 set
     VkDescriptorSet descriptor_sets[4];
@@ -1095,16 +1083,12 @@ TEST_F(VkBestPracticesLayerTest, OverAllocateFromDescriptorPool) {
 
 TEST_F(VkBestPracticesLayerTest, OverAllocateTypeFromDescriptorPool) {
     TEST_DESCRIPTION("Attempt to allocate more sets and descriptors than descriptor pool has available.");
-
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(InitBestPracticesFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    VkDescriptorPoolSize ds_type_count = {};
-    ds_type_count.type = VK_DESCRIPTOR_TYPE_SAMPLER;
-    ds_type_count.descriptorCount = 3;
-
+    VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_SAMPLER, 3};
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.flags = 0;
     ds_pool_ci.maxSets = 4;
@@ -1113,14 +1097,7 @@ TEST_F(VkBestPracticesLayerTest, OverAllocateTypeFromDescriptorPool) {
 
     vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
 
-    VkDescriptorSetLayoutBinding dsl_binding_samp = {};
-    dsl_binding_samp.binding = 0;
-    dsl_binding_samp.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-    dsl_binding_samp.descriptorCount = 1;
-    dsl_binding_samp.stageFlags = VK_SHADER_STAGE_ALL;
-    dsl_binding_samp.pImmutableSamplers = NULL;
-
-    const vkt::DescriptorSetLayout ds_layout_samp(*m_device, {dsl_binding_samp});
+    const vkt::DescriptorSetLayout ds_layout_samp(*m_device, {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr});
 
     // Try to allocate 2 sets when pool only has 1 set
     VkDescriptorSet descriptor_sets[4];
@@ -2262,20 +2239,13 @@ TEST_F(VkBestPracticesLayerTest, MutableDescriptors) {
     RETURN_IF_SKIP(InitBestPractices());
     VkDescriptorType descriptor_types[] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER};
 
-    VkMutableDescriptorTypeListEXT mutable_descriptor_type_lists[2] = {};
-    mutable_descriptor_type_lists[0].descriptorTypeCount = 1;
-    mutable_descriptor_type_lists[0].pDescriptorTypes = &descriptor_types[0];
-    mutable_descriptor_type_lists[1].descriptorTypeCount = 1;
-    mutable_descriptor_type_lists[1].pDescriptorTypes = &descriptor_types[1];
+    VkMutableDescriptorTypeListEXT mutable_descriptor_type_lists[2] = {{1, &descriptor_types[0]}, {1, &descriptor_types[1]}};
 
     VkMutableDescriptorTypeCreateInfoEXT mdtci = vku::InitStructHelper();
     mdtci.mutableDescriptorTypeListCount = 2;
     mdtci.pMutableDescriptorTypeLists = mutable_descriptor_type_lists;
 
-    VkDescriptorPoolSize pool_size = {};
-    pool_size.type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
-    pool_size.descriptorCount = 4;
-
+    VkDescriptorPoolSize pool_size = {VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 4};
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper(&mdtci);
     ds_pool_ci.maxSets = 2;
     ds_pool_ci.poolSizeCount = 1;

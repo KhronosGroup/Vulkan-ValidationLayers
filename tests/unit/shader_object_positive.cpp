@@ -866,13 +866,10 @@ TEST_F(PositiveShaderObject, MultiplePushConstants) {
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vert_src);
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, frag_src);
 
-    VkPushConstantRange push_constant_ranges[2];
-    push_constant_ranges[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    push_constant_ranges[0].offset = 0u;
-    push_constant_ranges[0].size = sizeof(int);
-    push_constant_ranges[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    push_constant_ranges[1].offset = sizeof(int);
-    push_constant_ranges[1].size = sizeof(float);
+    VkPushConstantRange push_constant_ranges[2] = {
+        {VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(int)},
+        {VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(int), sizeof(float)},
+    };
     vkt::PipelineLayout pipeline_layout(*m_device, {}, {push_constant_ranges[0], push_constant_ranges[1]});
 
     const vkt::Shader vert_shader(*m_device,
