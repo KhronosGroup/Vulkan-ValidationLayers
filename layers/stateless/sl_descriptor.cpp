@@ -571,6 +571,10 @@ bool Device::ValidateMutableDescriptorTypeCreateInfo(const VkDescriptorSetLayout
                     skip |= LogError("VUID-VkMutableDescriptorTypeListEXT-pDescriptorTypes-04603", device, type_loc,
                                      "is VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK.");
                     break;
+                case VK_DESCRIPTOR_TYPE_TENSOR_ARM:
+                    skip |= LogError("VUID-VkMutableDescriptorTypeListEXT-pDescriptorTypes-09696", device, type_loc,
+                                     "is VK_DESCRIPTOR_TYPE_TENSOR_ARM.");
+                    break;
                 default:
                     break;
             }
