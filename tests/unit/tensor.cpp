@@ -1644,7 +1644,7 @@ TEST_F(NegativeTensor, MemoryDedicatedAllocateInfoTensorWrongAllocationSize) {
 }
 
 TEST_F(NegativeTensor, WriteDescriptorSetTensorInfoMissing) {
-    TEST_DESCRIPTION("Test writing tensors to descriptor set without a ");
+    TEST_DESCRIPTION("Test trying to write to a descriptor set without a VkWriteDescriptorSetTensorARM structure");
     RETURN_IF_SKIP(InitBasicTensor());
 
     vkt::Tensor tensor(*m_device);
@@ -1676,7 +1676,7 @@ TEST_F(NegativeTensor, WriteDescriptorSetTensorInfoMissing) {
 }
 
 TEST_F(NegativeTensor, WriteDescriptorSetTensorInfoWrongCount) {
-    TEST_DESCRIPTION("Test writing tensors to descriptor set with the wrong descriptor count");
+    TEST_DESCRIPTION("Test trying to write to a descriptor set with the wrong descriptor count");
     RETURN_IF_SKIP(InitBasicTensor());
 
     vkt::Tensor tensor(*m_device);
