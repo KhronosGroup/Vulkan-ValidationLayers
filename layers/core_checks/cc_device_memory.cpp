@@ -1879,27 +1879,27 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
 
                 auto chained_flags_struct = vku::FindStructInPNextChain<VkMemoryAllocateFlagsInfo>(mem_info->allocate_info.pNext);
                 const VkMemoryAllocateFlags memory_allocate_flags = chained_flags_struct ? chained_flags_struct->flags : 0;
-                if ((image_state->create_info.flags & VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT) &&
-                    !(memory_allocate_flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT)) {
-                    const char *vuid = bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-descriptorBufferCaptureReplay-08113"
-                                                        : "VUID-vkBindImageMemory-descriptorBufferCaptureReplay-08113";
-                    const LogObjectList objlist(bind_info.image, bind_info.memory);
-                    skip |= LogError(vuid, objlist, loc.dot(Field::image),
-                                     "was created with the VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT bit set,"
-                                     "but the bound memory was allocated with %s and needs "
-                                     "VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT.",
-                                     string_VkMemoryAllocateFlags(memory_allocate_flags).c_str());
-                }
-                if ((image_state->create_info.flags & VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT) &&
-                    !(memory_allocate_flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT)) {
-                    const char *vuid =
-                        bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-image-09202" : "VUID-vkBindImageMemory-image-09202";
-                    const LogObjectList objlist(bind_info.image, bind_info.memory);
-                    skip |= LogError(vuid, objlist, loc.dot(Field::image),
-                                     "was created with the VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT bit set,"
-                                     "but the bound memory was allocated with %s and needs "
-                                     "VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT.",
-                                     string_VkMemoryAllocateFlags(memory_allocate_flags).c_str());
+                if (image_state->create_info.flags & VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT) {
+                    if ((memory_allocate_flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT) == 0) {
+                        const char *vuid = bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-descriptorBufferCaptureReplay-08113"
+                                                            : "VUID-vkBindImageMemory-descriptorBufferCaptureReplay-08113";
+                        const LogObjectList objlist(bind_info.image, bind_info.memory);
+                        skip |= LogError(vuid, objlist, loc.dot(Field::image),
+                                         "was created with the VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT bit set, "
+                                         "but the bound memory was allocated with %s and needs "
+                                         "VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT.",
+                                         string_VkMemoryAllocateFlags(memory_allocate_flags).c_str());
+                    }
+                    if ((memory_allocate_flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) == 0) {
+                        const char *vuid =
+                            bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-image-09202" : "VUID-vkBindImageMemory-image-09202";
+                        const LogObjectList objlist(bind_info.image, bind_info.memory);
+                        skip |= LogError(vuid, objlist, loc.dot(Field::image),
+                                         "was created with the VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT bit set, "
+                                         "but the bound memory was allocated with %s and needs "
+                                         "VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT.",
+                                         string_VkMemoryAllocateFlags(memory_allocate_flags).c_str());
+                    }
                 }
 
                 // Validate export memory handles
