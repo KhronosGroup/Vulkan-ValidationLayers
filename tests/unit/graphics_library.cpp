@@ -11,6 +11,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <vulkan/vulkan_core.h>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
@@ -19,60 +20,30 @@ class NegativeGraphicsLibrary : public GraphicsLibraryTest {};
 
 TEST_F(NegativeGraphicsLibrary, DSLs) {
     TEST_DESCRIPTION("Create a pipeline layout with invalid descriptor set layouts");
-
     RETURN_IF_SKIP(Init());
 
-    VkDescriptorSetLayoutBinding dsl_binding = {};
-    dsl_binding.binding = 0;
-    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    dsl_binding.descriptorCount = 1;
-    dsl_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    dsl_binding.pImmutableSamplers = nullptr;
-
-    VkDescriptorSetLayoutCreateInfo dsl_ci = vku::InitStructHelper();
-    dsl_ci.bindingCount = 1;
-    dsl_ci.pBindings = &dsl_binding;
-
-    vkt::DescriptorSetLayout dsl(*m_device, dsl_ci);
-
-    std::vector<const vkt::DescriptorSetLayout *> dsls = {&dsl, nullptr};
-
+    vkt::DescriptorSetLayout dsl(*m_device, {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr});
     VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
     pipeline_layout_ci.pushConstantRangeCount = 0;
     pipeline_layout_ci.pPushConstantRanges = nullptr;
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-graphicsPipelineLibrary-06753");
-    vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci, dsls);
+    vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci, {&dsl, nullptr});
     m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeGraphicsLibrary, GPLDSLs) {
     TEST_DESCRIPTION("Create a pipeline layout with invalid descriptor set layouts with VK_EXT_grahpics_pipeline_library enabled");
-
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    VkDescriptorSetLayoutBinding dsl_binding = {};
-    dsl_binding.binding = 0;
-    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    dsl_binding.descriptorCount = 1;
-    dsl_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    dsl_binding.pImmutableSamplers = nullptr;
-
-    VkDescriptorSetLayoutCreateInfo dsl_ci = vku::InitStructHelper();
-    dsl_ci.bindingCount = 1;
-    dsl_ci.pBindings = &dsl_binding;
-
-    vkt::DescriptorSetLayout dsl(*m_device, dsl_ci);
-
-    std::vector<const vkt::DescriptorSetLayout *> dsls = {&dsl, nullptr};
-
+    vkt::DescriptorSetLayout dsl(*m_device, {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr});
     VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
     pipeline_layout_ci.pushConstantRangeCount = 0;
     pipeline_layout_ci.pPushConstantRanges = nullptr;
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-graphicsPipelineLibrary-06753");
-    vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci, dsls);
+    vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci, {&dsl, nullptr});
     m_errorMonitor->VerifyFound();
 }
 

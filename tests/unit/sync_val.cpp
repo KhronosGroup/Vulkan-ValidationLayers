@@ -11,6 +11,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <cstdint>
 #include "../framework/sync_val_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/render_pass_helper.h"
@@ -3777,10 +3778,8 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBindingPartiallyBound);
     AddRequiredFeature(vkt::Feature::descriptorBindingUpdateUnusedWhilePending);
-
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
-
     InitRenderTarget();
 
     VkDescriptorSetLayoutBindingFlagsCreateInfo layout_createinfo_binding_flags = vku::InitStructHelper();
@@ -3815,14 +3814,10 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     auto buffer = std::make_unique<vkt::Buffer>(*m_device, buffer_create_info);
 
-    VkDescriptorBufferInfo buffer_info[2] = {};
-    buffer_info[0].buffer = doit_buffer;
-    buffer_info[0].offset = 0;
-    buffer_info[0].range = sizeof(uint32_t);
-    buffer_info[1].buffer = buffer->handle();
-    buffer_info[1].offset = 0;
-    buffer_info[1].range = sizeof(uint32_t);
-
+    VkDescriptorBufferInfo buffer_info[2] = {
+        {doit_buffer, 0, sizeof(uint32_t)},
+        {buffer->handle(), 0, sizeof(uint32_t)},
+    };
     buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
     vkt::Buffer texel_buffer(*m_device, buffer_create_info);
 
@@ -3849,16 +3844,11 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    VkDescriptorImageInfo image_info[3] = {};
-    image_info[0].sampler = sampler;
-    image_info[0].imageView = VK_NULL_HANDLE;
-    image_info[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    image_info[1].sampler = VK_NULL_HANDLE;
-    image_info[1].imageView = sampled_view->handle();
-    image_info[1].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    image_info[2].sampler = sampler;
-    image_info[2].imageView = combined_view->handle();
-    image_info[2].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    VkDescriptorImageInfo image_info[3] = {
+        {sampler, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
+        {VK_NULL_HANDLE, sampled_view->handle(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
+        {sampler, combined_view->handle(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
+    };
 
     // Update all descriptors
     std::array<VkWriteDescriptorSet, kNumDescriptors> descriptor_writes;

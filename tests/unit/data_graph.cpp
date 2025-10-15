@@ -165,9 +165,7 @@ TEST_F(NegativeDataGraph, CreateDataGraphPipelinesMutableDescriptor) {
     RETURN_IF_SKIP(Init());
 
     VkDescriptorType types[] = {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE};
-    VkMutableDescriptorTypeListEXT mutable_descriptor_type_list = {};
-    mutable_descriptor_type_list.descriptorTypeCount = 1;
-    mutable_descriptor_type_list.pDescriptorTypes = types;
+    VkMutableDescriptorTypeListEXT mutable_descriptor_type_list = {1, types};
 
     VkMutableDescriptorTypeCreateInfoEXT mutable_descriptor_info = vku::InitStructHelper();
     mutable_descriptor_info.mutableDescriptorTypeListCount = 1;

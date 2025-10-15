@@ -249,7 +249,6 @@ TEST_F(NegativeRayTracing, EventSync1AccessAccelerationStructureRayQueryDisabled
 
 TEST_F(NegativeRayTracing, DescriptorBindingUpdateAfterBindWithAccelerationStructure) {
     TEST_DESCRIPTION("Validate acceleration structure descriptor writing.");
-
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
@@ -257,12 +256,7 @@ TEST_F(NegativeRayTracing, DescriptorBindingUpdateAfterBindWithAccelerationStruc
     RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
-    VkDescriptorSetLayoutBinding binding = {};
-    binding.binding = 0;
-    binding.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-    binding.descriptorCount = 1;
-    binding.stageFlags = VK_SHADER_STAGE_ALL;
-    binding.pImmutableSamplers = nullptr;
+    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_ALL, nullptr};
 
     VkDescriptorBindingFlags flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
 
@@ -275,10 +269,10 @@ TEST_F(NegativeRayTracing, DescriptorBindingUpdateAfterBindWithAccelerationStruc
     create_info.bindingCount = 1;
     create_info.pBindings = &binding;
 
-    VkDescriptorSetLayout setLayout;
+    VkDescriptorSetLayout set_layout;
     m_errorMonitor->SetDesiredError(
         "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingAccelerationStructureUpdateAfterBind-03570");
-    vk::CreateDescriptorSetLayout(device(), &create_info, nullptr, &setLayout);
+    vk::CreateDescriptorSetLayout(device(), &create_info, nullptr, &set_layout);
     m_errorMonitor->VerifyFound();
 }
 

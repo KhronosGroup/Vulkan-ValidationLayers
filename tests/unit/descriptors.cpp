@@ -27,36 +27,27 @@ class NegativeDescriptors : public VkLayerTest {};
 
 TEST_F(NegativeDescriptors, DescriptorPoolConsistency) {
     TEST_DESCRIPTION("Allocate descriptor sets from one DS pool and attempt to delete them from another.");
-
-    m_errorMonitor->SetDesiredError("VUID-vkFreeDescriptorSets-pDescriptorSets-parent");
-
     RETURN_IF_SKIP(Init());
 
-    VkDescriptorPoolSize ds_type_count = {};
-    ds_type_count.type = VK_DESCRIPTOR_TYPE_SAMPLER;
-    ds_type_count.descriptorCount = 1;
-
+    VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_SAMPLER, 1};
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.flags = 0;
     ds_pool_ci.maxSets = 1;
     ds_pool_ci.poolSizeCount = 1;
     ds_pool_ci.pPoolSizes = &ds_type_count;
-
     vkt::DescriptorPool bad_pool(*m_device, ds_pool_ci);
 
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                  });
-
+    m_errorMonitor->SetDesiredError("VUID-vkFreeDescriptorSets-pDescriptorSets-parent");
     vk::FreeDescriptorSets(device(), bad_pool, 1, &descriptor_set.set_);
-
     m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDescriptors, AllocDescriptorFromEmptyPool) {
     TEST_DESCRIPTION("Attempt to allocate more sets and descriptors than descriptor pool has available.");
     SetTargetApiVersion(VK_API_VERSION_1_0);
-
     RETURN_IF_SKIP(Init());
 
     // This test is valid for Vulkan 1.0 only -- skip if device has an API version greater than 1.0.
@@ -66,9 +57,7 @@ TEST_F(NegativeDescriptors, AllocDescriptorFromEmptyPool) {
 
     // Create Pool w/ 1 Sampler descriptor, but try to alloc Uniform Buffer
     // descriptor from it
-    VkDescriptorPoolSize ds_type_count = {};
-    ds_type_count.type = VK_DESCRIPTOR_TYPE_SAMPLER;
-    ds_type_count.descriptorCount = 2;
+    VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_SAMPLER, 2};
 
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.flags = 0;
@@ -78,14 +67,7 @@ TEST_F(NegativeDescriptors, AllocDescriptorFromEmptyPool) {
 
     vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
 
-    VkDescriptorSetLayoutBinding dsl_binding_samp = {};
-    dsl_binding_samp.binding = 0;
-    dsl_binding_samp.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-    dsl_binding_samp.descriptorCount = 1;
-    dsl_binding_samp.stageFlags = VK_SHADER_STAGE_ALL;
-    dsl_binding_samp.pImmutableSamplers = NULL;
-
-    const vkt::DescriptorSetLayout ds_layout_samp(*m_device, {dsl_binding_samp});
+    const vkt::DescriptorSetLayout ds_layout_samp(*m_device, {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr});
 
     // Try to allocate 2 sets when pool only has 1 set
     VkDescriptorSet descriptor_sets[2];
@@ -100,14 +82,7 @@ TEST_F(NegativeDescriptors, AllocDescriptorFromEmptyPool) {
 
     alloc_info.descriptorSetCount = 1;
     // Create layout w/ descriptor type not available in pool
-    VkDescriptorSetLayoutBinding dsl_binding = {};
-    dsl_binding.binding = 0;
-    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    dsl_binding.descriptorCount = 1;
-    dsl_binding.stageFlags = VK_SHADER_STAGE_ALL;
-    dsl_binding.pImmutableSamplers = NULL;
-
-    const vkt::DescriptorSetLayout ds_layout_ub(*m_device, {dsl_binding});
+    const vkt::DescriptorSetLayout ds_layout_ub(*m_device, {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr});
 
     VkDescriptorSet descriptor_set;
     alloc_info.descriptorSetCount = 1;
@@ -128,8 +103,7 @@ TEST_F(NegativeDescriptors, AllocateOverMaxSet) {
     ds_pool_ci.pPoolSizes = &ds_type_count;
     vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
 
-    VkDescriptorSetLayoutBinding dsl_binding = {0, VK_DESCRIPTOR_TYPE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr};
-    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
+    const vkt::DescriptorSetLayout ds_layout(*m_device, {0, VK_DESCRIPTOR_TYPE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr});
 
     VkDescriptorSet descriptor_sets[2];
     VkDescriptorSetLayout set_layouts[2] = {ds_layout, ds_layout};
@@ -154,8 +128,7 @@ TEST_F(NegativeDescriptors, AllocateOverMaxSet2) {
     ds_pool_ci.pPoolSizes = &ds_type_count;
     vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
 
-    VkDescriptorSetLayoutBinding dsl_binding = {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr};
-    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
+    const vkt::DescriptorSetLayout ds_layout(*m_device, {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr});
 
     VkDescriptorSet descriptor_sets[2];
     VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
@@ -184,8 +157,7 @@ TEST_F(NegativeDescriptors, AllocateOverDescriptorCount) {
     ds_pool_ci.pPoolSizes = ds_type_counts;
     vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
 
-    VkDescriptorSetLayoutBinding dsl_binding = {0, VK_DESCRIPTOR_TYPE_SAMPLER, 5, VK_SHADER_STAGE_ALL, nullptr};
-    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
+    const vkt::DescriptorSetLayout ds_layout(*m_device, {0, VK_DESCRIPTOR_TYPE_SAMPLER, 5, VK_SHADER_STAGE_ALL, nullptr});
 
     VkDescriptorSet descriptor_set = VK_NULL_HANDLE;
     VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
@@ -298,9 +270,7 @@ TEST_F(NegativeDescriptors, AllocateOverDescriptorCountVariableAllocate) {
 TEST_F(NegativeDescriptors, FreeDescriptorFromOneShotPool) {
     RETURN_IF_SKIP(Init());
 
-    VkDescriptorPoolSize ds_type_count = {};
-    ds_type_count.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    ds_type_count.descriptorCount = 1;
+    VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1};
 
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.maxSets = 1;
@@ -311,15 +281,7 @@ TEST_F(NegativeDescriptors, FreeDescriptorFromOneShotPool) {
     ds_pool_ci.pPoolSizes = &ds_type_count;
 
     vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
-
-    VkDescriptorSetLayoutBinding dsl_binding = {};
-    dsl_binding.binding = 0;
-    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    dsl_binding.descriptorCount = 1;
-    dsl_binding.stageFlags = VK_SHADER_STAGE_ALL;
-    dsl_binding.pImmutableSamplers = NULL;
-
-    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
+    const vkt::DescriptorSetLayout ds_layout(*m_device, {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr});
 
     VkDescriptorSet descriptorSet;
     VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
@@ -351,8 +313,8 @@ TEST_F(NegativeDescriptors, BindInvalidDescriptorSet) {
     constexpr uint64_t fake_set_handle = 0xbaad6001;
     VkDescriptorSet bad_set = CastFromUint64<VkDescriptorSet>(fake_set_handle);
 
-    VkDescriptorSetLayoutBinding layout_binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr};
-    const vkt::DescriptorSetLayout descriptor_set_layout(*m_device, {layout_binding});
+    const vkt::DescriptorSetLayout descriptor_set_layout(
+        *m_device, {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr});
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_layout});
 
     m_command_buffer.Begin();
@@ -764,17 +726,11 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetConsecutiveUpdates) {
     {  // Scope 2nd buffer to cause early destruction
         vkt::Buffer buffer1(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
-        VkDescriptorBufferInfo buffer_info[3] = {};
-        buffer_info[0].buffer = buffer0;
-        buffer_info[0].offset = 0;
-        buffer_info[0].range = 1024;
-        buffer_info[1].buffer = buffer0;
-        buffer_info[1].offset = 1024;
-        buffer_info[1].range = 1024;
-        buffer_info[2].buffer = buffer1;
-        buffer_info[2].offset = 0;
-        buffer_info[2].range = 1024;
-
+        VkDescriptorBufferInfo buffer_info[3] = {
+            {buffer0, 0, 1024},
+            {buffer0, 1024, 1024},
+            {buffer1, 0, 1024},
+        };
         VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
         descriptor_write.dstSet = descriptor_set.set_;  // descriptor_set;
         descriptor_write.dstBinding = 0;
@@ -955,11 +911,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
     vkt::Sampler tmp_sampler(*m_device, SafeSaneSamplerCreateInfo());
     vkt::Sampler sampler2(*m_device, SafeSaneSamplerCreateInfo());
 
-    VkDescriptorImageInfo img_info = {};
-    img_info.sampler = tmp_sampler;
-    img_info.imageView = tmp_view;
-    img_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
+    VkDescriptorImageInfo img_info = {tmp_sampler, tmp_view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = descriptor_set.set_;
     descriptor_write.dstBinding = 0;
@@ -1258,8 +1210,7 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     // Setup structure for descriptor update with sampler, for update in do_test below
-    VkDescriptorImageInfo img_info = {};
-    img_info.sampler = sampler;
+    VkDescriptorImageInfo img_info = {sampler, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED};
 
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = descriptorSet;
@@ -1727,7 +1678,6 @@ TEST_F(NegativeDescriptors, DynamicDescriptorSet) {
 
 TEST_F(NegativeDescriptors, DynamicOffsetWithNullBuffer) {
     TEST_DESCRIPTION("Create a descriptorSet w/ dynamic descriptors where 1 binding is inactive, but all have null buffers");
-
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
     OneOffDescriptorSet descriptor_set(m_device,
@@ -1737,24 +1687,13 @@ TEST_F(NegativeDescriptors, DynamicOffsetWithNullBuffer) {
                                            {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                        });
 
-    // Update descriptors
-    const uint32_t BINDING_COUNT = 3;
-    VkDescriptorBufferInfo buff_info[BINDING_COUNT] = {};
-    buff_info[0].buffer = VK_NULL_HANDLE;
-    buff_info[0].offset = 0;
-    buff_info[0].range = 256;
-    buff_info[1].buffer = VK_NULL_HANDLE;
-    buff_info[1].offset = 256;
-    buff_info[1].range = 512;
-    buff_info[2].buffer = VK_NULL_HANDLE;
-    buff_info[2].offset = 0;
-    buff_info[2].range = 512;
+    VkDescriptorBufferInfo buff_info[3] = {{VK_NULL_HANDLE, 0, 256}, {VK_NULL_HANDLE, 256, 512}, {VK_NULL_HANDLE, 0, 512}};
 
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = descriptor_set.set_;
     descriptor_write.dstBinding = 0;
     descriptor_write.dstArrayElement = 0;
-    descriptor_write.descriptorCount = BINDING_COUNT;
+    descriptor_write.descriptorCount = 3;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     descriptor_write.pBufferInfo = buff_info;
 
@@ -1788,12 +1727,12 @@ TEST_F(NegativeDescriptors, DynamicOffsetWithNullBuffer) {
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
-    uint32_t dyn_off[BINDING_COUNT] = {0, 1024, 256};
+    uint32_t dyn_off[3] = {0, 1024, 256};
     // The 2 active descriptors produce this error
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114");
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_,
-                              BINDING_COUNT, dyn_off);
+                              3, dyn_off);
     vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -1993,10 +1932,7 @@ TEST_F(NegativeDescriptors, DISABLED_MutableBufferUpdate) {
         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
     };
 
-    VkMutableDescriptorTypeListEXT type_list = {};
-    type_list.descriptorTypeCount = 2;
-    type_list.pDescriptorTypes = desc_types;
-
+    VkMutableDescriptorTypeListEXT type_list = {2, desc_types};
     VkMutableDescriptorTypeCreateInfoEXT mdtci = vku::InitStructHelper();
     mdtci.mutableDescriptorTypeListCount = 1;
     mdtci.pMutableDescriptorTypeLists = &type_list;
@@ -2048,37 +1984,23 @@ TEST_F(NegativeDescriptors, UpdateDescriptorSetMismatchType) {
 }
 
 TEST_F(NegativeDescriptors, DescriptorSetCompatibility) {
-    // Test various desriptorSet errors with bad binding combinations
-    VkResult err;
-
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    static const uint32_t NUM_DESCRIPTOR_TYPES = 5;
-    VkDescriptorPoolSize ds_type_count[NUM_DESCRIPTOR_TYPES] = {};
-    ds_type_count[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    ds_type_count[0].descriptorCount = 10;
-    ds_type_count[1].type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-    ds_type_count[1].descriptorCount = 2;
-    ds_type_count[2].type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-    ds_type_count[2].descriptorCount = 2;
-    ds_type_count[3].type = VK_DESCRIPTOR_TYPE_SAMPLER;
-    ds_type_count[3].descriptorCount = 5;
-    // TODO : LunarG ILO driver currently asserts in desc.c w/ INPUT_ATTACHMENT
-    // type
-    // ds_type_count[4].type = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-    ds_type_count[4].type = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
-    ds_type_count[4].descriptorCount = 2;
+    VkDescriptorPoolSize ds_type_count[5] = {
+        {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10},      {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 2},
+        {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 2},        {VK_DESCRIPTOR_TYPE_SAMPLER, 5},
+        {VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 2},
+    };
 
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.maxSets = 5;
-    ds_pool_ci.poolSizeCount = NUM_DESCRIPTOR_TYPES;
+    ds_pool_ci.poolSizeCount = 5;
     ds_pool_ci.pPoolSizes = ds_type_count;
 
     vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
 
-    static const uint32_t MAX_DS_TYPES_IN_LAYOUT = 2;
-    VkDescriptorSetLayoutBinding dsl_binding[MAX_DS_TYPES_IN_LAYOUT] = {};
+    VkDescriptorSetLayoutBinding dsl_binding[2] = {};
     dsl_binding[0].binding = 0;
     dsl_binding[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     dsl_binding[0].descriptorCount = 5;
@@ -2125,13 +2047,12 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibility) {
         ds_vk_layouts.push_back(ds_layout.handle());
     }
 
-    static const uint32_t NUM_SETS = 4;
-    VkDescriptorSet descriptorSet[NUM_SETS] = {};
+    VkDescriptorSet descriptorSet[4] = {};
     VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.descriptorPool = ds_pool;
     alloc_info.descriptorSetCount = ds_vk_layouts.size();
     alloc_info.pSetLayouts = ds_vk_layouts.data();
-    err = vk::AllocateDescriptorSets(device(), &alloc_info, descriptorSet);
+    VkResult err = vk::AllocateDescriptorSets(device(), &alloc_info, descriptorSet);
     ASSERT_EQ(VK_SUCCESS, err);
     VkDescriptorSet ds0_fs_only = {};
     alloc_info.descriptorSetCount = 1;
@@ -2153,10 +2074,7 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibility) {
 
     // Add buffer binding for UBO
     vkt::Buffer buffer(*m_device, 8, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-    VkDescriptorBufferInfo buffer_info;
-    buffer_info.buffer = buffer;
-    buffer_info.offset = 0;
-    buffer_info.range = VK_WHOLE_SIZE;
+    VkDescriptorBufferInfo buffer_info{buffer, 0, VK_WHOLE_SIZE};
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = descriptorSet[0];
     descriptor_write.dstBinding = 0;
@@ -2291,10 +2209,7 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibilityMutableDescriptors) {
     VkDescriptorType descriptor_types_0[] = {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER};
     VkDescriptorType descriptor_types_1[] = {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_SAMPLER};
 
-    VkMutableDescriptorTypeListEXT type_list = {};
-    type_list.descriptorTypeCount = 2;
-    type_list.pDescriptorTypes = descriptor_types_0;
-
+    VkMutableDescriptorTypeListEXT type_list = {2, descriptor_types_0};
     VkMutableDescriptorTypeCreateInfoEXT mdtci = vku::InitStructHelper();
     mdtci.mutableDescriptorTypeListCount = 1;
     mdtci.pMutableDescriptorTypeLists = &type_list;
@@ -2748,9 +2663,7 @@ TEST_F(NegativeDescriptors, DSUpdateStruct) {
                                                  });
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    VkDescriptorImageInfo info = {};
-    info.sampler = sampler;
-
+    VkDescriptorImageInfo info = {sampler, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED};
     VkWriteDescriptorSet descriptor_write;
     memset(&descriptor_write, 0, sizeof(descriptor_write));
     descriptor_write.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO; /* Intentionally broken struct type */
@@ -3191,30 +3104,16 @@ TEST_F(NegativeDescriptors, CreateDescriptorPool) {
 
 TEST_F(NegativeDescriptors, DuplicateDescriptorBinding) {
     TEST_DESCRIPTION("Create a descriptor set layout with a duplicate binding number.");
-
     RETURN_IF_SKIP(Init());
     // Create layout where two binding #s are "1"
-    static const uint32_t NUM_BINDINGS = 3;
-    VkDescriptorSetLayoutBinding dsl_binding[NUM_BINDINGS] = {};
-    dsl_binding[0].binding = 1;
-    dsl_binding[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    dsl_binding[0].descriptorCount = 1;
-    dsl_binding[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    dsl_binding[0].pImmutableSamplers = NULL;
-    dsl_binding[1].binding = 0;
-    dsl_binding[1].descriptorCount = 1;
-    dsl_binding[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    dsl_binding[1].descriptorCount = 1;
-    dsl_binding[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    dsl_binding[1].pImmutableSamplers = NULL;
-    dsl_binding[2].binding = 1;  // Duplicate binding should cause error
-    dsl_binding[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    dsl_binding[2].descriptorCount = 1;
-    dsl_binding[2].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    dsl_binding[2].pImmutableSamplers = NULL;
+    VkDescriptorSetLayoutBinding dsl_binding[3] = {
+        {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+    };
 
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
-    ds_layout_ci.bindingCount = NUM_BINDINGS;
+    ds_layout_ci.bindingCount = 3;
     ds_layout_ci.pBindings = dsl_binding;
     VkDescriptorSetLayout ds_layout;
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutCreateInfo-binding-00279");
@@ -3295,9 +3194,7 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXT) {
     pool_inline_info.maxInlineUniformBlockBindings = 32;
 
     // Pool size must be a multiple of 4
-    VkDescriptorPoolSize ds_type_count = {};
-    ds_type_count.type = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
-    ds_type_count.descriptorCount = 33;
+    VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, 33};
 
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper(&pool_inline_info);
     ds_pool_ci.flags = 0;
@@ -3408,18 +3305,12 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXT) {
 
 TEST_F(NegativeDescriptors, InlineUniformBlockEXTFeature) {
     TEST_DESCRIPTION("Test VK_EXT_inline_uniform_block features.");
-
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
     // Don't enable any features
     RETURN_IF_SKIP(Init());
 
-    VkDescriptorSetLayoutBinding dslb = {};
-    dslb.binding = 0;
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
-    dslb.descriptorCount = 1;
-    dslb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
+    VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
     ds_layout_ci.flags = 0;
     ds_layout_ci.bindingCount = 1;
@@ -3436,10 +3327,7 @@ TEST_F(NegativeDescriptors, MaxInlineUniformBlockBindings) {
     AddRequiredFeature(vkt::Feature::inlineUniformBlock);
     RETURN_IF_SKIP(Init());
 
-    VkDescriptorPoolSize ds_type_count = {};
-    ds_type_count.type = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
-    ds_type_count.descriptorCount = 16;
-
+    VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, 16};
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.flags = 0;
     ds_pool_ci.maxSets = 2;
@@ -3471,11 +3359,7 @@ TEST_F(NegativeDescriptors, DstArrayElement) {
                                            {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                            {1, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                        });
-    VkDescriptorImageInfo image_info = {};
-    image_info.sampler = VK_NULL_HANDLE;
-    image_info.imageView = view;
-    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
+    VkDescriptorImageInfo image_info = {VK_NULL_HANDLE, view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = descriptor_set.set_;
     descriptor_write.dstBinding = 0;
@@ -3509,16 +3393,9 @@ TEST_F(NegativeDescriptors, DstArrayElement) {
 
 TEST_F(NegativeDescriptors, DescriptorSetLayoutMisc) {
     TEST_DESCRIPTION("Various invalid ways to create a VkDescriptorSetLayout.");
-
     RETURN_IF_SKIP(Init());
 
-    VkDescriptorSetLayoutBinding dsl_binding = {};
-    dsl_binding.binding = 1;
-    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-    dsl_binding.descriptorCount = 1;
-    dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    dsl_binding.pImmutableSamplers = nullptr;
-
+    VkDescriptorSetLayoutBinding dsl_binding = {1, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
     ds_layout_ci.bindingCount = 1;
     ds_layout_ci.pBindings = &dsl_binding;
@@ -3540,16 +3417,9 @@ TEST_F(NegativeDescriptors, DescriptorSetLayoutMisc) {
 
 TEST_F(NegativeDescriptors, DescriptorSetLayoutStageFlags) {
     TEST_DESCRIPTION("VkDescriptorSetLayout stageFlags are not valid flags");
-
     RETURN_IF_SKIP(Init());
 
-    VkDescriptorSetLayoutBinding dsl_binding = {};
-    dsl_binding.binding = 1;
-    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    dsl_binding.descriptorCount = 1;
-    dsl_binding.stageFlags = 0x3BADFFFF;
-    dsl_binding.pImmutableSamplers = nullptr;
-
+    VkDescriptorSetLayoutBinding dsl_binding = {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, 0x3BADFFFF, nullptr};
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
     ds_layout_ci.bindingCount = 1;
     ds_layout_ci.pBindings = &dsl_binding;
@@ -3562,16 +3432,10 @@ TEST_F(NegativeDescriptors, DescriptorSetLayoutStageFlags) {
 
 TEST_F(NegativeDescriptors, DescriptorSetLayoutImmutableSamplers) {
     TEST_DESCRIPTION("VkDescriptorSetLayout with invalid pImmutableSamplers");
-
     RETURN_IF_SKIP(Init());
 
     const VkSampler badhandles[2] = {CastFromUint64<VkSampler>(0xFFFFEEEE), CastFromUint64<VkSampler>(0xDDDDAAAA)};
-    VkDescriptorSetLayoutBinding dsl_binding = {};
-    dsl_binding.binding = 1;
-    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-    dsl_binding.descriptorCount = 2;
-    dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    dsl_binding.pImmutableSamplers = badhandles;
+    VkDescriptorSetLayoutBinding dsl_binding = {1, VK_DESCRIPTOR_TYPE_SAMPLER, 2, VK_SHADER_STAGE_FRAGMENT_BIT, badhandles};
 
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
     ds_layout_ci.bindingCount = 1;
@@ -3587,16 +3451,10 @@ TEST_F(NegativeDescriptors, DescriptorSetLayoutImmutableSamplers) {
 
 TEST_F(NegativeDescriptors, DescriptorSetLayoutNullImmutableSamplers) {
     TEST_DESCRIPTION("VkDescriptorSetLayout with invalid pImmutableSamplers set to null");
-
     RETURN_IF_SKIP(Init());
 
     const VkSampler null_samples[2] = {VK_NULL_HANDLE, VK_NULL_HANDLE};
-    VkDescriptorSetLayoutBinding dsl_binding = {};
-    dsl_binding.binding = 1;
-    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-    dsl_binding.descriptorCount = 2;
-    dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    dsl_binding.pImmutableSamplers = null_samples;
+    VkDescriptorSetLayoutBinding dsl_binding = {1, VK_DESCRIPTOR_TYPE_SAMPLER, 2, VK_SHADER_STAGE_FRAGMENT_BIT, null_samples};
 
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
     ds_layout_ci.bindingCount = 1;
@@ -3817,17 +3675,13 @@ TEST_F(NegativeDescriptors, DISABLED_ImageSubresourceOverlapBetweenAttachmentsAn
 
 TEST_F(NegativeDescriptors, CreateDescriptorPoolFlags) {
     TEST_DESCRIPTION("Create descriptor pool with invalid flags.");
-
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::mutableDescriptorType);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkDescriptorPoolSize ds_type_count = {};
-    ds_type_count.type = VK_DESCRIPTOR_TYPE_SAMPLER;
-    ds_type_count.descriptorCount = 1;
-
+    VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_SAMPLER, 1};
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT | VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
     ds_pool_ci.maxSets = 1;
@@ -3842,14 +3696,10 @@ TEST_F(NegativeDescriptors, CreateDescriptorPoolFlags) {
 
 TEST_F(NegativeDescriptors, MissingMutableDescriptorTypeFeature) {
     TEST_DESCRIPTION("Create mutable descriptor pool with feature not enabled.");
-
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    VkDescriptorPoolSize ds_type_count = {};
-    ds_type_count.type = VK_DESCRIPTOR_TYPE_SAMPLER;
-    ds_type_count.descriptorCount = 1;
-
+    VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_SAMPLER, 1};
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT;
     ds_pool_ci.maxSets = 1;
@@ -3870,16 +3720,14 @@ TEST_F(NegativeDescriptors, MissingMutableDescriptorTypeFeature) {
 
 TEST_F(NegativeDescriptors, MutableDescriptorPoolsWithPartialOverlap) {
     TEST_DESCRIPTION("Create mutable descriptor pools with partial overlap.");
-
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::mutableDescriptorType);
     RETURN_IF_SKIP(Init());
 
-    VkDescriptorPoolSize pool_sizes[2] = {};
-    pool_sizes[0].type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
-    pool_sizes[0].descriptorCount = 1;
-    pool_sizes[1].type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
-    pool_sizes[1].descriptorCount = 1;
+    VkDescriptorPoolSize pool_sizes[2] = {
+        {VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1},
+        {VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1},
+    };
 
     VkDescriptorType first_types[2] = {
         VK_DESCRIPTOR_TYPE_SAMPLER,
@@ -3891,11 +3739,7 @@ TEST_F(NegativeDescriptors, MutableDescriptorPoolsWithPartialOverlap) {
         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
     };
 
-    VkMutableDescriptorTypeListEXT lists[2] = {};
-    lists[0].descriptorTypeCount = 2;
-    lists[0].pDescriptorTypes = first_types;
-    lists[1].descriptorTypeCount = 2;
-    lists[1].pDescriptorTypes = second_types;
+    VkMutableDescriptorTypeListEXT lists[2] = {{2, first_types}, {2, second_types}};
 
     VkMutableDescriptorTypeCreateInfoEXT mdtci = vku::InitStructHelper();
     mdtci.mutableDescriptorTypeListCount = 2;
@@ -3932,16 +3776,12 @@ TEST_F(NegativeDescriptors, MutableDescriptorPoolsWithPartialOverlap) {
 
 TEST_F(NegativeDescriptors, CreateDescriptorPoolAllocateFlags) {
     TEST_DESCRIPTION("Create descriptor pool with invalid flags.");
-
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::mutableDescriptorType);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkDescriptorPoolSize ds_type_count = {};
-    ds_type_count.type = VK_DESCRIPTOR_TYPE_SAMPLER;
-    ds_type_count.descriptorCount = 1;
-
+    VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_SAMPLER, 1};
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.flags = 0;
     ds_pool_ci.maxSets = 1;
@@ -3950,13 +3790,7 @@ TEST_F(NegativeDescriptors, CreateDescriptorPoolAllocateFlags) {
 
     vkt::DescriptorPool pool(*m_device, ds_pool_ci);
 
-    VkDescriptorSetLayoutBinding dsl_binding_samp = {};
-    dsl_binding_samp.binding = 0;
-    dsl_binding_samp.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-    dsl_binding_samp.descriptorCount = 1;
-    dsl_binding_samp.stageFlags = VK_SHADER_STAGE_ALL;
-    dsl_binding_samp.pImmutableSamplers = NULL;
-
+    VkDescriptorSetLayoutBinding dsl_binding_samp = {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr};
     const vkt::DescriptorSetLayout ds_layout_samp(*m_device, {dsl_binding_samp},
                                                   VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT);
 
@@ -4021,12 +3855,8 @@ TEST_F(NegativeDescriptors, DescriptorUpdateOfMultipleBindingWithOneUpdateCall) 
         VkDescriptorPoolInlineUniformBlockCreateInfo descPoolInlineInfo = vku::InitStructHelper();
         descPoolInlineInfo.maxInlineUniformBlockBindings = 2;
 
-        VkDescriptorPoolSize poolSize[2];
-        poolSize[0].descriptorCount = sizeof(inline_data);
-        poolSize[0].type = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
-        poolSize[1].descriptorCount = 1;
-        poolSize[1].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
-
+        VkDescriptorPoolSize poolSize[2] = {{VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, sizeof(inline_data)},
+                                            {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1}};
         VkDescriptorPoolCreateInfo poolCreate = vku::InitStructHelper(&descPoolInlineInfo);
         poolCreate.poolSizeCount = 2;
         poolCreate.pPoolSizes = poolSize;
@@ -4073,10 +3903,7 @@ TEST_F(NegativeDescriptors, WriteMutableDescriptorSet) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkDescriptorPoolSize ds_type_count = {};
-    ds_type_count.type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
-    ds_type_count.descriptorCount = 1;
-
+    VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1};
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.maxSets = 1;
     ds_pool_ci.poolSizeCount = 1;
@@ -4084,22 +3911,14 @@ TEST_F(NegativeDescriptors, WriteMutableDescriptorSet) {
 
     vkt::DescriptorPool pool(*m_device, ds_pool_ci);
 
-    VkDescriptorSetLayoutBinding dsl_binding = {};
-    dsl_binding.binding = 0;
-    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
-    dsl_binding.descriptorCount = 1;
-    dsl_binding.stageFlags = VK_SHADER_STAGE_ALL;
-    dsl_binding.pImmutableSamplers = nullptr;
+    VkDescriptorSetLayoutBinding dsl_binding = {0, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1, VK_SHADER_STAGE_ALL, nullptr};
 
     VkDescriptorType types[2] = {
         VK_DESCRIPTOR_TYPE_SAMPLER,
         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
     };
 
-    VkMutableDescriptorTypeListEXT list = {};
-    list.descriptorTypeCount = 2;
-    list.pDescriptorTypes = types;
-
+    VkMutableDescriptorTypeListEXT list = {2, types};
     VkMutableDescriptorTypeCreateInfoEXT mdtci = vku::InitStructHelper();
     mdtci.mutableDescriptorTypeListCount = 1;
     mdtci.pMutableDescriptorTypeLists = &list;
@@ -4122,11 +3941,7 @@ TEST_F(NegativeDescriptors, WriteMutableDescriptorSet) {
 
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
-    VkDescriptorBufferInfo buffer_info = {};
-    buffer_info.buffer = buffer;
-    buffer_info.offset = 0;
-    buffer_info.range = 32;
-
+    VkDescriptorBufferInfo buffer_info = {buffer, 0, VK_WHOLE_SIZE};
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = descriptor_set;
     descriptor_write.dstBinding = 0;
@@ -4149,10 +3964,7 @@ TEST_F(NegativeDescriptors, WriteMutableDescriptorSet2) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkDescriptorPoolSize ds_type_count = {};
-    ds_type_count.type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
-    ds_type_count.descriptorCount = 2;
-
+    VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 2};
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.maxSets = 1;
     ds_pool_ci.poolSizeCount = 1;
@@ -4198,11 +4010,7 @@ TEST_F(NegativeDescriptors, WriteMutableDescriptorSet2) {
     image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     vkt::ImageView image_view = image.CreateView();
 
-    VkDescriptorImageInfo image_info = {};
-    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    image_info.imageView = image_view;
-    image_info.sampler = VK_NULL_HANDLE;
-
+    VkDescriptorImageInfo image_info = {VK_NULL_HANDLE, image_view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = descriptor_set;
     descriptor_write.dstBinding = 2;
@@ -4222,10 +4030,7 @@ TEST_F(NegativeDescriptors, WriteMutableDescriptorSet3) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkDescriptorPoolSize ds_type_count = {};
-    ds_type_count.type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
-    ds_type_count.descriptorCount = 2;
-
+    VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 2};
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.maxSets = 1;
     ds_pool_ci.poolSizeCount = 1;
@@ -4270,10 +4075,7 @@ TEST_F(NegativeDescriptors, WriteMutableDescriptorSet3) {
     ASSERT_EQ(VK_SUCCESS, err);
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
-    VkDescriptorImageInfo image_info = {};
-    image_info.imageView = VK_NULL_HANDLE;
-    image_info.sampler = sampler;
-
+    VkDescriptorImageInfo image_info = {sampler, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED};
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = descriptor_set;
     descriptor_write.dstBinding = 1;
@@ -4288,23 +4090,15 @@ TEST_F(NegativeDescriptors, WriteMutableDescriptorSet3) {
 
 TEST_F(NegativeDescriptors, MutableDescriptors) {
     TEST_DESCRIPTION("Test mutable descriptors");
-
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::mutableDescriptorType);
     RETURN_IF_SKIP(Init());
-    VkDescriptorSetLayoutBinding dsl_binding = {};
-    dsl_binding.binding = 0;
-    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-    dsl_binding.descriptorCount = 1;
-    dsl_binding.stageFlags = VK_SHADER_STAGE_ALL;
-    dsl_binding.pImmutableSamplers = nullptr;
+    VkDescriptorSetLayoutBinding dsl_binding = {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr};
 
     VkDescriptorType descriptor_types[] = {VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_SAMPLER};
 
-    VkMutableDescriptorTypeListEXT mutable_descriptor_type_list = {};
-    mutable_descriptor_type_list.descriptorTypeCount = 1;
-    mutable_descriptor_type_list.pDescriptorTypes = descriptor_types;
+    VkMutableDescriptorTypeListEXT mutable_descriptor_type_list = {1, descriptor_types};
 
     VkMutableDescriptorTypeCreateInfoEXT mutable_descriptor_type_ci = vku::InitStructHelper();
     mutable_descriptor_type_ci.mutableDescriptorTypeListCount = 1;
@@ -4354,16 +4148,12 @@ TEST_F(NegativeDescriptors, MutableDescriptors) {
 
 TEST_F(NegativeDescriptors, DescriptorUpdateTemplate) {
     TEST_DESCRIPTION("Use more bindings with a descriptorType of VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV than allowed");
-
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::mutableDescriptorType);
     RETURN_IF_SKIP(Init());
 
-    VkDescriptorPoolSize ds_type_count = {};
-    ds_type_count.type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
-    ds_type_count.descriptorCount = 1;
-
+    VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1};
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.maxSets = 1;
     ds_pool_ci.poolSizeCount = 1;
@@ -4371,21 +4161,14 @@ TEST_F(NegativeDescriptors, DescriptorUpdateTemplate) {
 
     vkt::DescriptorPool pool(*m_device, ds_pool_ci);
 
-    VkDescriptorSetLayoutBinding dsl_binding = {};
-    dsl_binding.binding = 0;
-    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
-    dsl_binding.descriptorCount = 1;
-    dsl_binding.stageFlags = VK_SHADER_STAGE_ALL;
-    dsl_binding.pImmutableSamplers = nullptr;
+    VkDescriptorSetLayoutBinding dsl_binding = {0, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1, VK_SHADER_STAGE_ALL, nullptr};
 
     VkDescriptorType types[2] = {
         VK_DESCRIPTOR_TYPE_SAMPLER,
         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
     };
 
-    VkMutableDescriptorTypeListEXT list = {};
-    list.descriptorTypeCount = 2;
-    list.pDescriptorTypes = types;
+    VkMutableDescriptorTypeListEXT list = {2, types};
 
     VkMutableDescriptorTypeCreateInfoEXT mdtci = vku::InitStructHelper();
     mdtci.mutableDescriptorTypeListCount = 1;
@@ -4420,7 +4203,6 @@ TEST_F(NegativeDescriptors, DescriptorUpdateTemplate) {
 
 TEST_F(NegativeDescriptors, MutableDescriptorSetLayout) {
     TEST_DESCRIPTION("Create mutable descriptor set layout.");
-
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::mutableDescriptorType);
@@ -4443,10 +4225,7 @@ TEST_F(NegativeDescriptors, MutableDescriptorSetLayout) {
         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
     };
 
-    VkMutableDescriptorTypeListEXT list = {};
-    list.descriptorTypeCount = 2;
-    list.pDescriptorTypes = types;
-
+    VkMutableDescriptorTypeListEXT list = {2, types};
     VkMutableDescriptorTypeCreateInfoEXT mdtci = vku::InitStructHelper();
     mdtci.mutableDescriptorTypeListCount = 1;
     mdtci.pMutableDescriptorTypeLists = &list;
@@ -4488,10 +4267,7 @@ TEST_F(NegativeDescriptors, MutableDescriptorSetLayoutMissingFeature) {
         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
     };
 
-    VkMutableDescriptorTypeListEXT list = {};
-    list.descriptorTypeCount = 2;
-    list.pDescriptorTypes = types;
-
+    VkMutableDescriptorTypeListEXT list = {2, types};
     VkMutableDescriptorTypeCreateInfoEXT mdtci = vku::InitStructHelper();
     mdtci.mutableDescriptorTypeListCount = 1;
     mdtci.pMutableDescriptorTypeLists = &list;
@@ -4719,13 +4495,8 @@ TEST_F(NegativeDescriptors, DISABLED_DescriptorReadFromWriteAttachment) {
 
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkDescriptorSetLayoutBinding layout_binding = {};
-    layout_binding.binding = 0;
-    layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-    layout_binding.descriptorCount = 1;
-    layout_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    layout_binding.pImmutableSamplers = nullptr;
-    const vkt::DescriptorSetLayout descriptor_set_layout(*m_device, {layout_binding});
+    const vkt::DescriptorSetLayout descriptor_set_layout(
+        *m_device, {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_layout, &descriptor_set_layout});
     CreatePipelineHelper pipe(*this);
@@ -4738,10 +4509,7 @@ TEST_F(NegativeDescriptors, DISABLED_DescriptorReadFromWriteAttachment) {
                                        {
                                            {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                        });
-    VkDescriptorImageInfo image_info = {};
-    image_info.sampler = sampler;
-    image_info.imageView = image_view;
-    image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    VkDescriptorImageInfo image_info = {sampler, image_view, VK_IMAGE_LAYOUT_GENERAL};
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = descriptor_set.set_;
     descriptor_write.dstBinding = 0;
@@ -4801,20 +4569,10 @@ TEST_F(NegativeDescriptors, DescriptorWriteFromReadAttachment) {
 
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkDescriptorSetLayoutBinding layout_binding1 = {};
-    layout_binding1.binding = 0;
-    layout_binding1.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-    layout_binding1.descriptorCount = 1;
-    layout_binding1.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    layout_binding1.pImmutableSamplers = nullptr;
-    VkDescriptorSetLayoutBinding layout_binding2 = {};
-    layout_binding2.binding = 0;
-    layout_binding2.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-    layout_binding2.descriptorCount = 1;
-    layout_binding2.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    layout_binding2.pImmutableSamplers = nullptr;
-    const vkt::DescriptorSetLayout descriptor_set_layout1(*m_device, {layout_binding1});
-    const vkt::DescriptorSetLayout descriptor_set_layout2(*m_device, {layout_binding2});
+    const vkt::DescriptorSetLayout descriptor_set_layout1(
+        *m_device, {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
+    const vkt::DescriptorSetLayout descriptor_set_layout2(
+        *m_device, {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_layout1, &descriptor_set_layout2});
     CreatePipelineHelper pipe(*this);
@@ -4857,7 +4615,6 @@ TEST_F(NegativeDescriptors, DescriptorWriteFromReadAttachment) {
 // This should be checked earlier as causes some driver to crash
 TEST_F(NegativeDescriptors, DISABLED_AllocatingVariableDescriptorSets) {
     TEST_DESCRIPTION("Test allocating large variable descriptor sets");
-
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBindingVariableDescriptorCount);
     RETURN_IF_SKIP(Init());
@@ -4901,26 +4658,17 @@ TEST_F(NegativeDescriptors, DISABLED_AllocatingVariableDescriptorSets) {
 
 TEST_F(NegativeDescriptors, DescriptorSetLayoutBinding) {
     TEST_DESCRIPTION("Create invalid descriptor set layout.");
-
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::mutableDescriptorType);
     RETURN_IF_SKIP(Init());
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    VkDescriptorSetLayoutBinding binding = {};
-    binding.binding = 0;
-    binding.descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
-    binding.descriptorCount = 1;
-    binding.stageFlags = VK_SHADER_STAGE_ALL;
-    binding.pImmutableSamplers = &sampler.handle();
+    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1, VK_SHADER_STAGE_ALL, &sampler.handle()};
 
     VkDescriptorType descriptor_types[] = {VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_SAMPLER};
 
-    VkMutableDescriptorTypeListEXT mutable_descriptor_type_list = {};
-    mutable_descriptor_type_list.descriptorTypeCount = 1;
-    mutable_descriptor_type_list.pDescriptorTypes = descriptor_types;
-
+    VkMutableDescriptorTypeListEXT mutable_descriptor_type_list = {1, descriptor_types};
     VkMutableDescriptorTypeCreateInfoEXT mdtci = vku::InitStructHelper();
     mdtci.mutableDescriptorTypeListCount = 1;
     mdtci.pMutableDescriptorTypeLists = &mutable_descriptor_type_list;
@@ -4940,15 +4688,11 @@ TEST_F(NegativeDescriptors, DescriptorSetLayoutBinding) {
 TEST_F(NegativeDescriptors, BindingDescriptorSetFromHostOnlyPool) {
     TEST_DESCRIPTION(
         "Try to bind a descriptor set that was allocated from a pool with VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT.");
-
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::mutableDescriptorType);
     RETURN_IF_SKIP(Init());
 
-    VkDescriptorPoolSize ds_type_count = {};
-    ds_type_count.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    ds_type_count.descriptorCount = 1;
-
+    VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1};
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT;
     ds_pool_ci.maxSets = 1;
@@ -4957,14 +4701,7 @@ TEST_F(NegativeDescriptors, BindingDescriptorSetFromHostOnlyPool) {
 
     vkt::DescriptorPool pool(*m_device, ds_pool_ci);
 
-    VkDescriptorSetLayoutBinding dsl_binding = {};
-    dsl_binding.binding = 0;
-    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    dsl_binding.descriptorCount = 1;
-    dsl_binding.stageFlags = VK_SHADER_STAGE_ALL;
-    dsl_binding.pImmutableSamplers = nullptr;
-
-    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
+    const vkt::DescriptorSetLayout ds_layout(*m_device, {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr});
     VkDescriptorSetLayout ds_layout_handle = ds_layout;
 
     VkDescriptorSetAllocateInfo allocate_info = vku::InitStructHelper();
@@ -4994,19 +4731,12 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
     {
         VkDescriptorType descriptor_types[] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER};
 
-        VkMutableDescriptorTypeListEXT mutable_descriptor_type_list = {};
-        mutable_descriptor_type_list.descriptorTypeCount = 1;
-        mutable_descriptor_type_list.pDescriptorTypes = descriptor_types;
-
+        VkMutableDescriptorTypeListEXT mutable_descriptor_type_list = {1, descriptor_types};
         VkMutableDescriptorTypeCreateInfoEXT mdtci = vku::InitStructHelper();
         mdtci.mutableDescriptorTypeListCount = 1;
         mdtci.pMutableDescriptorTypeLists = &mutable_descriptor_type_list;
 
-        VkDescriptorPoolSize pool_sizes[2] = {};
-        pool_sizes[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        pool_sizes[0].descriptorCount = 2;
-        pool_sizes[1].type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
-        pool_sizes[1].descriptorCount = 2;
+        VkDescriptorPoolSize pool_sizes[2] = {{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2}, {VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 2}};
 
         VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper(&mdtci);
         ds_pool_ci.maxSets = 2;
@@ -5015,17 +4745,9 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
 
         vkt::DescriptorPool pool(*m_device, ds_pool_ci);
 
-        VkDescriptorSetLayoutBinding bindings[2] = {};
-        bindings[0].binding = 0;
-        bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
-        bindings[0].descriptorCount = 1;
-        bindings[0].stageFlags = VK_SHADER_STAGE_ALL;
-        bindings[0].pImmutableSamplers = nullptr;
-        bindings[1].binding = 1;
-        bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        bindings[1].descriptorCount = 1;
-        bindings[1].stageFlags = VK_SHADER_STAGE_ALL;
-        bindings[1].pImmutableSamplers = nullptr;
+        VkDescriptorSetLayoutBinding bindings[2] = {
+            {0, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1, VK_SHADER_STAGE_ALL, nullptr},
+            {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}};
 
         VkDescriptorSetLayoutCreateInfo create_info = vku::InitStructHelper(&mdtci);
         create_info.bindingCount = 2;
@@ -5046,10 +4768,7 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
 
         vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
-        VkDescriptorBufferInfo buffer_info = {};
-        buffer_info.buffer = buffer;
-        buffer_info.offset = 0;
-        buffer_info.range = 32;
+        VkDescriptorBufferInfo buffer_info = {buffer, 0, VK_WHOLE_SIZE};
 
         VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
         descriptor_write.dstSet = descriptor_sets[0];
@@ -5074,21 +4793,12 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
     {
         VkDescriptorType descriptor_types[] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER};
 
-        VkMutableDescriptorTypeListEXT mutable_descriptor_type_lists[2] = {};
-        mutable_descriptor_type_lists[0].descriptorTypeCount = 1;
-        mutable_descriptor_type_lists[0].pDescriptorTypes = &descriptor_types[0];
-        mutable_descriptor_type_lists[1].descriptorTypeCount = 1;
-        mutable_descriptor_type_lists[1].pDescriptorTypes = &descriptor_types[1];
-
+        VkMutableDescriptorTypeListEXT mutable_descriptor_type_lists[2] = {{1, &descriptor_types[0]}, {1, &descriptor_types[1]}};
         VkMutableDescriptorTypeCreateInfoEXT mdtci = vku::InitStructHelper();
         mdtci.mutableDescriptorTypeListCount = 2;
         mdtci.pMutableDescriptorTypeLists = mutable_descriptor_type_lists;
 
-        VkDescriptorPoolSize pool_sizes[2] = {};
-        pool_sizes[0].type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
-        pool_sizes[0].descriptorCount = 4;
-        pool_sizes[1].type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
-        pool_sizes[1].descriptorCount = 4;
+        VkDescriptorPoolSize pool_sizes[2] = {{VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 4}, {VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 4}};
 
         VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper(&mdtci);
         ds_pool_ci.maxSets = 2;
@@ -5097,17 +4807,8 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
 
         vkt::DescriptorPool pool(*m_device, ds_pool_ci);
 
-        VkDescriptorSetLayoutBinding bindings[2] = {};
-        bindings[0].binding = 0;
-        bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
-        bindings[0].descriptorCount = 1;
-        bindings[0].stageFlags = VK_SHADER_STAGE_ALL;
-        bindings[0].pImmutableSamplers = nullptr;
-        bindings[1].binding = 1;
-        bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
-        bindings[1].descriptorCount = 1;
-        bindings[1].stageFlags = VK_SHADER_STAGE_ALL;
-        bindings[1].pImmutableSamplers = nullptr;
+        VkDescriptorSetLayoutBinding bindings[2] = {{0, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                    {1, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1, VK_SHADER_STAGE_ALL, nullptr}};
 
         VkDescriptorSetLayoutCreateInfo create_info = vku::InitStructHelper(&mdtci);
         create_info.bindingCount = 2;
@@ -5128,11 +4829,7 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
 
         vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
-        VkDescriptorBufferInfo buffer_info = {};
-        buffer_info.buffer = buffer;
-        buffer_info.offset = 0;
-        buffer_info.range = 32;
-
+        VkDescriptorBufferInfo buffer_info = {buffer, 0, VK_WHOLE_SIZE};
         VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
         descriptor_write.dstSet = descriptor_sets[0];
         descriptor_write.dstBinding = 0;
@@ -5156,23 +4853,13 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
     {
         VkDescriptorType descriptor_types[] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_SAMPLER};
 
-        VkMutableDescriptorTypeListEXT mutable_descriptor_type_lists[2] = {};
-        mutable_descriptor_type_lists[0].descriptorTypeCount = 2;
-        mutable_descriptor_type_lists[0].pDescriptorTypes = descriptor_types;
-        mutable_descriptor_type_lists[1].descriptorTypeCount = 0;
-        mutable_descriptor_type_lists[1].pDescriptorTypes = nullptr;
-
+        VkMutableDescriptorTypeListEXT mutable_descriptor_type_lists[2] = {{2, descriptor_types}, {0, nullptr}};
         VkMutableDescriptorTypeCreateInfoEXT mdtci = vku::InitStructHelper();
         mdtci.mutableDescriptorTypeListCount = 2;
         mdtci.pMutableDescriptorTypeLists = mutable_descriptor_type_lists;
 
-        VkDescriptorPoolSize pool_sizes[3] = {};
-        pool_sizes[0].type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
-        pool_sizes[0].descriptorCount = 4;
-        pool_sizes[1].type = VK_DESCRIPTOR_TYPE_SAMPLER;
-        pool_sizes[1].descriptorCount = 4;
-        pool_sizes[2].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        pool_sizes[2].descriptorCount = 4;
+        VkDescriptorPoolSize pool_sizes[3] = {
+            {VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 4}, {VK_DESCRIPTOR_TYPE_SAMPLER, 4}, {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 4}};
 
         VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper(&mdtci);
         ds_pool_ci.maxSets = 2;
@@ -5181,17 +4868,8 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
 
         vkt::DescriptorPool pool(*m_device, ds_pool_ci);
 
-        VkDescriptorSetLayoutBinding bindings[2] = {};
-        bindings[0].binding = 0;
-        bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
-        bindings[0].descriptorCount = 2;
-        bindings[0].stageFlags = VK_SHADER_STAGE_ALL;
-        bindings[0].pImmutableSamplers = nullptr;
-        bindings[1].binding = 1;
-        bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-        bindings[1].descriptorCount = 2;
-        bindings[1].stageFlags = VK_SHADER_STAGE_ALL;
-        bindings[1].pImmutableSamplers = nullptr;
+        VkDescriptorSetLayoutBinding bindings[2] = {{0, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                                    {1, VK_DESCRIPTOR_TYPE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr}};
 
         VkDescriptorSetLayoutCreateInfo create_info = vku::InitStructHelper(&mdtci);
         create_info.bindingCount = 2;
@@ -5213,13 +4891,9 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
         vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
         vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-        VkDescriptorBufferInfo buffer_info = {};
-        buffer_info.buffer = buffer;
-        buffer_info.offset = 0;
-        buffer_info.range = 32;
+        VkDescriptorBufferInfo buffer_info = {buffer, 0, VK_WHOLE_SIZE};
 
-        VkDescriptorImageInfo image_info = {};
-        image_info.sampler = sampler;
+        VkDescriptorImageInfo image_info = {sampler, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED};
 
         VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
         descriptor_write.dstSet = descriptor_sets[0];
@@ -5264,19 +4938,13 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
 
 TEST_F(NegativeDescriptors, InvalidDescriptorSetLayoutInlineUniformBlockFlags) {
     TEST_DESCRIPTION("Create descriptor set layout with invalid flags.");
-
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::inlineUniformBlock);
 
     RETURN_IF_SKIP(Init());
 
-    VkDescriptorSetLayoutBinding binding;
-    binding.binding = 0u;
-    binding.descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
-    binding.descriptorCount = 4u;
-    binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    binding.pImmutableSamplers = nullptr;
+    VkDescriptorSetLayoutBinding binding{0, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, 4, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
 
     VkDescriptorBindingFlags binding_flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
 
@@ -5391,17 +5059,10 @@ TEST_F(NegativeDescriptors, CompatiblePushConstantRanges) {
 
 TEST_F(NegativeDescriptors, InvalidDescriptorSetLayoutFlags) {
     TEST_DESCRIPTION("Create descriptor set layout with invalid flags.");
-
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    VkDescriptorSetLayoutBinding binding;
-    binding.binding = 0u;
-    binding.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-    binding.descriptorCount = 1u;
-    binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    binding.pImmutableSamplers = nullptr;
-
+    VkDescriptorSetLayoutBinding binding{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     VkDescriptorBindingFlags binding_flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
 
     VkDescriptorSetLayoutBindingFlagsCreateInfo binding_flags_ci = vku::InitStructHelper();
@@ -5643,9 +5304,7 @@ TEST_F(NegativeDescriptors, BindStorageBufferDynamicAlignment) {
 
 TEST_F(NegativeDescriptors, DescriptorIndexingMissingFeatures) {
     TEST_DESCRIPTION("Use partially bound descriptor flag without feature.");
-
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-
     RETURN_IF_SKIP(Init());
 
     VkDescriptorBindingFlags flag = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
@@ -5713,23 +5372,14 @@ TEST_F(NegativeDescriptors, DescriptorIndexingMissingFeatures) {
 
 TEST_F(NegativeDescriptors, IncompatibleDescriptorFlagsWithBindingFlags) {
     TEST_DESCRIPTION("Create descriptor set layout with incompatible flags with binding flags");
-
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBindingVariableDescriptorCount);
     RETURN_IF_SKIP(Init());
 
-    VkDescriptorSetLayoutBinding bindings[2];
-    bindings[0].binding = 0u;
-    bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    bindings[0].descriptorCount = 1u;
-    bindings[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    bindings[0].pImmutableSamplers = nullptr;
-    bindings[1].binding = 1u;
-    bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    bindings[1].descriptorCount = 1u;
-    bindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    bindings[1].pImmutableSamplers = nullptr;
+    VkDescriptorSetLayoutBinding bindings[2] = {
+        {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
 
     VkDescriptorBindingFlags binding_flags[] = {VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT, 0};
     VkDescriptorSetLayoutBindingFlagsCreateInfo flags_create_info = vku::InitStructHelper();
@@ -5766,10 +5416,7 @@ TEST_F(NegativeDescriptors, IncompatibleDescriptorFlagsWithBindingFlags) {
     variable_allocate.descriptorSetCount = 2u;
     variable_allocate.pDescriptorCounts = descriptorCounts;
 
-    VkDescriptorPoolSize ds_type_count;
-    ds_type_count.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    ds_type_count.descriptorCount = 1u;
-
+    VkDescriptorPoolSize ds_type_count{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1};
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.maxSets = 1u;
     ds_pool_ci.poolSizeCount = 1u;
@@ -5940,7 +5587,6 @@ TEST_F(NegativeDescriptors, GetSupportMutableDescriptorType) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::mutableDescriptorType);
-
     RETURN_IF_SKIP(Init());
 
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr};
@@ -6075,11 +5721,7 @@ TEST_F(NegativeDescriptors, DSBufferLimitWithTemplateUpdate) {
                                            {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
                                        });
 
-    VkDescriptorBufferInfo buffer_info = {};
-    buffer_info.buffer = buffer;
-    buffer_info.offset = storage_buffer_offset_alignment / 2u;
-    buffer_info.range = VK_WHOLE_SIZE;
-
+    VkDescriptorBufferInfo buffer_info = {buffer, storage_buffer_offset_alignment / 2u, VK_WHOLE_SIZE};
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = descriptor_set.set_;
     descriptor_write.descriptorCount = 1u;
@@ -6113,7 +5755,6 @@ TEST_F(NegativeDescriptors, DSBufferLimitWithTemplateUpdate) {
 
 TEST_F(NegativeDescriptors, UpdateDescriptorSetWithAccelerationStructure) {
     TEST_DESCRIPTION("Update descriptor set with invalid acceleration structures.");
-
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
@@ -6121,29 +5762,15 @@ TEST_F(NegativeDescriptors, UpdateDescriptorSetWithAccelerationStructure) {
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(Init());
 
-    VkDescriptorPoolSize pool_size;
-    pool_size.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-    pool_size.descriptorCount = 1u;
-
+    VkDescriptorPoolSize pool_size{VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1};
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.maxSets = 1u;
     ds_pool_ci.poolSizeCount = 1u;
     ds_pool_ci.pPoolSizes = &pool_size;
 
     vkt::DescriptorPool pool(*m_device, ds_pool_ci);
-
-    VkDescriptorSetLayoutBinding binding;
-    binding.binding = 0u;
-    binding.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-    binding.descriptorCount = 1u;
-    binding.stageFlags = VK_SHADER_STAGE_ALL;
-    binding.pImmutableSamplers = nullptr;
-
-    VkDescriptorSetLayoutCreateInfo create_info = vku::InitStructHelper();
-    create_info.bindingCount = 1u;
-    create_info.pBindings = &binding;
-
-    vkt::DescriptorSetLayout set_layout(*m_device, create_info);
+    vkt::DescriptorSetLayout set_layout(*m_device,
+                                        {0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_ALL, nullptr});
 
     VkDescriptorSetAllocateInfo allocate_info = vku::InitStructHelper();
     allocate_info.descriptorPool = pool;

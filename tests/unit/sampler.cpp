@@ -626,12 +626,8 @@ TEST_F(NegativeSampler, MultiplaneImageSamplerConversionMismatch) {
     }
 
     // Use the same image view twice, using the same sampler, with the *second* mismatched with the *second* immutable sampler
-    VkDescriptorImageInfo image_infos[2];
-    image_infos[0] = {};
-    image_infos[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    image_infos[0].imageView = view;
-    image_infos[0].sampler = samplers_0;
-    image_infos[1] = image_infos[0];
+    VkDescriptorImageInfo image_infos[2] = {{samplers_0, view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
+                                            {samplers_0, view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL}};
 
     // Update the descriptor set expecting to get an error
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
@@ -748,7 +744,6 @@ TEST_F(NegativeSampler, CustomBorderColor) {
     TEST_DESCRIPTION("Tests for VUs for VK_EXT_custom_border_color");
     AddRequiredExtensions(VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::customBorderColors);
-
     RETURN_IF_SKIP(Init());
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();

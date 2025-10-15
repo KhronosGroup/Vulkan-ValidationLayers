@@ -12,6 +12,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <vulkan/vulkan_core.h>
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
@@ -3059,13 +3060,8 @@ TEST_F(NegativePipeline, MismatchedRenderPassAndPipelineAttachments) {
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkDescriptorSetLayoutBinding layout_binding = {};
-    layout_binding.binding = 1;
-    layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-    layout_binding.descriptorCount = 1;
-    layout_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    layout_binding.pImmutableSamplers = nullptr;
-    const vkt::DescriptorSetLayout descriptor_set_layout(*m_device, {layout_binding});
+    const vkt::DescriptorSetLayout descriptor_set_layout(
+        *m_device, {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_layout});
     CreatePipelineHelper pipe(*this);

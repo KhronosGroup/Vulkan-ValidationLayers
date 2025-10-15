@@ -174,24 +174,11 @@ TEST_F(VkAmdBestPracticesLayerTest, KeepLayoutSmall) {
 
     // create a layout of 15 DWORDS (40 bytes push constants (10 DWORDS), a descriptor set (1 DWORD), and 2 dynamic buffers (4
     // DWORDS)
-
     uint32_t push_size_dwords = 10;
-    VkPushConstantRange push_range = {};
-    push_range.stageFlags = VK_SHADER_STAGE_ALL;
-    push_range.offset = 0;
-    push_range.size = 4 * push_size_dwords;
+    VkPushConstantRange push_range = {VK_SHADER_STAGE_ALL, 0, 4 * push_size_dwords};
 
-    VkDescriptorSetLayoutBinding binding;
-    binding.binding = 0;
-    binding.descriptorCount = 2;
-    binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
-    binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    VkDescriptorSetLayoutCreateInfo ds_layout_info = vku::InitStructHelper();
-    ds_layout_info.bindingCount = 1;
-    ds_layout_info.pBindings = &binding;
-
-    vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_info);
+    vkt::DescriptorSetLayout ds_layout(*m_device,
+                                       {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
 
     VkPipelineLayoutCreateInfo pipeline_layout_info = vku::InitStructHelper();
     pipeline_layout_info.setLayoutCount = 1;
@@ -210,10 +197,7 @@ TEST_F(VkAmdBestPracticesLayerTest, CopyingDescriptors) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
 
-    VkDescriptorPoolSize ds_type_count = {};
-    ds_type_count.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-    ds_type_count.descriptorCount = 2;
-
+    VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 2};
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.maxSets = 2;
     ds_pool_ci.poolSizeCount = 1;
@@ -221,15 +205,8 @@ TEST_F(VkAmdBestPracticesLayerTest, CopyingDescriptors) {
     ds_pool_ci.pPoolSizes = &ds_type_count;
 
     vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
-
-    VkDescriptorSetLayoutBinding dsl_binding = {};
-    dsl_binding.binding = 2;
-    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-    dsl_binding.descriptorCount = 1;
-    dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    dsl_binding.pImmutableSamplers = NULL;
-
-    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
+    const vkt::DescriptorSetLayout ds_layout(
+        *m_device, {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
 
     VkDescriptorSet descriptor_sets[2] = {};
     VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();

@@ -327,14 +327,9 @@ TEST_F(PositiveDescriptorIndexing, DescriptorSetVariableDescriptorCountAllocateI
     RETURN_IF_SKIP(Init());
 
     // Don't set VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT
-    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
-    ds_layout_ci.bindingCount = 1;
-    ds_layout_ci.pBindings = &binding;
-    ds_layout_ci.flags = 0;
-    vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+    vkt::DescriptorSetLayout ds_layout(*m_device, {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
 
-    VkDescriptorPoolSize pool_size = {binding.descriptorType, 1};
+    VkDescriptorPoolSize pool_size = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1};
     VkDescriptorPoolCreateInfo dspci = vku::InitStructHelper();
     dspci.poolSizeCount = 1;
     dspci.pPoolSizes = &pool_size;

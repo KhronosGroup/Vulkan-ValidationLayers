@@ -12,6 +12,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <vulkan/vulkan_core.h>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/pipeline_helper.h"
@@ -59,10 +60,7 @@ TEST_F(PositiveObjectLifetime, DestroyFreeNullHandles) {
     vk::FreeCommandBuffers(device(), command_pool, 3, command_buffers);
     vk::DestroyCommandPool(device(), command_pool, NULL);
 
-    VkDescriptorPoolSize ds_type_count = {};
-    ds_type_count.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-    ds_type_count.descriptorCount = 1;
-
+    VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1};
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.maxSets = 1;
     ds_pool_ci.poolSizeCount = 1;
@@ -70,14 +68,8 @@ TEST_F(PositiveObjectLifetime, DestroyFreeNullHandles) {
     ds_pool_ci.pPoolSizes = &ds_type_count;
     vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
 
-    VkDescriptorSetLayoutBinding dsl_binding = {};
-    dsl_binding.binding = 2;
-    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-    dsl_binding.descriptorCount = 1;
-    dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    dsl_binding.pImmutableSamplers = NULL;
-
-    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
+    const vkt::DescriptorSetLayout ds_layout(
+        *m_device, {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
 
     VkDescriptorSet descriptor_sets[3] = {};
     VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
@@ -168,10 +160,7 @@ TEST_F(PositiveObjectLifetime, DescriptorSetMutableBufferDestroyed) {
         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
     };
 
-    VkMutableDescriptorTypeListEXT type_list = {};
-    type_list.descriptorTypeCount = 2;
-    type_list.pDescriptorTypes = desc_types;
-
+    VkMutableDescriptorTypeListEXT type_list = {2, desc_types};
     VkMutableDescriptorTypeCreateInfoEXT mdtci = vku::InitStructHelper();
     mdtci.mutableDescriptorTypeListCount = 1;
     mdtci.pMutableDescriptorTypeLists = &type_list;

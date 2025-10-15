@@ -296,10 +296,7 @@ TEST_F(NegativeImageLayout, DISABLED_Mutable) {
         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
     };
 
-    VkMutableDescriptorTypeListEXT type_list = {};
-    type_list.descriptorTypeCount = 2;
-    type_list.pDescriptorTypes = desc_types;
-
+    VkMutableDescriptorTypeListEXT type_list = {2, desc_types};
     VkMutableDescriptorTypeCreateInfoEXT mdtci = vku::InitStructHelper();
     mdtci.mutableDescriptorTypeListCount = 1;
     mdtci.pMutableDescriptorTypeLists = &type_list;
@@ -337,19 +334,13 @@ TEST_F(NegativeImageLayout, DISABLED_Mutable) {
 
 TEST_F(NegativeImageLayout, PushDescriptor) {
     TEST_DESCRIPTION("Use a push descriptor with a mismatched image layout.");
-
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkDescriptorSetLayoutBinding dsl_binding = {};
-    dsl_binding.binding = 0;
-    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    dsl_binding.descriptorCount = 1;
-    dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    dsl_binding.pImmutableSamplers = NULL;
-
-    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
+    const vkt::DescriptorSetLayout ds_layout(
+        *m_device, {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+        VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
     auto pipeline_layout = vkt::PipelineLayout(*m_device, {&ds_layout});
 
     const char *fsSource = R"glsl(
@@ -373,10 +364,7 @@ TEST_F(NegativeImageLayout, PushDescriptor) {
     vkt::ImageView image_view = image.CreateView();
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
-    VkDescriptorImageInfo img_info = {};
-    img_info.sampler = sampler;
-    img_info.imageView = image_view;
-    img_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    VkDescriptorImageInfo img_info = {sampler, image_view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = 0;
     descriptor_write.descriptorCount = 1;

@@ -143,7 +143,6 @@ TEST_F(NegativePushDescriptor, DSBufferInfoTemplate) {
 
 TEST_F(NegativePushDescriptor, DestroyDescriptorSetLayout) {
     TEST_DESCRIPTION("Delete the DescriptorSetLayout and then call vkCmdPushDescriptorSetKHR");
-
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
@@ -184,7 +183,6 @@ TEST_F(NegativePushDescriptor, DestroyDescriptorSetLayout) {
 
 TEST_F(NegativePushDescriptor, TemplateDestroyDescriptorSetLayout) {
     TEST_DESCRIPTION("Delete the DescriptorSetLayout and then call vkCmdPushDescriptorSetWithTemplateKHR");
-
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
@@ -280,8 +278,8 @@ TEST_F(NegativePushDescriptor, DSUpdateIndex) {
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
-    vkt::DescriptorSetLayout ds_layout(*m_device, {binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
+    vkt::DescriptorSetLayout ds_layout(*m_device, {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                       VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
     vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout});
 
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
@@ -330,8 +328,8 @@ TEST_F(NegativePushDescriptor, DSTypeMismatch) {
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr};
-    vkt::DescriptorSetLayout ds_layout(*m_device, {binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
+    vkt::DescriptorSetLayout ds_layout(*m_device, {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                       VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
     vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout});
 
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
@@ -372,7 +370,6 @@ TEST_F(NegativePushDescriptor, SetLayoutWithoutExtension) {
 TEST_F(NegativePushDescriptor, AllocateSet) {
     TEST_DESCRIPTION("Attempt to allocate a push descriptor set.");
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
-
     RETURN_IF_SKIP(Init());
 
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
@@ -402,22 +399,14 @@ TEST_F(NegativePushDescriptor, AllocateSet) {
 
 TEST_F(NegativePushDescriptor, CreateDescriptorUpdateTemplate) {
     TEST_DESCRIPTION("Verify error messages for invalid vkCreateDescriptorUpdateTemplate calls.");
-
 #ifdef __ANDROID__
     GTEST_SKIP() << "Skipped on Android pending further investigation.";
 #endif
-
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    VkDescriptorSetLayoutBinding dsl_binding = {};
-    dsl_binding.binding = 0;
-    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    dsl_binding.descriptorCount = 1;
-    dsl_binding.stageFlags = VK_SHADER_STAGE_ALL;
-    dsl_binding.pImmutableSamplers = NULL;
-
+    VkDescriptorSetLayoutBinding dsl_binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     const vkt::DescriptorSetLayout ds_layout_ub(*m_device, {dsl_binding});
     const vkt::DescriptorSetLayout ds_layout_ub1(*m_device, {dsl_binding});
     const vkt::DescriptorSetLayout ds_layout_ub_push(*m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
@@ -494,22 +483,14 @@ TEST_F(NegativePushDescriptor, CreateDescriptorUpdateTemplate) {
 
 TEST_F(NegativePushDescriptor, CreateDescriptorUpdateTemplate14) {
     TEST_DESCRIPTION("Verify error messages for invalid vkCreateDescriptorUpdateTemplate calls. Rely on 1.4 features");
-
 #ifdef __ANDROID__
     GTEST_SKIP() << "Skipped on Android pending further investigation.";
 #endif
-
     SetTargetApiVersion(VK_API_VERSION_1_4);
     AddRequiredFeature(vkt::Feature::pushDescriptor);
     RETURN_IF_SKIP(Init());
 
-    VkDescriptorSetLayoutBinding dsl_binding = {};
-    dsl_binding.binding = 0;
-    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    dsl_binding.descriptorCount = 1;
-    dsl_binding.stageFlags = VK_SHADER_STAGE_ALL;
-    dsl_binding.pImmutableSamplers = NULL;
-
+    VkDescriptorSetLayoutBinding dsl_binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     const vkt::DescriptorSetLayout ds_layout_ub(*m_device, {dsl_binding});
     const vkt::DescriptorSetLayout ds_layout_ub1(*m_device, {dsl_binding});
     const vkt::DescriptorSetLayout ds_layout_ub_push(*m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
@@ -656,7 +637,6 @@ TEST_F(NegativePushDescriptor, GetSupportSetLayout) {
 
 TEST_F(NegativePushDescriptor, SetLayoutMutableDescriptor) {
     TEST_DESCRIPTION("Create mutable descriptor set layout.");
-
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
@@ -680,10 +660,7 @@ TEST_F(NegativePushDescriptor, SetLayoutMutableDescriptor) {
         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
     };
 
-    VkMutableDescriptorTypeListEXT list = {};
-    list.descriptorTypeCount = 2;
-    list.pDescriptorTypes = types;
-
+    VkMutableDescriptorTypeListEXT list = {2, types};
     VkMutableDescriptorTypeCreateInfoEXT mdtci = vku::InitStructHelper();
     mdtci.mutableDescriptorTypeListCount = 1;
     mdtci.pMutableDescriptorTypeLists = &list;
@@ -893,7 +870,6 @@ TEST_F(NegativePushDescriptor, SetCmdPush14) {
 TEST_F(NegativePushDescriptor, DestroyLayout) {
     TEST_DESCRIPTION("Attempt to push a push descriptor set with incorrect arguments.");
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
-
     RETURN_IF_SKIP(Init());
 
     vkt::Buffer buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
@@ -911,7 +887,6 @@ TEST_F(NegativePushDescriptor, DestroyLayout) {
 TEST_F(NegativePushDescriptor, SetCmdBufferOffsetUnaligned) {
     TEST_DESCRIPTION("Attempt to push a push descriptor set buffer with unaligned offset.");
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
-
     RETURN_IF_SKIP(Init());
 
     auto const min_alignment = m_device->Physical().limits_.minUniformBufferOffsetAlignment;
@@ -943,7 +918,6 @@ TEST_F(NegativePushDescriptor, SetCmdBufferOffsetUnaligned) {
 
 TEST_F(NegativePushDescriptor, DescriptorWriteMissingImageInfo) {
     TEST_DESCRIPTION("Attempt to write descriptor with missing image info");
-
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
@@ -1028,7 +1002,6 @@ TEST_F(NegativePushDescriptor, UnsupportedDescriptorTemplateBindPoint) {
 
 TEST_F(NegativePushDescriptor, InvalidDescriptorUpdateTemplateType) {
     TEST_DESCRIPTION("Use descriptor template with invalid descriptorType");
-
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
@@ -1076,7 +1049,6 @@ TEST_F(NegativePushDescriptor, InvalidDescriptorUpdateTemplateType) {
 
 TEST_F(NegativePushDescriptor, DescriptorTemplateIncompatibleLayout) {
     TEST_DESCRIPTION("Update descriptor set with template with incompatible pipeline layout");
-
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
