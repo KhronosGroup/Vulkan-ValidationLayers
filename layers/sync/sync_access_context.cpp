@@ -164,30 +164,51 @@ void AccessContext::AddReferencedTags(ResourceUsageTagSet &used) const {
 void AccessContext::ResolveFromContext(const AccessContext &from) {
     assert(!finalized_);
     auto noop_action = [](ResourceAccessState *access) {};
-    from.ResolveAccessRange(kFullRange, noop_action, &access_state_map_, nullptr);
+    from.ResolveAccessRange(kFullRange, noop_action, &access_state_map_, false);
 }
 
-void AccessContext::ResolvePreviousAccess(const ResourceAccessRange &range, ResourceAccessRangeMap *descent_map,
-                                          const ResourceAccessState *infill_state,
+// This function is a simplification of update_range_value from range_map.h that takes into account syncval specifics
+static void UpdateRangeValue(ResourceAccessRangeMap &map, const ResourceAccessRange &range,
+                             const ResourceAccessState &access_state) {
+    using CachedLowerBound = sparse_container::cached_lower_bound_impl<ResourceAccessRangeMap>;
+    CachedLowerBound pos(map, range.begin);
+    while (range.includes(pos->index)) {
+        if (!pos->valid) {
+            // Fill in the leading space (or in the case of pos at end the trailing space)
+            const auto start = pos->index;
+            auto it = pos->lower_bound;
+            const auto limit = (it != map.end()) ? std::min(it->first.begin, range.end) : range.end;
+            map.insert(it, std::make_pair(ResourceAccessRange(start, limit), access_state));
+            // We inserted before pos->lower_bound, so pos->lower_bound isn't invalid, but the associated index *is* and seek
+            // will fix this (and move the state to valid)
+            pos.seek(limit);
+        }
+        // Note that after the "fill" operation pos may have become valid so we check again
+        if (pos->valid) {
+            // "prefer_dest" means don't overwrite existing values, so we'll skip this interval.
+            // Point just past the end of this section,  if it's within the given range, it will get filled next iteration
+            // ++pos could move us past the end of range (which would exit the loop) so we don't use it.
+            pos.seek(pos->lower_bound->first.end);
+        }
+    }
+}
+
+void AccessContext::ResolvePreviousAccess(const ResourceAccessRange &range, ResourceAccessRangeMap *descent_map, bool infill,
                                           const ResourceAccessStateFunction *previous_barrier) const {
     if (prev_.empty()) {
-        if (range.non_empty() && infill_state) {
+        if (range.non_empty() && infill) {
             // Fill the empty poritions of descent_map with the default_state with the barrier function applied (iff present)
-            ResourceAccessState state_copy;
+            ResourceAccessState access_state;
             if (previous_barrier) {
-                assert(bool(*previous_barrier));
-                state_copy = *infill_state;
-                (*previous_barrier)(&state_copy);
-                infill_state = &state_copy;
+                (*previous_barrier)(&access_state);
             }
-            sparse_container::update_range_value(*descent_map, range, *infill_state,
-                                                 sparse_container::value_precedence::prefer_dest);
+            UpdateRangeValue(*descent_map, range, access_state);
         }
     } else {
         // Look for something to fill the gap further along.
         for (const auto &prev_dep : prev_) {
             const ApplyTrackbackStackAction barrier_action(prev_dep.barriers, previous_barrier);
-            prev_dep.source_subpass->ResolveAccessRange(range, barrier_action, descent_map, infill_state);
+            prev_dep.source_subpass->ResolveAccessRange(range, barrier_action, descent_map, infill);
         }
     }
 }
@@ -198,8 +219,7 @@ void AccessContext::ResolvePreviousAccesses() {
     if (!prev_.size()) {
         return;  // If no previous contexts, nothing to do
     }
-    ResourceAccessState default_state;
-    ResolvePreviousAccess(kFullRange, &access_state_map_, &default_state);
+    ResolvePreviousAccess(kFullRange, &access_state_map_, true);
 }
 
 void AccessContext::UpdateAccessState(const vvl::Buffer &buffer, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
@@ -284,7 +304,7 @@ void AccessContext::ResolveChildContexts(vvl::span<AccessContext> subpass_contex
     assert(!finalized_);
     for (AccessContext &context : subpass_contexts) {
         ApplyTrackbackStackAction barrier_action(context.GetDstExternalTrackBack().barriers);
-        context.ResolveAccessRange(kFullRange, barrier_action, &access_state_map_, nullptr, false);
+        context.ResolveAccessRange(kFullRange, barrier_action, &access_state_map_, false, false);
     }
 }
 
@@ -553,8 +573,7 @@ ResourceAccessRangeMap::iterator AccessContext::UpdateMemoryAccessStateFunctor::
                                                                                        const Iterator &pos_hint,
                                                                                        const ResourceAccessRange &range) const {
     // this is only called on gaps, and never returns a gap.
-    ResourceAccessState default_state;
-    context.ResolvePreviousAccess(range, accesses, &default_state);
+    context.ResolvePreviousAccess(range, accesses, true);
     return accesses->lower_bound(range);
 }
 void AccessContext::UpdateMemoryAccessStateFunctor::operator()(const ResourceAccessRangeMap::iterator &pos) const {
