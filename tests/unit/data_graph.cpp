@@ -1211,7 +1211,7 @@ TEST_F(NegativeDataGraph, ShaderSpirvUsesOpSpecFeatureNotEnabled) {
 
     // inject a dummy line in the spirv to trigger the error
     const std::string &spirv_string =
-        vkt::dg::DataGraphPipelineHelper::GetSpirvSourceGraph("%dummy_spec_constant = OpSpecConstant %uint 3");
+        vkt::dg::DataGraphPipelineHelper::GetSpirvBasicDataGraph("%dummy_spec_constant = OpSpecConstant %uint 3");
     vkt::dg::HelperParameters params;
     params.spirv_source = spirv_string.c_str();
     vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
@@ -1245,7 +1245,7 @@ TEST_F(NegativeDataGraph, DataGraphShaderModuleCreateInfoHasModuleAndShaderModul
 
     // also add the same ShaderModule in the pNext chain
     spvtools::SpirvTools tools{SPV_ENV_UNIVERSAL_1_6};
-    const std::string &spirv_source = vkt::dg::DataGraphPipelineHelper::GetSpirvSourceGraph();
+    const std::string &spirv_source = vkt::dg::DataGraphPipelineHelper::GetSpirvBasicDataGraph();
     std::vector<uint32_t> spirv_binary;
     if (!tools.Assemble(spirv_source, &spirv_binary)) {
         Monitor().SetError("Failed to compile SPIRV shader module");

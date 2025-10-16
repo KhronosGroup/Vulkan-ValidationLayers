@@ -195,7 +195,7 @@ std::string DataGraphPipelineHelper::GetSpirvMultiEntryTwoDataGraph() {
 // Spirv source. For testing purposes it includes:
 // - unused OpGraphConstantARM
 // - `inserted_line` to cause different errors
-std::string DataGraphPipelineHelper::GetSpirvSourceGraph(const char* inserted_line) {
+std::string DataGraphPipelineHelper::GetSpirvBasicDataGraph(const char* inserted_line) {
     std::stringstream ss;
     ss << R"(
                                   OpCapability GraphARM
@@ -257,6 +257,51 @@ std::string DataGraphPipelineHelper::GetSpirvSourceGraph(const char* inserted_li
 )";
 
     return ss.str();
+}
+
+std::string DataGraphPipelineHelper::GetSpirvBasicShader() {
+    return R"(
+; SPIRV
+; Version: 1.6
+; Generator: Khronos Glslang Reference Front End; 11
+; Bound: 19
+; Schema: 0
+               OpCapability Shader
+               OpCapability TensorsARM
+               OpExtension "SPV_ARM_tensors"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %tens
+               OpExecutionMode %main LocalSize 1 1 1
+               OpSource GLSL 450
+               OpSourceExtension "GL_ARM_tensors"
+               OpSourceExtension "GL_EXT_shader_explicit_arithmetic_types"
+               OpName %main "main"
+               OpName %size_x "size_x"
+               OpName %tens "tens"
+               OpDecorate %tens Binding 0
+               OpDecorate %tens DescriptorSet 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%_ptr_Function_uint = OpTypePointer Function %uint
+        %int = OpTypeInt 32 1
+     %uint_1 = OpConstant %uint 1
+         %11 = OpTypeTensorARM %int %uint_1
+%_ptr_UniformConstant_11 = OpTypePointer UniformConstant %11
+       %tens = OpVariable %_ptr_UniformConstant_11 UniformConstant
+     %uint_0 = OpConstant %uint 0
+     %v3uint = OpTypeVector %uint 3
+         %18 = OpConstantComposite %v3uint %uint_1 %uint_1 %uint_1
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+     %size_x = OpVariable %_ptr_Function_uint Function
+         %14 = OpLoad %11 %tens
+         %16 = OpTensorQuerySizeARM %uint %14 %uint_0
+               OpStore %size_x %16
+               OpReturn
+               OpFunctionEnd
+)";
 }
 
 void DataGraphPipelineHelper::InitPipelineResources(const std::vector<vkt::Tensor*>& tensors, VkDescriptorType desc_type,
@@ -336,7 +381,7 @@ DataGraphPipelineHelper::DataGraphPipelineHelper(VkLayerTest& test, const Helper
     device_ = layer_test_.DeviceObj();
     pipeline_ci_ = vku::InitStructHelper();
 
-    std::string spirv_string(params.spirv_source ? params.spirv_source : GetSpirvSourceGraph());
+    std::string spirv_string(params.spirv_source ? params.spirv_source : GetSpirvBasicDataGraph());
 
     InitTensor(in_tensor_, in_tensor_view_, in_tensor_dims, params.protected_tensors);
     InitTensor(out_tensor_, out_tensor_view_, out_tensor_dims, params.protected_tensors);

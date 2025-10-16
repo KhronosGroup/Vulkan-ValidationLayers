@@ -60,9 +60,11 @@ class DataGraphPipelineHelper {
     virtual ~DataGraphPipelineHelper();
     void Destroy();
 
-    static std::string GetSpirvSourceGraph(const char *inserted_line = "");
+    static std::string GetSpirvBasicDataGraph(const char *inserted_line = "");
     static std::string GetSpirvMultiEntryComputeAndDataGraph();
     static std::string GetSpirvMultiEntryTwoDataGraph();
+    static std::string GetSpirvBasicShader();
+
     void InitPipelineResources(const std::vector<vkt::Tensor *> &tensors = {},
                                VkDescriptorType desc_type = VK_DESCRIPTOR_TYPE_TENSOR_ARM,
                                VkDescriptorSetLayoutCreateFlags layout_flags = 0);
