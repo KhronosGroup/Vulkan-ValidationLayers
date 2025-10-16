@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2025 Valve Corporation
- * Copyright (c) 2019-2025 LunarG, Inc.
+ * Copyright (c) 2019-2026 Valve Corporation
+ * Copyright (c) 2019-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,12 +126,15 @@ struct ApplyMarkupFunctor {
     const bool layout_transition;
 };
 
+class AccessContext;
+
 // This functor populates PendingBarriers with the results of independent barrier appication (pending barriers).
 // After this functor finished its work then PendingBarriers::Apply() can be used to update the access states.
 struct CollectBarriersFunctor {
-    CollectBarriersFunctor(const BarrierScope &barrier_scope, const SyncBarrier &barrier, bool layout_transition,
-                           uint32_t layout_transition_handle_index, PendingBarriers &pending_barriers)
-        : barrier_scope(barrier_scope),
+    CollectBarriersFunctor(const AccessContext &access_context, const BarrierScope &barrier_scope, const SyncBarrier &barrier,
+                           bool layout_transition, uint32_t layout_transition_handle_index, PendingBarriers &pending_barriers)
+        : access_context(access_context),
+          barrier_scope(barrier_scope),
           barrier(barrier),
           layout_transition(layout_transition),
           layout_transition_handle_index(layout_transition_handle_index),
@@ -149,13 +152,9 @@ struct CollectBarriersFunctor {
         assert(!layout_transition);  // MarkupFunctor infills gaps for layout transtion, so we should never get here in that case
         return pos_hint;
     }
+    void operator()(const Iterator &pos) const;
 
-    void operator()(const Iterator &pos) const {
-        AccessState &access_state = pos->second;
-        access_state.CollectPendingBarriers(barrier_scope, barrier, layout_transition, layout_transition_handle_index,
-                                            pending_barriers);
-    }
-
+    const AccessContext &access_context;
     const BarrierScope barrier_scope;
     const SyncBarrier barrier;
     bool layout_transition;
@@ -340,6 +339,11 @@ class AccessContext {
 
     void UpdateAccessState(const vvl::Buffer &buffer, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
                            const AccessRange &range, ResourceUsageTagEx tag_ex, SyncFlags flags = 0);
+    void UpdateAccessState(ImageRangeGen &range_gen, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
+                           ResourceUsageTagEx tag_ex, SyncFlags flags = 0);
+
+    // TODO: all of the following UpdateAccessState can be external helpers that use two primary UpdateAccessState
+    // implementations listed above
     void UpdateAccessState(const vvl::Image &image, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
                            const VkImageSubresourceRange &subresource_range, const ResourceUsageTag &tag);
     void UpdateAccessState(const vvl::Image &image, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
@@ -353,10 +357,9 @@ class AccessContext {
                            ResourceUsageTagEx tag_ex);
     void UpdateAccessState(const ImageRangeGen &range_gen, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
                            ResourceUsageTagEx tag_ex, SyncFlags flags = 0);
-    void UpdateAccessState(ImageRangeGen &range_gen, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
-                           ResourceUsageTagEx tag_ex, SyncFlags flags = 0);
     void UpdateAccessState(const vvl::VideoSession &vs_state, const vvl::VideoPictureResource &resource,
                            SyncAccessIndex current_usage, ResourceUsageTag tag);
+
     void ResolveChildContexts(vvl::span<AccessContext> subpass_contexts);
 
     void ImportAsyncContexts(const AccessContext &from);
@@ -415,10 +418,14 @@ class AccessContext {
     };
 
     template <typename Action>
-    void UpdateMemoryAccessRangeState(Action &action, const AccessRange &range);
+    void UpdateMemoryAccessState(Action &action, const AccessRange &range);
 
     template <typename Action, typename RangeGen>
     void UpdateMemoryAccessState(const Action &action, RangeGen &range_gen);
+
+    void RegisterGlobalBarrier(const SyncBarrier &barrier, QueueId queue_id);
+    void ApplyGlobalBarriers(AccessState &access_state) const;
+    uint32_t GetGlobalBarrierCount() const { return (uint32_t)global_barriers_.size(); }
 
     // Called when all accesses are recorded. This can be used for preprocessing
     // or caching purposes. After finalization, it is save to keep persistent
@@ -426,31 +433,23 @@ class AccessContext {
     void Finalize();
 
   private:
-    struct UpdateMemoryAccessStateFunctor {
-        using Iterator = AccessMap::iterator;
-        Iterator Infill(AccessMap *accesses, const Iterator &pos_hint, const AccessRange &range) const;
-        void operator()(const Iterator &pos) const;
-        UpdateMemoryAccessStateFunctor(const AccessContext &context_, SyncAccessIndex usage_, SyncOrdering ordering_rule_,
-                                       ResourceUsageTagEx tag_ex, SyncFlags flags = 0)
-            : context(context_), usage_info(GetAccessInfo(usage_)), ordering_rule(ordering_rule_), tag_ex(tag_ex), flags(flags) {}
-        const AccessContext &context;
-        const SyncAccessInfo &usage_info;
-        const SyncOrdering ordering_rule;
-        const ResourceUsageTagEx tag_ex;
-        const SyncFlags flags;
-    };
+    void ResetGlobalBarriers();
 
     // Follow the context previous to access the access state, supporting "lazy" import into the context. Not intended for
     // subpass layout transition, as the pending state handling is more complex (TODO: check if previous statement is
     // still true after pending barriers rework).
     // TODO: See if returning the lower_bound would be useful from a performance POV -- look at the lower_bound overhead
     // Would need to add a "hint" overload to parallel_iterator::invalidate_[AB] call, if so.
-    void ResolvePreviousAccess(const AccessRange &range, AccessMap *descent_map) const;
-    void ResolvePreviousAccess(const AccessRange &range, AccessMap *descent_map, bool infill,
+    void ResolvePreviousAccess(const AccessRange &range, AccessContext &descent_context, bool infill,
                                const AccessStateFunction &previous_barrier_action) const;
-    void ResolveAccessRange(const AccessRange &range, const AccessStateFunction &barrier_action, AccessMap *resolve_map) const;
-    void ResolveAccessRangeRecursePrev(const AccessRange &range, const AccessStateFunction &barrier_action, AccessMap *resolve_map,
-                                       bool infill) const;
+    void ResolveAccessRange(const AccessRange &range, const AccessStateFunction &barrier_action,
+                            AccessContext &resolve_context) const;
+    void ResolveAccessRangeRecursePrev(const AccessRange &range, const AccessStateFunction &barrier_action,
+                                       AccessContext &resolve_context, bool infill) const;
+
+    AccessMap::iterator InfillGapRecursePrev(const AccessRange &range, AccessMap::iterator pos_hint);
+    AccessMap::iterator DoUpdateAccessState(AccessMap::iterator pos, const AccessRange &range, SyncAccessIndex access_index,
+                                            SyncOrdering ordering_rule, ResourceUsageTagEx tag_ex, SyncFlags flags);
 
     template <typename Detector>
     HazardResult DetectHazardRange(Detector &detector, const AccessRange &range, DetectOptions options) const;
@@ -499,6 +498,22 @@ class AccessContext {
     SubpassBarrierTrackback dst_external_;
     ResourceUsageTag start_tag_ = 0;
 
+    // Global barriers are registered at the AccessContext level and applied to access states
+    // lazily when the access state's barrier information is needed.
+    // Global barriers track VkMemoryBarrier barriers and execution dependencies, including
+    // those from image or buffer barriers.
+    static constexpr uint32_t kMaxGlobaBarrierDefCount = 8;
+    struct GlobalBarrierDef {
+        SyncBarrier barrier;
+        // The i-th bit indicates whether the source stage of this barrier
+        // chains with the destination stage of the barrier for the i-th def.
+        uint32_t chain_mask = 0;
+    };
+    QueueId global_barriers_queue_ = kQueueIdInvalid;
+    GlobalBarrierDef global_barrier_defs_[kMaxGlobaBarrierDefCount];
+    uint32_t global_barrier_def_count_ = 0;
+    std::vector<uint32_t> global_barriers_;
+
     // True if access map won't be modified anymore.
     // NOTE: In the current implementation we mark only command buffer contexts as finalized.
     // TODO: mark other contexts as finalized too if needed.
@@ -530,7 +545,7 @@ struct ActionToOpsAdapter {
 };
 
 template <typename Action>
-void AccessContext::UpdateMemoryAccessRangeState(Action &action, const AccessRange &range) {
+void AccessContext::UpdateMemoryAccessState(Action &action, const AccessRange &range) {
     assert(!finalized_);
     ActionToOpsAdapter<Action> ops{action};
     InfillUpdateRange(access_state_map_, range, ops);
@@ -668,11 +683,12 @@ HazardResult AccessContext::DetectPreviousHazard(Detector &detector, const Acces
     if (prev_.empty()) {
         return {};
     }
-    AccessMap descent_map;
+    AccessContext descent_context;
     for (const auto &prev_dep : prev_) {
         const ApplyTrackbackStackAction barrier_action(prev_dep.barriers, nullptr);
-        prev_dep.source_subpass->ResolveAccessRangeRecursePrev(range, barrier_action, &descent_map, false);
+        prev_dep.source_subpass->ResolveAccessRangeRecursePrev(range, barrier_action, descent_context, false);
     }
+    AccessMap &descent_map = descent_context.access_state_map_;
     for (auto prev = descent_map.begin(); prev != descent_map.end(); ++prev) {
         HazardResult hazard = detector.Detect(prev);
         if (hazard.IsHazard()) {
@@ -698,7 +714,7 @@ void AccessContext::EraseIf(Predicate &&pred) {
 template <typename ResolveOp>
 void AccessContext::ResolveFromContext(ResolveOp &&resolve_op, const AccessContext &from_context) {
     assert(!finalized_);
-    from_context.ResolveAccessRange(kFullRange, resolve_op, &access_state_map_);
+    from_context.ResolveAccessRange(kFullRange, resolve_op, *this);
 }
 
 template <typename ResolveOp>
@@ -706,7 +722,7 @@ void AccessContext::ResolveFromContext(ResolveOp &&resolve_op, const AccessConte
                                        subresource_adapter::ImageRangeGenerator range_gen) {
     assert(!finalized_);
     for (; range_gen->non_empty(); ++range_gen) {
-        from_context.ResolveAccessRange(*range_gen, resolve_op, &access_state_map_);
+        from_context.ResolveAccessRange(*range_gen, resolve_op, *this);
     }
 }
 

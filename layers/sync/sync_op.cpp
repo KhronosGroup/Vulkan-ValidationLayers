@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2025 Valve Corporation
- * Copyright (c) 2019-2025 LunarG, Inc.
+ * Copyright (c) 2019-2026 Valve Corporation
+ * Copyright (c) 2019-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -404,21 +404,6 @@ ResourceUsageTag SyncOpPipelineBarrier::Record(CommandBufferAccessContext *cb_co
     return tag;
 }
 
-struct ApplyGlobalBarrierFunctor {
-    ApplyGlobalBarrierFunctor(QueueId queue_id, const SyncBarrier &barrier) : barrier_scope(barrier, queue_id), barrier(barrier) {}
-
-    using Iterator = AccessMap::iterator;
-    Iterator Infill(AccessMap *accesses, const Iterator &pos_hint, const AccessRange &range) const { return pos_hint; }
-
-    void operator()(const Iterator &pos) const {
-        AccessState &access_state = pos->second;
-        access_state.ApplyBarrier(barrier_scope, barrier);
-    }
-
-    const BarrierScope barrier_scope;
-    SyncBarrier barrier;
-};
-
 // TODO: support more uses cases of a single barrier: if single barrier is an image/buffer
 // barrier then we need consider three ranges - range of the resource where to apply
 // full fledged barrier and also two ranges before and after the resource where it is
@@ -427,9 +412,14 @@ void SyncOpPipelineBarrier::ApplySingleBarrier(CommandExecutionContext &exec_con
     AccessContext *access_context = exec_context.GetCurrentAccessContext();
     const QueueId queue_id = exec_context.GetQueueId();
 
+    // TODO: current function is for a single memory barrier, but we would like to handle
+    // multiple barriers too. We can't just loop over barriers and apply one by one (causes
+    // dependencies). Instead, we need to register entire group of global, so during appliation
+    // time we'll be able to use pending barrier helper.
+    assert(barrier_set_.memory_barriers.size() == 1);
+
     for (const SyncBarrier &barrier : barrier_set_.memory_barriers) {
-        ApplyGlobalBarrierFunctor apply_barrier(queue_id, barrier);
-        access_context->UpdateMemoryAccessRangeState(apply_barrier, kFullRange);
+        access_context->RegisterGlobalBarrier(barrier, queue_id);
     }
 }
 
@@ -451,7 +441,7 @@ void SyncOpPipelineBarrier::ApplyMultipleBarriers(CommandExecutionContext &exec_
             const VkDeviceSize base_address = ResourceBaseAddress(*barrier.buffer);
             const AccessRange range = barrier.range + base_address;
             ApplyMarkupFunctor markup_action(false);
-            access_context->UpdateMemoryAccessRangeState(markup_action, range);
+            access_context->UpdateMemoryAccessState(markup_action, range);
         }
     }
     for (const SyncImageMemoryBarrier &barrier : barrier_set_.image_memory_barriers) {
@@ -469,18 +459,19 @@ void SyncOpPipelineBarrier::ApplyMultipleBarriers(CommandExecutionContext &exec_
     for (const SyncBufferMemoryBarrier &barrier : barrier_set_.buffer_memory_barriers) {
         if (SimpleBinding(*barrier.buffer)) {
             const BarrierScope barrier_scope(barrier.barrier, queue_id);
-            CollectBarriersFunctor collect_barriers(barrier_scope, barrier.barrier, false, vvl::kNoIndex32, pending_barriers);
+            CollectBarriersFunctor collect_barriers(*access_context, barrier_scope, barrier.barrier, false, vvl::kNoIndex32,
+                                                    pending_barriers);
 
             const VkDeviceSize base_address = ResourceBaseAddress(*barrier.buffer);
             const AccessRange range = barrier.range + base_address;
 
-            access_context->UpdateMemoryAccessRangeState(collect_barriers, range);
+            access_context->UpdateMemoryAccessState(collect_barriers, range);
         }
     }
     for (const SyncImageMemoryBarrier &barrier : barrier_set_.image_memory_barriers) {
         const BarrierScope barrier_scope(barrier.barrier, queue_id);
-        CollectBarriersFunctor collect_barriers(barrier_scope, barrier.barrier, barrier.layout_transition, barrier.handle_index,
-                                                pending_barriers);
+        CollectBarriersFunctor collect_barriers(*access_context, barrier_scope, barrier.barrier, barrier.layout_transition,
+                                                barrier.handle_index, pending_barriers);
 
         const auto &sub_state = SubState(*barrier.image);
         const bool can_transition_depth_slices =
@@ -491,8 +482,8 @@ void SyncOpPipelineBarrier::ApplyMultipleBarriers(CommandExecutionContext &exec_
     }
     for (const SyncBarrier &barrier : barrier_set_.memory_barriers) {
         const BarrierScope barrier_scope(barrier, queue_id);
-        CollectBarriersFunctor collect_barriers(barrier_scope, barrier, false, vvl::kNoIndex32, pending_barriers);
-        access_context->UpdateMemoryAccessRangeState(collect_barriers, kFullRange);
+        CollectBarriersFunctor collect_barriers(*access_context, barrier_scope, barrier, false, vvl::kNoIndex32, pending_barriers);
+        access_context->UpdateMemoryAccessState(collect_barriers, kFullRange);
     }
 
     // Update access states with collected barriers
@@ -836,7 +827,8 @@ void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext &exec_context, Resou
                 if (SimpleBinding(*barrier.buffer)) {
                     const SyncBarrier event_barrier = RestrictToEvent(barrier.barrier, *sync_event);
                     const BarrierScope barrier_scope(event_barrier, queue_id, sync_event->first_scope_tag);
-                    CollectBarriersFunctor collect_barriers(barrier_scope, event_barrier, false, vvl::kNoIndex32, pending_barriers);
+                    CollectBarriersFunctor collect_barriers(*access_context, barrier_scope, event_barrier, false, vvl::kNoIndex32,
+                                                            pending_barriers);
 
                     const VkDeviceSize base_address = ResourceBaseAddress(*barrier.buffer);
                     const AccessRange range = barrier.range + base_address;
@@ -848,7 +840,7 @@ void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext &exec_context, Resou
             for (const SyncImageMemoryBarrier &barrier : barrier_set.image_memory_barriers) {
                 const SyncBarrier event_barrier = RestrictToEvent(barrier.barrier, *sync_event);
                 const BarrierScope barrier_scope(event_barrier, queue_id, sync_event->first_scope_tag);
-                CollectBarriersFunctor collect_barriers(barrier_scope, event_barrier, barrier.layout_transition,
+                CollectBarriersFunctor collect_barriers(*access_context, barrier_scope, event_barrier, barrier.layout_transition,
                                                         barrier.handle_index, pending_barriers);
 
                 const auto &sub_state = SubState(*barrier.image);
@@ -865,7 +857,8 @@ void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext &exec_context, Resou
             for (const auto &barrier : barrier_set.memory_barriers) {
                 const SyncBarrier event_barrier = RestrictToEvent(barrier, *sync_event);
                 const BarrierScope barrier_scope(event_barrier, queue_id, sync_event->first_scope_tag);
-                CollectBarriersFunctor collect_barriers(barrier_scope, event_barrier, false, vvl::kNoIndex32, pending_barriers);
+                CollectBarriersFunctor collect_barriers(*access_context, barrier_scope, event_barrier, false, vvl::kNoIndex32,
+                                                        pending_barriers);
 
                 auto range_gen = global_range_gen;  // intentional copy
                 access_context->UpdateMemoryAccessState(collect_barriers, range_gen);

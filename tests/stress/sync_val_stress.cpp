@@ -58,7 +58,7 @@ TEST_F(StressSyncVal, CopyPagesInSmallChunks) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitSyncVal());
 
-    const uint32_t page_count = 2;
+    const uint32_t page_count = 16;
     const uint32_t page_size = 65536;
     const uint32_t copies_per_page = page_size / 16;  // 4K
 
@@ -105,7 +105,7 @@ TEST_F(StressSyncVal, CopyPagesInSmallChunksNoQueueSync) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitSyncVal());
 
-    const uint32_t page_count = 2;
+    const uint32_t page_count = 16;
     const uint32_t page_size = 65536;
     const uint32_t copies_per_page = page_size / 16;  // 4K
 

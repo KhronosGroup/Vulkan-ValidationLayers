@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google, Inc.
+ * Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
+ * Copyright (c) 2015-2026 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -3502,4 +3502,73 @@ TEST_F(PositiveSyncVal, BarrierRepeat) {
     m_command_buffer.Barrier(barrier_a);
 
     m_command_buffer.Copy(buffer, dst_buffer);
+}
+
+TEST_F(PositiveSyncVal, ChainGlobalBarrierWithTransition) {
+    TEST_DESCRIPTION("Test that global barrier chains with layout transition source scope");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+
+    const VkClearValue clear_value{};
+    VkImageSubresourceRange subresource_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    // If global barriers tracking is broken this barrier won't chain with layout transition and it will cause WAW hazard
+    VkMemoryBarrier2 global_barrier = vku::InitStructHelper();
+    global_barrier.srcStageMask = VK_PIPELINE_STAGE_2_CLEAR_BIT;
+    global_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    global_barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    global_barrier.dstAccessMask = VK_ACCESS_2_NONE;
+
+    VkImageMemoryBarrier2 transition = vku::InitStructHelper();
+    transition.srcStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    transition.srcAccessMask = VK_ACCESS_2_NONE;
+    transition.dstStageMask = VK_PIPELINE_STAGE_2_NONE;
+    transition.dstAccessMask = VK_ACCESS_2_NONE;
+    transition.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    transition.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    transition.image = image;
+    transition.subresourceRange = subresource_range;
+
+    m_command_buffer.Begin();
+    vk::CmdClearColorImage(m_command_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value.color, 1,
+                           &subresource_range);
+    m_command_buffer.Barrier(global_barrier);
+    m_command_buffer.Barrier(transition);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncVal, ChainGlobalBarrierWithBufferBarrier) {
+    TEST_DESCRIPTION("Test that global barrier chains with buffer barrier's source scope");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer buffer_a(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_b(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_c(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    // If global barriers tracking is broken this barrier won't chain with buffer barrier and will case WAR hazard
+    VkMemoryBarrier2 global_barrier = vku::InitStructHelper();
+    global_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    global_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
+    global_barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    global_barrier.dstAccessMask = VK_ACCESS_2_NONE;
+
+    VkBufferMemoryBarrier2 buffer_barrier = vku::InitStructHelper();
+    buffer_barrier.srcStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    buffer_barrier.srcAccessMask = VK_ACCESS_2_NONE;
+    buffer_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    buffer_barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    buffer_barrier.buffer = buffer_a;
+    buffer_barrier.size = 1024;
+
+    m_command_buffer.Begin();
+    m_command_buffer.Copy(buffer_a, buffer_b);
+    m_command_buffer.Barrier(global_barrier);
+    m_command_buffer.Barrier(buffer_barrier);
+    m_command_buffer.Copy(buffer_c, buffer_a);
+    m_command_buffer.End();
 }

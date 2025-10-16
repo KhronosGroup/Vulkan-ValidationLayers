@@ -1,6 +1,6 @@
-/* Copyright (c) 2019-2025 The Khronos Group Inc.
- * Copyright (c) 2019-2025 Valve Corporation
- * Copyright (c) 2019-2025 LunarG, Inc.
+/* Copyright (c) 2019-2026 The Khronos Group Inc.
+ * Copyright (c) 2019-2026 Valve Corporation
+ * Copyright (c) 2019-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -908,7 +908,8 @@ void RenderPassAccessContext::RecordEndRenderPass(AccessContext *external_contex
             PendingBarriers pending_barriers;
             for (const auto &barrier : last_trackback.barriers) {
                 const BarrierScope barrier_scope(barrier);
-                CollectBarriersFunctor collect_barriers(barrier_scope, barrier, true, vvl::kNoIndex32, pending_barriers);
+                CollectBarriersFunctor collect_barriers(*external_context, barrier_scope, barrier, true, vvl::kNoIndex32,
+                                                        pending_barriers);
                 external_context->UpdateMemoryAccessState(collect_barriers, range_gen);
             }
             pending_barriers.Apply(barrier_tag);
