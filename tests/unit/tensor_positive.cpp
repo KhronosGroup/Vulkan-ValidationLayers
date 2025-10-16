@@ -11,6 +11,7 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/data_graph_objects.h"
 #include <vector>
 
 class PositiveTensor : public TensorTest {};
@@ -96,10 +97,9 @@ TEST_F(PositiveTensor, DescriptorBuffer) {
     vk::GetTensorViewOpaqueCaptureDescriptorDataARM(*m_device, &tensor_capture_desc_data_info, &data);
 }
 
-TEST_F(PositiveTensor, DispatchShader) {
-    TEST_DESCRIPTION("Use a tensor in a shader");
+TEST_F(PositiveTensor, DispatchShaderGLSL) {
+    TEST_DESCRIPTION("Use a tensor in a GLSL shader");
     AddRequiredFeature(vkt::Feature::shaderTensorAccess);
-    AddRequiredFeature(vkt::Feature::timelineSemaphore);
     RETURN_IF_SKIP(InitBasicTensor());
 
     vkt::Tensor tensor(*m_device);
@@ -114,6 +114,46 @@ TEST_F(PositiveTensor, DispatchShader) {
 
     CreateComputePipelineHelper pipe(*m_device);
     pipe.cs_ = VkShaderObj::CreateFromGLSL(this, tensor_shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    std::vector<VkDescriptorSetLayoutBinding> bindings = {
+        {0, VK_DESCRIPTOR_TYPE_TENSOR_ARM, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+
+    pipe.dsl_bindings_.resize(bindings.size());
+    memcpy(pipe.dsl_bindings_.data(), bindings.data(), bindings.size() * sizeof(VkDescriptorSetLayoutBinding));
+    pipe.CreateComputePipeline();
+    pipe.descriptor_set_.WriteDescriptorTensorInfo(0, &view.handle());
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(1, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_.set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveTensor, DispatchShaderSpirv) {
+    TEST_DESCRIPTION("Use a tensor in a Spir-V shader");
+    AddRequiredFeature(vkt::Feature::shaderTensorAccess);
+    RETURN_IF_SKIP(InitBasicTensor());
+
+    vkt::Tensor tensor(*m_device);
+    tensor.BindToMem();
+
+    VkTensorViewCreateInfoARM tensor_view_create_info = vku::InitStructHelper();
+    tensor_view_create_info.tensor = tensor.handle();
+    tensor_view_create_info.format = tensor.Format();
+    vkt::TensorView view(*m_device, tensor_view_create_info);
+
+    vkt::Buffer buffer(*m_device, tensor.GetMemoryReqs().memoryRequirements.size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+    CreateComputePipelineHelper pipe(*m_device);
+    const std::string spirv_source = vkt::dg::DataGraphPipelineHelper::GetSpirvBasicShader();
+    pipe.cs_ = VkShaderObj(this, spirv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
 
     std::vector<VkDescriptorSetLayoutBinding> bindings = {
         {0, VK_DESCRIPTOR_TYPE_TENSOR_ARM, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},

@@ -1686,6 +1686,8 @@ NumericType Module::GetNumericType(uint32_t type) const {
     const Instruction* insn = FindDef(type);
 
     switch (insn->Opcode()) {
+        case spv::OpTypeBool:
+            return NumericTypeBool;
         case spv::OpTypeInt:
             return insn->Word(3) ? NumericTypeSint : NumericTypeUint;
         case spv::OpTypeFloat:
@@ -1728,6 +1730,7 @@ std::string InterfaceSlot::Describe() const {
 uint32_t GetFormatType(VkFormat format) {
     if (vkuFormatIsSINT(format)) return NumericTypeSint;
     if (vkuFormatIsUINT(format)) return NumericTypeUint;
+    if (vkuFormatIsBOOL(format)) return NumericTypeBool;
     // Formats such as VK_FORMAT_D16_UNORM_S8_UINT are both
     if (vkuFormatIsDepthAndStencil(format)) return NumericTypeFloat | NumericTypeUint;
     if (format == VK_FORMAT_UNDEFINED) return NumericTypeUnknown;
@@ -1738,8 +1741,32 @@ uint32_t GetFormatType(VkFormat format) {
 const char* string_NumericType(uint32_t type) {
     if (type == NumericTypeSint) return "SINT";
     if (type == NumericTypeUint) return "UINT";
+    if (type == NumericTypeBool) return "BOOL";
     if (type == NumericTypeFloat) return "FLOAT";
     return "(none)";
+}
+
+VkFormat GetTensorFormat(NumericType numeric_type, uint32_t bit_width) {
+    if (numeric_type == NumericTypeBool) {
+        return VK_FORMAT_R8_BOOL_ARM;
+    } else if (numeric_type == NumericTypeFloat) {
+        if (bit_width == 16) return VK_FORMAT_R16_SFLOAT;
+        if (bit_width == 32) return VK_FORMAT_R32_SFLOAT;
+        if (bit_width == 64) return VK_FORMAT_R64_SFLOAT;
+    } else if (numeric_type == NumericTypeSint) {
+        if (bit_width == 8) return VK_FORMAT_R8_SINT;
+        if (bit_width == 16) return VK_FORMAT_R16_SINT;
+        if (bit_width == 32) return VK_FORMAT_R32_SINT;
+        if (bit_width == 64) return VK_FORMAT_R64_SINT;
+    } else if (numeric_type == NumericTypeUint) {
+        if (bit_width == 8) return VK_FORMAT_R8_UINT;
+        if (bit_width == 16) return VK_FORMAT_R16_UINT;
+        if (bit_width == 32) return VK_FORMAT_R32_UINT;
+        if (bit_width == 64) return VK_FORMAT_R64_UINT;
+    }
+    // invalid type, width combination
+    assert(false);
+    return VK_FORMAT_UNDEFINED;
 }
 
 const char* VariableBase::FindDebugName(const VariableBase& variable, const DebugNameMap& debug_name_map) {
@@ -2086,9 +2113,9 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
 
     // Handle anything specific to the base type
     if (base_type.Opcode() == spv::OpTypeImage) {
-        info.image_format = CompatibleSpirvImageFormat(base_type.Word(8));
-        info.image_sampled_type_numeric = module_state.GetNumericType(base_type.Word(2));
-        info.image_sampled_type_width = (uint8_t)module_state.GetTypeBitsSize(&base_type);
+        info.vk_format = CompatibleSpirvImageFormat(base_type.Word(8));
+        info.numeric_type = module_state.GetNumericType(base_type.Word(2));
+        info.bit_width = (uint8_t)module_state.GetTypeBitsSize(&base_type);
 
         // Things marked regardless of the image being accessed or not
         const bool is_sampled_without_sampler = base_type.Word(7) == 2;  // Word(7) == Sampled
@@ -2190,6 +2217,9 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
     }
     if (base_type.Opcode() == spv::OpTypeTensorARM) {
         is_storage_tensor = true;
+        info.numeric_type = module_state.GetNumericType(base_type.Word(2));
+        info.bit_width = (uint8_t)module_state.GetTypeBitsSize(&base_type);
+        info.vk_format = GetTensorFormat(info.numeric_type, info.bit_width);
     }
 
     info.access_mask = access_mask;
@@ -2363,6 +2393,9 @@ uint32_t Module::GetTypeBitsSize(const Instruction* insn) const {
     } else if (opcode == spv::OpTypeImage) {
         const Instruction* type = FindDef(insn->Word(2));
         bit_size = GetTypeBitsSize(type);
+    } else if (opcode == spv::OpTypeTensorARM) {
+        const Instruction* type = FindDef(insn->Word(2));
+        bit_size = type->GetBitWidth();
     } else if (opcode == spv::OpTypeVoid) {
         // Sampled Type of OpTypeImage can be a void
         bit_size = 0;

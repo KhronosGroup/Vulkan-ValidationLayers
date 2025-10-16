@@ -326,9 +326,11 @@ enum NumericType {
     NumericTypeFloat = 1,    // UNORM, SNORM, FLOAT, USCALED, SSCALED, SRGB -- anything we consider float in the shader
     NumericTypeSint = 2,
     NumericTypeUint = 4,
+    NumericTypeBool = 5,
 };
 uint32_t GetFormatType(VkFormat format);
 const char *string_NumericType(uint32_t type);
+VkFormat GetTensorFormat(NumericType numeric_type, uint32_t bit_width);
 
 // Common info needed for all OpVariable
 struct VariableBase {
@@ -442,7 +444,7 @@ struct ResourceInterfaceVariable : public VariableBase {
     std::vector<bool> input_attachment_index_read;
 
     // Type once array/pointer are stripped
-    // most likly will be OpTypeImage, OpTypeStruct, OpTypeSampler, or OpTypeAccelerationStructureKHR
+    // most likely will be OpTypeImage, OpTypeStruct, OpTypeSampler, or OpTypeAccelerationStructureKHR
     const Instruction &base_type;
 
     // True if the Resource variable itself is runtime descriptor array
@@ -454,7 +456,7 @@ struct ResourceInterfaceVariable : public VariableBase {
     bool all_constant_integral_expressions{true};
 
     // All info regarding what will be validated from requirements imposed by the pipeline on a descriptor. These
-    // can't be checked at pipeline creation time as they depend on the Image or ImageView bound.
+    // can't be checked at pipeline creation time as they depend on the object bound (Image/Tensor) or its view.
     // That is perf-critical code and hashing if 2 variables have same info provides a 20% perf bonus
     //
     // This info can be broken down into two further parts:
@@ -464,12 +466,12 @@ struct ResourceInterfaceVariable : public VariableBase {
     // in the array that match correctly depending on the index used. (For normal 1.0 descriptor, all access to the array must be
     // valid for all indexes in the array)
     struct Info {
-        // the 'format' operand of OpTypeImage as the corresponding Vulkan Format
-        VkFormat image_format{VK_FORMAT_UNDEFINED};
-        // the 'Sampled Type' operand of OpTypeImage,as a numeric type (float, uint, int)
-        NumericType image_sampled_type_numeric{NumericTypeUnknown};
-        // the 'Sampled Type' operand of OpTypeImage as the bit width (64 is the largest bit width in SPIR-V)
-        uint8_t image_sampled_type_width{0};
+        // the 'format' operand of OpTypeImage as the corresponding Vulkan Format. Computed for OpTypeTensorARM
+        VkFormat vk_format{VK_FORMAT_UNDEFINED};
+        // the 'Type' operand of OpTypeImage/OpTypeTensorARM, as a numeric type (float, uint, int, bool)
+        NumericType numeric_type{NumericTypeUnknown};
+        // the width in bits of the 'Type' operand of OpTypeImage/OpTypeTensorARM (64 is the largest bit width in SPIR-V)
+        uint8_t bit_width{0};
 
         spv::Dim image_dim;
         bool is_image_array;
@@ -480,7 +482,7 @@ struct ResourceInterfaceVariable : public VariableBase {
         bool is_read_without_format{false};   // For storage images
         bool is_write_without_format{false};  // For storage images
 
-        // If a variable is used as a function arguement, but never actually used, it will be found in EntryPoint::accessible_ids so
+        // If a variable is used as a function argument, but never actually used, it will be found in EntryPoint::accessible_ids so
         // we need to have a dedicated mark if it was accessed.
         // We use this for variable hashing, but the VariableBase has the helper functions to read this value.
         uint32_t access_mask{AccessBit::empty};

@@ -149,7 +149,7 @@ TEST_F(PositiveDataGraph, ShaderModuleInPNext) {
 
     // create a ShaderModule to add in the pNext chain
     spvtools::SpirvTools tools{SPV_ENV_UNIVERSAL_1_6};
-    const std::string& spirv_source = vkt::dg::DataGraphPipelineHelper::GetSpirvSourceGraph();
+    const std::string& spirv_source = vkt::dg::DataGraphPipelineHelper::GetSpirvBasicDataGraph();
     std::vector<uint32_t> spirv_binary;
     if (!tools.Assemble(spirv_source, &spirv_binary)) {
         Monitor().SetError("Failed to compile SPIRV shader module");
