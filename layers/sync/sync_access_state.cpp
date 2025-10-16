@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2025 Valve Corporation
- * Copyright (c) 2019-2025 LunarG, Inc.
+ * Copyright (c) 2019-2026 Valve Corporation
+ * Copyright (c) 2019-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -616,7 +616,7 @@ void AccessState::ClearFirstUse() {
     first_access_closed_ = false;
 }
 
-void AccessState::ApplyBarrier(const BarrierScope &barrier_scope, const SyncBarrier &barrier, bool layout_transition,
+bool AccessState::ApplyBarrier(const BarrierScope &barrier_scope, const SyncBarrier &barrier, bool layout_transition,
                                uint32_t layout_transition_handle_index, ResourceUsageTag layout_transition_tag) {
     // Dedicated layout transition barrier logic
     if (layout_transition) {
@@ -631,13 +631,16 @@ void AccessState::ApplyBarrier(const BarrierScope &barrier_scope, const SyncBarr
 
         last_write->barriers |= barrier.dst_access_scope;
         last_write->dependency_chain |= barrier.dst_exec_scope.exec_scope;
-        return;
+        return true;
     }
+
+    bool barrier_applied = false;
 
     // Apply barriers over write access
     if (last_write.has_value() && last_write->InBarrierSourceScope(barrier_scope)) {
         last_write->barriers |= barrier.dst_access_scope;
         last_write->dependency_chain |= barrier.dst_exec_scope.exec_scope;
+        barrier_applied = true;
     }
     // Apply barriers over read accesses
     VkPipelineStageFlags2 stages_in_scope = VK_PIPELINE_STAGE_2_NONE;
@@ -656,8 +659,10 @@ void AccessState::ApplyBarrier(const BarrierScope &barrier_scope, const SyncBarr
             // barriers used to determine sync_stages have been propagated to all known earlier stages
             read_access.barriers |= barrier.dst_exec_scope.exec_scope;
             read_execution_barriers |= barrier.dst_exec_scope.exec_scope;
+            barrier_applied = true;
         }
     }
+    return barrier_applied;
 }
 
 void AccessState::CollectPendingBarriers(const BarrierScope &barrier_scope, const SyncBarrier &barrier, bool layout_transition,
@@ -929,6 +934,8 @@ void AccessState::OffsetTag(ResourceUsageTag offset) {
 
 // Copies everything except read states which need custom logic
 void AccessState::CopySimpleMembers(const AccessState &other) {
+    next_global_barrier_index = other.next_global_barrier_index;
+
     last_write = other.last_write;
 
     last_read_stages = other.last_read_stages;
@@ -1186,7 +1193,7 @@ bool WriteState::IsOrdered(const OrderingBarrier &ordering, QueueId queue_id) co
 }
 
 bool WriteState::IsWriteBarrierHazard(QueueId queue_id, VkPipelineStageFlags2 src_exec_scope,
-                                                    const SyncAccessFlags &src_access_scope) const {
+                                      const SyncAccessFlags &src_access_scope) const {
     // Current implementation relies on TOP_OF_PIPE constant due to the fact that it's non-zero value
     // and AND-ing with it can create execution dependency when necessary. One example, it allows the
     // ALL_COMMANDS stage to guard all accesses even if NONE/TOP_OF_PIPE is used. When NONE constant is
@@ -1229,9 +1236,7 @@ bool WriteState::DependencyChainInSourceScope(VkPipelineStageFlags2 src_exec_sco
     return (dependency_chain & src_exec_scope) != 0;
 }
 
-bool WriteState::WriteInSourceScope(const SyncAccessFlags &src_access_scope) const {
-    return src_access_scope[access_index];
-}
+bool WriteState::WriteInSourceScope(const SyncAccessFlags &src_access_scope) const { return src_access_scope[access_index]; }
 
 bool WriteState::WriteOrDependencyChainInSourceScope(QueueId queue_id, VkPipelineStageFlags2 src_exec_scope,
                                                      const SyncAccessFlags &src_access_scope) const {

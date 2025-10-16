@@ -1,6 +1,6 @@
-/* Copyright (c) 2019-2025 The Khronos Group Inc.
- * Copyright (c) 2019-2025 Valve Corporation
- * Copyright (c) 2019-2025 LunarG, Inc.
+/* Copyright (c) 2019-2026 The Khronos Group Inc.
+ * Copyright (c) 2019-2026 Valve Corporation
+ * Copyright (c) 2019-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -348,7 +348,7 @@ class AccessState {
     void Resolve(const AccessState &other);
 
     // Apply a single barrier to the access state
-    void ApplyBarrier(const BarrierScope &barrier_scope, const SyncBarrier &barrier, bool layout_transition = false,
+    bool ApplyBarrier(const BarrierScope &barrier_scope, const SyncBarrier &barrier, bool layout_transition = false,
                       uint32_t layout_transition_handle_index = vvl::kNoIndex32,
                       ResourceUsageTag layout_transition_tag = kInvalidTag);
 
@@ -456,6 +456,13 @@ class AccessState {
     void AddRead(const ReadState &read);
     void MergeReads(const AccessState &other);
     void ClearReadStates();
+
+public:
+    // Index of the next global barrier to apply.
+    // Global barriers are stored in the AccessContext associated with this access state.
+    // If 0, no global barriers have been applied yet.
+    // If greater than 0, then all global barriers with smaller indices are already applied.
+    uint32_t next_global_barrier_index = 0;
 
   private:
     // The most recent write.

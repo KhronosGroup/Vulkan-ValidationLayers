@@ -1,6 +1,6 @@
-/* Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2026 The Khronos Group Inc.
+ * Copyright (c) 2026 Valve Corporation
+ * Copyright (c) 2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,6 +87,13 @@ std::pair<AccessMap::iterator, bool> AccessMap::Insert(const AccessRange &range,
     }
     // We don't replace
     return {lower, false};
+}
+
+AccessMap::iterator AccessMap::InfillGap(const_iterator range_lower_bound, const AccessRange &range,
+                                         const AccessState &access_state) {
+    assert(LowerBound(range.begin) == range_lower_bound);
+    assert(range_lower_bound == end() || range.strictly_less(range_lower_bound->first));
+    return impl_map_.insert(range_lower_bound, {range, access_state});
 }
 
 AccessMap::iterator AccessMap::Split(const iterator split_it, const index_type &index) {
