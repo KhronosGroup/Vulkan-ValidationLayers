@@ -926,43 +926,6 @@ TEST_F(NegativeSecondaryCommandBuffer, NestedDrawWithoutInline) {
     secondary.End();
 }
 
-// http://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10761
-TEST_F(NegativeSecondaryCommandBuffer, DISABLED_NestedDrawWithoutInline2) {
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::nestedCommandBuffer);
-    AddRequiredFeature(vkt::Feature::dynamicRendering);
-    RETURN_IF_SKIP(Init());
-
-    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
-    pipe.CreateGraphicsPipeline();
-
-    VkCommandBufferInheritanceRenderingInfo inheritance_rendering_info = vku::InitStructHelper();
-    inheritance_rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
-    inheritance_rendering_info.colorAttachmentCount = 1;
-    inheritance_rendering_info.pColorAttachmentFormats = &color_format;
-    inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-
-    const VkCommandBufferInheritanceInfo cmdbuff_ii = vku::InitStructHelper(&inheritance_rendering_info);
-    VkCommandBufferBeginInfo cmdbuff_bi = vku::InitStructHelper();
-    cmdbuff_bi.pInheritanceInfo = &cmdbuff_ii;
-    cmdbuff_bi.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
-
-    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-    secondary.Begin(&cmdbuff_bi);
-    vk::CmdBindPipeline(secondary, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-flags-10582");
-    vk::CmdDraw(secondary, 3, 1, 0, 0);
-    m_errorMonitor->VerifyFound();
-    secondary.End();
-}
-
 TEST_F(NegativeSecondaryCommandBuffer, MissingInheritedQueriesFeature) {
     AddRequiredFeature(vkt::Feature::pipelineStatisticsQuery);
     RETURN_IF_SKIP(Init());
