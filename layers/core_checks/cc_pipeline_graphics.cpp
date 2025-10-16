@@ -3483,20 +3483,6 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpass(const LastBound &last_bou
         return skip;
     }
 
-    const VkRenderingFlags render_flags = rp_state.GetRenderingFlags();
-    if ((render_flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT) != 0 &&
-        (render_flags & VK_RENDERING_CONTENTS_INLINE_BIT_KHR) == 0) {
-        // Being discussed if this is correct or not
-        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10761
-        if (!rp_state.use_dynamic_rendering_inherited) {
-            skip |= LogError(vuid.rendering_contents_10582, cb_state.Handle(), vuid.loc(),
-                             "the render pass is %s::flags %s (missing VK_RENDERING_CONTENTS_INLINE_BIT_KHR)",
-                             rp_state.use_dynamic_rendering_inherited ? "inherited with VkCommandBufferInheritanceRenderingInfo"
-                                                                      : "begun with VkRenderingInfo",
-                             string_VkRenderingFlags(render_flags).c_str());
-        }
-    }
-
     const VkPipelineRenderingCreateInfo &pipeline_rendering_ci = *(pipeline_rp_state->dynamic_pipeline_rendering_create_info.ptr());
     const auto rendering_view_mask = rp_state.GetDynamicRenderingViewMask();
     // There is currently a 06031 VU that catches the viewMask at vkCmdExecuteCommands time, so seems like this is not suppose to be
@@ -3509,6 +3495,7 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpass(const LastBound &last_bou
                          FormatHandle(pipeline).c_str(), pipeline_rendering_ci.viewMask, rendering_view_mask);
     }
 
+    skip |= ValidateDrawPipelineDynamicRenderpassNonInherited(last_bound_state, pipeline, rp_state, vuid);
     skip |= ValidateDrawPipelineDynamicRenderpassFragmentFormat(last_bound_state, pipeline, rp_state, pipeline_rendering_ci, vuid);
     skip |= ValidateDrawPipelineDynamicRenderpassDepthStencil(last_bound_state, pipeline, rp_state, pipeline_rendering_ci, vuid);
     skip |=
@@ -3572,6 +3559,30 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassDepthStencil(const LastBou
                                  string_VkFormat(stencil_format), FormatHandle(pipeline).c_str());
             }
         }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateDrawPipelineDynamicRenderpassNonInherited(const LastBound &last_bound_state, const vvl::Pipeline &pipeline,
+                                                                   const vvl::RenderPass &rp_state,
+                                                                   const vvl::DrawDispatchVuid &vuid) const {
+    bool skip = false;
+    // See https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10761
+    // There are some drawtime VUs that say:
+    //   "If the current render pass instance was begun with a vkCmdBeginRendering call in commandBuffer"
+    // Where the "call in commandBuffer" part specifically mean we don't count the cases of secondary command buffers that are using
+    // VkCommandBufferInheritanceRenderingInfo
+    if (rp_state.use_dynamic_rendering_inherited) {
+        return skip;
+    }
+
+    const VkRenderingFlags render_flags = rp_state.GetRenderingFlags();
+    if ((render_flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT) != 0 &&
+        (render_flags & VK_RENDERING_CONTENTS_INLINE_BIT_KHR) == 0) {
+        skip |= LogError(vuid.rendering_contents_10582, last_bound_state.cb_state.Handle(), vuid.loc(),
+                         "the render pass is begun with VkRenderingInfo::flags %s (missing VK_RENDERING_CONTENTS_INLINE_BIT_KHR)",
+                         string_VkRenderingFlags(render_flags).c_str());
     }
 
     return skip;

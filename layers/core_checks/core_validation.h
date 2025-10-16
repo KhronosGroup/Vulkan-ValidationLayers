@@ -688,6 +688,9 @@ class CoreChecks : public vvl::DeviceProxy {
                                         const vvl::RenderPass& rp_state, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawPipelineDynamicRenderpass(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
                                                const vvl::RenderPass& rp_state, const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateDrawPipelineDynamicRenderpassNonInherited(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
+                                                           const vvl::RenderPass& rp_state,
+                                                           const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawPipelineDynamicRenderpassSampleCount(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
                                                           const vvl::RenderPass& rp_state, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawPipelineDynamicRenderpassLegacyDithering(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
