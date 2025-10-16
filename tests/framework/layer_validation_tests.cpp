@@ -79,20 +79,23 @@ bool FormatFeaturesAreSupported(VkPhysicalDevice phy, VkFormat format, VkImageTi
     return (features == (phy_features & features));
 }
 
-bool ImageFormatIsSupported(const VkPhysicalDevice phy, const VkImageCreateInfo info, const VkFormatFeatureFlags features) {
+VkResult GetImageFormatProps(VkPhysicalDevice gpu, const VkImageCreateInfo &ci, VkImageFormatProperties &out_limits) {
+    return vk::GetPhysicalDeviceImageFormatProperties(gpu, ci.format, ci.imageType, ci.tiling, ci.usage, ci.flags, &out_limits);
+}
+
+bool IsImageFormatSupported(const VkPhysicalDevice gpu, const VkImageCreateInfo &ci, const VkFormatFeatureFlags features) {
     // Verify physical device support of format features
-    if (!FormatFeaturesAreSupported(phy, info.format, info.tiling, features)) {
+    if (!FormatFeaturesAreSupported(gpu, ci.format, ci.tiling, features)) {
         return false;
     }
 
     // Verify that PhysDevImageFormatProp() also claims support for the specific usage
     VkImageFormatProperties props;
-    VkResult err =
-        vk::GetPhysicalDeviceImageFormatProperties(phy, info.format, info.imageType, info.tiling, info.usage, info.flags, &props);
+    VkResult err = GetImageFormatProps(gpu, ci, props);
     if (VK_SUCCESS != err) {
         return false;
     }
-    if (info.arrayLayers > props.maxArrayLayers) {
+    if (ci.arrayLayers > props.maxArrayLayers) {
         return false;
     }
 
@@ -200,10 +203,6 @@ void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkDevice device, con
             vk::ResetCommandBuffer(command_buffer, 0);
         }
     }
-}
-
-VkResult GetImageFormatProps(VkPhysicalDevice gpu, const VkImageCreateInfo &ci, VkImageFormatProperties &out_limits) {
-    return vk::GetPhysicalDeviceImageFormatProperties(gpu, ci.format, ci.imageType, ci.tiling, ci.usage, ci.flags, &out_limits);
 }
 
 VkFormat FindFormatWithoutFeatures(VkPhysicalDevice gpu, VkImageTiling tiling, VkFormatFeatureFlags undesired_features) {

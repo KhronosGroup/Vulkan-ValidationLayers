@@ -108,7 +108,7 @@ bool FormatFeaturesAreSupported(VkPhysicalDevice phy, VkFormat format, VkImageTi
 VkResult GetImageFormatProps(VkPhysicalDevice gpu, const VkImageCreateInfo &ci, VkImageFormatProperties &out_limits);
 
 // Returns true if format and *all* requested features are available.
-bool ImageFormatIsSupported(const VkPhysicalDevice phy, const VkImageCreateInfo info, const VkFormatFeatureFlags features);
+bool IsImageFormatSupported(VkPhysicalDevice gpu, const VkImageCreateInfo &ci, const VkFormatFeatureFlags features);
 
 // Returns true if format and *all* requested features are available.
 bool BufferFormatAndFeaturesSupported(VkPhysicalDevice phy, VkFormat format, VkFormatFeatureFlags features);
