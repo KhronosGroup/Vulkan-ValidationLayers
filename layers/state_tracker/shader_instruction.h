@@ -81,6 +81,7 @@ class Instruction {
     spv::Dim FindImageDim() const;
     bool IsImageArray() const;
     bool IsImageMultisampled() const;
+    bool IsTensor() const;
 
     // Auto-generated helper functions
     spv::StorageClass StorageClass() const;

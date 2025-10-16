@@ -203,6 +203,8 @@ bool Instruction::IsImageMultisampled() const {
     return (Opcode() == spv::OpTypeImage) && (Word(6) != 0);
 }
 
+bool Instruction::IsTensor() const { return (Opcode() == spv::OpTypeTensorARM); }
+
 spv::StorageClass Instruction::StorageClass() const {
     spv::StorageClass storage_class = spv::StorageClassMax;
     switch (Opcode()) {
