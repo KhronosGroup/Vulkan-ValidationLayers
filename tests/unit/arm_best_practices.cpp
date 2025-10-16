@@ -46,7 +46,7 @@ TEST_F(VkArmBestPracticesLayerTest, TooManySamples) {
     image_ci.samples = VK_SAMPLE_COUNT_8_BIT;
 
     VkImageFormatProperties img_limits;
-    VkResult res = GPDIFPHelper(Gpu(), &image_ci, &img_limits);
+    VkResult res = GetImageFormatProps(Gpu(), image_ci, img_limits);
     if (res != VK_SUCCESS || (img_limits.sampleCounts & VK_SAMPLE_COUNT_8_BIT) == 0) {
         GTEST_SKIP() << "Required format not supported";
     }

@@ -104,6 +104,9 @@ bool FormatIsSupported(VkPhysicalDevice phy, VkFormat format, VkImageTiling tili
 // Returns true if format and *all* requested features are available.
 bool FormatFeaturesAreSupported(VkPhysicalDevice phy, VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags features);
 
+// Small wrapprer around vkGetPhysicalDeviceImageFormatProperties
+VkResult GetImageFormatProps(VkPhysicalDevice gpu, const VkImageCreateInfo &ci, VkImageFormatProperties &out_limits);
+
 // Returns true if format and *all* requested features are available.
 bool ImageFormatIsSupported(const VkPhysicalDevice phy, const VkImageCreateInfo info, const VkFormatFeatureFlags features);
 
@@ -460,8 +463,6 @@ void TestRenderPass2KHRCreate(ErrorMonitor &error_monitor, const vkt::Device &de
                               const std::vector<const char *> &vuids);
 void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkDevice device, const VkCommandBuffer command_buffer,
                          const VkRenderPassBeginInfo *begin_info, bool rp2Supported, const char *rp1_vuid, const char *rp2_vuid);
-
-VkResult GPDIFPHelper(VkPhysicalDevice dev, const VkImageCreateInfo *ci, VkImageFormatProperties *limits = nullptr);
 
 VkFormat FindFormatWithoutFeatures(VkPhysicalDevice gpu, VkImageTiling tiling,
                                    VkFormatFeatureFlags undesired_features = vvl::kNoIndex32);

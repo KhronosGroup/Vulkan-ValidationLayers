@@ -2222,7 +2222,7 @@ TEST_F(NegativeHostImageCopy, ImageMemorySparseUnbound) {
     image_ci.usage = VK_IMAGE_USAGE_HOST_TRANSFER_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_ci.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
     VkImageFormatProperties img_prop;
-    if (VK_SUCCESS != GPDIFPHelper(Gpu(), &image_ci, &img_prop)) {
+    if (VK_SUCCESS != GetImageFormatProps(Gpu(), image_ci, img_prop)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
