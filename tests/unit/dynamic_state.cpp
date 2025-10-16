@@ -5745,8 +5745,7 @@ TEST_F(NegativeDynamicState, DynamicRasterizationSamplesWithMSRTSS) {
     image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VkImageFormatProperties image_format_properties;
-    vk::GetPhysicalDeviceImageFormatProperties(Gpu(), image_ci.format, image_ci.imageType, image_ci.tiling, image_ci.usage,
-                                               image_ci.flags, &image_format_properties);
+    GetImageFormatProps(Gpu(), image_ci, image_format_properties);
     if ((image_format_properties.sampleCounts & VK_SAMPLE_COUNT_2_BIT) == 0) {
         GTEST_SKIP() << "Required sample count not supported";
     }

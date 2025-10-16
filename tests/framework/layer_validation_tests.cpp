@@ -22,11 +22,11 @@
 // Global list of sType,size identifiers
 std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};
 
-VkFormat FindSupportedDepthOnlyFormat(VkPhysicalDevice phy) {
+VkFormat FindSupportedDepthOnlyFormat(VkPhysicalDevice gpu) {
     constexpr std::array depth_formats = {VK_FORMAT_D16_UNORM, VK_FORMAT_X8_D24_UNORM_PACK32, VK_FORMAT_D32_SFLOAT};
     for (VkFormat depth_format : depth_formats) {
         VkFormatProperties format_props;
-        vk::GetPhysicalDeviceFormatProperties(phy, depth_format, &format_props);
+        vk::GetPhysicalDeviceFormatProperties(gpu, depth_format, &format_props);
 
         if (format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
             return depth_format;
@@ -36,11 +36,11 @@ VkFormat FindSupportedDepthOnlyFormat(VkPhysicalDevice phy) {
     return VK_FORMAT_UNDEFINED;
 }
 
-VkFormat FindSupportedStencilOnlyFormat(VkPhysicalDevice phy) {
+VkFormat FindSupportedStencilOnlyFormat(VkPhysicalDevice gpu) {
     constexpr std::array stencil_formats = {VK_FORMAT_S8_UINT};
     for (VkFormat stencil_format : stencil_formats) {
         VkFormatProperties format_props;
-        vk::GetPhysicalDeviceFormatProperties(phy, stencil_format, &format_props);
+        vk::GetPhysicalDeviceFormatProperties(gpu, stencil_format, &format_props);
 
         if (format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
             return stencil_format;
@@ -49,11 +49,11 @@ VkFormat FindSupportedStencilOnlyFormat(VkPhysicalDevice phy) {
     return VK_FORMAT_UNDEFINED;
 }
 
-VkFormat FindSupportedDepthStencilFormat(VkPhysicalDevice phy) {
+VkFormat FindSupportedDepthStencilFormat(VkPhysicalDevice gpu) {
     const VkFormat ds_formats[] = {VK_FORMAT_D16_UNORM_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT_S8_UINT};
     for (uint32_t i = 0; i < size32(ds_formats); ++i) {
         VkFormatProperties format_props;
-        vk::GetPhysicalDeviceFormatProperties(phy, ds_formats[i], &format_props);
+        vk::GetPhysicalDeviceFormatProperties(gpu, ds_formats[i], &format_props);
 
         if (format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
             return ds_formats[i];
@@ -63,20 +63,20 @@ VkFormat FindSupportedDepthStencilFormat(VkPhysicalDevice phy) {
     return VK_FORMAT_UNDEFINED;
 }
 
-bool FormatIsSupported(VkPhysicalDevice phy, VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags features) {
+bool FormatIsSupported(VkPhysicalDevice gpu, VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags features) {
     VkFormatProperties format_props;
-    vk::GetPhysicalDeviceFormatProperties(phy, format, &format_props);
-    VkFormatFeatureFlags phy_features =
+    vk::GetPhysicalDeviceFormatProperties(gpu, format, &format_props);
+    VkFormatFeatureFlags gpu_features =
         (VK_IMAGE_TILING_OPTIMAL == tiling ? format_props.optimalTilingFeatures : format_props.linearTilingFeatures);
-    return (0 != (phy_features & features));
+    return (0 != (gpu_features & features));
 }
 
-bool FormatFeaturesAreSupported(VkPhysicalDevice phy, VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags features) {
+bool FormatFeaturesAreSupported(VkPhysicalDevice gpu, VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags features) {
     VkFormatProperties format_props;
-    vk::GetPhysicalDeviceFormatProperties(phy, format, &format_props);
-    VkFormatFeatureFlags phy_features =
+    vk::GetPhysicalDeviceFormatProperties(gpu, format, &format_props);
+    VkFormatFeatureFlags gpu_features =
         (VK_IMAGE_TILING_OPTIMAL == tiling ? format_props.optimalTilingFeatures : format_props.linearTilingFeatures);
-    return (features == (phy_features & features));
+    return (features == (gpu_features & features));
 }
 
 VkResult GetImageFormatProps(VkPhysicalDevice gpu, const VkImageCreateInfo &ci, VkImageFormatProperties &out_limits) {
@@ -102,11 +102,11 @@ bool IsImageFormatSupported(const VkPhysicalDevice gpu, const VkImageCreateInfo 
     return true;
 }
 
-bool BufferFormatAndFeaturesSupported(VkPhysicalDevice phy, VkFormat format, VkFormatFeatureFlags features) {
+bool BufferFormatAndFeaturesSupported(VkPhysicalDevice gpu, VkFormat format, VkFormatFeatureFlags features) {
     VkFormatProperties format_props;
-    vk::GetPhysicalDeviceFormatProperties(phy, format, &format_props);
-    VkFormatFeatureFlags phy_features = format_props.bufferFeatures;
-    return (features == (phy_features & features));
+    vk::GetPhysicalDeviceFormatProperties(gpu, format, &format_props);
+    VkFormatFeatureFlags gpu_features = format_props.bufferFeatures;
+    return (features == (gpu_features & features));
 }
 
 bool operator==(const VkDebugUtilsLabelEXT &rhs, const VkDebugUtilsLabelEXT &lhs) {

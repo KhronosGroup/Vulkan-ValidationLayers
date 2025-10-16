@@ -200,9 +200,11 @@ TEST_F(NegativeDynamicRendering, CmdClearAttachmentTests) {
     RETURN_IF_SKIP(InitBasicDynamicRendering());
     InitRenderTarget();
 
+    const auto render_target_ci = vkt::Image::ImageCreateInfo2D(m_renderTargets[0]->Width(), m_renderTargets[0]->Height(),
+                                                                m_renderTargets[0]->CreateInfo().mipLevels, 4,
+                                                                m_renderTargets[0]->Format(), m_renderTargets[0]->Usage());
     VkImageFormatProperties image_format_properties{};
-    vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical(), m_renderTargets[0]->Format(), VK_IMAGE_TYPE_2D,
-                                               VK_IMAGE_TILING_OPTIMAL, m_renderTargets[0]->Usage(), 0, &image_format_properties);
+    GetImageFormatProps(Gpu(), render_target_ci, image_format_properties);
     if (image_format_properties.maxArrayLayers < 4) {
         GTEST_SKIP() << "Test needs to create image 2D array of 4 image view, but VkImageFormatProperties::maxArrayLayers is < 4. "
                         "Skipping test.";
@@ -212,9 +214,6 @@ TEST_F(NegativeDynamicRendering, CmdClearAttachmentTests) {
     // to make sure that considered layer count is the one coming from frame buffer
     // (test would not fail if layer count used to do validation was 4)
     assert(!m_renderTargets.empty());
-    const auto render_target_ci = vkt::Image::ImageCreateInfo2D(m_renderTargets[0]->Width(), m_renderTargets[0]->Height(),
-                                                                m_renderTargets[0]->CreateInfo().mipLevels, 4,
-                                                                m_renderTargets[0]->Format(), m_renderTargets[0]->Usage());
     vkt::Image render_target(*m_device, render_target_ci, vkt::set_layout);
     vkt::ImageView render_target_view =
         render_target.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, render_target_ci.arrayLayers);
@@ -1621,11 +1620,6 @@ TEST_F(NegativeDynamicRendering, PipelineMissingFlags) {
         image_ci.usage |= VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
     }
 
-    VkImageFormatProperties imageFormatProperties;
-    if (vk::GetPhysicalDeviceImageFormatProperties(Gpu(), image_ci.format, image_ci.imageType, image_ci.tiling, image_ci.usage,
-                                                   image_ci.flags, &imageFormatProperties) == VK_ERROR_FORMAT_NOT_SUPPORTED) {
-        GTEST_SKIP() << "Format not supported";
-    }
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
     vkt::ImageView depth_image_view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
@@ -1840,11 +1834,6 @@ TEST_F(NegativeDynamicRendering, BeginRenderingFragmentShadingRate) {
     auto image_ci = vkt::Image::ImageCreateInfo2D(
         32, 32, 1, 2, VK_FORMAT_R8G8B8A8_UNORM,
         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
-    VkImageFormatProperties imageFormatProperties;
-    if (vk::GetPhysicalDeviceImageFormatProperties(Gpu(), image_ci.format, image_ci.imageType, image_ci.tiling, image_ci.usage,
-                                                   image_ci.flags, &imageFormatProperties) == VK_ERROR_FORMAT_NOT_SUPPORTED) {
-        GTEST_SKIP() << "Format not supported";
-    }
 
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
     vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, 2);

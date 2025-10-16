@@ -765,10 +765,7 @@ TEST_F(NegativeMemory, BindMemory) {
         VkImageCreateInfo sparse_image_create_info = image_create_info;
         sparse_image_create_info.flags |= VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
         VkImageFormatProperties image_format_properties = {};
-        VkResult err = vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical(), sparse_image_create_info.format,
-                                                                  sparse_image_create_info.imageType,
-                                                                  sparse_image_create_info.tiling, sparse_image_create_info.usage,
-                                                                  sparse_image_create_info.flags, &image_format_properties);
+        VkResult err = GetImageFormatProps(Gpu(), sparse_image_create_info, image_format_properties);
         if (!m_device->Physical().Features().sparseResidencyImage2D || err == VK_ERROR_FORMAT_NOT_SUPPORTED) {
             // most likely means sparse formats aren't supported here; skip this test.
         } else {

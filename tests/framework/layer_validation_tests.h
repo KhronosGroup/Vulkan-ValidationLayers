@@ -91,18 +91,18 @@ uint32_t size32(const Container &c) {
 }
 
 // Format search helper
-VkFormat FindSupportedDepthOnlyFormat(VkPhysicalDevice phy);
-VkFormat FindSupportedStencilOnlyFormat(VkPhysicalDevice phy);
-VkFormat FindSupportedDepthStencilFormat(VkPhysicalDevice phy);
+VkFormat FindSupportedDepthOnlyFormat(VkPhysicalDevice gpu);
+VkFormat FindSupportedStencilOnlyFormat(VkPhysicalDevice gpu);
+VkFormat FindSupportedDepthStencilFormat(VkPhysicalDevice gpu);
 
 // Returns true if *any* requested features are available.
 // Assumption is that the framework can successfully create an image as
 // long as at least one of the feature bits is present (excepting VTX_BUF).
-bool FormatIsSupported(VkPhysicalDevice phy, VkFormat format, VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL,
+bool FormatIsSupported(VkPhysicalDevice gpu, VkFormat format, VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL,
                        VkFormatFeatureFlags features = ~VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT);
 
 // Returns true if format and *all* requested features are available.
-bool FormatFeaturesAreSupported(VkPhysicalDevice phy, VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags features);
+bool FormatFeaturesAreSupported(VkPhysicalDevice gpu, VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags features);
 
 // Small wrapprer around vkGetPhysicalDeviceImageFormatProperties
 VkResult GetImageFormatProps(VkPhysicalDevice gpu, const VkImageCreateInfo &ci, VkImageFormatProperties &out_limits);
@@ -111,7 +111,7 @@ VkResult GetImageFormatProps(VkPhysicalDevice gpu, const VkImageCreateInfo &ci, 
 bool IsImageFormatSupported(VkPhysicalDevice gpu, const VkImageCreateInfo &ci, const VkFormatFeatureFlags features);
 
 // Returns true if format and *all* requested features are available.
-bool BufferFormatAndFeaturesSupported(VkPhysicalDevice phy, VkFormat format, VkFormatFeatureFlags features);
+bool BufferFormatAndFeaturesSupported(VkPhysicalDevice gpu, VkFormat format, VkFormatFeatureFlags features);
 
 // Simple sane SamplerCreateInfo boilerplate
 VkSamplerCreateInfo SafeSaneSamplerCreateInfo(void *p_next = nullptr);

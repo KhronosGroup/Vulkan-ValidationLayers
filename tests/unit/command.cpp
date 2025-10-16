@@ -2878,9 +2878,7 @@ TEST_F(NegativeCommand, ResolveUsage) {
 
     // Some implementations don't support multisampling, check that image format is valid
     VkImageFormatProperties image_format_props{};
-    VkResult result =
-        vk::GetPhysicalDeviceImageFormatProperties(Gpu(), dst_format, image_create_info.imageType, image_create_info.tiling,
-                                                   image_create_info.usage, image_create_info.flags, &image_format_props);
+    VkResult result = GetImageFormatProps(Gpu(), image_create_info, image_format_props);
     bool src_image_2_tests_valid = false;
     vkt::Image srcImage2;
     if ((result == VK_SUCCESS) && (image_format_props.sampleCounts & VK_SAMPLE_COUNT_4_BIT) != 0) {

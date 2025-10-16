@@ -318,8 +318,7 @@ TEST_F(NegativeYcbcr, Formats) {
     image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
     // Might need to add extra validation because implementation probably doesn't support YUV
     VkImageFormatProperties image_format_props;
-    vk::GetPhysicalDeviceImageFormatProperties(Gpu(), mp_format, image_create_info.imageType, image_create_info.tiling,
-                                               image_create_info.usage, image_create_info.flags, &image_format_props);
+    GetImageFormatProps(Gpu(), image_create_info, image_format_props);
     if ((image_format_props.sampleCounts & VK_SAMPLE_COUNT_4_BIT) == 0) {
         m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-samples-02258");
     }
@@ -338,10 +337,7 @@ TEST_F(NegativeYcbcr, Formats) {
 
     // invalid imageType
     image_create_info.imageType = VK_IMAGE_TYPE_1D;
-    // Check that image format is valid
-    if (vk::GetPhysicalDeviceImageFormatProperties(Gpu(), mp_format, image_create_info.imageType, image_create_info.tiling,
-                                                   image_create_info.usage, image_create_info.flags,
-                                                   &image_format_props) == VK_SUCCESS) {
+    if (GetImageFormatProps(Gpu(), image_create_info, image_format_props) == VK_SUCCESS) {
         // Can't just set height to 1 as stateless validation will hit 04713 first
         m_errorMonitor->SetUnexpectedError("VUID-VkImageCreateInfo-imageType-00956");
         m_errorMonitor->SetUnexpectedError("VUID-VkImageCreateInfo-extent-02253");
