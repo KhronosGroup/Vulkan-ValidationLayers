@@ -3118,7 +3118,7 @@ TEST_F(NegativeFragmentShadingRate, ImageMaxLimitsEXT) {
     image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VkImageFormatProperties img_limits;
-    ASSERT_EQ(VK_SUCCESS, GPDIFPHelper(Gpu(), &image_ci, &img_limits));
+    ASSERT_EQ(VK_SUCCESS, GetImageFormatProps(Gpu(), image_ci, img_limits));
 
     image_ci.extent = {dev_limits.maxFramebufferWidth + 1, 64, 1};
     if (dev_limits.maxFramebufferWidth + 1 > img_limits.maxExtent.width) {

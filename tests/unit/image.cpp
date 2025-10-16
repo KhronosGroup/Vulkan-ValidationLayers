@@ -2134,7 +2134,7 @@ TEST_F(NegativeImage, ImageViewLayerCount) {
 
     image_ci.imageType = VK_IMAGE_TYPE_3D;
     VkImageFormatProperties img_limits;
-    ASSERT_EQ(VK_SUCCESS, GPDIFPHelper(Gpu(), &image_ci, &img_limits));
+    ASSERT_EQ(VK_SUCCESS, GetImageFormatProps(Gpu(), image_ci, img_limits));
     vkt::Image image_3d_array;
     image_ci.arrayLayers = 1;  // arrayLayers must be 1 for 3D images
     if (img_limits.maxArrayLayers >= image_ci.arrayLayers) {
@@ -2186,14 +2186,10 @@ TEST_F(NegativeImage, ImageViewLayerCount) {
 
 TEST_F(NegativeImage, ImageMisc) {
     TEST_DESCRIPTION("Misc leftover valid usage errors in VkImageCreateInfo struct");
-
     VkPhysicalDeviceFeatures features{};
     RETURN_IF_SKIP(Init(&features));
 
     const VkImageCreateInfo safe_image_ci = DefaultImageInfo();
-
-    ASSERT_EQ(VK_SUCCESS, GPDIFPHelper(Gpu(), &safe_image_ci));
-
     {
         VkImageCreateInfo image_ci = safe_image_ci;
         image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;  // always has 4 samples support
@@ -2421,7 +2417,7 @@ TEST_F(NegativeImage, MaxLimitsMipLevels) {
         image_ci.format = format;
 
         VkImageFormatProperties img_limits;
-        if (VK_SUCCESS == GPDIFPHelper(Gpu(), &image_ci, &img_limits) && img_limits.maxMipLevels == 1) {
+        if (VK_SUCCESS == GetImageFormatProps(Gpu(), image_ci, img_limits) && img_limits.maxMipLevels == 1) {
             CreateImageTest(image_ci, "VUID-VkImageCreateInfo-mipLevels-02255");
             return;  // end test
         }
@@ -2436,7 +2432,7 @@ TEST_F(NegativeImage, MaxLimitsArrayLayers) {
     VkImageCreateInfo image_ci = DefaultImageInfo();
 
     VkImageFormatProperties img_limits;
-    ASSERT_EQ(VK_SUCCESS, GPDIFPHelper(Gpu(), &image_ci, &img_limits));
+    ASSERT_EQ(VK_SUCCESS, GetImageFormatProps(Gpu(), image_ci, img_limits));
 
     if (img_limits.maxArrayLayers == vvl::kU32Max) {
         GTEST_SKIP() << "VkImageFormatProperties::maxArrayLayers is already UINT32_MAX; skipping part of test";
@@ -2458,7 +2454,7 @@ TEST_F(NegativeImage, MaxLimitsSamples) {
              samples = static_cast<VkSampleCountFlagBits>(samples >> 1)) {
             image_ci.samples = samples;
             VkImageFormatProperties img_limits;
-            if (VK_SUCCESS == GPDIFPHelper(Gpu(), &image_ci, &img_limits) && !(img_limits.sampleCounts & samples)) {
+            if (VK_SUCCESS == GetImageFormatProps(Gpu(), image_ci, img_limits) && !(img_limits.sampleCounts & samples)) {
                 CreateImageTest(image_ci, "VUID-VkImageCreateInfo-samples-02258");
                 return;  // end test
             }
@@ -2475,7 +2471,7 @@ TEST_F(NegativeImage, MaxLimitsExtent) {
     image_ci.imageType = VK_IMAGE_TYPE_3D;
 
     VkImageFormatProperties img_limits;
-    ASSERT_EQ(VK_SUCCESS, GPDIFPHelper(Gpu(), &image_ci, &img_limits));
+    ASSERT_EQ(VK_SUCCESS, GetImageFormatProps(Gpu(), image_ci, img_limits));
 
     image_ci.extent = {img_limits.maxExtent.width + 1, 1, 1};
     CreateImageTest(image_ci, "VUID-VkImageCreateInfo-extent-02252");
@@ -2499,7 +2495,7 @@ TEST_F(NegativeImage, MaxLimitsFramebufferWidth) {
     image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;  // (any attachment bit)
 
     VkImageFormatProperties img_limits;
-    ASSERT_EQ(VK_SUCCESS, GPDIFPHelper(Gpu(), &image_ci, &img_limits));
+    ASSERT_EQ(VK_SUCCESS, GetImageFormatProps(Gpu(), image_ci, img_limits));
 
     image_ci.extent = {dev_limits.maxFramebufferWidth + 1, 64, 1};
     if (dev_limits.maxFramebufferWidth + 1 > img_limits.maxExtent.width) {
@@ -2521,7 +2517,7 @@ TEST_F(NegativeImage, MaxLimitsFramebufferHeight) {
     image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;  // (any attachment bit)
 
     VkImageFormatProperties img_limits;
-    ASSERT_EQ(VK_SUCCESS, GPDIFPHelper(Gpu(), &image_ci, &img_limits));
+    ASSERT_EQ(VK_SUCCESS, GetImageFormatProps(Gpu(), image_ci, img_limits));
 
     image_ci.extent = {64, dev_limits.maxFramebufferHeight + 1, 1};
     if (dev_limits.maxFramebufferHeight + 1 > img_limits.maxExtent.height) {
@@ -3453,7 +3449,6 @@ TEST_F(NegativeImage, ImageSubresourceRangeAspectMask) {
 
 TEST_F(NegativeImage, CreateImageSharingModeConcurrentQueueFamilies) {
     TEST_DESCRIPTION("Checks for invalid queue families in ImageCreateInfo when sharingMode is VK_SHARING_MODE_CONCURRENT");
-
     AddOptionalExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
@@ -3470,8 +3465,6 @@ TEST_F(NegativeImage, CreateImageSharingModeConcurrentQueueFamilies) {
     ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     ci.sharingMode = VK_SHARING_MODE_CONCURRENT;
-
-    ASSERT_EQ(VK_SUCCESS, GPDIFPHelper(Gpu(), &ci));
 
     // Invalid pQueueFamilyIndices
     {

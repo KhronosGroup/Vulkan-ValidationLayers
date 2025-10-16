@@ -393,7 +393,7 @@ TEST_F(NegativeYcbcr, FormatsLimits) {
     image_create_info.arrayLayers = 1;
 
     VkImageFormatProperties img_limits;
-    ASSERT_EQ(VK_SUCCESS, GPDIFPHelper(Gpu(), &image_create_info, &img_limits));
+    ASSERT_EQ(VK_SUCCESS, GetImageFormatProps(Gpu(), image_create_info, img_limits));
     if (img_limits.maxMipLevels == 1) {
         GTEST_SKIP() << "Multiplane image maxMipLevels is already 1.";
     }
