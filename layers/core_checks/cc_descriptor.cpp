@@ -2811,7 +2811,16 @@ bool CoreChecks::PreCallValidateGetDescriptorSetLayoutSizeEXT(VkDevice device, V
         const auto create_flags = ds_layout_state->GetCreateFlags();
         if (!(create_flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT)) {
             skip |= LogError("VUID-vkGetDescriptorSetLayoutSizeEXT-layout-08012", layout, error_obj.location.dot(Field::layout),
-                             "was created with %s.", string_VkDescriptorSetLayoutCreateFlags(create_flags).c_str());
+                             "was created with %s (missing the DESCRIPTOR_BUFFER_BIT).",
+                             string_VkDescriptorSetLayoutCreateFlags(create_flags).c_str());
+        }
+        if (create_flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT) {
+            // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7733
+            skip |=
+                LogError("UNASSIGNED-vkGetDescriptorSetLayoutSizeEXT-layout-push", layout, error_obj.location.dot(Field::layout),
+                         "was created with VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT (this VkDescriptorSetLayout has an "
+                         "opaque size and is "
+                         "not needed as you use vkCmdPushDescriptorSet to bind the set).");
         }
     }
 
@@ -2830,10 +2839,18 @@ bool CoreChecks::PreCallValidateGetDescriptorSetLayoutBindingOffsetEXT(VkDevice 
 
     if (auto ds_layout_state = Get<vvl::DescriptorSetLayout>(layout)) {
         const auto create_flags = ds_layout_state->GetCreateFlags();
-        if (!(ds_layout_state->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT)) {
+        if (!(create_flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT)) {
             skip |= LogError("VUID-vkGetDescriptorSetLayoutBindingOffsetEXT-layout-08014", layout,
-                             error_obj.location.dot(Field::layout), "was created with %s.",
+                             error_obj.location.dot(Field::layout), "was created with %s (missing the DESCRIPTOR_BUFFER_BIT).",
                              string_VkDescriptorSetLayoutCreateFlags(create_flags).c_str());
+        }
+        if (create_flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT) {
+            // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7733
+            skip |= LogError("UNASSIGNED-vkGetDescriptorSetLayoutBindingOffsetEXT-layout-push", layout,
+                             error_obj.location.dot(Field::layout),
+                             "was created with VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT (this VkDescriptorSetLayout has "
+                             "an opaque size "
+                             "and is not needed as you use vkCmdPushDescriptorSet to bind the set).");
         }
     }
 
