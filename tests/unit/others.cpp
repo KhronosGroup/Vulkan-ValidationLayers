@@ -779,10 +779,8 @@ TEST_F(VkLayerTest, InvalidImageCreateFlagWithPhysicalDeviceCount) {
     ici.tiling = VK_IMAGE_TILING_OPTIMAL;
     ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    VkImageFormatProperties imageFormatProperties;
-    VkResult result =
-        vk::GetPhysicalDeviceImageFormatProperties(physical_device_group[0].physicalDevices[0], ici.format, ici.imageType,
-                                                   ici.tiling, ici.usage, ici.flags, &imageFormatProperties);
+    VkImageFormatProperties image_format_properties;
+    VkResult result = GetImageFormatProps(physical_device_group[0].physicalDevices[0], ici, image_format_properties);
     if (result == VK_ERROR_FORMAT_NOT_SUPPORTED) {
         GTEST_SKIP() << "image format is not supported";
     }

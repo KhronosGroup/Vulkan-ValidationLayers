@@ -1527,9 +1527,7 @@ TEST_F(NegativeCopyBufferImage, ImageCompressedBlockAlignment) {
     RETURN_IF_SKIP(Init());
 
     auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_BC3_SRGB_BLOCK, kSrcDstUsage);
-    VkImageFormatProperties img_prop = {};
-    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical(), image_ci.format, image_ci.imageType,
-                                                                 image_ci.tiling, image_ci.usage, image_ci.flags, &img_prop)) {
+    if (!IsImageFormatSupported(Gpu(), image_ci, kSrcDstUsage)) {
         GTEST_SKIP() << "No compressed formats supported";
     }
 
@@ -2067,19 +2065,16 @@ TEST_F(NegativeCopyBufferImage, ImageDepthStencilFormatMismatch) {
 
 TEST_F(NegativeCopyBufferImage, ImageSampleCountMismatch) {
     TEST_DESCRIPTION("Image copies with sample count mis-matches");
-
     RETURN_IF_SKIP(Init());
 
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, kSrcDstUsage);
     VkImageFormatProperties image_format_properties;
-    vk::GetPhysicalDeviceImageFormatProperties(Gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
-                                               kSrcDstUsage, 0, &image_format_properties);
-
+    GetImageFormatProps(Gpu(), image_ci, image_format_properties);
     if ((0 == (VK_SAMPLE_COUNT_2_BIT & image_format_properties.sampleCounts)) ||
         (0 == (VK_SAMPLE_COUNT_4_BIT & image_format_properties.sampleCounts))) {
         GTEST_SKIP() << "Image multi-sample support not found";
     }
 
-    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, kSrcDstUsage);
     vkt::Image image1(*m_device, image_ci, vkt::set_layout);
 
     image_ci.samples = VK_SAMPLE_COUNT_2_BIT;

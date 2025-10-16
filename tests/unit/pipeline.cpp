@@ -3319,10 +3319,9 @@ TEST_F(NegativePipeline, MismatchedRasterizationSamples) {
     image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-    VkImageFormatProperties formProps;
-    VkResult res = vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical(), image_ci.format, image_ci.imageType,
-                                                              image_ci.tiling, image_ci.usage, image_ci.flags, &formProps);
-    if (res != VK_SUCCESS || (formProps.sampleCounts & VK_SAMPLE_COUNT_2_BIT) == 0) {
+    VkImageFormatProperties format_props;
+    VkResult res = GetImageFormatProps(Gpu(), image_ci, format_props);
+    if (res != VK_SUCCESS || (format_props.sampleCounts & VK_SAMPLE_COUNT_2_BIT) == 0) {
         GTEST_SKIP() << "Required format not supported";
     }
 

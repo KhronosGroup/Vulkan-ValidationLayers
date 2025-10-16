@@ -1147,14 +1147,6 @@ TEST_F(PositivePipeline, MutableStorageImageFormatWriteForFormat) {
     cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;  // override with wrong value
     cs_pipeline.CreateComputePipeline(false);                      // need false to prevent late binding
 
-    // Messing with format support, make sure device will handle the image combination
-    VkImageFormatProperties format_props;
-    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(Gpu(), image_format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
-                                                                 VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
-                                                                 &format_props)) {
-        GTEST_SKIP() << "Device will not be able to initialize buffer view skipped";
-    }
-
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -1165,6 +1157,10 @@ TEST_F(PositivePipeline, MutableStorageImageFormatWriteForFormat) {
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_STORAGE_BIT;
+    VkImageFormatProperties format_props;
+    if (VK_SUCCESS != GetImageFormatProps(Gpu(), image_create_info, format_props)) {
+        GTEST_SKIP() << "Device will not be able to initialize buffer view skipped";
+    }
     vkt::Image image(*m_device, image_create_info, vkt::set_layout);
     vkt::ImageView view = image.CreateView();
 

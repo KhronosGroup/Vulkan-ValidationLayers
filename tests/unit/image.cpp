@@ -2980,8 +2980,7 @@ TEST_F(NegativeImage, BlockTextImageViewCompatibleFormat) {
     image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
 
     VkImageFormatProperties image_properties;
-    VkResult res = vk::GetPhysicalDeviceImageFormatProperties(Gpu(), image_ci.format, image_ci.imageType, image_ci.tiling,
-                                                              image_ci.usage, image_ci.flags, &image_properties);
+    VkResult res = GetImageFormatProps(Gpu(), image_ci, image_properties);
     if (res != VK_SUCCESS) {
         GTEST_SKIP() << "Image format not valid for format, type, tiling, usage and flags combination.";
     }
@@ -2998,8 +2997,7 @@ TEST_F(NegativeImage, BlockTextImageViewCompatibleFlag) {
     image_ci.format = VK_FORMAT_BC3_UNORM_BLOCK;
 
     VkImageFormatProperties image_properties;
-    VkResult res = vk::GetPhysicalDeviceImageFormatProperties(Gpu(), image_ci.format, image_ci.imageType, image_ci.tiling,
-                                                              image_ci.usage, image_ci.flags, &image_properties);
+    VkResult res = GetImageFormatProps(Gpu(), image_ci, image_properties);
     if (res != VK_SUCCESS) {
         GTEST_SKIP() << "Image format not valid for format, type, tiling, usage and flags combination.";
     }

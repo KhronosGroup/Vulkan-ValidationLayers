@@ -266,9 +266,7 @@ TEST_F(PositiveImage, ExtendedUsageWithDifferentFormatViews) {
         VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 
     VkImageFormatProperties image_properties;
-    VkResult err = vk::GetPhysicalDeviceImageFormatProperties(Gpu(), image_ci.format, image_ci.imageType, image_ci.tiling,
-                                                              image_ci.usage, image_ci.flags, &image_properties);
-    // Test not supported by driver
+    VkResult err = GetImageFormatProps(Gpu(), image_ci, image_properties);
     if (err != VK_SUCCESS) {
         GTEST_SKIP() << "Image format not valid for format, type, tiling, usage and flags combination.";
     }
