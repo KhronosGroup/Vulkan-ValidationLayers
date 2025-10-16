@@ -49,7 +49,7 @@ bool Device::manual_PreCallValidateAllocateMemory(VkDevice device, const VkMemor
         const Location flags_loc = allocate_info_loc.pNext(Struct::VkMemoryAllocateFlagsInfo, Field::flags);
         if ((flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) && !enabled_features.bufferDeviceAddressCaptureReplay) {
             skip |= LogError("VUID-VkMemoryAllocateInfo-flags-03330", device, flags_loc,
-                             "has VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT set, but"
+                             "has VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT set, but "
                              "bufferDeviceAddressCaptureReplay feature is not enabled.");
         }
         if ((flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT) && !enabled_features.bufferDeviceAddress) {
