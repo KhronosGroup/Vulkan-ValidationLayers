@@ -72,7 +72,7 @@ TEST_F(VkAmdBestPracticesLayerTest, UseMutableRT) {
     // create a depth attachment image with mutable bit set
     image_ci.format = VK_FORMAT_D32_SFLOAT;
     image_ci.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-    if (ImageFormatIsSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
+    if (IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-AMD-vkImage-DontUseMutableRenderTargets");
         vk::CreateImage(*m_device, &image_ci, nullptr, &test_image);
         m_errorMonitor->VerifyFound();
@@ -110,7 +110,7 @@ TEST_F(VkAmdBestPracticesLayerTest, UsageConcurentRT) {
 
     image_ci.format = VK_FORMAT_D32_SFLOAT;
     image_ci.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-    if (ImageFormatIsSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
+    if (IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-AMD-vkImage-AvoidConcurrentRenderTargets");
         vk::CreateImage(*m_device, &image_ci, nullptr, &test_image);
         m_errorMonitor->VerifyFound();
@@ -265,7 +265,7 @@ TEST_F(VkAmdBestPracticesLayerTest, ClearImage) {
             vkt::Image::ImageCreateInfo2D(1, 1, 1, 1, VK_FORMAT_D32_SFLOAT_S8_UINT,
                                           VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
         image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
-        if (ImageFormatIsSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
+        if (IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
             vkt::Image image(*m_device, image_ci);
 
             m_command_buffer.Begin();
