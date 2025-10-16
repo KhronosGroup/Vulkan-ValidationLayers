@@ -1719,22 +1719,20 @@ TEST_F(PositiveDescriptorBuffer, PushDescriptor) {
     AddRequiredFeature(vkt::Feature::pushDescriptor);
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
-    vkt::Buffer buffer_data(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
-    uint32_t *data = (uint32_t *)buffer_data.Memory().Map();
+    vkt::Buffer buffer_data0(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer buffer_data1(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    uint32_t *data = (uint32_t *)buffer_data0.Memory().Map();
     data[0] = 8;
     data[1] = 12;
-    data[2] = 1;
 
-    OneOffDescriptorSet descriptor_set(
-        m_device,
-        {
-            {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-        },
+    const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    vkt::DescriptorSetLayout descriptor_set(*m_device, {binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
+    vkt::DescriptorSetLayout descriptor_set_push(
+        *m_device, {binding},
         VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT | VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
-    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set, &descriptor_set_push});
 
-    VkDeviceSize ds_layout_size = descriptor_set.layout_.GetDescriptorBufferSize();
-    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4473
+    VkDeviceSize ds_layout_size = descriptor_set.GetDescriptorBufferSize();
     ds_layout_size = std::max(ds_layout_size, descriptor_buffer_properties.descriptorBufferOffsetAlignment);
     VkBufferUsageFlags descriptor_buffer_usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
     if (!descriptor_buffer_properties.bufferlessPushDescriptors) {
@@ -1742,11 +1740,17 @@ TEST_F(PositiveDescriptorBuffer, PushDescriptor) {
     }
     vkt::Buffer descriptor_buffer(*m_device, ds_layout_size, descriptor_buffer_usage, vkt::device_address);
 
+    vkt::DescriptorGetInfo get_info(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_data0, 16);
+    void *mapped_descriptor_data = descriptor_buffer.Memory().Map();
+    vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data);
+
     const char *cs_source = R"glsl(
         #version 450
         layout (set = 0, binding = 0) buffer SSBO_0 {
             uint a;
             uint b;
+        };
+        layout (set = 1, binding = 0) buffer SSBO_1 {
             uint c;
         };
 
@@ -1775,6 +1779,68 @@ TEST_F(PositiveDescriptorBuffer, PushDescriptor) {
     descriptor_buffer_binding_info.address = descriptor_buffer.Address();
     descriptor_buffer_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
     vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &descriptor_buffer_binding_info);
+
+    VkDescriptorBufferInfo buffer_info = {buffer_data1, 0, VK_WHOLE_SIZE};
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstSet = VK_NULL_HANDLE;
+    descriptor_write.dstBinding = 0u;
+    descriptor_write.dstArrayElement = 0u;
+    descriptor_write.descriptorCount = 1u;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_write.pBufferInfo = &buffer_info;
+    vk::CmdPushDescriptorSetKHR(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 1u, 1u, &descriptor_write);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    if (!IsPlatformMockICD()) {
+        data = (uint32_t *)buffer_data1.Memory().Map();
+        ASSERT_TRUE(data[0] == 20);
+    }
+}
+
+TEST_F(PositiveDescriptorBuffer, PushDescriptorOnly) {
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorBufferPushDescriptors);
+    AddRequiredFeature(vkt::Feature::pushDescriptor);
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+
+    vkt::Buffer buffer_data(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    uint32_t *data = (uint32_t *)buffer_data.Memory().Map();
+    data[0] = 8;
+    data[1] = 12;
+    data[2] = 1;
+
+    OneOffDescriptorSet descriptor_set(
+        m_device,
+        {
+            {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+        },
+        VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT | VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    const char *cs_source = R"glsl(
+        #version 450
+        layout (set = 0, binding = 0) buffer SSBO_0 {
+            uint a;
+            uint b;
+            uint c;
+        };
+
+        void main() {
+            c = a + b;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
 
     VkDescriptorBufferInfo buffer_info = {buffer_data, 0, VK_WHOLE_SIZE};
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
