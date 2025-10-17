@@ -1849,3 +1849,78 @@ TEST_F(PositiveCopyBufferImage, MemoryToImageIndirect) {
     vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer, &copy_info);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveCopyBufferImage, SinglePlaneYCbCr) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateInfo ci = vku::InitStructHelper();
+    ci.imageType = VK_IMAGE_TYPE_2D;
+    // This is a single planar YCbCr format with a 2x1x1 block extent and texel block size of 4
+    ci.format = VK_FORMAT_G8B8G8R8_422_UNORM;
+    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    ci.mipLevels = 1;
+    ci.arrayLayers = 1;
+    ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    if (!IsImageFormatSupported(Gpu(), ci, kSrcDstFeature)) {
+        // Assume there's low ROI on searching for different mp formats
+        GTEST_SKIP() << "Single-plane _422 image format not supported";
+    }
+
+    ci.extent = {64, 64, 1};
+    vkt::Image image_422(*m_device, ci, vkt::set_layout);
+
+    ci.extent = {64, 64, 1};
+    ci.format = VK_FORMAT_R8G8B8A8_UNORM;  // texel block size of 4
+    vkt::Image image_ucmp(*m_device, ci, vkt::set_layout);
+
+    VkImageCopy copy_region;
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.srcOffset = {0, 0, 0};
+    copy_region.dstOffset = {0, 0, 0};
+
+    m_command_buffer.Begin();
+    copy_region.extent = {32, 64, 1};
+    vk::CmdCopyImage(m_command_buffer, image_ucmp, VK_IMAGE_LAYOUT_GENERAL, image_422, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_command_buffer.FullMemoryBarrier();
+
+    copy_region.extent = {64, 64, 1};
+    vk::CmdCopyImage(m_command_buffer, image_422, VK_IMAGE_LAYOUT_GENERAL, image_ucmp, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveCopyBufferImage, CompressedMipLevels) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/1762");
+    RETURN_IF_SKIP(Init());
+
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC2_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+
+    // Mip 0 - 60 x 60
+    // Mip 1 - 30 x 30
+    // Mip 2 - 15 x 15
+    VkImageCreateInfo image_ci_bc2 = vkt::Image::ImageCreateInfo2D(60, 60, 3, 1, VK_FORMAT_BC2_UNORM_BLOCK, kSrcDstUsage);
+    VkImageCreateInfo image_ci_bc3 = vkt::Image::ImageCreateInfo2D(60, 60, 3, 1, VK_FORMAT_BC3_UNORM_BLOCK, kSrcDstUsage);
+
+    vkt::Image image_src(*m_device, image_ci_bc2);
+    vkt::Image image_dst(*m_device, image_ci_bc3);
+
+    if (!image_src.initialized() || !image_dst.initialized()) {
+        GTEST_SKIP() << "Unable to initialize surfaces";
+    }
+
+    VkImageCopy copy_region = {};
+    copy_region.extent = {16, 16, 1};
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};  // mip 0
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 2, 0, 1};  // mip 2
+    copy_region.srcOffset = {0, 0, 0};
+    copy_region.dstOffset = {0, 0, 0};
+
+    m_command_buffer.Begin();
+    vk::CmdCopyImage(m_command_buffer, image_src, VK_IMAGE_LAYOUT_GENERAL, image_dst, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_command_buffer.End();
+}
