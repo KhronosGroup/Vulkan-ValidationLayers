@@ -445,12 +445,11 @@ TEST_F(NegativeYcbcr, ImageViewFormat) {
 }
 
 TEST_F(NegativeYcbcr, CopyImageSinglePlane422Alignment) {
-    // Image copy tests on single-plane _422 formats with block alignment errors
+    TEST_DESCRIPTION("Image copy tests on single-plane _422 formats with block alignment errors");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
     RETURN_IF_SKIP(Init());
 
-    // Select a _422 format and verify support
     VkImageCreateInfo ci = vku::InitStructHelper();
     ci.flags = 0;
     ci.imageType = VK_IMAGE_TYPE_2D;
@@ -461,15 +460,12 @@ TEST_F(NegativeYcbcr, CopyImageSinglePlane422Alignment) {
     ci.arrayLayers = 1;
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
 
-    // Verify formats
     VkFormatFeatureFlags features = VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
-    bool supported = IsImageFormatSupported(Gpu(), ci, features);
-    if (!supported) {
+    if (!IsImageFormatSupported(Gpu(), ci, features)) {
         // Assume there's low ROI on searching for different mp formats
         GTEST_SKIP() << "Single-plane _422 image format not supported";
     }
 
-    // Create images
     ci.extent = {64, 64, 1};
     vkt::Image image_422(*m_device, ci, vkt::set_layout);
 
@@ -480,7 +476,7 @@ TEST_F(NegativeYcbcr, CopyImageSinglePlane422Alignment) {
     m_command_buffer.Begin();
 
     VkImageCopy copy_region;
-    copy_region.extent = {48, 48, 1};
+    copy_region.extent = {24, 48, 1};
     copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     copy_region.srcOffset = {0, 0, 0};
@@ -505,11 +501,6 @@ TEST_F(NegativeYcbcr, CopyImageSinglePlane422Alignment) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcImage-01728");
     vk::CmdCopyImage(m_command_buffer, image_422, VK_IMAGE_LAYOUT_GENERAL, image_ucmp, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
-
-    // 422 dest
-    copy_region.extent.width = 30;
-    vk::CmdCopyImage(m_command_buffer, image_ucmp, VK_IMAGE_LAYOUT_GENERAL, image_422, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
-    m_command_buffer.End();
 }
 
 TEST_F(NegativeYcbcr, MultiplaneImageCopyBufferToImage) {

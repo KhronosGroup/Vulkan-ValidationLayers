@@ -748,7 +748,6 @@ TEST_F(NegativeCopyBufferImage, CompressedToCompressedSrc) {
     m_errorMonitor->VerifyFound();
 }
 
-// issue being resolved in https://gitlab.khronos.org/vulkan/vulkan/-/issues/1762
 TEST_F(NegativeCopyBufferImage, CompressedMipLevels) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-Docs/issues/1005");
     RETURN_IF_SKIP(Init());
@@ -777,12 +776,6 @@ TEST_F(NegativeCopyBufferImage, CompressedMipLevels) {
     copy_region.dstOffset = {0, 0, 0};
 
     m_command_buffer.Begin();
-
-    // TODO - Need WG agreement how this works still
-    // copy_region.extent = {16, 16, 1};
-    // m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-dstOffset-00150");
-    // vk::CmdCopyImage(m_command_buffer, image_src, VK_IMAGE_LAYOUT_GENERAL, image_dst, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
-    // m_errorMonitor->VerifyFound();
 
     copy_region.extent = {15, 15, 1};
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcImage-01728");
@@ -4818,5 +4811,50 @@ TEST_F(NegativeCopyBufferImage, MemoryToImageIndirectLayout) {
     vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer, &indirect_info);
     m_errorMonitor->VerifyFound();
 
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeCopyBufferImage, SinglePlaneYCbCr) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateInfo ci = vku::InitStructHelper();
+    ci.imageType = VK_IMAGE_TYPE_2D;
+    // This is a single planar YCbCr format with a 2x1x1 block extent and texel block size of 4
+    ci.format = VK_FORMAT_G8B8G8R8_422_UNORM;
+    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    ci.mipLevels = 1;
+    ci.arrayLayers = 1;
+    ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    if (!IsImageFormatSupported(Gpu(), ci, kSrcDstFeature)) {
+        GTEST_SKIP() << "Single-plane _422 image format not supported";
+    }
+
+    ci.extent = {64, 64, 1};
+    vkt::Image image_422(*m_device, ci, vkt::set_layout);
+
+    ci.extent = {64, 64, 1};
+    ci.format = VK_FORMAT_R8G8B8A8_UNORM;  // texel block size of 4
+    vkt::Image image_ucmp64(*m_device, ci, vkt::set_layout);
+    ci.extent = {32, 32, 1};
+    vkt::Image image_ucmp32(*m_device, ci, vkt::set_layout);
+
+    VkImageCopy copy_region;
+    copy_region.extent = {64, 64, 1};
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.srcOffset = {0, 0, 0};
+    copy_region.dstOffset = {0, 0, 0};
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-dstOffset-00150");
+    vk::CmdCopyImage(m_command_buffer, image_ucmp64, VK_IMAGE_LAYOUT_GENERAL, image_422, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-dstOffset-00151");
+    vk::CmdCopyImage(m_command_buffer, image_422, VK_IMAGE_LAYOUT_GENERAL, image_ucmp32, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }

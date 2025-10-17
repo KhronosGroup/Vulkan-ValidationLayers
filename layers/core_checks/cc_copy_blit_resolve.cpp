@@ -352,31 +352,36 @@ struct ImageCopyRegion {
     uint32_t normalized_dst_layer_count;  // fills in VK_REMAINING_ARRAY_LAYERS
 
     bool is_adjusted_extent = false;
-    VkExtent3D dst_adjusted_extent;  // extent that is adjusted if copying compressed<-->uncompressed
+    // extent that is adjusted if copying compressed<-->uncompressed
+    VkExtent3D dst_adjusted_extent;
+    // This "just works" for Single Planar YCbCr formats because it used to catch height/depth, but the YCbCr formats only extend in
+    // the x-dimension (width)
     bool src_dst_both_compressed = false;
 
     void Init() {
         src_subresource_extent = src_state.GetEffectiveSubresourceExtent(src_subresource);
         normalized_src_layer_count = src_state.NormalizeLayerCount(src_subresource);
         const VkFormat src_format = src_state.create_info.format;
-        const bool src_is_compressed = vkuFormatIsCompressed(src_format);
+        const VkExtent3D src_block_extent = vkuFormatTexelBlockExtent(src_format);
+        const bool src_is_in_blocks = !IsExtentAllOne(src_block_extent);
 
         dst_subresource_extent = dst_state.GetEffectiveSubresourceExtent(dst_subresource);
         normalized_dst_layer_count = dst_state.NormalizeLayerCount(dst_subresource);
         const VkFormat dst_format = dst_state.create_info.format;
-        const bool dst_is_compressed = vkuFormatIsCompressed(dst_format);
+        const VkExtent3D dst_block_extent = vkuFormatTexelBlockExtent(dst_format);
+        const bool dst_is_in_blocks = !IsExtentAllOne(dst_block_extent);
 
         // For image copies between compressed/uncompressed formats, the extent is provided in source image texels
         // Destination image texel extents must be adjusted by block size for the dest validation checks
         // vkspec.html#formats-size-compatibility
-        if (src_is_compressed && !dst_is_compressed) {
-            const VkExtent3D block_extent = vkuFormatTexelBlockExtent(src_format);
-            dst_adjusted_extent = GetTexelBlocks(extent, block_extent);
+        //
+        // Note: Single Planar are also included, they are similar to compressed formats... fun
+        if (src_is_in_blocks && !dst_is_in_blocks) {
+            dst_adjusted_extent = GetTexelBlocks(extent, src_block_extent);
             is_adjusted_extent = true;
-        } else if (!src_is_compressed && dst_is_compressed) {
-            const VkExtent3D block_extent = vkuFormatTexelBlockExtent(dst_format);
-            dst_adjusted_extent = {extent.width * block_extent.width, extent.height * block_extent.height,
-                                   extent.depth * block_extent.depth};
+        } else if (!src_is_in_blocks && dst_is_in_blocks) {
+            dst_adjusted_extent = {extent.width * dst_block_extent.width, extent.height * dst_block_extent.height,
+                                   extent.depth * dst_block_extent.depth};
             // One final edge case, if the compressed image is in 1D, the height is only actually 1 texel
             if (dst_state.create_info.imageType == VK_IMAGE_TYPE_1D) {
                 dst_adjusted_extent.height = 1;
@@ -385,7 +390,7 @@ struct ImageCopyRegion {
                 dst_adjusted_extent.depth = 1;
             }
             is_adjusted_extent = true;
-        } else if (src_is_compressed && dst_is_compressed) {
+        } else if (src_is_in_blocks && dst_is_in_blocks) {
             src_dst_both_compressed = true;
             dst_adjusted_extent = extent;
         } else {
@@ -427,9 +432,13 @@ struct ImageCopyRegion {
             ss << "The VkImageCopy::extent [" << string_VkExtent3D(extent) << "] is adjusted to ["
                << string_VkExtent3D(dst_adjusted_extent) << "] because it is going from ";
             if (vkuFormatIsCompressed(src_state.create_info.format)) {
-                ss << " compressed to uncompressed";
+                ss << "compressed to uncompressed";
+            } else if (vkuFormatIsSinglePlane_422(src_state.create_info.format)) {
+                ss << "single-planar YCbCr (2x1 compressed) to uncompressed";
+            } else if (vkuFormatIsSinglePlane_422(dst_state.create_info.format)) {
+                ss << "uncompressed to single-planar YCbCr (2x1 compressed)";
             } else {
-                ss << " uncompressed to compressed";
+                ss << "uncompressed to compressed";
             }
             ss << '\n';
         }
