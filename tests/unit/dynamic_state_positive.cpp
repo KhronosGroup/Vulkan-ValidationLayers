@@ -1861,3 +1861,26 @@ TEST_F(PositiveDynamicState, UnusedFragmentShaderState) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveDynamicState, DepthWriteFromVertexShader) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7858");
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_BLEND_CONSTANTS);
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
+    pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    float blends[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+    vk::CmdSetBlendConstants(m_command_buffer, blends);
+    vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
