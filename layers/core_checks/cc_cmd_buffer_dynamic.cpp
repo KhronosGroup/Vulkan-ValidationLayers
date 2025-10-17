@@ -822,7 +822,8 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
 
     // Verify vkCmdSet* calls since last bound pipeline
     const CBDynamicFlags unset_status_pipeline =
-        (cb_state.dynamic_state_status.pipeline ^ pipeline.dynamic_state) & cb_state.dynamic_state_status.pipeline;
+        cb_state.dynamic_state_status.pipeline & ~(pipeline.dynamic_state | pipeline.ignored_dynamic_state);
+
     if (unset_status_pipeline.any()) {
         const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
         skip |= LogError(vuid.dynamic_state_setting_commands_08608, objlist, vuid.loc(),
