@@ -191,6 +191,10 @@ class VkLayerTest : public VkLayerTestBase {
     void CreateImageTest(const VkImageCreateInfo &create_info, const char *vuid);
     void CreateBufferViewTest(const VkBufferViewCreateInfo &create_info, const char *vuid);
     void CreateImageViewTest(const VkImageViewCreateInfo &create_info, const char *vuid);
+    void CreateRenderPassTest(const VkRenderPassCreateInfo &create_info, bool rp2_supported, const char *rp1_vuid,
+                              const char *rp2_vuid);
+    void CreateRenderPassBeginTest(const VkCommandBuffer command_buffer, const VkRenderPassBeginInfo *begin_info,
+                                   bool rp2_supported, const char *rp1_vuid, const char *rp2_vuid);
 
   protected:
     void SetTargetApiVersion(APIVersion target_api_version);
@@ -454,15 +458,6 @@ bool operator==(const VkDebugUtilsLabelEXT &rhs, const VkDebugUtilsLabelEXT &lhs
 VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                                   VkDebugUtilsMessageTypeFlagsEXT messageTypes,
                                                   const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData);
-
-void TestRenderPassCreate(ErrorMonitor *error_monitor, const vkt::Device &device, const VkRenderPassCreateInfo &create_info,
-                          bool rp2_supported, const char *rp1_vuid, const char *rp2_vuid);
-void PositiveTestRenderPassCreate(const vkt::Device &device, const VkRenderPassCreateInfo &create_info, bool rp2_supported);
-void PositiveTestRenderPass2KHRCreate(const vkt::Device &device, const VkRenderPassCreateInfo2KHR &create_info);
-void TestRenderPass2KHRCreate(ErrorMonitor &error_monitor, const vkt::Device &device, const VkRenderPassCreateInfo2KHR &create_info,
-                              const std::vector<const char *> &vuids);
-void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkDevice device, const VkCommandBuffer command_buffer,
-                         const VkRenderPassBeginInfo *begin_info, bool rp2Supported, const char *rp1_vuid, const char *rp2_vuid);
 
 VkFormat FindFormatWithoutFeatures(VkPhysicalDevice gpu, VkImageTiling tiling,
                                    VkFormatFeatureFlags undesired_features = vvl::kNoIndex32);

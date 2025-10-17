@@ -247,8 +247,7 @@ TEST_F(PositiveSubpass, AccessFlags3) {
 
     auto rpci2 =
         vku::InitStruct<VkRenderPassCreateInfo2>(nullptr, 0u, 1u, &attach_desc, 1u, &subpass, 1u, &subpass_dependency, 0u, nullptr);
-
-    PositiveTestRenderPass2KHRCreate(*m_device, rpci2);
+    vkt::RenderPass rp(*m_device, rpci2);
 }
 
 TEST_F(PositiveSubpass, AllCommandsInSubpassDependency) {
@@ -405,4 +404,82 @@ TEST_F(PositiveSubpass, ColorBlendEnable) {
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
+}
+
+TEST_F(PositiveSubpass, InputAttachmentLayout) {
+    TEST_DESCRIPTION("Create renderpass where an input attachment is also uses as another type");
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    const bool rp2_supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+
+    const VkAttachmentDescription attach0 = {0,
+                                             VK_FORMAT_R8G8B8A8_UNORM,
+                                             VK_SAMPLE_COUNT_1_BIT,
+                                             VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                             VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                             VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                             VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                             VK_IMAGE_LAYOUT_UNDEFINED,
+                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    const VkAttachmentDescription attach1 = {0,
+                                             VK_FORMAT_R8G8B8A8_UNORM,
+                                             VK_SAMPLE_COUNT_1_BIT,
+                                             VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                             VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                             VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                             VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                             VK_IMAGE_LAYOUT_UNDEFINED,
+                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+
+    const VkAttachmentReference ref0 = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    const VkAttachmentReference ref1 = {1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    const VkAttachmentReference inRef0 = {0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    const VkAttachmentReference inRef1 = {1, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+
+    // First subpass draws to attachment 0
+    const VkSubpassDescription subpass0 = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &ref0, nullptr, nullptr, 0, nullptr};
+    // Second subpass reads attachment 0 as input-attachment, writes to attachment 1
+    const VkSubpassDescription subpass1 = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &inRef0, 1, &ref1, nullptr, nullptr, 0, nullptr};
+    // Seconnd subpass reads attachment 1 as input-attachment, writes to attachment 0
+    const VkSubpassDescription subpass2 = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &inRef1, 1, &ref0, nullptr, nullptr, 0, nullptr};
+
+    // Subpass 0 writes attachment 0 as output, subpass 1 reads as input (RAW)
+    VkSubpassDependency dep0 = {0,
+                                1,
+                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                VK_ACCESS_INPUT_ATTACHMENT_READ_BIT,
+                                VK_DEPENDENCY_BY_REGION_BIT};
+    // Subpass 1 writes attachment 1 as output, subpass 2 reads as input while (RAW)
+    VkSubpassDependency dep1 = {1,
+                                2,
+                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                VK_ACCESS_INPUT_ATTACHMENT_READ_BIT,
+                                VK_DEPENDENCY_BY_REGION_BIT};
+    // Subpass 1 reads attachment 0 as input, subpass 2 writes output (WAR)
+    VkSubpassDependency dep2 = {1,
+                                2,
+                                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                VK_ACCESS_INPUT_ATTACHMENT_READ_BIT,
+                                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                VK_DEPENDENCY_BY_REGION_BIT};
+
+    std::vector<VkAttachmentDescription> attachs = {attach0, attach1};
+    std::vector<VkSubpassDescription> subpasses = {subpass0, subpass1, subpass2};
+    std::vector<VkSubpassDependency> deps = {dep0, dep1, dep2};
+
+    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, size32(attachs), attachs.data(), size32(subpasses),
+                                                        subpasses.data(), size32(deps), deps.data());
+
+    // Current setup should be OK -- no attachment is both input and output in same subpass
+    vkt::RenderPass render_pass(*m_device, rpci);
+    if (rp2_supported) {
+        vkt::RenderPass rp2(*m_device, *ConvertVkRenderPassCreateInfoToV2KHR(rpci).ptr());
+    }
 }
