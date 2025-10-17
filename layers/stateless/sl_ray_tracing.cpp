@@ -1222,19 +1222,18 @@ bool Device::manual_PreCallValidateCmdBuildAccelerationStructuresKHR(
                 }
 
                 if (geom_i < infoCount && triangles.indexType == VK_INDEX_TYPE_NONE_KHR) {
-                    for (const auto [build_range_i, build_range] : vvl::enumerate(ppBuildRangeInfos[geom_i], info.geometryCount)) {
-                        if (build_range.primitiveCount > 0) {
-                            const uint64_t build_range_max_vertex =
-                                uint64_t(build_range.firstVertex) + 3 * uint64_t(build_range.primitiveCount) - 1;
-                            if (uint64_t(triangles.maxVertex) < build_range_max_vertex) {
-                                const Location p_build_range_loc = error_obj.location.dot(Field::ppBuildRangeInfos, info_i);
-                                skip |= LogError("VUID-VkAccelerationStructureBuildRangeInfoKHR-None-10775", commandBuffer,
-                                                 p_geom_geom_loc.dot(Field::triangles).dot(Field::maxVertex),
-                                                 "is %" PRIu32 " but for %s, firstVertex ( %" PRIu32
-                                                 " ) + primitiveCount ( %" PRIu32 " ) x 3 - 1 = %" PRIu64 ".",
-                                                 triangles.maxVertex, p_build_range_loc.Fields().c_str(), build_range.firstVertex,
-                                                 build_range.primitiveCount, build_range_max_vertex);
-                            }
+                    const VkAccelerationStructureBuildRangeInfoKHR &build_range = *ppBuildRangeInfos[geom_i];
+                    if (build_range.primitiveCount > 0) {
+                        const uint64_t build_range_max_vertex =
+                            uint64_t(build_range.firstVertex) + 3 * uint64_t(build_range.primitiveCount) - 1;
+                        if (uint64_t(triangles.maxVertex) < build_range_max_vertex) {
+                            const Location p_build_range_loc = error_obj.location.dot(Field::ppBuildRangeInfos, info_i);
+                            skip |= LogError("VUID-VkAccelerationStructureBuildRangeInfoKHR-None-10775", commandBuffer,
+                                             p_geom_geom_loc.dot(Field::triangles).dot(Field::maxVertex),
+                                             "is %" PRIu32 " but for %s, firstVertex ( %" PRIu32 " ) + primitiveCount ( %" PRIu32
+                                             " ) x 3 - 1 = %" PRIu64 ".",
+                                             triangles.maxVertex, p_build_range_loc.Fields().c_str(), build_range.firstVertex,
+                                             build_range.primitiveCount, build_range_max_vertex);
                         }
                     }
                 }
@@ -2221,9 +2220,9 @@ bool Device::manual_PreCallValidateCmdBuildClusterAccelerationStructureIndirectN
     }
 
     if (IsValueIn(input.opType, {VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_NV,
-        VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_TEMPLATE_NV,
-        VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_INSTANTIATE_TRIANGLE_CLUSTER_NV,
-        VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_GET_CLUSTER_TEMPLATE_INDICES_NV})) {
+                                 VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_TEMPLATE_NV,
+                                 VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_INSTANTIATE_TRIANGLE_CLUSTER_NV,
+                                 VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_GET_CLUSTER_TEMPLATE_INDICES_NV})) {
         skip |= ValidateClusterAccelerationStructureTriangleClusterInputNV(context, *input.opInput.pTriangleClusters,
                                                                            op_input_loc.dot(Field::pTriangleClusters));
     }
@@ -2249,9 +2248,9 @@ bool Device::manual_PreCallValidateGetClusterAccelerationStructureBuildSizesNV(
     }
 
     if (IsValueIn(pInfo->opType, {VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_NV,
-        VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_TEMPLATE_NV,
-        VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_INSTANTIATE_TRIANGLE_CLUSTER_NV,
-        VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_GET_CLUSTER_TEMPLATE_INDICES_NV})) {
+                                  VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_TEMPLATE_NV,
+                                  VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_INSTANTIATE_TRIANGLE_CLUSTER_NV,
+                                  VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_GET_CLUSTER_TEMPLATE_INDICES_NV})) {
         skip |= ValidateClusterAccelerationStructureTriangleClusterInputNV(context, *pInfo->opInput.pTriangleClusters,
                                                                            op_input_loc.dot(Field::pTriangleClusters));
     }
