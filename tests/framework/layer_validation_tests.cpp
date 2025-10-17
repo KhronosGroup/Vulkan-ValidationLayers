@@ -129,82 +129,6 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsCallback(VkDebugUtilsMessageSeverityFla
     return VK_FALSE;
 }
 
-void TestRenderPassCreate(ErrorMonitor *error_monitor, const vkt::Device &device, const VkRenderPassCreateInfo &create_info,
-                          bool rp2_supported, const char *rp1_vuid, const char *rp2_vuid) {
-    if (rp1_vuid) {
-        // If the second VUID is not provided, set it equal to the first VUID.  In this way,
-        // we can check both vkCreateRenderPass and vkCreateRenderPass2 with the same VUID
-        // if rp2_supported is true;
-        if (rp2_supported && !rp2_vuid) {
-            rp2_vuid = rp1_vuid;
-        }
-
-        error_monitor->SetDesiredError(rp1_vuid);
-        vkt::RenderPass rp(device, create_info);
-        error_monitor->VerifyFound();
-    }
-
-    if (rp2_supported && rp2_vuid) {
-        auto create_info2 = ConvertVkRenderPassCreateInfoToV2KHR(create_info);
-        error_monitor->SetDesiredError(rp2_vuid);
-        vkt::RenderPass rp2(device, *create_info2.ptr());
-        error_monitor->VerifyFound();
-    }
-}
-
-void PositiveTestRenderPassCreate(const vkt::Device &device, const VkRenderPassCreateInfo &create_info, bool rp2_supported) {
-    vkt::RenderPass rp(device, create_info);
-    if (rp2_supported) {
-        vkt::RenderPass rp2(device, *ConvertVkRenderPassCreateInfoToV2KHR(create_info).ptr());
-    }
-}
-
-void PositiveTestRenderPass2KHRCreate(const vkt::Device &device, const VkRenderPassCreateInfo2KHR &create_info) {
-    vkt::RenderPass rp(device, create_info);
-}
-
-void TestRenderPass2KHRCreate(ErrorMonitor &error_monitor, const vkt::Device &device, const VkRenderPassCreateInfo2KHR &create_info,
-                              const std::vector<const char *> &vuids) {
-    for (auto vuid : vuids) {
-        error_monitor.SetDesiredError(vuid);
-    }
-    vkt::RenderPass rp(device, create_info);
-    error_monitor.VerifyFound();
-}
-
-void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkDevice device, const VkCommandBuffer command_buffer,
-                         const VkRenderPassBeginInfo *begin_info, bool rp2Supported, const char *rp1_vuid, const char *rp2_vuid) {
-    VkCommandBufferBeginInfo cmd_begin_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
-                                               VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
-
-    if (rp1_vuid) {
-        vk::BeginCommandBuffer(command_buffer, &cmd_begin_info);
-        error_monitor->SetDesiredError(rp1_vuid);
-        vk::CmdBeginRenderPass(command_buffer, begin_info, VK_SUBPASS_CONTENTS_INLINE);
-        error_monitor->VerifyFound();
-        vk::ResetCommandBuffer(command_buffer, 0);
-    }
-    if (rp2Supported && rp2_vuid) {
-        VkSubpassBeginInfo subpass_begin_info = {VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO_KHR, nullptr, VK_SUBPASS_CONTENTS_INLINE};
-        vk::BeginCommandBuffer(command_buffer, &cmd_begin_info);
-        error_monitor->SetDesiredError(rp2_vuid);
-        vk::CmdBeginRenderPass2KHR(command_buffer, begin_info, &subpass_begin_info);
-        error_monitor->VerifyFound();
-        vk::ResetCommandBuffer(command_buffer, 0);
-
-        // For api version >= 1.2, try core entrypoint
-        PFN_vkCmdBeginRenderPass2KHR vkCmdBeginRenderPass2 =
-            (PFN_vkCmdBeginRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCmdBeginRenderPass2");
-        if (vkCmdBeginRenderPass2) {
-            vk::BeginCommandBuffer(command_buffer, &cmd_begin_info);
-            error_monitor->SetDesiredError(rp2_vuid);
-            vkCmdBeginRenderPass2(command_buffer, begin_info, &subpass_begin_info);
-            error_monitor->VerifyFound();
-            vk::ResetCommandBuffer(command_buffer, 0);
-        }
-    }
-}
-
 VkFormat FindFormatWithoutFeatures(VkPhysicalDevice gpu, VkImageTiling tiling, VkFormatFeatureFlags undesired_features) {
     const VkFormat first_vk_format = static_cast<VkFormat>(1);
     const VkFormat last_vk_format = static_cast<VkFormat>(130);  // avoid compressed/feature protected, otherwise 184
@@ -270,6 +194,62 @@ void VkLayerTest::CreateImageViewTest(const VkImageViewCreateInfo &create_info, 
     Monitor().SetDesiredError(vuid);
     vkt::ImageView view(*m_device, create_info);
     Monitor().VerifyFound();
+}
+
+void VkLayerTest::CreateRenderPassTest(const VkRenderPassCreateInfo &create_info, bool rp2_supported, const char *rp1_vuid,
+                                       const char *rp2_vuid) {
+    if (rp1_vuid) {
+        // If the second VUID is not provided, set it equal to the first VUID.  In this way,
+        // we can check both vkCreateRenderPass and vkCreateRenderPass2 with the same VUID
+        // if rp2_supported is true;
+        if (rp2_supported && !rp2_vuid) {
+            rp2_vuid = rp1_vuid;
+        }
+
+        Monitor().SetDesiredError(rp1_vuid);
+        vkt::RenderPass rp(*m_device, create_info);
+        Monitor().VerifyFound();
+    }
+
+    if (rp2_supported && rp2_vuid) {
+        auto create_info2 = ConvertVkRenderPassCreateInfoToV2KHR(create_info);
+        Monitor().SetDesiredError(rp2_vuid);
+        vkt::RenderPass rp2(*m_device, *create_info2.ptr());
+        Monitor().VerifyFound();
+    }
+}
+
+void VkLayerTest::CreateRenderPassBeginTest(const VkCommandBuffer command_buffer, const VkRenderPassBeginInfo *begin_info,
+                                            bool rp2_supported, const char *rp1_vuid, const char *rp2_vuid) {
+    VkCommandBufferBeginInfo cmd_begin_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
+                                               VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
+
+    if (rp1_vuid) {
+        vk::BeginCommandBuffer(command_buffer, &cmd_begin_info);
+        Monitor().SetDesiredError(rp1_vuid);
+        vk::CmdBeginRenderPass(command_buffer, begin_info, VK_SUBPASS_CONTENTS_INLINE);
+        Monitor().VerifyFound();
+        vk::ResetCommandBuffer(command_buffer, 0);
+    }
+    if (rp2_supported && rp2_vuid) {
+        VkSubpassBeginInfo subpass_begin_info = {VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO_KHR, nullptr, VK_SUBPASS_CONTENTS_INLINE};
+        vk::BeginCommandBuffer(command_buffer, &cmd_begin_info);
+        Monitor().SetDesiredError(rp2_vuid);
+        vk::CmdBeginRenderPass2KHR(command_buffer, begin_info, &subpass_begin_info);
+        Monitor().VerifyFound();
+        vk::ResetCommandBuffer(command_buffer, 0);
+
+        // For api version >= 1.2, try core entrypoint
+        PFN_vkCmdBeginRenderPass2KHR vkCmdBeginRenderPass2 =
+            (PFN_vkCmdBeginRenderPass2KHR)vk::GetDeviceProcAddr(*m_device, "vkCmdBeginRenderPass2");
+        if (vkCmdBeginRenderPass2) {
+            vk::BeginCommandBuffer(command_buffer, &cmd_begin_info);
+            Monitor().SetDesiredError(rp2_vuid);
+            vkCmdBeginRenderPass2(command_buffer, begin_info, &subpass_begin_info);
+            Monitor().VerifyFound();
+            vk::ResetCommandBuffer(command_buffer, 0);
+        }
+    }
 }
 
 VkSamplerCreateInfo SafeSaneSamplerCreateInfo(void *p_next) {

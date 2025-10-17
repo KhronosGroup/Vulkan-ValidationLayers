@@ -287,8 +287,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapReferences) {
 
     auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(&rpfdmi, 0u, 1u, &attach, 1u, &subpass, 0u, nullptr);
 
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, false, "VUID-VkRenderPassCreateInfo-fragmentDensityMapAttachment-06471",
-                         nullptr);
+    CreateRenderPassTest(rpci, false, "VUID-VkRenderPassCreateInfo-fragmentDensityMapAttachment-06471", nullptr);
 
     // Set wrong VkImageLayout
     ref = {0, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL};
@@ -296,8 +295,8 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapReferences) {
     rpfdmi = vku::InitStruct<VkRenderPassFragmentDensityMapCreateInfoEXT>(nullptr, ref);
     rpci = vku::InitStruct<VkRenderPassCreateInfo>(&rpfdmi, 0u, 1u, &attach, 1u, &subpass, 0u, nullptr);
 
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, false,
-                         "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02549", nullptr);
+    CreateRenderPassTest(rpci, false, "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02549",
+                         nullptr);
 
     // Set wrong load operation
     attach = {0,
@@ -315,8 +314,8 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapReferences) {
     rpfdmi = vku::InitStruct<VkRenderPassFragmentDensityMapCreateInfoEXT>(nullptr, ref);
     rpci = vku::InitStruct<VkRenderPassCreateInfo>(&rpfdmi, 0u, 1u, &attach, 1u, &subpass, 0u, nullptr);
 
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, false,
-                         "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02550", nullptr);
+    CreateRenderPassTest(rpci, false, "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02550",
+                         nullptr);
 
     // Set wrong store operation
     attach = {0,
@@ -334,8 +333,8 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapReferences) {
     rpfdmi = vku::InitStruct<VkRenderPassFragmentDensityMapCreateInfoEXT>(nullptr, ref);
     rpci = vku::InitStruct<VkRenderPassCreateInfo>(&rpfdmi, 0u, 1u, &attach, 1u, &subpass, 0u, nullptr);
 
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, false,
-                         "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02551", nullptr);
+    CreateRenderPassTest(rpci, false, "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02551",
+                         nullptr);
 }
 
 TEST_F(NegativeFragmentShadingRate, FragmentDensityMapDuplicateReferences) {
@@ -394,8 +393,8 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapDuplicateReferences) {
         auto rpfdmi = vku::InitStruct<VkRenderPassFragmentDensityMapCreateInfoEXT>(nullptr, ref_fdm);
         auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(&rpfdmi, 0u, 5u, attachments, 1u, &subpass, 0u, nullptr);
 
-        TestRenderPassCreate(m_errorMonitor, *m_device, rpci, false,
-                             "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02548", nullptr);
+        CreateRenderPassTest(rpci, false, "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02548",
+                             nullptr);
     }
 
     {
@@ -406,8 +405,8 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapDuplicateReferences) {
         auto rpfdmi = vku::InitStruct<VkRenderPassFragmentDensityMapCreateInfoEXT>(nullptr, ref_fdm);
         auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(&rpfdmi, 0u, 5u, attachments, 1u, &subpass, 0u, nullptr);
 
-        TestRenderPassCreate(m_errorMonitor, *m_device, rpci, false,
-                             "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02548", nullptr);
+        CreateRenderPassTest(rpci, false, "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02548",
+                             nullptr);
     }
 
     {
@@ -418,8 +417,8 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapDuplicateReferences) {
         auto rpfdmi = vku::InitStruct<VkRenderPassFragmentDensityMapCreateInfoEXT>(nullptr, ref_fdm);
         auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(&rpfdmi, 0u, 5u, attachments, 1u, &subpass, 0u, nullptr);
 
-        TestRenderPassCreate(m_errorMonitor, *m_device, rpci, false,
-                             "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02548", nullptr);
+        CreateRenderPassTest(rpci, false, "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02548",
+                             nullptr);
     }
 }
 

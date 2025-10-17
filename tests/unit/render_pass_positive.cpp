@@ -11,10 +11,12 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <vulkan/vulkan_core.h>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/render_pass_helper.h"
+#include "utils/convert_utils.h"
 
 class PositiveRenderPass : public VkLayerTest {};
 
@@ -398,19 +400,34 @@ TEST_F(PositiveRenderPass, ValidStages) {
     dependency.dstSubpass = 1;
     dependency.srcStageMask = kGraphicsStages;
     dependency.dstStageMask = kGraphicsStages;
-    PositiveTestRenderPassCreate(*m_device, rpci, rp2_supported);
+    {
+        vkt::RenderPass rp(*m_device, rpci);
+        if (rp2_supported) {
+            vkt::RenderPass rp2(*m_device, *ConvertVkRenderPassCreateInfoToV2KHR(rpci).ptr());
+        }
+    }
 
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
     dependency.dstSubpass = 0;
     dependency.srcStageMask = kGraphicsStages | VK_PIPELINE_STAGE_HOST_BIT;
     dependency.dstStageMask = kGraphicsStages;
-    PositiveTestRenderPassCreate(*m_device, rpci, rp2_supported);
+    {
+        vkt::RenderPass rp(*m_device, rpci);
+        if (rp2_supported) {
+            vkt::RenderPass rp2(*m_device, *ConvertVkRenderPassCreateInfoToV2KHR(rpci).ptr());
+        }
+    }
 
     dependency.srcSubpass = 0;
     dependency.dstSubpass = VK_SUBPASS_EXTERNAL;
     dependency.srcStageMask = kGraphicsStages;
     dependency.dstStageMask = VK_PIPELINE_STAGE_HOST_BIT;
-    PositiveTestRenderPassCreate(*m_device, rpci, rp2_supported);
+    {
+        vkt::RenderPass rp(*m_device, rpci);
+        if (rp2_supported) {
+            vkt::RenderPass rp2(*m_device, *ConvertVkRenderPassCreateInfoToV2KHR(rpci).ptr());
+        }
+    }
 }
 
 TEST_F(PositiveRenderPass, SingleMipTransition) {
@@ -998,11 +1015,9 @@ TEST_F(PositiveRenderPass, SeparateDepthStencilSubresourceLayout) {
 
 TEST_F(PositiveRenderPass, InputResolve) {
     TEST_DESCRIPTION("Create render pass where input attachment == resolve attachment");
-
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
-    const bool rp2Supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
 
     RenderPassSingleSubpass rp(*this);
     // input attachments
@@ -1019,8 +1034,7 @@ TEST_F(PositiveRenderPass, InputResolve) {
     rp.AddInputAttachment(0);
     rp.AddColorAttachment(1);
     rp.AddResolveAttachment(2);
-
-    PositiveTestRenderPassCreate(*m_device, rp.GetCreateInfo(), rp2Supported);
+    rp.CreateRenderPass();
 }
 
 TEST_F(PositiveRenderPass, TestDepthStencilRenderPassTransition) {

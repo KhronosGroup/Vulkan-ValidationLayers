@@ -44,18 +44,17 @@ TEST_F(NegativeDynamicRenderingLocalRead, AttachmentLayout) {
 
     refs[0].layout = VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ;
 
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, true, "VUID-VkAttachmentReference-dynamicRenderingLocalRead-09546",
+    CreateRenderPassTest(rpci, true, "VUID-VkAttachmentReference-dynamicRenderingLocalRead-09546",
                          "VUID-VkAttachmentReference2-dynamicRenderingLocalRead-09546");
 
     refs[0].layout = VK_IMAGE_LAYOUT_GENERAL;
     attach->initialLayout = VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ;
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, true, "VUID-VkAttachmentDescription-dynamicRenderingLocalRead-09544",
+    CreateRenderPassTest(rpci, true, "VUID-VkAttachmentDescription-dynamicRenderingLocalRead-09544",
                          "VUID-VkAttachmentDescription2-dynamicRenderingLocalRead-09544");
 
     attach->initialLayout = VK_IMAGE_LAYOUT_GENERAL;
     attach->finalLayout = VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ;
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, true,
-                         "VUID-VkAttachmentDescription-dynamicRenderingLocalRead-09545",
+    CreateRenderPassTest(rpci, true, "VUID-VkAttachmentDescription-dynamicRenderingLocalRead-09545",
                          "VUID-VkAttachmentDescription2-dynamicRenderingLocalRead-09545");
 }
 
