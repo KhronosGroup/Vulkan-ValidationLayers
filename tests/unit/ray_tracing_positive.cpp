@@ -1893,8 +1893,8 @@ TEST_F(PositiveRayTracing, MultipleGeometries) {
     geometries.emplace_back(vkt::as::blueprint::GeometrySimpleOnDeviceIndexedTriangleInfo(*m_device, 2));
     geometries[0].SetTrianglesIndexType(VK_INDEX_TYPE_NONE_KHR);
     geometries[1].SetTrianglesIndexType(VK_INDEX_TYPE_NONE_KHR);
-    geometries[0].SetTrianglesMaxVertex(5);
-    geometries[1].SetTrianglesMaxVertex(5);
+    geometries[0].SetTrianglesMaxVertex(3);
+    geometries[1].SetTrianglesMaxVertex(6);
     blas.SetGeometries(std::move(geometries));
     auto build_range_infos = blas.GetBuildRangeInfosFromGeometries();
     blas.SetBuildRanges(build_range_infos);
@@ -1909,7 +1909,7 @@ TEST_F(PositiveRayTracing, MultipleGeometries) {
     range_infos[0].primitiveOffset = 0u;
     range_infos[0].firstVertex = 0u;
     range_infos[0].transformOffset = 0u;
-    range_infos[1].primitiveCount = 1u;
+    range_infos[1].primitiveCount = 2u;
     range_infos[1].primitiveOffset = 0u;
     range_infos[1].firstVertex = 0u;
     range_infos[1].transformOffset = 0u;
