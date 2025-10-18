@@ -334,6 +334,7 @@ class Pipeline {
     // Build settings
     // --------------
     void AddCreateInfoFlags(VkPipelineCreateFlags flags);
+    void AddCreateInfoFlags2(VkPipelineCreateFlags2 flags);
     void InitLibraryInfo(uint32_t max_pipeline_payload_size, bool is_exe_pipeline);
 
     void AddBinding(VkDescriptorType descriptor_type, uint32_t binding, uint32_t descriptor_count = 1);
@@ -345,7 +346,7 @@ class Pipeline {
     void SetPipelineSetLayouts(uint32_t set_layout_count, const VkDescriptorSetLayout* set_layouts);
 
     void SetPushConstantRangeSize(uint32_t byte_size);
-    void SetGlslRayGenShader(const char* glsl);
+    void SetGlslRayGenShader(const char* glsl, void* pNext = nullptr);
     void AddSpirvRayGenShader(const char* spirv, const char* entry_point);
     void AddSlangRayGenShader(const char* slang, const char* entry_point);
     void AddGlslMissShader(const char* glsl);
@@ -394,6 +395,7 @@ class Pipeline {
   private:
     VkLayerTest& test_;
     vkt::Device* device_;
+    VkPipelineCreateFlags2CreateInfo create_flags_2_ = {};
     VkRayTracingPipelineCreateInfoKHR vk_info_{};
     uint32_t push_constant_range_size_ = 0;
     std::vector<VkDescriptorSetLayoutBinding> bindings_{};
