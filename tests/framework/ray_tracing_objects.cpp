@@ -1466,6 +1466,12 @@ Pipeline::~Pipeline() {
 
 void Pipeline::AddCreateInfoFlags(VkPipelineCreateFlags flags) { vk_info_.flags |= flags; }
 
+void Pipeline::AddCreateInfoFlags2(VkPipelineCreateFlags2 flags) {
+    create_flags_2_ = vku::InitStructHelper();
+    create_flags_2_.flags = flags;
+    vk_info_.pNext = &create_flags_2_;
+}
+
 void Pipeline::InitLibraryInfo(uint32_t max_pipeline_payload_size, bool is_exe_pipeline) {
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR rt_pipeline_props = vku::InitStructHelper();
     test_.GetPhysicalDeviceProperties2(rt_pipeline_props);
@@ -1514,8 +1520,9 @@ void Pipeline::SetPipelineSetLayouts(uint32_t set_layout_count, const VkDescript
 
 void Pipeline::SetPushConstantRangeSize(uint32_t byte_size) { push_constant_range_size_ = byte_size; }
 
-void Pipeline::SetGlslRayGenShader(const char *glsl) {
-    ray_gen_shaders_.emplace_back(std::make_unique<VkShaderObj>(&test_, glsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2));
+void Pipeline::SetGlslRayGenShader(const char *glsl, void *pNext) {
+    ray_gen_shaders_.emplace_back(std::make_unique<VkShaderObj>(&test_, glsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2,
+                                                                SPV_SOURCE_GLSL, nullptr, "main", pNext));
 }
 
 void Pipeline::AddSpirvRayGenShader(const char *spirv, const char *entry_point) {
