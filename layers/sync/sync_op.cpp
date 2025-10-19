@@ -457,7 +457,7 @@ void SyncOpPipelineBarrier::ApplyMultipleBarriers(CommandExecutionContext &exec_
         }
     }
     for (const SyncImageMemoryBarrier &barrier : barrier_set_.image_memory_barriers) {
-        const auto &sub_state = syncval_state::SubState(*barrier.image);
+        const auto &sub_state = SubState(*barrier.image);
         const bool can_transition_depth_slices =
             CanTransitionDepthSlices(exec_context.GetSyncState().extensions, sub_state.base.create_info);
         auto range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, can_transition_depth_slices);
@@ -484,7 +484,7 @@ void SyncOpPipelineBarrier::ApplyMultipleBarriers(CommandExecutionContext &exec_
         CollectBarriersFunctor collect_barriers(barrier_scope, barrier.barrier, barrier.layout_transition, barrier.handle_index,
                                                 pending_barriers);
 
-        const auto &sub_state = syncval_state::SubState(*barrier.image);
+        const auto &sub_state = SubState(*barrier.image);
         const bool can_transition_depth_slices =
             CanTransitionDepthSlices(exec_context.GetSyncState().extensions, sub_state.base.create_info);
         auto range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, can_transition_depth_slices);
@@ -804,7 +804,7 @@ void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext &exec_context, Resou
                 }
             }
             for (const SyncImageMemoryBarrier &barrier : barrier_set.image_memory_barriers) {
-                const auto &sub_state = syncval_state::SubState(*barrier.image);
+                const auto &sub_state = SubState(*barrier.image);
                 const bool can_transition_depth_slices =
                     CanTransitionDepthSlices(exec_context.GetSyncState().extensions, sub_state.base.create_info);
                 ImageRangeGen range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, can_transition_depth_slices);
@@ -853,7 +853,7 @@ void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext &exec_context, Resou
                 CollectBarriersFunctor collect_barriers(barrier_scope, event_barrier, barrier.layout_transition,
                                                         barrier.handle_index, pending_barriers);
 
-                const auto &sub_state = syncval_state::SubState(*barrier.image);
+                const auto &sub_state = SubState(*barrier.image);
                 const bool can_transition_depth_slices =
                     CanTransitionDepthSlices(exec_context.GetSyncState().extensions, sub_state.base.create_info);
                 ImageRangeGen range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, can_transition_depth_slices);

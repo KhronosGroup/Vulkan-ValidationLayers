@@ -240,7 +240,7 @@ void AccessContext::UpdateAccessState(const vvl::Buffer &buffer, SyncAccessIndex
 void AccessContext::UpdateAccessState(const vvl::Image &image, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
                                       const VkImageSubresourceRange &subresource_range, const ResourceUsageTag &tag) {
     // range_gen is non-temporary to avoid an additional copy
-    const auto &sub_state = syncval_state::SubState(image);
+    const auto &sub_state = SubState(image);
     ImageRangeGen range_gen = sub_state.MakeImageRangeGen(subresource_range, false);
     UpdateAccessState(range_gen, current_usage, ordering_rule, ResourceUsageTagEx{tag});
 }
@@ -248,7 +248,7 @@ void AccessContext::UpdateAccessState(const vvl::Image &image, SyncAccessIndex c
                                       const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
                                       const VkExtent3D &extent, const ResourceUsageTagEx tag_ex) {
     // range_gen is non-temporary to avoid an additional copy
-    const auto &sub_state = syncval_state::SubState(image);
+    const auto &sub_state = SubState(image);
     ImageRangeGen range_gen = sub_state.MakeImageRangeGen(subresource_range, offset, extent, false);
     UpdateAccessState(range_gen, current_usage, ordering_rule, tag_ex);
 }
@@ -256,13 +256,13 @@ void AccessContext::UpdateAccessState(const vvl::Image &image, SyncAccessIndex c
 void AccessContext::UpdateAccessState(const vvl::ImageView &image_view, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
                                       const VkOffset3D &offset, const VkExtent3D &extent, const ResourceUsageTagEx tag_ex) {
     // range_gen is non-temporary to avoid an additional copy
-    ImageRangeGen range_gen(syncval_state::MakeImageRangeGen(image_view, offset, extent));
+    ImageRangeGen range_gen(MakeImageRangeGen(image_view, offset, extent));
     UpdateAccessState(range_gen, current_usage, ordering_rule, tag_ex);
 }
 
 void AccessContext::UpdateAccessState(const vvl::ImageView &image_view, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
                                       ResourceUsageTagEx tag_ex) {
-    auto range_gen = syncval_state::MakeImageRangeGen(image_view);
+    auto range_gen = MakeImageRangeGen(image_view);
     UpdateAccessState(range_gen, current_usage, ordering_rule, tag_ex);
 }
 
@@ -281,7 +281,7 @@ void AccessContext::UpdateAccessState(const vvl::VideoSession &vs_state, const v
     const auto image = static_cast<const vvl::Image *>(resource.image_state.get());
     const auto offset = resource.GetEffectiveImageOffset(vs_state);
     const auto extent = resource.GetEffectiveImageExtent(vs_state);
-    const auto &sub_state = syncval_state::SubState(*image);
+    const auto &sub_state = SubState(*image);
     ImageRangeGen range_gen(sub_state.MakeImageRangeGen(resource.range, offset, extent, false));
     UpdateAccessState(range_gen, current_usage, SyncOrdering::kNonAttachment, ResourceUsageTagEx{tag});
 }
@@ -365,7 +365,7 @@ HazardResult AccessContext::DetectHazard(Detector &detector, const vvl::Image &i
                                          const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
                                          const VkExtent3D &extent, bool is_depth_sliced, DetectOptions options) const {
     // range_gen is non-temporary to avoid additional copy
-    const auto &sub_state = syncval_state::SubState(image);
+    const auto &sub_state = SubState(image);
     ImageRangeGen range_gen = sub_state.MakeImageRangeGen(subresource_range, offset, extent, is_depth_sliced);
     return DetectHazardGeneratedRanges(detector, range_gen, options);
 }
@@ -375,7 +375,7 @@ HazardResult AccessContext::DetectHazard(Detector &detector, const vvl::Image &i
                                          const VkImageSubresourceRange &subresource_range, bool is_depth_sliced,
                                          DetectOptions options) const {
     // range_gen is non-temporary to avoid additional copy
-    const auto &sub_state = syncval_state::SubState(image);
+    const auto &sub_state = SubState(image);
     ImageRangeGen range_gen = sub_state.MakeImageRangeGen(subresource_range, is_depth_sliced);
     return DetectHazardGeneratedRanges(detector, range_gen, options);
 }
@@ -389,7 +389,7 @@ HazardResult AccessContext::DetectHazard(const vvl::Image &image, SyncAccessInde
 HazardResult AccessContext::DetectHazard(const vvl::ImageView &image_view, SyncAccessIndex current_usage) const {
     // Get is const, but callee will copy
     HazardDetector detector(current_usage);
-    auto range_gen = syncval_state::MakeImageRangeGen(image_view);
+    auto range_gen = MakeImageRangeGen(image_view);
     return DetectHazardGeneratedRanges(detector, range_gen, DetectOptions::kDetectAll);
 }
 
@@ -407,7 +407,7 @@ HazardResult AccessContext::DetectHazard(const ImageRangeGen &ref_range_gen, Syn
 HazardResult AccessContext::DetectHazard(const vvl::ImageView &image_view, const VkOffset3D &offset, const VkExtent3D &extent,
                                          SyncAccessIndex current_usage, SyncOrdering ordering_rule) const {
     // range_gen is non-temporary to avoid an additional copy
-    ImageRangeGen range_gen(syncval_state::MakeImageRangeGen(image_view, offset, extent));
+    ImageRangeGen range_gen(MakeImageRangeGen(image_view, offset, extent));
     HazardDetectorWithOrdering detector(current_usage, ordering_rule);
     return DetectHazardGeneratedRanges(detector, range_gen, DetectOptions::kDetectAll);
 }
@@ -421,7 +421,7 @@ HazardResult AccessContext::DetectHazard(const AttachmentViewGen &view_gen, Atta
 HazardResult AccessContext::DetectHazard(const vvl::VideoSession &vs_state, const vvl::VideoPictureResource &resource,
                                          SyncAccessIndex current_usage) const {
     const auto image = static_cast<const vvl::Image *>(resource.image_state.get());
-    const auto &sub_state = syncval_state::SubState(*image);
+    const auto &sub_state = SubState(*image);
     const auto offset = resource.GetEffectiveImageOffset(vs_state);
     const auto extent = resource.GetEffectiveImageExtent(vs_state);
     ImageRangeGen range_gen(sub_state.MakeImageRangeGen(resource.range, offset, extent, false));
@@ -701,7 +701,7 @@ ResourceUsageTag AccessContext::AsyncReference::StartTag() const { return (tag_ 
 
 AttachmentViewGen::AttachmentViewGen(const vvl::ImageView *image_view, const VkOffset3D &offset, const VkExtent3D &extent)
     : view_(image_view) {
-    gen_store_[Gen::kViewSubresource].emplace(syncval_state::MakeImageRangeGen(*image_view));
+    gen_store_[Gen::kViewSubresource].emplace(MakeImageRangeGen(*image_view));
 
     const bool has_depth = vkuFormatHasDepth(image_view->create_info.format);
     const bool has_stencil = vkuFormatHasStencil(image_view->create_info.format);
@@ -715,14 +715,13 @@ AttachmentViewGen::AttachmentViewGen(const vvl::ImageView *image_view, const VkO
     }
 
     // Range gen for attachment's render area
-    gen_store_[Gen::kRenderArea].emplace(syncval_state::MakeImageRangeGen(*image_view, offset, extent, override_aspect_flags));
+    gen_store_[Gen::kRenderArea].emplace(MakeImageRangeGen(*image_view, offset, extent, override_aspect_flags));
 
     // If attachment has both depth and stencil aspects then add range gens to represent each aspect separately.
     if (has_depth && has_stencil) {
-        gen_store_[Gen::kDepthOnlyRenderArea].emplace(
-            syncval_state::MakeImageRangeGen(*image_view, offset, extent, VK_IMAGE_ASPECT_DEPTH_BIT));
+        gen_store_[Gen::kDepthOnlyRenderArea].emplace(MakeImageRangeGen(*image_view, offset, extent, VK_IMAGE_ASPECT_DEPTH_BIT));
         gen_store_[Gen::kStencilOnlyRenderArea].emplace(
-            syncval_state::MakeImageRangeGen(*image_view, offset, extent, VK_IMAGE_ASPECT_STENCIL_BIT));
+            MakeImageRangeGen(*image_view, offset, extent, VK_IMAGE_ASPECT_STENCIL_BIT));
     }
 }
 

@@ -19,21 +19,21 @@
 
 namespace syncval {
 
-syncval_state::ImageSubState::ImageSubState(vvl::Image &image) : vvl::ImageSubState(image), fragment_encoder(image) {}
+ImageSubState::ImageSubState(vvl::Image &image) : vvl::ImageSubState(image), fragment_encoder(image) {}
 
-bool syncval_state::ImageSubState::IsSimplyBound() const {
+bool ImageSubState::IsSimplyBound() const {
     bool simple = SimpleBinding(base) || base.IsSwapchainImage() || base.bind_swapchain;
     return simple;
 }
 
-void syncval_state::ImageSubState::SetOpaqueBaseAddress(vvl::DeviceState &dev_data) {
+void ImageSubState::SetOpaqueBaseAddress(vvl::DeviceState &dev_data) {
     // This is safe to call if already called to simplify caller logic
     // NOTE: Not asserting IsTiled, as there could in future be other reasons for opaque representations
     if (opaque_base_address_) return;
 
     VkDeviceSize opaque_base = 0U;  // Fakespace Allocator starts > 0
     auto get_opaque_base = [&opaque_base](const vvl::Image &other) {
-        const auto &other_sync = syncval_state::SubState(other);
+        const auto &other_sync = SubState(other);
         opaque_base = other_sync.opaque_base_address_;
         return true;
     };
@@ -51,14 +51,14 @@ void syncval_state::ImageSubState::SetOpaqueBaseAddress(vvl::DeviceState &dev_da
     opaque_base_address_ = opaque_base;
 }
 
-VkDeviceSize syncval_state::ImageSubState::GetResourceBaseAddress() const {
+VkDeviceSize ImageSubState::GetResourceBaseAddress() const {
     if (HasOpaqueMapping()) {
         return GetOpaqueBaseAddress();
     }
     return base.GetFakeBaseAddress();
 }
 
-ImageRangeGen syncval_state::ImageSubState::MakeImageRangeGen(const VkImageSubresourceRange &subresource_range,
+ImageRangeGen ImageSubState::MakeImageRangeGen(const VkImageSubresourceRange &subresource_range,
                                                               bool is_depth_sliced) const {
     if (!IsSimplyBound()) {
         return ImageRangeGen();  // default range generators have an empty position (generator "end")
@@ -69,7 +69,7 @@ ImageRangeGen syncval_state::ImageSubState::MakeImageRangeGen(const VkImageSubre
     return range_gen;
 }
 
-ImageRangeGen syncval_state::ImageSubState::MakeImageRangeGen(const VkImageSubresourceRange &subresource_range,
+ImageRangeGen ImageSubState::MakeImageRangeGen(const VkImageSubresourceRange &subresource_range,
                                                               const VkOffset3D &offset, const VkExtent3D &extent,
                                                               bool is_depth_sliced) const {
     if (!IsSimplyBound()) {
@@ -82,13 +82,13 @@ ImageRangeGen syncval_state::ImageSubState::MakeImageRangeGen(const VkImageSubre
     return range_gen;
 }
 
-ImageRangeGen syncval_state::MakeImageRangeGen(const vvl::ImageView &view) {
+ImageRangeGen MakeImageRangeGen(const vvl::ImageView &view) {
     const auto &sub_state = SubState(*view.image_state);
     return sub_state.MakeImageRangeGen(view.normalized_subresource_range, view.is_depth_sliced);
 }
 
-ImageRangeGen syncval_state::MakeImageRangeGen(const vvl::ImageView &view, const VkOffset3D &offset, const VkExtent3D &extent,
-                                               VkImageAspectFlags override_depth_stencil_aspect_mask) {
+ImageRangeGen MakeImageRangeGen(const vvl::ImageView &view, const VkOffset3D &offset, const VkExtent3D &extent,
+                                VkImageAspectFlags override_depth_stencil_aspect_mask) {
     if (view.Invalid()) ImageRangeGen();
 
     VkImageSubresourceRange subresource_range = view.normalized_subresource_range;

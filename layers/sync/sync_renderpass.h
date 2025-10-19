@@ -31,7 +31,6 @@ class CommandBuffer;
 
 namespace syncval {
 
-namespace syncval_state {
 enum class AttachmentType { kColor, kDepth, kStencil };
 
 struct DynamicRenderingInfo {
@@ -75,7 +74,6 @@ struct BeginRenderingCmdState {
     std::shared_ptr<const vvl::CommandBuffer> cb_state;
     std::unique_ptr<DynamicRenderingInfo> info;
 };
-}  // namespace syncval_state
 
 std::unique_ptr<AccessContext[]> InitSubpassContexts(VkQueueFlags queue_flags, const vvl::RenderPass &rp_state,
                                                      const AccessContext *external_context);

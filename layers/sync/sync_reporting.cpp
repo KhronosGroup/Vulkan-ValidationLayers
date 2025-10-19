@@ -610,7 +610,7 @@ static ResourceUsageInfo GetResourceUsageInfoFromRecord(ResourceUsageTagEx tag_e
 
         // Associated resource
         if (tag_ex.handle_index != vvl::kNoIndex32) {
-            auto &cb_context = syncval_state::SubState(*record.cb_state);
+            auto &cb_context = SubState(*record.cb_state);
             const auto &handle_records = cb_context.access_context.GetHandleRecords();
 
             // Command buffer can be in inconsistent state due to unhandled core validation error (core validation is disabled).
