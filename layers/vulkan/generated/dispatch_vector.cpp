@@ -51,13 +51,13 @@ void Device::InitObjectDispatchVectors() {
                                 typeid(&stateless::Device::name), typeid(&deprecation::Device::name),                     \
                                 typeid(&object_lifetimes::Device::name), typeid(&vvl::DeviceState::name),                 \
                                 typeid(&CoreChecks::name), typeid(&BestPractices::name), typeid(&gpuav::Validator::name), \
-                                typeid(&SyncValidator::name), false);
+                                typeid(&syncval::SyncValidator::name), false);
 #define BUILD_DESTROY_DISPATCH_VECTOR(name)                                                                               \
     init_object_dispatch_vector(InterceptId##name, typeid(&vvl::base::Device::name), typeid(&threadsafety::Device::name), \
                                 typeid(&stateless::Device::name), typeid(&deprecation::Device::name),                     \
                                 typeid(&object_lifetimes::Device::name), typeid(&vvl::DeviceState::name),                 \
                                 typeid(&CoreChecks::name), typeid(&BestPractices::name), typeid(&gpuav::Validator::name), \
-                                typeid(&SyncValidator::name), true);
+                                typeid(&syncval::SyncValidator::name), true);
 
     auto init_object_dispatch_vector = [this](InterceptId id, const std::type_info& vo_typeid, const std::type_info& t_typeid,
                                               const std::type_info& pv_typeid, const std::type_info& d_typeid,

@@ -19,6 +19,8 @@
 
 #include "sync/sync_common.h"
 
+namespace syncval {
+
 struct SyncExecScope {
     // The xxxStageMask parameter passed by the caller
     VkPipelineStageFlags2 mask_param = 0;
@@ -81,3 +83,5 @@ struct SemaphoreScope : SyncExecScope {
     SemaphoreScope() = default;
     QueueId queue;
 };
+
+}  // namespace syncval

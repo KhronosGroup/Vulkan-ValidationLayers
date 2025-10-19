@@ -20,6 +20,8 @@
 #include "utils/hash_util.h"
 #include <cstring>  // memset
 
+namespace syncval {
+
 // NOTE: SyncAccessFlags struct replaces what was originally defined via std::bitset<>.
 // This is done for simplicity and efficiency purposes. The general nature of std::bitset
 // makes it inefficient in some scenarios (e.g. hashing). Also implementation simplicity
@@ -113,3 +115,5 @@ struct SyncAccessFlags {
         hc << words[2];
     }
 };
+
+}  // namespace syncval

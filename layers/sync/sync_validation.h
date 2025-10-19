@@ -35,7 +35,6 @@ class Instance : public vvl::InstanceProxy {
   public:
     Instance(vvl::dispatch::Instance *dispatch) : vvl::InstanceProxy(dispatch, LayerObjectTypeSyncValidation) {}
 };
-}  // namespace syncval
 
 class SyncValidator : public vvl::DeviceProxy {
     using BaseClass = vvl::DeviceProxy;
@@ -48,12 +47,12 @@ class SyncValidator : public vvl::DeviceProxy {
     SyncValidator(vvl::dispatch::Device *dev, syncval::Instance *instance_vo);
     ~SyncValidator();
 
-    syncval::ErrorMessages error_messages_;
+    ErrorMessages error_messages_;
 
     // Stats object must be the first member of this class:
     // - it is the first to be constructed: can observe all subsequent syncval stats events
     // - it is the last to be destroyed: ensures there are no unreported syncval stats events.
-    mutable syncval_stats::Stats stats;  // Stats object is thread safe
+    mutable Stats stats;  // Stats object is thread safe
     const bool report_stats_ = false;
 
     // Global tag range for submitted command buffers resource usage logs
@@ -121,7 +120,8 @@ class SyncValidator : public vvl::DeviceProxy {
 
     std::vector<QueueBatchContext::ConstPtr> GetLastBatches(std::function<bool(const QueueBatchContext::ConstPtr &)> filter) const;
     std::vector<QueueBatchContext::Ptr> GetLastBatches(std::function<bool(const QueueBatchContext::ConstPtr &)> filter);
-    std::vector<QueueBatchContext::ConstPtr> GetLastPendingBatches(std::function<bool(const QueueBatchContext::ConstPtr &)> filter) const;
+    std::vector<QueueBatchContext::ConstPtr> GetLastPendingBatches(
+        std::function<bool(const QueueBatchContext::ConstPtr &)> filter) const;
     void ClearPending() const;
 
     void Created(vvl::CommandBuffer &cb_state) override;
@@ -140,8 +140,8 @@ class SyncValidator : public vvl::DeviceProxy {
 
     void FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) override;
 
-    void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator,
-                                    const RecordObject& record_obj) override;
+    void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator,
+                                    const RecordObject &record_obj) override;
 
     void PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
                                        const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore,
@@ -521,9 +521,10 @@ class SyncValidator : public vvl::DeviceProxy {
                                                    const RecordObject &record_obj) override;
     void PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
                                              VkImage *pSwapchainImages, const RecordObject &record_obj) override;
-    bool PreCallValidateCmdBuildAccelerationStructuresKHR(
-        VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
-        const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos, const ErrorObject &error_obj) const override;
+    bool PreCallValidateCmdBuildAccelerationStructuresKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                                          const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
+                                                          const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos,
+                                                          const ErrorObject &error_obj) const override;
     void PostCallRecordCmdBuildAccelerationStructuresKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
                                                          const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
                                                          const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos,
@@ -575,3 +576,5 @@ class SyncValidator : public vvl::DeviceProxy {
     void PostCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress,
                                                 const RecordObject &record_obj) override;
 };
+
+}  // namespace syncval

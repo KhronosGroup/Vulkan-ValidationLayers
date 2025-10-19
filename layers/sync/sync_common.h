@@ -25,6 +25,8 @@ namespace vvl {
 class Buffer;
 }  // namespace vvl
 
+namespace syncval {
+
 using ImageRangeGen = subresource_adapter::ImageRangeGenerator;
 
 // The resource tag index is relative to the command buffer or queue in which it's found
@@ -169,3 +171,5 @@ class ThreadSafeLookupTable {
     // Locks snapshot during rare insert events
     std::mutex snapshot_mutex_;
 };
+
+}  // namespace syncval

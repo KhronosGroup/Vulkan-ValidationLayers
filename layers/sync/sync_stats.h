@@ -39,9 +39,10 @@
 
 #endif  // VVL_ENABLE_SYNCVAL_STATS != 0
 
+namespace syncval {
+
 class SyncValidator;
 
-namespace syncval_stats {
 #if VVL_ENABLE_SYNCVAL_STATS != 0
 
 struct Value32 {
@@ -167,5 +168,6 @@ struct Stats {
     void ReportOnDestruction() {}
     std::string CreateReport() { return "SyncVal stats are disabled in the current build configuration\n"; }
 };
+
+}  // namespace syncval
 #endif  // VVL_ENABLE_SYNCVAL_STATS != 0
-}  // namespace syncval_stats

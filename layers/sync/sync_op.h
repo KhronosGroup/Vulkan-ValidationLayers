@@ -20,17 +20,20 @@
 #include <vulkan/utility/vk_safe_struct.hpp>
 #include "error_message/error_location.h"
 
-class CommandBufferAccessContext;
-class CommandExecutionContext;
-class RenderPassAccessContext;
-class ReplayState;
-class SyncValidator;
 struct DeviceExtensions;
 
 namespace vvl {
 class ImageView;
 class RenderPass;
 }  // namespace vvl
+
+namespace syncval {
+
+class CommandBufferAccessContext;
+class CommandExecutionContext;
+class RenderPassAccessContext;
+class ReplayState;
+class SyncValidator;
 
 struct SyncEventState {
     enum IgnoreReason { NotIgnored = 0, ResetWaitRace, Reset2WaitRace, SetRace, MissingStageBits, SetVsWait2, MissingSetEvent };
@@ -336,9 +339,7 @@ struct BatchBarrierOp {
 
     BatchBarrierOp(QueueId queue_id, const SyncBarrier &barrier) : barrier(barrier), barrier_scope(barrier, queue_id) {}
 
-    void operator()(ResourceAccessState *access_state) const {
-        access_state->ApplyBarrier(barrier_scope, barrier);
-    }
+    void operator()(ResourceAccessState *access_state) const { access_state->ApplyBarrier(barrier_scope, barrier); }
 };
 
 // Allow keep track of the exec contexts replay state
@@ -383,3 +384,5 @@ class ReplayState {
     const ResourceUsageTag base_tag_;
     RenderPassReplayState rp_replay_;
 };
+
+}  // namespace syncval

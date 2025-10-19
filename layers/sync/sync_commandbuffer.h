@@ -20,17 +20,13 @@
 #include "sync/sync_reporting.h"
 #include "state_tracker/cmd_buffer_state.h"
 
-struct ReportProperties;
 struct RecordObject;
-class SyncValidator;
-
-namespace syncval_stats {
-struct AccessStats;
-}  // namespace syncval_stats
 
 namespace syncval {
+
+class SyncValidator;
 class ErrorMessages;
-}  // namespace syncval
+struct AccessStats;
 
 class AlternateResourceUsage {
   public:
@@ -290,7 +286,7 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
 
     std::vector<vvl::LabelCommand> &GetProxyLabelCommands() { return proxy_label_commands_; }
 
-    void UpdateStats(syncval_stats::AccessStats &access_stats) const;
+    void UpdateStats(AccessStats &access_stats) const;
 
   private:
     CommandBufferAccessContext(const SyncValidator &sync_validator, VkQueueFlags queue_flags);
@@ -428,3 +424,6 @@ static inline const CommandBufferAccessContext *AccessContext(const vvl::Command
 }
 
 }  // namespace syncval_state
+
+}  // namespace syncval
+

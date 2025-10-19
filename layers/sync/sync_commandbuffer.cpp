@@ -31,6 +31,8 @@
 #include "utils/math_utils.h"
 #include "utils/text_utils.h"
 
+namespace syncval {
+
 constexpr VkImageAspectFlags kColorAspects =
     VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT;
 
@@ -1359,11 +1361,9 @@ void CommandBufferAccessContext::CheckCommandTagDebugCheckpoint() {
     }
 }
 
-namespace syncval_stats {
-void UpdateAccessMapStats(const ResourceAccessRangeMap &access_map, syncval_stats::AccessContextStats &stats);
-}
+void UpdateAccessMapStats(const ResourceAccessRangeMap &access_map, AccessContextStats &stats);
 
-void CommandBufferAccessContext::UpdateStats(syncval_stats::AccessStats &access_stats) const {
+void CommandBufferAccessContext::UpdateStats(AccessStats &access_stats) const {
 #if VVL_ENABLE_SYNCVAL_STATS != 0
     UpdateAccessMapStats(cb_access_context_.GetAccessStateMap(), access_stats.cb_access_stats);
 
@@ -1861,3 +1861,5 @@ void CommandBufferSubState::RecordExecuteCommand(vvl::CommandBuffer &secondary_c
 }
 
 }  // namespace syncval_state
+
+}  // namespace syncval
