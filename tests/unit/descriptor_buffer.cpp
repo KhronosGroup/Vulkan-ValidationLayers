@@ -1331,7 +1331,7 @@ TEST_F(NegativeDescriptorBuffer, DescriptorGetInfoSampler) {
     dgi.type = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
     dgi.data.pStorageTexelBuffer = nullptr;
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorDataEXT-type-08038");
-    vk::GetDescriptorEXT(device(), &dgi, descriptor_buffer_properties.storageBufferDescriptorSize, &buffer);
+    vk::GetDescriptorEXT(device(), &dgi, descriptor_buffer_properties.storageTexelBufferDescriptorSize, &buffer);
     m_errorMonitor->VerifyFound();
 
     dgi.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
