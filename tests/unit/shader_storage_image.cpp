@@ -881,7 +881,20 @@ void NegativeShaderStorageImage::FormatComponentMismatchTest(std::string spirv_f
         }
     )";
 
-    vkt::Image image(*m_device, 4, 4, vk_format, VK_IMAGE_USAGE_STORAGE_BIT);
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = vk_format;
+    image_create_info.extent = {4u, 4u, 1u};
+    image_create_info.mipLevels = 1u;
+    image_create_info.arrayLayers = 1u;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_STORAGE_BIT;
+    if (!IsImageFormatSupported(Gpu(), image_create_info, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)) {
+        GTEST_SKIP() << "Format doesn't support storage image";
+    }
+
+    vkt::Image image(*m_device, image_create_info);
     vkt::ImageView image_view = image.CreateView();
 
     OneOffDescriptorSet descriptor_set(m_device, {
