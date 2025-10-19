@@ -3629,6 +3629,9 @@ TEST_F(NegativeImage, Image2DViewOf3DFeature) {
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
     image_ci.flags = VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT;
+    if (!IsImageFormatSupported(gpu_, image_ci, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)) {
+        GTEST_SKIP() << "Format not supported";
+    }
     vkt::Image image_3d(*m_device, image_ci, vkt::set_layout);
 
     VkImageViewCreateInfo view_ci = vku::InitStructHelper();
