@@ -29,6 +29,8 @@
 #include "utils/image_utils.h"
 #include "utils/sync_utils.h"
 
+namespace syncval {
+
 // Range generators for to allow event scope filtration to be limited to the top of the resource access traversal pipeline
 //
 // Note: there is no "begin/end" or reset facility.  These are each written as "one time through" generators.
@@ -1495,3 +1497,5 @@ void SyncEventState::AddReferencedTags(ResourceUsageTagSet &referenced) const {
         first_scope->AddReferencedTags(referenced);
     }
 }
+
+}  // namespace syncval

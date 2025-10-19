@@ -18,6 +18,8 @@
 #include "sync/sync_common.h"
 #include "state_tracker/buffer_state.h"
 
+namespace syncval {
+
 const ResourceAccessRange kFullRange(0, std::numeric_limits<VkDeviceSize>::max());
 
 ResourceAccessRange MakeRange(VkDeviceSize start, VkDeviceSize size) { return ResourceAccessRange(start, start + size); }
@@ -34,3 +36,5 @@ ResourceAccessRange MakeRange(const vvl::Buffer& buffer, VkDeviceSize offset, Vk
     }
     return ResourceAccessRange(offset, end);
 }
+
+}  // namespace syncval

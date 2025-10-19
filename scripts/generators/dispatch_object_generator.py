@@ -103,7 +103,7 @@ class APISpecific:
                     },
                     {
                         'include': 'sync/sync_validation.h',
-                        'device': 'SyncValidator',
+                        'device': 'syncval::SyncValidator',
                         'instance': 'syncval::Instance',
                         'type': 'LayerObjectTypeSyncValidation',
                         'enabled': 'settings.enabled[sync_validation]'

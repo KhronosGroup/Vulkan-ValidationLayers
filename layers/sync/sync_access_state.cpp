@@ -21,6 +21,8 @@
 
 static bool IsRead(SyncAccessIndex access) { return syncAccessReadMask[access]; }
 
+namespace syncval {
+
 static const std::array<OrderingBarrier, static_cast<size_t>(SyncOrdering::kNumOrderings)> kOrderingRules = {
     {{VK_PIPELINE_STAGE_2_NONE, SyncAccessFlags()},
      {kColorAttachmentExecScope, kColorAttachmentAccessScope},
@@ -1009,7 +1011,7 @@ const WriteState &ResourceAccessState::LastWrite() const {
     return *last_write;
 }
 
-void ResourceAccessState::UpdateStats(syncval_stats::AccessContextStats &stats) const {
+void ResourceAccessState::UpdateStats(AccessContextStats &stats) const {
 #if VVL_ENABLE_SYNCVAL_STATS != 0
     stats.read_states += last_read_count;
     stats.write_states += last_write.has_value();
@@ -1338,3 +1340,5 @@ SyncHazardInfo GetSyncHazardInfo(SyncHazard hazard) {
             return SyncHazardInfo{};
     }
 }
+
+}  // namespace syncval

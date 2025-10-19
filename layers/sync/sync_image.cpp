@@ -17,6 +17,8 @@
 #include "sync_image.h"
 #include "state_tracker/state_tracker.h"
 
+namespace syncval {
+
 syncval_state::ImageSubState::ImageSubState(vvl::Image &image) : vvl::ImageSubState(image), fragment_encoder(image) {}
 
 bool syncval_state::ImageSubState::IsSimplyBound() const {
@@ -98,3 +100,5 @@ ImageRangeGen syncval_state::MakeImageRangeGen(const vvl::ImageView &view, const
     const auto &sub_state = SubState(*view.image_state);
     return sub_state.MakeImageRangeGen(subresource_range, offset, extent, view.is_depth_sliced);
 }
+
+}  // namespace syncval

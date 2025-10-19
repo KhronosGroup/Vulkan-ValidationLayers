@@ -20,6 +20,8 @@
 #include "state_tracker/image_state.h"
 #include "state_tracker/wsi_state.h"
 
+namespace syncval {
+
 namespace syncval_state {
 
 class ImageSubState : public vvl::ImageSubState {
@@ -77,3 +79,5 @@ static inline const SwapchainSubState &SubState(const vvl::Swapchain &sc) {
 }
 
 }  // namespace syncval_state
+
+}  // namespace syncval

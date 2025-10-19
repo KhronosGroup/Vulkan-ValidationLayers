@@ -32,6 +32,8 @@ class VideoPictureResource;
 class VideoSession;
 }  // namespace vvl
 
+namespace syncval {
+
 bool SimpleBinding(const vvl::Bindable &bindable);
 VkDeviceSize ResourceBaseAddress(const vvl::Buffer &buffer);
 
@@ -754,3 +756,5 @@ void AccessContext::ResolvePreviousAccessStack(const ResourceAccessRange &range,
     ResourceAccessStateFunction stacked_barrier(std::ref(previous_barrier));
     ResolvePreviousAccess(range, descent_map, infill, &stacked_barrier);
 }
+
+}  // namespace syncval

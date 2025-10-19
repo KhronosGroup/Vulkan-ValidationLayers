@@ -22,13 +22,7 @@
 #include <vulkan/vulkan.h>
 #include <string>
 
-class CommandBufferAccessContext;
-class CommandExecutionContext;
-class HazardResult;
-class QueueBatchContext;
-class SyncValidator;
 struct Location;
-struct SyncImageMemoryBarrier;
 
 namespace vvl {
 class DescriptorSet;
@@ -36,6 +30,13 @@ class Pipeline;
 }  // namespace vvl
 
 namespace syncval {
+
+class CommandBufferAccessContext;
+class CommandExecutionContext;
+class HazardResult;
+class QueueBatchContext;
+class SyncValidator;
+struct SyncImageMemoryBarrier;
 
 class ErrorMessages {
   public:

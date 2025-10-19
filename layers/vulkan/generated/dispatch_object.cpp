@@ -113,7 +113,7 @@ void Device::InitValidationObjects() {
             this, static_cast<gpuav::Instance*>(dispatch_instance->GetValidationObject(LayerObjectTypeGpuAssisted))));
     }
     if (settings.enabled[sync_validation]) {
-        object_dispatch.emplace_back(new SyncValidator(
+        object_dispatch.emplace_back(new syncval::SyncValidator(
             this, static_cast<syncval::Instance*>(dispatch_instance->GetValidationObject(LayerObjectTypeSyncValidation))));
     }
 }

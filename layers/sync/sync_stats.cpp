@@ -37,7 +37,7 @@ inline T atomic_fetch_max(std::atomic<T> &current_max, const T &value) noexcept 
 }
 }  // namespace vvl
 
-namespace syncval_stats {
+namespace syncval {
 
 // NOTE: fetch_add/fetch_sub return value before increment/decrement.
 // Our Add/Sub functions return new counter values, so they need to
@@ -247,5 +247,5 @@ std::string Stats::CreateReport() {
     return ss.str();
 }
 
-}  // namespace syncval_stats
+}  // namespace syncval
 #endif  // VVL_ENABLE_SYNCVAL_STATS != 0

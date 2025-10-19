@@ -20,6 +20,8 @@
 #include "sync/sync_image.h"
 #include "sync/sync_reporting.h"
 
+namespace syncval {
+
 AcquiredImage::AcquiredImage(const PresentedImage& presented, ResourceUsageTag acq_tag)
     : image(presented.image), generator(presented.range_gen), present_tag(presented.tag), acquire_tag(acq_tag) {}
 
@@ -963,3 +965,5 @@ void PresentedImage::UpdateMemoryAccess(SyncAccessIndex usage, ResourceUsageTag 
     // Intentional copy. The range_gen argument is not copied by the Update... call below
     access_context.UpdateAccessState(range_gen, usage, SyncOrdering::kNonAttachment, ResourceUsageTagEx{tag}, flags);
 }
+
+}  // namespace syncval

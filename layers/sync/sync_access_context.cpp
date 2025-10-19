@@ -22,6 +22,8 @@
 #include "sync/sync_access_context.h"
 #include "sync/sync_image.h"
 
+namespace syncval {
+
 bool SimpleBinding(const vvl::Bindable &bindable) { return !bindable.sparse && bindable.Binding(); }
 VkDeviceSize ResourceBaseAddress(const vvl::Buffer &buffer) { return buffer.GetFakeBaseAddress(); }
 
@@ -441,9 +443,7 @@ HazardResult AccessContext::DetectHazard(const vvl::Image &image, const VkImageS
 class BarrierHazardDetector {
   public:
     BarrierHazardDetector(SyncAccessIndex access_index, VkPipelineStageFlags2 src_exec_scope, SyncAccessFlags src_access_scope)
-        : access_info_(GetAccessInfo(access_index)),
-          src_exec_scope_(src_exec_scope),
-          src_access_scope_(src_access_scope) {}
+        : access_info_(GetAccessInfo(access_index)), src_exec_scope_(src_exec_scope), src_access_scope_(src_access_scope) {}
 
     HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const {
         return pos->second.DetectBarrierHazard(access_info_, kQueueIdInvalid, src_exec_scope_, src_access_scope_);
@@ -757,3 +757,5 @@ AttachmentViewGen::Gen AttachmentViewGen::GetDepthStencilRenderAreaGenType(bool 
     assert(depth_op || stencil_op);
     return kRenderArea;
 }
+
+}  // namespace syncval

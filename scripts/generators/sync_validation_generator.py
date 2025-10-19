@@ -184,6 +184,7 @@ static const VkAccessFlagBits2 VK_ACCESS_2_PRESENT_PRESENTED_BIT_SYNCVAL = 0x{(s
 
         out.append('\n')
 
+        out.append('using syncval::SyncAccessFlags;\n');
         syncStageAccessFlagsSize = 192
         out.append('// Unique bit for each stage/access combination\n')
         for access in [x for x in self.stageAccessCombo if x['access_bit'] is not None]:

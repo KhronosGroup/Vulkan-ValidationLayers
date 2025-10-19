@@ -21,15 +21,14 @@
 #include "containers/span.h"
 #include <cstring>  // memcpy
 
+namespace syncval {
+
 class ResourceAccessState;
 struct WriteState;
 struct ReadState;
 struct ResourceFirstAccess;
 struct SemaphoreScope;
-
-namespace syncval_stats {
 struct AccessContextStats;
-}  // namespace syncval_stats
 
 // NOTE: the attachement read flag is put *only* in the access scope and not in the exect scope, since the ordering
 //       rules apply only to this specific access for this stage, and not the stage as a whole. The ordering detection
@@ -169,13 +168,6 @@ struct OrderingBarrier {
     bool operator==(const OrderingBarrier &rhs) const;
     size_t Hash() const;
 };
-
-namespace std {
-template <>
-struct hash<OrderingBarrier> {
-    size_t operator()(const OrderingBarrier &ordering_barrier) const { return ordering_barrier.Hash(); }
-};
-}  // namespace std
 
 const OrderingBarrier &GetOrderingRules(SyncOrdering ordering_enum);
 
@@ -436,7 +428,7 @@ class ResourceAccessState {
     void Normalize();
     void GatherReferencedTags(ResourceUsageTagSet &used) const;
 
-    void UpdateStats(syncval_stats::AccessContextStats &stats) const;
+    void UpdateStats(AccessContextStats &stats) const;
 
   private:
     void CopySimpleMembers(const ResourceAccessState &other);
@@ -563,3 +555,12 @@ void ApplyBarriers(ResourceAccessState &access_state, const std::vector<SyncBarr
 
 // Global registry of layout transition ordering barriers
 ThreadSafeLookupTable<OrderingBarrier> &GetLayoutOrderingBarrierLookup();
+
+}  // namespace syncval
+
+namespace std {
+template <>
+struct hash<syncval::OrderingBarrier> {
+    size_t operator()(const syncval::OrderingBarrier &ordering_barrier) const { return ordering_barrier.Hash(); }
+};
+}  // namespace std

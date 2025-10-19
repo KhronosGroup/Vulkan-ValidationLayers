@@ -110,6 +110,8 @@ static SyncAccessFlags AccessScope(const SyncAccessFlags &stage_scope, VkAccessF
     return access_scope;
 }
 
+namespace syncval {
+
 SyncExecScope SyncExecScope::MakeSrc(VkQueueFlags queue_flags, VkPipelineStageFlags2 mask_param,
                                      VkPipelineStageFlags2 disabled_feature_mask) {
     const VkPipelineStageFlags2 expanded_mask = sync_utils::ExpandPipelineStages(mask_param, queue_flags, disabled_feature_mask);
@@ -215,3 +217,5 @@ size_t SyncBarrier::Hash() const {
     dst_access_scope.HashCombine(hc);
     return hc.Value();
 }
+
+}  // namespace syncval

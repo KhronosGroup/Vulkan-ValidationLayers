@@ -20,6 +20,13 @@
 #include "state_tracker/queue_state.h"
 #include "containers/small_container.h"
 
+namespace vvl {
+class CommandBuffer;
+class Semaphore;
+}  // namespace vvl
+
+namespace syncval {
+
 struct PresentedImage;
 class QueueBatchContext;
 struct QueueSubmitCmdState;
@@ -28,11 +35,6 @@ class SyncValidator;
 
 using BatchContextPtr = std::shared_ptr<QueueBatchContext>;
 using BatchContextConstPtr = std::shared_ptr<const QueueBatchContext>;
-
-namespace vvl {
-class CommandBuffer;
-class Semaphore;
-}  // namespace vvl
 
 using CommandBufferConstPtr = std::shared_ptr<const vvl::CommandBuffer>;
 
@@ -441,3 +443,5 @@ struct QueueSubmitCmdState {
     SignalsUpdate signals_update;
     QueueSubmitCmdState(const SyncValidator &sync_validator) : signals_update(sync_validator) {}
 };
+
+}  // namespace syncval

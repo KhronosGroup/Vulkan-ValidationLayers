@@ -31,6 +31,8 @@
 #include "vk_layer_config.h"
 #include "containers/tls_guard.h"
 
+namespace syncval {
+
 static bool GetShowStatsEnvVar() {
     // Set environment variable as non zero number to enable stats reporting
     const auto show_stats_str = GetEnvironment("VK_SYNCVAL_SHOW_STATS");
@@ -3505,3 +3507,5 @@ void SyncValidator::PostCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer comma
         RecordIndirectBuffer(cb_context, tag, sizeof(VkTraceRaysIndirectCommand2KHR), indirect_buffer->VkHandle(), 0, 1, 0);
     }
 }
+
+}  // namespace syncval

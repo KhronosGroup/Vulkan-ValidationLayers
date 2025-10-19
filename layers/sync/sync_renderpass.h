@@ -28,6 +28,9 @@ struct LastBound;
 namespace vvl {
 class CommandBuffer;
 }
+
+namespace syncval {
+
 namespace syncval_state {
 enum class AttachmentType { kColor, kDepth, kStencil };
 
@@ -136,3 +139,5 @@ class RenderPassAccessContext {
     std::unique_ptr<AccessContext[]> subpass_contexts_;
     AttachmentViewGenVector attachment_views_;
 };
+
+}  // namespace syncval

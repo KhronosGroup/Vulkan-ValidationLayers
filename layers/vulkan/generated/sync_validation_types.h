@@ -188,6 +188,7 @@ enum SyncAccessIndex {
     SYNC_QUEUE_FAMILY_OWNERSHIP_TRANSFER = 145,
 };
 
+using syncval::SyncAccessFlags;
 // Unique bit for each stage/access combination
 static const SyncAccessFlags SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ_BIT = (SyncAccessFlags(1) << SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ);
 static const SyncAccessFlags SYNC_DRAW_INDIRECT_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT = (SyncAccessFlags(1) << SYNC_DRAW_INDIRECT_TRANSFORM_FEEDBACK_COUNTER_READ_EXT);

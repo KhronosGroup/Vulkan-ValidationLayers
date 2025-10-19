@@ -20,6 +20,8 @@
 #include "error_message/error_strings.h"
 #include "utils/math_utils.h"
 
+namespace syncval {
+
 constexpr VkAccessFlags2 kAllAccesses = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
 
 static const char *string_SyncHazard(SyncHazard hazard) {
@@ -651,3 +653,5 @@ ResourceUsageInfo QueueBatchContext::GetResourceUsageInfo(ResourceUsageTagEx tag
     }
     return info;
 }
+
+}  // namespace syncval

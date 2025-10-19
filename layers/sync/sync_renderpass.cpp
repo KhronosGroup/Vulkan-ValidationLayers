@@ -23,6 +23,8 @@
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/pipeline_state.h"
 
+namespace syncval {
+
 // Action for validating resolve operations
 class ValidateResolveAction {
   public:
@@ -1055,3 +1057,5 @@ bool syncval_state::DynamicRenderingInfo::Attachment::IsWriteable(const LastBoun
     }
     return writeable;
 }
+
+}  // namespace syncval
