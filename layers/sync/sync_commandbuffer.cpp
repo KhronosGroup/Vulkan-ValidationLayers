@@ -282,10 +282,9 @@ void CommandBufferAccessContext::Reset() {
     dynamic_rendering_info_.reset();
 }
 
-bool CommandBufferAccessContext::ValidateBeginRendering(const ErrorObject &error_obj,
-                                                        syncval_state::BeginRenderingCmdState &cmd_state) const {
+bool CommandBufferAccessContext::ValidateBeginRendering(const ErrorObject &error_obj, BeginRenderingCmdState &cmd_state) const {
     bool skip = false;
-    const syncval_state::DynamicRenderingInfo &info = cmd_state.GetRenderingInfo();
+    const DynamicRenderingInfo &info = cmd_state.GetRenderingInfo();
 
     // Load operations do not happen when resuming
     if (info.info.flags & VK_RENDERING_RESUMING_BIT) {
@@ -324,9 +323,9 @@ bool CommandBufferAccessContext::ValidateBeginRendering(const ErrorObject &error
     return skip;
 }
 
-void CommandBufferAccessContext::RecordBeginRendering(syncval_state::BeginRenderingCmdState &cmd_state, const Location &loc) {
-    using Attachment = syncval_state::DynamicRenderingInfo::Attachment;
-    const syncval_state::DynamicRenderingInfo &info = cmd_state.GetRenderingInfo();
+void CommandBufferAccessContext::RecordBeginRendering(BeginRenderingCmdState &cmd_state, const Location &loc) {
+    using Attachment = DynamicRenderingInfo::Attachment;
+    const DynamicRenderingInfo &info = cmd_state.GetRenderingInfo();
     const auto tag = NextCommandTag(loc.function);
 
     // Only load if not resuming
@@ -364,7 +363,7 @@ bool CommandBufferAccessContext::ValidateEndRendering(const ErrorObject &error_o
 
         // The logic about whether to resolve is embedded in the Attachment constructor
         if (attachment.resolve_gen) {
-            const bool is_color = attachment.type == syncval_state::AttachmentType::kColor;
+            const bool is_color = attachment.type == AttachmentType::kColor;
             const SyncOrdering kResolveOrder = is_color ? kColorResolveOrder : kDepthStencilResolveOrder;
 
             HazardResult hazard = current_context_->DetectHazard(attachment.view_gen, kResolveRead, kResolveOrder);
@@ -430,13 +429,13 @@ void CommandBufferAccessContext::RecordEndRendering(const RecordObject &record_o
     if (dynamic_rendering_info_ && (0 == (dynamic_rendering_info_->info.flags & VK_RENDERING_SUSPENDING_BIT))) {
         auto store_tag = NextCommandTag(record_obj.location.function, ResourceUsageRecord::SubcommandType::kStoreOp);
 
-        const syncval_state::DynamicRenderingInfo &info = *dynamic_rendering_info_;
+        const DynamicRenderingInfo &info = *dynamic_rendering_info_;
         const uint32_t attachment_count = static_cast<uint32_t>(info.attachments.size());
         AccessContext *access_context = GetCurrentAccessContext();
         for (uint32_t i = 0; i < attachment_count; i++) {
             const auto &attachment = info.attachments[i];
             if (attachment.resolve_gen) {
-                const bool is_color = attachment.type == syncval_state::AttachmentType::kColor;
+                const bool is_color = attachment.type == AttachmentType::kColor;
                 const SyncOrdering kResolveOrder = is_color ? kColorResolveOrder : kDepthStencilResolveOrder;
                 access_context->UpdateAccessState(attachment.view_gen, kResolveRead, kResolveOrder, ResourceUsageTagEx{store_tag});
                 access_context->UpdateAccessState(*attachment.resolve_gen, kResolveWrite, kResolveOrder,
@@ -887,7 +886,7 @@ bool CommandBufferAccessContext::ValidateDrawDynamicRenderingAttachment(const Lo
     const auto &list = pipe->fragmentShader_writable_output_location_list;
     const auto &access_context = *GetCurrentAccessContext();
 
-    const syncval_state::DynamicRenderingInfo &info = *dynamic_rendering_info_;
+    const DynamicRenderingInfo &info = *dynamic_rendering_info_;
     for (const auto output_location : list) {
         if (output_location >= info.info.colorAttachmentCount) continue;
         const auto &attachment = info.attachments[output_location];
@@ -949,7 +948,7 @@ void CommandBufferAccessContext::RecordDrawDynamicRenderingAttachment(ResourceUs
     const auto &list = pipe->fragmentShader_writable_output_location_list;
     auto &access_context = *GetCurrentAccessContext();
 
-    const syncval_state::DynamicRenderingInfo &info = *dynamic_rendering_info_;
+    const DynamicRenderingInfo &info = *dynamic_rendering_info_;
     for (const auto output_location : list) {
         if (output_location >= info.info.colorAttachmentCount) continue;
         const auto &attachment = info.attachments[output_location];
@@ -1374,8 +1373,6 @@ void CommandBufferAccessContext::UpdateStats(AccessStats &access_stats) const {
     }
 #endif
 }
-
-namespace syncval_state {
 
 CommandBufferSubState::CommandBufferSubState(SyncValidator &dev, vvl::CommandBuffer &cb)
     : vvl::CommandBufferSubState(cb), access_context(dev, &cb) {
@@ -1857,9 +1854,7 @@ void CommandBufferSubState::RecordExecuteCommand(vvl::CommandBuffer &secondary_c
         ResourceUsageTag cb_tag = access_context.NextSubcommandTag(loc.function, subcommand);
         access_context.AddSubcommandHandleIndexed(cb_tag, secondary_command_buffer.Handle(), cmd_index);
     }
-    access_context.RecordExecutedCommandBuffer(*syncval_state::AccessContext(secondary_command_buffer));
+    access_context.RecordExecutedCommandBuffer(*GetAccessContext(secondary_command_buffer));
 }
-
-}  // namespace syncval_state
 
 }  // namespace syncval

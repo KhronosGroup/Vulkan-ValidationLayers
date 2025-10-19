@@ -161,7 +161,7 @@ std::optional<SignalInfo> SignalsUpdate::OnTimelineWait(VkSemaphore semaphore, u
     return resolving_signal;  // empty result if it is a wait-before-signal
 }
 
-void syncval_state::SwapchainSubState::RecordPresentedImage(PresentedImage&& presented_image) {
+void SwapchainSubState::RecordPresentedImage(PresentedImage&& presented_image) {
     // All presented images are stored within the swapchain until the are reaquired.
     const uint32_t image_index = presented_image.image_index;
     if (image_index >= presented.size()) presented.resize(image_index + 1);
@@ -171,7 +171,7 @@ void syncval_state::SwapchainSubState::RecordPresentedImage(PresentedImage&& pre
 }
 
 // We move from the presented images array 1) so we don't copy shared_ptr, and 2) to mark it acquired
-PresentedImage syncval_state::SwapchainSubState::MovePresentedImage(uint32_t image_index) {
+PresentedImage SwapchainSubState::MovePresentedImage(uint32_t image_index) {
     if (presented.size() <= image_index) presented.resize(image_index + 1);
     PresentedImage ret_val = std::move(presented[image_index]);
     if (ret_val.Invalid()) {
@@ -182,7 +182,7 @@ PresentedImage syncval_state::SwapchainSubState::MovePresentedImage(uint32_t ima
     return ret_val;
 }
 
-void syncval_state::SwapchainSubState::GetPresentBatches(std::vector<QueueBatchContext::Ptr>& batches) const {
+void SwapchainSubState::GetPresentBatches(std::vector<QueueBatchContext::Ptr>& batches) const {
     for (const auto& presented_image : presented) {
         if (presented_image.batch) {
             batches.push_back(presented_image.batch);
@@ -683,12 +683,12 @@ bool QueueBatchContext::ValidateSubmit(const std::vector<CommandBufferConstPtr>&
     uint32_t tag_count = 0;
     for (const auto& cb : command_buffers) {
         if (!cb) continue;
-        tag_count += static_cast<uint32_t>(syncval_state::SubState(*cb).access_context.GetTagCount());
+        tag_count += static_cast<uint32_t>(SubState(*cb).access_context.GetTagCount());
     }
     batch.base_tag = SetupBatchTags(tag_count);
 
     for (size_t index = 0; index < command_buffers.size(); index++) {
-        const auto& cb = syncval_state::SubState(*command_buffers[index]);
+        const auto& cb = SubState(*command_buffers[index]);
         // Validate and resolve command buffers that has tagged commands
         const CommandBufferAccessContext& access_context = cb.access_context;
         if (access_context.GetTagCount() > 0) {
@@ -940,7 +940,7 @@ void PresentedImage::ExportToSwapchain(SyncValidator&) {  // Include this argume
     // If the swapchain is dead just ignore the present
     auto swap_lock = swapchain_state.lock();
     if (vvl::StateObject::Invalid(swap_lock)) return;
-    auto& sub_state = syncval_state::SubState(*swap_lock);
+    auto& sub_state = SubState(*swap_lock);
     sub_state.RecordPresentedImage(std::move(*this));
 }
 
@@ -955,7 +955,7 @@ void PresentedImage::SetImage(uint32_t at_index) {
         range_gen = ImageRangeGen();
     } else {
         // For valid images create the type/range_gen to used to scope the semaphore operations
-        const auto& sub_state = syncval_state::SubState(*image);
+        const auto& sub_state = SubState(*image);
         range_gen = sub_state.MakeImageRangeGen(image->full_range, false);
     }
 }

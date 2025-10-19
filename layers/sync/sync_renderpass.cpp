@@ -97,11 +97,11 @@ std::unique_ptr<AccessContext[]> InitSubpassContexts(VkQueueFlags queue_flags, c
     return subpass_contexts;
 }
 
-static SyncAccessIndex GetLoadOpUsageIndex(VkAttachmentLoadOp load_op, syncval_state::AttachmentType type) {
+static SyncAccessIndex GetLoadOpUsageIndex(VkAttachmentLoadOp load_op, AttachmentType type) {
     SyncAccessIndex access_index;
     if (load_op == VK_ATTACHMENT_LOAD_OP_NONE) {
         access_index = SYNC_ACCESS_INDEX_NONE;
-    } else if (type == syncval_state::AttachmentType::kColor) {
+    } else if (type == AttachmentType::kColor) {
         access_index = (load_op == VK_ATTACHMENT_LOAD_OP_LOAD) ? SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ
                                                                : SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE;
     } else {  // depth and stencil ops are the same
@@ -111,11 +111,11 @@ static SyncAccessIndex GetLoadOpUsageIndex(VkAttachmentLoadOp load_op, syncval_s
     return access_index;
 }
 
-static SyncAccessIndex GetStoreOpUsageIndex(VkAttachmentStoreOp store_op, syncval_state::AttachmentType type) {
+static SyncAccessIndex GetStoreOpUsageIndex(VkAttachmentStoreOp store_op, AttachmentType type) {
     SyncAccessIndex access_index;
     if (store_op == VK_ATTACHMENT_STORE_OP_NONE) {
         access_index = SYNC_ACCESS_INDEX_NONE;
-    } else if (type == syncval_state::AttachmentType::kColor) {
+    } else if (type == AttachmentType::kColor) {
         access_index = SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE;
     } else {  // depth and stencil ops are the same
         access_index = SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE;
@@ -124,10 +124,10 @@ static SyncAccessIndex GetStoreOpUsageIndex(VkAttachmentStoreOp store_op, syncva
 }
 
 static SyncAccessIndex ColorLoadUsage(VkAttachmentLoadOp load_op) {
-    return GetLoadOpUsageIndex(load_op, syncval_state::AttachmentType::kColor);
+    return GetLoadOpUsageIndex(load_op, AttachmentType::kColor);
 }
 static SyncAccessIndex DepthStencilLoadUsage(VkAttachmentLoadOp load_op) {
-    return GetLoadOpUsageIndex(load_op, syncval_state::AttachmentType::kDepth);
+    return GetLoadOpUsageIndex(load_op, AttachmentType::kDepth);
 }
 
 // Caller must manage returned pointer
@@ -945,15 +945,15 @@ vvl::span<AccessContext> RenderPassAccessContext::GetSubpassContexts() {
     return vvl::make_span<AccessContext>(subpass_contexts_.get(), rp_state_->create_info.subpassCount);
 }
 
-void syncval_state::BeginRenderingCmdState::AddRenderingInfo(const SyncValidator &state, const VkRenderingInfo &rendering_info) {
+void BeginRenderingCmdState::AddRenderingInfo(const SyncValidator &state, const VkRenderingInfo &rendering_info) {
     info = std::make_unique<DynamicRenderingInfo>(state, rendering_info);
 }
 
-const syncval_state::DynamicRenderingInfo &syncval_state::BeginRenderingCmdState::GetRenderingInfo() const {
+const DynamicRenderingInfo &BeginRenderingCmdState::GetRenderingInfo() const {
     assert(info);
     return *info;
 }
-syncval_state::DynamicRenderingInfo::DynamicRenderingInfo(const SyncValidator &state, const VkRenderingInfo &rendering_info)
+DynamicRenderingInfo::DynamicRenderingInfo(const SyncValidator &state, const VkRenderingInfo &rendering_info)
     : info(&rendering_info) {
     uint32_t attachment_count = info.colorAttachmentCount + (info.pDepthAttachment ? 1 : 0) + (info.pStencilAttachment ? 1 : 0);
 
@@ -962,19 +962,19 @@ syncval_state::DynamicRenderingInfo::DynamicRenderingInfo(const SyncValidator &s
 
     attachments.reserve(attachment_count);
     for (uint32_t i = 0; i < info.colorAttachmentCount; i++) {
-        attachments.emplace_back(state, info.pColorAttachments[i], syncval_state::AttachmentType::kColor, offset, extent);
+        attachments.emplace_back(state, info.pColorAttachments[i], AttachmentType::kColor, offset, extent);
     }
 
     if (info.pDepthAttachment) {
-        attachments.emplace_back(state, *info.pDepthAttachment, syncval_state::AttachmentType::kDepth, offset, extent);
+        attachments.emplace_back(state, *info.pDepthAttachment, AttachmentType::kDepth, offset, extent);
     }
 
     if (info.pStencilAttachment) {
-        attachments.emplace_back(state, *info.pStencilAttachment, syncval_state::AttachmentType::kStencil, offset, extent);
+        attachments.emplace_back(state, *info.pStencilAttachment, AttachmentType::kStencil, offset, extent);
     }
 }
 
-const vvl::ImageView *syncval_state::DynamicRenderingInfo::GetClearAttachmentView(const VkClearAttachment &clear_attachment) const {
+const vvl::ImageView *DynamicRenderingInfo::GetClearAttachmentView(const VkClearAttachment &clear_attachment) const {
     const vvl::ImageView *attachment_view = nullptr;
     if (clear_attachment.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
         if (clear_attachment.colorAttachment < info.colorAttachmentCount) {
@@ -989,50 +989,47 @@ const vvl::ImageView *syncval_state::DynamicRenderingInfo::GetClearAttachmentVie
     return attachment_view;
 }
 
-syncval_state::DynamicRenderingInfo::Attachment::Attachment(const SyncValidator &state,
-                                                            const vku::safe_VkRenderingAttachmentInfo &attachment_info,
-                                                            AttachmentType type_, const VkOffset3D &offset,
-                                                            const VkExtent3D &extent)
+DynamicRenderingInfo::Attachment::Attachment(const SyncValidator &state, const vku::safe_VkRenderingAttachmentInfo &attachment_info,
+                                             AttachmentType type_, const VkOffset3D &offset, const VkExtent3D &extent)
     : info(attachment_info), view(state.Get<vvl::ImageView>(attachment_info.imageView)), view_gen(), type(type_) {
     if (view) {
         if (type == AttachmentType::kColor) {
-            view_gen = syncval_state::MakeImageRangeGen(*view, offset, extent);
+            view_gen = MakeImageRangeGen(*view, offset, extent);
         } else if (type == AttachmentType::kDepth) {
-            view_gen = syncval_state::MakeImageRangeGen(*view, offset, extent, VK_IMAGE_ASPECT_DEPTH_BIT);
+            view_gen = MakeImageRangeGen(*view, offset, extent, VK_IMAGE_ASPECT_DEPTH_BIT);
         } else {
-            view_gen = syncval_state::MakeImageRangeGen(*view, offset, extent, VK_IMAGE_ASPECT_STENCIL_BIT);
+            view_gen = MakeImageRangeGen(*view, offset, extent, VK_IMAGE_ASPECT_STENCIL_BIT);
         }
 
         if (info.resolveImageView != VK_NULL_HANDLE && (info.resolveMode != VK_RESOLVE_MODE_NONE)) {
             resolve_view = state.Get<vvl::ImageView>(info.resolveImageView);
             if (resolve_view) {
                 if (type == AttachmentType::kColor) {
-                    resolve_gen.emplace(syncval_state::MakeImageRangeGen(*resolve_view, offset, extent));
+                    resolve_gen.emplace(MakeImageRangeGen(*resolve_view, offset, extent));
                 } else if (type == AttachmentType::kDepth) {
                     // Only the depth aspect
-                    resolve_gen.emplace(syncval_state::MakeImageRangeGen(*resolve_view, offset, extent, VK_IMAGE_ASPECT_DEPTH_BIT));
+                    resolve_gen.emplace(MakeImageRangeGen(*resolve_view, offset, extent, VK_IMAGE_ASPECT_DEPTH_BIT));
                 } else {
-                    resolve_gen.emplace(
-                        syncval_state::MakeImageRangeGen(*resolve_view, offset, extent, VK_IMAGE_ASPECT_STENCIL_BIT));
+                    resolve_gen.emplace(MakeImageRangeGen(*resolve_view, offset, extent, VK_IMAGE_ASPECT_STENCIL_BIT));
                 }
             }
         }
     }
 }
 
-SyncAccessIndex syncval_state::DynamicRenderingInfo::Attachment::GetLoadUsage() const {
+SyncAccessIndex DynamicRenderingInfo::Attachment::GetLoadUsage() const {
     return GetLoadOpUsageIndex(info.loadOp, type);
 }
 
-SyncAccessIndex syncval_state::DynamicRenderingInfo::Attachment::GetStoreUsage() const {
+SyncAccessIndex DynamicRenderingInfo::Attachment::GetStoreUsage() const {
     return GetStoreOpUsageIndex(info.storeOp, type);
 }
 
-SyncOrdering syncval_state::DynamicRenderingInfo::Attachment::GetOrdering() const {
+SyncOrdering DynamicRenderingInfo::Attachment::GetOrdering() const {
     return (type == AttachmentType::kColor) ? SyncOrdering::kColorAttachment : SyncOrdering::kDepthStencilAttachment;
 }
 
-Location syncval_state::DynamicRenderingInfo::Attachment::GetLocation(const Location &loc, uint32_t attachment_index) const {
+Location DynamicRenderingInfo::Attachment::GetLocation(const Location &loc, uint32_t attachment_index) const {
     if (type == AttachmentType::kColor) {
         return loc.dot(vvl::Struct::VkRenderingAttachmentInfo, vvl::Field::pColorAttachments, attachment_index);
     } else if (type == AttachmentType::kDepth) {
@@ -1043,7 +1040,7 @@ Location syncval_state::DynamicRenderingInfo::Attachment::GetLocation(const Loca
     }
 }
 
-bool syncval_state::DynamicRenderingInfo::Attachment::IsWriteable(const LastBound &last_bound_state) const {
+bool DynamicRenderingInfo::Attachment::IsWriteable(const LastBound &last_bound_state) const {
     bool writeable = IsValid();
     if (writeable) {
         //  Depth and Stencil have additional criteria

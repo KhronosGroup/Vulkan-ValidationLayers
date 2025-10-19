@@ -22,8 +22,6 @@
 
 namespace syncval {
 
-namespace syncval_state {
-
 class ImageSubState : public vvl::ImageSubState {
   public:
     ImageSubState(vvl::Image &image);
@@ -77,7 +75,5 @@ static inline SwapchainSubState &SubState(vvl::Swapchain &sc) {
 static inline const SwapchainSubState &SubState(const vvl::Swapchain &sc) {
     return *static_cast<const SwapchainSubState *>(sc.SubState(LayerObjectTypeSyncValidation));
 }
-
-}  // namespace syncval_state
 
 }  // namespace syncval
