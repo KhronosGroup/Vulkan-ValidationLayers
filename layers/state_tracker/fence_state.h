@@ -21,6 +21,7 @@
 
 #include "state_tracker/state_object.h"
 #include "state_tracker/submission_reference.h"
+#include "containers/limits.h"
 #include "containers/span.h"
 #include <optional>
 #include <future>
@@ -29,6 +30,7 @@ class Logger;
 
 namespace vvl {
 class Semaphore;
+class Swapchain;
 class Queue;
 
 class Fence : public RefcountedStateObject {
@@ -68,6 +70,7 @@ class Fence : public RefcountedStateObject {
     std::optional<VkExternalFenceHandleTypeFlagBits> ImportedHandleType() const;
 
     // Called on AcquireNextImage fence
+    void SetAcquiredImage(const std::shared_ptr<vvl::Swapchain> &swapchain, uint32_t image_index);
     void SetPresentSubmissionRef(const SubmissionReference &present_submission_ref);
 
     // Called on VkSwapchainPresentFenceInfoKHR fence
@@ -109,6 +112,11 @@ class Fence : public RefcountedStateObject {
     std::optional<SubmissionReference> present_submission_ref_;
 
     small_vector<std::shared_ptr<vvl::Semaphore>, 1> present_wait_semaphores_;
+
+    // Reference to the swapchain image if the fence was used for an acquire operation.
+    // The fence wait operation uses this to mark the image as acquired and safe to use.
+    std::shared_ptr<vvl::Swapchain> acquired_image_swapchain_;
+    uint32_t acquired_image_index_ = vvl::kNoIndex32;
 };
 
 }  // namespace vvl

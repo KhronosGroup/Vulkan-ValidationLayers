@@ -746,18 +746,18 @@ bool CoreChecks::ValidateImageAcquireWait(const vvl::SwapchainImage &swapchain_i
 
     const auto &semaphore = swapchain_image.acquire_semaphore;
     const auto &fence = swapchain_image.acquire_fence;
+    const vvl::AcquireSyncStatus acquire_fence_status = swapchain_image.acquire_fence_status;
+
     // The specification requires that either a semaphore or fence is specified (or both).
     // If neither is specified the error is reported by the stateless validation.
     if (!semaphore && !fence) {
         return skip;
     }
 
+    // Skip validation if an external sync object is used, as there is no way to track external waits.
+    // NOTE: check only semaphores, for external fences we use AcquireSyncStatus::WasWaitedOn
     const bool is_external_semaphore = semaphore && semaphore->Scope() != vvl::Semaphore::kInternal;
-    const bool is_external_fence = fence && fence->Scope() != vvl::Fence::kInternal;
-    // Skip validation if external sync object is used.
-    // Validation error according to regular vulkan rules could be a false-positive,
-    // because synchronization could be established via external means.
-    if (is_external_semaphore || is_external_fence) {
+    if (is_external_semaphore) {
         return skip;
     }
 
@@ -770,10 +770,8 @@ bool CoreChecks::ValidateImageAcquireWait(const vvl::SwapchainImage &swapchain_i
         // - the acquire semaphore has been waited on previously, in which case CanBinaryBeWaited() reports false
         semaphore_was_waited = in_wait_list || !semaphore->CanBinaryBeWaited();
     }
-    bool fence_was_waited = false;
-    if (fence) {
-        fence_was_waited = fence->State() != vvl::Fence::kInflight;
-    }
+
+    const bool fence_was_waited = (acquire_fence_status == vvl::AcquireSyncStatus::WasWaitedOn);
 
     // Either semaphore or fence should be waited on (or both)
     if (!semaphore_was_waited && !fence_was_waited) {

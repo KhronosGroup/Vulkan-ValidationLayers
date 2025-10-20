@@ -56,6 +56,12 @@ struct hash<GpuQueue> {
 namespace vvl {
 class Swapchain;
 
+// Tracks the status of the fence or semaphore specified by acquire operation.
+// The reason we can't simply check the fence or semaphore's own status is that the sync
+// primitive can be reused, and it might report "not ready" due to other usage even if we
+// have already waited on it after acquire.
+enum class AcquireSyncStatus { NotSpecified, Signaled, WasWaitedOn };
+
 struct SwapchainImage {
     vvl::Image *image_state = nullptr;
 
@@ -63,6 +69,8 @@ struct SwapchainImage {
     bool acquired = false;
     std::shared_ptr<vvl::Semaphore> acquire_semaphore;
     std::shared_ptr<vvl::Fence> acquire_fence;
+    AcquireSyncStatus acquire_fence_status = AcquireSyncStatus::NotSpecified;
+    void ResetAcquireState();
 
     // Queue location (seq) for present operation that presented this image.
     // When this image is reacquired, the acquire fence can synchronize with this location.

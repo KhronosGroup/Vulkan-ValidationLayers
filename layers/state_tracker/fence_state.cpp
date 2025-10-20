@@ -19,6 +19,7 @@
 #include "state_tracker/fence_state.h"
 #include "state_tracker/queue_state.h"
 #include "state_tracker/state_tracker.h"
+#include "state_tracker/wsi_state.h"
 
 static VkExternalFenceHandleTypeFlags GetExportHandleTypes(const VkFenceCreateInfo *info) {
     auto export_info = vku::FindStructInPNextChain<VkExportFenceCreateInfo>(info->pNext);
@@ -81,6 +82,13 @@ void vvl::Fence::NotifyAndWait(const Location &loc) {
                 completed_.set_value();
                 queue_ = nullptr;
                 seq_ = 0;
+                // Update the swapchain image acquire state if the fence was used by the acquire operation
+                if (acquired_image_swapchain_) {
+                    assert(acquired_image_index_ != vvl::kNoIndex32);
+                    acquired_image_swapchain_->images[acquired_image_index_].acquire_fence_status = AcquireSyncStatus::WasWaitedOn;
+                    acquired_image_swapchain_.reset();
+                    acquired_image_index_ = vvl::kNoIndex32;
+                }
             }
             present_submission_ref = std::move(present_submission_ref_);
             present_submission_ref_.reset();
@@ -176,18 +184,23 @@ std::optional<VkExternalFenceHandleTypeFlagBits> vvl::Fence::ImportedHandleType(
     return imported_handle_type_;
 }
 
+void vvl::Fence::SetAcquiredImage(const std::shared_ptr<vvl::Swapchain> &swapchain, uint32_t image_index) {
+    auto guard = WriteLock();
+    acquired_image_swapchain_ = swapchain;
+    acquired_image_index_ = image_index;
+}
+
 void vvl::Fence::SetPresentSubmissionRef(const SubmissionReference &present_submission_ref) {
     auto guard = WriteLock();
-    // In an error-free scenario, "present_submission_ref_" member has no value (as optional).
-    // If the fence is reused without being waited on/reset (which causes a validation error),
-    // then we may find a stale ref value here. Simply overwrite it with a new ref.
+    // At this point, in an error-free scenario, "present_submission_ref_" member has no value
+    // (as an optional). If the fence is reused without being waited on (which causes a validation
+    // error), then we may find a stale ref value here. Simply overwrite it with a new ref.
     //
     // VVL INSIGHT: Interestingly, stale ref value can't happen in VVL tests because this function
     // (from the Record phase) is not called if validation fails. However, the Record phase is
     // always called for regular applications even in the case of validation errors.
     // This means we cannot assert that submission ref member is empty. Such an assert would be
-    // valid for VVL tests but not for regular apps. It's not a big deal, but this observation
-    // may be useful to get better understanding of VVL internals.
+    // valid for VVL tests but not for regular apps.
     //
     // assert(!present_submission_ref_.has_value()); - only valid for VVL tests
 
