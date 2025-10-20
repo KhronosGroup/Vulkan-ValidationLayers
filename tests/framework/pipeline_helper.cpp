@@ -71,6 +71,9 @@ CreatePipelineHelper::CreatePipelineHelper(VkLayerTest &test, void *pNext) : lay
         rs_state_ci_.pNext = &line_state_ci_;
     }
 
+    // Init VkPipelineColorBlendAttachmentState
+    cb_attachments_.colorWriteMask = 15;
+
     // InitBlendStateInfo
     cb_ci_ = vku::InitStructHelper();
     cb_ci_.logicOpEnable = VK_FALSE;
