@@ -1922,8 +1922,7 @@ TEST_F(NegativeWsi, SurfaceSupportByPhysicalDevice) {
 
 TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     TEST_DESCRIPTION("Test swapchain Maintenance1 extensions.");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-
+    AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
@@ -2236,11 +2235,10 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
 
 TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionCaps) {
     TEST_DESCRIPTION("Test swapchain and surface Maintenance1 extensions.");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-
     AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
     AddSurfaceExtension();
 
@@ -2322,7 +2320,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionCaps) {
 
     // SwapchainMaint1 enabled + deferred_memory_alloc but image not acquired:
     m_errorMonitor->SetDesiredError("VUID-VkBindImageMemorySwapchainInfoKHR-swapchain-07756");
-    vk::BindImageMemory2(device(), 1, &bind_info);
+    vk::BindImageMemory2KHR(device(), 1, &bind_info);
     m_errorMonitor->VerifyFound();
 
     vk::GetPhysicalDeviceSurfacePresentModesKHR(Gpu(), m_surface.Handle(), &count, nullptr);
@@ -2376,8 +2374,6 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionCaps) {
 // assert later in ReleaseSwapchainImagesEXT.
 TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionRelease) {
     TEST_DESCRIPTION("Test acquiring swapchain images with Maint1 features.");
-
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
