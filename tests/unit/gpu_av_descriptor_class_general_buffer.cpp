@@ -1992,8 +1992,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ArrayCopyTwoBindingsSlang) {
     m_errorMonitor->VerifyFound();
 }
 
-// https://github.com/KhronosGroup/glslang/issues/3892
-TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DISABLED_StructCopyGLSL) {
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, StructCopyGLSL) {
     const char *cs_source = R"glsl(
         #version 450
 
