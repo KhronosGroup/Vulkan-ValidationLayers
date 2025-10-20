@@ -1213,7 +1213,7 @@ void CommandBufferAccessContext::RecordExecutedCommandBuffer(const CommandBuffer
 }
 
 void CommandBufferAccessContext::ResolveExecutedCommandBuffer(const AccessContext &recorded_context, ResourceUsageTag offset) {
-    auto tag_offset = [offset](ResourceAccessState *access) { access->OffsetTag(offset); };
+    auto tag_offset = [offset](AccessState *access) { access->OffsetTag(offset); };
     GetCurrentAccessContext()->ResolveFromContext(tag_offset, recorded_context);
 }
 

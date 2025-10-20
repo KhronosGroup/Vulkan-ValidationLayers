@@ -23,7 +23,7 @@
 
 namespace syncval {
 
-class ResourceAccessState;
+class AccessState;
 struct WriteState;
 struct ReadState;
 struct ResourceFirstAccess;
@@ -99,21 +99,21 @@ SyncHazardInfo GetSyncHazardInfo(SyncHazard hazard);
 class HazardResult {
   public:
     struct HazardState {
-        std::unique_ptr<const ResourceAccessState> access_state;
+        std::unique_ptr<const AccessState> access_state;
         std::unique_ptr<const ResourceFirstAccess> recorded_access;
         SyncAccessIndex access_index = std::numeric_limits<SyncAccessIndex>::max();
         SyncAccessIndex prior_access_index;
         ResourceUsageTag tag = ResourceUsageTag();
         uint32_t handle_index = vvl::kNoIndex32;
         SyncHazard hazard = NONE;
-        HazardState(const ResourceAccessState *access_state, const SyncAccessInfo &usage_info, SyncHazard hazard,
+        HazardState(const AccessState *access_state, const SyncAccessInfo &usage_info, SyncHazard hazard,
                     SyncAccessIndex prior_access_index, ResourceUsageTagEx tag_ex);
     };
 
-    static HazardResult HazardVsPriorWrite(const ResourceAccessState *access_state, const SyncAccessInfo &usage_info,
-                                           SyncHazard hazard, const WriteState &prior_write);
-    static HazardResult HazardVsPriorRead(const ResourceAccessState *access_state, const SyncAccessInfo &usage_info,
-                                          SyncHazard hazard, const ReadState &prior_read);
+    static HazardResult HazardVsPriorWrite(const AccessState *access_state, const SyncAccessInfo &usage_info, SyncHazard hazard,
+                                           const WriteState &prior_write);
+    static HazardResult HazardVsPriorRead(const AccessState *access_state, const SyncAccessInfo &usage_info, SyncHazard hazard,
+                                          const ReadState &prior_read);
 
     void AddRecordedAccess(const ResourceFirstAccess &first_access);
 
@@ -265,12 +265,12 @@ enum class PendingBarrierType : uint8_t { ReadAccessBarrier, WriteAccessBarrier,
 struct PendingBarrierInfo {
     PendingBarrierType type;
     uint32_t index;  // indexes array determined by 'type'
-    ResourceAccessState *access_state;
+    AccessState *access_state;
 };
 
 struct PendingReadBarrier {
     VkPipelineStageFlags2 barriers;
-    uint32_t last_reads_index;  // indexes ResourceAccessState::last_reads
+    uint32_t last_reads_index;  // indexes AccessState::last_reads
 };
 
 struct PendingWriteBarrier {
@@ -298,38 +298,38 @@ struct PendingBarriers {
     std::vector<PendingLayoutTransition> layout_transitions;
 
     // Store result of barrier application as PendingBarriers state
-    void AddReadBarrier(ResourceAccessState *access_state, uint32_t last_reads_index, const SyncBarrier &barrier);
-    void AddWriteBarrier(ResourceAccessState *access_state, const SyncBarrier &barrier);
-    void AddLayoutTransition(ResourceAccessState *access_state, const OrderingBarrier &layout_transition_ordering_barrier,
+    void AddReadBarrier(AccessState *access_state, uint32_t last_reads_index, const SyncBarrier &barrier);
+    void AddWriteBarrier(AccessState *access_state, const SyncBarrier &barrier);
+    void AddLayoutTransition(AccessState *access_state, const OrderingBarrier &layout_transition_ordering_barrier,
                              uint32_t layout_transition_handle_index);
 
     // Update accesss state with collected barriers
     void Apply(const ResourceUsageTag exec_tag);
 };
 
-class ResourceAccessState {
+class AccessState {
   public:
-    ResourceAccessState() = default;
-    ~ResourceAccessState();
-    ResourceAccessState(const ResourceAccessState &other);
-    ResourceAccessState &operator=(const ResourceAccessState &other);
-    ResourceAccessState(ResourceAccessState &&other);
-    ResourceAccessState &operator=(ResourceAccessState &&other);
+    AccessState() = default;
+    ~AccessState();
+    AccessState(const AccessState &other);
+    AccessState &operator=(const AccessState &other);
+    AccessState(AccessState &&other);
+    AccessState &operator=(AccessState &&other);
 
     HazardResult DetectHazard(const SyncAccessInfo &usage_info) const;
     HazardResult DetectMarkerHazard() const;
 
     HazardResult DetectHazard(const SyncAccessInfo &usage_info, const OrderingBarrier &ordering, SyncFlags flags,
                               QueueId queue_id) const;
-    HazardResult DetectHazard(const ResourceAccessState &recorded_use, QueueId queue_id, const ResourceUsageRange &tag_range) const;
+    HazardResult DetectHazard(const AccessState &recorded_use, QueueId queue_id, const ResourceUsageRange &tag_range) const;
 
     HazardResult DetectAsyncHazard(const SyncAccessInfo &usage_info, ResourceUsageTag start_tag, QueueId queue_id) const;
-    HazardResult DetectAsyncHazard(const ResourceAccessState &recorded_use, const ResourceUsageRange &tag_range,
+    HazardResult DetectAsyncHazard(const AccessState &recorded_use, const ResourceUsageRange &tag_range,
                                    ResourceUsageTag start_tag, QueueId queue_id) const;
 
     HazardResult DetectBarrierHazard(const SyncAccessInfo &usage_info, QueueId queue_id, VkPipelineStageFlags2 source_exec_scope,
                                      const SyncAccessFlags &source_access_scope) const;
-    HazardResult DetectBarrierHazard(const SyncAccessInfo &usage_info, const ResourceAccessState &scope_state,
+    HazardResult DetectBarrierHazard(const SyncAccessInfo &usage_info, const AccessState &scope_state,
                                      VkPipelineStageFlags2 source_exec_scope, const SyncAccessFlags &source_access_scope,
                                      QueueId event_queue, ResourceUsageTag event_tag) const;
 
@@ -338,7 +338,7 @@ class ResourceAccessState {
     void ClearWrite();
     void ClearRead();
     void ClearFirstUse();
-    void Resolve(const ResourceAccessState &other);
+    void Resolve(const AccessState &other);
 
     // Apply a single barrier to the access state
     void ApplyBarrier(const BarrierScope &barrier_scope, const SyncBarrier &barrier, bool layout_transition = false,
@@ -363,14 +363,14 @@ class ResourceAccessState {
         QueueId queue;
         ResourceUsageTag tag;
         bool operator()(const ReadState &read_access) const;       // Read access predicate
-        bool operator()(const ResourceAccessState &access) const;  // Write access predicate
+        bool operator()(const AccessState &access) const;  // Write access predicate
     };
     friend WaitQueueTagPredicate;
 
     struct WaitTagPredicate {
         ResourceUsageTag tag;
         bool operator()(const ReadState &read_access) const;       // Read access predicate
-        bool operator()(const ResourceAccessState &access) const;  // Write access predicate
+        bool operator()(const AccessState &access) const;  // Write access predicate
     };
     friend WaitTagPredicate;
 
@@ -378,7 +378,7 @@ class ResourceAccessState {
         ResourceUsageTag present_tag;
         ResourceUsageTag acquire_tag;
         bool operator()(const ReadState &read_access) const;       // Read access predicate
-        bool operator()(const ResourceAccessState &access) const;  // Write access predicate
+        bool operator()(const AccessState &access) const;  // Write access predicate
     };
     friend WaitAcquirePredicate;
 
@@ -399,7 +399,7 @@ class ResourceAccessState {
     }
     ResourceUsageTag LastWriteTag() const { return last_write.has_value() ? last_write->tag : ResourceUsageTag(0); }
     const WriteState &LastWrite() const;
-    bool operator==(const ResourceAccessState &rhs) const {
+    bool operator==(const AccessState &rhs) const {
         const bool write_same = (read_execution_barriers == rhs.read_execution_barriers) &&
                                 (input_attachment_read == rhs.input_attachment_read) && (last_write == rhs.last_write);
 
@@ -418,7 +418,7 @@ class ResourceAccessState {
 
         return same;
     }
-    bool operator!=(const ResourceAccessState &rhs) const { return !(*this == rhs); }
+    bool operator!=(const AccessState &rhs) const { return !(*this == rhs); }
     VkPipelineStageFlags2 GetReadBarriers(SyncAccessIndex access_index) const;
     SyncAccessFlags GetWriteBarriers() const { return last_write.has_value() ? last_write->barriers : SyncAccessFlags(); }
     void SetQueueId(QueueId id);
@@ -431,7 +431,7 @@ class ResourceAccessState {
     void UpdateStats(AccessContextStats &stats) const;
 
   private:
-    void CopySimpleMembers(const ResourceAccessState &other);
+    void CopySimpleMembers(const AccessState &other);
     bool IsRAWHazard(const SyncAccessInfo &usage_info) const;
 
     bool IsReadHazard(VkPipelineStageFlags2 stage_mask, const ReadState &read_access) const {
@@ -446,7 +446,7 @@ class ResourceAccessState {
     vvl::span<ReadState> GetReads() { return vvl::make_span(last_reads, last_read_count); }
     vvl::span<ReadState> GetReads() const { return vvl::make_span(last_reads, last_read_count); }
     void AddRead(const ReadState &read);
-    void MergeReads(const ResourceAccessState &other);
+    void MergeReads(const AccessState &other);
     void ClearReadStates();
 
     // The most recent write.
@@ -480,12 +480,12 @@ class ResourceAccessState {
     // input_attachment_read and last_write
     bool input_attachment_read = false;
 };
-using ResourceAccessStateFunction = std::function<void(ResourceAccessState *)>;
-using ResourceAccessRangeMap = sparse_container::range_map<ResourceAddress, ResourceAccessState>;
+using ResourceAccessStateFunction = std::function<void(AccessState *)>;
+using ResourceAccessRangeMap = sparse_container::range_map<ResourceAddress, AccessState>;
 using ResourceRangeMergeIterator = sparse_container::parallel_iterator<ResourceAccessRangeMap, const ResourceAccessRangeMap>;
 
 template <typename Predicate>
-bool ResourceAccessState::ClearPredicatedAccesses(Predicate &predicate) {
+bool AccessState::ClearPredicatedAccesses(Predicate &predicate) {
     VkPipelineStageFlags2 sync_reads = VK_PIPELINE_STAGE_2_NONE;
 
     // Use the predicate to build a mask of the read stages we are synchronizing
@@ -550,7 +550,7 @@ bool ResourceAccessState::ClearPredicatedAccesses(Predicate &predicate) {
 // A helper function to apply multiple barriers.
 // NOTE: That's for use cases when BarrierScope does not use queue id or tag (record time, not-event barriers).
 // This can be extended if necessary to provide BarrierScope for each barrier.
-void ApplyBarriers(ResourceAccessState &access_state, const std::vector<SyncBarrier> &barriers, bool layout_transition = false,
+void ApplyBarriers(AccessState &access_state, const std::vector<SyncBarrier> &barriers, bool layout_transition = false,
                    ResourceUsageTag layout_transition_tag = kInvalidTag);
 
 // Global registry of layout transition ordering barriers

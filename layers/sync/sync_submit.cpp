@@ -193,7 +193,7 @@ void SwapchainSubState::GetPresentBatches(std::vector<QueueBatchContext::Ptr>& b
 class ApplySemaphoreBarrierAction {
   public:
     ApplySemaphoreBarrierAction(const SemaphoreScope& signal, const SemaphoreScope& wait) : signal_(signal), wait_(wait) {}
-    void operator()(ResourceAccessState* access) const { access->ApplySemaphore(signal_, wait_); }
+    void operator()(AccessState* access) const { access->ApplySemaphore(signal_, wait_); }
 
   private:
     const SemaphoreScope& signal_;
@@ -204,7 +204,7 @@ class ApplyAcquireNextSemaphoreAction {
   public:
     ApplyAcquireNextSemaphoreAction(const SyncExecScope& wait_scope, ResourceUsageTag acquire_tag)
         : barrier_(GetAcquireBarrier(wait_scope)), acq_tag_(acquire_tag) {}
-    void operator()(ResourceAccessState* access) const {
+    void operator()(AccessState* access) const {
         // Note that the present operations may or may not be present, given that the fence wait may have cleared them out.
         // Also, if a subsequent present has happened, we *don't* want to protect that...
         if (access->LastWriteTag() <= acq_tag_) {
@@ -313,7 +313,7 @@ VulkanTypedHandle QueueBatchContext::Handle() const { return queue_state_->Handl
 template <typename Predicate>
 void QueueBatchContext::ApplyPredicatedWait(Predicate& predicate, const LastSynchronizedPresent& last_synchronized_present) {
     access_context_.EraseIf([this, &last_synchronized_present, &predicate](ResourceAccessRangeMap::value_type& access) {
-        ResourceAccessState& access_state = access.second;
+        AccessState& access_state = access.second;
 
         // Tell EraseIf to remove present accesses that are already synchronized according to LastSynchronizedPresent
         if (access_state.HasWriteOp() && access_state.LastWrite().IsPresent()) {
@@ -344,10 +344,10 @@ void QueueBatchContext::ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag,
         // This isn't just avoid an unneeded test, but to allow *all* queues to to be waited in a single pass
         // (and it does avoid doing the same test for every access, as well as avoiding the need for the predicate
         // to grok Queue/Device/Wait differences.
-        ResourceAccessState::WaitTagPredicate predicate{tag};
+        AccessState::WaitTagPredicate predicate{tag};
         ApplyPredicatedWait(predicate, last_synchronized_present);
     } else {
-        ResourceAccessState::WaitQueueTagPredicate predicate{queue_id, tag};
+        AccessState::WaitQueueTagPredicate predicate{queue_id, tag};
         ApplyPredicatedWait(predicate, last_synchronized_present);
     }
 
@@ -358,7 +358,7 @@ void QueueBatchContext::ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag,
 }
 
 void QueueBatchContext::ApplyAcquireWait(const AcquiredImage& acquired) {
-    ResourceAccessState::WaitAcquirePredicate predicate{acquired.present_tag, acquired.acquire_tag};
+    AccessState::WaitAcquirePredicate predicate{acquired.present_tag, acquired.acquire_tag};
     ApplyPredicatedWait(predicate, {});
 }
 

@@ -111,7 +111,7 @@ void UpdateAccessMapStats(const ResourceAccessRangeMap& access_map, AccessContex
     stats.access_contexts += 1;
     stats.access_states += (uint32_t)access_map.size();
     for (const auto& entry : access_map) {
-        const ResourceAccessState& access_state = entry.second;
+        const AccessState& access_state = entry.second;
         access_state.UpdateStats(stats);
     }
 }
@@ -168,7 +168,7 @@ std::string Stats::CreateReport() {
         ss << std::setw(13) << std::string(context_type) + "(" + std::to_string(stats.access_contexts) + ")";
         ss << std::setw(11) << stats.access_states;
 
-        const uint64_t access_state_objects_size = sizeof(ResourceAccessState) * stats.access_states;
+        const uint64_t access_state_objects_size = sizeof(AccessState) * stats.access_states;
         const double size_mb = ((double)access_state_objects_size / 1024.0 / 1024.0);
         ss << std::fixed << std::setprecision(2) << std::setw(11) << size_mb;
         ss.unsetf(std::ios::floatfield);

@@ -115,7 +115,7 @@ struct ApplyMarkupFunctor {
         if (!layout_transition) {
             return pos_hint;
         }
-        ResourceAccessState default_state;
+        AccessState default_state;
         auto inserted = accesses->insert(pos_hint, std::make_pair(range, default_state));
         return inserted;
     }
@@ -148,7 +148,7 @@ struct CollectBarriersFunctor {
     }
 
     void operator()(const Iterator &pos) const {
-        ResourceAccessState &access_state = pos->second;
+        AccessState &access_state = pos->second;
         access_state.CollectPendingBarriers(barrier_scope, barrier, layout_transition, layout_transition_handle_index,
                                             pending_barriers);
     }
@@ -162,7 +162,7 @@ struct CollectBarriersFunctor {
 
 struct QueueTagOffsetBarrierAction {
     QueueTagOffsetBarrierAction(QueueId qid, ResourceUsageTag offset) : queue_id(qid), tag_offset(offset) {}
-    void operator()(ResourceAccessState *access) const {
+    void operator()(AccessState *access) const {
         access->OffsetTag(tag_offset);
         access->SetQueueId(queue_id);
     };
@@ -174,7 +174,7 @@ struct ApplyTrackbackStackAction {
     explicit ApplyTrackbackStackAction(const std::vector<SyncBarrier> &barriers_,
                                        const ResourceAccessStateFunction *previous_barrier_ = nullptr)
         : barriers(barriers_), previous_barrier(previous_barrier_) {}
-    void operator()(ResourceAccessState *access) const {
+    void operator()(AccessState *access) const {
         assert(access);
         ApplyBarriers(*access, barriers);
         if (previous_barrier) {
@@ -625,7 +625,7 @@ void AccessContext::ResolveAccessRange(const ResourceAccessRange &range, Barrier
         const auto current_range = current->range & range;
         if (current->pos_B->valid) {
             const auto &src_pos = current->pos_B->lower_bound;
-            ResourceAccessState access(src_pos->second);  // intentional copy
+            AccessState access(src_pos->second);  // intentional copy
             barrier_action(&access);
             if (current->pos_A->valid) {
                 const auto trimmed = sparse_container::split(current->pos_A->lower_bound, *resolve_map, current_range);
@@ -662,8 +662,7 @@ void AccessContext::ResolveAccessRange(const ResourceAccessRange &range, Barrier
                 current.seek(seek_to);
             } else if (!current->pos_A->valid && infill) {
                 // If we didn't find anything in the current range, and we aren't reccuring... we infill if required
-                auto inserted =
-                    resolve_map->insert(current->pos_A->lower_bound, std::make_pair(current->range, ResourceAccessState{}));
+                auto inserted = resolve_map->insert(current->pos_A->lower_bound, std::make_pair(current->range, AccessState{}));
                 current.invalidate_A(inserted);  // Update the parallel iterator to point at the correct segment after insert
             }
         }
