@@ -26,7 +26,7 @@ namespace syncval {
 class AccessState;
 struct WriteState;
 struct ReadState;
-struct ResourceFirstAccess;
+struct FirstAccess;
 struct SemaphoreScope;
 struct AccessContextStats;
 
@@ -100,7 +100,7 @@ class HazardResult {
   public:
     struct HazardState {
         std::unique_ptr<const AccessState> access_state;
-        std::unique_ptr<const ResourceFirstAccess> recorded_access;
+        std::unique_ptr<const FirstAccess> recorded_access;
         SyncAccessIndex access_index = std::numeric_limits<SyncAccessIndex>::max();
         SyncAccessIndex prior_access_index;
         ResourceUsageTag tag = ResourceUsageTag();
@@ -115,7 +115,7 @@ class HazardResult {
     static HazardResult HazardVsPriorRead(const AccessState *access_state, const SyncAccessInfo &usage_info, SyncHazard hazard,
                                           const ReadState &prior_read);
 
-    void AddRecordedAccess(const ResourceFirstAccess &first_access);
+    void AddRecordedAccess(const FirstAccess &first_access);
 
     bool IsHazard() const { return state_.has_value() && NONE != state_->hazard; }
     bool IsWAWHazard() const;
@@ -131,7 +131,7 @@ class HazardResult {
         assert(state_);
         return state_->hazard;
     }
-    const std::unique_ptr<const ResourceFirstAccess> &RecordedAccess() const {
+    const std::unique_ptr<const FirstAccess> &RecordedAccess() const {
         assert(state_);
         return state_->recorded_access;
     }
@@ -144,16 +144,16 @@ class HazardResult {
     std::optional<HazardState> state_;
 };
 
-struct ResourceFirstAccess {
+struct FirstAccess {
     const SyncAccessInfo *usage_info;
     ResourceUsageTag tag;
     uint32_t handle_index;
     SyncOrdering ordering_rule;
     SyncFlags flags;
 
-    ResourceFirstAccess(const SyncAccessInfo &usage_info, ResourceUsageTagEx tag_ex, SyncOrdering ordering_rule, SyncFlags flags)
+    FirstAccess(const SyncAccessInfo &usage_info, ResourceUsageTagEx tag_ex, SyncOrdering ordering_rule, SyncFlags flags)
         : usage_info(&usage_info), tag(tag_ex.tag), handle_index(tag_ex.handle_index), ordering_rule(ordering_rule), flags(flags) {}
-    bool operator==(const ResourceFirstAccess &rhs) const {
+    bool operator==(const FirstAccess &rhs) const {
         return (tag == rhs.tag) && (usage_info == rhs.usage_info) && (ordering_rule == rhs.ordering_rule) && flags == rhs.flags;
     }
     ResourceUsageTagEx TagEx() const { return {tag, handle_index}; }
@@ -468,7 +468,7 @@ class AccessState {
     VkPipelineStageFlags2 read_execution_barriers = VK_PIPELINE_STAGE_2_NONE;
 
     // NOTE: Reserve capacity for 2 first accesses, more than that is not very common
-    using FirstAccesses = small_vector<ResourceFirstAccess, 2>;
+    using FirstAccesses = small_vector<FirstAccess, 2>;
     FirstAccesses first_accesses_;
     VkPipelineStageFlags2 first_read_stages_ = VK_PIPELINE_STAGE_2_NONE;
     uint32_t first_write_layout_ordering_index = vvl::kNoIndex32;
@@ -480,9 +480,9 @@ class AccessState {
     // input_attachment_read and last_write
     bool input_attachment_read = false;
 };
-using ResourceAccessStateFunction = std::function<void(AccessState *)>;
-using ResourceAccessRangeMap = sparse_container::range_map<ResourceAddress, AccessState>;
-using ResourceRangeMergeIterator = sparse_container::parallel_iterator<ResourceAccessRangeMap, const ResourceAccessRangeMap>;
+using AccessStateFunction = std::function<void(AccessState *)>;
+using AccessMap = sparse_container::range_map<ResourceAddress, AccessState>;
+using RangeMergeIterator = sparse_container::parallel_iterator<AccessMap, const AccessMap>;
 
 template <typename Predicate>
 bool AccessState::ClearPredicatedAccesses(Predicate &predicate) {

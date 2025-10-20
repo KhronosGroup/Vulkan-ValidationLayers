@@ -31,9 +31,8 @@ class HazardDetector {
     const SyncAccessInfo &access_info_;
 
   public:
-    HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const { return pos->second.DetectHazard(access_info_); }
-    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag,
-                             QueueId queue_id) const {
+    HazardResult Detect(const AccessMap::const_iterator &pos) const { return pos->second.DetectHazard(access_info_); }
+    HazardResult DetectAsync(const AccessMap::const_iterator &pos, ResourceUsageTag start_tag, QueueId queue_id) const {
         return pos->second.DetectAsyncHazard(access_info_, start_tag, queue_id);
     }
     explicit HazardDetector(SyncAccessIndex access_index) : access_info_(GetAccessInfo(access_index)) {}
@@ -45,12 +44,11 @@ class HazardDetectorWithOrdering {
     const SyncFlags flags_;
 
   public:
-    HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const {
+    HazardResult Detect(const AccessMap::const_iterator &pos) const {
         const OrderingBarrier &ordering = GetOrderingRules(ordering_rule_);
         return pos->second.DetectHazard(access_info_, ordering, flags_, kQueueIdInvalid);
     }
-    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag,
-                             QueueId queue_id) const {
+    HazardResult DetectAsync(const AccessMap::const_iterator &pos, ResourceUsageTag start_tag, QueueId queue_id) const {
         return pos->second.DetectAsyncHazard(access_info_, start_tag, queue_id);
     }
     HazardDetectorWithOrdering(SyncAccessIndex access_index, SyncOrdering ordering, SyncFlags flags = 0)
@@ -61,11 +59,10 @@ class HazardDetectFirstUse {
   public:
     HazardDetectFirstUse(const AccessState &recorded_use, QueueId queue_id, const ResourceUsageRange &tag_range)
         : recorded_use_(recorded_use), queue_id_(queue_id), tag_range_(tag_range) {}
-    HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const {
+    HazardResult Detect(const AccessMap::const_iterator &pos) const {
         return pos->second.DetectHazard(recorded_use_, queue_id_, tag_range_);
     }
-    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag,
-                             QueueId queue_id) const {
+    HazardResult DetectAsync(const AccessMap::const_iterator &pos, ResourceUsageTag start_tag, QueueId queue_id) const {
         return pos->second.DetectAsyncHazard(recorded_use_, tag_range_, start_tag, queue_id);
     }
 
@@ -76,8 +73,8 @@ class HazardDetectFirstUse {
 };
 
 struct HazardDetectorMarker {
-    HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const { return pos->second.DetectMarkerHazard(); }
-    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag,
+    HazardResult Detect(const AccessMap::const_iterator &pos) const { return pos->second.DetectMarkerHazard(); }
+    HazardResult DetectAsync(const AccessMap::const_iterator &pos, ResourceUsageTag start_tag,
                              QueueId queue_id) const {
         return pos->second.DetectAsyncHazard(GetAccessInfo(SYNC_COPY_TRANSFER_WRITE), start_tag, queue_id);
     }
@@ -170,8 +167,8 @@ void AccessContext::ResolveFromContext(const AccessContext &from) {
 }
 
 // This function is a simplification of update_range_value from range_map.h that takes into account syncval specifics
-static void UpdateRangeValue(ResourceAccessRangeMap &map, const ResourceAccessRange &range, const AccessState &access_state) {
-    using CachedLowerBound = sparse_container::cached_lower_bound_impl<ResourceAccessRangeMap>;
+static void UpdateRangeValue(AccessMap &map, const ResourceAccessRange &range, const AccessState &access_state) {
+    using CachedLowerBound = sparse_container::cached_lower_bound_impl<AccessMap>;
     CachedLowerBound pos(map, range.begin);
     while (range.includes(pos->index)) {
         if (!pos->valid) {
@@ -194,8 +191,8 @@ static void UpdateRangeValue(ResourceAccessRangeMap &map, const ResourceAccessRa
     }
 }
 
-void AccessContext::ResolvePreviousAccess(const ResourceAccessRange &range, ResourceAccessRangeMap *descent_map, bool infill,
-                                          const ResourceAccessStateFunction *previous_barrier) const {
+void AccessContext::ResolvePreviousAccess(const ResourceAccessRange &range, AccessMap *descent_map, bool infill,
+                                          const AccessStateFunction *previous_barrier) const {
     if (prev_.empty()) {
         if (range.non_empty() && infill) {
             // Fill the empty poritions of descent_map with the default_state with the barrier function applied (iff present)
@@ -444,11 +441,10 @@ class BarrierHazardDetector {
     BarrierHazardDetector(SyncAccessIndex access_index, VkPipelineStageFlags2 src_exec_scope, SyncAccessFlags src_access_scope)
         : access_info_(GetAccessInfo(access_index)), src_exec_scope_(src_exec_scope), src_access_scope_(src_access_scope) {}
 
-    HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const {
+    HazardResult Detect(const AccessMap::const_iterator &pos) const {
         return pos->second.DetectBarrierHazard(access_info_, kQueueIdInvalid, src_exec_scope_, src_access_scope_);
     }
-    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag,
-                             QueueId queue_id) const {
+    HazardResult DetectAsync(const AccessMap::const_iterator &pos, ResourceUsageTag start_tag, QueueId queue_id) const {
         // Async barrier hazard detection can use the same path as the usage index is not IsRead, but is IsWrite
         return pos->second.DetectAsyncHazard(access_info_, start_tag, queue_id);
     }
@@ -472,7 +468,7 @@ class EventBarrierHazardDetector {
           scope_pos_(event_scope.cbegin()),
           scope_end_(event_scope.cend()) {}
 
-    HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) {
+    HazardResult Detect(const AccessMap::const_iterator &pos) {
         // Need to piece together coverage of pos->first range:
         // Copy the range as we'll be chopping it up as needed
         ResourceAccessRange range = pos->first;
@@ -505,8 +501,7 @@ class EventBarrierHazardDetector {
         return hazard;
     }
 
-    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag,
-                             QueueId queue_id) const {
+    HazardResult DetectAsync(const AccessMap::const_iterator &pos, ResourceUsageTag start_tag, QueueId queue_id) const {
         // Async barrier hazard detection can use the same path as the usage index is not IsRead, but is IsWrite
         return pos->second.DetectAsyncHazard(access_info_, start_tag, queue_id);
     }
@@ -568,14 +563,13 @@ HazardResult AccessContext::DetectImageBarrierHazard(const vvl::Image &image, Vk
     return DetectHazard(detector, image, subresource_range, is_depth_sliced, options);
 }
 
-ResourceAccessRangeMap::iterator AccessContext::UpdateMemoryAccessStateFunctor::Infill(ResourceAccessRangeMap *accesses,
-                                                                                       const Iterator &pos_hint,
-                                                                                       const ResourceAccessRange &range) const {
+AccessMap::iterator AccessContext::UpdateMemoryAccessStateFunctor::Infill(AccessMap *accesses, const Iterator &pos_hint,
+                                                                          const ResourceAccessRange &range) const {
     // this is only called on gaps, and never returns a gap.
     context.ResolvePreviousAccess(range, accesses, true);
     return accesses->lower_bound(range);
 }
-void AccessContext::UpdateMemoryAccessStateFunctor::operator()(const ResourceAccessRangeMap::iterator &pos) const {
+void AccessContext::UpdateMemoryAccessStateFunctor::operator()(const AccessMap::iterator &pos) const {
     auto &access_state = pos->second;
     access_state.Update(usage_info, ordering_rule, tag_ex, flags);
 }
@@ -642,7 +636,7 @@ HazardResult AccessContext::DetectMarkerHazard(const vvl::Buffer &buffer, const 
     return DetectHazardRange(detector, (range + base_address), DetectOptions::kDetectAll);
 }
 
-void SortedFirstAccesses::Init(const ResourceAccessRangeMap &finalized_access_map) {
+void SortedFirstAccesses::Init(const AccessMap &finalized_access_map) {
     for (const auto &entry : finalized_access_map) {
         const AccessState &access = entry.second;
         const ResourceUsageRange range = access.GetFirstAccessRange();

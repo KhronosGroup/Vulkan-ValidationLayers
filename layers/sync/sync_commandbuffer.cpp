@@ -1360,15 +1360,15 @@ void CommandBufferAccessContext::CheckCommandTagDebugCheckpoint() {
     }
 }
 
-void UpdateAccessMapStats(const ResourceAccessRangeMap &access_map, AccessContextStats &stats);
+void UpdateAccessMapStats(const AccessMap &access_map, AccessContextStats &stats);
 
 void CommandBufferAccessContext::UpdateStats(AccessStats &access_stats) const {
 #if VVL_ENABLE_SYNCVAL_STATS != 0
-    UpdateAccessMapStats(cb_access_context_.GetAccessStateMap(), access_stats.cb_access_stats);
+    UpdateAccessMapStats(cb_access_context_.GetAccessMap(), access_stats.cb_access_stats);
 
     for (const auto &render_pass_context : render_pass_contexts_) {
         for (const AccessContext &subpass_access_context : render_pass_context->GetContexts()) {
-            UpdateAccessMapStats(subpass_access_context.GetAccessStateMap(), access_stats.subpass_access_stats);
+            UpdateAccessMapStats(subpass_access_context.GetAccessMap(), access_stats.subpass_access_stats);
         }
     }
 #endif

@@ -407,10 +407,8 @@ ResourceUsageTag SyncOpPipelineBarrier::Record(CommandBufferAccessContext *cb_co
 struct ApplyGlobalBarrierFunctor {
     ApplyGlobalBarrierFunctor(QueueId queue_id, const SyncBarrier &barrier) : barrier_scope(barrier, queue_id), barrier(barrier) {}
 
-    using Iterator = ResourceAccessRangeMap::iterator;
-    Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos_hint, const ResourceAccessRange &range) const {
-        return pos_hint;
-    }
+    using Iterator = AccessMap::iterator;
+    Iterator Infill(AccessMap *accesses, const Iterator &pos_hint, const ResourceAccessRange &range) const { return pos_hint; }
 
     void operator()(const Iterator &pos) const {
         AccessState &access_state = pos->second;

@@ -64,7 +64,7 @@ struct SyncEventState {
     SyncEventState(const SyncEventState::EventPointer &event_state);
 
     void ResetFirstScope();
-    const AccessContext::ScopeMap &FirstScope() const { return first_scope->GetAccessStateMap(); }
+    const AccessContext::ScopeMap &FirstScope() const { return first_scope->GetAccessMap(); }
     IgnoreReason IsIgnoredByWait(vvl::Func command, VkPipelineStageFlags2 srcStageMask) const;
     bool HasBarrier(VkPipelineStageFlags2 stageMask, VkPipelineStageFlags2 exec_scope) const;
     void AddReferencedTags(ResourceUsageTagSet &referenced) const;
