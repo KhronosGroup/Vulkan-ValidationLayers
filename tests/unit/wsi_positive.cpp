@@ -380,7 +380,7 @@ TEST_F(PositiveWsi, WaitForAcquireFenceAndIgnoreSemaphore) {
     const vkt::Fence fence(*m_device);
     uint32_t image_index = 0;
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore, fence, &image_index);
-    vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
+    fence.Wait(kWaitTimeout);
 
     // Present without waiting for the semaphore. That's fine because we waited on the fence
     m_default_queue->Present(m_swapchain, image_index, vkt::no_semaphore);
@@ -410,7 +410,52 @@ TEST_F(PositiveWsi, WaitForAcquireSemaphoreAndIgnoreFence) {
     // NOTE: this test validates vkQueuePresentKHR.
     // At this point it's fine to wait for the fence to avoid in-use errors during test exit
     // (QueueWaitIdle does not wait for the fence signaled by the non-queue operation - AcquireNextImageKHR).
-    vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
+    fence.Wait(kWaitTimeout);
+
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveWsi, WaitForAcquireFenceThenReset) {
+    TEST_DESCRIPTION("Wait for acquire fence then reset it");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+    const auto swapchain_images = m_swapchain.GetImages();
+    for (auto image : swapchain_images) {
+        SetPresentImageLayout(image);
+    }
+
+    const vkt::Fence fence(*m_device);
+    uint32_t image_index = m_swapchain.AcquireNextImage(fence, kWaitTimeout);
+    fence.Wait(kWaitTimeout);
+    fence.Reset();
+
+    m_default_queue->Present(m_swapchain, image_index, vkt::no_semaphore);
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveWsi, WaitForAcquireFenceThenResetAndReuse) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10842
+    TEST_DESCRIPTION("Wait for acquire fence then reset it and resut by QueueSubmit");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+    const auto swapchain_images = m_swapchain.GetImages();
+    for (auto image : swapchain_images) {
+        SetPresentImageLayout(image);
+    }
+
+    const vkt::Fence fence(*m_device);
+    uint32_t image_index = m_swapchain.AcquireNextImage(fence, kWaitTimeout);
+    fence.Wait(kWaitTimeout);
+    fence.Reset();
+
+    // Reuse fence
+    m_default_queue->Submit(vkt::no_cmd, fence);
+
+    // Acquired image is ready since we waited on the fence.
+    // In the original issue it was not considered ready due to fence reuse.
+    m_default_queue->Present(m_swapchain, image_index, vkt::no_semaphore);
 
     m_default_queue->Wait();
 }
