@@ -30,7 +30,7 @@ set VK_LAYER_PRINTF_ONLY_PRESET=1
 export VK_LAYER_PRINTF_ONLY_PRESET=1
 
 # Android
-adb setprop debug.vulkan.khronos_validation.printf_only_preset=1
+adb shell setprop debug.vulkan.khronos_validation.printf_only_preset=1
 ```
 
 ## Settings

@@ -70,7 +70,7 @@ set VK_LAYER_MESSAGE_ID_FILTER=VUID-VkInstanceCreateInfo-pNext-pNext
 export VK_LAYER_MESSAGE_ID_FILTER=VUID-VkInstanceCreateInfo-pNext-pNext
 
 # Android
-adb setprop debug.vulkan.khronos_validation.message_id_filter=VUID-VkInstanceCreateInfo-pNext-pNext
+adb shell setprop debug.vulkan.khronos_validation.message_id_filter=VUID-VkInstanceCreateInfo-pNext-pNext
 ```
 
 ## Layer Settings
