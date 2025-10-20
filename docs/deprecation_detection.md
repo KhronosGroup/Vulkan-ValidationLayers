@@ -54,7 +54,7 @@ set VK_LAYER_DEPRECATION_DETECTION=1
 export VK_LAYER_DEPRECATION_DETECTION=1
 
 # Android
-adb setprop debug.vulkan.khronos_validation.deprecation_detection=1
+adb shell setprop debug.vulkan.khronos_validation.deprecation_detection=1
 ```
 
 ## Extra reference
