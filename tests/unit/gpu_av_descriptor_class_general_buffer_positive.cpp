@@ -966,8 +966,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ArrayCopyTwoBindingsSlang) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-// https://github.com/KhronosGroup/glslang/issues/3892
-TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, DISABLED_StructCopyGLSL) {
+TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, StructCopyGLSL) {
     const char *cs_source = R"glsl(
         #version 450
 
