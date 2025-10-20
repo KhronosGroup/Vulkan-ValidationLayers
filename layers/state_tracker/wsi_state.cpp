@@ -68,6 +68,13 @@ static vku::safe_VkImageCreateInfo GetImageCreateInfo(const VkSwapchainCreateInf
 
 namespace vvl {
 
+void SwapchainImage::ResetAcquireState() {
+    acquired = false;
+    acquire_semaphore.reset();
+    acquire_fence.reset();
+    acquire_fence_status = AcquireSyncStatus::NotSpecified;
+}
+
 void SwapchainImage::ResetPresentWaitSemaphores() {
     const bool swapchain_has_completed_presentation = !present_wait_semaphores.empty();
     for (auto &semaphore : present_wait_semaphores) {
@@ -111,9 +118,7 @@ void Swapchain::PresentImage(uint32_t image_index, uint64_t present_id, const Su
         images[image_index].image_state->layout_locked = true;
     } else if (acquired_images > 0) {
         acquired_images--;
-        images[image_index].acquired = false;
-        images[image_index].acquire_semaphore.reset();
-        images[image_index].acquire_fence.reset();
+        images[image_index].ResetAcquireState();
     }
 
     images[image_index].present_submission_ref = present_submission_ref;
@@ -142,9 +147,7 @@ void Swapchain::ReleaseImage(uint32_t image_index) {
     }
     if (acquired_images > 0) {
         acquired_images--;
-        images[image_index].acquired = false;
-        images[image_index].acquire_semaphore.reset();
-        images[image_index].acquire_fence.reset();
+        images[image_index].ResetAcquireState();
         images[image_index].ResetPresentWaitSemaphores();
     }
 }
@@ -155,9 +158,22 @@ void Swapchain::AcquireImage(uint32_t image_index, const std::shared_ptr<vvl::Se
     images[image_index].acquired = true;
     images[image_index].acquire_semaphore = semaphore_state;
     images[image_index].acquire_fence = fence_state;
-    if (fence_state && images[image_index].present_submission_ref.has_value()) {
-        fence_state->SetPresentSubmissionRef(*images[image_index].present_submission_ref);
-        images[image_index].present_submission_ref.reset();
+
+    if (fence_state) {
+        if (fence_state->Scope() == vvl::Fence::kInternal) {
+            images[image_index].acquire_fence_status = AcquireSyncStatus::Signaled;
+        } else {
+            // For external fences (where waits can't be tracked), assume an optimistic scenario
+            // in which the fence has been waited on.
+            images[image_index].acquire_fence_status = AcquireSyncStatus::WasWaitedOn;
+        }
+
+        fence_state->SetAcquiredImage(shared_from_this(), image_index);
+
+        if (images[image_index].present_submission_ref.has_value()) {
+            fence_state->SetPresentSubmissionRef(*images[image_index].present_submission_ref);
+            images[image_index].present_submission_ref.reset();
+        }
     }
     if (shared_presentable) {
         images[image_index].image_state->shared_presentable = shared_presentable;
