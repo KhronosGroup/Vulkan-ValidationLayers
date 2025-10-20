@@ -59,7 +59,7 @@ class HazardDetectorWithOrdering {
 
 class HazardDetectFirstUse {
   public:
-    HazardDetectFirstUse(const ResourceAccessState &recorded_use, QueueId queue_id, const ResourceUsageRange &tag_range)
+    HazardDetectFirstUse(const AccessState &recorded_use, QueueId queue_id, const ResourceUsageRange &tag_range)
         : recorded_use_(recorded_use), queue_id_(queue_id), tag_range_(tag_range) {}
     HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const {
         return pos->second.DetectHazard(recorded_use_, queue_id_, tag_range_);
@@ -70,7 +70,7 @@ class HazardDetectFirstUse {
     }
 
   private:
-    const ResourceAccessState &recorded_use_;
+    const AccessState &recorded_use_;
     const QueueId queue_id_;
     const ResourceUsageRange &tag_range_;
 };
@@ -165,13 +165,12 @@ void AccessContext::AddReferencedTags(ResourceUsageTagSet &used) const {
 
 void AccessContext::ResolveFromContext(const AccessContext &from) {
     assert(!finalized_);
-    auto noop_action = [](ResourceAccessState *access) {};
+    auto noop_action = [](AccessState *access) {};
     from.ResolveAccessRange(kFullRange, noop_action, &access_state_map_, false);
 }
 
 // This function is a simplification of update_range_value from range_map.h that takes into account syncval specifics
-static void UpdateRangeValue(ResourceAccessRangeMap &map, const ResourceAccessRange &range,
-                             const ResourceAccessState &access_state) {
+static void UpdateRangeValue(ResourceAccessRangeMap &map, const ResourceAccessRange &range, const AccessState &access_state) {
     using CachedLowerBound = sparse_container::cached_lower_bound_impl<ResourceAccessRangeMap>;
     CachedLowerBound pos(map, range.begin);
     while (range.includes(pos->index)) {
@@ -200,7 +199,7 @@ void AccessContext::ResolvePreviousAccess(const ResourceAccessRange &range, Reso
     if (prev_.empty()) {
         if (range.non_empty() && infill) {
             // Fill the empty poritions of descent_map with the default_state with the barrier function applied (iff present)
-            ResourceAccessState access_state;
+            AccessState access_state;
             if (previous_barrier) {
                 (*previous_barrier)(&access_state);
             }
@@ -477,7 +476,7 @@ class EventBarrierHazardDetector {
         // Need to piece together coverage of pos->first range:
         // Copy the range as we'll be chopping it up as needed
         ResourceAccessRange range = pos->first;
-        const ResourceAccessState &access = pos->second;
+        const AccessState &access = pos->second;
         HazardResult hazard;
 
         bool in_scope = AdvanceScope(range);
@@ -521,7 +520,7 @@ class EventBarrierHazardDetector {
     ResourceAddress ScopeBegin() const { return scope_pos_->first.begin; }
     ResourceAddress ScopeEnd() const { return scope_pos_->first.end; }
     const ResourceAccessRange &ScopeRange() const { return scope_pos_->first; }
-    const ResourceAccessState &ScopeState() const { return scope_pos_->second; }
+    const AccessState &ScopeState() const { return scope_pos_->second; }
 
     bool AdvanceScope(const ResourceAccessRange &range) {
         // Note: non_empty is (valid && !empty), so don't change !non_empty to empty...
@@ -589,7 +588,7 @@ HazardResult AccessContext::DetectFirstUseHazard(QueueId queue_id, const Resourc
     if (finalized_) {
         for (const auto &single_tag : sorted_first_accesses_.IterateSingleTagFirstAccesses(tag_range)) {
             const ResourceAccessRange access_range = single_tag.p_key_value->first;
-            const ResourceAccessState &access = single_tag.p_key_value->second;
+            const AccessState &access = single_tag.p_key_value->second;
 
             // For single tag first accesses we have exact search and can assert the find
             assert(access.FirstAccessInTagRange(tag_range));
@@ -602,7 +601,7 @@ HazardResult AccessContext::DetectFirstUseHazard(QueueId queue_id, const Resourc
         }
         for (const auto &multi_tag : sorted_first_accesses_.IterateMultiTagFirstAccesses(tag_range)) {
             const ResourceAccessRange access_range = multi_tag.p_key_value->first;
-            const ResourceAccessState &access = multi_tag.p_key_value->second;
+            const AccessState &access = multi_tag.p_key_value->second;
 
             // For multi tag first accesses the search is not exact, so we need to check for range inclusion
             // (on average multi tag search is faster than going over the entire access map)
@@ -645,7 +644,7 @@ HazardResult AccessContext::DetectMarkerHazard(const vvl::Buffer &buffer, const 
 
 void SortedFirstAccesses::Init(const ResourceAccessRangeMap &finalized_access_map) {
     for (const auto &entry : finalized_access_map) {
-        const ResourceAccessState &access = entry.second;
+        const AccessState &access = entry.second;
         const ResourceUsageRange range = access.GetFirstAccessRange();
         if (range.empty()) {
             continue;

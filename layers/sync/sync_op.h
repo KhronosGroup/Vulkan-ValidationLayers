@@ -339,7 +339,7 @@ struct BatchBarrierOp {
 
     BatchBarrierOp(QueueId queue_id, const SyncBarrier &barrier) : barrier(barrier), barrier_scope(barrier, queue_id) {}
 
-    void operator()(ResourceAccessState *access_state) const { access_state->ApplyBarrier(barrier_scope, barrier); }
+    void operator()(AccessState *access_state) const { access_state->ApplyBarrier(barrier_scope, barrier); }
 };
 
 // Allow keep track of the exec contexts replay state

@@ -494,7 +494,7 @@ void RenderPassAccessContext::UpdateAttachmentStoreAccess(const vvl::RenderPass 
 struct ApplySubpassTransitionBarriersAction {
     explicit ApplySubpassTransitionBarriersAction(const std::vector<SyncBarrier> &barriers, ResourceUsageTag layout_transition_tag)
         : barriers(barriers), layout_transition_tag(layout_transition_tag) {}
-    void operator()(ResourceAccessState *access) const {
+    void operator()(AccessState *access) const {
         assert(access);
         ApplyBarriers(*access, barriers, true, layout_transition_tag);
     }
