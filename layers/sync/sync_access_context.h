@@ -111,7 +111,7 @@ struct ApplyMarkupFunctor {
     ApplyMarkupFunctor(bool layout_transition) : layout_transition(layout_transition) {}
 
     using Iterator = AccessMap::iterator;
-    Iterator Infill(AccessMap *accesses, const Iterator &pos_hint, const ResourceAccessRange &range) const {
+    Iterator Infill(AccessMap *accesses, const Iterator &pos_hint, const AccessRange &range) const {
         if (!layout_transition) {
             return pos_hint;
         }
@@ -142,7 +142,7 @@ struct CollectBarriersFunctor {
     }
 
     using Iterator = AccessMap::iterator;
-    Iterator Infill(AccessMap *accesses, const Iterator &pos_hint, const ResourceAccessRange &range) const {
+    Iterator Infill(AccessMap *accesses, const Iterator &pos_hint, const AccessRange &range) const {
         assert(!layout_transition);  // MarkupFunctor infills gaps for layout transtion, so we should never get here in that case
         return pos_hint;
     }
@@ -273,7 +273,7 @@ class AccessContext {
         kDetectAll = (kDetectPrevious | kDetectAsync)
     };
 
-    HazardResult DetectHazard(const vvl::Buffer &buffer, SyncAccessIndex access_index, const ResourceAccessRange &range) const;
+    HazardResult DetectHazard(const vvl::Buffer &buffer, SyncAccessIndex access_index, const AccessRange &range) const;
     HazardResult DetectHazard(const vvl::Image &image, SyncAccessIndex current_usage,
                               const VkImageSubresourceRange &subresource_range, bool is_depth_sliced) const;
     HazardResult DetectHazard(const vvl::ImageView &image_view, SyncAccessIndex current_usage) const;
@@ -303,7 +303,7 @@ class AccessContext {
 
     HazardResult DetectFirstUseHazard(QueueId queue_id, const ResourceUsageRange &tag_range,
                                       const AccessContext &access_context) const;
-    HazardResult DetectMarkerHazard(const vvl::Buffer &buffer, const ResourceAccessRange &range) const;
+    HazardResult DetectMarkerHazard(const vvl::Buffer &buffer, const AccessRange &range) const;
 
     const SubpassBarrierTrackback &GetDstExternalTrackBack() const { return dst_external_; }
 
@@ -317,7 +317,7 @@ class AccessContext {
                             subresource_adapter::ImageRangeGenerator range_gen, bool infill = false, bool recur_to_infill = false);
 
     void UpdateAccessState(const vvl::Buffer &buffer, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
-                           const ResourceAccessRange &range, ResourceUsageTagEx tag_ex, SyncFlags flags = 0);
+                           const AccessRange &range, ResourceUsageTagEx tag_ex, SyncFlags flags = 0);
     void UpdateAccessState(const vvl::Image &image, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
                            const VkImageSubresourceRange &subresource_range, const ResourceUsageTag &tag);
     void UpdateAccessState(const vvl::Image &image, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
@@ -392,7 +392,7 @@ class AccessContext {
     };
 
     template <typename Action>
-    void UpdateMemoryAccessRangeState(Action &action, const ResourceAccessRange &range);
+    void UpdateMemoryAccessRangeState(Action &action, const AccessRange &range);
 
     template <typename Action, typename RangeGen>
     void UpdateMemoryAccessState(const Action &action, RangeGen &range_gen);
@@ -405,7 +405,7 @@ class AccessContext {
   private:
     struct UpdateMemoryAccessStateFunctor {
         using Iterator = AccessMap::iterator;
-        Iterator Infill(AccessMap *accesses, const Iterator &pos_hint, const ResourceAccessRange &range) const;
+        Iterator Infill(AccessMap *accesses, const Iterator &pos_hint, const AccessRange &range) const;
         void operator()(const Iterator &pos) const;
         UpdateMemoryAccessStateFunctor(const AccessContext &context_, SyncAccessIndex usage_, SyncOrdering ordering_rule_,
                                        ResourceUsageTagEx tag_ex, SyncFlags flags = 0)
@@ -422,17 +422,17 @@ class AccessContext {
     // still true after pending barriers rework).
     // TODO: See if returning the lower_bound would be useful from a performance POV -- look at the lower_bound overhead
     // Would need to add a "hint" overload to parallel_iterator::invalidate_[AB] call, if so.
-    void ResolvePreviousAccess(const ResourceAccessRange &range, AccessMap *descent_map, bool infill,
+    void ResolvePreviousAccess(const AccessRange &range, AccessMap *descent_map, bool infill,
                                const AccessStateFunction *previous_barrier = nullptr) const;
     template <typename BarrierAction>
-    void ResolvePreviousAccessStack(const ResourceAccessRange &range, AccessMap *descent_map, bool infill,
+    void ResolvePreviousAccessStack(const AccessRange &range, AccessMap *descent_map, bool infill,
                                     const BarrierAction &previous_barrie) const;
     template <typename BarrierAction>
-    void ResolveAccessRange(const ResourceAccessRange &range, BarrierAction &barrier_action, AccessMap *resolve_map, bool infill,
+    void ResolveAccessRange(const AccessRange &range, BarrierAction &barrier_action, AccessMap *resolve_map, bool infill,
                             bool recur_to_infill = true) const;
 
     template <typename Detector>
-    HazardResult DetectHazardRange(Detector &detector, const ResourceAccessRange &range, DetectOptions options) const;
+    HazardResult DetectHazardRange(Detector &detector, const AccessRange &range, DetectOptions options) const;
     template <typename Detector, typename RangeGen>
     HazardResult DetectHazardGeneratedRanges(Detector &detector, RangeGen &range_gen, DetectOptions options) const;
     template <typename Detector, typename RangeGen>
@@ -453,15 +453,14 @@ class AccessContext {
 
     template <typename Detector>
     HazardResult DetectHazardOneRange(Detector &detector, bool detect_prev, AccessMap::const_iterator &pos,
-                                      const AccessMap::const_iterator &the_end,
-                                      const ResourceAccessRange &range) const;
+                                      const AccessMap::const_iterator &the_end, const AccessRange &range) const;
 
     template <typename Detector, typename RangeGen>
     HazardResult DetectAsyncHazard(const Detector &detector, const RangeGen &const_range_gen, ResourceUsageTag async_tag,
                                    QueueId async_queue_id) const;
 
     template <typename Detector>
-    HazardResult DetectPreviousHazard(Detector &detector, const ResourceAccessRange &range) const;
+    HazardResult DetectPreviousHazard(Detector &detector, const AccessRange &range) const;
 
   private:
     AccessMap access_state_map_;
@@ -512,7 +511,7 @@ struct ActionToOpsAdapter {
 };
 
 template <typename Action>
-void AccessContext::UpdateMemoryAccessRangeState(Action &action, const ResourceAccessRange &range) {
+void AccessContext::UpdateMemoryAccessRangeState(Action &action, const AccessRange &range) {
     assert(!finalized_);
     ActionToOpsAdapter<Action> ops{action};
     infill_update_range(access_state_map_, range, ops);
@@ -555,9 +554,9 @@ HazardResult AccessContext::DetectAsyncHazard(const Detector &detector, const Ra
 
 template <typename Detector>
 HazardResult AccessContext::DetectHazardOneRange(Detector &detector, bool detect_prev, AccessMap::const_iterator &pos,
-                                                 const AccessMap::const_iterator &the_end, const ResourceAccessRange &range) const {
+                                                 const AccessMap::const_iterator &the_end, const AccessRange &range) const {
     HazardResult hazard;
-    ResourceAccessRange gap = {range.begin, range.begin};
+    AccessRange gap = {range.begin, range.begin};
 
     while (pos != the_end && pos->first.begin < range.end) {
         // Cover any leading gap, or gap between entries
@@ -609,14 +608,14 @@ class SingleRangeGenerator {
 };
 
 template <typename Detector>
-HazardResult AccessContext::DetectHazardRange(Detector &detector, const ResourceAccessRange &range, DetectOptions options) const {
+HazardResult AccessContext::DetectHazardRange(Detector &detector, const AccessRange &range, DetectOptions options) const {
     SingleRangeGenerator range_gen(range);
     return DetectHazardGeneratedRanges(detector, range_gen, options);
 }
 
 template <typename BarrierAction>
-void AccessContext::ResolveAccessRange(const ResourceAccessRange &range, BarrierAction &barrier_action, AccessMap *resolve_map,
-                                       bool infill, bool recur_to_infill) const {
+void AccessContext::ResolveAccessRange(const AccessRange &range, BarrierAction &barrier_action, AccessMap *resolve_map, bool infill,
+                                       bool recur_to_infill) const {
     if (!range.non_empty()) return;
 
     RangeMergeIterator current(*resolve_map, access_state_map_, range.begin);
@@ -637,7 +636,7 @@ void AccessContext::ResolveAccessRange(const ResourceAccessRange &range, Barrier
         } else {
             // we have to descend to fill this gap
             if (recur_to_infill) {
-                ResourceAccessRange recurrence_range = current_range;
+                AccessRange recurrence_range = current_range;
                 // The current context is empty for the current range, so recur to fill the gap.
                 // Since we will be recurring back up the DAG, expand the gap descent to cover the full range for which B
                 // is not valid, to minimize that recurrence
@@ -672,7 +671,7 @@ void AccessContext::ResolveAccessRange(const ResourceAccessRange &range, Barrier
 
     // Infill if range goes passed both the current and resolve map prior contents
     if (recur_to_infill && (current->range.end < range.end)) {
-        ResourceAccessRange trailing_fill_range = {current->range.end, range.end};
+        AccessRange trailing_fill_range = {current->range.end, range.end};
         ResolvePreviousAccessStack<BarrierAction>(trailing_fill_range, resolve_map, infill, barrier_action);
     }
 }
@@ -709,7 +708,7 @@ HazardResult AccessContext::DetectHazardGeneratedRanges(Detector &detector, Rang
 }
 
 template <typename Detector>
-HazardResult AccessContext::DetectPreviousHazard(Detector &detector, const ResourceAccessRange &range) const {
+HazardResult AccessContext::DetectPreviousHazard(Detector &detector, const AccessRange &range) const {
     AccessMap descent_map;
     ResolvePreviousAccess(range, &descent_map, false);
 
@@ -749,7 +748,7 @@ void AccessContext::ResolveFromContext(ResolveOp &&resolve_op, const AccessConte
 }
 
 template <typename BarrierAction>
-void AccessContext::ResolvePreviousAccessStack(const ResourceAccessRange &range, AccessMap *descent_map, bool infill,
+void AccessContext::ResolvePreviousAccessStack(const AccessRange &range, AccessMap *descent_map, bool infill,
                                                const BarrierAction &previous_barrier) const {
     AccessStateFunction stacked_barrier(std::ref(previous_barrier));
     ResolvePreviousAccess(range, descent_map, infill, &stacked_barrier);

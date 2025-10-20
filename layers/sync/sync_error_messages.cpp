@@ -46,7 +46,7 @@ std::string ErrorMessages::Error(const HazardResult& hazard, const CommandExecut
 }
 
 std::string ErrorMessages::BufferError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
-                                       const std::string& resource_description, const ResourceAccessRange range,
+                                       const std::string& resource_description, const AccessRange range,
                                        AdditionalMessageInfo additional_info) const {
     std::stringstream ss;
     ss << "\nBuffer access region: {\n";
@@ -60,7 +60,7 @@ std::string ErrorMessages::BufferError(const HazardResult& hazard, const Command
 
 std::string ErrorMessages::BufferCopyError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                            const vvl::Func command, const std::string& resource_description, uint32_t region_index,
-                                           ResourceAccessRange range) const {
+                                           AccessRange range) const {
     AdditionalMessageInfo additional_info;
     additional_info.properties.Add(kPropertyRegionIndex, region_index);
 
@@ -76,7 +76,7 @@ std::string ErrorMessages::BufferCopyError(const HazardResult& hazard, const Com
 
 std::string ErrorMessages::AccelerationStructureError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                       const vvl::Func command, const std::string& resource_description,
-                                                      const ResourceAccessRange range, VkAccelerationStructureKHR as,
+                                                      const AccessRange range, VkAccelerationStructureKHR as,
                                                       const Location& as_location) const {
     AdditionalMessageInfo additional_info;
 

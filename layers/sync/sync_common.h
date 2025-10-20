@@ -43,7 +43,7 @@ constexpr static ResourceUsageTag kInvalidTag = std::numeric_limits<ResourceUsag
 
 using ResourceUsageRange = vvl::range<ResourceUsageTag>;
 using ResourceAddress = VkDeviceSize;
-using ResourceAccessRange = vvl::range<ResourceAddress>;
+using AccessRange = vvl::range<ResourceAddress>;
 
 // Usage tag extended with resource handle information
 struct ResourceUsageTagEx {
@@ -51,11 +51,11 @@ struct ResourceUsageTagEx {
     uint32_t handle_index = vvl::kNoIndex32;
 };
 
-ResourceAccessRange MakeRange(VkDeviceSize start, VkDeviceSize size);
-ResourceAccessRange MakeRange(const vvl::Buffer &buffer, VkDeviceSize offset, VkDeviceSize size);
+AccessRange MakeRange(VkDeviceSize start, VkDeviceSize size);
+AccessRange MakeRange(const vvl::Buffer &buffer, VkDeviceSize offset, VkDeviceSize size);
 inline const SyncAccessInfo &GetAccessInfo(SyncAccessIndex access) { return GetSyncAccessInfos()[access]; }
 
-extern const ResourceAccessRange kFullRange;
+extern const AccessRange kFullRange;
 constexpr VkImageAspectFlags kDepthStencilAspects = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 
 // Notes:
