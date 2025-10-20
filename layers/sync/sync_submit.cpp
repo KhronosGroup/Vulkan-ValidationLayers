@@ -312,7 +312,7 @@ VulkanTypedHandle QueueBatchContext::Handle() const { return queue_state_->Handl
 
 template <typename Predicate>
 void QueueBatchContext::ApplyPredicatedWait(Predicate& predicate, const LastSynchronizedPresent& last_synchronized_present) {
-    access_context_.EraseIf([this, &last_synchronized_present, &predicate](ResourceAccessRangeMap::value_type& access) {
+    access_context_.EraseIf([this, &last_synchronized_present, &predicate](AccessMap::value_type& access) {
         AccessState& access_state = access.second;
 
         // Tell EraseIf to remove present accesses that are already synchronized according to LastSynchronizedPresent
@@ -364,8 +364,7 @@ void QueueBatchContext::ApplyAcquireWait(const AcquiredImage& acquired) {
 
 void QueueBatchContext::OnResourceDestroyed(const ResourceAccessRange& resource_range) {
     // Remove all accesses associated with the resource being destroyed
-    access_context_.EraseIf(
-        [&resource_range](ResourceAccessRangeMap::value_type& access) { return resource_range.includes(access.first); });
+    access_context_.EraseIf([&resource_range](AccessMap::value_type& access) { return resource_range.includes(access.first); });
 }
 
 void QueueBatchContext::BeginRenderPassReplaySetup(ReplayState& replay, const SyncOpBeginRenderPass& begin_op) {

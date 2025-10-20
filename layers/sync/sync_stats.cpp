@@ -107,7 +107,7 @@ void AccessContextStats::UpdateMax(const AccessContextStats& cur_stats) {
 #undef UPDATE_MAX
 }
 
-void UpdateAccessMapStats(const ResourceAccessRangeMap& access_map, AccessContextStats& stats) {
+void UpdateAccessMapStats(const AccessMap& access_map, AccessContextStats& stats) {
     stats.access_contexts += 1;
     stats.access_states += (uint32_t)access_map.size();
     for (const auto& entry : access_map) {
@@ -128,7 +128,7 @@ void AccessStats::Update(SyncValidator& validator) {
     });
     for (const auto& batch : validator.GetAllQueueBatchContexts()) {
         const AccessContext& access_context = batch->GetAccessContext();
-        UpdateAccessMapStats(access_context.GetAccessStateMap(), queue_access_stats);
+        UpdateAccessMapStats(access_context.GetAccessMap(), queue_access_stats);
     }
 
     max_cb_access_stats.UpdateMax(cb_access_stats);

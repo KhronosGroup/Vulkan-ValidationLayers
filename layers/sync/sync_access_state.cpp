@@ -555,9 +555,9 @@ HazardResult HazardResult::HazardVsPriorRead(const AccessState *access_state, co
     return result;
 }
 
-void HazardResult::AddRecordedAccess(const ResourceFirstAccess &first_access) {
+void HazardResult::AddRecordedAccess(const FirstAccess &first_access) {
     assert(state_.has_value());
-    state_->recorded_access = std::make_unique<const ResourceFirstAccess>(first_access);
+    state_->recorded_access = std::make_unique<const FirstAccess>(first_access);
 }
 bool HazardResult::IsWAWHazard() const {
     assert(state_.has_value());
@@ -1023,7 +1023,7 @@ void AccessState::UpdateStats(AccessContextStats &stats) const {
     }
     // check if first accesses allocate
     if (first_accesses_.size() > first_accesses_.kSmallCapacity) {
-        stats.access_states_dynamic_allocation_size += uint64_t(sizeof(ResourceFirstAccess) * first_accesses_.size());
+        stats.access_states_dynamic_allocation_size += uint64_t(sizeof(FirstAccess) * first_accesses_.size());
         is_dynamic_allocation = true;
     }
     stats.access_states_with_dynamic_allocations += is_dynamic_allocation;
