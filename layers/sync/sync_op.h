@@ -120,11 +120,11 @@ class SyncEventsContext {
 struct SyncBufferMemoryBarrier {
     std::shared_ptr<const vvl::Buffer> buffer;
     SyncBarrier barrier;
-    ResourceAccessRange range;
+    AccessRange range;
 
-    SyncBufferMemoryBarrier(const std::shared_ptr<const vvl::Buffer> &buffer, const SyncBarrier &barrier,
-                            const ResourceAccessRange &range)
-        : buffer(buffer), barrier(barrier), range(range) {}
+	SyncBufferMemoryBarrier(const std::shared_ptr<const vvl::Buffer> &buffer, const SyncBarrier &barrier,
+							const AccessRange &range)
+		: buffer(buffer), barrier(barrier), range(range) {}
 };
 
 struct SyncImageMemoryBarrier {

@@ -408,7 +408,7 @@ struct ApplyGlobalBarrierFunctor {
     ApplyGlobalBarrierFunctor(QueueId queue_id, const SyncBarrier &barrier) : barrier_scope(barrier, queue_id), barrier(barrier) {}
 
     using Iterator = AccessMap::iterator;
-    Iterator Infill(AccessMap *accesses, const Iterator &pos_hint, const ResourceAccessRange &range) const { return pos_hint; }
+    Iterator Infill(AccessMap *accesses, const Iterator &pos_hint, const AccessRange &range) const { return pos_hint; }
 
     void operator()(const Iterator &pos) const {
         AccessState &access_state = pos->second;
@@ -449,7 +449,7 @@ void SyncOpPipelineBarrier::ApplyMultipleBarriers(CommandExecutionContext &exec_
     for (const SyncBufferMemoryBarrier &barrier : barrier_set_.buffer_memory_barriers) {
         if (SimpleBinding(*barrier.buffer)) {
             const VkDeviceSize base_address = ResourceBaseAddress(*barrier.buffer);
-            const ResourceAccessRange range = barrier.range + base_address;
+            const AccessRange range = barrier.range + base_address;
             ApplyMarkupFunctor markup_action(false);
             access_context->UpdateMemoryAccessRangeState(markup_action, range);
         }
@@ -472,7 +472,7 @@ void SyncOpPipelineBarrier::ApplyMultipleBarriers(CommandExecutionContext &exec_
             CollectBarriersFunctor collect_barriers(barrier_scope, barrier.barrier, false, vvl::kNoIndex32, pending_barriers);
 
             const VkDeviceSize base_address = ResourceBaseAddress(*barrier.buffer);
-            const ResourceAccessRange range = barrier.range + base_address;
+            const AccessRange range = barrier.range + base_address;
 
             access_context->UpdateMemoryAccessRangeState(collect_barriers, range);
         }
@@ -795,7 +795,7 @@ void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext &exec_context, Resou
             for (const SyncBufferMemoryBarrier &barrier : barrier_set.buffer_memory_barriers) {
                 if (SimpleBinding(*barrier.buffer)) {
                     const VkDeviceSize base_address = ResourceBaseAddress(*barrier.buffer);
-                    const ResourceAccessRange range = barrier.range + base_address;
+                    const AccessRange range = barrier.range + base_address;
                     EventSimpleRangeGenerator filtered_range_gen(sync_event->FirstScope(), range);
                     ApplyMarkupFunctor markup_action(false);
                     access_context->UpdateMemoryAccessState(markup_action, filtered_range_gen);
@@ -839,7 +839,7 @@ void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext &exec_context, Resou
                     CollectBarriersFunctor collect_barriers(barrier_scope, event_barrier, false, vvl::kNoIndex32, pending_barriers);
 
                     const VkDeviceSize base_address = ResourceBaseAddress(*barrier.buffer);
-                    const ResourceAccessRange range = barrier.range + base_address;
+                    const AccessRange range = barrier.range + base_address;
                     EventSimpleRangeGenerator range_gen(sync_event->FirstScope(), range);
 
                     access_context->UpdateMemoryAccessState(collect_barriers, range_gen);

@@ -20,11 +20,11 @@
 
 namespace syncval {
 
-const ResourceAccessRange kFullRange(0, std::numeric_limits<VkDeviceSize>::max());
+const AccessRange kFullRange(0, std::numeric_limits<VkDeviceSize>::max());
 
-ResourceAccessRange MakeRange(VkDeviceSize start, VkDeviceSize size) { return ResourceAccessRange(start, start + size); }
+AccessRange MakeRange(VkDeviceSize start, VkDeviceSize size) { return AccessRange(start, start + size); }
 
-ResourceAccessRange MakeRange(const vvl::Buffer& buffer, VkDeviceSize offset, VkDeviceSize size) {
+AccessRange MakeRange(const vvl::Buffer& buffer, VkDeviceSize offset, VkDeviceSize size) {
     if (offset >= buffer.create_info.size) {
         return {};
     }
@@ -34,7 +34,7 @@ ResourceAccessRange MakeRange(const vvl::Buffer& buffer, VkDeviceSize offset, Vk
     } else {
         end = std::min(offset + size, buffer.create_info.size);
     }
-    return ResourceAccessRange(offset, end);
+    return AccessRange(offset, end);
 }
 
 }  // namespace syncval

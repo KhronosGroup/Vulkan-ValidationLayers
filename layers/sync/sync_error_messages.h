@@ -47,15 +47,15 @@ class ErrorMessages {
                       const AdditionalMessageInfo& additional_info = {}) const;
 
     std::string BufferError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
-                            const std::string& resource_description, const ResourceAccessRange range,
+                            const std::string& resource_description, const AccessRange range,
                             AdditionalMessageInfo additional_info = {}) const;
 
     std::string BufferCopyError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, const vvl::Func command,
-                                const std::string& resouce_description, uint32_t region_index, ResourceAccessRange range) const;
+                                const std::string& resouce_description, uint32_t region_index, AccessRange range) const;
 
     std::string AccelerationStructureError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                            const vvl::Func command, const std::string& resource_description,
-                                           const ResourceAccessRange range, VkAccelerationStructureKHR as,
+                                           const AccessRange range, VkAccelerationStructureKHR as,
                                            const Location& as_location) const;
 
     std::string ImageCopyResolveBlitError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,

@@ -362,7 +362,7 @@ void QueueBatchContext::ApplyAcquireWait(const AcquiredImage& acquired) {
     ApplyPredicatedWait(predicate, {});
 }
 
-void QueueBatchContext::OnResourceDestroyed(const ResourceAccessRange& resource_range) {
+void QueueBatchContext::OnResourceDestroyed(const AccessRange& resource_range) {
     // Remove all accesses associated with the resource being destroyed
     access_context_.EraseIf([&resource_range](AccessMap::value_type& access) { return resource_range.includes(access.first); });
 }
