@@ -23,7 +23,9 @@ TEST_F(PositiveBuffer, OwnershipTranfers) {
 
     vkt::Queue *no_gfx_queue = m_device->QueueWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
     if (!no_gfx_queue) {
-        GTEST_SKIP() << "Required queue not present (non-graphics non-compute capable required)";
+        GTEST_SKIP() << "Required queue not present (non-graphics capable required)";
+    } else if ((m_device->Physical().queue_properties_[no_gfx_queue->family_index].queueFlags & VK_QUEUE_TRANSFER_BIT) == 0) {
+        GTEST_SKIP() << "Non graphic queue doesn't have transfer bit";
     }
 
     vkt::CommandPool no_gfx_pool(*m_device, no_gfx_queue->family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
