@@ -72,6 +72,7 @@ void SwapchainImage::ResetAcquireState() {
     acquired = false;
     acquire_semaphore.reset();
     acquire_fence.reset();
+    acquire_semaphore_status = AcquireSyncStatus::NotSpecified;
     acquire_fence_status = AcquireSyncStatus::NotSpecified;
 }
 
@@ -159,6 +160,16 @@ void Swapchain::AcquireImage(uint32_t image_index, const std::shared_ptr<vvl::Se
     images[image_index].acquire_semaphore = semaphore_state;
     images[image_index].acquire_fence = fence_state;
 
+    if (semaphore_state) {
+        if (semaphore_state->Scope() == vvl::Semaphore::kInternal) {
+            images[image_index].acquire_semaphore_status = AcquireSyncStatus::Signaled;
+        } else {
+            // For external semaphores (where waits can't be tracked), assume an optimistic scenario
+            // in which the semaphore has been waited on.
+            images[image_index].acquire_semaphore_status = AcquireSyncStatus::WasWaitedOn;
+        }
+        semaphore_state->SetAcquiredImage(shared_from_this(), image_index);
+    }
     if (fence_state) {
         if (fence_state->Scope() == vvl::Fence::kInternal) {
             images[image_index].acquire_fence_status = AcquireSyncStatus::Signaled;
@@ -167,9 +178,7 @@ void Swapchain::AcquireImage(uint32_t image_index, const std::shared_ptr<vvl::Se
             // in which the fence has been waited on.
             images[image_index].acquire_fence_status = AcquireSyncStatus::WasWaitedOn;
         }
-
         fence_state->SetAcquiredImage(shared_from_this(), image_index);
-
         if (images[image_index].present_submission_ref.has_value()) {
             fence_state->SetPresentSubmissionRef(*images[image_index].present_submission_ref);
             images[image_index].present_submission_ref.reset();
