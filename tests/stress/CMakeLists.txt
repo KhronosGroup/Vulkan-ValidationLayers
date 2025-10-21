@@ -38,10 +38,9 @@ target_link_libraries(vk_layer_validation_stress PRIVATE
 )
 
 # Want next to other executable in build folder
-get_filename_component(TEST_MAIN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/.." REALPATH)
 set_target_properties(vk_layer_validation_stress
     PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/.."
+    RUNTIME_OUTPUT_DIRECTORY "$<TARGET_FILE_DIR:vk_layer_validation_tests>"
 )
 
 # Copy the dependent DLL's into the build directory of vk_layer_validation_stress
