@@ -13,6 +13,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <gtest/gtest.h>
 #include "utils/cast_utils.h"
 #include "utils/convert_utils.h"
 #include "../framework/layer_validation_tests.h"
@@ -2703,42 +2704,13 @@ TEST_F(NegativeRenderPass, AttachmentUndefinedLayout) {
 }
 
 TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
-    TEST_DESCRIPTION("Test VK_EXT_multisampled_render_to_single_sampled");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-
     AddRequiredExtensions(VK_EXT_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    AddOptionalExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::imagelessFramebuffer);
     AddRequiredFeature(vkt::Feature::multisampledRenderToSingleSampled);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(Init());
-
-    bool imageless_fb_supported = IsExtensionsEnabled(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
-
-    VkPhysicalDeviceVulkan12Properties vulkan_12_features = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(vulkan_12_features);
-    InitRenderTarget();
-
-    VkAttachmentReference2 attachmentRef = vku::InitStructHelper();
-    attachmentRef.layout = VK_IMAGE_LAYOUT_GENERAL;
-    attachmentRef.attachment = 0;
-    VkAttachmentReference2 depthRef = vku::InitStructHelper();
-    depthRef.layout = VK_IMAGE_LAYOUT_GENERAL;
-    depthRef.attachment = 1;
-
-    VkMultisampledRenderToSingleSampledInfoEXT ms_render_to_ss = vku::InitStructHelper();
-    ms_render_to_ss.multisampledRenderToSingleSampledEnable = VK_TRUE;
-    ms_render_to_ss.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
-
-    VkSubpassDescription2 subpass = vku::InitStructHelper(&ms_render_to_ss);
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &attachmentRef;
-
-    VkRenderPassCreateInfo2 rpci = vku::InitStructHelper();
-    rpci.subpassCount = 1;
-    rpci.pSubpasses = &subpass;
-    rpci.attachmentCount = 2;
 
     VkAttachmentDescription2 attach_desc[2] = {};
     attach_desc[0] = vku::InitStructHelper();
@@ -2755,27 +2727,95 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     attach_desc[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     attach_desc[1].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
+    VkAttachmentReference2 attachment_ref = vku::InitStructHelper();
+    attachment_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment_ref.attachment = 0;
+    VkAttachmentReference2 depth_ref = vku::InitStructHelper();
+    depth_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
+    depth_ref.attachment = 1;
+
+    VkMultisampledRenderToSingleSampledInfoEXT ms_render_to_ss = vku::InitStructHelper();
+    ms_render_to_ss.multisampledRenderToSingleSampledEnable = VK_TRUE;
+    ms_render_to_ss.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
+
+    VkSubpassDescription2 subpass = vku::InitStructHelper(&ms_render_to_ss);
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &attachment_ref;
+
+    VkRenderPassCreateInfo2 rpci = vku::InitStructHelper();
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    rpci.attachmentCount = 2;
     rpci.pAttachments = attach_desc;
 
     VkRenderPass rp;
-    // attach_desc[0].samples != ms_state.rasterizationSamples
     m_errorMonitor->SetDesiredError("VUID-VkSubpassDescription2-pNext-06870");
     vk::CreateRenderPass2(device(), &rpci, nullptr, &rp);
     m_errorMonitor->VerifyFound();
 
     attach_desc[0].samples = VK_SAMPLE_COUNT_2_BIT;
-    subpass.pDepthStencilAttachment = &depthRef;
-    // Depth VK_SAMPLE_COUNT_1_BIT, no VkSubpassDescriptionDepthStencilResolve in pNext
+    subpass.pDepthStencilAttachment = &depth_ref;
     m_errorMonitor->SetDesiredError("VUID-VkSubpassDescription2-pNext-06871");
     vk::CreateRenderPass2(device(), &rpci, nullptr, &rp);
     m_errorMonitor->VerifyFound();
 
     VkSubpassDescriptionDepthStencilResolve depth_stencil_resolve = vku::InitStructHelper();
     ms_render_to_ss.pNext = &depth_stencil_resolve;
-    // VkSubpassDescriptionDepthStencilResolve depthResolveMode and stencilResolveMode both VK_RESOLVE_MODE_NONE
     m_errorMonitor->SetDesiredError("VUID-VkSubpassDescriptionDepthStencilResolve-pNext-06873");
     vk::CreateRenderPass2(device(), &rpci, nullptr, &rp);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled2) {
+    TEST_DESCRIPTION("Test VK_EXT_multisampled_render_to_single_sampled");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::imagelessFramebuffer);
+    AddRequiredFeature(vkt::Feature::multisampledRenderToSingleSampled);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceVulkan12Properties vulkan_12_features = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(vulkan_12_features);
+
+    VkAttachmentDescription2 attach_desc[2] = {};
+    attach_desc[0] = vku::InitStructHelper();
+    attach_desc[0].format = VK_FORMAT_B8G8R8A8_UNORM;
+    attach_desc[0].samples = VK_SAMPLE_COUNT_2_BIT;
+    attach_desc[0].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc[0].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attach_desc[1] = vku::InitStructHelper();
+    attach_desc[1].format = VK_FORMAT_D32_SFLOAT;
+    attach_desc[1].samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc[1].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc[1].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkAttachmentReference2 attachment_ref = vku::InitStructHelper();
+    attachment_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment_ref.attachment = 0;
+    VkAttachmentReference2 depth_ref = vku::InitStructHelper();
+    depth_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
+    depth_ref.attachment = 1;
+
+    VkSubpassDescriptionDepthStencilResolve depth_stencil_resolve = vku::InitStructHelper();
+    VkMultisampledRenderToSingleSampledInfoEXT ms_render_to_ss = vku::InitStructHelper(&depth_stencil_resolve);
+    ms_render_to_ss.multisampledRenderToSingleSampledEnable = VK_TRUE;
+    ms_render_to_ss.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
+
+    VkSubpassDescription2 subpass = vku::InitStructHelper(&ms_render_to_ss);
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &attachment_ref;
+    subpass.pDepthStencilAttachment = &depth_ref;
+
+    VkRenderPassCreateInfo2 rpci = vku::InitStructHelper();
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    rpci.attachmentCount = 2;
+    rpci.pAttachments = attach_desc;
 
     VkResolveModeFlagBits unsupported_depth = VK_RESOLVE_MODE_NONE;
     VkResolveModeFlagBits supported_depth = VK_RESOLVE_MODE_NONE;
@@ -2800,6 +2840,8 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
             }
         }
     }
+
+    VkRenderPass rp;
     if (unsupported_depth != VK_RESOLVE_MODE_NONE) {
         depth_stencil_resolve.depthResolveMode = unsupported_depth;
         // depthResolveMode unsupported
@@ -2841,12 +2883,69 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
         vk::CreateRenderPass2(device(), &rpci, nullptr, &rp);
         m_errorMonitor->VerifyFound();
     }
+}
+
+TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled3) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::imagelessFramebuffer);
+    AddRequiredFeature(vkt::Feature::multisampledRenderToSingleSampled);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceVulkan12Properties vulkan_12_features = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(vulkan_12_features);
+    InitRenderTarget();
+
+    VkAttachmentReference2 attachment_ref = vku::InitStructHelper();
+    attachment_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment_ref.attachment = 0;
+    VkAttachmentReference2 depth_ref = vku::InitStructHelper();
+    depth_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
+    depth_ref.attachment = 1;
+
+    VkMultisampledRenderToSingleSampledInfoEXT ms_render_to_ss = vku::InitStructHelper();
+    ms_render_to_ss.multisampledRenderToSingleSampledEnable = VK_TRUE;
+    ms_render_to_ss.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
+
+    VkSubpassDescription2 subpass = vku::InitStructHelper(&ms_render_to_ss);
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &attachment_ref;
+
+    VkRenderPassCreateInfo2 rpci = vku::InitStructHelper();
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    rpci.attachmentCount = 2;
+
+    VkAttachmentDescription2 attach_desc[2] = {};
+    attach_desc[0] = vku::InitStructHelper();
+    attach_desc[0].format = VK_FORMAT_B8G8R8A8_UNORM;
+    attach_desc[0].samples = VK_SAMPLE_COUNT_4_BIT;
+    attach_desc[0].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc[0].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attach_desc[1] = vku::InitStructHelper();
+    attach_desc[1].format = VK_FORMAT_D32_SFLOAT;
+    attach_desc[1].samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc[1].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc[1].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    rpci.pAttachments = attach_desc;
+
+    VkRenderPass rp;
+    attach_desc[0].samples = VK_SAMPLE_COUNT_2_BIT;
+    subpass.pDepthStencilAttachment = &depth_ref;
+
+    VkSubpassDescriptionDepthStencilResolve depth_stencil_resolve = vku::InitStructHelper();
+    ms_render_to_ss.pNext = &depth_stencil_resolve;
 
     ms_render_to_ss.pNext = nullptr;
     subpass.pDepthStencilAttachment = nullptr;
     ms_render_to_ss.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     attach_desc[0].samples = VK_SAMPLE_COUNT_1_BIT;
-    // rasterizationSamples can't be VK_SAMPLE_COUNT_1_BIT
     m_errorMonitor->SetDesiredError("VUID-VkMultisampledRenderToSingleSampledInfoEXT-rasterizationSamples-06878");
     vk::CreateRenderPass2(device(), &rpci, nullptr, &rp);
     m_errorMonitor->VerifyFound();
@@ -2891,14 +2990,6 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     begin_rendering_info.pColorAttachments = &color_attachment;
     begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
-    m_command_buffer.Begin();
-    m_command_buffer.BeginRendering(begin_rendering_info);
-    // ms_render_to_ss.rasterizationSamples != ms_state.rasterizationSamples
-    // Valid because never hit draw time
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_helper);
-    m_command_buffer.EndRendering();
-    m_command_buffer.End();
-
     VkImageFormatProperties2 image_format_prop = vku::InitStructHelper();
     VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper();
     image_format_info.tiling = VK_IMAGE_TILING_OPTIMAL;
@@ -2928,8 +3019,6 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
 
     color_attachment.imageView = two_count_image_view;
     m_command_buffer.Begin();
-    // Attachments must have a sample count that is either VK_SAMPLE_COUNT_1_BIT or
-    // VkMultisampledRenderToSingleSampledInfoEXT::rasterizationSamples.
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-imageView-06858");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
@@ -2939,8 +3028,6 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     auto one_count_image_view_ci = one_count_image.BasicViewCreatInfo();
     vkt::ImageView one_count_image_view(*m_device, one_count_image_view_ci);
     color_attachment.imageView = one_count_image_view;
-    // Attachments with a sample count of VK_SAMPLE_COUNT_1_BIT must have been created with
-    // VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-imageView-06859");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
@@ -2955,14 +3042,12 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;
     begin_rendering_info.pNext = nullptr;
     color_attachment.imageView = good_one_count_image_view;
-    // If resolveMode is not VK_RESOLVE_MODE_NONE, imageView must not have a sample count of VK_SAMPLE_COUNT_1_BIT
     m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06861");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
     color_attachment.imageView = two_count_image_view;
     color_attachment.resolveImageView = VK_NULL_HANDLE;
-    // If resolveMode is not VK_RESOLVE_MODE_NONE, resolveImageView must not be VK_NULL_HANDLE
     m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06862");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
@@ -2970,35 +3055,173 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     begin_rendering_info.pNext = &ms_render_to_ss;
     color_attachment.imageView = good_one_count_image_view;
     color_attachment.resolveImageView = good_one_count_image_view;
-    // If imageView has a sample count of VK_SAMPLE_COUNT_1_BIT, resolveImageView must be VK_NULL_HANDLE
     m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06863");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
+}
 
-    // Positive Test: Image view with VK_SAMPLE_COUNT_1_BIT should not get error 07285 in pipeline created with attachment with
-    // VK_SAMPLE_COUNT_2_BIT
-    CreatePipelineHelper dr_pipe_helper(*this);
-    dr_pipe_helper.gp_ci_.renderPass = VK_NULL_HANDLE;
-    dr_pipe_helper.ms_ci_ = ms_state;
-    dr_pipe_helper.cb_ci_.attachmentCount = 0;
-    dr_pipe_helper.CreateGraphicsPipeline();
-    begin_rendering_info.pNext = nullptr;
-    color_attachment.resolveImageView = VK_NULL_HANDLE;
-    color_attachment.resolveMode = VK_RESOLVE_MODE_NONE;
-    m_command_buffer.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, dr_pipe_helper);
-    vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
-    m_command_buffer.EndRendering();
-    color_attachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled4) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::imagelessFramebuffer);
+    AddRequiredFeature(vkt::Feature::multisampledRenderToSingleSampled);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
 
-    // Positive Test: Same as previous test but using render pass and should not get error 08644
-    CreatePipelineHelper test_pipe(*this);
-    test_pipe.ms_ci_ = ms_state;
-    test_pipe.CreateGraphicsPipeline();
-    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, test_pipe);
-    vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
-    m_command_buffer.EndRenderPass();
+    VkAttachmentReference2 attachment_ref = vku::InitStructHelper();
+    attachment_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment_ref.attachment = 0;
+
+    VkMultisampledRenderToSingleSampledInfoEXT ms_render_to_ss = vku::InitStructHelper();
+    ms_render_to_ss.multisampledRenderToSingleSampledEnable = VK_TRUE;
+    ms_render_to_ss.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
+
+    VkSubpassDescription2 subpass = vku::InitStructHelper(&ms_render_to_ss);
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &attachment_ref;
+
+    VkAttachmentDescription2 attach_desc = vku::InitStructHelper();
+    attach_desc.format = VK_FORMAT_B8G8R8A8_UNORM;
+    attach_desc.samples = VK_SAMPLE_COUNT_2_BIT;
+    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderPassCreateInfo2 rpci = vku::InitStructHelper();
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = &attach_desc;
+    vkt::RenderPass test_rp(*m_device, rpci);
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+
+    VkImageFormatProperties2 image_format_prop = vku::InitStructHelper();
+    VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper();
+    image_format_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_format_info.type = VK_IMAGE_TYPE_2D;
+    image_format_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_format_info.format = VK_FORMAT_B8G8R8A8_UNORM;
+    VkResult result = vk::GetPhysicalDeviceImageFormatProperties2(m_device->Physical(), &image_format_info, &image_format_prop);
+    if ((result != VK_SUCCESS) || !(image_format_prop.imageFormatProperties.sampleCounts & VK_SAMPLE_COUNT_2_BIT)) {
+        GTEST_SKIP() << "Cannot create an image with format VK_FORMAT_B8G8R8A8_UNORM and sample count VK_SAMPLE_COUNT_2_BIT. "
+                        "Skipping remainder of the test";
+    }
+
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
+    image_create_info.flags = 0;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_create_info.extent = {64, 64, 1};
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    vkt::Image one_count_image(*m_device, image_create_info, vkt::set_layout);
+    auto one_count_image_view_ci = one_count_image.BasicViewCreatInfo();
+    vkt::ImageView one_count_image_view(*m_device, one_count_image_view_ci);
+
+    vkt::RenderPass test_rp2(*m_device, rpci);
+    auto fbci =
+        vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, test_rp2.handle(), 1u, &one_count_image_view.handle(), 64u, 64u, 1u);
+    VkFramebuffer fb;
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-samples-06881");
+    vk::CreateFramebuffer(device(), &fbci, nullptr, &fb);
+    m_errorMonitor->VerifyFound();
+
+    image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
+    image_create_info.flags = VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
+    VkImage bad_flag_image;
+    m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-flags-06883");
+    vk::CreateImage(device(), &image_create_info, nullptr, &bad_flag_image);
+    m_errorMonitor->VerifyFound();
+
+    vkt::QueueCreateInfoArray queue_info(m_device->Physical().queue_properties_);
+    VkDeviceCreateInfo device_create_info = vku::InitStructHelper();
+    device_create_info.queueCreateInfoCount = queue_info.Size();
+    device_create_info.pQueueCreateInfos = queue_info.Data();
+    device_create_info.pEnabledFeatures = nullptr;
+    device_create_info.enabledExtensionCount = m_device_extension_names.size();
+    device_create_info.ppEnabledExtensionNames = m_device_extension_names.data();
+
+    VkDevice second_device;
+    ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(Gpu(), &device_create_info, nullptr, &second_device));
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    bad_flag_image = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-multisampledRenderToSingleSampled-06882");
+    vk::CreateImage(second_device, &image_create_info, nullptr, &bad_flag_image);
+    m_errorMonitor->VerifyFound();
+    vk::DestroyDevice(second_device, nullptr);
+}
+
+TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled5) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::imagelessFramebuffer);
+    AddRequiredFeature(vkt::Feature::multisampledRenderToSingleSampled);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkAttachmentReference2 attachment_ref = vku::InitStructHelper();
+    attachment_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment_ref.attachment = 0;
+
+    VkMultisampledRenderToSingleSampledInfoEXT ms_render_to_ss = vku::InitStructHelper();
+    ms_render_to_ss.multisampledRenderToSingleSampledEnable = VK_TRUE;
+    ms_render_to_ss.rasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
+
+    VkSubpassDescription2 subpass = vku::InitStructHelper(&ms_render_to_ss);
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &attachment_ref;
+    subpass.pDepthStencilAttachment = nullptr;
+
+    VkAttachmentDescription2 attach_desc = vku::InitStructHelper();
+    attach_desc.format = VK_FORMAT_B8G8R8A8_UNORM;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderPassCreateInfo2 rpci = vku::InitStructHelper();
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = &attach_desc;
+
+    VkImageFormatProperties2 image_format_prop = vku::InitStructHelper();
+    VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper();
+    image_format_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_format_info.type = VK_IMAGE_TYPE_2D;
+    image_format_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_format_info.format = VK_FORMAT_B8G8R8A8_UNORM;
+    VkResult result = vk::GetPhysicalDeviceImageFormatProperties2(m_device->Physical(), &image_format_info, &image_format_prop);
+    if ((result != VK_SUCCESS) || !(image_format_prop.imageFormatProperties.sampleCounts & VK_SAMPLE_COUNT_2_BIT)) {
+        GTEST_SKIP() << "Cannot create an image with format VK_FORMAT_B8G8R8A8_UNORM and sample count VK_SAMPLE_COUNT_2_BIT. "
+                        "Skipping remainder of the test";
+    }
+
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
+    image_create_info.flags = VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_create_info.extent = {64, 64, 1};
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+    vkt::Image ms_ss_image(*m_device, image_create_info, vkt::set_layout);
+    auto ms_ss_image_view_ci = ms_ss_image.BasicViewCreatInfo();
+    vkt::ImageView ms_ss_image_view(*m_device, ms_ss_image_view_ci);
 
     // Find an image format that can't be sampled
     image_format_prop = vku::InitStructHelper();
@@ -3026,123 +3249,89 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
             }
         }
     }
-
-    if (unsampleable_format != VK_FORMAT_UNDEFINED) {
-        image_create_info.imageType = VK_IMAGE_TYPE_3D;
-        image_create_info.format = unsampleable_format;
-        image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;  // Can't use unsupported sample count or can't create image view
-        image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-        image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-        image_create_info.flags =
-            VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT | VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
-        vkt::Image unsampleable_image(*m_device, image_create_info, vkt::set_layout);
-        auto unsampleable_image_view_ci = unsampleable_image.BasicViewCreatInfo();
-        vkt::ImageView unsampleable_image_view(*m_device, unsampleable_image_view_ci);
-        begin_rendering_info.pNext = &ms_render_to_ss;
-        ms_render_to_ss.rasterizationSamples = unsampleable_count;
-        color_attachment.resolveImageView = VK_NULL_HANDLE;
-        color_attachment.imageView = unsampleable_image_view;
-        // Attachment must have a format that supports the sample count specified in rasterizationSamples
-        m_errorMonitor->SetDesiredError("VUID-VkMultisampledRenderToSingleSampledInfoEXT-pNext-06880");
-        m_command_buffer.BeginRendering(begin_rendering_info);
-        m_errorMonitor->VerifyFound();
-
-        attach_desc[0].samples = VK_SAMPLE_COUNT_1_BIT;
-        subpass.pDepthStencilAttachment = nullptr;
-        rpci.attachmentCount = 1;
-        attach_desc[0].format = unsampleable_format;
-
-        vkt::RenderPass unsampleable_rp(*m_device, rpci);
-        auto unsampleable_fbci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, unsampleable_rp.handle(), 1u,
-                                                                          &unsampleable_image_view.handle(), 64u, 64u, 1u);
-
-        VkFramebuffer unsampleable_fb;
-        m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-samples-07009");
-        vk::CreateFramebuffer(device(), &unsampleable_fbci, nullptr, &unsampleable_fb);
-        m_errorMonitor->VerifyFound();
-        attach_desc[0].format = VK_FORMAT_B8G8R8A8_UNORM;
-
-        if (imageless_fb_supported) {
-            VkFormat framebufferAttachmentFormats[1] = {unsampleable_format};
-            VkFramebufferAttachmentImageInfo framebufferAttachmentImageInfo = vku::InitStructHelper();
-            framebufferAttachmentImageInfo.flags = image_create_info.flags;
-            framebufferAttachmentImageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-            framebufferAttachmentImageInfo.width = 64;
-            framebufferAttachmentImageInfo.height = 64;
-            framebufferAttachmentImageInfo.layerCount = 1;
-            framebufferAttachmentImageInfo.viewFormatCount = 1;
-            framebufferAttachmentImageInfo.pViewFormats = framebufferAttachmentFormats;
-            VkFramebufferAttachmentsCreateInfo framebufferAttachmentsCreateInfo = vku::InitStructHelper();
-            framebufferAttachmentsCreateInfo.attachmentImageInfoCount = 1;
-            framebufferAttachmentsCreateInfo.pAttachmentImageInfos = &framebufferAttachmentImageInfo;
-            rpci.attachmentCount = 1;
-            attach_desc[0].format = unsampleable_format;
-            attach_desc[0].samples = VK_SAMPLE_COUNT_1_BIT;
-            vkt::RenderPass imageless_rp(*m_device, rpci);
-            auto imageless_fbci =
-                vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, imageless_rp.handle(), 1u, nullptr, 64u, 64u, 1u);
-            imageless_fbci.pNext = &framebufferAttachmentsCreateInfo;
-            imageless_fbci.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
-            vkt::Framebuffer imageless_fb(*m_device, imageless_fbci);
-
-            VkRenderPassAttachmentBeginInfo renderPassAttachmentBeginInfo = vku::InitStructHelper();
-            renderPassAttachmentBeginInfo.attachmentCount = 1;
-            renderPassAttachmentBeginInfo.pAttachments = &unsampleable_image_view.handle();
-            VkRenderPassBeginInfo renderPassBeginInfo = vku::InitStructHelper(&renderPassAttachmentBeginInfo);
-            renderPassBeginInfo.renderPass = imageless_rp;
-            renderPassBeginInfo.renderArea.extent.width = 64;
-            renderPassBeginInfo.renderArea.extent.height = 64;
-            renderPassBeginInfo.framebuffer = imageless_fb;
-            m_errorMonitor->SetDesiredError("VUID-VkRenderPassAttachmentBeginInfo-pAttachments-07010");
-            m_command_buffer.BeginRenderPass(renderPassBeginInfo);
-            m_errorMonitor->VerifyFound();
-            attach_desc[0].format = VK_FORMAT_B8G8R8A8_UNORM;
-        }
+    if (unsampleable_format == VK_FORMAT_UNDEFINED) {
+        GTEST_SKIP() << "Can't find format that has no sampling";
     }
 
-    // Need a renderpass with a COUNT_1 attachment
-    ms_render_to_ss.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
-    attach_desc[0].samples = VK_SAMPLE_COUNT_1_BIT;
-    subpass.pDepthStencilAttachment = nullptr;
-    rpci.attachmentCount = 1;
-    // Create a usable renderpass
-    vkt::RenderPass test_rp2(*m_device, rpci);
-    auto fbci =
-        vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, test_rp2.handle(), 1u, &one_count_image_view.handle(), 64u, 64u, 1u);
-    VkFramebuffer fb;
-    // Framebuffer attachments with VK_SAMPLE_COUNT_1_BIT must have been created with
-    // VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT
-    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-samples-06881");
-    vk::CreateFramebuffer(device(), &fbci, nullptr, &fb);
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper(&ms_render_to_ss);
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+
+    color_attachment.imageView = ms_ss_image_view;
+    color_attachment.resolveImageView = VK_NULL_HANDLE;
+    color_attachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+    color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    image_create_info.imageType = VK_IMAGE_TYPE_3D;
+    image_create_info.format = unsampleable_format;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;  // Can't use unsupported sample count or can't create image view
+    image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.flags =
+        VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT | VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+    vkt::Image unsampleable_image(*m_device, image_create_info, vkt::set_layout);
+    auto unsampleable_image_view_ci = unsampleable_image.BasicViewCreatInfo();
+    vkt::ImageView unsampleable_image_view(*m_device, unsampleable_image_view_ci);
+    if (!unsampleable_image_view.initialized()) {
+        // This extension was written before we were more strict on the working group.
+        // There is a chance these VUs in this test really can't be reached.
+        GTEST_SKIP() << "can't create a image view with the unsampleable format";
+    }
+    ms_render_to_ss.rasterizationSamples = unsampleable_count;
+    color_attachment.resolveImageView = VK_NULL_HANDLE;
+    color_attachment.imageView = unsampleable_image_view;
+    m_errorMonitor->SetDesiredError("VUID-VkMultisampledRenderToSingleSampledInfoEXT-pNext-06880");
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
-    image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
-    image_create_info.flags = VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT;
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
-    VkImage bad_flag_image;
-    // VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT requires VK_SAMPLE_COUNT_1_BIT
-    m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-flags-06883");
-    vk::CreateImage(device(), &image_create_info, nullptr, &bad_flag_image);
-    m_errorMonitor->VerifyFound();
+    attach_desc.format = unsampleable_format;
 
-    vkt::QueueCreateInfoArray queue_info(m_device->Physical().queue_properties_);
-    VkDeviceCreateInfo device_create_info = vku::InitStructHelper();
-    device_create_info.queueCreateInfoCount = queue_info.Size();
-    device_create_info.pQueueCreateInfos = queue_info.Data();
-    device_create_info.pEnabledFeatures = nullptr;
-    device_create_info.enabledExtensionCount = m_device_extension_names.size();
-    device_create_info.ppEnabledExtensionNames = m_device_extension_names.data();
+    vkt::RenderPass unsampleable_rp(*m_device, rpci);
+    auto unsampleable_fbci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, unsampleable_rp.handle(), 1u,
+                                                                      &unsampleable_image_view.handle(), 64u, 64u, 1u);
 
-    VkDevice second_device;
-    ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(Gpu(), &device_create_info, nullptr, &second_device));
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    bad_flag_image = VK_NULL_HANDLE;
-    // VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT requires multisampledRenderToSingleSampled feature
-    m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-multisampledRenderToSingleSampled-06882");
-    vk::CreateImage(second_device, &image_create_info, nullptr, &bad_flag_image);
+    VkFramebuffer unsampleable_fb;
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-samples-07009");
+    vk::CreateFramebuffer(device(), &unsampleable_fbci, nullptr, &unsampleable_fb);
     m_errorMonitor->VerifyFound();
-    vk::DestroyDevice(second_device, nullptr);
+    attach_desc.format = VK_FORMAT_B8G8R8A8_UNORM;
+
+    VkFormat framebuffer_attachment_formats[1] = {unsampleable_format};
+    VkFramebufferAttachmentImageInfo framebuffer_attachment_image_info = vku::InitStructHelper();
+    framebuffer_attachment_image_info.flags = image_create_info.flags;
+    framebuffer_attachment_image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    framebuffer_attachment_image_info.width = 64;
+    framebuffer_attachment_image_info.height = 64;
+    framebuffer_attachment_image_info.layerCount = 1;
+    framebuffer_attachment_image_info.viewFormatCount = 1;
+    framebuffer_attachment_image_info.pViewFormats = framebuffer_attachment_formats;
+    VkFramebufferAttachmentsCreateInfo framebuffer_attachment_ci = vku::InitStructHelper();
+    framebuffer_attachment_ci.attachmentImageInfoCount = 1;
+    framebuffer_attachment_ci.pAttachmentImageInfos = &framebuffer_attachment_image_info;
+    attach_desc.format = unsampleable_format;
+    vkt::RenderPass imageless_rp(*m_device, rpci);
+    auto imageless_fbci = vku::InitStruct<VkFramebufferCreateInfo>(nullptr, 0u, imageless_rp.handle(), 1u, nullptr, 64u, 64u, 1u);
+    imageless_fbci.pNext = &framebuffer_attachment_ci;
+    imageless_fbci.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
+    vkt::Framebuffer imageless_fb(*m_device, imageless_fbci);
+
+    VkRenderPassAttachmentBeginInfo rp_attachment_begin_info = vku::InitStructHelper();
+    rp_attachment_begin_info.attachmentCount = 1;
+    rp_attachment_begin_info.pAttachments = &unsampleable_image_view.handle();
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper(&rp_attachment_begin_info);
+    rp_begin_info.renderPass = imageless_rp;
+    rp_begin_info.renderArea.extent = {64, 64};
+    rp_begin_info.framebuffer = imageless_fb;
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassAttachmentBeginInfo-pAttachments-07010");
+    m_command_buffer.BeginRenderPass(rp_begin_info);
+    m_errorMonitor->VerifyFound();
+    attach_desc.format = VK_FORMAT_B8G8R8A8_UNORM;
 }
 
 TEST_F(NegativeRenderPass, AttachmentDescriptionUndefinedFormat) {
