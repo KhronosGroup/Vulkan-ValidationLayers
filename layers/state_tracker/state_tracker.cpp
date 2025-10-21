@@ -3853,10 +3853,14 @@ void DeviceState::RecordCreateSwapchainState(VkResult result, const VkSwapchainC
                                                            IsExtEnabled(extensions.vk_ext_image_drm_format_modifier), device,
                                                            swapchain_images[i], image_ci.format, image_ci.tiling);
                 auto image_state = CreateImageState(swapchain_images[i], image_ci.ptr(), swapchain->VkHandle(), i, format_features);
+
+                // Create a copy since image state is needed after move. SetSwapchain modifies image substates.
+                auto image_state_ptr_copy = image_state;
+                Add(std::move(image_state_ptr_copy));
+
                 image_state->SetSwapchain(swapchain, i);
                 image_state->SetInitialLayoutMap();
                 swapchain->images[i].image_state = image_state.get();
-                Add(std::move(image_state));
             }
         }
         if (old_swapchain_state) {
