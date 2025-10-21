@@ -324,13 +324,13 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
 static const char *SuggestImageViewType(spv::Dim dim, bool is_image_array) {
     VkImageViewType suggest = VK_IMAGE_VIEW_TYPE_MAX_ENUM;
     if (dim == spv::Dim1D) {
-        suggest = is_image_array ? VK_IMAGE_VIEW_TYPE_1D : VK_IMAGE_VIEW_TYPE_1D_ARRAY;
+        suggest = is_image_array ? VK_IMAGE_VIEW_TYPE_1D_ARRAY : VK_IMAGE_VIEW_TYPE_1D;
     } else if (dim == spv::Dim2D) {
-        suggest = is_image_array ? VK_IMAGE_VIEW_TYPE_2D : VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+        suggest = is_image_array ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D;
     } else if (dim == spv::Dim3D) {
         suggest = VK_IMAGE_VIEW_TYPE_3D;
     } else if (dim == spv::DimCube) {
-        suggest = is_image_array ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+        suggest = is_image_array ? VK_IMAGE_VIEW_TYPE_CUBE_ARRAY : VK_IMAGE_VIEW_TYPE_CUBE;
     } else {
         return "(No matching VkImageViewTyp)";
     }
