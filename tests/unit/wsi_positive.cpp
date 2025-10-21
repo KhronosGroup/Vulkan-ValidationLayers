@@ -436,7 +436,7 @@ TEST_F(PositiveWsi, WaitForAcquireFenceThenReset) {
 
 TEST_F(PositiveWsi, WaitForAcquireFenceThenResetAndReuse) {
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10842
-    TEST_DESCRIPTION("Wait for acquire fence then reset it and resut by QueueSubmit");
+    TEST_DESCRIPTION("Wait for acquire fence then reset it and reuse by QueueSubmit");
     AddSurfaceExtension();
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
@@ -455,6 +455,29 @@ TEST_F(PositiveWsi, WaitForAcquireFenceThenResetAndReuse) {
 
     // Acquired image is ready since we waited on the fence.
     // In the original issue it was not considered ready due to fence reuse.
+    m_default_queue->Present(m_swapchain, image_index, vkt::no_semaphore);
+
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveWsi, WaitForAcquireSemaphoreThenSignal) {
+    TEST_DESCRIPTION("Wait for acquire semaphore then reuse it in QueueSubmit");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+    const auto swapchain_images = m_swapchain.GetImages();
+    for (auto image : swapchain_images) {
+        SetPresentImageLayout(image);
+    }
+
+    vkt::Semaphore semaphore(*m_device);
+    uint32_t image_index = m_swapchain.AcquireNextImage(semaphore, kWaitTimeout);
+
+    // Wait for the acquire semaphore but then immediately signal it again.
+    m_default_queue->Submit(vkt::no_cmd, vkt::Wait(semaphore), vkt::Signal(semaphore));
+
+    // Acquired image is ready since we waited for the semaphore.
+    // The semaphore is signaled again but this should not affect the presentation.
     m_default_queue->Present(m_swapchain, image_index, vkt::no_semaphore);
 
     m_default_queue->Wait();
