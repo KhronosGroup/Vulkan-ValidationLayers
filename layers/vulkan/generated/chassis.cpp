@@ -33995,54 +33995,6 @@ VKAPI_ATTR void VKAPI_CALL DestroyAccelerationStructureKHR(VkDevice device, VkAc
     }
 }
 
-VKAPI_ATTR void VKAPI_CALL CmdBuildAccelerationStructuresKHR(
-    VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos) {
-    VVL_ZoneScoped;
-
-    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
-    bool skip = false;
-    ErrorObject error_obj(vvl::Func::vkCmdBuildAccelerationStructuresKHR,
-                          VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
-    {
-        VVL_ZoneScopedN("PreCallValidate_vkCmdBuildAccelerationStructuresKHR");
-        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdBuildAccelerationStructuresKHR]) {
-            if (!vo) {
-                continue;
-            }
-            auto lock = vo->ReadLock();
-            skip |= vo->PreCallValidateCmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos,
-                                                                         error_obj);
-            if (skip) return;
-        }
-    }
-    RecordObject record_obj(vvl::Func::vkCmdBuildAccelerationStructuresKHR);
-    {
-        VVL_ZoneScopedN("PreCallRecord_vkCmdBuildAccelerationStructuresKHR");
-        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCmdBuildAccelerationStructuresKHR]) {
-            if (!vo) {
-                continue;
-            }
-            auto lock = vo->WriteLock();
-            vo->PreCallRecordCmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos, record_obj);
-        }
-    }
-    {
-        VVL_ZoneScopedN("Dispatch_vkCmdBuildAccelerationStructuresKHR");
-        device_dispatch->CmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos);
-    }
-    {
-        VVL_ZoneScopedN("PostCallRecord_vkCmdBuildAccelerationStructuresKHR");
-        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdBuildAccelerationStructuresKHR]) {
-            if (!vo) {
-                continue;
-            }
-            auto lock = vo->WriteLock();
-            vo->PostCallRecordCmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos, record_obj);
-        }
-    }
-}
-
 VKAPI_ATTR void VKAPI_CALL CmdBuildAccelerationStructuresIndirectKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
                                                                      const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
                                                                      const VkDeviceAddress* pIndirectDeviceAddresses,

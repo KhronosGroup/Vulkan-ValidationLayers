@@ -263,6 +263,17 @@ GpuResourcesManager::GpuResourcesManager(Validator &gpuav) : gpuav_(gpuav) {
         VmaAllocationCreateInfo alloc_ci = {};
         alloc_ci.usage = VMA_MEMORY_USAGE_AUTO;
         alloc_ci.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+        alloc_ci.requiredFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        buffer_caches_.host_coherent_indirect.Create(VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                                                         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+                                                         VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                                     alloc_ci);
+    }
+
+    {
+        VmaAllocationCreateInfo alloc_ci = {};
+        alloc_ci.usage = VMA_MEMORY_USAGE_AUTO;
+        alloc_ci.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
         buffer_caches_.host_cached.Create(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
                                               VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                           alloc_ci);
@@ -340,6 +351,15 @@ vko::BufferRange GpuResourcesManager::GetHostCoherentBufferRange(VkDeviceSize si
     const VkDeviceSize alignment =
         std::max<VkDeviceSize>(gpuav_.phys_dev_props.limits.minStorageBufferOffsetAlignment, buffer_address_alignment);
     return buffer_caches_.host_coherent.GetBufferRange(gpuav_, size, alignment, min_buffer_block_size);
+}
+
+vko::BufferRange GpuResourcesManager::GetHostCoherentIndirectBufferRange(VkDeviceSize size) {
+    // Kind of arbitrary, considered "big enough"
+    constexpr VkDeviceSize min_buffer_block_size = 4 * 1024;
+    // Buffers are used as storage buffers, align to corresponding limit
+    const VkDeviceSize alignment =
+        std::max<VkDeviceSize>(gpuav_.phys_dev_props.limits.minStorageBufferOffsetAlignment, buffer_address_alignment);
+    return buffer_caches_.host_coherent_indirect.GetBufferRange(gpuav_, size, alignment, min_buffer_block_size);
 }
 
 vko::BufferRange GpuResourcesManager::GetHostCachedBufferRange(VkDeviceSize size) {

@@ -105,6 +105,8 @@ class LayerChassisOutputGenerator(BaseGenerator):
         'vkGetValidationCacheDataEXT',
         'vkGetPhysicalDeviceToolProperties',
         'vkGetPhysicalDeviceToolPropertiesEXT',
+        # GPU-AV needs to transform AS build commands into indirect ones to be able to stop them from the GPU
+        'vkCmdBuildAccelerationStructuresKHR'
     )
 
     def __init__(self):

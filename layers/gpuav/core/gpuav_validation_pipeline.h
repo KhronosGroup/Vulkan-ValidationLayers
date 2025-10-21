@@ -83,11 +83,18 @@ class ComputePipeline {
 
     [[nodiscard]] bool BindShaderResources(Validator& gpuav, CommandBufferSubState& cb_state,
                                            const ShaderResources& shader_resources) {
-        const VkDescriptorSet desc_set = internal::GetDescriptorSetHelper(cb_state, specific_desc_set_layout);
-        if (!desc_set) {
-            return false;
+        std::vector<VkWriteDescriptorSet> desc_writes = shader_resources.GetDescriptorWrites();
+        VkDescriptorSet desc_set = VK_NULL_HANDLE;
+        if (!desc_writes.empty()) {
+            desc_set = internal::GetDescriptorSetHelper(cb_state, specific_desc_set_layout);
+            if (!desc_set) {
+                return false;
+            }
         }
-        const std::vector<VkWriteDescriptorSet> desc_writes = shader_resources.GetDescriptorWrites(desc_set);
+        for (VkWriteDescriptorSet& wds : desc_writes) {
+            wds.dstSet = desc_set;
+        }
+
         internal::BindShaderResourcesHelper(gpuav, cb_state, pipeline_layout, desc_set, desc_writes,
                                             sizeof(shader_resources.push_constants), &shader_resources.push_constants);
         return true;

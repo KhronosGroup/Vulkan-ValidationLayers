@@ -38,6 +38,7 @@ const int kErrorGroupGpuCopyBufferToImage = 7;
 const int kErrorGroupInstDescriptorClass = 8;
 const int kErrorGroupInstIndexedDraw = 9;
 const int kErrorGroupInstCopyMemoryIndirect = 10;
+const int kErrorGroupGpuPreBuildAccelerationStructures = 11;
 
 // We just take ExecutionModel and normalize it so we only use 5 bits to store it
 const int kExecutionModelVertex = 0;
@@ -122,7 +123,7 @@ const int kErrorSubCodePreDispatchCountLimitX = 1;
 const int kErrorSubCodePreDispatchCountLimitY = 2;
 const int kErrorSubCodePreDispatchCountLimitZ = 3;
 
-// Pre Tracy Rays
+// Pre Trace Rays
 //
 const int kErrorSubCodePreTraceRaysLimitWidth = 1;
 const int kErrorSubCodePreTraceRaysLimitHeight = 2;
@@ -143,6 +144,11 @@ const int kErrorSubCodePreCopyMemoryToImageIndirectBufferImageHeight = 6;
 const int kErrorSubCodePreCopyMemoryIndirectSrcAddressInvalid = 7;
 const int kErrorSubCodePreCopyMemoryIndirectDstAddressInvalid = 8;
 const int kErrorSubCodePreCopyMemoryToImageIndirectSrcAddressInvalid = 9;
+
+// Pre Build Acceleration Structures
+//
+const int kErrorSubCodePreBuildAccelerationStructures_InvalidAS = 1;
+const int kErrorSubCodePreBuildAccelerationStructures_DestroyedASBuffer = 2;
 
 #ifdef __cplusplus
 }  // namespace glsl

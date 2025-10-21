@@ -162,4 +162,8 @@ struct CreateBuffer {
     vku::safe_VkBufferCreateInfo modified_create_info;
 };
 
+struct BuildAccelerationStructures {
+    bool app_dispatch = true;
+};
+
 }  // namespace chassis

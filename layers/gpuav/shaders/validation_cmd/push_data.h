@@ -119,6 +119,61 @@ struct TraceRaysPushData {
     uint max_ray_dispatch_invocation_count;
 };
 
+const uint kPreBuildAccelerationStructures_ASMap = 0;
+
+struct AccelerationStructureMetadata {
+    uint address_low;
+    uint address_high;
+    // Only 1 bit used for buffer status (dead or alive). 
+    // Could add BLAS build status.
+    uint buffer_status;
+};
+#ifdef __cplusplus
+using PtrToVkAccelerationStructureInstanceArray = uint64_t;
+using PtrToAccelerationStructureMetadataArray = uint64_t;
+using PtrtoPtrToAccelerationStructureMetadataArray = uint64_t;
+using PtrToAccelerationStructureBuildRangeInfos = uint64_t;
+#else
+struct VkAccelerationStructureInstance {
+    // #ARNO_TODO do I need to do that?
+    // float transform[3][4];
+    mat3x4 transform;
+    uint instanceCustomIndex_and_mask;
+    uint instanceShaderBindingTableRecordOffset_and_flags;
+    uint64_t accelerationStructureReference;
+};
+
+struct VkAccelerationStructureBuildRangeInfo {
+    uint primitiveCount;
+    uint primitiveOffset;
+    uint firstVertex;
+    uint transformOffset;
+};
+
+layout(buffer_reference, scalar) buffer PtrToVkAccelerationStructureInstanceArray { VkAccelerationStructureInstance instances[]; };
+
+layout(buffer_reference, scalar) buffer PtrToAccelerationStructureMetadataArray {
+    uint metadata_count;
+    AccelerationStructureMetadata metadata[];
+};
+
+layout(buffer_reference, scalar) buffer PtrtoPtrToAccelerationStructureMetadataArray {
+    PtrToAccelerationStructureMetadataArray ptr;
+};
+
+layout(buffer_reference, scalar) buffer PtrToAccelerationStructureBuildRangeInfos {
+    VkAccelerationStructureBuildRangeInfo infos[];
+};
+#endif
+
+// Case where arrayOfPointers is false
+struct AccelerationStructureReferencePushData {
+    PtrtoPtrToAccelerationStructureMetadataArray ptr_to_ptr_to_accel_structs_metadata;
+    PtrToVkAccelerationStructureInstanceArray ptr_to_accel_struct_instances;
+    PtrToAccelerationStructureBuildRangeInfos ptr_to_accel_struct_build_range_infos;
+    uint flattened_build_range_i;
+};
+
 #ifdef __cplusplus
 }  // namespace glsl
 }  // namespace gpuav

@@ -13901,7 +13901,6 @@ bool Device::PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffer, cons
             }
         }
     }
-    if (!skip) skip |= manual_PreCallValidateCmdResolveImage2(commandBuffer, pResolveImageInfo, context);
     return skip;
 }
 

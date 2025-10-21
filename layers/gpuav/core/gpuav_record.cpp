@@ -32,7 +32,7 @@
 #include "gpuav/validation_cmd/gpuav_copy_memory_indirect.h"
 #include "gpuav/validation_cmd/gpuav_dispatch.h"
 #include "gpuav/validation_cmd/gpuav_draw.h"
-#include "gpuav/validation_cmd/gpuav_trace_rays.h"
+#include "gpuav/validation_cmd/gpuav_ray_tracing.h"
 #include "utils/math_utils.h"
 
 namespace gpuav {
@@ -590,6 +590,21 @@ void Validator::PreCallRecordCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, u
                                                 uint32_t groupCountZ, const RecordObject &record_obj) {
     PreCallRecordCmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ,
                                  record_obj);
+}
+
+void Validator::PreCallRecordCmdBuildAccelerationStructuresKHR(
+    VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
+    const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos, const RecordObject &record_obj,
+    chassis::BuildAccelerationStructures &chassis_state) {
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    if (!cb_state) {
+        InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
+        return;
+    }
+    auto &sub_state = SubState(*cb_state);
+    const LastBound &last_bound = cb_state->GetLastBoundRayTracing();
+    valcmd::BuildAccelerationStructures(*this, record_obj.location, sub_state, last_bound, infoCount, pInfos, ppBuildRangeInfos,
+                                        chassis_state);
 }
 
 void Validator::PreCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,

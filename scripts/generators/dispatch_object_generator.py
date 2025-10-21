@@ -133,6 +133,7 @@ class DispatchObjectGenerator(BaseGenerator):
             'vkCreateDataGraphPipelinesARM',
             # Need to only wrap on certain cases
             'vkCreateShadersEXT',
+            'vkCmdBuildAccelerationStructuresKHR',
             # Need handle which pool descriptors were allocated from
             'vkResetDescriptorPool',
             'vkDestroyDescriptorPool',

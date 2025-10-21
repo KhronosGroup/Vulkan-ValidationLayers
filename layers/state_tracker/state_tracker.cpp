@@ -110,6 +110,14 @@ VkDeviceAddress DeviceState::GetBufferDeviceAddressHelper(VkBuffer buffer, const
     }
 }
 
+void DeviceState::GetASAddrToASBufferMap(AccelerationStructureMetadata *as_metadata) const {
+    const auto snapshot = as_addr_to_as_buffer_map_.snapshot();
+    size_t written_count = 0;
+    for (const auto &[device_addr, as_buffer] : snapshot) {
+        as_metadata[written_count++] = {device_addr, uint32_t(as_buffer && !as_buffer->Destroyed())};
+    }
+}
+
 // NOTE:  Beware the lifespan of the rp_begin when holding  the return.  If the rp_begin isn't a "safe" copy, "IMAGELESS"
 //        attachments won't persist past the API entry point exit.
 static std::pair<uint32_t, const VkImageView *> GetFramebufferAttachments(const VkRenderPassBeginInfo &rp_begin,
@@ -2752,6 +2760,12 @@ void DeviceState::PostCallRecordCmdCopyAccelerationStructureNV(VkCommandBuffer c
 void DeviceState::PreCallRecordDestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStructureKHR accelerationStructure,
                                                                const VkAllocationCallbacks *pAllocator,
                                                                const RecordObject &record_obj) {
+    if (auto as_state = Get<AccelerationStructureKHR>(accelerationStructure)) {
+        if (as_state->acceleration_structure_address != 0) {
+            as_addr_to_as_buffer_map_.erase(as_state->acceleration_structure_address);
+            as_state->acceleration_structure_address = 0;
+        }
+    }
     Destroy<AccelerationStructureKHR>(accelerationStructure);
 }
 
@@ -5924,7 +5938,9 @@ void DeviceState::PostCallRecordGetShaderModuleCreateInfoIdentifierEXT(VkDevice,
 
 void DeviceState::PostCallRecordGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
                                                        const RecordObject &record_obj) {
-    if (record_obj.device_address == 0) return;
+    if (record_obj.device_address == 0) {
+        return;
+    }
     if (auto buffer_state = Get<Buffer>(pInfo->buffer)) {
         WriteLockGuard guard(buffer_address_lock_);
         // address is used for GPU-AV and ray tracing buffer validation
@@ -6044,5 +6060,17 @@ void DeviceState::PreCallRecordDestroyIndirectCommandsLayoutEXT(VkDevice device,
                                                                 const VkAllocationCallbacks *pAllocator,
                                                                 const RecordObject &record_obj) {
     Destroy<IndirectCommandsLayout>(indirectCommandsLayout);
+}
+
+void DeviceState::PostCallRecordGetAccelerationStructureDeviceAddressKHR(VkDevice device,
+                                                                         const VkAccelerationStructureDeviceAddressInfoKHR *pInfo,
+                                                                         const RecordObject &record_obj) {
+    if (record_obj.device_address == 0) {
+        return;
+    }
+    if (auto as_state = Get<AccelerationStructureKHR>(pInfo->accelerationStructure)) {
+        as_state->acceleration_structure_address = record_obj.device_address;
+        as_addr_to_as_buffer_map_.insert(record_obj.device_address, as_state->buffer_state);
+    }
 }
 }  // namespace vvl

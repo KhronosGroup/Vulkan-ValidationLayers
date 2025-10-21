@@ -1475,4 +1475,56 @@ VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(VkDevice device, VkVali
     }
     return VK_SUCCESS;
 }
+
+VKAPI_ATTR void VKAPI_CALL CmdBuildAccelerationStructuresKHR(
+    VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdBuildAccelerationStructuresKHR,
+                          VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    chassis::BuildAccelerationStructures chassis_state;
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkCmdBuildAccelerationStructuresKHR");
+        for (const auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos,
+                                                                         error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCmdBuildAccelerationStructuresKHR);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkCmdBuildAccelerationStructuresKHR");
+        for (auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos, record_obj,
+                                                               chassis_state);
+        }
+    }
+    if (chassis_state.app_dispatch) {
+        VVL_ZoneScopedN("Dispatch_vkCmdBuildAccelerationStructuresKHR");
+        device_dispatch->CmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkCmdBuildAccelerationStructuresKHR");
+        for (auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos, record_obj,
+                                                                chassis_state);
+        }
+    }
+}
+
 }  // namespace vulkan_layer_chassis

@@ -204,6 +204,7 @@ const char *VK_LAYER_GPUAV_INDIRECT_TRACE_RAYS_BUFFERS = "gpuav_indirect_trace_r
 const char *VK_LAYER_GPUAV_BUFFER_COPIES = "gpuav_buffer_copies";
 const char *VK_LAYER_GPUAV_COPY_MEMORY_INDIRECT = "gpuav_copy_memory_indirect";
 const char *VK_LAYER_GPUAV_INDEX_BUFFERS = "gpuav_index_buffers";
+const char *VK_LAYER_GPUAV_BUILD_ACCELERATION_STRUCTURES = "gpuav_build_acceleration_structures";
 
 // A temporary workaround until we get proper Descriptor Buffer support
 const char *VK_LAYER_GPUAV_DESCRIPTOR_BUFFER_OVERRIDE = "gpuav_descriptor_buffer_override";
@@ -806,6 +807,13 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     LayerCreateMessengerCallback(settings_data->debug_report, true, &dbg_create_info, &messenger);
 #endif  // WIN32
 
+    GpuAVSettings &gpuav_settings = *settings_data->gpuav_settings;
+    gpuav_settings.SetOnlyDebugPrintf();
+    // chassis uses this to create Validation Object
+    settings_data->enabled[debug_printf_validation] = true;
+    settings_data->enabled[gpu_validation] = false;
+    gpuav_settings.debug_printf_to_stdout = true;
+
     return;
 #else
 
@@ -944,6 +952,11 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_INDEX_BUFFERS)) {
             vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_INDEX_BUFFERS, gpuav_settings.validate_index_buffers);
         }
+    }
+
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_BUILD_ACCELERATION_STRUCTURES)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_BUILD_ACCELERATION_STRUCTURES,
+                                gpuav_settings.validate_build_acceleration_structures);
     }
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_DESCRIPTOR_BUFFER_OVERRIDE)) {

@@ -701,6 +701,16 @@ class DeviceState : public vvl::base::Device {
         }
     }
 
+    // #ARNO_TODO Move state tracking to GPU-AV substate
+    // #ARNO_TODO this struct needs to match the equivalent found in push_data,
+    // just have one struct
+    struct AccelerationStructureMetadata {
+        uint64_t address;
+        uint32_t buffer_status;
+    };
+    [[nodiscard]] size_t GetASAddrToASBufferMapSize() const { return as_addr_to_as_buffer_map_.size(); }
+    void GetASAddrToASBufferMap(AccelerationStructureMetadata* as_metadata) const;
+
     VkDeviceSize AllocFakeMemory(VkDeviceSize size) { return fake_memory.Alloc(size); }
     void FreeFakeMemory(VkDeviceSize address) { fake_memory.Free(address); }
 
@@ -1884,6 +1894,10 @@ class DeviceState : public vvl::base::Device {
                                                        const VkAllocationCallbacks* pAllocator,
                                                        const RecordObject& record_obj) override;
 
+    void PostCallRecordGetAccelerationStructureDeviceAddressKHR(VkDevice device,
+                                                                const VkAccelerationStructureDeviceAddressInfoKHR* pInfo,
+                                                                const RecordObject& record_obj) override;
+
     inline std::shared_ptr<vvl::ShaderModule> GetShaderModuleStateFromIdentifier(const VkShaderModuleIdentifierEXT& ident) {
         ReadLockGuard guard(shader_identifier_map_lock_);
         if (const auto itr = shader_identifier_map_.find(ident); itr != shader_identifier_map_.cend()) {
@@ -1996,6 +2010,8 @@ class DeviceState : public vvl::base::Device {
     // If vkGetBufferDeviceAddress is called, keep track of buffer <-> address mapping.
     BufferAddressRangeMap buffer_address_map_;
     mutable std::shared_mutex buffer_address_lock_;
+
+    vvl::concurrent_unordered_map<VkDeviceAddress, std::shared_ptr<vvl::Buffer>> as_addr_to_as_buffer_map_;
 
     // < external format, features >
     vvl::concurrent_unordered_map<uint64_t, VkFormatFeatureFlags2> ahb_ext_formats_map;

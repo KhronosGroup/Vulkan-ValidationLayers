@@ -102,6 +102,7 @@ class GpuResourcesManager {
     VkDescriptorSet GetManagedDescriptorSet(VkDescriptorSetLayout desc_set_layout);
 
     vko::BufferRange GetHostCoherentBufferRange(VkDeviceSize size);
+    vko::BufferRange GetHostCoherentIndirectBufferRange(VkDeviceSize size);
     vko::BufferRange GetHostCachedBufferRange(VkDeviceSize size);
     void FlushAllocation(const vko::BufferRange &buffer_range);
     void InvalidateAllocation(const vko::BufferRange &buffer_range);
@@ -156,6 +157,8 @@ class GpuResourcesManager {
     struct BufferCaches {
         // Will have HOST_VISIBLE and HOST_COHERENT (may be HOST_CACHED)
         BufferCache host_coherent;
+        // Will have VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, HOST_VISIBLE and HOST_COHERENT (may be HOST_CACHED)
+        BufferCache host_coherent_indirect;
         // Will have HOST_VISIBLE and HOST_CACHED (may be HOST_COHERENT)
         BufferCache host_cached;
         // Will have DEVICE_LOCAL
