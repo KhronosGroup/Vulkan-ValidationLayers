@@ -460,6 +460,10 @@ void Image::SetSwapchain(std::shared_ptr<vvl::Swapchain> &swapchain, uint32_t sw
     bind_swapchain = swapchain;
     swapchain_image_index = swapchain_index;
     bind_swapchain->AddParent(this);
+
+    for (auto &item : sub_states_) {
+        item.second->SetSwapchain(*swapchain);
+    }
 }
 
 bool Image::CompareCreateInfo(const Image &other) const {

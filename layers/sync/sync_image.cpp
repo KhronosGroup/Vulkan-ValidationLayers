@@ -21,6 +21,8 @@ namespace syncval {
 
 ImageSubState::ImageSubState(vvl::Image &image) : vvl::ImageSubState(image), fragment_encoder(image) {}
 
+void ImageSubState::SetSwapchain(vvl::Swapchain &swapchain) { SetOpaqueBaseAddress(swapchain.dev_data); }
+
 bool ImageSubState::IsSimplyBound() const {
     bool simple = SimpleBinding(base) || base.IsSwapchainImage() || base.bind_swapchain;
     return simple;
@@ -29,7 +31,9 @@ bool ImageSubState::IsSimplyBound() const {
 void ImageSubState::SetOpaqueBaseAddress(vvl::DeviceState &dev_data) {
     // This is safe to call if already called to simplify caller logic
     // NOTE: Not asserting IsTiled, as there could in future be other reasons for opaque representations
-    if (opaque_base_address_) return;
+    if (opaque_base_address_) {
+        return;
+    }
 
     VkDeviceSize opaque_base = 0U;  // Fakespace Allocator starts > 0
     auto get_opaque_base = [&opaque_base](const vvl::Image &other) {
@@ -52,8 +56,8 @@ void ImageSubState::SetOpaqueBaseAddress(vvl::DeviceState &dev_data) {
 }
 
 VkDeviceSize ImageSubState::GetResourceBaseAddress() const {
-    if (HasOpaqueMapping()) {
-        return GetOpaqueBaseAddress();
+    if (opaque_base_address_) {
+        return opaque_base_address_;
     }
     return base.GetFakeBaseAddress();
 }

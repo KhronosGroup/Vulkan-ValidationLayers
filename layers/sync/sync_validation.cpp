@@ -2922,24 +2922,6 @@ void SyncValidator::PostCallRecordGetSemaphoreCounterValueKHR(VkDevice device, V
     PostCallRecordGetSemaphoreCounterValue(device, semaphore, pValue, record_obj);
 }
 
-void SyncValidator::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
-                                                        VkImage *pSwapchainImages, const RecordObject &record_obj) {
-    if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
-    auto swapchain_state = Get<vvl::Swapchain>(swapchain);
-
-    if (pSwapchainImages) {
-        for (uint32_t i = 0; i < *pSwapchainImageCount; ++i) {
-            vvl::SwapchainImage &swapchain_image = swapchain_state->images[i];
-            if (swapchain_image.image_state) {
-                auto *sync_image = swapchain_image.image_state;
-                auto &sub_state = SubState(*sync_image);
-                assert(sub_state.IsTiled());  // This is the assumption from the spec, and the implementation relies on it
-                sub_state.SetOpaqueBaseAddress(*device_state);
-            }
-        }
-    }
-}
-
 // Returns null when device address is asssociated with no buffers or more than one buffer.
 // Otherwise returns a valid buffer (device address is associated with a single buffer).
 // When syncval adds memory aliasing support the need of this function can be revisited.

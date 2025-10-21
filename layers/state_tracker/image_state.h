@@ -258,6 +258,9 @@ class ImageSubState {
     virtual void Destroy() {}
     virtual void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {}
 
+    // Called by Image::SetSwapchain when image gets associated with swapchain
+    virtual void SetSwapchain(vvl::Swapchain &swapchain) {}
+
     Image &base;
 };
 
