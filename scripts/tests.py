@@ -44,6 +44,7 @@ def BuildVVL(config, cmake_args, build_tests, mock_android):
     cmake_cmd += f' -D UPDATE_DEPS=ON -D UPDATE_DEPS_DIR={CI_EXTERNAL_DIR}'
     cmake_cmd += ' -D BUILD_WERROR=ON'
     cmake_cmd += ' -D INSTALL_VVL_TEST_ICD=ON'
+    cmake_cmd += ' -D CMAKE_INSTALL_LIBDIR=lib'
 
     if cmake_args:
          cmake_cmd += f' {cmake_args}'
@@ -74,6 +75,7 @@ def BuildLoader():
     print("Run CMake for Loader")
     cmake_cmd = f'cmake -S {SRC_DIR} -B {BUILD_DIR}'
     cmake_cmd += ' -D UPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=Release'
+    cmake_cmd += ' -D CMAKE_INSTALL_LIBDIR=lib'
 
     # GitHub actions runs our test as admin on Windows
     if common_ci.IsGHA() and common_ci.IsWindows():
@@ -103,6 +105,8 @@ def BuildProfileLayer(mockAndroid):
     cmake_cmd = f'cmake -S {SRC_DIR} -B {BUILD_DIR}'
     cmake_cmd += ' -D CMAKE_BUILD_TYPE=Release'
     cmake_cmd += ' -D UPDATE_DEPS=ON'
+    cmake_cmd += ' -D CMAKE_INSTALL_LIBDIR=lib'
+
     if mockAndroid:
         cmake_cmd += ' -DBUILD_MOCK_ANDROID_SUPPORT=ON'
     common_ci.RunShellCmd(cmake_cmd)
