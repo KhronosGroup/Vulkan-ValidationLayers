@@ -164,7 +164,7 @@ bool DescriptorValidator::ValidateDescriptorsStatic(const spirv::ResourceInterfa
         const auto &descriptor = binding.descriptors[index];
 
         if (!binding.updated[index]) {
-            const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle());
+            const LogObjectList objlist(this->objlist, descriptor_set.Handle());
             skip |=
                 LogError(vuids->descriptor_buffer_bit_set_08114, objlist, loc.Get(),
                          "the %s is being used in %s but has never been updated via vkUpdateDescriptorSets() or a similar call.",
@@ -220,7 +220,7 @@ bool DescriptorValidator::ValidateDescriptorsDynamic(const spirv::ResourceInterf
     const auto &descriptor = binding.descriptors[index];
 
     if (!binding.updated[index]) {
-        const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle());
+        const LogObjectList objlist(this->objlist, descriptor_set.Handle());
         skip |= LogError(vuids->descriptor_buffer_bit_set_08114, objlist, loc.Get(),
                          "the %s is being used in %s but has never been updated via vkUpdateDescriptorSets() or a similar call.%s",
                          DescribeDescriptor(resource_variable, index, VK_DESCRIPTOR_TYPE_MAX_ENUM).c_str(),
@@ -288,7 +288,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     const VkBuffer buffer = descriptor.GetBuffer();
     auto buffer_node = descriptor.GetBufferState();
     if ((!buffer_node && !dev_proxy.enabled_features.nullDescriptor) || (buffer_node && buffer_node->Destroyed())) {
-        const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle());
+        const LogObjectList objlist(this->objlist, descriptor_set.Handle());
         skip |= LogError(vuids->descriptor_buffer_bit_set_08114, objlist, loc.Get(),
                          "the %s is using buffer %s that is invalid or has been destroyed.%s",
                          DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(buffer).c_str(),
@@ -303,7 +303,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     }
     if (buffer_node /* && !buffer_node->sparse*/) {
         for (const auto &binding : buffer_node->GetInvalidMemory()) {
-            const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle());
+            const LogObjectList objlist(this->objlist, descriptor_set.Handle());
             skip |= LogError(vuids->descriptor_buffer_bit_set_08114, objlist, loc.Get(),
                              "the %s is using buffer %s that references invalid memory %s.%s",
                              DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(buffer).c_str(),
@@ -372,7 +372,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     if ((!image_view_state && !dev_proxy.enabled_features.nullDescriptor) || (image_view_state && image_view_state->Destroyed())) {
         // Image view must have been destroyed since initial update. Could potentially flag the descriptor
         //  as "invalid" (updated = false) at DestroyImageView() time and detect this error at bind time
-        const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle());
+        const LogObjectList objlist(this->objlist, descriptor_set.Handle());
         skip |= LogError(vuids->descriptor_buffer_bit_set_08114, objlist, loc.Get(),
                          "the %s is using imageView %s that is invalid or has been destroyed.%s",
                          DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(image_view).c_str(),
@@ -431,7 +431,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                 break;  // incase a new VkImageViewType is added, let it be valid by default
         }
         if (!valid_dim) {
-            const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view);
+            const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
             skip |= LogError(
                 vuids->image_view_dim_07752, objlist, loc.Get(),
                 "the %s VkImageViewType is %s but the OpTypeImage has (Dim = %s) and (Arrayed = %" PRIu32
@@ -454,7 +454,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             const bool signed_override = ((variable_numeric_type & spirv::NumericTypeUint) && image_insn.is_sign_extended);
             const bool unsigned_override = ((variable_numeric_type & spirv::NumericTypeSint) && image_insn.is_zero_extended);
             if (!signed_override && !unsigned_override) {
-                const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view);
+                const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
                 skip |= LogError(vuids->image_view_numeric_format_07753, objlist, loc.Get(),
                                  "the %s requires %s component type, but bound descriptor format is %s.%s",
                                  DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
@@ -468,7 +468,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             image_view_ci.format != resource_variable.info.image_format && !dev_proxy.global_settings.only_report_errors) {
             // This warning was added after being discussed in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4128
             auto set = descriptor_set.Handle();
-            const LogObjectList objlist(cb_state.Handle(), this->objlist, set, image_view);
+            const LogObjectList objlist(this->objlist, set, image_view);
             std::stringstream msg;
             msg << "the " << DescribeDescriptor(resource_variable, index, descriptor_type)
                 << " is accessed by a OpTypeImage that has a Format operand "
@@ -505,7 +505,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         const bool image_format_width_64 = vkuFormatHasComponentSize(image_view_ci.format, 64);
         if (image_format_width_64) {
             if (resource_variable.info.image_sampled_type_width != 64) {
-                const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view);
+                const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
                 skip |= LogError(vuids->image_view_access_64_04470, objlist, loc.Get(),
                                  "the %s has a 64-bit component ImageView format (%s) but the OpTypeImage's "
                                  "Sampled Type has a width of %" PRIu32 ".%s",
@@ -513,8 +513,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                                  string_VkFormat(image_view_ci.format), resource_variable.info.image_sampled_type_width,
                                  DescribeInstruction().c_str());
             } else if (!dev_proxy.enabled_features.sparseImageInt64Atomics && image_state->sparse_residency) {
-                const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view,
-                                            image_state->Handle());
+                const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view, image_state->Handle());
                 skip |=
                     LogError(vuids->image_view_sparse_64_04474, objlist, loc.Get(),
                              "the %s has a OpTypeImage's Sampled Type has a width of 64 backed by a sparse Image, but "
@@ -522,7 +521,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                              DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), DescribeInstruction().c_str());
             }
         } else if (!image_format_width_64 && resource_variable.info.image_sampled_type_width != 32) {
-            const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view);
+            const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
             skip |= LogError(vuids->image_view_access_32_04471, objlist, loc.Get(),
                              "the %s has a 32-bit component ImageView format (%s) but the OpTypeImage's "
                              "Sampled Type has a width of %" PRIu32 ".%s",
@@ -544,7 +543,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             };
             const VkImageLayout image_layout = image_descriptor.GetImageLayout();
             const VkImageAspectFlags aspect_flags = image_view_state->create_info.subresourceRange.aspectMask;
-            const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_state->Handle(),
+            const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_state->Handle(),
                                         VulkanTypedHandle(image_view, kVulkanObjectTypeImageView));
 
             skip |= dev_proxy.ValidateDescriptorImageLayout(objlist, *image_state, aspect_flags, image_layout, *image_layout_map,
@@ -556,14 +555,14 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     // Verify Sample counts
     if (resource_variable.IsImage()) {
         if (!resource_variable.info.is_multisampled && image_view_state->samples != VK_SAMPLE_COUNT_1_BIT) {
-            const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view);
+            const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
             skip |= LogError("VUID-RuntimeSpirv-samples-08725", objlist, loc.Get(),
                              "the %s has %s created with %s, but OpTypeImage has marked it as single-sampled.%s",
                              DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
                              FormatHandle(image_state->Handle()).c_str(), string_VkSampleCountFlagBits(image_view_state->samples),
                              DescribeInstruction().c_str());
         } else if (resource_variable.info.is_multisampled && image_view_state->samples == VK_SAMPLE_COUNT_1_BIT) {
-            const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view);
+            const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
             skip |= LogError("VUID-RuntimeSpirv-samples-08726", objlist, loc.Get(),
                              "the %s has %s created with VK_SAMPLE_COUNT_1_BIT, but OpTypeImage has marked it as multisampled.%s",
                              DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
@@ -574,7 +573,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     // Verify VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT
     if (resource_variable.IsAtomic() && (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) &&
         !(image_view_state->format_features & VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT)) {
-        const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view);
+        const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
         skip |= LogError(vuids->imageview_atomic_02691, objlist, loc.Get(),
                          "the %s has %s with format of %s which doesn't support VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT.\n"
                          "(supported features: %s).%s",
@@ -592,7 +591,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         if (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
             if ((resource_variable.info.is_read_without_format) &&
                 !(format_features & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT)) {
-                const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view);
+                const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
                 skip |= LogError(vuids->storage_image_read_without_format_07028, objlist, loc.Get(),
                                  "the %s has %s with format of %s which doesn't support "
                                  "VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT.\n"
@@ -602,7 +601,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                                  string_VkFormatFeatureFlags2(format_features).c_str(), DescribeInstruction().c_str());
             } else if ((resource_variable.info.is_write_without_format) &&
                        !(format_features & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT)) {
-                const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view);
+                const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
                 skip |= LogError(vuids->storage_image_write_without_format_07027, objlist, loc.Get(),
                                  "the %s has %s with format of %s which doesn't support "
                                  "VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT.\n"
@@ -614,7 +613,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         }
 
         if ((image_insn.is_dref) && !(format_features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT)) {
-            const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view);
+            const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
             skip |= LogError(vuids->depth_compare_sample_06479, objlist, loc.Get(),
                              "the %s has %s with format of %s which doesn't support "
                              "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT.\n"
@@ -659,14 +658,14 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             const bool read_attachment = (subpass.usage & (VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) != 0;
             if (read_attachment && descriptor_written_to) {
                 if (same_view) {
-                    const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view, framebuffer);
+                    const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view, framebuffer);
                     skip |= LogError(vuids->image_subresources_subpass_write_06539, objlist, loc.Get(),
                                      "the %s has %s which will be read from as %s attachment %" PRIu32 ".%s",
                                      DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
                                      FormatHandle(image_view).c_str(), FormatHandle(framebuffer).c_str(), att_index,
                                      DescribeInstruction().c_str());
                 } else if (overlapping_view) {
-                    const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view, framebuffer,
+                    const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view, framebuffer,
                                                 view_state->Handle());
                     skip |= LogError(vuids->image_subresources_subpass_write_06539, objlist, loc.Get(),
                                      "the %s has %s which will be overlap read from as %s in %s attachment %" PRIu32 " overlap.%s",
@@ -678,14 +677,14 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
 
             if (descriptor_written_to && !layout_read_only) {
                 if (same_view) {
-                    const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view, framebuffer);
+                    const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view, framebuffer);
                     skip |= LogError(vuids->image_subresources_render_pass_write_06537, objlist, loc.Get(),
                                      "the %s has %s which is written to but is also %s attachment %" PRIu32 ".%s",
                                      DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
                                      FormatHandle(image_view).c_str(), FormatHandle(framebuffer).c_str(), att_index,
                                      DescribeInstruction().c_str());
                 } else if (overlapping_view) {
-                    const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view, framebuffer,
+                    const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view, framebuffer,
                                                 view_state->Handle());
                     skip |= LogError(vuids->image_subresources_render_pass_write_06537, objlist, loc.Get(),
                                      "the %s has %s which overlaps writes to %s but is also %s attachment %" PRIu32 ".%s",
@@ -721,7 +720,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             (sampler_state->customCreateInfo.format == VK_FORMAT_UNDEFINED)) {
             if (image_view_format == VK_FORMAT_B4G4R4A4_UNORM_PACK16 || image_view_format == VK_FORMAT_B5G6R5_UNORM_PACK16 ||
                 image_view_format == VK_FORMAT_B5G5R5A1_UNORM_PACK16 || image_view_format == VK_FORMAT_A1B5G5R5_UNORM_PACK16) {
-                const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), sampler_state->Handle(),
+                const LogObjectList objlist(this->objlist, descriptor_set.Handle(), sampler_state->Handle(),
                                             image_view_state->Handle());
                 skip |= LogError("VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-04015", objlist, loc.Get(),
                                  "the %s has %s which has a custom border color with format = "
@@ -744,7 +743,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         if (!sampler_compare_enable && is_weighted_average &&
             !(image_view_state->format_features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
             if (sampler_mag_filter == VK_FILTER_LINEAR || sampler_min_filter == VK_FILTER_LINEAR) {
-                const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), sampler_state->Handle(),
+                const LogObjectList objlist(this->objlist, descriptor_set.Handle(), sampler_state->Handle(),
                                             image_view_state->Handle());
                 skip |= LogError(vuids->linear_filter_sampler_04553, objlist, loc.Get(),
                                  "the %s has %s which is set to use VK_FILTER_LINEAR with compareEnable is set "
@@ -754,7 +753,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                                  FormatHandle(sampler_state->Handle()).c_str(), FormatHandle(image_view_state->Handle()).c_str(),
                                  string_VkFormat(image_view_format), DescribeInstruction().c_str());
             } else if (sampler_state->create_info.mipmapMode == VK_SAMPLER_MIPMAP_MODE_LINEAR) {
-                const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), sampler_state->Handle(),
+                const LogObjectList objlist(this->objlist, descriptor_set.Handle(), sampler_state->Handle(),
                                             image_view_state->Handle());
                 skip |= LogError(vuids->linear_mipmap_sampler_04770, objlist, loc.Get(),
                                  "the %s has %s which is set to use VK_SAMPLER_MIPMAP_MODE_LINEAR with "
@@ -770,7 +769,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                                                      sampler_reduction->reductionMode == VK_SAMPLER_REDUCTION_MODE_MAX);
         if (is_minmax && !(image_view_state->format_features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_MINMAX_BIT)) {
             if (sampler_mag_filter == VK_FILTER_LINEAR || sampler_min_filter == VK_FILTER_LINEAR) {
-                const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), sampler_state->Handle(),
+                const LogObjectList objlist(this->objlist, descriptor_set.Handle(), sampler_state->Handle(),
                                             image_view_state->Handle());
                 skip |= LogError(vuids->linear_filter_sampler_09598, objlist, loc.Get(),
                                  "the %s has %s which is set to use VK_FILTER_LINEAR with reductionMode is set "
@@ -782,7 +781,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                                  FormatHandle(image_view_state->Handle()).c_str(), string_VkFormat(image_view_format),
                                  DescribeInstruction().c_str());
             } else if (sampler_state->create_info.mipmapMode == VK_SAMPLER_MIPMAP_MODE_LINEAR) {
-                const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), sampler_state->Handle(),
+                const LogObjectList objlist(this->objlist, descriptor_set.Handle(), sampler_state->Handle(),
                                             image_view_state->Handle());
                 skip |= LogError(vuids->linear_mipmap_sampler_09599, objlist, loc.Get(),
                                  "the %s has %s which is set to use VK_SAMPLER_MIPMAP_MODE_LINEAR with "
@@ -798,7 +797,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
 
         if (sampler_mag_filter == VK_FILTER_CUBIC_EXT || sampler_min_filter == VK_FILTER_CUBIC_EXT) {
             if (!(image_view_state->format_features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT)) {
-                const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), sampler_state->Handle(),
+                const LogObjectList objlist(this->objlist, descriptor_set.Handle(), sampler_state->Handle(),
                                             image_view_state->Handle());
                 skip |= LogError(vuids->cubic_sampler_02692, objlist, loc.Get(),
                                  "the %s has %s which is set to use VK_FILTER_CUBIC_EXT, then image view's (%s) format (%s) "
@@ -815,7 +814,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                     (reduction_mode_info->reductionMode == VK_SAMPLER_REDUCTION_MODE_MIN ||
                      reduction_mode_info->reductionMode == VK_SAMPLER_REDUCTION_MODE_MAX) &&
                     !image_view_state->filter_cubic_props.filterCubicMinmax) {
-                    const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), sampler_state->Handle(),
+                    const LogObjectList objlist(this->objlist, descriptor_set.Handle(), sampler_state->Handle(),
                                                 image_view_state->Handle());
                     skip |= LogError(vuids->filter_cubic_min_max_02695, objlist, loc.Get(),
                                      "the %s has %s which is set to use VK_FILTER_CUBIC_EXT & %s, but image view "
@@ -825,7 +824,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                                      string_VkSamplerReductionMode(reduction_mode_info->reductionMode),
                                      FormatHandle(image_view_state->Handle()).c_str(), DescribeInstruction().c_str());
                 } else if (!image_view_state->filter_cubic_props.filterCubic) {
-                    const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), sampler_state->Handle(),
+                    const LogObjectList objlist(this->objlist, descriptor_set.Handle(), sampler_state->Handle(),
                                                 image_view_state->Handle());
                     skip |= LogError(vuids->filter_cubic_02694, objlist, loc.Get(),
                                      "the %s has %s which is set to use VK_FILTER_CUBIC_EXT, but image view (%s) "
@@ -840,7 +839,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                 if (image_view_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_3D ||
                     image_view_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_CUBE ||
                     image_view_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
-                    const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), sampler_state->Handle(),
+                    const LogObjectList objlist(this->objlist, descriptor_set.Handle(), sampler_state->Handle(),
                                                 image_view_state->Handle());
                     skip |=
                         LogError(vuids->img_filter_cubic_02693, objlist, loc.Get(),
@@ -865,8 +864,8 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                                                 : (sampler_state->create_info.addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)
                                                     ? sampler_state->create_info.addressModeV
                                                     : sampler_state->create_info.addressModeW;
-            const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), sampler_state->Handle(),
-                                        image_state->Handle(), image_view_state->Handle());
+            const LogObjectList objlist(this->objlist, descriptor_set.Handle(), sampler_state->Handle(), image_state->Handle(),
+                                        image_view_state->Handle());
             skip |= LogError(vuids->corner_sampled_address_mode_02696, objlist, loc.Get(),
                              "the %s image (%s) in image view (%s) is created with flag "
                              "VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV and can only be sampled using "
@@ -887,16 +886,14 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             if (image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_3D || image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_CUBE ||
                 image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY || image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY ||
                 image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
-                const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view,
-                                            sampler_state->Handle());
+                const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view, sampler_state->Handle());
                 skip |= LogError(vuids->sampler_imageview_type_08609, objlist, loc.Get(),
                                  "the %s (%s) was created with %s, but %s was created with unnormalizedCoordinates.%s",
                                  DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
                                  FormatHandle(image_view).c_str(), string_VkImageViewType(image_view_ci.viewType),
                                  FormatHandle(sampler_state->Handle()).c_str(), DescribeInstruction().c_str());
             } else if (subresource_range.levelCount != 1) {
-                const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view,
-                                            sampler_state->Handle());
+                const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view, sampler_state->Handle());
                 skip |= LogError(vuids->unnormalized_coordinates_09635, objlist, loc.Get(),
                                  "the %s (%s) was created with levelCount of %s, but %s was created with "
                                  "unnormalizedCoordinates.%s",
@@ -905,8 +902,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                                  string_LevelCount(image_state->create_info, image_view_ci.subresourceRange).c_str(),
                                  FormatHandle(sampler_state->Handle()).c_str(), DescribeInstruction().c_str());
             } else if (subresource_range.layerCount != 1) {
-                const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view,
-                                            sampler_state->Handle());
+                const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view, sampler_state->Handle());
                 skip |= LogError(vuids->unnormalized_coordinates_09635, objlist, loc.Get(),
                                  "the %s (%s) was created with layerCount of %s, but %s was created with "
                                  "unnormalizedCoordinates.%s",
@@ -917,8 +913,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             } else if (image_insn.is_sampler_implicitLod_dref_proj) {
                 // sampler must not be used with any of the SPIR-V OpImageSample* or OpImageSparseSample*
                 // instructions with ImplicitLod, Dref or Proj in their name
-                const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view,
-                                            sampler_state->Handle());
+                const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view, sampler_state->Handle());
                 skip |= LogError(vuids->sampler_implicitLod_dref_proj_08610, objlist, loc.Get(),
                                  "the %s (%s) is used by %s that uses invalid operator.%s",
                                  DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
@@ -927,8 +922,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             } else if (image_insn.is_sampler_bias_offset) {
                 // sampler must not be used with any of the SPIR-V OpImageSample* or OpImageSparseSample*
                 // instructions that includes a LOD bias or any offset values
-                const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view,
-                                            sampler_state->Handle());
+                const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view, sampler_state->Handle());
                 skip |= LogError(vuids->sampler_bias_offset_08611, objlist, loc.Get(),
                                  "the %s (%s) is used by %s that uses invalid bias or offset operator.%s",
                                  DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
@@ -942,7 +936,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         const uint32_t format_component_count = vkuFormatComponentCount(image_view_format);
         if (image_view_format == VK_FORMAT_A8_UNORM) {
             if (texel_component_count != 4) {
-                const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view);
+                const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
                 skip |= LogError(vuids->storage_image_write_texel_count_08796, objlist, loc.Get(),
                                  "the %s (%s) is mapped to a OpImage format of VK_FORMAT_A8_UNORM, "
                                  "but the OpImageWrite Texel "
@@ -951,7 +945,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                                  FormatHandle(image_view).c_str(), texel_component_count, DescribeInstruction().c_str());
             }
         } else if (texel_component_count < format_component_count) {
-            const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), image_view);
+            const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
             skip |= LogError(vuids->storage_image_write_texel_count_08795, objlist, loc.Get(),
                              "the %s (%s) is mapped to a OpImage format of %s which has %" PRIu32
                              " components, but the OpImageWrite Texel operand only contains %" PRIu32 " components.%s",
@@ -983,7 +977,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     auto buffer_view_state = texel_descriptor.GetBufferViewState();
     if ((!buffer_view_state && !dev_proxy.enabled_features.nullDescriptor) ||
         (buffer_view_state && buffer_view_state->Destroyed())) {
-        const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle());
+        const LogObjectList objlist(this->objlist, descriptor_set.Handle());
         skip |= LogError(vuids->descriptor_buffer_bit_set_08114, objlist, loc.Get(),
                          "the %s is using bufferView %s that is invalid or has been destroyed.%s",
                          DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(buffer_view).c_str(),
@@ -1000,7 +994,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     auto buffer = buffer_view_state->create_info.buffer;
     const auto *buffer_state = buffer_view_state->buffer_state.get();
     if (!buffer_state || buffer_state->Destroyed()) {
-        const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle());
+        const LogObjectList objlist(this->objlist, descriptor_set.Handle());
         skip |= LogError(vuids->descriptor_buffer_bit_set_08114, objlist, loc.Get(),
                          "the %s is using buffer %s that has been destroyed.%s",
                          DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(buffer).c_str(),
@@ -1019,7 +1013,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         const bool signed_override = ((variable_numeric_type & spirv::NumericTypeUint) && image_insn.is_sign_extended);
         const bool unsigned_override = ((variable_numeric_type & spirv::NumericTypeSint) && image_insn.is_zero_extended);
         if (!signed_override && !unsigned_override) {
-            const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), buffer_view);
+            const LogObjectList objlist(this->objlist, descriptor_set.Handle(), buffer_view);
             skip |= LogError(vuids->image_view_numeric_format_07753, objlist, loc.Get(),
                              "the %s requires %s component type, but bound descriptor format is %s.%s",
                              DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
@@ -1033,7 +1027,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         buffer_view_format != resource_variable.info.image_format && !dev_proxy.global_settings.only_report_errors) {
         // This warning was added after being discussed in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4128
         auto set = descriptor_set.Handle();
-        const LogObjectList objlist(cb_state.Handle(), this->objlist, set, buffer_view);
+        const LogObjectList objlist(this->objlist, set, buffer_view);
         std::stringstream msg;
         msg << "the " << DescribeDescriptor(resource_variable, index, descriptor_type)
             << " is accessed by a OpTypeImage that has a Format operand "
@@ -1067,14 +1061,14 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
 
     const bool buffer_format_width_64 = vkuFormatHasComponentSize(buffer_view_format, 64);
     if (buffer_format_width_64 && resource_variable.info.image_sampled_type_width != 64) {
-        const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), buffer_view);
+        const LogObjectList objlist(this->objlist, descriptor_set.Handle(), buffer_view);
         skip |= LogError(vuids->buffer_view_access_64_04472, objlist, loc.Get(),
                          "the %s has a 64-bit component BufferView format (%s) but the OpTypeImage's Sampled "
                          "Type has a width of %" PRIu32 ".%s",
                          DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), string_VkFormat(buffer_view_format),
                          resource_variable.info.image_sampled_type_width, DescribeInstruction().c_str());
     } else if (!buffer_format_width_64 && resource_variable.info.image_sampled_type_width != 32) {
-        const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), buffer_view);
+        const LogObjectList objlist(this->objlist, descriptor_set.Handle(), buffer_view);
         skip |= LogError(vuids->buffer_view_access_32_04473, objlist, loc.Get(),
                          "the %s has a 32-bit component BufferView format (%s) but the OpTypeImage's Sampled "
                          "Type has a width of %" PRIu32 ".%s",
@@ -1087,7 +1081,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     // Verify VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT
     if ((resource_variable.IsAtomic()) && (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) &&
         !(buffer_format_features & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT)) {
-        const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), buffer_view);
+        const LogObjectList objlist(this->objlist, descriptor_set.Handle(), buffer_view);
         skip |= LogError(vuids->bufferview_atomic_07888, objlist, loc.Get(),
                          "the %s has %s with format of %s which doesn't support VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT.\n"
                          "(supported features: %s).%s",
@@ -1103,7 +1097,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         if (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) {
             if ((resource_variable.info.is_read_without_format) &&
                 !(buffer_format_features & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR)) {
-                const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), buffer_view);
+                const LogObjectList objlist(this->objlist, descriptor_set.Handle(), buffer_view);
                 skip |= LogError(vuids->storage_texel_buffer_read_without_format_07030, objlist, loc.Get(),
                                  "the %s has %s with format of %s which doesn't support "
                                  "VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR.\n"
@@ -1113,7 +1107,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                                  string_VkFormatFeatureFlags2(buffer_format_features).c_str(), DescribeInstruction().c_str());
             } else if ((resource_variable.info.is_write_without_format) &&
                        !(buffer_format_features & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT)) {
-                const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), buffer_view);
+                const LogObjectList objlist(this->objlist, descriptor_set.Handle(), buffer_view);
                 skip |= LogError(vuids->storage_texel_buffer_write_without_format_07029, objlist, loc.Get(),
                                  "the %s has %s with format of %s which doesn't support "
                                  "VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT.\n"
@@ -1137,7 +1131,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     for (const uint32_t texel_component_count : resource_variable.write_without_formats_component_count_list) {
         const uint32_t format_component_count = vkuFormatComponentCount(buffer_view_format);
         if (texel_component_count < format_component_count) {
-            const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), buffer_view);
+            const LogObjectList objlist(this->objlist, descriptor_set.Handle(), buffer_view);
             skip |= LogError(vuids->storage_texel_buffer_write_texel_count_04469, objlist, loc.Get(),
                              "the %s (%s) is mapped to a OpImage format of %s which has %" PRIu32
                              " components, but the OpImageWrite Texel operand only contains %" PRIu32 " components.%s",
@@ -1161,7 +1155,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         if (!acc_node || acc_node->Destroyed()) {
             // the AccelerationStructure could be null via nullDescriptor and accessing it is legal
             if (acc != VK_NULL_HANDLE || !dev_proxy.enabled_features.nullDescriptor) {
-                const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle());
+                const LogObjectList objlist(this->objlist, descriptor_set.Handle());
                 skip |= LogError(vuids->descriptor_buffer_bit_set_08114, objlist, loc.Get(),
                                  "the %s is using acceleration structure %s that is invalid or has been destroyed.%s",
                                  DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(acc).c_str(),
@@ -1169,7 +1163,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             }
         } else if (acc_node->buffer_state) {
             for (const auto &mem_binding : acc_node->buffer_state->GetInvalidMemory()) {
-                const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle());
+                const LogObjectList objlist(this->objlist, descriptor_set.Handle());
                 skip |= LogError(vuids->descriptor_buffer_bit_set_08114, objlist, loc.Get(),
                                  "the %s is using acceleration structure %s that references invalid memory %s.%s",
                                  DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(acc).c_str(),
@@ -1182,7 +1176,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         if (!acc_node || acc_node->Destroyed()) {
             // the AccelerationStructure could be null via nullDescriptor and accessing it is legal
             if (acc != VK_NULL_HANDLE || !dev_proxy.enabled_features.nullDescriptor) {
-                const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle());
+                const LogObjectList objlist(this->objlist, descriptor_set.Handle());
                 skip |= LogError(vuids->descriptor_buffer_bit_set_08114, objlist, loc.Get(),
                                  "the %s is using acceleration structure %s that is invalid or has been destroyed.%s",
                                  DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(acc).c_str(),
@@ -1190,7 +1184,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             }
         } else {
             for (const auto &mem_binding : acc_node->GetInvalidMemory()) {
-                const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle());
+                const LogObjectList objlist(this->objlist, descriptor_set.Handle());
                 skip |= LogError(vuids->descriptor_buffer_bit_set_08114, objlist, loc.Get(),
                                  "the %s is using acceleration structure %s that references invalid memory %s.%s",
                                  DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(acc).c_str(),
@@ -1214,13 +1208,13 @@ bool DescriptorValidator::ValidateSamplerDescriptor(const spirv::ResourceInterfa
 
     // Verify Sampler still valid
     if (!sampler_state || (sampler_state->Destroyed() && !can_be_destroyed)) {
-        const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle());
+        const LogObjectList objlist(this->objlist, descriptor_set.Handle());
         skip |= LogError(vuids->descriptor_buffer_bit_set_08114, objlist, loc.Get(),
                          "the %s is using sampler %s that is invalid or has been destroyed.%s",
                          DescribeDescriptor(resource_variable, index, VK_DESCRIPTOR_TYPE_SAMPLER).c_str(),
                          FormatHandle(sampler).c_str(), DescribeInstruction().c_str());
     } else if (sampler_state->samplerConversion && !is_immutable) {
-        const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle());
+        const LogObjectList objlist(this->objlist, descriptor_set.Handle());
         skip |= LogError(vuids->descriptor_buffer_bit_set_08114, objlist, loc.Get(),
                          "the %s sampler (%s) contains a YCBCR conversion (%s), but the sampler is not an "
                          "immutable sampler.%s",
