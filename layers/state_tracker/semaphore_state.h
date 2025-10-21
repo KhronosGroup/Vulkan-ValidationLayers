@@ -133,6 +133,9 @@ class Semaphore : public RefcountedStateObject {
     void GetLastBinarySignalSource(VkQueue &queue, vvl::Func &acquire_command) const;
     bool HasResolvingTimelineSignal(uint64_t wait_payload) const;
 
+    // Called on AcquireNextImage semaphore
+    void SetAcquiredImage(const std::shared_ptr<vvl::Swapchain> &swapchain, uint32_t image_index);
+
     void SetSwapchainWaitInfo(const SwapchainWaitInfo &info);
     void ClearSwapchainWaitInfo();
     std::optional<SwapchainWaitInfo> GetSwapchainWaitInfo() const;
@@ -186,6 +189,11 @@ class Semaphore : public RefcountedStateObject {
     std::map<uint64_t, TimePoint> timeline_;
     mutable std::shared_mutex lock_;
     DeviceState &dev_data_;
+
+    // Reference to the swapchain image if the semaphore was used by the acquire operation.
+    // The semaphore wait operation uses this to mark the image as acquired and safe to use.
+    std::shared_ptr<vvl::Swapchain> acquired_image_swapchain_;
+    uint32_t acquired_image_index_ = vvl::kNoIndex32;
 
     // Not empty when semaphore was used in QueuePresent but has not been re-acquired yet
     // and the presentation fence (if provided) has not been waited on.

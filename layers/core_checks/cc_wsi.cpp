@@ -746,7 +746,6 @@ bool CoreChecks::ValidateImageAcquireWait(const vvl::SwapchainImage &swapchain_i
 
     const auto &semaphore = swapchain_image.acquire_semaphore;
     const auto &fence = swapchain_image.acquire_fence;
-    const vvl::AcquireSyncStatus acquire_fence_status = swapchain_image.acquire_fence_status;
 
     // The specification requires that either a semaphore or fence is specified (or both).
     // If neither is specified the error is reported by the stateless validation.
@@ -754,27 +753,25 @@ bool CoreChecks::ValidateImageAcquireWait(const vvl::SwapchainImage &swapchain_i
         return skip;
     }
 
-    // Skip validation if an external sync object is used, as there is no way to track external waits.
-    // NOTE: check only semaphores, for external fences we use AcquireSyncStatus::WasWaitedOn
-    const bool is_external_semaphore = semaphore && semaphore->Scope() != vvl::Semaphore::kInternal;
-    if (is_external_semaphore) {
-        return skip;
-    }
+    // NOTE: for external semaphores and fences we use AcquireSyncStatus::WasWaitedOn
 
-    bool semaphore_was_waited = false;
+    // The acquire semaphore has been waited on iff:
+    // - the acquire semaphore has been waited on previously
+    // - pWaitSemaphores list contains the acquire semaphore
+    bool semaphore_was_waited_on = false;
     if (semaphore) {
+        const bool was_waited_on = (swapchain_image.acquire_semaphore_status == vvl::AcquireSyncStatus::WasWaitedOn);
+
         const auto wait_list = vvl::make_span(present_info.pWaitSemaphores, present_info.waitSemaphoreCount);
         const bool in_wait_list = IsValueIn(semaphore->VkHandle(), wait_list);
-        // The acquire semaphore has been waited on if either of the following is true:
-        // - pWaitSemaphores list contains the acquire semaphore
-        // - the acquire semaphore has been waited on previously, in which case CanBinaryBeWaited() reports false
-        semaphore_was_waited = in_wait_list || !semaphore->CanBinaryBeWaited();
+
+        semaphore_was_waited_on = was_waited_on || in_wait_list;
     }
 
-    const bool fence_was_waited = (acquire_fence_status == vvl::AcquireSyncStatus::WasWaitedOn);
+    const bool fence_was_waited_on = (swapchain_image.acquire_fence_status == vvl::AcquireSyncStatus::WasWaitedOn);
 
     // Either semaphore or fence should be waited on (or both)
-    if (!semaphore_was_waited && !fence_was_waited) {
+    if (!semaphore_was_waited_on && !fence_was_waited_on) {
         // TODO: Replace UNASSIGNED with official VUID when ready: https://gitlab.khronos.org/vulkan/vulkan/-/issues/3616
         static const char *missing_acquire_wait_vuid = "UNASSIGNED-VkPresentInfoKHR-pImageIndices-MissingAcquireWait";
 

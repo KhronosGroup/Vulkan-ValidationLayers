@@ -69,6 +69,7 @@ struct SwapchainImage {
     bool acquired = false;
     std::shared_ptr<vvl::Semaphore> acquire_semaphore;
     std::shared_ptr<vvl::Fence> acquire_fence;
+    AcquireSyncStatus acquire_semaphore_status = AcquireSyncStatus::NotSpecified;
     AcquireSyncStatus acquire_fence_status = AcquireSyncStatus::NotSpecified;
     void ResetAcquireState();
 

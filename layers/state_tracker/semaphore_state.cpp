@@ -19,6 +19,7 @@
 #include "state_tracker/semaphore_state.h"
 #include "state_tracker/queue_state.h"
 #include "state_tracker/state_tracker.h"
+#include "state_tracker/wsi_state.h"
 
 static bool CanSignalBinarySemaphoreAfterOperation(vvl::Semaphore::OpType op_type) {
     return op_type == vvl::Semaphore::kNone || op_type == vvl::Semaphore::kWait;
@@ -113,6 +114,14 @@ void vvl::Semaphore::EnqueueSignal(const SubmissionReference &signal_submit, uin
 void vvl::Semaphore::EnqueueWait(const SubmissionReference &wait_submit, uint64_t &payload) {
     auto guard = WriteLock();
     if (type == VK_SEMAPHORE_TYPE_BINARY) {
+        // Update the swapchain image acquire state if the semaphore was used by the acquire operation
+        if (acquired_image_swapchain_) {
+            assert(acquired_image_index_ != vvl::kNoIndex32);
+            acquired_image_swapchain_->images[acquired_image_index_].acquire_semaphore_status = AcquireSyncStatus::WasWaitedOn;
+            acquired_image_swapchain_.reset();
+            acquired_image_index_ = vvl::kNoIndex32;
+        }
+        // Get payload value
         if (timeline_.empty()) {
             if (scope_ != vvl::Semaphore::kInternal) {
                 // for external semaphore mark wait as completed, no guarantee of signal visibility
@@ -490,6 +499,12 @@ void vvl::Semaphore::WaitTimePoint(std::shared_future<void> &&waiter, uint64_t p
             " wait_payload=%" PRIu64,
             completed_.payload, payload);
     }
+}
+
+void vvl::Semaphore::SetAcquiredImage(const std::shared_ptr<vvl::Swapchain> &swapchain, uint32_t image_index) {
+    auto guard = WriteLock();
+    acquired_image_swapchain_ = swapchain;
+    acquired_image_index_ = image_index;
 }
 
 void vvl::Semaphore::SetSwapchainWaitInfo(const SwapchainWaitInfo &info) {
