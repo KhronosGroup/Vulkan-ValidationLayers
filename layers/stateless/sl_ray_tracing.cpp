@@ -1221,20 +1221,19 @@ bool Device::manual_PreCallValidateCmdBuildAccelerationStructuresKHR(
                                  triangles.transformData.deviceAddress);
                 }
 
-                if (geom_i < infoCount && triangles.indexType == VK_INDEX_TYPE_NONE_KHR) {
-                    for (const auto [build_range_i, build_range] : vvl::enumerate(ppBuildRangeInfos[geom_i], info.geometryCount)) {
-                        if (build_range.primitiveCount > 0) {
-                            const uint64_t build_range_max_vertex =
-                                uint64_t(build_range.firstVertex) + 3 * uint64_t(build_range.primitiveCount) - 1;
-                            if (uint64_t(triangles.maxVertex) < build_range_max_vertex) {
-                                const Location p_build_range_loc = error_obj.location.dot(Field::ppBuildRangeInfos, info_i);
-                                skip |= LogError("VUID-VkAccelerationStructureBuildRangeInfoKHR-None-10775", commandBuffer,
-                                                 p_geom_geom_loc.dot(Field::triangles).dot(Field::maxVertex),
-                                                 "is %" PRIu32 " but for %s, firstVertex ( %" PRIu32
-                                                 " ) + primitiveCount ( %" PRIu32 " ) x 3 - 1 = %" PRIu64 ".",
-                                                 triangles.maxVertex, p_build_range_loc.Fields().c_str(), build_range.firstVertex,
-                                                 build_range.primitiveCount, build_range_max_vertex);
-                            }
+                if (triangles.indexType == VK_INDEX_TYPE_NONE_KHR) {
+                    const VkAccelerationStructureBuildRangeInfoKHR &build_range = ppBuildRangeInfos[info_i][geom_i];
+                    if (build_range.primitiveCount > 0) {
+                        const uint64_t build_range_max_vertex =
+                            uint64_t(build_range.firstVertex) + 3 * uint64_t(build_range.primitiveCount) - 1;
+                        if (uint64_t(triangles.maxVertex) < build_range_max_vertex) {
+                            const Location p_build_range_loc = error_obj.location.dot(Field::ppBuildRangeInfos, info_i);
+                            skip |= LogError("VUID-VkAccelerationStructureBuildRangeInfoKHR-None-10775", commandBuffer,
+                                             p_geom_geom_loc.dot(Field::triangles).dot(Field::maxVertex),
+                                             "is %" PRIu32 " but for %s[%" PRIu32 "], firstVertex ( %" PRIu32
+                                             " ) + primitiveCount ( %" PRIu32 " ) x 3 - 1 = %" PRIu64 ".",
+                                             triangles.maxVertex, p_build_range_loc.Fields().c_str(), geom_i,
+                                             build_range.firstVertex, build_range.primitiveCount, build_range_max_vertex);
                         }
                     }
                 }
@@ -1270,16 +1269,14 @@ bool Device::manual_PreCallValidateCmdBuildAccelerationStructuresKHR(
                     }
                 }
                 const Location p_build_range_loc = error_obj.location.dot(Field::ppBuildRangeInfos, info_i);
-                for (const auto [build_range_i, build_range] : vvl::enumerate(ppBuildRangeInfos[geom_i], info.geometryCount)) {
-                    if (build_range.primitiveCount > phys_dev_ext_props.acc_structure_props.maxInstanceCount) {
-                        skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03801", commandBuffer, p_build_range_loc,
-                                         "[%" PRIu32 "].primitiveCount (%" PRIu32
-                                         ") is superior to VkPhysicalDeviceAccelerationStructurePropertiesKHR::maxInstanceCount "
-                                         "(%" PRIu64 ").",
-                                         build_range_i, build_range.primitiveCount,
-                                         phys_dev_ext_props.acc_structure_props.maxPrimitiveCount);
+                const VkAccelerationStructureBuildRangeInfoKHR &build_range = ppBuildRangeInfos[info_i][geom_i];
+                if (build_range.primitiveCount > phys_dev_ext_props.acc_structure_props.maxInstanceCount) {
+                    skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03801", commandBuffer, p_build_range_loc,
+                                     "[%" PRIu32 "].primitiveCount (%" PRIu32
+                                     ") is superior to VkPhysicalDeviceAccelerationStructurePropertiesKHR::maxInstanceCount "
+                                     "(%" PRIu64 ").",
+                                     geom_i, build_range.primitiveCount, phys_dev_ext_props.acc_structure_props.maxPrimitiveCount);
                     }
-                }
             }
         }
         skip |= context.ValidateArray(info_loc.dot(Field::geometryCount), error_obj.location.dot(Field::ppBuildRangeInfos, info_i),
