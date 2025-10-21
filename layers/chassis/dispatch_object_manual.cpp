@@ -544,6 +544,23 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
     }
 }
 
+// VKU's vk_safe_struct_manual.cpp defines a local object with static storage duration
+// (inside GetAccelStructGeomHostAllocMap) that serves as a cache to store AS related data.
+//
+// During the deinitialization sequence the AS cache may be accessed by the destructors of safe
+// structures. For example, the device_data map needs the cache to be available during destruction.
+// ASHostGeomCacheInitializer ensures that the AS cache is initialized before device_data, so
+// that in the reverse destruction order the cache is destroyed after its clients.
+//
+// The ASHostGeomCacheInitializer implementation relies on vku internal details. It creates a
+// temporary safe_VkAccelerationStructureGeometryKHR object, which during destruction accesses the
+// AS cache. The cache is constructed upon this first request. A better API would be for VKU to
+// provide an explicit function to initialize the cache (and call it from ASHostGeomCacheInitializer
+// constructor).
+struct ASHostGeomCacheInitializer {
+    ASHostGeomCacheInitializer() { vku::safe_VkAccelerationStructureGeometryKHR cache_toucher; }
+};
+
 namespace dispatch {
 
 static std::shared_mutex dispatch_lock;
@@ -551,6 +568,9 @@ static std::shared_mutex dispatch_lock;
 std::atomic<uint64_t> HandleWrapper::global_unique_id{1};
 vvl::concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> HandleWrapper::unique_id_mapping;
 bool HandleWrapper::wrap_handles{true};
+
+// Must be defined before device_data
+static ASHostGeomCacheInitializer as_host_geom_cache_initializer;
 
 // Generally we expect to get the same device and instance, so we keep them handy
 static std::shared_mutex instance_mutex;
