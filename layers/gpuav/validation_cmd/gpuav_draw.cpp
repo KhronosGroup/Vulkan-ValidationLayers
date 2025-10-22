@@ -258,8 +258,8 @@ void FirstInstance(Validator &gpuav, CommandBufferSubState &cb_state, const Loca
         assert(((error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift) ==
                kErrorSubCodePreDrawFirstInstance);
 
-        const uint32_t index = error_record[kPreActionParamOffset_0];
-        const uint32_t invalid_first_instance = error_record[kPreActionParamOffset_1];
+        const uint32_t index = error_record[kValCmdErrorPayloadDword_0];
+        const uint32_t invalid_first_instance = error_record[kValCmdErrorPayloadDword_1];
 
         skip |= gpuav.LogError(
             vuid, objlist, loc_with_debug_region,
@@ -409,7 +409,7 @@ void CountBuffer(Validator &gpuav, CommandBufferSubState &cb_state, const Locati
         const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
         switch (error_sub_code) {
             case kErrorSubCodePreDraw_DrawBufferSize: {
-                const uint32_t count = error_record[kPreActionParamOffset_0];
+                const uint32_t count = error_record[kValCmdErrorPayloadDword_0];
 
                 const VkDeviceSize draw_size = (api_stride * (count - 1) + api_offset + api_struct_size_byte);
 
@@ -426,7 +426,7 @@ void CountBuffer(Validator &gpuav, CommandBufferSubState &cb_state, const Locati
                 break;
             }
             case kErrorSubCodePreDraw_DrawCountLimit: {
-                const uint32_t count = error_record[kPreActionParamOffset_0];
+                const uint32_t count = error_record[kValCmdErrorPayloadDword_0];
                 skip |= gpuav.LogError(vuid, objlist, loc_with_debug_region,
                                        "Indirect draw count of %" PRIu32 " would exceed maxDrawIndirectCount limit of %" PRIu32 ".",
                                        count, gpuav.phys_dev_props.limits.maxDrawIndirectCount);
@@ -618,7 +618,7 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
         const char *vuid_mesh_group_count_exceeds_max_z = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07328";
         const char *vuid_mesh_group_count_exceeds_max_total = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07329";
 
-        const uint32_t draw_i = error_record[kPreActionParamOffset_1];
+        const uint32_t draw_i = error_record[kValCmdErrorPayloadDword_1];
         const char *group_count_name = is_task_shader ? "maxTaskWorkGroupCount" : "maxMeshWorkGroupCount";
         const char *group_count_total_name = is_task_shader ? "maxTaskWorkGroupTotalCount" : "maxMeshWorkGroupTotalCount";
 
@@ -627,7 +627,7 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
             case kErrorSubCodePreDrawGroupCountX: {
                 const char *vuid_group_count_exceeds_max =
                     is_task_shader ? vuid_task_group_count_exceeds_max_x : vuid_mesh_group_count_exceeds_max_x;
-                const uint32_t group_count_x = error_record[kPreActionParamOffset_0];
+                const uint32_t group_count_x = error_record[kValCmdErrorPayloadDword_0];
                 const uint32_t limit = is_task_shader ? gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[0]
                                                       : gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[0];
                 skip |= gpuav.LogError(vuid_group_count_exceeds_max, objlist, loc_with_debug_region,
@@ -641,7 +641,7 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
             case kErrorSubCodePreDrawGroupCountY: {
                 const char *vuid_group_count_exceeds_max =
                     is_task_shader ? vuid_task_group_count_exceeds_max_y : vuid_mesh_group_count_exceeds_max_y;
-                const uint32_t group_count_y = error_record[kPreActionParamOffset_0];
+                const uint32_t group_count_y = error_record[kValCmdErrorPayloadDword_0];
                 const uint32_t limit = is_task_shader ? gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[1]
                                                       : gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[1];
                 skip |= gpuav.LogError(vuid_group_count_exceeds_max, objlist, loc_with_debug_region,
@@ -655,7 +655,7 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
             case kErrorSubCodePreDrawGroupCountZ: {
                 const char *vuid_group_count_exceeds_max =
                     is_task_shader ? vuid_task_group_count_exceeds_max_z : vuid_mesh_group_count_exceeds_max_z;
-                const uint32_t group_count_z = error_record[kPreActionParamOffset_0];
+                const uint32_t group_count_z = error_record[kValCmdErrorPayloadDword_0];
                 const uint32_t limit = is_task_shader ? gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[2]
                                                       : gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[2];
                 skip |= gpuav.LogError(vuid_group_count_exceeds_max, objlist, loc_with_debug_region,
@@ -669,7 +669,7 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
             case kErrorSubCodePreDrawGroupCountTotal: {
                 const char *vuid_group_count_exceeds_max =
                     is_task_shader ? vuid_task_group_count_exceeds_max_total : vuid_mesh_group_count_exceeds_max_total;
-                const uint32_t group_count_total = error_record[kPreActionParamOffset_0];
+                const uint32_t group_count_total = error_record[kValCmdErrorPayloadDword_0];
                 const uint32_t limit = is_task_shader ? gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupTotalCount
                                                       : gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupTotalCount;
                 skip |= gpuav.LogError(vuid_group_count_exceeds_max, objlist, loc_with_debug_region,
@@ -962,9 +962,9 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
         const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
         switch (error_sub_code) {
             case kErrorSubCode_OobIndexBuffer: {
-                const uint32_t draw_i = error_record[kPreActionParamOffset_0];
-                const uint32_t first_index = error_record[kPreActionParamOffset_1];
-                const uint32_t index_count = error_record[kPreActionParamOffset_2];
+                const uint32_t draw_i = error_record[kValCmdErrorPayloadDword_0];
+                const uint32_t first_index = error_record[kValCmdErrorPayloadDword_1];
+                const uint32_t index_count = error_record[kValCmdErrorPayloadDword_2];
                 const uint32_t highest_accessed_index = first_index + index_count;
                 const uint32_t index_bits_size = GetIndexBitsSize(index_buffer_binding.index_type);
                 const uint32_t max_indices_in_buffer = static_cast<uint32_t>(index_buffer_binding.size / (index_bits_size / 8u));
