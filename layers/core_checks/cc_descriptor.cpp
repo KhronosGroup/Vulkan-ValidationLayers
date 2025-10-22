@@ -2846,6 +2846,14 @@ bool CoreChecks::PreCallValidateGetDescriptorSetLayoutSizeEXT(VkDevice device, V
                          "opaque size and is "
                          "not needed as you use vkCmdPushDescriptorSet to bind the set).");
         }
+        if (create_flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT) {
+            // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7733
+            skip |= LogError(
+                "UNASSIGNED-vkGetDescriptorSetLayoutSizeEXT-layout-embedded", layout, error_obj.location.dot(Field::layout),
+                "was created with VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT (this VkDescriptorSetLayout "
+                "has an "
+                "opaque size and is not needed as you use vkCmdBindDescriptorBufferEmbeddedSamplersEXT to bind the set).");
+        }
     }
 
     return skip;
@@ -2875,6 +2883,15 @@ bool CoreChecks::PreCallValidateGetDescriptorSetLayoutBindingOffsetEXT(VkDevice 
                              "was created with VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT (this VkDescriptorSetLayout has "
                              "an opaque size "
                              "and is not needed as you use vkCmdPushDescriptorSet to bind the set).");
+        }
+        if (create_flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT) {
+            // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7733
+            skip |= LogError(
+                "UNASSIGNED-vkGetDescriptorSetLayoutBindingOffsetEXT-layout-embedded", layout,
+                error_obj.location.dot(Field::layout),
+                "was created with VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT (this VkDescriptorSetLayout "
+                "has "
+                "an opaque size and is not needed as you use vkCmdBindDescriptorBufferEmbeddedSamplersEXT to bind the set).");
         }
     }
 

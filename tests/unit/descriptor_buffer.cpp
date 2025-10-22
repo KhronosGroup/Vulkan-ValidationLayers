@@ -197,10 +197,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     const VkDescriptorSetLayoutBinding binding{0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler.handle()};
-    vkt::DescriptorSetLayout dsl(*m_device, binding,
-                                 VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT |
-                                     VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT);
-
+    vkt::DescriptorSetLayout dsl(*m_device, binding, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
     {
         VkDeviceSize size;
 
@@ -229,7 +226,11 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
     }
 
     {
-        vkt::PipelineLayout pipeline_layout(*m_device, {&dsl});
+        vkt::DescriptorSetLayout embedded_dsl(*m_device, binding,
+                                              VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT |
+                                                  VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT);
+
+        vkt::PipelineLayout pipeline_layout(*m_device, {&embedded_dsl});
 
         m_command_buffer.Begin();
         m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorBufferEmbeddedSamplersEXT-None-08068");
@@ -1486,6 +1487,19 @@ TEST_F(NegativeDescriptorBuffer, LayoutFlags) {
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredError("UNASSIGNED-vkGetDescriptorSetLayoutBindingOffsetEXT-layout-push");
+        vk::GetDescriptorSetLayoutBindingOffsetEXT(device(), dsl, 0, &offset);
+        m_errorMonitor->VerifyFound();
+    }
+    {
+        vkt::DescriptorSetLayout dsl(*m_device, binding,
+                                     VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT |
+                                         VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT);
+
+        m_errorMonitor->SetDesiredError("UNASSIGNED-vkGetDescriptorSetLayoutSizeEXT-layout-embedded");
+        vk::GetDescriptorSetLayoutSizeEXT(device(), dsl, &size);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredError("UNASSIGNED-vkGetDescriptorSetLayoutBindingOffsetEXT-layout-embedded");
         vk::GetDescriptorSetLayoutBindingOffsetEXT(device(), dsl, 0, &offset);
         m_errorMonitor->VerifyFound();
     }
