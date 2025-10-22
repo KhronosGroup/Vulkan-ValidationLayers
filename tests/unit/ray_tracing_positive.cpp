@@ -1671,7 +1671,7 @@ TEST_F(PositiveRayTracing, AccelerationStructuresAndScratchBuffersAddressSharing
     // Test overlapping destination acceleration structure and scratch buffer
     {
         VkBufferCreateInfo dst_blas_buffer_ci = vku::InitStructHelper();
-        dst_blas_buffer_ci.size = 4096;
+        dst_blas_buffer_ci.size = 8192;
         dst_blas_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
                                    VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
                                    VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
