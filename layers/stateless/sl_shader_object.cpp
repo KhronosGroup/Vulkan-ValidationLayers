@@ -172,7 +172,7 @@ bool Device::manual_PreCallValidateGetShaderBinaryDataEXT(VkDevice device, VkSha
 
     if (pData) {
         auto ptr = reinterpret_cast<std::uintptr_t>(pData);
-        if (SafeModulo(ptr, 16 * sizeof(unsigned char)) != 0) {
+        if (ptr % 16 != 0) {
             skip |= LogError("VUID-vkGetShaderBinaryDataEXT-None-08499", shader, error_obj.location.dot(Field::pData),
                              "(%p) is not aligned to 16 bytes.", pData);
         }

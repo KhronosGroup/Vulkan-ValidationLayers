@@ -1301,13 +1301,17 @@ TEST_F(PositiveShaderObject, DrawWithBinaryShaders) {
         create_info.pName = "main";
 
         vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shaders[i]);
-        size_t dataSize;
-        vk::GetShaderBinaryDataEXT(*m_device, shaders[i], &dataSize, nullptr);
-        std::vector<uint8_t> data(dataSize);
-        vk::GetShaderBinaryDataEXT(*m_device, shaders[i], &dataSize, data.data());
+        size_t data_size;
+        vk::GetShaderBinaryDataEXT(*m_device, shaders[i], &data_size, nullptr);
+        std::vector<uint8_t> data(data_size);
+        auto ptr = reinterpret_cast<std::uintptr_t>(data.data());
+        if (ptr % 16 != 0) {
+            GTEST_SKIP() << "unable to create value memory, seems to happen on 32-bit systems";
+        }
+        vk::GetShaderBinaryDataEXT(*m_device, shaders[i], &data_size, data.data());
 
         create_info.codeType = VK_SHADER_CODE_TYPE_BINARY_EXT;
-        create_info.codeSize = dataSize;
+        create_info.codeSize = data_size;
         create_info.pCode = data.data();
         vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &binary_shaders[i]);
     }
