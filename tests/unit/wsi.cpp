@@ -2851,6 +2851,24 @@ TEST_F(NegativeWsi, PresentImageWithWrongLayout) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeWsi, PresentImageWithWrongLayout2) {
+    TEST_DESCRIPTION("Present swapchain image without transitioning it to presentable layout.");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    const vkt::Semaphore acquire_semaphore(*m_device);
+    const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+
+    m_errorMonitor->SetDesiredError("VUID-VkPresentInfoKHR-pImageIndices-01430");
+    m_default_queue->Present(m_swapchain, image_index, acquire_semaphore);
+    m_default_queue->Wait();
+    // NOTE: in the current implementation submit time validation is run by the queue thread
+    // (so all dependencies are resolved), that's why we check vuid after Wait(). There's an idea
+    // to move this validation to actual submit/present call, then we can put Verify after Present.
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeWsi, CreatingSwapchainWithExtent) {
     TEST_DESCRIPTION("Create swapchain with extent greater than maxImageExtent of SurfaceCapabilities");
 
