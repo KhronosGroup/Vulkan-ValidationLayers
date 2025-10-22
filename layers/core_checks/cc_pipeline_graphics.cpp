@@ -3514,7 +3514,7 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassDepthStencil(const LastBou
     bool skip = false;
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
 
-    if (last_bound_state.IsDepthWriteEnable() && pipeline_rendering_ci.depthAttachmentFormat == VK_FORMAT_UNDEFINED) {
+    if (last_bound_state.IsDepthTestEnable() && pipeline_rendering_ci.depthAttachmentFormat == VK_FORMAT_UNDEFINED) {
         if (rp_state.use_dynamic_rendering && rp_state.dynamic_rendering_begin_rendering_info.pDepthAttachment) {
             const VkImageView depth_attachment = rp_state.dynamic_rendering_begin_rendering_info.pDepthAttachment->imageView;
             if (depth_attachment != VK_NULL_HANDLE) {
