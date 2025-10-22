@@ -2376,7 +2376,8 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer 
 
     for (uint32_t i = 0; i < setCount; i++) {
         const auto set_layout = pipeline_layout->set_layouts[firstSet + i];
-        if ((set_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) == 0) {
+        const VkDescriptorSetLayoutCreateFlags create_flags = set_layout->GetCreateFlags();
+        if ((create_flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) == 0) {
             const LogObjectList objlist(cb_state.Handle(), set_layout->Handle(), pipeline_layout->Handle());
             const char *vuid = is_2 ? "VUID-VkSetDescriptorBufferOffsetsInfoEXT-firstSet-09006"
                                     : "VUID-vkCmdSetDescriptorBufferOffsetsEXT-firstSet-09006";
@@ -2386,7 +2387,7 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer 
                              FormatHandle(set_layout->Handle()).c_str(), firstSet + i);
             continue;
         }
-        if ((set_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR) != 0) {
+        if ((create_flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR) != 0) {
             const LogObjectList objlist(cb_state.Handle(), set_layout->Handle(), pipeline_layout->Handle());
             // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7721
             const char *vuid = is_2 ? "UNASSIGNED-VkSetDescriptorBufferOffsetsInfoEXT-push-descriptor-flags"
@@ -2398,6 +2399,19 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer 
                 "When using Push Descriptor with Descriptor Buffers, there is a single set created with PUSH_DESCRIPTOR_BIT, to "
                 "update it, call vkCmdPushDescriptorSetKHR with the same VkPipelineLayout and set index.",
                 FormatHandle(set_layout->Handle()).c_str(), firstSet + i);
+            continue;
+        }
+        if ((create_flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT) != 0) {
+            const LogObjectList objlist(cb_state.Handle(), set_layout->Handle(), pipeline_layout->Handle());
+            // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7721
+            const char *vuid = is_2 ? "UNASSIGNED-VkSetDescriptorBufferOffsetsInfoEXT-embedded-descriptor-flags"
+                                    : "UNASSIGNED-vkCmdSetDescriptorBufferOffsetsEXT-embedded-descriptor-flags";
+            skip |= LogError(vuid, objlist, loc,
+                             "Descriptor set layout (%s) for set %" PRIu32
+                             " was created with VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT flag set.\n"
+                             "When using Embedded Samplers with Descriptor Buffers, to update it, call "
+                             "vkCmdBindDescriptorBufferEmbeddedSamplersEXT with the same VkPipelineLayout and set index.",
+                             FormatHandle(set_layout->Handle()).c_str(), firstSet + i);
             continue;
         }
 
