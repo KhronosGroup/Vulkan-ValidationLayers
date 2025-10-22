@@ -608,7 +608,7 @@ TEST_F(NegativeRayTracing, CopyAccelerationStructureOverlappingMemory) {
     vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
 
     VkBufferCreateInfo blas_buffer_ci = vku::InitStructHelper();
-    blas_buffer_ci.size = 4096;
+    blas_buffer_ci.size = 8192;  // large enough for all known driver
     blas_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
                            VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
@@ -1591,10 +1591,8 @@ TEST_F(NegativeRayTracing, HostCmdBuildAccelerationStructuresKHR) {
 
 TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     TEST_DESCRIPTION("Validate acceleration structure building.");
-
     AddOptionalExtensions(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME);
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::rayQuery);
@@ -1693,8 +1691,9 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
 
     // Invalid dst buffer
     {
+        // 8192 is large enough for all known driver
         auto buffer_ci =
-            vkt::Buffer::CreateInfo(4096, VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+            vkt::Buffer::CreateInfo(8192, VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
                                               VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
         vkt::Buffer invalid_buffer(*m_device, buffer_ci, vkt::no_mem);
         auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
@@ -1867,9 +1866,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
 
 TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory) {
     TEST_DESCRIPTION("Validate acceleration structure building when source/destination acceleration structures overlap.");
-
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::rayQuery);
@@ -1893,7 +1890,7 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory) {
     // Test overlapping destination acceleration structures
     {
         VkBufferCreateInfo dst_blas_buffer_ci = vku::InitStructHelper();
-        dst_blas_buffer_ci.size = 4096;
+        dst_blas_buffer_ci.size = 8192;
         dst_blas_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
                                    VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
                                    VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
@@ -1922,7 +1919,7 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory) {
     // Test overlapping source acceleration structure and destination acceleration structures
     {
         VkBufferCreateInfo blas_buffer_ci = vku::InitStructHelper();
-        blas_buffer_ci.size = 4096;
+        blas_buffer_ci.size = 8192;
         blas_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
                                VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         std::vector<vkt::Buffer> src_blas_buffers(build_info_count);
@@ -1976,9 +1973,7 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory) {
 
 TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory2) {
     TEST_DESCRIPTION("Validate acceleration structure building when scratch buffers overlap.");
-
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::rayQuery);
@@ -2037,9 +2032,7 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory2) {
 TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory3) {
     TEST_DESCRIPTION(
         "Validate acceleration structure building when destination acceleration structures and scratch buffers overlap.");
-
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::rayQuery);
@@ -2065,7 +2058,7 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory3) {
     // Test overlapping destination acceleration structure and scratch buffer
     {
         VkBufferCreateInfo dst_blas_buffer_ci = vku::InitStructHelper();
-        dst_blas_buffer_ci.size = 4096;
+        dst_blas_buffer_ci.size = 8192;  // large enough for all known driver
         dst_blas_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
                                    VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
                                    VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
@@ -2112,9 +2105,7 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory3) {
 TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory4) {
     TEST_DESCRIPTION(
         "Validate acceleration structure building when source/destination acceleration structures and scratch buffers overlap.");
-
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::rayQuery);
@@ -2140,7 +2131,7 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory4) {
     // Test overlapping source acceleration structure and scratch buffer
     {
         VkBufferCreateInfo blas_buffer_ci = vku::InitStructHelper();
-        blas_buffer_ci.size = 4096;
+        blas_buffer_ci.size = 8192;  // large enough for all known driver
         blas_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
                                VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         VkBufferCreateInfo scratch_buffer_ci = vku::InitStructHelper();
