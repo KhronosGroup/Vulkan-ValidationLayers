@@ -783,6 +783,7 @@ TEST_F(NegativeDescriptorBuffer, CmdSetDescriptorBufferOffsets) {
     VkDeviceSize offsets[3] = {0};
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetDescriptorBufferOffsetsEXT-firstSet-08066");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdSetDescriptorBufferOffsetsEXT-embedded-descriptor-flags");
     m_errorMonitor->SetUnexpectedError("VUID-vkCmdSetDescriptorBufferOffsetsEXT-pOffsets-08063");
     vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 3, indices,
                                          offsets);
@@ -1945,6 +1946,44 @@ TEST_F(NegativeDescriptorBuffer, PushDescriptor) {
     uint32_t buffer_index = 0;
     VkDeviceSize buffer_offset = 0;
     m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdSetDescriptorBufferOffsetsEXT-push-descriptor-flags");
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &buffer_index,
+                                         &buffer_offset);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptorBuffer, EmbeddedSamplers) {
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    const VkDescriptorSetLayoutBinding sampler_binding = {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, &sampler.handle()};
+    VkDescriptorSetLayoutCreateInfo sampler_ds_layout_ci = vku::InitStructHelper();
+    sampler_ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT |
+                                 VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT;
+    sampler_ds_layout_ci.bindingCount = 1u;
+    sampler_ds_layout_ci.pBindings = &sampler_binding;
+    vkt::DescriptorSetLayout sampler_ds_layout(*m_device, sampler_ds_layout_ci);
+    vkt::PipelineLayout pipeline_layout(*m_device, {&sampler_ds_layout});
+
+    VkBufferUsageFlags descriptor_buffer_usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
+    vkt::Buffer descriptor_buffer(*m_device, 4096, descriptor_buffer_usage, vkt::device_address);
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+
+    VkDescriptorBufferBindingInfoEXT descriptor_buffer_binding_info = vku::InitStructHelper();
+    descriptor_buffer_binding_info.address = descriptor_buffer.Address();
+    descriptor_buffer_binding_info.usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &descriptor_buffer_binding_info);
+
+    uint32_t buffer_index = 0;
+    VkDeviceSize buffer_offset = 0;
+    m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdSetDescriptorBufferOffsetsEXT-embedded-descriptor-flags");
     vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &buffer_index,
                                          &buffer_offset);
     m_errorMonitor->VerifyFound();
