@@ -43,16 +43,16 @@ set_target_properties(vk_layer_validation_stress
     RUNTIME_OUTPUT_DIRECTORY "$<TARGET_FILE_DIR:vk_layer_validation_tests>"
 )
 
-# Copy the dependent DLL's into the build directory of vk_layer_validation_stress
-if(SLANG_INSTALL_DIR AND WIN32)
-    add_custom_command(TARGET vk_layer_validation_stress POST_BUILD
-                       COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:vk_layer_validation_stress> $<TARGET_RUNTIME_DLLS:vk_layer_validation_stress>
-                       COMMAND_EXPAND_LISTS)
+if(SLANG_INSTALL_DIR)
+    configure_slang_for_target(vk_layer_validation_stress)
 endif()
 
 install(TARGETS vk_layer_validation_stress)
 if (WIN32)
     install(FILES $<TARGET_RUNTIME_DLLS:vk_layer_validation_stress> DESTINATION ${CMAKE_INSTALL_LIBDIR})
+endif()
+if(SLANG_INSTALL_DIR)
+    install_slang_with_target(vk_layer_validation_stress ${CMAKE_INSTALL_LIBDIR})
 endif()
 
 include(GoogleTest)

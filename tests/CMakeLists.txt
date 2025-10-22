@@ -16,6 +16,10 @@
 # limitations under the License.
 # ~~~
 
+if(SLANG_INSTALL_DIR)
+    find_package(slang CONFIG QUIET)
+endif()
+
 add_subdirectory(framework)
 
 if (ANDROID)
@@ -278,16 +282,16 @@ elseif (ANDROID)
     return()
 endif()
 
-# Copy the dependent DLL's into the build directory of vk_layer_validation_tests
-if(SLANG_INSTALL_DIR AND WIN32)
-    add_custom_command(TARGET vk_layer_validation_tests POST_BUILD
-                       COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:vk_layer_validation_tests> $<TARGET_RUNTIME_DLLS:vk_layer_validation_tests>
-                       COMMAND_EXPAND_LISTS)
+if(SLANG_INSTALL_DIR)
+    configure_slang_for_target(vk_layer_validation_tests)
 endif()
 
 install(TARGETS vk_layer_validation_tests)
 if (WIN32)
     install(FILES $<TARGET_RUNTIME_DLLS:vk_layer_validation_tests> DESTINATION ${CMAKE_INSTALL_LIBDIR})
+endif()
+if(SLANG_INSTALL_DIR)
+    install_slang_with_target(vk_layer_validation_tests ${CMAKE_INSTALL_LIBDIR})
 endif()
 
 include(GoogleTest)
