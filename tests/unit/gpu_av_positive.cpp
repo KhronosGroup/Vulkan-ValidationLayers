@@ -2370,11 +2370,9 @@ TEST_F(PositiveGpuAV, PipelineBinariesDraw) {
     VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();
     flags2.flags = VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR;
 
-    std::vector<uint8_t> binary_data[2];
-    size_t data_size[2];
-    VkPipelineBinaryKeyKHR binary_key[2];
-    binary_key[0] = vku::InitStructHelper();
-    binary_key[1] = vku::InitStructHelper();
+    std::vector<std::vector<uint8_t>> binary_data;
+    std::vector<size_t> data_size;
+    std::vector<VkPipelineBinaryKeyKHR> binary_key;
 
     // create binary from pipeline
     {
@@ -2397,7 +2395,11 @@ TEST_F(PositiveGpuAV, PipelineBinariesDraw) {
         for (uint32_t i = 0; i < handles_info.pipelineBinaryCount; i++) {
             VkPipelineBinaryDataInfoKHR data_info = vku::InitStructHelper();
             data_info.pipelineBinary = handles_info.pPipelineBinaries[i];
+            binary_key.emplace_back();
+            binary_key[i] = vku::InitStructHelper();
+            data_size.emplace_back();
             vk::GetPipelineBinaryDataKHR(device(), &data_info, &binary_key[i], &data_size[i], nullptr);
+            binary_data.emplace_back();
             binary_data[i].resize(data_size[i]);
             vk::GetPipelineBinaryDataKHR(device(), &data_info, &binary_key[i], &data_size[i], binary_data[i].data());
             vk::DestroyPipelineBinaryKHR(device(), handles_info.pPipelineBinaries[i], nullptr);
@@ -2406,32 +2408,32 @@ TEST_F(PositiveGpuAV, PipelineBinariesDraw) {
 
     // create binary from data, then create pipeline from binary
     {
-        VkPipelineBinaryKHR pipeline_binaries[2];
-
-        VkPipelineBinaryDataKHR data[2];
-        data[0].dataSize = data_size[0];
-        data[0].pData = binary_data[0].data();
-        data[1].dataSize = data_size[1];
-        data[1].pData = binary_data[1].data();
+        std::vector<VkPipelineBinaryDataKHR> data(binary_data.size());
+        for (size_t i = 0; i < binary_data.size(); ++i) {
+            data[i].dataSize = data_size[i];
+            data[i].pData = binary_data[i].data();
+        }
 
         VkPipelineBinaryKeysAndDataKHR keys_data_info;
-        keys_data_info.binaryCount = 2u;
-        keys_data_info.pPipelineBinaryKeys = binary_key;
-        keys_data_info.pPipelineBinaryData = data;
+        keys_data_info.binaryCount = size32(binary_key);
+        keys_data_info.pPipelineBinaryKeys = binary_key.data();
+        keys_data_info.pPipelineBinaryData = data.data();
 
         VkPipelineBinaryCreateInfoKHR binary_create_info = vku::InitStructHelper();
         binary_create_info.pKeysAndDataInfo = &keys_data_info;
 
+        std::vector<VkPipelineBinaryKHR> pipeline_binaries(binary_data.size());
+
         VkPipelineBinaryHandlesInfoKHR handles_info = vku::InitStructHelper();
-        handles_info.pipelineBinaryCount = 2u;
-        handles_info.pPipelineBinaries = pipeline_binaries;
+        handles_info.pipelineBinaryCount = size32(pipeline_binaries);
+        handles_info.pPipelineBinaries = pipeline_binaries.data();
 
         vk::CreatePipelineBinariesKHR(device(), &binary_create_info, nullptr, &handles_info);
 
         VkPipelineBinaryInfoKHR binary_info = vku::InitStructHelper();
 
-        binary_info.binaryCount = 2u;
-        binary_info.pPipelineBinaries = pipeline_binaries;
+        binary_info.binaryCount = size32(pipeline_binaries);
+        binary_info.pPipelineBinaries = pipeline_binaries.data();
 
         flags2.pNext = &binary_info;
 
@@ -2447,7 +2449,8 @@ TEST_F(PositiveGpuAV, PipelineBinariesDraw) {
         m_command_buffer.EndRenderPass();
         m_command_buffer.End();
 
-        vk::DestroyPipelineBinaryKHR(device(), pipeline_binaries[0], nullptr);
-        vk::DestroyPipelineBinaryKHR(device(), pipeline_binaries[1], nullptr);
+        for (size_t i = 0; i < pipeline_binaries.size(); ++i) {
+            vk::DestroyPipelineBinaryKHR(device(), pipeline_binaries[i], nullptr);
+        }
     }
 }
