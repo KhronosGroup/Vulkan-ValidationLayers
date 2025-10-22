@@ -506,6 +506,22 @@ TEST_F(NegativeDescriptorBuffer, NotEnabledDescriptorBufferCaptureReplayAS) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDescriptorBuffer, BindWithNoValidUsageFlags) {
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+    m_command_buffer.Begin();
+
+    vkt::Buffer d_buffer(*m_device, 4096, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
+
+    VkDescriptorBufferBindingInfoEXT binding_info = vku::InitStructHelper();
+    binding_info.address = d_buffer.Address();
+    binding_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDescriptorBufferBindingInfoEXT-usage-flags");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08055");
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &binding_info);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDescriptorBuffer, BufferlessPushDescriptorsOff) {
     TEST_DESCRIPTION("When bufferlessPushDescriptors is not supported.");
     AddRequiredFeature(vkt::Feature::descriptorBufferPushDescriptors);

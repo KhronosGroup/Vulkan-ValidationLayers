@@ -2644,6 +2644,12 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
     std::vector<VkBuffer> resource_buffers;
     std::vector<VkBuffer> push_descriptor_buffers;
 
+    // Only these 3 usage flags matter, rest are ignored
+    // From https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7734
+    const VkBufferUsageFlags2 descriptor_buffer_usage = VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT |
+                                                        VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT |
+                                                        VK_BUFFER_USAGE_2_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT;
+
     for (uint32_t i = 0; i < bufferCount; i++) {
         const Location binding_loc = error_obj.location.dot(Field::pBindingInfos, i);
         const VkDescriptorBufferBindingInfoEXT &binding_info = pBindingInfos[i];
@@ -2654,26 +2660,31 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
         // Try to find a valid buffer in buffer_states.
         // If none if found, output each violated VUIDs, with the list of buffers that violate it.
 
+        if ((buffer_usage & descriptor_buffer_usage) == 0) {
+            // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7734
+            bool has_usage2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(binding_info.pNext);
+            skip |=
+                LogError("UNASSIGNED-VkDescriptorBufferBindingInfoEXT-usage-flags", commandBuffer, binding_loc.dot(Field::usage),
+                         "%sis %s", has_usage2 ? "is ignored for pNext->VkBufferUsageFlags2CreateInfo::usage, which " : "",
+                         string_VkBufferUsageFlags2(buffer_usage).c_str());
+        }
+
         BufferAddressValidation<4> buffer_address_validator = {{{
             {"VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08055",
              [buffer_usage](const vvl::Buffer &buffer_state) {
-                 // TODO - This check seems wrong, being looked inside WG
-                 // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4469
-                 if ((buffer_state.usage &
-                      (VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT |
-                       VK_BUFFER_USAGE_2_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT)) !=
-                     (buffer_usage &
-                      (VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT |
-                       VK_BUFFER_USAGE_2_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT))) {
+                 if ((buffer_state.usage & descriptor_buffer_usage) != (buffer_usage & descriptor_buffer_usage)) {
                      return true;
                  }
                  return false;
              },
              [buffer_usage, i]() {
-                 return "pBindingInfos[" + std::to_string(i) + "].usage is " + string_VkBufferUsageFlags2(buffer_usage) +
+                 return "pBindingInfos[" + std::to_string(i) + "].usage is " +
+                        string_VkBufferUsageFlags2(buffer_usage & descriptor_buffer_usage) +
                         " but none of the following buffers contain it:";
              },
-             [](const vvl::Buffer &buffer_state) { return "buffer has usage " + string_VkBufferUsageFlags2(buffer_state.usage); }},
+             [](const vvl::Buffer &buffer_state) {
+                 return "buffer has usage " + string_VkBufferUsageFlags2(buffer_state.usage & descriptor_buffer_usage);
+             }},
 
             {"VUID-VkDescriptorBufferBindingInfoEXT-usage-08122",
              [buffer_usage](const vvl::Buffer &buffer_state) {
