@@ -76,10 +76,6 @@ find_package(GTest CONFIG)
 find_package(glslang CONFIG)
 find_package(SPIRV-Tools CONFIG)
 
-if(SLANG_INSTALL_DIR)
-    find_package(slang CONFIG QUIET)
-endif()
-
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
     target_compile_options(vk_test_framework PUBLIC
         -Wno-sign-compare
@@ -134,3 +130,23 @@ if(SLANG_INSTALL_DIR)
     target_compile_definitions(vk_test_framework PUBLIC VVL_USE_SLANG)
 endif()
 
+function(configure_slang_for_target TARGET_NAME)
+    if(WIN32)
+        add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:${TARGET_NAME}> $<TARGET_RUNTIME_DLLS:${TARGET_NAME}>
+            COMMAND_EXPAND_LISTS
+        )
+    endif()
+endfunction()
+
+function(install_slang_with_target TARGET_NAME DESTINATION)
+    if(NOT WIN32)
+        install(FILES $<TARGET_FILE:slang::slang> DESTINATION ${DESTINATION})
+
+        # Make sure slang can be found after the target is installed
+        set_target_properties(${TARGET_NAME} PROPERTIES
+            INSTALL_RPATH "$ORIGIN"
+            INSTALL_RPATH_USE_LINK_PATH TRUE
+        )
+    endif()
+endfunction()
