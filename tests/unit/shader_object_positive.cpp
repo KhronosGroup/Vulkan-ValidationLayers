@@ -1265,7 +1265,6 @@ TEST_F(PositiveShaderObject, DrawRebindingShaders) {
 
 TEST_F(PositiveShaderObject, DrawWithBinaryShaders) {
     TEST_DESCRIPTION("Draw using binary shaders.");
-
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredFeature(vkt::Feature::geometryShader);
     AddRequiredFeature(vkt::Feature::tessellationShader);
@@ -1304,10 +1303,6 @@ TEST_F(PositiveShaderObject, DrawWithBinaryShaders) {
         size_t data_size;
         vk::GetShaderBinaryDataEXT(*m_device, shaders[i], &data_size, nullptr);
         std::vector<uint8_t> data(data_size);
-        auto ptr = reinterpret_cast<std::uintptr_t>(data.data());
-        if (ptr % 16 != 0) {
-            GTEST_SKIP() << "unable to create value memory, seems to happen on 32-bit systems";
-        }
         vk::GetShaderBinaryDataEXT(*m_device, shaders[i], &data_size, data.data());
 
         create_info.codeType = VK_SHADER_CODE_TYPE_BINARY_EXT;
