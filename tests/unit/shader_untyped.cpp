@@ -381,3 +381,41 @@ TEST_F(NegativeShaderUntyped, OffsetMaxComputeSharedMemorySize) {
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeShaderUntyped, MissingDataTypeOperand) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    RETURN_IF_SKIP(Init());
+
+    const std::string spirv = R"(
+        OpCapability Shader
+        OpCapability UntypedPointersKHR
+        OpExtension "SPV_KHR_untyped_pointers"
+        OpMemoryModel Logical GLSL450
+        OpEntryPoint GLCompute %main "main" %var
+        OpExecutionMode %main LocalSize 1 1 1
+        OpDecorate %block Block
+        OpMemberDecorate %block 0 Offset 0
+        OpDecorate %var DescriptorSet 0
+        OpDecorate %var Binding 0
+        %void = OpTypeVoid
+        %void_fn = OpTypeFunction %void
+        %int = OpTypeInt 32 0
+        %int_0 = OpConstant %int 0
+        %int_1 = OpConstant %int 1
+        %block = OpTypeStruct %int
+        %ptr = OpTypeUntypedPointerKHR StorageBuffer
+        %var = OpUntypedVariableKHR %ptr StorageBuffer
+        %main = OpFunction %void None %void_fn
+        %entry = OpLabel
+        %access = OpUntypedAccessChainKHR %ptr %block %var %int_0
+        OpAtomicStore %access %int_1 %int_0 %int_1
+        OpReturn
+        OpFunctionEnd
+    )";
+
+    m_errorMonitor->SetDesiredError("VUID-StandaloneSpirv-OpUntypedVariableKHR-11167");
+    VkShaderObj cs_module = VkShaderObj::CreateFromASM(this, spirv.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    m_errorMonitor->VerifyFound();
+}
