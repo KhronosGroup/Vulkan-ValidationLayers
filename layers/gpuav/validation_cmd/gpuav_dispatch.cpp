@@ -115,7 +115,7 @@ void DispatchIndirect(Validator &gpuav, const Location &loc, CommandBufferSubSta
             const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
             switch (error_sub_code) {
                 case kErrorSubCodePreDispatchCountLimitX: {
-                    uint32_t count = error_record[kPreActionParamOffset_0];
+                    uint32_t count = error_record[kValCmdErrorPayloadDword_0];
                     skip |= gpuav.LogError("VUID-VkDispatchIndirectCommand-x-00417", objlist, loc_with_debug_region,
                                            "Indirect dispatch VkDispatchIndirectCommand::x of %" PRIu32
                                            " would exceed maxComputeWorkGroupCount[0] limit of %" PRIu32 ".",
@@ -123,7 +123,7 @@ void DispatchIndirect(Validator &gpuav, const Location &loc, CommandBufferSubSta
                     break;
                 }
                 case kErrorSubCodePreDispatchCountLimitY: {
-                    uint32_t count = error_record[kPreActionParamOffset_0];
+                    uint32_t count = error_record[kValCmdErrorPayloadDword_0];
                     skip |= gpuav.LogError("VUID-VkDispatchIndirectCommand-y-00418", objlist, loc_with_debug_region,
                                            "Indirect dispatch VkDispatchIndirectCommand::y of %" PRIu32
                                            " would exceed maxComputeWorkGroupCount[1] limit of %" PRIu32 ".",
@@ -131,7 +131,7 @@ void DispatchIndirect(Validator &gpuav, const Location &loc, CommandBufferSubSta
                     break;
                 }
                 case kErrorSubCodePreDispatchCountLimitZ: {
-                    uint32_t count = error_record[kPreActionParamOffset_0];
+                    uint32_t count = error_record[kValCmdErrorPayloadDword_0];
                     skip |= gpuav.LogError("VUID-VkDispatchIndirectCommand-z-00419", objlist, loc_with_debug_region,
                                            "Indirect dispatch VkDispatchIndirectCommand::z of %" PRIu32
                                            " would exceed maxComputeWorkGroupCount[2] limit of %" PRIu32 ".",

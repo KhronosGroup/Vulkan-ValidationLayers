@@ -234,7 +234,7 @@ void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubSt
         const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
         switch (error_sub_code) {
             case kErrorSubCodePreCopyBufferToImageBufferTexel: {
-                const uint32_t texel_offset = error_record[kPreActionParamOffset_0];
+                const uint32_t texel_offset = error_record[kValCmdErrorPayloadDword_0];
                 LogObjectList objlist_and_src_buffer = objlist;
                 objlist_and_src_buffer.add(src_buffer);
                 const char *vuid = loc_with_debug_region.function == vvl::Func::vkCmdCopyBufferToImage
