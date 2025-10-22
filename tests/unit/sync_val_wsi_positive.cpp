@@ -939,3 +939,151 @@ TEST_F(PositiveSyncValWsi, PresentWithSecondaryLayoutTransitions) {
     m_default_queue->Present(m_swapchain, image_index, submit_semaphore);
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveSyncValWsi, BindSwapchainImage) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9787
+    TEST_DESCRIPTION("Bind custom swapchain images. Do not retrieve images using GetSwapchainImagesKHR");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(InitSyncVal());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    const uint32_t image_count = m_swapchain.GetImageCount();
+    if (image_count < 2) {
+        GTEST_SKIP() << "The test requires swapchain with at least 2 images";
+    }
+
+    VkImageSwapchainCreateInfoKHR image_swapchain_ci = vku::InitStructHelper();
+    image_swapchain_ci.swapchain = m_swapchain;
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.pNext = &image_swapchain_ci;
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = m_surface_formats[0].format;
+    image_ci.extent.width = m_surface_capabilities.minImageExtent.width;
+    image_ci.extent.height = m_surface_capabilities.minImageExtent.height;
+    image_ci.extent.depth = 1;
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    std::vector<vkt::Image> images;
+    for (uint32_t i = 0; i < image_count; i++) {
+        images.emplace_back(*m_device, image_ci, vkt::no_mem);
+
+        VkBindImageMemorySwapchainInfoKHR bind_swapchain_info = vku::InitStructHelper();
+        bind_swapchain_info.swapchain = m_swapchain;
+        bind_swapchain_info.imageIndex = i;
+
+        VkBindImageMemoryInfo bind_info = vku::InitStructHelper(&bind_swapchain_info);
+        bind_info.image = images.back();
+
+        vk::BindImageMemory2(device(), 1, &bind_info);
+
+        images.back().SetLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    }
+
+    vkt::Semaphore acquire_semaphore0(*m_device);
+    vkt::Semaphore submit_semaphore0(*m_device);
+
+    vkt::Semaphore acquire_semaphore1(*m_device);
+    vkt::Semaphore submit_semaphore1(*m_device);
+
+    const uint32_t image_index0 = m_swapchain.AcquireNextImage(acquire_semaphore0, kWaitTimeout);
+    m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore0), vkt::Signal(submit_semaphore0));
+    m_default_queue->Present(m_swapchain, image_index0, submit_semaphore0);
+
+    const uint32_t image_index1 = m_swapchain.AcquireNextImage(acquire_semaphore1, kWaitTimeout);
+    m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore1), vkt::Signal(submit_semaphore1));
+    m_default_queue->Present(m_swapchain, image_index1, submit_semaphore1);
+
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveSyncValWsi, BindSwapchainImage2) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9787
+    TEST_DESCRIPTION("Bind custom swapchain images. Do not retrieve images using GetSwapchainImagesKHR");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddSurfaceExtension();
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    const uint32_t image_count = m_swapchain.GetImageCount();
+    if (image_count < 2) {
+        GTEST_SKIP() << "The test requires swapchain with at least 2 images";
+    }
+
+    VkImageSwapchainCreateInfoKHR image_swapchain_ci = vku::InitStructHelper();
+    image_swapchain_ci.swapchain = m_swapchain;
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.pNext = &image_swapchain_ci;
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = m_surface_formats[0].format;
+    image_ci.extent.width = m_surface_capabilities.minImageExtent.width;
+    image_ci.extent.height = m_surface_capabilities.minImageExtent.height;
+    image_ci.extent.depth = 1;
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    std::vector<vkt::Image> images;
+    for (uint32_t i = 0; i < image_count; i++) {
+        images.emplace_back(*m_device, image_ci, vkt::no_mem);
+
+        VkBindImageMemorySwapchainInfoKHR bind_swapchain_info = vku::InitStructHelper();
+        bind_swapchain_info.swapchain = m_swapchain;
+        bind_swapchain_info.imageIndex = i;
+
+        VkBindImageMemoryInfo bind_info = vku::InitStructHelper(&bind_swapchain_info);
+        bind_info.image = images.back();
+
+        vk::BindImageMemory2(device(), 1, &bind_info);
+    }
+
+    vkt::Semaphore acquire_semaphore0(*m_device);
+    vkt::Semaphore submit_semaphore0(*m_device);
+    vkt::CommandBuffer command_buffer0(*m_device, m_command_pool);
+
+    vkt::Semaphore acquire_semaphore1(*m_device);
+    vkt::Semaphore submit_semaphore1(*m_device);
+    vkt::CommandBuffer command_buffer1(*m_device, m_command_pool);
+
+    VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
+    layout_transition.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    layout_transition.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    layout_transition.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    layout_transition.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    command_buffer0.Begin();
+    layout_transition.image = images[0];
+    command_buffer0.Barrier(layout_transition);
+    command_buffer0.End();
+
+    const uint32_t image_index0 = m_swapchain.AcquireNextImage(acquire_semaphore0, kWaitTimeout);
+    m_default_queue->Submit2(command_buffer0, vkt::Wait(acquire_semaphore0), vkt::Signal(submit_semaphore0));
+    m_default_queue->Present(m_swapchain, image_index0, submit_semaphore0);
+
+    command_buffer1.Begin();
+    layout_transition.image = images[1];
+    command_buffer1.Barrier(layout_transition);
+    command_buffer1.End();
+
+    const uint32_t image_index1 = m_swapchain.AcquireNextImage(acquire_semaphore1, kWaitTimeout);
+    m_default_queue->Submit2(command_buffer1, vkt::Wait(acquire_semaphore1), vkt::Signal(submit_semaphore1));
+    m_default_queue->Present(m_swapchain, image_index1, submit_semaphore1);
+
+    m_default_queue->Wait();
+}
