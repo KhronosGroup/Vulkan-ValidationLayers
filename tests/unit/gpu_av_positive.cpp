@@ -2454,3 +2454,31 @@ TEST_F(PositiveGpuAV, PipelineBinariesDraw) {
         }
     }
 }
+
+TEST_F(PositiveGpuAV, SafeBuffers) {
+    TEST_DESCRIPTION("Ensure we are using safe struct for our VkBufferCreateInfo");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    {
+        VkBufferUsageFlags2CreateInfo buffer_usage_flags = vku::InitStructHelper();
+        buffer_usage_flags.usage = VK_BUFFER_USAGE_2_SHADER_BINDING_TABLE_BIT_KHR;
+        VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&buffer_usage_flags);
+        buffer_ci.size = 1024;
+        vkt::Buffer buffer(*m_device, buffer_ci);
+        ASSERT_TRUE(buffer_usage_flags.usage == VK_BUFFER_USAGE_2_SHADER_BINDING_TABLE_BIT_KHR);
+    }
+    {
+        VkBufferUsageFlags2CreateInfo buffer_usage_flags = vku::InitStructHelper();
+        buffer_usage_flags.usage = VK_BUFFER_USAGE_2_INDEX_BUFFER_BIT;
+        VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&buffer_usage_flags);
+        buffer_ci.size = 63;
+        vkt::Buffer buffer(*m_device, buffer_ci);
+
+        ASSERT_TRUE(buffer_usage_flags.usage == VK_BUFFER_USAGE_2_INDEX_BUFFER_BIT);
+        ASSERT_TRUE(buffer_ci.size == 63);
+    }
+}

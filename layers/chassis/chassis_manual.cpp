@@ -1117,7 +1117,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(VkDevice device, const VkBufferCreat
     }
 
     chassis::CreateBuffer chassis_state{};
-    chassis_state.modified_create_info = *pCreateInfo;
+    chassis_state.create_info_copy = pCreateInfo;
 
     RecordObject record_obj(vvl::Func::vkCreateBuffer);
     {
@@ -1134,7 +1134,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(VkDevice device, const VkBufferCreat
     VkResult result;
     {
         VVL_ZoneScopedN("Dispatch_CreateBuffer");
-        result = device_dispatch->CreateBuffer(device, &chassis_state.modified_create_info, pAllocator, pBuffer);
+        result = device_dispatch->CreateBuffer(device, chassis_state.create_info_copy, pAllocator, pBuffer);
     }
     record_obj.result = result;
 
@@ -1146,7 +1146,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(VkDevice device, const VkBufferCreat
             }
             auto lock = vo->WriteLock();
             // If we don't pass into PostCallRecord, CoreCheck may give false positives when using GPU-AV
-            vo->PostCallRecordCreateBuffer(device, &chassis_state.modified_create_info, pAllocator, pBuffer, record_obj);
+            vo->PostCallRecordCreateBuffer(device, chassis_state.create_info_copy, pAllocator, pBuffer, record_obj);
         }
     }
     return result;
