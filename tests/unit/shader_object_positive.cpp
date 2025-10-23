@@ -13,6 +13,7 @@
 #include "../framework/shader_object_helper.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/shader_templates.h"
+#include "utils/math_utils.h"
 
 void ShaderObjectTest::InitBasicShaderObject() {
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1302,12 +1303,16 @@ TEST_F(PositiveShaderObject, DrawWithBinaryShaders) {
         vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shaders[i]);
         size_t data_size;
         vk::GetShaderBinaryDataEXT(*m_device, shaders[i], &data_size, nullptr);
-        std::vector<uint8_t> data(data_size);
-        vk::GetShaderBinaryDataEXT(*m_device, shaders[i], &data_size, data.data());
+        // Allocate enough space to guarantee 16 byte alignment
+        std::vector<uint8_t> data(data_size + 15);
+        // Get 16 byte aligned pointer
+        void *storage_ptr = reinterpret_cast<void *>(Align(reinterpret_cast<uintptr_t>(data.data()), (uintptr_t)16));
+
+        vk::GetShaderBinaryDataEXT(*m_device, shaders[i], &data_size, storage_ptr);
 
         create_info.codeType = VK_SHADER_CODE_TYPE_BINARY_EXT;
         create_info.codeSize = data_size;
-        create_info.pCode = data.data();
+        create_info.pCode = storage_ptr;
         vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &binary_shaders[i]);
     }
 
