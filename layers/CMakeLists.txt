@@ -468,6 +468,15 @@ target_sources(vvl PRIVATE
 get_target_property(LAYER_SOURCES vvl SOURCES)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${LAYER_SOURCES})
 
+set(GPUAV_SHADERS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gpuav/shaders")
+file(GLOB_RECURSE GPUAV_SHADERS
+    "${GPUAV_SHADERS_DIR}/*.vert"
+    "${GPUAV_SHADERS_DIR}/*.comp"
+    "${GPUAV_SHADERS_DIR}/*.h"
+)
+add_custom_target(Shaders ALL SOURCES ${GPUAV_SHADERS})
+source_group(TREE ${GPUAV_SHADERS_DIR} PREFIX "GPU-AV Shaders" FILES ${GPUAV_SHADERS})
+
 option(BUILD_SELF_VVL "Setup a VVL build that will be used for self validation" FALSE)
 if (BUILD_SELF_VVL)
     target_compile_definitions(VkLayer_utils PUBLIC BUILD_SELF_VVL)
