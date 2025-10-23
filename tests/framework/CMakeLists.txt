@@ -56,8 +56,6 @@ add_library(vk_test_framework STATIC
     render_pass_helper.cpp
     feature_requirements.h
     feature_requirements.cpp
-    queue_submit_context.h
-    queue_submit_context.cpp
 )
 if (APPLE)
     target_sources(vk_test_framework PRIVATE

@@ -18,7 +18,6 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/render_pass_helper.h"
 #include "../framework/thread_helper.h"
-#include "../framework/queue_submit_context.h"
 #include "../layers/sync/sync_settings.h"
 
 class PositiveSyncVal : public VkSyncValTest {};
@@ -1175,28 +1174,29 @@ TEST_F(PositiveSyncVal, TexelBufferArrayConstantIndexing) {
 }
 
 TEST_F(PositiveSyncVal, QSBufferCopyHazardsDisabled) {
+    TEST_DESCRIPTION("This test checks that disabling syncval's submit time validation actually disables it");
     SyncValSettings settings;
     settings.submit_time_validation = false;
     RETURN_IF_SKIP(InitSyncValFramework(&settings));
     RETURN_IF_SKIP(InitState());
 
-    QSTestContext test(m_device, m_device->QueuesWithGraphicsCapability()[0]);
-    if (!test.Valid()) {
-        GTEST_SKIP() << "Test requires a valid queue object.";
-    }
+    vkt::CommandBuffer cb0(*m_device, m_command_pool);
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
 
-    test.RecordCopy(test.cba, test.buffer_a, test.buffer_b);
-    test.RecordCopy(test.cbb, test.buffer_c, test.buffer_a);
+    vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_c(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
-    VkSubmitInfo submit1 = vku::InitStructHelper();
-    submit1.commandBufferCount = 2;
-    VkCommandBuffer two_cbs[2] = {test.h_cba, test.h_cbb};
-    submit1.pCommandBuffers = two_cbs;
+    cb0.Begin();
+    cb0.Copy(buffer_a, buffer_b);
+    cb0.End();
 
-    // This should be a hazard if we didn't disable it at InitSyncValFramework time
-    vk::QueueSubmit(test.q0, 1, &submit1, VK_NULL_HANDLE);
+    cb1.Begin();
+    cb1.Copy(buffer_c, buffer_a);
+    cb1.End();
 
-    test.DeviceWait();
+    m_default_queue->Submit({cb0, cb1});
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage) {

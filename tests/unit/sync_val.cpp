@@ -16,7 +16,6 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/render_pass_helper.h"
 #include "../framework/descriptor_helper.h"
-#include "../framework/queue_submit_context.h"
 
 class NegativeSyncVal : public VkSyncValTest {};
 
@@ -4203,370 +4202,445 @@ TEST_F(NegativeSyncVal, StageAccessExpansion) {
 }
 
 TEST_F(NegativeSyncVal, QSBufferCopyHazards) {
-    RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitSyncVal());
 
-    QSTestContext test(m_device, m_device->QueuesWithGraphicsCapability()[0]);
-    if (!test.Valid()) {
-        GTEST_SKIP() << "Test requires a valid queue object.";
-    }
+    vkt::CommandBuffer cb0(*m_device, m_command_pool);
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
 
-    test.RecordCopy(test.cba, test.buffer_a, test.buffer_b);
-    test.RecordCopy(test.cbb, test.buffer_c, test.buffer_a);
+    vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_c(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
-    VkSubmitInfo submit1 = vku::InitStructHelper();
-    submit1.commandBufferCount = 2;
-    VkCommandBuffer two_cbs[2] = {test.h_cba, test.h_cbb};
-    submit1.pCommandBuffers = two_cbs;
+    cb0.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    cb0.Copy(buffer_a, buffer_b);
+    cb0.End();
+
+    cb1.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    cb1.Copy(buffer_c, buffer_a);
+    cb1.End();
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    vk::QueueSubmit(test.q0, 1, &submit1, VK_NULL_HANDLE);
+    m_default_queue->Submit({cb0, cb1});
     m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
 
-    test.DeviceWait();
-
-    VkSubmitInfo submit2[2] = {vku::InitStruct<VkSubmitInfo>(), vku::InitStruct<VkSubmitInfo>()};
-    submit2[0].commandBufferCount = 1;
-    submit2[0].pCommandBuffers = &test.h_cba;
-    submit2[1].commandBufferCount = 1;
-    submit2[1].pCommandBuffers = &test.h_cbb;
+    VkSubmitInfo submits[2];
+    submits[0] = vku::InitStructHelper();
+    submits[0].commandBufferCount = 1;
+    submits[0].pCommandBuffers = &cb0.handle();
+    submits[1] = vku::InitStructHelper();
+    submits[1].commandBufferCount = 1;
+    submits[1].pCommandBuffers = &cb1.handle();
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    vk::QueueSubmit(test.q0, 2, submit2, VK_NULL_HANDLE);
+    vk::QueueSubmit(*m_default_queue, 2, submits, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     // With the skip settings, the above QueueSubmit's didn't record, so we can treat the global queue contexts as empty
-    test.Submit0(test.cba);
+    m_default_queue->Submit(cb0);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    test.Submit0(test.cbb);
+    m_default_queue->Submit(cb1);
     m_errorMonitor->VerifyFound();
 
-    test.DeviceWait();
+    m_default_queue->Wait();
 
     // A little grey box testing to ensure the trim code is referenced
-    test.BeginA();
-    test.Copy(test.buffer_a, test.buffer_c, test.first_half);
-    test.Copy(test.buffer_a, test.buffer_c, test.second_half);
-    test.End();
-    test.Submit0(test.cba);
-    test.BeginB();
-    test.TransferBarrierWAR(test.buffer_a);
-    test.Copy(test.buffer_b, test.buffer_a);
-    test.TransferBarrierRAW(test.buffer_c);
-    test.TransferBarrierWAR(test.buffer_b);
-    test.Copy(test.buffer_c, test.buffer_b);
-    test.End();
-    test.Submit0(test.cbb);
+    const VkBufferCopy first_half = {0, 0, 128};
+    const VkBufferCopy second_half = {128, 128, 128};
+    cb0.Begin();
+    vk::CmdCopyBuffer(cb0, buffer_a, buffer_c, 1, &first_half);
+    vk::CmdCopyBuffer(cb0, buffer_a, buffer_c, 1, &second_half);
+    cb0.End();
+    m_default_queue->Submit(cb0);
 
-    test.DeviceWait();
+    VkBufferMemoryBarrier barrier_war = vku::InitStructHelper();
+    barrier_war.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    barrier_war.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier_war.size = 256;
+
+    VkBufferMemoryBarrier barrier_raw = vku::InitStructHelper();
+    barrier_raw.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier_raw.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    barrier_raw.size = 256;
+
+    cb1.Begin();
+    barrier_war.buffer = buffer_a;
+    vk::CmdPipelineBarrier(cb1, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1, &barrier_war, 0,
+                           nullptr);
+
+    cb1.Copy(buffer_b, buffer_a);
+
+    barrier_raw.buffer = buffer_c;
+    vk::CmdPipelineBarrier(cb1, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1, &barrier_raw, 0,
+                           nullptr);
+    barrier_war.buffer = buffer_b;
+    vk::CmdPipelineBarrier(cb1, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1, &barrier_war, 0,
+                           nullptr);
+
+    cb1.Copy(buffer_c, buffer_b);
+    cb1.End();
+    m_default_queue->Submit(cb1);
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeSyncVal, QSSubmit2) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::synchronization2);
-    RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitSyncVal());
 
-    QSTestContext test(m_device, m_device->QueuesWithGraphicsCapability()[0]);
-    if (!test.Valid()) {
-        GTEST_SKIP() << "Test requires a valid queue object.";
-    }
+    vkt::CommandBuffer cb0(*m_device, m_command_pool);
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
+    vkt::CommandBuffer cb2(*m_device, m_command_pool);
 
-    test.RecordCopy(test.cba, test.buffer_a, test.buffer_b);
-    test.RecordCopy(test.cbb, test.buffer_c, test.buffer_a);
+    vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_c(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    cb0.Begin();
+    cb0.Copy(buffer_a, buffer_b);
+    cb0.End();
+
+    cb1.Begin();
+    cb1.Copy(buffer_c, buffer_a);
+    cb1.End();
+
+    vkt::Semaphore semaphore(*m_device);
 
     // Test that the signal mask is controlling the first scope
-    test.SubmitX(test.q0, test.cba, VK_NULL_HANDLE, 0, test.semaphore.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
+    m_default_queue->Submit2(cb0, vkt::Signal(semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT));
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    test.Submit0(test.cbb);
+    m_default_queue->Submit2(cb1);
     m_errorMonitor->VerifyFound();
 
     // Since the last submit skipped, we need a wait that will success
-    test.BeginC();
-    test.End();
-    test.Submit0Wait(test.cbc, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-    test.DeviceWait();
+    cb2.Begin();
+    cb2.End();
+    m_default_queue->Submit2(cb2, vkt::Wait(semaphore));
+    m_default_queue->Wait();
 
-    // This time with the correct first sync scope.
-    test.SubmitX(test.q0, test.cba, VK_NULL_HANDLE, 0, test.semaphore.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT);
-    test.Submit0Wait(test.cbb, VK_PIPELINE_STAGE_TRANSFER_BIT);
-
-    test.DeviceWait();
+    // This time with the correct first sync scope
+    m_default_queue->Submit2(cb0, vkt::Signal(semaphore, VK_PIPELINE_STAGE_TRANSFER_BIT));
+    m_default_queue->Submit2(cb1, vkt::Wait(semaphore, VK_PIPELINE_STAGE_TRANSFER_BIT));
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeSyncVal, QSBufferCopyVsIdle) {
-    RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitSyncVal());
 
-    QSTestContext test(m_device, m_device->QueuesWithGraphicsCapability()[0]);
-    if (!test.Valid()) {
-        GTEST_SKIP() << "Test requires a valid queue object.";
-    }
+    vkt::CommandBuffer cb0(*m_device, m_command_pool);
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
 
-    test.RecordCopy(test.cba, test.buffer_a, test.buffer_b);
-    test.RecordCopy(test.cbb, test.buffer_c, test.buffer_a);
+    vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_c(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
-    // Submit A
-    test.Submit0(test.cba);
+    cb0.Begin();
+    cb0.Copy(buffer_a, buffer_b);
+    cb0.End();
 
-    // Submit B which hazards vs. A
+    cb1.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    cb1.Copy(buffer_c, buffer_a);
+    cb1.End();
+
+    m_default_queue->Submit(cb0);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    test.Submit0(test.cbb);
+    m_default_queue->Submit(cb1);
     m_errorMonitor->VerifyFound();
 
-    // With the skip settings, the above QueueSubmit's didn't record, so we can treat the previous submit as not
-    // having happened. So we'll try again with a device wait idle
-    // Submit B again, but after idling, which should remove the hazard
-    test.DeviceWait();
-    test.Submit0(test.cbb);
+    // Wait should remove hazard
+    m_default_queue->Wait();
+    m_default_queue->Submit(cb1);
 
     // Submit the same command again for another hazard
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    test.Submit0(test.cbb);
+    m_default_queue->Submit(cb1);
     m_errorMonitor->VerifyFound();
 
-    // With the skip settings, the above QueueSubmit's didn't record, so we can treat the previous submit as not
-    // having happened. So we'll try again with a queue wait idle
-    // Submit B again, but after idling, which should remove the hazard
-    test.QueueWait0();
-    test.Submit0(test.cbb);
+    // Wait should remove hazard
+    m_default_queue->Wait();
+    m_default_queue->Submit(cb1);
 
-    m_device->Wait();
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeSyncVal, QSBufferCopyVsFence) {
-    RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitSyncVal());
 
-    QSTestContext test(m_device, m_device->QueuesWithGraphicsCapability()[0]);
-    if (!test.Valid()) {
-        GTEST_SKIP() << "Test requires a valid queue object.";
-    }
+    vkt::CommandBuffer cb0(*m_device, m_command_pool);
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
+    vkt::CommandBuffer cb2(*m_device, m_command_pool);
+    vkt::CommandBuffer cb3(*m_device, m_command_pool);
+
+    vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_c(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     vkt::Fence fence(*m_device);
-    VkResult wait_result;
-    vkt::CommandBuffer cbd;
-    test.InitFromPool(cbd);
 
-    // Set up four CB with copy commands
-    // We'll wait for the first, but not the second
-    test.RecordCopy(test.cba, test.buffer_a, test.buffer_b);
-    test.RecordCopy(test.cbb, test.buffer_a, test.buffer_c);
-    test.RecordCopy(test.cbc, test.buffer_a, test.buffer_b);
+    cb0.Begin();
+    cb0.Copy(buffer_a, buffer_b);
+    cb0.End();
 
-    // This is the one that should error
-    test.RecordCopy(cbd, test.buffer_a, test.buffer_c);
+    cb1.Begin();
+    cb1.Copy(buffer_a, buffer_c);
+    cb1.End();
 
-    // Two copies *better* finish in a second...
-    const uint64_t kFourSeconds = 1U << 30;
+    cb2.Begin();
+    cb2.Copy(buffer_a, buffer_b);
+    cb2.End();
+
+    cb3.Begin();
+    cb3.Copy(buffer_a, buffer_c);
+    cb3.End();
+
     // Copy A to B
-    test.Submit0(test.cba, VK_NULL_HANDLE, 0U, VK_NULL_HANDLE, fence);
+    m_default_queue->Submit(cb0, fence);
     // Copy A to C
-    test.Submit0(test.cbb);
+    m_default_queue->Submit(cb1);
+
     // Wait for A to B
-    wait_result = fence.Wait(kFourSeconds);
+    fence.Wait(kWaitTimeout);
 
-    if (wait_result != VK_SUCCESS) {
-        ADD_FAILURE() << "Fence wait failed. Aborting test.";
-        m_device->Wait();
-    }
-
-    // A and B should be good to go...
-    test.Submit0(test.cbc);
+    // A and B should be good to go
+    m_default_queue->Submit(cb2);
 
     // But C shouldn't
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    test.Submit0(cbd);
+    m_default_queue->Submit(cb3);
     m_errorMonitor->VerifyFound();
 
-    test.DeviceWait();
+    m_default_queue->Wait();
+}
+
+static std::pair<vkt::Queue*, vkt::Queue*> GetTwoQueuesFromSameFamily(const std::vector<vkt ::Queue*>& queues) {
+    for (size_t i = 0; i < queues.size(); i++) {
+        for (size_t k = i + 1; k < queues.size(); k++) {
+            if (queues[i]->family_index == queues[k]->family_index) {
+                return {queues[i], queues[k]};
+            }
+        }
+    }
+    return {};
 }
 
 TEST_F(NegativeSyncVal, QSBufferCopyQSORules) {
     all_queue_count_ = true;
-    RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitSyncVal());
 
-    QSTestContext test(m_device);
-    if (!test.Valid()) {
-        GTEST_SKIP() << "Test requires at least 2 TRANSFER capable queues in the same queue_family";
+    auto [queue0, queue1] = GetTwoQueuesFromSameFamily(m_device->QueuesWithTransferCapability());
+    if (!queue0) {
+        GTEST_SKIP() << "Test requires two queues with transfer capabilities from the same queue family";
     }
 
-    // Need an extra buffer and CB
-    vkt::Buffer buffer_d(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    vkt::CommandBuffer cbd;
-    test.InitFromPool(cbd);
-    // This gives a noop command buffer w.r.t. buffers a, b, and c.
-    test.RecordCopy(cbd, buffer_d, buffer_d, test.first_to_second);
+    vkt::CommandPool cmd_pool(*m_device, queue0->family_index);
 
-    // Command Buffer A reads froms buffer A and writes to buffer B
-    test.RecordCopy(test.cba, test.buffer_a, test.buffer_b);
+    vkt::CommandBuffer cb0(*m_device, cmd_pool);
+    vkt::CommandBuffer cb1(*m_device, cmd_pool);
+    vkt::CommandBuffer cb2(*m_device, cmd_pool);
+    vkt::CommandBuffer cb3(*m_device, cmd_pool);
 
-    // Command Buffer B reads froms buffer C and writes to buffer A, but has a barrier to protect the write to A when
-    // executed on the same queue, given that commands in "queue submission order" are within the first scope of the barrier.
-    test.BeginB();
+    vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_c(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_d(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
-    // Use the barrier to clean up the WAR, which will work for command buffers ealier in queue submission order, or with
-    // correct semaphore operations between queues.
-    test.TransferBarrierWAR(test.buffer_a);
-    test.CopyCToA();
-    test.End();
+    VkBufferMemoryBarrier barrier_war = vku::InitStructHelper();
+    barrier_war.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    barrier_war.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier_war.size = 256;
 
-    // Command Buffer C does the same copy as B but without the barrier.
-    test.RecordCopy(test.cbc, test.buffer_c, test.buffer_a);
+    vkt::Semaphore semaphore(*m_device);
 
-    // Submit A and B on the same queue, to assure us the barrier *would* be sufficient given QSO
-    // This is included in a "Sucess" section, just to verify CBA and CBB are set up correctly.
-    test.Submit0(test.cba);
-    test.Submit0(test.cbb);
-    m_device->Wait();  // DeviceWaitIdle, clearing the field for the next subcase
+    // A noop command buffer w.r.t. buffers a, b, and c
+    const VkBufferCopy first_to_second = {0, 128, 128};
+    cb3.Begin();
+    vk::CmdCopyBuffer(cb3, buffer_d, buffer_d, 1, &first_to_second);
+    cb3.End();
 
-    // Submit A and B on the different queues. Since no semaphore is used between the queues, CB B hazards asynchronously with,
-    // CB A with A being read and written on independent queues.
-    test.Submit0(test.cba);
+    // cb0 reads froms buffer A and writes to buffer B
+    cb0.Begin();
+    cb0.Copy(buffer_a, buffer_b);
+    cb0.End();
+
+    // cb1 reads froms buffer C and writes to buffer A, but has a barrier to protect
+    // the write to A when executed on the same queue.
+    cb1.Begin();
+    barrier_war.buffer = buffer_a;
+    vk::CmdPipelineBarrier(cb1, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1, &barrier_war, 0,
+                           nullptr);
+    cb1.Copy(buffer_c, buffer_a);
+    cb1.End();
+
+    // cb2 does the same copy as cb1 but without the barrier
+    cb2.Begin();
+    cb2.Copy(buffer_c, buffer_a);
+    cb2.End();
+
+    // Submit cb0 and cb1 on the same queue
+    queue0->Submit(cb0);
+    queue0->Submit(cb1);
+    queue0->Wait();
+
+    // Submit cb0 and cb1 on the different queues.
+    // Since no semaphore is used between the queues cb1 hazards asynchronously with cb0.
+    queue0->Submit(cb0);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-READ");
-    test.Submit1(test.cbb);
+    queue1->Submit(cb1);
     m_errorMonitor->VerifyFound();
-    m_device->Wait();  // DeviceWaitIdle, clearing the field for the next subcase
+    m_device->Wait();
 
     // Test full async detection
-    test.Submit0(test.cba);
-    test.Submit0(cbd);
+    queue0->Submit(cb0);
+    queue0->Submit(cb3);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-READ");
-    test.Submit1(test.cbb);
+    queue1->Submit(cb1);
     m_errorMonitor->VerifyFound();
-
-    // Set up the semaphore for the next two cases
-
     m_device->Wait();
 
-    // Submit A and B on the different queues, with an ineffectual semaphore.  The wait mask is empty, thus nothing in CB B is in
-    // the second excution scope of the waited signal.
+    // Submit cb0 and cb1 on the different queues, with an ineffectual semaphore.
+    // The wait mask is empty, thus nothing in cb1 is in the second excution scope of the waited signal.
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    test.Submit0Signal(test.cba);
-    test.Submit1Wait(test.cbb, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);  // wait mask is BOTTOM, s.t. this is a wait-for-nothing.
+    queue0->Submit(cb0, vkt::Signal(semaphore));
+    // wait mask is BOTTOM,  which is wait-for-nothing
+    queue1->Submit(cb1, vkt::Wait(semaphore, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT));
     m_errorMonitor->VerifyFound();
 
-    // The since second submit failed, it was skipped. So we can try again, without having to WaitDeviceIdle
-    // Include transfers in the second execution scope of the waited signal, s.t. the PipelineBarrier in CB B can chain with it.
-    test.Submit1Wait(test.cbb, VK_PIPELINE_STAGE_TRANSFER_BIT);  //
-
+    // Try again. Include transfers in the second execution scope of the waited signal,
+    // so PipelineBarrier in cb1 can chain with it
+    queue1->Submit(cb1, vkt::Wait(semaphore, VK_PIPELINE_STAGE_TRANSFER_BIT));
     m_device->Wait();
 
-    // Draw A and then C to verify the second access scope of the signal
-    test.Submit0Signal(test.cba);
-    test.Submit1Wait(test.cbc, VK_PIPELINE_STAGE_TRANSFER_BIT);
-
+    // Submit cb0 and cb2 verify the second access scope of the signal
+    queue0->Submit(cb0, vkt::Signal(semaphore));
+    queue1->Submit(cb2, vkt::Wait(semaphore, VK_PIPELINE_STAGE_TRANSFER_BIT));
     m_device->Wait();
 
-    //  ... and again on the same queue
-    test.Submit0Signal(test.cba);
-    test.Submit0Wait(test.cbc, VK_PIPELINE_STAGE_TRANSFER_BIT);
-
+    // ...and again on the same queue
+    queue0->Submit(cb0, vkt::Signal(semaphore));
+    queue0->Submit(cb2, vkt::Wait(semaphore, VK_PIPELINE_STAGE_TRANSFER_BIT));
     m_device->Wait();
 }
 
 TEST_F(NegativeSyncVal, QSBufferEvents) {
     all_queue_count_ = true;
-    RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitSyncVal());
 
-    QSTestContext test(m_device);
-    if (!test.Valid()) {
-        GTEST_SKIP() << "Test requires at least 2 TRANSFER capable queues in the same queue_family";
+    auto [queue0, queue1] = GetTwoQueuesFromSameFamily(m_device->QueuesWithTransferCapability());
+    if (!queue0) {
+        GTEST_SKIP() << "Test requires two queues with transfer capabilities from the same queue family";
     }
 
+    vkt::CommandPool cmd_pool(*m_device, queue0->family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+
+    vkt::CommandBuffer cb0(*m_device, cmd_pool);
+    vkt::CommandBuffer cb1(*m_device, cmd_pool);
+    vkt::CommandBuffer cb2(*m_device, cmd_pool);
+    vkt::CommandBuffer reset(*m_device, cmd_pool);
+
+    vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_c(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    VkBufferMemoryBarrier barrier_war = vku::InitStructHelper();
+    barrier_war.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    barrier_war.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier_war.size = 256;
+
+    vkt::Semaphore semaphore(*m_device);
+    vkt::Event event(*m_device);
+
+    reset.Begin();
+    vk::CmdResetEvent(reset, event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    reset.End();
+
     // Command Buffer A reads froms buffer A and writes to buffer B
-    test.BeginA();
-    test.CopyAToB();
-    test.SetEvent(VK_PIPELINE_STAGE_TRANSFER_BIT);
-    test.End();
+    cb0.Begin();
+    cb0.Copy(buffer_a, buffer_b);
+    vk::CmdSetEvent(cb0, event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    cb0.End();
 
-    // Command Buffer B reads froms buffer C and writes to buffer A, but has a wait to protect the write to A when
-    // executed on the same queue, given that commands in "queue submission order" are within the first scope of the barrier.
-    test.BeginB();
+    // cb1 reads froms buffer C and writes to buffer A, but has a wait to protect
+    // the write to A when executed on the same queue
+    cb1.Begin();
+    barrier_war.buffer = buffer_a;
+    vk::CmdWaitEvents(cb1, 1, &event.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, nullptr, 1,
+                      &barrier_war, 0, nullptr);
+    cb1.Copy(buffer_c, buffer_a);
+    cb1.End();
 
-    // Use the barrier to clean up the WAR, which will work for command buffers ealier in queue submission order, or with
-    // correct semaphore operations between queues.
-    test.WaitEventBufferTransfer(test.buffer_a, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
-    test.CopyCToA();
-    test.End();
-
-    // Command Buffer C merges the operations from A and B, to ensure the set/wait is correct.
+    // cb2 merges the operations from cb0 and cb1, to ensure the set/wait is correct.
     //    reads froms buffer A and writes to buffer B
     //    reads froms buffer C and writes to buffer A, but has a barrier to protect the write to A when
-    test.BeginC();
-    test.CopyAToB();
-    test.SetEvent(VK_PIPELINE_STAGE_TRANSFER_BIT);
-    test.WaitEventBufferTransfer(test.buffer_a, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
-    test.CopyCToA();
-    test.End();
+    cb2.Begin();
+    cb2.Copy(buffer_a, buffer_b);
+    vk::CmdSetEvent(cb2, event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    barrier_war.buffer = buffer_a;
+    vk::CmdWaitEvents(cb2, 1, &event.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, nullptr, 1,
+                      &barrier_war, 0, nullptr);
+    cb2.Copy(buffer_c, buffer_a);
+    cb2.End();
 
     // Ensure this would work on one queue (sanity check)
-    vkt::CommandBuffer reset(*test.dev, test.pool);
-    test.Begin(reset);
-    test.ResetEvent(VK_PIPELINE_STAGE_TRANSFER_BIT);
-    test.End();
-
-    // Reset the event s.t. I reuse it
-    test.Submit0(reset);
+    queue0->Submit(reset);
     m_device->Wait();
 
-    test.Submit0(test.cba);
-    test.Submit0(test.cbb);
+    queue0->Submit(cb0);
+    queue0->Submit(cb1);
 
     // Ensure that the wait doesn't apply to async queues
-    test.Submit0(reset);
+    queue0->Submit(reset);
     m_device->Wait();
 
-    test.Submit0(test.cba);
+    queue0->Submit(cb0);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-READ");
     // Suppress submit time validation about inter-queue event usage.
     // TODO: update test to avoid inter-queue event usage.
     m_errorMonitor->SetUnexpectedError("UNASSIGNED-SubmitValidation-WaitEvents-WrongQueue");
-    test.Submit1(test.cbb);
+    queue1->Submit(cb1);
     m_errorMonitor->VerifyFound();
-
-    // Ensure that the wait doesn't apply to access on other synchronized queues
     m_device->Wait();
 
-    test.Submit0Signal(test.cba);
+    // Ensure that the wait doesn't apply to access on other synchronized queues
+    queue0->Submit(cb0, vkt::Signal(semaphore));
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
     // Suppress submit time validation about inter-queue event usage.
     // TODO: update test to avoid inter-queue event usage.
     m_errorMonitor->SetUnexpectedError("UNASSIGNED-SubmitValidation-WaitEvents-WrongQueue");
-    test.Submit1Wait(test.cbb, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    queue1->Submit(cb1, vkt::Wait(semaphore, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT));
     m_errorMonitor->VerifyFound();
 
     // Need to have a successful signal wait to get the semaphore in a usuable state.
-    test.BeginC();
-    test.End();
-    test.Submit1Wait(test.cbc, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    cb2.Begin();
+    cb2.End();
+    queue1->Submit(cb2, vkt::Wait(semaphore, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT));
     m_device->Wait();
 
     // Next ensure that accesses from other queues aren't included in the first scope
-    test.RecordCopy(test.cba, test.buffer_a, test.buffer_b);
+    cb0.Begin();
+    cb0.Copy(buffer_a, buffer_b);
+    cb0.End();
 
-    test.BeginB();
-    test.SetEvent(VK_PIPELINE_STAGE_TRANSFER_BIT);
-    test.WaitEventBufferTransfer(test.buffer_a, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
-    test.CopyCToA();
-    test.End();
+    cb1.Begin();
+    vk::CmdSetEvent(cb1, event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    barrier_war.buffer = buffer_a;
+    vk::CmdWaitEvents(cb1, 1, &event.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, nullptr, 1,
+                      &barrier_war, 0, nullptr);
+    cb1.Copy(buffer_c, buffer_a);
+    cb1.End();
 
     // Sanity check that same queue works
-    test.Submit0(reset);
+    queue0->Submit(reset);
     m_device->Wait();
-    test.Submit0(test.cba);
-    test.Submit0(test.cbb);
+    queue0->Submit(cb0);
+    queue0->Submit(cb1);
 
     // Reset the signal
-    test.Submit0(reset);
+    queue0->Submit(reset);
     m_device->Wait();
 
-    test.Submit0Signal(test.cba);
+    queue0->Submit(cb0, vkt::Signal(semaphore));
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    test.Submit1Wait(test.cbb, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    queue1->Submit(cb1, vkt::Wait(semaphore, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT));
     m_errorMonitor->VerifyFound();
     m_device->Wait();
 }
@@ -4575,13 +4649,24 @@ TEST_F(NegativeSyncVal, QSOBarrierHazard) {
     all_queue_count_ = true;
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
-    RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitSyncVal());
 
-    QSTestContext test(m_device);
-    if (!test.Valid()) {
-        GTEST_SKIP() << "Test requires at least 2 TRANSFER capable queues in the same queue_family.";
+    auto [queue0, queue1] = GetTwoQueuesFromSameFamily(m_device->QueuesWithTransferCapability());
+    if (!queue0) {
+        GTEST_SKIP() << "Test requires two queues with transfer capabilities from the same queue family";
     }
+
+    vkt::CommandPool cmd_pool(*m_device, queue0->family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+
+    vkt::CommandBuffer cb0(*m_device, cmd_pool);
+    vkt::CommandBuffer cb1(*m_device, cmd_pool);
+    vkt::CommandBuffer cb2(*m_device, cmd_pool);
+
+    vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_c(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    vkt::Semaphore semaphore(*m_device);
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -4598,32 +4683,30 @@ TEST_F(NegativeSyncVal, QSOBarrierHazard) {
     VkExtent3D full_extent{128, 128, 1};  // <-- image type is 2D
     VkImageCopy full_region = {all_layers, zero_offset, all_layers, zero_offset, full_extent};
 
-    test.BeginA();
-    test.CopyGeneral(image_a, image_b, full_region);
-    test.End();
+    cb0.Begin();
+    vk::CmdCopyImage(cb0, image_a, VK_IMAGE_LAYOUT_GENERAL, image_b, VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
+    cb0.End();
 
-    test.BeginB();
-    image_a.ImageMemoryBarrier(*test.current_cb, VK_ACCESS_NONE, VK_ACCESS_NONE, VK_IMAGE_LAYOUT_GENERAL,
-                               VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                               VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
-    test.End();
+    cb1.Begin();
+    image_a.ImageMemoryBarrier(cb1, VK_ACCESS_NONE, VK_ACCESS_NONE, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+                               VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    cb1.End();
 
     // We're going to do the copy first, then use the skip on fail, to test three different ways...
-    test.Submit0Signal(test.cba);
+    queue0->Submit(cb0, vkt::Signal(semaphore));
 
     // First asynchronously fail -- the pipeline barrier in B shouldn't work on queue 1
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-READ ");
-    test.Submit1(test.cbb);
+    queue1->Submit(cb1);
     m_errorMonitor->VerifyFound();
 
     // Next synchronously fail -- the pipeline barrier in B shouldn't work on queue 1
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    test.Submit1Wait(test.cbb, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    queue1->Submit(cb1, vkt::Wait(semaphore, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT));
     m_errorMonitor->VerifyFound();
 
     // Then prove qso works (note that with the failure, the semaphore hasn't been waited, nor the layout changed)
-    test.Submit0Wait(test.cbb, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
-
+    queue0->Submit(cb1, vkt::Wait(semaphore, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT));
     m_device->Wait();
 }
 
