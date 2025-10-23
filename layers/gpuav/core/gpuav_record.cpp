@@ -39,6 +39,9 @@ namespace gpuav {
 void Validator::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
                                           const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
                                           const RecordObject &record_obj, chassis::CreateBuffer &chassis_state) {
+    // init here so if using just CoreCheck we don't waste time
+    chassis_state.modified_create_info.initialize(pCreateInfo);
+
     const auto *flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(chassis_state.modified_create_info.pNext);
     const VkBufferUsageFlags2 in_usage = flags2 ? flags2->usage : chassis_state.modified_create_info.usage;
 
@@ -64,9 +67,11 @@ void Validator::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateI
     }
 
     // Align index buffer size to 4: validation shader reads DWORDS
-    if (gpuav_settings.IsBufferValidationEnabled() && (in_usage & (VK_BUFFER_USAGE_2_INDEX_BUFFER_BIT_KHR))) {
+    if (gpuav_settings.IsBufferValidationEnabled() && (in_usage & (VK_BUFFER_USAGE_2_INDEX_BUFFER_BIT))) {
         chassis_state.modified_create_info.size = Align<VkDeviceSize>(chassis_state.modified_create_info.size, 4);
     }
+
+    chassis_state.create_info_copy = chassis_state.modified_create_info.ptr();
 }
 
 void Validator::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,

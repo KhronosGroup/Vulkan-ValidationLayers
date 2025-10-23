@@ -156,7 +156,10 @@ struct ShaderBinaryData {
 };
 
 struct CreateBuffer {
-    VkBufferCreateInfo modified_create_info;
+    // To not waste time for CoreChecks we just copy the pointer, but if GPU-AV want to modifiy it, it will update pointer to be a
+    // pointer of the Safe Struct
+    const VkBufferCreateInfo* create_info_copy;
+    vku::safe_VkBufferCreateInfo modified_create_info;
 };
 
 }  // namespace chassis
