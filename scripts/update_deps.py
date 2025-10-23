@@ -108,6 +108,9 @@ a description of its elements.  All elements are required except those
 marked as optional.  Please see the "known_good.json" file for
 examples of all of these elements.
 
+Required fields
+---------------
+
 - name
 
 The name of the dependent repository.  This field can be referenced
@@ -137,10 +140,28 @@ directory.
 The directory used to store the installed build artifacts, relative
 to the "top" directory.
 
+Required Exclusive Option Group: [commit, release]
+-----------------
+
 - commit
 
 The commit used to checkout the repository.  This can be a SHA-1
-object name or a refname used with the remote name "origin".
+object name or a refname used with the remote name "origin". This
+option is for dependencies that need to be built from source.
+
+- release
+
+Tells update_deps to download binary artifacts instead of checking out
+a git repository. The value of release can be used as a format specifier
+in the url json field. Because different platforms require different binaries,
+the url *can* contain the following format specifiers:
+    release - replaced with the release json field
+    system - replaced with platform.system() (EG. Windows, Linux, Darwin)
+    arch - replaced with the arch command line argument
+
+
+Optional fields
+---------------
 
 - deps (optional)
 
@@ -222,11 +243,19 @@ Legal options include:
 
 Builds on all platforms by default.
 
-- repo_binaries_url (optional)
+- url_format_map (optional)
 
-URL to a GitHub releases page for downloading precompiled binaries.
-If this field is present, the dependency will be downloaded as a binary
-instead of being built from source.
+Used with the --release option. Contains a list of key-string pairs that are used
+to fixup the platform.system() and args.arch names in the url. It is needed
+to account for differences between the arch and system names python uses and the
+naming scheme of the repository. For example if the binary artifact for the current
+system uses "macOS", we need to add "darwin" : "macos" to the url_format_map so that
+the url is formatted with macOS instead of darwin.
+
+- build_architectures (optional)
+
+A list of architectures supported by the dependency. If the value of args.arch isn't
+present in this list, then the dependency is skipped.
 
 Note
 ----
@@ -252,7 +281,7 @@ import stat
 import time
 import urllib.request
 import zipfile
-import struct
+import tarfile
 
 KNOWN_GOOD_FILE_NAME = 'known_good.json'
 
@@ -343,18 +372,16 @@ class GoodRepo(object):
         # Required JSON elements
         self.name = json['name']
 
-        # Check if this is a binary dependency
-        # For binary dependencies, url and commit are optional
-        self.repo_binaries_url = json.get('repo_binaries_url')
-        self.is_binary_dependency = self.repo_binaries_url is not None
-        if not self.is_binary_dependency:
-            self.url = json['url']
-            self.commit = json['commit']
-        else:
-            self.url = json.get('url')
-            self.commit = json.get('commit')
+        self.url = json['url']
+        self.sub_dir = json['sub_dir']
 
-        self.sub_dir = json.get('sub_dir', '')
+        # commit/release Exclusive Option Group
+        self.commit = json.get('commit', None)
+        self.release = json.get('release', None)
+        self.is_release = True if self.release is not None else False
+
+        if self.commit is None and self.release is None:
+            raise RuntimeError(f'Repo {self.name} is missing required exclusive option group! Either "commit" or "release" must be specified.')
 
         # Optional JSON elements
         self.build_dir = None
@@ -377,10 +404,12 @@ class GoodRepo(object):
         self.build_platforms = json['build_platforms'] if ('build_platforms' in json) else []
         self.optional = set(json.get('optional', []))
         self.api = json['api'] if ('api' in json) else None
+        self.url_format_map = json.get('url_format_map')
+        self.build_architectures = json.get('build_architectures') if ('build_architectures' in json) else []
 
         # Absolute paths for a repo's directories
         dir_top = os.path.abspath(args.dir)
-        self.repo_dir = os.path.join(dir_top, self.sub_dir) if self.sub_dir else None
+        self.repo_dir = os.path.join(dir_top, self.sub_dir)
         if self.build_dir:
             self.build_dir = os.path.join(dir_top, self.build_dir)
         if self.install_dir:
@@ -396,6 +425,10 @@ class GoodRepo(object):
         self.on_build_platform = False
         if self.build_platforms == [] or target_platform in self.build_platforms:
             self.on_build_platform = True
+
+        self.on_build_architecture = False
+        if self.build_architectures == [] or self._args.arch in self.build_architectures:
+            self.on_build_architecture = True
 
     def Clone(self, retries=10, retry_seconds=60):
         if VERBOSE:
@@ -464,68 +497,43 @@ class GoodRepo(object):
         if VERBOSE:
             print(command_output(['git', 'status'], self.repo_dir))
 
-    def GetPlatformSuffix(self):
-        """Get the platform suffix for binary downloads based on current platform."""
-        system = platform.system().lower()
-        machine = platform.machine().lower()
 
-        # No Android support
-        for cmake_var in self._args.cmake_var:
-            if "android.toolchain.cmake" in cmake_var:
-                return None
+    def DownloadAndExtractArtifact(self):
+        """Download and extract file located at given url."""
 
-        # No 32 bits architecture support
-        if self._args.pointer_size == 4:
-            return None
-        if self._args.arch.lower() == '32' or self._args.arch == 'x86' or self._args.arch == 'win32':
-            return None
+        system = platform.system()
+        arch = self._args.arch
 
-        platform_suffix = None
-        if system == 'windows':
-            if machine in ['aarch64', 'arm64']:
-                platform_suffix = 'windows-aarch64'
-            else:
-                platform_suffix = 'windows-x86_64'
-        elif system == 'linux':
-            if machine in ['aarch64', 'arm64']:
-                platform_suffix = 'linux-aarch64'
-            else:
-                platform_suffix = 'linux-x86_64'
-        return platform_suffix
+        if system in self.url_format_map:
+            system = self.url_format_map[system]
+        if arch in self.url_format_map:
+            arch = self.url_format_map[arch]
 
-    def DownloadAndExtractBinary(self):
-        """Download and extract binary dependency."""
-        platform_suffix = self.GetPlatformSuffix()
-        if not platform_suffix:
-            if VERBOSE:
-                print(f"Skipping binary download for {self.name} - unsupported platform")
-            self.on_build_platform = False
-            return False
+        formatted_url = self.url.format(release=self.release, system=system, arch=arch)
 
-        # Extract version from the URL (assuming format like /tag/v2025.12.1)
-        if '/tag/v' in self.repo_binaries_url:
-            version = self.repo_binaries_url.split('/tag/v')[-1]
-        else:
-            version = self.repo_binaries_url.split('/')[-1].lstrip('v')
+        # use the last part of the url after the slash as filename to download into
+        download_path = os.path.join(self.build_dir, formatted_url[formatted_url.rfind('/') + 1:])
 
-        download_url = f"{self.repo_binaries_url.replace('/tag/', '/download/')}/{self.name}-{version}-{platform_suffix}.zip"
         make_or_exist_dirs(self.build_dir)
+        print(f"Downloading {self.name} from {formatted_url} to {download_path}")
 
-        zip_path = os.path.join(self.build_dir, f"{self.name}-{version}-{platform_suffix}.zip")
-        # Dependency already downloaded
-        if not os.path.isfile(zip_path):
+        if not os.path.isfile(download_path):
             if VERBOSE:
-                print(f"Downloading {self.name} from {download_url}")
+                print(f"Downloading {self.name} from {formatted_url} to {download_path}")
             try:
-                urllib.request.urlretrieve(download_url, zip_path)
+                urllib.request.urlretrieve(formatted_url, download_path)
             except Exception as e:
                 print(f"Failed to download {self.name}: {e}")
                 return False
 
         make_or_exist_dirs(self.install_dir)
 
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            zip_ref.extractall(self.install_dir)
+        if download_path.endswith('.zip'):
+            with zipfile.ZipFile(download_path, 'r') as zip_ref:
+                zip_ref.extractall(self.install_dir)
+        elif download_path.endswith('.tar') or download_path.endswith('.tar.gz'):
+            with tarfile.open(download_path) as tar_ref:
+                tar_ref.extractall(self.install_dir)
 
         return True
 
@@ -577,7 +585,7 @@ class GoodRepo(object):
         # repo's install dir.
         for d in self.deps:
             dep_commit = [r for r in repos if r.name == d['repo_name']]
-            if len(dep_commit) and dep_commit[0].on_build_platform:
+            if len(dep_commit) and dep_commit[0].on_build_platform and dep_commit[0].on_build_architecture:
                 cmake_cmd.append('-D{var_name}={install_dir}'.format(
                     var_name=d['var_name'],
                     install_dir=dep_commit[0].install_dir))
@@ -666,22 +674,22 @@ class GoodRepo(object):
 
         print(f"Installed {self.name} ({self.commit}) in {total_time:.3f} seconds", flush=True)
 
-    def ProcessBinary(self):
-        """Process binary dependency and time how long it took"""
+    def AcquireReleaseArtifacts(self):
+        """Process acquiring the release artifacts and time how long it took"""
         if VERBOSE:
-            print('Processing binary {n}'.format(n=self.name))
-            print('Build dir = {b}'.format(b=self.build_dir))
+            print('Processing release artifacts {n}'.format(n=self.name))
+            print('Download dir = {b}'.format(b=self.build_dir))
             print('Install dir = {i}\n'.format(i=self.install_dir))
 
         start = time.time()
 
-        success = self.DownloadAndExtractBinary()
+        success = self.DownloadAndExtractArtifact()
         if not success:
             return
 
         total_time = time.time() - start
 
-        print(f"Downloaded and extracted {self.name} in {total_time:.3f} seconds", flush=True)
+        print(f"Installed {self.name} ({self.release}) in {total_time:.3f} seconds", flush=True)
 
     def IsOptional(self, opts):
         return len(self.optional.intersection(opts)) > 0
@@ -744,7 +752,7 @@ def CreateHelper(args, repos, filename):
             # the target API then skip it
             if repo.api is not None and repo.api != args.api:
                 continue
-            if install_names and repo.name in install_names and repo.on_build_platform:
+            if install_names and repo.name in install_names and repo.on_build_platform and repo.on_build_architecture:
                 helper_file.write('set({var} "{dir}" CACHE STRING "")\n'
                                   .format(
                                       var=install_names[repo.name],
@@ -754,8 +762,12 @@ def GetDefaultArch():
     machine = platform.machine().lower()
     if  machine == "arm64" or machine == "aarch64":
         return 'arm64'
-    else:
-        return '64'
+    system = platform.system()
+    # vcvarsall.bat sets the Platform env-var, which CMake uses to determine the default build architecture
+    Platform_env_var = os.getenv('Platform')
+    if system == 'Windows' and Platform_env_var is not None:
+        return Platform_env_var
+    return '64'
 
 
 def main():
@@ -862,12 +874,6 @@ def main():
         action='store_true',
         help="Build dependencies with UBSAN enabled",
         default=False)
-    parser.add_argument(
-        '--pointer_size',
-        type=int,
-        dest='pointer_size',
-        help="pointer size in the produced executables",
-        default=8)
 
     args = parser.parse_args()
     save_cwd = os.getcwd()
@@ -886,9 +892,9 @@ def main():
         if repo.api is not None and repo.api != args.api:
             continue
 
-        # If the repo has a platform whitelist, skip the repo
-        # unless we are building on a whitelisted platform.
-        if not repo.on_build_platform:
+        # If the repo has a platform or architecture whitelist, skip the repo
+        # unless we are building on a whitelisted platform and architecture.
+        if not repo.on_build_platform or not repo.on_build_architecture:
             continue
 
         # Skip building the repo if its install directory already exists
@@ -935,9 +941,9 @@ def main():
                 continue
 
         # Handle binary dependencies differently
-        if repo.is_binary_dependency:
+        if repo.is_release:
             if args.do_build:
-                repo.ProcessBinary()
+                repo.AcquireReleaseArtifacts()
         else:
             # Clone/update the repository
             repo.Checkout()

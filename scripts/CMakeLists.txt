@@ -32,9 +32,6 @@ if (UPDATE_DEPS)
         list(APPEND update_dep_command "${CMAKE_GENERATOR_PLATFORM}")
     endif()
 
-    list(APPEND update_dep_command "--pointer_size")
-    list(APPEND update_dep_command "${CMAKE_SIZEOF_VOID_P}")
-
     if (NOT CMAKE_BUILD_TYPE)
         message(WARNING "CMAKE_BUILD_TYPE not set. Using Debug for dependency build type")
         set(_build_type Debug)
@@ -73,6 +70,7 @@ if (UPDATE_DEPS)
         list(APPEND update_dep_command "--skip-existing-install")
     endif()
 
+    # Need to propagate current CMake variables into the builds that update_deps.py executes - so collect all the variable names and use a function to set them all
     list(APPEND cmake_vars "CMAKE_TOOLCHAIN_FILE")
 
     # Avoids manually setting CMAKE_SYSTEM_NAME unless it's needed:

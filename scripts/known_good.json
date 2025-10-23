@@ -120,9 +120,32 @@
         },
         {
             "name": "slang",
-            "repo_binaries_url": "https://github.com/shader-slang/slang/releases/tag/v2025.12.1",
+            "url": "https://github.com/shader-slang/slang/releases/download/v{release}/slang-{release}-{system}-{arch}.zip",
+            "sub_dir": "slang",
             "build_dir": "slang/download",
-            "install_dir": "slang/install"
+            "install_dir": "slang/install",
+            "release": "2025.12.1",
+            "url_format_map": {
+                "64": "x86_64",
+                "x64": "x86_64",
+                "win64": "x86_64",
+                "arm64": "aarch64",
+                "Darwin": "macos"
+            },
+            "optional": [
+                "tests"
+            ],
+            "build_platforms": [
+                "linux",
+                "macos",
+                "windows"
+            ],
+            "build_architectures": [
+                "64",
+                "x64",
+                "win64",
+                "arm64"
+            ]
         }
     ],
     "install_names": {
