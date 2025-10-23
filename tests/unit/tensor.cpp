@@ -2663,6 +2663,7 @@ TEST_F(NegativeTensor, TensorWriteTooManyBytesInShader) {
     VkShaderObj shader(*m_device, spirv_string.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
+
 TEST_F(NegativeTensor, DescriptorTensorNull) {
     TEST_DESCRIPTION("DescriptorInfo with Tensor type and null pNext.");
     SetTargetApiVersion(VK_API_VERSION_1_4);
@@ -2681,5 +2682,128 @@ TEST_F(NegativeTensor, DescriptorTensorNull) {
 
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorGetInfoEXT-type-09701");
     vk::GetDescriptorEXT(device(), &dgi, descriptor_buffer_properties.storageBufferDescriptorSize, &buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeTensor, ImportMemoryFdTensorDifferentDedicatedTensor) {
+    TEST_DESCRIPTION("Test imported memory tensor with different dedicated tensor");
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
+    // Required to pass in various memory flags without querying for corresponding extensions.
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tensors);
+    RETURN_IF_SKIP(Init());
+
+    const std::vector<int64_t> dimensions{2ul};
+    VkTensorDescriptionARM tensor_desc = vku::InitStructHelper();
+    tensor_desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
+    tensor_desc.format = VK_FORMAT_R8_SINT;
+    tensor_desc.dimensionCount = dimensions.size();
+    tensor_desc.pDimensions = dimensions.data();
+    tensor_desc.pStrides = nullptr;
+    tensor_desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
+
+    VkExternalMemoryTensorCreateInfoARM external_tensor_info = vku::InitStructHelper();
+    constexpr auto allowed_handle_bits = static_cast<VkExternalMemoryHandleTypeFlags>(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT);
+
+    VkExternalMemoryHandleTypeFlags supported_handle_types = 0;
+    VkExternalMemoryHandleTypeFlags any_compatible_group = 0;
+    VkPhysicalDeviceExternalTensorInfoARM external_device_tensor_info = vku::InitStructHelper();
+    external_device_tensor_info.pDescription = &tensor_desc;
+    VkExternalTensorPropertiesARM external_tensor_properties = vku::InitStructHelper();
+
+    IterateFlags<VkExternalMemoryHandleTypeFlagBits>(allowed_handle_bits, [&](VkExternalMemoryHandleTypeFlagBits flag) {
+        external_device_tensor_info.handleType = flag;
+        vk::GetPhysicalDeviceExternalTensorPropertiesARM(m_device->Physical(), &external_device_tensor_info,
+                                                         &external_tensor_properties);
+        const auto features = external_tensor_properties.externalMemoryProperties.externalMemoryFeatures;
+        if (features & VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT) {
+            supported_handle_types |= flag;
+            any_compatible_group = external_tensor_properties.externalMemoryProperties.compatibleHandleTypes;
+        }
+    });
+
+    external_tensor_info.handleTypes = supported_handle_types;
+    if ((supported_handle_types & VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT) == 0) {
+        GTEST_SKIP() << "Unable to find importable handle type";
+    }
+    VkTensorCreateInfoARM tensor_create_info = vku::InitStructHelper();
+    tensor_create_info.pDescription = &tensor_desc;
+    tensor_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    tensor_create_info.pNext = &external_tensor_info;
+
+    vkt::Tensor tensor(*m_device, tensor_create_info);
+    VkMemoryDedicatedAllocateInfoTensorARM dedicated_tensor_info = vku::InitStructHelper();
+    dedicated_tensor_info.tensor = tensor;
+
+    VkMemoryDedicatedAllocateInfo dedicated_info = vku::InitStructHelper();
+    dedicated_info.image = VK_NULL_HANDLE;
+    dedicated_info.buffer = VK_NULL_HANDLE;
+    dedicated_info.pNext = &dedicated_tensor_info;
+
+    VkExportMemoryAllocateInfo export_info = vku::InitStructHelper(&dedicated_info);
+    export_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+    auto alloc_info =
+        vkt::DeviceMemory::GetResourceAllocInfo(*m_device, tensor.GetMemoryReqs().memoryRequirements, 0, &export_info);
+
+    vkt::DeviceMemory memory_export(*m_device, alloc_info);
+
+    VkMemoryGetFdInfoKHR mgfi = vku::InitStructHelper();
+    mgfi.memory = memory_export;
+    mgfi.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+
+    int fd;
+    vk::GetMemoryFdKHR(device(), &mgfi, &fd);
+
+    tensor_desc.usage = VK_TENSOR_USAGE_TRANSFER_DST_BIT_ARM;
+
+    vkt::Tensor tensor2(*m_device, tensor_create_info);
+
+    dedicated_tensor_info.tensor = tensor2;
+    dedicated_info.pNext = &dedicated_tensor_info;
+
+    VkImportMemoryFdInfoKHR import_info = vku::InitStructHelper(&dedicated_info);
+    import_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+    import_info.fd = fd;
+
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryDedicatedAllocateInfoTensorARM-tensor-09859");
+    alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, tensor2.GetMemoryReqs().memoryRequirements, 0, &import_info);
+    vkt::DeviceMemory memory_import(*m_device, alloc_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeTensor, WriteDescriptorSetTensorInfoNullViews) {
+    TEST_DESCRIPTION("Test writing a tensor descriptor with null tensor views");
+    RETURN_IF_SKIP(InitBasicTensor());
+
+    vkt::Tensor tensor(*m_device);
+    tensor.BindToMem();
+
+    VkTensorViewCreateInfoARM tensor_view_create_info = vku::InitStructHelper();
+    tensor_view_create_info.tensor = tensor.handle();
+    tensor_view_create_info.format = tensor.Format();
+
+    vkt::TensorView view(*m_device, tensor_view_create_info);
+
+    constexpr uint32_t tensor_binding_count = 1;
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_TENSOR_ARM, tensor_binding_count, VK_SHADER_STAGE_ALL, nullptr},
+                                       });
+    std::vector<VkTensorViewARM> views = {VK_NULL_HANDLE};
+    VkWriteDescriptorSetTensorARM tensor_descriptor_write = vku::InitStructHelper();
+    tensor_descriptor_write.tensorViewCount = views.size();
+    tensor_descriptor_write.pTensorViews = views.data();
+
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper(&tensor_descriptor_write);
+    descriptor_write.dstSet = descriptor_set.set_;
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = tensor_binding_count;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_TENSOR_ARM;
+
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSetTensorARM-nullDescriptor-09898");
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 }

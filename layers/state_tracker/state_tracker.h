@@ -1975,6 +1975,7 @@ class DeviceState : public vvl::base::Device {
         VkBuffer dedicated_buffer;
         VkImage dedicated_image;
         VkDeviceMemory device_memory;
+        VkTensorARM dedicated_tensor;
 
         // External Semaphore
         VkSemaphoreCreateFlags semaphore_flags = 0;

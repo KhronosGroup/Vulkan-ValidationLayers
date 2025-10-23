@@ -37,6 +37,50 @@ Tensor::Tensor(DeviceState &dev_data, VkTensorARM handle, const VkTensorCreateIn
     SetMemoryTracker(&std::get<BindableLinearMemoryTracker>(tracker_));
 }
 
+bool Tensor::CompareCreateInfo(const Tensor &other) const {
+    bool valid_queue_family = true;
+    if (create_info.sharingMode == VK_SHARING_MODE_CONCURRENT) {
+        if (create_info.queueFamilyIndexCount != other.create_info.queueFamilyIndexCount) {
+            valid_queue_family = false;
+        } else {
+            for (uint32_t i = 0; i < create_info.queueFamilyIndexCount; i++) {
+                if (create_info.pQueueFamilyIndices[i] != other.create_info.pQueueFamilyIndices[i]) {
+                    valid_queue_family = false;
+                    break;
+                }
+            }
+        }
+    }
+
+    // There are limitations what actually needs to be compared, so for simplicity (until found otherwise needed), we only need to
+    // check the ExternalHandleType and not other pNext chains
+    const bool valid_external = GetExternalHandleTypes(&create_info) == GetExternalHandleTypes(&other.create_info);
+    bool valid_dimensions = true;
+    if (create_info.pDescription->dimensionCount != other.create_info.pDescription->dimensionCount) {
+        valid_dimensions = false;
+    } else {
+        for (uint32_t i = 0; i < create_info.pDescription->dimensionCount; i++) {
+            if (create_info.pDescription->pDimensions[i] != other.create_info.pDescription->pDimensions[i]) {
+                valid_dimensions = false;
+                break;
+            }
+        }
+    }
+
+    bool valid_strides = true;
+    for (uint32_t i = 0; i < create_info.pDescription->dimensionCount; i++) {
+        if (create_info.pDescription->pStrides[i] != other.create_info.pDescription->pStrides[i]) {
+            valid_strides = false;
+            break;
+        }
+    }
+
+    return (create_info.pDescription->tiling == other.create_info.pDescription->tiling) &&
+           (create_info.pDescription->format == other.create_info.pDescription->format) &&
+           (create_info.flags == other.create_info.flags) && (create_info.sharingMode == other.create_info.sharingMode) &&
+           valid_queue_family && valid_external && valid_dimensions && valid_strides;
+}
+
 TensorView::TensorView(const std::shared_ptr<Tensor> &tensor, VkTensorViewARM handle, const VkTensorViewCreateInfoARM *pCreateInfo)
     : StateObject(handle, kVulkanObjectTypeTensorViewARM),
       safe_create_info(pCreateInfo),
