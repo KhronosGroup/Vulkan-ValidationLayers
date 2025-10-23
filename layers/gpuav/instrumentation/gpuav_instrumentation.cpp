@@ -1050,27 +1050,27 @@ bool LogMessageInstIndexedDraw(Validator &gpuav, const uint32_t *error_record, s
 
     auto add_vertex_buffer_binding_info = [&gpuav, error_sub_code](const VertexAttributeFetchLimit &vertex_attribute_fetch_limit,
                                                                    std::string &out) {
-        out += "- Buffer: ";
+        out += "Vertex Buffer (";
         out += gpuav.FormatHandle(vertex_attribute_fetch_limit.binding_info.buffer);
-        out += '\n';
-        out += "- Binding: ";
+        out += ") binding info:\n";
+        out += "  - Binding: ";
         out += std::to_string(vertex_attribute_fetch_limit.attribute.binding);
         out += '\n';
-        out += "- Binding size (effective): ";
-        out += std::to_string(vertex_attribute_fetch_limit.binding_info.effective_size);
-        out += " bytes\n";
-        out += "- Binding offset: ";
+        out += "  - Offset: ";
         out += std::to_string(vertex_attribute_fetch_limit.binding_info.offset);
         out += " bytes\n";
-        out += "- Binding stride: ";
-        out += std::to_string(vertex_attribute_fetch_limit.binding_info.stride);
+        out += "  - Effective Size: ";
+        out += std::to_string(vertex_attribute_fetch_limit.binding_info.effective_size);
         out += " bytes\n";
-        out += "- Vertices count: ";
+        out += "  - Vertices Count: ";
         out += std::to_string(vertex_attribute_fetch_limit.max_vertex_attributes_count);
         out += '\n';
+        out += "  - Stride: ";
+        out += std::to_string(vertex_attribute_fetch_limit.binding_info.stride);
+        out += " bytes\n";
         if (error_sub_code == glsl::kErrorSubCode_IndexedDraw_OOBInstanceIndex) {
             if (vertex_attribute_fetch_limit.instance_rate_divisor != vvl::kNoIndex32) {
-                out += "- Instance rate divisor: ";
+                out += "  - Instance rate divisor: ";
                 out += std::to_string(vertex_attribute_fetch_limit.instance_rate_divisor);
                 out += '\n';
             }
@@ -1078,17 +1078,17 @@ bool LogMessageInstIndexedDraw(Validator &gpuav, const uint32_t *error_record, s
     };
 
     auto add_vertex_attribute_info = [](const VertexAttributeFetchLimit &vertex_attribute_fetch_limit, std::string &out) {
-        out += "At least the following vertex attribute caused OOB access:\n";
-        out += "- Location: ";
+        out += "The following VkVertexInputAttributeDescription caused OOB access:\n";
+        out += "  - Location: ";
         out += std::to_string(vertex_attribute_fetch_limit.attribute.location);
         out += '\n';
-        out += "- Binding: ";
+        out += "  - Binding: ";
         out += std::to_string(vertex_attribute_fetch_limit.attribute.binding);
         out += '\n';
-        out += "- Format: ";
+        out += "  - Format: ";
         out += string_VkFormat(vertex_attribute_fetch_limit.attribute.format);
         out += '\n';
-        out += "- Offset: ";
+        out += "  - Offset: ";
         out += std::to_string(vertex_attribute_fetch_limit.attribute.offset);
         out += " bytes\n";
     };
@@ -1112,15 +1112,18 @@ bool LogMessageInstIndexedDraw(Validator &gpuav, const uint32_t *error_record, s
         }
     }
 
-    out_error_msg += " is not within the smallest bound vertex buffer.\n";
+    if (error_sub_code == glsl::kErrorSubCode_IndexedDraw_OOBVertexIndex) {
+        out_error_msg += ", using VK_VERTEX_INPUT_RATE_VERTEX, has caused an OOB access within a bound vertex buffer.\n";
+
+    } else if (error_sub_code == glsl::kErrorSubCode_IndexedDraw_OOBInstanceIndex) {
+        out_error_msg += ", using VK_VERTEX_INPUT_RATE_INSTANCE, has caused an OOB access within a bound vertex buffer.\n";
+    }
 
     if (error_sub_code == glsl::kErrorSubCode_IndexedDraw_OOBVertexIndex) {
-        out_error_msg += "Smallest vertex buffer binding info, causing OOB access with VK_VERTEX_INPUT_RATE_VERTEX:\n";
         add_vertex_buffer_binding_info(*inst_error_blob.vertex_attribute_fetch_limit_vertex_input_rate, out_error_msg);
         add_vertex_attribute_info(*inst_error_blob.vertex_attribute_fetch_limit_vertex_input_rate, out_error_msg);
 
     } else if (error_sub_code == glsl::kErrorSubCode_IndexedDraw_OOBInstanceIndex) {
-        out_error_msg += "Smallest vertex buffer binding info, causing OOB access with VK_VERTEX_INPUT_RATE_INSTANCE:\n";
         add_vertex_buffer_binding_info(*inst_error_blob.vertex_attribute_fetch_limit_instance_input_rate, out_error_msg);
         add_vertex_attribute_info(*inst_error_blob.vertex_attribute_fetch_limit_instance_input_rate, out_error_msg);
     }
@@ -1129,27 +1132,26 @@ bool LogMessageInstIndexedDraw(Validator &gpuav, const uint32_t *error_record, s
         const uint32_t index_bits_size = GetIndexBitsSize(inst_error_blob.index_buffer_binding->index_type);
         const uint32_t max_indices_in_buffer =
             static_cast<uint32_t>(inst_error_blob.index_buffer_binding->size / (index_bits_size / 8u));
-        out_error_msg += "Index buffer binding info:\n";
-        out_error_msg += "- Buffer: ";
+        out_error_msg += "Index Buffer (";
         out_error_msg += gpuav.FormatHandle(inst_error_blob.index_buffer_binding->buffer);
-        out_error_msg += '\n';
-        out_error_msg += "- Index type: ";
+        out_error_msg += ") binding info:\n";
+        out_error_msg += "  - Type: ";
         out_error_msg += string_VkIndexType(inst_error_blob.index_buffer_binding->index_type);
         out_error_msg += '\n';
-        out_error_msg += "- Binding offset: ";
+        out_error_msg += "  - Offset: ";
         out_error_msg += std::to_string(inst_error_blob.index_buffer_binding->offset);
         out_error_msg += " bytes\n";
-        out_error_msg += "- Binding size: ";
+        out_error_msg += "  - Size: ";
         out_error_msg += std::to_string(inst_error_blob.index_buffer_binding->size);
-        out_error_msg += " bytes (or ";
-        out_error_msg += std::to_string(max_indices_in_buffer);
-        out_error_msg += ' ';
+        out_error_msg += " bytes (sizeof(";
         out_error_msg += string_VkIndexType(inst_error_blob.index_buffer_binding->index_type);
+        out_error_msg += ") * ";
+        out_error_msg += std::to_string(max_indices_in_buffer);
         out_error_msg += ")\n";
     }
     out_error_msg +=
         "Note: Vertex buffer binding size is the effective, valid one, based on how the VkBuffer was created and "
-        "vertex buffer binding parameters. So it can be clamped up to 0 if binding was invalid.";
+        "the vkCmdBindVertexBuffers parameters. So it can be clamped up to 0 if binding was invalid.";
 
     return true;
 }
