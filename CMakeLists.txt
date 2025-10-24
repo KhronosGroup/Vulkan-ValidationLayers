@@ -209,6 +209,35 @@ endif()
 
 add_subdirectory(layers)
 
+if(MSVC)
+    set(SCRIPTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
+    file(GLOB_RECURSE SCRIPTS
+        "${SCRIPTS_DIR}/*.py"
+        "${SCRIPTS_DIR}/*.json"
+    )
+    add_custom_target(Scripts SOURCES ${SCRIPTS})
+    source_group(TREE ${SCRIPTS_DIR} PREFIX "Scripts" FILES ${SCRIPTS})
+
+    set(EXTERNAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external")
+    file(GLOB_RECURSE EXTERNAL_HEADER_FILES
+            "${GLSLANG_INSTALL_DIR}/*.h"
+            "${GLSLANG_INSTALL_DIR}/*.hpp"
+            "${VULKAN_HEADERS_INSTALL_DIR}/*.h"
+            "${VULKAN_HEADERS_INSTALL_DIR}/*.hpp"
+            "${VULKAN_UTILITY_LIBRARIES_INSTALL_DIR}/*.h"
+            "${VULKAN_UTILITY_LIBRARIES_INSTALL_DIR}/*.hpp"
+            "${SPIRV_HEADERS_INSTALL_DIR}/*.h"
+            "${SPIRV_HEADERS_INSTALL_DIR}/*.hpp"
+            "${SPIRV_TOOLS_INSTALL_DIR}/*.h"
+            "${SPIRV_TOOLS_INSTALL_DIR}/*.hpp"
+            # Not really interested in seeing those headers in VS
+            # "GOOGLETEST_INSTALL_DIR/*.h"
+            # "MIMALLOC_INSTALL_DIR/*.h"
+    )
+    add_custom_target(External SOURCES ${EXTERNAL_HEADER_FILES})
+    source_group(TREE ${EXTERNAL_DIR} PREFIX "External" FILES ${EXTERNAL_HEADER_FILES})
+endif()
+
 option(BUILD_TESTS "Build the tests")
 if(BUILD_TESTS)
     enable_testing()
