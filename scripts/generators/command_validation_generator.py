@@ -82,6 +82,8 @@ class CommandValidationOutputGenerator(BaseGenerator):
                 CommandScope video_coding_scope;
                 const char* video_coding_vuid;
 
+                const char* suspended_vuid;
+
                 bool state;
                 bool action;
                 bool synchronization;
@@ -96,6 +98,8 @@ class CommandValidationOutputGenerator(BaseGenerator):
         out.append('''
             #include "command_validation.h"
             #include "containers/custom_containers.h"
+
+            extern const char *kVUIDUndefined;
 
             using Func = vvl::Func;
             ''')
@@ -127,7 +131,7 @@ class CommandValidationOutputGenerator(BaseGenerator):
 
             # render_pass / render_pass_vuid
             renderPassType = 'CommandScope::Both'
-            vuid = '"kVUIDUndefined"' # Only will be a VUID if not BOTH
+            vuid = 'kVUIDUndefined' # Only will be a VUID if not BOTH
             if command.renderPass is CommandScope.INSIDE:
                 renderPassType = 'CommandScope::Inside'
                 vuid = getVUID(self.valid_vuids, f'VUID-{alias_name}-renderpass')
@@ -138,7 +142,7 @@ class CommandValidationOutputGenerator(BaseGenerator):
 
             # video_coding / video_coding_vuid
             videoCodingType = 'CommandScope::Both'
-            vuid = '"kVUIDUndefined"' # Only will be a VUID if not BOTH
+            vuid = 'kVUIDUndefined' # Only will be a VUID if not BOTH
             if command.videoCoding is CommandScope.INSIDE:
                 videoCodingType = 'CommandScope::Inside'
                 vuid = getVUID(self.valid_vuids, f'VUID-{alias_name}-videocoding')
@@ -151,6 +155,12 @@ class CommandValidationOutputGenerator(BaseGenerator):
             is_state = 'true' if 'state' in command.tasks else 'false'
             is_action = 'true' if 'action' in command.tasks else 'false'
             is_synchronization = 'true' if 'synchronization' in command.tasks else 'false'
+
+            vuid = 'kVUIDUndefined'
+            if is_action == 'true' or is_synchronization == 'true':
+                vuid = getVUID(self.valid_vuids, f'VUID-{alias_name}-suspended')
+            out.append(f'    {vuid},\n')
+
             out.append(f'    {is_state}, {is_action}, {is_synchronization},\n')
 
             out.append('}},\n')

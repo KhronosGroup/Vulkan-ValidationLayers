@@ -4642,8 +4642,7 @@ TEST_F(NegativeDynamicRendering, SuspendThenActionCommand) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(GetSimpleSuspendInfo());
     m_command_buffer.EndRendering();
-    // TODO: temporary use submit time vuid: https://gitlab.khronos.org/vulkan/vulkan/-/issues/4468
-    m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-pCommandBuffers-06015");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdFillBuffer-suspended");
     vk::CmdFillBuffer(m_command_buffer, buffer, 0, 4, 0x42);
     m_errorMonitor->VerifyFound();
 }
@@ -4658,8 +4657,7 @@ TEST_F(NegativeDynamicRendering, SuspendThenActionCommandSecondary) {
     secondary.Begin();
     secondary.BeginRendering(GetSimpleSuspendInfo());
     secondary.EndRendering();
-    // TODO: temporary use submit time vuid: https://gitlab.khronos.org/vulkan/vulkan/-/issues/4468
-    m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-pCommandBuffers-06015");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdFillBuffer-suspended");
     vk::CmdFillBuffer(secondary, buffer, 0, 4, 0x42);
     m_errorMonitor->VerifyFound();
     secondary.End();
@@ -4679,8 +4677,7 @@ TEST_F(NegativeDynamicRendering, SuspendThenActionCommandSecondary2) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(GetSimpleSuspendInfo());
     m_command_buffer.EndRendering();
-    // TODO: temporary use submit time vuid: https://gitlab.khronos.org/vulkan/vulkan/-/issues/4468
-    m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-pCommandBuffers-06015");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-pCommandBuffers-06021");
     m_command_buffer.ExecuteCommands(secondary);
     m_errorMonitor->VerifyFound();
 }
@@ -4704,8 +4701,7 @@ TEST_F(NegativeDynamicRendering, SuspendThenActionCommandSecondary3) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(GetSimpleSuspendInfo());
     m_command_buffer.EndRendering();
-    // TODO: temporary use submit time vuid: https://gitlab.khronos.org/vulkan/vulkan/-/issues/4468
-    m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-pCommandBuffers-06015");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-pCommandBuffers-06021");
     vk::CmdExecuteCommands(m_command_buffer, 2, secondary_handles);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -4730,8 +4726,7 @@ TEST_F(NegativeDynamicRendering, SuspendThenActionCommandSecondary4) {
     secondaries[1].End();
 
     m_command_buffer.Begin();
-    // TODO: temporary use submit time vuid: https://gitlab.khronos.org/vulkan/vulkan/-/issues/4468
-    m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-pCommandBuffers-06015");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-pCommandBuffers-06021");
     vk::CmdExecuteCommands(m_command_buffer, 2, secondary_handles);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
