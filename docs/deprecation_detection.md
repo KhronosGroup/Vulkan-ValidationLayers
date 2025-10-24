@@ -48,10 +48,10 @@ instance_ci.pNext = &layer_settings_create_info;
 
 ```bash
 # Windows
-set VK_LAYER_DEPRECATION_DETECTION=1
+set VK_VALIDATION_DEPRECATION_DETECTION=1
 
 # Linux
-export VK_LAYER_DEPRECATION_DETECTION=1
+export VK_VALIDATION_DEPRECATION_DETECTION=1
 
 # Android
 adb shell setprop debug.vulkan.khronos_validation.deprecation_detection=1
