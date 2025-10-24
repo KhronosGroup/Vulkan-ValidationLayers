@@ -41,10 +41,10 @@ instance_ci.pNext = &layer_settings_create_info;
 
 ```bash
 # Windows
-set VK_LAYER_VALIDATE_SYNC=1
+set VK_VALIDATION_VALIDATE_SYNC=1
 
 # Linux
-export VK_LAYER_VALIDATE_SYNC=1
+export VK_VALIDATION_VALIDATE_SYNC=1
 
 # Android
 adb shell setprop debug.vulkan.khronos_validation.validate_sync=1
