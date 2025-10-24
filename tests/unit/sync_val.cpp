@@ -4525,9 +4525,9 @@ TEST_F(NegativeSyncVal, QSBufferEvents) {
     all_queue_count_ = true;
     RETURN_IF_SKIP(InitSyncVal());
 
-    auto [queue0, queue1] = GetTwoQueuesFromSameFamily(m_device->QueuesWithTransferCapability());
+    auto [queue0, queue1] = GetTwoQueuesFromSameFamily(m_device->QueuesWithComputeCapability());
     if (!queue0) {
-        GTEST_SKIP() << "Test requires two queues with transfer capabilities from the same queue family";
+        GTEST_SKIP() << "Test requires two queues with compute capabilities from the same queue family";
     }
 
     vkt::CommandPool cmd_pool(*m_device, queue0->family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
