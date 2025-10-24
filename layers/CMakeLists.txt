@@ -266,8 +266,8 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/valid_flag_values.cpp
     ${API_TYPE}/generated/command_validation.cpp
     ${API_TYPE}/generated/command_validation.h
-    ${API_TYPE}/generated/deprecation.cpp
-    ${API_TYPE}/generated/deprecation.h
+    ${API_TYPE}/generated/legacy.cpp
+    ${API_TYPE}/generated/legacy.h
     ${API_TYPE}/generated/device_features.cpp
     ${API_TYPE}/generated/device_features.h
     ${API_TYPE}/generated/dynamic_state_helper.cpp

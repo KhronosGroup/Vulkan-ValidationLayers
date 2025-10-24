@@ -13,7 +13,7 @@
 #include <vulkan/vulkan_core.h>
 #include "../framework/layer_validation_tests.h"
 
-void DeprecationTest::CreateRenderPass() {
+void LegacyTest::CreateRenderPass() {
     vkt::Image image(*m_device, 8, 8, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
     VkAttachmentReference attachment_ref = {0, VK_IMAGE_LAYOUT_GENERAL};
@@ -36,11 +36,11 @@ void DeprecationTest::CreateRenderPass() {
     vkt::RenderPass rp(*m_device, rp_ci);
 }
 
-class PositiveDeprecation : public DeprecationTest {};
+class PositiveLegacy : public LegacyTest {};
 
-TEST_F(PositiveDeprecation, SettingExplicitOff) {
+TEST_F(PositiveLegacy, SettingExplicitOff) {
     TEST_DESCRIPTION("Turn off setting explicitly");
-    const VkLayerSettingEXT layer_setting = {OBJECT_LAYER_NAME, "deprecation_detection", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
+    const VkLayerSettingEXT layer_setting = {OBJECT_LAYER_NAME, "legacy_detection", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
                                              &kVkFalse};
     VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &layer_setting};
 
@@ -51,7 +51,7 @@ TEST_F(PositiveDeprecation, SettingExplicitOff) {
     CreateRenderPass();
 }
 
-TEST_F(PositiveDeprecation, SettingDefault) {
+TEST_F(PositiveLegacy, SettingDefault) {
     TEST_DESCRIPTION("Make sure default settings have no warning");
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
@@ -59,10 +59,10 @@ TEST_F(PositiveDeprecation, SettingDefault) {
     CreateRenderPass();
 }
 
-TEST_F(PositiveDeprecation, MuteMultipleWarnings) {
-    const char *ids[] = {"WARNING-deprecation-gpdp2", "WARNING-deprecation-renderpass2", "WARNING-deprecation-dynamicrendering"};
+TEST_F(PositiveLegacy, MuteMultipleWarnings) {
+    const char *ids[] = {"WARNING-legacy-gpdp2", "WARNING-legacy-renderpass2", "WARNING-legacy-dynamicrendering"};
     VkLayerSettingEXT layer_settings[3] = {
-        {OBJECT_LAYER_NAME, "deprecation_detection", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
+        {OBJECT_LAYER_NAME, "legacy_detection", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
         {OBJECT_LAYER_NAME, "message_id_filter", VK_LAYER_SETTING_TYPE_STRING_EXT, 3, ids}};
     VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 2, layer_settings};
 
@@ -78,16 +78,16 @@ TEST_F(PositiveDeprecation, MuteMultipleWarnings) {
     rp_ci.subpassCount = 1u;
     rp_ci.pSubpasses = &subpass;
 
-    // ignores WARNING-deprecation-renderpass2
+    // ignores WARNING-legacy-renderpass2
     vkt::RenderPass render_pass(*m_device, rp_ci);
 
-    // ignores WARNING-deprecation-dynamicrendering
+    // ignores WARNING-legacy-dynamicrendering
     vkt::Framebuffer framebuffer(*m_device, render_pass, 0, nullptr);
 }
 
-TEST_F(PositiveDeprecation, GetPhysicalDeviceProperties2Extension) {
+TEST_F(PositiveLegacy, GetPhysicalDeviceProperties2Extension) {
     TEST_DESCRIPTION("Show Instance extensions currently only detected if enabled, not if supported");
-    const VkLayerSettingEXT layer_setting = {OBJECT_LAYER_NAME, "deprecation_detection", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
+    const VkLayerSettingEXT layer_setting = {OBJECT_LAYER_NAME, "legacy_detection", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
                                              &kVkTrue};
     VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &layer_setting};
 
