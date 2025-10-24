@@ -293,6 +293,7 @@ vvl_sources = [
   "layers/state_tracker/ray_tracing_state.h",
   "layers/state_tracker/render_pass_state.cpp",
   "layers/state_tracker/render_pass_state.h",
+  "layers/state_tracker/sampler_state.cpp",
   "layers/state_tracker/sampler_state.h",
   "layers/state_tracker/semaphore_state.cpp",
   "layers/state_tracker/semaphore_state.h",

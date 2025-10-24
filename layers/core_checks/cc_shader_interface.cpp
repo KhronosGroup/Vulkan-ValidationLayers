@@ -37,6 +37,7 @@
 #include "containers/limits.h"
 #include "error_message/error_strings.h"
 #include "utils/vk_api_utils.h"
+#include "utils/image_utils.h"
 
 bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, const spirv::Module &module_state,
                                               const spirv::EntryPoint &entrypoint, const Location &create_info_loc) const {

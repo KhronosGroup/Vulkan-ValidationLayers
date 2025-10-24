@@ -46,6 +46,7 @@
 // Used for debugging
 #include "utils/keyboard.h"
 
+#include "utils/image_utils.h" // GetExternalFormat
 #include "utils/sync_utils.h"
 #include "chassis/chassis.h"
 
