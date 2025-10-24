@@ -331,6 +331,13 @@ void HandleWrapper::UnwrapPnextChainHandles(const void* pNext) {
                     safe_struct->conversion = Unwrap(safe_struct->conversion);
                 }
             } break;
+            case VK_STRUCTURE_TYPE_TILE_MEMORY_BIND_INFO_QCOM: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkTileMemoryBindInfoQCOM*>(cur_pnext);
+
+                if (safe_struct->memory) {
+                    safe_struct->memory = Unwrap(safe_struct->memory);
+                }
+            } break;
             case VK_STRUCTURE_TYPE_SHADER_MODULE_VALIDATION_CACHE_CREATE_INFO_EXT: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkShaderModuleValidationCacheCreateInfoEXT*>(cur_pnext);
 
@@ -351,6 +358,30 @@ void HandleWrapper::UnwrapPnextChainHandles(const void* pNext) {
 
                 if (safe_struct->renderPass) {
                     safe_struct->renderPass = Unwrap(safe_struct->renderPass);
+                }
+            } break;
+            case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkWriteDescriptorSetAccelerationStructureKHR*>(cur_pnext);
+                if (safe_struct->pAccelerationStructures) {
+                    for (uint32_t index0 = 0; index0 < safe_struct->accelerationStructureCount; ++index0) {
+                        safe_struct->pAccelerationStructures[index0] = Unwrap(safe_struct->pAccelerationStructures[index0]);
+                    }
+                }
+            } break;
+            case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_NV: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkWriteDescriptorSetAccelerationStructureNV*>(cur_pnext);
+                if (safe_struct->pAccelerationStructures) {
+                    for (uint32_t index0 = 0; index0 < safe_struct->accelerationStructureCount; ++index0) {
+                        safe_struct->pAccelerationStructures[index0] = Unwrap(safe_struct->pAccelerationStructures[index0]);
+                    }
+                }
+            } break;
+            case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_TENSOR_ARM: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkWriteDescriptorSetTensorARM*>(cur_pnext);
+                if (safe_struct->pTensorViews) {
+                    for (uint32_t index0 = 0; index0 < safe_struct->tensorViewCount; ++index0) {
+                        safe_struct->pTensorViews[index0] = Unwrap(safe_struct->pTensorViews[index0]);
+                    }
                 }
             } break;
             case VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_SHADER_GROUPS_CREATE_INFO_NV: {
@@ -381,37 +412,6 @@ void HandleWrapper::UnwrapPnextChainHandles(const void* pNext) {
                     for (uint32_t index0 = 0; index0 < safe_struct->libraryCount; ++index0) {
                         safe_struct->pLibraries[index0] = Unwrap(safe_struct->pLibraries[index0]);
                     }
-                }
-            } break;
-            case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR: {
-                auto* safe_struct = reinterpret_cast<vku::safe_VkWriteDescriptorSetAccelerationStructureKHR*>(cur_pnext);
-                if (safe_struct->pAccelerationStructures) {
-                    for (uint32_t index0 = 0; index0 < safe_struct->accelerationStructureCount; ++index0) {
-                        safe_struct->pAccelerationStructures[index0] = Unwrap(safe_struct->pAccelerationStructures[index0]);
-                    }
-                }
-            } break;
-            case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_NV: {
-                auto* safe_struct = reinterpret_cast<vku::safe_VkWriteDescriptorSetAccelerationStructureNV*>(cur_pnext);
-                if (safe_struct->pAccelerationStructures) {
-                    for (uint32_t index0 = 0; index0 < safe_struct->accelerationStructureCount; ++index0) {
-                        safe_struct->pAccelerationStructures[index0] = Unwrap(safe_struct->pAccelerationStructures[index0]);
-                    }
-                }
-            } break;
-            case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_TENSOR_ARM: {
-                auto* safe_struct = reinterpret_cast<vku::safe_VkWriteDescriptorSetTensorARM*>(cur_pnext);
-                if (safe_struct->pTensorViews) {
-                    for (uint32_t index0 = 0; index0 < safe_struct->tensorViewCount; ++index0) {
-                        safe_struct->pTensorViews[index0] = Unwrap(safe_struct->pTensorViews[index0]);
-                    }
-                }
-            } break;
-            case VK_STRUCTURE_TYPE_TILE_MEMORY_BIND_INFO_QCOM: {
-                auto* safe_struct = reinterpret_cast<vku::safe_VkTileMemoryBindInfoQCOM*>(cur_pnext);
-
-                if (safe_struct->memory) {
-                    safe_struct->memory = Unwrap(safe_struct->memory);
                 }
             } break;
             case VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO: {
@@ -1022,47 +1022,6 @@ void Device::DestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAl
     device_dispatch_table.DestroySemaphore(device, semaphore, pAllocator);
 }
 
-VkResult Device::CreateEvent(VkDevice device, const VkEventCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                             VkEvent* pEvent) {
-    if (!wrap_handles) return device_dispatch_table.CreateEvent(device, pCreateInfo, pAllocator, pEvent);
-
-    VkResult result = device_dispatch_table.CreateEvent(device, pCreateInfo, pAllocator, pEvent);
-    if (result == VK_SUCCESS) {
-        *pEvent = WrapNew(*pEvent);
-    }
-    return result;
-}
-
-void Device::DestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator) {
-    if (!wrap_handles) return device_dispatch_table.DestroyEvent(device, event, pAllocator);
-    event = Erase(event);
-    device_dispatch_table.DestroyEvent(device, event, pAllocator);
-}
-
-VkResult Device::GetEventStatus(VkDevice device, VkEvent event) {
-    if (!wrap_handles) return device_dispatch_table.GetEventStatus(device, event);
-    { event = Unwrap(event); }
-    VkResult result = device_dispatch_table.GetEventStatus(device, event);
-
-    return result;
-}
-
-VkResult Device::SetEvent(VkDevice device, VkEvent event) {
-    if (!wrap_handles) return device_dispatch_table.SetEvent(device, event);
-    { event = Unwrap(event); }
-    VkResult result = device_dispatch_table.SetEvent(device, event);
-
-    return result;
-}
-
-VkResult Device::ResetEvent(VkDevice device, VkEvent event) {
-    if (!wrap_handles) return device_dispatch_table.ResetEvent(device, event);
-    { event = Unwrap(event); }
-    VkResult result = device_dispatch_table.ResetEvent(device, event);
-
-    return result;
-}
-
 VkResult Device::CreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                  VkQueryPool* pQueryPool) {
     if (!wrap_handles) return device_dispatch_table.CreateQueryPool(device, pCreateInfo, pAllocator, pQueryPool);
@@ -1114,35 +1073,6 @@ void Device::DestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationC
     if (!wrap_handles) return device_dispatch_table.DestroyBuffer(device, buffer, pAllocator);
     buffer = Erase(buffer);
     device_dispatch_table.DestroyBuffer(device, buffer, pAllocator);
-}
-
-VkResult Device::CreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
-                                  const VkAllocationCallbacks* pAllocator, VkBufferView* pView) {
-    if (!wrap_handles) return device_dispatch_table.CreateBufferView(device, pCreateInfo, pAllocator, pView);
-    vku::safe_VkBufferViewCreateInfo var_local_pCreateInfo;
-    vku::safe_VkBufferViewCreateInfo* local_pCreateInfo = nullptr;
-    {
-        if (pCreateInfo) {
-            local_pCreateInfo = &var_local_pCreateInfo;
-            local_pCreateInfo->initialize(pCreateInfo);
-
-            if (pCreateInfo->buffer) {
-                local_pCreateInfo->buffer = Unwrap(pCreateInfo->buffer);
-            }
-        }
-    }
-    VkResult result =
-        device_dispatch_table.CreateBufferView(device, (const VkBufferViewCreateInfo*)local_pCreateInfo, pAllocator, pView);
-    if (result == VK_SUCCESS) {
-        *pView = WrapNew(*pView);
-    }
-    return result;
-}
-
-void Device::DestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks* pAllocator) {
-    if (!wrap_handles) return device_dispatch_table.DestroyBufferView(device, bufferView, pAllocator);
-    bufferView = Erase(bufferView);
-    device_dispatch_table.DestroyBufferView(device, bufferView, pAllocator);
 }
 
 VkResult Device::CreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
@@ -1205,6 +1135,253 @@ void Device::DestroyImageView(VkDevice device, VkImageView imageView, const VkAl
     if (!wrap_handles) return device_dispatch_table.DestroyImageView(device, imageView, pAllocator);
     imageView = Erase(imageView);
     device_dispatch_table.DestroyImageView(device, imageView, pAllocator);
+}
+
+VkResult Device::CreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
+                                   const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool) {
+    if (!wrap_handles) return device_dispatch_table.CreateCommandPool(device, pCreateInfo, pAllocator, pCommandPool);
+
+    VkResult result = device_dispatch_table.CreateCommandPool(device, pCreateInfo, pAllocator, pCommandPool);
+    if (result == VK_SUCCESS) {
+        *pCommandPool = WrapNew(*pCommandPool);
+    }
+    return result;
+}
+
+VkResult Device::ResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags) {
+    if (!wrap_handles) return device_dispatch_table.ResetCommandPool(device, commandPool, flags);
+    { commandPool = Unwrap(commandPool); }
+    VkResult result = device_dispatch_table.ResetCommandPool(device, commandPool, flags);
+
+    return result;
+}
+
+VkResult Device::EndCommandBuffer(VkCommandBuffer commandBuffer) {
+    VkResult result = device_dispatch_table.EndCommandBuffer(commandBuffer);
+
+    return result;
+}
+
+VkResult Device::ResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags) {
+    VkResult result = device_dispatch_table.ResetCommandBuffer(commandBuffer, flags);
+
+    return result;
+}
+
+void Device::CmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
+                           const VkBufferCopy* pRegions) {
+    if (!wrap_handles) return device_dispatch_table.CmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
+    {
+        srcBuffer = Unwrap(srcBuffer);
+        dstBuffer = Unwrap(dstBuffer);
+    }
+    device_dispatch_table.CmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
+}
+
+void Device::CmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
+                          VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageCopy* pRegions) {
+    if (!wrap_handles)
+        return device_dispatch_table.CmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
+                                                  pRegions);
+    {
+        srcImage = Unwrap(srcImage);
+        dstImage = Unwrap(dstImage);
+    }
+    device_dispatch_table.CmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
+}
+
+void Device::CmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage, VkImageLayout dstImageLayout,
+                                  uint32_t regionCount, const VkBufferImageCopy* pRegions) {
+    if (!wrap_handles)
+        return device_dispatch_table.CmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount,
+                                                          pRegions);
+    {
+        srcBuffer = Unwrap(srcBuffer);
+        dstImage = Unwrap(dstImage);
+    }
+    device_dispatch_table.CmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
+}
+
+void Device::CmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkBuffer dstBuffer,
+                                  uint32_t regionCount, const VkBufferImageCopy* pRegions) {
+    if (!wrap_handles)
+        return device_dispatch_table.CmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount,
+                                                          pRegions);
+    {
+        srcImage = Unwrap(srcImage);
+        dstBuffer = Unwrap(dstBuffer);
+    }
+    device_dispatch_table.CmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
+}
+
+void Device::CmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize dataSize,
+                             const void* pData) {
+    if (!wrap_handles) return device_dispatch_table.CmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData);
+    { dstBuffer = Unwrap(dstBuffer); }
+    device_dispatch_table.CmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData);
+}
+
+void Device::CmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size,
+                           uint32_t data) {
+    if (!wrap_handles) return device_dispatch_table.CmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data);
+    { dstBuffer = Unwrap(dstBuffer); }
+    device_dispatch_table.CmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data);
+}
+
+void Device::CmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+                                VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount,
+                                const VkMemoryBarrier* pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
+                                const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
+                                const VkImageMemoryBarrier* pImageMemoryBarriers) {
+    if (!wrap_handles)
+        return device_dispatch_table.CmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags,
+                                                        memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
+                                                        pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+    small_vector<vku::safe_VkBufferMemoryBarrier, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pBufferMemoryBarriers;
+    vku::safe_VkBufferMemoryBarrier* local_pBufferMemoryBarriers = nullptr;
+    small_vector<vku::safe_VkImageMemoryBarrier, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pImageMemoryBarriers;
+    vku::safe_VkImageMemoryBarrier* local_pImageMemoryBarriers = nullptr;
+    {
+        if (pBufferMemoryBarriers) {
+            var_local_pBufferMemoryBarriers.resize(bufferMemoryBarrierCount);
+            local_pBufferMemoryBarriers = var_local_pBufferMemoryBarriers.data();
+            for (uint32_t index0 = 0; index0 < bufferMemoryBarrierCount; ++index0) {
+                local_pBufferMemoryBarriers[index0].initialize(&pBufferMemoryBarriers[index0]);
+
+                if (pBufferMemoryBarriers[index0].buffer) {
+                    local_pBufferMemoryBarriers[index0].buffer = Unwrap(pBufferMemoryBarriers[index0].buffer);
+                }
+            }
+        }
+        if (pImageMemoryBarriers) {
+            var_local_pImageMemoryBarriers.resize(imageMemoryBarrierCount);
+            local_pImageMemoryBarriers = var_local_pImageMemoryBarriers.data();
+            for (uint32_t index0 = 0; index0 < imageMemoryBarrierCount; ++index0) {
+                local_pImageMemoryBarriers[index0].initialize(&pImageMemoryBarriers[index0]);
+
+                if (pImageMemoryBarriers[index0].image) {
+                    local_pImageMemoryBarriers[index0].image = Unwrap(pImageMemoryBarriers[index0].image);
+                }
+            }
+        }
+    }
+    device_dispatch_table.CmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount,
+                                             pMemoryBarriers, bufferMemoryBarrierCount,
+                                             (const VkBufferMemoryBarrier*)local_pBufferMemoryBarriers, imageMemoryBarrierCount,
+                                             (const VkImageMemoryBarrier*)local_pImageMemoryBarriers);
+}
+
+void Device::CmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query, VkQueryControlFlags flags) {
+    if (!wrap_handles) return device_dispatch_table.CmdBeginQuery(commandBuffer, queryPool, query, flags);
+    { queryPool = Unwrap(queryPool); }
+    device_dispatch_table.CmdBeginQuery(commandBuffer, queryPool, query, flags);
+}
+
+void Device::CmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query) {
+    if (!wrap_handles) return device_dispatch_table.CmdEndQuery(commandBuffer, queryPool, query);
+    { queryPool = Unwrap(queryPool); }
+    device_dispatch_table.CmdEndQuery(commandBuffer, queryPool, query);
+}
+
+void Device::CmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
+    if (!wrap_handles) return device_dispatch_table.CmdResetQueryPool(commandBuffer, queryPool, firstQuery, queryCount);
+    { queryPool = Unwrap(queryPool); }
+    device_dispatch_table.CmdResetQueryPool(commandBuffer, queryPool, firstQuery, queryCount);
+}
+
+void Device::CmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage, VkQueryPool queryPool,
+                               uint32_t query) {
+    if (!wrap_handles) return device_dispatch_table.CmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, query);
+    { queryPool = Unwrap(queryPool); }
+    device_dispatch_table.CmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, query);
+}
+
+void Device::CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
+                                     VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize stride, VkQueryResultFlags flags) {
+    if (!wrap_handles)
+        return device_dispatch_table.CmdCopyQueryPoolResults(commandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset,
+                                                             stride, flags);
+    {
+        queryPool = Unwrap(queryPool);
+        dstBuffer = Unwrap(dstBuffer);
+    }
+    device_dispatch_table.CmdCopyQueryPoolResults(commandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset, stride,
+                                                  flags);
+}
+
+void Device::CmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
+                                const VkCommandBuffer* pCommandBuffers) {
+    device_dispatch_table.CmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
+}
+
+VkResult Device::CreateEvent(VkDevice device, const VkEventCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+                             VkEvent* pEvent) {
+    if (!wrap_handles) return device_dispatch_table.CreateEvent(device, pCreateInfo, pAllocator, pEvent);
+
+    VkResult result = device_dispatch_table.CreateEvent(device, pCreateInfo, pAllocator, pEvent);
+    if (result == VK_SUCCESS) {
+        *pEvent = WrapNew(*pEvent);
+    }
+    return result;
+}
+
+void Device::DestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator) {
+    if (!wrap_handles) return device_dispatch_table.DestroyEvent(device, event, pAllocator);
+    event = Erase(event);
+    device_dispatch_table.DestroyEvent(device, event, pAllocator);
+}
+
+VkResult Device::GetEventStatus(VkDevice device, VkEvent event) {
+    if (!wrap_handles) return device_dispatch_table.GetEventStatus(device, event);
+    { event = Unwrap(event); }
+    VkResult result = device_dispatch_table.GetEventStatus(device, event);
+
+    return result;
+}
+
+VkResult Device::SetEvent(VkDevice device, VkEvent event) {
+    if (!wrap_handles) return device_dispatch_table.SetEvent(device, event);
+    { event = Unwrap(event); }
+    VkResult result = device_dispatch_table.SetEvent(device, event);
+
+    return result;
+}
+
+VkResult Device::ResetEvent(VkDevice device, VkEvent event) {
+    if (!wrap_handles) return device_dispatch_table.ResetEvent(device, event);
+    { event = Unwrap(event); }
+    VkResult result = device_dispatch_table.ResetEvent(device, event);
+
+    return result;
+}
+
+VkResult Device::CreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
+                                  const VkAllocationCallbacks* pAllocator, VkBufferView* pView) {
+    if (!wrap_handles) return device_dispatch_table.CreateBufferView(device, pCreateInfo, pAllocator, pView);
+    vku::safe_VkBufferViewCreateInfo var_local_pCreateInfo;
+    vku::safe_VkBufferViewCreateInfo* local_pCreateInfo = nullptr;
+    {
+        if (pCreateInfo) {
+            local_pCreateInfo = &var_local_pCreateInfo;
+            local_pCreateInfo->initialize(pCreateInfo);
+
+            if (pCreateInfo->buffer) {
+                local_pCreateInfo->buffer = Unwrap(pCreateInfo->buffer);
+            }
+        }
+    }
+    VkResult result =
+        device_dispatch_table.CreateBufferView(device, (const VkBufferViewCreateInfo*)local_pCreateInfo, pAllocator, pView);
+    if (result == VK_SUCCESS) {
+        *pView = WrapNew(*pView);
+    }
+    return result;
+}
+
+void Device::DestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks* pAllocator) {
+    if (!wrap_handles) return device_dispatch_table.DestroyBufferView(device, bufferView, pAllocator);
+    bufferView = Erase(bufferView);
+    device_dispatch_table.DestroyBufferView(device, bufferView, pAllocator);
 }
 
 VkResult Device::CreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
@@ -1455,119 +1632,10 @@ void Device::UpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount
                                                descriptorCopyCount, (const VkCopyDescriptorSet*)local_pDescriptorCopies);
 }
 
-VkResult Device::CreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
-                                   const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer) {
-    if (!wrap_handles) return device_dispatch_table.CreateFramebuffer(device, pCreateInfo, pAllocator, pFramebuffer);
-    vku::safe_VkFramebufferCreateInfo var_local_pCreateInfo;
-    vku::safe_VkFramebufferCreateInfo* local_pCreateInfo = nullptr;
-    {
-        if (pCreateInfo) {
-            local_pCreateInfo = &var_local_pCreateInfo;
-            local_pCreateInfo->initialize(pCreateInfo);
-
-            if (pCreateInfo->renderPass) {
-                local_pCreateInfo->renderPass = Unwrap(pCreateInfo->renderPass);
-            }
-            if (local_pCreateInfo->pAttachments) {
-                for (uint32_t index1 = 0; index1 < local_pCreateInfo->attachmentCount; ++index1) {
-                    local_pCreateInfo->pAttachments[index1] = Unwrap(local_pCreateInfo->pAttachments[index1]);
-                }
-            }
-        }
-    }
-    VkResult result = device_dispatch_table.CreateFramebuffer(device, (const VkFramebufferCreateInfo*)local_pCreateInfo, pAllocator,
-                                                              pFramebuffer);
-    if (result == VK_SUCCESS) {
-        *pFramebuffer = WrapNew(*pFramebuffer);
-    }
-    return result;
-}
-
-void Device::DestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer, const VkAllocationCallbacks* pAllocator) {
-    if (!wrap_handles) return device_dispatch_table.DestroyFramebuffer(device, framebuffer, pAllocator);
-    framebuffer = Erase(framebuffer);
-    device_dispatch_table.DestroyFramebuffer(device, framebuffer, pAllocator);
-}
-
-void Device::GetRenderAreaGranularity(VkDevice device, VkRenderPass renderPass, VkExtent2D* pGranularity) {
-    if (!wrap_handles) return device_dispatch_table.GetRenderAreaGranularity(device, renderPass, pGranularity);
-    { renderPass = Unwrap(renderPass); }
-    device_dispatch_table.GetRenderAreaGranularity(device, renderPass, pGranularity);
-}
-
-VkResult Device::CreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
-                                   const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool) {
-    if (!wrap_handles) return device_dispatch_table.CreateCommandPool(device, pCreateInfo, pAllocator, pCommandPool);
-
-    VkResult result = device_dispatch_table.CreateCommandPool(device, pCreateInfo, pAllocator, pCommandPool);
-    if (result == VK_SUCCESS) {
-        *pCommandPool = WrapNew(*pCommandPool);
-    }
-    return result;
-}
-
-VkResult Device::ResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags) {
-    if (!wrap_handles) return device_dispatch_table.ResetCommandPool(device, commandPool, flags);
-    { commandPool = Unwrap(commandPool); }
-    VkResult result = device_dispatch_table.ResetCommandPool(device, commandPool, flags);
-
-    return result;
-}
-
-VkResult Device::EndCommandBuffer(VkCommandBuffer commandBuffer) {
-    VkResult result = device_dispatch_table.EndCommandBuffer(commandBuffer);
-
-    return result;
-}
-
-VkResult Device::ResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags) {
-    VkResult result = device_dispatch_table.ResetCommandBuffer(commandBuffer, flags);
-
-    return result;
-}
-
 void Device::CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline) {
     if (!wrap_handles) return device_dispatch_table.CmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
     { pipeline = Unwrap(pipeline); }
     device_dispatch_table.CmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
-}
-
-void Device::CmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
-                            const VkViewport* pViewports) {
-    device_dispatch_table.CmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports);
-}
-
-void Device::CmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount, const VkRect2D* pScissors) {
-    device_dispatch_table.CmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors);
-}
-
-void Device::CmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth) {
-    device_dispatch_table.CmdSetLineWidth(commandBuffer, lineWidth);
-}
-
-void Device::CmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp,
-                             float depthBiasSlopeFactor) {
-    device_dispatch_table.CmdSetDepthBias(commandBuffer, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor);
-}
-
-void Device::CmdSetBlendConstants(VkCommandBuffer commandBuffer, const float blendConstants[4]) {
-    device_dispatch_table.CmdSetBlendConstants(commandBuffer, blendConstants);
-}
-
-void Device::CmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds, float maxDepthBounds) {
-    device_dispatch_table.CmdSetDepthBounds(commandBuffer, minDepthBounds, maxDepthBounds);
-}
-
-void Device::CmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t compareMask) {
-    device_dispatch_table.CmdSetStencilCompareMask(commandBuffer, faceMask, compareMask);
-}
-
-void Device::CmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t writeMask) {
-    device_dispatch_table.CmdSetStencilWriteMask(commandBuffer, faceMask, writeMask);
-}
-
-void Device::CmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t reference) {
-    device_dispatch_table.CmdSetStencilReference(commandBuffer, faceMask, reference);
 }
 
 void Device::CmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout,
@@ -1592,53 +1660,12 @@ void Device::CmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBind
                                                 (const VkDescriptorSet*)local_pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
 }
 
-void Device::CmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkIndexType indexType) {
-    if (!wrap_handles) return device_dispatch_table.CmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
-    { buffer = Unwrap(buffer); }
-    device_dispatch_table.CmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
-}
-
-void Device::CmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
-                                  const VkBuffer* pBuffers, const VkDeviceSize* pOffsets) {
+void Device::CmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                const VkClearColorValue* pColor, uint32_t rangeCount, const VkImageSubresourceRange* pRanges) {
     if (!wrap_handles)
-        return device_dispatch_table.CmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
-    small_vector<VkBuffer, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pBuffers;
-    VkBuffer* local_pBuffers = nullptr;
-    {
-        if (pBuffers) {
-            var_local_pBuffers.resize(bindingCount);
-            local_pBuffers = var_local_pBuffers.data();
-            for (uint32_t index0 = 0; index0 < bindingCount; ++index0) {
-                local_pBuffers[index0] = Unwrap(pBuffers[index0]);
-            }
-        }
-    }
-    device_dispatch_table.CmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, (const VkBuffer*)local_pBuffers,
-                                               pOffsets);
-}
-
-void Device::CmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
-                     uint32_t firstInstance) {
-    device_dispatch_table.CmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
-}
-
-void Device::CmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex,
-                            int32_t vertexOffset, uint32_t firstInstance) {
-    device_dispatch_table.CmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
-}
-
-void Device::CmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount,
-                             uint32_t stride) {
-    if (!wrap_handles) return device_dispatch_table.CmdDrawIndirect(commandBuffer, buffer, offset, drawCount, stride);
-    { buffer = Unwrap(buffer); }
-    device_dispatch_table.CmdDrawIndirect(commandBuffer, buffer, offset, drawCount, stride);
-}
-
-void Device::CmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount,
-                                    uint32_t stride) {
-    if (!wrap_handles) return device_dispatch_table.CmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride);
-    { buffer = Unwrap(buffer); }
-    device_dispatch_table.CmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride);
+        return device_dispatch_table.CmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
+    { image = Unwrap(image); }
+    device_dispatch_table.CmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
 }
 
 void Device::CmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
@@ -1649,114 +1676,6 @@ void Device::CmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer,
     if (!wrap_handles) return device_dispatch_table.CmdDispatchIndirect(commandBuffer, buffer, offset);
     { buffer = Unwrap(buffer); }
     device_dispatch_table.CmdDispatchIndirect(commandBuffer, buffer, offset);
-}
-
-void Device::CmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
-                           const VkBufferCopy* pRegions) {
-    if (!wrap_handles) return device_dispatch_table.CmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
-    {
-        srcBuffer = Unwrap(srcBuffer);
-        dstBuffer = Unwrap(dstBuffer);
-    }
-    device_dispatch_table.CmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
-}
-
-void Device::CmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                          VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageCopy* pRegions) {
-    if (!wrap_handles)
-        return device_dispatch_table.CmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
-                                                  pRegions);
-    {
-        srcImage = Unwrap(srcImage);
-        dstImage = Unwrap(dstImage);
-    }
-    device_dispatch_table.CmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
-}
-
-void Device::CmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                          VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit* pRegions, VkFilter filter) {
-    if (!wrap_handles)
-        return device_dispatch_table.CmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
-                                                  pRegions, filter);
-    {
-        srcImage = Unwrap(srcImage);
-        dstImage = Unwrap(dstImage);
-    }
-    device_dispatch_table.CmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions,
-                                       filter);
-}
-
-void Device::CmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage, VkImageLayout dstImageLayout,
-                                  uint32_t regionCount, const VkBufferImageCopy* pRegions) {
-    if (!wrap_handles)
-        return device_dispatch_table.CmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount,
-                                                          pRegions);
-    {
-        srcBuffer = Unwrap(srcBuffer);
-        dstImage = Unwrap(dstImage);
-    }
-    device_dispatch_table.CmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
-}
-
-void Device::CmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkBuffer dstBuffer,
-                                  uint32_t regionCount, const VkBufferImageCopy* pRegions) {
-    if (!wrap_handles)
-        return device_dispatch_table.CmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount,
-                                                          pRegions);
-    {
-        srcImage = Unwrap(srcImage);
-        dstBuffer = Unwrap(dstBuffer);
-    }
-    device_dispatch_table.CmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
-}
-
-void Device::CmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize dataSize,
-                             const void* pData) {
-    if (!wrap_handles) return device_dispatch_table.CmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData);
-    { dstBuffer = Unwrap(dstBuffer); }
-    device_dispatch_table.CmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData);
-}
-
-void Device::CmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size,
-                           uint32_t data) {
-    if (!wrap_handles) return device_dispatch_table.CmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data);
-    { dstBuffer = Unwrap(dstBuffer); }
-    device_dispatch_table.CmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data);
-}
-
-void Device::CmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                const VkClearColorValue* pColor, uint32_t rangeCount, const VkImageSubresourceRange* pRanges) {
-    if (!wrap_handles)
-        return device_dispatch_table.CmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
-    { image = Unwrap(image); }
-    device_dispatch_table.CmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
-}
-
-void Device::CmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                       const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
-                                       const VkImageSubresourceRange* pRanges) {
-    if (!wrap_handles)
-        return device_dispatch_table.CmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount,
-                                                               pRanges);
-    { image = Unwrap(image); }
-    device_dispatch_table.CmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges);
-}
-
-void Device::CmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount, const VkClearAttachment* pAttachments,
-                                 uint32_t rectCount, const VkClearRect* pRects) {
-    device_dispatch_table.CmdClearAttachments(commandBuffer, attachmentCount, pAttachments, rectCount, pRects);
-}
-
-void Device::CmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                             VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageResolve* pRegions) {
-    if (!wrap_handles)
-        return device_dispatch_table.CmdResolveImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
-                                                     pRegions);
-    {
-        srcImage = Unwrap(srcImage);
-        dstImage = Unwrap(dstImage);
-    }
-    device_dispatch_table.CmdResolveImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
 }
 
 void Device::CmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
@@ -1823,92 +1742,178 @@ void Device::CmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, c
                                         (const VkImageMemoryBarrier*)local_pImageMemoryBarriers);
 }
 
-void Device::CmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-                                VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount,
-                                const VkMemoryBarrier* pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
-                                const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-                                const VkImageMemoryBarrier* pImageMemoryBarriers) {
-    if (!wrap_handles)
-        return device_dispatch_table.CmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags,
-                                                        memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
-                                                        pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
-    small_vector<vku::safe_VkBufferMemoryBarrier, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pBufferMemoryBarriers;
-    vku::safe_VkBufferMemoryBarrier* local_pBufferMemoryBarriers = nullptr;
-    small_vector<vku::safe_VkImageMemoryBarrier, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pImageMemoryBarriers;
-    vku::safe_VkImageMemoryBarrier* local_pImageMemoryBarriers = nullptr;
-    {
-        if (pBufferMemoryBarriers) {
-            var_local_pBufferMemoryBarriers.resize(bufferMemoryBarrierCount);
-            local_pBufferMemoryBarriers = var_local_pBufferMemoryBarriers.data();
-            for (uint32_t index0 = 0; index0 < bufferMemoryBarrierCount; ++index0) {
-                local_pBufferMemoryBarriers[index0].initialize(&pBufferMemoryBarriers[index0]);
-
-                if (pBufferMemoryBarriers[index0].buffer) {
-                    local_pBufferMemoryBarriers[index0].buffer = Unwrap(pBufferMemoryBarriers[index0].buffer);
-                }
-            }
-        }
-        if (pImageMemoryBarriers) {
-            var_local_pImageMemoryBarriers.resize(imageMemoryBarrierCount);
-            local_pImageMemoryBarriers = var_local_pImageMemoryBarriers.data();
-            for (uint32_t index0 = 0; index0 < imageMemoryBarrierCount; ++index0) {
-                local_pImageMemoryBarriers[index0].initialize(&pImageMemoryBarriers[index0]);
-
-                if (pImageMemoryBarriers[index0].image) {
-                    local_pImageMemoryBarriers[index0].image = Unwrap(pImageMemoryBarriers[index0].image);
-                }
-            }
-        }
-    }
-    device_dispatch_table.CmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount,
-                                             pMemoryBarriers, bufferMemoryBarrierCount,
-                                             (const VkBufferMemoryBarrier*)local_pBufferMemoryBarriers, imageMemoryBarrierCount,
-                                             (const VkImageMemoryBarrier*)local_pImageMemoryBarriers);
-}
-
-void Device::CmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query, VkQueryControlFlags flags) {
-    if (!wrap_handles) return device_dispatch_table.CmdBeginQuery(commandBuffer, queryPool, query, flags);
-    { queryPool = Unwrap(queryPool); }
-    device_dispatch_table.CmdBeginQuery(commandBuffer, queryPool, query, flags);
-}
-
-void Device::CmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query) {
-    if (!wrap_handles) return device_dispatch_table.CmdEndQuery(commandBuffer, queryPool, query);
-    { queryPool = Unwrap(queryPool); }
-    device_dispatch_table.CmdEndQuery(commandBuffer, queryPool, query);
-}
-
-void Device::CmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
-    if (!wrap_handles) return device_dispatch_table.CmdResetQueryPool(commandBuffer, queryPool, firstQuery, queryCount);
-    { queryPool = Unwrap(queryPool); }
-    device_dispatch_table.CmdResetQueryPool(commandBuffer, queryPool, firstQuery, queryCount);
-}
-
-void Device::CmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage, VkQueryPool queryPool,
-                               uint32_t query) {
-    if (!wrap_handles) return device_dispatch_table.CmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, query);
-    { queryPool = Unwrap(queryPool); }
-    device_dispatch_table.CmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, query);
-}
-
-void Device::CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
-                                     VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize stride, VkQueryResultFlags flags) {
-    if (!wrap_handles)
-        return device_dispatch_table.CmdCopyQueryPoolResults(commandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset,
-                                                             stride, flags);
-    {
-        queryPool = Unwrap(queryPool);
-        dstBuffer = Unwrap(dstBuffer);
-    }
-    device_dispatch_table.CmdCopyQueryPoolResults(commandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset, stride,
-                                                  flags);
-}
-
 void Device::CmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
                               uint32_t offset, uint32_t size, const void* pValues) {
     if (!wrap_handles) return device_dispatch_table.CmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues);
     { layout = Unwrap(layout); }
     device_dispatch_table.CmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues);
+}
+
+VkResult Device::CreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
+                                   const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer) {
+    if (!wrap_handles) return device_dispatch_table.CreateFramebuffer(device, pCreateInfo, pAllocator, pFramebuffer);
+    vku::safe_VkFramebufferCreateInfo var_local_pCreateInfo;
+    vku::safe_VkFramebufferCreateInfo* local_pCreateInfo = nullptr;
+    {
+        if (pCreateInfo) {
+            local_pCreateInfo = &var_local_pCreateInfo;
+            local_pCreateInfo->initialize(pCreateInfo);
+
+            if (pCreateInfo->renderPass) {
+                local_pCreateInfo->renderPass = Unwrap(pCreateInfo->renderPass);
+            }
+            if (local_pCreateInfo->pAttachments) {
+                for (uint32_t index1 = 0; index1 < local_pCreateInfo->attachmentCount; ++index1) {
+                    local_pCreateInfo->pAttachments[index1] = Unwrap(local_pCreateInfo->pAttachments[index1]);
+                }
+            }
+        }
+    }
+    VkResult result = device_dispatch_table.CreateFramebuffer(device, (const VkFramebufferCreateInfo*)local_pCreateInfo, pAllocator,
+                                                              pFramebuffer);
+    if (result == VK_SUCCESS) {
+        *pFramebuffer = WrapNew(*pFramebuffer);
+    }
+    return result;
+}
+
+void Device::DestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer, const VkAllocationCallbacks* pAllocator) {
+    if (!wrap_handles) return device_dispatch_table.DestroyFramebuffer(device, framebuffer, pAllocator);
+    framebuffer = Erase(framebuffer);
+    device_dispatch_table.DestroyFramebuffer(device, framebuffer, pAllocator);
+}
+
+void Device::GetRenderAreaGranularity(VkDevice device, VkRenderPass renderPass, VkExtent2D* pGranularity) {
+    if (!wrap_handles) return device_dispatch_table.GetRenderAreaGranularity(device, renderPass, pGranularity);
+    { renderPass = Unwrap(renderPass); }
+    device_dispatch_table.GetRenderAreaGranularity(device, renderPass, pGranularity);
+}
+
+void Device::CmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
+                            const VkViewport* pViewports) {
+    device_dispatch_table.CmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports);
+}
+
+void Device::CmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount, const VkRect2D* pScissors) {
+    device_dispatch_table.CmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors);
+}
+
+void Device::CmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth) {
+    device_dispatch_table.CmdSetLineWidth(commandBuffer, lineWidth);
+}
+
+void Device::CmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp,
+                             float depthBiasSlopeFactor) {
+    device_dispatch_table.CmdSetDepthBias(commandBuffer, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor);
+}
+
+void Device::CmdSetBlendConstants(VkCommandBuffer commandBuffer, const float blendConstants[4]) {
+    device_dispatch_table.CmdSetBlendConstants(commandBuffer, blendConstants);
+}
+
+void Device::CmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds, float maxDepthBounds) {
+    device_dispatch_table.CmdSetDepthBounds(commandBuffer, minDepthBounds, maxDepthBounds);
+}
+
+void Device::CmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t compareMask) {
+    device_dispatch_table.CmdSetStencilCompareMask(commandBuffer, faceMask, compareMask);
+}
+
+void Device::CmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t writeMask) {
+    device_dispatch_table.CmdSetStencilWriteMask(commandBuffer, faceMask, writeMask);
+}
+
+void Device::CmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t reference) {
+    device_dispatch_table.CmdSetStencilReference(commandBuffer, faceMask, reference);
+}
+
+void Device::CmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkIndexType indexType) {
+    if (!wrap_handles) return device_dispatch_table.CmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
+    { buffer = Unwrap(buffer); }
+    device_dispatch_table.CmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
+}
+
+void Device::CmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
+                                  const VkBuffer* pBuffers, const VkDeviceSize* pOffsets) {
+    if (!wrap_handles)
+        return device_dispatch_table.CmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
+    small_vector<VkBuffer, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pBuffers;
+    VkBuffer* local_pBuffers = nullptr;
+    {
+        if (pBuffers) {
+            var_local_pBuffers.resize(bindingCount);
+            local_pBuffers = var_local_pBuffers.data();
+            for (uint32_t index0 = 0; index0 < bindingCount; ++index0) {
+                local_pBuffers[index0] = Unwrap(pBuffers[index0]);
+            }
+        }
+    }
+    device_dispatch_table.CmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, (const VkBuffer*)local_pBuffers,
+                                               pOffsets);
+}
+
+void Device::CmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
+                     uint32_t firstInstance) {
+    device_dispatch_table.CmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+}
+
+void Device::CmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex,
+                            int32_t vertexOffset, uint32_t firstInstance) {
+    device_dispatch_table.CmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+}
+
+void Device::CmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount,
+                             uint32_t stride) {
+    if (!wrap_handles) return device_dispatch_table.CmdDrawIndirect(commandBuffer, buffer, offset, drawCount, stride);
+    { buffer = Unwrap(buffer); }
+    device_dispatch_table.CmdDrawIndirect(commandBuffer, buffer, offset, drawCount, stride);
+}
+
+void Device::CmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount,
+                                    uint32_t stride) {
+    if (!wrap_handles) return device_dispatch_table.CmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride);
+    { buffer = Unwrap(buffer); }
+    device_dispatch_table.CmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride);
+}
+
+void Device::CmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
+                          VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit* pRegions, VkFilter filter) {
+    if (!wrap_handles)
+        return device_dispatch_table.CmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
+                                                  pRegions, filter);
+    {
+        srcImage = Unwrap(srcImage);
+        dstImage = Unwrap(dstImage);
+    }
+    device_dispatch_table.CmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions,
+                                       filter);
+}
+
+void Device::CmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                       const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
+                                       const VkImageSubresourceRange* pRanges) {
+    if (!wrap_handles)
+        return device_dispatch_table.CmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount,
+                                                               pRanges);
+    { image = Unwrap(image); }
+    device_dispatch_table.CmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges);
+}
+
+void Device::CmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount, const VkClearAttachment* pAttachments,
+                                 uint32_t rectCount, const VkClearRect* pRects) {
+    device_dispatch_table.CmdClearAttachments(commandBuffer, attachmentCount, pAttachments, rectCount, pRects);
+}
+
+void Device::CmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
+                             VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageResolve* pRegions) {
+    if (!wrap_handles)
+        return device_dispatch_table.CmdResolveImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
+                                                     pRegions);
+    {
+        srcImage = Unwrap(srcImage);
+        dstImage = Unwrap(dstImage);
+    }
+    device_dispatch_table.CmdResolveImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
 }
 
 void Device::CmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
@@ -1939,11 +1944,6 @@ void Device::CmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents con
 
 void Device::CmdEndRenderPass(VkCommandBuffer commandBuffer) { device_dispatch_table.CmdEndRenderPass(commandBuffer); }
 
-void Device::CmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
-                                const VkCommandBuffer* pCommandBuffers) {
-    device_dispatch_table.CmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
-}
-
 void Device::GetDeviceGroupPeerMemoryFeatures(VkDevice device, uint32_t heapIndex, uint32_t localDeviceIndex,
                                               uint32_t remoteDeviceIndex, VkPeerMemoryFeatureFlags* pPeerMemoryFeatures) {
     device_dispatch_table.GetDeviceGroupPeerMemoryFeatures(device, heapIndex, localDeviceIndex, remoteDeviceIndex,
@@ -1952,11 +1952,6 @@ void Device::GetDeviceGroupPeerMemoryFeatures(VkDevice device, uint32_t heapInde
 
 void Device::CmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask) {
     device_dispatch_table.CmdSetDeviceMask(commandBuffer, deviceMask);
-}
-
-void Device::CmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY, uint32_t baseGroupZ,
-                             uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
-    device_dispatch_table.CmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
 }
 
 VkResult Instance::EnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
@@ -2077,24 +2072,6 @@ void Device::GetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2* pQueueIn
     device_dispatch_table.GetDeviceQueue2(device, pQueueInfo, pQueue);
 }
 
-VkResult Device::CreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,
-                                              const VkAllocationCallbacks* pAllocator, VkSamplerYcbcrConversion* pYcbcrConversion) {
-    if (!wrap_handles) return device_dispatch_table.CreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion);
-
-    VkResult result = device_dispatch_table.CreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion);
-    if (result == VK_SUCCESS) {
-        *pYcbcrConversion = WrapNew(*pYcbcrConversion);
-    }
-    return result;
-}
-
-void Device::DestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
-                                           const VkAllocationCallbacks* pAllocator) {
-    if (!wrap_handles) return device_dispatch_table.DestroySamplerYcbcrConversion(device, ycbcrConversion, pAllocator);
-    ycbcrConversion = Erase(ycbcrConversion);
-    device_dispatch_table.DestroySamplerYcbcrConversion(device, ycbcrConversion, pAllocator);
-}
-
 void Instance::GetPhysicalDeviceExternalBufferProperties(VkPhysicalDevice physicalDevice,
                                                          const VkPhysicalDeviceExternalBufferInfo* pExternalBufferInfo,
                                                          VkExternalBufferProperties* pExternalBufferProperties) {
@@ -2113,6 +2090,11 @@ void Instance::GetPhysicalDeviceExternalSemaphoreProperties(VkPhysicalDevice phy
                                                             VkExternalSemaphoreProperties* pExternalSemaphoreProperties) {
     instance_dispatch_table.GetPhysicalDeviceExternalSemaphoreProperties(physicalDevice, pExternalSemaphoreInfo,
                                                                          pExternalSemaphoreProperties);
+}
+
+void Device::CmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY, uint32_t baseGroupZ,
+                             uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
+    device_dispatch_table.CmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
 }
 
 void Device::GetDescriptorSetLayoutSupport(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
@@ -2140,61 +2122,22 @@ void Device::GetDescriptorSetLayoutSupport(VkDevice device, const VkDescriptorSe
                                                         pSupport);
 }
 
-void Device::CmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer,
-                                  VkDeviceSize countBufferOffset, uint32_t maxDrawCount, uint32_t stride) {
-    if (!wrap_handles)
-        return device_dispatch_table.CmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
-                                                          maxDrawCount, stride);
-    {
-        buffer = Unwrap(buffer);
-        countBuffer = Unwrap(countBuffer);
+VkResult Device::CreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,
+                                              const VkAllocationCallbacks* pAllocator, VkSamplerYcbcrConversion* pYcbcrConversion) {
+    if (!wrap_handles) return device_dispatch_table.CreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion);
+
+    VkResult result = device_dispatch_table.CreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion);
+    if (result == VK_SUCCESS) {
+        *pYcbcrConversion = WrapNew(*pYcbcrConversion);
     }
-    device_dispatch_table.CmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
+    return result;
 }
 
-void Device::CmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer,
-                                         VkDeviceSize countBufferOffset, uint32_t maxDrawCount, uint32_t stride) {
-    if (!wrap_handles)
-        return device_dispatch_table.CmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
-                                                                 maxDrawCount, stride);
-    {
-        buffer = Unwrap(buffer);
-        countBuffer = Unwrap(countBuffer);
-    }
-    device_dispatch_table.CmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
-                                                      stride);
-}
-
-void Device::CmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                 const VkSubpassBeginInfo* pSubpassBeginInfo) {
-    if (!wrap_handles) return device_dispatch_table.CmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
-    vku::safe_VkRenderPassBeginInfo var_local_pRenderPassBegin;
-    vku::safe_VkRenderPassBeginInfo* local_pRenderPassBegin = nullptr;
-    {
-        if (pRenderPassBegin) {
-            local_pRenderPassBegin = &var_local_pRenderPassBegin;
-            local_pRenderPassBegin->initialize(pRenderPassBegin);
-
-            if (pRenderPassBegin->renderPass) {
-                local_pRenderPassBegin->renderPass = Unwrap(pRenderPassBegin->renderPass);
-            }
-            if (pRenderPassBegin->framebuffer) {
-                local_pRenderPassBegin->framebuffer = Unwrap(pRenderPassBegin->framebuffer);
-            }
-            UnwrapPnextChainHandles(local_pRenderPassBegin->pNext);
-        }
-    }
-    device_dispatch_table.CmdBeginRenderPass2(commandBuffer, (const VkRenderPassBeginInfo*)local_pRenderPassBegin,
-                                              pSubpassBeginInfo);
-}
-
-void Device::CmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
-                             const VkSubpassEndInfo* pSubpassEndInfo) {
-    device_dispatch_table.CmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
-}
-
-void Device::CmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo) {
-    device_dispatch_table.CmdEndRenderPass2(commandBuffer, pSubpassEndInfo);
+void Device::DestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
+                                           const VkAllocationCallbacks* pAllocator) {
+    if (!wrap_handles) return device_dispatch_table.DestroySamplerYcbcrConversion(device, ycbcrConversion, pAllocator);
+    ycbcrConversion = Erase(ycbcrConversion);
+    device_dispatch_table.DestroySamplerYcbcrConversion(device, ycbcrConversion, pAllocator);
 }
 
 void Device::ResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
@@ -2308,6 +2251,63 @@ uint64_t Device::GetDeviceMemoryOpaqueCaptureAddress(VkDevice device, const VkDe
     return result;
 }
 
+void Device::CmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer,
+                                  VkDeviceSize countBufferOffset, uint32_t maxDrawCount, uint32_t stride) {
+    if (!wrap_handles)
+        return device_dispatch_table.CmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
+                                                          maxDrawCount, stride);
+    {
+        buffer = Unwrap(buffer);
+        countBuffer = Unwrap(countBuffer);
+    }
+    device_dispatch_table.CmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
+}
+
+void Device::CmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer,
+                                         VkDeviceSize countBufferOffset, uint32_t maxDrawCount, uint32_t stride) {
+    if (!wrap_handles)
+        return device_dispatch_table.CmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
+                                                                 maxDrawCount, stride);
+    {
+        buffer = Unwrap(buffer);
+        countBuffer = Unwrap(countBuffer);
+    }
+    device_dispatch_table.CmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
+                                                      stride);
+}
+
+void Device::CmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
+                                 const VkSubpassBeginInfo* pSubpassBeginInfo) {
+    if (!wrap_handles) return device_dispatch_table.CmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
+    vku::safe_VkRenderPassBeginInfo var_local_pRenderPassBegin;
+    vku::safe_VkRenderPassBeginInfo* local_pRenderPassBegin = nullptr;
+    {
+        if (pRenderPassBegin) {
+            local_pRenderPassBegin = &var_local_pRenderPassBegin;
+            local_pRenderPassBegin->initialize(pRenderPassBegin);
+
+            if (pRenderPassBegin->renderPass) {
+                local_pRenderPassBegin->renderPass = Unwrap(pRenderPassBegin->renderPass);
+            }
+            if (pRenderPassBegin->framebuffer) {
+                local_pRenderPassBegin->framebuffer = Unwrap(pRenderPassBegin->framebuffer);
+            }
+            UnwrapPnextChainHandles(local_pRenderPassBegin->pNext);
+        }
+    }
+    device_dispatch_table.CmdBeginRenderPass2(commandBuffer, (const VkRenderPassBeginInfo*)local_pRenderPassBegin,
+                                              pSubpassBeginInfo);
+}
+
+void Device::CmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
+                             const VkSubpassEndInfo* pSubpassEndInfo) {
+    device_dispatch_table.CmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
+}
+
+void Device::CmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo) {
+    device_dispatch_table.CmdEndRenderPass2(commandBuffer, pSubpassEndInfo);
+}
+
 VkResult Device::CreatePrivateDataSlot(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo,
                                        const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot) {
     if (!wrap_handles) return device_dispatch_table.CreatePrivateDataSlot(device, pCreateInfo, pAllocator, pPrivateDataSlot);
@@ -2349,87 +2349,6 @@ void Device::GetPrivateData(VkDevice device, VkObjectType objectType, uint64_t o
         privateDataSlot = Unwrap(privateDataSlot);
     }
     device_dispatch_table.GetPrivateData(device, objectType, objectHandle, privateDataSlot, pData);
-}
-
-void Device::CmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo) {
-    if (!wrap_handles) return device_dispatch_table.CmdSetEvent2(commandBuffer, event, pDependencyInfo);
-    vku::safe_VkDependencyInfo var_local_pDependencyInfo;
-    vku::safe_VkDependencyInfo* local_pDependencyInfo = nullptr;
-    {
-        event = Unwrap(event);
-        if (pDependencyInfo) {
-            local_pDependencyInfo = &var_local_pDependencyInfo;
-            local_pDependencyInfo->initialize(pDependencyInfo);
-            if (local_pDependencyInfo->pBufferMemoryBarriers) {
-                for (uint32_t index1 = 0; index1 < local_pDependencyInfo->bufferMemoryBarrierCount; ++index1) {
-                    if (pDependencyInfo->pBufferMemoryBarriers[index1].buffer) {
-                        local_pDependencyInfo->pBufferMemoryBarriers[index1].buffer =
-                            Unwrap(pDependencyInfo->pBufferMemoryBarriers[index1].buffer);
-                    }
-                }
-            }
-            if (local_pDependencyInfo->pImageMemoryBarriers) {
-                for (uint32_t index1 = 0; index1 < local_pDependencyInfo->imageMemoryBarrierCount; ++index1) {
-                    if (pDependencyInfo->pImageMemoryBarriers[index1].image) {
-                        local_pDependencyInfo->pImageMemoryBarriers[index1].image =
-                            Unwrap(pDependencyInfo->pImageMemoryBarriers[index1].image);
-                    }
-                }
-            }
-            UnwrapPnextChainHandles(local_pDependencyInfo->pNext);
-        }
-    }
-    device_dispatch_table.CmdSetEvent2(commandBuffer, event, (const VkDependencyInfo*)local_pDependencyInfo);
-}
-
-void Device::CmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask) {
-    if (!wrap_handles) return device_dispatch_table.CmdResetEvent2(commandBuffer, event, stageMask);
-    { event = Unwrap(event); }
-    device_dispatch_table.CmdResetEvent2(commandBuffer, event, stageMask);
-}
-
-void Device::CmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                            const VkDependencyInfo* pDependencyInfos) {
-    if (!wrap_handles) return device_dispatch_table.CmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos);
-    small_vector<VkEvent, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pEvents;
-    VkEvent* local_pEvents = nullptr;
-    small_vector<vku::safe_VkDependencyInfo, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pDependencyInfos;
-    vku::safe_VkDependencyInfo* local_pDependencyInfos = nullptr;
-    {
-        if (pEvents) {
-            var_local_pEvents.resize(eventCount);
-            local_pEvents = var_local_pEvents.data();
-            for (uint32_t index0 = 0; index0 < eventCount; ++index0) {
-                local_pEvents[index0] = Unwrap(pEvents[index0]);
-            }
-        }
-        if (pDependencyInfos) {
-            var_local_pDependencyInfos.resize(eventCount);
-            local_pDependencyInfos = var_local_pDependencyInfos.data();
-            for (uint32_t index0 = 0; index0 < eventCount; ++index0) {
-                local_pDependencyInfos[index0].initialize(&pDependencyInfos[index0]);
-                UnwrapPnextChainHandles(local_pDependencyInfos[index0].pNext);
-                if (local_pDependencyInfos[index0].pBufferMemoryBarriers) {
-                    for (uint32_t index1 = 0; index1 < local_pDependencyInfos[index0].bufferMemoryBarrierCount; ++index1) {
-                        if (pDependencyInfos[index0].pBufferMemoryBarriers[index1].buffer) {
-                            local_pDependencyInfos[index0].pBufferMemoryBarriers[index1].buffer =
-                                Unwrap(pDependencyInfos[index0].pBufferMemoryBarriers[index1].buffer);
-                        }
-                    }
-                }
-                if (local_pDependencyInfos[index0].pImageMemoryBarriers) {
-                    for (uint32_t index1 = 0; index1 < local_pDependencyInfos[index0].imageMemoryBarrierCount; ++index1) {
-                        if (pDependencyInfos[index0].pImageMemoryBarriers[index1].image) {
-                            local_pDependencyInfos[index0].pImageMemoryBarriers[index1].image =
-                                Unwrap(pDependencyInfos[index0].pImageMemoryBarriers[index1].image);
-                        }
-                    }
-                }
-            }
-        }
-    }
-    device_dispatch_table.CmdWaitEvents2(commandBuffer, eventCount, (const VkEvent*)local_pEvents,
-                                         (const VkDependencyInfo*)local_pDependencyInfos);
 }
 
 void Device::CmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo) {
@@ -2587,6 +2506,104 @@ void Device::CmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyIm
         }
     }
     device_dispatch_table.CmdCopyImageToBuffer2(commandBuffer, (const VkCopyImageToBufferInfo2*)local_pCopyImageToBufferInfo);
+}
+
+void Device::GetDeviceBufferMemoryRequirements(VkDevice device, const VkDeviceBufferMemoryRequirements* pInfo,
+                                               VkMemoryRequirements2* pMemoryRequirements) {
+    device_dispatch_table.GetDeviceBufferMemoryRequirements(device, pInfo, pMemoryRequirements);
+}
+
+void Device::GetDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
+                                              VkMemoryRequirements2* pMemoryRequirements) {
+    device_dispatch_table.GetDeviceImageMemoryRequirements(device, pInfo, pMemoryRequirements);
+}
+
+void Device::GetDeviceImageSparseMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
+                                                    uint32_t* pSparseMemoryRequirementCount,
+                                                    VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {
+    device_dispatch_table.GetDeviceImageSparseMemoryRequirements(device, pInfo, pSparseMemoryRequirementCount,
+                                                                 pSparseMemoryRequirements);
+}
+
+void Device::CmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo) {
+    if (!wrap_handles) return device_dispatch_table.CmdSetEvent2(commandBuffer, event, pDependencyInfo);
+    vku::safe_VkDependencyInfo var_local_pDependencyInfo;
+    vku::safe_VkDependencyInfo* local_pDependencyInfo = nullptr;
+    {
+        event = Unwrap(event);
+        if (pDependencyInfo) {
+            local_pDependencyInfo = &var_local_pDependencyInfo;
+            local_pDependencyInfo->initialize(pDependencyInfo);
+            if (local_pDependencyInfo->pBufferMemoryBarriers) {
+                for (uint32_t index1 = 0; index1 < local_pDependencyInfo->bufferMemoryBarrierCount; ++index1) {
+                    if (pDependencyInfo->pBufferMemoryBarriers[index1].buffer) {
+                        local_pDependencyInfo->pBufferMemoryBarriers[index1].buffer =
+                            Unwrap(pDependencyInfo->pBufferMemoryBarriers[index1].buffer);
+                    }
+                }
+            }
+            if (local_pDependencyInfo->pImageMemoryBarriers) {
+                for (uint32_t index1 = 0; index1 < local_pDependencyInfo->imageMemoryBarrierCount; ++index1) {
+                    if (pDependencyInfo->pImageMemoryBarriers[index1].image) {
+                        local_pDependencyInfo->pImageMemoryBarriers[index1].image =
+                            Unwrap(pDependencyInfo->pImageMemoryBarriers[index1].image);
+                    }
+                }
+            }
+            UnwrapPnextChainHandles(local_pDependencyInfo->pNext);
+        }
+    }
+    device_dispatch_table.CmdSetEvent2(commandBuffer, event, (const VkDependencyInfo*)local_pDependencyInfo);
+}
+
+void Device::CmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask) {
+    if (!wrap_handles) return device_dispatch_table.CmdResetEvent2(commandBuffer, event, stageMask);
+    { event = Unwrap(event); }
+    device_dispatch_table.CmdResetEvent2(commandBuffer, event, stageMask);
+}
+
+void Device::CmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+                            const VkDependencyInfo* pDependencyInfos) {
+    if (!wrap_handles) return device_dispatch_table.CmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos);
+    small_vector<VkEvent, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pEvents;
+    VkEvent* local_pEvents = nullptr;
+    small_vector<vku::safe_VkDependencyInfo, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pDependencyInfos;
+    vku::safe_VkDependencyInfo* local_pDependencyInfos = nullptr;
+    {
+        if (pEvents) {
+            var_local_pEvents.resize(eventCount);
+            local_pEvents = var_local_pEvents.data();
+            for (uint32_t index0 = 0; index0 < eventCount; ++index0) {
+                local_pEvents[index0] = Unwrap(pEvents[index0]);
+            }
+        }
+        if (pDependencyInfos) {
+            var_local_pDependencyInfos.resize(eventCount);
+            local_pDependencyInfos = var_local_pDependencyInfos.data();
+            for (uint32_t index0 = 0; index0 < eventCount; ++index0) {
+                local_pDependencyInfos[index0].initialize(&pDependencyInfos[index0]);
+                UnwrapPnextChainHandles(local_pDependencyInfos[index0].pNext);
+                if (local_pDependencyInfos[index0].pBufferMemoryBarriers) {
+                    for (uint32_t index1 = 0; index1 < local_pDependencyInfos[index0].bufferMemoryBarrierCount; ++index1) {
+                        if (pDependencyInfos[index0].pBufferMemoryBarriers[index1].buffer) {
+                            local_pDependencyInfos[index0].pBufferMemoryBarriers[index1].buffer =
+                                Unwrap(pDependencyInfos[index0].pBufferMemoryBarriers[index1].buffer);
+                        }
+                    }
+                }
+                if (local_pDependencyInfos[index0].pImageMemoryBarriers) {
+                    for (uint32_t index1 = 0; index1 < local_pDependencyInfos[index0].imageMemoryBarrierCount; ++index1) {
+                        if (pDependencyInfos[index0].pImageMemoryBarriers[index1].image) {
+                            local_pDependencyInfos[index0].pImageMemoryBarriers[index1].image =
+                                Unwrap(pDependencyInfos[index0].pImageMemoryBarriers[index1].image);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    device_dispatch_table.CmdWaitEvents2(commandBuffer, eventCount, (const VkEvent*)local_pEvents,
+                                         (const VkDependencyInfo*)local_pDependencyInfos);
 }
 
 void Device::CmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo) {
@@ -2753,27 +2770,6 @@ void Device::CmdSetPrimitiveRestartEnable(VkCommandBuffer commandBuffer, VkBool3
     device_dispatch_table.CmdSetPrimitiveRestartEnable(commandBuffer, primitiveRestartEnable);
 }
 
-void Device::GetDeviceBufferMemoryRequirements(VkDevice device, const VkDeviceBufferMemoryRequirements* pInfo,
-                                               VkMemoryRequirements2* pMemoryRequirements) {
-    device_dispatch_table.GetDeviceBufferMemoryRequirements(device, pInfo, pMemoryRequirements);
-}
-
-void Device::GetDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
-                                              VkMemoryRequirements2* pMemoryRequirements) {
-    device_dispatch_table.GetDeviceImageMemoryRequirements(device, pInfo, pMemoryRequirements);
-}
-
-void Device::GetDeviceImageSparseMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
-                                                    uint32_t* pSparseMemoryRequirementCount,
-                                                    VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {
-    device_dispatch_table.GetDeviceImageSparseMemoryRequirements(device, pInfo, pSparseMemoryRequirementCount,
-                                                                 pSparseMemoryRequirements);
-}
-
-void Device::CmdSetLineStipple(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern) {
-    device_dispatch_table.CmdSetLineStipple(commandBuffer, lineStippleFactor, lineStipplePattern);
-}
-
 VkResult Device::MapMemory2(VkDevice device, const VkMemoryMapInfo* pMemoryMapInfo, void** ppData) {
     if (!wrap_handles) return device_dispatch_table.MapMemory2(device, pMemoryMapInfo, ppData);
     vku::safe_VkMemoryMapInfo var_local_pMemoryMapInfo;
@@ -2812,17 +2808,6 @@ VkResult Device::UnmapMemory2(VkDevice device, const VkMemoryUnmapInfo* pMemoryU
     return result;
 }
 
-void Device::CmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize size,
-                                 VkIndexType indexType) {
-    if (!wrap_handles) return device_dispatch_table.CmdBindIndexBuffer2(commandBuffer, buffer, offset, size, indexType);
-    { buffer = Unwrap(buffer); }
-    device_dispatch_table.CmdBindIndexBuffer2(commandBuffer, buffer, offset, size, indexType);
-}
-
-void Device::GetRenderingAreaGranularity(VkDevice device, const VkRenderingAreaInfo* pRenderingAreaInfo, VkExtent2D* pGranularity) {
-    device_dispatch_table.GetRenderingAreaGranularity(device, pRenderingAreaInfo, pGranularity);
-}
-
 void Device::GetDeviceImageSubresourceLayout(VkDevice device, const VkDeviceImageSubresourceInfo* pInfo,
                                              VkSubresourceLayout2* pLayout) {
     device_dispatch_table.GetDeviceImageSubresourceLayout(device, pInfo, pLayout);
@@ -2833,6 +2818,90 @@ void Device::GetImageSubresourceLayout2(VkDevice device, VkImage image, const Vk
     if (!wrap_handles) return device_dispatch_table.GetImageSubresourceLayout2(device, image, pSubresource, pLayout);
     { image = Unwrap(image); }
     device_dispatch_table.GetImageSubresourceLayout2(device, image, pSubresource, pLayout);
+}
+
+VkResult Device::CopyMemoryToImage(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo) {
+    if (!wrap_handles) return device_dispatch_table.CopyMemoryToImage(device, pCopyMemoryToImageInfo);
+    vku::safe_VkCopyMemoryToImageInfo var_local_pCopyMemoryToImageInfo;
+    vku::safe_VkCopyMemoryToImageInfo* local_pCopyMemoryToImageInfo = nullptr;
+    {
+        if (pCopyMemoryToImageInfo) {
+            local_pCopyMemoryToImageInfo = &var_local_pCopyMemoryToImageInfo;
+            local_pCopyMemoryToImageInfo->initialize(pCopyMemoryToImageInfo);
+
+            if (pCopyMemoryToImageInfo->dstImage) {
+                local_pCopyMemoryToImageInfo->dstImage = Unwrap(pCopyMemoryToImageInfo->dstImage);
+            }
+        }
+    }
+    VkResult result = device_dispatch_table.CopyMemoryToImage(device, (const VkCopyMemoryToImageInfo*)local_pCopyMemoryToImageInfo);
+
+    return result;
+}
+
+VkResult Device::CopyImageToMemory(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo) {
+    if (!wrap_handles) return device_dispatch_table.CopyImageToMemory(device, pCopyImageToMemoryInfo);
+    vku::safe_VkCopyImageToMemoryInfo var_local_pCopyImageToMemoryInfo;
+    vku::safe_VkCopyImageToMemoryInfo* local_pCopyImageToMemoryInfo = nullptr;
+    {
+        if (pCopyImageToMemoryInfo) {
+            local_pCopyImageToMemoryInfo = &var_local_pCopyImageToMemoryInfo;
+            local_pCopyImageToMemoryInfo->initialize(pCopyImageToMemoryInfo);
+
+            if (pCopyImageToMemoryInfo->srcImage) {
+                local_pCopyImageToMemoryInfo->srcImage = Unwrap(pCopyImageToMemoryInfo->srcImage);
+            }
+        }
+    }
+    VkResult result = device_dispatch_table.CopyImageToMemory(device, (const VkCopyImageToMemoryInfo*)local_pCopyImageToMemoryInfo);
+
+    return result;
+}
+
+VkResult Device::CopyImageToImage(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo) {
+    if (!wrap_handles) return device_dispatch_table.CopyImageToImage(device, pCopyImageToImageInfo);
+    vku::safe_VkCopyImageToImageInfo var_local_pCopyImageToImageInfo;
+    vku::safe_VkCopyImageToImageInfo* local_pCopyImageToImageInfo = nullptr;
+    {
+        if (pCopyImageToImageInfo) {
+            local_pCopyImageToImageInfo = &var_local_pCopyImageToImageInfo;
+            local_pCopyImageToImageInfo->initialize(pCopyImageToImageInfo);
+
+            if (pCopyImageToImageInfo->srcImage) {
+                local_pCopyImageToImageInfo->srcImage = Unwrap(pCopyImageToImageInfo->srcImage);
+            }
+            if (pCopyImageToImageInfo->dstImage) {
+                local_pCopyImageToImageInfo->dstImage = Unwrap(pCopyImageToImageInfo->dstImage);
+            }
+        }
+    }
+    VkResult result = device_dispatch_table.CopyImageToImage(device, (const VkCopyImageToImageInfo*)local_pCopyImageToImageInfo);
+
+    return result;
+}
+
+VkResult Device::TransitionImageLayout(VkDevice device, uint32_t transitionCount,
+                                       const VkHostImageLayoutTransitionInfo* pTransitions) {
+    if (!wrap_handles) return device_dispatch_table.TransitionImageLayout(device, transitionCount, pTransitions);
+    small_vector<vku::safe_VkHostImageLayoutTransitionInfo, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pTransitions;
+    vku::safe_VkHostImageLayoutTransitionInfo* local_pTransitions = nullptr;
+    {
+        if (pTransitions) {
+            var_local_pTransitions.resize(transitionCount);
+            local_pTransitions = var_local_pTransitions.data();
+            for (uint32_t index0 = 0; index0 < transitionCount; ++index0) {
+                local_pTransitions[index0].initialize(&pTransitions[index0]);
+
+                if (pTransitions[index0].image) {
+                    local_pTransitions[index0].image = Unwrap(pTransitions[index0].image);
+                }
+            }
+        }
+    }
+    VkResult result = device_dispatch_table.TransitionImageLayout(device, transitionCount,
+                                                                  (const VkHostImageLayoutTransitionInfo*)local_pTransitions);
+
+    return result;
 }
 
 void Device::CmdPushDescriptorSet(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout,
@@ -2885,16 +2954,6 @@ void Device::CmdPushDescriptorSet(VkCommandBuffer commandBuffer, VkPipelineBindP
     }
     device_dispatch_table.CmdPushDescriptorSet(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount,
                                                (const VkWriteDescriptorSet*)local_pDescriptorWrites);
-}
-
-void Device::CmdSetRenderingAttachmentLocations(VkCommandBuffer commandBuffer,
-                                                const VkRenderingAttachmentLocationInfo* pLocationInfo) {
-    device_dispatch_table.CmdSetRenderingAttachmentLocations(commandBuffer, pLocationInfo);
-}
-
-void Device::CmdSetRenderingInputAttachmentIndices(VkCommandBuffer commandBuffer,
-                                                   const VkRenderingInputAttachmentIndexInfo* pInputAttachmentIndexInfo) {
-    device_dispatch_table.CmdSetRenderingInputAttachmentIndices(commandBuffer, pInputAttachmentIndexInfo);
 }
 
 void Device::CmdBindDescriptorSets2(VkCommandBuffer commandBuffer, const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo) {
@@ -2996,88 +3055,29 @@ void Device::CmdPushDescriptorSet2(VkCommandBuffer commandBuffer, const VkPushDe
     device_dispatch_table.CmdPushDescriptorSet2(commandBuffer, (const VkPushDescriptorSetInfo*)local_pPushDescriptorSetInfo);
 }
 
-VkResult Device::CopyMemoryToImage(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo) {
-    if (!wrap_handles) return device_dispatch_table.CopyMemoryToImage(device, pCopyMemoryToImageInfo);
-    vku::safe_VkCopyMemoryToImageInfo var_local_pCopyMemoryToImageInfo;
-    vku::safe_VkCopyMemoryToImageInfo* local_pCopyMemoryToImageInfo = nullptr;
-    {
-        if (pCopyMemoryToImageInfo) {
-            local_pCopyMemoryToImageInfo = &var_local_pCopyMemoryToImageInfo;
-            local_pCopyMemoryToImageInfo->initialize(pCopyMemoryToImageInfo);
-
-            if (pCopyMemoryToImageInfo->dstImage) {
-                local_pCopyMemoryToImageInfo->dstImage = Unwrap(pCopyMemoryToImageInfo->dstImage);
-            }
-        }
-    }
-    VkResult result = device_dispatch_table.CopyMemoryToImage(device, (const VkCopyMemoryToImageInfo*)local_pCopyMemoryToImageInfo);
-
-    return result;
+void Device::CmdSetLineStipple(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern) {
+    device_dispatch_table.CmdSetLineStipple(commandBuffer, lineStippleFactor, lineStipplePattern);
 }
 
-VkResult Device::CopyImageToMemory(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo) {
-    if (!wrap_handles) return device_dispatch_table.CopyImageToMemory(device, pCopyImageToMemoryInfo);
-    vku::safe_VkCopyImageToMemoryInfo var_local_pCopyImageToMemoryInfo;
-    vku::safe_VkCopyImageToMemoryInfo* local_pCopyImageToMemoryInfo = nullptr;
-    {
-        if (pCopyImageToMemoryInfo) {
-            local_pCopyImageToMemoryInfo = &var_local_pCopyImageToMemoryInfo;
-            local_pCopyImageToMemoryInfo->initialize(pCopyImageToMemoryInfo);
-
-            if (pCopyImageToMemoryInfo->srcImage) {
-                local_pCopyImageToMemoryInfo->srcImage = Unwrap(pCopyImageToMemoryInfo->srcImage);
-            }
-        }
-    }
-    VkResult result = device_dispatch_table.CopyImageToMemory(device, (const VkCopyImageToMemoryInfo*)local_pCopyImageToMemoryInfo);
-
-    return result;
+void Device::CmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize size,
+                                 VkIndexType indexType) {
+    if (!wrap_handles) return device_dispatch_table.CmdBindIndexBuffer2(commandBuffer, buffer, offset, size, indexType);
+    { buffer = Unwrap(buffer); }
+    device_dispatch_table.CmdBindIndexBuffer2(commandBuffer, buffer, offset, size, indexType);
 }
 
-VkResult Device::CopyImageToImage(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo) {
-    if (!wrap_handles) return device_dispatch_table.CopyImageToImage(device, pCopyImageToImageInfo);
-    vku::safe_VkCopyImageToImageInfo var_local_pCopyImageToImageInfo;
-    vku::safe_VkCopyImageToImageInfo* local_pCopyImageToImageInfo = nullptr;
-    {
-        if (pCopyImageToImageInfo) {
-            local_pCopyImageToImageInfo = &var_local_pCopyImageToImageInfo;
-            local_pCopyImageToImageInfo->initialize(pCopyImageToImageInfo);
-
-            if (pCopyImageToImageInfo->srcImage) {
-                local_pCopyImageToImageInfo->srcImage = Unwrap(pCopyImageToImageInfo->srcImage);
-            }
-            if (pCopyImageToImageInfo->dstImage) {
-                local_pCopyImageToImageInfo->dstImage = Unwrap(pCopyImageToImageInfo->dstImage);
-            }
-        }
-    }
-    VkResult result = device_dispatch_table.CopyImageToImage(device, (const VkCopyImageToImageInfo*)local_pCopyImageToImageInfo);
-
-    return result;
+void Device::GetRenderingAreaGranularity(VkDevice device, const VkRenderingAreaInfo* pRenderingAreaInfo, VkExtent2D* pGranularity) {
+    device_dispatch_table.GetRenderingAreaGranularity(device, pRenderingAreaInfo, pGranularity);
 }
 
-VkResult Device::TransitionImageLayout(VkDevice device, uint32_t transitionCount,
-                                       const VkHostImageLayoutTransitionInfo* pTransitions) {
-    if (!wrap_handles) return device_dispatch_table.TransitionImageLayout(device, transitionCount, pTransitions);
-    small_vector<vku::safe_VkHostImageLayoutTransitionInfo, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pTransitions;
-    vku::safe_VkHostImageLayoutTransitionInfo* local_pTransitions = nullptr;
-    {
-        if (pTransitions) {
-            var_local_pTransitions.resize(transitionCount);
-            local_pTransitions = var_local_pTransitions.data();
-            for (uint32_t index0 = 0; index0 < transitionCount; ++index0) {
-                local_pTransitions[index0].initialize(&pTransitions[index0]);
+void Device::CmdSetRenderingAttachmentLocations(VkCommandBuffer commandBuffer,
+                                                const VkRenderingAttachmentLocationInfo* pLocationInfo) {
+    device_dispatch_table.CmdSetRenderingAttachmentLocations(commandBuffer, pLocationInfo);
+}
 
-                if (pTransitions[index0].image) {
-                    local_pTransitions[index0].image = Unwrap(pTransitions[index0].image);
-                }
-            }
-        }
-    }
-    VkResult result = device_dispatch_table.TransitionImageLayout(device, transitionCount,
-                                                                  (const VkHostImageLayoutTransitionInfo*)local_pTransitions);
-
-    return result;
+void Device::CmdSetRenderingInputAttachmentIndices(VkCommandBuffer commandBuffer,
+                                                   const VkRenderingInputAttachmentIndexInfo* pInputAttachmentIndexInfo) {
+    device_dispatch_table.CmdSetRenderingInputAttachmentIndices(commandBuffer, pInputAttachmentIndexInfo);
 }
 
 void Instance::DestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks* pAllocator) {
@@ -5204,6 +5204,10 @@ void Device::CmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer,
     }
     device_dispatch_table.CmdCopyMemoryToImageIndirectKHR(
         commandBuffer, (const VkCopyMemoryToImageIndirectInfoKHR*)local_pCopyMemoryToImageIndirectInfo);
+}
+
+void Device::CmdEndRendering2KHR(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo) {
+    device_dispatch_table.CmdEndRendering2KHR(commandBuffer, pRenderingEndInfo);
 }
 
 VkResult Instance::CreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
@@ -8586,6 +8590,19 @@ void Device::CmdBindTileMemoryQCOM(VkCommandBuffer commandBuffer, const VkTileMe
     device_dispatch_table.CmdBindTileMemoryQCOM(commandBuffer, (const VkTileMemoryBindInfoQCOM*)local_pTileMemoryBindInfo);
 }
 
+void Device::CmdDecompressMemoryEXT(VkCommandBuffer commandBuffer, const VkDecompressMemoryInfoEXT* pDecompressMemoryInfoEXT) {
+    device_dispatch_table.CmdDecompressMemoryEXT(commandBuffer, pDecompressMemoryInfoEXT);
+}
+
+void Device::CmdDecompressMemoryIndirectCountEXT(VkCommandBuffer commandBuffer,
+                                                 VkMemoryDecompressionMethodFlagsEXT decompressionMethod,
+                                                 VkDeviceAddress indirectCommandsAddress,
+                                                 VkDeviceAddress indirectCommandsCountAddress, uint32_t maxDecompressionCount,
+                                                 uint32_t stride) {
+    device_dispatch_table.CmdDecompressMemoryIndirectCountEXT(commandBuffer, decompressionMethod, indirectCommandsAddress,
+                                                              indirectCommandsCountAddress, maxDecompressionCount, stride);
+}
+
 VkResult Device::CreateExternalComputeQueueNV(VkDevice device, const VkExternalComputeQueueCreateInfoNV* pCreateInfo,
                                               const VkAllocationCallbacks* pAllocator, VkExternalComputeQueueNV* pExternalQueue) {
     VkResult result = device_dispatch_table.CreateExternalComputeQueueNV(device, pCreateInfo, pAllocator, pExternalQueue);
@@ -8801,6 +8818,47 @@ VkResult Instance::CreateSurfaceOHOS(VkInstance instance, const VkSurfaceCreateI
     }
     return result;
 }
+
+VkResult Device::GetSwapchainGrallocUsageOHOS(VkDevice device, VkFormat format, VkImageUsageFlags imageUsage,
+                                              uint64_t* grallocUsage) {
+    VkResult result = device_dispatch_table.GetSwapchainGrallocUsageOHOS(device, format, imageUsage, grallocUsage);
+
+    return result;
+}
+
+VkResult Device::AcquireImageOHOS(VkDevice device, VkImage image, int32_t nativeFenceFd, VkSemaphore semaphore, VkFence fence) {
+    if (!wrap_handles) return device_dispatch_table.AcquireImageOHOS(device, image, nativeFenceFd, semaphore, fence);
+    {
+        image = Unwrap(image);
+        semaphore = Unwrap(semaphore);
+        fence = Unwrap(fence);
+    }
+    VkResult result = device_dispatch_table.AcquireImageOHOS(device, image, nativeFenceFd, semaphore, fence);
+
+    return result;
+}
+
+VkResult Device::QueueSignalReleaseImageOHOS(VkQueue queue, uint32_t waitSemaphoreCount, const VkSemaphore* pWaitSemaphores,
+                                             VkImage image, int32_t* pNativeFenceFd) {
+    if (!wrap_handles)
+        return device_dispatch_table.QueueSignalReleaseImageOHOS(queue, waitSemaphoreCount, pWaitSemaphores, image, pNativeFenceFd);
+    small_vector<VkSemaphore, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pWaitSemaphores;
+    VkSemaphore* local_pWaitSemaphores = nullptr;
+    {
+        if (pWaitSemaphores) {
+            var_local_pWaitSemaphores.resize(waitSemaphoreCount);
+            local_pWaitSemaphores = var_local_pWaitSemaphores.data();
+            for (uint32_t index0 = 0; index0 < waitSemaphoreCount; ++index0) {
+                local_pWaitSemaphores[index0] = Unwrap(pWaitSemaphores[index0]);
+            }
+        }
+        image = Unwrap(image);
+    }
+    VkResult result = device_dispatch_table.QueueSignalReleaseImageOHOS(
+        queue, waitSemaphoreCount, (const VkSemaphore*)local_pWaitSemaphores, image, pNativeFenceFd);
+
+    return result;
+}
 #endif  // VK_USE_PLATFORM_OHOS
 
 VkResult Instance::GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
@@ -8843,7 +8901,7 @@ VkResult Device::GetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMe
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
-void Device::CmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT* pRenderingEndInfo) {
+void Device::CmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo) {
     device_dispatch_table.CmdEndRendering2EXT(commandBuffer, pRenderingEndInfo);
 }
 

@@ -37,16 +37,6 @@
 //  "forgot to enable an extension" is VERY important
 
 template <>
-ValidValue stateless::Context::IsValidEnumValue(VkPipelineCacheHeaderVersion value) const {
-    switch (value) {
-        case VK_PIPELINE_CACHE_HEADER_VERSION_ONE:
-            return ValidValue::Valid;
-        default:
-            return ValidValue::NotFound;
-    };
-}
-
-template <>
 ValidValue stateless::Context::IsValidEnumValue(VkImageLayout value) const {
     switch (value) {
         case VK_IMAGE_LAYOUT_UNDEFINED:
@@ -133,10 +123,10 @@ ValidValue stateless::Context::IsValidEnumValue(VkObjectType value) const {
         case VK_OBJECT_TYPE_FRAMEBUFFER:
         case VK_OBJECT_TYPE_COMMAND_POOL:
             return ValidValue::Valid;
-        case VK_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION:
-            return IsExtEnabled(extensions.vk_khr_sampler_ycbcr_conversion) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE:
             return IsExtEnabled(extensions.vk_khr_descriptor_update_template) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION:
+            return IsExtEnabled(extensions.vk_khr_sampler_ycbcr_conversion) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_OBJECT_TYPE_PRIVATE_DATA_SLOT:
             return IsExtEnabled(extensions.vk_ext_private_data) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_OBJECT_TYPE_SURFACE_KHR:
@@ -585,6 +575,181 @@ ValidValue stateless::Context::IsValidEnumValue(VkImageViewType value) const {
 }
 
 template <>
+ValidValue stateless::Context::IsValidEnumValue(VkCommandBufferLevel value) const {
+    switch (value) {
+        case VK_COMMAND_BUFFER_LEVEL_PRIMARY:
+        case VK_COMMAND_BUFFER_LEVEL_SECONDARY:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkIndexType value) const {
+    switch (value) {
+        case VK_INDEX_TYPE_UINT16:
+        case VK_INDEX_TYPE_UINT32:
+            return ValidValue::Valid;
+        case VK_INDEX_TYPE_UINT8:
+            return IsExtEnabled(extensions.vk_khr_index_type_uint8) || IsExtEnabled(extensions.vk_ext_index_type_uint8)
+                       ? ValidValue::Valid
+                       : ValidValue::NoExtension;
+        case VK_INDEX_TYPE_NONE_KHR:
+            return IsExtEnabled(extensions.vk_nv_ray_tracing) || IsExtEnabled(extensions.vk_khr_acceleration_structure)
+                       ? ValidValue::Valid
+                       : ValidValue::NoExtension;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkPipelineCacheHeaderVersion value) const {
+    switch (value) {
+        case VK_PIPELINE_CACHE_HEADER_VERSION_ONE:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkBorderColor value) const {
+    switch (value) {
+        case VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK:
+        case VK_BORDER_COLOR_INT_TRANSPARENT_BLACK:
+        case VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK:
+        case VK_BORDER_COLOR_INT_OPAQUE_BLACK:
+        case VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE:
+        case VK_BORDER_COLOR_INT_OPAQUE_WHITE:
+            return ValidValue::Valid;
+        case VK_BORDER_COLOR_FLOAT_CUSTOM_EXT:
+        case VK_BORDER_COLOR_INT_CUSTOM_EXT:
+            return IsExtEnabled(extensions.vk_ext_custom_border_color) ? ValidValue::Valid : ValidValue::NoExtension;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkFilter value) const {
+    switch (value) {
+        case VK_FILTER_NEAREST:
+        case VK_FILTER_LINEAR:
+            return ValidValue::Valid;
+        case VK_FILTER_CUBIC_EXT:
+            return IsExtEnabled(extensions.vk_img_filter_cubic) || IsExtEnabled(extensions.vk_ext_filter_cubic)
+                       ? ValidValue::Valid
+                       : ValidValue::NoExtension;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkSamplerAddressMode value) const {
+    switch (value) {
+        case VK_SAMPLER_ADDRESS_MODE_REPEAT:
+        case VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT:
+        case VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE:
+        case VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER:
+            return ValidValue::Valid;
+        case VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE:
+            return IsExtEnabled(extensions.vk_khr_sampler_mirror_clamp_to_edge) ? ValidValue::Valid : ValidValue::NoExtension;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkSamplerMipmapMode value) const {
+    switch (value) {
+        case VK_SAMPLER_MIPMAP_MODE_NEAREST:
+        case VK_SAMPLER_MIPMAP_MODE_LINEAR:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkCompareOp value) const {
+    switch (value) {
+        case VK_COMPARE_OP_NEVER:
+        case VK_COMPARE_OP_LESS:
+        case VK_COMPARE_OP_EQUAL:
+        case VK_COMPARE_OP_LESS_OR_EQUAL:
+        case VK_COMPARE_OP_GREATER:
+        case VK_COMPARE_OP_NOT_EQUAL:
+        case VK_COMPARE_OP_GREATER_OR_EQUAL:
+        case VK_COMPARE_OP_ALWAYS:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkDescriptorType value) const {
+    switch (value) {
+        case VK_DESCRIPTOR_TYPE_SAMPLER:
+        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
+        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+            return ValidValue::Valid;
+        case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
+            return IsExtEnabled(extensions.vk_ext_inline_uniform_block) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+            return IsExtEnabled(extensions.vk_khr_acceleration_structure) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
+            return IsExtEnabled(extensions.vk_nv_ray_tracing) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM:
+        case VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM:
+            return IsExtEnabled(extensions.vk_qcom_image_processing) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_DESCRIPTOR_TYPE_TENSOR_ARM:
+            return IsExtEnabled(extensions.vk_arm_tensors) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_DESCRIPTOR_TYPE_MUTABLE_EXT:
+            return IsExtEnabled(extensions.vk_valve_mutable_descriptor_type) ||
+                           IsExtEnabled(extensions.vk_ext_mutable_descriptor_type)
+                       ? ValidValue::Valid
+                       : ValidValue::NoExtension;
+        case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
+            return IsExtEnabled(extensions.vk_nv_partitioned_acceleration_structure) ? ValidValue::Valid : ValidValue::NoExtension;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkPipelineBindPoint value) const {
+    switch (value) {
+        case VK_PIPELINE_BIND_POINT_GRAPHICS:
+        case VK_PIPELINE_BIND_POINT_COMPUTE:
+            return ValidValue::Valid;
+        case VK_PIPELINE_BIND_POINT_EXECUTION_GRAPH_AMDX:
+            return IsExtEnabled(extensions.vk_amdx_shader_enqueue) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR:
+            return IsExtEnabled(extensions.vk_nv_ray_tracing) || IsExtEnabled(extensions.vk_khr_ray_tracing_pipeline)
+                       ? ValidValue::Valid
+                       : ValidValue::NoExtension;
+        case VK_PIPELINE_BIND_POINT_SUBPASS_SHADING_HUAWEI:
+            return IsExtEnabled(extensions.vk_huawei_subpass_shading) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM:
+            return IsExtEnabled(extensions.vk_arm_data_graph) ? ValidValue::Valid : ValidValue::NoExtension;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
 ValidValue stateless::Context::IsValidEnumValue(VkBlendFactor value) const {
     switch (value) {
         case VK_BLEND_FACTOR_ZERO:
@@ -668,23 +833,6 @@ ValidValue stateless::Context::IsValidEnumValue(VkBlendOp value) const {
         case VK_BLEND_OP_GREEN_EXT:
         case VK_BLEND_OP_BLUE_EXT:
             return IsExtEnabled(extensions.vk_ext_blend_operation_advanced) ? ValidValue::Valid : ValidValue::NoExtension;
-        default:
-            return ValidValue::NotFound;
-    };
-}
-
-template <>
-ValidValue stateless::Context::IsValidEnumValue(VkCompareOp value) const {
-    switch (value) {
-        case VK_COMPARE_OP_NEVER:
-        case VK_COMPARE_OP_LESS:
-        case VK_COMPARE_OP_EQUAL:
-        case VK_COMPARE_OP_LESS_OR_EQUAL:
-        case VK_COMPARE_OP_GREATER:
-        case VK_COMPARE_OP_NOT_EQUAL:
-        case VK_COMPARE_OP_GREATER_OR_EQUAL:
-        case VK_COMPARE_OP_ALWAYS:
-            return ValidValue::Valid;
         default:
             return ValidValue::NotFound;
     };
@@ -889,103 +1037,6 @@ ValidValue stateless::Context::IsValidEnumValue(VkLogicOp value) const {
 }
 
 template <>
-ValidValue stateless::Context::IsValidEnumValue(VkBorderColor value) const {
-    switch (value) {
-        case VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK:
-        case VK_BORDER_COLOR_INT_TRANSPARENT_BLACK:
-        case VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK:
-        case VK_BORDER_COLOR_INT_OPAQUE_BLACK:
-        case VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE:
-        case VK_BORDER_COLOR_INT_OPAQUE_WHITE:
-            return ValidValue::Valid;
-        case VK_BORDER_COLOR_FLOAT_CUSTOM_EXT:
-        case VK_BORDER_COLOR_INT_CUSTOM_EXT:
-            return IsExtEnabled(extensions.vk_ext_custom_border_color) ? ValidValue::Valid : ValidValue::NoExtension;
-        default:
-            return ValidValue::NotFound;
-    };
-}
-
-template <>
-ValidValue stateless::Context::IsValidEnumValue(VkFilter value) const {
-    switch (value) {
-        case VK_FILTER_NEAREST:
-        case VK_FILTER_LINEAR:
-            return ValidValue::Valid;
-        case VK_FILTER_CUBIC_EXT:
-            return IsExtEnabled(extensions.vk_img_filter_cubic) || IsExtEnabled(extensions.vk_ext_filter_cubic)
-                       ? ValidValue::Valid
-                       : ValidValue::NoExtension;
-        default:
-            return ValidValue::NotFound;
-    };
-}
-
-template <>
-ValidValue stateless::Context::IsValidEnumValue(VkSamplerAddressMode value) const {
-    switch (value) {
-        case VK_SAMPLER_ADDRESS_MODE_REPEAT:
-        case VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT:
-        case VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE:
-        case VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER:
-            return ValidValue::Valid;
-        case VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE:
-            return IsExtEnabled(extensions.vk_khr_sampler_mirror_clamp_to_edge) ? ValidValue::Valid : ValidValue::NoExtension;
-        default:
-            return ValidValue::NotFound;
-    };
-}
-
-template <>
-ValidValue stateless::Context::IsValidEnumValue(VkSamplerMipmapMode value) const {
-    switch (value) {
-        case VK_SAMPLER_MIPMAP_MODE_NEAREST:
-        case VK_SAMPLER_MIPMAP_MODE_LINEAR:
-            return ValidValue::Valid;
-        default:
-            return ValidValue::NotFound;
-    };
-}
-
-template <>
-ValidValue stateless::Context::IsValidEnumValue(VkDescriptorType value) const {
-    switch (value) {
-        case VK_DESCRIPTOR_TYPE_SAMPLER:
-        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
-        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
-        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
-        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
-        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
-        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
-            return ValidValue::Valid;
-        case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
-            return IsExtEnabled(extensions.vk_ext_inline_uniform_block) ? ValidValue::Valid : ValidValue::NoExtension;
-        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
-            return IsExtEnabled(extensions.vk_khr_acceleration_structure) ? ValidValue::Valid : ValidValue::NoExtension;
-        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
-            return IsExtEnabled(extensions.vk_nv_ray_tracing) ? ValidValue::Valid : ValidValue::NoExtension;
-        case VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM:
-        case VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM:
-            return IsExtEnabled(extensions.vk_qcom_image_processing) ? ValidValue::Valid : ValidValue::NoExtension;
-        case VK_DESCRIPTOR_TYPE_TENSOR_ARM:
-            return IsExtEnabled(extensions.vk_arm_tensors) ? ValidValue::Valid : ValidValue::NoExtension;
-        case VK_DESCRIPTOR_TYPE_MUTABLE_EXT:
-            return IsExtEnabled(extensions.vk_valve_mutable_descriptor_type) ||
-                           IsExtEnabled(extensions.vk_ext_mutable_descriptor_type)
-                       ? ValidValue::Valid
-                       : ValidValue::NoExtension;
-        case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
-            return IsExtEnabled(extensions.vk_nv_partitioned_acceleration_structure) ? ValidValue::Valid : ValidValue::NoExtension;
-        default:
-            return ValidValue::NotFound;
-    };
-}
-
-template <>
 ValidValue stateless::Context::IsValidEnumValue(VkAttachmentLoadOp value) const {
     switch (value) {
         case VK_ATTACHMENT_LOAD_OP_LOAD:
@@ -1019,57 +1070,6 @@ ValidValue stateless::Context::IsValidEnumValue(VkAttachmentStoreOp value) const
 }
 
 template <>
-ValidValue stateless::Context::IsValidEnumValue(VkPipelineBindPoint value) const {
-    switch (value) {
-        case VK_PIPELINE_BIND_POINT_GRAPHICS:
-        case VK_PIPELINE_BIND_POINT_COMPUTE:
-            return ValidValue::Valid;
-        case VK_PIPELINE_BIND_POINT_EXECUTION_GRAPH_AMDX:
-            return IsExtEnabled(extensions.vk_amdx_shader_enqueue) ? ValidValue::Valid : ValidValue::NoExtension;
-        case VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR:
-            return IsExtEnabled(extensions.vk_nv_ray_tracing) || IsExtEnabled(extensions.vk_khr_ray_tracing_pipeline)
-                       ? ValidValue::Valid
-                       : ValidValue::NoExtension;
-        case VK_PIPELINE_BIND_POINT_SUBPASS_SHADING_HUAWEI:
-            return IsExtEnabled(extensions.vk_huawei_subpass_shading) ? ValidValue::Valid : ValidValue::NoExtension;
-        case VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM:
-            return IsExtEnabled(extensions.vk_arm_data_graph) ? ValidValue::Valid : ValidValue::NoExtension;
-        default:
-            return ValidValue::NotFound;
-    };
-}
-
-template <>
-ValidValue stateless::Context::IsValidEnumValue(VkCommandBufferLevel value) const {
-    switch (value) {
-        case VK_COMMAND_BUFFER_LEVEL_PRIMARY:
-        case VK_COMMAND_BUFFER_LEVEL_SECONDARY:
-            return ValidValue::Valid;
-        default:
-            return ValidValue::NotFound;
-    };
-}
-
-template <>
-ValidValue stateless::Context::IsValidEnumValue(VkIndexType value) const {
-    switch (value) {
-        case VK_INDEX_TYPE_UINT16:
-        case VK_INDEX_TYPE_UINT32:
-            return ValidValue::Valid;
-        case VK_INDEX_TYPE_UINT8:
-            return IsExtEnabled(extensions.vk_khr_index_type_uint8) || IsExtEnabled(extensions.vk_ext_index_type_uint8)
-                       ? ValidValue::Valid
-                       : ValidValue::NoExtension;
-        case VK_INDEX_TYPE_NONE_KHR:
-            return IsExtEnabled(extensions.vk_nv_ray_tracing) || IsExtEnabled(extensions.vk_khr_acceleration_structure)
-                       ? ValidValue::Valid
-                       : ValidValue::NoExtension;
-        default:
-            return ValidValue::NotFound;
-    };
-}
-
-template <>
 ValidValue stateless::Context::IsValidEnumValue(VkSubpassContents value) const {
     switch (value) {
         case VK_SUBPASS_CONTENTS_INLINE:
@@ -1085,11 +1085,12 @@ ValidValue stateless::Context::IsValidEnumValue(VkSubpassContents value) const {
 }
 
 template <>
-ValidValue stateless::Context::IsValidEnumValue(VkTessellationDomainOrigin value) const {
+ValidValue stateless::Context::IsValidEnumValue(VkDescriptorUpdateTemplateType value) const {
     switch (value) {
-        case VK_TESSELLATION_DOMAIN_ORIGIN_UPPER_LEFT:
-        case VK_TESSELLATION_DOMAIN_ORIGIN_LOWER_LEFT:
+        case VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET:
             return ValidValue::Valid;
+        case VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS:
+            return IsExtEnabled(extensions.vk_khr_push_descriptor) ? ValidValue::Valid : ValidValue::NoExtension;
         default:
             return ValidValue::NotFound;
     };
@@ -1132,12 +1133,22 @@ ValidValue stateless::Context::IsValidEnumValue(VkChromaLocation value) const {
 }
 
 template <>
-ValidValue stateless::Context::IsValidEnumValue(VkDescriptorUpdateTemplateType value) const {
+ValidValue stateless::Context::IsValidEnumValue(VkTessellationDomainOrigin value) const {
     switch (value) {
-        case VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET:
+        case VK_TESSELLATION_DOMAIN_ORIGIN_UPPER_LEFT:
+        case VK_TESSELLATION_DOMAIN_ORIGIN_LOWER_LEFT:
             return ValidValue::Valid;
-        case VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS:
-            return IsExtEnabled(extensions.vk_khr_push_descriptor) ? ValidValue::Valid : ValidValue::NoExtension;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkSemaphoreType value) const {
+    switch (value) {
+        case VK_SEMAPHORE_TYPE_BINARY:
+        case VK_SEMAPHORE_TYPE_TIMELINE:
+            return ValidValue::Valid;
         default:
             return ValidValue::NotFound;
     };
@@ -1152,17 +1163,6 @@ ValidValue stateless::Context::IsValidEnumValue(VkSamplerReductionMode value) co
             return ValidValue::Valid;
         case VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE_RANGECLAMP_QCOM:
             return IsExtEnabled(extensions.vk_qcom_filter_cubic_clamp) ? ValidValue::Valid : ValidValue::NoExtension;
-        default:
-            return ValidValue::NotFound;
-    };
-}
-
-template <>
-ValidValue stateless::Context::IsValidEnumValue(VkSemaphoreType value) const {
-    switch (value) {
-        case VK_SEMAPHORE_TYPE_BINARY:
-        case VK_SEMAPHORE_TYPE_TIMELINE:
-            return ValidValue::Valid;
         default:
             return ValidValue::NotFound;
     };
@@ -2340,15 +2340,6 @@ ValidValue stateless::Context::IsValidEnumValue(VkShaderGroupShaderKHR value) co
 }
 
 template <>
-vvl::Extensions stateless::Context::GetEnumExtensions(VkPipelineCacheHeaderVersion value) const {
-    return {};
-}
-template <>
-const char* stateless::Context::DescribeEnum(VkPipelineCacheHeaderVersion value) const {
-    return nullptr;
-}
-
-template <>
 vvl::Extensions stateless::Context::GetEnumExtensions(VkImageLayout value) const {
     switch (value) {
         case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL:
@@ -2400,10 +2391,10 @@ const char* stateless::Context::DescribeEnum(VkImageLayout value) const {
 template <>
 vvl::Extensions stateless::Context::GetEnumExtensions(VkObjectType value) const {
     switch (value) {
-        case VK_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION:
-            return {vvl::Extension::_VK_KHR_sampler_ycbcr_conversion};
         case VK_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE:
             return {vvl::Extension::_VK_KHR_descriptor_update_template};
+        case VK_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION:
+            return {vvl::Extension::_VK_KHR_sampler_ycbcr_conversion};
         case VK_OBJECT_TYPE_PRIVATE_DATA_SLOT:
             return {vvl::Extension::_VK_EXT_private_data};
         case VK_OBJECT_TYPE_SURFACE_KHR:
@@ -2656,6 +2647,148 @@ const char* stateless::Context::DescribeEnum(VkImageViewType value) const {
 }
 
 template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkCommandBufferLevel value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkCommandBufferLevel value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkIndexType value) const {
+    switch (value) {
+        case VK_INDEX_TYPE_UINT8:
+            return {vvl::Extension::_VK_KHR_index_type_uint8, vvl::Extension::_VK_EXT_index_type_uint8};
+        case VK_INDEX_TYPE_NONE_KHR:
+            return {vvl::Extension::_VK_NV_ray_tracing, vvl::Extension::_VK_KHR_acceleration_structure};
+        default:
+            return {};
+    };
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkIndexType value) const {
+    return string_VkIndexType(value);
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkPipelineCacheHeaderVersion value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkPipelineCacheHeaderVersion value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkBorderColor value) const {
+    switch (value) {
+        case VK_BORDER_COLOR_FLOAT_CUSTOM_EXT:
+        case VK_BORDER_COLOR_INT_CUSTOM_EXT:
+            return {vvl::Extension::_VK_EXT_custom_border_color};
+        default:
+            return {};
+    };
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkBorderColor value) const {
+    return string_VkBorderColor(value);
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkFilter value) const {
+    switch (value) {
+        case VK_FILTER_CUBIC_EXT:
+            return {vvl::Extension::_VK_IMG_filter_cubic, vvl::Extension::_VK_EXT_filter_cubic};
+        default:
+            return {};
+    };
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkFilter value) const {
+    return string_VkFilter(value);
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkSamplerAddressMode value) const {
+    switch (value) {
+        case VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE:
+            return {vvl::Extension::_VK_KHR_sampler_mirror_clamp_to_edge};
+        default:
+            return {};
+    };
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkSamplerAddressMode value) const {
+    return string_VkSamplerAddressMode(value);
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkSamplerMipmapMode value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkSamplerMipmapMode value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkCompareOp value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkCompareOp value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkDescriptorType value) const {
+    switch (value) {
+        case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
+            return {vvl::Extension::_VK_EXT_inline_uniform_block};
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+            return {vvl::Extension::_VK_KHR_acceleration_structure};
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
+            return {vvl::Extension::_VK_NV_ray_tracing};
+        case VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM:
+        case VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM:
+            return {vvl::Extension::_VK_QCOM_image_processing};
+        case VK_DESCRIPTOR_TYPE_TENSOR_ARM:
+            return {vvl::Extension::_VK_ARM_tensors};
+        case VK_DESCRIPTOR_TYPE_MUTABLE_EXT:
+            return {vvl::Extension::_VK_VALVE_mutable_descriptor_type, vvl::Extension::_VK_EXT_mutable_descriptor_type};
+        case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
+            return {vvl::Extension::_VK_NV_partitioned_acceleration_structure};
+        default:
+            return {};
+    };
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkDescriptorType value) const {
+    return string_VkDescriptorType(value);
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkPipelineBindPoint value) const {
+    switch (value) {
+        case VK_PIPELINE_BIND_POINT_EXECUTION_GRAPH_AMDX:
+            return {vvl::Extension::_VK_AMDX_shader_enqueue};
+        case VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR:
+            return {vvl::Extension::_VK_NV_ray_tracing, vvl::Extension::_VK_KHR_ray_tracing_pipeline};
+        case VK_PIPELINE_BIND_POINT_SUBPASS_SHADING_HUAWEI:
+            return {vvl::Extension::_VK_HUAWEI_subpass_shading};
+        case VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM:
+            return {vvl::Extension::_VK_ARM_data_graph};
+        default:
+            return {};
+    };
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkPipelineBindPoint value) const {
+    return string_VkPipelineBindPoint(value);
+}
+
+template <>
 vvl::Extensions stateless::Context::GetEnumExtensions(VkBlendFactor value) const {
     return {};
 }
@@ -2721,15 +2854,6 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkBlendOp value) const {
 template <>
 const char* stateless::Context::DescribeEnum(VkBlendOp value) const {
     return string_VkBlendOp(value);
-}
-
-template <>
-vvl::Extensions stateless::Context::GetEnumExtensions(VkCompareOp value) const {
-    return {};
-}
-template <>
-const char* stateless::Context::DescribeEnum(VkCompareOp value) const {
-    return nullptr;
 }
 
 template <>
@@ -2883,85 +3007,6 @@ const char* stateless::Context::DescribeEnum(VkLogicOp value) const {
 }
 
 template <>
-vvl::Extensions stateless::Context::GetEnumExtensions(VkBorderColor value) const {
-    switch (value) {
-        case VK_BORDER_COLOR_FLOAT_CUSTOM_EXT:
-        case VK_BORDER_COLOR_INT_CUSTOM_EXT:
-            return {vvl::Extension::_VK_EXT_custom_border_color};
-        default:
-            return {};
-    };
-}
-template <>
-const char* stateless::Context::DescribeEnum(VkBorderColor value) const {
-    return string_VkBorderColor(value);
-}
-
-template <>
-vvl::Extensions stateless::Context::GetEnumExtensions(VkFilter value) const {
-    switch (value) {
-        case VK_FILTER_CUBIC_EXT:
-            return {vvl::Extension::_VK_IMG_filter_cubic, vvl::Extension::_VK_EXT_filter_cubic};
-        default:
-            return {};
-    };
-}
-template <>
-const char* stateless::Context::DescribeEnum(VkFilter value) const {
-    return string_VkFilter(value);
-}
-
-template <>
-vvl::Extensions stateless::Context::GetEnumExtensions(VkSamplerAddressMode value) const {
-    switch (value) {
-        case VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE:
-            return {vvl::Extension::_VK_KHR_sampler_mirror_clamp_to_edge};
-        default:
-            return {};
-    };
-}
-template <>
-const char* stateless::Context::DescribeEnum(VkSamplerAddressMode value) const {
-    return string_VkSamplerAddressMode(value);
-}
-
-template <>
-vvl::Extensions stateless::Context::GetEnumExtensions(VkSamplerMipmapMode value) const {
-    return {};
-}
-template <>
-const char* stateless::Context::DescribeEnum(VkSamplerMipmapMode value) const {
-    return nullptr;
-}
-
-template <>
-vvl::Extensions stateless::Context::GetEnumExtensions(VkDescriptorType value) const {
-    switch (value) {
-        case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
-            return {vvl::Extension::_VK_EXT_inline_uniform_block};
-        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
-            return {vvl::Extension::_VK_KHR_acceleration_structure};
-        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
-            return {vvl::Extension::_VK_NV_ray_tracing};
-        case VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM:
-        case VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM:
-            return {vvl::Extension::_VK_QCOM_image_processing};
-        case VK_DESCRIPTOR_TYPE_TENSOR_ARM:
-            return {vvl::Extension::_VK_ARM_tensors};
-        case VK_DESCRIPTOR_TYPE_MUTABLE_EXT:
-            return {vvl::Extension::_VK_VALVE_mutable_descriptor_type, vvl::Extension::_VK_EXT_mutable_descriptor_type};
-        case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
-            return {vvl::Extension::_VK_NV_partitioned_acceleration_structure};
-        default:
-            return {};
-    };
-}
-template <>
-const char* stateless::Context::DescribeEnum(VkDescriptorType value) const {
-    return string_VkDescriptorType(value);
-}
-
-template <>
 vvl::Extensions stateless::Context::GetEnumExtensions(VkAttachmentLoadOp value) const {
     switch (value) {
         case VK_ATTACHMENT_LOAD_OP_NONE:
@@ -2991,51 +3036,6 @@ const char* stateless::Context::DescribeEnum(VkAttachmentStoreOp value) const {
 }
 
 template <>
-vvl::Extensions stateless::Context::GetEnumExtensions(VkPipelineBindPoint value) const {
-    switch (value) {
-        case VK_PIPELINE_BIND_POINT_EXECUTION_GRAPH_AMDX:
-            return {vvl::Extension::_VK_AMDX_shader_enqueue};
-        case VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR:
-            return {vvl::Extension::_VK_NV_ray_tracing, vvl::Extension::_VK_KHR_ray_tracing_pipeline};
-        case VK_PIPELINE_BIND_POINT_SUBPASS_SHADING_HUAWEI:
-            return {vvl::Extension::_VK_HUAWEI_subpass_shading};
-        case VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM:
-            return {vvl::Extension::_VK_ARM_data_graph};
-        default:
-            return {};
-    };
-}
-template <>
-const char* stateless::Context::DescribeEnum(VkPipelineBindPoint value) const {
-    return string_VkPipelineBindPoint(value);
-}
-
-template <>
-vvl::Extensions stateless::Context::GetEnumExtensions(VkCommandBufferLevel value) const {
-    return {};
-}
-template <>
-const char* stateless::Context::DescribeEnum(VkCommandBufferLevel value) const {
-    return nullptr;
-}
-
-template <>
-vvl::Extensions stateless::Context::GetEnumExtensions(VkIndexType value) const {
-    switch (value) {
-        case VK_INDEX_TYPE_UINT8:
-            return {vvl::Extension::_VK_KHR_index_type_uint8, vvl::Extension::_VK_EXT_index_type_uint8};
-        case VK_INDEX_TYPE_NONE_KHR:
-            return {vvl::Extension::_VK_NV_ray_tracing, vvl::Extension::_VK_KHR_acceleration_structure};
-        default:
-            return {};
-    };
-}
-template <>
-const char* stateless::Context::DescribeEnum(VkIndexType value) const {
-    return string_VkIndexType(value);
-}
-
-template <>
 vvl::Extensions stateless::Context::GetEnumExtensions(VkSubpassContents value) const {
     switch (value) {
         case VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_KHR:
@@ -3050,12 +3050,17 @@ const char* stateless::Context::DescribeEnum(VkSubpassContents value) const {
 }
 
 template <>
-vvl::Extensions stateless::Context::GetEnumExtensions(VkTessellationDomainOrigin value) const {
-    return {};
+vvl::Extensions stateless::Context::GetEnumExtensions(VkDescriptorUpdateTemplateType value) const {
+    switch (value) {
+        case VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS:
+            return {vvl::Extension::_VK_KHR_push_descriptor};
+        default:
+            return {};
+    };
 }
 template <>
-const char* stateless::Context::DescribeEnum(VkTessellationDomainOrigin value) const {
-    return nullptr;
+const char* stateless::Context::DescribeEnum(VkDescriptorUpdateTemplateType value) const {
+    return string_VkDescriptorUpdateTemplateType(value);
 }
 
 template <>
@@ -3086,17 +3091,21 @@ const char* stateless::Context::DescribeEnum(VkChromaLocation value) const {
 }
 
 template <>
-vvl::Extensions stateless::Context::GetEnumExtensions(VkDescriptorUpdateTemplateType value) const {
-    switch (value) {
-        case VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS:
-            return {vvl::Extension::_VK_KHR_push_descriptor};
-        default:
-            return {};
-    };
+vvl::Extensions stateless::Context::GetEnumExtensions(VkTessellationDomainOrigin value) const {
+    return {};
 }
 template <>
-const char* stateless::Context::DescribeEnum(VkDescriptorUpdateTemplateType value) const {
-    return string_VkDescriptorUpdateTemplateType(value);
+const char* stateless::Context::DescribeEnum(VkTessellationDomainOrigin value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkSemaphoreType value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkSemaphoreType value) const {
+    return nullptr;
 }
 
 template <>
@@ -3111,15 +3120,6 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkSamplerReductionMode val
 template <>
 const char* stateless::Context::DescribeEnum(VkSamplerReductionMode value) const {
     return string_VkSamplerReductionMode(value);
-}
-
-template <>
-vvl::Extensions stateless::Context::GetEnumExtensions(VkSemaphoreType value) const {
-    return {};
-}
-template <>
-const char* stateless::Context::DescribeEnum(VkSemaphoreType value) const {
-    return nullptr;
 }
 
 template <>
