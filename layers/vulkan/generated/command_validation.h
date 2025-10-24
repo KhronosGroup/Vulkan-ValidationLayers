@@ -40,6 +40,8 @@ struct CommandValidationInfo {
     CommandScope video_coding_scope;
     const char* video_coding_vuid;
 
+    const char* suspended_vuid;
+
     bool state;
     bool action;
     bool synchronization;
