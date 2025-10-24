@@ -18,6 +18,8 @@
  */
 #pragma once
 #include "state_tracker/state_object.h"
+#include <string>
+#include <sstream>
 #include <vulkan/utility/vk_safe_struct.hpp>
 #include "utils/image_utils.h"
 
@@ -119,20 +121,51 @@ inline void Sampler::NotifyInvalidate(const StateObject::NodeList &invalid_nodes
 
 class SamplerYcbcrConversion : public StateObject {
   public:
+    const vku::safe_VkSamplerYcbcrConversionCreateInfo safe_create_info;
+    const VkSamplerYcbcrConversionCreateInfo &create_info;
+
     const VkFormatFeatureFlags2 format_features;
-    const VkFormat format;
-    const VkFilter chromaFilter;
     const uint64_t external_format;
 
     SamplerYcbcrConversion(VkSamplerYcbcrConversion handle, const VkSamplerYcbcrConversionCreateInfo *info,
                            VkFormatFeatureFlags2 features)
         : StateObject(handle, kVulkanObjectTypeSamplerYcbcrConversion),
+          safe_create_info(info),
+          create_info(*safe_create_info.ptr()),
           format_features(features),
-          format(info->format),
-          chromaFilter(info->chromaFilter),
           external_format(GetExternalFormat(info->pNext)) {}
 
     VkSamplerYcbcrConversion VkHandle() const { return handle_.Cast<VkSamplerYcbcrConversion>(); }
+
+    bool operator!=(const SamplerYcbcrConversion &rhs) const {
+        return (create_info.format != rhs.create_info.format) || (create_info.ycbcrModel != rhs.create_info.ycbcrModel) ||
+               (create_info.ycbcrRange != rhs.create_info.ycbcrRange) ||
+               (create_info.components.r != rhs.create_info.components.r) ||
+               (create_info.components.g != rhs.create_info.components.g) ||
+               (create_info.components.b != rhs.create_info.components.b) ||
+               (create_info.components.a != rhs.create_info.components.a) ||
+               (create_info.xChromaOffset != rhs.create_info.xChromaOffset) ||
+               (create_info.yChromaOffset != rhs.create_info.yChromaOffset) ||
+               (create_info.chromaFilter != rhs.create_info.chromaFilter) ||
+               (create_info.forceExplicitReconstruction != rhs.create_info.forceExplicitReconstruction) ||
+               (external_format != rhs.external_format);
+    }
+
+    std::string Describe() const {
+        std::stringstream ss;
+        ss << " format (" << string_VkFormat(create_info.format) << ")\n";
+        ss << " ycbcrModel (" << string_VkSamplerYcbcrModelConversion(create_info.ycbcrModel) << ")\n";
+        ss << " ycbcrRange (" << string_VkSamplerYcbcrRange(create_info.ycbcrRange) << ")\n";
+        ss << " components (" << string_VkComponentSwizzle(create_info.components.r) << ", "
+           << string_VkComponentSwizzle(create_info.components.g) << ", " << string_VkComponentSwizzle(create_info.components.b)
+           << ", " << string_VkComponentSwizzle(create_info.components.a) << ")\n";
+        ss << " xChromaOffset (" << string_VkChromaLocation(create_info.xChromaOffset) << ")\n";
+        ss << " yChromaOffset (" << string_VkChromaLocation(create_info.yChromaOffset) << ")\n";
+        ss << " chromaFilter (" << string_VkFilter(create_info.chromaFilter) << ")\n";
+        ss << " forceExplicitReconstruction (" << (create_info.forceExplicitReconstruction ? "VK_TRUE" : "VK_FALSE") << ")\n";
+        ss << " externalFormat (" << external_format << ")\n";
+        return ss.str();
+    }
 };
 
 }  // namespace vvl

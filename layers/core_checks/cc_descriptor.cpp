@@ -2100,13 +2100,20 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet &dst_set, co
                 // VK_NULL_HANDLE when updating the imageView
                 if (desc.IsImmutableSampler()) {
                     if (auto sampler_state = Get<vvl::Sampler>(desc.GetSampler())) {
+                        // Do a quick handle check, if not the same, need to check if create info is the same
                         if (iv_state->samplerConversion != sampler_state->samplerConversion) {
-                            const LogObjectList objlist(update.dstSet, desc.GetSampler(), iv_state->Handle());
-                            skip |= LogError(
-                                "VUID-VkWriteDescriptorSet-descriptorType-01948", objlist, image_info_loc.dot(Field::sampler),
-                                "was created with %s which is not identical to %s that was used to create the imageView.",
-                                FormatHandle(iv_state->samplerConversion).c_str(),
-                                FormatHandle(sampler_state->samplerConversion).c_str());
+                            const auto sampler_ycbcr = Get<vvl::SamplerYcbcrConversion>(sampler_state->samplerConversion);
+                            const auto view_ycbcr = Get<vvl::SamplerYcbcrConversion>(iv_state->samplerConversion);
+                            if (sampler_ycbcr && view_ycbcr && (*sampler_ycbcr != *view_ycbcr)) {
+                                const LogObjectList objlist(update.dstSet, desc.GetSampler(), image_view);
+                                skip |= LogError(
+                                    "VUID-VkWriteDescriptorSet-descriptorType-01948", objlist, image_info_loc.dot(Field::sampler),
+                                    "was created with %s which is not identical to %s that was used to create %s.\nSampler "
+                                    "VkSamplerYcbcrConversion\n%sImageView VkSamplerYcbcrConversion\n%s",
+                                    FormatHandle(iv_state->samplerConversion).c_str(),
+                                    FormatHandle(sampler_state->samplerConversion).c_str(), FormatHandle(image_view).c_str(),
+                                    sampler_ycbcr->Describe().c_str(), view_ycbcr->Describe().c_str());
+                            }
                         }
                     }
                 } else {
@@ -4900,7 +4907,7 @@ bool CoreChecks::ValidateSamplerCreateInfo(const VkSamplerCreateInfo &create_inf
             auto ycbcr_state = Get<vvl::SamplerYcbcrConversion>(sampler_ycbcr_conversion);
             if (ycbcr_state && (ycbcr_state->format_features &
                                 VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT) == 0) {
-                const VkFilter chroma_filter = ycbcr_state->chromaFilter;
+                const VkFilter chroma_filter = ycbcr_state->create_info.chromaFilter;
                 if (create_info.minFilter != chroma_filter) {
                     skip |= LogError(
                         "VUID-VkSamplerCreateInfo-minFilter-01645", device,
@@ -4908,7 +4915,7 @@ bool CoreChecks::ValidateSamplerCreateInfo(const VkSamplerCreateInfo &create_inf
                         "(%s) does not support VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT "
                         "for format %s and minFilter (%s) is different from "
                         "chromaFilter (%s)",
-                        FormatHandle(sampler_ycbcr_conversion).c_str(), string_VkFormat(ycbcr_state->format),
+                        FormatHandle(sampler_ycbcr_conversion).c_str(), string_VkFormat(ycbcr_state->create_info.format),
                         string_VkFilter(create_info.minFilter), string_VkFilter(chroma_filter));
                 }
                 if (create_info.magFilter != chroma_filter) {
@@ -4918,7 +4925,7 @@ bool CoreChecks::ValidateSamplerCreateInfo(const VkSamplerCreateInfo &create_inf
                         "(%s) does not support VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT "
                         "for format %s and magFilter (%s) is different from "
                         "chromaFilter (%s)",
-                        FormatHandle(sampler_ycbcr_conversion).c_str(), string_VkFormat(ycbcr_state->format),
+                        FormatHandle(sampler_ycbcr_conversion).c_str(), string_VkFormat(ycbcr_state->create_info.format),
                         string_VkFilter(create_info.magFilter), string_VkFilter(chroma_filter));
                 }
             }
