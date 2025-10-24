@@ -192,7 +192,7 @@ class AttachmentViewGen {
     };
     AttachmentViewGen(const vvl::ImageView *image_view, const VkOffset3D &offset, const VkExtent3D &extent);
     const vvl::ImageView *GetViewState() const { return view_; }
-    const ImageRangeGen &GetRangeGen(Gen type) const;
+    ImageRangeGen GetRangeGen(Gen type, uint32_t view_index = vvl::kNoIndex32) const;
     Gen GetDepthStencilRenderAreaGenType(bool depth_op, bool stencil_op) const;
 
   private:
@@ -272,8 +272,11 @@ class AccessContext {
     void UpdateAccessState(const vvl::Buffer &buffer, SyncAccessIndex current_usage, const AccessRange &range,
                            ResourceUsageTagEx tag_ex, SyncFlags flags = 0);
     void UpdateAccessState(ImageRangeGen &range_gen, SyncAccessIndex current_usage, ResourceUsageTagEx tag_ex, SyncFlags flags = 0);
-    void UpdateAccessState(ImageRangeGen &range_gen, SyncAccessIndex current_usage, const AttachmentAccess &attachment_access,
-                           ResourceUsageTagEx tag_ex);
+    void UpdateAttachmentAccessState(ImageRangeGen &range_gen, SyncAccessIndex current_usage,
+                                     const AttachmentAccess &attachment_access, ResourceUsageTagEx tag_ex);
+    void UpdateAttachmentAccessState(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
+                                     SyncAccessIndex current_usage, const AttachmentAccess &attachment_access,
+                                     ResourceUsageTagEx tag_ex, uint32_t view_mask = 0);
 
     void ResolveChildContexts(vvl::span<AccessContext> subpass_contexts);
 
@@ -359,6 +362,9 @@ class AccessContext {
 
     HazardResult DetectAttachmentHazard(ImageRangeGen &range_gen, SyncAccessIndex current_usage,
                                         const AttachmentAccess &attachment_access) const;
+    HazardResult DetectAttachmentHazard(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
+                                        SyncAccessIndex current_usage, const AttachmentAccess &attachment_access,
+                                        uint32_t view_mask = 0) const;
     HazardResult DetectAttachmentHazard(const vvl::Image &image, const VkImageSubresourceRange &subresource_range,
                                         bool is_depth_sliced, SyncAccessIndex current_usage,
                                         const AttachmentAccess &attachment_access) const;

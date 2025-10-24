@@ -682,3 +682,105 @@ TEST_F(NegativeSyncValRenderPass, FinalLayoutTransitionHazard) {
     m_command_buffer.EndRenderPass();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeSyncValRenderPass, MultiviewSameViewLayer) {
+    TEST_DESCRIPTION("Two async subpasses render to the same view");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Image image(*m_device, 128, 128, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkAttachmentDescription attachment{};
+    attachment.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    const VkAttachmentReference color_ref = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+
+    VkSubpassDescription subpasses[2] = {};
+    subpasses[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpasses[0].colorAttachmentCount = 1;
+    subpasses[0].pColorAttachments = &color_ref;
+
+    subpasses[1] = subpasses[0];
+
+    // Both subpasses render to the same view
+    const uint32_t view_masks[2] = {1, 1};
+    VkRenderPassMultiviewCreateInfo multiview_ci = vku::InitStructHelper();
+    multiview_ci.subpassCount = 2;
+    multiview_ci.pViewMasks = view_masks;
+
+    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper(&multiview_ci);
+    render_pass_ci.attachmentCount = 1;
+    render_pass_ci.pAttachments = &attachment;
+    render_pass_ci.subpassCount = 2;
+    render_pass_ci.pSubpasses = subpasses;
+    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+
+    vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle(), 128, 128);
+    VkClearValue clear_value{};
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 128, 128, 1, &clear_value);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-WRITE");
+    m_command_buffer.NextSubpass();
+    m_command_buffer.EndRenderPass();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSyncValRenderPass, MultiviewSharedViewLayer) {
+    TEST_DESCRIPTION("Two async subpasses render to the same view");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkImageCreateInfo image_ci =
+        vkt::Image::ImageCreateInfo2D(128, 128, 1, 3 /*layers*/, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, image_ci);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, 3 /*layers*/);
+
+    VkAttachmentDescription attachment{};
+    attachment.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    const VkAttachmentReference color_ref = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+
+    VkSubpassDescription subpasses[2] = {};
+    subpasses[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpasses[0].colorAttachmentCount = 1;
+    subpasses[0].pColorAttachments = &color_ref;
+
+    subpasses[1] = subpasses[0];
+
+    // Subpasses share layer 1
+    const uint32_t view_masks[2] = {0x3 /* layer0 + layer 1*/, 0x6 /* layer 1 + layer 2*/};
+    VkRenderPassMultiviewCreateInfo multiview_ci = vku::InitStructHelper();
+    multiview_ci.subpassCount = 2;
+    multiview_ci.pViewMasks = view_masks;
+
+    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper(&multiview_ci);
+    render_pass_ci.attachmentCount = 1;
+    render_pass_ci.pAttachments = &attachment;
+    render_pass_ci.subpassCount = 2;
+    render_pass_ci.pSubpasses = subpasses;
+    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+
+    vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle(), 128, 128);
+    VkClearValue clear_value{};
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 128, 128, 1, &clear_value);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-WRITE");
+    m_command_buffer.NextSubpass();
+    m_command_buffer.EndRenderPass();
+    m_errorMonitor->VerifyFound();
+}

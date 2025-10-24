@@ -562,8 +562,8 @@ void AccessContext::UpdateAccessState(ImageRangeGen &range_gen, SyncAccessIndex 
     }
 }
 
-void AccessContext::UpdateAccessState(ImageRangeGen &range_gen, SyncAccessIndex current_usage,
-                                      const AttachmentAccess &attachment_access, ResourceUsageTagEx tag_ex) {
+void AccessContext::UpdateAttachmentAccessState(ImageRangeGen &range_gen, SyncAccessIndex current_usage,
+                                                const AttachmentAccess &attachment_access, ResourceUsageTagEx tag_ex) {
     assert(!finalized_);
     if (current_usage == SYNC_ACCESS_INDEX_NONE) {
         return;
@@ -571,6 +571,25 @@ void AccessContext::UpdateAccessState(ImageRangeGen &range_gen, SyncAccessIndex 
     auto pos = access_state_map_.LowerBound(range_gen->begin);
     for (; range_gen->non_empty(); ++range_gen) {
         pos = DoUpdateAccessState(pos, *range_gen, current_usage, attachment_access, tag_ex, 0);
+    }
+}
+
+void AccessContext::UpdateAttachmentAccessState(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
+                                                SyncAccessIndex current_usage, const AttachmentAccess &attachment_access,
+                                                ResourceUsageTagEx tag_ex, uint32_t view_mask) {
+    if (view_mask == 0) {
+        ImageRangeGen range_gen = view_gen.GetRangeGen(gen_type);
+        UpdateAttachmentAccessState(range_gen, current_usage, attachment_access, tag_ex);
+    } else {
+        uint32_t view_index = 0;
+        while (view_mask) {
+            if (view_mask & 1) {
+                ImageRangeGen range_gen = view_gen.GetRangeGen(gen_type, view_index);
+                UpdateAttachmentAccessState(range_gen, current_usage, attachment_access, tag_ex);
+            }
+            view_mask >>= 1;
+            view_index++;
+        }
     }
 }
 
@@ -676,14 +695,27 @@ AttachmentViewGen::AttachmentViewGen(const vvl::ImageView *image_view, const VkO
     }
 }
 
-const ImageRangeGen &AttachmentViewGen::GetRangeGen(AttachmentViewGen::Gen type) const {
-    static_assert(Gen::kGenSize == 4, "Function written with this assumption");
-    // If the view is a depth only view, then the depth only portion of the render area is simply the render area.
-    // If the view is a depth stencil view, then the depth only portion of the render area will be a subset,
-    // and thus needs the generator function that will produce the address ranges of that subset
-    const bool depth_only = (type == kDepthOnlyRenderArea) && vkuFormatIsDepthOnly(view_->create_info.format);
-    const bool stencil_only = (type == kStencilOnlyRenderArea) && vkuFormatIsStencilOnly(view_->create_info.format);
-    if (depth_only || stencil_only) {
+ImageRangeGen AttachmentViewGen::GetRangeGen(AttachmentViewGen::Gen type, uint32_t view_index) const {
+    // Restrict image view's subresource range to a specific multiview layer
+    if (view_index != vvl::kNoIndex32) {
+        VkImageSubresourceRange subresource = view_->normalized_subresource_range;
+        if (view_index >= subresource.layerCount) {
+            return {};  // invalid view index
+        }
+        subresource.baseArrayLayer += view_index;
+        subresource.layerCount = 1;
+        auto range_gen = SubState(*view_->image_state).MakeImageRangeGen(subresource, view_->is_depth_sliced);
+        return range_gen;
+    }
+
+    // If a single aspect of depth-stencil attachment is requested, but the attachment actually
+    // consist of a single aspect, then the render area's range gen is what was requested
+    // (in this case we also don't cache separate depth/stencil-only range gens).
+    const bool asked_depth_aspect_for_depth_only =
+        (type == kDepthOnlyRenderArea) && vkuFormatIsDepthOnly(view_->create_info.format);
+    const bool asked_stencil_aspect_for_stencil_only =
+        (type == kStencilOnlyRenderArea) && vkuFormatIsStencilOnly(view_->create_info.format);
+    if (asked_depth_aspect_for_depth_only || asked_stencil_aspect_for_stencil_only) {
         type = Gen::kRenderArea;
     }
     assert(gen_store_[type].has_value());

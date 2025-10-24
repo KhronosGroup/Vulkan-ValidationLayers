@@ -352,6 +352,29 @@ HazardResult AccessContext::DetectAttachmentHazard(ImageRangeGen &range_gen, Syn
     return DetectHazardGeneratedRangeGen(detector, range_gen, DetectOptions::kDetectAll);
 }
 
+HazardResult AccessContext::DetectAttachmentHazard(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
+                                                   SyncAccessIndex current_usage, const AttachmentAccess &attachment_access,
+                                                   uint32_t view_mask) const {
+    if (view_mask == 0) {
+        ImageRangeGen range_gen = view_gen.GetRangeGen(gen_type);
+        return DetectAttachmentHazard(range_gen, current_usage, attachment_access);
+    } else {
+        uint32_t view_index = 0;
+        while (view_mask) {
+            if (view_mask & 1) {
+                ImageRangeGen range_gen = view_gen.GetRangeGen(gen_type, view_index);
+                auto hazard = DetectAttachmentHazard(range_gen, current_usage, attachment_access);
+                if (hazard.IsHazard()) {
+                    return hazard;
+                }
+            }
+            view_mask >>= 1;
+            view_index++;
+        }
+        return {};
+    }
+}
+
 HazardResult AccessContext::DetectAttachmentHazard(const vvl::Image &image, const VkImageSubresourceRange &subresource_range,
                                                    bool is_depth_sliced, SyncAccessIndex current_usage,
                                                    const AttachmentAccess &attachment_access) const {
@@ -393,8 +416,7 @@ HazardResult AccessContext::DetectImageBarrierHazard(const AttachmentViewGen &vi
                                                      DetectOptions options) const {
     BarrierHazardDetector detector(*this, SyncAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION, barrier.src_exec_scope.exec_scope,
                                    barrier.src_access_scope);
-    const std::optional<ImageRangeGen> &attachment_gen = view_gen.GetRangeGen(AttachmentViewGen::Gen::kViewSubresource);
-    subresource_adapter::ImageRangeGenerator range_gen(*attachment_gen);
+    ImageRangeGen range_gen = view_gen.GetRangeGen(AttachmentViewGen::Gen::kViewSubresource);
     return DetectHazardGeneratedRangeGen(detector, range_gen, options);
 }
 
