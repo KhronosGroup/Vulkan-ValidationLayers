@@ -148,10 +148,10 @@ To try it out, use `vkconfig` or set with
 
 ```bash
 # Windows
-set VK_LAYER_MESSAGE_FORMAT_JSON=1
+set VK_VALIDATION_MESSAGE_FORMAT_JSON=1
 
 # Linux
-export VK_LAYER_MESSAGE_FORMAT_JSON=1
+export VK_VALIDATION_MESSAGE_FORMAT_JSON=1
 
 # Android
 adb shell setprop debug.vulkan.khronos_validation.message_format_json=1
