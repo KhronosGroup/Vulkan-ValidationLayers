@@ -4139,26 +4139,27 @@ bool CoreChecks::ValidateCmdEndRendering(const vvl::CommandBuffer& cb_state, con
         return skip;
     }
 
-    const bool is_ext = error_obj.location.function == Func::vkCmdEndRendering2EXT;
+    const bool is_2 =
+        error_obj.location.function != Func::vkCmdEndRendering && error_obj.location.function != Func::vkCmdEndRenderingKHR;
 
     if (!cb_state.active_render_pass->UsesDynamicRendering()) {
-        const char *vuid = is_ext ? "VUID-vkCmdEndRendering2EXT-None-10610" : "VUID-vkCmdEndRendering-None-06161";
+        const char *vuid = is_2 ? "VUID-vkCmdEndRendering2KHR-None-10610" : "VUID-vkCmdEndRendering-None-06161";
         skip |= LogError(vuid, cb_state.Handle(), error_obj.location,
                          "in a render pass instance that was not begun with vkCmdBeginRendering().");
     }
     if (cb_state.active_render_pass->use_dynamic_rendering_inherited) {
-        const char *vuid = is_ext ? "VUID-vkCmdEndRendering2EXT-commandBuffer-10611" : "VUID-vkCmdEndRendering-commandBuffer-06162";
+        const char *vuid = is_2 ? "VUID-vkCmdEndRendering2KHR-commandBuffer-10611" : "VUID-vkCmdEndRendering-commandBuffer-06162";
         skip |= LogError(vuid, cb_state.Handle(), error_obj.location,
                          "in a render pass instance that was not begun in this command buffer.");
     }
     if (cb_state.transform_feedback_active) {
-        const char *vuid = is_ext ? "VUID-vkCmdEndRendering2EXT-None-10612" : "VUID-vkCmdEndRendering-None-06781";
+        const char *vuid = is_2 ? "VUID-vkCmdEndRendering2KHR-None-10612" : "VUID-vkCmdEndRendering-None-06781";
         skip |= LogError(vuid, cb_state.Handle(), error_obj.location,
                          "in a render pass instance that was not begun in this command buffer.");
     }
     for (const auto &query : cb_state.render_pass_queries) {
         const LogObjectList objlist(cb_state.Handle(), query.pool);
-        const char *vuid = is_ext ? "VUID-vkCmdEndRendering2EXT-None-10613" : "VUID-vkCmdEndRendering-None-06999";
+        const char *vuid = is_2 ? "VUID-vkCmdEndRendering2KHR-None-10613" : "VUID-vkCmdEndRendering-None-06999";
         skip |=
             LogError(vuid, objlist, error_obj.location, "query %" PRIu32 " from %s was began in the render pass, but never ended.",
                      query.slot, FormatHandle(query.pool).c_str());

@@ -1978,7 +1978,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetEndRenderingMismatch
     fdm_offset_end_info.pFragmentDensityOffsets = &offset;
     VkRenderingEndInfoEXT rendering_end_info = vku::InitStructHelper(&fdm_offset_end_info);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdEndRendering2EXT-None-10610");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdEndRendering2KHR-None-10610");
     vk::CmdEndRendering2EXT(m_command_buffer, &rendering_end_info);
     m_errorMonitor->VerifyFound();
 }
