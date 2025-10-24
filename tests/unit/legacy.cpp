@@ -13,20 +13,20 @@
 #include <vulkan/vulkan_core.h>
 #include "../framework/layer_validation_tests.h"
 
-static const VkLayerSettingEXT kDeprecationSetting = {OBJECT_LAYER_NAME, "deprecation_detection", VK_LAYER_SETTING_TYPE_BOOL32_EXT,
+static const VkLayerSettingEXT kLegacySetting = {OBJECT_LAYER_NAME, "legacy_detection", VK_LAYER_SETTING_TYPE_BOOL32_EXT,
                                                       1, &kVkTrue};
-static VkLayerSettingsCreateInfoEXT kDeprecationSettingCreateInfo = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
-                                                                     &kDeprecationSetting};
+static VkLayerSettingsCreateInfoEXT kLegacySettingCreateInfo = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
+                                                                     &kLegacySetting};
 
-class NegativeDeprecation : public DeprecationTest {};
+class NegativeLegacy : public LegacyTest {};
 
-TEST_F(NegativeDeprecation, RenderPass2Extension) {
+TEST_F(NegativeLegacy, RenderPass2Extension) {
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework(&kDeprecationSettingCreateInfo));
+    RETURN_IF_SKIP(InitFramework(&kLegacySettingCreateInfo));
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
-    m_errorMonitor->SetDesiredWarning("WARNING-deprecation-renderpass2");
+    m_errorMonitor->SetDesiredWarning("WARNING-legacy-renderpass2");
     CreateRenderPass();
     m_errorMonitor->VerifyFound();
 
@@ -34,10 +34,10 @@ TEST_F(NegativeDeprecation, RenderPass2Extension) {
     CreateRenderPass();
 }
 
-TEST_F(NegativeDeprecation, MultipleDifferentWarnings) {
+TEST_F(NegativeLegacy, MultipleDifferentWarnings) {
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework(&kDeprecationSettingCreateInfo));
+    RETURN_IF_SKIP(InitFramework(&kLegacySettingCreateInfo));
     RETURN_IF_SKIP(InitState());
     if (IsPlatformMockICD()) {
         // Works locally
@@ -51,20 +51,20 @@ TEST_F(NegativeDeprecation, MultipleDifferentWarnings) {
     rp_ci.subpassCount = 1u;
     rp_ci.pSubpasses = &subpass;
 
-    m_errorMonitor->SetDesiredWarning("WARNING-deprecation-renderpass2");
+    m_errorMonitor->SetDesiredWarning("WARNING-legacy-renderpass2");
     vkt::RenderPass render_pass(*m_device, rp_ci);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredWarning("WARNING-deprecation-dynamicrendering");
+    m_errorMonitor->SetDesiredWarning("WARNING-legacy-dynamicrendering");
     vkt::Framebuffer framebuffer(*m_device, render_pass, 0, nullptr);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDeprecation, MuteSingleWarning) {
+TEST_F(NegativeLegacy, MuteSingleWarning) {
     TEST_DESCRIPTION("Only mute of the two warnings to make sure mutting works");
 
-    const char *ids[] = {"WARNING-deprecation-renderpass2"};
-    VkLayerSettingEXT layer_settings[2] = {kDeprecationSetting,
+    const char *ids[] = {"WARNING-legacy-renderpass2"};
+    VkLayerSettingEXT layer_settings[2] = {kLegacySetting,
                                            {OBJECT_LAYER_NAME, "message_id_filter", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, ids}};
 
     VkLayerSettingsCreateInfoEXT layer_setting_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 2, layer_settings};
@@ -85,17 +85,17 @@ TEST_F(NegativeDeprecation, MuteSingleWarning) {
     rp_ci.subpassCount = 1u;
     rp_ci.pSubpasses = &subpass;
 
-    // ignores WARNING-deprecation-renderpass2
+    // ignores WARNING-legacy-renderpass2
     vkt::RenderPass render_pass(*m_device, rp_ci);
 
-    m_errorMonitor->SetDesiredWarning("WARNING-deprecation-dynamicrendering");
+    m_errorMonitor->SetDesiredWarning("WARNING-legacy-dynamicrendering");
     vkt::Framebuffer framebuffer(*m_device, render_pass, 0, nullptr);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDeprecation, GetPhysicalDeviceProperties2Extension) {
+TEST_F(NegativeLegacy, GetPhysicalDeviceProperties2Extension) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework(&kDeprecationSettingCreateInfo));
+    RETURN_IF_SKIP(InitFramework(&kLegacySettingCreateInfo));
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
     if (IsPlatformMockICD()) {
         // Works locally
@@ -105,13 +105,13 @@ TEST_F(NegativeDeprecation, GetPhysicalDeviceProperties2Extension) {
     GTEST_SKIP() << "Android doesn't unload VVL and static reported bool is not reset";
 #endif
 
-    m_errorMonitor->SetDesiredWarning("WARNING-deprecation-gpdp2");
+    m_errorMonitor->SetDesiredWarning("WARNING-legacy-gpdp2");
     VkPhysicalDeviceFeatures features{};
     vk::GetPhysicalDeviceFeatures(Gpu(), &features);
     m_errorMonitor->VerifyFound();
 
     VkFormatProperties format_properties{};
-    m_errorMonitor->SetDesiredWarning("WARNING-deprecation-gpdp2");
+    m_errorMonitor->SetDesiredWarning("WARNING-legacy-gpdp2");
     vk::GetPhysicalDeviceFormatProperties(Gpu(), VK_FORMAT_R8G8B8A8_UNORM, &format_properties);
     m_errorMonitor->VerifyFound();
 
@@ -120,9 +120,9 @@ TEST_F(NegativeDeprecation, GetPhysicalDeviceProperties2Extension) {
     vk::GetPhysicalDeviceFormatProperties(Gpu(), VK_FORMAT_R8G8B8A8_UNORM, &format_properties);
 }
 
-TEST_F(NegativeDeprecation, GetPhysicalDeviceProperties2Version) {
+TEST_F(NegativeLegacy, GetPhysicalDeviceProperties2Version) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitFramework(&kDeprecationSettingCreateInfo));
+    RETURN_IF_SKIP(InitFramework(&kLegacySettingCreateInfo));
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
     if (IsPlatformMockICD()) {
         // Works locally
@@ -132,13 +132,13 @@ TEST_F(NegativeDeprecation, GetPhysicalDeviceProperties2Version) {
     GTEST_SKIP() << "Android doesn't unload VVL and static reported bool is not reset";
 #endif
 
-    m_errorMonitor->SetDesiredWarning("WARNING-deprecation-gpdp2");
+    m_errorMonitor->SetDesiredWarning("WARNING-legacy-gpdp2");
     VkPhysicalDeviceFeatures features{};
     vk::GetPhysicalDeviceFeatures(Gpu(), &features);
     m_errorMonitor->VerifyFound();
 
     VkFormatProperties format_properties{};
-    m_errorMonitor->SetDesiredWarning("WARNING-deprecation-gpdp2");
+    m_errorMonitor->SetDesiredWarning("WARNING-legacy-gpdp2");
     vk::GetPhysicalDeviceFormatProperties(Gpu(), VK_FORMAT_R8G8B8A8_UNORM, &format_properties);
     m_errorMonitor->VerifyFound();
 }

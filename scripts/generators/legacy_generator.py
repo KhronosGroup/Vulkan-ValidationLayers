@@ -19,7 +19,7 @@
 import os
 from base_generator import BaseGenerator
 
-class DeprecationGenerator(BaseGenerator):
+class LegacyGenerator(BaseGenerator):
     def __init__(self):
         BaseGenerator.__init__(self)
 
@@ -104,9 +104,9 @@ class DeprecationGenerator(BaseGenerator):
         for extensions in [x.legacy.extensions for x in self.vk.commands.values() if x.legacy and x.legacy.extensions and x.device]:
             self.all_device_extensions.update(extensions)
 
-        if self.filename == 'deprecation.h':
+        if self.filename == 'legacy.h':
             self.generateHeader()
-        elif self.filename == 'deprecation.cpp':
+        elif self.filename == 'legacy.cpp':
             self.generateSource()
         else:
             self.write(f'\nFile name {self.filename} has no code to generate\n')
@@ -121,7 +121,7 @@ class DeprecationGenerator(BaseGenerator):
             #include <vulkan/vulkan.h>
             #include "chassis/validation_object.h"
 
-            namespace deprecation {
+            namespace legacy {
 
             // We currently only check if the extension is enabled, if we decide in the future to check for support, instance extensions
             // we can try and use DispatchEnumerateInstanceExtensionProperties, but will likely run into many loader related issues.
@@ -129,7 +129,7 @@ class DeprecationGenerator(BaseGenerator):
                 using BaseClass = vvl::base::Instance;
 
             public:
-                Instance(vvl::dispatch::Instance *dispatch) : BaseClass(dispatch, LayerObjectTypeDeprecation) {}
+                Instance(vvl::dispatch::Instance *dispatch) : BaseClass(dispatch, LayerObjectTypeLegacy) {}
 
         ''')
 
@@ -146,7 +146,7 @@ class DeprecationGenerator(BaseGenerator):
 
             public:
                 Device(vvl::dispatch::Device *dev, Instance *instance_vo)
-                    : BaseClass(dev, instance_vo, LayerObjectTypeDeprecation), instance(instance_vo) {}
+                    : BaseClass(dev, instance_vo, LayerObjectTypeLegacy), instance(instance_vo) {}
                 ~Device() {}
                 Instance *instance;
 
@@ -155,7 +155,7 @@ class DeprecationGenerator(BaseGenerator):
         out.append('\n')
 
         for command in [x for x in self.vk.commands.values() if x.legacy and x.device]:
-            # There is really no good use to warn developer both the create and destroy are deprecated
+            # There is really no good use to warn developer both the create and destroy are superseded
             if command.name.startswith('vkDestroy'):
                 continue
 
@@ -164,19 +164,19 @@ class DeprecationGenerator(BaseGenerator):
             out.append(f'bool PreCallValidate{prePrototype} const override;\n')
 
         out.append('};')
-        out.append('}  // namespace deprecation')
+        out.append('}  // namespace legacy')
         self.write(''.join(out))
 
     def generateSource(self):
         out = []
         out.append('''
-            #include "deprecation.h"
+            #include "legacy.h"
 
-            namespace deprecation {
+            namespace legacy {
         ''')
 
         for command in [x for x in self.vk.commands.values() if x.legacy]:
-            # There is really no good use to warn developer both the create and destroy are deprecated
+            # There is really no good use to warn developer both the create and destroy are superseded
             if command.name.startswith('vkDestroy'):
                 continue
 
@@ -206,7 +206,7 @@ class DeprecationGenerator(BaseGenerator):
                     {logic} (api_version >= {command.legacy.version.nameApi}) {{
                         reported = true;
                         LogWarning("WARNING-{command.legacy.link}", {objName}, error_obj.location,
-                            "{command.name} is deprecated and this {handleName} was created with {command.legacy.version.name} {replacement}.\\nSee more information about this deprecation in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#{command.legacy.link}");
+                            "{command.name} is a a legacy command and this {handleName} was created with {command.legacy.version.name} {replacement}.\\nSee more information about this legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#{command.legacy.link}");
                     }}''')
 
             for extension in command.legacy.extensions:
@@ -221,14 +221,14 @@ class DeprecationGenerator(BaseGenerator):
                     {logic} (IsExtEnabled(extensions.{extension.lower()})) {{
                         reported = true;
                         LogWarning("WARNING-{command.legacy.link}", {objName}, error_obj.location,
-                            "{command.name} is deprecated and this {handleName} enabled the {extension} extension {replacement}.\\nSee more information about this deprecation in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#{command.legacy.link}");
+                            "{command.name} is a legacy command and this {handleName} enabled the {extension} extension {replacement}.\\nSee more information about this legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#{command.legacy.link}");
                     }}''')
 
-            # For things deprecated in Vulkan 1.0
+            # For things mark as legacy in Vulkan 1.0
             if command.legacy.version is None and len(command.legacy.extensions) == 0:
                 out.append(f'''
                            LogWarning("WARNING-{command.legacy.link}", {objName}, error_obj.location,
-                            "{command.name} is deprecated.\\nSee more information about this deprecation in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#{command.legacy.link}");
+                            "{command.name} is a legacy command.\\nSee more information about this superseding in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#{command.legacy.link}");
                     ''')
 
             out.append('''
@@ -236,5 +236,5 @@ class DeprecationGenerator(BaseGenerator):
             }
             ''')
 
-        out.append('}  // namespace deprecation')
+        out.append('}  // namespace legacy')
         self.write(''.join(out))
