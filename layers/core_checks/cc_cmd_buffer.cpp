@@ -92,9 +92,8 @@ bool CoreChecks::ValidateCmd(const vvl::CommandBuffer &cb_state, const Location 
                                                        !cb_state.active_render_pass &&
                                                        HasActionOrSyncCommandBeforeBeginRendering(loc.function);
     if (is_command_between_suspend_and_resume && (info.action || info.synchronization)) {
-        // TODO: temporary use submit time vuid: https://gitlab.khronos.org/vulkan/vulkan/-/issues/4468
-        skip |= LogError("VUID-VkSubmitInfo-pCommandBuffers-06015", cb_state.Handle(), loc,
-                         "was recorded, but there is a suspended render pass instance.");
+        skip |=
+            LogError(info.suspended_vuid, cb_state.Handle(), loc, "was recorded, but there is a suspended render pass instance.");
     }
 
     // Validate if command is inside or outside a video coding scope if applicable
@@ -1162,7 +1161,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
         if (suspended_render_pass_instance &&
             HasActionOrSyncCommandBeforeBeginRendering(secondary_cb_state.first_action_or_sync_command)) {
             const LogObjectList objlist(commandBuffer, secondary_cb);
-            skip |= LogError("VUID-VkSubmitInfo-pCommandBuffers-06015", objlist, secondary_cb_loc,
+            skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-06021", objlist, secondary_cb_loc,
                              "records %s while a render pass instance is suspended.",
                              vvl::String(secondary_cb_state.first_action_or_sync_command));
         }
