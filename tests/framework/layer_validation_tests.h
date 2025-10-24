@@ -268,7 +268,7 @@ class AndroidExternalResolveTest : public VkLayerTest {
     bool nullColorAttachmentWithExternalFormatResolve;
 };
 
-class DeprecationTest : public VkLayerTest {
+class LegacyTest : public VkLayerTest {
   public:
     void CreateRenderPass();
 };

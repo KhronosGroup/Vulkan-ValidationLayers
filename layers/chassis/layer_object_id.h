@@ -24,7 +24,7 @@
 // While this doesn't enforce the order, we enforce the order in InitValidationObjects() based on this
 enum LayerObjectTypeId {
     LayerObjectTypeParameterValidation,  // Instance or device parameter validation layer object
-    LayerObjectTypeDeprecation,          // Instance or device deprecation layer object
+    LayerObjectTypeLegacy,               // Instance or device legacy layer object
     LayerObjectTypeThreading,            // Instance or device threading layer object
     LayerObjectTypeObjectTracker,        // Instance or device object tracker layer object
     LayerObjectTypeStateTracker,         // Shared state tracker

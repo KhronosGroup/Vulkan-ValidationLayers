@@ -30,7 +30,7 @@
 
 #include "thread_tracker/thread_safety_validation.h"
 #include "stateless/stateless_validation.h"
-#include "generated/deprecation.h"
+#include "generated/legacy.h"
 #include "object_tracker/object_lifetime_validation.h"
 #include "state_tracker/state_tracker.h"
 #include "core_checks/core_validation.h"
@@ -52,8 +52,8 @@ void Instance::InitValidationObjects() {
     if (!settings.disabled[stateless_checks]) {
         object_dispatch.emplace_back(new stateless::Instance(this));
     }
-    if (settings.enabled[deprecation_detection]) {
-        object_dispatch.emplace_back(new deprecation::Instance(this));
+    if (settings.enabled[legacy_detection]) {
+        object_dispatch.emplace_back(new legacy::Instance(this));
     }
     if (!settings.disabled[object_tracking]) {
         object_dispatch.emplace_back(new object_lifetimes::Instance(this));
@@ -87,9 +87,9 @@ void Device::InitValidationObjects() {
         object_dispatch.emplace_back(new stateless::Device(
             this, static_cast<stateless::Instance*>(dispatch_instance->GetValidationObject(LayerObjectTypeParameterValidation))));
     }
-    if (settings.enabled[deprecation_detection]) {
-        object_dispatch.emplace_back(new deprecation::Device(
-            this, static_cast<deprecation::Instance*>(dispatch_instance->GetValidationObject(LayerObjectTypeDeprecation))));
+    if (settings.enabled[legacy_detection]) {
+        object_dispatch.emplace_back(new legacy::Device(
+            this, static_cast<legacy::Instance*>(dispatch_instance->GetValidationObject(LayerObjectTypeLegacy))));
     }
     if (!settings.disabled[object_tracking]) {
         object_dispatch.emplace_back(new object_lifetimes::Device(

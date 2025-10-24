@@ -8,7 +8,7 @@ This directory contains more detailed information about how each part of the Val
     - [Best Practices Validation](./best_practices.md)
     - [Error Object (information used to print better error messages)](./error_object.md)
     - [Shader Debug Printf](./debug_printf.md)
-    - [Deprecation Detection](./deprecation_detection.md)
+    - [Legacy Detection](./legacy_detection.md)
     - [Fine Grained Locking](./fine_grained_locking.md)
         - [Fine Grained Locking - Usage](./fine_grained_locking_usage.md)
     - [Generated Code](./generated_code.md)

@@ -1,5 +1,5 @@
 // *** THIS FILE IS GENERATED - DO NOT EDIT ***
-// See deprecation_generator.py for modifications
+// See legacy_generator.py for modifications
 
 /***************************************************************************
  *
@@ -27,7 +27,7 @@
 #include <vulkan/vulkan.h>
 #include "chassis/validation_object.h"
 
-namespace deprecation {
+namespace legacy {
 
 // We currently only check if the extension is enabled, if we decide in the future to check for support, instance extensions
 // we can try and use DispatchEnumerateInstanceExtensionProperties, but will likely run into many loader related issues.
@@ -35,7 +35,7 @@ class Instance : public vvl::base::Instance {
     using BaseClass = vvl::base::Instance;
 
   public:
-    Instance(vvl::dispatch::Instance* dispatch) : BaseClass(dispatch, LayerObjectTypeDeprecation) {}
+    Instance(vvl::dispatch::Instance* dispatch) : BaseClass(dispatch, LayerObjectTypeLegacy) {}
 
     bool PreCallValidateGetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* pFeatures,
                                                   const ErrorObject& error_obj) const override;
@@ -70,7 +70,7 @@ class Device : public vvl::base::Device {
 
   public:
     Device(vvl::dispatch::Device* dev, Instance* instance_vo)
-        : BaseClass(dev, instance_vo, LayerObjectTypeDeprecation), instance(instance_vo) {}
+        : BaseClass(dev, instance_vo, LayerObjectTypeLegacy), instance(instance_vo) {}
     ~Device() {}
     Instance* instance;
 
@@ -98,5 +98,5 @@ class Device : public vvl::base::Device {
     bool PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
                                           const ErrorObject& error_obj) const override;
 };
-}  // namespace deprecation
+}  // namespace legacy
 // NOLINTEND

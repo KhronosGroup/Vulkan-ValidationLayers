@@ -140,6 +140,11 @@ khronos_validation.gpuav_validate_ray_query = true
 # Validate that no vertex attribute fetching is out of bonds
 khronos_validation.gpuav_vertex_attribute_fetch_oob = true
 
+# Legacy Detection
+# =====================
+# Give warnings when using legacy parts of the API.
+khronos_validation.legacy_detection = false
+
 # Log Filename
 # =====================
 # Specifies the output filename
