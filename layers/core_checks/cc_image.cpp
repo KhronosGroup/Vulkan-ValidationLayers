@@ -2337,11 +2337,11 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo &create
     const auto ycbcr_conversion = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(create_info.pNext);
     if (ycbcr_conversion && ycbcr_conversion->conversion != VK_NULL_HANDLE) {
         auto ycbcr_state = Get<vvl::SamplerYcbcrConversion>(ycbcr_conversion->conversion);
-        if (ycbcr_state && (create_info.format != ycbcr_state->format)) {
+        if (ycbcr_state && (create_info.format != ycbcr_state->create_info.format)) {
             skip |= LogError("VUID-VkImageViewCreateInfo-pNext-06658", create_info.image,
                              create_info_loc.pNext(Struct::VkSamplerYcbcrConversionInfo, Field::conversion),
                              "was created with format %s which is different than create_info.format %s.",
-                             string_VkFormat(ycbcr_state->format), string_VkFormat(view_format));
+                             string_VkFormat(ycbcr_state->create_info.format), string_VkFormat(view_format));
         }
     } else if ((image_usage & VK_IMAGE_USAGE_SAMPLED_BIT) && FormatRequiresYcbcrConversionExplicitly(view_format)) {
         skip |= LogError("VUID-VkImageViewCreateInfo-format-06415", create_info.image, create_info_loc.dot(Field::image),
