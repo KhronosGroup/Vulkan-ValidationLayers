@@ -37,6 +37,7 @@
 #include "state_tracker/tensor_state.h"
 #include "drawdispatch/drawdispatch_vuids.h"
 #include "utils/action_command_utils.h"
+#include "utils/image_utils.h"
 
 namespace vvl {
 

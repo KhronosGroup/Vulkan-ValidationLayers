@@ -32,6 +32,7 @@
 #include "utils/assert_utils.h"
 #include "utils/math_utils.h"
 #include "utils/vk_struct_compare.h"
+#include "utils/image_utils.h"
 #include "core_validation.h"
 #include "generated/enum_flag_bits.h"
 #include "generated/dispatch_functions.h"

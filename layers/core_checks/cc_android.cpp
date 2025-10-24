@@ -24,6 +24,7 @@
 #include "state_tracker/cmd_buffer_state.h"
 #include "generated/dispatch_functions.h"
 #include "error_message/error_strings.h"
+#include "utils/image_utils.h"
 #include <algorithm>
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)

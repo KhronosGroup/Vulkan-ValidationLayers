@@ -44,7 +44,7 @@
 #include "drawdispatch/descriptor_validator.h"
 #include "drawdispatch/drawdispatch_vuids.h"
 #include "utils/assert_utils.h"
-#include "utils/vk_struct_compare.h"
+#include "utils/image_utils.h"
 #include "utils/math_utils.h"
 #include "error_message/error_strings.h"
 

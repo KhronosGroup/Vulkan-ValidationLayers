@@ -32,6 +32,7 @@
 #include "state_tracker/pipeline_state.h"
 #include "containers/limits.h"
 #include "cc_buffer_address.h"
+#include "utils/image_utils.h"
 
 static inline bool IsActionCommand(VkIndirectCommandsTokenTypeEXT type) {
     return IsValueIn(
