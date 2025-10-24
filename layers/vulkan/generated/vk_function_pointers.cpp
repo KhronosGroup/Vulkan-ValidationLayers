@@ -118,30 +118,50 @@ PFN_vkGetFenceStatus GetFenceStatus;
 PFN_vkWaitForFences WaitForFences;
 PFN_vkCreateSemaphore CreateSemaphore;
 PFN_vkDestroySemaphore DestroySemaphore;
-PFN_vkCreateEvent CreateEvent;
-PFN_vkDestroyEvent DestroyEvent;
-PFN_vkGetEventStatus GetEventStatus;
-PFN_vkSetEvent SetEvent;
-PFN_vkResetEvent ResetEvent;
 PFN_vkCreateQueryPool CreateQueryPool;
 PFN_vkDestroyQueryPool DestroyQueryPool;
 PFN_vkGetQueryPoolResults GetQueryPoolResults;
 PFN_vkCreateBuffer CreateBuffer;
 PFN_vkDestroyBuffer DestroyBuffer;
-PFN_vkCreateBufferView CreateBufferView;
-PFN_vkDestroyBufferView DestroyBufferView;
 PFN_vkCreateImage CreateImage;
 PFN_vkDestroyImage DestroyImage;
 PFN_vkGetImageSubresourceLayout GetImageSubresourceLayout;
 PFN_vkCreateImageView CreateImageView;
 PFN_vkDestroyImageView DestroyImageView;
+PFN_vkCreateCommandPool CreateCommandPool;
+PFN_vkDestroyCommandPool DestroyCommandPool;
+PFN_vkResetCommandPool ResetCommandPool;
+PFN_vkAllocateCommandBuffers AllocateCommandBuffers;
+PFN_vkFreeCommandBuffers FreeCommandBuffers;
+PFN_vkBeginCommandBuffer BeginCommandBuffer;
+PFN_vkEndCommandBuffer EndCommandBuffer;
+PFN_vkResetCommandBuffer ResetCommandBuffer;
+PFN_vkCmdCopyBuffer CmdCopyBuffer;
+PFN_vkCmdCopyImage CmdCopyImage;
+PFN_vkCmdCopyBufferToImage CmdCopyBufferToImage;
+PFN_vkCmdCopyImageToBuffer CmdCopyImageToBuffer;
+PFN_vkCmdUpdateBuffer CmdUpdateBuffer;
+PFN_vkCmdFillBuffer CmdFillBuffer;
+PFN_vkCmdPipelineBarrier CmdPipelineBarrier;
+PFN_vkCmdBeginQuery CmdBeginQuery;
+PFN_vkCmdEndQuery CmdEndQuery;
+PFN_vkCmdResetQueryPool CmdResetQueryPool;
+PFN_vkCmdWriteTimestamp CmdWriteTimestamp;
+PFN_vkCmdCopyQueryPoolResults CmdCopyQueryPoolResults;
+PFN_vkCmdExecuteCommands CmdExecuteCommands;
+PFN_vkCreateEvent CreateEvent;
+PFN_vkDestroyEvent DestroyEvent;
+PFN_vkGetEventStatus GetEventStatus;
+PFN_vkSetEvent SetEvent;
+PFN_vkResetEvent ResetEvent;
+PFN_vkCreateBufferView CreateBufferView;
+PFN_vkDestroyBufferView DestroyBufferView;
 PFN_vkCreateShaderModule CreateShaderModule;
 PFN_vkDestroyShaderModule DestroyShaderModule;
 PFN_vkCreatePipelineCache CreatePipelineCache;
 PFN_vkDestroyPipelineCache DestroyPipelineCache;
 PFN_vkGetPipelineCacheData GetPipelineCacheData;
 PFN_vkMergePipelineCaches MergePipelineCaches;
-PFN_vkCreateGraphicsPipelines CreateGraphicsPipelines;
 PFN_vkCreateComputePipelines CreateComputePipelines;
 PFN_vkDestroyPipeline DestroyPipeline;
 PFN_vkCreatePipelineLayout CreatePipelineLayout;
@@ -156,20 +176,21 @@ PFN_vkResetDescriptorPool ResetDescriptorPool;
 PFN_vkAllocateDescriptorSets AllocateDescriptorSets;
 PFN_vkFreeDescriptorSets FreeDescriptorSets;
 PFN_vkUpdateDescriptorSets UpdateDescriptorSets;
+PFN_vkCmdBindPipeline CmdBindPipeline;
+PFN_vkCmdBindDescriptorSets CmdBindDescriptorSets;
+PFN_vkCmdClearColorImage CmdClearColorImage;
+PFN_vkCmdDispatch CmdDispatch;
+PFN_vkCmdDispatchIndirect CmdDispatchIndirect;
+PFN_vkCmdSetEvent CmdSetEvent;
+PFN_vkCmdResetEvent CmdResetEvent;
+PFN_vkCmdWaitEvents CmdWaitEvents;
+PFN_vkCmdPushConstants CmdPushConstants;
+PFN_vkCreateGraphicsPipelines CreateGraphicsPipelines;
 PFN_vkCreateFramebuffer CreateFramebuffer;
 PFN_vkDestroyFramebuffer DestroyFramebuffer;
 PFN_vkCreateRenderPass CreateRenderPass;
 PFN_vkDestroyRenderPass DestroyRenderPass;
 PFN_vkGetRenderAreaGranularity GetRenderAreaGranularity;
-PFN_vkCreateCommandPool CreateCommandPool;
-PFN_vkDestroyCommandPool DestroyCommandPool;
-PFN_vkResetCommandPool ResetCommandPool;
-PFN_vkAllocateCommandBuffers AllocateCommandBuffers;
-PFN_vkFreeCommandBuffers FreeCommandBuffers;
-PFN_vkBeginCommandBuffer BeginCommandBuffer;
-PFN_vkEndCommandBuffer EndCommandBuffer;
-PFN_vkResetCommandBuffer ResetCommandBuffer;
-PFN_vkCmdBindPipeline CmdBindPipeline;
 PFN_vkCmdSetViewport CmdSetViewport;
 PFN_vkCmdSetScissor CmdSetScissor;
 PFN_vkCmdSetLineWidth CmdSetLineWidth;
@@ -179,46 +200,24 @@ PFN_vkCmdSetDepthBounds CmdSetDepthBounds;
 PFN_vkCmdSetStencilCompareMask CmdSetStencilCompareMask;
 PFN_vkCmdSetStencilWriteMask CmdSetStencilWriteMask;
 PFN_vkCmdSetStencilReference CmdSetStencilReference;
-PFN_vkCmdBindDescriptorSets CmdBindDescriptorSets;
 PFN_vkCmdBindIndexBuffer CmdBindIndexBuffer;
 PFN_vkCmdBindVertexBuffers CmdBindVertexBuffers;
 PFN_vkCmdDraw CmdDraw;
 PFN_vkCmdDrawIndexed CmdDrawIndexed;
 PFN_vkCmdDrawIndirect CmdDrawIndirect;
 PFN_vkCmdDrawIndexedIndirect CmdDrawIndexedIndirect;
-PFN_vkCmdDispatch CmdDispatch;
-PFN_vkCmdDispatchIndirect CmdDispatchIndirect;
-PFN_vkCmdCopyBuffer CmdCopyBuffer;
-PFN_vkCmdCopyImage CmdCopyImage;
 PFN_vkCmdBlitImage CmdBlitImage;
-PFN_vkCmdCopyBufferToImage CmdCopyBufferToImage;
-PFN_vkCmdCopyImageToBuffer CmdCopyImageToBuffer;
-PFN_vkCmdUpdateBuffer CmdUpdateBuffer;
-PFN_vkCmdFillBuffer CmdFillBuffer;
-PFN_vkCmdClearColorImage CmdClearColorImage;
 PFN_vkCmdClearDepthStencilImage CmdClearDepthStencilImage;
 PFN_vkCmdClearAttachments CmdClearAttachments;
 PFN_vkCmdResolveImage CmdResolveImage;
-PFN_vkCmdSetEvent CmdSetEvent;
-PFN_vkCmdResetEvent CmdResetEvent;
-PFN_vkCmdWaitEvents CmdWaitEvents;
-PFN_vkCmdPipelineBarrier CmdPipelineBarrier;
-PFN_vkCmdBeginQuery CmdBeginQuery;
-PFN_vkCmdEndQuery CmdEndQuery;
-PFN_vkCmdResetQueryPool CmdResetQueryPool;
-PFN_vkCmdWriteTimestamp CmdWriteTimestamp;
-PFN_vkCmdCopyQueryPoolResults CmdCopyQueryPoolResults;
-PFN_vkCmdPushConstants CmdPushConstants;
 PFN_vkCmdBeginRenderPass CmdBeginRenderPass;
 PFN_vkCmdNextSubpass CmdNextSubpass;
 PFN_vkCmdEndRenderPass CmdEndRenderPass;
-PFN_vkCmdExecuteCommands CmdExecuteCommands;
 PFN_vkEnumerateInstanceVersion EnumerateInstanceVersion;
 PFN_vkBindBufferMemory2 BindBufferMemory2;
 PFN_vkBindImageMemory2 BindImageMemory2;
 PFN_vkGetDeviceGroupPeerMemoryFeatures GetDeviceGroupPeerMemoryFeatures;
 PFN_vkCmdSetDeviceMask CmdSetDeviceMask;
-PFN_vkCmdDispatchBase CmdDispatchBase;
 PFN_vkEnumeratePhysicalDeviceGroups EnumeratePhysicalDeviceGroups;
 PFN_vkGetImageMemoryRequirements2 GetImageMemoryRequirements2;
 PFN_vkGetBufferMemoryRequirements2 GetBufferMemoryRequirements2;
@@ -232,21 +231,16 @@ PFN_vkGetPhysicalDeviceMemoryProperties2 GetPhysicalDeviceMemoryProperties2;
 PFN_vkGetPhysicalDeviceSparseImageFormatProperties2 GetPhysicalDeviceSparseImageFormatProperties2;
 PFN_vkTrimCommandPool TrimCommandPool;
 PFN_vkGetDeviceQueue2 GetDeviceQueue2;
-PFN_vkCreateSamplerYcbcrConversion CreateSamplerYcbcrConversion;
-PFN_vkDestroySamplerYcbcrConversion DestroySamplerYcbcrConversion;
-PFN_vkCreateDescriptorUpdateTemplate CreateDescriptorUpdateTemplate;
-PFN_vkDestroyDescriptorUpdateTemplate DestroyDescriptorUpdateTemplate;
-PFN_vkUpdateDescriptorSetWithTemplate UpdateDescriptorSetWithTemplate;
 PFN_vkGetPhysicalDeviceExternalBufferProperties GetPhysicalDeviceExternalBufferProperties;
 PFN_vkGetPhysicalDeviceExternalFenceProperties GetPhysicalDeviceExternalFenceProperties;
 PFN_vkGetPhysicalDeviceExternalSemaphoreProperties GetPhysicalDeviceExternalSemaphoreProperties;
+PFN_vkCmdDispatchBase CmdDispatchBase;
+PFN_vkCreateDescriptorUpdateTemplate CreateDescriptorUpdateTemplate;
+PFN_vkDestroyDescriptorUpdateTemplate DestroyDescriptorUpdateTemplate;
+PFN_vkUpdateDescriptorSetWithTemplate UpdateDescriptorSetWithTemplate;
 PFN_vkGetDescriptorSetLayoutSupport GetDescriptorSetLayoutSupport;
-PFN_vkCmdDrawIndirectCount CmdDrawIndirectCount;
-PFN_vkCmdDrawIndexedIndirectCount CmdDrawIndexedIndirectCount;
-PFN_vkCreateRenderPass2 CreateRenderPass2;
-PFN_vkCmdBeginRenderPass2 CmdBeginRenderPass2;
-PFN_vkCmdNextSubpass2 CmdNextSubpass2;
-PFN_vkCmdEndRenderPass2 CmdEndRenderPass2;
+PFN_vkCreateSamplerYcbcrConversion CreateSamplerYcbcrConversion;
+PFN_vkDestroySamplerYcbcrConversion DestroySamplerYcbcrConversion;
 PFN_vkResetQueryPool ResetQueryPool;
 PFN_vkGetSemaphoreCounterValue GetSemaphoreCounterValue;
 PFN_vkWaitSemaphores WaitSemaphores;
@@ -254,14 +248,17 @@ PFN_vkSignalSemaphore SignalSemaphore;
 PFN_vkGetBufferDeviceAddress GetBufferDeviceAddress;
 PFN_vkGetBufferOpaqueCaptureAddress GetBufferOpaqueCaptureAddress;
 PFN_vkGetDeviceMemoryOpaqueCaptureAddress GetDeviceMemoryOpaqueCaptureAddress;
+PFN_vkCmdDrawIndirectCount CmdDrawIndirectCount;
+PFN_vkCmdDrawIndexedIndirectCount CmdDrawIndexedIndirectCount;
+PFN_vkCreateRenderPass2 CreateRenderPass2;
+PFN_vkCmdBeginRenderPass2 CmdBeginRenderPass2;
+PFN_vkCmdNextSubpass2 CmdNextSubpass2;
+PFN_vkCmdEndRenderPass2 CmdEndRenderPass2;
 PFN_vkGetPhysicalDeviceToolProperties GetPhysicalDeviceToolProperties;
 PFN_vkCreatePrivateDataSlot CreatePrivateDataSlot;
 PFN_vkDestroyPrivateDataSlot DestroyPrivateDataSlot;
 PFN_vkSetPrivateData SetPrivateData;
 PFN_vkGetPrivateData GetPrivateData;
-PFN_vkCmdSetEvent2 CmdSetEvent2;
-PFN_vkCmdResetEvent2 CmdResetEvent2;
-PFN_vkCmdWaitEvents2 CmdWaitEvents2;
 PFN_vkCmdPipelineBarrier2 CmdPipelineBarrier2;
 PFN_vkCmdWriteTimestamp2 CmdWriteTimestamp2;
 PFN_vkQueueSubmit2 QueueSubmit2;
@@ -269,6 +266,12 @@ PFN_vkCmdCopyBuffer2 CmdCopyBuffer2;
 PFN_vkCmdCopyImage2 CmdCopyImage2;
 PFN_vkCmdCopyBufferToImage2 CmdCopyBufferToImage2;
 PFN_vkCmdCopyImageToBuffer2 CmdCopyImageToBuffer2;
+PFN_vkGetDeviceBufferMemoryRequirements GetDeviceBufferMemoryRequirements;
+PFN_vkGetDeviceImageMemoryRequirements GetDeviceImageMemoryRequirements;
+PFN_vkGetDeviceImageSparseMemoryRequirements GetDeviceImageSparseMemoryRequirements;
+PFN_vkCmdSetEvent2 CmdSetEvent2;
+PFN_vkCmdResetEvent2 CmdResetEvent2;
+PFN_vkCmdWaitEvents2 CmdWaitEvents2;
 PFN_vkCmdBlitImage2 CmdBlitImage2;
 PFN_vkCmdResolveImage2 CmdResolveImage2;
 PFN_vkCmdBeginRendering CmdBeginRendering;
@@ -288,28 +291,25 @@ PFN_vkCmdSetStencilOp CmdSetStencilOp;
 PFN_vkCmdSetRasterizerDiscardEnable CmdSetRasterizerDiscardEnable;
 PFN_vkCmdSetDepthBiasEnable CmdSetDepthBiasEnable;
 PFN_vkCmdSetPrimitiveRestartEnable CmdSetPrimitiveRestartEnable;
-PFN_vkGetDeviceBufferMemoryRequirements GetDeviceBufferMemoryRequirements;
-PFN_vkGetDeviceImageMemoryRequirements GetDeviceImageMemoryRequirements;
-PFN_vkGetDeviceImageSparseMemoryRequirements GetDeviceImageSparseMemoryRequirements;
-PFN_vkCmdSetLineStipple CmdSetLineStipple;
 PFN_vkMapMemory2 MapMemory2;
 PFN_vkUnmapMemory2 UnmapMemory2;
-PFN_vkCmdBindIndexBuffer2 CmdBindIndexBuffer2;
-PFN_vkGetRenderingAreaGranularity GetRenderingAreaGranularity;
 PFN_vkGetDeviceImageSubresourceLayout GetDeviceImageSubresourceLayout;
 PFN_vkGetImageSubresourceLayout2 GetImageSubresourceLayout2;
-PFN_vkCmdPushDescriptorSet CmdPushDescriptorSet;
-PFN_vkCmdPushDescriptorSetWithTemplate CmdPushDescriptorSetWithTemplate;
-PFN_vkCmdSetRenderingAttachmentLocations CmdSetRenderingAttachmentLocations;
-PFN_vkCmdSetRenderingInputAttachmentIndices CmdSetRenderingInputAttachmentIndices;
-PFN_vkCmdBindDescriptorSets2 CmdBindDescriptorSets2;
-PFN_vkCmdPushConstants2 CmdPushConstants2;
-PFN_vkCmdPushDescriptorSet2 CmdPushDescriptorSet2;
-PFN_vkCmdPushDescriptorSetWithTemplate2 CmdPushDescriptorSetWithTemplate2;
 PFN_vkCopyMemoryToImage CopyMemoryToImage;
 PFN_vkCopyImageToMemory CopyImageToMemory;
 PFN_vkCopyImageToImage CopyImageToImage;
 PFN_vkTransitionImageLayout TransitionImageLayout;
+PFN_vkCmdPushDescriptorSet CmdPushDescriptorSet;
+PFN_vkCmdPushDescriptorSetWithTemplate CmdPushDescriptorSetWithTemplate;
+PFN_vkCmdBindDescriptorSets2 CmdBindDescriptorSets2;
+PFN_vkCmdPushConstants2 CmdPushConstants2;
+PFN_vkCmdPushDescriptorSet2 CmdPushDescriptorSet2;
+PFN_vkCmdPushDescriptorSetWithTemplate2 CmdPushDescriptorSetWithTemplate2;
+PFN_vkCmdSetLineStipple CmdSetLineStipple;
+PFN_vkCmdBindIndexBuffer2 CmdBindIndexBuffer2;
+PFN_vkGetRenderingAreaGranularity GetRenderingAreaGranularity;
+PFN_vkCmdSetRenderingAttachmentLocations CmdSetRenderingAttachmentLocations;
+PFN_vkCmdSetRenderingInputAttachmentIndices CmdSetRenderingInputAttachmentIndices;
 PFN_vkDestroySurfaceKHR DestroySurfaceKHR;
 PFN_vkGetPhysicalDeviceSurfaceSupportKHR GetPhysicalDeviceSurfaceSupportKHR;
 PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR GetPhysicalDeviceSurfaceCapabilitiesKHR;
@@ -492,6 +492,7 @@ PFN_vkCmdSetDescriptorBufferOffsets2EXT CmdSetDescriptorBufferOffsets2EXT;
 PFN_vkCmdBindDescriptorBufferEmbeddedSamplers2EXT CmdBindDescriptorBufferEmbeddedSamplers2EXT;
 PFN_vkCmdCopyMemoryIndirectKHR CmdCopyMemoryIndirectKHR;
 PFN_vkCmdCopyMemoryToImageIndirectKHR CmdCopyMemoryToImageIndirectKHR;
+PFN_vkCmdEndRendering2KHR CmdEndRendering2KHR;
 PFN_vkCreateDebugReportCallbackEXT CreateDebugReportCallbackEXT;
 PFN_vkDestroyDebugReportCallbackEXT DestroyDebugReportCallbackEXT;
 PFN_vkDebugReportMessageEXT DebugReportMessageEXT;
@@ -843,6 +844,8 @@ PFN_vkCmdSetAttachmentFeedbackLoopEnableEXT CmdSetAttachmentFeedbackLoopEnableEX
 PFN_vkGetScreenBufferPropertiesQNX GetScreenBufferPropertiesQNX;
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 PFN_vkCmdBindTileMemoryQCOM CmdBindTileMemoryQCOM;
+PFN_vkCmdDecompressMemoryEXT CmdDecompressMemoryEXT;
+PFN_vkCmdDecompressMemoryIndirectCountEXT CmdDecompressMemoryIndirectCountEXT;
 PFN_vkCreateExternalComputeQueueNV CreateExternalComputeQueueNV;
 PFN_vkDestroyExternalComputeQueueNV DestroyExternalComputeQueueNV;
 PFN_vkGetExternalComputeQueueDataNV GetExternalComputeQueueDataNV;
@@ -861,6 +864,9 @@ PFN_vkUpdateIndirectExecutionSetPipelineEXT UpdateIndirectExecutionSetPipelineEX
 PFN_vkUpdateIndirectExecutionSetShaderEXT UpdateIndirectExecutionSetShaderEXT;
 #ifdef VK_USE_PLATFORM_OHOS
 PFN_vkCreateSurfaceOHOS CreateSurfaceOHOS;
+PFN_vkGetSwapchainGrallocUsageOHOS GetSwapchainGrallocUsageOHOS;
+PFN_vkAcquireImageOHOS AcquireImageOHOS;
+PFN_vkQueueSignalReleaseImageOHOS QueueSignalReleaseImageOHOS;
 #endif  // VK_USE_PLATFORM_OHOS
 PFN_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV;
 #ifdef VK_USE_PLATFORM_METAL_EXT
@@ -957,30 +963,50 @@ void InitCore(const char *api_name) {
     WaitForFences = reinterpret_cast<PFN_vkWaitForFences>(get_proc_address(lib_handle, "vkWaitForFences"));
     CreateSemaphore = reinterpret_cast<PFN_vkCreateSemaphore>(get_proc_address(lib_handle, "vkCreateSemaphore"));
     DestroySemaphore = reinterpret_cast<PFN_vkDestroySemaphore>(get_proc_address(lib_handle, "vkDestroySemaphore"));
-    CreateEvent = reinterpret_cast<PFN_vkCreateEvent>(get_proc_address(lib_handle, "vkCreateEvent"));
-    DestroyEvent = reinterpret_cast<PFN_vkDestroyEvent>(get_proc_address(lib_handle, "vkDestroyEvent"));
-    GetEventStatus = reinterpret_cast<PFN_vkGetEventStatus>(get_proc_address(lib_handle, "vkGetEventStatus"));
-    SetEvent = reinterpret_cast<PFN_vkSetEvent>(get_proc_address(lib_handle, "vkSetEvent"));
-    ResetEvent = reinterpret_cast<PFN_vkResetEvent>(get_proc_address(lib_handle, "vkResetEvent"));
     CreateQueryPool = reinterpret_cast<PFN_vkCreateQueryPool>(get_proc_address(lib_handle, "vkCreateQueryPool"));
     DestroyQueryPool = reinterpret_cast<PFN_vkDestroyQueryPool>(get_proc_address(lib_handle, "vkDestroyQueryPool"));
     GetQueryPoolResults = reinterpret_cast<PFN_vkGetQueryPoolResults>(get_proc_address(lib_handle, "vkGetQueryPoolResults"));
     CreateBuffer = reinterpret_cast<PFN_vkCreateBuffer>(get_proc_address(lib_handle, "vkCreateBuffer"));
     DestroyBuffer = reinterpret_cast<PFN_vkDestroyBuffer>(get_proc_address(lib_handle, "vkDestroyBuffer"));
-    CreateBufferView = reinterpret_cast<PFN_vkCreateBufferView>(get_proc_address(lib_handle, "vkCreateBufferView"));
-    DestroyBufferView = reinterpret_cast<PFN_vkDestroyBufferView>(get_proc_address(lib_handle, "vkDestroyBufferView"));
     CreateImage = reinterpret_cast<PFN_vkCreateImage>(get_proc_address(lib_handle, "vkCreateImage"));
     DestroyImage = reinterpret_cast<PFN_vkDestroyImage>(get_proc_address(lib_handle, "vkDestroyImage"));
     GetImageSubresourceLayout = reinterpret_cast<PFN_vkGetImageSubresourceLayout>(get_proc_address(lib_handle, "vkGetImageSubresourceLayout"));
     CreateImageView = reinterpret_cast<PFN_vkCreateImageView>(get_proc_address(lib_handle, "vkCreateImageView"));
     DestroyImageView = reinterpret_cast<PFN_vkDestroyImageView>(get_proc_address(lib_handle, "vkDestroyImageView"));
+    CreateCommandPool = reinterpret_cast<PFN_vkCreateCommandPool>(get_proc_address(lib_handle, "vkCreateCommandPool"));
+    DestroyCommandPool = reinterpret_cast<PFN_vkDestroyCommandPool>(get_proc_address(lib_handle, "vkDestroyCommandPool"));
+    ResetCommandPool = reinterpret_cast<PFN_vkResetCommandPool>(get_proc_address(lib_handle, "vkResetCommandPool"));
+    AllocateCommandBuffers = reinterpret_cast<PFN_vkAllocateCommandBuffers>(get_proc_address(lib_handle, "vkAllocateCommandBuffers"));
+    FreeCommandBuffers = reinterpret_cast<PFN_vkFreeCommandBuffers>(get_proc_address(lib_handle, "vkFreeCommandBuffers"));
+    BeginCommandBuffer = reinterpret_cast<PFN_vkBeginCommandBuffer>(get_proc_address(lib_handle, "vkBeginCommandBuffer"));
+    EndCommandBuffer = reinterpret_cast<PFN_vkEndCommandBuffer>(get_proc_address(lib_handle, "vkEndCommandBuffer"));
+    ResetCommandBuffer = reinterpret_cast<PFN_vkResetCommandBuffer>(get_proc_address(lib_handle, "vkResetCommandBuffer"));
+    CmdCopyBuffer = reinterpret_cast<PFN_vkCmdCopyBuffer>(get_proc_address(lib_handle, "vkCmdCopyBuffer"));
+    CmdCopyImage = reinterpret_cast<PFN_vkCmdCopyImage>(get_proc_address(lib_handle, "vkCmdCopyImage"));
+    CmdCopyBufferToImage = reinterpret_cast<PFN_vkCmdCopyBufferToImage>(get_proc_address(lib_handle, "vkCmdCopyBufferToImage"));
+    CmdCopyImageToBuffer = reinterpret_cast<PFN_vkCmdCopyImageToBuffer>(get_proc_address(lib_handle, "vkCmdCopyImageToBuffer"));
+    CmdUpdateBuffer = reinterpret_cast<PFN_vkCmdUpdateBuffer>(get_proc_address(lib_handle, "vkCmdUpdateBuffer"));
+    CmdFillBuffer = reinterpret_cast<PFN_vkCmdFillBuffer>(get_proc_address(lib_handle, "vkCmdFillBuffer"));
+    CmdPipelineBarrier = reinterpret_cast<PFN_vkCmdPipelineBarrier>(get_proc_address(lib_handle, "vkCmdPipelineBarrier"));
+    CmdBeginQuery = reinterpret_cast<PFN_vkCmdBeginQuery>(get_proc_address(lib_handle, "vkCmdBeginQuery"));
+    CmdEndQuery = reinterpret_cast<PFN_vkCmdEndQuery>(get_proc_address(lib_handle, "vkCmdEndQuery"));
+    CmdResetQueryPool = reinterpret_cast<PFN_vkCmdResetQueryPool>(get_proc_address(lib_handle, "vkCmdResetQueryPool"));
+    CmdWriteTimestamp = reinterpret_cast<PFN_vkCmdWriteTimestamp>(get_proc_address(lib_handle, "vkCmdWriteTimestamp"));
+    CmdCopyQueryPoolResults = reinterpret_cast<PFN_vkCmdCopyQueryPoolResults>(get_proc_address(lib_handle, "vkCmdCopyQueryPoolResults"));
+    CmdExecuteCommands = reinterpret_cast<PFN_vkCmdExecuteCommands>(get_proc_address(lib_handle, "vkCmdExecuteCommands"));
+    CreateEvent = reinterpret_cast<PFN_vkCreateEvent>(get_proc_address(lib_handle, "vkCreateEvent"));
+    DestroyEvent = reinterpret_cast<PFN_vkDestroyEvent>(get_proc_address(lib_handle, "vkDestroyEvent"));
+    GetEventStatus = reinterpret_cast<PFN_vkGetEventStatus>(get_proc_address(lib_handle, "vkGetEventStatus"));
+    SetEvent = reinterpret_cast<PFN_vkSetEvent>(get_proc_address(lib_handle, "vkSetEvent"));
+    ResetEvent = reinterpret_cast<PFN_vkResetEvent>(get_proc_address(lib_handle, "vkResetEvent"));
+    CreateBufferView = reinterpret_cast<PFN_vkCreateBufferView>(get_proc_address(lib_handle, "vkCreateBufferView"));
+    DestroyBufferView = reinterpret_cast<PFN_vkDestroyBufferView>(get_proc_address(lib_handle, "vkDestroyBufferView"));
     CreateShaderModule = reinterpret_cast<PFN_vkCreateShaderModule>(get_proc_address(lib_handle, "vkCreateShaderModule"));
     DestroyShaderModule = reinterpret_cast<PFN_vkDestroyShaderModule>(get_proc_address(lib_handle, "vkDestroyShaderModule"));
     CreatePipelineCache = reinterpret_cast<PFN_vkCreatePipelineCache>(get_proc_address(lib_handle, "vkCreatePipelineCache"));
     DestroyPipelineCache = reinterpret_cast<PFN_vkDestroyPipelineCache>(get_proc_address(lib_handle, "vkDestroyPipelineCache"));
     GetPipelineCacheData = reinterpret_cast<PFN_vkGetPipelineCacheData>(get_proc_address(lib_handle, "vkGetPipelineCacheData"));
     MergePipelineCaches = reinterpret_cast<PFN_vkMergePipelineCaches>(get_proc_address(lib_handle, "vkMergePipelineCaches"));
-    CreateGraphicsPipelines = reinterpret_cast<PFN_vkCreateGraphicsPipelines>(get_proc_address(lib_handle, "vkCreateGraphicsPipelines"));
     CreateComputePipelines = reinterpret_cast<PFN_vkCreateComputePipelines>(get_proc_address(lib_handle, "vkCreateComputePipelines"));
     DestroyPipeline = reinterpret_cast<PFN_vkDestroyPipeline>(get_proc_address(lib_handle, "vkDestroyPipeline"));
     CreatePipelineLayout = reinterpret_cast<PFN_vkCreatePipelineLayout>(get_proc_address(lib_handle, "vkCreatePipelineLayout"));
@@ -995,20 +1021,21 @@ void InitCore(const char *api_name) {
     AllocateDescriptorSets = reinterpret_cast<PFN_vkAllocateDescriptorSets>(get_proc_address(lib_handle, "vkAllocateDescriptorSets"));
     FreeDescriptorSets = reinterpret_cast<PFN_vkFreeDescriptorSets>(get_proc_address(lib_handle, "vkFreeDescriptorSets"));
     UpdateDescriptorSets = reinterpret_cast<PFN_vkUpdateDescriptorSets>(get_proc_address(lib_handle, "vkUpdateDescriptorSets"));
+    CmdBindPipeline = reinterpret_cast<PFN_vkCmdBindPipeline>(get_proc_address(lib_handle, "vkCmdBindPipeline"));
+    CmdBindDescriptorSets = reinterpret_cast<PFN_vkCmdBindDescriptorSets>(get_proc_address(lib_handle, "vkCmdBindDescriptorSets"));
+    CmdClearColorImage = reinterpret_cast<PFN_vkCmdClearColorImage>(get_proc_address(lib_handle, "vkCmdClearColorImage"));
+    CmdDispatch = reinterpret_cast<PFN_vkCmdDispatch>(get_proc_address(lib_handle, "vkCmdDispatch"));
+    CmdDispatchIndirect = reinterpret_cast<PFN_vkCmdDispatchIndirect>(get_proc_address(lib_handle, "vkCmdDispatchIndirect"));
+    CmdSetEvent = reinterpret_cast<PFN_vkCmdSetEvent>(get_proc_address(lib_handle, "vkCmdSetEvent"));
+    CmdResetEvent = reinterpret_cast<PFN_vkCmdResetEvent>(get_proc_address(lib_handle, "vkCmdResetEvent"));
+    CmdWaitEvents = reinterpret_cast<PFN_vkCmdWaitEvents>(get_proc_address(lib_handle, "vkCmdWaitEvents"));
+    CmdPushConstants = reinterpret_cast<PFN_vkCmdPushConstants>(get_proc_address(lib_handle, "vkCmdPushConstants"));
+    CreateGraphicsPipelines = reinterpret_cast<PFN_vkCreateGraphicsPipelines>(get_proc_address(lib_handle, "vkCreateGraphicsPipelines"));
     CreateFramebuffer = reinterpret_cast<PFN_vkCreateFramebuffer>(get_proc_address(lib_handle, "vkCreateFramebuffer"));
     DestroyFramebuffer = reinterpret_cast<PFN_vkDestroyFramebuffer>(get_proc_address(lib_handle, "vkDestroyFramebuffer"));
     CreateRenderPass = reinterpret_cast<PFN_vkCreateRenderPass>(get_proc_address(lib_handle, "vkCreateRenderPass"));
     DestroyRenderPass = reinterpret_cast<PFN_vkDestroyRenderPass>(get_proc_address(lib_handle, "vkDestroyRenderPass"));
     GetRenderAreaGranularity = reinterpret_cast<PFN_vkGetRenderAreaGranularity>(get_proc_address(lib_handle, "vkGetRenderAreaGranularity"));
-    CreateCommandPool = reinterpret_cast<PFN_vkCreateCommandPool>(get_proc_address(lib_handle, "vkCreateCommandPool"));
-    DestroyCommandPool = reinterpret_cast<PFN_vkDestroyCommandPool>(get_proc_address(lib_handle, "vkDestroyCommandPool"));
-    ResetCommandPool = reinterpret_cast<PFN_vkResetCommandPool>(get_proc_address(lib_handle, "vkResetCommandPool"));
-    AllocateCommandBuffers = reinterpret_cast<PFN_vkAllocateCommandBuffers>(get_proc_address(lib_handle, "vkAllocateCommandBuffers"));
-    FreeCommandBuffers = reinterpret_cast<PFN_vkFreeCommandBuffers>(get_proc_address(lib_handle, "vkFreeCommandBuffers"));
-    BeginCommandBuffer = reinterpret_cast<PFN_vkBeginCommandBuffer>(get_proc_address(lib_handle, "vkBeginCommandBuffer"));
-    EndCommandBuffer = reinterpret_cast<PFN_vkEndCommandBuffer>(get_proc_address(lib_handle, "vkEndCommandBuffer"));
-    ResetCommandBuffer = reinterpret_cast<PFN_vkResetCommandBuffer>(get_proc_address(lib_handle, "vkResetCommandBuffer"));
-    CmdBindPipeline = reinterpret_cast<PFN_vkCmdBindPipeline>(get_proc_address(lib_handle, "vkCmdBindPipeline"));
     CmdSetViewport = reinterpret_cast<PFN_vkCmdSetViewport>(get_proc_address(lib_handle, "vkCmdSetViewport"));
     CmdSetScissor = reinterpret_cast<PFN_vkCmdSetScissor>(get_proc_address(lib_handle, "vkCmdSetScissor"));
     CmdSetLineWidth = reinterpret_cast<PFN_vkCmdSetLineWidth>(get_proc_address(lib_handle, "vkCmdSetLineWidth"));
@@ -1018,46 +1045,24 @@ void InitCore(const char *api_name) {
     CmdSetStencilCompareMask = reinterpret_cast<PFN_vkCmdSetStencilCompareMask>(get_proc_address(lib_handle, "vkCmdSetStencilCompareMask"));
     CmdSetStencilWriteMask = reinterpret_cast<PFN_vkCmdSetStencilWriteMask>(get_proc_address(lib_handle, "vkCmdSetStencilWriteMask"));
     CmdSetStencilReference = reinterpret_cast<PFN_vkCmdSetStencilReference>(get_proc_address(lib_handle, "vkCmdSetStencilReference"));
-    CmdBindDescriptorSets = reinterpret_cast<PFN_vkCmdBindDescriptorSets>(get_proc_address(lib_handle, "vkCmdBindDescriptorSets"));
     CmdBindIndexBuffer = reinterpret_cast<PFN_vkCmdBindIndexBuffer>(get_proc_address(lib_handle, "vkCmdBindIndexBuffer"));
     CmdBindVertexBuffers = reinterpret_cast<PFN_vkCmdBindVertexBuffers>(get_proc_address(lib_handle, "vkCmdBindVertexBuffers"));
     CmdDraw = reinterpret_cast<PFN_vkCmdDraw>(get_proc_address(lib_handle, "vkCmdDraw"));
     CmdDrawIndexed = reinterpret_cast<PFN_vkCmdDrawIndexed>(get_proc_address(lib_handle, "vkCmdDrawIndexed"));
     CmdDrawIndirect = reinterpret_cast<PFN_vkCmdDrawIndirect>(get_proc_address(lib_handle, "vkCmdDrawIndirect"));
     CmdDrawIndexedIndirect = reinterpret_cast<PFN_vkCmdDrawIndexedIndirect>(get_proc_address(lib_handle, "vkCmdDrawIndexedIndirect"));
-    CmdDispatch = reinterpret_cast<PFN_vkCmdDispatch>(get_proc_address(lib_handle, "vkCmdDispatch"));
-    CmdDispatchIndirect = reinterpret_cast<PFN_vkCmdDispatchIndirect>(get_proc_address(lib_handle, "vkCmdDispatchIndirect"));
-    CmdCopyBuffer = reinterpret_cast<PFN_vkCmdCopyBuffer>(get_proc_address(lib_handle, "vkCmdCopyBuffer"));
-    CmdCopyImage = reinterpret_cast<PFN_vkCmdCopyImage>(get_proc_address(lib_handle, "vkCmdCopyImage"));
     CmdBlitImage = reinterpret_cast<PFN_vkCmdBlitImage>(get_proc_address(lib_handle, "vkCmdBlitImage"));
-    CmdCopyBufferToImage = reinterpret_cast<PFN_vkCmdCopyBufferToImage>(get_proc_address(lib_handle, "vkCmdCopyBufferToImage"));
-    CmdCopyImageToBuffer = reinterpret_cast<PFN_vkCmdCopyImageToBuffer>(get_proc_address(lib_handle, "vkCmdCopyImageToBuffer"));
-    CmdUpdateBuffer = reinterpret_cast<PFN_vkCmdUpdateBuffer>(get_proc_address(lib_handle, "vkCmdUpdateBuffer"));
-    CmdFillBuffer = reinterpret_cast<PFN_vkCmdFillBuffer>(get_proc_address(lib_handle, "vkCmdFillBuffer"));
-    CmdClearColorImage = reinterpret_cast<PFN_vkCmdClearColorImage>(get_proc_address(lib_handle, "vkCmdClearColorImage"));
     CmdClearDepthStencilImage = reinterpret_cast<PFN_vkCmdClearDepthStencilImage>(get_proc_address(lib_handle, "vkCmdClearDepthStencilImage"));
     CmdClearAttachments = reinterpret_cast<PFN_vkCmdClearAttachments>(get_proc_address(lib_handle, "vkCmdClearAttachments"));
     CmdResolveImage = reinterpret_cast<PFN_vkCmdResolveImage>(get_proc_address(lib_handle, "vkCmdResolveImage"));
-    CmdSetEvent = reinterpret_cast<PFN_vkCmdSetEvent>(get_proc_address(lib_handle, "vkCmdSetEvent"));
-    CmdResetEvent = reinterpret_cast<PFN_vkCmdResetEvent>(get_proc_address(lib_handle, "vkCmdResetEvent"));
-    CmdWaitEvents = reinterpret_cast<PFN_vkCmdWaitEvents>(get_proc_address(lib_handle, "vkCmdWaitEvents"));
-    CmdPipelineBarrier = reinterpret_cast<PFN_vkCmdPipelineBarrier>(get_proc_address(lib_handle, "vkCmdPipelineBarrier"));
-    CmdBeginQuery = reinterpret_cast<PFN_vkCmdBeginQuery>(get_proc_address(lib_handle, "vkCmdBeginQuery"));
-    CmdEndQuery = reinterpret_cast<PFN_vkCmdEndQuery>(get_proc_address(lib_handle, "vkCmdEndQuery"));
-    CmdResetQueryPool = reinterpret_cast<PFN_vkCmdResetQueryPool>(get_proc_address(lib_handle, "vkCmdResetQueryPool"));
-    CmdWriteTimestamp = reinterpret_cast<PFN_vkCmdWriteTimestamp>(get_proc_address(lib_handle, "vkCmdWriteTimestamp"));
-    CmdCopyQueryPoolResults = reinterpret_cast<PFN_vkCmdCopyQueryPoolResults>(get_proc_address(lib_handle, "vkCmdCopyQueryPoolResults"));
-    CmdPushConstants = reinterpret_cast<PFN_vkCmdPushConstants>(get_proc_address(lib_handle, "vkCmdPushConstants"));
     CmdBeginRenderPass = reinterpret_cast<PFN_vkCmdBeginRenderPass>(get_proc_address(lib_handle, "vkCmdBeginRenderPass"));
     CmdNextSubpass = reinterpret_cast<PFN_vkCmdNextSubpass>(get_proc_address(lib_handle, "vkCmdNextSubpass"));
     CmdEndRenderPass = reinterpret_cast<PFN_vkCmdEndRenderPass>(get_proc_address(lib_handle, "vkCmdEndRenderPass"));
-    CmdExecuteCommands = reinterpret_cast<PFN_vkCmdExecuteCommands>(get_proc_address(lib_handle, "vkCmdExecuteCommands"));
     EnumerateInstanceVersion = reinterpret_cast<PFN_vkEnumerateInstanceVersion>(get_proc_address(lib_handle, "vkEnumerateInstanceVersion"));
     BindBufferMemory2 = reinterpret_cast<PFN_vkBindBufferMemory2>(get_proc_address(lib_handle, "vkBindBufferMemory2"));
     BindImageMemory2 = reinterpret_cast<PFN_vkBindImageMemory2>(get_proc_address(lib_handle, "vkBindImageMemory2"));
     GetDeviceGroupPeerMemoryFeatures = reinterpret_cast<PFN_vkGetDeviceGroupPeerMemoryFeatures>(get_proc_address(lib_handle, "vkGetDeviceGroupPeerMemoryFeatures"));
     CmdSetDeviceMask = reinterpret_cast<PFN_vkCmdSetDeviceMask>(get_proc_address(lib_handle, "vkCmdSetDeviceMask"));
-    CmdDispatchBase = reinterpret_cast<PFN_vkCmdDispatchBase>(get_proc_address(lib_handle, "vkCmdDispatchBase"));
     EnumeratePhysicalDeviceGroups = reinterpret_cast<PFN_vkEnumeratePhysicalDeviceGroups>(get_proc_address(lib_handle, "vkEnumeratePhysicalDeviceGroups"));
     GetImageMemoryRequirements2 = reinterpret_cast<PFN_vkGetImageMemoryRequirements2>(get_proc_address(lib_handle, "vkGetImageMemoryRequirements2"));
     GetBufferMemoryRequirements2 = reinterpret_cast<PFN_vkGetBufferMemoryRequirements2>(get_proc_address(lib_handle, "vkGetBufferMemoryRequirements2"));
@@ -1071,21 +1076,16 @@ void InitCore(const char *api_name) {
     GetPhysicalDeviceSparseImageFormatProperties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceSparseImageFormatProperties2>(get_proc_address(lib_handle, "vkGetPhysicalDeviceSparseImageFormatProperties2"));
     TrimCommandPool = reinterpret_cast<PFN_vkTrimCommandPool>(get_proc_address(lib_handle, "vkTrimCommandPool"));
     GetDeviceQueue2 = reinterpret_cast<PFN_vkGetDeviceQueue2>(get_proc_address(lib_handle, "vkGetDeviceQueue2"));
-    CreateSamplerYcbcrConversion = reinterpret_cast<PFN_vkCreateSamplerYcbcrConversion>(get_proc_address(lib_handle, "vkCreateSamplerYcbcrConversion"));
-    DestroySamplerYcbcrConversion = reinterpret_cast<PFN_vkDestroySamplerYcbcrConversion>(get_proc_address(lib_handle, "vkDestroySamplerYcbcrConversion"));
-    CreateDescriptorUpdateTemplate = reinterpret_cast<PFN_vkCreateDescriptorUpdateTemplate>(get_proc_address(lib_handle, "vkCreateDescriptorUpdateTemplate"));
-    DestroyDescriptorUpdateTemplate = reinterpret_cast<PFN_vkDestroyDescriptorUpdateTemplate>(get_proc_address(lib_handle, "vkDestroyDescriptorUpdateTemplate"));
-    UpdateDescriptorSetWithTemplate = reinterpret_cast<PFN_vkUpdateDescriptorSetWithTemplate>(get_proc_address(lib_handle, "vkUpdateDescriptorSetWithTemplate"));
     GetPhysicalDeviceExternalBufferProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalBufferProperties>(get_proc_address(lib_handle, "vkGetPhysicalDeviceExternalBufferProperties"));
     GetPhysicalDeviceExternalFenceProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalFenceProperties>(get_proc_address(lib_handle, "vkGetPhysicalDeviceExternalFenceProperties"));
     GetPhysicalDeviceExternalSemaphoreProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalSemaphoreProperties>(get_proc_address(lib_handle, "vkGetPhysicalDeviceExternalSemaphoreProperties"));
+    CmdDispatchBase = reinterpret_cast<PFN_vkCmdDispatchBase>(get_proc_address(lib_handle, "vkCmdDispatchBase"));
+    CreateDescriptorUpdateTemplate = reinterpret_cast<PFN_vkCreateDescriptorUpdateTemplate>(get_proc_address(lib_handle, "vkCreateDescriptorUpdateTemplate"));
+    DestroyDescriptorUpdateTemplate = reinterpret_cast<PFN_vkDestroyDescriptorUpdateTemplate>(get_proc_address(lib_handle, "vkDestroyDescriptorUpdateTemplate"));
+    UpdateDescriptorSetWithTemplate = reinterpret_cast<PFN_vkUpdateDescriptorSetWithTemplate>(get_proc_address(lib_handle, "vkUpdateDescriptorSetWithTemplate"));
     GetDescriptorSetLayoutSupport = reinterpret_cast<PFN_vkGetDescriptorSetLayoutSupport>(get_proc_address(lib_handle, "vkGetDescriptorSetLayoutSupport"));
-    CmdDrawIndirectCount = reinterpret_cast<PFN_vkCmdDrawIndirectCount>(get_proc_address(lib_handle, "vkCmdDrawIndirectCount"));
-    CmdDrawIndexedIndirectCount = reinterpret_cast<PFN_vkCmdDrawIndexedIndirectCount>(get_proc_address(lib_handle, "vkCmdDrawIndexedIndirectCount"));
-    CreateRenderPass2 = reinterpret_cast<PFN_vkCreateRenderPass2>(get_proc_address(lib_handle, "vkCreateRenderPass2"));
-    CmdBeginRenderPass2 = reinterpret_cast<PFN_vkCmdBeginRenderPass2>(get_proc_address(lib_handle, "vkCmdBeginRenderPass2"));
-    CmdNextSubpass2 = reinterpret_cast<PFN_vkCmdNextSubpass2>(get_proc_address(lib_handle, "vkCmdNextSubpass2"));
-    CmdEndRenderPass2 = reinterpret_cast<PFN_vkCmdEndRenderPass2>(get_proc_address(lib_handle, "vkCmdEndRenderPass2"));
+    CreateSamplerYcbcrConversion = reinterpret_cast<PFN_vkCreateSamplerYcbcrConversion>(get_proc_address(lib_handle, "vkCreateSamplerYcbcrConversion"));
+    DestroySamplerYcbcrConversion = reinterpret_cast<PFN_vkDestroySamplerYcbcrConversion>(get_proc_address(lib_handle, "vkDestroySamplerYcbcrConversion"));
     ResetQueryPool = reinterpret_cast<PFN_vkResetQueryPool>(get_proc_address(lib_handle, "vkResetQueryPool"));
     GetSemaphoreCounterValue = reinterpret_cast<PFN_vkGetSemaphoreCounterValue>(get_proc_address(lib_handle, "vkGetSemaphoreCounterValue"));
     WaitSemaphores = reinterpret_cast<PFN_vkWaitSemaphores>(get_proc_address(lib_handle, "vkWaitSemaphores"));
@@ -1093,14 +1093,17 @@ void InitCore(const char *api_name) {
     GetBufferDeviceAddress = reinterpret_cast<PFN_vkGetBufferDeviceAddress>(get_proc_address(lib_handle, "vkGetBufferDeviceAddress"));
     GetBufferOpaqueCaptureAddress = reinterpret_cast<PFN_vkGetBufferOpaqueCaptureAddress>(get_proc_address(lib_handle, "vkGetBufferOpaqueCaptureAddress"));
     GetDeviceMemoryOpaqueCaptureAddress = reinterpret_cast<PFN_vkGetDeviceMemoryOpaqueCaptureAddress>(get_proc_address(lib_handle, "vkGetDeviceMemoryOpaqueCaptureAddress"));
+    CmdDrawIndirectCount = reinterpret_cast<PFN_vkCmdDrawIndirectCount>(get_proc_address(lib_handle, "vkCmdDrawIndirectCount"));
+    CmdDrawIndexedIndirectCount = reinterpret_cast<PFN_vkCmdDrawIndexedIndirectCount>(get_proc_address(lib_handle, "vkCmdDrawIndexedIndirectCount"));
+    CreateRenderPass2 = reinterpret_cast<PFN_vkCreateRenderPass2>(get_proc_address(lib_handle, "vkCreateRenderPass2"));
+    CmdBeginRenderPass2 = reinterpret_cast<PFN_vkCmdBeginRenderPass2>(get_proc_address(lib_handle, "vkCmdBeginRenderPass2"));
+    CmdNextSubpass2 = reinterpret_cast<PFN_vkCmdNextSubpass2>(get_proc_address(lib_handle, "vkCmdNextSubpass2"));
+    CmdEndRenderPass2 = reinterpret_cast<PFN_vkCmdEndRenderPass2>(get_proc_address(lib_handle, "vkCmdEndRenderPass2"));
     GetPhysicalDeviceToolProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceToolProperties>(get_proc_address(lib_handle, "vkGetPhysicalDeviceToolProperties"));
     CreatePrivateDataSlot = reinterpret_cast<PFN_vkCreatePrivateDataSlot>(get_proc_address(lib_handle, "vkCreatePrivateDataSlot"));
     DestroyPrivateDataSlot = reinterpret_cast<PFN_vkDestroyPrivateDataSlot>(get_proc_address(lib_handle, "vkDestroyPrivateDataSlot"));
     SetPrivateData = reinterpret_cast<PFN_vkSetPrivateData>(get_proc_address(lib_handle, "vkSetPrivateData"));
     GetPrivateData = reinterpret_cast<PFN_vkGetPrivateData>(get_proc_address(lib_handle, "vkGetPrivateData"));
-    CmdSetEvent2 = reinterpret_cast<PFN_vkCmdSetEvent2>(get_proc_address(lib_handle, "vkCmdSetEvent2"));
-    CmdResetEvent2 = reinterpret_cast<PFN_vkCmdResetEvent2>(get_proc_address(lib_handle, "vkCmdResetEvent2"));
-    CmdWaitEvents2 = reinterpret_cast<PFN_vkCmdWaitEvents2>(get_proc_address(lib_handle, "vkCmdWaitEvents2"));
     CmdPipelineBarrier2 = reinterpret_cast<PFN_vkCmdPipelineBarrier2>(get_proc_address(lib_handle, "vkCmdPipelineBarrier2"));
     CmdWriteTimestamp2 = reinterpret_cast<PFN_vkCmdWriteTimestamp2>(get_proc_address(lib_handle, "vkCmdWriteTimestamp2"));
     QueueSubmit2 = reinterpret_cast<PFN_vkQueueSubmit2>(get_proc_address(lib_handle, "vkQueueSubmit2"));
@@ -1108,6 +1111,12 @@ void InitCore(const char *api_name) {
     CmdCopyImage2 = reinterpret_cast<PFN_vkCmdCopyImage2>(get_proc_address(lib_handle, "vkCmdCopyImage2"));
     CmdCopyBufferToImage2 = reinterpret_cast<PFN_vkCmdCopyBufferToImage2>(get_proc_address(lib_handle, "vkCmdCopyBufferToImage2"));
     CmdCopyImageToBuffer2 = reinterpret_cast<PFN_vkCmdCopyImageToBuffer2>(get_proc_address(lib_handle, "vkCmdCopyImageToBuffer2"));
+    GetDeviceBufferMemoryRequirements = reinterpret_cast<PFN_vkGetDeviceBufferMemoryRequirements>(get_proc_address(lib_handle, "vkGetDeviceBufferMemoryRequirements"));
+    GetDeviceImageMemoryRequirements = reinterpret_cast<PFN_vkGetDeviceImageMemoryRequirements>(get_proc_address(lib_handle, "vkGetDeviceImageMemoryRequirements"));
+    GetDeviceImageSparseMemoryRequirements = reinterpret_cast<PFN_vkGetDeviceImageSparseMemoryRequirements>(get_proc_address(lib_handle, "vkGetDeviceImageSparseMemoryRequirements"));
+    CmdSetEvent2 = reinterpret_cast<PFN_vkCmdSetEvent2>(get_proc_address(lib_handle, "vkCmdSetEvent2"));
+    CmdResetEvent2 = reinterpret_cast<PFN_vkCmdResetEvent2>(get_proc_address(lib_handle, "vkCmdResetEvent2"));
+    CmdWaitEvents2 = reinterpret_cast<PFN_vkCmdWaitEvents2>(get_proc_address(lib_handle, "vkCmdWaitEvents2"));
     CmdBlitImage2 = reinterpret_cast<PFN_vkCmdBlitImage2>(get_proc_address(lib_handle, "vkCmdBlitImage2"));
     CmdResolveImage2 = reinterpret_cast<PFN_vkCmdResolveImage2>(get_proc_address(lib_handle, "vkCmdResolveImage2"));
     CmdBeginRendering = reinterpret_cast<PFN_vkCmdBeginRendering>(get_proc_address(lib_handle, "vkCmdBeginRendering"));
@@ -1127,28 +1136,25 @@ void InitCore(const char *api_name) {
     CmdSetRasterizerDiscardEnable = reinterpret_cast<PFN_vkCmdSetRasterizerDiscardEnable>(get_proc_address(lib_handle, "vkCmdSetRasterizerDiscardEnable"));
     CmdSetDepthBiasEnable = reinterpret_cast<PFN_vkCmdSetDepthBiasEnable>(get_proc_address(lib_handle, "vkCmdSetDepthBiasEnable"));
     CmdSetPrimitiveRestartEnable = reinterpret_cast<PFN_vkCmdSetPrimitiveRestartEnable>(get_proc_address(lib_handle, "vkCmdSetPrimitiveRestartEnable"));
-    GetDeviceBufferMemoryRequirements = reinterpret_cast<PFN_vkGetDeviceBufferMemoryRequirements>(get_proc_address(lib_handle, "vkGetDeviceBufferMemoryRequirements"));
-    GetDeviceImageMemoryRequirements = reinterpret_cast<PFN_vkGetDeviceImageMemoryRequirements>(get_proc_address(lib_handle, "vkGetDeviceImageMemoryRequirements"));
-    GetDeviceImageSparseMemoryRequirements = reinterpret_cast<PFN_vkGetDeviceImageSparseMemoryRequirements>(get_proc_address(lib_handle, "vkGetDeviceImageSparseMemoryRequirements"));
-    CmdSetLineStipple = reinterpret_cast<PFN_vkCmdSetLineStipple>(get_proc_address(lib_handle, "vkCmdSetLineStipple"));
     MapMemory2 = reinterpret_cast<PFN_vkMapMemory2>(get_proc_address(lib_handle, "vkMapMemory2"));
     UnmapMemory2 = reinterpret_cast<PFN_vkUnmapMemory2>(get_proc_address(lib_handle, "vkUnmapMemory2"));
-    CmdBindIndexBuffer2 = reinterpret_cast<PFN_vkCmdBindIndexBuffer2>(get_proc_address(lib_handle, "vkCmdBindIndexBuffer2"));
-    GetRenderingAreaGranularity = reinterpret_cast<PFN_vkGetRenderingAreaGranularity>(get_proc_address(lib_handle, "vkGetRenderingAreaGranularity"));
     GetDeviceImageSubresourceLayout = reinterpret_cast<PFN_vkGetDeviceImageSubresourceLayout>(get_proc_address(lib_handle, "vkGetDeviceImageSubresourceLayout"));
     GetImageSubresourceLayout2 = reinterpret_cast<PFN_vkGetImageSubresourceLayout2>(get_proc_address(lib_handle, "vkGetImageSubresourceLayout2"));
-    CmdPushDescriptorSet = reinterpret_cast<PFN_vkCmdPushDescriptorSet>(get_proc_address(lib_handle, "vkCmdPushDescriptorSet"));
-    CmdPushDescriptorSetWithTemplate = reinterpret_cast<PFN_vkCmdPushDescriptorSetWithTemplate>(get_proc_address(lib_handle, "vkCmdPushDescriptorSetWithTemplate"));
-    CmdSetRenderingAttachmentLocations = reinterpret_cast<PFN_vkCmdSetRenderingAttachmentLocations>(get_proc_address(lib_handle, "vkCmdSetRenderingAttachmentLocations"));
-    CmdSetRenderingInputAttachmentIndices = reinterpret_cast<PFN_vkCmdSetRenderingInputAttachmentIndices>(get_proc_address(lib_handle, "vkCmdSetRenderingInputAttachmentIndices"));
-    CmdBindDescriptorSets2 = reinterpret_cast<PFN_vkCmdBindDescriptorSets2>(get_proc_address(lib_handle, "vkCmdBindDescriptorSets2"));
-    CmdPushConstants2 = reinterpret_cast<PFN_vkCmdPushConstants2>(get_proc_address(lib_handle, "vkCmdPushConstants2"));
-    CmdPushDescriptorSet2 = reinterpret_cast<PFN_vkCmdPushDescriptorSet2>(get_proc_address(lib_handle, "vkCmdPushDescriptorSet2"));
-    CmdPushDescriptorSetWithTemplate2 = reinterpret_cast<PFN_vkCmdPushDescriptorSetWithTemplate2>(get_proc_address(lib_handle, "vkCmdPushDescriptorSetWithTemplate2"));
     CopyMemoryToImage = reinterpret_cast<PFN_vkCopyMemoryToImage>(get_proc_address(lib_handle, "vkCopyMemoryToImage"));
     CopyImageToMemory = reinterpret_cast<PFN_vkCopyImageToMemory>(get_proc_address(lib_handle, "vkCopyImageToMemory"));
     CopyImageToImage = reinterpret_cast<PFN_vkCopyImageToImage>(get_proc_address(lib_handle, "vkCopyImageToImage"));
     TransitionImageLayout = reinterpret_cast<PFN_vkTransitionImageLayout>(get_proc_address(lib_handle, "vkTransitionImageLayout"));
+    CmdPushDescriptorSet = reinterpret_cast<PFN_vkCmdPushDescriptorSet>(get_proc_address(lib_handle, "vkCmdPushDescriptorSet"));
+    CmdPushDescriptorSetWithTemplate = reinterpret_cast<PFN_vkCmdPushDescriptorSetWithTemplate>(get_proc_address(lib_handle, "vkCmdPushDescriptorSetWithTemplate"));
+    CmdBindDescriptorSets2 = reinterpret_cast<PFN_vkCmdBindDescriptorSets2>(get_proc_address(lib_handle, "vkCmdBindDescriptorSets2"));
+    CmdPushConstants2 = reinterpret_cast<PFN_vkCmdPushConstants2>(get_proc_address(lib_handle, "vkCmdPushConstants2"));
+    CmdPushDescriptorSet2 = reinterpret_cast<PFN_vkCmdPushDescriptorSet2>(get_proc_address(lib_handle, "vkCmdPushDescriptorSet2"));
+    CmdPushDescriptorSetWithTemplate2 = reinterpret_cast<PFN_vkCmdPushDescriptorSetWithTemplate2>(get_proc_address(lib_handle, "vkCmdPushDescriptorSetWithTemplate2"));
+    CmdSetLineStipple = reinterpret_cast<PFN_vkCmdSetLineStipple>(get_proc_address(lib_handle, "vkCmdSetLineStipple"));
+    CmdBindIndexBuffer2 = reinterpret_cast<PFN_vkCmdBindIndexBuffer2>(get_proc_address(lib_handle, "vkCmdBindIndexBuffer2"));
+    GetRenderingAreaGranularity = reinterpret_cast<PFN_vkGetRenderingAreaGranularity>(get_proc_address(lib_handle, "vkGetRenderingAreaGranularity"));
+    CmdSetRenderingAttachmentLocations = reinterpret_cast<PFN_vkCmdSetRenderingAttachmentLocations>(get_proc_address(lib_handle, "vkCmdSetRenderingAttachmentLocations"));
+    CmdSetRenderingInputAttachmentIndices = reinterpret_cast<PFN_vkCmdSetRenderingInputAttachmentIndices>(get_proc_address(lib_handle, "vkCmdSetRenderingInputAttachmentIndices"));
 }
 void InitExtensionFromCore(const char* extension_name) {
     static const vvl::unordered_map<std::string, std::function<void()>> initializers = {
@@ -1402,6 +1408,10 @@ void InitExtensionFromCore(const char* extension_name) {
         },
         {
             "VK_NV_copy_memory_indirect", []() {
+            }
+        },
+        {
+            "VK_NV_memory_decompression", []() {
             }
         },
 
@@ -1965,6 +1975,11 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             "VK_KHR_copy_memory_indirect", [](VkInstance , VkDevice device) {
                 CmdCopyMemoryIndirectKHR = reinterpret_cast<PFN_vkCmdCopyMemoryIndirectKHR>(GetDeviceProcAddr(device, "vkCmdCopyMemoryIndirectKHR"));
                 CmdCopyMemoryToImageIndirectKHR = reinterpret_cast<PFN_vkCmdCopyMemoryToImageIndirectKHR>(GetDeviceProcAddr(device, "vkCmdCopyMemoryToImageIndirectKHR"));
+            }
+        },
+        {
+            "VK_KHR_maintenance10", [](VkInstance , VkDevice device) {
+                CmdEndRendering2KHR = reinterpret_cast<PFN_vkCmdEndRendering2KHR>(GetDeviceProcAddr(device, "vkCmdEndRendering2KHR"));
             }
         },
         {
@@ -2638,6 +2653,12 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
+            "VK_EXT_memory_decompression", [](VkInstance , VkDevice device) {
+                CmdDecompressMemoryEXT = reinterpret_cast<PFN_vkCmdDecompressMemoryEXT>(GetDeviceProcAddr(device, "vkCmdDecompressMemoryEXT"));
+                CmdDecompressMemoryIndirectCountEXT = reinterpret_cast<PFN_vkCmdDecompressMemoryIndirectCountEXT>(GetDeviceProcAddr(device, "vkCmdDecompressMemoryIndirectCountEXT"));
+            }
+        },
+        {
             "VK_NV_external_compute_queue", [](VkInstance , VkDevice device) {
                 CreateExternalComputeQueueNV = reinterpret_cast<PFN_vkCreateExternalComputeQueueNV>(GetDeviceProcAddr(device, "vkCreateExternalComputeQueueNV"));
                 DestroyExternalComputeQueueNV = reinterpret_cast<PFN_vkDestroyExternalComputeQueueNV>(GetDeviceProcAddr(device, "vkDestroyExternalComputeQueueNV"));
@@ -2674,6 +2695,15 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 CmdSetDepthClampRangeEXT = reinterpret_cast<PFN_vkCmdSetDepthClampRangeEXT>(GetDeviceProcAddr(device, "vkCmdSetDepthClampRangeEXT"));
             }
         },
+#ifdef VK_USE_PLATFORM_OHOS
+        {
+            "VK_OHOS_native_buffer", [](VkInstance , VkDevice device) {
+                GetSwapchainGrallocUsageOHOS = reinterpret_cast<PFN_vkGetSwapchainGrallocUsageOHOS>(GetDeviceProcAddr(device, "vkGetSwapchainGrallocUsageOHOS"));
+                AcquireImageOHOS = reinterpret_cast<PFN_vkAcquireImageOHOS>(GetDeviceProcAddr(device, "vkAcquireImageOHOS"));
+                QueueSignalReleaseImageOHOS = reinterpret_cast<PFN_vkQueueSignalReleaseImageOHOS>(GetDeviceProcAddr(device, "vkQueueSignalReleaseImageOHOS"));
+            }
+        },
+#endif  // VK_USE_PLATFORM_OHOS
         {
             "VK_NV_cooperative_matrix2", [](VkInstance instance, VkDevice ) {
                 GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV = reinterpret_cast<PFN_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV"));
@@ -2919,6 +2949,7 @@ void ResetAllExtensions() {
     CmdBindDescriptorBufferEmbeddedSamplers2EXT = nullptr;
     CmdCopyMemoryIndirectKHR = nullptr;
     CmdCopyMemoryToImageIndirectKHR = nullptr;
+    CmdEndRendering2KHR = nullptr;
     CreateDebugReportCallbackEXT = nullptr;
     DestroyDebugReportCallbackEXT = nullptr;
     DebugReportMessageEXT = nullptr;
@@ -3270,6 +3301,8 @@ void ResetAllExtensions() {
     GetScreenBufferPropertiesQNX = nullptr;
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
     CmdBindTileMemoryQCOM = nullptr;
+    CmdDecompressMemoryEXT = nullptr;
+    CmdDecompressMemoryIndirectCountEXT = nullptr;
     CreateExternalComputeQueueNV = nullptr;
     DestroyExternalComputeQueueNV = nullptr;
     GetExternalComputeQueueDataNV = nullptr;
@@ -3288,6 +3321,9 @@ void ResetAllExtensions() {
     UpdateIndirectExecutionSetShaderEXT = nullptr;
 #ifdef VK_USE_PLATFORM_OHOS
     CreateSurfaceOHOS = nullptr;
+    GetSwapchainGrallocUsageOHOS = nullptr;
+    AcquireImageOHOS = nullptr;
+    QueueSignalReleaseImageOHOS = nullptr;
 #endif  // VK_USE_PLATFORM_OHOS
     GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV = nullptr;
 #ifdef VK_USE_PLATFORM_METAL_EXT

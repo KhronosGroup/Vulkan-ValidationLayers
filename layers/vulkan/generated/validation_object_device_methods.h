@@ -225,32 +225,6 @@ virtual void PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore semaphor
                                            const RecordObject& record_obj) {}
 virtual void PostCallRecordDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks* pAllocator,
                                             const RecordObject& record_obj) {}
-virtual bool PreCallValidateCreateEvent(VkDevice device, const VkEventCreateInfo* pCreateInfo,
-                                        const VkAllocationCallbacks* pAllocator, VkEvent* pEvent,
-                                        const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCreateEvent(VkDevice device, const VkEventCreateInfo* pCreateInfo,
-                                      const VkAllocationCallbacks* pAllocator, VkEvent* pEvent, const RecordObject& record_obj) {}
-virtual void PostCallRecordCreateEvent(VkDevice device, const VkEventCreateInfo* pCreateInfo,
-                                       const VkAllocationCallbacks* pAllocator, VkEvent* pEvent, const RecordObject& record_obj) {}
-virtual bool PreCallValidateDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator,
-                                         const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator,
-                                       const RecordObject& record_obj) {}
-virtual void PostCallRecordDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator,
-                                        const RecordObject& record_obj) {}
-virtual bool PreCallValidateGetEventStatus(VkDevice device, VkEvent event, const ErrorObject& error_obj) const { return false; }
-virtual void PreCallRecordGetEventStatus(VkDevice device, VkEvent event, const RecordObject& record_obj) {}
-virtual void PostCallRecordGetEventStatus(VkDevice device, VkEvent event, const RecordObject& record_obj) {}
-virtual bool PreCallValidateSetEvent(VkDevice device, VkEvent event, const ErrorObject& error_obj) const { return false; }
-virtual void PreCallRecordSetEvent(VkDevice device, VkEvent event, const RecordObject& record_obj) {}
-virtual void PostCallRecordSetEvent(VkDevice device, VkEvent event, const RecordObject& record_obj) {}
-virtual bool PreCallValidateResetEvent(VkDevice device, VkEvent event, const ErrorObject& error_obj) const { return false; }
-virtual void PreCallRecordResetEvent(VkDevice device, VkEvent event, const RecordObject& record_obj) {}
-virtual void PostCallRecordResetEvent(VkDevice device, VkEvent event, const RecordObject& record_obj) {}
 virtual bool PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo* pCreateInfo,
                                             const VkAllocationCallbacks* pAllocator, VkQueryPool* pQueryPool,
                                             const ErrorObject& error_obj) const {
@@ -300,25 +274,6 @@ virtual void PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const 
                                         const RecordObject& record_obj) {}
 virtual void PostCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator,
                                          const RecordObject& record_obj) {}
-virtual bool PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
-                                             const VkAllocationCallbacks* pAllocator, VkBufferView* pView,
-                                             const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
-                                           const VkAllocationCallbacks* pAllocator, VkBufferView* pView,
-                                           const RecordObject& record_obj) {}
-virtual void PostCallRecordCreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
-                                            const VkAllocationCallbacks* pAllocator, VkBufferView* pView,
-                                            const RecordObject& record_obj) {}
-virtual bool PreCallValidateDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks* pAllocator,
-                                              const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks* pAllocator,
-                                            const RecordObject& record_obj) {}
-virtual void PostCallRecordDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks* pAllocator,
-                                             const RecordObject& record_obj) {}
 virtual bool PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkImage* pImage,
                                         const ErrorObject& error_obj) const {
@@ -363,6 +318,243 @@ virtual void PreCallRecordDestroyImageView(VkDevice device, VkImageView imageVie
                                            const RecordObject& record_obj) {}
 virtual void PostCallRecordDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks* pAllocator,
                                             const RecordObject& record_obj) {}
+virtual bool PreCallValidateCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
+                                              const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool,
+                                              const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
+                                            const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool,
+                                            const RecordObject& record_obj) {}
+virtual void PostCallRecordCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
+                                             const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool,
+                                             const RecordObject& record_obj) {}
+virtual bool PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks* pAllocator,
+                                               const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks* pAllocator,
+                                             const RecordObject& record_obj) {}
+virtual void PostCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks* pAllocator,
+                                              const RecordObject& record_obj) {}
+virtual bool PreCallValidateResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags,
+                                             const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags,
+                                           const RecordObject& record_obj) {}
+virtual void PostCallRecordResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags,
+                                            const RecordObject& record_obj) {}
+virtual bool PreCallValidateAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pAllocateInfo,
+                                                   VkCommandBuffer* pCommandBuffers, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pAllocateInfo,
+                                                 VkCommandBuffer* pCommandBuffers, const RecordObject& record_obj) {}
+virtual void PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pAllocateInfo,
+                                                  VkCommandBuffer* pCommandBuffers, const RecordObject& record_obj) {}
+virtual bool PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
+                                               const VkCommandBuffer* pCommandBuffers, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
+                                             const VkCommandBuffer* pCommandBuffers, const RecordObject& record_obj) {}
+virtual void PostCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
+                                              const VkCommandBuffer* pCommandBuffers, const RecordObject& record_obj) {}
+virtual bool PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo,
+                                               const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo,
+                                             const RecordObject& record_obj) {}
+virtual void PostCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo,
+                                              const RecordObject& record_obj) {}
+virtual bool PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const { return false; }
+virtual void PreCallRecordEndCommandBuffer(VkCommandBuffer commandBuffer, const RecordObject& record_obj) {}
+virtual void PostCallRecordEndCommandBuffer(VkCommandBuffer commandBuffer, const RecordObject& record_obj) {}
+virtual bool PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags,
+                                               const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags,
+                                             const RecordObject& record_obj) {}
+virtual void PostCallRecordResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags,
+                                              const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
+                                          uint32_t regionCount, const VkBufferCopy* pRegions, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
+                                        const VkBufferCopy* pRegions, const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
+                                         uint32_t regionCount, const VkBufferCopy* pRegions, const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                         VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                         const VkImageCopy* pRegions, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                       VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                       const VkImageCopy* pRegions, const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                        VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                        const VkImageCopy* pRegions, const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
+                                                 VkImageLayout dstImageLayout, uint32_t regionCount,
+                                                 const VkBufferImageCopy* pRegions, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
+                                               VkImageLayout dstImageLayout, uint32_t regionCount,
+                                               const VkBufferImageCopy* pRegions, const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
+                                                VkImageLayout dstImageLayout, uint32_t regionCount,
+                                                const VkBufferImageCopy* pRegions, const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                                 VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions,
+                                                 const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                               VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions,
+                                               const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                                VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions,
+                                                const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                            VkDeviceSize dataSize, const void* pData, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                          VkDeviceSize dataSize, const void* pData, const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                           VkDeviceSize dataSize, const void* pData, const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                          VkDeviceSize size, uint32_t data, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                        VkDeviceSize size, uint32_t data, const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                         VkDeviceSize size, uint32_t data, const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
+                                               VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
+                                               uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+                                               uint32_t bufferMemoryBarrierCount,
+                                               const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
+                                               const VkImageMemoryBarrier* pImageMemoryBarriers,
+                                               const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
+                                             VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
+                                             uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+                                             uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+                                             uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
+                                             const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
+                                              VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
+                                              uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+                                              uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+                                              uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
+                                              const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
+                                          VkQueryControlFlags flags, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
+                                        VkQueryControlFlags flags, const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
+                                         VkQueryControlFlags flags, const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
+                                        const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
+                                      const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
+                                       const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
+                                              uint32_t queryCount, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
+                                            uint32_t queryCount, const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
+                                             uint32_t queryCount, const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
+                                              VkQueryPool queryPool, uint32_t query, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
+                                            VkQueryPool queryPool, uint32_t query, const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
+                                             VkQueryPool queryPool, uint32_t query, const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
+                                                    uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                                    VkDeviceSize stride, VkQueryResultFlags flags,
+                                                    const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
+                                                  uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                                  VkDeviceSize stride, VkQueryResultFlags flags, const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
+                                                   uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                                   VkDeviceSize stride, VkQueryResultFlags flags, const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
+                                               const VkCommandBuffer* pCommandBuffers, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
+                                             const VkCommandBuffer* pCommandBuffers, const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
+                                              const VkCommandBuffer* pCommandBuffers, const RecordObject& record_obj) {}
+virtual bool PreCallValidateCreateEvent(VkDevice device, const VkEventCreateInfo* pCreateInfo,
+                                        const VkAllocationCallbacks* pAllocator, VkEvent* pEvent,
+                                        const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCreateEvent(VkDevice device, const VkEventCreateInfo* pCreateInfo,
+                                      const VkAllocationCallbacks* pAllocator, VkEvent* pEvent, const RecordObject& record_obj) {}
+virtual void PostCallRecordCreateEvent(VkDevice device, const VkEventCreateInfo* pCreateInfo,
+                                       const VkAllocationCallbacks* pAllocator, VkEvent* pEvent, const RecordObject& record_obj) {}
+virtual bool PreCallValidateDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator,
+                                         const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator,
+                                       const RecordObject& record_obj) {}
+virtual void PostCallRecordDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator,
+                                        const RecordObject& record_obj) {}
+virtual bool PreCallValidateGetEventStatus(VkDevice device, VkEvent event, const ErrorObject& error_obj) const { return false; }
+virtual void PreCallRecordGetEventStatus(VkDevice device, VkEvent event, const RecordObject& record_obj) {}
+virtual void PostCallRecordGetEventStatus(VkDevice device, VkEvent event, const RecordObject& record_obj) {}
+virtual bool PreCallValidateSetEvent(VkDevice device, VkEvent event, const ErrorObject& error_obj) const { return false; }
+virtual void PreCallRecordSetEvent(VkDevice device, VkEvent event, const RecordObject& record_obj) {}
+virtual void PostCallRecordSetEvent(VkDevice device, VkEvent event, const RecordObject& record_obj) {}
+virtual bool PreCallValidateResetEvent(VkDevice device, VkEvent event, const ErrorObject& error_obj) const { return false; }
+virtual void PreCallRecordResetEvent(VkDevice device, VkEvent event, const RecordObject& record_obj) {}
+virtual void PostCallRecordResetEvent(VkDevice device, VkEvent event, const RecordObject& record_obj) {}
+virtual bool PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
+                                             const VkAllocationCallbacks* pAllocator, VkBufferView* pView,
+                                             const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
+                                           const VkAllocationCallbacks* pAllocator, VkBufferView* pView,
+                                           const RecordObject& record_obj) {}
+virtual void PostCallRecordCreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
+                                            const VkAllocationCallbacks* pAllocator, VkBufferView* pView,
+                                            const RecordObject& record_obj) {}
+virtual bool PreCallValidateDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks* pAllocator,
+                                              const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks* pAllocator,
+                                            const RecordObject& record_obj) {}
+virtual void PostCallRecordDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks* pAllocator,
+                                             const RecordObject& record_obj) {}
 virtual bool PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
                                                const ErrorObject& error_obj) const {
@@ -417,20 +609,6 @@ virtual void PreCallRecordMergePipelineCaches(VkDevice device, VkPipelineCache d
                                               const VkPipelineCache* pSrcCaches, const RecordObject& record_obj) {}
 virtual void PostCallRecordMergePipelineCaches(VkDevice device, VkPipelineCache dstCache, uint32_t srcCacheCount,
                                                const VkPipelineCache* pSrcCaches, const RecordObject& record_obj) {}
-virtual bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                                    const VkGraphicsPipelineCreateInfo* pCreateInfos,
-                                                    const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                    const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                                  const VkGraphicsPipelineCreateInfo* pCreateInfos,
-                                                  const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                  const RecordObject& record_obj) {}
-virtual void PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                                   const VkGraphicsPipelineCreateInfo* pCreateInfos,
-                                                   const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                   const RecordObject& record_obj) {}
 virtual bool PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                    const VkComputePipelineCreateInfo* pCreateInfos,
                                                    const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
@@ -565,6 +743,114 @@ virtual void PreCallRecordUpdateDescriptorSets(VkDevice device, uint32_t descrip
 virtual void PostCallRecordUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
                                                 const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
                                                 const VkCopyDescriptorSet* pDescriptorCopies, const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                            VkPipeline pipeline, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline,
+                                          const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                           VkPipeline pipeline, const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                  VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
+                                                  const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,
+                                                  const uint32_t* pDynamicOffsets, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
+                                                const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,
+                                                const uint32_t* pDynamicOffsets, const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                 VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
+                                                 const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,
+                                                 const uint32_t* pDynamicOffsets, const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                               const VkClearColorValue* pColor, uint32_t rangeCount,
+                                               const VkImageSubresourceRange* pRanges, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                             const VkClearColorValue* pColor, uint32_t rangeCount,
+                                             const VkImageSubresourceRange* pRanges, const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                              const VkClearColorValue* pColor, uint32_t rangeCount,
+                                              const VkImageSubresourceRange* pRanges, const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
+                                        uint32_t groupCountZ, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
+                                      uint32_t groupCountZ, const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
+                                       uint32_t groupCountZ, const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                              const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                               const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
+                                        const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
+                                      const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
+                                       const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
+                                          const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
+                                        const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
+                                         const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+                                          VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+                                          uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+                                          uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+                                          uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
+                                          const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+                                        VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+                                        uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+                                        uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+                                        uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
+                                        const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+                                         VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+                                         uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+                                         uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+                                         uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
+                                         const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
+                                             uint32_t offset, uint32_t size, const void* pValues,
+                                             const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
+                                           uint32_t offset, uint32_t size, const void* pValues, const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
+                                            uint32_t offset, uint32_t size, const void* pValues, const RecordObject& record_obj) {}
+virtual bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                    const VkGraphicsPipelineCreateInfo* pCreateInfos,
+                                                    const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                    const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                  const VkGraphicsPipelineCreateInfo* pCreateInfos,
+                                                  const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                  const RecordObject& record_obj) {}
+virtual void PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                   const VkGraphicsPipelineCreateInfo* pCreateInfos,
+                                                   const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                   const RecordObject& record_obj) {}
 virtual bool PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
                                               const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer,
                                               const ErrorObject& error_obj) const {
@@ -611,76 +897,6 @@ virtual void PreCallRecordGetRenderAreaGranularity(VkDevice device, VkRenderPass
                                                    const RecordObject& record_obj) {}
 virtual void PostCallRecordGetRenderAreaGranularity(VkDevice device, VkRenderPass renderPass, VkExtent2D* pGranularity,
                                                     const RecordObject& record_obj) {}
-virtual bool PreCallValidateCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
-                                              const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool,
-                                              const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
-                                            const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool,
-                                            const RecordObject& record_obj) {}
-virtual void PostCallRecordCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
-                                             const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool,
-                                             const RecordObject& record_obj) {}
-virtual bool PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks* pAllocator,
-                                               const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks* pAllocator,
-                                             const RecordObject& record_obj) {}
-virtual void PostCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks* pAllocator,
-                                              const RecordObject& record_obj) {}
-virtual bool PreCallValidateResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags,
-                                             const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags,
-                                           const RecordObject& record_obj) {}
-virtual void PostCallRecordResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags,
-                                            const RecordObject& record_obj) {}
-virtual bool PreCallValidateAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pAllocateInfo,
-                                                   VkCommandBuffer* pCommandBuffers, const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pAllocateInfo,
-                                                 VkCommandBuffer* pCommandBuffers, const RecordObject& record_obj) {}
-virtual void PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pAllocateInfo,
-                                                  VkCommandBuffer* pCommandBuffers, const RecordObject& record_obj) {}
-virtual bool PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
-                                               const VkCommandBuffer* pCommandBuffers, const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
-                                             const VkCommandBuffer* pCommandBuffers, const RecordObject& record_obj) {}
-virtual void PostCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
-                                              const VkCommandBuffer* pCommandBuffers, const RecordObject& record_obj) {}
-virtual bool PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo,
-                                               const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo,
-                                             const RecordObject& record_obj) {}
-virtual void PostCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo,
-                                              const RecordObject& record_obj) {}
-virtual bool PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const { return false; }
-virtual void PreCallRecordEndCommandBuffer(VkCommandBuffer commandBuffer, const RecordObject& record_obj) {}
-virtual void PostCallRecordEndCommandBuffer(VkCommandBuffer commandBuffer, const RecordObject& record_obj) {}
-virtual bool PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags,
-                                               const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags,
-                                             const RecordObject& record_obj) {}
-virtual void PostCallRecordResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags,
-                                              const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                            VkPipeline pipeline, const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline,
-                                          const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                           VkPipeline pipeline, const RecordObject& record_obj) {}
 virtual bool PreCallValidateCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
                                            const VkViewport* pViewports, const ErrorObject& error_obj) const {
     return false;
@@ -750,20 +966,6 @@ virtual void PreCallRecordCmdSetStencilReference(VkCommandBuffer commandBuffer, 
                                                  const RecordObject& record_obj) {}
 virtual void PostCallRecordCmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t reference,
                                                   const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                  VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
-                                                  const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,
-                                                  const uint32_t* pDynamicOffsets, const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
-                                                const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,
-                                                const uint32_t* pDynamicOffsets, const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                 VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
-                                                 const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,
-                                                 const uint32_t* pDynamicOffsets, const RecordObject& record_obj) {}
 virtual bool PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                VkIndexType indexType, const ErrorObject& error_obj) const {
     return false;
@@ -818,41 +1020,6 @@ virtual void PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, 
                                                  uint32_t drawCount, uint32_t stride, const RecordObject& record_obj) {}
 virtual void PostCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                   uint32_t drawCount, uint32_t stride, const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
-                                        uint32_t groupCountZ, const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
-                                      uint32_t groupCountZ, const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
-                                       uint32_t groupCountZ, const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                              const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                               const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
-                                          uint32_t regionCount, const VkBufferCopy* pRegions, const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
-                                        const VkBufferCopy* pRegions, const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
-                                         uint32_t regionCount, const VkBufferCopy* pRegions, const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                         VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                         const VkImageCopy* pRegions, const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                       VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                       const VkImageCopy* pRegions, const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                        VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                        const VkImageCopy* pRegions, const RecordObject& record_obj) {}
 virtual bool PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                          VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                          const VkImageBlit* pRegions, VkFilter filter, const ErrorObject& error_obj) const {
@@ -864,55 +1031,6 @@ virtual void PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage sr
 virtual void PostCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                         VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                         const VkImageBlit* pRegions, VkFilter filter, const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                                 VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                 const VkBufferImageCopy* pRegions, const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                               VkImageLayout dstImageLayout, uint32_t regionCount,
-                                               const VkBufferImageCopy* pRegions, const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                                VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                const VkBufferImageCopy* pRegions, const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                                 VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions,
-                                                 const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                               VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions,
-                                               const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                                VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions,
-                                                const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                            VkDeviceSize dataSize, const void* pData, const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                          VkDeviceSize dataSize, const void* pData, const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                           VkDeviceSize dataSize, const void* pData, const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                          VkDeviceSize size, uint32_t data, const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                        VkDeviceSize size, uint32_t data, const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                         VkDeviceSize size, uint32_t data, const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                               const VkClearColorValue* pColor, uint32_t rangeCount,
-                                               const VkImageSubresourceRange* pRanges, const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                             const VkClearColorValue* pColor, uint32_t rangeCount,
-                                             const VkImageSubresourceRange* pRanges, const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                              const VkClearColorValue* pColor, uint32_t rangeCount,
-                                              const VkImageSubresourceRange* pRanges, const RecordObject& record_obj) {}
 virtual bool PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                       const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
                                                       const VkImageSubresourceRange* pRanges, const ErrorObject& error_obj) const {
@@ -946,116 +1064,6 @@ virtual void PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage
 virtual void PostCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                            VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                            const VkImageResolve* pRegions, const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
-                                        const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
-                                      const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
-                                       const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
-                                          const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
-                                        const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
-                                         const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                          VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-                                          uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
-                                          uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
-                                          uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
-                                          const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                        VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-                                        uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
-                                        uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
-                                        uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
-                                        const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                         VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-                                         uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
-                                         uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
-                                         uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
-                                         const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
-                                               VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
-                                               uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
-                                               uint32_t bufferMemoryBarrierCount,
-                                               const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-                                               const VkImageMemoryBarrier* pImageMemoryBarriers,
-                                               const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
-                                             VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
-                                             uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
-                                             uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
-                                             uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
-                                             const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
-                                              VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
-                                              uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
-                                              uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
-                                              uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
-                                              const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
-                                          VkQueryControlFlags flags, const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
-                                        VkQueryControlFlags flags, const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
-                                         VkQueryControlFlags flags, const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
-                                        const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
-                                      const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
-                                       const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
-                                              uint32_t queryCount, const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
-                                            uint32_t queryCount, const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
-                                             uint32_t queryCount, const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
-                                              VkQueryPool queryPool, uint32_t query, const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
-                                            VkQueryPool queryPool, uint32_t query, const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
-                                             VkQueryPool queryPool, uint32_t query, const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
-                                                    uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                                    VkDeviceSize stride, VkQueryResultFlags flags,
-                                                    const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
-                                                  uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                                  VkDeviceSize stride, VkQueryResultFlags flags, const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
-                                                   uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                                   VkDeviceSize stride, VkQueryResultFlags flags, const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
-                                             uint32_t offset, uint32_t size, const void* pValues,
-                                             const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
-                                           uint32_t offset, uint32_t size, const void* pValues, const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
-                                            uint32_t offset, uint32_t size, const void* pValues, const RecordObject& record_obj) {}
 virtual bool PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                                VkSubpassContents contents, const ErrorObject& error_obj) const {
     return false;
@@ -1075,14 +1083,6 @@ virtual void PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpa
 virtual bool PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const { return false; }
 virtual void PreCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const RecordObject& record_obj) {}
 virtual void PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
-                                               const VkCommandBuffer* pCommandBuffers, const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
-                                             const VkCommandBuffer* pCommandBuffers, const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
-                                              const VkCommandBuffer* pCommandBuffers, const RecordObject& record_obj) {}
 virtual bool PreCallValidateBindBufferMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfo* pBindInfos,
                                               const ErrorObject& error_obj) const {
     return false;
@@ -1119,17 +1119,6 @@ virtual bool PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint
 }
 virtual void PreCallRecordCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask, const RecordObject& record_obj) {}
 virtual void PostCallRecordCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask, const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
-                                            uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ,
-                                            const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
-                                          uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ,
-                                          const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
-                                           uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ,
-                                           const RecordObject& record_obj) {}
 virtual bool PreCallValidateGetImageMemoryRequirements2(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
                                                         VkMemoryRequirements2* pMemoryRequirements,
                                                         const ErrorObject& error_obj) const {
@@ -1181,29 +1170,17 @@ virtual void PreCallRecordGetDeviceQueue2(VkDevice device, const VkDeviceQueueIn
                                           const RecordObject& record_obj) {}
 virtual void PostCallRecordGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2* pQueueInfo, VkQueue* pQueue,
                                            const RecordObject& record_obj) {}
-virtual bool PreCallValidateCreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,
-                                                         const VkAllocationCallbacks* pAllocator,
-                                                         VkSamplerYcbcrConversion* pYcbcrConversion,
-                                                         const ErrorObject& error_obj) const {
+virtual bool PreCallValidateCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
+                                            uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ,
+                                            const ErrorObject& error_obj) const {
     return false;
 }
-virtual void PreCallRecordCreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,
-                                                       const VkAllocationCallbacks* pAllocator,
-                                                       VkSamplerYcbcrConversion* pYcbcrConversion, const RecordObject& record_obj) {
-}
-virtual void PostCallRecordCreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,
-                                                        const VkAllocationCallbacks* pAllocator,
-                                                        VkSamplerYcbcrConversion* pYcbcrConversion,
-                                                        const RecordObject& record_obj) {}
-virtual bool PreCallValidateDestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
-                                                          const VkAllocationCallbacks* pAllocator,
-                                                          const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordDestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
-                                                        const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {}
-virtual void PostCallRecordDestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
-                                                         const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {}
+virtual void PreCallRecordCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
+                                          uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ,
+                                          const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
+                                           uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ,
+                                           const RecordObject& record_obj) {}
 virtual bool PreCallValidateCreateDescriptorUpdateTemplate(VkDevice device, const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator,
                                                            VkDescriptorUpdateTemplate* pDescriptorUpdateTemplate,
@@ -1249,63 +1226,29 @@ virtual void PreCallRecordGetDescriptorSetLayoutSupport(VkDevice device, const V
                                                         VkDescriptorSetLayoutSupport* pSupport, const RecordObject& record_obj) {}
 virtual void PostCallRecordGetDescriptorSetLayoutSupport(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
                                                          VkDescriptorSetLayoutSupport* pSupport, const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                 VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                 uint32_t stride, const ErrorObject& error_obj) const {
+virtual bool PreCallValidateCreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,
+                                                         const VkAllocationCallbacks* pAllocator,
+                                                         VkSamplerYcbcrConversion* pYcbcrConversion,
+                                                         const ErrorObject& error_obj) const {
     return false;
 }
-virtual void PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                               VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                               uint32_t stride, const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                uint32_t stride, const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                        VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                        uint32_t stride, const ErrorObject& error_obj) const {
+virtual void PreCallRecordCreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,
+                                                       const VkAllocationCallbacks* pAllocator,
+                                                       VkSamplerYcbcrConversion* pYcbcrConversion, const RecordObject& record_obj) {
+}
+virtual void PostCallRecordCreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,
+                                                        const VkAllocationCallbacks* pAllocator,
+                                                        VkSamplerYcbcrConversion* pYcbcrConversion,
+                                                        const RecordObject& record_obj) {}
+virtual bool PreCallValidateDestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
+                                                          const VkAllocationCallbacks* pAllocator,
+                                                          const ErrorObject& error_obj) const {
     return false;
 }
-virtual void PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                      VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                      uint32_t stride, const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                       VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                       uint32_t stride, const RecordObject& record_obj) {}
-virtual bool PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2* pCreateInfo,
-                                              const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
-                                              const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2* pCreateInfo,
-                                            const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
-                                            const RecordObject& record_obj) {}
-virtual void PostCallRecordCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2* pCreateInfo,
-                                             const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
-                                             const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                                const VkSubpassBeginInfo* pSubpassBeginInfo, const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                              const VkSubpassBeginInfo* pSubpassBeginInfo, const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                               const VkSubpassBeginInfo* pSubpassBeginInfo, const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
-                                            const VkSubpassEndInfo* pSubpassEndInfo, const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
-                                          const VkSubpassEndInfo* pSubpassEndInfo, const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
-                                           const VkSubpassEndInfo* pSubpassEndInfo, const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
-                                              const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
-                                            const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
-                                             const RecordObject& record_obj) {}
+virtual void PreCallRecordDestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
+                                                        const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {}
+virtual void PostCallRecordDestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
+                                                         const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {}
 virtual bool PreCallValidateResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
                                            const ErrorObject& error_obj) const {
     return false;
@@ -1363,6 +1306,63 @@ virtual void PreCallRecordGetDeviceMemoryOpaqueCaptureAddress(VkDevice device, c
                                                               const RecordObject& record_obj) {}
 virtual void PostCallRecordGetDeviceMemoryOpaqueCaptureAddress(VkDevice device, const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo,
                                                                const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                 VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                 uint32_t stride, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                               VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                               uint32_t stride, const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                uint32_t stride, const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                        VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                        uint32_t stride, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                      VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                      uint32_t stride, const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                       VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                       uint32_t stride, const RecordObject& record_obj) {}
+virtual bool PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2* pCreateInfo,
+                                              const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
+                                              const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2* pCreateInfo,
+                                            const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
+                                            const RecordObject& record_obj) {}
+virtual void PostCallRecordCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2* pCreateInfo,
+                                             const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
+                                             const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
+                                                const VkSubpassBeginInfo* pSubpassBeginInfo, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
+                                              const VkSubpassBeginInfo* pSubpassBeginInfo, const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
+                                               const VkSubpassBeginInfo* pSubpassBeginInfo, const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
+                                            const VkSubpassEndInfo* pSubpassEndInfo, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
+                                          const VkSubpassEndInfo* pSubpassEndInfo, const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
+                                           const VkSubpassEndInfo* pSubpassEndInfo, const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
+                                              const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
+                                            const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
+                                             const RecordObject& record_obj) {}
 virtual bool PreCallValidateCreatePrivateDataSlot(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo,
                                                   const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot,
                                                   const ErrorObject& error_obj) const {
@@ -1398,30 +1398,6 @@ virtual void PreCallRecordGetPrivateData(VkDevice device, VkObjectType objectTyp
                                          VkPrivateDataSlot privateDataSlot, uint64_t* pData, const RecordObject& record_obj) {}
 virtual void PostCallRecordGetPrivateData(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
                                           VkPrivateDataSlot privateDataSlot, uint64_t* pData, const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo,
-                                         const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo,
-                                       const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo,
-                                        const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
-                                           const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
-                                         const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
-                                          const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                           const VkDependencyInfo* pDependencyInfos, const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                         const VkDependencyInfo* pDependencyInfos, const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                          const VkDependencyInfo* pDependencyInfos, const RecordObject& record_obj) {}
 virtual bool PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo,
                                                 const ErrorObject& error_obj) const {
     return false;
@@ -1484,6 +1460,66 @@ virtual void PreCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
 virtual void PostCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
                                                  const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo,
                                                  const RecordObject& record_obj) {}
+virtual bool PreCallValidateGetDeviceBufferMemoryRequirements(VkDevice device, const VkDeviceBufferMemoryRequirements* pInfo,
+                                                              VkMemoryRequirements2* pMemoryRequirements,
+                                                              const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordGetDeviceBufferMemoryRequirements(VkDevice device, const VkDeviceBufferMemoryRequirements* pInfo,
+                                                            VkMemoryRequirements2* pMemoryRequirements,
+                                                            const RecordObject& record_obj) {}
+virtual void PostCallRecordGetDeviceBufferMemoryRequirements(VkDevice device, const VkDeviceBufferMemoryRequirements* pInfo,
+                                                             VkMemoryRequirements2* pMemoryRequirements,
+                                                             const RecordObject& record_obj) {}
+virtual bool PreCallValidateGetDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
+                                                             VkMemoryRequirements2* pMemoryRequirements,
+                                                             const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordGetDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
+                                                           VkMemoryRequirements2* pMemoryRequirements,
+                                                           const RecordObject& record_obj) {}
+virtual void PostCallRecordGetDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
+                                                            VkMemoryRequirements2* pMemoryRequirements,
+                                                            const RecordObject& record_obj) {}
+virtual bool PreCallValidateGetDeviceImageSparseMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
+                                                                   uint32_t* pSparseMemoryRequirementCount,
+                                                                   VkSparseImageMemoryRequirements2* pSparseMemoryRequirements,
+                                                                   const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordGetDeviceImageSparseMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
+                                                                 uint32_t* pSparseMemoryRequirementCount,
+                                                                 VkSparseImageMemoryRequirements2* pSparseMemoryRequirements,
+                                                                 const RecordObject& record_obj) {}
+virtual void PostCallRecordGetDeviceImageSparseMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
+                                                                  uint32_t* pSparseMemoryRequirementCount,
+                                                                  VkSparseImageMemoryRequirements2* pSparseMemoryRequirements,
+                                                                  const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo,
+                                         const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo,
+                                       const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo,
+                                        const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
+                                           const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
+                                         const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
+                                          const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+                                           const VkDependencyInfo* pDependencyInfos, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+                                         const VkDependencyInfo* pDependencyInfos, const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+                                          const VkDependencyInfo* pDependencyInfos, const RecordObject& record_obj) {}
 virtual bool PreCallValidateCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo,
                                           const ErrorObject& error_obj) const {
     return false;
@@ -1635,50 +1671,6 @@ virtual void PreCallRecordCmdSetPrimitiveRestartEnable(VkCommandBuffer commandBu
                                                        const RecordObject& record_obj) {}
 virtual void PostCallRecordCmdSetPrimitiveRestartEnable(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable,
                                                         const RecordObject& record_obj) {}
-virtual bool PreCallValidateGetDeviceBufferMemoryRequirements(VkDevice device, const VkDeviceBufferMemoryRequirements* pInfo,
-                                                              VkMemoryRequirements2* pMemoryRequirements,
-                                                              const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordGetDeviceBufferMemoryRequirements(VkDevice device, const VkDeviceBufferMemoryRequirements* pInfo,
-                                                            VkMemoryRequirements2* pMemoryRequirements,
-                                                            const RecordObject& record_obj) {}
-virtual void PostCallRecordGetDeviceBufferMemoryRequirements(VkDevice device, const VkDeviceBufferMemoryRequirements* pInfo,
-                                                             VkMemoryRequirements2* pMemoryRequirements,
-                                                             const RecordObject& record_obj) {}
-virtual bool PreCallValidateGetDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
-                                                             VkMemoryRequirements2* pMemoryRequirements,
-                                                             const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordGetDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
-                                                           VkMemoryRequirements2* pMemoryRequirements,
-                                                           const RecordObject& record_obj) {}
-virtual void PostCallRecordGetDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
-                                                            VkMemoryRequirements2* pMemoryRequirements,
-                                                            const RecordObject& record_obj) {}
-virtual bool PreCallValidateGetDeviceImageSparseMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
-                                                                   uint32_t* pSparseMemoryRequirementCount,
-                                                                   VkSparseImageMemoryRequirements2* pSparseMemoryRequirements,
-                                                                   const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordGetDeviceImageSparseMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
-                                                                 uint32_t* pSparseMemoryRequirementCount,
-                                                                 VkSparseImageMemoryRequirements2* pSparseMemoryRequirements,
-                                                                 const RecordObject& record_obj) {}
-virtual void PostCallRecordGetDeviceImageSparseMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
-                                                                  uint32_t* pSparseMemoryRequirementCount,
-                                                                  VkSparseImageMemoryRequirements2* pSparseMemoryRequirements,
-                                                                  const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdSetLineStipple(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
-                                              uint16_t lineStipplePattern, const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdSetLineStipple(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern,
-                                            const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdSetLineStipple(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern,
-                                             const RecordObject& record_obj) {}
 virtual bool PreCallValidateMapMemory2(VkDevice device, const VkMemoryMapInfo* pMemoryMapInfo, void** ppData,
                                        const ErrorObject& error_obj) const {
     return false;
@@ -1695,22 +1687,6 @@ virtual void PreCallRecordUnmapMemory2(VkDevice device, const VkMemoryUnmapInfo*
 }
 virtual void PostCallRecordUnmapMemory2(VkDevice device, const VkMemoryUnmapInfo* pMemoryUnmapInfo,
                                         const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                VkDeviceSize size, VkIndexType indexType, const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                              VkDeviceSize size, VkIndexType indexType, const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                               VkDeviceSize size, VkIndexType indexType, const RecordObject& record_obj) {}
-virtual bool PreCallValidateGetRenderingAreaGranularity(VkDevice device, const VkRenderingAreaInfo* pRenderingAreaInfo,
-                                                        VkExtent2D* pGranularity, const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordGetRenderingAreaGranularity(VkDevice device, const VkRenderingAreaInfo* pRenderingAreaInfo,
-                                                      VkExtent2D* pGranularity, const RecordObject& record_obj) {}
-virtual void PostCallRecordGetRenderingAreaGranularity(VkDevice device, const VkRenderingAreaInfo* pRenderingAreaInfo,
-                                                       VkExtent2D* pGranularity, const RecordObject& record_obj) {}
 virtual bool PreCallValidateGetDeviceImageSubresourceLayout(VkDevice device, const VkDeviceImageSubresourceInfo* pInfo,
                                                             VkSubresourceLayout2* pLayout, const ErrorObject& error_obj) const {
     return false;
@@ -1727,6 +1703,41 @@ virtual void PreCallRecordGetImageSubresourceLayout2(VkDevice device, VkImage im
                                                      VkSubresourceLayout2* pLayout, const RecordObject& record_obj) {}
 virtual void PostCallRecordGetImageSubresourceLayout2(VkDevice device, VkImage image, const VkImageSubresource2* pSubresource,
                                                       VkSubresourceLayout2* pLayout, const RecordObject& record_obj) {}
+virtual bool PreCallValidateCopyMemoryToImage(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo,
+                                              const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCopyMemoryToImage(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo,
+                                            const RecordObject& record_obj) {}
+virtual void PostCallRecordCopyMemoryToImage(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo,
+                                             const RecordObject& record_obj) {}
+virtual bool PreCallValidateCopyImageToMemory(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo,
+                                              const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCopyImageToMemory(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo,
+                                            const RecordObject& record_obj) {}
+virtual void PostCallRecordCopyImageToMemory(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo,
+                                             const RecordObject& record_obj) {}
+virtual bool PreCallValidateCopyImageToImage(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo,
+                                             const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCopyImageToImage(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo,
+                                           const RecordObject& record_obj) {}
+virtual void PostCallRecordCopyImageToImage(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo,
+                                            const RecordObject& record_obj) {}
+virtual bool PreCallValidateTransitionImageLayout(VkDevice device, uint32_t transitionCount,
+                                                  const VkHostImageLayoutTransitionInfo* pTransitions,
+                                                  const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordTransitionImageLayout(VkDevice device, uint32_t transitionCount,
+                                                const VkHostImageLayoutTransitionInfo* pTransitions,
+                                                const RecordObject& record_obj) {}
+virtual void PostCallRecordTransitionImageLayout(VkDevice device, uint32_t transitionCount,
+                                                 const VkHostImageLayoutTransitionInfo* pTransitions,
+                                                 const RecordObject& record_obj) {}
 virtual bool PreCallValidateCmdPushDescriptorSet(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                  VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
                                                  const VkWriteDescriptorSet* pDescriptorWrites,
@@ -1753,28 +1764,6 @@ virtual void PostCallRecordCmdPushDescriptorSetWithTemplate(VkCommandBuffer comm
                                                             VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                             VkPipelineLayout layout, uint32_t set, const void* pData,
                                                             const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdSetRenderingAttachmentLocations(VkCommandBuffer commandBuffer,
-                                                               const VkRenderingAttachmentLocationInfo* pLocationInfo,
-                                                               const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdSetRenderingAttachmentLocations(VkCommandBuffer commandBuffer,
-                                                             const VkRenderingAttachmentLocationInfo* pLocationInfo,
-                                                             const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdSetRenderingAttachmentLocations(VkCommandBuffer commandBuffer,
-                                                              const VkRenderingAttachmentLocationInfo* pLocationInfo,
-                                                              const RecordObject& record_obj) {}
-virtual bool PreCallValidateCmdSetRenderingInputAttachmentIndices(
-    VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfo* pInputAttachmentIndexInfo,
-    const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordCmdSetRenderingInputAttachmentIndices(
-    VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfo* pInputAttachmentIndexInfo,
-    const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdSetRenderingInputAttachmentIndices(
-    VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfo* pInputAttachmentIndexInfo,
-    const RecordObject& record_obj) {}
 virtual bool PreCallValidateCmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
                                                    const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo,
                                                    const ErrorObject& error_obj) const {
@@ -1816,41 +1805,52 @@ virtual void PreCallRecordCmdPushDescriptorSetWithTemplate2(
 virtual void PostCallRecordCmdPushDescriptorSetWithTemplate2(
     VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfo* pPushDescriptorSetWithTemplateInfo,
     const RecordObject& record_obj) {}
-virtual bool PreCallValidateCopyMemoryToImage(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo,
-                                              const ErrorObject& error_obj) const {
+virtual bool PreCallValidateCmdSetLineStipple(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
+                                              uint16_t lineStipplePattern, const ErrorObject& error_obj) const {
     return false;
 }
-virtual void PreCallRecordCopyMemoryToImage(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo,
+virtual void PreCallRecordCmdSetLineStipple(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern,
                                             const RecordObject& record_obj) {}
-virtual void PostCallRecordCopyMemoryToImage(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo,
+virtual void PostCallRecordCmdSetLineStipple(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern,
                                              const RecordObject& record_obj) {}
-virtual bool PreCallValidateCopyImageToMemory(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo,
-                                              const ErrorObject& error_obj) const {
+virtual bool PreCallValidateCmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                VkDeviceSize size, VkIndexType indexType, const ErrorObject& error_obj) const {
     return false;
 }
-virtual void PreCallRecordCopyImageToMemory(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo,
-                                            const RecordObject& record_obj) {}
-virtual void PostCallRecordCopyImageToMemory(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo,
-                                             const RecordObject& record_obj) {}
-virtual bool PreCallValidateCopyImageToImage(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo,
-                                             const ErrorObject& error_obj) const {
+virtual void PreCallRecordCmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                              VkDeviceSize size, VkIndexType indexType, const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                               VkDeviceSize size, VkIndexType indexType, const RecordObject& record_obj) {}
+virtual bool PreCallValidateGetRenderingAreaGranularity(VkDevice device, const VkRenderingAreaInfo* pRenderingAreaInfo,
+                                                        VkExtent2D* pGranularity, const ErrorObject& error_obj) const {
     return false;
 }
-virtual void PreCallRecordCopyImageToImage(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo,
-                                           const RecordObject& record_obj) {}
-virtual void PostCallRecordCopyImageToImage(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo,
-                                            const RecordObject& record_obj) {}
-virtual bool PreCallValidateTransitionImageLayout(VkDevice device, uint32_t transitionCount,
-                                                  const VkHostImageLayoutTransitionInfo* pTransitions,
-                                                  const ErrorObject& error_obj) const {
+virtual void PreCallRecordGetRenderingAreaGranularity(VkDevice device, const VkRenderingAreaInfo* pRenderingAreaInfo,
+                                                      VkExtent2D* pGranularity, const RecordObject& record_obj) {}
+virtual void PostCallRecordGetRenderingAreaGranularity(VkDevice device, const VkRenderingAreaInfo* pRenderingAreaInfo,
+                                                       VkExtent2D* pGranularity, const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdSetRenderingAttachmentLocations(VkCommandBuffer commandBuffer,
+                                                               const VkRenderingAttachmentLocationInfo* pLocationInfo,
+                                                               const ErrorObject& error_obj) const {
     return false;
 }
-virtual void PreCallRecordTransitionImageLayout(VkDevice device, uint32_t transitionCount,
-                                                const VkHostImageLayoutTransitionInfo* pTransitions,
-                                                const RecordObject& record_obj) {}
-virtual void PostCallRecordTransitionImageLayout(VkDevice device, uint32_t transitionCount,
-                                                 const VkHostImageLayoutTransitionInfo* pTransitions,
-                                                 const RecordObject& record_obj) {}
+virtual void PreCallRecordCmdSetRenderingAttachmentLocations(VkCommandBuffer commandBuffer,
+                                                             const VkRenderingAttachmentLocationInfo* pLocationInfo,
+                                                             const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdSetRenderingAttachmentLocations(VkCommandBuffer commandBuffer,
+                                                              const VkRenderingAttachmentLocationInfo* pLocationInfo,
+                                                              const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdSetRenderingInputAttachmentIndices(
+    VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfo* pInputAttachmentIndexInfo,
+    const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdSetRenderingInputAttachmentIndices(
+    VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfo* pInputAttachmentIndexInfo,
+    const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdSetRenderingInputAttachmentIndices(
+    VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfo* pInputAttachmentIndexInfo,
+    const RecordObject& record_obj) {}
 virtual bool PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain,
                                                const ErrorObject& error_obj) const {
@@ -3004,6 +3004,14 @@ virtual void PreCallRecordCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer comman
 virtual void PostCallRecordCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer,
                                                            const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo,
                                                            const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdEndRendering2KHR(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo,
+                                                const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdEndRendering2KHR(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo,
+                                              const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdEndRendering2KHR(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo,
+                                               const RecordObject& record_obj) {}
 virtual bool PreCallValidateDebugMarkerSetObjectTagEXT(VkDevice device, const VkDebugMarkerObjectTagInfoEXT* pTagInfo,
                                                        const ErrorObject& error_obj) const {
     return false;
@@ -5728,6 +5736,37 @@ virtual void PreCallRecordCmdBindTileMemoryQCOM(VkCommandBuffer commandBuffer, c
                                                 const RecordObject& record_obj) {}
 virtual void PostCallRecordCmdBindTileMemoryQCOM(VkCommandBuffer commandBuffer, const VkTileMemoryBindInfoQCOM* pTileMemoryBindInfo,
                                                  const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdDecompressMemoryEXT(VkCommandBuffer commandBuffer,
+                                                   const VkDecompressMemoryInfoEXT* pDecompressMemoryInfoEXT,
+                                                   const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdDecompressMemoryEXT(VkCommandBuffer commandBuffer,
+                                                 const VkDecompressMemoryInfoEXT* pDecompressMemoryInfoEXT,
+                                                 const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdDecompressMemoryEXT(VkCommandBuffer commandBuffer,
+                                                  const VkDecompressMemoryInfoEXT* pDecompressMemoryInfoEXT,
+                                                  const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdDecompressMemoryIndirectCountEXT(VkCommandBuffer commandBuffer,
+                                                                VkMemoryDecompressionMethodFlagsEXT decompressionMethod,
+                                                                VkDeviceAddress indirectCommandsAddress,
+                                                                VkDeviceAddress indirectCommandsCountAddress,
+                                                                uint32_t maxDecompressionCount, uint32_t stride,
+                                                                const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdDecompressMemoryIndirectCountEXT(VkCommandBuffer commandBuffer,
+                                                              VkMemoryDecompressionMethodFlagsEXT decompressionMethod,
+                                                              VkDeviceAddress indirectCommandsAddress,
+                                                              VkDeviceAddress indirectCommandsCountAddress,
+                                                              uint32_t maxDecompressionCount, uint32_t stride,
+                                                              const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdDecompressMemoryIndirectCountEXT(VkCommandBuffer commandBuffer,
+                                                               VkMemoryDecompressionMethodFlagsEXT decompressionMethod,
+                                                               VkDeviceAddress indirectCommandsAddress,
+                                                               VkDeviceAddress indirectCommandsCountAddress,
+                                                               uint32_t maxDecompressionCount, uint32_t stride,
+                                                               const RecordObject& record_obj) {}
 virtual bool PreCallValidateCreateExternalComputeQueueNV(VkDevice device, const VkExternalComputeQueueCreateInfoNV* pCreateInfo,
                                                          const VkAllocationCallbacks* pAllocator,
                                                          VkExternalComputeQueueNV* pExternalQueue,
@@ -5923,6 +5962,35 @@ virtual void PostCallRecordUpdateIndirectExecutionSetShaderEXT(VkDevice device, 
                                                                uint32_t executionSetWriteCount,
                                                                const VkWriteIndirectExecutionSetShaderEXT* pExecutionSetWrites,
                                                                const RecordObject& record_obj) {}
+#ifdef VK_USE_PLATFORM_OHOS
+virtual bool PreCallValidateGetSwapchainGrallocUsageOHOS(VkDevice device, VkFormat format, VkImageUsageFlags imageUsage,
+                                                         uint64_t* grallocUsage, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordGetSwapchainGrallocUsageOHOS(VkDevice device, VkFormat format, VkImageUsageFlags imageUsage,
+                                                       uint64_t* grallocUsage, const RecordObject& record_obj) {}
+virtual void PostCallRecordGetSwapchainGrallocUsageOHOS(VkDevice device, VkFormat format, VkImageUsageFlags imageUsage,
+                                                        uint64_t* grallocUsage, const RecordObject& record_obj) {}
+virtual bool PreCallValidateAcquireImageOHOS(VkDevice device, VkImage image, int32_t nativeFenceFd, VkSemaphore semaphore,
+                                             VkFence fence, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordAcquireImageOHOS(VkDevice device, VkImage image, int32_t nativeFenceFd, VkSemaphore semaphore,
+                                           VkFence fence, const RecordObject& record_obj) {}
+virtual void PostCallRecordAcquireImageOHOS(VkDevice device, VkImage image, int32_t nativeFenceFd, VkSemaphore semaphore,
+                                            VkFence fence, const RecordObject& record_obj) {}
+virtual bool PreCallValidateQueueSignalReleaseImageOHOS(VkQueue queue, uint32_t waitSemaphoreCount,
+                                                        const VkSemaphore* pWaitSemaphores, VkImage image, int32_t* pNativeFenceFd,
+                                                        const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordQueueSignalReleaseImageOHOS(VkQueue queue, uint32_t waitSemaphoreCount,
+                                                      const VkSemaphore* pWaitSemaphores, VkImage image, int32_t* pNativeFenceFd,
+                                                      const RecordObject& record_obj) {}
+virtual void PostCallRecordQueueSignalReleaseImageOHOS(VkQueue queue, uint32_t waitSemaphoreCount,
+                                                       const VkSemaphore* pWaitSemaphores, VkImage image, int32_t* pNativeFenceFd,
+                                                       const RecordObject& record_obj) {}
+#endif  // VK_USE_PLATFORM_OHOS
 #ifdef VK_USE_PLATFORM_METAL_EXT
 virtual bool PreCallValidateGetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,
                                                     void** pHandle, const ErrorObject& error_obj) const {
@@ -5947,13 +6015,13 @@ virtual void PostCallRecordGetMemoryMetalHandlePropertiesEXT(VkDevice device, Vk
                                                              VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties,
                                                              const RecordObject& record_obj) {}
 #endif  // VK_USE_PLATFORM_METAL_EXT
-virtual bool PreCallValidateCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT* pRenderingEndInfo,
+virtual bool PreCallValidateCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo,
                                                 const ErrorObject& error_obj) const {
     return false;
 }
-virtual void PreCallRecordCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT* pRenderingEndInfo,
+virtual void PreCallRecordCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo,
                                               const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT* pRenderingEndInfo,
+virtual void PostCallRecordCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo,
                                                const RecordObject& record_obj) {}
 virtual bool PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator,

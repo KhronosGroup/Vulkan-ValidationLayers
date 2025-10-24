@@ -100,6 +100,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
     for (const VkBaseInStructure *pNext = reinterpret_cast<const VkBaseInStructure *>(pCreateInfo->pNext); pNext != nullptr;
          pNext = pNext->pNext) {
         switch (pNext->sType) {
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_FEATURES: {
+                const VkPhysicalDeviceProtectedMemoryFeatures *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceProtectedMemoryFeatures *>(pNext);
+                features->protectedMemory |= enabled->protectedMemory == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES: {
                 const VkPhysicalDevice16BitStorageFeatures *enabled =
                     reinterpret_cast<const VkPhysicalDevice16BitStorageFeatures *>(pNext);
@@ -109,14 +115,6 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->storageInputOutput16 |= enabled->storageInputOutput16 == VK_TRUE;
                 break;
             }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES: {
-                const VkPhysicalDeviceMultiviewFeatures *enabled =
-                    reinterpret_cast<const VkPhysicalDeviceMultiviewFeatures *>(pNext);
-                features->multiview |= enabled->multiview == VK_TRUE;
-                features->multiviewGeometryShader |= enabled->multiviewGeometryShader == VK_TRUE;
-                features->multiviewTessellationShader |= enabled->multiviewTessellationShader == VK_TRUE;
-                break;
-            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTERS_FEATURES: {
                 const VkPhysicalDeviceVariablePointersFeatures *enabled =
                     reinterpret_cast<const VkPhysicalDeviceVariablePointersFeatures *>(pNext);
@@ -124,16 +122,18 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->variablePointers |= enabled->variablePointers == VK_TRUE;
                 break;
             }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_FEATURES: {
-                const VkPhysicalDeviceProtectedMemoryFeatures *enabled =
-                    reinterpret_cast<const VkPhysicalDeviceProtectedMemoryFeatures *>(pNext);
-                features->protectedMemory |= enabled->protectedMemory == VK_TRUE;
-                break;
-            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES: {
                 const VkPhysicalDeviceSamplerYcbcrConversionFeatures *enabled =
                     reinterpret_cast<const VkPhysicalDeviceSamplerYcbcrConversionFeatures *>(pNext);
                 features->samplerYcbcrConversion |= enabled->samplerYcbcrConversion == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES: {
+                const VkPhysicalDeviceMultiviewFeatures *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceMultiviewFeatures *>(pNext);
+                features->multiview |= enabled->multiview == VK_TRUE;
+                features->multiviewGeometryShader |= enabled->multiviewGeometryShader == VK_TRUE;
+                features->multiviewTessellationShader |= enabled->multiviewTessellationShader == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES: {
@@ -227,6 +227,35 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->subgroupBroadcastDynamicId |= enabled->subgroupBroadcastDynamicId == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES: {
+                const VkPhysicalDeviceVulkanMemoryModelFeatures *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceVulkanMemoryModelFeatures *>(pNext);
+                features->vulkanMemoryModel |= enabled->vulkanMemoryModel == VK_TRUE;
+                features->vulkanMemoryModelDeviceScope |= enabled->vulkanMemoryModelDeviceScope == VK_TRUE;
+                features->vulkanMemoryModelAvailabilityVisibilityChains |=
+                    enabled->vulkanMemoryModelAvailabilityVisibilityChains == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES: {
+                const VkPhysicalDeviceHostQueryResetFeatures *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceHostQueryResetFeatures *>(pNext);
+                features->hostQueryReset |= enabled->hostQueryReset == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES: {
+                const VkPhysicalDeviceTimelineSemaphoreFeatures *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceTimelineSemaphoreFeatures *>(pNext);
+                features->timelineSemaphore |= enabled->timelineSemaphore == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES: {
+                const VkPhysicalDeviceBufferDeviceAddressFeatures *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceBufferDeviceAddressFeatures *>(pNext);
+                features->bufferDeviceAddress |= enabled->bufferDeviceAddress == VK_TRUE;
+                features->bufferDeviceAddressCaptureReplay |= enabled->bufferDeviceAddressCaptureReplay == VK_TRUE;
+                features->bufferDeviceAddressMultiDevice |= enabled->bufferDeviceAddressMultiDevice == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES: {
                 const VkPhysicalDevice8BitStorageFeatures *enabled =
                     reinterpret_cast<const VkPhysicalDevice8BitStorageFeatures *>(pNext);
@@ -297,21 +326,6 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->scalarBlockLayout |= enabled->scalarBlockLayout == VK_TRUE;
                 break;
             }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES: {
-                const VkPhysicalDeviceVulkanMemoryModelFeatures *enabled =
-                    reinterpret_cast<const VkPhysicalDeviceVulkanMemoryModelFeatures *>(pNext);
-                features->vulkanMemoryModel |= enabled->vulkanMemoryModel == VK_TRUE;
-                features->vulkanMemoryModelDeviceScope |= enabled->vulkanMemoryModelDeviceScope == VK_TRUE;
-                features->vulkanMemoryModelAvailabilityVisibilityChains |=
-                    enabled->vulkanMemoryModelAvailabilityVisibilityChains == VK_TRUE;
-                break;
-            }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES: {
-                const VkPhysicalDeviceImagelessFramebufferFeatures *enabled =
-                    reinterpret_cast<const VkPhysicalDeviceImagelessFramebufferFeatures *>(pNext);
-                features->imagelessFramebuffer |= enabled->imagelessFramebuffer == VK_TRUE;
-                break;
-            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES: {
                 const VkPhysicalDeviceUniformBufferStandardLayoutFeatures *enabled =
                     reinterpret_cast<const VkPhysicalDeviceUniformBufferStandardLayoutFeatures *>(pNext);
@@ -324,30 +338,16 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->shaderSubgroupExtendedTypes |= enabled->shaderSubgroupExtendedTypes == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES: {
+                const VkPhysicalDeviceImagelessFramebufferFeatures *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceImagelessFramebufferFeatures *>(pNext);
+                features->imagelessFramebuffer |= enabled->imagelessFramebuffer == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SEPARATE_DEPTH_STENCIL_LAYOUTS_FEATURES: {
                 const VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures *enabled =
                     reinterpret_cast<const VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures *>(pNext);
                 features->separateDepthStencilLayouts |= enabled->separateDepthStencilLayouts == VK_TRUE;
-                break;
-            }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES: {
-                const VkPhysicalDeviceHostQueryResetFeatures *enabled =
-                    reinterpret_cast<const VkPhysicalDeviceHostQueryResetFeatures *>(pNext);
-                features->hostQueryReset |= enabled->hostQueryReset == VK_TRUE;
-                break;
-            }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES: {
-                const VkPhysicalDeviceTimelineSemaphoreFeatures *enabled =
-                    reinterpret_cast<const VkPhysicalDeviceTimelineSemaphoreFeatures *>(pNext);
-                features->timelineSemaphore |= enabled->timelineSemaphore == VK_TRUE;
-                break;
-            }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES: {
-                const VkPhysicalDeviceBufferDeviceAddressFeatures *enabled =
-                    reinterpret_cast<const VkPhysicalDeviceBufferDeviceAddressFeatures *>(pNext);
-                features->bufferDeviceAddress |= enabled->bufferDeviceAddress == VK_TRUE;
-                features->bufferDeviceAddressCaptureReplay |= enabled->bufferDeviceAddressCaptureReplay == VK_TRUE;
-                features->bufferDeviceAddressMultiDevice |= enabled->bufferDeviceAddressMultiDevice == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES: {
@@ -370,6 +370,30 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->maintenance4 |= enabled->maintenance4 == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIVATE_DATA_FEATURES: {
+                const VkPhysicalDevicePrivateDataFeatures *enabled =
+                    reinterpret_cast<const VkPhysicalDevicePrivateDataFeatures *>(pNext);
+                features->privateData |= enabled->privateData == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES: {
+                const VkPhysicalDeviceSynchronization2Features *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceSynchronization2Features *>(pNext);
+                features->synchronization2 |= enabled->synchronization2 == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXTURE_COMPRESSION_ASTC_HDR_FEATURES: {
+                const VkPhysicalDeviceTextureCompressionASTCHDRFeatures *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceTextureCompressionASTCHDRFeatures *>(pNext);
+                features->textureCompressionASTC_HDR |= enabled->textureCompressionASTC_HDR == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES: {
+                const VkPhysicalDeviceMaintenance4Features *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceMaintenance4Features *>(pNext);
+                features->maintenance4 |= enabled->maintenance4 == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TERMINATE_INVOCATION_FEATURES: {
                 const VkPhysicalDeviceShaderTerminateInvocationFeatures *enabled =
                     reinterpret_cast<const VkPhysicalDeviceShaderTerminateInvocationFeatures *>(pNext);
@@ -382,22 +406,10 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->shaderDemoteToHelperInvocation |= enabled->shaderDemoteToHelperInvocation == VK_TRUE;
                 break;
             }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIVATE_DATA_FEATURES: {
-                const VkPhysicalDevicePrivateDataFeatures *enabled =
-                    reinterpret_cast<const VkPhysicalDevicePrivateDataFeatures *>(pNext);
-                features->privateData |= enabled->privateData == VK_TRUE;
-                break;
-            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CREATION_CACHE_CONTROL_FEATURES: {
                 const VkPhysicalDevicePipelineCreationCacheControlFeatures *enabled =
                     reinterpret_cast<const VkPhysicalDevicePipelineCreationCacheControlFeatures *>(pNext);
                 features->pipelineCreationCacheControl |= enabled->pipelineCreationCacheControl == VK_TRUE;
-                break;
-            }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES: {
-                const VkPhysicalDeviceSynchronization2Features *enabled =
-                    reinterpret_cast<const VkPhysicalDeviceSynchronization2Features *>(pNext);
-                features->synchronization2 |= enabled->synchronization2 == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_WORKGROUP_MEMORY_FEATURES: {
@@ -427,28 +439,16 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                     enabled->descriptorBindingInlineUniformBlockUpdateAfterBind == VK_TRUE;
                 break;
             }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXTURE_COMPRESSION_ASTC_HDR_FEATURES: {
-                const VkPhysicalDeviceTextureCompressionASTCHDRFeatures *enabled =
-                    reinterpret_cast<const VkPhysicalDeviceTextureCompressionASTCHDRFeatures *>(pNext);
-                features->textureCompressionASTC_HDR |= enabled->textureCompressionASTC_HDR == VK_TRUE;
-                break;
-            }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES: {
-                const VkPhysicalDeviceDynamicRenderingFeatures *enabled =
-                    reinterpret_cast<const VkPhysicalDeviceDynamicRenderingFeatures *>(pNext);
-                features->dynamicRendering |= enabled->dynamicRendering == VK_TRUE;
-                break;
-            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_FEATURES: {
                 const VkPhysicalDeviceShaderIntegerDotProductFeatures *enabled =
                     reinterpret_cast<const VkPhysicalDeviceShaderIntegerDotProductFeatures *>(pNext);
                 features->shaderIntegerDotProduct |= enabled->shaderIntegerDotProduct == VK_TRUE;
                 break;
             }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES: {
-                const VkPhysicalDeviceMaintenance4Features *enabled =
-                    reinterpret_cast<const VkPhysicalDeviceMaintenance4Features *>(pNext);
-                features->maintenance4 |= enabled->maintenance4 == VK_TRUE;
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES: {
+                const VkPhysicalDeviceDynamicRenderingFeatures *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceDynamicRenderingFeatures *>(pNext);
+                features->dynamicRendering |= enabled->dynamicRendering == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_4_FEATURES: {
@@ -482,6 +482,30 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->globalPriorityQuery |= enabled->globalPriorityQuery == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES: {
+                const VkPhysicalDeviceIndexTypeUint8Features *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceIndexTypeUint8Features *>(pNext);
+                features->indexTypeUint8 |= enabled->indexTypeUint8 == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_FEATURES: {
+                const VkPhysicalDeviceMaintenance5Features *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceMaintenance5Features *>(pNext);
+                features->maintenance5 |= enabled->maintenance5 == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_6_FEATURES: {
+                const VkPhysicalDeviceMaintenance6Features *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceMaintenance6Features *>(pNext);
+                features->maintenance6 |= enabled->maintenance6 == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_IMAGE_COPY_FEATURES: {
+                const VkPhysicalDeviceHostImageCopyFeatures *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceHostImageCopyFeatures *>(pNext);
+                features->hostImageCopy |= enabled->hostImageCopy == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_ROTATE_FEATURES: {
                 const VkPhysicalDeviceShaderSubgroupRotateFeatures *enabled =
                     reinterpret_cast<const VkPhysicalDeviceShaderSubgroupRotateFeatures *>(pNext);
@@ -499,6 +523,18 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 const VkPhysicalDeviceShaderExpectAssumeFeatures *enabled =
                     reinterpret_cast<const VkPhysicalDeviceShaderExpectAssumeFeatures *>(pNext);
                 features->shaderExpectAssume |= enabled->shaderExpectAssume == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_PROTECTED_ACCESS_FEATURES: {
+                const VkPhysicalDevicePipelineProtectedAccessFeatures *enabled =
+                    reinterpret_cast<const VkPhysicalDevicePipelineProtectedAccessFeatures *>(pNext);
+                features->pipelineProtectedAccess |= enabled->pipelineProtectedAccess == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_ROBUSTNESS_FEATURES: {
+                const VkPhysicalDevicePipelineRobustnessFeatures *enabled =
+                    reinterpret_cast<const VkPhysicalDevicePipelineRobustnessFeatures *>(pNext);
+                features->pipelineRobustness |= enabled->pipelineRobustness == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINE_RASTERIZATION_FEATURES: {
@@ -519,46 +555,10 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->vertexAttributeInstanceRateZeroDivisor |= enabled->vertexAttributeInstanceRateZeroDivisor == VK_TRUE;
                 break;
             }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES: {
-                const VkPhysicalDeviceIndexTypeUint8Features *enabled =
-                    reinterpret_cast<const VkPhysicalDeviceIndexTypeUint8Features *>(pNext);
-                features->indexTypeUint8 |= enabled->indexTypeUint8 == VK_TRUE;
-                break;
-            }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_FEATURES: {
-                const VkPhysicalDeviceMaintenance5Features *enabled =
-                    reinterpret_cast<const VkPhysicalDeviceMaintenance5Features *>(pNext);
-                features->maintenance5 |= enabled->maintenance5 == VK_TRUE;
-                break;
-            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_LOCAL_READ_FEATURES: {
                 const VkPhysicalDeviceDynamicRenderingLocalReadFeatures *enabled =
                     reinterpret_cast<const VkPhysicalDeviceDynamicRenderingLocalReadFeatures *>(pNext);
                 features->dynamicRenderingLocalRead |= enabled->dynamicRenderingLocalRead == VK_TRUE;
-                break;
-            }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_6_FEATURES: {
-                const VkPhysicalDeviceMaintenance6Features *enabled =
-                    reinterpret_cast<const VkPhysicalDeviceMaintenance6Features *>(pNext);
-                features->maintenance6 |= enabled->maintenance6 == VK_TRUE;
-                break;
-            }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_PROTECTED_ACCESS_FEATURES: {
-                const VkPhysicalDevicePipelineProtectedAccessFeatures *enabled =
-                    reinterpret_cast<const VkPhysicalDevicePipelineProtectedAccessFeatures *>(pNext);
-                features->pipelineProtectedAccess |= enabled->pipelineProtectedAccess == VK_TRUE;
-                break;
-            }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_ROBUSTNESS_FEATURES: {
-                const VkPhysicalDevicePipelineRobustnessFeatures *enabled =
-                    reinterpret_cast<const VkPhysicalDevicePipelineRobustnessFeatures *>(pNext);
-                features->pipelineRobustness |= enabled->pipelineRobustness == VK_TRUE;
-                break;
-            }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_IMAGE_COPY_FEATURES: {
-                const VkPhysicalDeviceHostImageCopyFeatures *enabled =
-                    reinterpret_cast<const VkPhysicalDeviceHostImageCopyFeatures *>(pNext);
-                features->hostImageCopy |= enabled->hostImageCopy == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_FEATURES_KHR: {
@@ -822,6 +822,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 const VkPhysicalDevicePresentModeFifoLatestReadyFeaturesKHR *enabled =
                     reinterpret_cast<const VkPhysicalDevicePresentModeFifoLatestReadyFeaturesKHR *>(pNext);
                 features->presentModeFifoLatestReady |= enabled->presentModeFifoLatestReady == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_10_FEATURES_KHR: {
+                const VkPhysicalDeviceMaintenance10FeaturesKHR *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceMaintenance10FeaturesKHR *>(pNext);
+                features->maintenance10 |= enabled->maintenance10 == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_FEATURES_EXT: {
@@ -1422,9 +1428,9 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->indirectCopy |= enabled->indirectCopy == VK_TRUE;
                 break;
             }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_DECOMPRESSION_FEATURES_NV: {
-                const VkPhysicalDeviceMemoryDecompressionFeaturesNV *enabled =
-                    reinterpret_cast<const VkPhysicalDeviceMemoryDecompressionFeaturesNV *>(pNext);
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_DECOMPRESSION_FEATURES_EXT: {
+                const VkPhysicalDeviceMemoryDecompressionFeaturesEXT *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceMemoryDecompressionFeaturesEXT *>(pNext);
                 features->memoryDecompression |= enabled->memoryDecompression == VK_TRUE;
                 break;
             }
@@ -1853,10 +1859,22 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->zeroInitializeDeviceMemory |= enabled->zeroInitializeDeviceMemory == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_64_BIT_INDEXING_FEATURES_EXT: {
+                const VkPhysicalDeviceShader64BitIndexingFeaturesEXT *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceShader64BitIndexingFeaturesEXT *>(pNext);
+                features->shader64BitIndexing |= enabled->shader64BitIndexing == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CACHE_INCREMENTAL_MODE_FEATURES_SEC: {
                 const VkPhysicalDevicePipelineCacheIncrementalModeFeaturesSEC *enabled =
                     reinterpret_cast<const VkPhysicalDevicePipelineCacheIncrementalModeFeaturesSEC *>(pNext);
                 features->pipelineCacheIncrementalMode |= enabled->pipelineCacheIncrementalMode == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_UNIFORM_BUFFER_UNSIZED_ARRAY_FEATURES_EXT: {
+                const VkPhysicalDeviceShaderUniformBufferUnsizedArrayFeaturesEXT *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceShaderUniformBufferUnsizedArrayFeaturesEXT *>(pNext);
+                features->shaderUniformBufferUnsizedArray |= enabled->shaderUniformBufferUnsizedArray == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR: {

@@ -1700,6 +1700,17 @@ void Instance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDevice
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_10_FEATURES_KHR: {
+                VkPhysicalDeviceMaintenance10FeaturesKHR supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceMaintenance10FeaturesKHR *enabling =
+                    reinterpret_cast<const VkPhysicalDeviceMaintenance10FeaturesKHR *>(current);
+                if (enabling->maintenance10 && !supported.maintenance10) {
+                    ss << "VkPhysicalDeviceMaintenance10FeaturesKHR::maintenance10 is not supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES: {
                 VkPhysicalDeviceMaintenance4Features supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
@@ -1783,14 +1794,14 @@ void Instance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDevice
                 }
                 break;
             }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_DECOMPRESSION_FEATURES_NV: {
-                VkPhysicalDeviceMemoryDecompressionFeaturesNV supported = vku::InitStructHelper();
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_DECOMPRESSION_FEATURES_EXT: {
+                VkPhysicalDeviceMemoryDecompressionFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceMemoryDecompressionFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceMemoryDecompressionFeaturesNV *>(current);
+                const VkPhysicalDeviceMemoryDecompressionFeaturesEXT *enabling =
+                    reinterpret_cast<const VkPhysicalDeviceMemoryDecompressionFeaturesEXT *>(current);
                 if (enabling->memoryDecompression && !supported.memoryDecompression) {
-                    ss << "VkPhysicalDeviceMemoryDecompressionFeaturesNV::memoryDecompression is not supported\n";
+                    ss << "VkPhysicalDeviceMemoryDecompressionFeaturesEXT::memoryDecompression is not supported\n";
                 }
                 break;
             }
@@ -2581,6 +2592,17 @@ void Instance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDevice
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_64_BIT_INDEXING_FEATURES_EXT: {
+                VkPhysicalDeviceShader64BitIndexingFeaturesEXT supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceShader64BitIndexingFeaturesEXT *enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShader64BitIndexingFeaturesEXT *>(current);
+                if (enabling->shader64BitIndexing && !supported.shader64BitIndexing) {
+                    ss << "VkPhysicalDeviceShader64BitIndexingFeaturesEXT::shader64BitIndexing is not supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT16_VECTOR_FEATURES_NV: {
                 VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
@@ -3041,6 +3063,18 @@ void Instance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDevice
                 }
                 if (enabling->shaderTileImageStencilReadAccess && !supported.shaderTileImageStencilReadAccess) {
                     ss << "VkPhysicalDeviceShaderTileImageFeaturesEXT::shaderTileImageStencilReadAccess is not supported\n";
+                }
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_UNIFORM_BUFFER_UNSIZED_ARRAY_FEATURES_EXT: {
+                VkPhysicalDeviceShaderUniformBufferUnsizedArrayFeaturesEXT supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceShaderUniformBufferUnsizedArrayFeaturesEXT *enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderUniformBufferUnsizedArrayFeaturesEXT *>(current);
+                if (enabling->shaderUniformBufferUnsizedArray && !supported.shaderUniformBufferUnsizedArray) {
+                    ss << "VkPhysicalDeviceShaderUniformBufferUnsizedArrayFeaturesEXT::shaderUniformBufferUnsizedArray is not "
+                          "supported\n";
                 }
                 break;
             }

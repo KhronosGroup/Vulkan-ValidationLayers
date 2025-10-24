@@ -99,9 +99,9 @@ class DeprecationGenerator(BaseGenerator):
             ****************************************************************************/\n''')
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
-        for extensions in [x.deprecate.extensions for x in self.vk.commands.values() if x.deprecate and x.deprecate.extensions and x.instance]:
+        for extensions in [x.legacy.extensions for x in self.vk.commands.values() if x.legacy and x.legacy.extensions and x.instance]:
             self.all_instance_extensions.update(extensions)
-        for extensions in [x.deprecate.extensions for x in self.vk.commands.values() if x.deprecate and x.deprecate.extensions and x.device]:
+        for extensions in [x.legacy.extensions for x in self.vk.commands.values() if x.legacy and x.legacy.extensions and x.device]:
             self.all_device_extensions.update(extensions)
 
         if self.filename == 'deprecation.h':
@@ -133,7 +133,7 @@ class DeprecationGenerator(BaseGenerator):
 
         ''')
 
-        for command in [x for x in self.vk.commands.values() if x.deprecate and x.instance]:
+        for command in [x for x in self.vk.commands.values() if x.legacy and x.instance]:
             prototype = (command.cPrototype.split('VKAPI_CALL ')[1])[2:-1]
             prePrototype = prototype.replace(')', ', const ErrorObject& error_obj)')
             out.append(f'bool PreCallValidate{prePrototype} const override;\n')
@@ -154,7 +154,7 @@ class DeprecationGenerator(BaseGenerator):
 
         out.append('\n')
 
-        for command in [x for x in self.vk.commands.values() if x.deprecate and x.device]:
+        for command in [x for x in self.vk.commands.values() if x.legacy and x.device]:
             # There is really no good use to warn developer both the create and destroy are deprecated
             if command.name.startswith('vkDestroy'):
                 continue
@@ -175,7 +175,7 @@ class DeprecationGenerator(BaseGenerator):
             namespace deprecation {
         ''')
 
-        for command in [x for x in self.vk.commands.values() if x.deprecate]:
+        for command in [x for x in self.vk.commands.values() if x.legacy]:
             # There is really no good use to warn developer both the create and destroy are deprecated
             if command.name.startswith('vkDestroy'):
                 continue
@@ -194,7 +194,7 @@ class DeprecationGenerator(BaseGenerator):
                 ''')
 
             firstCheck = True
-            if command.deprecate.version:
+            if command.legacy.version:
                 logic = 'if' if firstCheck else 'else if'
                 if firstCheck:
                     firstCheck = False
@@ -203,13 +203,13 @@ class DeprecationGenerator(BaseGenerator):
                     replacement = f'which contains {self.replacement[command.name]["version"]} that can be used instead'
 
                 out.append(f'''
-                    {logic} (api_version >= {command.deprecate.version.nameApi}) {{
+                    {logic} (api_version >= {command.legacy.version.nameApi}) {{
                         reported = true;
-                        LogWarning("WARNING-{command.deprecate.link}", {objName}, error_obj.location,
-                            "{command.name} is deprecated and this {handleName} was created with {command.deprecate.version.name} {replacement}.\\nSee more information about this deprecation in the specification: https://docs.vulkan.org/spec/latest/appendices/deprecation.html#{command.deprecate.link}");
+                        LogWarning("WARNING-{command.legacy.link}", {objName}, error_obj.location,
+                            "{command.name} is deprecated and this {handleName} was created with {command.legacy.version.name} {replacement}.\\nSee more information about this deprecation in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#{command.legacy.link}");
                     }}''')
 
-            for extension in command.deprecate.extensions:
+            for extension in command.legacy.extensions:
                 logic = 'if' if firstCheck else 'else if'
                 if firstCheck:
                     firstCheck = False
@@ -220,15 +220,15 @@ class DeprecationGenerator(BaseGenerator):
                 out.append(f'''
                     {logic} (IsExtEnabled(extensions.{extension.lower()})) {{
                         reported = true;
-                        LogWarning("WARNING-{command.deprecate.link}", {objName}, error_obj.location,
-                            "{command.name} is deprecated and this {handleName} enabled the {extension} extension {replacement}.\\nSee more information about this deprecation in the specification: https://docs.vulkan.org/spec/latest/appendices/deprecation.html#{command.deprecate.link}");
+                        LogWarning("WARNING-{command.legacy.link}", {objName}, error_obj.location,
+                            "{command.name} is deprecated and this {handleName} enabled the {extension} extension {replacement}.\\nSee more information about this deprecation in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#{command.legacy.link}");
                     }}''')
 
             # For things deprecated in Vulkan 1.0
-            if command.deprecate.version is None and len(command.deprecate.extensions) == 0:
+            if command.legacy.version is None and len(command.legacy.extensions) == 0:
                 out.append(f'''
-                           LogWarning("WARNING-{command.deprecate.link}", {objName}, error_obj.location,
-                            "{command.name} is deprecated.\\nSee more information about this deprecation in the specification: https://docs.vulkan.org/spec/latest/appendices/deprecation.html#{command.deprecate.link}");
+                           LogWarning("WARNING-{command.legacy.link}", {objName}, error_obj.location,
+                            "{command.name} is deprecated.\\nSee more information about this deprecation in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#{command.legacy.link}");
                     ''')
 
             out.append('''

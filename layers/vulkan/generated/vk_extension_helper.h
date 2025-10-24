@@ -275,6 +275,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_depth_clamp_zero_one{kNotSupported};
     ExtEnabled vk_khr_robustness2{kNotSupported};
     ExtEnabled vk_khr_present_mode_fifo_latest_ready{kNotSupported};
+    ExtEnabled vk_khr_maintenance10{kNotSupported};
     ExtEnabled vk_nv_glsl_shader{kNotSupported};
     ExtEnabled vk_ext_depth_range_unrestricted{kNotSupported};
     ExtEnabled vk_img_filter_cubic{kNotSupported};
@@ -513,6 +514,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_msft_layered_driver{kNotSupported};
     ExtEnabled vk_nv_descriptor_pool_overallocation{kNotSupported};
     ExtEnabled vk_qcom_tile_memory_heap{kNotSupported};
+    ExtEnabled vk_ext_memory_decompression{kNotSupported};
     ExtEnabled vk_nv_raw_access_chains{kNotSupported};
     ExtEnabled vk_nv_external_compute_queue{kNotSupported};
     ExtEnabled vk_nv_command_buffer_inheritance{kNotSupported};
@@ -525,6 +527,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_device_generated_commands{kNotSupported};
     ExtEnabled vk_mesa_image_alignment_control{kNotSupported};
     ExtEnabled vk_ext_depth_clamp_control{kNotSupported};
+    ExtEnabled vk_ohos_native_buffer{kNotSupported};
     ExtEnabled vk_huawei_hdr_vivid{kNotSupported};
     ExtEnabled vk_nv_cooperative_matrix2{kNotSupported};
     ExtEnabled vk_arm_pipeline_opacity_micromap{kNotSupported};
@@ -535,7 +538,9 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_present_metering{kNotSupported};
     ExtEnabled vk_ext_fragment_density_map_offset{kNotSupported};
     ExtEnabled vk_ext_zero_initialize_device_memory{kNotSupported};
+    ExtEnabled vk_ext_shader_64bit_indexing{kNotSupported};
     ExtEnabled vk_sec_pipeline_cache_incremental_mode{kNotSupported};
+    ExtEnabled vk_ext_shader_uniform_buffer_unsized_array{kNotSupported};
     ExtEnabled vk_khr_acceleration_structure{kNotSupported};
     ExtEnabled vk_khr_ray_tracing_pipeline{kNotSupported};
     ExtEnabled vk_khr_ray_query{kNotSupported};
@@ -738,6 +743,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_KHR_depth_clamp_zero_one:
         case vvl::Extension::_VK_KHR_robustness2:
         case vvl::Extension::_VK_KHR_present_mode_fifo_latest_ready:
+        case vvl::Extension::_VK_KHR_maintenance10:
         case vvl::Extension::_VK_NV_glsl_shader:
         case vvl::Extension::_VK_EXT_depth_range_unrestricted:
         case vvl::Extension::_VK_IMG_filter_cubic:
@@ -976,6 +982,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_MSFT_layered_driver:
         case vvl::Extension::_VK_NV_descriptor_pool_overallocation:
         case vvl::Extension::_VK_QCOM_tile_memory_heap:
+        case vvl::Extension::_VK_EXT_memory_decompression:
         case vvl::Extension::_VK_NV_raw_access_chains:
         case vvl::Extension::_VK_NV_external_compute_queue:
         case vvl::Extension::_VK_NV_command_buffer_inheritance:
@@ -988,6 +995,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_EXT_device_generated_commands:
         case vvl::Extension::_VK_MESA_image_alignment_control:
         case vvl::Extension::_VK_EXT_depth_clamp_control:
+        case vvl::Extension::_VK_OHOS_native_buffer:
         case vvl::Extension::_VK_HUAWEI_hdr_vivid:
         case vvl::Extension::_VK_NV_cooperative_matrix2:
         case vvl::Extension::_VK_ARM_pipeline_opacity_micromap:
@@ -998,7 +1006,9 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_NV_present_metering:
         case vvl::Extension::_VK_EXT_fragment_density_map_offset:
         case vvl::Extension::_VK_EXT_zero_initialize_device_memory:
+        case vvl::Extension::_VK_EXT_shader_64bit_indexing:
         case vvl::Extension::_VK_SEC_pipeline_cache_incremental_mode:
+        case vvl::Extension::_VK_EXT_shader_uniform_buffer_unsized_array:
         case vvl::Extension::_VK_KHR_acceleration_structure:
         case vvl::Extension::_VK_KHR_ray_tracing_pipeline:
         case vvl::Extension::_VK_KHR_ray_query:

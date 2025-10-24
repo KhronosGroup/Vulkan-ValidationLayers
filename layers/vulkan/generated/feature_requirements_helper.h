@@ -542,6 +542,8 @@ enum class Feature {
     stippledSmoothLines,
     // VkPhysicalDeviceLinearColorAttachmentFeaturesNV
     linearColorAttachment,
+    // VkPhysicalDeviceMaintenance10FeaturesKHR
+    maintenance10,
     // VkPhysicalDeviceMaintenance4Features, VkPhysicalDeviceVulkan13Features
     maintenance4,
     // VkPhysicalDeviceMaintenance5Features, VkPhysicalDeviceVulkan14Features
@@ -560,7 +562,7 @@ enum class Feature {
     memoryMapRangePlaced,
     // VkPhysicalDeviceMapMemoryPlacedFeaturesEXT
     memoryUnmapReserve,
-    // VkPhysicalDeviceMemoryDecompressionFeaturesNV
+    // VkPhysicalDeviceMemoryDecompressionFeaturesEXT
     memoryDecompression,
     // VkPhysicalDeviceMemoryPriorityFeaturesEXT
     memoryPriority,
@@ -758,6 +760,8 @@ enum class Feature {
     schedulingControls,
     // VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures, VkPhysicalDeviceVulkan12Features
     separateDepthStencilLayouts,
+    // VkPhysicalDeviceShader64BitIndexingFeaturesEXT
+    shader64BitIndexing,
     // VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV
     shaderFloat16VectorAtomics,
     // VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT
@@ -892,6 +896,8 @@ enum class Feature {
     shaderTileImageDepthReadAccess,
     // VkPhysicalDeviceShaderTileImageFeaturesEXT
     shaderTileImageStencilReadAccess,
+    // VkPhysicalDeviceShaderUniformBufferUnsizedArrayFeaturesEXT
+    shaderUniformBufferUnsizedArray,
     // VkPhysicalDeviceShaderUntypedPointersFeaturesKHR
     shaderUntypedPointers,
     // VkPhysicalDeviceShadingRateImageFeaturesNV

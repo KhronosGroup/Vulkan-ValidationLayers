@@ -22,8 +22,6 @@
 
 // NOLINTBEGIN
 template <>
-ValidValue stateless::Context::IsValidEnumValue(VkPipelineCacheHeaderVersion value) const;
-template <>
 ValidValue stateless::Context::IsValidEnumValue(VkImageLayout value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkObjectType value) const;
@@ -42,11 +40,29 @@ ValidValue stateless::Context::IsValidEnumValue(VkComponentSwizzle value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkImageViewType value) const;
 template <>
+ValidValue stateless::Context::IsValidEnumValue(VkCommandBufferLevel value) const;
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkIndexType value) const;
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkPipelineCacheHeaderVersion value) const;
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkBorderColor value) const;
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkFilter value) const;
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkSamplerAddressMode value) const;
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkSamplerMipmapMode value) const;
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkCompareOp value) const;
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkDescriptorType value) const;
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkPipelineBindPoint value) const;
+template <>
 ValidValue stateless::Context::IsValidEnumValue(VkBlendFactor value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkBlendOp value) const;
-template <>
-ValidValue stateless::Context::IsValidEnumValue(VkCompareOp value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkDynamicState value) const;
 template <>
@@ -62,29 +78,13 @@ ValidValue stateless::Context::IsValidEnumValue(VkStencilOp value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkLogicOp value) const;
 template <>
-ValidValue stateless::Context::IsValidEnumValue(VkBorderColor value) const;
-template <>
-ValidValue stateless::Context::IsValidEnumValue(VkFilter value) const;
-template <>
-ValidValue stateless::Context::IsValidEnumValue(VkSamplerAddressMode value) const;
-template <>
-ValidValue stateless::Context::IsValidEnumValue(VkSamplerMipmapMode value) const;
-template <>
-ValidValue stateless::Context::IsValidEnumValue(VkDescriptorType value) const;
-template <>
 ValidValue stateless::Context::IsValidEnumValue(VkAttachmentLoadOp value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkAttachmentStoreOp value) const;
 template <>
-ValidValue stateless::Context::IsValidEnumValue(VkPipelineBindPoint value) const;
-template <>
-ValidValue stateless::Context::IsValidEnumValue(VkCommandBufferLevel value) const;
-template <>
-ValidValue stateless::Context::IsValidEnumValue(VkIndexType value) const;
-template <>
 ValidValue stateless::Context::IsValidEnumValue(VkSubpassContents value) const;
 template <>
-ValidValue stateless::Context::IsValidEnumValue(VkTessellationDomainOrigin value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkDescriptorUpdateTemplateType value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkSamplerYcbcrModelConversion value) const;
 template <>
@@ -92,11 +92,11 @@ ValidValue stateless::Context::IsValidEnumValue(VkSamplerYcbcrRange value) const
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkChromaLocation value) const;
 template <>
-ValidValue stateless::Context::IsValidEnumValue(VkDescriptorUpdateTemplateType value) const;
-template <>
-ValidValue stateless::Context::IsValidEnumValue(VkSamplerReductionMode value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkTessellationDomainOrigin value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkSemaphoreType value) const;
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkSamplerReductionMode value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkPipelineRobustnessBufferBehavior value) const;
 template <>

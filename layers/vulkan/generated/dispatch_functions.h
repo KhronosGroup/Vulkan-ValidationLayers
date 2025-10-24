@@ -253,32 +253,6 @@ static inline void DispatchDestroySemaphore(VkDevice device, VkSemaphore semapho
     dispatch->DestroySemaphore(device, semaphore, pAllocator);
 }
 
-static inline VkResult DispatchCreateEvent(VkDevice device, const VkEventCreateInfo* pCreateInfo,
-                                           const VkAllocationCallbacks* pAllocator, VkEvent* pEvent) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    return dispatch->CreateEvent(device, pCreateInfo, pAllocator, pEvent);
-}
-
-static inline void DispatchDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    dispatch->DestroyEvent(device, event, pAllocator);
-}
-
-static inline VkResult DispatchGetEventStatus(VkDevice device, VkEvent event) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    return dispatch->GetEventStatus(device, event);
-}
-
-static inline VkResult DispatchSetEvent(VkDevice device, VkEvent event) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    return dispatch->SetEvent(device, event);
-}
-
-static inline VkResult DispatchResetEvent(VkDevice device, VkEvent event) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    return dispatch->ResetEvent(device, event);
-}
-
 static inline VkResult DispatchCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkQueryPool* pQueryPool) {
     auto dispatch = vvl::dispatch::GetData(device);
@@ -307,17 +281,6 @@ static inline void DispatchDestroyBuffer(VkDevice device, VkBuffer buffer, const
     dispatch->DestroyBuffer(device, buffer, pAllocator);
 }
 
-static inline VkResult DispatchCreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
-                                                const VkAllocationCallbacks* pAllocator, VkBufferView* pView) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    return dispatch->CreateBufferView(device, pCreateInfo, pAllocator, pView);
-}
-
-static inline void DispatchDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks* pAllocator) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    dispatch->DestroyBufferView(device, bufferView, pAllocator);
-}
-
 static inline VkResult DispatchCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkImage* pImage) {
     auto dispatch = vvl::dispatch::GetData(device);
@@ -344,6 +307,170 @@ static inline VkResult DispatchCreateImageView(VkDevice device, const VkImageVie
 static inline void DispatchDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks* pAllocator) {
     auto dispatch = vvl::dispatch::GetData(device);
     dispatch->DestroyImageView(device, imageView, pAllocator);
+}
+
+static inline VkResult DispatchCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
+                                                 const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->CreateCommandPool(device, pCreateInfo, pAllocator, pCommandPool);
+}
+
+static inline void DispatchDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks* pAllocator) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    dispatch->DestroyCommandPool(device, commandPool, pAllocator);
+}
+
+static inline VkResult DispatchResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->ResetCommandPool(device, commandPool, flags);
+}
+
+static inline VkResult DispatchAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pAllocateInfo,
+                                                      VkCommandBuffer* pCommandBuffers) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->AllocateCommandBuffers(device, pAllocateInfo, pCommandBuffers);
+}
+
+static inline void DispatchFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
+                                              const VkCommandBuffer* pCommandBuffers) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    dispatch->FreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers);
+}
+
+static inline VkResult DispatchBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    return dispatch->BeginCommandBuffer(commandBuffer, pBeginInfo);
+}
+
+static inline VkResult DispatchEndCommandBuffer(VkCommandBuffer commandBuffer) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    return dispatch->EndCommandBuffer(commandBuffer);
+}
+
+static inline VkResult DispatchResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    return dispatch->ResetCommandBuffer(commandBuffer, flags);
+}
+
+static inline void DispatchCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
+                                         uint32_t regionCount, const VkBufferCopy* pRegions) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
+}
+
+static inline void DispatchCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                        VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                        const VkImageCopy* pRegions) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
+}
+
+static inline void DispatchCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
+                                                VkImageLayout dstImageLayout, uint32_t regionCount,
+                                                const VkBufferImageCopy* pRegions) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
+}
+
+static inline void DispatchCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                                VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
+}
+
+static inline void DispatchCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                           VkDeviceSize dataSize, const void* pData) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData);
+}
+
+static inline void DispatchCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                         VkDeviceSize size, uint32_t data) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data);
+}
+
+static inline void DispatchCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
+                                              VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
+                                              uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+                                              uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+                                              uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers,
+                                 bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+}
+
+static inline void DispatchCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
+                                         VkQueryControlFlags flags) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdBeginQuery(commandBuffer, queryPool, query, flags);
+}
+
+static inline void DispatchCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdEndQuery(commandBuffer, queryPool, query);
+}
+
+static inline void DispatchCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
+                                             uint32_t queryCount) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdResetQueryPool(commandBuffer, queryPool, firstQuery, queryCount);
+}
+
+static inline void DispatchCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
+                                             VkQueryPool queryPool, uint32_t query) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, query);
+}
+
+static inline void DispatchCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
+                                                   uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                                   VkDeviceSize stride, VkQueryResultFlags flags) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdCopyQueryPoolResults(commandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset, stride, flags);
+}
+
+static inline void DispatchCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
+                                              const VkCommandBuffer* pCommandBuffers) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
+}
+
+static inline VkResult DispatchCreateEvent(VkDevice device, const VkEventCreateInfo* pCreateInfo,
+                                           const VkAllocationCallbacks* pAllocator, VkEvent* pEvent) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->CreateEvent(device, pCreateInfo, pAllocator, pEvent);
+}
+
+static inline void DispatchDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    dispatch->DestroyEvent(device, event, pAllocator);
+}
+
+static inline VkResult DispatchGetEventStatus(VkDevice device, VkEvent event) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->GetEventStatus(device, event);
+}
+
+static inline VkResult DispatchSetEvent(VkDevice device, VkEvent event) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->SetEvent(device, event);
+}
+
+static inline VkResult DispatchResetEvent(VkDevice device, VkEvent event) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->ResetEvent(device, event);
+}
+
+static inline VkResult DispatchCreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
+                                                const VkAllocationCallbacks* pAllocator, VkBufferView* pView) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->CreateBufferView(device, pCreateInfo, pAllocator, pView);
+}
+
+static inline void DispatchDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks* pAllocator) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    dispatch->DestroyBufferView(device, bufferView, pAllocator);
 }
 
 static inline VkResult DispatchCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
@@ -380,13 +507,6 @@ static inline VkResult DispatchMergePipelineCaches(VkDevice device, VkPipelineCa
                                                    const VkPipelineCache* pSrcCaches) {
     auto dispatch = vvl::dispatch::GetData(device);
     return dispatch->MergePipelineCaches(device, dstCache, srcCacheCount, pSrcCaches);
-}
-
-static inline VkResult DispatchCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                                       const VkGraphicsPipelineCreateInfo* pCreateInfos,
-                                                       const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    return dispatch->CreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
 }
 
 static inline VkResult DispatchCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
@@ -474,6 +594,72 @@ static inline void DispatchUpdateDescriptorSets(VkDevice device, uint32_t descri
     dispatch->UpdateDescriptorSets(device, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount, pDescriptorCopies);
 }
 
+static inline void DispatchCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                           VkPipeline pipeline) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
+}
+
+static inline void DispatchCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                 VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
+                                                 const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,
+                                                 const uint32_t* pDynamicOffsets) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount, pDescriptorSets,
+                                    dynamicOffsetCount, pDynamicOffsets);
+}
+
+static inline void DispatchCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                              const VkClearColorValue* pColor, uint32_t rangeCount,
+                                              const VkImageSubresourceRange* pRanges) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
+}
+
+static inline void DispatchCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
+                                       uint32_t groupCountZ) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
+}
+
+static inline void DispatchCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdDispatchIndirect(commandBuffer, buffer, offset);
+}
+
+static inline void DispatchCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdSetEvent(commandBuffer, event, stageMask);
+}
+
+static inline void DispatchCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdResetEvent(commandBuffer, event, stageMask);
+}
+
+static inline void DispatchCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+                                         VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+                                         uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+                                         uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+                                         uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdWaitEvents(commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers,
+                            bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+}
+
+static inline void DispatchCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
+                                            uint32_t offset, uint32_t size, const void* pValues) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues);
+}
+
+static inline VkResult DispatchCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                       const VkGraphicsPipelineCreateInfo* pCreateInfos,
+                                                       const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->CreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
+}
+
 static inline VkResult DispatchCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer) {
     auto dispatch = vvl::dispatch::GetData(device);
@@ -499,55 +685,6 @@ static inline void DispatchDestroyRenderPass(VkDevice device, VkRenderPass rende
 static inline void DispatchGetRenderAreaGranularity(VkDevice device, VkRenderPass renderPass, VkExtent2D* pGranularity) {
     auto dispatch = vvl::dispatch::GetData(device);
     dispatch->GetRenderAreaGranularity(device, renderPass, pGranularity);
-}
-
-static inline VkResult DispatchCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
-                                                 const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    return dispatch->CreateCommandPool(device, pCreateInfo, pAllocator, pCommandPool);
-}
-
-static inline void DispatchDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks* pAllocator) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    dispatch->DestroyCommandPool(device, commandPool, pAllocator);
-}
-
-static inline VkResult DispatchResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    return dispatch->ResetCommandPool(device, commandPool, flags);
-}
-
-static inline VkResult DispatchAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pAllocateInfo,
-                                                      VkCommandBuffer* pCommandBuffers) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    return dispatch->AllocateCommandBuffers(device, pAllocateInfo, pCommandBuffers);
-}
-
-static inline void DispatchFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
-                                              const VkCommandBuffer* pCommandBuffers) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    dispatch->FreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers);
-}
-
-static inline VkResult DispatchBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    return dispatch->BeginCommandBuffer(commandBuffer, pBeginInfo);
-}
-
-static inline VkResult DispatchEndCommandBuffer(VkCommandBuffer commandBuffer) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    return dispatch->EndCommandBuffer(commandBuffer);
-}
-
-static inline VkResult DispatchResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    return dispatch->ResetCommandBuffer(commandBuffer, flags);
-}
-
-static inline void DispatchCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                           VkPipeline pipeline) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
 }
 
 static inline void DispatchCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
@@ -599,15 +736,6 @@ static inline void DispatchCmdSetStencilReference(VkCommandBuffer commandBuffer,
     dispatch->CmdSetStencilReference(commandBuffer, faceMask, reference);
 }
 
-static inline void DispatchCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                 VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
-                                                 const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,
-                                                 const uint32_t* pDynamicOffsets) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount, pDescriptorSets,
-                                    dynamicOffsetCount, pDynamicOffsets);
-}
-
 static inline void DispatchCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                               VkIndexType indexType) {
     auto dispatch = vvl::dispatch::GetData(commandBuffer);
@@ -644,67 +772,11 @@ static inline void DispatchCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer,
     dispatch->CmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride);
 }
 
-static inline void DispatchCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
-                                       uint32_t groupCountZ) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
-}
-
-static inline void DispatchCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdDispatchIndirect(commandBuffer, buffer, offset);
-}
-
-static inline void DispatchCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
-                                         uint32_t regionCount, const VkBufferCopy* pRegions) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
-}
-
-static inline void DispatchCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                        VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                        const VkImageCopy* pRegions) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
-}
-
 static inline void DispatchCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                         VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                         const VkImageBlit* pRegions, VkFilter filter) {
     auto dispatch = vvl::dispatch::GetData(commandBuffer);
     dispatch->CmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter);
-}
-
-static inline void DispatchCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                                VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                const VkBufferImageCopy* pRegions) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
-}
-
-static inline void DispatchCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                                VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
-}
-
-static inline void DispatchCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                           VkDeviceSize dataSize, const void* pData) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData);
-}
-
-static inline void DispatchCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                         VkDeviceSize size, uint32_t data) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data);
-}
-
-static inline void DispatchCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                              const VkClearColorValue* pColor, uint32_t rangeCount,
-                                              const VkImageSubresourceRange* pRanges) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
 }
 
 static inline void DispatchCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
@@ -728,72 +800,6 @@ static inline void DispatchCmdResolveImage(VkCommandBuffer commandBuffer, VkImag
     dispatch->CmdResolveImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
 }
 
-static inline void DispatchCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdSetEvent(commandBuffer, event, stageMask);
-}
-
-static inline void DispatchCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdResetEvent(commandBuffer, event, stageMask);
-}
-
-static inline void DispatchCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                         VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-                                         uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
-                                         uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
-                                         uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdWaitEvents(commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers,
-                            bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
-}
-
-static inline void DispatchCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
-                                              VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
-                                              uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
-                                              uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
-                                              uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers,
-                                 bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
-}
-
-static inline void DispatchCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
-                                         VkQueryControlFlags flags) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdBeginQuery(commandBuffer, queryPool, query, flags);
-}
-
-static inline void DispatchCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdEndQuery(commandBuffer, queryPool, query);
-}
-
-static inline void DispatchCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
-                                             uint32_t queryCount) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdResetQueryPool(commandBuffer, queryPool, firstQuery, queryCount);
-}
-
-static inline void DispatchCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
-                                             VkQueryPool queryPool, uint32_t query) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, query);
-}
-
-static inline void DispatchCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
-                                                   uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                                   VkDeviceSize stride, VkQueryResultFlags flags) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdCopyQueryPoolResults(commandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset, stride, flags);
-}
-
-static inline void DispatchCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
-                                            uint32_t offset, uint32_t size, const void* pValues) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues);
-}
-
 static inline void DispatchCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                               VkSubpassContents contents) {
     auto dispatch = vvl::dispatch::GetData(commandBuffer);
@@ -808,12 +814,6 @@ static inline void DispatchCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpa
 static inline void DispatchCmdEndRenderPass(VkCommandBuffer commandBuffer) {
     auto dispatch = vvl::dispatch::GetData(commandBuffer);
     dispatch->CmdEndRenderPass(commandBuffer);
-}
-
-static inline void DispatchCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
-                                              const VkCommandBuffer* pCommandBuffers) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
 }
 
 static inline VkResult DispatchBindBufferMemory2(VkDevice device, uint32_t bindInfoCount,
@@ -837,12 +837,6 @@ static inline void DispatchGetDeviceGroupPeerMemoryFeatures(VkDevice device, uin
 static inline void DispatchCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask) {
     auto dispatch = vvl::dispatch::GetData(commandBuffer);
     dispatch->CmdSetDeviceMask(commandBuffer, deviceMask);
-}
-
-static inline void DispatchCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
-                                           uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
 }
 
 static inline VkResult DispatchEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
@@ -924,17 +918,31 @@ static inline void DispatchGetDeviceQueue2(VkDevice device, const VkDeviceQueueI
     dispatch->GetDeviceQueue2(device, pQueueInfo, pQueue);
 }
 
-static inline VkResult DispatchCreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,
-                                                            const VkAllocationCallbacks* pAllocator,
-                                                            VkSamplerYcbcrConversion* pYcbcrConversion) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    return dispatch->CreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion);
+static inline void DispatchGetPhysicalDeviceExternalBufferProperties(VkPhysicalDevice physicalDevice,
+                                                                     const VkPhysicalDeviceExternalBufferInfo* pExternalBufferInfo,
+                                                                     VkExternalBufferProperties* pExternalBufferProperties) {
+    auto dispatch = vvl::dispatch::GetData(physicalDevice);
+    dispatch->GetPhysicalDeviceExternalBufferProperties(physicalDevice, pExternalBufferInfo, pExternalBufferProperties);
 }
 
-static inline void DispatchDestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
-                                                         const VkAllocationCallbacks* pAllocator) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    dispatch->DestroySamplerYcbcrConversion(device, ycbcrConversion, pAllocator);
+static inline void DispatchGetPhysicalDeviceExternalFenceProperties(VkPhysicalDevice physicalDevice,
+                                                                    const VkPhysicalDeviceExternalFenceInfo* pExternalFenceInfo,
+                                                                    VkExternalFenceProperties* pExternalFenceProperties) {
+    auto dispatch = vvl::dispatch::GetData(physicalDevice);
+    dispatch->GetPhysicalDeviceExternalFenceProperties(physicalDevice, pExternalFenceInfo, pExternalFenceProperties);
+}
+
+static inline void DispatchGetPhysicalDeviceExternalSemaphoreProperties(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
+    VkExternalSemaphoreProperties* pExternalSemaphoreProperties) {
+    auto dispatch = vvl::dispatch::GetData(physicalDevice);
+    dispatch->GetPhysicalDeviceExternalSemaphoreProperties(physicalDevice, pExternalSemaphoreInfo, pExternalSemaphoreProperties);
+}
+
+static inline void DispatchCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
+                                           uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
 }
 
 static inline VkResult DispatchCreateDescriptorUpdateTemplate(VkDevice device,
@@ -957,31 +965,59 @@ static inline void DispatchUpdateDescriptorSetWithTemplate(VkDevice device, VkDe
     dispatch->UpdateDescriptorSetWithTemplate(device, descriptorSet, descriptorUpdateTemplate, pData);
 }
 
-static inline void DispatchGetPhysicalDeviceExternalBufferProperties(VkPhysicalDevice physicalDevice,
-                                                                     const VkPhysicalDeviceExternalBufferInfo* pExternalBufferInfo,
-                                                                     VkExternalBufferProperties* pExternalBufferProperties) {
-    auto dispatch = vvl::dispatch::GetData(physicalDevice);
-    dispatch->GetPhysicalDeviceExternalBufferProperties(physicalDevice, pExternalBufferInfo, pExternalBufferProperties);
-}
-
-static inline void DispatchGetPhysicalDeviceExternalFenceProperties(VkPhysicalDevice physicalDevice,
-                                                                    const VkPhysicalDeviceExternalFenceInfo* pExternalFenceInfo,
-                                                                    VkExternalFenceProperties* pExternalFenceProperties) {
-    auto dispatch = vvl::dispatch::GetData(physicalDevice);
-    dispatch->GetPhysicalDeviceExternalFenceProperties(physicalDevice, pExternalFenceInfo, pExternalFenceProperties);
-}
-
-static inline void DispatchGetPhysicalDeviceExternalSemaphoreProperties(
-    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
-    VkExternalSemaphoreProperties* pExternalSemaphoreProperties) {
-    auto dispatch = vvl::dispatch::GetData(physicalDevice);
-    dispatch->GetPhysicalDeviceExternalSemaphoreProperties(physicalDevice, pExternalSemaphoreInfo, pExternalSemaphoreProperties);
-}
-
 static inline void DispatchGetDescriptorSetLayoutSupport(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
                                                          VkDescriptorSetLayoutSupport* pSupport) {
     auto dispatch = vvl::dispatch::GetData(device);
     dispatch->GetDescriptorSetLayoutSupport(device, pCreateInfo, pSupport);
+}
+
+static inline VkResult DispatchCreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,
+                                                            const VkAllocationCallbacks* pAllocator,
+                                                            VkSamplerYcbcrConversion* pYcbcrConversion) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->CreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion);
+}
+
+static inline void DispatchDestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
+                                                         const VkAllocationCallbacks* pAllocator) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    dispatch->DestroySamplerYcbcrConversion(device, ycbcrConversion, pAllocator);
+}
+
+static inline void DispatchResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    dispatch->ResetQueryPool(device, queryPool, firstQuery, queryCount);
+}
+
+static inline VkResult DispatchGetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, uint64_t* pValue) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->GetSemaphoreCounterValue(device, semaphore, pValue);
+}
+
+static inline VkResult DispatchWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->WaitSemaphores(device, pWaitInfo, timeout);
+}
+
+static inline VkResult DispatchSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->SignalSemaphore(device, pSignalInfo);
+}
+
+static inline VkDeviceAddress DispatchGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->GetBufferDeviceAddress(device, pInfo);
+}
+
+static inline uint64_t DispatchGetBufferOpaqueCaptureAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->GetBufferOpaqueCaptureAddress(device, pInfo);
+}
+
+static inline uint64_t DispatchGetDeviceMemoryOpaqueCaptureAddress(VkDevice device,
+                                                                   const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->GetDeviceMemoryOpaqueCaptureAddress(device, pInfo);
 }
 
 static inline void DispatchCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -1021,42 +1057,6 @@ static inline void DispatchCmdEndRenderPass2(VkCommandBuffer commandBuffer, cons
     dispatch->CmdEndRenderPass2(commandBuffer, pSubpassEndInfo);
 }
 
-static inline void DispatchResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    dispatch->ResetQueryPool(device, queryPool, firstQuery, queryCount);
-}
-
-static inline VkResult DispatchGetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, uint64_t* pValue) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    return dispatch->GetSemaphoreCounterValue(device, semaphore, pValue);
-}
-
-static inline VkResult DispatchWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    return dispatch->WaitSemaphores(device, pWaitInfo, timeout);
-}
-
-static inline VkResult DispatchSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    return dispatch->SignalSemaphore(device, pSignalInfo);
-}
-
-static inline VkDeviceAddress DispatchGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    return dispatch->GetBufferDeviceAddress(device, pInfo);
-}
-
-static inline uint64_t DispatchGetBufferOpaqueCaptureAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    return dispatch->GetBufferOpaqueCaptureAddress(device, pInfo);
-}
-
-static inline uint64_t DispatchGetDeviceMemoryOpaqueCaptureAddress(VkDevice device,
-                                                                   const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    return dispatch->GetDeviceMemoryOpaqueCaptureAddress(device, pInfo);
-}
-
 static inline VkResult DispatchGetPhysicalDeviceToolProperties(VkPhysicalDevice physicalDevice, uint32_t* pToolCount,
                                                                VkPhysicalDeviceToolProperties* pToolProperties) {
     auto dispatch = vvl::dispatch::GetData(physicalDevice);
@@ -1085,22 +1085,6 @@ static inline void DispatchGetPrivateData(VkDevice device, VkObjectType objectTy
                                           VkPrivateDataSlot privateDataSlot, uint64_t* pData) {
     auto dispatch = vvl::dispatch::GetData(device);
     dispatch->GetPrivateData(device, objectType, objectHandle, privateDataSlot, pData);
-}
-
-static inline void DispatchCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdSetEvent2(commandBuffer, event, pDependencyInfo);
-}
-
-static inline void DispatchCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdResetEvent2(commandBuffer, event, stageMask);
-}
-
-static inline void DispatchCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                          const VkDependencyInfo* pDependencyInfos) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos);
 }
 
 static inline void DispatchCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo) {
@@ -1139,6 +1123,41 @@ static inline void DispatchCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
                                                  const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo) {
     auto dispatch = vvl::dispatch::GetData(commandBuffer);
     dispatch->CmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo);
+}
+
+static inline void DispatchGetDeviceBufferMemoryRequirements(VkDevice device, const VkDeviceBufferMemoryRequirements* pInfo,
+                                                             VkMemoryRequirements2* pMemoryRequirements) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    dispatch->GetDeviceBufferMemoryRequirements(device, pInfo, pMemoryRequirements);
+}
+
+static inline void DispatchGetDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
+                                                            VkMemoryRequirements2* pMemoryRequirements) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    dispatch->GetDeviceImageMemoryRequirements(device, pInfo, pMemoryRequirements);
+}
+
+static inline void DispatchGetDeviceImageSparseMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
+                                                                  uint32_t* pSparseMemoryRequirementCount,
+                                                                  VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    dispatch->GetDeviceImageSparseMemoryRequirements(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
+}
+
+static inline void DispatchCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdSetEvent2(commandBuffer, event, pDependencyInfo);
+}
+
+static inline void DispatchCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdResetEvent2(commandBuffer, event, stageMask);
+}
+
+static inline void DispatchCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+                                          const VkDependencyInfo* pDependencyInfos) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos);
 }
 
 static inline void DispatchCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo) {
@@ -1240,31 +1259,6 @@ static inline void DispatchCmdSetPrimitiveRestartEnable(VkCommandBuffer commandB
     dispatch->CmdSetPrimitiveRestartEnable(commandBuffer, primitiveRestartEnable);
 }
 
-static inline void DispatchGetDeviceBufferMemoryRequirements(VkDevice device, const VkDeviceBufferMemoryRequirements* pInfo,
-                                                             VkMemoryRequirements2* pMemoryRequirements) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    dispatch->GetDeviceBufferMemoryRequirements(device, pInfo, pMemoryRequirements);
-}
-
-static inline void DispatchGetDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
-                                                            VkMemoryRequirements2* pMemoryRequirements) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    dispatch->GetDeviceImageMemoryRequirements(device, pInfo, pMemoryRequirements);
-}
-
-static inline void DispatchGetDeviceImageSparseMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
-                                                                  uint32_t* pSparseMemoryRequirementCount,
-                                                                  VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    dispatch->GetDeviceImageSparseMemoryRequirements(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
-}
-
-static inline void DispatchCmdSetLineStipple(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
-                                             uint16_t lineStipplePattern) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdSetLineStipple(commandBuffer, lineStippleFactor, lineStipplePattern);
-}
-
 static inline VkResult DispatchMapMemory2(VkDevice device, const VkMemoryMapInfo* pMemoryMapInfo, void** ppData) {
     auto dispatch = vvl::dispatch::GetData(device);
     return dispatch->MapMemory2(device, pMemoryMapInfo, ppData);
@@ -1273,18 +1267,6 @@ static inline VkResult DispatchMapMemory2(VkDevice device, const VkMemoryMapInfo
 static inline VkResult DispatchUnmapMemory2(VkDevice device, const VkMemoryUnmapInfo* pMemoryUnmapInfo) {
     auto dispatch = vvl::dispatch::GetData(device);
     return dispatch->UnmapMemory2(device, pMemoryUnmapInfo);
-}
-
-static inline void DispatchCmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                               VkDeviceSize size, VkIndexType indexType) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdBindIndexBuffer2(commandBuffer, buffer, offset, size, indexType);
-}
-
-static inline void DispatchGetRenderingAreaGranularity(VkDevice device, const VkRenderingAreaInfo* pRenderingAreaInfo,
-                                                       VkExtent2D* pGranularity) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    dispatch->GetRenderingAreaGranularity(device, pRenderingAreaInfo, pGranularity);
 }
 
 static inline void DispatchGetDeviceImageSubresourceLayout(VkDevice device, const VkDeviceImageSubresourceInfo* pInfo,
@@ -1299,6 +1281,27 @@ static inline void DispatchGetImageSubresourceLayout2(VkDevice device, VkImage i
     dispatch->GetImageSubresourceLayout2(device, image, pSubresource, pLayout);
 }
 
+static inline VkResult DispatchCopyMemoryToImage(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->CopyMemoryToImage(device, pCopyMemoryToImageInfo);
+}
+
+static inline VkResult DispatchCopyImageToMemory(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->CopyImageToMemory(device, pCopyImageToMemoryInfo);
+}
+
+static inline VkResult DispatchCopyImageToImage(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->CopyImageToImage(device, pCopyImageToImageInfo);
+}
+
+static inline VkResult DispatchTransitionImageLayout(VkDevice device, uint32_t transitionCount,
+                                                     const VkHostImageLayoutTransitionInfo* pTransitions) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->TransitionImageLayout(device, transitionCount, pTransitions);
+}
+
 static inline void DispatchCmdPushDescriptorSet(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                 VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
                                                 const VkWriteDescriptorSet* pDescriptorWrites) {
@@ -1311,18 +1314,6 @@ static inline void DispatchCmdPushDescriptorSetWithTemplate(VkCommandBuffer comm
                                                             VkPipelineLayout layout, uint32_t set, const void* pData) {
     auto dispatch = vvl::dispatch::GetData(commandBuffer);
     dispatch->CmdPushDescriptorSetWithTemplate(commandBuffer, descriptorUpdateTemplate, layout, set, pData);
-}
-
-static inline void DispatchCmdSetRenderingAttachmentLocations(VkCommandBuffer commandBuffer,
-                                                              const VkRenderingAttachmentLocationInfo* pLocationInfo) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdSetRenderingAttachmentLocations(commandBuffer, pLocationInfo);
-}
-
-static inline void DispatchCmdSetRenderingInputAttachmentIndices(
-    VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfo* pInputAttachmentIndexInfo) {
-    auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdSetRenderingInputAttachmentIndices(commandBuffer, pInputAttachmentIndexInfo);
 }
 
 static inline void DispatchCmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
@@ -1348,25 +1339,34 @@ static inline void DispatchCmdPushDescriptorSetWithTemplate2(
     dispatch->CmdPushDescriptorSetWithTemplate2(commandBuffer, pPushDescriptorSetWithTemplateInfo);
 }
 
-static inline VkResult DispatchCopyMemoryToImage(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    return dispatch->CopyMemoryToImage(device, pCopyMemoryToImageInfo);
+static inline void DispatchCmdSetLineStipple(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
+                                             uint16_t lineStipplePattern) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdSetLineStipple(commandBuffer, lineStippleFactor, lineStipplePattern);
 }
 
-static inline VkResult DispatchCopyImageToMemory(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    return dispatch->CopyImageToMemory(device, pCopyImageToMemoryInfo);
+static inline void DispatchCmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                               VkDeviceSize size, VkIndexType indexType) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdBindIndexBuffer2(commandBuffer, buffer, offset, size, indexType);
 }
 
-static inline VkResult DispatchCopyImageToImage(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo) {
+static inline void DispatchGetRenderingAreaGranularity(VkDevice device, const VkRenderingAreaInfo* pRenderingAreaInfo,
+                                                       VkExtent2D* pGranularity) {
     auto dispatch = vvl::dispatch::GetData(device);
-    return dispatch->CopyImageToImage(device, pCopyImageToImageInfo);
+    dispatch->GetRenderingAreaGranularity(device, pRenderingAreaInfo, pGranularity);
 }
 
-static inline VkResult DispatchTransitionImageLayout(VkDevice device, uint32_t transitionCount,
-                                                     const VkHostImageLayoutTransitionInfo* pTransitions) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    return dispatch->TransitionImageLayout(device, transitionCount, pTransitions);
+static inline void DispatchCmdSetRenderingAttachmentLocations(VkCommandBuffer commandBuffer,
+                                                              const VkRenderingAttachmentLocationInfo* pLocationInfo) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdSetRenderingAttachmentLocations(commandBuffer, pLocationInfo);
+}
+
+static inline void DispatchCmdSetRenderingInputAttachmentIndices(
+    VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfo* pInputAttachmentIndexInfo) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdSetRenderingInputAttachmentIndices(commandBuffer, pInputAttachmentIndexInfo);
 }
 
 static inline void DispatchDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks* pAllocator) {
@@ -2393,6 +2393,11 @@ static inline void DispatchCmdCopyMemoryToImageIndirectKHR(
     VkCommandBuffer commandBuffer, const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo) {
     auto dispatch = vvl::dispatch::GetData(commandBuffer);
     dispatch->CmdCopyMemoryToImageIndirectKHR(commandBuffer, pCopyMemoryToImageIndirectInfo);
+}
+
+static inline void DispatchCmdEndRendering2KHR(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdEndRendering2KHR(commandBuffer, pRenderingEndInfo);
 }
 
 static inline VkResult DispatchCreateDebugReportCallbackEXT(VkInstance instance,
@@ -4351,6 +4356,22 @@ static inline void DispatchCmdBindTileMemoryQCOM(VkCommandBuffer commandBuffer,
     dispatch->CmdBindTileMemoryQCOM(commandBuffer, pTileMemoryBindInfo);
 }
 
+static inline void DispatchCmdDecompressMemoryEXT(VkCommandBuffer commandBuffer,
+                                                  const VkDecompressMemoryInfoEXT* pDecompressMemoryInfoEXT) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdDecompressMemoryEXT(commandBuffer, pDecompressMemoryInfoEXT);
+}
+
+static inline void DispatchCmdDecompressMemoryIndirectCountEXT(VkCommandBuffer commandBuffer,
+                                                               VkMemoryDecompressionMethodFlagsEXT decompressionMethod,
+                                                               VkDeviceAddress indirectCommandsAddress,
+                                                               VkDeviceAddress indirectCommandsCountAddress,
+                                                               uint32_t maxDecompressionCount, uint32_t stride) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdDecompressMemoryIndirectCountEXT(commandBuffer, decompressionMethod, indirectCommandsAddress,
+                                                  indirectCommandsCountAddress, maxDecompressionCount, stride);
+}
+
 static inline VkResult DispatchCreateExternalComputeQueueNV(VkDevice device, const VkExternalComputeQueueCreateInfoNV* pCreateInfo,
                                                             const VkAllocationCallbacks* pAllocator,
                                                             VkExternalComputeQueueNV* pExternalQueue) {
@@ -4464,6 +4485,25 @@ static inline VkResult DispatchCreateSurfaceOHOS(VkInstance instance, const VkSu
     auto dispatch = vvl::dispatch::GetData(instance);
     return dispatch->CreateSurfaceOHOS(instance, pCreateInfo, pAllocator, pSurface);
 }
+
+static inline VkResult DispatchGetSwapchainGrallocUsageOHOS(VkDevice device, VkFormat format, VkImageUsageFlags imageUsage,
+                                                            uint64_t* grallocUsage) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->GetSwapchainGrallocUsageOHOS(device, format, imageUsage, grallocUsage);
+}
+
+static inline VkResult DispatchAcquireImageOHOS(VkDevice device, VkImage image, int32_t nativeFenceFd, VkSemaphore semaphore,
+                                                VkFence fence) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->AcquireImageOHOS(device, image, nativeFenceFd, semaphore, fence);
+}
+
+static inline VkResult DispatchQueueSignalReleaseImageOHOS(VkQueue queue, uint32_t waitSemaphoreCount,
+                                                           const VkSemaphore* pWaitSemaphores, VkImage image,
+                                                           int32_t* pNativeFenceFd) {
+    auto dispatch = vvl::dispatch::GetData(queue);
+    return dispatch->QueueSignalReleaseImageOHOS(queue, waitSemaphoreCount, pWaitSemaphores, image, pNativeFenceFd);
+}
 #endif  // VK_USE_PLATFORM_OHOS
 
 static inline VkResult DispatchGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
@@ -4487,7 +4527,7 @@ static inline VkResult DispatchGetMemoryMetalHandlePropertiesEXT(VkDevice device
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
-static inline void DispatchCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT* pRenderingEndInfo) {
+static inline void DispatchCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo) {
     auto dispatch = vvl::dispatch::GetData(commandBuffer);
     dispatch->CmdEndRendering2EXT(commandBuffer, pRenderingEndInfo);
 }
