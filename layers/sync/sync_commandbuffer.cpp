@@ -380,7 +380,8 @@ void CommandBufferAccessContext::RecordBeginRendering(BeginRenderingCmdState &cm
             }
             ImageRangeGen range_gen = attachment.view_gen;
             const AttachmentAccess attachment_access = GetAttachmentAccess(attachment.GetOrdering(), AttachmentAccessType::LoadOp);
-            GetCurrentAccessContext()->UpdateAccessState(range_gen, load_index, attachment_access, ResourceUsageTagEx{tag});
+            GetCurrentAccessContext()->UpdateAttachmentAccessState(range_gen, load_index, attachment_access,
+                                                                   ResourceUsageTagEx{tag});
         }
     }
     dynamic_rendering_info_ = std::move(cmd_state.info);
@@ -492,18 +493,19 @@ void CommandBufferAccessContext::RecordEndRendering(const RecordObject &record_o
 
             const AttachmentAccess resolve_read_access = GetAttachmentAccess(kResolveOrder, AttachmentAccessType::ResolveRead);
             ImageRangeGen view_gen = attachment.view_gen;
-            access_context.UpdateAccessState(view_gen, kResolveRead, resolve_read_access, ResourceUsageTagEx{store_tag});
+            access_context.UpdateAttachmentAccessState(view_gen, kResolveRead, resolve_read_access, ResourceUsageTagEx{store_tag});
 
             const AttachmentAccess resolve_write_access = GetAttachmentAccess(kResolveOrder, AttachmentAccessType::ResolveWrite);
             ImageRangeGen resolve_gen = *attachment.resolve_gen;
-            access_context.UpdateAccessState(resolve_gen, kResolveWrite, resolve_write_access, ResourceUsageTagEx{store_tag});
+            access_context.UpdateAttachmentAccessState(resolve_gen, kResolveWrite, resolve_write_access,
+                                                       ResourceUsageTagEx{store_tag});
         }
 
         const SyncAccessIndex store_index = attachment.GetStoreUsage();
         if (store_index != SYNC_ACCESS_INDEX_NONE) {
             const AttachmentAccess attachment_access = GetAttachmentAccess(kStoreOrder, AttachmentAccessType::StoreOp);
             ImageRangeGen view_gen = attachment.view_gen;
-            access_context.UpdateAccessState(view_gen, store_index, attachment_access, ResourceUsageTagEx{store_tag});
+            access_context.UpdateAttachmentAccessState(view_gen, store_index, attachment_access, ResourceUsageTagEx{store_tag});
         }
     }
     current_render_pass_instance_id_++;
@@ -744,8 +746,8 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
                             const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kRaster);
 
                             ImageRangeGen range_gen(MakeImageRangeGen(*img_view_state, offset, extent));
-                            current_context_->UpdateAccessState(range_gen, SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ,
-                                                                attachment_access, tag_ex);
+                            current_context_->UpdateAttachmentAccessState(range_gen, SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ,
+                                                                          attachment_access, tag_ex);
                         } else {
                             ImageRangeGen range_gen = MakeImageRangeGen(*img_view_state);
                             current_context_->UpdateAccessState(range_gen, sync_index, tag_ex);
@@ -1020,8 +1022,8 @@ void CommandBufferAccessContext::RecordDrawDynamicRenderingAttachment(ResourceUs
         }
         const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kColorAttachment);
         ImageRangeGen view_gen = attachment.view_gen;
-        access_context.UpdateAccessState(view_gen, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, attachment_access,
-                                         ResourceUsageTagEx{tag});
+        access_context.UpdateAttachmentAccessState(view_gen, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, attachment_access,
+                                                   ResourceUsageTagEx{tag});
     }
 
     // TODO -- fixup this and Subpass attachment to correct map the various depth stencil enables/reads vs. writes
@@ -1037,8 +1039,8 @@ void CommandBufferAccessContext::RecordDrawDynamicRenderingAttachment(ResourceUs
         if (writeable) {
             const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kDepthStencilAttachment);
             ImageRangeGen view_gen = attachment.view_gen;
-            access_context.UpdateAccessState(view_gen, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, attachment_access,
-                                             ResourceUsageTagEx{tag});
+            access_context.UpdateAttachmentAccessState(view_gen, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
+                                                       attachment_access, ResourceUsageTagEx{tag});
         }
     }
 }
@@ -1210,13 +1212,13 @@ void CommandBufferAccessContext::RecordClearAttachment(ResourceUsageTag tag, con
     if (aspects_to_clear & kColorAspects) {
         assert((aspects_to_clear & kDepthStencilAspects) == 0);
         const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kColorAttachment);
-        current_context_->UpdateAccessState(range_gen, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, attachment_access,
-                                            ResourceUsageTagEx{tag});
+        current_context_->UpdateAttachmentAccessState(range_gen, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
+                                                      attachment_access, ResourceUsageTagEx{tag});
     } else {
         assert((aspects_to_clear & kColorAspects) == 0);
         const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kDepthStencilAttachment);
-        current_context_->UpdateAccessState(range_gen, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, attachment_access,
-                                            ResourceUsageTagEx{tag});
+        current_context_->UpdateAttachmentAccessState(range_gen, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
+                                                      attachment_access, ResourceUsageTagEx{tag});
     }
 }
 
