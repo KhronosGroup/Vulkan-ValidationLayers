@@ -517,7 +517,7 @@ TEST_F(NegativeDescriptorBuffer, BindWithNoValidUsageFlags) {
     binding_info.address = d_buffer.Address();
     binding_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDescriptorBufferBindingInfoEXT-usage-flags");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferBindingInfoEXT-usage-10998");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08055");
     vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &binding_info);
     m_errorMonitor->VerifyFound();
@@ -1502,7 +1502,7 @@ TEST_F(NegativeDescriptorBuffer, LayoutFlags) {
         vk::GetDescriptorSetLayoutSizeEXT(device(), dsl, &size);
         m_errorMonitor->VerifyFound();
 
-        m_errorMonitor->SetDesiredError("UNASSIGNED-vkGetDescriptorSetLayoutBindingOffsetEXT-layout-push");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdSetDescriptorBufferOffsetsEXT-firstSet-11803");
         vk::GetDescriptorSetLayoutBindingOffsetEXT(device(), dsl, 0, &offset);
         m_errorMonitor->VerifyFound();
     }
@@ -1515,7 +1515,7 @@ TEST_F(NegativeDescriptorBuffer, LayoutFlags) {
         vk::GetDescriptorSetLayoutSizeEXT(device(), dsl, &size);
         m_errorMonitor->VerifyFound();
 
-        m_errorMonitor->SetDesiredError("UNASSIGNED-vkGetDescriptorSetLayoutBindingOffsetEXT-layout-embedded");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdSetDescriptorBufferOffsetsEXT-firstSet-11804");
         vk::GetDescriptorSetLayoutBindingOffsetEXT(device(), dsl, 0, &offset);
         m_errorMonitor->VerifyFound();
     }

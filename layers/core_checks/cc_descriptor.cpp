@@ -2661,12 +2661,10 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
         // If none if found, output each violated VUIDs, with the list of buffers that violate it.
 
         if ((buffer_usage & descriptor_buffer_usage) == 0) {
-            // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7734
             bool has_usage2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(binding_info.pNext);
-            skip |=
-                LogError("UNASSIGNED-VkDescriptorBufferBindingInfoEXT-usage-flags", commandBuffer, binding_loc.dot(Field::usage),
-                         "%sis %s", has_usage2 ? "is ignored for pNext->VkBufferUsageFlags2CreateInfo::usage, which " : "",
-                         string_VkBufferUsageFlags2(buffer_usage).c_str());
+            skip |= LogError("VUID-VkDescriptorBufferBindingInfoEXT-usage-10998", commandBuffer, binding_loc.dot(Field::usage),
+                             "%sis %s", has_usage2 ? "is ignored for pNext->VkBufferUsageFlags2CreateInfo::usage, which " : "",
+                             string_VkBufferUsageFlags2(buffer_usage).c_str());
         }
 
         BufferAddressValidation<4> buffer_address_validator = {{{
@@ -2888,18 +2886,15 @@ bool CoreChecks::PreCallValidateGetDescriptorSetLayoutBindingOffsetEXT(VkDevice 
                              string_VkDescriptorSetLayoutCreateFlags(create_flags).c_str());
         }
         if (create_flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT) {
-            // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7733
-            skip |= LogError("UNASSIGNED-vkGetDescriptorSetLayoutBindingOffsetEXT-layout-push", layout,
-                             error_obj.location.dot(Field::layout),
-                             "was created with VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT (this VkDescriptorSetLayout has "
-                             "an opaque size "
-                             "and is not needed as you use vkCmdPushDescriptorSet to bind the set).");
+            skip |=
+                LogError("VUID-vkCmdSetDescriptorBufferOffsetsEXT-firstSet-11803", layout, error_obj.location.dot(Field::layout),
+                         "was created with VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT (this VkDescriptorSetLayout has "
+                         "an opaque size "
+                         "and is not needed as you use vkCmdPushDescriptorSet to bind the set).");
         }
         if (create_flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT) {
-            // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7733
             skip |= LogError(
-                "UNASSIGNED-vkGetDescriptorSetLayoutBindingOffsetEXT-layout-embedded", layout,
-                error_obj.location.dot(Field::layout),
+                "VUID-vkCmdSetDescriptorBufferOffsetsEXT-firstSet-11804", layout, error_obj.location.dot(Field::layout),
                 "was created with VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT (this VkDescriptorSetLayout "
                 "has "
                 "an opaque size and is not needed as you use vkCmdBindDescriptorBufferEmbeddedSamplersEXT to bind the set).");
