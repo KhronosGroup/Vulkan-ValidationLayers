@@ -577,6 +577,14 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
              &allocate_flag_info);
     }
 
+    explicit Buffer(const Device& dev, VkDeviceSize size, VkBufferUsageFlags2CreateInfo usage_ci, DeviceAddressT) {
+        usage_ci.usage |= VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT;
+        VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+        allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+        Init(dev, CreateInfo(size, 0, {}, &usage_ci), VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+             &allocate_flag_info);
+    }
+
     explicit Buffer(const Device &dev, VkBufferUsageFlags usage, const void *data, size_t data_size,
                     const vvl::span<uint32_t> &queue_families = {}) {
         InitHostVisibleWithData(dev, usage, data, data_size, queue_families);

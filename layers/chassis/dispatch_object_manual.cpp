@@ -467,6 +467,8 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_android_external_format_resolve,
                                              &phys_dev_ext_props.android_format_resolve_props);
 #endif
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_memory_decompression,
+                                             &phys_dev_ext_props.memory_decompression_props);
 
     // None of these "check if supported" features are possible without first having gpdp2 first
     if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) {

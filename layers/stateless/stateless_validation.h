@@ -508,6 +508,15 @@ class Device : public vvl::base::Device {
     bool ValidateSwapchainCreateInfo(const Context &context, const VkSwapchainCreateInfoKHR &create_info,
                                      const Location &loc) const;
 
+    bool manual_PreCallValidateCmdDecompressMemoryEXT(VkCommandBuffer commandBuffer,
+                                                      const VkDecompressMemoryInfoEXT* pDecompressMemoryInfoEXT,
+                                                      const Context& context) const;
+    bool manual_PreCallValidateCmdDecompressMemoryIndirectCountEXT(VkCommandBuffer commandBuffer,
+                                                                   VkMemoryDecompressionMethodFlagsEXT decompressionMethod,
+                                                                   VkDeviceAddress indirectCommandsAddress,
+                                                                   VkDeviceAddress indirectCommandsCountAddress,
+                                                                   uint32_t maxDecompressionCount, uint32_t stride,
+                                                                   const Context& context) const;
     bool manual_PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool,
                                                const Context &context) const;
