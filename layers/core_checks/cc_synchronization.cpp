@@ -51,6 +51,7 @@
 #include "utils/math_utils.h"
 #include "utils/sync_utils.h"
 #include "utils/vk_struct_compare.h"
+#include "utils/image_utils.h"
 
 constexpr VkQueueFlags kAllQueueTypes = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
 

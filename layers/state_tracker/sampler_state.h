@@ -18,8 +18,8 @@
  */
 #pragma once
 #include "state_tracker/state_object.h"
+#include <string>
 #include <vulkan/utility/vk_safe_struct.hpp>
-#include "utils/image_utils.h"
 
 // Note: some of the types in this header are needed by both the DescriptorSet and Pipeline
 // state objects. It is helpful to have a separate header to avoid circular #include madness.
@@ -67,12 +67,7 @@ class Sampler : public StateObject, public SubStateManager<SamplerSubState> {
     const VkSamplerYcbcrConversion samplerConversion;
     const VkSamplerCustomBorderColorCreateInfoEXT customCreateInfo;
 
-    Sampler(const VkSampler handle, const VkSamplerCreateInfo *pCreateInfo)
-        : StateObject(handle, kVulkanObjectTypeSampler),
-          safe_create_info(pCreateInfo),
-          create_info(*safe_create_info.ptr()),
-          samplerConversion(GetConversion(pCreateInfo)),
-          customCreateInfo(GetCustomCreateInfo(pCreateInfo)) {}
+    Sampler(const VkSampler handle, const VkSamplerCreateInfo *pCreateInfo);
 
     void Destroy() override;
     void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) override;
@@ -119,20 +114,19 @@ inline void Sampler::NotifyInvalidate(const StateObject::NodeList &invalid_nodes
 
 class SamplerYcbcrConversion : public StateObject {
   public:
+    const vku::safe_VkSamplerYcbcrConversionCreateInfo safe_create_info;
+    const VkSamplerYcbcrConversionCreateInfo &create_info;
+
     const VkFormatFeatureFlags2 format_features;
-    const VkFormat format;
-    const VkFilter chromaFilter;
     const uint64_t external_format;
 
-    SamplerYcbcrConversion(VkSamplerYcbcrConversion handle, const VkSamplerYcbcrConversionCreateInfo *info,
-                           VkFormatFeatureFlags2 features)
-        : StateObject(handle, kVulkanObjectTypeSamplerYcbcrConversion),
-          format_features(features),
-          format(info->format),
-          chromaFilter(info->chromaFilter),
-          external_format(GetExternalFormat(info->pNext)) {}
+    SamplerYcbcrConversion(VkSamplerYcbcrConversion handle, const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
+                           VkFormatFeatureFlags2 features);
 
     VkSamplerYcbcrConversion VkHandle() const { return handle_.Cast<VkSamplerYcbcrConversion>(); }
+
+    bool operator!=(const SamplerYcbcrConversion &rhs) const;
+    std::string Describe() const;
 };
 
 }  // namespace vvl

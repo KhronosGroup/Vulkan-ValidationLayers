@@ -388,6 +388,7 @@ target_sources(vvl PRIVATE
     state_tracker/ray_tracing_state.h
     state_tracker/render_pass_state.cpp
     state_tracker/render_pass_state.h
+    state_tracker/sampler_state.cpp
     state_tracker/sampler_state.h
     state_tracker/shader_instruction.cpp
     state_tracker/shader_instruction.h

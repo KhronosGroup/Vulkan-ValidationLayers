@@ -41,6 +41,7 @@
 #include "state_tracker/shader_module.h"
 #include "state_tracker/descriptor_mode.h"
 #include "utils/action_command_utils.h"
+#include "utils/image_utils.h"
 
 namespace gpuav {
 

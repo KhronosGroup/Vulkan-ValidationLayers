@@ -25,6 +25,7 @@
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "state_tracker/descriptor_sets.h"
 #include "containers/limits.h"
+#include "utils/image_utils.h"
 
 #include "profiling/profiling.h"
 

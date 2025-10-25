@@ -36,6 +36,7 @@
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "utils/math_utils.h"
+#include "utils/image_utils.h"
 
 using vvl::DrawDispatchVuid;
 using vvl::GetDrawDispatchVuid;
