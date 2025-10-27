@@ -233,17 +233,18 @@ bool RenderPassAccessContext::ValidateLoadOperation(const CommandBufferAccessCon
             bool checked_stencil = false;
             if (is_color && (load_index != SYNC_ACCESS_INDEX_NONE)) {
                 hazard = access_context.DetectHazard(view_gen, AttachmentViewGen::Gen::kRenderArea, load_index,
-                                                     SyncOrdering::kColorAttachment);
+                                                     SyncOrdering::kColorAttachment, SyncFlag::kLoadOp);
                 aspect = "color";
             } else {
                 if (has_depth && (load_index != SYNC_ACCESS_INDEX_NONE)) {
                     hazard = access_context.DetectHazard(view_gen, AttachmentViewGen::Gen::kDepthOnlyRenderArea, load_index,
-                                                         SyncOrdering::kDepthStencilAttachment);
+                                                         SyncOrdering::kDepthStencilAttachment, SyncFlag::kLoadOp);
                     aspect = "depth";
                 }
                 if (!hazard.IsHazard() && has_stencil && (stencil_load_index != SYNC_ACCESS_INDEX_NONE)) {
-                    hazard = access_context.DetectHazard(view_gen, AttachmentViewGen::Gen::kStencilOnlyRenderArea,
-                                                         stencil_load_index, SyncOrdering::kDepthStencilAttachment);
+                    hazard =
+                        access_context.DetectHazard(view_gen, AttachmentViewGen::Gen::kStencilOnlyRenderArea, stencil_load_index,
+                                                    SyncOrdering::kDepthStencilAttachment, SyncFlag::kLoadOp);
                     aspect = "stencil";
                     checked_stencil = true;
                 }
