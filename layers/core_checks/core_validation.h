@@ -1645,11 +1645,11 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateBeginRenderingMultisampledRenderToSingleSampled(VkCommandBuffer commandBuffer,
                                                                  const VkRenderingInfo& rendering_info,
                                                                  const Location& rendering_info_loc) const;
-    bool ValidateBeginRenderingColorAttachment(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
+    bool ValidateBeginRenderingColorAttachment(const vvl::CommandBuffer& cb_state, const VkRenderingInfo& rendering_info,
                                                const Location& rendering_info_loc) const;
-    bool ValidateBeginRenderingDepthAttachment(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
+    bool ValidateBeginRenderingDepthAttachment(const vvl::CommandBuffer& cb_state, const VkRenderingInfo& rendering_info,
                                                const Location& rendering_info_loc) const;
-    bool ValidateBeginRenderingStencilAttachment(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
+    bool ValidateBeginRenderingStencilAttachment(const vvl::CommandBuffer& cb_state, const VkRenderingInfo& rendering_info,
                                                  const Location& rendering_info_loc) const;
     bool ValidateBeginRenderingDepthAndStencilAttachment(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
                                                          const Location& rendering_info_loc) const;
@@ -1659,6 +1659,9 @@ class CoreChecks : public vvl::DeviceProxy {
                                           const ErrorObject& error_obj) const override;
     bool ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
                                          const VkRenderingAttachmentInfo& attachment_info, const Location& loc) const;
+    bool ValidateRenderingAttachmentCurrentLayout(const vvl::CommandBuffer& cb_state,
+                                                  const VkRenderingAttachmentInfo& attachment_info, VkImageAspectFlags aspect_mask,
+                                                  const Location& loc, const char* vuid) const;
     bool PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;
     bool ValidateCmdEndRendering(const vvl::CommandBuffer& cb_state, const ErrorObject& error_obj) const;
     bool PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;

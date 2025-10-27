@@ -759,6 +759,50 @@ bool CoreChecks::ValidateFramebufferAndRenderPassLayouts(const vvl::CommandBuffe
     return skip;
 }
 
+bool CoreChecks::ValidateRenderingAttachmentCurrentLayout(const vvl::CommandBuffer &cb_state,
+                                                          const VkRenderingAttachmentInfo &attachment_info,
+                                                          VkImageAspectFlags aspect_mask, const Location &attachment_loc,
+                                                          const char *vuid) const {
+    bool skip = false;
+    if (disabled[image_layout_validation]) {
+        return skip;
+    }
+    const auto image_view_state = Get<vvl::ImageView>(attachment_info.imageView);
+    if (!image_view_state) {
+        return skip;
+    }
+    const vvl::Image &image_state = *image_view_state->image_state;
+    const auto image_layout_map = cb_state.GetImageLayoutMap(image_state.VkHandle());
+    if (!image_layout_map) {
+        return skip;
+    }
+
+    LayoutUseCheckAndMessage layout_check(attachment_info.imageLayout, aspect_mask);
+
+    VkImageSubresourceRange normalized_range = image_view_state->normalized_subresource_range;
+    normalized_range.aspectMask = aspect_mask;
+    auto range_gen = RangeGenerator(image_state.subresource_encoder, normalized_range);
+
+    skip |= ForEachMatchingLayoutMapRange(
+        *image_layout_map, std::move(range_gen),
+        [this, &cb_state, &image_state, &image_view_state, &layout_check, vuid, attachment_loc](const LayoutRange &range,
+                                                                                                const ImageLayoutState &state) {
+            bool local_skip = false;
+            if (!layout_check.Check(state)) {
+                const subresource_adapter::Subresource subresource = image_state.subresource_encoder.Decode(range.begin);
+                const LogObjectList objlist(cb_state.Handle(), image_state.Handle(), image_view_state->Handle());
+                local_skip |=
+                    LogError(vuid, objlist, attachment_loc,
+                             "(%s, layer %" PRIu32 ", mip %" PRIu32 ") is expected to have layout %s but %s layout is %s.",
+                             FormatHandle(image_state).c_str(), subresource.arrayLayer, subresource.mipLevel,
+                             string_VkImageLayout(layout_check.expected_layout), layout_check.message,
+                             string_VkImageLayout(layout_check.layout));
+            }
+            return local_skip;
+        });
+    return skip;
+}
+
 void CoreChecks::TransitionAttachmentRefLayout(vvl::CommandBuffer &cb_state, const vku::safe_VkAttachmentReference2 &ref) {
     if (ref.attachment == VK_ATTACHMENT_UNUSED) return;
     vvl::ImageView *image_view = cb_state.GetActiveAttachmentImageViewState(ref.attachment);
