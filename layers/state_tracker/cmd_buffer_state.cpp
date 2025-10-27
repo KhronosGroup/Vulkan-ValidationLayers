@@ -1632,12 +1632,7 @@ void CommandBuffer::SetImageLayout(const vvl::Image &image_state, const VkImageS
 }
 
 void CommandBuffer::TrackImageViewFirstLayout(const vvl::ImageView &view_state, VkImageLayout layout) {
-    if (dev_data.disabled[image_layout_validation]) {
-        return;
-    }
-    vvl::Image *image_state = view_state.image_state.get();
-    auto image_layout_map = (image_state && !image_state->Destroyed()) ? GetOrCreateImageLayoutMap(*image_state) : nullptr;
-    if (image_layout_map) {
+    if (auto image_layout_map = GetOrCreateImageLayoutMap(*view_state.image_state.get())) {
         RangeGenerator range_gen(view_state.range_generator);
         TrackFirstLayout(*image_layout_map, std::move(range_gen), layout, view_state.normalized_subresource_range.aspectMask);
     }
@@ -1652,7 +1647,6 @@ void CommandBuffer::TrackImageFirstLayout(const vvl::Image &image_state, const V
             normalized_subresource_range.baseArrayLayer = (uint32_t)depth_offset;
             normalized_subresource_range.layerCount = depth_extent;
         }
-
         if (image_state.subresource_encoder.InRange(normalized_subresource_range)) {
             RangeGenerator range_gen(image_state.subresource_encoder, normalized_subresource_range);
             TrackFirstLayout(*image_layout_map, std::move(range_gen), layout, normalized_subresource_range.aspectMask);

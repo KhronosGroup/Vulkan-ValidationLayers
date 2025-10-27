@@ -3708,9 +3708,9 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
     skip |= ValidateBeginRenderingFragmentShadingRate(commandBuffer, *pRenderingInfo, rendering_info_loc);
     skip |= ValidateBeginRenderingSampleCount(commandBuffer, *pRenderingInfo, rendering_info_loc);
     skip |= ValidateBeginRenderingDeviceGroup(commandBuffer, *pRenderingInfo, rendering_info_loc);
-    skip |= ValidateBeginRenderingColorAttachment(commandBuffer, *pRenderingInfo, rendering_info_loc);
-    skip |= ValidateBeginRenderingDepthAttachment(commandBuffer, *pRenderingInfo, rendering_info_loc);
-    skip |= ValidateBeginRenderingStencilAttachment(commandBuffer, *pRenderingInfo, rendering_info_loc);
+    skip |= ValidateBeginRenderingColorAttachment(*cb_state, *pRenderingInfo, rendering_info_loc);
+    skip |= ValidateBeginRenderingDepthAttachment(*cb_state, *pRenderingInfo, rendering_info_loc);
+    skip |= ValidateBeginRenderingStencilAttachment(*cb_state, *pRenderingInfo, rendering_info_loc);
     skip |= ValidateBeginRenderingDepthAndStencilAttachment(commandBuffer, *pRenderingInfo, rendering_info_loc);
 
     if (MostSignificantBit(pRenderingInfo->viewMask) >= static_cast<int32_t>(phys_dev_props_core11.maxMultiviewViewCount)) {
@@ -3722,13 +3722,17 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
     return skip;
 }
 
-bool CoreChecks::ValidateBeginRenderingColorAttachment(VkCommandBuffer commandBuffer, const VkRenderingInfo &rendering_info,
+bool CoreChecks::ValidateBeginRenderingColorAttachment(const vvl::CommandBuffer &cb_state,
+                                                       const VkRenderingInfo &rendering_info,
                                                        const Location &rendering_info_loc) const {
     bool skip = false;
+    const VkCommandBuffer commandBuffer = cb_state.VkHandle();
     for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
         const VkRenderingAttachmentInfo &color_attachment = rendering_info.pColorAttachments[i];
         const Location color_attachment_loc = rendering_info_loc.dot(Field::pColorAttachments, i);
         skip |= ValidateRenderingAttachmentInfo(commandBuffer, rendering_info, color_attachment, color_attachment_loc);
+        skip |= ValidateRenderingAttachmentCurrentLayout(cb_state, color_attachment, VK_IMAGE_ASPECT_COLOR_BIT,
+                                                         color_attachment_loc, "VUID-vkCmdBeginRendering-pRenderingInfo-09592");
 
         if (color_attachment.imageView != VK_NULL_HANDLE) {
             auto image_view_state = Get<vvl::ImageView>(color_attachment.imageView);
@@ -3878,14 +3882,17 @@ bool CoreChecks::ValidateBeginRenderingColorAttachment(VkCommandBuffer commandBu
     return skip;
 }
 
-bool CoreChecks::ValidateBeginRenderingDepthAttachment(VkCommandBuffer commandBuffer, const VkRenderingInfo &rendering_info,
+bool CoreChecks::ValidateBeginRenderingDepthAttachment(const vvl::CommandBuffer &cb_state, const VkRenderingInfo &rendering_info,
                                                        const Location &rendering_info_loc) const {
     bool skip = false;
     if (!rendering_info.pDepthAttachment) return skip;
 
-    const auto &depth_attachment = *rendering_info.pDepthAttachment;
+    const VkCommandBuffer commandBuffer = cb_state.VkHandle();
+    const VkRenderingAttachmentInfo &depth_attachment = *rendering_info.pDepthAttachment;
     const Location depth_attachment_loc = rendering_info_loc.dot(Field::pDepthAttachment);
     skip |= ValidateRenderingAttachmentInfo(commandBuffer, rendering_info, depth_attachment, depth_attachment_loc);
+    skip |= ValidateRenderingAttachmentCurrentLayout(cb_state, depth_attachment, VK_IMAGE_ASPECT_DEPTH_BIT, depth_attachment_loc,
+                                                     "VUID-vkCmdBeginRendering-pRenderingInfo-09588");
 
     if (depth_attachment.imageView != VK_NULL_HANDLE) {
         auto depth_view_state = Get<vvl::ImageView>(depth_attachment.imageView);
@@ -3961,14 +3968,17 @@ bool CoreChecks::ValidateBeginRenderingDepthAttachment(VkCommandBuffer commandBu
     return skip;
 }
 
-bool CoreChecks::ValidateBeginRenderingStencilAttachment(VkCommandBuffer commandBuffer, const VkRenderingInfo &rendering_info,
+bool CoreChecks::ValidateBeginRenderingStencilAttachment(const vvl::CommandBuffer &cb_state, const VkRenderingInfo &rendering_info,
                                                          const Location &rendering_info_loc) const {
     bool skip = false;
     if (!rendering_info.pStencilAttachment) return skip;
 
-    const auto &stencil_attachment = *rendering_info.pStencilAttachment;
+    const VkCommandBuffer commandBuffer = cb_state.VkHandle();
+    const VkRenderingAttachmentInfo &stencil_attachment = *rendering_info.pStencilAttachment;
     const Location stencil_attachment_loc = rendering_info_loc.dot(Field::pStencilAttachment);
     skip |= ValidateRenderingAttachmentInfo(commandBuffer, rendering_info, stencil_attachment, stencil_attachment_loc);
+    skip |= ValidateRenderingAttachmentCurrentLayout(cb_state, stencil_attachment, VK_IMAGE_ASPECT_STENCIL_BIT,
+                                                     stencil_attachment_loc, "VUID-vkCmdBeginRendering-pRenderingInfo-09590");
 
     if (stencil_attachment.imageView != VK_NULL_HANDLE) {
         auto stencil_view_state = Get<vvl::ImageView>(stencil_attachment.imageView);
