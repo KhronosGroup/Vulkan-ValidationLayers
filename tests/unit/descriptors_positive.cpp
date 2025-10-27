@@ -1334,8 +1334,78 @@ TEST_F(PositiveDescriptors, CopyDestroyedMutableDescriptors) {
     AddRequiredFeature(vkt::Feature::mutableDescriptorType);
     RETURN_IF_SKIP(Init());
 
-    VkDescriptorType descriptor_types[] = {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER};
+    VkDescriptorType descriptor_types[] = {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE};
 
+    VkMutableDescriptorTypeListEXT mutable_descriptor_type_list = {1, descriptor_types};
+    VkMutableDescriptorTypeCreateInfoEXT mdtci = vku::InitStructHelper();
+    mdtci.mutableDescriptorTypeListCount = 1;
+    mdtci.pMutableDescriptorTypeLists = &mutable_descriptor_type_list;
+
+    VkDescriptorPoolSize pool_sizes[2] = {
+        {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 2},
+        {VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 2},
+    };
+
+    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper(&mdtci);
+    ds_pool_ci.maxSets = 2;
+    ds_pool_ci.poolSizeCount = 2;
+    ds_pool_ci.pPoolSizes = pool_sizes;
+
+    vkt::DescriptorPool pool(*m_device, ds_pool_ci);
+
+    VkDescriptorSetLayoutBinding bindings[2] = {
+        {0, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1, VK_SHADER_STAGE_ALL, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
+    };
+
+    VkDescriptorSetLayoutCreateInfo create_info = vku::InitStructHelper(&mdtci);
+    create_info.bindingCount = 2;
+    create_info.pBindings = bindings;
+
+    vkt::DescriptorSetLayout set_layout(*m_device, create_info);
+    VkDescriptorSetLayout set_layout_handle = set_layout;
+
+    VkDescriptorSetLayout layouts[2] = {set_layout_handle, set_layout_handle};
+
+    VkDescriptorSetAllocateInfo allocate_info = vku::InitStructHelper();
+    allocate_info.descriptorPool = pool;
+    allocate_info.descriptorSetCount = 2;
+    allocate_info.pSetLayouts = layouts;
+
+    VkDescriptorSet descriptor_sets[2];
+    vk::AllocateDescriptorSets(device(), &allocate_info, descriptor_sets);
+
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT);
+    vkt::ImageView view = image.CreateView();
+    VkDescriptorImageInfo image_info = {VK_NULL_HANDLE, view, VK_IMAGE_LAYOUT_GENERAL};
+
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstSet = descriptor_sets[1];
+    descriptor_write.dstBinding = 1;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    descriptor_write.pImageInfo = &image_info;
+
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+
+    VkCopyDescriptorSet copy_set = vku::InitStructHelper();
+    copy_set.srcSet = descriptor_sets[1];
+    copy_set.srcBinding = 1;
+    copy_set.dstSet = descriptor_sets[0];
+    copy_set.dstBinding = 0;
+    copy_set.descriptorCount = 1;
+
+    vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_set);
+}
+
+TEST_F(PositiveDescriptors, CombineImageSamplerMutable) {
+    TEST_DESCRIPTION("VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER is an optional type to be supported");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::mutableDescriptorType);
+    RETURN_IF_SKIP(Init());
+
+    VkDescriptorType descriptor_types[] = {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER};
     VkMutableDescriptorTypeListEXT mutable_descriptor_type_list = {1, descriptor_types};
     VkMutableDescriptorTypeCreateInfoEXT mdtci = vku::InitStructHelper();
     mdtci.mutableDescriptorTypeListCount = 1;
@@ -1362,6 +1432,12 @@ TEST_F(PositiveDescriptors, CopyDestroyedMutableDescriptors) {
     create_info.bindingCount = 2;
     create_info.pBindings = bindings;
 
+    VkDescriptorSetLayoutSupport dsl_support = vku::InitStructHelper();
+    vk::GetDescriptorSetLayoutSupport(device(), &create_info, &dsl_support);
+    if (!dsl_support.supported) {
+        GTEST_SKIP() << "COMBINED_IMAGE_SAMPLER not supported for mutable";
+    }
+
     vkt::DescriptorSetLayout set_layout(*m_device, create_info);
     VkDescriptorSetLayout set_layout_handle = set_layout;
 
@@ -1386,7 +1462,6 @@ TEST_F(PositiveDescriptors, CopyDestroyedMutableDescriptors) {
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptor_write.pImageInfo = &image_info;
-
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
 
     VkCopyDescriptorSet copy_set = vku::InitStructHelper();
@@ -1395,7 +1470,6 @@ TEST_F(PositiveDescriptors, CopyDestroyedMutableDescriptors) {
     copy_set.dstSet = descriptor_sets[0];
     copy_set.dstBinding = 0;
     copy_set.descriptorCount = 1;
-
     vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_set);
 }
 
