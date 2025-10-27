@@ -1214,13 +1214,13 @@ bool DescriptorValidator::ValidateSamplerDescriptor(const spirv::ResourceInterfa
                          "the %s is using sampler %s that is invalid or has been destroyed.%s",
                          DescribeDescriptor(resource_variable, index, VK_DESCRIPTOR_TYPE_SAMPLER).c_str(),
                          FormatHandle(sampler).c_str(), DescribeInstruction().c_str());
-    } else if (sampler_state->samplerConversion && !is_immutable) {
+    } else if (sampler_state->sampler_conversion && !is_immutable) {
         const LogObjectList objlist(this->objlist, descriptor_set.Handle());
         skip |= LogError(vuids->descriptor_buffer_bit_set_08114, objlist, loc.Get(),
                          "the %s sampler (%s) contains a YCBCR conversion (%s), but the sampler is not an "
                          "immutable sampler.%s",
                          DescribeDescriptor(resource_variable, index, VK_DESCRIPTOR_TYPE_SAMPLER).c_str(),
-                         FormatHandle(sampler).c_str(), FormatHandle(sampler_state->samplerConversion).c_str(),
+                         FormatHandle(sampler).c_str(), FormatHandle(sampler_state->sampler_conversion).c_str(),
                          DescribeInstruction().c_str());
     }
     return skip;

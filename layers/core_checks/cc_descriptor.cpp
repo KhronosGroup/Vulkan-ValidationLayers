@@ -1278,11 +1278,11 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView &view_state, VkImageLa
 
     switch (type) {
         case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-            if (view_state.samplerConversion != VK_NULL_HANDLE) {
+            if (view_state.sampler_conversion != VK_NULL_HANDLE) {
                 skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-01946", objlist, image_info_loc.dot(Field::imageView),
                                  "is used as VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, but was created with %s. (YCbCr Conversion Sampler "
                                  "must be done with VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)",
-                                 FormatHandle(view_state.samplerConversion).c_str());
+                                 FormatHandle(view_state.sampler_conversion).c_str());
             }
             [[fallthrough]];
         case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: {
@@ -2101,29 +2101,29 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet &dst_set, co
                 if (desc.IsImmutableSampler()) {
                     if (auto sampler_state = Get<vvl::Sampler>(desc.GetSampler())) {
                         // Do a quick handle check, if not the same, need to check if create info is the same
-                        if (iv_state->samplerConversion != sampler_state->samplerConversion) {
-                            const auto sampler_ycbcr = Get<vvl::SamplerYcbcrConversion>(sampler_state->samplerConversion);
-                            const auto view_ycbcr = Get<vvl::SamplerYcbcrConversion>(iv_state->samplerConversion);
+                        if (iv_state->sampler_conversion != sampler_state->sampler_conversion) {
+                            const auto sampler_ycbcr = Get<vvl::SamplerYcbcrConversion>(sampler_state->sampler_conversion);
+                            const auto view_ycbcr = Get<vvl::SamplerYcbcrConversion>(iv_state->sampler_conversion);
                             if (sampler_ycbcr && view_ycbcr && (*sampler_ycbcr != *view_ycbcr)) {
                                 const LogObjectList objlist(update.dstSet, desc.GetSampler(), image_view);
                                 skip |= LogError(
                                     "VUID-VkWriteDescriptorSet-descriptorType-01948", objlist, image_info_loc.dot(Field::sampler),
                                     "was created with %s which is not identical to %s that was used to create %s.\nSampler "
                                     "VkSamplerYcbcrConversion\n%sImageView VkSamplerYcbcrConversion\n%s",
-                                    FormatHandle(iv_state->samplerConversion).c_str(),
-                                    FormatHandle(sampler_state->samplerConversion).c_str(), FormatHandle(image_view).c_str(),
+                                    FormatHandle(iv_state->sampler_conversion).c_str(),
+                                    FormatHandle(sampler_state->sampler_conversion).c_str(), FormatHandle(image_view).c_str(),
                                     sampler_ycbcr->Describe().c_str(), view_ycbcr->Describe().c_str());
                             }
                         }
                     }
                 } else {
-                    if (iv_state->samplerConversion != VK_NULL_HANDLE) {
+                    if (iv_state->sampler_conversion != VK_NULL_HANDLE) {
                         const LogObjectList objlist(update.dstSet, iv_state->Handle());
                         skip |=
                             LogError("VUID-VkWriteDescriptorSet-descriptorType-02738", objlist, write_loc.dot(Field::dstSet),
                                      "is bound to %s which was built with %s, this VkDescriptorSet must have been allocated "
                                      "with a VkDescriptorSetLayout that includes a non-null pImmutableSampler for this binding.",
-                                     FormatHandle(iv_state->Handle()).c_str(), FormatHandle(iv_state->samplerConversion).c_str());
+                                     FormatHandle(iv_state->Handle()).c_str(), FormatHandle(iv_state->sampler_conversion).c_str());
                     }
 
                     if (auto sampler_state = Get<vvl::Sampler>(sampler)) {
@@ -3224,7 +3224,7 @@ bool CoreChecks::ValidateGetDescriptorDataSize(const VkDescriptorGetInfoEXT &des
             }
         } else {
             const auto image_view_state = Get<vvl::ImageView>(combined_image_sampler->imageView);
-            if (image_view_state && image_view_state->samplerConversion != VK_NULL_HANDLE) {
+            if (image_view_state && image_view_state->sampler_conversion != VK_NULL_HANDLE) {
                 auto image_info = image_view_state->image_state->create_info;
                 VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper();
                 image_format_info.type = image_info.imageType;
@@ -3242,7 +3242,7 @@ bool CoreChecks::ValidateGetDescriptorDataSize(const VkDescriptorGetInfoEXT &des
                                      "(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) has %s and descriptor size is %zu "
                                      "[combinedImageSamplerDescriptorCount (%" PRIu32
                                      ") times combinedImageSamplerDescriptorSize (%zu)], but dataSize is %zu",
-                                     FormatHandle(image_view_state->samplerConversion).c_str(), size,
+                                     FormatHandle(image_view_state->sampler_conversion).c_str(), size,
                                      sampler_ycbcr_image_format_info.combinedImageSamplerDescriptorCount,
                                      phys_dev_ext_props.descriptor_buffer_props.combinedImageSamplerDescriptorSize, data_size);
                 }
@@ -3661,10 +3661,13 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
             // Same idea but if they are trying to allocate more descriptors of one type then possible in the whole pool
             for (auto it = ds_data.required_descriptors_by_type.begin(); it != ds_data.required_descriptors_by_type.end(); ++it) {
                 auto max_iter = ds_pool_state->max_descriptor_type_count.find(it->first);
-                if (max_iter == ds_pool_state->max_descriptor_type_count.end()) continue;
+                if (max_iter == ds_pool_state->max_descriptor_type_count.end()) {
+                    continue;
+                }
                 const uint32_t max_available_count = max_iter->second;
-                // TODO - consider combining PostCallRecordAllocateDescriptorSets check here (needs more testing)
-                if (max_available_count == 0) continue;
+                if (max_available_count == 0) {
+                    continue;
+                }
                 const uint32_t attempt_allocate = ds_data.required_descriptors_by_type.at(it->first);
 
                 if (attempt_allocate > max_available_count) {

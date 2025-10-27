@@ -24,7 +24,7 @@ Sampler::Sampler(const VkSampler handle, const VkSamplerCreateInfo *pCreateInfo)
     : StateObject(handle, kVulkanObjectTypeSampler),
       safe_create_info(pCreateInfo),
       create_info(*safe_create_info.ptr()),
-      samplerConversion(GetConversion(pCreateInfo)),
+      sampler_conversion(GetConversion(pCreateInfo)),
       customCreateInfo(GetCustomCreateInfo(pCreateInfo)) {}
 
 SamplerYcbcrConversion::SamplerYcbcrConversion(VkSamplerYcbcrConversion handle,

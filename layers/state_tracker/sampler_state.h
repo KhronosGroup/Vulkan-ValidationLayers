@@ -64,7 +64,8 @@ class Sampler : public StateObject, public SubStateManager<SamplerSubState> {
     const vku::safe_VkSamplerCreateInfo safe_create_info;
     const VkSamplerCreateInfo &create_info;
 
-    const VkSamplerYcbcrConversion samplerConversion;
+    // VK_NULL_HANDLE if it doesn't have one chained in the pNext at creation time
+    const VkSamplerYcbcrConversion sampler_conversion;
     const VkSamplerCustomBorderColorCreateInfoEXT customCreateInfo;
 
     Sampler(const VkSampler handle, const VkSamplerCreateInfo *pCreateInfo);

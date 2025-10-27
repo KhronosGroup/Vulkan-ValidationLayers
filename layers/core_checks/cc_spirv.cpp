@@ -1545,7 +1545,7 @@ bool CoreChecks::ValidateShaderYcbcrSamplerAccess(const VkDescriptorSetLayoutBin
         ASSERT_AND_CONTINUE(sampler_state);
 
         // It is possible to use pImmutableSamplers for embedded sampler that don't use YCbCr as well.
-        if (!sampler_state->samplerConversion) {
+        if (!sampler_state->sampler_conversion) {
             continue;
         }
 

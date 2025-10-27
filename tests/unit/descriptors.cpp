@@ -267,6 +267,45 @@ TEST_F(NegativeDescriptors, AllocateOverDescriptorCountVariableAllocate) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDescriptors, AllocateOverDescriptorYCbCr) {
+    SetTargetApiVersion(VK_API_VERSION_1_4);  // Has VK_KHR_maintenance6
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceMaintenance6PropertiesKHR maintenance6_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(maintenance6_props);
+    if (maintenance6_props.maxCombinedImageSamplerDescriptorCount == 1) {
+        GTEST_SKIP() << "maxCombinedImageSamplerDescriptorCount is not over 1";
+    }
+
+    vkt::SamplerYcbcrConversion conversion(*m_device, VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM);
+    auto conversion_info = conversion.ConversionInfo();
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo(&conversion_info));
+
+    // Simple mistake, thinking this is only 1, but is really 3 on most implementations (one for each plane)
+    VkDescriptorPoolSize pool_size{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1};
+
+    VkDescriptorPoolCreateInfo pool_ci = vku::InitStructHelper();
+    pool_ci.flags = 0;
+    pool_ci.maxSets = 1;
+    pool_ci.poolSizeCount = 1;
+    pool_ci.pPoolSizes = &pool_size;
+    vkt::DescriptorPool pool(*m_device, pool_ci);
+
+    vkt::DescriptorSetLayout dsl(
+        *m_device, {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler.handle()});
+
+    VkDescriptorSetAllocateInfo ds_alloc_info = vku::InitStructHelper();
+    ds_alloc_info.descriptorPool = pool;
+    ds_alloc_info.descriptorSetCount = 1;
+    ds_alloc_info.pSetLayouts = &dsl.handle();
+
+    VkDescriptorSet ds = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredWarning("WARNING-VkDescriptorSetAllocateInfo-descriptorCount");
+    vk::AllocateDescriptorSets(device(), &ds_alloc_info, &ds);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDescriptors, FreeDescriptorFromOneShotPool) {
     RETURN_IF_SKIP(Init());
 

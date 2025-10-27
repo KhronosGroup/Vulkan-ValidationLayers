@@ -542,7 +542,7 @@ ImageView::ImageView(const DeviceState &device_state, const std::shared_ptr<vvl:
       normalized_subresource_range(ImageView::NormalizeImageViewSubresourceRange(*image_state, create_info)),
       range_generator(image_state->subresource_encoder, GetRangeGeneratorRange(device_state.extensions)),
       samples(image_state->create_info.samples),
-      samplerConversion(GetSamplerConversion(ci)),
+      sampler_conversion(GetSamplerConversion(ci)),
       filter_cubic_props(cubic_props),
       min_lod(GetImageViewMinLod(ci)),
       format_features(ff),
