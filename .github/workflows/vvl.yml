@@ -188,7 +188,7 @@ jobs:
         env:
           CMAKE_C_COMPILER_LAUNCHER: ccache
           CMAKE_CXX_COMPILER_LAUNCHER: ccache
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: Validation_Layers_Linux_64
           path: /tmp/lib/libVkLayer_khronos_validation.so
@@ -290,7 +290,7 @@ jobs:
           -D UPDATE_DEPS_DIR=${{ github.workspace }}/external
       - run: cmake --build build
       - run: cmake --install build --prefix ${{ github.workspace }}/install
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: Validation_Layers_Windows_64
           path: ${{ github.workspace }}/install/bin/VkLayer_khronos_validation.dll
@@ -361,7 +361,7 @@ jobs:
         - run: cmake --install build/ --prefix /tmp
         - name: Strip
           run: $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip /tmp/lib/libVkLayer_khronos_validation.so
-        - uses: actions/upload-artifact@v4
+        - uses: actions/upload-artifact@v5
           with:
             name: Validation_Layers_Android_64
             path: /tmp/lib/libVkLayer_khronos_validation.so
