@@ -24,6 +24,7 @@
 #include <vulkan/vulkan_core.h>
 #include <vulkan/utility/vk_struct_helper.hpp>
 #include "containers/custom_containers.h"
+#include "generated/vk_extension_helper.h"
 #include "state_tracker/data_graph_pipeline_session_state.h"
 #include "state_tracker/shader_stage_state.h"
 #include "state_tracker/image_state.h"
@@ -2272,6 +2273,7 @@ void DeviceState::PostCallRecordResetDescriptorPool(VkDevice device, VkDescripto
     }
 }
 
+// We do some state tracking prior so other things can use it at PreCallValidate time as well
 bool DeviceState::PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
                                                         VkDescriptorSet *pDescriptorSets, const ErrorObject &error_obj,
                                                         AllocateDescriptorSetsData &ads_state) const {
@@ -2291,6 +2293,18 @@ bool DeviceState::PreCallValidateAllocateDescriptorSets(VkDevice device, const V
                     // Only binding will have this flag
                     if (layout->GetDescriptorBindingFlagsFromIndex(j) & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT) {
                         descriptor_count = count_allocate_info->pDescriptorCounts[i];
+                    }
+                }
+
+                // In VK_KHR_maintenance6 we can finally check for YCbCr samplers that will take multiple descriptor slots.
+                // First need to check if has a YCbCr format
+                if (binding_layout->pImmutableSamplers != nullptr &&
+                    binding_layout->descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER &&
+                    IsExtEnabled(extensions.vk_khr_maintenance6)) {
+                    if (const auto sampler = Get<Sampler>(*binding_layout->pImmutableSamplers)) {
+                        if (sampler->sampler_conversion != VK_NULL_HANDLE) {
+                            descriptor_count *= phys_dev_props_core14.maxCombinedImageSamplerDescriptorCount;
+                        }
                     }
                 }
 
@@ -2326,13 +2340,29 @@ std::string DeviceState::PrintDescriptorAllocation(const VkDescriptorSetAllocate
                 if (binding_layout->descriptorType != type) {
                     continue;
                 }
+                bool normal_message = true;
                 if (count_allocate_info && i < count_allocate_info->descriptorSetCount &&
                     (ds_layout_state->GetDescriptorBindingFlagsFromIndex(i) &
                      VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT)) {
                     ss << "  pSetLayouts[" << set_layout_i << "]::pBindings[" << i
                        << "].descriptorCount = " << count_allocate_info->pDescriptorCounts[i]
                        << " (adjusted for VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT)\n";
-                } else {
+                    normal_message = false;
+                } else if (binding_layout->pImmutableSamplers != nullptr && type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER &&
+                           IsExtEnabled(extensions.vk_khr_maintenance6)) {
+                    if (const auto sampler = Get<Sampler>(*binding_layout->pImmutableSamplers)) {
+                        if (sampler->sampler_conversion != VK_NULL_HANDLE) {
+                            const uint32_t ycbcr_count =
+                                binding_layout->descriptorCount * phys_dev_props_core14.maxCombinedImageSamplerDescriptorCount;
+                            ss << "  pSetLayouts[" << set_layout_i << "]::pBindings[" << i << "].descriptorCount = " << ycbcr_count
+                               << " (adjusted by multiplying maxCombinedImageSamplerDescriptorCount which is "
+                               << phys_dev_props_core14.maxCombinedImageSamplerDescriptorCount << ")\n";
+                            normal_message = false;
+                        }
+                    }
+                }
+
+                if (normal_message) {
                     ss << "  pSetLayouts[" << set_layout_i << "]::pBindings[" << i
                        << "].descriptorCount = " << binding_layout->descriptorCount << '\n';
                 }

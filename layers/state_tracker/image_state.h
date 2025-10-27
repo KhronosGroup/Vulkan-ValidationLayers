@@ -282,7 +282,8 @@ class ImageView : public StateObject, public SubStateManager<ImageViewSubState> 
     const VkImageSubresourceRange normalized_subresource_range;
     const subresource_adapter::RangeGenerator range_generator;
     const VkSampleCountFlagBits samples;
-    const VkSamplerYcbcrConversion samplerConversion;  // Handle of the ycbcr sampler conversion the image was created with, if any
+    // VK_NULL_HANDLE if it doesn't have one chained in the pNext at creation time
+    const VkSamplerYcbcrConversion sampler_conversion;
     const VkFilterCubicImageViewImageFormatPropertiesEXT filter_cubic_props;
     const float min_lod;
     const VkFormatFeatureFlags2 format_features;
