@@ -15,6 +15,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/shader_object_helper.h"
+#include "containers/container_utils.h"
 
 const char *vkComponentTypeToGLSL(VkComponentTypeKHR type) {
     switch (type) {
@@ -117,6 +118,22 @@ bool CooperativeMatrixTest::HasValidProperty(VkScopeKHR scope, uint32_t m, uint3
     return false;
 }
 
+bool CooperativeMatrixTest::Has8BitComponentType(const VkCooperativeMatrixPropertiesKHR &prop) {
+    static const VkComponentTypeKHR type_8bit[6] = {
+        VK_COMPONENT_TYPE_SINT8_KHR,       VK_COMPONENT_TYPE_UINT8_KHR,       VK_COMPONENT_TYPE_SINT8_PACKED_NV,
+        VK_COMPONENT_TYPE_UINT8_PACKED_NV, VK_COMPONENT_TYPE_FLOAT8_E4M3_EXT, VK_COMPONENT_TYPE_FLOAT8_E5M2_EXT,
+    };
+    return IsValueIn(prop.AType, type_8bit) || IsValueIn(prop.BType, type_8bit) || IsValueIn(prop.CType, type_8bit) ||
+           IsValueIn(prop.ResultType, type_8bit);
+}
+
+bool CooperativeMatrixTest::Has64BitComponentType(const VkCooperativeMatrixPropertiesKHR &prop) {
+    static const VkComponentTypeKHR type_64bit[3] = {VK_COMPONENT_TYPE_FLOAT64_KHR, VK_COMPONENT_TYPE_SINT64_KHR,
+                                                     VK_COMPONENT_TYPE_UINT64_KHR};
+    return IsValueIn(prop.AType, type_64bit) || IsValueIn(prop.BType, type_64bit) || IsValueIn(prop.CType, type_64bit) ||
+           IsValueIn(prop.ResultType, type_64bit);
+}
+
 class PositiveShaderCooperativeMatrix : public CooperativeMatrixTest {};
 
 TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixNV) {
@@ -183,9 +200,7 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixNV) {
 
 TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixKHR) {
     TEST_DESCRIPTION("Test VK_KHR_cooperative_matrix.");
-
     SetTargetApiVersion(VK_API_VERSION_1_3);
-
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_16BIT_STORAGE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderFloat16);
@@ -201,7 +216,8 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixKHR) {
     VkCooperativeMatrixPropertiesKHR subgroup_prop = vku::InitStructHelper();
     bool found_scope_subgroup = false;
     for (const auto &prop : coop_matrix_props) {
-        if (prop.scope == VK_SCOPE_SUBGROUP_KHR) {
+        // We only have the 16-bit features enabled, but 32-bit also works
+        if (prop.scope == VK_SCOPE_SUBGROUP_KHR && !Has8BitComponentType(prop) && !Has64BitComponentType(prop)) {
             found_scope_subgroup = true;
             subgroup_prop = prop;
             break;
