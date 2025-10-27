@@ -2653,9 +2653,10 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
 
     // Only these 3 usage flags matter, rest are ignored
     // From https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7734
-    const VkBufferUsageFlags2 descriptor_buffer_usage = VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT |
-                                                        VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT |
-                                                        VK_BUFFER_USAGE_2_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT;
+    // (Note: need to be static or MSVC will cry https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10930)
+    static const VkBufferUsageFlags2 descriptor_buffer_usage = VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT |
+                                                               VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT |
+                                                               VK_BUFFER_USAGE_2_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT;
 
     for (uint32_t i = 0; i < bufferCount; i++) {
         const Location binding_loc = error_obj.location.dot(Field::pBindingInfos, i);
