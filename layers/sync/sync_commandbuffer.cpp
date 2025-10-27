@@ -301,7 +301,7 @@ bool CommandBufferAccessContext::ValidateBeginRendering(const ErrorObject &error
         }
 
         const HazardResult hazard =
-            GetCurrentAccessContext()->DetectHazard(attachment.view_gen, load_index, attachment.GetOrdering());
+            GetCurrentAccessContext()->DetectHazard(attachment.view_gen, load_index, attachment.GetOrdering(), SyncFlag::kLoadOp);
         if (hazard.IsHazard()) {
             LogObjectList objlist(cb_state_->Handle(), attachment.view->Handle());
 
@@ -337,7 +337,7 @@ void CommandBufferAccessContext::RecordBeginRendering(BeginRenderingCmdState &cm
             if (load_index == SYNC_ACCESS_INDEX_NONE) continue;
 
             GetCurrentAccessContext()->UpdateAccessState(attachment.view_gen, load_index, attachment.GetOrdering(),
-                                                         ResourceUsageTagEx{tag});
+                                                         ResourceUsageTagEx{tag}, SyncFlag::kLoadOp);
         }
     }
 
@@ -444,7 +444,8 @@ void CommandBufferAccessContext::RecordEndRendering(const RecordObject &record_o
 
             const SyncAccessIndex store_index = attachment.GetStoreUsage();
             if (store_index == SYNC_ACCESS_INDEX_NONE) continue;
-            access_context->UpdateAccessState(attachment.view_gen, store_index, kStoreOrder, ResourceUsageTagEx{store_tag});
+            access_context->UpdateAccessState(attachment.view_gen, store_index, kStoreOrder, ResourceUsageTagEx{store_tag},
+                                              SyncFlag::kStoreOp);
         }
     }
 

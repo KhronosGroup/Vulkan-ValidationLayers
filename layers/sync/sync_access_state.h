@@ -253,6 +253,7 @@ struct WriteState {
 
     bool IsOrdered(const OrderingBarrier &ordering, QueueId queue_id) const;
     bool IsLoadOp() const { return flags & SyncFlag::kLoadOp; }
+    bool IsStoreOp() const { return flags & SyncFlag::kStoreOp; }
     bool IsPresent() const { return flags & SyncFlag::kPresent; }
 
     ResourceUsageTagEx TagEx() const { return {tag, handle_index}; }

@@ -110,6 +110,16 @@ HazardResult AccessState::DetectHazard(const SyncAccessInfo &usage_info, const O
                 bool most_recent_is_ordered =
                     last_write->IsOrdered(ordering, queue_id) && (!usage_is_input_attachment || last_write->IsLoadOp());
 
+                // LoadOp after StoreOp happens only if accesses are from different render pass instances.
+                // Such accesses are not implicitly synchronized.
+                if (last_write->IsStoreOp() && (flags & SyncFlag::kLoadOp)) {
+                    most_recent_is_ordered = false;
+                }
+
+                // TODO: current implementation does not distiguish separate render pass instances. Some cases can be
+                // handled with SyncFlags, but not all. We need to add some idea of render pass instance id, and
+                // combine that with ordering rules and/or SyncFlags to get unified solution.
+
                 // If most recent write is not ordered then check if subsequent read is ordered
                 if (!most_recent_is_ordered) {
                     most_recent_is_ordered = (GetOrderedStages(queue_id, ordering, flags) != 0);
@@ -152,7 +162,9 @@ HazardResult AccessState::DetectHazard(const SyncAccessInfo &usage_info, const O
 
     // Only check for WAW if there are no reads since last_write
     if (last_write.has_value()) {
-        if (last_write->IsOrdered(ordering, queue_id) && usage_write_is_ordered) {
+        // Check if it's two ordered write accesses
+        const bool different_render_pass_instances = (last_write->IsStoreOp() && (flags & SyncFlag::kLoadOp));
+        if (last_write->IsOrdered(ordering, queue_id) && usage_write_is_ordered && !different_render_pass_instances) {
             return {};
         }
 
@@ -198,10 +210,10 @@ HazardResult AccessState::DetectHazard(const AccessState &recorded_use, QueueId 
             }
 
             const auto &first_ordering = GetOrderingRules(first.ordering_rule);
-            hazard = DetectHazard(*first.usage_info, first_ordering, 0, queue_id);
+            hazard = DetectHazard(*first.usage_info, first_ordering, first.flags, queue_id);
             if (hazard.IsHazard()) {
                 hazard.AddRecordedAccess(first);
-                break;
+                return hazard;
             }
         }
 
@@ -235,11 +247,12 @@ HazardResult AccessState::DetectHazard(const AccessState &recorded_use, QueueId 
                 hazard = DetectHazard(*last_access.usage_info, barrier, last_access.flags, queue_id);
                 if (hazard.IsHazard()) {
                     hazard.AddRecordedAccess(last_access);
+                    return hazard;
                 }
             }
         }
     }
-    return hazard;
+    return {};
 }
 
 // Asynchronous Hazards occur between subpasses with no connection through the DAG
