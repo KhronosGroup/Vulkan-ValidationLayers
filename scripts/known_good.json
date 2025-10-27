@@ -124,7 +124,7 @@
             "sub_dir": "slang",
             "build_dir": "slang/download",
             "install_dir": "slang/install",
-            "release": "2025.12.1",
+            "release": "2025.19.1",
             "url_format_map": {
                 "64": "x86_64",
                 "x64": "x86_64",
