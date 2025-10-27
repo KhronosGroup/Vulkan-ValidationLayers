@@ -4830,7 +4830,7 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
         m_errorMonitor->VerifyFound();
     }
     {
-        VkDescriptorType descriptor_types[] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER};
+        VkDescriptorType descriptor_types[] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE};
 
         VkMutableDescriptorTypeListEXT mutable_descriptor_type_lists[2] = {{1, &descriptor_types[0]}, {1, &descriptor_types[1]}};
         VkMutableDescriptorTypeCreateInfoEXT mdtci = vku::InitStructHelper();
