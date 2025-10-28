@@ -19,6 +19,7 @@
  */
 
 #include <assert.h>
+#include <sstream>
 
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vulkan_core.h>
@@ -34,6 +35,7 @@
 #include "utils/image_utils.h"
 #include "utils/math_utils.h"
 #include "state_tracker/data_graph_pipeline_session_state.h"
+#include "state_tracker/cmd_buffer_state.h"
 
 // For given mem object, verify that it is not null or UNBOUND, if it is, report error. Return skip value.
 bool CoreChecks::VerifyBoundMemoryIsValid(const vvl::DeviceMemory *memory_state, const LogObjectList &objlist,
@@ -2835,11 +2837,162 @@ bool CoreChecks::ValidateBindDataGraphPipelineSessionMemoryARM(const VkBindDataG
 }
 
 bool CoreChecks::PreCallValidateBindDataGraphPipelineSessionMemoryARM(VkDevice device, uint32_t bindInfoCount,
-                                                                      const VkBindDataGraphPipelineSessionMemoryInfoARM *pBindInfos,
-                                                                      const ErrorObject &error_obj) const {
+                                                                      const VkBindDataGraphPipelineSessionMemoryInfoARM* pBindInfos,
+                                                                      const ErrorObject& error_obj) const {
     bool skip = false;
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         skip |= ValidateBindDataGraphPipelineSessionMemoryARM(pBindInfos[i], error_obj.location.dot(Field::pBindInfos, i));
     }
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdDecompressMemoryEXT(VkCommandBuffer commandBuffer,
+                                                       const VkDecompressMemoryInfoEXT* pDecompressMemoryInfoEXT,
+                                                       const ErrorObject& error_obj) const {
+    bool skip = false;
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    const LogObjectList objlist(cb_state->Handle());
+
+    const Location memory_info_loc = error_obj.location.dot(Field::pDecompressMemoryInfoEXT);
+    for (uint32_t i = 0; i < pDecompressMemoryInfoEXT->regionCount; ++i) {
+        const auto& region = pDecompressMemoryInfoEXT->pRegions[i];
+        const Location region_loc = memory_info_loc.dot(Field::pRegions, i);
+        if (region.compressedSize > 0) {
+            const VkDeviceAddress start = region.srcAddress;
+            const VkDeviceSize size = region.compressedSize;
+
+            BufferAddressValidation<2> buffer_address_validator = {
+                {{{
+                      "VUID-VkDecompressMemoryRegionEXT-srcAddress-07686",
+                      [start, size](const vvl::Buffer& buffer_state) {
+                          const VkDeviceSize end =
+                              buffer_state.create_info.size - static_cast<VkDeviceSize>(start - buffer_state.deviceAddress);
+                          return size > end;
+                      },
+                      [start, size]() {
+                          const vvl::range<VkDeviceAddress> req_range{start, start + size};
+                          return std::string("The required source range ") + string_range_hex(req_range) + " does not fit:";
+                      },
+                      [](const vvl::Buffer& buffer_state) {
+                          const vvl::range<VkDeviceAddress> buf_range{buffer_state.deviceAddress,
+                                                                      buffer_state.deviceAddress + buffer_state.create_info.size};
+                          return std::string("buffer provides ") + std::to_string(buffer_state.create_info.size) +
+                                 " bytes at range " + string_range_hex(buf_range);
+                      },
+                  },
+                  {
+                      "VUID-VkDecompressMemoryRegionEXT-srcAddress-11764",
+                      [](const vvl::Buffer& buffer_state) {
+                          return (buffer_state.usage & VK_BUFFER_USAGE_2_MEMORY_DECOMPRESSION_BIT_EXT) == 0;
+                      },
+                      []() { return "The following buffers are missing VK_BUFFER_USAGE_2_MEMORY_DECOMPRESSION_BIT_EXT"; },
+                      [](const vvl::Buffer& buffer_state) {
+                          return "buffer has usage " + string_VkBufferUsageFlags2(buffer_state.usage);
+                      },
+                  }}}};
+
+            const Location src_loc = region_loc.dot(Field::srcAddress);
+            skip |= buffer_address_validator.ValidateDeviceAddress(*this, src_loc, objlist, start);
+        }
+
+        if (region.decompressedSize > 0) {
+            const VkDeviceAddress start = region.dstAddress;
+            const VkDeviceSize size = region.decompressedSize;
+            BufferAddressValidation<2> dst_range_validator = {
+                {{{
+                      "VUID-VkDecompressMemoryRegionEXT-dstAddress-07688",
+                      [start, size](const vvl::Buffer& buffer_state) {
+                          const VkDeviceSize end =
+                              buffer_state.create_info.size - static_cast<VkDeviceSize>(start - buffer_state.deviceAddress);
+                          return size > end;
+                      },
+                      [start, size]() {
+                          const vvl::range<VkDeviceAddress> req_range{start, start + size};
+                          return std::string("The required destination range ") + string_range_hex(req_range) + " does not fit:";
+                      },
+                      [](const vvl::Buffer& buffer_state) {
+                          const vvl::range<VkDeviceAddress> buf_range{buffer_state.deviceAddress,
+                                                                      buffer_state.deviceAddress + buffer_state.create_info.size};
+                          return std::string("buffer provides ") + std::to_string(buffer_state.create_info.size) +
+                                 " bytes at range " + string_range_hex(buf_range);
+                      },
+                  },
+                  {
+                      "VUID-VkDecompressMemoryRegionEXT-dstAddress-11765",
+                      [](const vvl::Buffer& buffer_state) {
+                          return (buffer_state.usage & VK_BUFFER_USAGE_2_MEMORY_DECOMPRESSION_BIT_EXT) == 0;
+                      },
+                      []() { return "The following buffers are missing VK_BUFFER_USAGE_2_MEMORY_DECOMPRESSION_BIT_EXT"; },
+                      [](const vvl::Buffer& buffer_state) {
+                          return "buffer has usage " + string_VkBufferUsageFlags2(buffer_state.usage);
+                      },
+                  }}}};
+
+            const Location dst_loc = region_loc.dot(Field::dstAddress);
+            skip |= dst_range_validator.ValidateDeviceAddress(*this, dst_loc, objlist, start);
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdDecompressMemoryIndirectCountEXT(VkCommandBuffer commandBuffer,
+                                                                    VkMemoryDecompressionMethodFlagsEXT decompressionMethod,
+                                                                    VkDeviceAddress indirectCommandsAddress,
+                                                                    VkDeviceAddress indirectCommandsCountAddress,
+                                                                    uint32_t maxDecompressionCount, uint32_t stride,
+                                                                    const ErrorObject& error_obj) const {
+    bool skip = false;
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    const LogObjectList objlist(cb_state->Handle());
+
+    {
+        BufferAddressValidation<2> buffer_address_validator = {
+            {{{"VUID-vkCmdDecompressMemoryIndirectCountEXT-indirectCommandsAddress-07694",
+               [](const vvl::Buffer& buffer_state) { return (buffer_state.usage & VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT) == 0; },
+               []() { return "The following buffers are missing VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT:"; },
+               [](const vvl::Buffer& buffer_state) {
+                   return std::string("buffer has usage ") + string_VkBufferUsageFlags2(buffer_state.usage);
+               }},
+
+              {"VUID-vkCmdDecompressMemoryIndirectCountEXT-indirectCommandsAddress-11794",
+               [indirectCommandsAddress, stride, maxDecompressionCount](const vvl::Buffer& buffer_state) {
+                   if (maxDecompressionCount == 0 || stride == 0) return false;
+                   const vvl::range<VkDeviceSize> required_range(
+                       indirectCommandsAddress, indirectCommandsAddress + static_cast<VkDeviceSize>(stride) *
+                                                                              static_cast<VkDeviceSize>(maxDecompressionCount));
+                   const vvl::range<VkDeviceSize> buffer_address_range = buffer_state.DeviceAddressRange();
+                   return !buffer_address_range.includes(required_range);
+               },
+               [indirectCommandsAddress, stride, maxDecompressionCount]() {
+                   const vvl::range<VkDeviceSize> required_range(
+                       indirectCommandsAddress, indirectCommandsAddress + static_cast<VkDeviceSize>(stride) *
+                                                                              static_cast<VkDeviceSize>(maxDecompressionCount));
+                   return std::string(
+                              "The following buffers have an address range that does not include indirect commands address "
+                              "range ") +
+                          string_range_hex(required_range) + ":";
+               },
+               [](const vvl::Buffer& buffer_state) {
+                   return std::string("buffer address range is ") + string_range_hex(buffer_state.DeviceAddressRange());
+               }}}}};
+
+        const Location ic_addr_loc = error_obj.location.dot(Field::indirectCommandsAddress);
+        skip |= buffer_address_validator.ValidateDeviceAddress(*this, ic_addr_loc, objlist, indirectCommandsAddress);
+    }
+
+    {
+        BufferAddressValidation<1> buffer_address_validator = {
+            {{{"VUID-vkCmdDecompressMemoryIndirectCountEXT-indirectCommandsCountAddress-07697",
+               [](const vvl::Buffer& buffer_state) { return (buffer_state.usage & VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT) == 0; },
+               []() { return "The following buffers are missing VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT:"; },
+               [](const vvl::Buffer& buffer_state) {
+                   return std::string("buffer has usage ") + string_VkBufferUsageFlags2(buffer_state.usage);
+               }}}}};
+
+        const Location ic_count_loc = error_obj.location.dot(Field::indirectCommandsCountAddress);
+        skip |= buffer_address_validator.ValidateDeviceAddress(*this, ic_count_loc, objlist, indirectCommandsCountAddress);
+    }
+
     return skip;
 }

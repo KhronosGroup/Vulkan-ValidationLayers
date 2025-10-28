@@ -12,6 +12,7 @@
  */
 
 #include <thread>
+#include <vector>
 #include "../framework/layer_validation_tests.h"
 
 #ifndef VK_USE_PLATFORM_WIN32_KHR
@@ -19,6 +20,131 @@
 #endif
 
 class PositiveMemory : public VkLayerTest {};
+
+TEST_F(PositiveMemory, MemoryDecompression) {
+    TEST_DESCRIPTION("Validate vkCmdDecompressMemoryEXT");
+    AddRequiredExtensions(VK_EXT_MEMORY_DECOMPRESSION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::memoryDecompression);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
+    VkPhysicalDeviceMemoryDecompressionPropertiesEXT mem_decomp_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(mem_decomp_props);
+    if ((mem_decomp_props.decompressionMethods & VK_MEMORY_DECOMPRESSION_METHOD_GDEFLATE_1_0_BIT_EXT) == 0) {
+        GTEST_SKIP() << "GDeflate decompression method not supported";
+    }
+
+    static const uint8_t kGdeflate_data[] = {0x47, 0x44, 0x46, 0x4c, 0x01, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x40, 0x00,
+                                             0x00, 0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
+    const std::vector<uint8_t> compressed(std::begin(kGdeflate_data), std::end(kGdeflate_data));
+    VkDeviceSize buffer_size = static_cast<VkDeviceSize>(compressed.size());
+    VkDeviceSize decompressed_size = 64;
+
+    VkBufferUsageFlags2CreateInfo src_usage2 = vku::InitStructHelper();
+    src_usage2.usage = VK_BUFFER_USAGE_2_MEMORY_DECOMPRESSION_BIT_EXT;
+    vkt::Buffer src_buffer(*m_device, buffer_size, src_usage2, vkt::device_address);
+
+    VkBufferUsageFlags2CreateInfo dst_usage2 = vku::InitStructHelper();
+    dst_usage2.usage = VK_BUFFER_USAGE_2_MEMORY_DECOMPRESSION_BIT_EXT;
+    vkt::Buffer dst_buffer(*m_device, decompressed_size, dst_usage2, vkt::device_address);
+
+    void* p = src_buffer.Memory().Map();
+    std::memcpy(p, compressed.data(), compressed.size());
+
+    VkDecompressMemoryRegionEXT decompress_region = {};
+    decompress_region.srcAddress = src_buffer.Address();
+    decompress_region.dstAddress = dst_buffer.Address();
+    decompress_region.compressedSize = buffer_size;
+    decompress_region.decompressedSize = decompressed_size;
+
+    VkDecompressMemoryInfoEXT decompress_info = vku::InitStructHelper();
+    decompress_info.decompressionMethod = VK_MEMORY_DECOMPRESSION_METHOD_GDEFLATE_1_0_BIT_EXT;
+    decompress_info.regionCount = 1;
+    decompress_info.pRegions = &decompress_region;
+
+    m_command_buffer.Begin();
+    VkMemoryBarrier2 mem_barrier = vku::InitStructHelper();
+    mem_barrier.srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT;
+    mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    mem_barrier.dstAccessMask = VK_ACCESS_2_MEMORY_DECOMPRESSION_READ_BIT_EXT | VK_ACCESS_2_MEMORY_DECOMPRESSION_WRITE_BIT_EXT;
+    mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_MEMORY_DECOMPRESSION_BIT_EXT;
+    m_command_buffer.BarrierKHR(mem_barrier);
+
+    vk::CmdDecompressMemoryEXT(m_command_buffer.handle(), &decompress_info);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveMemory, MemoryDecompressionIndirectCount) {
+    TEST_DESCRIPTION("Validate vkCmdDecompressMemoryIndirectCountEXT");
+    AddRequiredExtensions(VK_EXT_MEMORY_DECOMPRESSION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::memoryDecompression);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
+    VkPhysicalDeviceMemoryDecompressionPropertiesEXT mem_decomp_props2 = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(mem_decomp_props2);
+    if ((mem_decomp_props2.decompressionMethods & VK_MEMORY_DECOMPRESSION_METHOD_GDEFLATE_1_0_BIT_EXT) == 0) {
+        GTEST_SKIP() << "GDeflate decompression method not supported";
+    }
+
+    static const uint8_t kGdeflate_data[] = {0x47, 0x44, 0x46, 0x4c, 0x01, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x40, 0x00,
+                                             0x00, 0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
+    const std::vector<uint8_t> compressed(std::begin(kGdeflate_data), std::end(kGdeflate_data));
+    VkDeviceSize buffer_size = static_cast<VkDeviceSize>(compressed.size());
+    VkDeviceSize decompressed_size = 64;
+
+    VkBufferUsageFlags2CreateInfo src_usage2_ind = vku::InitStructHelper();
+    src_usage2_ind.usage = VK_BUFFER_USAGE_2_MEMORY_DECOMPRESSION_BIT_EXT | VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT;
+    vkt::Buffer src_buffer(*m_device, buffer_size, src_usage2_ind, vkt::device_address);
+
+    VkBufferUsageFlags2CreateInfo dst_usage2_ind = vku::InitStructHelper();
+    dst_usage2_ind.usage = VK_BUFFER_USAGE_2_MEMORY_DECOMPRESSION_BIT_EXT;
+    vkt::Buffer dst_buffer(*m_device, decompressed_size, dst_usage2_ind, vkt::device_address);
+
+    void* p = src_buffer.Memory().Map();
+    std::memcpy(p, compressed.data(), compressed.size());
+
+    VkDecompressMemoryRegionEXT decompress_region = {};
+    decompress_region.srcAddress = src_buffer.Address();
+    decompress_region.dstAddress = dst_buffer.Address();
+    decompress_region.compressedSize = buffer_size;
+    decompress_region.decompressedSize = decompressed_size;
+    VkDecompressMemoryRegionEXT cmds[2] = {decompress_region, decompress_region};
+
+    vkt::Buffer ic_buffer(*m_device, sizeof(cmds), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
+    void* p_ic = ic_buffer.Memory().Map();
+    memcpy(p_ic, cmds, sizeof(cmds));
+
+    vkt::Buffer icc_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
+    uint32_t count = sizeof(cmds) / sizeof(VkDecompressMemoryRegionEXT);
+    void* p_cnt = icc_buffer.Memory().Map();
+    memcpy(p_cnt, &count, sizeof(count));
+
+    VkPhysicalDeviceMemoryDecompressionPropertiesEXT memory_decompression_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(memory_decompression_props);
+
+    VkMemoryDecompressionMethodFlagsEXT decompression_method = VK_MEMORY_DECOMPRESSION_METHOD_GDEFLATE_1_0_BIT_EXT;
+    uint32_t max_decompression_count = count;
+    uint32_t stride = (uint32_t)sizeof(VkDecompressMemoryRegionEXT);
+
+    m_command_buffer.Begin();
+    VkMemoryBarrier2 mem_barrier = vku::InitStructHelper();
+    mem_barrier.srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT;
+    mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    mem_barrier.dstAccessMask = VK_ACCESS_2_MEMORY_DECOMPRESSION_READ_BIT_EXT | VK_ACCESS_2_MEMORY_DECOMPRESSION_WRITE_BIT_EXT;
+    mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_MEMORY_DECOMPRESSION_BIT_EXT;
+    m_command_buffer.BarrierKHR(mem_barrier);
+
+    vk::CmdDecompressMemoryIndirectCountEXT(m_command_buffer.handle(), decompression_method, ic_buffer.Address(),
+                                            icc_buffer.Address(), max_decompression_count, stride);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
 
 TEST_F(PositiveMemory, MapMemory2) {
     TEST_DESCRIPTION("Validate vkMapMemory2 and vkUnmapMemory2");

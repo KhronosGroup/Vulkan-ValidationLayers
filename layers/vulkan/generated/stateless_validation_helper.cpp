@@ -25990,6 +25990,7 @@ bool Device::PreCallValidateCmdDecompressMemoryEXT(VkCommandBuffer commandBuffer
             }
         }
     }
+    if (!skip) skip |= manual_PreCallValidateCmdDecompressMemoryEXT(commandBuffer, pDecompressMemoryInfoEXT, context);
     return skip;
 }
 
@@ -26014,6 +26015,10 @@ bool Device::PreCallValidateCmdDecompressMemoryIndirectCountEXT(VkCommandBuffer 
     skip |= context.ValidateNotZero(indirectCommandsCountAddress == 0,
                                     "VUID-vkCmdDecompressMemoryIndirectCountEXT-indirectCommandsCountAddress-parameter",
                                     loc.dot(Field::indirectCommandsCountAddress));
+    if (!skip)
+        skip |= manual_PreCallValidateCmdDecompressMemoryIndirectCountEXT(commandBuffer, decompressionMethod,
+                                                                          indirectCommandsAddress, indirectCommandsCountAddress,
+                                                                          maxDecompressionCount, stride, context);
     return skip;
 }
 

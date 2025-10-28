@@ -865,6 +865,15 @@ class CoreChecks : public vvl::DeviceProxy {
                                            const VkRayTracingPipelineCreateInfoKHR& pipeline_create_info,
                                            const VkPipelineLibraryCreateInfoKHR& library_create_info,
                                            const Location& library_info_loc) const;
+    bool PreCallValidateCmdDecompressMemoryEXT(VkCommandBuffer commandBuffer,
+                                               const VkDecompressMemoryInfoEXT* pDecompressMemoryInfoEXT,
+                                               const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdDecompressMemoryIndirectCountEXT(VkCommandBuffer commandBuffer,
+                                                            VkMemoryDecompressionMethodFlagsEXT decompressionMethod,
+                                                            VkDeviceAddress indirectCommandsAddress,
+                                                            VkDeviceAddress indirectCommandsCountAddress,
+                                                            uint32_t maxDecompressionCount, uint32_t stride,
+                                                            const ErrorObject& error_obj) const override;
     bool PreCallValidateGetShaderModuleIdentifierEXT(VkDevice device, VkShaderModule shaderModule,
                                                      VkShaderModuleIdentifierEXT* pIdentifier,
                                                      const ErrorObject& error_obj) const override;

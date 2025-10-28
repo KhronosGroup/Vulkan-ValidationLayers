@@ -20,6 +20,7 @@
 #include <vulkan/utility/vk_format_utils.h>
 #include "utils/image_utils.h"
 #include "utils/math_utils.h"
+#include "containers/range.h"
 
 namespace stateless {
 
@@ -115,6 +116,133 @@ bool Device::manual_PreCallValidateGetDeviceImageSparseMemoryRequirements(
     const auto &error_obj = context.error_obj;
 
     skip |= ValidateDeviceImageMemoryRequirements(device, *pInfo, error_obj.location.dot(Field::pInfo));
+
+    return skip;
+}
+bool Device::manual_PreCallValidateCmdDecompressMemoryEXT(VkCommandBuffer commandBuffer,
+                                                          const VkDecompressMemoryInfoEXT* pDecompressMemoryInfoEXT,
+                                                          const Context& context) const {
+    bool skip = false;
+    const auto& error_obj = context.error_obj;
+
+    if (!enabled_features.memoryDecompression) {
+        skip |= LogError("VUID-vkCmdDecompressMemoryEXT-memoryDecompression-11761", commandBuffer, error_obj.location,
+                         "The memoryDecompression feature must be enabled.");
+    }
+
+    const auto& props = phys_dev_ext_props.memory_decompression_props;
+    if ((pDecompressMemoryInfoEXT->decompressionMethod & props.decompressionMethods) == 0) {
+        skip |= LogError("VUID-VkDecompressMemoryInfoEXT-decompressionMethod-11763", commandBuffer,
+                         error_obj.location.dot(Field::decompressionMethod),
+                         "(0x%" PRIx64 ") is not a supported decompression method bit (supported mask: 0x%" PRIx64 ").",
+                         pDecompressMemoryInfoEXT->decompressionMethod, props.decompressionMethods);
+    }
+
+    if (pDecompressMemoryInfoEXT->decompressionMethod & VK_MEMORY_DECOMPRESSION_METHOD_GDEFLATE_1_0_BIT_EXT) {
+        const Location memory_info_loc = error_obj.location.dot(Field::pDecompressMemoryInfoEXT);
+        for (uint32_t i = 0; i < pDecompressMemoryInfoEXT->regionCount; ++i) {
+            const Location region_loc = memory_info_loc.dot(Field::pRegions, i);
+            const VkDecompressMemoryRegionEXT mem_region = pDecompressMemoryInfoEXT->pRegions[i];
+            if (mem_region.decompressedSize > 65536) {
+                skip |= LogError("VUID-VkDecompressMemoryInfoEXT-decompressionMethod-11762", commandBuffer,
+                                 region_loc.dot(Field::decompressedSize),
+                                 "(%" PRIu64 ") must be less than or equal to 65536 bytes.", mem_region.decompressedSize);
+            }
+
+            if (mem_region.compressedSize == 0) {
+                skip |= LogError("VUID-VkDecompressMemoryRegionEXT-compressedSize-11795", commandBuffer,
+                                 region_loc.dot(Field::compressedSize), "must not be zero.");
+            }
+
+            if (mem_region.decompressedSize == 0) {
+                skip |= LogError("VUID-VkDecompressMemoryRegionEXT-decompressedSize-11796", commandBuffer,
+                                 region_loc.dot(Field::decompressedSize), "must not be zero.");
+            }
+
+            if (mem_region.srcAddress & 0x3) {
+                skip |=
+                    LogError("VUID-VkDecompressMemoryRegionEXT-srcAddress-07685", commandBuffer, region_loc.dot(Field::srcAddress),
+                             "(0x%" PRIx64 ") is not 4-byte aligned.", mem_region.srcAddress);
+            }
+
+            if (mem_region.dstAddress & 0x3) {
+                skip |=
+                    LogError("VUID-VkDecompressMemoryRegionEXT-dstAddress-07687", commandBuffer, region_loc.dot(Field::dstAddress),
+                             "(0x%" PRIx64 ") is not 4-byte aligned.", mem_region.dstAddress);
+            }
+
+            const vvl::range<VkDeviceAddress> src_range{mem_region.srcAddress, mem_region.srcAddress + mem_region.compressedSize};
+            const vvl::range<VkDeviceAddress> dst_range{mem_region.dstAddress, mem_region.dstAddress + mem_region.decompressedSize};
+            if (src_range.intersects(dst_range)) {
+                skip |= LogError("VUID-VkDecompressMemoryRegionEXT-srcAddress-07691", commandBuffer,
+                                 region_loc.dot(Field::srcAddress), "range %s overlaps with dstAddress range %s.",
+                                 string_range_hex(src_range).c_str(), string_range_hex(dst_range).c_str());
+            }
+        }
+    }
+
+    if (!IsPowerOfTwo(pDecompressMemoryInfoEXT->decompressionMethod)) {
+        skip |= LogError("VUID-VkDecompressMemoryInfoEXT-decompressionMethod-07690", commandBuffer,
+                         error_obj.location.dot(Field::pDecompressMemoryInfoEXT).dot(Field::decompressionMethod),
+                         "(0x%" PRIx64 ") must have a single bit set.", pDecompressMemoryInfoEXT->decompressionMethod);
+    }
+
+    return skip;
+}
+
+bool Device::manual_PreCallValidateCmdDecompressMemoryIndirectCountEXT(
+    VkCommandBuffer commandBuffer, VkMemoryDecompressionMethodFlagsEXT decompressionMethod, VkDeviceAddress indirectCommandsAddress,
+    VkDeviceAddress indirectCommandsCountAddress, uint32_t maxDecompressionCount, uint32_t stride, const Context& context) const {
+    bool skip = false;
+    const auto& error_obj = context.error_obj;
+
+    if (!enabled_features.memoryDecompression) {
+        skip |= LogError("VUID-vkCmdDecompressMemoryIndirectCountEXT-None-07692", commandBuffer, error_obj.location,
+                         "The memoryDecompression feature must be enabled.");
+    }
+
+    const auto& props = phys_dev_ext_props.memory_decompression_props;
+    if ((decompressionMethod & props.decompressionMethods) == 0) {
+        skip |= LogError("VUID-vkCmdDecompressMemoryIndirectCountEXT-decompressionMethod-parameter", commandBuffer,
+                         error_obj.location.dot(Field::decompressionMethod),
+                         "(0x%" PRIx64 ") is not a supported decompression method bit (supported mask: 0x%" PRIx64 ").",
+                         decompressionMethod, props.decompressionMethods);
+    }
+
+    if (!IsPowerOfTwo(decompressionMethod)) {
+        skip |= LogError("VUID-vkCmdDecompressMemoryIndirectCountEXT-decompressionMethod-07690", commandBuffer,
+                         error_obj.location.dot(Field::decompressionMethod), "(0x%" PRIx64 ") must have a single bit set.",
+                         decompressionMethod);
+    }
+
+    if (indirectCommandsAddress % 4 != 0) {
+        skip |= LogError("VUID-vkCmdDecompressMemoryIndirectCountEXT-indirectCommandsAddress-07695", commandBuffer,
+                         error_obj.location.dot(Field::indirectCommandsAddress), "(0x%" PRIx64 ") must be a multiple of 4.",
+                         indirectCommandsAddress);
+    }
+
+    if (indirectCommandsCountAddress % 4 != 0) {
+        skip |= LogError("VUID-vkCmdDecompressMemoryIndirectCountEXT-indirectCommandsCountAddress-07698", commandBuffer,
+                         error_obj.location.dot(Field::indirectCommandsCountAddress), "(0x%" PRIx64 ") must be a multiple of 4.",
+                         indirectCommandsCountAddress);
+    }
+
+    if (stride % 4 != 0 || stride < sizeof(VkDecompressMemoryRegionEXT)) {
+        skip |= LogError(
+            "VUID-vkCmdDecompressMemoryIndirectCountEXT-stride-11767", commandBuffer, error_obj.location.dot(Field::stride),
+            "(%" PRIu32
+            ") must be a multiple of 4 and must be greater than or equal to size of VkDecompressMemoryRegionEXT (%" PRIu64 ").",
+            stride, static_cast<uint64_t>(sizeof(VkDecompressMemoryRegionEXT)));
+    }
+
+    if (maxDecompressionCount > props.maxDecompressionIndirectCount) {
+        skip |= LogError("VUID-vkCmdDecompressMemoryIndirectCountEXT-maxDecompressionCount-11768", commandBuffer,
+                         error_obj.location.dot(Field::maxDecompressionCount),
+                         "(%" PRIu32
+                         ") must be less than or equal to "
+                         "VkPhysicalDeviceMemoryDecompressionPropertiesEXT::maxDecompressionIndirectCount (%" PRIu64 ").",
+                         maxDecompressionCount, props.maxDecompressionIndirectCount);
+    }
 
     return skip;
 }
