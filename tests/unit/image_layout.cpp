@@ -978,6 +978,49 @@ TEST_F(NegativeImageLayout, DynamicRenderingColorAttachmentLayout) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeImageLayout, DynamicRenderingColorAttachmentLayout2) {
+    TEST_DESCRIPTION("Transition image layout after image was used as dynamic rendering attachment");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Image image(*m_device, 128, 128, VK_FORMAT_R8G8B8A8_UNORM,
+                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {128, 128};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
+    layout_transition.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    layout_transition.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+    layout_transition.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+    layout_transition.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    // Does not match COLOR_ATTACHMENT_OPTIMAL layout specified by attachment
+    layout_transition.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    layout_transition.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    layout_transition.image = image;
+    layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    m_command_buffer.EndRendering();
+    m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-oldLayout-01197");
+    m_command_buffer.Barrier(layout_transition);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeImageLayout, DynamicRenderingDepthAttachmentLayout) {
     TEST_DESCRIPTION("Depth attachment layout does not match expected layout");
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -1011,6 +1054,50 @@ TEST_F(NegativeImageLayout, DynamicRenderingDepthAttachmentLayout) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeImageLayout, DynamicRenderingDepthAttachmentLayout2) {
+    TEST_DESCRIPTION("Transition image layout after image was used as dynamic rendering attachment");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    const VkFormat depth_format = FindSupportedDepthOnlyFormat(Gpu());
+
+    vkt::Image image(*m_device, 128, 128, depth_format,
+                     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    VkRenderingAttachmentInfo depth_attachment = vku::InitStructHelper();
+    depth_attachment.imageView = image_view;
+    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {128, 128};
+    rendering_info.layerCount = 1;
+    rendering_info.pDepthAttachment = &depth_attachment;
+
+    VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
+    layout_transition.srcStageMask = VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT;
+    layout_transition.srcAccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    layout_transition.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+    layout_transition.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    // Does not match DEPTH_ATTACHMENT_OPTIMAL layout specified by attachment
+    layout_transition.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    layout_transition.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    layout_transition.image = image;
+    layout_transition.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    m_command_buffer.EndRendering();
+    m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-oldLayout-01197");
+    m_command_buffer.Barrier(layout_transition);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeImageLayout, DynamicRenderingStencilAttachmentLayout) {
     TEST_DESCRIPTION("Stencil attachment layout does not match expected layout");
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -1041,5 +1128,80 @@ TEST_F(NegativeImageLayout, DynamicRenderingStencilAttachmentLayout) {
     vk::CmdClearDepthStencilImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, &clear_value, 1, &clear_subresource);
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginRendering-pRenderingInfo-09590");
     m_command_buffer.BeginRendering(rendering_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeImageLayout, DynamicRenderingStencilAttachmentLayout2) {
+    TEST_DESCRIPTION("Transition image layout after image was used as dynamic rendering attachment");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    const VkFormat depth_stencil_format = FindSupportedDepthStencilFormat(Gpu());
+
+    vkt::Image image(*m_device, 128, 128, depth_stencil_format,
+                     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    VkRenderingAttachmentInfo stencil_attachment = vku::InitStructHelper();
+    stencil_attachment.imageView = image_view;
+    stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+    stencil_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    stencil_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {128, 128};
+    rendering_info.layerCount = 1;
+    rendering_info.pStencilAttachment = &stencil_attachment;
+
+    VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
+    layout_transition.srcStageMask = VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT;
+    layout_transition.srcAccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    layout_transition.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+    layout_transition.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    // Does not match STENCIL_ATTACHMENT_OPTIMAL layout specified by attachment
+    layout_transition.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    layout_transition.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    layout_transition.image = image;
+    layout_transition.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    m_command_buffer.EndRendering();
+    m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-oldLayout-01197");
+    m_command_buffer.Barrier(layout_transition);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeImageLayout, DynamicRenderingColorAttachmentLayoutSubmitTime) {
+    TEST_DESCRIPTION("Color attachment layout does not match expected layout. Submit time validation");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Image image(*m_device, 128, 128, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {128, 128};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
