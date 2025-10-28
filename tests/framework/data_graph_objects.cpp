@@ -344,7 +344,7 @@ void DataGraphPipelineHelper::CreatePipelineLayout(const std::vector<VkPushConst
     pipeline_ci_.layout = pipeline_layout_;
 }
 
-/* 2-layer maxpool 2x2: output tensor is 1/4 the size of the input tensor */
+// 2-layer maxpool 2x2: output tensor is 1/4 the size of the input tensor
 const std::vector<int64_t> in_tensor_dims = {1, 8, 16, 4};
 const std::vector<int64_t> out_tensor_dims = {in_tensor_dims[0], in_tensor_dims[1] / 4,
                                               in_tensor_dims[2] / 4, in_tensor_dims[3]};

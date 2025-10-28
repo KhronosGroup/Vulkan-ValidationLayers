@@ -198,48 +198,74 @@ bool CoreChecks::PreCallValidateCmdCopyTensorARM(VkCommandBuffer commandBuffer, 
         skip |= LogError("VUID-VkCopyTensorInfoARM-regionCount-09686", tensors_objlist, copy_info_loc.dot(Field::regionCount),
                          "(%" PRIu32 ") is not 1", pCopyTensorInfo->regionCount);
     }
-    auto &region = pCopyTensorInfo->pRegions[0];
 
-    if (src_tensor_state.description.dimensionCount != dst_tensor_state.description.dimensionCount) {
-        skip |= LogError("VUID-VkCopyTensorInfoARM-dimensionCount-09684", tensors_objlist, copy_info_loc,
-                         "dimensionCount for srcTensor (%d) and dstTensor (%d) are different",
-                         src_tensor_state.description.dimensionCount, dst_tensor_state.description.dimensionCount);
-    } else {
-        for (uint32_t i = 0; i < src_tensor_state.description.dimensionCount; i++) {
-            if (src_tensor_state.description.pDimensions[i] != dst_tensor_state.description.pDimensions[i]) {
-                skip |= LogError("VUID-VkCopyTensorInfoARM-pDimensions-09685", tensors_objlist, copy_info_loc,
+    // currently there can only be 1 region (VUID 09686 above), but this way the code is future-proof
+    for (uint32_t j = 0; j < pCopyTensorInfo->regionCount; j++) {
+        const auto &region = pCopyTensorInfo->pRegions[j];
+
+        if (src_tensor_state.description.dimensionCount != dst_tensor_state.description.dimensionCount) {
+            skip |= LogError("VUID-VkCopyTensorInfoARM-dimensionCount-09684", tensors_objlist, copy_info_loc,
+                             "dimensionCount for srcTensor (%" PRIu32 ") and dstTensor (%" PRIu32 ") are different",
+                             src_tensor_state.description.dimensionCount, dst_tensor_state.description.dimensionCount);
+        } else {
+            for (uint32_t i = 0; i < src_tensor_state.description.dimensionCount; i++) {
+                if (src_tensor_state.description.pDimensions[i] != dst_tensor_state.description.pDimensions[i]) {
+                    skip |=
+                        LogError("VUID-VkCopyTensorInfoARM-pDimensions-09685", tensors_objlist, copy_info_loc,
                                  "pDimensions[%" PRIu32 "] for srcTensor (%" PRIi64 ") and dstTensor (%" PRIi64 ") are different.",
                                  i, src_tensor_state.description.pDimensions[i], dst_tensor_state.description.pDimensions[i]);
-            } else {
-                if (region.pExtent) {
-                    if (static_cast<int64_t>(region.pExtent[i]) != src_tensor_state.description.pDimensions[i]) {
-                        skip |= LogError("VUID-VkCopyTensorInfoARM-pRegions-09689", src_objlist,
-                                         copy_info_loc.dot(Field::pRegions).dot(Field::pExtent, i),
-                                         "(%" PRIu64 ") is not equal to srcTensor::pDimensions[%d] (%" PRIi64 ")",
-                                         region.pExtent[i], i, src_tensor_state.description.pDimensions[i]);
+                } else {
+                    if (region.pExtent) {
+                        if (static_cast<int64_t>(region.pExtent[i]) != src_tensor_state.description.pDimensions[i]) {
+                            skip |= LogError("VUID-VkCopyTensorInfoARM-pRegions-09689", src_objlist,
+                                             copy_info_loc.dot(Field::pRegions).dot(Field::pExtent, i),
+                                             "(%" PRIu64 ") is not equal to srcTensor::pDimensions[%" PRIu32 "] (%" PRIi64 ")",
+                                             region.pExtent[i], i, src_tensor_state.description.pDimensions[i]);
+                        }
                     }
                 }
             }
         }
-    }
-    if (region.pSrcOffset) {
-        for (uint32_t i = 0; i < region.dimensionCount; i++) {
-            if (region.pSrcOffset[i] != 0) {
-                skip |= LogError("VUID-VkCopyTensorInfoARM-pRegions-09687", src_objlist, copy_info_loc.dot(Field::pSrcOffset, i),
-                                 "(%" PRIu64 ") is not zero", region.pSrcOffset[i]);
-                break;
+        if (region.pSrcOffset) {
+            for (uint32_t i = 0; i < region.dimensionCount; i++) {
+                if (region.pSrcOffset[i] != 0) {
+                    skip |= LogError("VUID-VkCopyTensorInfoARM-pRegions-09687", src_objlist,
+                                     copy_info_loc.dot(Field::pSrcOffset, i), "(%" PRIu64 ") is not zero", region.pSrcOffset[i]);
+                    break;
+                }
+            }
+        }
+        if (region.pDstOffset) {
+            for (uint32_t i = 0; i < region.dimensionCount; i++) {
+                if (region.pDstOffset[i] != 0) {
+                    skip |= LogError("VUID-VkCopyTensorInfoARM-pRegions-09688", dst_objlist,
+                                     copy_info_loc.dot(Field::pDstOffset, i), "(%" PRIu64 ") is not zero", region.pDstOffset[i]);
+                    break;
+                }
+            }
+        }
+        if (region.dimensionCount != 0) {
+            const uint32_t maxDimensionCount =
+                std::max(src_tensor_state.description.dimensionCount, dst_tensor_state.description.dimensionCount);
+            if (region.dimensionCount != maxDimensionCount) {
+                skip |= LogError("VUID-VkCopyTensorInfoARM-pRegions-09954", tensors_objlist,
+                                 copy_info_loc.dot(Field::pRegions, 0).dot(Field::dimensionCount),
+                                 "(%" PRIu32 ") is not equal to the max dimensionCount of srcTensor (%" PRIu32
+                                 ") and dstTensor (%" PRIu32 ")",
+                                 region.dimensionCount, src_tensor_state.description.dimensionCount,
+                                 dst_tensor_state.description.dimensionCount);
+            }
+        } else {
+            if (region.pSrcOffset || region.pDstOffset || region.pExtent) {
+                skip |= LogError("VUID-VkTensorCopyARM-dimensionCount-09955", tensors_objlist,
+                                 copy_info_loc.dot(Field::pRegions, 0).dot(Field::dimensionCount),
+                                 "(%" PRIu32
+                                 ") is zero, but at least one of pSrcOffset (%p), pDstOffset (%p), pExtent (%p) is not NULL",
+                                 region.dimensionCount, region.pSrcOffset, region.pDstOffset, region.pExtent);
             }
         }
     }
-    if (region.pDstOffset) {
-        for (uint32_t i = 0; i < region.dimensionCount; i++) {
-            if (region.pDstOffset[i] != 0) {
-                skip |= LogError("VUID-VkCopyTensorInfoARM-pRegions-09688", dst_objlist, copy_info_loc.dot(Field::pDstOffset, i),
-                                 "(%" PRIu64 ") is not zero", region.pDstOffset[i]);
-                break;
-            }
-        }
-    }
+
     skip |= ValidateTensorFormatUsage(src_tensor_state.description.format, VK_TENSOR_USAGE_TRANSFER_SRC_BIT_ARM,
                                       src_tensor_state.description.tiling, "VUID-VkCopyTensorInfoARM-srcTensor-09690",
                                       copy_info_loc.dot(Field::srcTensor));
@@ -341,7 +367,7 @@ bool CoreChecks::PreCallValidateGetTensorViewOpaqueCaptureDescriptorDataARM(VkDe
 // Validates the buffer is allowed to be protected
 bool CoreChecks::ValidateProtectedTensor(const vvl::CommandBuffer &cb_state, const vvl::Tensor &tensor_state,
                                          const Location &tensor_loc, const char *vuid, const char *more_message) const {
-    /* don't use on an unprotected tensor */
+    // don't use on an unprotected tensor
     assert(tensor_state.unprotected == false);
 
     bool skip = false;
@@ -358,7 +384,7 @@ bool CoreChecks::ValidateProtectedTensor(const vvl::CommandBuffer &cb_state, con
 // Validates the buffer is allowed to be unprotected
 bool CoreChecks::ValidateUnprotectedTensor(const vvl::CommandBuffer &cb_state, const vvl::Tensor &tensor_state,
                                            const Location &tensor_loc, const char *vuid, const char *more_message) const {
-    /* don't use on a protected tensor */
+    // don't use on a protected tensor
     assert(tensor_state.unprotected == true);
 
     bool skip = false;
