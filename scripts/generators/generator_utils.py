@@ -1,7 +1,7 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2023-2024 Valve Corporation
-# Copyright (c) 2023-2024 LunarG, Inc.
+# Copyright (c) 2023-2025 Valve Corporation
+# Copyright (c) 2023-2025 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -56,6 +56,13 @@ def getVUID(valid_vuids: set, vuid: str, quotes: bool = True) -> str:
         print(f'Warning: Could not find {vuid} in validusage.json')
         vuid = vuid.replace('VUID-', 'UNASSIGNED-')
     return vuid if not quotes else f'"{vuid}"'
+
+# There is no way to find this information in the XML
+def createObject(command_name: str):
+    return any(x in command_name for x in ['Create', 'Allocate', 'Enumerate', 'RegisterDeviceEvent', 'RegisterDisplayEvent', 'AcquirePerformanceConfigurationINTEL'])
+
+def destroyObject(command_name: str):
+    return any(x in command_name for x in ['Destroy', 'Free', 'ReleasePerformanceConfigurationINTEL'])
 
 class PlatformGuardHelper():
     """Used to elide platform guards together, so redundant #endif then #ifdefs are removed

@@ -21,7 +21,7 @@
 import os
 from vulkan_object import Command, Param, ExternSync
 from base_generator import BaseGenerator
-from generators.generator_utils import PlatformGuardHelper
+from generators.generator_utils import createObject, destroyObject, PlatformGuardHelper
 
 def GetParentInstance(param: Param) -> str:
     instanceParent = ['VkSurfaceKHR',
@@ -174,9 +174,9 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
                         }}\n''')
                 else:
                     out.append(f'{prefix}WriteObject{parent_instance}({param.name}, record_obj.location);\n')
-                    if ('Destroy' in command.name or 'Free' in command.name or 'ReleasePerformanceConfigurationINTEL' in command.name) and prefix == 'Finish':
+                    if destroyObject(command.name) and prefix == 'Finish':
                         out.append(f'DestroyObject{parent_instance}({param.name});\n')
-            elif param.pointer and ('Create' in command.name or 'Allocate' in command.name or 'AcquirePerformanceConfigurationINTEL' in command.name) and prefix == 'Finish':
+            elif param.pointer and createObject(command.name) and command.name != 'vkEnumeratePhysicalDevices' and prefix == 'Finish':
                 if param.type in self.vk.handles:
                     create_pipelines_call = True
                     create_shaders_call = True
