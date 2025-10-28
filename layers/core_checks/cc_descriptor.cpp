@@ -2678,18 +2678,15 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
         BufferAddressValidation<4> buffer_address_validator = {{{
             {"VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08055",
              [buffer_usage](const vvl::Buffer &buffer_state) {
-                 if ((buffer_state.usage & descriptor_buffer_usage) != (buffer_usage & descriptor_buffer_usage)) {
-                     return true;
-                 }
-                 return false;
+                 return ((buffer_state.usage & descriptor_buffer_usage) != (buffer_usage & descriptor_buffer_usage));
              },
              [buffer_usage, i]() {
                  return "pBindingInfos[" + std::to_string(i) + "].usage is " +
                         string_VkBufferUsageFlags2(buffer_usage & descriptor_buffer_usage) +
-                        " but none of the following buffers contain it:";
+                        " but none of the following buffers contain it";
              },
              [](const vvl::Buffer &buffer_state) {
-                 return "buffer has usage " + string_VkBufferUsageFlags2(buffer_state.usage & descriptor_buffer_usage);
+                 return "has usage " + string_VkBufferUsageFlags2(buffer_state.usage & descriptor_buffer_usage);
              }},
 
             {"VUID-VkDescriptorBufferBindingInfoEXT-usage-08122",
@@ -2701,7 +2698,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                  }
                  return false;
              },
-             []() { return "The following buffers were not created with VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT:"; },
+             []() { return "The following buffers are missing VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT"; },
              [](const vvl::Buffer &buffer_state) { return "has usage " + string_VkBufferUsageFlags2(buffer_state.usage); }},
 
             {
@@ -2714,12 +2711,8 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                     }
                     return false;
                 },
-                []() {
-                    return "The following buffers were not created with VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT:";
-                },
-                [](const vvl::Buffer &buffer_state) {
-                    return "buffer has usage " + string_VkBufferUsageFlags2(buffer_state.usage);
-                },
+                []() { return "The following buffers are missing VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT"; },
+                [](const vvl::Buffer &buffer_state) { return "has usage " + string_VkBufferUsageFlags2(buffer_state.usage); },
             },
 
             {"VUID-VkDescriptorBufferBindingInfoEXT-usage-08124",
@@ -2731,11 +2724,8 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                  }
                  return false;
              },
-             []() {
-                 return "The following buffers were not created with "
-                        "VK_BUFFER_USAGE_2_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT:";
-             },
-             [](const vvl::Buffer &buffer_state) { return "buffer has usage " + string_VkBufferUsageFlags2(buffer_state.usage); }},
+             []() { return "The following buffers are missing VK_BUFFER_USAGE_2_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT"; },
+             [](const vvl::Buffer &buffer_state) { return "has usage " + string_VkBufferUsageFlags2(buffer_state.usage); }},
         }}};
 
         buffer_address_validator.update_callback = [buffer_usage, &push_descriptor_buffers, &resource_buffers,
@@ -3113,27 +3103,19 @@ bool CoreChecks::ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoE
         }
     }
 
-    BufferAddressValidation<1> buffer_address_validator = {{{{
-        "VUID-VkDescriptorAddressInfoEXT-range-08045",
-        [&address_info](const vvl::Buffer &buffer_state) {
-            const VkDeviceSize end = buffer_state.create_info.size - (address_info.address - buffer_state.deviceAddress);
-            return address_info.range > end;
-        },
-        [&address_info]() {
-            const vvl::range<VkDeviceAddress> address_range{address_info.address, address_info.address + address_info.range};
-            return "The following buffers do not contain the needed " + std::to_string(address_info.range) +
-                   " bytes at address range " + string_range_hex(address_range) + ":";
-        },
-        [](const vvl::Buffer &buffer_state) {
-            const vvl::range<VkDeviceAddress> buffer_address_range{buffer_state.deviceAddress,
-                                                                   buffer_state.deviceAddress + buffer_state.create_info.size};
-            return "buffer has " + std::to_string(buffer_state.create_info.size) + " bytes at range " +
-                   string_range_hex(buffer_address_range);
-        },
-    }}}};
+    BufferAddressValidation<1> buffer_address_validator = {
+        {{{"VUID-VkDescriptorAddressInfoEXT-range-08045",
+           [&address_info](const vvl::Buffer &buffer_state) {
+               const VkDeviceSize end = buffer_state.create_info.size - (address_info.address - buffer_state.deviceAddress);
+               return address_info.range > end;
+           },
+           [&address_info]() {
+               return "The VkDescriptorAddressInfoEXT::range (" + std::to_string(address_info.range) +
+                      ") bytes does not fit in any buffer";
+           }}}}};
 
     skip |= buffer_address_validator.ValidateDeviceAddress(*this, address_loc.dot(Field::address), LogObjectList(device),
-                                                           address_info.address);
+                                                           address_info.address, address_info.range);
 
     return skip;
 }

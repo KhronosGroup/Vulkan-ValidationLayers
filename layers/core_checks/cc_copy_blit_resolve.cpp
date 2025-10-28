@@ -3523,27 +3523,19 @@ bool CoreChecks::ValidateStridedDeviceAddressRange(VkCommandBuffer command_buffe
                          "is zero, but size is non-zero (%" PRIu64 ")", strided_range.size);
     }
 
-    BufferAddressValidation<1> buffer_address_validator = {{{{
-        "VUID-VkStridedDeviceAddressRangeKHR-address-11365",
-        [&strided_range](const vvl::Buffer &buffer_state) {
-            const VkDeviceSize end = buffer_state.create_info.size - (strided_range.address - buffer_state.deviceAddress);
-            return strided_range.size > end;
-        },
-        [&strided_range]() {
-            const vvl::range<VkDeviceAddress> address_range{strided_range.address, strided_range.address + strided_range.size};
-            return "The following buffers do not contain the needed " + std::to_string(strided_range.size) +
-                   " bytes at address range " + string_range_hex(address_range) + ":";
-        },
-        [](const vvl::Buffer &buffer_state) {
-            const vvl::range<VkDeviceAddress> buffer_address_range{buffer_state.deviceAddress,
-                                                                   buffer_state.deviceAddress + buffer_state.create_info.size};
-            return "buffer has " + std::to_string(buffer_state.create_info.size) + " bytes at range " +
-                   string_range_hex(buffer_address_range);
-        },
-    }}}};
+    BufferAddressValidation<1> buffer_address_validator = {
+        {{{"VUID-VkStridedDeviceAddressRangeKHR-address-11365",
+           [&strided_range](const vvl::Buffer &buffer_state) {
+               const VkDeviceSize end = buffer_state.create_info.size - (strided_range.address - buffer_state.deviceAddress);
+               return strided_range.size > end;
+           },
+           [&strided_range]() {
+               return "The VkStridedDeviceAddressRangeKHR::size (" + std::to_string(strided_range.size) +
+                      ") bytes does not fit in any buffer";
+           }}}}};
 
-    skip |= buffer_address_validator.ValidateDeviceAddress(*this, strided_range_loc.dot(Field::address),
-                                                           LogObjectList(command_buffer), strided_range.address);
+    skip |= buffer_address_validator.ValidateDeviceAddress(
+        *this, strided_range_loc.dot(Field::address), LogObjectList(command_buffer), strided_range.address, strided_range.size);
 
     return skip;
 }

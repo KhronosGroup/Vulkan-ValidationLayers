@@ -22,7 +22,6 @@
 class PositiveMemory : public VkLayerTest {};
 
 TEST_F(PositiveMemory, MemoryDecompression) {
-    TEST_DESCRIPTION("Validate vkCmdDecompressMemoryEXT");
     AddRequiredExtensions(VK_EXT_MEMORY_DECOMPRESSION_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
@@ -78,7 +77,6 @@ TEST_F(PositiveMemory, MemoryDecompression) {
 }
 
 TEST_F(PositiveMemory, MemoryDecompressionIndirectCount) {
-    TEST_DESCRIPTION("Validate vkCmdDecompressMemoryIndirectCountEXT");
     AddRequiredExtensions(VK_EXT_MEMORY_DECOMPRESSION_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
