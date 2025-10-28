@@ -20,7 +20,7 @@
 # limitations under the License.
 
 import os
-from generators.generator_utils import buildListVUID, getVUID, PlatformGuardHelper
+from generators.generator_utils import buildListVUID, getVUID, createObject, destroyObject, PlatformGuardHelper
 from vulkan_object import Handle, Command, Struct, Member, Param
 from base_generator import BaseGenerator
 
@@ -1094,8 +1094,8 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
         pre_call_record = ''
         post_call_record = ''
         isGetCreate = 'vkGet' in command.name and command.params[-1].pointer and not command.params[-1].const
-        isCreate = any(x in command.name for x in ['Create', 'Allocate', 'Enumerate', 'RegisterDeviceEvent', 'RegisterDisplayEvent', 'AcquirePerformanceConfigurationINTEL']) or isGetCreate
-        isDestroy = any(x in command.name for x in ['Destroy', 'Free', 'ReleasePerformanceConfigurationINTEL'])
+        isCreate = createObject(command.name) or isGetCreate
+        isDestroy = destroyObject(command.name)
 
         # TODO - we need to wrap with autogen list here for header to still build the function definition,
         # but this function is being used in the header to duplicate work to know if the function will be used

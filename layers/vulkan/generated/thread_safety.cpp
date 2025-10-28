@@ -4803,6 +4803,9 @@ void Device::PostCallRecordRegisterDeviceEventEXT(VkDevice device, const VkDevic
                                                   const VkAllocationCallbacks* pAllocator, VkFence* pFence,
                                                   const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, record_obj.location);
+    if (record_obj.result == VK_SUCCESS) {
+        CreateObject(*pFence);
+    }
 }
 
 void Device::PreCallRecordGetSwapchainCounterEXT(VkDevice device, VkSwapchainKHR swapchain, VkSurfaceCounterFlagBitsEXT counter,
