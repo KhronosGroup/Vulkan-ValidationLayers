@@ -1780,6 +1780,10 @@ TEST_F(PositiveDescriptorBuffer, PushDescriptor) {
     descriptor_buffer_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
     vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &descriptor_buffer_binding_info);
 
+    const uint32_t index = 0;
+    const VkDeviceSize offset = 0;
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &index, &offset);
+
     VkDescriptorBufferInfo buffer_info = {buffer_data1, 0, VK_WHOLE_SIZE};
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = VK_NULL_HANDLE;
