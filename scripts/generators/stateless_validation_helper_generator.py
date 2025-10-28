@@ -74,6 +74,8 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkUpdateDescriptorSets',
             'vkBeginCommandBuffer',
             'vkFreeCommandBuffers',
+            'vkCmdDecompressMemoryEXT',
+            'vkCmdDecompressMemoryIndirectCountEXT',
             'vkCmdSetViewport',
             'vkCmdSetScissor',
             'vkCmdSetLineWidth',

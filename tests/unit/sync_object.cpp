@@ -2222,6 +2222,55 @@ TEST_F(NegativeSyncObject, BarrierAccessSync2DescriptorBuffer) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeSyncObject, BarrierAccessSync2MemoryDecompression) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_MEMORY_DECOMPRESSION_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    VkMemoryBarrier2 mem_barrier = vku::InitStructHelper();
+
+    m_command_buffer.Begin();
+
+    // srcAccessMask mismatch: decompression READ access without decompression stage
+    mem_barrier = vku::InitStructHelper();
+    mem_barrier.srcAccessMask = VK_ACCESS_2_MEMORY_DECOMPRESSION_READ_BIT_EXT;
+    mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-srcAccessMask-11771");
+    m_command_buffer.BarrierKHR(mem_barrier);
+    m_errorMonitor->VerifyFound();
+
+    // srcAccessMask mismatch: decompression WRITE access without decompression stage
+    mem_barrier = vku::InitStructHelper();
+    mem_barrier.srcAccessMask = VK_ACCESS_2_MEMORY_DECOMPRESSION_WRITE_BIT_EXT;
+    mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-srcAccessMask-11772");
+    m_command_buffer.BarrierKHR(mem_barrier);
+    m_errorMonitor->VerifyFound();
+
+    // dstAccessMask mismatch: decompression READ access without decompression stage
+    mem_barrier = vku::InitStructHelper();
+    mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    mem_barrier.dstAccessMask = VK_ACCESS_2_MEMORY_DECOMPRESSION_READ_BIT_EXT;
+    mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-dstAccessMask-11771");
+    m_command_buffer.BarrierKHR(mem_barrier);
+    m_errorMonitor->VerifyFound();
+
+    // dstAccessMask mismatch: decompression WRITE access without decompression stage
+    mem_barrier = vku::InitStructHelper();
+    mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    mem_barrier.dstAccessMask = VK_ACCESS_2_MEMORY_DECOMPRESSION_WRITE_BIT_EXT;
+    mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-dstAccessMask-11772");
+    m_command_buffer.BarrierKHR(mem_barrier);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeSyncObject, BarrierAccessVideoDecode) {
     TEST_DESCRIPTION("Test barrier with access decode read bit.");
 

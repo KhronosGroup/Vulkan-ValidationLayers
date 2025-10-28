@@ -351,6 +351,9 @@
                 "VkPhysicalDeviceMemoryDecompressionFeaturesNV": {
                     "memoryDecompression": true
                 },
+                "VkPhysicalDeviceMemoryDecompressionFeaturesEXT": {
+                    "memoryDecompression": true
+                },
                 "VkPhysicalDeviceShadingRateImageFeaturesNV": {
                     "shadingRateImage": true,
                     "shadingRateCoarseSampleOrder": true
@@ -1655,6 +1658,12 @@
                 "VkPhysicalDeviceMemoryDecompressionPropertiesNV": {
                     "maxDecompressionIndirectCount": 4294967000
                 },
+                "VkPhysicalDeviceMemoryDecompressionPropertiesEXT": {
+                    "maxDecompressionIndirectCount": 4294967000,
+                    "decompressionMethods": [
+                        "VK_MEMORY_DECOMPRESSION_METHOD_GDEFLATE_1_0_BIT_EXT"
+                    ]
+                },
                 "VkPhysicalDeviceShadingRateImagePropertiesNV": {
                     "shadingRatePaletteSize": 32,
                     "shadingRateMaxCoarseSamples": 32
@@ -2336,6 +2345,7 @@
                 "VK_EXT_map_memory_placed": 1,
                 "VK_EXT_memory_budget": 1,
                 "VK_EXT_memory_priority": 1,
+                "VK_EXT_memory_decompression": 1,
                 "VK_EXT_mesh_shader": 1,
                 "VK_EXT_metal_objects": 1,
                 "VK_EXT_metal_surface": 1,
