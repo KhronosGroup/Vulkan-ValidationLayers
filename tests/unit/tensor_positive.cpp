@@ -239,3 +239,58 @@ TEST_F(PositiveTensor, DescriptorBindingUpdateAfterBindTensor) {
 
     vkt::DescriptorSetLayout(*m_device, create_info);
 }
+
+TEST_F(PositiveTensor, WriteDescriptorSetTensorInfoNullViews) {
+    TEST_DESCRIPTION("Test writing a tensor descriptor with null tensor views");
+    AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::nullDescriptor);
+    RETURN_IF_SKIP(InitBasicTensor());
+    vkt::Tensor tensor(*m_device);
+    tensor.BindToMem();
+
+    VkTensorViewCreateInfoARM tensor_view_create_info = vku::InitStructHelper();
+    tensor_view_create_info.tensor = tensor.handle();
+    tensor_view_create_info.format = tensor.Format();
+
+    vkt::TensorView view(*m_device, tensor_view_create_info);
+
+    constexpr uint32_t tensor_binding_count = 1;
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_TENSOR_ARM, tensor_binding_count, VK_SHADER_STAGE_ALL, nullptr},
+                                       });
+    std::vector<VkTensorViewARM> views = {VK_NULL_HANDLE};
+    VkWriteDescriptorSetTensorARM tensor_descriptor_write = vku::InitStructHelper();
+    tensor_descriptor_write.tensorViewCount = views.size();
+    tensor_descriptor_write.pTensorViews = views.data();
+
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper(&tensor_descriptor_write);
+    descriptor_write.dstSet = descriptor_set.set_;
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = tensor_binding_count;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_TENSOR_ARM;
+
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
+}
+
+TEST_F(PositiveTensor, DescriptorTensorViewNull) {
+    TEST_DESCRIPTION("Descriptor buffer with null tensor views.");
+    AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::nullDescriptor);
+    AddRequiredFeature(vkt::Feature::descriptorBuffer);
+    RETURN_IF_SKIP(InitBasicTensor());
+
+    VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(descriptor_buffer_properties);
+    uint8_t buffer[128];
+
+    VkDescriptorGetTensorInfoARM tensor_info = vku::InitStructHelper();
+    tensor_info.tensorView = VK_NULL_HANDLE;
+
+    VkDescriptorGetInfoEXT dgi = vku::InitStructHelper(&tensor_info);
+    dgi.type = VK_DESCRIPTOR_TYPE_TENSOR_ARM;
+
+    vk::GetDescriptorEXT(device(), &dgi, descriptor_buffer_properties.storageBufferDescriptorSize, &buffer);
+}

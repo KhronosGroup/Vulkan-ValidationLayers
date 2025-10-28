@@ -1210,6 +1210,15 @@ bool Device::manual_PreCallValidateGetDescriptorEXT(VkDevice device, const VkDes
             }
         }
     }
+
+    const auto *tensor_struct = vku::FindStructInPNextChain<VkDescriptorGetTensorInfoARM>(pDescriptorInfo->pNext);
+    if (tensor_struct) {
+        if (!enabled_features.nullDescriptor && tensor_struct->tensorView == VK_NULL_HANDLE) {
+            skip |= LogError("VUID-VkDescriptorGetTensorInfoARM-tensorView-09899", device,
+                             error_obj.location.dot(Field::pNext).dot(Field::tensorView),
+                             "is VK_NULL_HANDLE and the nullDescriptor feature is not enabled.");
+        }
+    }
     return skip;
 }
 
