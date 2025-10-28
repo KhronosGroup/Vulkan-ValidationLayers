@@ -862,6 +862,9 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo &rendering_info, 
             color_attachment.layout = rendering_attachment.imageLayout;
             color_attachment.type_index = i;
             active_color_attachments_index.insert(i);
+            if (color_attachment.image_view) {
+                TrackImageViewFirstLayout(*color_attachment.image_view, rendering_attachment.imageLayout);
+            }
             if (rendering_attachment.resolveMode != VK_RESOLVE_MODE_NONE &&
                 rendering_attachment.resolveImageView != VK_NULL_HANDLE) {
                 auto &resolve_attachment = active_attachments[GetDynamicRenderingColorResolveAttachmentIndex(i)];
@@ -878,6 +881,9 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo &rendering_info, 
         depth_attachment.image_view = dev_data.Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView).get();
         depth_attachment.type = AttachmentInfo::Type::Depth;
         depth_attachment.layout = rendering_info.pDepthAttachment->imageLayout;
+        if (depth_attachment.image_view) {
+            TrackImageViewFirstLayout(*depth_attachment.image_view, rendering_info.pDepthAttachment->imageLayout);
+        }
         if (rendering_info.pDepthAttachment->resolveMode != VK_RESOLVE_MODE_NONE &&
             rendering_info.pDepthAttachment->resolveImageView != VK_NULL_HANDLE) {
             auto &resolve_attachment = active_attachments[GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::DepthResolve)];
@@ -892,6 +898,9 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo &rendering_info, 
         stencil_attachment.image_view = dev_data.Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView).get();
         stencil_attachment.type = AttachmentInfo::Type::Stencil;
         stencil_attachment.layout = rendering_info.pStencilAttachment->imageLayout;
+        if (stencil_attachment.image_view) {
+            TrackImageViewFirstLayout(*stencil_attachment.image_view, rendering_info.pStencilAttachment->imageLayout);
+        }
         if (rendering_info.pStencilAttachment->resolveMode != VK_RESOLVE_MODE_NONE &&
             rendering_info.pStencilAttachment->resolveImageView != VK_NULL_HANDLE) {
             auto &resolve_attachment = active_attachments[GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::StencilResolve)];
