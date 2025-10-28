@@ -709,32 +709,24 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                                      : pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03672",
                                                                  "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03672");
 
-        BufferAddressValidation<2> buffer_address_validator = {{{
-            {pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03674",
-                       "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03674"),
-             [](const vvl::Buffer &buffer_state) { return (buffer_state.usage & VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT) == 0; },
-             []() { return "The following buffers are missing VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT usage flag:"; },
-             [](const vvl::Buffer &buffer_state) { return "buffer usage is " + string_VkBufferUsageFlags2(buffer_state.usage); }},
+        BufferAddressValidation<2> buffer_address_validator = {
+            {{{pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03674",
+                         "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03674"),
+               [](const vvl::Buffer &buffer_state) { return (buffer_state.usage & VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT) == 0; },
+               []() { return "The following buffers are missing VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT"; },
+               [](const vvl::Buffer &buffer_state) { return "usage is " + string_VkBufferUsageFlags2(buffer_state.usage); }},
 
-            {
-                scratch_address_range_vuid,
-                [scratch_address_range](const vvl::Buffer &buffer_state) {
-                    const vvl::range<VkDeviceSize> buffer_address_range = buffer_state.DeviceAddressRange();
-                    return !buffer_address_range.includes(scratch_address_range);
-                },
-                [scratch_address_range]() {
-                    return "The following buffers have an address range that does not include scratch address range " +
-                           string_range_hex(scratch_address_range) + ":";
-                },
-                [](const vvl::Buffer &buffer_state) {
-                    return "buffer address range is " + string_range_hex(buffer_state.DeviceAddressRange());
-                },
-            },
-
-        }}};
+              {scratch_address_range_vuid,
+               [scratch_address_range](const vvl::Buffer &buffer_state) {
+                   const vvl::range<VkDeviceSize> buffer_address_range = buffer_state.DeviceAddressRange();
+                   return !buffer_address_range.includes(scratch_address_range);
+               },
+               [scratch_size]() {
+                   return "The scratch size (" + std::to_string(scratch_size) + ") does not fit in any buffer";
+               }}}}};
 
         skip |= buffer_address_validator.ValidateDeviceAddress(*this, info_loc.dot(Field::scratchData).dot(Field::deviceAddress),
-                                                               cb_objlist, info.scratchData.deviceAddress);
+                                                               cb_objlist, info.scratchData.deviceAddress, scratch_size);
     }
 
     return skip;
@@ -2041,8 +2033,8 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(const vvl::CommandBuffer &
         return skip;
     }
 
-    const vvl::range<VkDeviceSize> requested_range(binding_table.deviceAddress,
-                                                   binding_table.deviceAddress + binding_table.size - 1);
+    const VkDeviceSize requested_size = binding_table.size - 1;
+    const vvl::range<VkDeviceSize> requested_range(binding_table.deviceAddress, binding_table.deviceAddress + requested_size);
 
     BufferAddressValidation<3> buffer_address_validator = {{{
         {
@@ -2050,11 +2042,8 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(const vvl::CommandBuffer &
             [](const vvl::Buffer &buffer_state) {
                 return (static_cast<uint32_t>(buffer_state.usage) & VK_BUFFER_USAGE_2_SHADER_BINDING_TABLE_BIT_KHR) == 0;
             },
-            []() {
-                return "The following buffers have not been created with the VK_BUFFER_USAGE_2_SHADER_BINDING_TABLE_BIT_KHR "
-                       "usage flag:";
-            },
-            [](const vvl::Buffer &buffer_state) { return "buffer has usage " + string_VkBufferUsageFlags2(buffer_state.usage); },
+            []() { return "The following buffers are missing VK_BUFFER_USAGE_2_SHADER_BINDING_TABLE_BIT_KHR"; },
+            [](const vvl::Buffer &buffer_state) { return "has usage " + string_VkBufferUsageFlags2(buffer_state.usage); },
         },
 
         {"VUID-VkStridedDeviceAddressRegionKHR-size-04631",
@@ -2062,26 +2051,22 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(const vvl::CommandBuffer &
              const auto buffer_address_range = buffer_state.DeviceAddressRange();
              return !buffer_address_range.includes(requested_range);
          },
-         [table_loc, requested_range_string = string_range_hex(requested_range)]() {
-             return "The following buffers do not include " + table_loc.Fields() + " buffer device address range " +
-                    requested_range_string + ':';
-         },
-         [](const vvl::Buffer &buffer_state) {
-             return "buffer device address range is " + string_range_hex(buffer_state.DeviceAddressRange());
+         [&table_loc, &binding_table]() {
+             return "The " + table_loc.Fields() + "->size (" + std::to_string(binding_table.size) +
+                    ") - 1 does not fit in any buffer";
          }},
 
         {"VUID-VkStridedDeviceAddressRegionKHR-size-04632",
          [&binding_table](const vvl::Buffer &buffer_state) { return binding_table.stride > buffer_state.create_info.size; },
          [table_loc, &binding_table]() {
-             return "The following buffers have a size inferior to " + table_loc.Fields() + "->stride (" +
-                    std::to_string(binding_table.stride) + "):";
-         },
-         [](const vvl::Buffer &buffer_state) { return "buffer size is " + std::to_string(buffer_state.create_info.size); }},
+             return "The " + table_loc.Fields() + "->stride (" + std::to_string(binding_table.stride) +
+                    ") does not fit in any buffer";
+         }},
     }}};
 
     skip |= buffer_address_validator.ValidateDeviceAddress(*this, table_loc.dot(Field::deviceAddress),
                                                            cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR),
-                                                           binding_table.deviceAddress);
+                                                           binding_table.deviceAddress, requested_size);
 
     return skip;
 }
@@ -2142,25 +2127,22 @@ bool CoreChecks::PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(
                   "VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10550",
                   [](const vvl::Buffer &buffer_state) { return (buffer_state.usage & VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT) == 0; },
                   []() { return "The following buffers are missing VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT"; },
-                  [](const vvl::Buffer &buffer_state) {
-                      return "buffer has usage " + string_VkBufferUsageFlags2(buffer_state.usage);
-                  },
+                  [](const vvl::Buffer &buffer_state) { return "has usage " + string_VkBufferUsageFlags2(buffer_state.usage); },
               },
               {
                   "VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10541",
                   [&build_size_info](const vvl::Buffer &buffer_state) {
                       return buffer_state.requirements.size < build_size_info.buildScratchSize;
                   },
-                  []() { return "The following buffers have insufficient scratch memory size:"; },
-                  [&build_size_info](const vvl::Buffer &buffer_state) {
-                      return "buffer memory size is " + std::to_string(buffer_state.requirements.size) +
-                             ", required scratch size is " + std::to_string(build_size_info.buildScratchSize);
+                  [&build_size_info]() {
+                      return "The buildScratchSize (" + std::to_string(build_size_info.buildScratchSize) +
+                             ") does not fit in any buffer";
                   },
               }}}};
 
-        skip |=
-            buffer_address_validator.ValidateDeviceAddress(*this, error_obj.location.dot(Field::pBuildInfo).dot(Field::scratchData),
-                                                           LogObjectList(commandBuffer), pBuildInfo->scratchData);
+        skip |= buffer_address_validator.ValidateDeviceAddress(
+            *this, error_obj.location.dot(Field::pBuildInfo).dot(Field::scratchData), LogObjectList(commandBuffer),
+            pBuildInfo->scratchData, build_size_info.buildScratchSize);
     }
 
     {
@@ -2172,7 +2154,7 @@ bool CoreChecks::PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(
             []() {
                 return "The following buffers are missing VK_BUFFER_USAGE_2_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR";
             },
-            [](const vvl::Buffer &buffer_state) { return "buffer has usage " + string_VkBufferUsageFlags2(buffer_state.usage); },
+            [](const vvl::Buffer &buffer_state) { return "has usage " + string_VkBufferUsageFlags2(buffer_state.usage); },
         }}}};
 
         skip |=
@@ -2189,7 +2171,7 @@ bool CoreChecks::PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(
             []() {
                 return "The following buffers are missing VK_BUFFER_USAGE_2_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR";
             },
-            [](const vvl::Buffer &buffer_state) { return "buffer has usage " + string_VkBufferUsageFlags2(buffer_state.usage); },
+            [](const vvl::Buffer &buffer_state) { return "has usage " + string_VkBufferUsageFlags2(buffer_state.usage); },
         }}}};
 
         skip |= buffer_address_validator.ValidateDeviceAddress(*this,
@@ -2204,7 +2186,7 @@ bool CoreChecks::PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(
                 return (buffer_state.usage & VK_BUFFER_USAGE_2_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR) == 0;
             },
             []() { return "The following buffers are missing VK_BUFFER_USAGE_2_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR"; },
-            [](const vvl::Buffer &buffer_state) { return "buffer has usage " + string_VkBufferUsageFlags2(buffer_state.usage); },
+            [](const vvl::Buffer &buffer_state) { return "has usage " + string_VkBufferUsageFlags2(buffer_state.usage); },
         }}}};
 
         skip |= buffer_address_validator.ValidateDeviceAddress(
@@ -2242,26 +2224,22 @@ bool CoreChecks::PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(
                       return (buffer_state.usage & VK_BUFFER_USAGE_2_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR) == 0;
                   },
                   []() { return "The following buffers are missing VK_BUFFER_USAGE_2_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR"; },
-                  [](const vvl::Buffer &buffer_state) {
-                      return "buffer has usage " + string_VkBufferUsageFlags2(buffer_state.usage);
-                  },
+                  [](const vvl::Buffer &buffer_state) { return "has usage " + string_VkBufferUsageFlags2(buffer_state.usage); },
               },
               {
                   "VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10543",
                   [&build_size_info](const vvl::Buffer &buffer_state) {
                       return buffer_state.requirements.size < build_size_info.accelerationStructureSize;
                   },
-                  []() { return "The following buffers have insufficient destination memory size:"; },
-                  [&build_size_info](const vvl::Buffer &buffer_state) {
-                      return "buffer memory size is " + std::to_string(buffer_state.requirements.size) +
-                             ", required acceleration structure size is " +
-                             std::to_string(build_size_info.accelerationStructureSize);
+                  [&build_size_info]() {
+                      return "The accelerationStructureSize (" + std::to_string(build_size_info.accelerationStructureSize) +
+                             ") does not fit in any buffer";
                   },
               }}}};
 
         skip |= buffer_address_validator.ValidateDeviceAddress(
             *this, error_obj.location.dot(Field::pBuildInfo).dot(Field::dstAccelerationStructureData), LogObjectList(commandBuffer),
-            pBuildInfo->dstAccelerationStructureData);
+            pBuildInfo->dstAccelerationStructureData, build_size_info.accelerationStructureSize);
     }
 
     if (pBuildInfo->dstAccelerationStructureData && pBuildInfo->scratchData) {
@@ -2343,37 +2321,35 @@ bool CoreChecks::ValidateBuildPartitionedAccelerationStructureInfoNV(
         skip |= LogError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-scratchData-10558", device,
                          build_info_loc.dot(Field::scratchData), "(0x%" PRIx64 ") must not be NULL", build_info.scratchData);
     } else {
-        BufferAddressValidation<1> buffer_address_validator = {{{{
-            "VUID-VkBuildPartitionedAccelerationStructureInfoNV-scratchData-10559",
-            [&build_scratch_size](const vvl::Buffer &buffer_state) { return buffer_state.requirements.size < build_scratch_size; },
-            []() { return "The following buffers have insufficient scratch memory size:"; },
-            [&build_scratch_size](const vvl::Buffer &buffer_state) {
-                return "buffer memory size is " + std::to_string(buffer_state.requirements.size) +
-                       ", required buildScratchSize is " + std::to_string(build_scratch_size);
-            },
-        }}}};
+        BufferAddressValidation<1> buffer_address_validator = {
+            {{{"VUID-VkBuildPartitionedAccelerationStructureInfoNV-scratchData-10559",
+               [&build_scratch_size](const vvl::Buffer &buffer_state) {
+                   return buffer_state.requirements.size < build_scratch_size;
+               },
+               [&build_scratch_size]() {
+                   return "The buildScratchSize (" + std::to_string(build_scratch_size) + ") does not fit in any buffer";
+               }}}}};
 
         skip |= buffer_address_validator.ValidateDeviceAddress(*this, build_info_loc.dot(Field::scratchData), LogObjectList(device),
-                                                               build_info.scratchData);
+                                                               build_info.scratchData, build_scratch_size);
     }
     if (!build_info.dstAccelerationStructureData) {
         skip |= LogError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-dstAccelerationStructureData-10561", device,
                          build_info_loc.dot(Field::dstAccelerationStructureData), "(0x%" PRIx64 ") must not be NULL",
                          build_info.dstAccelerationStructureData);
     } else {
-        BufferAddressValidation<1> buffer_address_validator = {{{{
-            "VUID-VkBuildPartitionedAccelerationStructureInfoNV-dstAccelerationStructureData-10562",
-            [&build_acceleration_structure_size](const vvl::Buffer &buffer_state) {
-                return buffer_state.requirements.size < build_acceleration_structure_size;
-            },
-            []() { return "The following buffers have insufficient destination memory size:"; },
-            [&build_acceleration_structure_size](const vvl::Buffer &buffer_state) {
-                return "buffer memory size is " + std::to_string(buffer_state.requirements.size) +
-                       ", required accelerationStructureSize is " + std::to_string(build_acceleration_structure_size);
-            },
-        }}}};
+        BufferAddressValidation<1> buffer_address_validator = {
+            {{{"VUID-VkBuildPartitionedAccelerationStructureInfoNV-dstAccelerationStructureData-10562",
+               [&build_acceleration_structure_size](const vvl::Buffer &buffer_state) {
+                   return buffer_state.requirements.size < build_acceleration_structure_size;
+               },
+               [&build_acceleration_structure_size]() {
+                   return "The accelerationStructureSize (" + std::to_string(build_acceleration_structure_size) +
+                          ") does not fit in any buffer";
+               }}}}};
         skip |= buffer_address_validator.ValidateDeviceAddress(*this, build_info_loc.dot(Field::dstAccelerationStructureData),
-                                                               LogObjectList(device), build_info.dstAccelerationStructureData);
+                                                               LogObjectList(device), build_info.dstAccelerationStructureData,
+                                                               build_acceleration_structure_size);
     }
 
     if (SafeModulo(build_info.srcInfosCount, 4) != 0) {
@@ -2419,21 +2395,15 @@ bool CoreChecks::PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV(
                  return buffer_state.create_info.size < accelerationStructure_size.buildScratchSize;
              },
              [&accelerationStructure_size]() {
-                 return "The scratch memory of the cluster acceleration structure specified in "
-                        "VkClusterAccelerationStructureCommandsInfoNV::scratchData must be larger than or equal to the "
-                        "scratch size (" +
-                        std::to_string(accelerationStructure_size.buildScratchSize) +
-                        ") queried with vkGetClusterAccelerationStructureBuildSizesNV";
-             },
-             [](const vvl::Buffer &buffer_state) {
-                 return "buffer size " + std::to_string(buffer_state.create_info.size) + " is less than required scratch size";
+                 return "The buildScratchSize (" + std::to_string(accelerationStructure_size.buildScratchSize) +
+                        ") does not fit in any buffer";
              }},
             {"VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-pCommandInfos-10457",
              [](const vvl::Buffer &buffer_state) {
                  return (static_cast<uint32_t>(buffer_state.usage) & VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT) == 0;
              },
-             []() { return "The following buffers have not been created with the VK_BUFFER_USAGE_STORAGE_BUFFER_BIT usage flag:"; },
-             [](const vvl::Buffer &buffer_state) { return "buffer has usage " + string_VkBufferUsageFlags2(buffer_state.usage); }},
+             []() { return "The following buffers are missing VK_BUFFER_USAGE_STORAGE_BUFFER_BIT"; },
+             [](const vvl::Buffer &buffer_state) { return "has usage " + string_VkBufferUsageFlags2(buffer_state.usage); }},
         }}};
         skip |= scratch_buffer_validator.ValidateDeviceAddress(*this, command_infos_loc.dot(Field::scratchData), objlist,
                                                                pCommandInfos->scratchData);
@@ -2456,10 +2426,9 @@ bool CoreChecks::PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV(
                          VK_BUFFER_USAGE_2_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR) == 0;
              },
              []() {
-                 return "The following buffers have not been created with the "
-                        "VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR usage flag:";
+                 return "The following buffers are missing VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR";
              },
-             [](const vvl::Buffer &buffer_state) { return "buffer has usage " + string_VkBufferUsageFlags2(buffer_state.usage); }},
+             [](const vvl::Buffer &buffer_state) { return "has usage " + string_VkBufferUsageFlags2(buffer_state.usage); }},
         }}};
 
         skip |= read_only_flags_validator.ValidateDeviceAddress(
@@ -2476,10 +2445,10 @@ bool CoreChecks::PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV(
                  return (static_cast<uint32_t>(buffer_state.usage) & VK_BUFFER_USAGE_2_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR) == 0;
              },
              []() {
-                 return "The following buffers have not been created with the "
-                        "VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR usage flag:";
+                 return "The following buffers are missing "
+                        "VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR";
              },
-             [](const vvl::Buffer &buffer_state) { return "buffer has usage " + string_VkBufferUsageFlags2(buffer_state.usage); }},
+             [](const vvl::Buffer &buffer_state) { return "has usage " + string_VkBufferUsageFlags2(buffer_state.usage); }},
         }}};
 
         skip |= storage_flags_validator.ValidateDeviceAddress(*this, command_infos_loc.dot(Field::dstImplicitData), objlist,
@@ -2676,22 +2645,15 @@ bool CoreChecks::ValidateClusterAccelerationStructureCommandsInfoNV(
                          return buffer_state.create_info.size < accelerationStructure_size.accelerationStructureSize;
                      },
                      [&accelerationStructure_size]() {
-                         return "If input::opMode is VK_CLUSTER_ACCELERATION_STRUCTURE_OP_MODE_IMPLICIT_DESTINATIONS_NV and "
-                                "input::opType is not VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_MOVE_OBJECTS_NV"
-                                ", the memory in dstImplicitData must be equal to or larger than the "
-                                "VkAccelerationStructureBuildSizesInfoKHR::accelerationStructureSize value (" +
+                         return "The accelerationStructureSize (" +
                                 std::to_string(accelerationStructure_size.accelerationStructureSize) +
-                                ") returned from "
-                                "vkGetClusterAccelerationStructureBuildSizesNV with same input parameters";
-                     },
-                     [](const vvl::Buffer &buffer_state) {
-                         return "buffer size " + std::to_string(buffer_state.create_info.size) +
-                                " is less than required acceleration structure size";
+                                ") does not fit in any buffer";
                      }},
                 }}};
 
                 skip |= dst_implicit_size_validator.ValidateDeviceAddress(*this, command_infos_loc.dot(Field::dstImplicitData),
-                                                                          objlist, command_infos.dstImplicitData);
+                                                                          objlist, command_infos.dstImplicitData,
+                                                                          accelerationStructure_size.accelerationStructureSize);
             }
         }
     }
@@ -2732,23 +2694,15 @@ bool CoreChecks::ValidateClusterAccelerationStructureCommandsInfoNV(
                          return buffer_state.create_info.size < accelerationStructure_size.accelerationStructureSize;
                      },
                      [&accelerationStructure_size]() {
-                         return "If input::opMode is VK_CLUSTER_ACCELERATION_STRUCTURE_OP_MODE_EXPLICIT_DESTINATIONS_NV and "
-                                "input::opType is not VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_MOVE_OBJECTS_NV"
-                                ", the buffers in dstAddressesArray must have a size equal to or larger than the "
-                                "VkAccelerationStructureBuildSizesInfoKHR::accelerationStructureSize value (" +
+                         return "The accelerationStructureSize (" +
                                 std::to_string(accelerationStructure_size.accelerationStructureSize) +
-                                ") returned from "
-                                "vkGetClusterAccelerationStructureBuildSizesNV with same input parameters";
-                     },
-                     [](const vvl::Buffer &buffer_state) {
-                         return "buffer size " + std::to_string(buffer_state.create_info.size) +
-                                " is less than required acceleration structure size";
+                                ") does not fit in any buffer";
                      }},
                 }}};
 
                 skip |= dst_addresses_size_validator.ValidateDeviceAddress(
                     *this, command_infos_loc.dot(Field::dstAddressesArray).dot(Field::deviceAddress), objlist,
-                    command_infos.dstAddressesArray.deviceAddress);
+                    command_infos.dstAddressesArray.deviceAddress, accelerationStructure_size.accelerationStructureSize);
             }
         }
     }

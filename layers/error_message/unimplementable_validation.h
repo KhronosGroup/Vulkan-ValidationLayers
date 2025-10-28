@@ -562,6 +562,10 @@ const char* unimplementable_validation[] = {
     "VUID-VkGeneratedCommandsInfoEXT-sequenceCountAddress-parameter",
     "VUID-VkMicromapCreateInfoEXT-deviceAddress-parameter",
     "VUID-VkStridedDeviceAddressRegionKHR-deviceAddress-parameter",
+
+    // See issue in VK_EXT_memory_decompression where we discussed why this is not possible
+    // without implementing the decompression algorithm
+    "VUID-VkDecompressMemoryRegionEXT-decompressedSize-07689",
 };
 
 // VUs from deprecated extensions that would require complex codegen to get working

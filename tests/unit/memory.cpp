@@ -58,7 +58,6 @@ TEST_F(NegativeMemory, MemoryDecompressionEnabled) {
 }
 
 TEST_F(NegativeMemory, MemoryDecompressionIndirectAddressUnaligned) {
-    TEST_DESCRIPTION("vkCmdDecompressMemoryIndirectCountEXT: indirectCommandsAddress must be 4-byte aligned (07695)");
     AddRequiredExtensions(VK_EXT_MEMORY_DECOMPRESSION_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::memoryDecompression);
@@ -109,7 +108,6 @@ TEST_F(NegativeMemory, MemoryDecompressionIndirectAddressUnaligned) {
 }
 
 TEST_F(NegativeMemory, MemoryDecompressionIndirectCountAddressUnaligned) {
-    TEST_DESCRIPTION("vkCmdDecompressMemoryIndirectCountEXT: indirectCommandsCountAddress must be 4-byte aligned (07698)");
     AddRequiredExtensions(VK_EXT_MEMORY_DECOMPRESSION_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::memoryDecompression);
@@ -159,7 +157,6 @@ TEST_F(NegativeMemory, MemoryDecompressionIndirectCountAddressUnaligned) {
 }
 
 TEST_F(NegativeMemory, MemoryDecompressionCompressedSizeZero) {
-    TEST_DESCRIPTION("vkCmdDecompressMemoryEXT: compressedSize must not be zero (11795)");
     AddRequiredExtensions(VK_EXT_MEMORY_DECOMPRESSION_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::memoryDecompression);
@@ -196,7 +193,6 @@ TEST_F(NegativeMemory, MemoryDecompressionCompressedSizeZero) {
 }
 
 TEST_F(NegativeMemory, MemoryDecompressionDecompressedSizeZero) {
-    TEST_DESCRIPTION("vkCmdDecompressMemoryEXT: decompressedSize must not be zero (11796)");
     AddRequiredExtensions(VK_EXT_MEMORY_DECOMPRESSION_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::memoryDecompression);
@@ -233,7 +229,6 @@ TEST_F(NegativeMemory, MemoryDecompressionDecompressedSizeZero) {
 }
 
 TEST_F(NegativeMemory, MemoryDecompressionDstRangeExceedsBuffer) {
-    TEST_DESCRIPTION("vkCmdDecompressMemoryEXT: dstAddress+decompressedSize must be within the buffer (07688)");
     AddRequiredExtensions(VK_EXT_MEMORY_DECOMPRESSION_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::memoryDecompression);
@@ -273,8 +268,6 @@ TEST_F(NegativeMemory, MemoryDecompressionDstRangeExceedsBuffer) {
 }
 
 TEST_F(NegativeMemory, MemoryDecompressionIndirectStrideInvalid) {
-    TEST_DESCRIPTION(
-        "vkCmdDecompressMemoryIndirectCountEXT: stride must be multiple of 4 and >= sizeof(VkDecompressMemoryRegionEXT) (11767)");
     AddRequiredExtensions(VK_EXT_MEMORY_DECOMPRESSION_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::memoryDecompression);
@@ -388,7 +381,6 @@ TEST_F(NegativeMemory, MemoryDecompressionIndirectEnabled) {
 }
 
 TEST_F(NegativeMemory, MemoryDecompressionIndirectCount) {
-    TEST_DESCRIPTION("Validate vkCmdDecompressMemoryIndirectCountEXT");
     AddRequiredExtensions(VK_EXT_MEMORY_DECOMPRESSION_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::memoryDecompression);
@@ -444,7 +436,6 @@ TEST_F(NegativeMemory, MemoryDecompressionIndirectCount) {
 }
 
 TEST_F(NegativeMemory, MaxDecompressionCount) {
-    TEST_DESCRIPTION("Validate vkCmdDecompressMemoryIndirectCountEXT maxDecompressionCount");
     AddRequiredExtensions(VK_EXT_MEMORY_DECOMPRESSION_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::memoryDecompression);
@@ -495,7 +486,6 @@ TEST_F(NegativeMemory, MaxDecompressionCount) {
 }
 
 TEST_F(NegativeMemory, MemoryDecompressionIndirectAddressRangeSameBuffer) {
-    TEST_DESCRIPTION("Range [addr, addr + stride*count - 1] must be in the same buffer");
     AddRequiredExtensions(VK_EXT_MEMORY_DECOMPRESSION_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::memoryDecompression);
@@ -538,7 +528,6 @@ TEST_F(NegativeMemory, MemoryDecompressionIndirectAddressRangeSameBuffer) {
 }
 
 TEST_F(NegativeMemory, MemoryDecompression) {
-    TEST_DESCRIPTION("Validate incorrect usage of vkCmdDecompressMemoryEXT");
     AddRequiredExtensions(VK_EXT_MEMORY_DECOMPRESSION_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::memoryDecompression);
     RETURN_IF_SKIP(Init());
@@ -570,7 +559,6 @@ TEST_F(NegativeMemory, MemoryDecompression) {
 }
 
 TEST_F(NegativeMemory, MemoryDecompressionBufferUsage) {
-    TEST_DESCRIPTION("Validate memory decompression requires MEMORY_DECOMPRESSION usage on src/dst buffers");
     AddRequiredExtensions(VK_EXT_MEMORY_DECOMPRESSION_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::memoryDecompression);
@@ -611,7 +599,6 @@ TEST_F(NegativeMemory, MemoryDecompressionBufferUsage) {
 }
 
 TEST_F(NegativeMemory, MemoryDecompressionMethodSingleBit) {
-    TEST_DESCRIPTION("vkCmdDecompressMemoryEXT: decompressionMethod must have a single bit set");
     AddRequiredExtensions(VK_EXT_MEMORY_DECOMPRESSION_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
@@ -659,7 +646,6 @@ TEST_F(NegativeMemory, MemoryDecompressionMethodSingleBit) {
 }
 
 TEST_F(NegativeMemory, MemoryDecompressionSrcAddressOutOfRange) {
-    TEST_DESCRIPTION("Trigger only VUID-VkDecompressMemoryRegionEXT-srcAddress-07686 by exceeding the source buffer range");
     AddRequiredExtensions(VK_EXT_MEMORY_DECOMPRESSION_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
