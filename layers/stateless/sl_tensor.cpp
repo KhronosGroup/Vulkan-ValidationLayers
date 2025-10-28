@@ -49,7 +49,13 @@ bool Device::ValidateTensorDescriptionARM(const VkTensorDescriptionARM &descript
                              "(%" PRIi64 ") must equal the size in bytes of a tensor element (%" PRIu32 ")",
                              strides[description.dimensionCount - 1], texel_block_size);
         }
-
+        if (static_cast<uint64_t>(strides[0]) * static_cast<uint64_t>(description.pDimensions[0]) >
+            phys_dev_ext_props.tensor_properties.maxTensorSize) {
+            skip |= LogError("VUID-VkTensorDescriptionARM-pStrides-09884", device, description_loc.dot(Field::pStrides, 0),
+                             "(%" PRId64 ") x pDimensions[0] (%" PRId64
+                             ") is greater than VkPhysicalDeviceTensorPropertiesARM::maxTensorSize (%" PRIu64 ").",
+                             strides[0], description.pDimensions[0], phys_dev_ext_props.tensor_properties.maxTensorSize);
+        }
         for (uint32_t i = 0; i < description.dimensionCount; i++) {
             if ((strides[i] % texel_block_size) != 0) {
                 skip |=
@@ -59,7 +65,7 @@ bool Device::ValidateTensorDescriptionARM(const VkTensorDescriptionARM &descript
 
             if (strides[i] <= 0 || strides[i] > phys_dev_ext_props.tensor_properties.maxTensorStride) {
                 skip |= LogError("VUID-VkTensorDescriptionARM-pStrides-09738", device, description_loc.dot(Field::pStrides, i),
-                                 "(%" PRIi64 ") > maxTensorStride (%" PRIu64 ")", strides[i],
+                                 "(%" PRIi64 ") is <= 0 or > maxTensorStride (%" PRIu64 ")", strides[i],
                                  phys_dev_ext_props.tensor_properties.maxTensorStride);
             }
 
@@ -114,6 +120,11 @@ bool Device::ValidateTensorDescriptionARM(const VkTensorDescriptionARM &descript
             if (dims[i] <= 0) {
                 skip |= LogError("VUID-VkTensorDescriptionARM-pDimensions-09734", device,
                                  description_loc.dot(Field::pDimensions, i), "(%" PRIi64 ") must be greater than 0.", dims[i]);
+            } else if (static_cast<uint64_t>(dims[i]) > phys_dev_ext_props.tensor_properties.maxPerDimensionTensorElements) {
+                skip |=
+                    LogError("VUID-VkTensorDescriptionARM-pDimensions-09883", device, description_loc.dot(Field::pDimensions, i),
+                             "(%" PRIi64 ") is greater than maxPerDimensionTensorElements.(%" PRIu64 ")", dims[i],
+                             phys_dev_ext_props.tensor_properties.maxPerDimensionTensorElements);
             }
         }
         if (static_cast<uint64_t>(total_elements) > phys_dev_ext_props.tensor_properties.maxTensorElements || would_overflow) {
@@ -196,7 +207,6 @@ bool Device::manual_PreCallValidateCreateTensorARM(VkDevice device, const VkTens
                              string_VkTensorCreateFlagsARM(VK_TENSOR_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_ARM).c_str());
         }
     }
-
     if (auto external_memory_info = vku::FindStructInPNextChain<VkExternalMemoryTensorCreateInfoARM>(pCreateInfo->pNext)) {
         VkPhysicalDeviceExternalTensorInfoARM tensor_info = vku::InitStructHelper();
         tensor_info.pDescription = pCreateInfo->pDescription;

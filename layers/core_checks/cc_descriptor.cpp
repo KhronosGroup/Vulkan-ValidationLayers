@@ -3264,7 +3264,6 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
     // update on first pass of switch case
     const VkDescriptorAddressInfoEXT *address_info = nullptr;
     Field data_field = Field::Empty;
-
     const Location descriptor_info_loc = error_obj.location.dot(Field::pDescriptorInfo);
     switch (pDescriptorInfo->type) {
         case VK_DESCRIPTOR_TYPE_SAMPLER:
@@ -3350,8 +3349,14 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
                 }
             }
             break;
-
-        case VK_DESCRIPTOR_TYPE_TENSOR_ARM:  // not implemented
+        case VK_DESCRIPTOR_TYPE_TENSOR_ARM: {
+            const auto *tensor_struct = vku::FindStructInPNextChain<VkDescriptorGetTensorInfoARM>(pDescriptorInfo->pNext);
+            if (!tensor_struct) {
+                skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-09701", device, descriptor_info_loc.dot(Field::type),
+                                 "is VK_DESCRIPTOR_TYPE_TENSOR_ARM and pNext does not contain a valid "
+                                 "VkDescriptorGetTensorInfoARM structure.");
+            }
+        } break;
         default:
             break;
     }

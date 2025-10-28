@@ -1641,6 +1641,25 @@ bool CoreChecks::ValidateBindTensorMemoryARM(uint32_t bindInfoCount, const VkBin
                     FormatHandle(bind_info.memory).c_str(), string_VkExternalMemoryHandleTypeFlagBits(mem_info->import_handle_type.value()));
             }
         }
+        if (tensor_state->create_info.flags & VK_TENSOR_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_ARM) {
+            const auto allocate_flags = vku::FindStructInPNextChain<VkMemoryAllocateFlagsInfo>(mem_info->allocate_info.pNext);
+            if (allocate_flags) {
+                if (!(allocate_flags->flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT)) {
+                    const LogObjectList objlist(bind_info.tensor, bind_info.memory);
+                    skip |= LogError("VUID-VkBindTensorMemoryInfoARM-tensor-09943", objlist, bind_info_loc.dot(Field::memory),
+                                     "(%s) is missing VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT required for "
+                                     "VK_TENSOR_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_ARM tensor (%s).",
+                                     FormatHandle(bind_info.memory).c_str(), FormatHandle(bind_info.tensor).c_str());
+                }
+                if (!(allocate_flags->flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT)) {
+                    const LogObjectList objlist(bind_info.tensor, bind_info.memory);
+                    skip |= LogError("VUID-VkBindTensorMemoryInfoARM-tensor-09944", objlist, bind_info_loc.dot(Field::memory),
+                                     "(%s) is missing VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT required for "
+                                     "VK_TENSOR_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_ARM tensor (%s).",
+                                     FormatHandle(bind_info.memory).c_str(), FormatHandle(bind_info.tensor).c_str());
+                }
+            }
+        }
     }
     return skip;
 }

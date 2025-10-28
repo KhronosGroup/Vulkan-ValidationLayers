@@ -143,7 +143,7 @@ TEST_F(NegativeTensor, MaxTensorElements) {
     VkPhysicalDeviceTensorPropertiesARM tensor_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(tensor_props);
 
-    std::vector<int64_t> dims(tensor_props.maxTensorDimensionCount, UINT32_MAX);
+    std::vector<int64_t> dims(tensor_props.maxTensorDimensionCount, tensor_props.maxPerDimensionTensorElements - 1);
     desc.pDimensions = dims.data();
     desc.dimensionCount = tensor_props.maxTensorDimensionCount;
     desc.tiling = VK_TENSOR_TILING_OPTIMAL_ARM;
@@ -240,6 +240,52 @@ TEST_F(NegativeTensor, DimensionsHaveZeros) {
     desc.pStrides = nullptr;
 
     m_errorMonitor->SetDesiredError("VUID-VkTensorDescriptionARM-pDimensions-09734");
+    vkt::Tensor tensor(*m_device, info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeTensor, PerDimensionsMaxElement) {
+    TEST_DESCRIPTION("Test creating a tensor where the one of the dimensions is greater than maxPerDimensionTensorElements");
+    RETURN_IF_SKIP(InitBasicTensor());
+
+    VkPhysicalDeviceTensorPropertiesARM tensor_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(tensor_props);
+    if (tensor_props.maxPerDimensionTensorElements == tensor_props.maxTensorElements) {
+        GTEST_SKIP() << "The test will fail if maxPerDimensionTensorElements is equal to maxTensorElements";
+    }
+
+    VkTensorDescriptionARM desc = DefaultDesc();
+    VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
+
+    std::vector<int64_t> dims{static_cast<int64_t>(tensor_props.maxPerDimensionTensorElements + 1), 1};
+    desc.dimensionCount = 2;
+    desc.pDimensions = dims.data();
+    desc.tiling = VK_TENSOR_TILING_OPTIMAL_ARM;
+    desc.pStrides = nullptr;
+
+    m_errorMonitor->SetDesiredError("VUID-VkTensorDescriptionARM-pDimensions-09883");
+    vkt::Tensor tensor(*m_device, info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeTensor, StridesAndDimensionsMaxElement) {
+    TEST_DESCRIPTION("Test creating a tensor where the multiplied strides and dimensions are greater than maxTensorSize");
+    RETURN_IF_SKIP(InitBasicTensor());
+
+    VkPhysicalDeviceTensorPropertiesARM tensor_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(tensor_props);
+
+    VkTensorDescriptionARM desc = DefaultDesc();
+    VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
+    // We want to trigger the layer that checks if strides[0] * dims[0] > maxTensorSize
+    const std::vector<int64_t> strides{8};
+    std::vector<int64_t> dims{static_cast<int64_t>((tensor_props.maxTensorSize / strides[0]) + 10)};
+    desc.dimensionCount = 1;
+    desc.pDimensions = dims.data();
+    desc.format = VK_FORMAT_R64_UINT;
+    desc.pStrides = strides.data();
+
+    m_errorMonitor->SetDesiredError("VUID-VkTensorDescriptionARM-pStrides-09884");
     vkt::Tensor tensor(*m_device, info);
     m_errorMonitor->VerifyFound();
 }
@@ -347,7 +393,7 @@ TEST_F(NegativeTensor, StridesExtremes) {
     GetPhysicalDeviceProperties2(tensor_props);
 
     const std::vector<int64_t> dimensions{2ul, 2ul, 2ul, 2ul};
-    const std::vector<int64_t> strides{-1l, 0l, static_cast<int64_t>(tensor_props.maxTensorStride + 1), 1l};
+    const std::vector<int64_t> strides{0l, -1l, static_cast<int64_t>(tensor_props.maxTensorStride + 1), 1l};
     desc.pDimensions = dimensions.data();
     desc.dimensionCount = dimensions.size();
     desc.pStrides = strides.data();
@@ -357,7 +403,6 @@ TEST_F(NegativeTensor, StridesExtremes) {
     m_errorMonitor->SetDesiredError("VUID-VkTensorDescriptionARM-pStrides-09738");
 
     m_errorMonitor->SetDesiredError("VUID-VkTensorDescriptionARM-None-09740");
-    m_errorMonitor->SetDesiredError("VUID-VkTensorDescriptionARM-pStrides-09739");
     m_errorMonitor->SetDesiredError("VUID-VkTensorDescriptionARM-pStrides-09739");
     vkt::Tensor tensor(*m_device, info);
     m_errorMonitor->VerifyFound();
@@ -779,6 +824,65 @@ TEST_F(NegativeTensor, BindTensorImportMemoryHandleType) {
     m_errorMonitor->VerifyFound();
 
     ::operator delete(host_memory, std::align_val_t(alloc_size));
+}
+
+TEST_F(NegativeTensor, BindTensorCaptureNoDeviceMemFlag) {
+    TEST_DESCRIPTION("Test binding a capture replay tensor where the memory flag is incorrect");
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddressCaptureReplay);
+    AddRequiredFeature(vkt::Feature::descriptorBufferCaptureReplay);
+    RETURN_IF_SKIP(InitBasicTensor());
+
+    VkTensorDescriptionARM desc = DefaultDesc();
+    VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
+    info.flags = VK_TENSOR_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_ARM;
+
+    vkt::Tensor tensor(*m_device, info);
+    auto tensor_mem_reqs = tensor.GetMemoryReqs().memoryRequirements;
+
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT;
+    alloc_flags.deviceMask = 0x1;
+    VkMemoryAllocateInfo tensor_alloc_info = vku::InitStructHelper(&alloc_flags);
+    tensor_alloc_info.allocationSize = tensor_mem_reqs.size;
+    m_device->Physical().SetMemoryType(tensor_mem_reqs.memoryTypeBits, &tensor_alloc_info, 0);
+    vkt::DeviceMemory memory(*m_device, tensor_alloc_info);
+
+    VkBindTensorMemoryInfoARM bind_info = vku::InitStructHelper();
+    bind_info.tensor = tensor.handle();
+    bind_info.memory = memory.handle();
+
+    m_errorMonitor->SetDesiredError("VUID-VkBindTensorMemoryInfoARM-tensor-09943");
+    vk::BindTensorMemoryARM(*m_device, 1, &bind_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeTensor, BindTensorCaptureNoCaptureMemFlag) {
+    TEST_DESCRIPTION("Test binding a capture replay tensor where the memory flag is partially incorrect");
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::descriptorBufferCaptureReplay);
+    RETURN_IF_SKIP(InitBasicTensor());
+
+    VkTensorDescriptionARM desc = DefaultDesc();
+    VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
+    info.flags = VK_TENSOR_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_ARM;
+
+    vkt::Tensor tensor(*m_device, info);
+    auto tensor_mem_reqs = tensor.GetMemoryReqs().memoryRequirements;
+
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    VkMemoryAllocateInfo tensor_alloc_info = vku::InitStructHelper(&alloc_flags);
+    tensor_alloc_info.allocationSize = tensor_mem_reqs.size;
+    m_device->Physical().SetMemoryType(tensor_mem_reqs.memoryTypeBits, &tensor_alloc_info, 0);
+    vkt::DeviceMemory memory(*m_device, tensor_alloc_info);
+
+    VkBindTensorMemoryInfoARM bind_info = vku::InitStructHelper();
+    bind_info.tensor = tensor.handle();
+    bind_info.memory = memory.handle();
+
+    m_errorMonitor->SetDesiredError("VUID-VkBindTensorMemoryInfoARM-tensor-09944");
+    vk::BindTensorMemoryARM(*m_device, 1, &bind_info);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeTensor, TensorViewFormatMismatch) {
@@ -2558,5 +2662,25 @@ TEST_F(NegativeTensor, TensorWriteTooManyBytesInShader) {
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maxTensorShaderAccessSize-09904");
     VkShaderObj shader(this, spirv_string.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
+    m_errorMonitor->VerifyFound();
+}
+TEST_F(NegativeTensor, DescriptorTensorNull) {
+    TEST_DESCRIPTION("DescriptorInfo with Tensor type and null pNext.");
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tensors);
+    AddRequiredFeature(vkt::Feature::descriptorBuffer);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(descriptor_buffer_properties);
+    uint8_t buffer[128];
+
+    VkDescriptorGetInfoEXT dgi = vku::InitStructHelper();
+    dgi.type = VK_DESCRIPTOR_TYPE_TENSOR_ARM;
+
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorGetInfoEXT-type-09701");
+    vk::GetDescriptorEXT(device(), &dgi, descriptor_buffer_properties.storageBufferDescriptorSize, &buffer);
     m_errorMonitor->VerifyFound();
 }
