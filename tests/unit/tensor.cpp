@@ -623,14 +623,14 @@ TEST_F(NegativeTensor, BindTensorNotProtectedToProtectedMemory) {
     vkt::Tensor unprotected_tensor(*m_device, unprotected_tensor_info);
     unprotected_tensor.GetMemoryReqs();
 
-    /* get protected memory (use requirements for protected tensor) */
+    // get protected memory (use requirements for protected tensor)
     VkMemoryRequirements2 mem_reqs = protected_tensor.GetMemoryReqs();
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     m_device->Physical().SetMemoryType(mem_reqs.memoryRequirements.memoryTypeBits, &mem_alloc, VK_MEMORY_PROPERTY_PROTECTED_BIT);
     mem_alloc.allocationSize = mem_reqs.memoryRequirements.size;
     vkt::DeviceMemory memory(*m_device, mem_alloc);
 
-    /* bind unprotected tensor with protected memory */
+    // bind unprotected tensor with protected memory
     VkBindTensorMemoryInfoARM bind_info = vku::InitStructHelper();
     bind_info.tensor = unprotected_tensor.handle();
     bind_info.memory = memory.handle();
@@ -655,14 +655,14 @@ TEST_F(NegativeTensor, BindTensorProtectedToNotProtectedMemory) {
     auto unprotected_tensor_info = DefaultCreateInfo(&tensor_desc);
     vkt::Tensor unprotected_tensor(*m_device, unprotected_tensor_info);
 
-    /* get unprotected memory (use requirements for unprotected tensor) */
+    // get unprotected memory (use requirements for unprotected tensor)
     VkMemoryRequirements2 mem_reqs = unprotected_tensor.GetMemoryReqs();
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     m_device->Physical().SetMemoryType(mem_reqs.memoryRequirements.memoryTypeBits, &mem_alloc, 0);
     mem_alloc.allocationSize = mem_reqs.memoryRequirements.size;
     vkt::DeviceMemory memory(*m_device, mem_alloc);
 
-    /* bind protected tensor with unprotected memory */
+    // bind protected tensor with unprotected memory
     VkBindTensorMemoryInfoARM bind_info = vku::InitStructHelper();
     bind_info.tensor = protected_tensor.handle();
     bind_info.memory = memory.handle();
@@ -963,6 +963,11 @@ TEST_F(NegativeTensor, CopyTensorDifferentDimensionCounts) {
     TEST_DESCRIPTION("Test copying 2 tensors with different values for dimensionCount");
     RETURN_IF_SKIP(InitBasicTensor());
 
+    // src Tensor, default rank = 4
+    constexpr bool is_copy_tensor = true;
+    vkt::Tensor src_tensor(*m_device, is_copy_tensor);
+
+    // dst Tensor, make it different rank, 3
     auto dst_desc = DefaultDesc();
     std::vector<int64_t> dst_dimensions{2ul, 2ul, 2ul};
     dst_desc.pDimensions = dst_dimensions.data();
@@ -970,16 +975,14 @@ TEST_F(NegativeTensor, CopyTensorDifferentDimensionCounts) {
     dst_desc.pStrides = nullptr;
     dst_desc.usage |= VK_TENSOR_USAGE_TRANSFER_DST_BIT_ARM;
     auto dst_info = DefaultCreateInfo(&dst_desc);
-
-    constexpr bool is_copy_tensor = true;
-    vkt::Tensor src_tensor(*m_device, is_copy_tensor);
     vkt::Tensor dst_tensor(*m_device, dst_info);
 
     src_tensor.BindToMem();
     dst_tensor.BindToMem();
 
     VkTensorCopyARM regions = vku::InitStructHelper();
-    regions.dimensionCount = dst_desc.dimensionCount;
+    // set this to max to avoid 09954
+    regions.dimensionCount = std::max(src_tensor.Description().dimensionCount, dst_desc.dimensionCount);
 
     VkCopyTensorInfoARM copy_info = vku::InitStructHelper();
     copy_info.srcTensor = src_tensor.handle();
@@ -1334,6 +1337,78 @@ TEST_F(NegativeTensor, CopyTensorDstNotBound) {
     vk::CmdCopyTensorARM(m_command_buffer.handle(), &copy_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
+}
+
+TEST_F(NegativeTensor, CopyTensorWrongRegionDimensionCount) {
+    TEST_DESCRIPTION("Copy 2 tensors but copy region has wrong dimensionCount");
+    RETURN_IF_SKIP(InitBasicTensor());
+
+    constexpr bool is_copy_tensor = true;
+    vkt::Tensor src_tensor(*m_device, is_copy_tensor);
+    vkt::Tensor dst_tensor(*m_device, is_copy_tensor);
+
+    src_tensor.BindToMem();
+    dst_tensor.BindToMem();
+
+    VkTensorCopyARM regions = vku::InitStructHelper();
+    regions.dimensionCount = src_tensor.DimensionCount() - 1;  // should be identical
+
+    VkCopyTensorInfoARM copy_info = vku::InitStructHelper();
+    copy_info.srcTensor = src_tensor.handle();
+    copy_info.dstTensor = dst_tensor.handle();
+    copy_info.regionCount = 1;
+    copy_info.pRegions = &regions;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkCopyTensorInfoARM-pRegions-09954");
+    vk::CmdCopyTensorARM(m_command_buffer.handle(), &copy_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeTensor, CopyTensorRegionDimensionCountZero) {
+    TEST_DESCRIPTION(
+        "Copy 2 tensors with a region with non-zero dimensionCount but one of pSrcOffset, pDstOffset or pExtent is not NULL");
+    RETURN_IF_SKIP(InitBasicTensor());
+
+    constexpr bool is_copy_tensor = true;
+    vkt::Tensor src_tensor(*m_device, is_copy_tensor);
+    vkt::Tensor dst_tensor(*m_device, is_copy_tensor);
+
+    src_tensor.BindToMem();
+    dst_tensor.BindToMem();
+
+    std::vector<VkTensorCopyARM> regions{vku::InitStructHelper()};
+    regions[0].dimensionCount = 0;
+
+    VkCopyTensorInfoARM copy_info = vku::InitStructHelper();
+    copy_info.srcTensor = src_tensor.handle();
+    copy_info.dstTensor = dst_tensor.handle();
+    copy_info.regionCount = 1;
+    copy_info.pRegions = regions.data();
+
+    // in turn, set each one of the 3 relevant vectors to point to some dummy data
+    // NOTE: the only reason we use the tensor pDimensions is to avoid VU 09689 on pExtent
+    const int64_t *dimensions = src_tensor.Description().pDimensions;
+    const std::vector<uint64_t> udims(dimensions, dimensions + src_tensor.Description().dimensionCount);
+    for (int i = 0; i < 3; i++) {
+        regions[0].pSrcOffset = nullptr;
+        regions[0].pDstOffset = nullptr;
+        regions[0].pExtent = nullptr;
+        if (i == 0) {
+            regions[0].pSrcOffset = udims.data();
+        } else if (i == 1) {
+            regions[0].pDstOffset = udims.data();
+        } else if (i == 2) {
+            regions[0].pExtent = udims.data();
+        }
+
+        m_command_buffer.Begin();
+        m_errorMonitor->SetDesiredError("VUID-VkTensorCopyARM-dimensionCount-09955");
+        vk::CmdCopyTensorARM(m_command_buffer.handle(), &copy_info);
+        m_errorMonitor->VerifyFound();
+        m_command_buffer.End();
+    }
 }
 
 TEST_F(NegativeTensor, DestroyTensorInUse) {
