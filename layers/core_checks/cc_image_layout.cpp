@@ -1011,40 +1011,61 @@ bool CoreChecks::VerifyDynamicRenderingImageBarrierLayouts(const vvl::CommandBuf
                                                            const VkRenderingInfo &rendering_info,
                                                            const Location &barrier_loc) const {
     bool skip = false;
-
     auto cb_image_layouts = cb_state.GetImageLayoutMap(image_state.VkHandle());
     if (!cb_image_layouts) {
         return skip;
     }
 
+    // Search for attachment that uses the same image as the barrier's image
+    std::shared_ptr<const vvl::ImageView> matching_attatchment_view_state;
     for (auto color_attachment_idx : GetUsedColorAttachments(cb_state)) {
         if (color_attachment_idx >= rendering_info.colorAttachmentCount) {
             continue;
         }
         const auto &color_attachment = rendering_info.pColorAttachments[color_attachment_idx];
-        const auto image_view_state = Get<vvl::ImageView>(color_attachment.imageView);
-        if (!image_view_state) {
-            continue;
+        auto image_view_state = Get<vvl::ImageView>(color_attachment.imageView);
+        if (image_view_state && image_view_state->image_state->VkHandle() == image_state.VkHandle()) {
+            matching_attatchment_view_state = std::move(image_view_state);
+            break;
         }
+    }
+    if (!matching_attatchment_view_state && rendering_info.pDepthAttachment) {
+        auto image_view_state = Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView);
+        if (image_view_state && image_view_state->image_state->VkHandle() == image_state.VkHandle()) {
+            matching_attatchment_view_state = std::move(image_view_state);
+        }
+    }
+    if (!matching_attatchment_view_state && rendering_info.pStencilAttachment) {
+        auto image_view_state = Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView);
+        if (image_view_state && image_view_state->image_state->VkHandle() == image_state.VkHandle()) {
+            matching_attatchment_view_state = std::move(image_view_state);
+        }
+    }
+    if (!matching_attatchment_view_state) {
+        return skip;
+    }
 
-        if (image_state.VkHandle() == image_view_state->image_state->VkHandle()) {
-            if (image_state.subresource_encoder.InRange(image_view_state->normalized_subresource_range)) {
-                auto range_gen = RangeGenerator(image_state.subresource_encoder, image_view_state->normalized_subresource_range);
-                skip |= ForEachMatchingLayoutMapRange(
-                    *cb_image_layouts, std::move(range_gen),
-                    [this, &image_state, &barrier_loc](const LayoutRange &range, const ImageLayoutState &state) {
-                        bool local_skip = false;
-                        if (state.current_layout != VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ &&
-                            state.current_layout != VK_IMAGE_LAYOUT_GENERAL) {
-                            const auto &vuid =
-                                GetDynamicRenderingBarrierVUID(barrier_loc, vvl::DynamicRenderingBarrierError::kImageLayout);
-                            local_skip |= LogError(vuid, image_state.VkHandle(), barrier_loc, "image layout is %s.",
-                                                   string_VkImageLayout(state.current_layout));
-                        }
-                        return local_skip;
-                    });
-            }
-        }
+    // Validate layout of the found attachment
+    if (image_state.subresource_encoder.InRange(matching_attatchment_view_state->normalized_subresource_range)) {
+        auto range_gen =
+            RangeGenerator(image_state.subresource_encoder, matching_attatchment_view_state->normalized_subresource_range);
+        skip |= ForEachMatchingLayoutMapRange(
+            *cb_image_layouts, std::move(range_gen),
+            [this, &image_state, &barrier_loc](const LayoutRange &range, const ImageLayoutState &state) {
+                bool local_skip = false;
+
+                // Use current layout if it is specified (we tracked actual image layout transition).
+                // Otherwise use expected layout (specified by various APIs): during execution the
+                // correct programs must ensure the image layout is in the expected layout at this point.
+                const VkImageLayout layout = (state.current_layout != kInvalidLayout) ? state.current_layout : state.first_layout;
+
+                if (layout != VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ && layout != VK_IMAGE_LAYOUT_GENERAL) {
+                    const auto &vuid = GetDynamicRenderingBarrierVUID(barrier_loc, vvl::DynamicRenderingBarrierError::kImageLayout);
+                    local_skip |=
+                        LogError(vuid, image_state.VkHandle(), barrier_loc, "image layout is %s.", string_VkImageLayout(layout));
+                }
+                return local_skip;
+            });
     }
     return skip;
 }

@@ -332,10 +332,10 @@ TEST_F(NegativeDynamicRendering, ClearAttachments) {
     // Dynamic rendering structs
     VkRect2D rect{{0, 0}, {32, 32}};
     VkRenderingAttachmentInfo depth_attachment_info = vku::InitStructHelper();
-    depth_attachment_info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    depth_attachment_info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     depth_attachment_info.imageView = depth_stencil_image_view;
     VkRenderingAttachmentInfo stencil_attachment_info = vku::InitStructHelper();
-    stencil_attachment_info.imageLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+    stencil_attachment_info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     stencil_attachment_info.imageView = depth_stencil_image_view;
     VkRenderingAttachmentInfo color_attachment_info = vku::InitStructHelper();
     color_attachment_info.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
