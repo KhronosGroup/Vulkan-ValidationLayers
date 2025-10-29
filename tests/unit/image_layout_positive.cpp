@@ -895,3 +895,54 @@ TEST_F(PositiveImageLayout, DynamicRenderingColorAttachmentLayoutSubmitTime) {
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
+
+TEST_F(PositiveImageLayout, DynamicRendering3DImageLayout) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10951
+    TEST_DESCRIPTION("Use 3d image slice as dynamic rendering attachment and validate its layout");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
+
+    // 3D image with 4 slices
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.extent = {32, 32, 4};
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    vkt::Image image_3d(*m_device, image_ci);
+
+    // Image view for slice 3
+    vkt::ImageView image_view = image_3d.CreateView(VK_IMAGE_VIEW_TYPE_2D, 0, 1, 2, 1);
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {32, 32};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    const VkClearColorValue clear_color{};
+    const VkImageSubresourceRange clear_subresource{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+
+    // Issue command that mentions image layout, so BeginRendering will have non-empty image layout map
+    // and will go with current image layout validation. In the original issue that validation caused
+    // assert due to invalid subresource range was passed to range encoder.
+    vk::CmdClearColorImage(m_command_buffer, image_3d, VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &clear_subresource);
+
+    m_command_buffer.BeginRendering(rendering_info);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
