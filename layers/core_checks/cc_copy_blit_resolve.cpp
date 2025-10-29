@@ -3942,7 +3942,8 @@ bool CoreChecks::ValidateStridedDeviceAddressRange(VkCommandBuffer command_buffe
            [&strided_range]() {
                return "The VkStridedDeviceAddressRangeKHR::size (" + std::to_string(strided_range.size) +
                       ") bytes does not fit in any buffer";
-           }}}}};
+           },
+           kEmptyErrorMsgBuffer}}}};
 
     skip |= buffer_address_validator.ValidateDeviceAddress(
         *this, strided_range_loc.dot(Field::address), LogObjectList(command_buffer), strided_range.address, strided_range.size);

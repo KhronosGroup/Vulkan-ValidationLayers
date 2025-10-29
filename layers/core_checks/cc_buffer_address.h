@@ -55,22 +55,31 @@
    More details in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7517
  */
 
+// This file usage is very limited, such that we should be able to claim this name in global userspace
+using ErrorMsgBuffer = std::function<std::string(const vvl::Buffer&)>;
+
+// These are to help unify the various checks to use the same language
+// The only reason to not use these is if you need special extra/modified information printed out
+static inline const ErrorMsgBuffer kEmptyErrorMsgBuffer = [](const vvl::Buffer&) { return ""; };
+static inline const ErrorMsgBuffer kUsageErrorMsgBuffer = [](const vvl::Buffer& buffer_state) {
+    return "has usage " + string_VkBufferUsageFlags2(buffer_state.usage);
+};
+
 template <size_t ChecksCount = 1>
 class BufferAddressValidation {
-  public:
     using IsInvalidFunction = std::function<bool(const vvl::Buffer&)>;
     using ErrorMsgHeaderFunction = std::function<std::string()>;
-    using ErrorMsgBuffer = std::function<std::string(const vvl::Buffer&)>;
     using UpdateCallback = std::function<void(const vvl::Buffer&)>;
 
+  public:
     struct VuidAndValidation {
         std::string_view vuid{};
-        // Return true if the buffer is invalid
-        IsInvalidFunction is_invalid_func = [](const vvl::Buffer&) { return false; };
+        // Return true if for a given buffer, it is invalid
+        IsInvalidFunction is_invalid_func;
         // Text appended to error message header (for the VU as a whole)
-        ErrorMsgHeaderFunction error_msg_header_func = []() { return "\n"; };
+        ErrorMsgHeaderFunction error_msg_header_func;
         // List dedicated error per buffer
-        ErrorMsgBuffer error_msg_buffer_func = [](const vvl::Buffer&) { return ""; };
+        ErrorMsgBuffer error_msg_buffer_func;
     };
 
     // +1 for extra check for "valid generic VkDeviceAddress" check
