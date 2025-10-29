@@ -76,11 +76,7 @@ TEST_F(NegativeSyncObject, ImageBarrierSubpassConflicts) {
     img_barrier.image = image;
     img_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     img_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    img_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    img_barrier.subresourceRange.baseArrayLayer = 0;
-    img_barrier.subresourceRange.baseMipLevel = 0;
-    img_barrier.subresourceRange.layerCount = 1;
-    img_barrier.subresourceRange.levelCount = 1;
+    img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     // Mis-match src stage mask
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-None-07889");
     vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -310,11 +306,7 @@ TEST_F(NegativeSyncObject, Barriers) {
     img_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
     img_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     img_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    img_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    img_barrier.subresourceRange.baseArrayLayer = 0;
-    img_barrier.subresourceRange.baseMipLevel = 0;
-    img_barrier.subresourceRange.layerCount = 1;
-    img_barrier.subresourceRange.levelCount = 1;
+    img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     VkImageMemoryBarrier img_barriers[2] = {img_barrier, img_barrier};
 
     // Transitions from UNDEFINED  are valid, even if duplicated
@@ -456,9 +448,7 @@ TEST_F(NegativeSyncObject, Barriers) {
             VkImageCreateInfo image_create_info = vku::InitStructHelper();
             image_create_info.imageType = VK_IMAGE_TYPE_2D;
             image_create_info.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
-            image_create_info.extent.width = 64;
-            image_create_info.extent.height = 64;
-            image_create_info.extent.depth = 1;
+            image_create_info.extent = {64, 64, 1};
             image_create_info.mipLevels = 1;
             image_create_info.arrayLayers = 1;
             image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -828,11 +818,7 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     img_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
     img_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     img_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    img_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    img_barrier.subresourceRange.baseArrayLayer = 0;
-    img_barrier.subresourceRange.baseMipLevel = 0;
-    img_barrier.subresourceRange.layerCount = 1;
-    img_barrier.subresourceRange.levelCount = 1;
+    img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     VkImageMemoryBarrier2 img_barriers[2] = {img_barrier, img_barrier};
 
     VkDependencyInfo dep_info = vku::InitStructHelper();
@@ -1693,11 +1679,7 @@ TEST_F(NegativeSyncObject, ImageBarrierWithBadRange) {
     img_barrier_template.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     img_barrier_template.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     // subresourceRange to be set later for the for the purposes of this test
-    img_barrier_template.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    img_barrier_template.subresourceRange.baseArrayLayer = 0;
-    img_barrier_template.subresourceRange.baseMipLevel = 0;
-    img_barrier_template.subresourceRange.layerCount = 0;
-    img_barrier_template.subresourceRange.levelCount = 0;
+    img_barrier_template.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 0, 0};
 
     const uint32_t submit_family = m_device->graphics_queue_node_index_;
     const uint32_t invalid = static_cast<uint32_t>(m_device->Physical().queue_properties_.size());
@@ -3668,11 +3650,7 @@ TEST_F(NegativeSyncObject, PipelineStageConditionalRenderingWithWrongQueue) {
     imb.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     imb.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     imb.image = image;
-    imb.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    imb.subresourceRange.baseMipLevel = 0;
-    imb.subresourceRange.levelCount = 1;
-    imb.subresourceRange.baseArrayLayer = 0;
-    imb.subresourceRange.layerCount = 1;
+    imb.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-srcStageMask-06461");
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-dstStageMask-06462");
@@ -5207,11 +5185,7 @@ TEST_F(NegativeSyncObject, Transition3dImageSlice) {
     image_memory_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     image_memory_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     image_memory_barrier.image = image;
-    image_memory_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    image_memory_barrier.subresourceRange.baseMipLevel = 0u;
-    image_memory_barrier.subresourceRange.levelCount = 1u;
-    image_memory_barrier.subresourceRange.baseArrayLayer = 4u;
-    image_memory_barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+    image_memory_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 4, VK_REMAINING_ARRAY_LAYERS};
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier-maintenance9-10798");
@@ -5255,11 +5229,7 @@ TEST_F(NegativeSyncObject, Transition3dImageWithMipLevels) {
     image_memory_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     image_memory_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     image_memory_barrier.image = image;
-    image_memory_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    image_memory_barrier.subresourceRange.baseMipLevel = 0u;
-    image_memory_barrier.subresourceRange.levelCount = 2u;
-    image_memory_barrier.subresourceRange.baseArrayLayer = 0u;
-    image_memory_barrier.subresourceRange.layerCount = 1u;
+    image_memory_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 2, 0, 1};
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier-maintenance9-10799");

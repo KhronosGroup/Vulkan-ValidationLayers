@@ -4348,8 +4348,6 @@ TEST_F(NegativeCommand, ResolveImage2ColorImageResolveModeNone) {
     resolve_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     resolve_region.dstOffset = {0, 0, 0};
     resolve_region.extent = {1, 1, 1};
-    resolve_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    resolve_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
     VkResolveImageModeInfoKHR resolve_mode = vku::InitStructHelper();
     resolve_mode.resolveMode = VK_RESOLVE_MODE_NONE;

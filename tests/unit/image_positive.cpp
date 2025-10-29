@@ -80,7 +80,6 @@ TEST_F(PositiveImage, OwnershipTranfers) {
 TEST_F(PositiveImage, AliasedMemoryTracking) {
     TEST_DESCRIPTION(
         "Create a buffer, allocate memory, bind memory, destroy the buffer, create an image, and bind the same memory to it");
-
     RETURN_IF_SKIP(Init());
 
     VkDeviceSize buff_size = 256;
@@ -90,9 +89,7 @@ TEST_F(PositiveImage, AliasedMemoryTracking) {
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;  // mandatory format
-    image_create_info.extent.width = 64;                  // at least 4096x4096 is supported
-    image_create_info.extent.height = 64;
-    image_create_info.extent.depth = 1;
+    image_create_info.extent = {64, 64, 1};               // at least 4096x4096 is supported
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -126,7 +123,6 @@ TEST_F(PositiveImage, AliasedMemoryTracking) {
     buffer.reset(nullptr);
     m_device->Wait();
 
-    // VALIDATION FAILURE:
     image.BindMemory(mem, 0);
 }
 
@@ -227,11 +223,7 @@ TEST_F(PositiveImage, FramebufferFrom3DImage) {
     dsvci.image = image;
     dsvci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     dsvci.format = VK_FORMAT_B8G8R8A8_UNORM;
-    dsvci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    dsvci.subresourceRange.baseMipLevel = 0;
-    dsvci.subresourceRange.layerCount = 4;
-    dsvci.subresourceRange.baseArrayLayer = 0;
-    dsvci.subresourceRange.levelCount = 1;
+    dsvci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 4};
     vkt::ImageView view(*m_device, dsvci);
 
     VkFramebufferCreateInfo fci = vku::InitStructHelper();
@@ -281,10 +273,7 @@ TEST_F(PositiveImage, ExtendedUsageWithDifferentFormatViews) {
     iv_ci.image = image;
     iv_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     iv_ci.format = VK_FORMAT_R32G32B32A32_UINT;
-    iv_ci.subresourceRange.layerCount = 1;
-    iv_ci.subresourceRange.baseMipLevel = 0;
-    iv_ci.subresourceRange.levelCount = 1;
-    iv_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    iv_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     vkt::ImageView view(*m_device, iv_ci);
     ASSERT_TRUE(view.handle() != VK_NULL_HANDLE);
 
@@ -578,11 +567,7 @@ TEST_F(PositiveImage, BlockTexelViewCompatibleMultipleLayers) {
     ivci.image = image;
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     ivci.format = VK_FORMAT_R16G16B16A16_UNORM;
-    ivci.subresourceRange.baseMipLevel = 0;
-    ivci.subresourceRange.baseArrayLayer = 0;
-    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    ivci.subresourceRange.levelCount = 1;
-    ivci.subresourceRange.layerCount = 2;
+    ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 2};
     vkt::ImageView view(*m_device, ivci);
 }
 
@@ -768,10 +753,7 @@ TEST_F(PositiveImage, ImageViewIncompatibleFormat) {
 
     VkImageViewCreateInfo imgViewInfo = vku::InitStructHelper();
     imgViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    imgViewInfo.subresourceRange.layerCount = 1;
-    imgViewInfo.subresourceRange.baseMipLevel = 0;
-    imgViewInfo.subresourceRange.levelCount = 1;
-    imgViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imgViewInfo.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     imgViewInfo.image = mutImage;
 
     // With a identical format, there should be no error
@@ -814,11 +796,7 @@ TEST_F(PositiveImage, BlockTexelViewType) {
     ivci.image = image;
     ivci.viewType = VK_IMAGE_VIEW_TYPE_3D;
     ivci.format = VK_FORMAT_R16G16B16A16_UNORM;
-    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    ivci.subresourceRange.baseMipLevel = 0;
-    ivci.subresourceRange.layerCount = 1;
-    ivci.subresourceRange.baseArrayLayer = 0;
-    ivci.subresourceRange.levelCount = 1;
+    ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     vkt::ImageView image_view(*m_device, ivci);
 }
@@ -832,9 +810,7 @@ TEST_F(PositiveImage, CornerSampledImageNV) {
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_create_info.extent.width = 2;
-    image_create_info.extent.height = 1;
-    image_create_info.extent.depth = 1;
+    image_create_info.extent = {2, 1, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -912,12 +888,7 @@ TEST_F(PositiveImage, Image3DWith2DArrayCompatIssue) {
     image_memory_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_memory_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     image_memory_barrier.image = image;
-    image_memory_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    image_memory_barrier.subresourceRange.baseMipLevel = 0;
-    image_memory_barrier.subresourceRange.levelCount = 1;
-    image_memory_barrier.subresourceRange.baseArrayLayer = 0;
-    // Prevent warning by using VK_REMAINING_ARRAY_LAYERS
-    image_memory_barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+    image_memory_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, VK_REMAINING_ARRAY_LAYERS};
 
     m_command_buffer.Begin();
     vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,

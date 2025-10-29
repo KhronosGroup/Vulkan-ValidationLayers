@@ -1500,7 +1500,6 @@ TEST_F(NegativeQuery, DestroyActiveQueryPool) {
 
 TEST_F(NegativeQuery, MultiviewBeginQuery) {
     TEST_DESCRIPTION("Test CmdBeginQuery in subpass with multiview");
-
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::multiview);
     RETURN_IF_SKIP(Init());
@@ -1521,13 +1520,13 @@ TEST_F(NegativeQuery, MultiviewBeginQuery) {
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &color_att;
 
-    uint32_t viewMasks[] = {0x3u};
-    uint32_t correlationMasks[] = {0x1u};
+    uint32_t view_masks[] = {0x3u};
+    uint32_t correlation_masks[] = {0x1u};
     VkRenderPassMultiviewCreateInfo rpmv_ci = vku::InitStructHelper();
     rpmv_ci.subpassCount = 1;
-    rpmv_ci.pViewMasks = viewMasks;
+    rpmv_ci.pViewMasks = view_masks;
     rpmv_ci.correlationMaskCount = 1;
-    rpmv_ci.pCorrelationMasks = correlationMasks;
+    rpmv_ci.pCorrelationMasks = correlation_masks;
 
     VkRenderPassCreateInfo rp_ci = vku::InitStructHelper(&rpmv_ci);
     rp_ci.attachmentCount = 1;
@@ -1540,9 +1539,7 @@ TEST_F(NegativeQuery, MultiviewBeginQuery) {
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
-    image_ci.extent.width = 64;
-    image_ci.extent.height = 64;
-    image_ci.extent.depth = 1;
+    image_ci.extent = {64, 64, 1};
     image_ci.mipLevels = 1;
     image_ci.arrayLayers = 4;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;

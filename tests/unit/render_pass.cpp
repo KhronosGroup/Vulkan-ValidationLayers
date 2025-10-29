@@ -1633,13 +1633,13 @@ TEST_F(NegativeRenderPass, FramebufferDepthStencilResolveAttachment) {
         GTEST_SKIP() << "Could not find a supported stencil resolve mode.";
     }
 
-    uint32_t attachmentWidth = 512;
-    uint32_t attachmentHeight = 512;
-    VkFormat attachmentFormat = FindSupportedDepthStencilFormat(Gpu());
+    uint32_t attachment_width = 512;
+    uint32_t attachment_height = 512;
+    VkFormat attachment_format = FindSupportedDepthStencilFormat(Gpu());
 
     RenderPass2SingleSubpass rp(*this);
-    rp.AddAttachmentDescription(attachmentFormat, VK_SAMPLE_COUNT_4_BIT);  // Depth/stencil
-    rp.AddAttachmentDescription(attachmentFormat, VK_SAMPLE_COUNT_1_BIT);  // Depth/stencil resolve
+    rp.AddAttachmentDescription(attachment_format, VK_SAMPLE_COUNT_4_BIT);  // Depth/stencil
+    rp.AddAttachmentDescription(attachment_format, VK_SAMPLE_COUNT_1_BIT);  // Depth/stencil resolve
     rp.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.AddAttachmentReference(1, VK_IMAGE_LAYOUT_GENERAL);
     rp.AddDepthStencilAttachment(0);
@@ -1650,10 +1650,8 @@ TEST_F(NegativeRenderPass, FramebufferDepthStencilResolveAttachment) {
     // Try creating Framebuffer with images, but with invalid image create usage flags
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = attachmentFormat;
-    image_create_info.extent.width = attachmentWidth;
-    image_create_info.extent.height = attachmentHeight;
-    image_create_info.extent.depth = 1;
+    image_create_info.format = attachment_format;
+    image_create_info.extent = {attachment_width, attachment_height, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
@@ -1675,7 +1673,7 @@ TEST_F(NegativeRenderPass, FramebufferDepthStencilResolveAttachment) {
 
     m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-pAttachments-00880");
     m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-pAttachments-02634");
-    vkt::Framebuffer framebuffer(*m_device, rp, 2, image_views, attachmentWidth, attachmentHeight);
+    vkt::Framebuffer framebuffer(*m_device, rp, 2, image_views, attachment_width, attachment_height);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2313,10 +2311,8 @@ TEST_F(NegativeRenderPass, RenderArea) {
     VkRenderPassBeginInfo rpbinfo = vku::InitStructHelper();
     rpbinfo.renderPass = m_renderPass;
     rpbinfo.framebuffer = Framebuffer();
-    rpbinfo.renderArea.extent.width = m_width;
-    rpbinfo.renderArea.extent.height = m_height;
-    rpbinfo.renderArea.offset.x = -32;
-    rpbinfo.renderArea.offset.y = 0;
+    rpbinfo.renderArea.extent = {m_width, m_height};
+    rpbinfo.renderArea.offset = {-32, 0};
     rpbinfo.clearValueCount = 1;
     rpbinfo.pClearValues = m_renderPassClearValues.data();
 
@@ -2357,10 +2353,8 @@ TEST_F(NegativeRenderPass, DeviceGroupRenderArea) {
     InitRenderTarget();
 
     VkRect2D renderArea = {};
-    renderArea.offset.x = -1;
-    renderArea.offset.y = -1;
-    renderArea.extent.width = 64;
-    renderArea.extent.height = 64;
+    renderArea.offset = {-1, -1};
+    renderArea.extent = {64, 64};
 
     VkDeviceGroupRenderPassBeginInfo device_group_render_pass_begin_info = vku::InitStructHelper();
     device_group_render_pass_begin_info.deviceMask = 0x1;
@@ -2370,10 +2364,8 @@ TEST_F(NegativeRenderPass, DeviceGroupRenderArea) {
     VkRenderPassBeginInfo rpbinfo = vku::InitStructHelper(&device_group_render_pass_begin_info);
     rpbinfo.renderPass = m_renderPass;
     rpbinfo.framebuffer = Framebuffer();
-    rpbinfo.renderArea.extent.width = m_width;
-    rpbinfo.renderArea.extent.height = m_height;
-    rpbinfo.renderArea.offset.x = -32;
-    rpbinfo.renderArea.offset.y = 0;
+    rpbinfo.renderArea.extent = {m_width, m_height};
+    rpbinfo.renderArea.offset = {-32, 0};
     rpbinfo.clearValueCount = 1;
     rpbinfo.pClearValues = m_renderPassClearValues.data();
 
@@ -2384,10 +2376,8 @@ TEST_F(NegativeRenderPass, DeviceGroupRenderArea) {
     m_command_buffer.BeginRenderPass(rpbinfo);
     m_errorMonitor->VerifyFound();
 
-    renderArea.offset.x = 0;
-    renderArea.offset.y = 1;
-    renderArea.extent.width = m_width + 1;
-    renderArea.extent.height = m_height;
+    renderArea.offset = {0, 1};
+    renderArea.extent = {m_width + 1, m_height};
 
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-pNext-02856");
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-pNext-02857");
@@ -4303,8 +4293,7 @@ TEST_F(NegativeRenderPass, BeginRenderPassWithRenderPassStriped) {
         stripe_infos[i] = vku::InitStructHelper();
         stripe_infos[i].stripeArea.offset.x = stripe_width * i;
         stripe_infos[i].stripeArea.offset.y = 0;
-        stripe_infos[i].stripeArea.extent.width = stripe_width;
-        stripe_infos[i].stripeArea.extent.height = stripe_height;
+        stripe_infos[i].stripeArea.extent = {stripe_width, stripe_height};
     }
 
     VkRenderPassStripeBeginInfoARM rp_stripe_info = vku::InitStructHelper();
@@ -4328,8 +4317,7 @@ TEST_F(NegativeRenderPass, BeginRenderPassWithRenderPassStriped) {
     for (uint32_t i = 0; i < stripe_count; ++i) {
         stripe_infos[i].stripeArea.offset.x = i > 1 && i <= 4 ? (stripe_width * (i - 1) / 2) : stripe_width * i;
         stripe_infos[i].stripeArea.offset.y = 0;
-        stripe_infos[i].stripeArea.extent.width = stripe_width;
-        stripe_infos[i].stripeArea.extent.height = stripe_height;
+        stripe_infos[i].stripeArea.extent = {stripe_width, stripe_height};
     }
 
     m_command_buffer.Begin();
@@ -4429,8 +4417,7 @@ TEST_F(NegativeRenderPass, RenderPassWithRenderPassStripedQueueSubmit2) {
         stripe_infos[i] = vku::InitStructHelper();
         stripe_infos[i].stripeArea.offset.x = stripe_width * i;
         stripe_infos[i].stripeArea.offset.y = 0;
-        stripe_infos[i].stripeArea.extent.width = stripe_width;
-        stripe_infos[i].stripeArea.extent.height = stripe_height;
+        stripe_infos[i].stripeArea.extent = {stripe_width, stripe_height};
     }
 
     VkRenderPassStripeBeginInfoARM rp_stripe_info = vku::InitStructHelper();
@@ -4636,9 +4623,7 @@ TEST_F(NegativeRenderPass, Framebuffer2DViewDsFormat) {
     image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
     image_ci.imageType = VK_IMAGE_TYPE_3D;
     image_ci.format = depth_format;
-    image_ci.extent.width = 32u;
-    image_ci.extent.height = 32u;
-    image_ci.extent.depth = 1u;
+    image_ci.extent = {32u, 32u, 1u};
     image_ci.mipLevels = 1u;
     image_ci.arrayLayers = 1u;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -4651,11 +4636,7 @@ TEST_F(NegativeRenderPass, Framebuffer2DViewDsFormat) {
     image_view_ci.image = image;
     image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     image_view_ci.format = depth_format;
-    image_view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    image_view_ci.subresourceRange.baseMipLevel = 0u;
-    image_view_ci.subresourceRange.levelCount = 1u;
-    image_view_ci.subresourceRange.baseArrayLayer = 0u;
-    image_view_ci.subresourceRange.layerCount = 1u;
+    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1};
     vkt::ImageView view(*m_device, image_view_ci);
 
     VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();
@@ -4717,9 +4698,7 @@ TEST_F(NegativeRenderPass, FramebufferMismatchedFormat) {
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_ci.extent.width = 32u;
-    image_ci.extent.height = 32u;
-    image_ci.extent.depth = 1u;
+    image_ci.extent = {32u, 32u, 1u};
     image_ci.mipLevels = 1u;
     image_ci.arrayLayers = 1u;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -4732,11 +4711,7 @@ TEST_F(NegativeRenderPass, FramebufferMismatchedFormat) {
     image_view_ci.image = image;
     image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     image_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    image_view_ci.subresourceRange.baseMipLevel = 0u;
-    image_view_ci.subresourceRange.levelCount = 1u;
-    image_view_ci.subresourceRange.baseArrayLayer = 0u;
-    image_view_ci.subresourceRange.layerCount = 1u;
+    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     vkt::ImageView view(*m_device, image_view_ci);
 
     VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();
@@ -4827,11 +4802,7 @@ TEST_F(NegativeRenderPass, FramebufferCreateWithInvalidSwizzle) {
     image_view_ci.components.g = VK_COMPONENT_SWIZZLE_G;
     image_view_ci.components.b = VK_COMPONENT_SWIZZLE_R;
     image_view_ci.components.a = VK_COMPONENT_SWIZZLE_A;
-    image_view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    image_view_ci.subresourceRange.baseMipLevel = 0u;
-    image_view_ci.subresourceRange.levelCount = 1u;
-    image_view_ci.subresourceRange.baseArrayLayer = 0u;
-    image_view_ci.subresourceRange.layerCount = 1u;
+    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     vkt::ImageView view(*m_device, image_view_ci);
 
     VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();
@@ -4889,9 +4860,7 @@ TEST_F(NegativeRenderPass, FramebufferMultiviewWithLayers) {
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_ci.extent.width = 32u;
-    image_ci.extent.height = 32u;
-    image_ci.extent.depth = 1u;
+    image_ci.extent = {32u, 32u, 1u};
     image_ci.mipLevels = 1u;
     image_ci.arrayLayers = 2u;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -4904,11 +4873,7 @@ TEST_F(NegativeRenderPass, FramebufferMultiviewWithLayers) {
     image_view_ci.image = image;
     image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     image_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    image_view_ci.subresourceRange.baseMipLevel = 0u;
-    image_view_ci.subresourceRange.levelCount = 1u;
-    image_view_ci.subresourceRange.baseArrayLayer = 0u;
-    image_view_ci.subresourceRange.layerCount = 2u;
+    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 2};
     vkt::ImageView view(*m_device, image_view_ci);
 
     VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();

@@ -585,8 +585,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
     render_pass_begin_info.renderPass = rp;
     render_pass_begin_info.framebuffer = fb;
     // need full clear
-    render_pass_begin_info.renderArea.extent.width = m_width;
-    render_pass_begin_info.renderArea.extent.height = m_height;
+    render_pass_begin_info.renderArea.extent = {m_width, m_height};
 
     // Plain clear after load.
     m_command_buffer.BeginRenderPass(render_pass_begin_info);
@@ -1032,11 +1031,7 @@ TEST_F(VkBestPracticesLayerTest, TransitionFromUndefinedToReadOnly) {
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     img_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     img_barrier.image = image;
-    img_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    img_barrier.subresourceRange.baseArrayLayer = 0;
-    img_barrier.subresourceRange.baseMipLevel = 0;
-    img_barrier.subresourceRange.layerCount = 1;
-    img_barrier.subresourceRange.levelCount = 1;
+    img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     m_command_buffer.Begin();
 
@@ -1165,8 +1160,7 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearWithoutLoadOpClear) {
     begin_info.clearValueCount = 1;  // Pass one clearValue, in conflict with attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE
     begin_info.pClearValues = &cv;
     begin_info.renderPass = rp;
-    begin_info.renderArea.extent.width = w;
-    begin_info.renderArea.extent.height = h;
+    begin_info.renderArea.extent = {w, h};
     begin_info.framebuffer = fb;
 
     m_errorMonitor->SetDesiredWarning("BestPractices-ClearValueWithoutLoadOpClear");
@@ -1237,8 +1231,7 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearValueCountHigherThanAttachmentCo
                                      // second clearValue will be ignored
     begin_info.pClearValues = cv;
     begin_info.renderPass = rp;
-    begin_info.renderArea.extent.width = w;
-    begin_info.renderArea.extent.height = h;
+    begin_info.renderArea.extent = {w, h};
     begin_info.framebuffer = fb;
 
     m_errorMonitor->SetDesiredWarning("BestPractices-ClearValueCountHigherThanAttachmentCount");
@@ -1432,8 +1425,7 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
     begin_info.clearValueCount = 1;
     begin_info.pClearValues = &cv;
     begin_info.renderPass = rp;
-    begin_info.renderArea.extent.width = w;
-    begin_info.renderArea.extent.height = h;
+    begin_info.renderArea.extent = {w, h};
     begin_info.framebuffer = fb;
 
     // Prepare compute
@@ -1574,11 +1566,7 @@ TEST_F(VkBestPracticesLayerTest, ImageMemoryBarrierAccessLayoutCombinations) {
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     img_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     img_barrier.image = image;
-    img_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    img_barrier.subresourceRange.baseArrayLayer = 0;
-    img_barrier.subresourceRange.baseMipLevel = 0;
-    img_barrier.subresourceRange.layerCount = 1;
-    img_barrier.subresourceRange.levelCount = 1;
+    img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     m_command_buffer.Begin();
 
@@ -1620,11 +1608,7 @@ TEST_F(VkBestPracticesLayerTest, ImageMemoryBarrierAccessLayoutCombinations) {
         img_barrier2.srcAccessMask = 0;
         img_barrier2.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         img_barrier2.image = image;
-        img_barrier2.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        img_barrier2.subresourceRange.baseArrayLayer = 0;
-        img_barrier2.subresourceRange.baseMipLevel = 0;
-        img_barrier2.subresourceRange.layerCount = 1;
-        img_barrier2.subresourceRange.levelCount = 1;
+        img_barrier2.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
         img_barrier2.dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
         img_barrier2.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;

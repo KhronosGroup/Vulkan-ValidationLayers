@@ -418,19 +418,12 @@ TEST_F(NegativeImageLayout, Basic) {
     RETURN_IF_SKIP(Init());
 
     const bool copy_commands2 = IsExtensionsEnabled(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
-
     auto depth_format = FindSupportedDepthStencilFormat(Gpu());
-
-    const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
-    const int32_t tex_width = 32;
-    const int32_t tex_height = 32;
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = tex_format;
-    image_create_info.extent.width = tex_width;
-    image_create_info.extent.height = tex_height;
-    image_create_info.extent.depth = 1;
+    image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_create_info.extent = {32, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 4;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -449,16 +442,11 @@ TEST_F(NegativeImageLayout, Basic) {
 
     m_command_buffer.Begin();
     VkImageCopy copy_region;
-    copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_region.srcSubresource.mipLevel = 0;
-    copy_region.srcSubresource.baseArrayLayer = 0;
-    copy_region.srcSubresource.layerCount = 1;
-    copy_region.dstSubresource = copy_region.srcSubresource;
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
-    copy_region.extent.width = 1;
-    copy_region.extent.height = 1;
-    copy_region.extent.depth = 1;
+    copy_region.extent = {1, 1, 1};
 
     vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_GENERAL, dst_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
 
@@ -638,11 +626,9 @@ TEST_F(NegativeImageLayout, CopyColorToDepthOnComputeQueue) {
     vkt::CommandPool pool(*m_device, *compute_without_graphics_queue_i);
     vkt::CommandBuffer cb(*m_device, pool);
 
-    const VkFormat tex_format = VK_FORMAT_R16_UINT;
-
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = tex_format;
+    image_create_info.format = VK_FORMAT_R16_UINT;
     image_create_info.extent = {32, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 4;
@@ -659,16 +645,8 @@ TEST_F(NegativeImageLayout, CopyColorToDepthOnComputeQueue) {
 
     cb.Begin();
     VkImageCopy copy_region{};
-    copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_region.srcSubresource.mipLevel = 0;
-    copy_region.srcSubresource.baseArrayLayer = 0;
-    copy_region.srcSubresource.layerCount = 1;
-
-    copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    copy_region.dstSubresource.mipLevel = 0;
-    copy_region.dstSubresource.baseArrayLayer = 0;
-    copy_region.dstSubresource.layerCount = 1;
-
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
     copy_region.extent = {1, 1, 1};
@@ -698,16 +676,10 @@ TEST_F(NegativeImageLayout, CopyColorToDepthOnTransferQueue) {
     vkt::CommandPool pool(*m_device, *compute_without_graphics_queue_i);
     vkt::CommandBuffer cb(*m_device, pool);
 
-    const VkFormat tex_format = VK_FORMAT_R16_UINT;
-    const int32_t tex_width = 32;
-    const int32_t tex_height = 32;
-
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = tex_format;
-    image_create_info.extent.width = tex_width;
-    image_create_info.extent.height = tex_height;
-    image_create_info.extent.depth = 1;
+    image_create_info.format = VK_FORMAT_R16_UINT;
+    image_create_info.extent = {32, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 4;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -723,21 +695,11 @@ TEST_F(NegativeImageLayout, CopyColorToDepthOnTransferQueue) {
 
     cb.Begin();
     VkImageCopy copy_region{};
-    copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_region.srcSubresource.mipLevel = 0;
-    copy_region.srcSubresource.baseArrayLayer = 0;
-    copy_region.srcSubresource.layerCount = 1;
-
-    copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    copy_region.dstSubresource.mipLevel = 0;
-    copy_region.dstSubresource.baseArrayLayer = 0;
-    copy_region.dstSubresource.layerCount = 1;
-
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
-    copy_region.extent.width = 1;
-    copy_region.extent.height = 1;
-    copy_region.extent.depth = 1;
+    copy_region.extent = {1, 1, 1};
 
     if (!ds_supports_copy_on_transfer_queue) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-commandBuffer-11783");
@@ -748,11 +710,9 @@ TEST_F(NegativeImageLayout, CopyColorToDepthOnTransferQueue) {
 
 TEST_F(NegativeImageLayout, StorageImage) {
     TEST_DESCRIPTION("Attempt to update a STORAGE_IMAGE descriptor w/o GENERAL layout.");
-
     RETURN_IF_SKIP(Init());
 
-    const VkFormat tex_format = VK_FORMAT_R8G8B8A8_UNORM;
-    if ((m_device->FormatFeaturesOptimal(tex_format) & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT) == 0) {
+    if ((m_device->FormatFeaturesOptimal(VK_FORMAT_R8G8B8A8_UNORM) & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT) == 0) {
         GTEST_SKIP() << "Device does not support VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT; skipped.";
     }
 
@@ -761,7 +721,7 @@ TEST_F(NegativeImageLayout, StorageImage) {
                                            {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                        });
 
-    vkt::Image image(*m_device, 32, 32, tex_format, VK_IMAGE_USAGE_STORAGE_BIT);
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT);
     vkt::ImageView view = image.CreateView();
 
     descriptor_set.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);

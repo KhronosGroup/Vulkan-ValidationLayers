@@ -86,9 +86,7 @@ TEST_F(NegativePortabilitySubset, Image) {
     ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
     ci.imageType = VK_IMAGE_TYPE_3D;
     ci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    ci.extent.width = 512;
-    ci.extent.height = 64;
-    ci.extent.depth = 1;
+    ci.extent = {512, 64, 1};
     ci.mipLevels = 1;
     ci.arrayLayers = 1;
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -119,9 +117,7 @@ TEST_F(NegativePortabilitySubset, ImageViewFormatSwizzle) {
     imageCI.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
     imageCI.imageType = VK_IMAGE_TYPE_2D;
     imageCI.format = VK_FORMAT_R8G8B8A8_UNORM;
-    imageCI.extent.width = 512;
-    imageCI.extent.height = 64;
-    imageCI.extent.depth = 1;
+    imageCI.extent = {512, 64, 1};
     imageCI.mipLevels = 1;
     imageCI.arrayLayers = 1;
     imageCI.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -165,9 +161,7 @@ TEST_F(NegativePortabilitySubset, ImageViewFormatReinterpretationComponentCount)
     imageCI.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
     imageCI.imageType = VK_IMAGE_TYPE_2D;
     imageCI.format = VK_FORMAT_R8G8B8A8_UNORM;
-    imageCI.extent.width = 512;
-    imageCI.extent.height = 64;
-    imageCI.extent.depth = 1;
+    imageCI.extent = {512, 64, 1};
     imageCI.mipLevels = 1;
     imageCI.arrayLayers = 1;
     imageCI.samples = VK_SAMPLE_COUNT_1_BIT;

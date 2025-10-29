@@ -565,8 +565,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferFramebufferImageDestroyed) {
 
         // Just use default renderpass with our framebuffer
         m_renderPassBeginInfo.framebuffer = fb;
-        m_renderPassBeginInfo.renderArea.extent.width = 32;
-        m_renderPassBeginInfo.renderArea.extent.height = 32;
+        m_renderPassBeginInfo.renderArea.extent = {32, 32};
         // Create Null cmd buffer for submit
         m_command_buffer.Begin();
         m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);

@@ -3241,9 +3241,7 @@ TEST_F(NegativeDynamicState, SampleLocations) {
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.extent.width = 128;
-    image_create_info.extent.height = 128;
-    image_create_info.extent.depth = 1;
+    image_create_info.extent = {128, 128, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -3615,10 +3613,8 @@ TEST_F(NegativeDynamicState, CmdSetDiscardRectangleEXTOffsets) {
     }
 
     VkRect2D discard_rectangles = {};
-    discard_rectangles.offset.x = -1;
-    discard_rectangles.offset.y = 0;
-    discard_rectangles.extent.width = 64;
-    discard_rectangles.extent.height = 64;
+    discard_rectangles.offset = {-1, 0};
+    discard_rectangles.extent = {64, 64};
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetDiscardRectangleEXT-x-00587");
@@ -3639,20 +3635,16 @@ TEST_F(NegativeDynamicState, CmdSetDiscardRectangleEXTRectangleCountOverflow) {
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     VkRect2D discard_rectangles = {};
-    discard_rectangles.offset.x = 1;
-    discard_rectangles.offset.y = 0;
-    discard_rectangles.extent.width = vvl::kU32Max;
-    discard_rectangles.extent.height = 64;
+    discard_rectangles.offset = {1, 0};
+    discard_rectangles.extent = {vvl::kU32Max, 64};
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetDiscardRectangleEXT-offset-00588");
     vk::CmdSetDiscardRectangleEXT(m_command_buffer, 0, 1, &discard_rectangles);
     m_errorMonitor->VerifyFound();
 
-    discard_rectangles.offset.x = 0;
-    discard_rectangles.offset.y = vvl::kI32Max;
-    discard_rectangles.extent.width = 64;
-    discard_rectangles.extent.height = 1;
+    discard_rectangles.offset = {0, vvl::kI32Max};
+    discard_rectangles.extent = {64, 1};
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetDiscardRectangleEXT-offset-00589");
     vk::CmdSetDiscardRectangleEXT(m_command_buffer, 0, 1, &discard_rectangles);
     m_errorMonitor->VerifyFound();
@@ -3668,10 +3660,8 @@ TEST_F(NegativeDynamicState, CmdSetDiscardRectangleEXTRectangleCount) {
     GetPhysicalDeviceProperties2(discard_rectangle_properties);
 
     VkRect2D discard_rectangles = {};
-    discard_rectangles.offset.x = 0;
-    discard_rectangles.offset.y = 0;
-    discard_rectangles.extent.width = 64;
-    discard_rectangles.extent.height = 64;
+    discard_rectangles.offset = {0, 0};
+    discard_rectangles.extent = {64, 64};
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetDiscardRectangleEXT-firstDiscardRectangle-00585");

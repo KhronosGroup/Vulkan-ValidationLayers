@@ -39,10 +39,8 @@ TEST_F(PositiveCopyBufferImage, ImageRemainingLayersMaintenance5) {
 
     VkImageCopy copy_region{};
     copy_region.extent = image_ci.extent;
-    copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_region.srcSubresource.baseArrayLayer = 2;
-    copy_region.srcSubresource.layerCount = VK_REMAINING_ARRAY_LAYERS;
-    copy_region.dstSubresource = copy_region.srcSubresource;
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 2, VK_REMAINING_ARRAY_LAYERS};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 2, VK_REMAINING_ARRAY_LAYERS};
 
     vk::CmdCopyImage(m_command_buffer, image_a, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image_b, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                      1, &copy_region);
@@ -1674,11 +1672,7 @@ TEST_F(PositiveCopyBufferImage, Transition3dImage) {
     image_memory_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_memory_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     image_memory_barrier.image = image;
-    image_memory_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    image_memory_barrier.subresourceRange.baseMipLevel = 0u;
-    image_memory_barrier.subresourceRange.levelCount = 1u;
-    image_memory_barrier.subresourceRange.baseArrayLayer = 0u;
-    image_memory_barrier.subresourceRange.layerCount = 4u;
+    image_memory_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 4};
 
     m_command_buffer.Begin();
     vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u,
@@ -1720,11 +1714,7 @@ TEST_F(PositiveCopyBufferImage, Transition3dImageSlices) {
     image_memory_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_memory_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     image_memory_barrier.image = image;
-    image_memory_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    image_memory_barrier.subresourceRange.baseMipLevel = 0u;
-    image_memory_barrier.subresourceRange.levelCount = 1u;
-    image_memory_barrier.subresourceRange.baseArrayLayer = 0u;
-    image_memory_barrier.subresourceRange.layerCount = 4u;
+    image_memory_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 4};
 
     vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u,
                            nullptr, 1u, &image_memory_barrier);

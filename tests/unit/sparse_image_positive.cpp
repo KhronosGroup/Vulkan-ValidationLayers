@@ -31,9 +31,7 @@ TEST_F(PositiveSparseImage, MultipleBinds) {
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
-    image_create_info.extent.width = 64;
-    image_create_info.extent.height = 64;
-    image_create_info.extent.depth = 1;
+    image_create_info.extent = {64, 64, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -104,9 +102,7 @@ TEST_F(PositiveSparseImage, BindFreeMemory) {
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
-    image_create_info.extent.width = 512;
-    image_create_info.extent.height = 512;
-    image_create_info.extent.depth = 1;
+    image_create_info.extent = {512, 512, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -161,11 +157,7 @@ TEST_F(PositiveSparseImage, BindFreeMemory) {
     img_barrier.image = image;
     img_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     img_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    img_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    img_barrier.subresourceRange.baseArrayLayer = 0;
-    img_barrier.subresourceRange.baseMipLevel = 0;
-    img_barrier.subresourceRange.layerCount = 1;
-    img_barrier.subresourceRange.levelCount = 1;
+    img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr,
                            0, nullptr, 1, &img_barrier);
 
@@ -194,9 +186,7 @@ TEST_F(PositiveSparseImage, BindMetadata) {
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
-    image_create_info.extent.width = 64;
-    image_create_info.extent.height = 64;
-    image_create_info.extent.depth = 1;
+    image_create_info.extent = {64, 64, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -273,9 +263,7 @@ TEST_F(PositiveSparseImage, OpImageSparse) {
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
-    image_create_info.extent.width = 64;
-    image_create_info.extent.height = 64;
-    image_create_info.extent.depth = 1;
+    image_create_info.extent = {64, 64, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;

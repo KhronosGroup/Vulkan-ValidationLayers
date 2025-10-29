@@ -4263,7 +4263,7 @@ bool CoreChecks::PreCallValidateCmdEndRendering2KHR(VkCommandBuffer commandBuffe
         if (previous_count > 0) {
             if (fdm_offset_end_info->fragmentDensityOffsetCount != previous_count) {
                 skip |=
-                    LogError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoKHR-pFragmentDensityOffsets-10730", commandBuffer,
+                    LogError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pFragmentDensityOffsets-10730", commandBuffer,
                              error_obj.location.dot(Field::pRenderingEndInfo)
                                  .pNext(Struct::VkRenderPassFragmentDensityMapOffsetEndInfoEXT, Field::fragmentDensityOffsetCount),
                              "%" PRIu32 " does not match previous fragmentDensityOffsetCount (%" PRIu32 ") used in the render pass",
@@ -4273,7 +4273,7 @@ bool CoreChecks::PreCallValidateCmdEndRendering2KHR(VkCommandBuffer commandBuffe
                     if (fdm_offset_end_info->pFragmentDensityOffsets[i].x != cb_sub_state.fragment_density_offsets[i].x ||
                         fdm_offset_end_info->pFragmentDensityOffsets[i].y != cb_sub_state.fragment_density_offsets[i].y) {
                         skip |= LogError(
-                            "VUID-VkRenderPassFragmentDensityMapOffsetEndInfoKHR-pFragmentDensityOffsets-10730", commandBuffer,
+                            "VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pFragmentDensityOffsets-10730", commandBuffer,
                             error_obj.location.dot(Field::pRenderingEndInfo)
                                 .pNext(Struct::VkRenderPassFragmentDensityMapOffsetEndInfoEXT, Field::pFragmentDensityOffsets, i),
                             "is (%s) which does not match previous fragmentDensityOffsetCount[%" PRIu32

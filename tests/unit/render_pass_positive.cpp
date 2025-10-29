@@ -1109,8 +1109,7 @@ TEST_F(PositiveRenderPass, BeginRenderPassWithRenderPassStriped) {
         stripe_infos[i] = vku::InitStructHelper();
         stripe_infos[i].stripeArea.offset.x = stripe_width * i;
         stripe_infos[i].stripeArea.offset.y = 0;
-        stripe_infos[i].stripeArea.extent.width = stripe_width;
-        stripe_infos[i].stripeArea.extent.height = stripe_height;
+        stripe_infos[i].stripeArea.extent = {stripe_width, stripe_height};
     }
 
     VkRenderPassStripeBeginInfoARM rp_stripes_info = vku::InitStructHelper();

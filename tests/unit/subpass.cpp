@@ -518,11 +518,8 @@ TEST_F(NegativeSubpass, ImageBarrierSubpassConflict) {
     img_barrier.image = image; /* barrier references image from attachment index 0 */
     img_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     img_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    img_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    img_barrier.subresourceRange.baseArrayLayer = 0;
-    img_barrier.subresourceRange.baseMipLevel = 0;
-    img_barrier.subresourceRange.layerCount = 1;
-    img_barrier.subresourceRange.levelCount = 1;
+    img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(rp, fb, 32, 32);
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-image-04073");

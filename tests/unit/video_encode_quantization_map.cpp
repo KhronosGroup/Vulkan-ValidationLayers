@@ -1636,9 +1636,7 @@ TEST_F(NegativeVideoEncodeQuantizationMap, CreateImageViewQuantMapInvalidViewTyp
         image_view_ci.image = image;
         image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_1D;
         image_view_ci.format = image_ci.format;
-        image_view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        image_view_ci.subresourceRange.levelCount = 1;
-        image_view_ci.subresourceRange.layerCount = 1;
+        image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageViewCreateInfo-subResourceRange-01021");
         m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-image-10261");
@@ -1701,9 +1699,7 @@ TEST_F(NegativeVideoEncodeQuantizationMap, CreateImageViewQuantMapUnsupportedFor
         // We will just use a definitely not supported view format here because we anyway
         // did not create the image with MUTABLE, so no need to worry about video format compatibility
         image_view_ci.format = VK_FORMAT_D32_SFLOAT;
-        image_view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        image_view_ci.subresourceRange.levelCount = 1;
-        image_view_ci.subresourceRange.layerCount = 1;
+        image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
         // The image is not created with MUTABLE, so we need to allow this VU.
         // This should also bypass view format compatibility checks

@@ -208,9 +208,7 @@ TEST_F(NegativeWsi, SwapchainImage) {
     image_create_info.flags = 0;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_create_info.extent.width = 64;
-    image_create_info.extent.height = 64;
-    image_create_info.extent.depth = 1;
+    image_create_info.extent = {64, 64, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -3284,11 +3282,7 @@ TEST_F(NegativeWsi, UseDestroyedSwapchain) {
     ivci.image = swapchain_images[index];
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ivci.format = swapchain_create_info.imageFormat;
-    ivci.subresourceRange.layerCount = 1;
-    ivci.subresourceRange.baseMipLevel = 0;
-    ivci.subresourceRange.levelCount = 1;
-    ivci.subresourceRange.baseArrayLayer = 0;
-    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     vkt::ImageView image_view(*m_device, ivci);
     VkImageView image_view_handle = image_view;

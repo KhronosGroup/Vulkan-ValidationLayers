@@ -1728,9 +1728,7 @@ TEST_F(PositiveDynamicState, SampleLocations) {
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.format = stencil_format;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.extent.width = 128;
-    image_create_info.extent.height = 128;
-    image_create_info.extent.depth = 1;
+    image_create_info.extent = {128, 128, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;

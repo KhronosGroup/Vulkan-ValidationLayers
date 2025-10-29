@@ -8485,11 +8485,11 @@ bool Device::PreCallValidateAcquireImageOHOS(VkDevice device, VkImage image, int
     bool skip = false;
     // Checked by chassis: device: "VUID-vkAcquireImageOHOS-device-parameter"
     skip |= ValidateObject(image, kVulkanObjectTypeImage, false, "VUID-vkAcquireImageOHOS-image-parameter",
-                           "UNASSIGNED-vkAcquireImageOHOS-commonparent", error_obj.location.dot(Field::image));
+                           "VUID-vkAcquireImageOHOS-image-parent", error_obj.location.dot(Field::image));
     skip |= ValidateObject(semaphore, kVulkanObjectTypeSemaphore, true, "VUID-vkAcquireImageOHOS-semaphore-parameter",
-                           "UNASSIGNED-vkAcquireImageOHOS-commonparent", error_obj.location.dot(Field::semaphore));
+                           "VUID-vkAcquireImageOHOS-semaphore-parent", error_obj.location.dot(Field::semaphore));
     skip |= ValidateObject(fence, kVulkanObjectTypeFence, true, "VUID-vkAcquireImageOHOS-fence-parameter",
-                           "UNASSIGNED-vkAcquireImageOHOS-commonparent", error_obj.location.dot(Field::fence));
+                           "VUID-vkAcquireImageOHOS-fence-parent", error_obj.location.dot(Field::fence));
 
     return skip;
 }

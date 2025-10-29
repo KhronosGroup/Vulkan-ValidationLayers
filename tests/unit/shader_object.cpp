@@ -6615,10 +6615,8 @@ TEST_F(NegativeShaderObject, TaskMeshShadersDrawWithoutBindingVertex) {
 
     VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.flags = 0u;
-    begin_rendering_info.renderArea.offset.x = 0;
-    begin_rendering_info.renderArea.offset.y = 0;
-    begin_rendering_info.renderArea.extent.width = static_cast<uint32_t>(m_width);
-    begin_rendering_info.renderArea.extent.height = static_cast<uint32_t>(m_height);
+    begin_rendering_info.renderArea.offset = {0, 0};
+    begin_rendering_info.renderArea.extent = {m_width, m_height};
     begin_rendering_info.layerCount = 1u;
     begin_rendering_info.viewMask = 0x0;
     begin_rendering_info.colorAttachmentCount = 1u;
@@ -6652,10 +6650,8 @@ TEST_F(NegativeShaderObject, DrawMeshTasksWithoutMeshShader) {
 
     VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.flags = 0u;
-    begin_rendering_info.renderArea.offset.x = 0;
-    begin_rendering_info.renderArea.offset.y = 0;
-    begin_rendering_info.renderArea.extent.width = static_cast<uint32_t>(m_width);
-    begin_rendering_info.renderArea.extent.height = static_cast<uint32_t>(m_height);
+    begin_rendering_info.renderArea.offset = {0, 0};
+    begin_rendering_info.renderArea.extent = {m_width, m_height};
     begin_rendering_info.layerCount = 1u;
     begin_rendering_info.viewMask = 0x0;
     begin_rendering_info.colorAttachmentCount = 1u;
