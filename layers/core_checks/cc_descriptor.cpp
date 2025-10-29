@@ -3930,7 +3930,10 @@ bool CoreChecks::ValidateCmdPushDescriptorSetWithTemplate(VkCommandBuffer comman
     const bool is_2 =
         loc.function != Func::vkCmdPushDescriptorSetWithTemplateKHR && loc.function != Func::vkCmdPushDescriptorSetWithTemplate;
     auto pipeline_layout = Get<vvl::PipelineLayout>(layout);
-    if (!pipeline_layout) return skip;  // dynamicPipelineLayout
+    if (!pipeline_layout) {
+        return skip;  // dynamicPipelineLayout
+    }
+
     const auto &set_layouts = pipeline_layout->set_layouts;
     if (set >= set_layouts.size()) {
         const char *vuid =
@@ -3957,7 +3960,9 @@ bool CoreChecks::ValidateCmdPushDescriptorSetWithTemplate(VkCommandBuffer comman
     }
 
     auto template_state = Get<vvl::DescriptorUpdateTemplate>(descriptorUpdateTemplate);
-    if (!template_state) return skip;
+    if (!template_state) {
+        return skip;
+    }
     const auto &template_ci = template_state->create_info;
 
     skip |= ValidatePipelineBindPoint(*cb_state, template_ci.pipelineBindPoint, loc);
@@ -3991,13 +3996,22 @@ bool CoreChecks::ValidateCmdPushDescriptorSetWithTemplate(VkCommandBuffer comman
                          DescribePipelineLayoutSetNonCompatible(set, pipeline_layout.get(), template_layout.get()).c_str());
     }
 
-    if (!Get<vvl::DescriptorSetLayout>(dsl->VkHandle())) {
-        const LogObjectList objlist(commandBuffer, descriptorUpdateTemplate, layout);
+    if (!pData) {
+        // Seems there is a VUID-VkPushDescriptorSetWithTemplateInfo-pData-parameter generated, but not for
+        // vkCmdPushDescriptorSetWithTemplate
         const char *vuid =
             is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfo-pData-01686" : "VUID-vkCmdPushDescriptorSetWithTemplate-pData-01686";
-        skip |= LogError(vuid, objlist, loc.dot(Field::pData),
-                         "does not point to a valid layout, it possible the "
-                         "VkDescriptorUpdateTemplateCreateInfo::descriptorSetLayout was accidentally destroy.");
+        skip |= LogError(vuid, commandBuffer, loc.dot(Field::pData), "is NULL.");
+    } else if (!Get<vvl::DescriptorSetLayout>(dsl->VkHandle())) {
+        const LogObjectList objlist(commandBuffer, descriptorUpdateTemplate, layout);
+        // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7772
+        const char *vuid =
+            is_2 ? "UNASSIGNED-VkPushDescriptorSetWithTemplateInfo-dsl" : "UNASSIGNED-vkCmdPushDescriptorSetWithTemplate-dsl";
+        skip |= LogError(vuid, objlist, loc.dot(Field::set),
+                         "(%" PRIu32
+                         ") in the layout does not point to a valid VkDescriptorSetLayout, it is possible the "
+                         "VkDescriptorUpdateTemplateCreateInfo::descriptorSetLayout was accidentally destroy.",
+                         set);
     } else {
         // Create an empty proxy in order to use the existing descriptor set update validation
         vvl::DescriptorSet proxy_ds(VK_NULL_HANDLE, nullptr, dsl, 0, const_cast<vvl::DeviceState *>(device_state));
