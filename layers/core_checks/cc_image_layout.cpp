@@ -777,11 +777,10 @@ bool CoreChecks::ValidateRenderingAttachmentCurrentLayout(const vvl::CommandBuff
         return skip;
     }
 
-    LayoutUseCheckAndMessage layout_check(attachment_info.imageLayout, aspect_mask);
+    VkImageSubresourceRange layout_range = image_view_state->GetRangeGeneratorRange(device_state->extensions);
+    auto range_gen = RangeGenerator(image_state.subresource_encoder, layout_range);
 
-    VkImageSubresourceRange normalized_range = image_view_state->normalized_subresource_range;
-    normalized_range.aspectMask = aspect_mask;
-    auto range_gen = RangeGenerator(image_state.subresource_encoder, normalized_range);
+    LayoutUseCheckAndMessage layout_check(attachment_info.imageLayout, aspect_mask);
 
     skip |= ForEachMatchingLayoutMapRange(
         *image_layout_map, std::move(range_gen),
