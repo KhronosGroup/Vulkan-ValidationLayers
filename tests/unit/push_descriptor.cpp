@@ -229,7 +229,7 @@ TEST_F(NegativePushDescriptor, TemplateDestroyDescriptorSetLayout) {
 
     m_command_buffer.Begin();
     vk::DestroyDescriptorSetLayout(device(), ds_layout, nullptr);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSetWithTemplate-pData-01686");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdPushDescriptorSetWithTemplate-dsl");
     vk::CmdPushDescriptorSetWithTemplateKHR(m_command_buffer, update_template, pipeline_layout, 0, &update_template_data);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -1150,6 +1150,47 @@ TEST_F(NegativePushDescriptor, PushDescriptorSetInfoPerStage) {
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-VkPushDescriptorSetInfo-layout-09496");
     vk::CmdPushDescriptorSet2KHR(m_command_buffer, &push_descriptor_set_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativePushDescriptor, NullData) {
+    TEST_DESCRIPTION("Basic use of vkCmdPushDescriptorSetWithTemplateKHR");
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    VkDescriptorSetLayoutBinding ds_bindings = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    OneOffDescriptorSet descriptor_set(m_device, {ds_bindings});
+    vkt::DescriptorSetLayout push_dsl(*m_device, ds_bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
+
+    vkt::PipelineLayout pipeline_layout(*m_device, {&push_dsl});
+
+    struct SimpleTemplateData {
+        VkDescriptorBufferInfo buff_info;
+    };
+
+    VkDescriptorUpdateTemplateEntry update_template_entry = {};
+    update_template_entry.dstBinding = 0;
+    update_template_entry.dstArrayElement = 0;
+    update_template_entry.descriptorCount = 1;
+    update_template_entry.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    update_template_entry.offset = offsetof(SimpleTemplateData, buff_info);
+    update_template_entry.stride = sizeof(SimpleTemplateData);
+
+    VkDescriptorUpdateTemplateCreateInfo update_template_ci = vku::InitStructHelper();
+    update_template_ci.descriptorUpdateEntryCount = 1;
+    update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
+    update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS;
+    update_template_ci.descriptorSetLayout = descriptor_set.layout_;
+    update_template_ci.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    update_template_ci.pipelineLayout = pipeline_layout;
+
+    vkt::DescriptorUpdateTemplate update_template(*m_device, update_template_ci);
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSetWithTemplate-pData-01686");
+    vk::CmdPushDescriptorSetWithTemplateKHR(m_command_buffer, update_template, pipeline_layout, 0, nullptr);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
