@@ -11,6 +11,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <vulkan/vulkan_core.h>
 #include "../framework/layer_validation_tests.h"
 
 class NegativeImageDrm : public ImageDrmTest {};
@@ -192,9 +193,7 @@ TEST_F(NegativeImageDrm, GetImageSubresourceLayoutPlane) {
     VkImageCreateInfo create_info = vku::InitStructHelper(&list_create_info);
     create_info.imageType = VK_IMAGE_TYPE_2D;
     create_info.format = format;
-    create_info.extent.width = 64;
-    create_info.extent.height = 64;
-    create_info.extent.depth = 1;
+    create_info.extent = {64, 64, 1};
     create_info.mipLevels = 1;
     create_info.arrayLayers = 1;
     create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -281,11 +280,7 @@ TEST_F(NegativeImageDrm, ImageSubresourceRangeAspectMask) {
     ivci.image = image;
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ivci.format = mp_format;
-    ivci.subresourceRange.layerCount = 1;
-    ivci.subresourceRange.baseMipLevel = 0;
-    ivci.subresourceRange.levelCount = 1;
-    ivci.subresourceRange.baseArrayLayer = 0;
-    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT;
+    ivci.subresourceRange = {VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT, 0, 1, 0, 1};
 
     m_errorMonitor->SetUnexpectedError("VUID-VkImageViewCreateInfo-subresourceRange-09594");
     CreateImageViewTest(ivci, "VUID-VkImageSubresourceRange-aspectMask-02278");
@@ -475,9 +470,7 @@ TEST_F(NegativeImageDrm, MultiPlanarGetImageMemoryRequirements) {
     create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
     create_info.imageType = VK_IMAGE_TYPE_2D;
     create_info.format = format;
-    create_info.extent.width = 64;
-    create_info.extent.height = 64;
-    create_info.extent.depth = 1;
+    create_info.extent = {64, 64, 1};
     create_info.mipLevels = 1;
     create_info.arrayLayers = 1;
     create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -534,9 +527,7 @@ TEST_F(NegativeImageDrm, MultiPlanarBindMemory) {
     create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
     create_info.imageType = VK_IMAGE_TYPE_2D;
     create_info.format = format;
-    create_info.extent.width = 64;
-    create_info.extent.height = 64;
-    create_info.extent.depth = 1;
+    create_info.extent = {64, 64, 1};
     create_info.mipLevels = 1;
     create_info.arrayLayers = 1;
     create_info.samples = VK_SAMPLE_COUNT_1_BIT;

@@ -275,11 +275,7 @@ TEST_F(PositiveSecondaryCommandBuffer, ImageLayoutTransitions) {
     img_barrier.image = image;
     img_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     img_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    img_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-    img_barrier.subresourceRange.baseArrayLayer = 0;
-    img_barrier.subresourceRange.baseMipLevel = 0;
-    img_barrier.subresourceRange.layerCount = 1;
-    img_barrier.subresourceRange.levelCount = 1;
+    img_barrier.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1};
     vk::CmdPipelineBarrier(secondary_command_buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 0, nullptr,
                            0, nullptr, 1, &img_barrier);
     vk::EndCommandBuffer(secondary_command_buffer);
@@ -296,11 +292,7 @@ TEST_F(PositiveSecondaryCommandBuffer, ImageLayoutTransitions) {
     img_barrier2.image = image;
     img_barrier2.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     img_barrier2.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    img_barrier2.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-    img_barrier2.subresourceRange.baseArrayLayer = 0;
-    img_barrier2.subresourceRange.baseMipLevel = 0;
-    img_barrier2.subresourceRange.layerCount = 1;
-    img_barrier2.subresourceRange.levelCount = 1;
+    img_barrier2.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1};
     vk::CmdPipelineBarrier(primary_command_buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 0, nullptr,
                            0, nullptr, 1, &img_barrier2);
     vk::EndCommandBuffer(primary_command_buffer);

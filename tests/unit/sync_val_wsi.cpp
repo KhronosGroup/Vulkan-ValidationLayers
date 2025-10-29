@@ -227,11 +227,7 @@ TEST_F(NegativeSyncValWsi, PresentDoesNotWaitForSubmit2) {
     layout_transition.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     layout_transition.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     layout_transition.image = swapchain_images[image_index];
-    layout_transition.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    layout_transition.subresourceRange.baseMipLevel = 0;
-    layout_transition.subresourceRange.levelCount = 1;
-    layout_transition.subresourceRange.baseArrayLayer = 0;
-    layout_transition.subresourceRange.layerCount = 1;
+    layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     m_command_buffer.Begin();
     m_command_buffer.Barrier(layout_transition);
@@ -265,11 +261,7 @@ TEST_F(NegativeSyncValWsi, PresentDoesNotWaitForSubmit) {
     layout_transition.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     layout_transition.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     layout_transition.image = swapchain_images[image_index];
-    layout_transition.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    layout_transition.subresourceRange.baseMipLevel = 0;
-    layout_transition.subresourceRange.levelCount = 1;
-    layout_transition.subresourceRange.baseArrayLayer = 0;
-    layout_transition.subresourceRange.layerCount = 1;
+    layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     m_command_buffer.Begin();
     vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,

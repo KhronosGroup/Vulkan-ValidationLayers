@@ -1277,8 +1277,7 @@ TEST_F(PositiveDynamicRendering, BeginRenderingWithRenderPassStriped) {
         stripe_infos[i] = vku::InitStructHelper();
         stripe_infos[i].stripeArea.offset.x = stripe_width * i;
         stripe_infos[i].stripeArea.offset.y = 0;
-        stripe_infos[i].stripeArea.extent.width = stripe_width;
-        stripe_infos[i].stripeArea.extent.height = stripe_height;
+        stripe_infos[i].stripeArea.extent = {stripe_width, stripe_height};
     }
 
     VkRenderPassStripeBeginInfoARM rp_striped_info = vku::InitStructHelper();

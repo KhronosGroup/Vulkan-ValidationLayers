@@ -192,9 +192,7 @@ TEST_F(PositiveImageDrm, GetImageSubresourceLayoutPlane) {
     VkImageCreateInfo create_info = vku::InitStructHelper(&list_create_info);
     create_info.imageType = VK_IMAGE_TYPE_2D;
     create_info.format = format;
-    create_info.extent.width = 64;
-    create_info.extent.height = 64;
-    create_info.extent.depth = 1;
+    create_info.extent = {64, 64, 1};
     create_info.mipLevels = 1;
     create_info.arrayLayers = 1;
     create_info.samples = VK_SAMPLE_COUNT_1_BIT;

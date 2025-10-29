@@ -1916,10 +1916,8 @@ TEST_F(NegativeDynamicRendering, DeviceGroupRenderPassBeginInfo) {
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
     VkRect2D render_area = {};
-    render_area.offset.x = 0;
-    render_area.offset.y = 0;
-    render_area.extent.width = 32;
-    render_area.extent.height = 32;
+    render_area.offset = {0, 0};
+    render_area.extent = {32, 32};
 
     VkDeviceGroupRenderPassBeginInfo device_group_render_pass_begin_info = vku::InitStructHelper();
     device_group_render_pass_begin_info.deviceRenderAreaCount = 1;
@@ -3379,8 +3377,7 @@ TEST_F(NegativeDynamicRendering, InfoViewMask) {
 
     VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea.extent.width = 32;
-    begin_rendering_info.renderArea.extent.height = 32;
+    begin_rendering_info.renderArea.extent = {32, 32};
     begin_rendering_info.viewMask = 1u << multiview_props.maxMultiviewViewCount;
 
     m_command_buffer.Begin();
@@ -4274,8 +4271,7 @@ TEST_F(NegativeDynamicRendering, RenderAreaNegativeOffset) {
     VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.layerCount = 1;
     begin_rendering_info.renderArea.offset.x = -1;
-    begin_rendering_info.renderArea.extent.width = 32;
-    begin_rendering_info.renderArea.extent.height = 32;
+    begin_rendering_info.renderArea.extent = {32, 32};
 
     m_command_buffer.Begin();
 
@@ -4454,8 +4450,7 @@ TEST_F(NegativeDynamicRendering, FragmentShadingRateAttachmentSizeWithDeviceGrou
     begin_rendering_info.renderArea.offset.y = fragment_shading_rate.shadingRateAttachmentTexelSize.height * 64;
 
     VkRect2D render_area = {};
-    render_area.offset.x = 0;
-    render_area.offset.y = 0;
+    render_area.offset = {0, 0};
     render_area.extent.width = 64 * fragment_shading_rate.shadingRateAttachmentTexelSize.width;
     render_area.extent.height = 32;
 
@@ -6542,8 +6537,7 @@ TEST_F(NegativeDynamicRendering, BeginRenderingWithRenderPassStriped) {
         stripe_infos[i] = vku::InitStructHelper();
         stripe_infos[i].stripeArea.offset.x = stripe_width * i;
         stripe_infos[i].stripeArea.offset.y = 0;
-        stripe_infos[i].stripeArea.extent.width = stripe_width;
-        stripe_infos[i].stripeArea.extent.height = stripe_height;
+        stripe_infos[i].stripeArea.extent = {stripe_width, stripe_height};
     }
 
     VkRenderPassStripeBeginInfoARM rp_stripe_info = vku::InitStructHelper();
@@ -6567,8 +6561,7 @@ TEST_F(NegativeDynamicRendering, BeginRenderingWithRenderPassStriped) {
     for (uint32_t i = 0; i < stripe_count; ++i) {
         stripe_infos[i].stripeArea.offset.x = i > 1 && i <= 4 ? (stripe_width * (i - 1) / 2) : stripe_width * i;
         stripe_infos[i].stripeArea.offset.y = 0;
-        stripe_infos[i].stripeArea.extent.width = stripe_width;
-        stripe_infos[i].stripeArea.extent.height = stripe_height;
+        stripe_infos[i].stripeArea.extent = {stripe_width, stripe_height};
     }
 
     m_command_buffer.Begin();

@@ -295,9 +295,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabledGetImageOpaqueCaptureDescriptorDataEX
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.extent.width = 128;
-    image_create_info.extent.height = 128;
-    image_create_info.extent.depth = 1;
+    image_create_info.extent = {128, 128, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -324,9 +322,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabledGetImageViewOpaqueCaptureDescriptorDa
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.extent.width = 128;
-    image_create_info.extent.height = 128;
-    image_create_info.extent.depth = 1;
+    image_create_info.extent = {128, 128, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -428,9 +424,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabledDescriptorBufferCaptureReplay) {
         VkImageCreateInfo image_create_info = vku::InitStructHelper();
         image_create_info.flags |= VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT;
         image_create_info.imageType = VK_IMAGE_TYPE_2D;
-        image_create_info.extent.width = 128;
-        image_create_info.extent.height = 128;
-        image_create_info.extent.depth = 1;
+        image_create_info.extent = {128, 128, 1};
         image_create_info.mipLevels = 1;
         image_create_info.arrayLayers = 1;
         image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -453,10 +447,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabledDescriptorBufferCaptureReplay) {
         dsvci.image = temp_image;
         dsvci.viewType = VK_IMAGE_VIEW_TYPE_2D;
         dsvci.format = VK_FORMAT_D32_SFLOAT;
-        dsvci.subresourceRange.layerCount = 1;
-        dsvci.subresourceRange.baseMipLevel = 0;
-        dsvci.subresourceRange.levelCount = 1;
-        dsvci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        dsvci.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1};
         CreateImageViewTest(dsvci, "VUID-VkImageViewCreateInfo-flags-08106");
 
         dsvci.pNext = &ocddci;
@@ -1552,9 +1543,7 @@ TEST_F(NegativeDescriptorBuffer, DescriptorBufferCaptureReplay) {
         VkImageCreateInfo image_create_info = vku::InitStructHelper();
         image_create_info.flags = VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT;
         image_create_info.imageType = VK_IMAGE_TYPE_2D;
-        image_create_info.extent.width = 128;
-        image_create_info.extent.height = 128;
-        image_create_info.extent.depth = 1;
+        image_create_info.extent = {128, 128, 1};
         image_create_info.mipLevels = 1;
         image_create_info.arrayLayers = 1;
         image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;

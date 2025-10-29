@@ -64,8 +64,7 @@ TEST_F(NegativeMultiview, MaxInstanceIndex) {
     VkRenderPassBeginInfo render_pass_bi = vku::InitStructHelper();
     render_pass_bi.renderPass = rp;
     render_pass_bi.framebuffer = framebuffer;
-    render_pass_bi.renderArea.extent.width = 32u;
-    render_pass_bi.renderArea.extent.height = 32u;
+    render_pass_bi.renderArea.extent = {32u, 32u};
     render_pass_bi.clearValueCount = 1u;
     render_pass_bi.pClearValues = m_renderPassClearValues.data();
 
@@ -130,8 +129,7 @@ TEST_F(NegativeMultiview, ClearColorAttachments) {
     color_attachment.colorAttachment = 0;
 
     VkClearRect clear_rect = {};
-    clear_rect.rect.extent.width = 32;
-    clear_rect.rect.extent.height = 32;
+    clear_rect.rect.extent = {32, 32};
 
     m_command_buffer.BeginRenderPass(rp, framebuffer, 32, 32);
     m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-baseArrayLayer-00018");
@@ -223,9 +221,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_create_info.extent.width = m_width;
-    image_create_info.extent.height = m_height;
-    image_create_info.extent.depth = 1;
+    image_create_info.extent = {m_width, m_height, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = multiview_count;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -242,8 +238,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
     m_renderPassClearValues.emplace_back(clear);
     m_renderPassBeginInfo.renderPass = m_renderPass;
     m_renderPassBeginInfo.framebuffer = fb;
-    m_renderPassBeginInfo.renderArea.extent.width = m_width;
-    m_renderPassBeginInfo.renderArea.extent.height = m_height;
+    m_renderPassBeginInfo.renderArea.extent = {m_width, m_height};
     m_renderPassBeginInfo.clearValueCount = m_renderPassClearValues.size();
     m_renderPassBeginInfo.pClearValues = m_renderPassClearValues.data();
 

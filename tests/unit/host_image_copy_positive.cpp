@@ -209,9 +209,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage14) {
     region_to_image.pHostPointer = pixels.data();
     region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     region_to_image.imageSubresource.layerCount = 1;
-    region_to_image.imageExtent.width = width;
-    region_to_image.imageExtent.height = height;
-    region_to_image.imageExtent.depth = 1;
+    region_to_image.imageExtent = {width, height, 1};
 
     VkCopyMemoryToImageInfo copy_to_image = vku::InitStructHelper();
     copy_to_image.dstImage = image;
@@ -229,9 +227,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage14) {
     region_from_image.pHostPointer = welcome_back.data();
     region_from_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     region_from_image.imageSubresource.layerCount = 1;
-    region_from_image.imageExtent.width = width;
-    region_from_image.imageExtent.height = height;
-    region_from_image.imageExtent.depth = 1;
+    region_from_image.imageExtent = {width, height, 1};
 
     VkCopyImageToMemoryInfo copy_from_image = vku::InitStructHelper();
     copy_from_image.srcImage = image;

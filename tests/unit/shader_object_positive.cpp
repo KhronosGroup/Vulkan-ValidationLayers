@@ -248,8 +248,7 @@ TEST_F(PositiveShaderObject, VertFragShaderDraw) {
     color_attachment.imageView = view;
 
     VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-    begin_rendering_info.renderArea.extent.width = static_cast<uint32_t>(m_width);
-    begin_rendering_info.renderArea.extent.height = static_cast<uint32_t>(m_height);
+    begin_rendering_info.renderArea.extent = {m_width, m_height};
     begin_rendering_info.layerCount = 1u;
     begin_rendering_info.colorAttachmentCount = 1u;
     begin_rendering_info.pColorAttachments = &color_attachment;
@@ -270,11 +269,7 @@ TEST_F(PositiveShaderObject, VertFragShaderDraw) {
         image_memory_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         image_memory_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         image_memory_barrier.image = image;
-        image_memory_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        image_memory_barrier.subresourceRange.baseMipLevel = 0u;
-        image_memory_barrier.subresourceRange.levelCount = 1u;
-        image_memory_barrier.subresourceRange.baseArrayLayer = 0u;
-        image_memory_barrier.subresourceRange.layerCount = 1u;
+        image_memory_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
         vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u,
                                0u, nullptr, 0u, nullptr, 1u, &image_memory_barrier);
     }
@@ -383,10 +378,8 @@ TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
 
     VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.flags = 0u;
-    begin_rendering_info.renderArea.offset.x = 0;
-    begin_rendering_info.renderArea.offset.y = 0;
-    begin_rendering_info.renderArea.extent.width = static_cast<uint32_t>(m_width);
-    begin_rendering_info.renderArea.extent.height = static_cast<uint32_t>(m_height);
+    begin_rendering_info.renderArea.offset = {0, 0};
+    begin_rendering_info.renderArea.extent = {m_width, m_height};
     begin_rendering_info.layerCount = 1u;
     begin_rendering_info.viewMask = 0x0;
     begin_rendering_info.colorAttachmentCount = 1u;
@@ -496,10 +489,8 @@ TEST_F(PositiveShaderObject, TaskMeshShadersDraw) {
 
     VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.flags = 0u;
-    begin_rendering_info.renderArea.offset.x = 0;
-    begin_rendering_info.renderArea.offset.y = 0;
-    begin_rendering_info.renderArea.extent.width = static_cast<uint32_t>(m_width);
-    begin_rendering_info.renderArea.extent.height = static_cast<uint32_t>(m_height);
+    begin_rendering_info.renderArea.offset = {0, 0};
+    begin_rendering_info.renderArea.extent = {m_width, m_height};
     begin_rendering_info.layerCount = 1u;
     begin_rendering_info.viewMask = 0x0;
     begin_rendering_info.colorAttachmentCount = 1u;

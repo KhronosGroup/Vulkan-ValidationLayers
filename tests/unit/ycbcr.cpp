@@ -267,10 +267,7 @@ TEST_F(NegativeYcbcr, Swizzle) {
     image_view_create_info.image = image;
     image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
     image_view_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_view_create_info.subresourceRange.layerCount = 1;
-    image_view_create_info.subresourceRange.baseMipLevel = 0;
-    image_view_create_info.subresourceRange.levelCount = 1;
-    image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    image_view_create_info.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     image_view_create_info.components = identity;
     image_view_create_info.components.r = VK_COMPONENT_SWIZZLE_B;
     CreateImageViewTest(image_view_create_info, "VUID-VkImageViewCreateInfo-pNext-01970");
@@ -414,9 +411,7 @@ TEST_F(NegativeYcbcr, ImageViewFormat) {
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
-    image_create_info.extent.width = 31;
-    image_create_info.extent.height = 32;
-    image_create_info.extent.depth = 1;
+    image_create_info.extent = {31, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
@@ -823,9 +818,7 @@ TEST_F(NegativeYcbcr, BindMemoryDisjoint) {
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = mp_format;
-    image_create_info.extent.width = 64;
-    image_create_info.extent.height = 64;
-    image_create_info.extent.depth = 1;
+    image_create_info.extent = {64, 64, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -897,9 +890,7 @@ TEST_F(NegativeYcbcr, BindMemoryNoDisjoint) {
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = mp_format;
-    image_create_info.extent.width = 64;
-    image_create_info.extent.height = 64;
-    image_create_info.extent.depth = 1;
+    image_create_info.extent = {64, 64, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -945,9 +936,7 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = tex_format;
-    image_create_info.extent.width = 256;
-    image_create_info.extent.height = 256;
-    image_create_info.extent.depth = 1;
+    image_create_info.extent = {256, 256, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -1141,9 +1130,7 @@ TEST_F(NegativeYcbcr, BindMemory2DisjointUnsupported) {
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = tex_format;
-    image_create_info.extent.width = 256;
-    image_create_info.extent.height = 256;
-    image_create_info.extent.depth = 1;
+    image_create_info.extent = {256, 256, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -1329,10 +1316,7 @@ TEST_F(NegativeYcbcr, MismatchedImageViewAndSamplerFormat) {
     view_info.image = image;
     view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
     view_info.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
-    view_info.subresourceRange.layerCount = 1;
-    view_info.subresourceRange.baseMipLevel = 0;
-    view_info.subresourceRange.levelCount = 1;
-    view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    view_info.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     CreateImageViewTest(view_info, "VUID-VkImageViewCreateInfo-pNext-06658");
 }
@@ -1631,9 +1615,7 @@ TEST_F(NegativeYcbcr, DisjointImageWithDrmFormatModifier) {
     image_create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = format;
-    image_create_info.extent.width = 64;
-    image_create_info.extent.height = 64;
-    image_create_info.extent.depth = 1;
+    image_create_info.extent = {64, 64, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;

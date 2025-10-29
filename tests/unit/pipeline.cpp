@@ -2736,10 +2736,8 @@ TEST_F(NegativePipeline, VariableSampleLocations) {
     VkRenderPassBeginInfo begin_info = vku::InitStructHelper(&render_pass_sample_locations);
     begin_info.renderPass = render_pass;
     begin_info.framebuffer = framebuffer;
-    begin_info.renderArea.extent.width = 32;
-    begin_info.renderArea.extent.height = 32;
-    begin_info.renderArea.offset.x = 0;
-    begin_info.renderArea.offset.y = 0;
+    begin_info.renderArea.extent = {32, 32};
+    begin_info.renderArea.offset = {0, 0};
     begin_info.clearValueCount = 1;
     begin_info.pClearValues = &clear_value;
 

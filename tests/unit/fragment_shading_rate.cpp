@@ -563,9 +563,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapEnabled) {
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8_UNORM;
-    image_create_info.extent.width = 64;
-    image_create_info.extent.height = 64;
-    image_create_info.extent.depth = 1;
+    image_create_info.extent = {64, 64, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -620,11 +618,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapEnabled) {
     ivci.image = densityImage;
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ivci.format = VK_FORMAT_R8G8_UNORM;
-    ivci.subresourceRange.layerCount = 1;
-    ivci.subresourceRange.baseMipLevel = 0;
-    ivci.subresourceRange.levelCount = 1;
-    ivci.subresourceRange.baseArrayLayer = 0;
-    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     // density maps can't be sparse (or protected)
     if (features2.features.sparseResidencyImage2D) {
@@ -671,9 +665,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapDisabled) {
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8_UNORM;
-    image_create_info.extent.width = 64;
-    image_create_info.extent.height = 64;
-    image_create_info.extent.depth = 1;
+    image_create_info.extent = {64, 64, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -686,11 +678,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapDisabled) {
     ivci.image = image2D;
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ivci.format = VK_FORMAT_R8G8_UNORM;
-    ivci.subresourceRange.layerCount = 1;
-    ivci.subresourceRange.baseMipLevel = 0;
-    ivci.subresourceRange.levelCount = 1;
-    ivci.subresourceRange.baseArrayLayer = 0;
-    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     // Flags must not be set if the feature is not enabled
     ivci.flags = VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DYNAMIC_BIT_EXT;
@@ -2749,19 +2737,15 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetHeightGranularity) {
 
 TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
     TEST_DESCRIPTION("Test VK_NV_shading_rate_image.");
-
     AddRequiredExtensions(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shadingRateImage);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    // Test shading rate image creation
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8_UINT;
-    image_create_info.extent.width = 4;
-    image_create_info.extent.height = 4;
-    image_create_info.extent.depth = 1;
+    image_create_info.extent = {4, 4, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -2769,37 +2753,29 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV;
     image_create_info.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
 
-    // image type must be 2D
     image_create_info.imageType = VK_IMAGE_TYPE_3D;
     CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-imageType-02082");
 
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.arrayLayers = 6;
 
-    // must be single sample
     image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
     CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-samples-02083");
 
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
 
-    // tiling must be optimal
     image_create_info.tiling = VK_IMAGE_TILING_LINEAR;
     CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-shadingRateImage-07727");
 
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     vkt::Image image(*m_device, image_create_info, vkt::set_layout);
 
-    // Test image view creation
     VkImageViewCreateInfo ivci = vku::InitStructHelper();
     ivci.image = image;
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ivci.format = VK_FORMAT_R8_UINT;
-    ivci.subresourceRange.layerCount = 1;
-    ivci.subresourceRange.baseMipLevel = 0;
-    ivci.subresourceRange.levelCount = 1;
-    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    // view type must be 2D or 2D_ARRAY
     {
         ivci.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
         ivci.subresourceRange.layerCount = 6;
@@ -2811,7 +2787,6 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
         ivci.subresourceRange.layerCount = 1;
     }
 
-    // format must be R8_UINT
     {
         ivci.format = VK_FORMAT_R8_UNORM;
         m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-image-02087");
@@ -2822,7 +2797,6 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
 
     vkt::ImageView view(*m_device, ivci);
 
-    // Test pipeline creation
     VkPipelineViewportShadingRateImageStateCreateInfoNV vsrisci = vku::InitStructHelper();
 
     VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
@@ -2850,8 +2824,6 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
                                       "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217"};
         CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit, vuids);
     }
-
-    // pShadingRatePalettes must not be NULL.
     {
         const auto break_vp = [&](CreatePipelineHelper &helper) {
             helper.vp_state_ci_.viewportCount = 1;
@@ -2867,11 +2839,9 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
                                           std::vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04057"}));
     }
 
-    // Create an image without the SRI bit
     vkt::Image nonSRIimage(*m_device, 256, 256, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView nonSRIview = nonSRIimage.CreateView();
 
-    // Test SRI layout on non-SRI image
     VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
     img_barrier.srcAccessMask = 0;
     img_barrier.dstAccessMask = 0;
@@ -2888,7 +2858,6 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
 
     m_command_buffer.Begin();
 
-    // Error trying to convert it to SRI layout
     m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier-oldLayout-02088");
     vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr,
                            0, nullptr, 1, &img_barrier);
@@ -2911,14 +2880,12 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
     VkShadingRatePaletteNV palette = {100, paletteEntries};
     VkShadingRatePaletteNV palettes[] = {palette, palette};
 
-    // errors on firstViewport/viewportCount
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetViewportShadingRatePaletteNV-firstViewport-02067");
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetViewportShadingRatePaletteNV-firstViewport-02068");
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetViewportShadingRatePaletteNV-viewportCount-02069");
     vk::CmdSetViewportShadingRatePaletteNV(m_command_buffer, 20, 2, palettes);
     m_errorMonitor->VerifyFound();
 
-    // shadingRatePaletteEntryCount must be in range
     m_errorMonitor->SetDesiredError("VUID-VkShadingRatePaletteNV-shadingRatePaletteEntryCount-02071");
     vk::CmdSetViewportShadingRatePaletteNV(m_command_buffer, 0, 1, palettes);
     m_errorMonitor->VerifyFound();
@@ -3005,14 +2972,11 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNVViewportCount) {
     AddRequiredFeature(vkt::Feature::multiViewport);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-
     // Test shading rate image creation
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8_UINT;
-    image_create_info.extent.width = 4;
-    image_create_info.extent.height = 4;
-    image_create_info.extent.depth = 1;
+    image_create_info.extent = {4, 4, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -3171,11 +3135,7 @@ TEST_F(NegativeFragmentShadingRate, Framebuffer) {
     image_view_ci.image = image2;
     image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     image_view_ci.format = format;
-    image_view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    image_view_ci.subresourceRange.baseMipLevel = 0u;
-    image_view_ci.subresourceRange.levelCount = 1u;
-    image_view_ci.subresourceRange.baseArrayLayer = 0u;
-    image_view_ci.subresourceRange.layerCount = 1u;
+    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     vkt::ImageView view(*m_device, image_view_ci);
 
     VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();
@@ -3247,10 +3207,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapNonSubsampledImages) {
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ivci.format = attachment_format;
     ivci.flags = 0;
-    ivci.subresourceRange.layerCount = 1;
-    ivci.subresourceRange.baseMipLevel = 0;
-    ivci.subresourceRange.levelCount = 1;
-    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     ivci.image = image;
 
     VkImageViewCreateInfo ivci_fdm = ivci;
@@ -3286,9 +3243,7 @@ TEST_F(NegativeFragmentShadingRate, AttachmentFragmentDensityFlags) {
     VkImageCreateInfo fdm_ici = vku::InitStructHelper();
     fdm_ici.imageType = VK_IMAGE_TYPE_2D;
     fdm_ici.format = VK_FORMAT_R8G8_UNORM;
-    fdm_ici.extent.width = 16;
-    fdm_ici.extent.height = 16;
-    fdm_ici.extent.depth = 1;
+    fdm_ici.extent = {16, 16, 1};
     fdm_ici.mipLevels = 1;
     fdm_ici.arrayLayers = 1;
     fdm_ici.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -3303,9 +3258,7 @@ TEST_F(NegativeFragmentShadingRate, AttachmentFragmentDensityFlags) {
     VkImageCreateInfo base_ici = vku::InitStructHelper();
     base_ici.imageType = VK_IMAGE_TYPE_2D;
     base_ici.format = VK_FORMAT_R8G8B8A8_UNORM;
-    base_ici.extent.width = 16;
-    base_ici.extent.height = 16;
-    base_ici.extent.depth = 1;
+    base_ici.extent = {16, 16, 1};
     base_ici.mipLevels = 1;
     base_ici.arrayLayers = 1;
     base_ici.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -3510,7 +3463,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetDifferentOffsetCount
     rendering_info.flags = VK_RENDERING_RESUMING_BIT;
     m_command_buffer.BeginRendering(rendering_info);
     fdm_offset_end_info.fragmentDensityOffsetCount = 0u;
-    m_errorMonitor->SetDesiredError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoKHR-pFragmentDensityOffsets-10730");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pFragmentDensityOffsets-10730");
     vk::CmdEndRendering2EXT(m_command_buffer, &rendering_end_info);
     m_errorMonitor->VerifyFound();
 
@@ -3558,7 +3511,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetDifferentOffsets) {
     m_command_buffer.BeginRendering(rendering_info);
     VkOffset2D offset2 = {width * 2, height * 2};
     fdm_offset_end_info.pFragmentDensityOffsets = &offset2;
-    m_errorMonitor->SetDesiredError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoKHR-pFragmentDensityOffsets-10730");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pFragmentDensityOffsets-10730");
     vk::CmdEndRendering2EXT(m_command_buffer, &rendering_end_info);
     m_errorMonitor->VerifyFound();
 

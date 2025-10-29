@@ -30,11 +30,7 @@ TEST_F(PositiveImageLayout, BarriersAndImageUsage) {
     img_barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     img_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     img_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    img_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    img_barrier.subresourceRange.baseArrayLayer = 0;
-    img_barrier.subresourceRange.baseMipLevel = 0;
-    img_barrier.subresourceRange.layerCount = 1;
-    img_barrier.subresourceRange.levelCount = 1;
+    img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     {
         vkt::Image img_color(*m_device, 128, 128, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -338,20 +334,14 @@ TEST_F(PositiveImageLayout, Descriptor3D2DSubresource) {
                                        });
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    // Create image, view, and sampler
     const VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
     auto usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-
-    static const uint32_t kWidth = 128;
-    static const uint32_t kHeight = 128;
 
     VkImageCreateInfo image_ci_3d = vku::InitStructHelper();
     image_ci_3d.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
     image_ci_3d.imageType = VK_IMAGE_TYPE_3D;
     image_ci_3d.format = format;
-    image_ci_3d.extent.width = kWidth;
-    image_ci_3d.extent.height = kHeight;
-    image_ci_3d.extent.depth = 8;
+    image_ci_3d.extent = {128, 128, 8};
     image_ci_3d.mipLevels = 1;
     image_ci_3d.arrayLayers = 1;
     image_ci_3d.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -359,7 +349,7 @@ TEST_F(PositiveImageLayout, Descriptor3D2DSubresource) {
     image_ci_3d.usage = usage;
     vkt::Image image_3d(*m_device, image_ci_3d, vkt::set_layout);
 
-    vkt::Image other_image(*m_device, kWidth, kHeight, format, usage);
+    vkt::Image other_image(*m_device, 128, 128, format, usage);
 
     // The image view is a 2D slice of the 3D image at depth = 4, which we request by
     // asking for arrayLayer = 4
@@ -446,7 +436,7 @@ TEST_F(PositiveImageLayout, Descriptor3D2DSubresource) {
     for (TestType test_type : test_list) {
         VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
 
-        vkt::Framebuffer fb(*m_device, rp, 1, &view_2d.handle(), kWidth, kHeight);
+        vkt::Framebuffer fb(*m_device, rp, 1, &view_2d.handle(), 128, 128);
 
         cmd_buf.Begin();
         image_barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
@@ -471,7 +461,7 @@ TEST_F(PositiveImageLayout, Descriptor3D2DSubresource) {
 
         m_renderPassBeginInfo.renderPass = rp;
         m_renderPassBeginInfo.framebuffer = fb;
-        m_renderPassBeginInfo.renderArea = {{0, 0}, {kWidth, kHeight}};
+        m_renderPassBeginInfo.renderArea = {{0, 0}, {128, 128}};
 
         cmd_buf.BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
@@ -481,8 +471,6 @@ TEST_F(PositiveImageLayout, Descriptor3D2DSubresource) {
 
         cmd_buf.EndRenderPass();
         cmd_buf.End();
-
-        // Submit cmd buffer
         m_default_queue->SubmitAndWait(cmd_buf);
     }
 }
@@ -619,10 +607,7 @@ TEST_F(PositiveImageLayout, MultipleLayoutChanges) {
     barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
     barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     barrier.image = image;
-    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    barrier.subresourceRange.levelCount = 1;
-    barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount = 1;
+    barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     m_command_buffer.Begin();
 

@@ -1647,9 +1647,7 @@ TEST_F(NegativeVideo, CreateImageViewInvalidViewType) {
         image_view_ci.image = image;
         image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
         image_view_ci.format = image_ci.format;
-        image_view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        image_view_ci.subresourceRange.levelCount = 1;
-        image_view_ci.subresourceRange.layerCount = 6;
+        image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 6};
 
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageViewCreateInfo-image-01003");
         if (config.IsDecode()) {
@@ -1727,9 +1725,7 @@ TEST_F(NegativeVideo, CreateImageViewInvalidUsage) {
         image_view_ci.image = image;
         image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
         image_view_ci.format = format;
-        image_view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        image_view_ci.subresourceRange.levelCount = 1;
-        image_view_ci.subresourceRange.layerCount = 1;
+        image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
         VkImageView image_view = VK_NULL_HANDLE;
 

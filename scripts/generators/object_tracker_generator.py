@@ -248,6 +248,7 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
             'vkUpdateDescriptorSetWithTemplate',
             'vkUpdateDescriptorSetWithTemplateKHR',
             'vkAcquireNextImageKHR',
+            'vkAcquireImageOHOS',
             'vkMergeValidationCachesEXT',
             'vkBindOpticalFlowSessionImageNV',
             ]
