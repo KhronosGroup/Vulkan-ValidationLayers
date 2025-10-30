@@ -29,6 +29,7 @@ struct safe_VkSpecializationInfo;
 
 namespace vvl {
 struct ShaderModule;
+struct DescriptorSetLayoutList;
 }  // namespace vvl
 
 namespace spirv {
@@ -44,11 +45,13 @@ struct ShaderStageState {
     std::shared_ptr<const spirv::Module> spirv_state;
     const vku::safe_VkPipelineShaderStageCreateInfo *pipeline_create_info;
     const vku::safe_VkShaderCreateInfoEXT *shader_object_create_info;
+    const vvl::DescriptorSetLayoutList *descriptor_set_layouts;
     // If null, means it is an empty object, no SPIR-V backing it
     std::shared_ptr<const spirv::EntryPoint> entrypoint;
 
     ShaderStageState(const vku::safe_VkPipelineShaderStageCreateInfo *pipeline_create_info,
                      const vku::safe_VkShaderCreateInfoEXT *shader_object_create_info,
+                     const vvl::DescriptorSetLayoutList *descriptor_set_layouts,
                      std::shared_ptr<const vvl::ShaderModule> module_state, std::shared_ptr<const spirv::Module> spirv_state);
 
     bool HasPipeline() const { return pipeline_create_info != nullptr; }

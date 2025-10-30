@@ -979,7 +979,7 @@ bool GpuShaderInstrumentor::NeedPipelineCreationShaderInstrumentation(vvl::Pipel
         return false;
     }
     const auto pipeline_layout = pipeline_state.PipelineLayoutState();
-    if (pipeline_layout && pipeline_layout->set_layouts.size() > instrumentation_desc_set_bind_index_) {
+    if (pipeline_layout && pipeline_layout->set_layouts.list.size() > instrumentation_desc_set_bind_index_) {
         return false;
     }
 
@@ -993,9 +993,9 @@ void GpuShaderInstrumentor::BuildDescriptorSetLayoutInfo(const vvl::Pipeline &pi
         return;
     }
 
-    out_instrumentation_dsl.set_index_to_bindings_layout_lut.resize(pipeline_layout->set_layouts.size());
-    for (uint32_t set_layout_index = 0; set_layout_index < pipeline_layout->set_layouts.size(); set_layout_index++) {
-        if (const auto set_layout_state = pipeline_layout->set_layouts[set_layout_index]) {
+    out_instrumentation_dsl.set_index_to_bindings_layout_lut.resize(pipeline_layout->set_layouts.list.size());
+    for (uint32_t set_layout_index = 0; set_layout_index < pipeline_layout->set_layouts.list.size(); set_layout_index++) {
+        if (const auto set_layout_state = pipeline_layout->set_layouts.list[set_layout_index]) {
             BuildDescriptorSetLayoutInfo(*set_layout_state, set_layout_index, out_instrumentation_dsl);
         }
     }

@@ -41,6 +41,7 @@
 #include "utils/hash_util.h"
 #include "chassis/chassis_modification_state.h"
 #include "state_tracker/descriptor_sets.h"
+#include "state_tracker/descriptor_set_layouts.h"
 #include "state_tracker/render_pass_state.h"
 #include "spirv-tools/optimizer.hpp"
 #include "containers/limits.h"
@@ -1431,71 +1432,79 @@ bool CoreChecks::ValidateShaderInterfaceVariable(const spirv::Module &module_sta
     return skip;
 }
 
-bool CoreChecks::ValidateShaderInterfaceVariablePipeline(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
-                                                         const vvl::Pipeline &pipeline,
-                                                         const spirv::ResourceInterfaceVariable &variable,
-                                                         vvl::unordered_set<uint32_t> &descriptor_type_set,
-                                                         const Location &loc) const {
+bool CoreChecks::ValidateShaderInterfaceVariableDSL(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
+                                                    const ShaderStageState &stage_state,
+                                                    const spirv::ResourceInterfaceVariable &variable,
+                                                    vvl::unordered_set<uint32_t> &descriptor_type_set, const Location &loc) const {
     bool skip = false;
+    if (!stage_state.descriptor_set_layouts) {
+        return skip;
+    }
 
-    const LogObjectList objlist(module_state.handle(), pipeline.PipelineLayoutState()->Handle());
+    LogObjectList objlist(module_state.handle());
 
     const VkDescriptorSetLayoutBinding *binding = nullptr;
-    // For given pipelineLayout verify that the set_layout_node at slot.first has the requested binding at slot.second and return
-    // ptr to that binding
-    const vvl::PipelineLayout *pipeline_layout_state = pipeline.PipelineLayoutState().get();
-    if (pipeline_layout_state) {
-        const vvl::DescriptorSetLayout *descriptor_set_layout = pipeline_layout_state->FindDescriptorSetLayout(variable);
-        if (descriptor_set_layout) {
-            binding = descriptor_set_layout->GetDescriptorSetLayoutBindingPtrFromBinding(variable.decorations.binding);
-        }
 
-        if (binding) {
-            skip |= ValidateShaderYcbcrSampler(module_state, entrypoint, *pipeline_layout_state, *descriptor_set_layout, *binding,
-                                               variable, loc);
-        }
+    const vvl::DescriptorSetLayout *descriptor_set_layout = stage_state.descriptor_set_layouts->FindFromVariable(variable);
+    if (descriptor_set_layout) {
+        objlist.add(descriptor_set_layout->Handle());
+        binding = descriptor_set_layout->GetDescriptorSetLayoutBindingPtrFromBinding(variable.decorations.binding);
     }
+
+    if (binding) {
+        skip |= ValidateShaderYcbcrSampler(module_state, entrypoint, *stage_state.descriptor_set_layouts, *descriptor_set_layout,
+                                           *binding, variable, objlist, loc);
+    }
+
+    auto print_dsl_info = [&stage_state, &variable]() {
+        std::stringstream ss;
+        const bool has_pipeline = stage_state.shader_object_create_info == nullptr;
+        if (has_pipeline) {
+            ss << "VkPipelineLayoutCreateInfo::pSetLayouts[" << variable.decorations.set << "]";
+        } else {
+            ss << "VkShaderCreateInfoEXT::pSetLayouts[" << variable.decorations.set << "]";
+        }
+        return ss.str();
+    };
 
     if (!binding) {
-        skip |= LogError(GetPipelineInterfaceVariableVUID(pipeline, vvl::PipelineInterfaceVariableError::ShaderStage_07988),
-                         objlist, loc, "SPIR-V (%s) uses descriptor %s (type %s) but was not declared in the pipeline layout.",
+        skip |= LogError(GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::ShaderStage_07988), objlist, loc,
+                         "SPIR-V (%s) uses descriptor %s (type %s) but was not declared in the %s.",
                          string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
-                         string_DescriptorTypeSet(descriptor_type_set).c_str());
+                         string_DescriptorTypeSet(descriptor_type_set).c_str(), print_dsl_info().c_str());
     } else if (~binding->stageFlags & variable.stage) {
         skip |=
-            LogError(GetPipelineInterfaceVariableVUID(pipeline, vvl::PipelineInterfaceVariableError::ShaderStage_07988), objlist,
-                     loc, "SPIR-V (%s) uses descriptor %s (type %s) but the VkDescriptorSetLayoutBinding::stageFlags was %s.",
+            LogError(GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::ShaderStage_07988), objlist, loc,
+                     "SPIR-V (%s) uses descriptor %s (type %s) but the VkDescriptorSetLayoutBinding::stageFlags was %s. (from %s)",
                      string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
-                     string_DescriptorTypeSet(descriptor_type_set).c_str(), string_VkShaderStageFlags(binding->stageFlags).c_str());
+                     string_DescriptorTypeSet(descriptor_type_set).c_str(), string_VkShaderStageFlags(binding->stageFlags).c_str(),
+                     print_dsl_info().c_str());
     } else if ((binding->descriptorType != VK_DESCRIPTOR_TYPE_MUTABLE_EXT) &&
                (descriptor_type_set.find(binding->descriptorType) == descriptor_type_set.end())) {
-        skip |= LogError(GetPipelineInterfaceVariableVUID(pipeline, vvl::PipelineInterfaceVariableError::Mutable_07990), objlist,
-                         loc, "SPIR-V (%s) uses descriptor %s of type %s but expected %s.",
+        skip |= LogError(GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::Mutable_07990), objlist, loc,
+                         "SPIR-V (%s) uses descriptor %s of type %s but expected %s. (from %s)",
                          string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
-                         string_VkDescriptorType(binding->descriptorType), string_DescriptorTypeSet(descriptor_type_set).c_str());
+                         string_VkDescriptorType(binding->descriptorType), string_DescriptorTypeSet(descriptor_type_set).c_str(),
+                         print_dsl_info().c_str());
     } else if (binding->descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK && variable.array_length) {
         skip |=
-            LogError(GetPipelineInterfaceVariableVUID(pipeline, vvl::PipelineInterfaceVariableError::Inline_10391), objlist, loc,
-                     "SPIR-V (%s) uses descriptor %s as VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, but it is an array of descriptor.",
-                     string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str());
+            LogError(GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::Inline_10391), objlist, loc,
+                     "SPIR-V (%s) uses descriptor %s as VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, but it is an array of descriptor. "
+                     "(from %s)",
+                     string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(), print_dsl_info().c_str());
 
     } else if (binding->descriptorCount < variable.array_length && variable.array_length != spirv::kRuntimeArray) {
-        skip |= LogError(GetPipelineInterfaceVariableVUID(pipeline, vvl::PipelineInterfaceVariableError::DescriptorCount_07991),
-                         objlist, loc,
+        skip |= LogError(GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::DescriptorCount_07991), objlist, loc,
                          "SPIR-V (%s) uses descriptor %s with a VkDescriptorSetLayoutBinding::descriptorCount of %" PRIu32
-                         ", but requires at least %" PRIu32 " in the SPIR-V.",
+                         ", but requires at least %" PRIu32 " in the SPIR-V. (from %s)",
                          string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
-                         binding->descriptorCount, variable.array_length);
+                         binding->descriptorCount, variable.array_length, print_dsl_info().c_str());
     } else if (binding->descriptorCount == 0 && variable.array_length == spirv::kRuntimeArray) {
-        skip |= LogError(GetPipelineInterfaceVariableVUID(pipeline, vvl::PipelineInterfaceVariableError::DescriptorCount_07991),
-                         objlist, loc,
-                         "SPIR-V (%s) uses a runtime descriptor array %s with a VkDescriptorSetLayoutBinding::descriptorCount of 0 "
-                         "but requires at least 1 descriptor.",
-                         string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str());
-    }
-
-    if (variable.decorations.Has(spirv::DecorationSet::input_attachment_bit)) {
-        skip |= ValidateShaderInputAttachment(module_state, pipeline, variable, loc);
+        skip |=
+            LogError(GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::DescriptorCount_07991), objlist, loc,
+                     "SPIR-V (%s) uses a runtime descriptor array %s with a VkDescriptorSetLayoutBinding::descriptorCount of 0 "
+                     "but requires at least 1 descriptor. (from %s)",
+                     string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(), print_dsl_info().c_str());
     }
 
     return skip;
@@ -1503,20 +1512,22 @@ bool CoreChecks::ValidateShaderInterfaceVariablePipeline(const spirv::Module &mo
 
 // "friends don't let friends validate YCbCr in SPIR-V" ~Spencer
 bool CoreChecks::ValidateShaderYcbcrSampler(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
-                                            const vvl::PipelineLayout &pipeline_layout,
+                                            const vvl::DescriptorSetLayoutList &all_dsl,
                                             const vvl::DescriptorSetLayout &descriptor_set_layout,
                                             const VkDescriptorSetLayoutBinding &binding,
-                                            const spirv::ResourceInterfaceVariable &variable, const Location &loc) const {
+                                            const spirv::ResourceInterfaceVariable &variable, const LogObjectList &objlist,
+                                            const Location &loc) const {
     bool skip = false;
 
+    // Need to check every DescriptorSetLayout as you can have 2 sets for the SAMPLED_IMAGE and SAMPLER
+    //
     // IsAccessed() will prevent things like textureSize() from be marked as a false positive.
     // Note that for YCbCr, OpImageQueryLod will query the sampler, but OpImageQuerySize only queries
     // the image and therefor can still be used with YCbCr.
-    const bool possible_ycbcr = pipeline_layout.has_ycbcr_samplers && (variable.IsImage() && variable.IsImageAccessed());
+    const bool possible_ycbcr = all_dsl.HasYcbcrSamplers() && (variable.IsImage() && variable.IsImageAccessed());
     if (!possible_ycbcr) {
         return skip;
     }
-    const LogObjectList objlist(module_state.handle(), pipeline_layout.Handle());
 
     if (variable.is_type_sampled_image) {
         // simple case if using combined image sampler
@@ -1530,7 +1541,7 @@ bool CoreChecks::ValidateShaderYcbcrSampler(const spirv::Module &module_state, c
                 entrypoint.resource_interface_variable_map.at(sampler_info.variable_id);
             ASSERT_AND_CONTINUE(sampler_variable);
 
-            const vvl::DescriptorSetLayout *sampler_dsl = pipeline_layout.FindDescriptorSetLayout(variable);
+            const vvl::DescriptorSetLayout *sampler_dsl = all_dsl.FindFromVariable(*sampler_variable);
             ASSERT_AND_CONTINUE(sampler_dsl);
             const VkDescriptorSetLayoutBinding *sampler_binding =
                 sampler_dsl->GetDescriptorSetLayoutBindingPtrFromBinding(sampler_variable->decorations.binding);
@@ -1628,54 +1639,6 @@ bool CoreChecks::ValidateShaderYcbcrSamplerAccess(const vvl::DescriptorSetLayout
             break;
         }
     }
-    return skip;
-}
-
-bool CoreChecks::ValidateShaderInterfaceVariableShaderObject(const VkShaderCreateInfoEXT &create_info,
-                                                             const spirv::ResourceInterfaceVariable &variable,
-                                                             vvl::unordered_set<uint32_t> &descriptor_type_set,
-                                                             const Location &loc) const {
-    bool skip = false;
-    const uint32_t set = variable.decorations.set;
-    const VkDescriptorSetLayoutBinding *binding = nullptr;
-    if (set < create_info.setLayoutCount) {
-        auto descriptor_set_layout_state = Get<vvl::DescriptorSetLayout>(create_info.pSetLayouts[set]);
-        if (descriptor_set_layout_state) {
-            binding = descriptor_set_layout_state->GetDescriptorSetLayoutBindingPtrFromBinding(variable.decorations.binding);
-        }
-    }
-
-    if (!binding) {
-        skip |= LogError("VUID-VkShaderCreateInfoEXT-codeType-10383", device, loc,
-                         "SPIR-V (%s) uses descriptor %s (type %s) but was not declared in pSetLayouts[%" PRIu32 "].",
-                         string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
-                         string_DescriptorTypeSet(descriptor_type_set).c_str(), set);
-    } else if (~binding->stageFlags & variable.stage) {
-        skip |=
-            LogError("VUID-VkShaderCreateInfoEXT-codeType-10383", device, loc,
-                     "SPIR-V (%s) uses descriptor %s (type %s) but the VkDescriptorSetLayoutBinding::stageFlags was %s.",
-                     string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
-                     string_DescriptorTypeSet(descriptor_type_set).c_str(), string_VkShaderStageFlags(binding->stageFlags).c_str());
-    } else if ((binding->descriptorType != VK_DESCRIPTOR_TYPE_MUTABLE_EXT) &&
-               (descriptor_type_set.find(binding->descriptorType) == descriptor_type_set.end())) {
-        skip |= LogError("VUID-VkShaderCreateInfoEXT-codeType-10384", device, loc,
-                         "SPIR-V (%s) uses descriptor %s of type %s but expected %s.", string_VkShaderStageFlagBits(variable.stage),
-                         variable.DescribeDescriptor().c_str(), string_VkDescriptorType(binding->descriptorType),
-                         string_DescriptorTypeSet(descriptor_type_set).c_str());
-    } else if (binding->descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK && variable.array_length) {
-        skip |=
-            LogError("VUID-VkShaderCreateInfoEXT-codeType-10386", device, loc,
-                     "SPIR-V (%s) uses descriptor %s as VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, but it is an array of descriptor.",
-                     string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str());
-
-    } else if (binding->descriptorCount < variable.array_length && variable.array_length != spirv::kRuntimeArray) {
-        skip |= LogError("VUID-VkShaderCreateInfoEXT-codeType-10385", device, loc,
-                         "SPIR-V (%s) uses descriptor %s with a VkDescriptorSetLayoutBinding::descriptorCount of %" PRIu32
-                         ", but requires at least %" PRIu32 " in the SPIR-V.",
-                         string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
-                         binding->descriptorCount, variable.array_length);
-    }
-
     return skip;
 }
 
@@ -2134,12 +2097,13 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
         vvl::unordered_set<uint32_t> descriptor_type_set;
         TypeToDescriptorTypeSet(module_state, variable.type_id, variable.data_type_id, descriptor_type_set);
         skip |= ValidateShaderInterfaceVariable(module_state, variable, descriptor_type_set, loc);
+        if (stage_state.descriptor_set_layouts) {
+            skip |= ValidateShaderInterfaceVariableDSL(module_state, entrypoint, stage_state, variable, descriptor_type_set, loc);
+        }
         if (pipeline) {
-            skip |=
-                ValidateShaderInterfaceVariablePipeline(module_state, entrypoint, *pipeline, variable, descriptor_type_set, loc);
-        } else if (stage_state.shader_object_create_info) {
-            skip |= ValidateShaderInterfaceVariableShaderObject(*stage_state.shader_object_create_info->ptr(), variable,
-                                                                descriptor_type_set, loc);
+            if (variable.decorations.Has(spirv::DecorationSet::input_attachment_bit)) {
+                skip |= ValidateShaderInputAttachment(module_state, *pipeline, variable, loc);
+            }
         }
     }
 
@@ -2751,6 +2715,7 @@ bool CoreChecks::ValidateDataGraphPipelineShaderModuleSpirv(VkDevice device, con
 
     std::vector<std::pair<uint32_t, uint32_t>> tensor_bindings;
     bool name_found = false;
+    const auto &stage_state = pipeline.stage_states[0];
     for (auto &entry_point : module_spirv.static_data_.entry_points) {
         if (!entry_point->is_data_graph)
             continue;
@@ -2761,8 +2726,8 @@ bool CoreChecks::ValidateDataGraphPipelineShaderModuleSpirv(VkDevice device, con
                 vvl::unordered_set<uint32_t> descriptor_type_set;
                 TypeToDescriptorTypeSet(module_spirv, variable.type_id, variable.data_type_id, descriptor_type_set);
                 skip |= ValidateShaderInterfaceVariable(module_spirv, variable, descriptor_type_set, module_loc);
-                skip |= ValidateShaderInterfaceVariablePipeline(module_spirv, *entry_point, pipeline, variable, descriptor_type_set,
-                                                                module_loc);
+                skip |= ValidateShaderInterfaceVariableDSL(module_spirv, *entry_point, stage_state, variable, descriptor_type_set,
+                                                           module_loc);
                 if (variable.is_storage_tensor) {
                     tensor_bindings.push_back({variable.decorations.set, variable.decorations.binding});
                 }

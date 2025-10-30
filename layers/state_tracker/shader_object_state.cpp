@@ -20,11 +20,10 @@
 #include "state_tracker/state_tracker.h"
 
 namespace vvl {
-static ShaderObject::SetLayoutVector GetSetLayouts(DeviceState &dev_data, const VkShaderCreateInfoEXT &pCreateInfo) {
-    ShaderObject::SetLayoutVector set_layouts(pCreateInfo.setLayoutCount);
-
+static DescriptorSetLayoutList GetSetLayouts(DeviceState &dev_data, const VkShaderCreateInfoEXT &pCreateInfo) {
+    DescriptorSetLayoutList set_layouts(pCreateInfo.setLayoutCount);
     for (uint32_t i = 0; i < pCreateInfo.setLayoutCount; ++i) {
-        set_layouts[i] = dev_data.Get<vvl::DescriptorSetLayout>(pCreateInfo.pSetLayouts[i]);
+        set_layouts.list[i] = dev_data.Get<vvl::DescriptorSetLayout>(pCreateInfo.pSetLayouts[i]);
     }
     return set_layouts;
 }

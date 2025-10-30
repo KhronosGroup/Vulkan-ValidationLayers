@@ -22,6 +22,7 @@
 #include "state_tracker/state_object.h"
 #include "state_tracker/shader_stage_state.h"
 #include "state_tracker/pipeline_layout_state.h"
+#include "state_tracker/descriptor_set_layouts.h"
 
 namespace vvl {
 
@@ -45,8 +46,7 @@ struct ShaderObject : public StateObject, public SubStateManager<ShaderObjectSub
     const ActiveSlotMap active_slots;
     const uint32_t max_active_slot = 0;  // the highest set number in active_slots for pipeline layout compatibility checks
 
-    using SetLayoutVector = std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>>;
-    const SetLayoutVector set_layouts;
+    const DescriptorSetLayoutList set_layouts;
     const PushConstantRangesId push_constant_ranges;
     const std::vector<PipelineLayoutCompatId> set_compat_ids;
 

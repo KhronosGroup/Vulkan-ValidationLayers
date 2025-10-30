@@ -283,13 +283,13 @@ bool CoreChecks::ValidateIndirectExecutionSetPipelineInfo(const VkIndirectExecut
 
     auto pipeline_layout = initial_pipeline->PipelineLayoutState();
     ASSERT_AND_RETURN_SKIP(pipeline_layout);
-    for (uint32_t i = 0; i < pipeline_layout->set_layouts.size(); i++) {
-        if (pipeline_layout->set_layouts[i] == nullptr) continue;
-        const auto& bindings = pipeline_layout->set_layouts[i]->GetBindings();
+    for (uint32_t i = 0; i < pipeline_layout->set_layouts.list.size(); i++) {
+        if (pipeline_layout->set_layouts.list[i] == nullptr) continue;
+        const auto& bindings = pipeline_layout->set_layouts.list[i]->GetBindings();
         for (uint32_t j = 0; j < bindings.size(); j++) {
             if (bindings[j].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC ||
                 bindings[j].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) {
-                const LogObjectList objlist(pipeline_layout->Handle(), pipeline_layout->set_layouts[i]->Handle());
+                const LogObjectList objlist(pipeline_layout->Handle(), pipeline_layout->set_layouts.list[i]->Handle());
                 skip |= LogError("VUID-VkIndirectExecutionSetPipelineInfoEXT-initialPipeline-11019", objlist,
                                  pipeline_info_loc.dot(Field::initialPipeline),
                                  "was created with a VkPipelineLayout that contains a descriptor type of %s in pSetLayouts[%" PRIu32

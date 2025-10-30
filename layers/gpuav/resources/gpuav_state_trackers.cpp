@@ -669,8 +669,8 @@ VkPipelineLayout PipelineSubState::GetPipelineLayoutUnion(const Location &loc, v
     }
 
     const std::shared_ptr<const vvl::PipelineLayout> pipeline_layout_state = base.PipelineLayoutState();
-    assert(pipeline_layout_state->set_layouts.size() <= gpuav_.instrumentation_desc_set_bind_index_);
-    if (pipeline_layout_state->set_layouts.size() > gpuav_.instrumentation_desc_set_bind_index_) {
+    assert(pipeline_layout_state->set_layouts.list.size() <= gpuav_.instrumentation_desc_set_bind_index_);
+    if (pipeline_layout_state->set_layouts.list.size() > gpuav_.instrumentation_desc_set_bind_index_) {
         gpuav_.InternalError(LogObjectList(base.VkHandle()), loc,
                              "Trying to recreate a pipeline layout with no room for the instrumentation descriptor set.");
         return VK_NULL_HANDLE;
@@ -680,8 +680,8 @@ VkPipelineLayout PipelineSubState::GetPipelineLayoutUnion(const Location &loc, v
     set_layout_handles.reserve(gpuav_.instrumentation_desc_set_bind_index_ + 1);
     std::vector<size_t> recreated_desc_set_layouts_indices;
 
-    for (size_t set_layout_i = 0; set_layout_i < pipeline_layout_state->set_layouts.size(); ++set_layout_i) {
-        const auto &set_layout = pipeline_layout_state->set_layouts[set_layout_i];
+    for (size_t set_layout_i = 0; set_layout_i < pipeline_layout_state->set_layouts.list.size(); ++set_layout_i) {
+        const auto &set_layout = pipeline_layout_state->set_layouts.list[set_layout_i];
         if (!set_layout) {
             set_layout_handles.emplace_back(VK_NULL_HANDLE);
         } else {

@@ -645,7 +645,7 @@ bool CoreChecks::ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, co
     // input from CreatePipeline and CreatePipelineLayout level
     const auto &layout_state = pipeline.PipelineLayoutState();
     if (layout_state) {
-        for (const auto &set_layout : layout_state->set_layouts) {
+        for (const auto &set_layout : layout_state->set_layouts.list) {
             if (!set_layout) {
                 continue;
             }

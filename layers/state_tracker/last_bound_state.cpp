@@ -919,8 +919,8 @@ vvl::DescriptorMode LastBound::GetActionDescriptorMode() const {
     } else {
         // Shader Object
         if (desc_set_pipeline_layout) {
-            for (uint32_t i = 0; i < desc_set_pipeline_layout->set_layouts.size(); i++) {
-                if (const auto set_layout_state = desc_set_pipeline_layout->set_layouts[i]) {
+            for (uint32_t i = 0; i < desc_set_pipeline_layout->set_layouts.list.size(); i++) {
+                if (const auto set_layout_state = desc_set_pipeline_layout->set_layouts.list[i]) {
                     if (set_layout_state->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
                         return vvl::DescriptorModeBuffer;
                     } else {

@@ -49,12 +49,12 @@ namespace gpuav {
 static uint32_t LastBoundPipelineOrShaderDescSetBindingsCount(const LastBound &last_bound) {
     // App uses pipeline or graphics pipeline libraries
     if (last_bound.pipeline_state && last_bound.pipeline_state->PipelineLayoutState()) {
-        return uint32_t(last_bound.pipeline_state->PipelineLayoutState()->set_layouts.size());
+        return uint32_t(last_bound.pipeline_state->PipelineLayoutState()->set_layouts.list.size());
     }
 
     // App uses shader objects
     if (const vvl::ShaderObject *main_bound_shader = last_bound.GetFirstShader()) {
-        return static_cast<uint32_t>(main_bound_shader->set_layouts.size());
+        return static_cast<uint32_t>(main_bound_shader->set_layouts.list.size());
     }
 
     // Should not get there, it would mean no pipeline nor shader object was bound
@@ -103,10 +103,10 @@ static VkPipelineLayout CreateInstrumentationPipelineLayout(Validator &gpuav, co
         pipe_layout_ci.pPushConstantRanges = ranges.data();
         std::vector<VkDescriptorSetLayout> set_layouts;
         set_layouts.reserve(inst_desc_set_binding + 1);
-        for (const auto &set_layout : last_bound_pipeline_pipe_layout->set_layouts) {
+        for (const auto &set_layout : last_bound_pipeline_pipe_layout->set_layouts.list) {
             set_layouts.push_back(set_layout->VkHandle());
         }
-        for (uint32_t set_i = static_cast<uint32_t>(last_bound_pipeline_pipe_layout->set_layouts.size());
+        for (uint32_t set_i = static_cast<uint32_t>(last_bound_pipeline_pipe_layout->set_layouts.list.size());
              set_i < inst_desc_set_binding; ++set_i) {
             set_layouts.push_back(dummy_desc_set_layout);
         }
@@ -140,19 +140,19 @@ static VkPipelineLayout CreateInstrumentationPipelineLayout(Validator &gpuav, co
         // layouts
         // => To compose a VkPipelineLayout, only need to get compute or vertex/mesh shader and look at their bindings,
         // no need to check other shaders.
-        const vvl::ShaderObject::SetLayoutVector *set_layouts = &main_bound_shader->set_layouts;
+        const vvl::DescriptorSetLayoutList &set_layouts = main_bound_shader->set_layouts;
         PushConstantRangesId push_constants_layouts = main_bound_shader->push_constant_ranges;
 
         if (last_bound.desc_set_pipeline_layout) {
             pipe_layout_ci.flags = last_bound.desc_set_pipeline_layout->CreateFlags();
         }
         std::vector<VkDescriptorSetLayout> set_layout_handles;
-        if (set_layouts) {
+        {
             set_layout_handles.reserve(inst_desc_set_binding + 1);
-            for (const auto &set_layout : *set_layouts) {
+            for (const auto &set_layout : set_layouts.list) {
                 set_layout_handles.push_back(set_layout->VkHandle());
             }
-            for (uint32_t set_i = static_cast<uint32_t>(set_layouts->size()); set_i < inst_desc_set_binding; ++set_i) {
+            for (uint32_t set_i = static_cast<uint32_t>(set_layouts.list.size()); set_i < inst_desc_set_binding; ++set_i) {
                 set_layout_handles.push_back(dummy_desc_set_layout);
             }
             set_layout_handles.push_back(instrumentation_desc_set_layout);
@@ -556,7 +556,7 @@ void PreCallSetupShaderInstrumentationResourcesClassic(Validator &gpuav, Command
 
     if (inst_binding_pipe_layout.handle != VK_NULL_HANDLE) {
         if (inst_binding_pipe_layout.state &&
-            (uint32_t)inst_binding_pipe_layout.state->set_layouts.size() > gpuav.instrumentation_desc_set_bind_index_) {
+            (uint32_t)inst_binding_pipe_layout.state->set_layouts.list.size() > gpuav.instrumentation_desc_set_bind_index_) {
             gpuav.InternalWarning(cb_state.Handle(), loc,
                                   "Unable to bind instrumentation descriptor set, it would override application's bound set");
             return;
@@ -589,7 +589,7 @@ void PreCallSetupShaderInstrumentationResourcesClassic(Validator &gpuav, Command
                 // less that the number of bindings in the pipeline layout used to bind descriptor sets,
                 // GPU-AV needs to create a temporary pipeline layout matching the the currently bound pipeline's layout
                 // to bind the instrumentation descriptor set
-                if (last_pipe_bindings_count < (uint32_t)inst_binding_pipe_layout.state->set_layouts.size() ||
+                if (last_pipe_bindings_count < (uint32_t)inst_binding_pipe_layout.state->set_layouts.list.size() ||
                     last_pipe_pcr_count < (uint32_t)inst_binding_pipe_layout.state->push_constant_ranges_layout->size()) {
                     VkPipelineLayout instrumentation_pipe_layout = CreateInstrumentationPipelineLayout(
                         gpuav, loc, last_bound, gpuav.dummy_desc_layout_[vvl::DescriptorModeClassic],
@@ -660,7 +660,7 @@ void PreCallSetupShaderInstrumentationResourcesDescriptorBuffer(Validator &gpuav
         // constants and the user called vkCmdBindDescriptorBuffersEXT but never vkCmdSetDescriptorBufferOffsetsEXT
         bind_pipeline_layout_handle = gpuav.GetInstrumentationPipelineLayout(vvl::DescriptorModeBuffer);
     } else if (inst_binding_pipe_layout.state &&
-               (uint32_t)inst_binding_pipe_layout.state->set_layouts.size() > gpuav.instrumentation_desc_set_bind_index_) {
+               (uint32_t)inst_binding_pipe_layout.state->set_layouts.list.size() > gpuav.instrumentation_desc_set_bind_index_) {
         gpuav.InternalWarning(cb_state.Handle(), loc,
                               "Unable to bind instrumentation descriptor set, it would override application's bound set");
         return;
@@ -717,11 +717,11 @@ void PostCallSetupShaderInstrumentationResourcesClassic(Validator &gpuav, Comman
 
         const bool any_disturbed_desc_sets_bindings =
             desc_set_bindings_counts_from_last_pipeline <
-            static_cast<uint32_t>(last_bound.desc_set_pipeline_layout->set_layouts.size());
+            static_cast<uint32_t>(last_bound.desc_set_pipeline_layout->set_layouts.list.size());
 
         if (any_disturbed_desc_sets_bindings) {
             const uint32_t disturbed_bindings_count = static_cast<uint32_t>(
-                last_bound.desc_set_pipeline_layout->set_layouts.size() - desc_set_bindings_counts_from_last_pipeline);
+                last_bound.desc_set_pipeline_layout->set_layouts.list.size() - desc_set_bindings_counts_from_last_pipeline);
             const uint32_t first_disturbed_set = desc_set_bindings_counts_from_last_pipeline;
 
             for (uint32_t set_i = 0; set_i < disturbed_bindings_count; ++set_i) {

@@ -109,12 +109,12 @@ enum class SubresourceRangeError {
 };
 const std::string &GetSubresourceRangeVUID(const Location &loc, SubresourceRangeError error);
 
-enum class PipelineInterfaceVariableError {
+enum class SpirvInterfaceVariableError {
     ShaderStage_07988,
     Mutable_07990,
     DescriptorCount_07991,
     Inline_10391,
 };
-const char *GetPipelineInterfaceVariableVUID(const vvl::Pipeline &pipeline, PipelineInterfaceVariableError error);
+const char *GetSpirvInterfaceVariableVUID(const Location &loc, SpirvInterfaceVariableError error);
 
 }  // namespace vvl
