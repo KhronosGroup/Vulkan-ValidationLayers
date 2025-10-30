@@ -90,10 +90,6 @@ class RangeEncoder {
          : RangeEncoder(full_range, AspectParameters::Get(full_range.aspectMask)) {}
     RangeEncoder(const RangeEncoder& from) = default;
 
-    inline bool InRange(const VkImageSubresource& subres) const {
-        return (subres.mipLevel < limits_.mipLevel) && (subres.arrayLayer < limits_.arrayLayer) &&
-               (subres.aspectMask & limits_.aspectMask);
-    }
     inline bool InRange(const VkImageSubresourceRange& range) const {
         return (range.baseMipLevel < limits_.mipLevel) && ((range.baseMipLevel + range.levelCount) <= limits_.mipLevel) &&
                (range.baseArrayLayer < limits_.arrayLayer) && ((range.baseArrayLayer + range.layerCount) <= limits_.arrayLayer) &&
