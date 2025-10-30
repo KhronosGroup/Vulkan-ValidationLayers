@@ -16,9 +16,10 @@
  * limitations under the License.
  */
 #include "cc_vuid_maps.h"
+#include "containers/container_utils.h"
 #include "error_message/error_location.h"
+#include "error_message/logging.h"
 #include "generated/error_location_helper.h"
-#include "state_tracker/pipeline_state.h"
 #include <map>
 
 namespace vvl {
@@ -672,37 +673,45 @@ const std::string &GetSubresourceRangeVUID(const Location &loc, SubresourceRange
     return result;
 }
 
-const char *GetPipelineInterfaceVariableVUID(const vvl::Pipeline &pipeline, PipelineInterfaceVariableError error) {
-    VkStructureType sType = pipeline.GetCreateInfoSType();
+const char *GetSpirvInterfaceVariableVUID(const Location &loc, SpirvInterfaceVariableError error) {
+    // clang-format off
     switch (error) {
-        case PipelineInterfaceVariableError::ShaderStage_07988:
-            return sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO  ? "VUID-VkGraphicsPipelineCreateInfo-layout-07988"
-                   : sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO ? "VUID-VkComputePipelineCreateInfo-layout-07988"
-                   : sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR
-                       ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07988"
-                       : "VUID-VkRayTracingPipelineCreateInfoNV-layout-07988";
-        case PipelineInterfaceVariableError::Mutable_07990:
-            return sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO  ? "VUID-VkGraphicsPipelineCreateInfo-layout-07990"
-                   : sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO ? "VUID-VkComputePipelineCreateInfo-layout-07990"
-                   : sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR
-                       ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07990"
-                       : sType == VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_CREATE_INFO_ARM
-                                ? "VUID-VkDataGraphPipelineCreateInfoARM-layout-09769"
-                                : "VUID-VkRayTracingPipelineCreateInfoNV-layout-07990";
-        case PipelineInterfaceVariableError::DescriptorCount_07991:
-            return sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO  ? "VUID-VkGraphicsPipelineCreateInfo-layout-07991"
-                   : sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO ? "VUID-VkComputePipelineCreateInfo-layout-07991"
-                   : sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR
-                       ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07991"
-                       : "VUID-VkRayTracingPipelineCreateInfoNV-layout-07991";
-        case PipelineInterfaceVariableError::Inline_10391:
-            return sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO  ? "VUID-VkGraphicsPipelineCreateInfo-None-10391"
-                   : sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO ? "VUID-VkComputePipelineCreateInfo-None-10391"
-                   : sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR
-                       ? "VUID-VkRayTracingPipelineCreateInfoKHR-None-10391"
-                       : "VUID-VkRayTracingPipelineCreateInfoNV-None-10391";
+        case SpirvInterfaceVariableError::ShaderStage_07988:
+            return
+                loc.function == Func::vkCreateGraphicsPipelines  ? "VUID-VkGraphicsPipelineCreateInfo-layout-07988" :
+                loc.function == Func::vkCreateComputePipelines   ? "VUID-VkComputePipelineCreateInfo-layout-07988" :
+                loc.function == Func::vkCreateRayTracingPipelinesKHR  ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07988" :
+                loc.function == Func::vkCreateRayTracingPipelinesNV   ? "VUID-VkRayTracingPipelineCreateInfoNV-layout-07988" :
+                loc.function == Func::vkCreateShadersEXT ? "VUID-VkShaderCreateInfoEXT-codeType-10383" :
+                kVUIDUndefined;
+        case SpirvInterfaceVariableError::Mutable_07990:
+            return
+                loc.function == Func::vkCreateGraphicsPipelines ? "VUID-VkGraphicsPipelineCreateInfo-layout-07990" :
+                loc.function == Func::vkCreateComputePipelines  ? "VUID-VkComputePipelineCreateInfo-layout-07990" :
+                loc.function == Func::vkCreateRayTracingPipelinesKHR ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07990" :
+                loc.function == Func::vkCreateRayTracingPipelinesNV  ? "VUID-VkRayTracingPipelineCreateInfoNV-layout-07990" :
+                loc.function == Func::vkCreateDataGraphPipelinesARM  ? "VUID-VkDataGraphPipelineCreateInfoARM-layout-09769" :
+                loc.function == Func::vkCreateShadersEXT ? "VUID-VkShaderCreateInfoEXT-codeType-10384" :
+                kVUIDUndefined;
+        case SpirvInterfaceVariableError::DescriptorCount_07991:
+            return
+                loc.function == Func::vkCreateGraphicsPipelines ? "VUID-VkGraphicsPipelineCreateInfo-layout-07991" :
+                loc.function == Func::vkCreateComputePipelines  ? "VUID-VkComputePipelineCreateInfo-layout-07991" :
+                loc.function == Func::vkCreateRayTracingPipelinesKHR ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07991" :
+                loc.function == Func::vkCreateRayTracingPipelinesNV  ? "VUID-VkRayTracingPipelineCreateInfoNV-layout-07991" :
+                loc.function == Func::vkCreateShadersEXT ? "VUID-VkShaderCreateInfoEXT-codeType-10385" :
+                kVUIDUndefined;
+        case SpirvInterfaceVariableError::Inline_10391:
+            return
+                loc.function == Func::vkCreateGraphicsPipelines ? "VUID-VkGraphicsPipelineCreateInfo-None-10391" :
+                loc.function == Func::vkCreateComputePipelines  ? "VUID-VkComputePipelineCreateInfo-None-10391" :
+                loc.function == Func::vkCreateRayTracingPipelinesKHR ? "VUID-VkRayTracingPipelineCreateInfoKHR-None-10391" :
+                loc.function == Func::vkCreateRayTracingPipelinesNV  ? "VUID-VkRayTracingPipelineCreateInfoNV-None-10391" :
+                loc.function == Func::vkCreateShadersEXT ? "VUID-VkShaderCreateInfoEXT-codeType-10386" :
+                kVUIDUndefined;
     }
     return "UNASSIGNED-CoreChecks-unhandled-pipeline-interface-variable";
+    // clang-format on
 }
 
 }  // namespace vvl

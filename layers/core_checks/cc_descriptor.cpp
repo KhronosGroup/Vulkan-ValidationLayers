@@ -166,10 +166,10 @@ bool CoreChecks::VerifyDescriptorSetIsCompatibile(const vvl::DescriptorSet &to_b
 
 bool CoreChecks::VerifyPipelineLayoutCompatibility(const vvl::PipelineLayout &layout_a, const vvl::PipelineLayout &layout_b,
                                                    std::string &error_msg) const {
-    const uint32_t num_sets = static_cast<uint32_t>(std::min(layout_a.set_layouts.size(), layout_b.set_layouts.size()));
+    const uint32_t num_sets = static_cast<uint32_t>(std::min(layout_a.set_layouts.list.size(), layout_b.set_layouts.list.size()));
     for (uint32_t i = 0; i < num_sets; ++i) {
-        const auto ds_a = layout_a.set_layouts[i];
-        const auto ds_b = layout_b.set_layouts[i];
+        const auto ds_a = layout_a.set_layouts.list[i];
+        const auto ds_b = layout_b.set_layouts.list[i];
         if (ds_a && ds_b) {
             if (!VerifyDescriptorSetLayoutIsCompatibile(*ds_a, *ds_b, error_msg)) {
                 return false;
@@ -184,14 +184,15 @@ bool CoreChecks::VerifyPipelineLayoutCompatibilityUnion(const vvl::PipelineLayou
                                                         const vvl::PipelineLayout &fs_layout, std::string &error_msg) const {
     // When dealing with Graphics Pipeline Library, we need to get the union of pipeline states.
     // Currently this just means the VkDescriptorSetLayout may be VK_NULL_HANDLE.
-    uint32_t num_sets = static_cast<uint32_t>(std::min(pre_raster_layout.set_layouts.size(), fs_layout.set_layouts.size()));
-    num_sets = std::min(static_cast<uint32_t>(layout.set_layouts.size()), num_sets);
+    uint32_t num_sets =
+        static_cast<uint32_t>(std::min(pre_raster_layout.set_layouts.list.size(), fs_layout.set_layouts.list.size()));
+    num_sets = std::min(static_cast<uint32_t>(layout.set_layouts.list.size()), num_sets);
     for (uint32_t i = 0; i < num_sets; ++i) {
-        const auto ds_a = layout.set_layouts[i];
+        const auto ds_a = layout.set_layouts.list[i];
         // If Pre-Rasterization is not null, should be good to use
-        auto ds_b = pre_raster_layout.set_layouts[i];
+        auto ds_b = pre_raster_layout.set_layouts.list[i];
         if (!ds_b) {
-            ds_b = fs_layout.set_layouts[i];
+            ds_b = fs_layout.set_layouts.list[i];
         }
         if (ds_a && ds_b) {
             if (!VerifyDescriptorSetLayoutIsCompatibile(*ds_a, *ds_b, error_msg)) {
@@ -218,13 +219,13 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer &cb_stat
     uint32_t total_dynamic_descriptors = 0;
 
     // If we detect we are binding to many sets, the extra sets will always be incompatible, so check first
-    if ((firstSet + descriptorSetCount) > static_cast<uint32_t>(pipeline_layout->set_layouts.size())) {
+    if ((firstSet + descriptorSetCount) > static_cast<uint32_t>(pipeline_layout->set_layouts.list.size())) {
         const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfo-firstSet-00360" : "VUID-vkCmdBindDescriptorSets-firstSet-00360";
         const LogObjectList objlist(cb_state.Handle(), layout);
         skip |= LogError(vuid, objlist, loc.dot(Field::firstSet),
                          "(%" PRIu32 ") plus descriptorSetCount (%" PRIu32
                          ") is greater than VkPipelineLayoutCreateInfo::setLayoutCount (%zu) when pipeline layout was created",
-                         firstSet, descriptorSetCount, pipeline_layout->set_layouts.size());
+                         firstSet, descriptorSetCount, pipeline_layout->set_layouts.list.size());
         return skip;
     }
 
@@ -237,9 +238,9 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer &cb_stat
 
             // This means there is an active set in the SPIR-V that was not in
             // VkPipelineLayoutCreateInfo/VkShaderCreateInfoEXT::pSetLayouts which would have broke way before
-            ASSERT_AND_CONTINUE((set_idx + firstSet) < pipeline_layout->set_layouts.size());
+            ASSERT_AND_CONTINUE((set_idx + firstSet) < pipeline_layout->set_layouts.list.size());
 
-            auto pipeline_layout_node = pipeline_layout->set_layouts[set_idx + firstSet];
+            auto pipeline_layout_node = pipeline_layout->set_layouts.list[set_idx + firstSet];
             if (!pipeline_layout_node) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline_layout->Handle(), set_handle);
                 const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfo-pDescriptorSets-00358"
@@ -2354,16 +2355,16 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer 
 
     const bool is_2 = loc.function != Func::vkCmdSetDescriptorBufferOffsetsEXT;
 
-    if ((firstSet + setCount) > pipeline_layout->set_layouts.size()) {
+    if ((firstSet + setCount) > pipeline_layout->set_layouts.list.size()) {
         const char *vuid = is_2 ? "VUID-VkSetDescriptorBufferOffsetsInfoEXT-firstSet-08066"
                                 : "VUID-vkCmdSetDescriptorBufferOffsetsEXT-firstSet-08066";
         skip |= LogError(vuid, cb_state.Handle(), loc,
                          "The sum of firstSet (%" PRIu32 ") and setCount (%" PRIu32
                          ") is greater than VkPipelineLayoutCreateInfo::setLayoutCount (%" PRIuLEAST64 ") when layout was created.",
-                         firstSet, setCount, (uint64_t)pipeline_layout->set_layouts.size());
+                         firstSet, setCount, (uint64_t)pipeline_layout->set_layouts.list.size());
 
         // Clamp so that we don't attempt to access invalid stuff
-        setCount = std::min(setCount, static_cast<uint32_t>(pipeline_layout->set_layouts.size()));
+        setCount = std::min(setCount, static_cast<uint32_t>(pipeline_layout->set_layouts.list.size()));
     }
 
     if (cb_state.descriptor_buffer.binding_info.empty()) {
@@ -2382,7 +2383,7 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer 
     }
 
     for (uint32_t i = 0; i < setCount; i++) {
-        const auto set_layout = pipeline_layout->set_layouts[firstSet + i];
+        const auto set_layout = pipeline_layout->set_layouts.list[firstSet + i];
         const VkDescriptorSetLayoutCreateFlags create_flags = set_layout->GetCreateFlags();
         if ((create_flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) == 0) {
             const LogObjectList objlist(cb_state.Handle(), set_layout->Handle(), pipeline_layout->Handle());
@@ -2582,16 +2583,16 @@ bool CoreChecks::ValidateCmdBindDescriptorBufferEmbeddedSamplers(const vvl::Comm
     auto pipeline_layout = Get<vvl::PipelineLayout>(layout);
     if (!pipeline_layout) return skip;  // dynamicPipelineLayout
 
-    if (set >= pipeline_layout->set_layouts.size()) {
+    if (set >= pipeline_layout->set_layouts.list.size()) {
         const char *vuid = is_2 ? "VUID-VkBindDescriptorBufferEmbeddedSamplersInfoEXT-set-08071"
                                 : "VUID-vkCmdBindDescriptorBufferEmbeddedSamplersEXT-set-08071";
         skip |= LogError(vuid, cb_state.Handle(), loc.dot(Field::set),
                          "(%" PRIu32
                          ") is greater than "
                          "VkPipelineLayoutCreateInfo::setLayoutCount (%" PRIuLEAST64 ") when layout was created.",
-                         set, (uint64_t)pipeline_layout->set_layouts.size());
+                         set, (uint64_t)pipeline_layout->set_layouts.list.size());
     } else {
-        auto set_layout = pipeline_layout->set_layouts[set];
+        auto set_layout = pipeline_layout->set_layouts.list[set];
         if (!(set_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT)) {
             const char *vuid = is_2 ? "VUID-VkBindDescriptorBufferEmbeddedSamplersInfoEXT-set-08070"
                                     : "VUID-vkCmdBindDescriptorBufferEmbeddedSamplersEXT-set-08070";
@@ -3730,16 +3731,16 @@ bool CoreChecks::ValidateCmdPushDescriptorSet(const vvl::CommandBuffer &cb_state
 
     // Validate the set index points to a push descriptor set and is in range
     const auto &set_layouts = pipeline_layout->set_layouts;
-    if (set >= set_layouts.size()) {
+    if (set >= set_layouts.list.size()) {
         const char *vuid = is_2 ? "VUID-VkPushDescriptorSetInfo-set-00364" : "VUID-vkCmdPushDescriptorSet-set-00364";
         const LogObjectList objlist(cb_state.Handle(), layout);
         skip |= LogError(vuid, objlist, loc.dot(Field::set),
                          "(%" PRIu32 ") is indexing outside the range for %s (which had a setLayoutCount of only %" PRIu32 ").",
-                         set, FormatHandle(layout).c_str(), static_cast<uint32_t>(set_layouts.size()));
+                         set, FormatHandle(layout).c_str(), static_cast<uint32_t>(set_layouts.list.size()));
         return skip;
     }
 
-    const auto &dsl = set_layouts[set];
+    const auto &dsl = set_layouts.list[set];
     ASSERT_AND_RETURN_SKIP(dsl);
 
     if (!dsl->IsPushDescriptor()) {
@@ -3840,8 +3841,8 @@ bool CoreChecks::PreCallValidateCreateDescriptorUpdateTemplate(VkDevice device,
                              FormatHandle(pCreateInfo->pipelineLayout).c_str());
         } else {
             const uint32_t pd_set = pCreateInfo->set;
-            if ((pd_set >= pipeline_layout->set_layouts.size()) || !pipeline_layout->set_layouts[pd_set] ||
-                !pipeline_layout->set_layouts[pd_set]->IsPushDescriptor()) {
+            if ((pd_set >= pipeline_layout->set_layouts.list.size()) || !pipeline_layout->set_layouts.list[pd_set] ||
+                !pipeline_layout->set_layouts.list[pd_set]->IsPushDescriptor()) {
                 skip |=
                     LogError("VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-00353", pCreateInfo->pipelineLayout,
                              create_info_loc.dot(Field::set),
@@ -3934,17 +3935,17 @@ bool CoreChecks::ValidateCmdPushDescriptorSetWithTemplate(VkCommandBuffer comman
     }
 
     const auto &set_layouts = pipeline_layout->set_layouts;
-    if (set >= set_layouts.size()) {
+    if (set >= set_layouts.list.size()) {
         const char *vuid =
             is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfo-set-07304" : "VUID-vkCmdPushDescriptorSetWithTemplate-set-07304";
         const LogObjectList objlist(commandBuffer, layout);
         skip |= LogError(vuid, objlist, loc.dot(Field::set),
                          "(%" PRIu32 ") is indexing outside the range for %s (which had a setLayoutCount of only %" PRIu32 ").",
-                         set, FormatHandle(layout).c_str(), static_cast<uint32_t>(set_layouts.size()));
+                         set, FormatHandle(layout).c_str(), static_cast<uint32_t>(set_layouts.list.size()));
         return skip;
     }
 
-    const auto &dsl = set_layouts[set];
+    const auto &dsl = set_layouts.list[set];
     ASSERT_AND_RETURN_SKIP(dsl);
 
     if (!dsl->IsPushDescriptor()) {

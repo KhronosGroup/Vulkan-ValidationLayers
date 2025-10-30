@@ -17,6 +17,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/pipeline_helper.h"
+#include "shader_object_helper.h"
 
 class NegativeYcbcr : public VkLayerTest {};
 
@@ -2404,5 +2405,91 @@ TEST_F(NegativeYcbcr, DescriptorIndexSlang) {
     pipe.cp_ci_.layout = pipeline_layout;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-10715");
     pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeYcbcr, DescriptorIndexShaderObject) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
+
+    vkt::SamplerYcbcrConversion conversion(*m_device, VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM);
+    auto conversion_info = conversion.ConversionInfo();
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo(&conversion_info));
+
+    VkSampler samplers[4] = {sampler, sampler, sampler, sampler};
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4, VK_SHADER_STAGE_COMPUTE_BIT, samplers},
+                                           {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                       });
+
+    const char *cs_source = R"glsl(
+        #version 460
+        #extension GL_EXT_nonuniform_qualifier : require
+        layout(set = 0, binding = 0) uniform sampler2D ycbcr[4];
+        layout(set = 0, binding = 1) buffer SSBO {
+            vec4 result;
+            uint x;
+        };
+
+        void main() {
+            // try and mask with valid access before and after
+            result = texture(ycbcr[2], vec2(0));
+            result = texture(ycbcr[x], vec2(0));
+            result = texture(ycbcr[1], vec2(0));
+        }
+    )glsl";
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-10715");
+    const vkt::Shader comp_shader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source),
+                                  &descriptor_set.layout_.handle());
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeYcbcr, DescriptorIndexShaderObjectMultipleSet) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
+
+    vkt::SamplerYcbcrConversion conversion(*m_device, VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM);
+    auto conversion_info = conversion.ConversionInfo();
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo(&conversion_info));
+
+    VkSampler samplers[4] = {sampler, sampler, sampler, sampler};
+    OneOffDescriptorSet descriptor_set0(m_device,
+                                        {
+                                            {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 4, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                            {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                        });
+    OneOffDescriptorSet descriptor_set1(m_device, {
+                                                      {0, VK_DESCRIPTOR_TYPE_SAMPLER, 4, VK_SHADER_STAGE_COMPUTE_BIT, samplers},
+                                                  });
+    VkDescriptorSetLayout layouts[2] = {descriptor_set0.layout_, descriptor_set1.layout_};
+
+    const char *cs_source = R"glsl(
+        #version 460
+        #extension GL_EXT_nonuniform_qualifier : require
+        layout(set = 0, binding = 0) uniform texture2D kTextures2D[4];
+        layout(set = 1, binding = 0) uniform sampler kSamplers[4];
+        layout(set = 0, binding = 1) buffer SSBO {
+            vec4 result;
+            uint x;
+        };
+
+        void main() {
+            result = texture(sampler2D(kTextures2D[1], kSamplers[0]), vec2(0));
+            result = texture(sampler2D(kTextures2D[2], kSamplers[x]), vec2(0));
+            result = texture(sampler2D(kTextures2D[3], kSamplers[0]), vec2(0));
+        }
+    )glsl";
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-10715");
+    auto cs_spirv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source);
+    const vkt::Shader comp_shader(*m_device, ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, 2, layouts));
     m_errorMonitor->VerifyFound();
 }

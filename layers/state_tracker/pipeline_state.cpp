@@ -17,10 +17,12 @@
  * limitations under the License.
  */
 #include "state_tracker/pipeline_state.h"
+#include <vulkan/vulkan_core.h>
 #include "error_message/error_location.h"
 #include "generated/dynamic_state_helper.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/cmd_buffer_state.h"
+#include "state_tracker/pipeline_layout_state.h"
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/state_object.h"
 #include "chassis/chassis_modification_state.h"
@@ -75,7 +77,7 @@ static std::shared_ptr<vvl::ShaderModule> GetShaderModuleFromInlinedSpirv(
     }
 }
 std::vector<ShaderStageState> Pipeline::GetStageStates(const DeviceState &state_data, const Pipeline &pipe_state,
-                                                       spirv::StatelessData *stateless_data) {
+                                                       VkPipelineLayout pipeline_layout, spirv::StatelessData *stateless_data) {
     std::vector<ShaderStageState> stage_states;
 
     std::vector<VkShaderStageFlagBits> lookup_in_library_stages = {VK_SHADER_STAGE_VERTEX_BIT,
@@ -85,6 +87,12 @@ std::vector<ShaderStageState> Pipeline::GetStageStates(const DeviceState &state_
                                                                    VK_SHADER_STAGE_GEOMETRY_BIT,
                                                                    VK_SHADER_STAGE_TASK_BIT_EXT,
                                                                    VK_SHADER_STAGE_MESH_BIT_EXT};
+
+    // Because GPL, we can't just "know our pipeline layout" here and have to do a state lookup to get it
+    const DescriptorSetLayoutList *descriptor_set_layouts = nullptr;
+    if (const auto pipeline_layout_state = state_data.Get<vvl::PipelineLayout>(pipeline_layout)) {
+        descriptor_set_layouts = &pipeline_layout_state->set_layouts;
+    }
 
     for (size_t stage_index = 0; stage_index < pipe_state.shader_stages_ci.size(); ++stage_index) {
         if (pipe_state.pipeline_type == VK_PIPELINE_BIND_POINT_GRAPHICS &&
@@ -112,7 +120,7 @@ std::vector<ShaderStageState> Pipeline::GetStageStates(const DeviceState &state_
             module_state = GetShaderModuleFromInlinedSpirv(state_data, stage_ci, stateless_data);
         }
 
-        stage_states.emplace_back(&stage_ci, nullptr, module_state, module_state->spirv);
+        stage_states.emplace_back(&stage_ci, nullptr, descriptor_set_layouts, module_state, module_state->spirv);
 
         // If stage was found, do not try to look for it in library
         auto found_stage = std::find(lookup_in_library_stages.begin(), lookup_in_library_stages.end(), stage_ci.stage);
@@ -178,7 +186,7 @@ std::vector<ShaderStageState> Pipeline::GetStageStates(const DeviceState &state_
             continue;
         }
 
-        stage_states.emplace_back(stage_ci, nullptr, module_state, module_state->spirv);
+        stage_states.emplace_back(stage_ci, nullptr, descriptor_set_layouts, module_state, module_state->spirv);
     }
 
     if (VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_CREATE_INFO_ARM == pipe_state.GetCreateInfoSType()) {
@@ -192,7 +200,8 @@ std::vector<ShaderStageState> Pipeline::GetStageStates(const DeviceState &state_
                         stage_ci.pName = pipeline_shader_module->pName;
                         stage_ci.stage = entry_point->stage;
                         vku::safe_VkPipelineShaderStageCreateInfo safe_stage_ci = &stage_ci;
-                        stage_states.emplace_back(&safe_stage_ci, nullptr, module_state, module_state->spirv);
+                        stage_states.emplace_back(&safe_stage_ci, nullptr, descriptor_set_layouts, module_state,
+                                                  module_state->spirv);
                     }
                 }
             }
@@ -203,8 +212,15 @@ std::vector<ShaderStageState> Pipeline::GetStageStates(const DeviceState &state_
 }
 
 std::vector<ShaderStageState> Pipeline::GetRayTracingStageStates(
-    const DeviceState &state_data, const Pipeline &pipe_state, std::vector<spirv::StatelessData> *inout_per_shader_stateless_data) {
+    const DeviceState &state_data, const Pipeline &pipe_state, VkPipelineLayout pipeline_layout,
+    std::vector<spirv::StatelessData> *inout_per_shader_stateless_data) {
     std::vector<ShaderStageState> stage_states;
+
+    // Duplicated code because we decided to form GetStageStates for RTX sadly
+    const DescriptorSetLayoutList *descriptor_set_layouts = nullptr;
+    if (const auto pipeline_layout_state = state_data.Get<vvl::PipelineLayout>(pipeline_layout)) {
+        descriptor_set_layouts = &pipeline_layout_state->set_layouts;
+    }
 
     for (size_t stage_index = 0; stage_index < pipe_state.shader_stages_ci.size(); ++stage_index) {
         const auto &stage_ci = pipe_state.shader_stages_ci[stage_index];
@@ -225,7 +241,7 @@ std::vector<ShaderStageState> Pipeline::GetRayTracingStageStates(
         }
 
         if (module_state) {
-            stage_states.emplace_back(&stage_ci, nullptr, module_state, module_state->spirv);
+            stage_states.emplace_back(&stage_ci, nullptr, descriptor_set_layouts, module_state, module_state->spirv);
         }
     }
 
@@ -235,7 +251,7 @@ std::vector<ShaderStageState> Pipeline::GetRayTracingStageStates(
             auto lib_state = state_data.Get<vvl::Pipeline>(lib);
             ASSERT_AND_CONTINUE(lib_state);
             std::vector<ShaderStageState> lib_stage_stages =
-                GetRayTracingStageStates(state_data, *lib_state, inout_per_shader_stateless_data);
+                GetRayTracingStageStates(state_data, *lib_state, pipeline_layout, inout_per_shader_stateless_data);
             for (size_t i = 0; i < lib_stage_stages.size(); ++i) {
                 stage_states.emplace_back(lib_stage_stages[i]);
             }
@@ -845,7 +861,7 @@ Pipeline::Pipeline(const DeviceState &state_data, const VkGraphicsPipelineCreate
       fragment_shader_state(
           CreateFragmentShaderState(*this, state_data, *pCreateInfo, GraphicsCreateInfo(), rpstate, stateless_data)),
       fragment_output_state(CreateFragmentOutputState(*this, state_data, *pCreateInfo, GraphicsCreateInfo(), rpstate)),
-      stage_states(GetStageStates(state_data, *this, stateless_data)),
+      stage_states(GetStageStates(state_data, *this, GraphicsCreateInfo().layout, stateless_data)),
       create_info_shaders(GetCreateInfoShaders(*this)),
       linking_shaders(GetLinkingShaders(library_create_info, state_data)),
       active_shaders(create_info_shaders | linking_shaders),
@@ -895,7 +911,7 @@ Pipeline::Pipeline(const DeviceState &state_data, const VkComputePipelineCreateI
       create_flags(GetPipelineCreateFlags(ComputeCreateInfo().pNext, ComputeCreateInfo().flags)),
       shader_stages_ci(&ComputeCreateInfo().stage, 1),
       uses_shader_module_id(UsesShaderModuleId(*this)),
-      stage_states(GetStageStates(state_data, *this, stateless_data)),
+      stage_states(GetStageStates(state_data, *this, ComputeCreateInfo().layout, stateless_data)),
       create_info_shaders(GetCreateInfoShaders(*this)),
       active_shaders(create_info_shaders),  // compute has no linking shaders
       active_slots(GetActiveSlots(stage_states)),
@@ -921,7 +937,7 @@ Pipeline::Pipeline(const DeviceState &state_data, const VkRayTracingPipelineCrea
       shader_stages_ci(RayTracingCreateInfo().pStages, RayTracingCreateInfo().stageCount),
       ray_tracing_library_ci(RayTracingCreateInfo().pLibraryInfo),
       uses_shader_module_id(UsesShaderModuleId(*this)),
-      stage_states(GetRayTracingStageStates(state_data, *this, stateless_data)),
+      stage_states(GetRayTracingStageStates(state_data, *this, RayTracingCreateInfo().layout, stateless_data)),
       create_info_shaders(GetCreateInfoShaders(*this)),
       active_shaders(create_info_shaders),  // RTX has no linking shaders
       active_slots(GetActiveSlots(stage_states)),
@@ -946,7 +962,7 @@ Pipeline::Pipeline(const DeviceState &state_data, const VkRayTracingPipelineCrea
       shader_stages_ci(RayTracingCreateInfo().pStages, RayTracingCreateInfo().stageCount),
       ray_tracing_library_ci(RayTracingCreateInfo().pLibraryInfo),
       uses_shader_module_id(UsesShaderModuleId(*this)),
-      stage_states(GetStageStates(state_data, *this, nullptr)),  // #ARNO_TODO redo stage_states fill, if its needed
+      stage_states(GetStageStates(state_data, *this, RayTracingCreateInfo().layout, nullptr)),
       create_info_shaders(GetCreateInfoShaders(*this)),
       active_shaders(create_info_shaders),  // RTX has no linking shaders
       active_slots(GetActiveSlots(stage_states)),
@@ -970,7 +986,7 @@ Pipeline::Pipeline(const DeviceState &state_data, const VkDataGraphPipelineCreat
       pipeline_type(VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM),
       create_flags(GetPipelineCreateFlags(DataGraphCreateInfo().pNext, DataGraphCreateInfo().flags)),
       uses_shader_module_id(UsesShaderModuleId(*this)),
-      stage_states(GetStageStates(state_data, *this, stateless_data)),
+      stage_states(GetStageStates(state_data, *this, DataGraphCreateInfo().layout, stateless_data)),
       create_info_shaders(VK_SHADER_STAGE_COMPUTE_BIT),
       active_shaders(create_info_shaders),  // TODO: graph may have linking shaders
       active_slots(GetActiveSlots(stage_states)),

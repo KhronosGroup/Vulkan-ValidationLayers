@@ -331,9 +331,15 @@ bool CoreChecks::ValidateCreateShadersSpirv(uint32_t createInfoCount, const VkSh
         spv_const_binary_t binary{static_cast<const uint32_t*>(create_info.pCode), create_info.codeSize / sizeof(uint32_t)};
         skip |= RunSpirvValidation(binary, create_info_loc, cache);
 
+        // We need to do this here because we have not created the vvl::ShaderObject state yet
+        vvl::DescriptorSetLayoutList set_layouts(create_info.setLayoutCount);
+        for (uint32_t j = 0; j < create_info.setLayoutCount; ++j) {
+            set_layouts.list[j] = Get<vvl::DescriptorSetLayout>(create_info.pSetLayouts[j]);
+        }
+
         // Finally, we have "pipeline" level information and can do validation we normally do at pipeline creation time
         vku::safe_VkShaderCreateInfoEXT safe_create_info = vku::safe_VkShaderCreateInfoEXT(&pCreateInfos[i]);
-        const ShaderStageState stage_state(nullptr, &safe_create_info, nullptr, spirv);
+        const ShaderStageState stage_state(nullptr, &safe_create_info, &set_layouts, nullptr, spirv);
         skip |= ValidateShaderStage(stage_state, nullptr, create_info_loc);
 
         if (create_info.stage == VK_SHADER_STAGE_MESH_BIT_EXT) {

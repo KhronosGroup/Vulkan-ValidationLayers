@@ -1351,13 +1351,13 @@ void CommandBuffer::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint
                                            uint32_t descriptorWriteCount, const VkWriteDescriptorSet *pDescriptorWrites,
                                            const Location &loc) {
     // Short circuit invalid updates
-    if ((set >= pipeline_layout->set_layouts.size()) || !pipeline_layout->set_layouts[set] ||
-        !pipeline_layout->set_layouts[set]->IsPushDescriptor()) {
+    if ((set >= pipeline_layout->set_layouts.list.size()) || !pipeline_layout->set_layouts.list[set] ||
+        !pipeline_layout->set_layouts.list[set]->IsPushDescriptor()) {
         return;
     }
 
     // We need a descriptor set to update the bindings with, compatible with the passed layout
-    const auto &dsl = pipeline_layout->set_layouts[set];
+    const auto &dsl = pipeline_layout->set_layouts.list[set];
     auto &last_bound = lastBound[ConvertToVvlBindPoint(pipelineBindPoint)];
     auto &push_descriptor_set = last_bound.push_descriptor_set;
     // If we are disturbing the current push_desriptor_set clear it

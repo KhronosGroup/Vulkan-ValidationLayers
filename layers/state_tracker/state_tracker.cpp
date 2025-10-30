@@ -4655,7 +4655,7 @@ void DeviceState::PostCallRecordCmdPushDescriptorSetWithTemplate(VkCommandBuffer
     }
 
     cb_state->RecordCommand(record_obj.location);
-    auto dsl = pipeline_layout->set_layouts[set];
+    auto dsl = pipeline_layout->set_layouts.list[set];
     // Decode the template into a set of write updates
     DecodedTemplateUpdate decoded_template(*this, VK_NULL_HANDLE, *template_state, pData, dsl->VkHandle());
     cb_state->PushDescriptorSetState(template_state->create_info.pipelineBindPoint, pipeline_layout, set,
@@ -4681,7 +4681,7 @@ void DeviceState::PostCallRecordCmdPushDescriptorSetWithTemplate2(
     }
 
     cb_state->RecordCommand(record_obj.location);
-    auto dsl = pipeline_layout->set_layouts[pPushDescriptorSetWithTemplateInfo->set];
+    auto dsl = pipeline_layout->set_layouts.list[pPushDescriptorSetWithTemplateInfo->set];
     // Decode the template into a set of write updates
     DecodedTemplateUpdate decoded_template(*this, VK_NULL_HANDLE, *template_state, pPushDescriptorSetWithTemplateInfo->pData,
                                            dsl->VkHandle());

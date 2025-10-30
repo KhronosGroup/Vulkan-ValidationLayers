@@ -128,10 +128,12 @@ bool ShaderStageState::GetBooleanConstantValue(const spirv::Instruction &insn, b
 
 ShaderStageState::ShaderStageState(const vku::safe_VkPipelineShaderStageCreateInfo *pipeline_create_info,
                                    const vku::safe_VkShaderCreateInfoEXT *shader_object_create_info,
+                                   const vvl::DescriptorSetLayoutList *descriptor_set_layouts,
                                    std::shared_ptr<const vvl::ShaderModule> module_state,
                                    std::shared_ptr<const spirv::Module> spirv_state)
     : module_state(module_state),
       spirv_state(spirv_state),
       pipeline_create_info(pipeline_create_info),
       shader_object_create_info(shader_object_create_info),
+      descriptor_set_layouts(descriptor_set_layouts),
       entrypoint(spirv_state ? spirv_state->FindEntrypoint(GetPName(), GetStage()) : nullptr) {}

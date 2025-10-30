@@ -829,8 +829,8 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
     }
 
     if (pipeline_layout_state && pre_raster_info.init == GPLInitType::gpl_flags) {
-        for (uint32_t i = 0; i < pipeline_layout_state->set_layouts.size(); i++) {
-            if (pipeline_layout_state->set_layouts[i] != nullptr) {
+        for (uint32_t i = 0; i < pipeline_layout_state->set_layouts.list.size(); i++) {
+            if (pipeline_layout_state->set_layouts.list[i] != nullptr) {
                 continue;
             }
 
@@ -974,8 +974,8 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
         // Check for consistent shader bindings + layout across libraries
         const auto &pre_raster_set_layouts = pre_raster_info.layout->set_layouts;
         const auto &fs_set_layouts = frag_shader_info.layout->set_layouts;
-        const uint32_t pre_raster_count = static_cast<uint32_t>(pre_raster_set_layouts.size());
-        const uint32_t frag_shader_count = static_cast<uint32_t>(fs_set_layouts.size());
+        const uint32_t pre_raster_count = static_cast<uint32_t>(pre_raster_set_layouts.list.size());
+        const uint32_t frag_shader_count = static_cast<uint32_t>(fs_set_layouts.list.size());
         if (not_independent_sets && pre_raster_count != frag_shader_count) {
             const char *vuid =
                 only_libs ? "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06613" : "VUID-VkGraphicsPipelineCreateInfo-flags-06612";
@@ -990,8 +990,8 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
         const auto num_set_layouts = std::max(pre_raster_count, frag_shader_count);
         for (uint32_t i = 0; i < num_set_layouts; ++i) {
             // if using VK_NULL_HANDLE, index into set_layouts will be null
-            const auto pre_raster_dsl = i < pre_raster_count ? pre_raster_set_layouts[i] : nullptr;
-            const auto fs_dsl = i < frag_shader_count ? fs_set_layouts[i] : nullptr;
+            const auto pre_raster_dsl = i < pre_raster_count ? pre_raster_set_layouts.list[i] : nullptr;
+            const auto fs_dsl = i < frag_shader_count ? fs_set_layouts.list[i] : nullptr;
 
             if (!pre_raster_dsl && fs_dsl) {
                 // Null DSL at pSetLayouts[i] in pre-raster state. Make sure that shader bindings in corresponding DSL in

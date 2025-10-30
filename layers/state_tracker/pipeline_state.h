@@ -450,9 +450,9 @@ class Pipeline : public StateObject, public SubStateManager<PipelineSubState> {
     const Location GetCreateFlagsLoc(const Location &create_info_loc) const;
 
     static std::vector<ShaderStageState> GetStageStates(const DeviceState &state_data, const Pipeline &pipe_state,
-                                                        spirv::StatelessData *stateless_data);
+                                                        VkPipelineLayout pipeline_layout, spirv::StatelessData *stateless_data);
     static std::vector<ShaderStageState> GetRayTracingStageStates(
-        const DeviceState &state_data, const Pipeline &pipe_state,
+        const DeviceState &state_data, const Pipeline &pipe_state, VkPipelineLayout pipeline_layout,
         std::vector<spirv::StatelessData> *inout_per_shader_stateless_data);
 
     // Return true if for a given PSO, the given state enum is dynamic, else return false

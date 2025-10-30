@@ -46,6 +46,7 @@ namespace vvl {
 struct DrawDispatchVuid;
 class DescriptorBinding;
 struct DslErrorSource;
+struct DescriptorSetLayoutList;
 class Bindable;
 }  // namespace vvl
 
@@ -943,19 +944,16 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidatePipelineTessellationStages(const spirv::Module& tesc_module_state, const spirv::EntryPoint& tesc_entrypoint,
                                             const spirv::Module& tese_module_state, const spirv::EntryPoint& tese_entrypoint,
                                             const Location& create_info_loc) const;
-    bool ValidateShaderInterfaceVariablePipeline(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
-                                                 const vvl::Pipeline& pipeline, const spirv::ResourceInterfaceVariable& variable,
-                                                 vvl::unordered_set<uint32_t>& descriptor_type_set, const Location& loc) const;
-    bool ValidateShaderInterfaceVariableShaderObject(const VkShaderCreateInfoEXT& create_info,
-                                                     const spirv::ResourceInterfaceVariable& variable,
-                                                     vvl::unordered_set<uint32_t>& descriptor_type_set, const Location& loc) const;
+    bool ValidateShaderInterfaceVariableDSL(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                            const ShaderStageState& stage_state, const spirv::ResourceInterfaceVariable& variable,
+                                            vvl::unordered_set<uint32_t>& descriptor_type_set, const Location& loc) const;
     bool ValidateShaderInterfaceVariable(const spirv::Module& module_state, const spirv::ResourceInterfaceVariable& variable,
                                          vvl::unordered_set<uint32_t>& descriptor_type_set, const Location& loc) const;
     bool ValidateShaderYcbcrSampler(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
-                                    const vvl::PipelineLayout& pipeline_layout,
+                                    const vvl::DescriptorSetLayoutList& all_dsl,
                                     const vvl::DescriptorSetLayout& descriptor_set_layout,
                                     const VkDescriptorSetLayoutBinding& binding, const spirv::ResourceInterfaceVariable& variable,
-                                    const Location& loc) const;
+                                    const LogObjectList& objlist, const Location& loc) const;
     bool ValidateShaderYcbcrSamplerAccess(const vvl::DescriptorSetLayout& descriptor_set_layout,
                                           const VkDescriptorSetLayoutBinding& binding,
                                           const spirv::ResourceInterfaceVariable& image_variable,

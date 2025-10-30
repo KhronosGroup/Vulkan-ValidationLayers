@@ -100,8 +100,8 @@ bool CoreChecks::ValidateDataGraphPipelineCreateInfo(VkDevice device, const VkDa
             LogError("VUID-VkDataGraphPipelineCreateInfoARM-layout-09767", device, layout_loc.dot(Field::pushConstantRangeCount),
                      "(%zu) must be zero", pipeline_layout->push_constant_ranges_layout->size());
     }
-    for (uint32_t j = 0; j < pipeline_layout->set_layouts.size(); j++) {
-        auto dsl = pipeline_layout->set_layouts[j];
+    for (uint32_t j = 0; j < pipeline_layout->set_layouts.list.size(); j++) {
+        auto dsl = pipeline_layout->set_layouts.list[j];
         if ((dsl->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT) != 0) {
             if (!enabled_features.dataGraphUpdateAfterBind) {
                 skip |= LogError("VUID-VkDataGraphPipelineCreateInfoARM-dataGraphUpdateAfterBind-09768", device,
