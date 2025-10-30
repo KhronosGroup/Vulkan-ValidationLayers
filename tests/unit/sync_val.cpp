@@ -1550,6 +1550,221 @@ TEST_F(NegativeSyncVal, DynamicRenderingAttachmentStoreHazard) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeSyncVal, LoadOpAfterStoreOpRAW) {
+    TEST_DESCRIPTION("LoadOp after StoreOp causes RAW hazard");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Image image(*m_device, 128, 128, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {128, 128};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    m_command_buffer.EndRendering();
+
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    m_command_buffer.BeginRendering(rendering_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSyncVal, LoadOpAfterStoreOpRAWSubmitTime) {
+    TEST_DESCRIPTION("LoadOp after StoreOp causes RAW hazard during submit time validation");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Image image(*m_device, 128, 128, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {128, 128};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    m_command_buffer.BeginRendering(rendering_info);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSyncVal, LoadOpAfterStoreOpWAW) {
+    TEST_DESCRIPTION("LoadOp after StoreOp causes WAW hazard");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Image image(*m_device, 128, 128, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {128, 128};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    m_command_buffer.EndRendering();
+
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    m_command_buffer.BeginRendering(rendering_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSyncVal, LoadOpAfterStoreOpWAWSubmitTime) {
+    TEST_DESCRIPTION("LoadOp after StoreOp causes WAW hazard during submit time validation");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Image image(*m_device, 128, 128, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {128, 128};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    m_command_buffer.BeginRendering(rendering_info);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSyncVal, RenderPassLoadOpAfterStoreOpRAW) {
+    TEST_DESCRIPTION("LoadOp after StoreOp causes RAW hazard");
+    RETURN_IF_SKIP(InitSyncVal());
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
+                                VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass();
+
+    vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view.handle(), 64, 64);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp, framebuffer, 64, 64);
+    m_command_buffer.EndRenderPass();
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    m_command_buffer.BeginRenderPass(rp, framebuffer, 64, 64);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSyncVal, RenderPassLoadOpAfterStoreOpRAWSubmitTime) {
+    TEST_DESCRIPTION("LoadOp after StoreOp causes RAW hazard during submit time validation");
+    RETURN_IF_SKIP(InitSyncVal());
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
+                                VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass();
+
+    vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view.handle(), 64, 64);
+
+    m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    m_command_buffer.BeginRenderPass(rp, framebuffer, 64, 64);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
+// TODO: Check TODO comment in AccessState::DetectHazard(const SyncAccessInfo&, const OrderingBarrier&, SyncFlags, QueueId)
+// about missing support to validate this test
+TEST_F(NegativeSyncVal, DISABLED_StoreOpAferLoadOpWAR) {
+    TEST_DESCRIPTION("StoreOp after LoadOp are not ordered if they are in different render pass instances");
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Image image(*m_device, 128, 128, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachment_load_op = vku::InitStructHelper();
+    color_attachment_load_op.imageView = image_view;
+    color_attachment_load_op.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment_load_op.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    color_attachment_load_op.storeOp = VK_ATTACHMENT_STORE_OP_NONE;
+
+    VkRenderingAttachmentInfo color_attachment_store_op = vku::InitStructHelper();
+    color_attachment_store_op.imageView = image_view;
+    color_attachment_store_op.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment_store_op.loadOp = VK_ATTACHMENT_LOAD_OP_NONE;
+    color_attachment_store_op.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {128, 128};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+
+    m_command_buffer.Begin();
+    rendering_info.pColorAttachments = &color_attachment_load_op;
+    m_command_buffer.BeginRendering(rendering_info);
+    m_command_buffer.EndRendering();
+
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
+    rendering_info.pColorAttachments = &color_attachment_store_op;
+    m_command_buffer.BeginRendering(rendering_info);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeSyncVal, UniformBufferDescriptorHazard) {
     TEST_DESCRIPTION("Hazard when compute shader reads uniform buffer");
     RETURN_IF_SKIP(InitSyncVal());
