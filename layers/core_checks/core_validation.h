@@ -64,6 +64,7 @@ struct SemaphoreSubmitState;
 struct LastBound;
 struct ShaderStageState;
 struct ImageCopyRegion;
+struct YcbcrSamplerUsedByImage;
 class ValidationCache;
 
 namespace core {
@@ -950,9 +951,16 @@ class CoreChecks : public vvl::DeviceProxy {
                                                      vvl::unordered_set<uint32_t>& descriptor_type_set, const Location& loc) const;
     bool ValidateShaderInterfaceVariable(const spirv::Module& module_state, const spirv::ResourceInterfaceVariable& variable,
                                          vvl::unordered_set<uint32_t>& descriptor_type_set, const Location& loc) const;
-    bool ValidateShaderYcbcrSamplerAccess(const VkDescriptorSetLayoutBinding& binding,
+    bool ValidateShaderYcbcrSampler(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                    const vvl::PipelineLayout& pipeline_layout,
+                                    const vvl::DescriptorSetLayout& descriptor_set_layout,
+                                    const VkDescriptorSetLayoutBinding& binding, const spirv::ResourceInterfaceVariable& variable,
+                                    const Location& loc) const;
+    bool ValidateShaderYcbcrSamplerAccess(const vvl::DescriptorSetLayout& descriptor_set_layout,
+                                          const VkDescriptorSetLayoutBinding& binding,
                                           const spirv::ResourceInterfaceVariable& image_variable,
-                                          const spirv::ResourceInterfaceVariable* sampler_variable, const LogObjectList& objlist,
+                                          const spirv::ResourceInterfaceVariable* sampler_variable,
+                                          const YcbcrSamplerUsedByImage* sampler_info, const LogObjectList& objlist,
                                           const Location& loc) const;
     bool ValidateTransformFeedbackPipeline(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                            const vvl::Pipeline& pipeline, const Location& loc) const;

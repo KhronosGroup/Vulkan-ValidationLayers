@@ -39,8 +39,22 @@ struct SamplerUsedByImage {
     uint32_t sampler_index;
 };
 
+// TODO - This is duplicated work of SamplerUsedByImage and need to combine
+// Information we need to store because when we find this, the resource_interface_variable_map might not have the sampler
+// information yet
+struct YcbcrSamplerUsedByImage {
+    uint32_t variable_id;
+    uint32_t image_access_chain_index;
+    uint32_t sampler_access_chain_index;
+};
+
 inline bool operator==(const SamplerUsedByImage &a, const SamplerUsedByImage &b) noexcept {
     return a.sampler_slot == b.sampler_slot && a.sampler_index == b.sampler_index;
+}
+
+inline bool operator==(const YcbcrSamplerUsedByImage &a, const YcbcrSamplerUsedByImage &b) noexcept {
+    return a.variable_id == b.variable_id && a.image_access_chain_index == b.image_access_chain_index &&
+           a.sampler_access_chain_index == b.sampler_access_chain_index;
 }
 
 namespace std {
@@ -52,6 +66,13 @@ template <>
 struct hash<SamplerUsedByImage> {
     size_t operator()(SamplerUsedByImage s) const noexcept {
         return hash<DescriptorSlot>()(s.sampler_slot) ^ hash<uint32_t>()(s.sampler_index);
+    }
+};
+template <>
+struct hash<YcbcrSamplerUsedByImage> {
+    size_t operator()(YcbcrSamplerUsedByImage s) const noexcept {
+        return hash<uint32_t>()(s.variable_id) ^ hash<uint32_t>()(s.image_access_chain_index) ^
+               hash<uint32_t>()(s.sampler_access_chain_index);
     }
 };
 }  // namespace std

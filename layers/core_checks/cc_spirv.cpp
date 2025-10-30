@@ -1445,7 +1445,15 @@ bool CoreChecks::ValidateShaderInterfaceVariablePipeline(const spirv::Module &mo
     // ptr to that binding
     const vvl::PipelineLayout *pipeline_layout_state = pipeline.PipelineLayoutState().get();
     if (pipeline_layout_state) {
-        binding = pipeline_layout_state->FindBinding(variable);
+        const vvl::DescriptorSetLayout *descriptor_set_layout = pipeline_layout_state->FindDescriptorSetLayout(variable);
+        if (descriptor_set_layout) {
+            binding = descriptor_set_layout->GetDescriptorSetLayoutBindingPtrFromBinding(variable.decorations.binding);
+        }
+
+        if (binding) {
+            skip |= ValidateShaderYcbcrSampler(module_state, entrypoint, *pipeline_layout_state, *descriptor_set_layout, *binding,
+                                               variable, loc);
+        }
     }
 
     if (!binding) {
@@ -1490,29 +1498,46 @@ bool CoreChecks::ValidateShaderInterfaceVariablePipeline(const spirv::Module &mo
         skip |= ValidateShaderInputAttachment(module_state, pipeline, variable, loc);
     }
 
-    // TODO - Need to add Shader Object variation of these checks
-    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9893
-    const bool possible_ycbcr = (pipeline_layout_state && pipeline_layout_state->has_immutable_samplers) &&
-                                // IsAccessed() will prevent things like textureSize() from be marked as a false positive.
-                                // Note that for YCbCr, OpImageQueryLod will query the sampler, but OpImageQuerySize only queries
-                                // the image and therefor can still be used with YCbCr.
-                                (variable.IsImage() && variable.IsImageAccessed()) &&
-                                // Quick check to prevent doing tons of sampler state lookup.
-                                // YCbCr can't be used with dynamic indexing, so can use at pipeline creation time
-                                (variable.info.image_insn.is_sampler_offset || !variable.info.image_insn.is_sampler_sampled);
-    if (binding && possible_ycbcr) {
-        if (variable.is_type_sampled_image) {
-            // simple case if using combined image sampler
-            skip |= ValidateShaderYcbcrSamplerAccess(*binding, variable, nullptr, objlist, loc);
-        } else if (pipeline_layout_state) {
-            // otherwise we need to search for each sampler variable used with this image access
-            for (uint32_t variable_id : variable.sampled_image_sampler_variable_ids) {
-                const spirv::ResourceInterfaceVariable *sampler_variable =
-                    entrypoint.resource_interface_variable_map.at(variable_id);
-                ASSERT_AND_CONTINUE(sampler_variable);
-                const VkDescriptorSetLayoutBinding *sampler_binding = pipeline_layout_state->FindBinding(*sampler_variable);
-                ASSERT_AND_CONTINUE(sampler_binding);
-                skip |= ValidateShaderYcbcrSamplerAccess(*sampler_binding, variable, sampler_variable, objlist, loc);
+    return skip;
+}
+
+// "friends don't let friends validate YCbCr in SPIR-V" ~Spencer
+bool CoreChecks::ValidateShaderYcbcrSampler(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
+                                            const vvl::PipelineLayout &pipeline_layout,
+                                            const vvl::DescriptorSetLayout &descriptor_set_layout,
+                                            const VkDescriptorSetLayoutBinding &binding,
+                                            const spirv::ResourceInterfaceVariable &variable, const Location &loc) const {
+    bool skip = false;
+
+    // IsAccessed() will prevent things like textureSize() from be marked as a false positive.
+    // Note that for YCbCr, OpImageQueryLod will query the sampler, but OpImageQuerySize only queries
+    // the image and therefor can still be used with YCbCr.
+    const bool possible_ycbcr = pipeline_layout.has_ycbcr_samplers && (variable.IsImage() && variable.IsImageAccessed());
+    if (!possible_ycbcr) {
+        return skip;
+    }
+    const LogObjectList objlist(module_state.handle(), pipeline_layout.Handle());
+
+    if (variable.is_type_sampled_image) {
+        // simple case if using combined image sampler
+        if (binding.pImmutableSamplers) {
+            skip |= ValidateShaderYcbcrSamplerAccess(descriptor_set_layout, binding, variable, nullptr, nullptr, objlist, loc);
+        }
+    } else {
+        // otherwise we need to search for each sampler variable used with this image access
+        for (const YcbcrSamplerUsedByImage &sampler_info : variable.ycbcr_samplers_used_by_image) {
+            const spirv::ResourceInterfaceVariable *sampler_variable =
+                entrypoint.resource_interface_variable_map.at(sampler_info.variable_id);
+            ASSERT_AND_CONTINUE(sampler_variable);
+
+            const vvl::DescriptorSetLayout *sampler_dsl = pipeline_layout.FindDescriptorSetLayout(variable);
+            ASSERT_AND_CONTINUE(sampler_dsl);
+            const VkDescriptorSetLayoutBinding *sampler_binding =
+                sampler_dsl->GetDescriptorSetLayoutBindingPtrFromBinding(sampler_variable->decorations.binding);
+            ASSERT_AND_CONTINUE(sampler_binding);
+            if (sampler_binding->pImmutableSamplers) {
+                skip |= ValidateShaderYcbcrSamplerAccess(*sampler_dsl, *sampler_binding, variable, sampler_variable, &sampler_info,
+                                                         objlist, loc);
             }
         }
     }
@@ -1520,16 +1545,15 @@ bool CoreChecks::ValidateShaderInterfaceVariablePipeline(const spirv::Module &mo
     return skip;
 }
 
-bool CoreChecks::ValidateShaderYcbcrSamplerAccess(const VkDescriptorSetLayoutBinding &binding,
+bool CoreChecks::ValidateShaderYcbcrSamplerAccess(const vvl::DescriptorSetLayout &descriptor_set_layout,
+                                                  const VkDescriptorSetLayoutBinding &binding,
                                                   const spirv::ResourceInterfaceVariable &image_variable,
                                                   const spirv::ResourceInterfaceVariable *sampler_variable,
-                                                  const LogObjectList &objlist, const Location &loc) const {
+                                                  const YcbcrSamplerUsedByImage *sampler_info, const LogObjectList &objlist,
+                                                  const Location &loc) const {
     bool skip = false;
-    if (!binding.pImmutableSamplers) {
-        return skip;
-    }
 
-    auto print_access_info = [&image_variable, &sampler_variable]() {
+    auto print_ycbcr_sampler = [&image_variable, &sampler_variable]() {
         std::stringstream ss;
         ss << image_variable.DescribeDescriptor();
         if (sampler_variable) {
@@ -1540,12 +1564,13 @@ bool CoreChecks::ValidateShaderYcbcrSamplerAccess(const VkDescriptorSetLayoutBin
         return ss.str();
     };
 
-    for (uint32_t i = 0; i < binding.descriptorCount; i++) {
-        auto sampler_state = Get<vvl::Sampler>(binding.pImmutableSamplers[i]);
-        ASSERT_AND_CONTINUE(sampler_state);
-
-        // It is possible to use pImmutableSamplers for embedded sampler that don't use YCbCr as well.
-        if (!sampler_state->sampler_conversion) {
+    // The sampler state might have been destroyed, we need to get the safe struct we saved
+    const uint32_t index = descriptor_set_layout.GetIndexFromBinding(binding.binding);
+    const std::vector<vku::safe_VkSamplerCreateInfo> &sampler_create_infos =
+        descriptor_set_layout.GetImmutableSamplerCreateInfosFromIndex(index);
+    for (uint32_t i = 0; i < sampler_create_infos.size(); i++) {
+        auto *conversion_info = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(sampler_create_infos[i].pNext);
+        if (!conversion_info || conversion_info->conversion == VK_NULL_HANDLE) {
             continue;
         }
 
@@ -1555,15 +1580,52 @@ bool CoreChecks::ValidateShaderYcbcrSamplerAccess(const VkDescriptorSetLayoutBin
                              "] (%s) that was created with a VkSamplerYcbcrConversion, but was accessed in the SPIR-V "
                              "with a non OpImage*Sample* instruction.\nNon-sampled operations (like texelFetch) can't be used "
                              "because it doesn't contain the sampler YCbCr conversion information for the driver.",
-                             print_access_info().c_str(), i, FormatHandle(sampler_state->Handle()).c_str());
+                             print_ycbcr_sampler().c_str(), i, FormatHandle(conversion_info->conversion).c_str());
             break;  // only need to report a single descriptor
         } else if (image_variable.info.image_insn.is_sampler_offset) {
             skip |= LogError("VUID-RuntimeSpirv-ConstOffset-10718", objlist, loc,
                              "%s points to pImmutableSamplers[%" PRIu32
                              "] (%s) that was created with a VkSamplerYcbcrConversion, but was accessed in the SPIR-V "
                              "with ConstOffset/Offset image operands.",
-                             print_access_info().c_str(), i, FormatHandle(sampler_state->Handle()).c_str());
+                             print_ycbcr_sampler().c_str(), i, FormatHandle(conversion_info->conversion).c_str());
             break;  // only need to report a single descriptor
+        }
+
+        // When dealing with COMBINED_IMAGE_SAMPLER it is easy because you just check how the array is accessed at anytime
+        const bool dynamic_access_combined = (!sampler_variable && !image_variable.all_constant_integral_expressions);
+        // For SAMPLER/SAMPLED_IMAGE if the sampler is an array, we must always checkc
+        // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4521
+        const bool dynamic_access_sampler = (sampler_variable && sampler_variable->array_length != 0 &&
+                                             sampler_info->sampler_access_chain_index == spirv::kInvalidValue);
+        // indexed, but only when not tied to a YCbCr sampler see test PositiveYcbcr.ArrayOfImagesSometimesUsedForYcbcr
+        const bool dynamic_access_image = (sampler_variable && !image_variable.all_constant_integral_expressions &&
+                                           sampler_info->image_access_chain_index == spirv::kInvalidValue);
+
+        if (dynamic_access_combined || dynamic_access_sampler || dynamic_access_image) {
+            std::stringstream ss;
+            if (dynamic_access_combined) {
+                ss << image_variable.DescribeDescriptor()
+                   << " is an COMBINED_SAMPLED_IMAGE tied to an array of YCbCr samplers and it trying to be accessed with a "
+                      "non-constant index value.";
+            } else {
+                ss << sampler_variable->DescribeDescriptor() << " is a YCbCr sampler ";
+                if (dynamic_access_image) {
+                    ss << "being accessed with " << image_variable.DescribeDescriptor()
+                       << " but this SAMPLED_IMAGE is an array accessed with an non-constant index value.";
+                } else {
+                    ss << "array that is being accessed with an non-constant index value (with image "
+                       << image_variable.DescribeDescriptor() << ")";
+                }
+            }
+            ss << "\nRegardless if it is uniform or not, you can't dynamically index into an array of YCbCr samplers (or images) "
+                  "in your shader and you need a constant value.\nThis is because the driver's compiler needs to know the exact "
+                  "YCbCr sampler/image being used in order to inject special instructions into the final shader.\nOne possible "
+                  "workaround is to use Specialization Constant to decide the index at pipeline/shaderObject creation time.";
+            skip |= LogError("VUID-RuntimeSpirv-None-10715", objlist, loc, "%s", ss.str().c_str());
+
+            // only need to report a single descriptor
+            // If we hook up to print the ShaderDebugInfo, might be worth it to print all of them
+            break;
         }
     }
     return skip;

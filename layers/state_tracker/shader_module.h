@@ -40,10 +40,12 @@ namespace spirv {
 struct EntryPoint;
 struct Module;
 
+// We can assume the upper 3 uint max values are not going to be used for anything meaningful in SPIR-V
 static constexpr uint32_t kInvalidValue = vvl::kNoIndex32;
 
 // Need to find a way to know if actually array length of zero, or a runtime array.
-static constexpr uint32_t kRuntimeArray = vvl::kNoIndex32;
+static constexpr uint32_t kRuntimeArray = vvl::kNoIndex32 - 1;
+static constexpr uint32_t kSpecConstant = vvl::kNoIndex32 - 2;
 
 struct LocalSize {
     uint32_t x = 0;
@@ -429,7 +431,7 @@ struct ResourceInterfaceVariable : public VariableBase {
     // The index of vector is index of image. (TODO - this doesn't work for GPU-AV)
     std::vector<vvl::unordered_set<SamplerUsedByImage>> samplers_used_by_image;
     // workaround for YCbCr to track sampler variables until |samplers_used_by_image| is fixed
-    vvl::unordered_set<uint32_t> sampled_image_sampler_variable_ids;
+    vvl::unordered_set<YcbcrSamplerUsedByImage> ycbcr_samplers_used_by_image;
 
     // For storage images - list of Texel component length the OpImageWrite
     std::vector<uint32_t> write_without_formats_component_count_list;
@@ -446,6 +448,10 @@ struct ResourceInterfaceVariable : public VariableBase {
     // True if the Resource variable itself is runtime descriptor array
     // Online example to showcase various arrays we do/don't care about here https://godbolt.org/z/h9jhsKaPn
     bool is_runtime_descriptor_array;
+
+    // "constant integral expressions" is fancy spec language to mean "you are not doing dynamic descriptor indexing into an array"
+    // NOTE - This just checks if there is ANY non-costant access
+    bool all_constant_integral_expressions{true};
 
     // All info regarding what will be validated from requirements imposed by the pipeline on a descriptor. These
     // can't be checked at pipeline creation time as they depend on the Image or ImageView bound.
@@ -766,6 +772,7 @@ struct Module {
     uint32_t CalculateWorkgroupSharedMemory() const;
 
     const Instruction *GetConstantDef(uint32_t id) const;
+    const Instruction *GetAnyConstantDef(uint32_t id) const;
     uint32_t GetConstantValueById(uint32_t id) const;
     uint32_t GetLocationsConsumedByType(uint32_t type) const;
     uint32_t GetComponentsConsumedByType(uint32_t type) const;

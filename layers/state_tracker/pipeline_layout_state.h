@@ -86,6 +86,8 @@ class PipelineLayout : public StateObject {
     const std::vector<PipelineLayoutCompatId> set_compat_ids;
     // Way to quick prevent searching if we know there are no immutable samplers
     bool has_immutable_samplers;
+    // We check for an array to know if need to validate against descriptor indexing into the array
+    bool has_ycbcr_samplers;
 
     PipelineLayout(DeviceState &dev_data, VkPipelineLayout handle, const VkPipelineLayoutCreateInfo *pCreateInfo);
     // Merge 2 or more non-overlapping layouts
@@ -98,6 +100,7 @@ class PipelineLayout : public StateObject {
     VkPipelineLayoutCreateFlags CreateFlags() const { return create_flags; }
     bool IsIndependentSets() const { return (create_flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT) != 0; }
 
+    const vvl::DescriptorSetLayout *FindDescriptorSetLayout(const spirv::ResourceInterfaceVariable &variable) const;
     const VkDescriptorSetLayoutBinding *FindBinding(const spirv::ResourceInterfaceVariable &variable) const;
 };
 

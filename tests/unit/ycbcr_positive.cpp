@@ -848,14 +848,16 @@ TEST_F(PositiveYcbcr, DescriptorIndexNonCombinedSampledImageMix) {
 
     vkt::SamplerYcbcrConversion conversion(*m_device, VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM);
     auto conversion_info = conversion.ConversionInfo();
-    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo(&conversion_info));
+    vkt::Sampler sampler_ycbcr(*m_device, SafeSaneSamplerCreateInfo(&conversion_info));
+    vkt::Sampler sampler_normal(*m_device, SafeSaneSamplerCreateInfo());
 
-    VkSampler samplers[4] = {sampler, sampler, sampler, sampler};
+    VkSampler samplers_ycbcr[4] = {sampler_ycbcr, sampler_ycbcr, sampler_ycbcr, sampler_ycbcr};
+    VkSampler samplers_normal[4] = {sampler_normal, sampler_normal, sampler_normal, sampler_normal};
     OneOffDescriptorSet descriptor_set0(m_device,
                                         {
                                             {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 4, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                            {1, VK_DESCRIPTOR_TYPE_SAMPLER, 4, VK_SHADER_STAGE_COMPUTE_BIT, samplers},
-                                            {2, VK_DESCRIPTOR_TYPE_SAMPLER, 4, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                            {1, VK_DESCRIPTOR_TYPE_SAMPLER, 4, VK_SHADER_STAGE_COMPUTE_BIT, samplers_normal},
+                                            {2, VK_DESCRIPTOR_TYPE_SAMPLER, 4, VK_SHADER_STAGE_COMPUTE_BIT, samplers_ycbcr},
                                             {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
                                         });
     OneOffDescriptorSet descriptor_set1(m_device, {
@@ -994,6 +996,120 @@ TEST_F(PositiveYcbcr, DescriptorIndexSpecConstant) {
         void main() {
             result = texture(sampler2D(kTextures2D[x], kSamplers[y]), vec2(0));
             result += texture(kCombined[z], vec2(0));
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+}
+
+TEST_F(PositiveYcbcr, DescriptorIndexNotYCbcr) {
+    TEST_DESCRIPTION("Make sure we detect immutable samplers array are actually YCBcr");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    VkSampler samplers[4] = {sampler, sampler, sampler, sampler};
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4, VK_SHADER_STAGE_COMPUTE_BIT, samplers},
+                                           {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                       });
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    const char* cs_source = R"glsl(
+        #version 460
+        #extension GL_EXT_nonuniform_qualifier : require
+        layout(set = 0, binding = 0) uniform sampler2D ycbcr[4];
+        layout(set = 0, binding = 1) buffer SSBO {
+            vec4 result;
+            uint x;
+        };
+
+        void main() {
+            result = texture(ycbcr[x], vec2(0)); // valid because not YCbCr
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+}
+
+TEST_F(PositiveYcbcr, DescriptorIndexNotYCbcrDestroyed) {
+    TEST_DESCRIPTION("Make sure we detect immutable samplers array are actually YCBcr");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    VkSampler samplers[4] = {sampler, sampler, sampler, sampler};
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4, VK_SHADER_STAGE_COMPUTE_BIT, samplers},
+                                           {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                       });
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    // Can destroyed because samplers were embedded
+    sampler.Destroy();
+
+    const char* cs_source = R"glsl(
+        #version 460
+        #extension GL_EXT_nonuniform_qualifier : require
+        layout(set = 0, binding = 0) uniform sampler2D ycbcr[4];
+        layout(set = 0, binding = 1) buffer SSBO {
+            vec4 result;
+            uint x;
+        };
+
+        void main() {
+            result = texture(ycbcr[x], vec2(0)); // valid because not YCbCr
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+}
+
+TEST_F(PositiveYcbcr, ArrayOfImagesSometimesUsedForYcbcr) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
+
+    vkt::SamplerYcbcrConversion conversion(*m_device, VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM);
+    auto conversion_info = conversion.ConversionInfo();
+    vkt::Sampler sampler_ycbcr(*m_device, SafeSaneSamplerCreateInfo(&conversion_info));
+    vkt::Sampler sampler_normal(*m_device, SafeSaneSamplerCreateInfo());
+
+    OneOffDescriptorSet descriptor_set(
+        m_device, {
+                      {8, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                      {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 2, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                      {3, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, &sampler_ycbcr.handle()},
+                      {4, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, &sampler_normal.handle()},
+                  });
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    const char* cs_source = R"glsl(
+        #version 460
+        layout(set = 0, binding = 1) uniform texture2D kTextures2D[2];
+        layout(set = 0, binding = 3) uniform sampler kSamplersYcbcr;
+        layout(set = 0, binding = 4) uniform sampler kSamplersNormal;
+        layout(set = 0, binding = 8) buffer SSBO {
+            uint index;
+            vec4 result;
+        };
+
+        void main() {
+            result = texture(sampler2D(kTextures2D[0], kSamplersYcbcr), vec2(0));
+            result = texture(sampler2D(kTextures2D[index], kSamplersNormal), vec2(0));
         }
     )glsl";
 
