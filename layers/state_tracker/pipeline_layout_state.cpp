@@ -250,13 +250,23 @@ static bool HasImmutableSamplers(const PipelineLayout::SetLayoutVector &set_layo
     return false;
 }
 
+static bool HasYcbcrSamplers(const PipelineLayout::SetLayoutVector &set_layouts) {
+    for (const auto &set_layout : set_layouts) {
+        if (set_layout && set_layout->HasYcbcrSamplers()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 PipelineLayout::PipelineLayout(DeviceState &dev_data, VkPipelineLayout handle, const VkPipelineLayoutCreateInfo *pCreateInfo)
     : StateObject(handle, kVulkanObjectTypePipelineLayout),
       set_layouts(GetSetLayouts(dev_data, pCreateInfo)),
       push_constant_ranges_layout(GetCanonicalId(pCreateInfo->pushConstantRangeCount, pCreateInfo->pPushConstantRanges)),
       create_flags(pCreateInfo->flags),
       set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges_layout, create_flags)),
-      has_immutable_samplers(HasImmutableSamplers(set_layouts)) {}
+      has_immutable_samplers(HasImmutableSamplers(set_layouts)),
+      has_ycbcr_samplers(HasYcbcrSamplers(set_layouts)) {}
 
 PipelineLayout::PipelineLayout(const vvl::span<const PipelineLayout *const> &layouts)
     : StateObject(static_cast<VkPipelineLayout>(VK_NULL_HANDLE), kVulkanObjectTypePipelineLayout),
@@ -264,18 +274,27 @@ PipelineLayout::PipelineLayout(const vvl::span<const PipelineLayout *const> &lay
       push_constant_ranges_layout(GetPushConstantRangesFromLayouts(layouts)),  // TODO is this correct?
       create_flags(GetCreateFlags(layouts)),
       set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges_layout, create_flags)),
-      has_immutable_samplers(HasImmutableSamplers(set_layouts)) {}
+      has_immutable_samplers(HasImmutableSamplers(set_layouts)),
+      has_ycbcr_samplers(HasYcbcrSamplers(set_layouts)) {}
 
-const VkDescriptorSetLayoutBinding *PipelineLayout::FindBinding(const spirv::ResourceInterfaceVariable &variable) const {
-    const VkDescriptorSetLayoutBinding *binding = nullptr;
+const vvl::DescriptorSetLayout *PipelineLayout::FindDescriptorSetLayout(const spirv::ResourceInterfaceVariable &variable) const {
     const uint32_t set = variable.decorations.set;
     if (set < set_layouts.size()) {
         const std::shared_ptr<vvl::DescriptorSetLayout const> set_layout = set_layouts[set];
         if (set_layout) {
-            binding = set_layout->GetDescriptorSetLayoutBindingPtrFromBinding(variable.decorations.binding);
+            return set_layout.get();
         }
     }
-    return binding;
+    return nullptr;
+}
+
+const VkDescriptorSetLayoutBinding *PipelineLayout::FindBinding(const spirv::ResourceInterfaceVariable &variable) const {
+    const vvl::DescriptorSetLayout *set_layout = FindDescriptorSetLayout(variable);
+    if (set_layout) {
+        return set_layout->GetDescriptorSetLayoutBindingPtrFromBinding(variable.decorations.binding);
+    } else {
+        return nullptr;
+    }
 }
 
 }  // namespace vvl

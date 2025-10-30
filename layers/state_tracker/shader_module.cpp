@@ -742,12 +742,13 @@ StaticImageAccess::StaticImageAccess(const Module& module_state, const Instructi
                 case spv::OpPtrAccessChain:
                 case spv::OpInBoundsPtrAccessChain: {
                     // If Image is an array (but not descriptor indexing), then need to get the index.
-                    const Instruction* const_def = module_state.GetConstantDef(find_insn->Word(4));
-                    if (const_def) {
+                    const Instruction* const_def = module_state.GetAnyConstantDef(find_insn->Word(4));
+                    if (const_def && (const_def->Opcode() == spv::OpConstant || const_def->Opcode() == spv::OpSpecConstant)) {
+                        bool non_spec_const = const_def->Opcode() == spv::OpConstant;
                         if (sampler) {
-                            sampler_access_chain_index = const_def->GetConstantValue();
+                            sampler_access_chain_index = non_spec_const ? const_def->GetConstantValue() : kSpecConstant;
                         } else {
-                            image_access_chain_index = const_def->GetConstantValue();
+                            image_access_chain_index = non_spec_const ? const_def->GetConstantValue() : kSpecConstant;
                         }
                     }
                     find_insn = module_state.FindDef(find_insn->Word(3));
@@ -1558,7 +1559,7 @@ uint32_t Module::CalculateWorkgroupSharedMemory() const {
 
 // If the instruction at |id| is a OpConstant or copy of a constant, returns the instruction
 // Cases such as runtime arrays, will not find a constant and return NULL
-const Instruction* Module::GetConstantDef(uint32_t id) const {
+const Instruction* Module::GetAnyConstantDef(uint32_t id) const {
     const Instruction* value = FindDef(id);
 
     // If id is a copy, see where it was copied from
@@ -1566,7 +1567,12 @@ const Instruction* Module::GetConstantDef(uint32_t id) const {
         id = value->Word(3);
         value = FindDef(id);
     }
+    return value;
+}
 
+// TODO - Need a better systematic way to handle Spec Constants
+const Instruction* Module::GetConstantDef(uint32_t id) const {
+    const Instruction* value = GetAnyConstantDef(id);
     if (value && (value->Opcode() == spv::OpConstant)) {
         return value;
     }
@@ -2134,7 +2140,9 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
 
                     // If accessed in an array, track which indexes were read, if not runtime array
                     if (is_input_attachment && !module_state.HasRuntimeArray(type_id)) {
-                        if (image_access.image_access_chain_index != kInvalidValue) {
+                        // TODO - Handle spec constats
+                        if (image_access.image_access_chain_index != kInvalidValue &&
+                            image_access.image_access_chain_index != kSpecConstant) {
                             input_attachment_index_read[image_access.image_access_chain_index] = true;
                         } else {
                             // if InputAttachment is accessed from load, just a single, non-array, index
@@ -2144,13 +2152,23 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                     }
                 }
 
+                // Only tied to the image
+                if (array_length != 0 && image_access.image_access_chain_index == kInvalidValue) {
+                    all_constant_integral_expressions = false;
+                }
+
                 // if not CombinedImageSampler, need to find all Samplers that were accessed with the image
                 if (!image_access.variable_sampler_insn.empty() && !is_type_sampled_image) {
                     // if no AccessChain, it is same conceptually as being zero
-                    const uint32_t image_index =
-                        image_access.image_access_chain_index != kInvalidValue ? image_access.image_access_chain_index : 0;
-                    const uint32_t sampler_index =
-                        image_access.sampler_access_chain_index != kInvalidValue ? image_access.sampler_access_chain_index : 0;
+                    // TODO - Handle Spec Constants
+                    const uint32_t image_index = (image_access.image_access_chain_index != kInvalidValue &&
+                                                  image_access.image_access_chain_index != kSpecConstant)
+                                                     ? image_access.image_access_chain_index
+                                                     : 0;
+                    const uint32_t sampler_index = (image_access.sampler_access_chain_index != kInvalidValue &&
+                                                    image_access.sampler_access_chain_index != kSpecConstant)
+                                                       ? image_access.sampler_access_chain_index
+                                                       : 0;
 
                     if (image_index >= samplers_used_by_image.size()) {
                         samplers_used_by_image.resize(image_index + 1);
@@ -2159,7 +2177,9 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                     for (const Instruction* sampler_insn : image_access.variable_sampler_insn) {
                         const uint32_t sampler_variable_id = sampler_insn->ResultId();
 
-                        sampled_image_sampler_variable_ids.insert(sampler_variable_id);
+                        ycbcr_samplers_used_by_image.emplace(YcbcrSamplerUsedByImage{
+                            sampler_variable_id, image_access.image_access_chain_index, image_access.sampler_access_chain_index});
+
                         const auto& decoration_set = module_state.GetDecorationSet(sampler_variable_id);
                         samplers_used_by_image[image_index].emplace(
                             SamplerUsedByImage{DescriptorSlot{decoration_set.set, decoration_set.binding}, sampler_index});

@@ -277,6 +277,7 @@ std::string DescriptorSetLayoutDef::DescribeDifference(uint32_t index, const Des
 vvl::DescriptorSetLayoutDef::DescriptorSetLayoutDef(vvl::DeviceState &device_state,
                                                     const VkDescriptorSetLayoutCreateInfo *p_create_info)
     : flags_(p_create_info->flags),
+      has_ycbcr_samplers_(false),
       binding_count_(0),
       descriptor_count_(0),
       non_inline_descriptor_count_(0),
@@ -340,6 +341,9 @@ vvl::DescriptorSetLayoutDef::DescriptorSetLayoutDef(vvl::DeviceState &device_sta
             hash_util::HashCombiner samplers_hc;
             for (uint32_t array_index = 0; array_index < binding_info.descriptorCount; array_index++) {
                 if (auto sampler = device_state.Get<vvl::Sampler>(binding_info.pImmutableSamplers[array_index])) {
+                    if (sampler->sampler_conversion != VK_NULL_HANDLE) {
+                        has_ycbcr_samplers_ = true;
+                    }
                     immutable_sampler_create_infos_[binding_index][array_index] = sampler->safe_create_info;
                     const size_t sampler_hash = HashSamplerCreateInfo(*sampler->safe_create_info.ptr());
                     samplers_hc << sampler_hash;
