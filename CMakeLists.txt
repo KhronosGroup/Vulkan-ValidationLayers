@@ -230,9 +230,8 @@ if(MSVC)
             "${SPIRV_HEADERS_INSTALL_DIR}/*.hpp"
             "${SPIRV_TOOLS_INSTALL_DIR}/*.h"
             "${SPIRV_TOOLS_INSTALL_DIR}/*.hpp"
-            # Not really interested in seeing those headers in VS
-            # "GOOGLETEST_INSTALL_DIR/*.h"
-            # "MIMALLOC_INSTALL_DIR/*.h"
+            "${GOOGLETEST_INSTALL_DIR}/*.h"
+            "${MIMALLOC_INSTALL_DIR}/*.h"
     )
     add_custom_target(External SOURCES ${EXTERNAL_HEADER_FILES})
     source_group(TREE ${EXTERNAL_DIR} PREFIX "External" FILES ${EXTERNAL_HEADER_FILES})
