@@ -1665,21 +1665,32 @@ TEST_F(PositiveRayTracing, AccelerationStructuresAndScratchBuffersAddressSharing
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
-    alloc_info.allocationSize = 1u << 17;
+
+    // To get a valid VkAccelerationStructureBuildSizesInfoKHR
+    auto dummy_blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    const VkAccelerationStructureBuildSizesInfoKHR dummy_size_info = dummy_blas.GetSizeInfo();
+
+    alloc_info.allocationSize = std::max(dummy_size_info.accelerationStructureSize, dummy_size_info.buildScratchSize);
+
+    VkBufferCreateInfo dst_blas_buffer_ci = vku::InitStructHelper();
+    dst_blas_buffer_ci.size = alloc_info.allocationSize;
+    dst_blas_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
+                               VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+    VkBufferCreateInfo scratch_buffer_ci = vku::InitStructHelper();
+    scratch_buffer_ci.size = alloc_info.allocationSize;
+    scratch_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
+                              VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+    {
+        vkt::Buffer dummy_blas_buffer(*m_device, dst_blas_buffer_ci, vkt::no_mem);
+        alloc_info.allocationSize = std::max(alloc_info.allocationSize, dummy_blas_buffer.MemoryRequirements().size);
+        vkt::Buffer dummy_scratch_buffer(*m_device, scratch_buffer_ci, vkt::no_mem);
+        alloc_info.allocationSize = std::max(alloc_info.allocationSize, dummy_scratch_buffer.MemoryRequirements().size);
+    }
+
     vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
 
     // Test overlapping destination acceleration structure and scratch buffer
     {
-        VkBufferCreateInfo dst_blas_buffer_ci = vku::InitStructHelper();
-        dst_blas_buffer_ci.size = 8192;
-        dst_blas_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
-                                   VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
-                                   VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-        VkBufferCreateInfo scratch_buffer_ci = vku::InitStructHelper();
-        scratch_buffer_ci.size = alloc_info.allocationSize;
-        scratch_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
-                                  VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-
         std::vector<vkt::Buffer> dst_blas_buffers(build_info_count);
         std::vector<std::shared_ptr<vkt::Buffer>> scratch_buffers(build_info_count);
         std::vector<vkt::as::BuildGeometryInfoKHR> blas_vec;
