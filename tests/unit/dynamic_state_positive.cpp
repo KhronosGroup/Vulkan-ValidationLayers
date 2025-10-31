@@ -1262,6 +1262,8 @@ TEST_F(PositiveDynamicState, DynamicAdvancedBlendMaxAttachments) {
     std::vector<std::unique_ptr<vkt::Image>> images(attachment_count);
     std::vector<vkt::ImageView> image_views(attachment_count);
     std::vector<VkRenderingAttachmentInfo> rendering_attachment_info(attachment_count);
+    std::vector<VkFormat> formats(attachment_count);
+    std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachments(attachment_count);
     for (uint32_t i = 0; i < attachment_count; ++i) {
         images[i] = std::make_unique<vkt::Image>(*m_device, image_ci);
         image_views[i] = images[i]->CreateView();
@@ -1271,12 +1273,19 @@ TEST_F(PositiveDynamicState, DynamicAdvancedBlendMaxAttachments) {
         rendering_attachment_info[i].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         rendering_attachment_info[i].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         rendering_attachment_info[i].clearValue.color = m_clear_color;
+        formats[i] = image_ci.format;
+        color_blend_attachments[i] = DefaultColorBlendAttachmentState();
     }
 
-    CreatePipelineHelper pipe(*this);
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = attachment_count;
+    pipeline_rendering_info.pColorAttachmentFormats = formats.data();
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT);
-    pipe.cb_ci_.attachmentCount = 0;
+    pipe.cb_ci_.attachmentCount = attachment_count;
+    pipe.cb_ci_.pAttachments = color_blend_attachments.data();
     pipe.CreateGraphicsPipeline();
 
     VkRenderingInfo rendering_info = vku::InitStructHelper();
