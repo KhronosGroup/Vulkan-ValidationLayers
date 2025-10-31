@@ -1384,10 +1384,13 @@ TEST_F(PositiveRenderPass, MultisampledRenderToSingleSampled) {
 
     // Image view with VK_SAMPLE_COUNT_1_BIT should not get error 07285 in pipeline created with attachment with
     // VK_SAMPLE_COUNT_2_BIT
-    CreatePipelineHelper dr_pipe_helper(*this);
+    VkPipelineRenderingCreateInfo rendering_ci = vku::InitStructHelper();
+    rendering_ci.colorAttachmentCount = 1;
+    rendering_ci.pColorAttachmentFormats = &image_create_info.format;
+
+    CreatePipelineHelper dr_pipe_helper(*this, &rendering_ci);
     dr_pipe_helper.gp_ci_.renderPass = VK_NULL_HANDLE;
     dr_pipe_helper.ms_ci_ = ms_state;
-    dr_pipe_helper.cb_ci_.attachmentCount = 0;
     dr_pipe_helper.CreateGraphicsPipeline();
 
     color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;

@@ -5762,10 +5762,13 @@ TEST_F(NegativeDynamicState, DynamicRasterizationSamplesWithMSRTSS) {
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
     vkt::ImageView image_view = image.CreateView();
 
-    CreatePipelineHelper pipe(*this);
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1u;
+    pipeline_rendering_info.pColorAttachmentFormats = &image_ci.format;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT);
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
-    pipe.cb_ci_.attachmentCount = 0;
     pipe.CreateGraphicsPipeline();
 
     VkMultisampledRenderToSingleSampledInfoEXT msrtss_info = vku::InitStructHelper();
