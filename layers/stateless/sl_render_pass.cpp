@@ -738,15 +738,50 @@ bool Device::manual_PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuff
     return skip;
 }
 
-bool Device::ValidateRenderingAttachmentFeedbackLoopInfo(VkCommandBuffer commandBuffer, const VkRenderingAttachmentInfo &attachment,
-                                                         const Location &rendering_attachment_loc) const {
+bool Device::ValidateRenderingAttachmentLayout(VkCommandBuffer commandBuffer, const VkRenderingAttachmentInfo &attachment_info,
+                                               const Location &attachment_loc) const {
     bool skip = false;
 
-    const auto attachment_feedback_loop_info = vku::FindStructInPNextChain<VkAttachmentFeedbackLoopInfoEXT>(attachment.pNext);
+    if (attachment_info.imageLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
+        const LogObjectList objlist(commandBuffer, attachment_info.imageView);
+        skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-06145", objlist, attachment_loc.dot(Field::imageLayout),
+                         "must not be VK_IMAGE_LAYOUT_PRESENT_SRC_KHR");
+    } else if (IsValueIn(attachment_info.imageLayout, {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                       VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                                       VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT})) {
+        const LogObjectList objlist(commandBuffer, attachment_info.imageView);
+        skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-06135", objlist, attachment_loc.dot(Field::imageLayout),
+                         "is %s.", string_VkImageLayout(attachment_info.imageLayout));
+    }
+
+    if (attachment_info.imageLayout == VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR) {
+        const LogObjectList objlist(commandBuffer, attachment_info.imageView);
+        const char *vuid = IsExtEnabled(extensions.vk_khr_fragment_shading_rate) ? "VUID-VkRenderingAttachmentInfo-imageView-06143"
+                                                                                 : "VUID-VkRenderingAttachmentInfo-imageView-06138";
+        skip |= LogError(vuid, objlist, attachment_loc.dot(Field::imageLayout),
+                         "must not be VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR (or the alias "
+                         "VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV)");
+    }
+
+    if (attachment_info.imageLayout == VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT) {
+        const LogObjectList objlist(commandBuffer, attachment_info.imageView);
+        skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-06140", objlist, attachment_loc.dot(Field::imageLayout),
+                         "must not be VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT");
+    }
+
+    return skip;
+}
+
+bool Device::ValidateRenderingAttachmentFeedbackLoopInfo(VkCommandBuffer commandBuffer,
+                                                         const VkRenderingAttachmentInfo &attachment_info,
+                                                         const Location &attachment_loc) const {
+    bool skip = false;
+
+    const auto attachment_feedback_loop_info = vku::FindStructInPNextChain<VkAttachmentFeedbackLoopInfoEXT>(attachment_info.pNext);
     if (attachment_feedback_loop_info) {
         if (attachment_feedback_loop_info->feedbackLoopEnable && !enabled_features.unifiedImageLayouts) {
             skip |= LogError("VUID-VkAttachmentFeedbackLoopInfoEXT-unifiedImageLayouts-10782", commandBuffer,
-                             rendering_attachment_loc.pNext(Struct::VkAttachmentFeedbackLoopInfoEXT, Field::feedbackLoopEnable),
+                             attachment_loc.pNext(Struct::VkAttachmentFeedbackLoopInfoEXT, Field::feedbackLoopEnable),
                              "is VK_TRUE, but VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR::unifiedImageLayouts is not enabled.");
         }
     }
@@ -763,6 +798,7 @@ bool Device::ValidateBeginRenderingColorAttachment(VkCommandBuffer commandBuffer
         const Location color_attachment_loc = rendering_info_loc.dot(Field::pColorAttachments, i);
 
         skip |= ValidateRenderingAttachmentFeedbackLoopInfo(commandBuffer, color_attachment, color_attachment_loc);
+        skip |= ValidateRenderingAttachmentLayout(commandBuffer, color_attachment, color_attachment_loc);
 
         const VkImageLayout image_layout = color_attachment.imageLayout;
         if (image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
@@ -826,6 +862,7 @@ bool Device::ValidateBeginRenderingDepthAttachment(VkCommandBuffer commandBuffer
     const Location attachment_loc = rendering_info_loc.dot(Field::pDepthAttachment);
 
     skip |= ValidateRenderingAttachmentFeedbackLoopInfo(commandBuffer, depth_attachment, attachment_loc);
+    skip |= ValidateRenderingAttachmentLayout(commandBuffer, depth_attachment, attachment_loc);
 
     if (depth_attachment.imageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
         skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-06092", commandBuffer, attachment_loc.dot(Field::imageLayout),
@@ -875,6 +912,7 @@ bool Device::ValidateBeginRenderingStencilAttachment(VkCommandBuffer commandBuff
     const Location attachment_loc = rendering_info_loc.dot(Field::pStencilAttachment);
 
     skip |= ValidateRenderingAttachmentFeedbackLoopInfo(commandBuffer, stencil_attachment, attachment_loc);
+    skip |= ValidateRenderingAttachmentLayout(commandBuffer, stencil_attachment, attachment_loc);
 
     if (stencil_attachment.imageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
         skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-06094", commandBuffer, attachment_loc.dot(Field::imageLayout),
