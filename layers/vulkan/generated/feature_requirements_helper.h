@@ -616,6 +616,8 @@ enum class Feature {
     dynamicPipelineLayout,
     // VkPhysicalDevicePerStageDescriptorSetFeaturesNV
     perStageDescriptorSet,
+    // VkPhysicalDevicePerformanceCountersByRegionFeaturesARM
+    performanceCountersByRegion,
     // VkPhysicalDevicePerformanceQueryFeaturesKHR
     performanceCounterMultipleQueryPools,
     // VkPhysicalDevicePerformanceQueryFeaturesKHR

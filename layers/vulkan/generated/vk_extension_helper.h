@@ -477,6 +477,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_image_compression_control_swapchain{kNotSupported};
     ExtEnabled vk_qcom_image_processing{kNotSupported};
     ExtEnabled vk_ext_nested_command_buffer{kNotSupported};
+    ExtEnabled vk_ohos_external_memory{kNotSupported};
     ExtEnabled vk_ext_external_memory_acquire_unmodified{kNotSupported};
     ExtEnabled vk_ext_extended_dynamic_state3{kNotSupported};
     ExtEnabled vk_ext_subpass_merge_feedback{kNotSupported};
@@ -532,6 +533,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_cooperative_matrix2{kNotSupported};
     ExtEnabled vk_arm_pipeline_opacity_micromap{kNotSupported};
     ExtEnabled vk_ext_external_memory_metal{kNotSupported};
+    ExtEnabled vk_arm_performance_counters_by_region{kNotSupported};
     ExtEnabled vk_ext_vertex_attribute_robustness{kNotSupported};
     ExtEnabled vk_arm_format_pack{kNotSupported};
     ExtEnabled vk_valve_fragment_density_map_layered{kNotSupported};
@@ -945,6 +947,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_EXT_image_compression_control_swapchain:
         case vvl::Extension::_VK_QCOM_image_processing:
         case vvl::Extension::_VK_EXT_nested_command_buffer:
+        case vvl::Extension::_VK_OHOS_external_memory:
         case vvl::Extension::_VK_EXT_external_memory_acquire_unmodified:
         case vvl::Extension::_VK_EXT_extended_dynamic_state3:
         case vvl::Extension::_VK_EXT_subpass_merge_feedback:
@@ -1000,6 +1003,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_NV_cooperative_matrix2:
         case vvl::Extension::_VK_ARM_pipeline_opacity_micromap:
         case vvl::Extension::_VK_EXT_external_memory_metal:
+        case vvl::Extension::_VK_ARM_performance_counters_by_region:
         case vvl::Extension::_VK_EXT_vertex_attribute_robustness:
         case vvl::Extension::_VK_ARM_format_pack:
         case vvl::Extension::_VK_VALVE_fragment_density_map_layered:

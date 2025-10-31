@@ -1326,6 +1326,13 @@ bool PreCallValidateCmdUpdatePipelineIndirectBufferNV(VkCommandBuffer commandBuf
                                                       VkPipeline pipeline, const ErrorObject& error_obj) const override;
 bool PreCallValidateGetPipelineIndirectDeviceAddressNV(VkDevice device, const VkPipelineIndirectDeviceAddressInfoNV* pInfo,
                                                        const ErrorObject& error_obj) const override;
+#ifdef VK_USE_PLATFORM_OHOS
+bool PreCallValidateGetNativeBufferPropertiesOHOS(VkDevice device, const struct OH_NativeBuffer* buffer,
+                                                  VkNativeBufferPropertiesOHOS* pProperties,
+                                                  const ErrorObject& error_obj) const override;
+bool PreCallValidateGetMemoryNativeBufferOHOS(VkDevice device, const VkMemoryGetNativeBufferInfoOHOS* pInfo,
+                                              struct OH_NativeBuffer** pBuffer, const ErrorObject& error_obj) const override;
+#endif  // VK_USE_PLATFORM_OHOS
 bool PreCallValidateCmdSetDepthClampEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable,
                                               const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdSetPolygonModeEXT(VkCommandBuffer commandBuffer, VkPolygonMode polygonMode,

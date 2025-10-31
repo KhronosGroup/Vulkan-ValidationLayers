@@ -496,6 +496,7 @@ const char* String(Func func) {
     {"vkEnumerateInstanceVersion", 27},
     {"vkEnumeratePhysicalDeviceGroups", 32},
     {"vkEnumeratePhysicalDeviceGroupsKHR", 35},
+    {"vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM", 67},
     {"vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR", 64},
     {"vkEnumeratePhysicalDevices", 27},
     {"vkExportMetalObjectsEXT", 24},
@@ -602,6 +603,7 @@ const char* String(Func func) {
     {"vkGetMemoryHostPointerPropertiesEXT", 36},
     {"vkGetMemoryMetalHandleEXT", 26},
     {"vkGetMemoryMetalHandlePropertiesEXT", 36},
+    {"vkGetMemoryNativeBufferOHOS", 28},
     {"vkGetMemoryRemoteAddressNV", 27},
     {"vkGetMemoryWin32HandleKHR", 26},
     {"vkGetMemoryWin32HandleNV", 25},
@@ -609,6 +611,7 @@ const char* String(Func func) {
     {"vkGetMemoryZirconHandleFUCHSIA", 31},
     {"vkGetMemoryZirconHandlePropertiesFUCHSIA", 41},
     {"vkGetMicromapBuildSizesEXT", 27},
+    {"vkGetNativeBufferPropertiesOHOS", 32},
     {"vkGetPartitionedAccelerationStructuresBuildSizesNV", 51},
     {"vkGetPastPresentationTimingGOOGLE", 34},
     {"vkGetPerformanceParameterINTEL", 31},
@@ -1126,6 +1129,7 @@ const char* String(Struct structure) {
     {"VkExternalComputeQueueDeviceCreateInfoNV", 41},
     {"VkExternalFenceProperties", 26},
     {"VkExternalFormatANDROID", 24},
+    {"VkExternalFormatOHOS", 21},
     {"VkExternalFormatQNX", 20},
     {"VkExternalImageFormatProperties", 32},
     {"VkExternalImageFormatPropertiesNV", 34},
@@ -1227,6 +1231,7 @@ const char* String(Struct structure) {
     {"VkImportMetalIOSurfaceInfoEXT", 30},
     {"VkImportMetalSharedEventInfoEXT", 32},
     {"VkImportMetalTextureInfoEXT", 28},
+    {"VkImportNativeBufferInfoOHOS", 29},
     {"VkImportScreenBufferInfoQNX", 28},
     {"VkImportSemaphoreFdInfoKHR", 27},
     {"VkImportSemaphoreWin32HandleInfoKHR", 36},
@@ -1271,6 +1276,7 @@ const char* String(Struct structure) {
     {"VkMemoryGetAndroidHardwareBufferInfoANDROID", 44},
     {"VkMemoryGetFdInfoKHR", 21},
     {"VkMemoryGetMetalHandleInfoEXT", 30},
+    {"VkMemoryGetNativeBufferInfoOHOS", 32},
     {"VkMemoryGetRemoteAddressInfoNV", 31},
     {"VkMemoryGetWin32HandleInfoKHR", 30},
     {"VkMemoryGetZirconHandleInfoFUCHSIA", 35},
@@ -1303,7 +1309,10 @@ const char* String(Struct structure) {
     {"VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM", 53},
     {"VkMutableDescriptorTypeCreateInfoEXT", 37},
     {"VkMutableDescriptorTypeListEXT", 31},
+    {"VkNativeBufferFormatPropertiesOHOS", 35},
     {"VkNativeBufferOHOS", 19},
+    {"VkNativeBufferPropertiesOHOS", 29},
+    {"VkNativeBufferUsageOHOS", 24},
     {"VkOffset2D", 11},
     {"VkOffset3D", 11},
     {"VkOpaqueCaptureDescriptorDataCreateInfoEXT", 43},
@@ -1322,6 +1331,8 @@ const char* String(Struct structure) {
     {"VkPerTileBeginInfoQCOM", 23},
     {"VkPerTileEndInfoQCOM", 21},
     {"VkPerformanceConfigurationAcquireInfoINTEL", 43},
+    {"VkPerformanceCounterARM", 24},
+    {"VkPerformanceCounterDescriptionARM", 35},
     {"VkPerformanceCounterDescriptionKHR", 35},
     {"VkPerformanceCounterKHR", 24},
     {"VkPerformanceCounterResultKHR", 30},
@@ -1541,6 +1552,8 @@ const char* String(Struct structure) {
     {"VkPhysicalDevicePartitionedAccelerationStructureFeaturesNV", 59},
     {"VkPhysicalDevicePartitionedAccelerationStructurePropertiesNV", 61},
     {"VkPhysicalDevicePerStageDescriptorSetFeaturesNV", 48},
+    {"VkPhysicalDevicePerformanceCountersByRegionFeaturesARM", 55},
+    {"VkPhysicalDevicePerformanceCountersByRegionPropertiesARM", 57},
     {"VkPhysicalDevicePerformanceQueryFeaturesKHR", 44},
     {"VkPhysicalDevicePerformanceQueryPropertiesKHR", 46},
     {"VkPhysicalDevicePipelineBinaryFeaturesKHR", 42},
@@ -1826,6 +1839,7 @@ const char* String(Struct structure) {
     {"VkRenderPassFragmentDensityMapOffsetEndInfoEXT", 47},
     {"VkRenderPassInputAttachmentAspectCreateInfo", 44},
     {"VkRenderPassMultiviewCreateInfo", 32},
+    {"VkRenderPassPerformanceCountersByRegionBeginInfoARM", 52},
     {"VkRenderPassSampleLocationsBeginInfoEXT", 40},
     {"VkRenderPassStripeBeginInfoARM", 31},
     {"VkRenderPassStripeInfoARM", 26},
@@ -2112,6 +2126,7 @@ const char* String(Field field) {
     {"MSize", 6},
     {"NGranularity", 13},
     {"NSize", 6},
+    {"OHOSNativeBufferUsage", 22},
     {"ResultType", 11},
     {"a", 2},
     {"aabbData", 9},
@@ -2378,9 +2393,11 @@ const char* String(Field field) {
     {"countBufferOffset", 18},
     {"countInfo", 10},
     {"counter", 8},
+    {"counterAddressCount", 20},
     {"counterBuffer", 14},
     {"counterBufferCount", 19},
     {"counterBufferOffset", 20},
+    {"counterID", 10},
     {"counterIndexCount", 18},
     {"counterOffset", 14},
     {"counterPassIndex", 17},
@@ -2894,6 +2911,7 @@ const char* String(Field field) {
     {"identicalMemoryTypeRequirements", 32},
     {"identifier", 11},
     {"identifierSize", 15},
+    {"identityTransformOrder", 23},
     {"idrPeriod", 10},
     {"image", 6},
     {"image2DViewOf3D", 16},
@@ -3286,6 +3304,7 @@ const char* String(Field field) {
     {"maxPPictureL0ReferenceCount", 28},
     {"maxPartitionCount", 18},
     {"maxPerDimensionTensorElements", 30},
+    {"maxPerRegionPerformanceCounters", 32},
     {"maxPerSetDescriptors", 21},
     {"maxPerStageDescriptorAccelerationStructures", 44},
     {"maxPerStageDescriptorInlineUniformBlocks", 41},
@@ -3726,6 +3745,7 @@ const char* String(Field field) {
     {"pCorrelatedViewMasks", 21},
     {"pCorrelationMasks", 18},
     {"pCountInfo", 11},
+    {"pCounterAddresses", 18},
     {"pCounterBufferOffsets", 22},
     {"pCounterBuffers", 16},
     {"pCounterCount", 14},
@@ -4223,6 +4243,8 @@ const char* String(Field field) {
     {"performEncodeRgbConversion", 27},
     {"performanceCounterMultipleQueryPools", 37},
     {"performanceCounterQueryPools", 29},
+    {"performanceCounterRegionSize", 29},
+    {"performanceCountersByRegion", 28},
     {"performanceCountersSampling", 28},
     {"performanceLevel", 17},
     {"persistent", 11},
@@ -4484,6 +4506,7 @@ const char* String(Field field) {
     {"referenceSlotCount", 19},
     {"refreshDuration", 16},
     {"refreshRate", 12},
+    {"regionAlignment", 16},
     {"regionCount", 12},
     {"relaxedLineRasterization", 25},
     {"releaseCount", 13},
@@ -4543,6 +4566,7 @@ const char* String(Field field) {
     {"robustUniformTexelBufferDescriptorSize", 39},
     {"roundingModeIndependence", 25},
     {"rowPitch", 9},
+    {"rowStrideAlignment", 19},
     {"rrOutput", 9},
     {"runtimeDescriptorArray", 23},
     {"sType", 6},
@@ -4605,6 +4629,7 @@ const char* String(Field field) {
     {"sequencesCountOffset", 21},
     {"sequencesIndexBuffer", 21},
     {"sequencesIndexOffset", 21},
+    {"serializeRegions", 17},
     {"session", 8},
     {"set", 4},
     {"setCount", 9},
@@ -5569,6 +5594,7 @@ const char* String(Extension extension) {
     {"VK_ANDROID_external_memory_android_hardware_buffer", 51},
     {"VK_ARM_data_graph", 18},
     {"VK_ARM_format_pack", 19},
+    {"VK_ARM_performance_counters_by_region", 38},
     {"VK_ARM_pipeline_opacity_micromap", 33},
     {"VK_ARM_rasterization_order_attachment_access", 45},
     {"VK_ARM_render_pass_striped", 27},
@@ -5946,6 +5972,7 @@ const char* String(Extension extension) {
     {"VK_NV_viewport_array2", 22},
     {"VK_NV_viewport_swizzle", 23},
     {"VK_NV_win32_keyed_mutex", 24},
+    {"VK_OHOS_external_memory", 24},
     {"VK_OHOS_native_buffer", 22},
     {"VK_OHOS_surface", 16},
     {"VK_QCOM_filter_cubic_clamp", 27},
@@ -6085,6 +6112,7 @@ bool IsFieldPointer(Field field) {
     case Field::pCorrelatedViewMasks:
     case Field::pCorrelationMasks:
     case Field::pCountInfo:
+    case Field::pCounterAddresses:
     case Field::pCounterBufferOffsets:
     case Field::pCounterBuffers:
     case Field::pCounterCount:
@@ -8355,6 +8383,18 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceNestedCommandBufferFeaturesEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_NESTED_COMMAND_BUFFER_PROPERTIES_EXT:
        return Struct::VkPhysicalDeviceNestedCommandBufferPropertiesEXT;
+    case VK_STRUCTURE_TYPE_NATIVE_BUFFER_USAGE_OHOS:
+       return Struct::VkNativeBufferUsageOHOS;
+    case VK_STRUCTURE_TYPE_NATIVE_BUFFER_PROPERTIES_OHOS:
+       return Struct::VkNativeBufferPropertiesOHOS;
+    case VK_STRUCTURE_TYPE_NATIVE_BUFFER_FORMAT_PROPERTIES_OHOS:
+       return Struct::VkNativeBufferFormatPropertiesOHOS;
+    case VK_STRUCTURE_TYPE_IMPORT_NATIVE_BUFFER_INFO_OHOS:
+       return Struct::VkImportNativeBufferInfoOHOS;
+    case VK_STRUCTURE_TYPE_MEMORY_GET_NATIVE_BUFFER_INFO_OHOS:
+       return Struct::VkMemoryGetNativeBufferInfoOHOS;
+    case VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_OHOS:
+       return Struct::VkExternalFormatOHOS;
     case VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_EXT:
        return Struct::VkExternalMemoryAcquireUnmodifiedEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT:
@@ -8735,6 +8775,16 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkMemoryMetalHandlePropertiesEXT;
     case VK_STRUCTURE_TYPE_MEMORY_GET_METAL_HANDLE_INFO_EXT:
        return Struct::VkMemoryGetMetalHandleInfoEXT;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_COUNTERS_BY_REGION_FEATURES_ARM:
+       return Struct::VkPhysicalDevicePerformanceCountersByRegionFeaturesARM;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_COUNTERS_BY_REGION_PROPERTIES_ARM:
+       return Struct::VkPhysicalDevicePerformanceCountersByRegionPropertiesARM;
+    case VK_STRUCTURE_TYPE_PERFORMANCE_COUNTER_ARM:
+       return Struct::VkPerformanceCounterARM;
+    case VK_STRUCTURE_TYPE_PERFORMANCE_COUNTER_DESCRIPTION_ARM:
+       return Struct::VkPerformanceCounterDescriptionARM;
+    case VK_STRUCTURE_TYPE_RENDER_PASS_PERFORMANCE_COUNTERS_BY_REGION_BEGIN_INFO_ARM:
+       return Struct::VkRenderPassPerformanceCountersByRegionBeginInfoARM;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_ROBUSTNESS_FEATURES_EXT:
        return Struct::VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FORMAT_PACK_FEATURES_ARM:

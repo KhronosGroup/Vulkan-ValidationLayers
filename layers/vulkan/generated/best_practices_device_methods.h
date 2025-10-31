@@ -700,6 +700,15 @@ void PostCallRecordWriteMicromapsPropertiesEXT(VkDevice device, uint32_t microma
                                                VkQueryType queryType, size_t dataSize, void* pData, size_t stride,
                                                const RecordObject& record_obj) override;
 
+#ifdef VK_USE_PLATFORM_OHOS
+void PostCallRecordGetNativeBufferPropertiesOHOS(VkDevice device, const struct OH_NativeBuffer* buffer,
+                                                 VkNativeBufferPropertiesOHOS* pProperties,
+                                                 const RecordObject& record_obj) override;
+
+void PostCallRecordGetMemoryNativeBufferOHOS(VkDevice device, const VkMemoryGetNativeBufferInfoOHOS* pInfo,
+                                             struct OH_NativeBuffer** pBuffer, const RecordObject& record_obj) override;
+
+#endif  // VK_USE_PLATFORM_OHOS
 void PostCallRecordCreateTensorARM(VkDevice device, const VkTensorCreateInfoARM* pCreateInfo,
                                    const VkAllocationCallbacks* pAllocator, VkTensorARM* pTensor,
                                    const RecordObject& record_obj) override;

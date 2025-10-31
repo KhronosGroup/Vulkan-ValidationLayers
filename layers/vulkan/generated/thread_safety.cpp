@@ -7309,6 +7309,29 @@ void Device::PostCallRecordGetPipelineIndirectDeviceAddressNV(VkDevice device, c
     FinishReadObjectParentInstance(device, record_obj.location);
 }
 
+#ifdef VK_USE_PLATFORM_OHOS
+void Device::PreCallRecordGetNativeBufferPropertiesOHOS(VkDevice device, const struct OH_NativeBuffer* buffer,
+                                                        VkNativeBufferPropertiesOHOS* pProperties, const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordGetNativeBufferPropertiesOHOS(VkDevice device, const struct OH_NativeBuffer* buffer,
+                                                         VkNativeBufferPropertiesOHOS* pProperties,
+                                                         const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PreCallRecordGetMemoryNativeBufferOHOS(VkDevice device, const VkMemoryGetNativeBufferInfoOHOS* pInfo,
+                                                    struct OH_NativeBuffer** pBuffer, const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordGetMemoryNativeBufferOHOS(VkDevice device, const VkMemoryGetNativeBufferInfoOHOS* pInfo,
+                                                     struct OH_NativeBuffer** pBuffer, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
+
+#endif  // VK_USE_PLATFORM_OHOS
 void Device::PreCallRecordCmdSetDepthClampEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable,
                                                     const RecordObject& record_obj) {
     StartWriteObject(commandBuffer, record_obj.location);

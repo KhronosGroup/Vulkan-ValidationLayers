@@ -291,5 +291,9 @@ VkResult CreateSurfaceOHOS(VkInstance instance, const VkSurfaceCreateInfoOHOS* p
 #endif  // VK_USE_PLATFORM_OHOS
 VkResult GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
     VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties);
+VkResult EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM(VkPhysicalDevice physicalDevice,
+                                                                          uint32_t queueFamilyIndex, uint32_t* pCounterCount,
+                                                                          VkPerformanceCounterARM* pCounters,
+                                                                          VkPerformanceCounterDescriptionARM* pCounterDescriptions);
 
 // NOLINTEND

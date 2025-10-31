@@ -1703,6 +1703,14 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateGetPipelineIndirectDeviceAddressNV);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetPipelineIndirectDeviceAddressNV);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetPipelineIndirectDeviceAddressNV);
+#ifdef VK_USE_PLATFORM_OHOS
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetNativeBufferPropertiesOHOS);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetNativeBufferPropertiesOHOS);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetNativeBufferPropertiesOHOS);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetMemoryNativeBufferOHOS);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetMemoryNativeBufferOHOS);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetMemoryNativeBufferOHOS);
+#endif  // VK_USE_PLATFORM_OHOS
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetDepthClampEnableEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetDepthClampEnableEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetDepthClampEnableEXT);

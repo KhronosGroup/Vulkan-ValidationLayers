@@ -5009,6 +5009,27 @@ virtual void PreCallRecordGetPipelineIndirectDeviceAddressNV(VkDevice device, co
                                                              const RecordObject& record_obj) {}
 virtual void PostCallRecordGetPipelineIndirectDeviceAddressNV(VkDevice device, const VkPipelineIndirectDeviceAddressInfoNV* pInfo,
                                                               const RecordObject& record_obj) {}
+#ifdef VK_USE_PLATFORM_OHOS
+virtual bool PreCallValidateGetNativeBufferPropertiesOHOS(VkDevice device, const struct OH_NativeBuffer* buffer,
+                                                          VkNativeBufferPropertiesOHOS* pProperties,
+                                                          const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordGetNativeBufferPropertiesOHOS(VkDevice device, const struct OH_NativeBuffer* buffer,
+                                                        VkNativeBufferPropertiesOHOS* pProperties, const RecordObject& record_obj) {
+}
+virtual void PostCallRecordGetNativeBufferPropertiesOHOS(VkDevice device, const struct OH_NativeBuffer* buffer,
+                                                         VkNativeBufferPropertiesOHOS* pProperties,
+                                                         const RecordObject& record_obj) {}
+virtual bool PreCallValidateGetMemoryNativeBufferOHOS(VkDevice device, const VkMemoryGetNativeBufferInfoOHOS* pInfo,
+                                                      struct OH_NativeBuffer** pBuffer, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordGetMemoryNativeBufferOHOS(VkDevice device, const VkMemoryGetNativeBufferInfoOHOS* pInfo,
+                                                    struct OH_NativeBuffer** pBuffer, const RecordObject& record_obj) {}
+virtual void PostCallRecordGetMemoryNativeBufferOHOS(VkDevice device, const VkMemoryGetNativeBufferInfoOHOS* pInfo,
+                                                     struct OH_NativeBuffer** pBuffer, const RecordObject& record_obj) {}
+#endif  // VK_USE_PLATFORM_OHOS
 virtual bool PreCallValidateCmdSetDepthClampEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable,
                                                       const ErrorObject& error_obj) const {
     return false;

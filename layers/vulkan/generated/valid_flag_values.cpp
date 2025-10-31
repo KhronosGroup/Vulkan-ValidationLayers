@@ -995,6 +995,12 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
                     return {vvl::Extension::_VK_NV_external_memory_rdma};
                 }
             }
+            if (value & (VK_EXTERNAL_MEMORY_HANDLE_TYPE_OH_NATIVE_BUFFER_BIT_OHOS)) {
+                if ((instance_function && !IsExtSupported(extensions.vk_ohos_external_memory)) ||
+                    (!instance_function && !IsExtEnabled(extensions.vk_ohos_external_memory))) {
+                    return {vvl::Extension::_VK_OHOS_external_memory};
+                }
+            }
             if (value & (VK_EXTERNAL_MEMORY_HANDLE_TYPE_SCREEN_BUFFER_BIT_QNX)) {
                 if ((instance_function && !IsExtSupported(extensions.vk_qnx_external_memory_screen_buffer)) ||
                     (!instance_function && !IsExtEnabled(extensions.vk_qnx_external_memory_screen_buffer))) {

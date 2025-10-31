@@ -626,6 +626,8 @@ struct DeviceFeatures {
     bool dynamicPipelineLayout;
     // VkPhysicalDevicePerStageDescriptorSetFeaturesNV
     bool perStageDescriptorSet;
+    // VkPhysicalDevicePerformanceCountersByRegionFeaturesARM
+    bool performanceCountersByRegion;
     // VkPhysicalDevicePerformanceQueryFeaturesKHR
     bool performanceCounterMultipleQueryPools;
     // VkPhysicalDevicePerformanceQueryFeaturesKHR

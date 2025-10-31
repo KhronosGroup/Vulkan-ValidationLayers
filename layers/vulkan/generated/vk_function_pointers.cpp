@@ -763,6 +763,10 @@ PFN_vkCmdDecompressMemoryIndirectCountNV CmdDecompressMemoryIndirectCountNV;
 PFN_vkGetPipelineIndirectMemoryRequirementsNV GetPipelineIndirectMemoryRequirementsNV;
 PFN_vkCmdUpdatePipelineIndirectBufferNV CmdUpdatePipelineIndirectBufferNV;
 PFN_vkGetPipelineIndirectDeviceAddressNV GetPipelineIndirectDeviceAddressNV;
+#ifdef VK_USE_PLATFORM_OHOS
+PFN_vkGetNativeBufferPropertiesOHOS GetNativeBufferPropertiesOHOS;
+PFN_vkGetMemoryNativeBufferOHOS GetMemoryNativeBufferOHOS;
+#endif  // VK_USE_PLATFORM_OHOS
 PFN_vkCmdSetDepthClampEnableEXT CmdSetDepthClampEnableEXT;
 PFN_vkCmdSetPolygonModeEXT CmdSetPolygonModeEXT;
 PFN_vkCmdSetRasterizationSamplesEXT CmdSetRasterizationSamplesEXT;
@@ -873,6 +877,7 @@ PFN_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV GetPhysic
 PFN_vkGetMemoryMetalHandleEXT GetMemoryMetalHandleEXT;
 PFN_vkGetMemoryMetalHandlePropertiesEXT GetMemoryMetalHandlePropertiesEXT;
 #endif  // VK_USE_PLATFORM_METAL_EXT
+PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM;
 PFN_vkCmdEndRendering2EXT CmdEndRendering2EXT;
 PFN_vkCreateAccelerationStructureKHR CreateAccelerationStructureKHR;
 PFN_vkDestroyAccelerationStructureKHR DestroyAccelerationStructureKHR;
@@ -2470,6 +2475,14 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 GetPipelineIndirectDeviceAddressNV = reinterpret_cast<PFN_vkGetPipelineIndirectDeviceAddressNV>(GetDeviceProcAddr(device, "vkGetPipelineIndirectDeviceAddressNV"));
             }
         },
+#ifdef VK_USE_PLATFORM_OHOS
+        {
+            "VK_OHOS_external_memory", [](VkInstance , VkDevice device) {
+                GetNativeBufferPropertiesOHOS = reinterpret_cast<PFN_vkGetNativeBufferPropertiesOHOS>(GetDeviceProcAddr(device, "vkGetNativeBufferPropertiesOHOS"));
+                GetMemoryNativeBufferOHOS = reinterpret_cast<PFN_vkGetMemoryNativeBufferOHOS>(GetDeviceProcAddr(device, "vkGetMemoryNativeBufferOHOS"));
+            }
+        },
+#endif  // VK_USE_PLATFORM_OHOS
         {
             "VK_EXT_extended_dynamic_state3", [](VkInstance , VkDevice device) {
                 CmdSetDepthClampEnableEXT = reinterpret_cast<PFN_vkCmdSetDepthClampEnableEXT>(GetDeviceProcAddr(device, "vkCmdSetDepthClampEnableEXT"));
@@ -2717,6 +2730,11 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
 #endif  // VK_USE_PLATFORM_METAL_EXT
+        {
+            "VK_ARM_performance_counters_by_region", [](VkInstance instance, VkDevice ) {
+                EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM = reinterpret_cast<PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM>(GetInstanceProcAddr(instance, "vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM"));
+            }
+        },
         {
             "VK_EXT_fragment_density_map_offset", [](VkInstance , VkDevice device) {
                 CmdEndRendering2EXT = reinterpret_cast<PFN_vkCmdEndRendering2EXT>(GetDeviceProcAddr(device, "vkCmdEndRendering2EXT"));
@@ -3220,6 +3238,10 @@ void ResetAllExtensions() {
     GetPipelineIndirectMemoryRequirementsNV = nullptr;
     CmdUpdatePipelineIndirectBufferNV = nullptr;
     GetPipelineIndirectDeviceAddressNV = nullptr;
+#ifdef VK_USE_PLATFORM_OHOS
+    GetNativeBufferPropertiesOHOS = nullptr;
+    GetMemoryNativeBufferOHOS = nullptr;
+#endif  // VK_USE_PLATFORM_OHOS
     CmdSetDepthClampEnableEXT = nullptr;
     CmdSetPolygonModeEXT = nullptr;
     CmdSetRasterizationSamplesEXT = nullptr;
@@ -3330,6 +3352,7 @@ void ResetAllExtensions() {
     GetMemoryMetalHandleEXT = nullptr;
     GetMemoryMetalHandlePropertiesEXT = nullptr;
 #endif  // VK_USE_PLATFORM_METAL_EXT
+    EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM = nullptr;
     CmdEndRendering2EXT = nullptr;
     CreateAccelerationStructureKHR = nullptr;
     DestroyAccelerationStructureKHR = nullptr;

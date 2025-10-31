@@ -2019,6 +2019,17 @@ void Instance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDevice
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_COUNTERS_BY_REGION_FEATURES_ARM: {
+                VkPhysicalDevicePerformanceCountersByRegionFeaturesARM supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDevicePerformanceCountersByRegionFeaturesARM *enabling =
+                    reinterpret_cast<const VkPhysicalDevicePerformanceCountersByRegionFeaturesARM *>(current);
+                if (enabling->performanceCountersByRegion && !supported.performanceCountersByRegion) {
+                    ss << "VkPhysicalDevicePerformanceCountersByRegionFeaturesARM::performanceCountersByRegion is not supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_FEATURES_KHR: {
                 VkPhysicalDevicePerformanceQueryFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;

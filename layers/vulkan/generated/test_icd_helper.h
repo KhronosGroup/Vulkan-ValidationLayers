@@ -460,6 +460,9 @@ static const std::unordered_map<std::string, uint32_t> device_extension_map = {
     {VK_EXT_IMAGE_COMPRESSION_CONTROL_SWAPCHAIN_EXTENSION_NAME, VK_EXT_IMAGE_COMPRESSION_CONTROL_SWAPCHAIN_SPEC_VERSION},
     {VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME, VK_QCOM_IMAGE_PROCESSING_SPEC_VERSION},
     {VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME, VK_EXT_NESTED_COMMAND_BUFFER_SPEC_VERSION},
+#ifdef VK_USE_PLATFORM_OHOS
+    {VK_OHOS_EXTERNAL_MEMORY_EXTENSION_NAME, VK_OHOS_EXTERNAL_MEMORY_SPEC_VERSION},
+#endif  // VK_USE_PLATFORM_OHOS
     {VK_EXT_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_EXTENSION_NAME, VK_EXT_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_SPEC_VERSION},
     {VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME, VK_EXT_EXTENDED_DYNAMIC_STATE_3_SPEC_VERSION},
     {VK_EXT_SUBPASS_MERGE_FEEDBACK_EXTENSION_NAME, VK_EXT_SUBPASS_MERGE_FEEDBACK_SPEC_VERSION},
@@ -525,6 +528,7 @@ static const std::unordered_map<std::string, uint32_t> device_extension_map = {
 #ifdef VK_USE_PLATFORM_METAL_EXT
     {VK_EXT_EXTERNAL_MEMORY_METAL_EXTENSION_NAME, VK_EXT_EXTERNAL_MEMORY_METAL_SPEC_VERSION},
 #endif  // VK_USE_PLATFORM_METAL_EXT
+    {VK_ARM_PERFORMANCE_COUNTERS_BY_REGION_EXTENSION_NAME, VK_ARM_PERFORMANCE_COUNTERS_BY_REGION_SPEC_VERSION},
     {VK_EXT_VERTEX_ATTRIBUTE_ROBUSTNESS_EXTENSION_NAME, VK_EXT_VERTEX_ATTRIBUTE_ROBUSTNESS_SPEC_VERSION},
     {VK_ARM_FORMAT_PACK_EXTENSION_NAME, VK_ARM_FORMAT_PACK_SPEC_VERSION},
     {VK_VALVE_FRAGMENT_DENSITY_MAP_LAYERED_EXTENSION_NAME, VK_VALVE_FRAGMENT_DENSITY_MAP_LAYERED_SPEC_VERSION},
@@ -1934,6 +1938,12 @@ static VKAPI_ATTR void VKAPI_CALL CmdUpdatePipelineIndirectBufferNV(VkCommandBuf
                                                                     VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline);
 static VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetPipelineIndirectDeviceAddressNV(VkDevice device,
                                                                                 const VkPipelineIndirectDeviceAddressInfoNV* pInfo);
+#ifdef VK_USE_PLATFORM_OHOS
+static VKAPI_ATTR VkResult VKAPI_CALL GetNativeBufferPropertiesOHOS(VkDevice device, const struct OH_NativeBuffer* buffer,
+                                                                    VkNativeBufferPropertiesOHOS* pProperties);
+static VKAPI_ATTR VkResult VKAPI_CALL GetMemoryNativeBufferOHOS(VkDevice device, const VkMemoryGetNativeBufferInfoOHOS* pInfo,
+                                                                struct OH_NativeBuffer** pBuffer);
+#endif  // VK_USE_PLATFORM_OHOS
 static VKAPI_ATTR void VKAPI_CALL CmdSetDepthClampEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable);
 static VKAPI_ATTR void VKAPI_CALL CmdSetPolygonModeEXT(VkCommandBuffer commandBuffer, VkPolygonMode polygonMode);
 static VKAPI_ATTR void VKAPI_CALL CmdSetRasterizationSamplesEXT(VkCommandBuffer commandBuffer,
@@ -2171,6 +2181,9 @@ static VKAPI_ATTR VkResult VKAPI_CALL
 GetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, const void* pHandle,
                                   VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties);
 #endif  // VK_USE_PLATFORM_METAL_EXT
+static VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM(
+    VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pCounterCount, VkPerformanceCounterARM* pCounters,
+    VkPerformanceCounterDescriptionARM* pCounterDescriptions);
 static VKAPI_ATTR void VKAPI_CALL CmdEndRendering2EXT(VkCommandBuffer commandBuffer,
                                                       const VkRenderingEndInfoKHR* pRenderingEndInfo);
 static VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(VkDevice device,
@@ -2939,6 +2952,10 @@ static const std::unordered_map<std::string, void*> name_to_func_ptr_map = {
     {"vkGetPipelineIndirectMemoryRequirementsNV", (void*)GetPipelineIndirectMemoryRequirementsNV},
     {"vkCmdUpdatePipelineIndirectBufferNV", (void*)CmdUpdatePipelineIndirectBufferNV},
     {"vkGetPipelineIndirectDeviceAddressNV", (void*)GetPipelineIndirectDeviceAddressNV},
+#ifdef VK_USE_PLATFORM_OHOS
+    {"vkGetNativeBufferPropertiesOHOS", (void*)GetNativeBufferPropertiesOHOS},
+    {"vkGetMemoryNativeBufferOHOS", (void*)GetMemoryNativeBufferOHOS},
+#endif  // VK_USE_PLATFORM_OHOS
     {"vkCmdSetDepthClampEnableEXT", (void*)CmdSetDepthClampEnableEXT},
     {"vkCmdSetPolygonModeEXT", (void*)CmdSetPolygonModeEXT},
     {"vkCmdSetRasterizationSamplesEXT", (void*)CmdSetRasterizationSamplesEXT},
@@ -3051,6 +3068,8 @@ static const std::unordered_map<std::string, void*> name_to_func_ptr_map = {
     {"vkGetMemoryMetalHandleEXT", (void*)GetMemoryMetalHandleEXT},
     {"vkGetMemoryMetalHandlePropertiesEXT", (void*)GetMemoryMetalHandlePropertiesEXT},
 #endif  // VK_USE_PLATFORM_METAL_EXT
+    {"vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM",
+     (void*)EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM},
     {"vkCmdEndRendering2EXT", (void*)CmdEndRendering2EXT},
     {"vkCreateAccelerationStructureKHR", (void*)CreateAccelerationStructureKHR},
     {"vkDestroyAccelerationStructureKHR", (void*)DestroyAccelerationStructureKHR},
@@ -5545,6 +5564,18 @@ GetPipelineIndirectDeviceAddressNV(VkDevice device, const VkPipelineIndirectDevi
     return VK_SUCCESS;
 }
 
+#ifdef VK_USE_PLATFORM_OHOS
+static VKAPI_ATTR VkResult VKAPI_CALL GetNativeBufferPropertiesOHOS(VkDevice device, const struct OH_NativeBuffer* buffer,
+                                                                    VkNativeBufferPropertiesOHOS* pProperties) {
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR VkResult VKAPI_CALL GetMemoryNativeBufferOHOS(VkDevice device, const VkMemoryGetNativeBufferInfoOHOS* pInfo,
+                                                                struct OH_NativeBuffer** pBuffer) {
+    return VK_SUCCESS;
+}
+
+#endif  // VK_USE_PLATFORM_OHOS
 static VKAPI_ATTR void VKAPI_CALL CmdSetDepthClampEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable) {}
 
 static VKAPI_ATTR void VKAPI_CALL CmdSetPolygonModeEXT(VkCommandBuffer commandBuffer, VkPolygonMode polygonMode) {}
@@ -5948,6 +5979,12 @@ GetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFla
 }
 
 #endif  // VK_USE_PLATFORM_METAL_EXT
+static VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM(
+    VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pCounterCount, VkPerformanceCounterARM* pCounters,
+    VkPerformanceCounterDescriptionARM* pCounterDescriptions) {
+    return VK_SUCCESS;
+}
+
 static VKAPI_ATTR void VKAPI_CALL CmdEndRendering2EXT(VkCommandBuffer commandBuffer,
                                                       const VkRenderingEndInfoKHR* pRenderingEndInfo) {
     CmdEndRendering2KHR(commandBuffer, pRenderingEndInfo);

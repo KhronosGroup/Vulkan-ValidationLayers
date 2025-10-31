@@ -1215,6 +1215,16 @@ static VKAPI_ATTR VkDeviceAddress VKAPI_CALL StubGetPipelineIndirectDeviceAddres
                                                                                     const VkPipelineIndirectDeviceAddressInfoNV*) {
     return 0;
 }
+#ifdef VK_USE_PLATFORM_OHOS
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetNativeBufferPropertiesOHOS(VkDevice, const struct OH_NativeBuffer*,
+                                                                        VkNativeBufferPropertiesOHOS*) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetMemoryNativeBufferOHOS(VkDevice, const VkMemoryGetNativeBufferInfoOHOS*,
+                                                                    struct OH_NativeBuffer**) {
+    return VK_SUCCESS;
+}
+#endif  // VK_USE_PLATFORM_OHOS
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetDepthClampEnableEXT(VkCommandBuffer, VkBool32) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetPolygonModeEXT(VkCommandBuffer, VkPolygonMode) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetRasterizationSamplesEXT(VkCommandBuffer, VkSampleCountFlagBits) {}
@@ -1455,6 +1465,10 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubGetMemoryMetalHandlePropertiesEXT(VkDe
     return VK_SUCCESS;
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
+static VKAPI_ATTR VkResult VKAPI_CALL StubEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM(
+    VkPhysicalDevice, uint32_t, uint32_t*, VkPerformanceCounterARM*, VkPerformanceCounterDescriptionARM*) {
+    return VK_SUCCESS;
+}
 static VKAPI_ATTR void VKAPI_CALL StubCmdEndRendering2EXT(VkCommandBuffer, const VkRenderingEndInfoKHR*) {}
 static VKAPI_ATTR VkResult VKAPI_CALL StubCreateAccelerationStructureKHR(VkDevice, const VkAccelerationStructureCreateInfoKHR*,
                                                                          const VkAllocationCallbacks*,
@@ -1958,6 +1972,8 @@ const auto& GetApiExtensionMap() {
         {"vkGetPipelineIndirectMemoryRequirementsNV", {vvl::Extension::_VK_NV_device_generated_commands_compute}},
         {"vkCmdUpdatePipelineIndirectBufferNV", {vvl::Extension::_VK_NV_device_generated_commands_compute}},
         {"vkGetPipelineIndirectDeviceAddressNV", {vvl::Extension::_VK_NV_device_generated_commands_compute}},
+        {"vkGetNativeBufferPropertiesOHOS", {vvl::Extension::_VK_OHOS_external_memory}},
+        {"vkGetMemoryNativeBufferOHOS", {vvl::Extension::_VK_OHOS_external_memory}},
         {"vkCmdSetDepthClampEnableEXT", {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object}},
         {"vkCmdSetPolygonModeEXT", {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object}},
         {"vkCmdSetRasterizationSamplesEXT",
@@ -4090,6 +4106,16 @@ void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* tab
         table->GetPipelineIndirectDeviceAddressNV =
             (PFN_vkGetPipelineIndirectDeviceAddressNV)StubGetPipelineIndirectDeviceAddressNV;
     }
+#ifdef VK_USE_PLATFORM_OHOS
+    table->GetNativeBufferPropertiesOHOS = (PFN_vkGetNativeBufferPropertiesOHOS)gpa(device, "vkGetNativeBufferPropertiesOHOS");
+    if (table->GetNativeBufferPropertiesOHOS == nullptr) {
+        table->GetNativeBufferPropertiesOHOS = (PFN_vkGetNativeBufferPropertiesOHOS)StubGetNativeBufferPropertiesOHOS;
+    }
+    table->GetMemoryNativeBufferOHOS = (PFN_vkGetMemoryNativeBufferOHOS)gpa(device, "vkGetMemoryNativeBufferOHOS");
+    if (table->GetMemoryNativeBufferOHOS == nullptr) {
+        table->GetMemoryNativeBufferOHOS = (PFN_vkGetMemoryNativeBufferOHOS)StubGetMemoryNativeBufferOHOS;
+    }
+#endif  // VK_USE_PLATFORM_OHOS
     table->CmdSetDepthClampEnableEXT = (PFN_vkCmdSetDepthClampEnableEXT)gpa(device, "vkCmdSetDepthClampEnableEXT");
     if (table->CmdSetDepthClampEnableEXT == nullptr) {
         table->CmdSetDepthClampEnableEXT = (PFN_vkCmdSetDepthClampEnableEXT)StubCmdSetDepthClampEnableEXT;
@@ -5253,6 +5279,14 @@ void layer_init_instance_dispatch_table(VkInstance instance, VkLayerInstanceDisp
         table->GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV =
             (PFN_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV)
                 StubGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV;
+    }
+    table->EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM =
+        (PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM)gpa(
+            instance, "vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM");
+    if (table->EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM == nullptr) {
+        table->EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM =
+            (PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM)
+                StubEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM;
     }
 }
 

@@ -3875,6 +3875,20 @@ static inline VkDeviceAddress DispatchGetPipelineIndirectDeviceAddressNV(VkDevic
     auto dispatch = vvl::dispatch::GetData(device);
     return dispatch->GetPipelineIndirectDeviceAddressNV(device, pInfo);
 }
+#ifdef VK_USE_PLATFORM_OHOS
+
+static inline VkResult DispatchGetNativeBufferPropertiesOHOS(VkDevice device, const struct OH_NativeBuffer* buffer,
+                                                             VkNativeBufferPropertiesOHOS* pProperties) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->GetNativeBufferPropertiesOHOS(device, buffer, pProperties);
+}
+
+static inline VkResult DispatchGetMemoryNativeBufferOHOS(VkDevice device, const VkMemoryGetNativeBufferInfoOHOS* pInfo,
+                                                         struct OH_NativeBuffer** pBuffer) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->GetMemoryNativeBufferOHOS(device, pInfo, pBuffer);
+}
+#endif  // VK_USE_PLATFORM_OHOS
 
 static inline void DispatchCmdSetDepthClampEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable) {
     auto dispatch = vvl::dispatch::GetData(commandBuffer);
@@ -4526,6 +4540,14 @@ static inline VkResult DispatchGetMemoryMetalHandlePropertiesEXT(VkDevice device
     return dispatch->GetMemoryMetalHandlePropertiesEXT(device, handleType, pHandle, pMemoryMetalHandleProperties);
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
+
+static inline VkResult DispatchEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM(
+    VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pCounterCount, VkPerformanceCounterARM* pCounters,
+    VkPerformanceCounterDescriptionARM* pCounterDescriptions) {
+    auto dispatch = vvl::dispatch::GetData(physicalDevice);
+    return dispatch->EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM(
+        physicalDevice, queueFamilyIndex, pCounterCount, pCounters, pCounterDescriptions);
+}
 
 static inline void DispatchCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo) {
     auto dispatch = vvl::dispatch::GetData(commandBuffer);
