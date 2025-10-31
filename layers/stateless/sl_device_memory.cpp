@@ -203,7 +203,7 @@ bool Device::manual_PreCallValidateCmdDecompressMemoryIndirectCountEXT(
 
     const auto& props = phys_dev_ext_props.memory_decompression_props;
     if ((decompressionMethod & props.decompressionMethods) == 0) {
-        skip |= LogError("VUID-vkCmdDecompressMemoryIndirectCountEXT-decompressionMethod-parameter", commandBuffer,
+        skip |= LogError("VUID-vkCmdDecompressMemoryIndirectCountEXT-decompressionMethod-11810", commandBuffer,
                          error_obj.location.dot(Field::decompressionMethod),
                          "(0x%" PRIx64 ") is not a supported decompression method bit (supported mask: 0x%" PRIx64 ").",
                          decompressionMethod, props.decompressionMethods);

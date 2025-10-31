@@ -791,7 +791,7 @@ TEST_F(NegativeDescriptorBuffer, CmdSetDescriptorBufferOffsets) {
     VkDeviceSize offsets[3] = {0};
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetDescriptorBufferOffsetsEXT-firstSet-08066");
-    m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdSetDescriptorBufferOffsetsEXT-embedded-descriptor-flags");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetDescriptorBufferOffsetsEXT-firstSet-11804");
     m_errorMonitor->SetUnexpectedError("VUID-vkCmdSetDescriptorBufferOffsetsEXT-pOffsets-08063");
     vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 3, indices,
                                          offsets);
@@ -1489,11 +1489,11 @@ TEST_F(NegativeDescriptorBuffer, LayoutFlags) {
             *m_device, binding,
             VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT | VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
 
-        m_errorMonitor->SetDesiredError("UNASSIGNED-vkGetDescriptorSetLayoutSizeEXT-layout-push");
+        m_errorMonitor->SetDesiredError("VUID-vkGetDescriptorSetLayoutSizeEXT-layout-11811");
         vk::GetDescriptorSetLayoutSizeEXT(device(), dsl, &size);
         m_errorMonitor->VerifyFound();
 
-        m_errorMonitor->SetDesiredError("VUID-vkCmdSetDescriptorBufferOffsetsEXT-firstSet-11803");
+        m_errorMonitor->SetDesiredError("VUID-vkGetDescriptorSetLayoutBindingOffsetEXT-layout-11813");
         vk::GetDescriptorSetLayoutBindingOffsetEXT(device(), dsl, 0, &offset);
         m_errorMonitor->VerifyFound();
     }
@@ -1502,11 +1502,11 @@ TEST_F(NegativeDescriptorBuffer, LayoutFlags) {
                                      VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT |
                                          VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT);
 
-        m_errorMonitor->SetDesiredError("UNASSIGNED-vkGetDescriptorSetLayoutSizeEXT-layout-embedded");
+        m_errorMonitor->SetDesiredError("VUID-vkGetDescriptorSetLayoutSizeEXT-layout-11812");
         vk::GetDescriptorSetLayoutSizeEXT(device(), dsl, &size);
         m_errorMonitor->VerifyFound();
 
-        m_errorMonitor->SetDesiredError("VUID-vkCmdSetDescriptorBufferOffsetsEXT-firstSet-11804");
+        m_errorMonitor->SetDesiredError("VUID-vkGetDescriptorSetLayoutBindingOffsetEXT-layout-11814");
         vk::GetDescriptorSetLayoutBindingOffsetEXT(device(), dsl, 0, &offset);
         m_errorMonitor->VerifyFound();
     }
@@ -1964,7 +1964,7 @@ TEST_F(NegativeDescriptorBuffer, PushDescriptor) {
 
     uint32_t buffer_index = 0;
     VkDeviceSize buffer_offset = 0;
-    m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdSetDescriptorBufferOffsetsEXT-push-descriptor-flags");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetDescriptorBufferOffsetsEXT-firstSet-11803");
     vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &buffer_index,
                                          &buffer_offset);
     m_errorMonitor->VerifyFound();
@@ -2002,7 +2002,7 @@ TEST_F(NegativeDescriptorBuffer, EmbeddedSamplers) {
 
     uint32_t buffer_index = 0;
     VkDeviceSize buffer_offset = 0;
-    m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdSetDescriptorBufferOffsetsEXT-embedded-descriptor-flags");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetDescriptorBufferOffsetsEXT-firstSet-11804");
     vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &buffer_index,
                                          &buffer_offset);
     m_errorMonitor->VerifyFound();
