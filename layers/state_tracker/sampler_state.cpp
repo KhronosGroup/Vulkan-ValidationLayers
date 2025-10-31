@@ -16,7 +16,37 @@
 
 #include "sampler_state.h"
 #include <sstream>
+#include "utils/hash_util.h"
 #include "utils/image_utils.h"
+
+bool DescriptorSlot::operator==(const DescriptorSlot &rhs) const { return set == rhs.set && binding == rhs.binding; }
+
+size_t DescriptorSlot::Hash() const {
+    hash_util::HashCombiner hc;
+    hc << set << binding;
+    return hc.Value();
+}
+
+bool SamplerUsedByImage::operator==(const SamplerUsedByImage &rhs) const {
+    return sampler_slot == rhs.sampler_slot && sampler_index == rhs.sampler_index;
+}
+
+size_t SamplerUsedByImage::Hash() const {
+    hash_util::HashCombiner hc;
+    hc << sampler_index << sampler_slot;
+    return hc.Value();
+}
+
+bool YcbcrSamplerUsedByImage::operator==(const YcbcrSamplerUsedByImage &rhs) const {
+    return variable_id == rhs.variable_id && image_access_chain_index == rhs.image_access_chain_index &&
+           sampler_access_chain_index == rhs.sampler_access_chain_index;
+}
+
+size_t YcbcrSamplerUsedByImage::Hash() const {
+    hash_util::HashCombiner hc;
+    hc << variable_id << image_access_chain_index << sampler_access_chain_index;
+    return hc.Value();
+}
 
 namespace vvl {
 

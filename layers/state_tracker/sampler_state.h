@@ -28,15 +28,17 @@ struct DescriptorSlot {
     uint32_t binding;
 
     DescriptorSlot(uint32_t s, uint32_t b) : set(s), binding(b) {}
-};
 
-inline bool operator==(const DescriptorSlot &lhs, const DescriptorSlot &rhs) noexcept {
-    return lhs.set == rhs.set && lhs.binding == rhs.binding;
-}
+    bool operator==(const DescriptorSlot &other) const;
+    size_t Hash() const;
+};
 
 struct SamplerUsedByImage {
     DescriptorSlot sampler_slot;
     uint32_t sampler_index;
+
+    bool operator==(const SamplerUsedByImage &other) const;
+    size_t Hash() const;
 };
 
 // TODO - This is duplicated work of SamplerUsedByImage and need to combine
@@ -46,34 +48,23 @@ struct YcbcrSamplerUsedByImage {
     uint32_t variable_id;
     uint32_t image_access_chain_index;
     uint32_t sampler_access_chain_index;
+
+    bool operator==(const YcbcrSamplerUsedByImage &other) const;
+    size_t Hash() const;
 };
-
-inline bool operator==(const SamplerUsedByImage &a, const SamplerUsedByImage &b) noexcept {
-    return a.sampler_slot == b.sampler_slot && a.sampler_index == b.sampler_index;
-}
-
-inline bool operator==(const YcbcrSamplerUsedByImage &a, const YcbcrSamplerUsedByImage &b) noexcept {
-    return a.variable_id == b.variable_id && a.image_access_chain_index == b.image_access_chain_index &&
-           a.sampler_access_chain_index == b.sampler_access_chain_index;
-}
 
 namespace std {
 template <>
 struct hash<DescriptorSlot> {
-    size_t operator()(DescriptorSlot slot) const noexcept { return hash<uint32_t>()(slot.set) ^ hash<uint32_t>()(slot.binding); }
+    size_t operator()(DescriptorSlot slot) const noexcept { return slot.Hash(); }
 };
 template <>
 struct hash<SamplerUsedByImage> {
-    size_t operator()(SamplerUsedByImage s) const noexcept {
-        return hash<DescriptorSlot>()(s.sampler_slot) ^ hash<uint32_t>()(s.sampler_index);
-    }
+    size_t operator()(SamplerUsedByImage s) const noexcept { return s.Hash(); }
 };
 template <>
 struct hash<YcbcrSamplerUsedByImage> {
-    size_t operator()(YcbcrSamplerUsedByImage s) const noexcept {
-        return hash<uint32_t>()(s.variable_id) ^ hash<uint32_t>()(s.image_access_chain_index) ^
-               hash<uint32_t>()(s.sampler_access_chain_index);
-    }
+    size_t operator()(const YcbcrSamplerUsedByImage &s) const { return s.Hash(); }
 };
 }  // namespace std
 
