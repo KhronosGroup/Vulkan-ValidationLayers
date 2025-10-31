@@ -28877,6 +28877,104 @@ VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetPipelineIndirectDeviceAddressNV(VkDevic
     return result;
 }
 
+#ifdef VK_USE_PLATFORM_OHOS
+VKAPI_ATTR VkResult VKAPI_CALL GetNativeBufferPropertiesOHOS(VkDevice device, const struct OH_NativeBuffer* buffer,
+                                                             VkNativeBufferPropertiesOHOS* pProperties) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetNativeBufferPropertiesOHOS, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkGetNativeBufferPropertiesOHOS");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateGetNativeBufferPropertiesOHOS]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateGetNativeBufferPropertiesOHOS(device, buffer, pProperties, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetNativeBufferPropertiesOHOS);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkGetNativeBufferPropertiesOHOS");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordGetNativeBufferPropertiesOHOS]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordGetNativeBufferPropertiesOHOS(device, buffer, pProperties, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch_vkGetNativeBufferPropertiesOHOS");
+        result = device_dispatch->GetNativeBufferPropertiesOHOS(device, buffer, pProperties);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkGetNativeBufferPropertiesOHOS");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetNativeBufferPropertiesOHOS]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordGetNativeBufferPropertiesOHOS(device, buffer, pProperties, record_obj);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetMemoryNativeBufferOHOS(VkDevice device, const VkMemoryGetNativeBufferInfoOHOS* pInfo,
+                                                         struct OH_NativeBuffer** pBuffer) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetMemoryNativeBufferOHOS, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkGetMemoryNativeBufferOHOS");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateGetMemoryNativeBufferOHOS]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateGetMemoryNativeBufferOHOS(device, pInfo, pBuffer, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetMemoryNativeBufferOHOS);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkGetMemoryNativeBufferOHOS");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordGetMemoryNativeBufferOHOS]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordGetMemoryNativeBufferOHOS(device, pInfo, pBuffer, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch_vkGetMemoryNativeBufferOHOS");
+        result = device_dispatch->GetMemoryNativeBufferOHOS(device, pInfo, pBuffer);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkGetMemoryNativeBufferOHOS");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetMemoryNativeBufferOHOS]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordGetMemoryNativeBufferOHOS(device, pInfo, pBuffer, record_obj);
+        }
+    }
+    return result;
+}
+
+#endif  // VK_USE_PLATFORM_OHOS
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthClampEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable) {
     VVL_ZoneScoped;
 
@@ -33661,6 +33759,57 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryMetalHandlePropertiesEXT(VkDevice device
 }
 
 #endif  // VK_USE_PLATFORM_METAL_EXT
+VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM(
+    VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pCounterCount, VkPerformanceCounterARM* pCounters,
+    VkPerformanceCounterDescriptionARM* pCounterDescriptions) {
+    VVL_ZoneScoped;
+
+    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM,
+                          VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM");
+        for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            skip |= vo->PreCallValidateEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM(
+                physicalDevice, queueFamilyIndex, pCounterCount, pCounters, pCounterDescriptions, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM");
+        for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            vo->PreCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM(
+                physicalDevice, queueFamilyIndex, pCounterCount, pCounters, pCounterDescriptions, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch_vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM");
+        result = instance_dispatch->EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM(
+            physicalDevice, queueFamilyIndex, pCounterCount, pCounters, pCounterDescriptions);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM");
+        for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            vo->PostCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM(
+                physicalDevice, queueFamilyIndex, pCounterCount, pCounters, pCounterDescriptions, record_obj);
+        }
+    }
+    return result;
+}
+
 VKAPI_ATTR void VKAPI_CALL CmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo) {
     VVL_ZoneScoped;
 
@@ -35610,6 +35759,10 @@ const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap() {
         {"vkGetPipelineIndirectMemoryRequirementsNV", {kFuncTypeDev, (void*)GetPipelineIndirectMemoryRequirementsNV}},
         {"vkCmdUpdatePipelineIndirectBufferNV", {kFuncTypeDev, (void*)CmdUpdatePipelineIndirectBufferNV}},
         {"vkGetPipelineIndirectDeviceAddressNV", {kFuncTypeDev, (void*)GetPipelineIndirectDeviceAddressNV}},
+#ifdef VK_USE_PLATFORM_OHOS
+        {"vkGetNativeBufferPropertiesOHOS", {kFuncTypeDev, (void*)GetNativeBufferPropertiesOHOS}},
+        {"vkGetMemoryNativeBufferOHOS", {kFuncTypeDev, (void*)GetMemoryNativeBufferOHOS}},
+#endif  // VK_USE_PLATFORM_OHOS
         {"vkCmdSetDepthClampEnableEXT", {kFuncTypeDev, (void*)CmdSetDepthClampEnableEXT}},
         {"vkCmdSetPolygonModeEXT", {kFuncTypeDev, (void*)CmdSetPolygonModeEXT}},
         {"vkCmdSetRasterizationSamplesEXT", {kFuncTypeDev, (void*)CmdSetRasterizationSamplesEXT}},
@@ -35727,6 +35880,8 @@ const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap() {
         {"vkGetMemoryMetalHandleEXT", {kFuncTypeDev, (void*)GetMemoryMetalHandleEXT}},
         {"vkGetMemoryMetalHandlePropertiesEXT", {kFuncTypeDev, (void*)GetMemoryMetalHandlePropertiesEXT}},
 #endif  // VK_USE_PLATFORM_METAL_EXT
+        {"vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM",
+         {kFuncTypePdev, (void*)EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM}},
         {"vkCmdEndRendering2EXT", {kFuncTypeDev, (void*)CmdEndRendering2EXT}},
         {"vkCreateAccelerationStructureKHR", {kFuncTypeDev, (void*)CreateAccelerationStructureKHR}},
         {"vkDestroyAccelerationStructureKHR", {kFuncTypeDev, (void*)DestroyAccelerationStructureKHR}},

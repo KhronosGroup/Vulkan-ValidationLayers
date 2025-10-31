@@ -845,6 +845,11 @@ void GetPipelineIndirectMemoryRequirementsNV(VkDevice device, const VkComputePip
                                              VkMemoryRequirements2* pMemoryRequirements);
 void CmdUpdatePipelineIndirectBufferNV(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline);
 VkDeviceAddress GetPipelineIndirectDeviceAddressNV(VkDevice device, const VkPipelineIndirectDeviceAddressInfoNV* pInfo);
+#ifdef VK_USE_PLATFORM_OHOS
+VkResult GetNativeBufferPropertiesOHOS(VkDevice device, const struct OH_NativeBuffer* buffer,
+                                       VkNativeBufferPropertiesOHOS* pProperties);
+VkResult GetMemoryNativeBufferOHOS(VkDevice device, const VkMemoryGetNativeBufferInfoOHOS* pInfo, struct OH_NativeBuffer** pBuffer);
+#endif  // VK_USE_PLATFORM_OHOS
 void CmdSetDepthClampEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable);
 void CmdSetPolygonModeEXT(VkCommandBuffer commandBuffer, VkPolygonMode polygonMode);
 void CmdSetRasterizationSamplesEXT(VkCommandBuffer commandBuffer, VkSampleCountFlagBits rasterizationSamples);

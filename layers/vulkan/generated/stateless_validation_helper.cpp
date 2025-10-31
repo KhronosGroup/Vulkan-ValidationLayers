@@ -3182,6 +3182,18 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
+        // Validation code for VkPhysicalDevicePerformanceCountersByRegionFeaturesARM structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_COUNTERS_BY_REGION_FEATURES_ARM: {  // Covers
+                                                                                               // VUID-VkPhysicalDevicePerformanceCountersByRegionFeaturesARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc =
+                    loc.pNext(Struct::VkPhysicalDevicePerformanceCountersByRegionFeaturesARM);
+                VkPhysicalDevicePerformanceCountersByRegionFeaturesARM* structure =
+                    (VkPhysicalDevicePerformanceCountersByRegionFeaturesARM*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::performanceCountersByRegion), structure->performanceCountersByRegion);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_ROBUSTNESS_FEATURES_EXT: {  // Covers
                                                                                             // VUID-VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT-sType-sType
@@ -7036,6 +7048,24 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
 
         // No Validation code for VkImageViewSampleWeightCreateInfoQCOM structure members  -- Covers
         // VUID-VkImageViewSampleWeightCreateInfoQCOM-sType-sType
+#ifdef VK_USE_PLATFORM_OHOS
+
+        // No Validation code for VkNativeBufferUsageOHOS structure members  -- Covers VUID-VkNativeBufferUsageOHOS-sType-sType
+
+        // No Validation code for VkNativeBufferFormatPropertiesOHOS structure members  -- Covers
+        // VUID-VkNativeBufferFormatPropertiesOHOS-sType-sType
+
+        // Validation code for VkImportNativeBufferInfoOHOS structure members
+        case VK_STRUCTURE_TYPE_IMPORT_NATIVE_BUFFER_INFO_OHOS: {  // Covers VUID-VkImportNativeBufferInfoOHOS-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkImportNativeBufferInfoOHOS);
+                VkImportNativeBufferInfoOHOS* structure = (VkImportNativeBufferInfoOHOS*)header;
+                skip |= ValidateRequiredPointer(pNext_loc.dot(Field::buffer), structure->buffer, kVUIDUndefined);
+            }
+        } break;
+
+        // No Validation code for VkExternalFormatOHOS structure members  -- Covers VUID-VkExternalFormatOHOS-sType-sType
+#endif  // VK_USE_PLATFORM_OHOS
 
         // Validation code for VkExternalMemoryAcquireUnmodifiedEXT structure members
         case VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_EXT: {  // Covers
@@ -7647,6 +7677,25 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
         } break;
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
+        // Validation code for VkRenderPassPerformanceCountersByRegionBeginInfoARM structure members
+        case VK_STRUCTURE_TYPE_RENDER_PASS_PERFORMANCE_COUNTERS_BY_REGION_BEGIN_INFO_ARM: {  // Covers
+                                                                                             // VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkRenderPassPerformanceCountersByRegionBeginInfoARM);
+                VkRenderPassPerformanceCountersByRegionBeginInfoARM* structure =
+                    (VkRenderPassPerformanceCountersByRegionBeginInfoARM*)header;
+                skip |=
+                    ValidateRequiredPointer(pNext_loc.dot(Field::pCounterAddresses), structure->pCounterAddresses,
+                                            "VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-pCounterAddresses-parameter");
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::serializeRegions), structure->serializeRegions);
+
+                skip |=
+                    ValidateRequiredPointer(pNext_loc.dot(Field::pCounterIndices), structure->pCounterIndices,
+                                            "VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-pCounterIndices-parameter");
+            }
+        } break;
+
         // No Validation code for VkPipelineFragmentDensityMapLayeredCreateInfoVALVE structure members  -- Covers
         // VUID-VkPipelineFragmentDensityMapLayeredCreateInfoVALVE-sType-sType
 #ifdef VK_ENABLE_BETA_EXTENSIONS
@@ -7938,6 +7987,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PAGEABLE_DEVICE_LOCAL_MEMORY_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PARTITIONED_ACCELERATION_STRUCTURE_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PER_STAGE_DESCRIPTOR_SET_FEATURES_NV,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_COUNTERS_BY_REGION_FEATURES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_BINARY_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CACHE_INCREMENTAL_MODE_FEATURES_SEC,
@@ -8224,6 +8274,7 @@ bool Device::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAlloca
                                                                      VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_NV,
                                                                      VK_STRUCTURE_TYPE_IMPORT_MEMORY_ZIRCON_HANDLE_INFO_FUCHSIA,
                                                                      VK_STRUCTURE_TYPE_IMPORT_METAL_BUFFER_INFO_EXT,
+                                                                     VK_STRUCTURE_TYPE_IMPORT_NATIVE_BUFFER_INFO_OHOS,
                                                                      VK_STRUCTURE_TYPE_IMPORT_SCREEN_BUFFER_INFO_QNX,
                                                                      VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO,
                                                                      VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO,
@@ -8838,6 +8889,7 @@ bool Device::PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo
             VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_IMAGE_CREATE_INFO_NV,
             VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID,
+            VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_OHOS,
             VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_QNX,
             VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO,
             VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO_NV,
@@ -10357,6 +10409,7 @@ bool Device::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineC
             constexpr std::array allowed_structs_VkGraphicsPipelineCreateInfo = {
                 VK_STRUCTURE_TYPE_ATTACHMENT_SAMPLE_COUNT_INFO_AMD,
                 VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID,
+                VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_OHOS,
                 VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_LIBRARY_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_SHADER_GROUPS_CREATE_INFO_NV,
                 VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_ATTRIBUTES_INFO_NVX,
@@ -10953,6 +11006,7 @@ bool Device::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, co
             VK_STRUCTURE_TYPE_DEVICE_GROUP_RENDER_PASS_BEGIN_INFO,
             VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_RENDER_AREAS_RENDER_PASS_BEGIN_INFO_QCOM,
             VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO,
+            VK_STRUCTURE_TYPE_RENDER_PASS_PERFORMANCE_COUNTERS_BY_REGION_BEGIN_INFO_ARM,
             VK_STRUCTURE_TYPE_RENDER_PASS_SAMPLE_LOCATIONS_BEGIN_INFO_EXT,
             VK_STRUCTURE_TYPE_RENDER_PASS_STRIPE_BEGIN_INFO_ARM,
             VK_STRUCTURE_TYPE_RENDER_PASS_TRANSFORM_BEGIN_INFO_QCOM};
@@ -11292,6 +11346,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice phys
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_OPTICAL_FLOW_PROPERTIES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PARTITIONED_ACCELERATION_STRUCTURE_PROPERTIES_NV,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_COUNTERS_BY_REGION_PROPERTIES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_PROPERTIES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_BINARY_PROPERTIES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_ROBUSTNESS_PROPERTIES,
@@ -11439,6 +11494,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceImageFormatProperties2(VkPhysical
             VK_STRUCTURE_TYPE_FILTER_CUBIC_IMAGE_VIEW_IMAGE_FORMAT_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_HOST_IMAGE_COPY_DEVICE_PERFORMANCE_QUERY,
             VK_STRUCTURE_TYPE_IMAGE_COMPRESSION_PROPERTIES_EXT,
+            VK_STRUCTURE_TYPE_NATIVE_BUFFER_USAGE_OHOS,
             VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_IMAGE_FORMAT_PROPERTIES,
             VK_STRUCTURE_TYPE_TEXTURE_LOD_GATHER_FORMAT_PROPERTIES_AMD};
 
@@ -11893,8 +11949,8 @@ bool Device::PreCallValidateCreateSamplerYcbcrConversion(VkDevice device, const 
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
         constexpr std::array allowed_structs_VkSamplerYcbcrConversionCreateInfo = {
-            VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID, VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_QNX,
-            VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_YCBCR_DEGAMMA_CREATE_INFO_QCOM};
+            VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID, VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_OHOS,
+            VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_QNX, VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_YCBCR_DEGAMMA_CREATE_INFO_QCOM};
 
         skip |= context.ValidateStructPnext(
             pCreateInfo_loc, pCreateInfo->pNext, allowed_structs_VkSamplerYcbcrConversionCreateInfo.size(),
@@ -12135,7 +12191,8 @@ bool Device::PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPas
             for (uint32_t attachmentIndex = 0; attachmentIndex < pCreateInfo->attachmentCount; ++attachmentIndex) {
                 [[maybe_unused]] const Location pAttachments_loc = pCreateInfo_loc.dot(Field::pAttachments, attachmentIndex);
                 constexpr std::array allowed_structs_VkAttachmentDescription2 = {
-                    VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT, VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID};
+                    VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT, VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID,
+                    VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_OHOS};
 
                 skip |= context.ValidateStructPnext(pAttachments_loc, pCreateInfo->pAttachments[attachmentIndex].pNext,
                                                     allowed_structs_VkAttachmentDescription2.size(),
@@ -12410,6 +12467,7 @@ bool Device::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, c
             VK_STRUCTURE_TYPE_DEVICE_GROUP_RENDER_PASS_BEGIN_INFO,
             VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_RENDER_AREAS_RENDER_PASS_BEGIN_INFO_QCOM,
             VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO,
+            VK_STRUCTURE_TYPE_RENDER_PASS_PERFORMANCE_COUNTERS_BY_REGION_BEGIN_INFO_ARM,
             VK_STRUCTURE_TYPE_RENDER_PASS_SAMPLE_LOCATIONS_BEGIN_INFO_EXT,
             VK_STRUCTURE_TYPE_RENDER_PASS_STRIPE_BEGIN_INFO_ARM,
             VK_STRUCTURE_TYPE_RENDER_PASS_TRANSFORM_BEGIN_INFO_QCOM};
@@ -13130,6 +13188,7 @@ bool Device::PreCallValidateGetDeviceImageMemoryRequirements(VkDevice device, co
                 VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_IMAGE_CREATE_INFO_NV,
                 VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID,
+                VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_OHOS,
                 VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_QNX,
                 VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO,
                 VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO_NV,
@@ -13230,6 +13289,7 @@ bool Device::PreCallValidateGetDeviceImageSparseMemoryRequirements(VkDevice devi
                 VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_IMAGE_CREATE_INFO_NV,
                 VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID,
+                VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_OHOS,
                 VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_QNX,
                 VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO,
                 VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO_NV,
@@ -13798,6 +13858,7 @@ bool Device::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, con
             VK_STRUCTURE_TYPE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_INFO_EXT,
             VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_ATTRIBUTES_INFO_NVX,
             VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_RENDER_AREAS_RENDER_PASS_BEGIN_INFO_QCOM,
+            VK_STRUCTURE_TYPE_RENDER_PASS_PERFORMANCE_COUNTERS_BY_REGION_BEGIN_INFO_ARM,
             VK_STRUCTURE_TYPE_RENDER_PASS_STRIPE_BEGIN_INFO_ARM,
             VK_STRUCTURE_TYPE_RENDER_PASS_TILE_SHADING_CREATE_INFO_QCOM,
             VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_DENSITY_MAP_ATTACHMENT_INFO_EXT,
@@ -14168,6 +14229,7 @@ bool Device::PreCallValidateGetDeviceImageSubresourceLayout(VkDevice device, con
                 VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_IMAGE_CREATE_INFO_NV,
                 VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID,
+                VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_OHOS,
                 VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_QNX,
                 VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO,
                 VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO_NV,
@@ -22727,6 +22789,7 @@ bool Device::PreCallValidateSetBufferCollectionImageConstraintsFUCHSIA(VkDevice 
                     VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_IMAGE_CREATE_INFO_NV,
                     VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT,
                     VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID,
+                    VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_OHOS,
                     VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_QNX,
                     VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO,
                     VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO_NV,
@@ -23808,6 +23871,55 @@ bool Device::PreCallValidateGetPipelineIndirectDeviceAddressNV(VkDevice device, 
     }
     return skip;
 }
+
+#ifdef VK_USE_PLATFORM_OHOS
+bool Device::PreCallValidateGetNativeBufferPropertiesOHOS(VkDevice device, const struct OH_NativeBuffer* buffer,
+                                                          VkNativeBufferPropertiesOHOS* pProperties,
+                                                          const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_ohos_external_memory))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_OHOS_external_memory});
+    skip |=
+        context.ValidateRequiredPointer(loc.dot(Field::buffer), buffer, "VUID-vkGetNativeBufferPropertiesOHOS-buffer-parameter");
+    skip |= context.ValidateStructType(loc.dot(Field::pProperties), pProperties, VK_STRUCTURE_TYPE_NATIVE_BUFFER_PROPERTIES_OHOS,
+                                       true, "VUID-vkGetNativeBufferPropertiesOHOS-pProperties-parameter",
+                                       "VUID-VkNativeBufferPropertiesOHOS-sType-sType");
+    if (pProperties != nullptr) {
+        [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties);
+        constexpr std::array allowed_structs_VkNativeBufferPropertiesOHOS = {
+            VK_STRUCTURE_TYPE_NATIVE_BUFFER_FORMAT_PROPERTIES_OHOS};
+
+        skip |= context.ValidateStructPnext(
+            pProperties_loc, pProperties->pNext, allowed_structs_VkNativeBufferPropertiesOHOS.size(),
+            allowed_structs_VkNativeBufferPropertiesOHOS.data(), GeneratedVulkanHeaderVersion,
+            "VUID-VkNativeBufferPropertiesOHOS-pNext-pNext", "VUID-VkNativeBufferPropertiesOHOS-sType-unique", false);
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateGetMemoryNativeBufferOHOS(VkDevice device, const VkMemoryGetNativeBufferInfoOHOS* pInfo,
+                                                      struct OH_NativeBuffer** pBuffer, const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_ohos_external_memory))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_OHOS_external_memory});
+    skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_MEMORY_GET_NATIVE_BUFFER_INFO_OHOS, true,
+                                       "VUID-vkGetMemoryNativeBufferOHOS-pInfo-parameter",
+                                       "VUID-VkMemoryGetNativeBufferInfoOHOS-sType-sType");
+    if (pInfo != nullptr) {
+        [[maybe_unused]] const Location pInfo_loc = loc.dot(Field::pInfo);
+        skip |= context.ValidateStructPnext(pInfo_loc, pInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkMemoryGetNativeBufferInfoOHOS-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateRequiredHandle(pInfo_loc.dot(Field::memory), pInfo->memory);
+    }
+    skip |= context.ValidateRequiredPointer(loc.dot(Field::pBuffer), pBuffer, "VUID-vkGetMemoryNativeBufferOHOS-pBuffer-parameter");
+    return skip;
+}
+#endif  // VK_USE_PLATFORM_OHOS
 
 bool Device::PreCallValidateCmdSetDepthClampEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable,
                                                       const ErrorObject& error_obj) const {
@@ -25102,6 +25214,7 @@ bool Device::PreCallValidateGetDynamicRenderingTilePropertiesQCOM(VkDevice devic
             VK_STRUCTURE_TYPE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_INFO_EXT,
             VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_ATTRIBUTES_INFO_NVX,
             VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_RENDER_AREAS_RENDER_PASS_BEGIN_INFO_QCOM,
+            VK_STRUCTURE_TYPE_RENDER_PASS_PERFORMANCE_COUNTERS_BY_REGION_BEGIN_INFO_ARM,
             VK_STRUCTURE_TYPE_RENDER_PASS_STRIPE_BEGIN_INFO_ARM,
             VK_STRUCTURE_TYPE_RENDER_PASS_TILE_SHADING_CREATE_INFO_QCOM,
             VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_DENSITY_MAP_ATTACHMENT_INFO_EXT,
@@ -26734,6 +26847,42 @@ bool Device::PreCallValidateGetMemoryMetalHandlePropertiesEXT(VkDevice device, V
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
+bool Instance::PreCallValidateEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM(
+    VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pCounterCount, VkPerformanceCounterARM* pCounters,
+    VkPerformanceCounterDescriptionARM* pCounterDescriptions, const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
+    Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
+    [[maybe_unused]] const Location loc = error_obj.location;
+    skip |= context.ValidateStructTypeArray(
+        loc.dot(Field::pCounterCount), loc.dot(Field::pCounters), pCounterCount, pCounters,
+        VK_STRUCTURE_TYPE_PERFORMANCE_COUNTER_ARM, true, false, false, "VUID-VkPerformanceCounterARM-sType-sType", kVUIDUndefined,
+        "VUID-vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM-pCounterCount-parameter", kVUIDUndefined);
+    if (pCounters != nullptr) {
+        for (uint32_t pIndexerIndex = 0; pIndexerIndex < *pCounterCount; ++pIndexerIndex) {
+            [[maybe_unused]] const Location pCounters_loc = loc.dot(Field::pCounters, pIndexerIndex);
+            skip |=
+                context.ValidateStructPnext(pCounters_loc, pCounters[pIndexerIndex].pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkPerformanceCounterARM-pNext-pNext", kVUIDUndefined, false);
+        }
+    }
+    skip |= context.ValidateStructTypeArray(
+        loc.dot(Field::pCounterCount), loc.dot(Field::pCounterDescriptions), pCounterCount, pCounterDescriptions,
+        VK_STRUCTURE_TYPE_PERFORMANCE_COUNTER_DESCRIPTION_ARM, true, false, false,
+        "VUID-VkPerformanceCounterDescriptionARM-sType-sType", kVUIDUndefined,
+        "VUID-vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM-pCounterCount-parameter", kVUIDUndefined);
+    if (pCounterDescriptions != nullptr) {
+        for (uint32_t pIndexerIndex = 0; pIndexerIndex < *pCounterCount; ++pIndexerIndex) {
+            [[maybe_unused]] const Location pCounterDescriptions_loc = loc.dot(Field::pCounterDescriptions, pIndexerIndex);
+            skip |= context.ValidateStructPnext(pCounterDescriptions_loc, pCounterDescriptions[pIndexerIndex].pNext, 0, nullptr,
+                                                GeneratedVulkanHeaderVersion, "VUID-VkPerformanceCounterDescriptionARM-pNext-pNext",
+                                                kVUIDUndefined, false);
+        }
+    }
+    return skip;
+}
+
 bool Device::PreCallValidateCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo,
                                                 const ErrorObject& error_obj) const {
     bool skip = false;
@@ -28124,6 +28273,7 @@ bool Device::ValidateCommandBufferInheritanceInfo(const Context& context, const 
         VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO,
         VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_VIEWPORT_SCISSOR_INFO_NV,
         VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID,
+        VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_OHOS,
         VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_ATTRIBUTES_INFO_NVX,
         VK_STRUCTURE_TYPE_RENDER_PASS_TILE_SHADING_CREATE_INFO_QCOM,
         VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_LOCATION_INFO,

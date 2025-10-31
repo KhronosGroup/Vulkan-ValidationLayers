@@ -7858,6 +7858,36 @@ VkDeviceAddress Device::GetPipelineIndirectDeviceAddressNV(VkDevice device, cons
 
     return result;
 }
+#ifdef VK_USE_PLATFORM_OHOS
+
+VkResult Device::GetNativeBufferPropertiesOHOS(VkDevice device, const struct OH_NativeBuffer* buffer,
+                                               VkNativeBufferPropertiesOHOS* pProperties) {
+    VkResult result = device_dispatch_table.GetNativeBufferPropertiesOHOS(device, buffer, pProperties);
+
+    return result;
+}
+
+VkResult Device::GetMemoryNativeBufferOHOS(VkDevice device, const VkMemoryGetNativeBufferInfoOHOS* pInfo,
+                                           struct OH_NativeBuffer** pBuffer) {
+    if (!wrap_handles) return device_dispatch_table.GetMemoryNativeBufferOHOS(device, pInfo, pBuffer);
+    vku::safe_VkMemoryGetNativeBufferInfoOHOS var_local_pInfo;
+    vku::safe_VkMemoryGetNativeBufferInfoOHOS* local_pInfo = nullptr;
+    {
+        if (pInfo) {
+            local_pInfo = &var_local_pInfo;
+            local_pInfo->initialize(pInfo);
+
+            if (pInfo->memory) {
+                local_pInfo->memory = Unwrap(pInfo->memory);
+            }
+        }
+    }
+    VkResult result =
+        device_dispatch_table.GetMemoryNativeBufferOHOS(device, (const VkMemoryGetNativeBufferInfoOHOS*)local_pInfo, pBuffer);
+
+    return result;
+}
+#endif  // VK_USE_PLATFORM_OHOS
 
 void Device::CmdSetDepthClampEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable) {
     device_dispatch_table.CmdSetDepthClampEnableEXT(commandBuffer, depthClampEnable);
@@ -8900,6 +8930,15 @@ VkResult Device::GetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMe
     return result;
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
+
+VkResult Instance::EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM(
+    VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pCounterCount, VkPerformanceCounterARM* pCounters,
+    VkPerformanceCounterDescriptionARM* pCounterDescriptions) {
+    VkResult result = instance_dispatch_table.EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM(
+        physicalDevice, queueFamilyIndex, pCounterCount, pCounters, pCounterDescriptions);
+
+    return result;
+}
 
 void Device::CmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo) {
     device_dispatch_table.CmdEndRendering2EXT(commandBuffer, pRenderingEndInfo);

@@ -1827,6 +1827,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->pipelineOpacityMicromap |= enabled->pipelineOpacityMicromap == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_COUNTERS_BY_REGION_FEATURES_ARM: {
+                const VkPhysicalDevicePerformanceCountersByRegionFeaturesARM *enabled =
+                    reinterpret_cast<const VkPhysicalDevicePerformanceCountersByRegionFeaturesARM *>(pNext);
+                features->performanceCountersByRegion |= enabled->performanceCountersByRegion == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_ROBUSTNESS_FEATURES_EXT: {
                 const VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT *enabled =
                     reinterpret_cast<const VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT *>(pNext);

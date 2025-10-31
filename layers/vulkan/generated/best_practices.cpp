@@ -221,6 +221,7 @@ std::string GetSpecialUse(vvl::Extension extension_name) {
         {vvl::Extension::_VK_EXT_legacy_vertex_attributes, "glemulation"},
         {vvl::Extension::_VK_EXT_attachment_feedback_loop_dynamic_state, "glemulation, d3demulation"},
         {vvl::Extension::_VK_MESA_image_alignment_control, "d3demulation"},
+        {vvl::Extension::_VK_ARM_performance_counters_by_region, "devtools"},
     };
 
     auto it = special_use_extensions.find(extension_name);
@@ -1823,6 +1824,19 @@ void BestPractices::PostCallRecordWriteMicromapsPropertiesEXT(VkDevice device, u
     bp_state::LogResult(*this, device, record_obj);
 }
 
+#ifdef VK_USE_PLATFORM_OHOS
+void BestPractices::PostCallRecordGetNativeBufferPropertiesOHOS(VkDevice device, const struct OH_NativeBuffer* buffer,
+                                                                VkNativeBufferPropertiesOHOS* pProperties,
+                                                                const RecordObject& record_obj) {
+    bp_state::LogResult(*this, device, record_obj);
+}
+
+void BestPractices::PostCallRecordGetMemoryNativeBufferOHOS(VkDevice device, const VkMemoryGetNativeBufferInfoOHOS* pInfo,
+                                                            struct OH_NativeBuffer** pBuffer, const RecordObject& record_obj) {
+    bp_state::LogResult(*this, device, record_obj);
+}
+#endif  // VK_USE_PLATFORM_OHOS
+
 void BestPractices::PostCallRecordCreateTensorARM(VkDevice device, const VkTensorCreateInfoARM* pCreateInfo,
                                                   const VkAllocationCallbacks* pAllocator, VkTensorARM* pTensor,
                                                   const RecordObject& record_obj) {
@@ -2044,6 +2058,12 @@ void BestPractices::PostCallRecordGetMemoryMetalHandlePropertiesEXT(VkDevice dev
     bp_state::LogResult(*this, device, record_obj);
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
+
+void bp_state::Instance::PostCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM(
+    VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pCounterCount, VkPerformanceCounterARM* pCounters,
+    VkPerformanceCounterDescriptionARM* pCounterDescriptions, const RecordObject& record_obj) {
+    bp_state::LogResult(*this, physicalDevice, record_obj);
+}
 
 void BestPractices::PostCallRecordCreateAccelerationStructureKHR(VkDevice device,
                                                                  const VkAccelerationStructureCreateInfoKHR* pCreateInfo,

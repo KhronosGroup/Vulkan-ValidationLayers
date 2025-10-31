@@ -1177,6 +1177,10 @@ bool PreCallValidateCmdUpdatePipelineIndirectBufferNV(VkCommandBuffer commandBuf
                                                       VkPipeline pipeline, const ErrorObject& error_obj) const override;
 bool PreCallValidateGetPipelineIndirectDeviceAddressNV(VkDevice device, const VkPipelineIndirectDeviceAddressInfoNV* pInfo,
                                                        const ErrorObject& error_obj) const override;
+#ifdef VK_USE_PLATFORM_OHOS
+bool PreCallValidateGetMemoryNativeBufferOHOS(VkDevice device, const VkMemoryGetNativeBufferInfoOHOS* pInfo,
+                                              struct OH_NativeBuffer** pBuffer, const ErrorObject& error_obj) const override;
+#endif  // VK_USE_PLATFORM_OHOS
 void PostCallRecordCreateTensorARM(VkDevice device, const VkTensorCreateInfoARM* pCreateInfo,
                                    const VkAllocationCallbacks* pAllocator, VkTensorARM* pTensor,
                                    const RecordObject& record_obj) override;

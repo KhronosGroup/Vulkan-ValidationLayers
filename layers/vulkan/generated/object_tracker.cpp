@@ -7352,6 +7352,25 @@ bool Device::PreCallValidateGetPipelineIndirectDeviceAddressNV(VkDevice device, 
 
     return skip;
 }
+#ifdef VK_USE_PLATFORM_OHOS
+
+// vkGetNativeBufferPropertiesOHOS:
+// Checked by chassis: device: "VUID-vkGetNativeBufferPropertiesOHOS-device-parameter"
+
+bool Device::PreCallValidateGetMemoryNativeBufferOHOS(VkDevice device, const VkMemoryGetNativeBufferInfoOHOS* pInfo,
+                                                      struct OH_NativeBuffer** pBuffer, const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkGetMemoryNativeBufferOHOS-device-parameter"
+    if (pInfo) {
+        [[maybe_unused]] const Location pInfo_loc = error_obj.location.dot(Field::pInfo);
+        skip |= ValidateObject(pInfo->memory, kVulkanObjectTypeDeviceMemory, false,
+                               "VUID-VkMemoryGetNativeBufferInfoOHOS-memory-parameter",
+                               "UNASSIGNED-VkMemoryGetNativeBufferInfoOHOS-memory-parent", pInfo_loc.dot(Field::memory));
+    }
+
+    return skip;
+}
+#endif  // VK_USE_PLATFORM_OHOS
 
 // vkCmdSetDepthClampEnableEXT:
 // Checked by chassis: commandBuffer: "VUID-vkCmdSetDepthClampEnableEXT-commandBuffer-parameter"
@@ -8541,6 +8560,10 @@ bool Device::PreCallValidateGetMemoryMetalHandleEXT(VkDevice device, const VkMem
 // Checked by chassis: device: "VUID-vkGetMemoryMetalHandlePropertiesEXT-device-parameter"
 
 #endif  // VK_USE_PLATFORM_METAL_EXT
+
+// vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM:
+// Checked by chassis: physicalDevice:
+// "VUID-vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM-physicalDevice-parameter"
 
 // vkCmdEndRendering2EXT:
 // Checked by chassis: commandBuffer: "VUID-vkCmdEndRendering2KHR-commandBuffer-parameter"

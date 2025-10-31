@@ -346,4 +346,8 @@ void PostCallRecordGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertie
     VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties,
     const RecordObject& record_obj) override;
 
+void PostCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM(
+    VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pCounterCount, VkPerformanceCounterARM* pCounters,
+    VkPerformanceCounterDescriptionARM* pCounterDescriptions, const RecordObject& record_obj) override;
+
 // NOLINTEND
