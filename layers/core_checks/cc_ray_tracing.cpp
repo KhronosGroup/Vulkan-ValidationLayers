@@ -2670,13 +2670,6 @@ bool CoreChecks::ValidateClusterAccelerationStructureCommandsInfoNV(
                 "(0x%" PRIx64
                 ") must be a valid address if input::opMode is VK_CLUSTER_ACCELERATION_STRUCTURE_OP_MODE_EXPLICIT_DESTINATIONS_NV",
                 command_infos.dstAddressesArray.deviceAddress);
-        } else if (SafeModulo(command_infos.dstAddressesArray.deviceAddress, alignment_type) != 0) {
-            skip |= LogError(vuid, objlist, command_infos_loc.dot(Field::dstAddressesArray).dot(Field::deviceAddress),
-                             "(0x%" PRIx64 ") must be aligned to (%" PRIu32
-                             ") depending on the input::opMode (%s) and input::opType (%s)",
-                             command_infos.dstAddressesArray.deviceAddress, alignment_type,
-                             string_VkClusterAccelerationStructureOpModeNV(command_infos.input.opMode),
-                             string_VkClusterAccelerationStructureOpTypeNV(command_infos.input.opType));
         } else {
             if (!invalid_triangle_input &&
                 command_infos.input.opType != VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_MOVE_OBJECTS_NV) {
