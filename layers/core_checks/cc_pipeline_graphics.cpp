@@ -3651,7 +3651,7 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassUnusedAttachments(const La
     if (!enabled_features.dynamicRenderingUnusedAttachments) {
         const auto color_attachment_count = pipeline_rendering_ci.colorAttachmentCount;
         const auto rendering_color_attachment_count = cb_state.GetDynamicRenderingColorAttachmentCount();
-        if (color_attachment_count && (color_attachment_count != rendering_color_attachment_count)) {
+        if (color_attachment_count != rendering_color_attachment_count) {
             const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
             skip |= LogError(vuid.dynamic_rendering_color_count_06179, objlist, vuid.loc(),
                              "Currently bound %s was created with VkPipelineRenderingCreateInfo::colorAttachmentCount (%" PRIu32
