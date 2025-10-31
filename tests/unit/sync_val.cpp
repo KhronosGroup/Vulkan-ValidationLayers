@@ -1588,6 +1588,7 @@ TEST_F(NegativeSyncVal, LoadOpAfterStoreOpRAWSubmitTime) {
 
     vkt::Image image(*m_device, 128, 128, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView image_view = image.CreateView();
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageView = image_view;
@@ -1610,6 +1611,7 @@ TEST_F(NegativeSyncVal, LoadOpAfterStoreOpRAWSubmitTime) {
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
     m_default_queue->Submit(m_command_buffer);
     m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeSyncVal, LoadOpAfterStoreOpWAW) {
@@ -1650,6 +1652,7 @@ TEST_F(NegativeSyncVal, LoadOpAfterStoreOpWAWSubmitTime) {
 
     vkt::Image image(*m_device, 128, 128, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView image_view = image.CreateView();
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageView = image_view;
@@ -1672,6 +1675,7 @@ TEST_F(NegativeSyncVal, LoadOpAfterStoreOpWAWSubmitTime) {
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
     m_default_queue->Submit(m_command_buffer);
     m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
 }
 
 TEST_F(NegativeSyncVal, RenderPassLoadOpAfterStoreOpRAW) {
