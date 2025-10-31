@@ -1479,15 +1479,16 @@ TEST_F(NegativeDynamicRendering, AttachmentInfo) {
     if (!(depth_stencil_resolve_props.supportedDepthResolveModes & resolve_mode)) {
         m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pDepthAttachment-06102");
     }
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06145");
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-imageView-06116");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
     fragment_density_map.imageView = depth_image_view_fragment;
 
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06145");
     if (!(depth_stencil_resolve_props.supportedDepthResolveModes & resolve_mode)) {
         m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pDepthAttachment-06102");
     } else {
-        m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06145");
         m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06146");
         m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06861");
         m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06862");
