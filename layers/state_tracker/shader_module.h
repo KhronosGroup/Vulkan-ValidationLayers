@@ -39,6 +39,7 @@ class Pipeline;
 namespace spirv {
 struct EntryPoint;
 struct Module;
+struct ParsedInfo;
 
 // We can assume the upper 3 uint max values are not going to be used for anything meaningful in SPIR-V
 static constexpr uint32_t kInvalidValue = vvl::kNoIndex32;
@@ -242,9 +243,6 @@ constexpr uint32_t read_mask = read | atomic_read | image_read;
 constexpr uint32_t write_mask = write | atomic_write | image_write;
 }  // namespace AccessBit
 
-// Mapping of < variable ID, AccessBit >
-using VariableAccessMap = vvl::unordered_map<uint32_t, uint32_t>;
-
 // Track all paths from %param to %arg so can walk back functions
 //
 // %arg   = OpVariable
@@ -277,15 +275,6 @@ struct StaticImageAccess {
 
     StaticImageAccess(const Module &module_state, const Instruction &insn, const FuncParameterMap &func_parameter_map);
 };
-
-// <Image OpVariable Result ID, [StaticImageAccess, StaticImageAccess, etc] > - used for faster lookup
-// Many StaticImageAccess can point to a single Image Variable
-using StaticImageAccessMap = vvl::unordered_map<uint32_t, std::vector<std::shared_ptr<const StaticImageAccess>>>;
-// < Variable ID, [ OpAccessChain ] >
-// Allows for grouping the access chains by which variables they are actually accessing
-using AccessChainVariableMap = vvl::unordered_map<uint32_t, std::vector<const Instruction *>>;
-// Mapping of OpName instructions
-using DebugNameMap = vvl::unordered_map<uint32_t, const Instruction *>;
 
 // A slot is a <Location, Component> mapping
 struct InterfaceSlot {
@@ -343,8 +332,7 @@ struct VariableBase {
     // The variable may have different access for a given entrypoint
     uint32_t access_mask;  // AccessBit
     const VkShaderStageFlagBits stage;
-    VariableBase(const Module &module_state, const Instruction &insn, VkShaderStageFlagBits stage,
-                 const VariableAccessMap &variable_access_map, const DebugNameMap &debug_name_map);
+    VariableBase(const Module &module_state, const Instruction &insn, VkShaderStageFlagBits stage, const ParsedInfo &parsed);
 
     // When no SPIR-V debug info is used, this will be empty strings
     // We need to store a std::string since the original SPIR-V string will be gone when we need to print this in an error message
@@ -377,7 +365,7 @@ struct VariableBase {
     bool IsUntyped() const { return data_type_id != 0; }
 
   private:
-    static const char *FindDebugName(const VariableBase &variable, const DebugNameMap &debug_name_map);
+    static const char *FindDebugName(const VariableBase &variable, const ParsedInfo &parsed);
 };
 
 // These are Input/Output OpVariable that go in-between stages
@@ -404,7 +392,7 @@ struct StageInterfaceVariable : public VariableBase {
     uint32_t total_builtin_components = 0;
 
     StageInterfaceVariable(const Module &module_state, const Instruction &insn, VkShaderStageFlagBits stage,
-                           const VariableAccessMap &variable_access_map, const DebugNameMap &debug_name_map);
+                           const ParsedInfo &parsed);
 
   protected:
     static bool IsPerTaskNV(const StageInterfaceVariable &variable);
@@ -500,8 +488,7 @@ struct ResourceInterfaceVariable : public VariableBase {
     bool is_storage_tensor{false};
 
     ResourceInterfaceVariable(const Module &module_state, const EntryPoint &entrypoint, const Instruction &insn,
-                              const StaticImageAccessMap &image_access_map, const AccessChainVariableMap &access_chain_map,
-                              const VariableAccessMap &variable_access_map, const DebugNameMap &debug_name_map);
+                              const ParsedInfo &parsed);
 
   protected:
     static const Instruction &FindBaseType(ResourceInterfaceVariable &variable, const Module &module_state);
@@ -522,14 +509,13 @@ struct PushConstantVariable : public VariableBase {
     uint32_t size;    // total size of block
 
     PushConstantVariable(const Module &module_state, const Instruction &insn, VkShaderStageFlagBits stage,
-                         const VariableAccessMap &variable_access_map, const DebugNameMap &debug_name_map);
+                         const ParsedInfo &parsed);
 };
 
 struct TaskPayloadVariable : public VariableBase {
     uint32_t size;
 
-    TaskPayloadVariable(const Module &module_state, const Instruction &insn, VkShaderStageFlagBits stage,
-                        const VariableAccessMap &variable_access_map, const DebugNameMap &debug_name_map);
+    TaskPayloadVariable(const Module &module_state, const Instruction &insn, VkShaderStageFlagBits stage, const ParsedInfo &parsed);
 };
 
 // Represents a single Entrypoint into a Shader Module
@@ -590,24 +576,18 @@ struct EntryPoint {
 
     bool has_physical_storage_buffer_interface{false};
 
-    EntryPoint(const Module &module_state, const Instruction &entrypoint_insn, const StaticImageAccessMap &image_access_map,
-               const AccessChainVariableMap &access_chain_map, const VariableAccessMap &variable_access_map,
-               const DebugNameMap &debug_name_map);
+    EntryPoint(const Module &module_state, const Instruction &entrypoint_insn, const ParsedInfo &parsed);
 
     bool HasBuiltIn(spv::BuiltIn built_in) const;
 
   protected:
     static vvl::unordered_set<uint32_t> GetAccessibleIds(const Module &module_state, EntryPoint &entrypoint);
     static std::vector<StageInterfaceVariable> GetStageInterfaceVariables(const Module &module_state, EntryPoint &entrypoint,
-                                                                          const VariableAccessMap &variable_access_map,
-                                                                          const DebugNameMap &debug_name_map);
+                                                                          const ParsedInfo &parsed);
     static std::vector<ResourceInterfaceVariable> GetResourceInterfaceVariables(const Module &module_state, EntryPoint &entrypoint,
-                                                                                const StaticImageAccessMap &image_access_map,
-                                                                                const AccessChainVariableMap &access_chain_map,
-                                                                                const VariableAccessMap &variable_access_map,
-                                                                                const DebugNameMap &debug_name_map);
+                                                                                const ParsedInfo &parsed);
     static bool IsBuiltInWritten(spv::BuiltIn built_in, const Module &module_state, const StageInterfaceVariable &variable,
-                                 const AccessChainVariableMap &access_chain_map);
+                                 const ParsedInfo &parsed);
 };
 
 // Info to capture while parsing the SPIR-V, but will only be used by SpirvValidator::Validate and don't need to save after
