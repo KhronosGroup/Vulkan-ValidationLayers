@@ -48,7 +48,7 @@ void NegativeGpuAVShaderDebugInfo::BasicSingleStorageBufferComputeOOB(const char
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
-    // UNASSIGNED-Device address out of bounds
+    // VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819
     m_errorMonitor->SetDesiredError(error);
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
@@ -708,7 +708,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, BasicGlslangShaderDebugInfoWithSourceShader
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
-    // UNASSIGNED-Device address out of bounds
+    // VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819
     m_errorMonitor->SetDesiredError("Shader validation error occurred at a.comp:11\n\n11:     x = data.indices[16];");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
@@ -1534,7 +1534,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, PipelineHandles) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
-    // UNASSIGNED-Device address out of bounds
+    // VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819
     m_errorMonitor->SetDesiredErrorRegex("", "VkCommandBuffer.*bad_command_buffer.*\n.*VkPipeline.*bad_pipeline");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
@@ -1596,7 +1596,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, ShaderObjectHandle) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
-    // UNASSIGNED-Device address out of bounds
+    // VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819
     m_errorMonitor->SetDesiredError("Shader Object (bad_shader_object)");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
@@ -1661,7 +1661,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, CommandBufferCommandIndex) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);  // dispatch index 1
     m_command_buffer.End();
 
-    // UNASSIGNED-Device address out of bounds
+    // VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819
     m_errorMonitor->SetDesiredError("Compute Dispatch Index 1");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
@@ -1714,7 +1714,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfo) {
     vk::CmdDispatch(m_command_buffer, 2, 1, 1);
     m_command_buffer.End();
 
-    // UNASSIGNED-Device address out of bounds
+    // VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819
     m_errorMonitor->SetDesiredError("Global invocation ID (x, y, z) = (1, 0, 0)");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
@@ -1775,7 +1775,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel1) {
 
     m_command_buffer.End();
 
-    // UNASSIGNED-Device address out of bounds
+    // VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819
     m_errorMonitor->SetDesiredError("Dispatch debug label region");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
@@ -1837,8 +1837,8 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel2) {
 
     m_command_buffer.End();
 
-    // UNASSIGNED-Device address out of bounds
-    m_errorMonitor->SetDesiredFailureMsgRegex(kErrorBit, "UNASSIGNED-Device address out of bounds",
+    // VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819
+    m_errorMonitor->SetDesiredFailureMsgRegex(kErrorBit, "VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819",
                                               "Global invocation ID \\(x, y, z\\) = \\(1, 0, 0\\)", "Dispatch debug label region");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
@@ -1915,7 +1915,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel3) {
 
     m_command_buffer.End();
 
-    // UNASSIGNED-Device address out of bounds
+    // VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819
     m_errorMonitor->SetDesiredError("region_0::region_1");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
@@ -1999,7 +1999,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel4) {
     vk::CmdExecuteCommands(m_command_buffer, 1, &secondary_cb.handle());
     m_command_buffer.End();
 
-    // UNASSIGNED-Device address out of bounds
+    // VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819
     m_errorMonitor->SetDesiredError("region_0::region_1");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
@@ -2094,7 +2094,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, DISABLED_StageInfoWithDebugLabel5) {
 
     m_command_buffer.End();
 
-    // UNASSIGNED-Device address out of bounds
+    // VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819
     m_errorMonitor->SetDesiredError("primary::region_0::region_1");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
@@ -2182,7 +2182,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel6) {
 
     cb_2.End();
 
-    // UNASSIGNED-Device address out of bounds
+    // VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819
     m_errorMonitor->SetDesiredError("region_0::region_1");
     m_errorMonitor->SetDesiredError("region_0");
     m_default_queue->Submit({m_command_buffer, cb_2});
@@ -2266,7 +2266,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel7) {
 
     cb_4_label_ends.End();
 
-    // UNASSIGNED-Device address out of bounds
+    // VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819
     m_errorMonitor->SetDesiredError("region_0::region_1::region_0::region_1");
     m_errorMonitor->SetDesiredError("region_0");
     m_default_queue->Submit({cb_2_label_beginnings, cb_2_label_beginnings, cb_4_label_ends});

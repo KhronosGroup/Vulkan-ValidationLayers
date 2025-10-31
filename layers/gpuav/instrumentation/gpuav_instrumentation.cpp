@@ -934,7 +934,7 @@ bool LogMessageInstBufferDeviceAddress(const uint32_t *error_record, std::string
                      << " corresponds to a full OpTypeStruct load. While not all members of the struct might be accessed, it is up "
                         "to the source language or tooling to detect that and reflect it in the SPIR-V.";
             }
-            out_vuid_msg = "UNASSIGNED-Device address out of bounds";
+            out_vuid_msg = "VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819";
         } break;
         case kErrorSubCodeBufferDeviceAddressAlignment: {
             const char *access_type = is_write ? "OpStore" : "OpLoad";

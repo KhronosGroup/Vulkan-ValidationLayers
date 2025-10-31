@@ -393,7 +393,7 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineNotReserved) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -467,7 +467,7 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineReserved) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
