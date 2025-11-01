@@ -144,6 +144,34 @@ void Validator::PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer command
     chassis_state.pBindInfos = reinterpret_cast<VkDescriptorBufferBindingInfoEXT *>(chassis_state.modified_binding_infos.data());
 }
 
+
+void Validator::PreCallRecordCmdBindResourceHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT *pBindInfo,
+                                                    const RecordObject &record_obj) {
+    const auto buffer_states = GetBuffersByAddress(pBindInfo->heapRange.address);
+    if (buffer_states.empty()) {
+        InternalError(commandBuffer, record_obj.location.dot(Field::pBindInfo), "address points to no VkBuffer");
+    } else {
+        if (buffer_states.size() > 1) {
+            InternalWarning(commandBuffer, record_obj.location.dot(Field::pBindInfo),
+                            "address points to multiple VkBuffer, taking first one");
+        }
+        resource_heap_buffer_state_ = buffer_states[0];
+    }
+    resource_heap_reserved_offset_ = pBindInfo->reservedRangeOffset;
+
+    auto modified_bind_heap_info = const_cast<VkBindHeapInfoEXT *>(pBindInfo);
+    modified_bind_heap_info->reservedRangeOffset += resource_heap_reserved_bytes_;
+    modified_bind_heap_info->reservedRangeSize -= resource_heap_reserved_bytes_;
+}
+
+void Validator::PostCallRecordCmdBindResourceHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT *pBindInfo,
+                                                     const RecordObject &record_obj) {
+    // Revert adjustment so the user doesn't see it
+    auto modified_bind_heap_info = const_cast<VkBindHeapInfoEXT *>(pBindInfo);
+    modified_bind_heap_info->reservedRangeOffset -= resource_heap_reserved_bytes_;
+    modified_bind_heap_info->reservedRangeSize += resource_heap_reserved_bytes_;
+}
+
 void Validator::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo,
                                                 const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
@@ -264,6 +292,21 @@ void Instance::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physi
         AdjustmentWarning(physicalDevice, record_obj.location, adjustment_warnings.c_str());
     }
 
+    if (auto *desc_heap_props = vku::FindStructInPNextChain<VkPhysicalDeviceDescriptorHeapPropertiesEXT>(device_props2->pNext)) {
+        VkDeviceSize bytes_to_reserve =
+            Align(desc_heap_props->bufferDescriptorSize * glsl::kTotalBindings, desc_heap_props->bufferDescriptorAlignment);
+        bytes_to_reserve = Align(bytes_to_reserve, desc_heap_props->resourceHeapAlignment);
+
+        VkDeviceSize new_limit = desc_heap_props->minResourceHeapReservedRange + bytes_to_reserve;
+
+        std::stringstream ss;
+        ss << "Setting VkPhysicalDeviceDescriptorHeapPropertiesEXT::minResourceHeapReservedRange to " << new_limit << " (reserving "
+           << bytes_to_reserve << " bytes)";
+        InternalWarning(physicalDevice, record_obj.location, ss.str().c_str());
+
+        desc_heap_props->minResourceHeapReservedRange = new_limit;
+    }
+
     ReserveBindingSlot(physicalDevice, device_props2->properties.limits, record_obj.location);
 }
 
@@ -277,6 +320,7 @@ void Validator::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCa
 
     global_indices_buffer_.Destroy();
     global_resource_descriptor_buffer_.Destroy();
+    global_resource_descriptor_heap_.Destroy();
 
     BaseClass::PreCallRecordDestroyDevice(device, pAllocator, record_obj);
 
@@ -573,6 +617,7 @@ void Validator::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t
     const LastBound &last_bound = cb_state->GetLastBoundCompute();
     PreCallActionCommand(*this, sub_state, last_bound, record_obj.location);
 }
+
 void Validator::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                  const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
@@ -752,6 +797,20 @@ void Validator::PreCallRecordCmdCopyMemoryToImageIndirectKHR(
     const valcmd::CopyMemoryIndirectCommon copy_info = {pCopyMemoryToImageIndirectInfo->copyCount,
                                                         pCopyMemoryToImageIndirectInfo->copyAddressRange};
     valcmd::CopyMemoryIndirect(*this, record_obj.location, SubState(*cb_state), copy_info);
+}
+
+bool Validator::PreCallValidateCmdPushDataEXT(VkCommandBuffer commandBuffer, const VkPushDataInfoEXT *pPushDataInfo,
+                                              const ErrorObject &error_obj) const {
+    bool skip = false;
+    if (pPushDataInfo->offset + pPushDataInfo->data.size > push_data_offset_) {
+        skip |=
+            LogError("UNASSIGNED-GPU-Assisted-Validation", commandBuffer, error_obj.location,
+                     "VkPhysicalDeviceDescriptorHeapPropertiesEXT::maxPushDataSize is %" PRIu32
+                     ", however GPU-AV reserved 8 bytes at the end of the push data range for internal use. Therefore only %" PRIu32
+                     " bytes are available to the application.",
+                     static_cast<uint32_t>(push_data_offset_ + 8u), push_data_offset_);
+    }
+    return skip;
 }
 
 // Validates the buffer is allowed to be protected

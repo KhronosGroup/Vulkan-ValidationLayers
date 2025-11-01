@@ -27,6 +27,7 @@
 #include "gpuav/spirv/interface.h"
 #include "utils/shader_utils.h"
 #include "utils/spirv_tools_utils.h"
+#include "utils/math_utils.h"
 
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "gpuav/shaders/gpuav_error_codes.h"
@@ -193,6 +194,19 @@ void GpuShaderInstrumentor::SetupDescriptorBuffers(const Location &loc) {
     instrumentation_bindings_[glsl::kBindingInstCmdResourceIndex].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
 }
 
+void GpuShaderInstrumentor::SetupDescriptorHeap(const Location &loc) {
+    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        const VkPhysicalDeviceDescriptorHeapPropertiesEXT &descriptor_heap_props = phys_dev_ext_props.descriptor_heap_props;
+        VkDeviceSize bytes_to_reserve = Align(descriptor_heap_props.bufferDescriptorSize * glsl::kTotalBindings,
+                                              descriptor_heap_props.bufferDescriptorAlignment);
+        bytes_to_reserve = Align(bytes_to_reserve, descriptor_heap_props.resourceHeapAlignment);
+
+        resource_heap_reserved_bytes_ = bytes_to_reserve;
+        buffer_descriptor_size_ = descriptor_heap_props.bufferDescriptorSize;
+        push_data_offset_ = static_cast<uint32_t>(descriptor_heap_props.maxPushDataSize) - 8u;
+    }
+}
+
 // In charge of getting things for shader instrumentation that both GPU-AV and DebugPrintF will need
 void GpuShaderInstrumentor::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
     BaseClass::FinishDeviceSetup(pCreateInfo, loc);
@@ -251,6 +265,7 @@ void GpuShaderInstrumentor::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateI
 
     SetupClassicDescriptor(loc);
     SetupDescriptorBuffers(loc);
+    SetupDescriptorHeap(loc);
 
     // Settings we will want for every SPIR-V instrumention pass
     instrumentation_device_settings_.output_buffer_descriptor_set = instrumentation_desc_set_bind_index_;
@@ -509,26 +524,36 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
             // 3. Fill in with the debug descriptor layout at the max binding slot
             const VkShaderCreateInfoEXT &original_create_info = pCreateInfos[i];
 
-            vvl::DescriptorMode mode =
-                SelectDescriptorModeFromDSL(original_create_info.setLayoutCount, original_create_info.pSetLayouts);
+            const vvl::DescriptorMode mode =
+                (original_create_info.flags & VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT)
+                    ? vvl::DescriptorMode::DescriptorModeHeap
+                    : SelectDescriptorModeFromDSL(original_create_info.setLayoutCount, original_create_info.pSetLayouts);
+            if (mode == vvl::DescriptorMode::DescriptorModeHeap) {
+                if (gpuav_settings.select_instrumented_shaders && !IsSelectiveInstrumentationEnabled(new_create_info.pNext)) {
+                    continue;
+                }
+                AddDescriptorHeapMappings(reinterpret_cast<VkBaseOutStructure *>(&new_create_info));
+                chassis_state.is_modified |=
+                    PreCallRecordShaderObjectInstrumentation(new_create_info, create_info_loc, instrumentation_data);
+            } else {
+                // We need to remove the old layouts we copied in safe_VkShaderCreateInfoEXT::initialize
+                if (new_create_info.pSetLayouts) {
+                    delete[] new_create_info.pSetLayouts;
+                }
 
-            // We need to remove the old layouts we copied in safe_VkShaderCreateInfoEXT::initialize
-            if (new_create_info.pSetLayouts) {
-                delete[] new_create_info.pSetLayouts;
-            }
+                new_create_info.setLayoutCount = instrumentation_desc_set_bind_index_ + 1;
+                new_create_info.pSetLayouts = new VkDescriptorSetLayout[new_create_info.setLayoutCount];
+                for (uint32_t k = 0; k < original_create_info.setLayoutCount; ++k) {
+                    new_create_info.pSetLayouts[k] = original_create_info.pSetLayouts[k];
+                }
+                for (uint32_t k = original_create_info.setLayoutCount; k < instrumentation_desc_set_bind_index_; ++k) {
+                    new_create_info.pSetLayouts[k] = dummy_desc_layout_[mode];
+                }
+                new_create_info.pSetLayouts[instrumentation_desc_set_bind_index_] = instrumentation_desc_layout_[mode];
 
-            new_create_info.setLayoutCount = instrumentation_desc_set_bind_index_ + 1;
-            new_create_info.pSetLayouts = new VkDescriptorSetLayout[new_create_info.setLayoutCount];
-            for (uint32_t k = 0; k < original_create_info.setLayoutCount; ++k) {
-                new_create_info.pSetLayouts[k] = original_create_info.pSetLayouts[k];
+                chassis_state.is_modified |=
+                    PreCallRecordShaderObjectInstrumentation(new_create_info, create_info_loc, instrumentation_data);
             }
-            for (uint32_t k = original_create_info.setLayoutCount; k < instrumentation_desc_set_bind_index_; ++k) {
-                new_create_info.pSetLayouts[k] = dummy_desc_layout_[mode];
-            }
-            new_create_info.pSetLayouts[instrumentation_desc_set_bind_index_] = instrumentation_desc_layout_[mode];
-
-            chassis_state.is_modified |=
-                PreCallRecordShaderObjectInstrumentation(new_create_info, create_info_loc, instrumentation_data);
         }
     }
 
@@ -1113,6 +1138,55 @@ bool GpuShaderInstrumentor::IsShaderSelectedForInstrumentation(vku::safe_VkShade
     return should_instrument_shader;
 }
 
+void GpuShaderInstrumentor::AddDescriptorHeapMappings(VkBaseOutStructure *create_info) {
+    const vku::safe_VkShaderDescriptorSetAndBindingMappingInfoEXT *mapping_info =
+        reinterpret_cast<const vku::safe_VkShaderDescriptorSetAndBindingMappingInfoEXT *>(
+            vku::FindStructInPNextChain<VkShaderDescriptorSetAndBindingMappingInfoEXT>(create_info->pNext));
+
+    uint32_t mapping_count = 1;
+    uint32_t app_mapping_count = 0;
+    if (mapping_info) {
+        app_mapping_count = mapping_info->mappingCount;
+        mapping_count += app_mapping_count;
+    }
+    vku::safe_VkDescriptorSetAndBindingMappingEXT *new_mappings = new vku::safe_VkDescriptorSetAndBindingMappingEXT[mapping_count];
+
+    if (mapping_info) {
+        for (uint32_t i = 0; i < app_mapping_count; i++) {
+            new_mappings[i] = mapping_info->pMappings[i];
+        }
+    }
+
+    vku::safe_VkDescriptorSetAndBindingMappingEXT debug_printf_mapping = {};
+    debug_printf_mapping.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_AND_BINDING_MAPPING_EXT;
+    debug_printf_mapping.pNext = nullptr;
+    debug_printf_mapping.descriptorSet = instrumentation_desc_set_bind_index_;
+    debug_printf_mapping.firstBinding = 0;
+    debug_printf_mapping.bindingCount = 1;
+    debug_printf_mapping.resourceMask = VK_SPIRV_RESOURCE_TYPE_ALL_EXT;
+    debug_printf_mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT;
+    debug_printf_mapping.sourceData.pushIndex.heapOffset = 0;
+    debug_printf_mapping.sourceData.pushIndex.pushOffset = push_data_offset_;
+    debug_printf_mapping.sourceData.pushIndex.heapIndexStride = 1;
+
+    new_mappings[mapping_count - 1] = debug_printf_mapping;
+
+    if (mapping_info) {
+        vku::safe_VkShaderDescriptorSetAndBindingMappingInfoEXT *modified_mapping_info =
+            const_cast<vku::safe_VkShaderDescriptorSetAndBindingMappingInfoEXT *>(mapping_info);
+        modified_mapping_info->mappingCount = mapping_count;
+        delete[] modified_mapping_info->pMappings;
+        modified_mapping_info->pMappings = new_mappings;
+    } else {
+        vku::safe_VkShaderDescriptorSetAndBindingMappingInfoEXT *new_mapping_info =
+            new vku::safe_VkShaderDescriptorSetAndBindingMappingInfoEXT();
+        new_mapping_info->mappingCount = mapping_count;
+        new_mapping_info->pMappings = new_mappings;
+        new_mapping_info->pNext = create_info->pNext;
+        create_info->pNext = reinterpret_cast<VkBaseOutStructure *>(new_mapping_info);
+    }
+}
+
 // Instrument all SPIR-V that is sent through pipeline. This can be done in various ways
 // 1. VkCreateShaderModule and passed in VkShaderModule.
 //    For this we create our own VkShaderModule with instrumented shader and manage it inside the pipeline state
@@ -1204,6 +1278,13 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
                 assert(false);
                 return false;
             }
+        }
+
+        if (stage_state.descriptor_heap_mode) {
+            const VkShaderStageFlagBits stage = stage_state.GetStage();
+            auto &stage_ci =
+                GetShaderStageCI<SafeCreateInfo, vku::safe_VkPipelineShaderStageCreateInfo>(modified_pipeline_ci, stage);
+            AddDescriptorHeapMappings(reinterpret_cast<VkBaseOutStructure *>(&stage_ci));
         }
     }
     return true;
@@ -1343,6 +1424,10 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
                     !IsShaderSelectedForInstrumentation(modified_shader_module_ci, modified_module_state->VkHandle(),
                                                         loc.dot(vvl::Field::pStages, stage_state_i).dot(vvl::Field::module))) {
                     continue;
+                }
+
+                if (modified_stage_state.descriptor_heap_mode) {
+                    AddDescriptorHeapMappings(reinterpret_cast<VkBaseOutStructure *>(modified_stage_ci));
                 }
             }
 

@@ -110,6 +110,10 @@ const Type& TypeManager::AddType(std::unique_ptr<Instruction> new_inst, SpvType 
         case SpvType::kHitObjectNV:
         case SpvType::kHitObjectEXT:
             break;  // don't track hit objects currently
+        case SpvType::kBufferEXT:
+            break;
+        case SpvType::kUntypedPointerKHR:
+            break;
         default:
             assert(false && "unsupported SpvType");
             break;

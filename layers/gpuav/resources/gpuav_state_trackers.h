@@ -63,6 +63,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
         stdext::inplace_function<void(CommandBufferSubState &cb, VkPipelineBindPoint bind_point,
                                       VkDescriptorAddressInfoEXT &out_address_info, uint32_t &out_dst_binding),
                                  48>;
+    using OnInstrumentationDescHeapUpdate = stdext::inplace_function<
+        void(CommandBufferSubState &cb, VkPipelineBindPoint bind_point, VkDeviceAddressRangeEXT &out_address_range), 48>;
     using OnCommandBufferSubmission =
         stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb, VkCommandBuffer per_submission_cb)>;
     using OnCommandBufferCompletion =
@@ -76,6 +78,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     std::vector<OnInstrumentationErrorLoggerRegister> on_instrumentation_error_logger_register_functions;
     std::vector<OnInstrumentationDescSetUpdate> on_instrumentation_desc_set_update_functions;
     std::vector<OnInstrumentationDescBufferUpdate> on_instrumentation_desc_buffer_update_functions;
+    std::vector<OnInstrumentationDescHeapUpdate> on_instrumentation_desc_heap_update_functions;
     std::vector<OnPreCommandBufferSubmission> on_pre_cb_submission_functions;
     std::vector<OnPostCommandBufferSubmission> on_post_cb_submission_functions;
     std::vector<OnCommandBufferCompletion> on_cb_completion_functions;
