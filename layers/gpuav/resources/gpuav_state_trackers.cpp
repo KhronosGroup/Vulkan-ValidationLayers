@@ -169,6 +169,7 @@ void CommandBufferSubState::ResetCBState(bool should_destroy) {
     on_instrumentation_error_logger_register_functions.clear();
     on_instrumentation_desc_set_update_functions.clear();
     on_instrumentation_desc_buffer_update_functions.clear();
+    on_instrumentation_desc_heap_update_functions.clear();
     on_cb_completion_functions.clear();
     on_post_cb_submission_functions.clear();
     on_pre_cb_submission_functions.clear();

@@ -316,6 +316,24 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const L
             return;
         }
     }
+
+    // Create our own Descriptor Heap if the user wont bind one
+    if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+        VkDeviceSize bytes_to_reserve = Align(phys_dev_ext_props.descriptor_heap_props.bufferDescriptorSize * glsl::kTotalBindings,
+                                              phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment);
+        bytes_to_reserve = Align(bytes_to_reserve, phys_dev_ext_props.descriptor_heap_props.resourceHeapAlignment);
+        VkBufferCreateInfo buffer_info = vku::InitStructHelper();
+        buffer_info.size = bytes_to_reserve + phys_dev_ext_props.descriptor_heap_props.minResourceHeapReservedRange;
+        buffer_info.usage = VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+        VmaAllocationCreateInfo alloc_info = {};
+        alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        alloc_info.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+        const bool success = global_resource_descriptor_heap_.Create(&buffer_info, &alloc_info);
+        if (!success) {
+            InternalVmaError(device, result, "Failed to create an internal resource Descriptor Heap.");
+            return;
+        }
+    }
 }
 
 namespace setting {

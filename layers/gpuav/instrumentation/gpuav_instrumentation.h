@@ -36,6 +36,7 @@ class CommandBufferSubState;
 
 void PreCallSetupShaderInstrumentationResources(Validator& gpuav, CommandBufferSubState& cb_state, const LastBound& last_bound,
                                                 const Location& loc);
+
 void PostCallSetupShaderInstrumentationResources(Validator& gpuav, CommandBufferSubState& cb_state, const LastBound& last_bound);
 
 }  // namespace gpuav
