@@ -450,6 +450,21 @@ void RegisterDebugPrintf(Validator &gpuav, CommandBufferSubState &cb_state) {
                 debug_printf_output_buffer, bind_point, cb.GetActionCommandIndex(bind_point), cb.base.GetObjectList(bind_point));
         });
 
+    cb_state.on_instrumentation_desc_heap_update_functions.emplace_back(
+        [debug_printf_buffer_size = gpuav.gpuav_settings.debug_printf_buffer_size](
+            CommandBufferSubState &cb, VkPipelineBindPoint bind_point, VkDeviceAddressRangeEXT &out_address_range) {
+            vko::BufferRange debug_printf_output_buffer =
+                cb.gpu_resources_manager.GetHostCoherentBufferRange(debug_printf_buffer_size);
+            std::memset(debug_printf_output_buffer.offset_mapped_ptr, 0, (size_t)debug_printf_buffer_size);
+
+            out_address_range.address = debug_printf_output_buffer.offset_address;
+            out_address_range.size = debug_printf_output_buffer.size;
+
+            DebugPrintfCbState &debug_printf_cb_state = cb.shared_resources_cache.GetOrCreate<DebugPrintfCbState>();
+            debug_printf_cb_state.buffer_infos.emplace_back(
+                debug_printf_output_buffer, bind_point, cb.GetActionCommandIndex(bind_point), cb.base.GetObjectList(bind_point));
+        });
+
     cb_state.on_cb_completion_functions.emplace_back([](Validator &gpuav, CommandBufferSubState &cb,
                                                         const CommandBufferSubState::LabelLogging &label_logging,
                                                         const Location &loc) {

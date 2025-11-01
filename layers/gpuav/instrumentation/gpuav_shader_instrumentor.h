@@ -207,6 +207,7 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
   public:
     void SetupClassicDescriptor(const Location &loc);
     void SetupDescriptorBuffers(const Location &loc);
+    void SetupDescriptorHeap(const Location &loc);
 
     VkDescriptorSetLayout GetInstrumentationDescriptorSetLayout(vvl::DescriptorMode mode) {
         return instrumentation_desc_layout_[mode];
@@ -237,6 +238,11 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
     VkDeviceSize resource_descriptor_buffer_size_ = 0;
     // Each vector index maps to the binding number with the offset to map to (with the start offset included)
     std::vector<VkDeviceSize> resource_descriptor_buffer_offsets_;
+
+    // Size to reserve in front of reserved range in resource heap
+    VkDeviceSize resource_heap_reserved_bytes_ = 0;
+    VkDeviceSize buffer_descriptor_size_ = 0;
+    uint32_t push_data_offset_ = 0;
 
     // These are the same as enabled_features, but may have been altered at setup time. This should be use for any feature GPU-AV
     // might force on. We need to track these changes separately so that they don't influence non-GPU-AV parts of validation.

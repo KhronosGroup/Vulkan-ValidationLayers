@@ -115,6 +115,10 @@ class Validator : public GpuShaderInstrumentor {
                                                   const VkDescriptorBufferBindingInfoEXT* pBindingInfos,
                                                   const RecordObject& record_obj,
                                                   chassis::CmdBindDescriptorBuffers& chassis_state) final;
+    void PreCallRecordCmdBindResourceHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo,
+                                             const RecordObject& record_obj) final;
+    void PostCallRecordCmdBindResourceHeapEXT(VkCommandBuffer commandBuffer, const VkBindHeapInfoEXT* pBindInfo,
+                                              const RecordObject& record_obj) override;
 
     void PreCallActionCommand(Validator& gpuav, CommandBufferSubState& cb_state, const LastBound& last_bound, const Location& loc);
 
@@ -272,6 +276,11 @@ class Validator : public GpuShaderInstrumentor {
     vvl::unordered_set<VkBuffer> resource_descriptor_buffer_handles_;
     // We need to track handles in order to adjust vkMapMemory calls
     vvl::unordered_set<VkDeviceMemory> resource_descriptor_buffer_memory_handles_;
+
+    // VK_EXT_descriptor_heap glboal tracking
+    //
+    const vvl::DeviceMemory* resource_heap_buffer_memory_state_;
+    VkDeviceSize resource_heap_reserved_offset_ = 0;
 
   private:
     std::string instrumented_shader_cache_path_{};
