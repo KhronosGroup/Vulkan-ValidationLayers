@@ -2227,9 +2227,6 @@ bool CoreChecks::ValidateDrawTessellation(const LastBound &last_bound_state, con
 bool CoreChecks::ValidateDrawVertexBinding(const LastBound &last_bound, const vvl::DrawDispatchVuid &vuid) const {
     bool skip = false;
     const vvl::CommandBuffer &cb_state = last_bound.cb_state;
-    if (!last_bound.pipeline_state) {
-        return skip;  // TODO - Add Shader Object support
-    }
 
     if ((last_bound.GetAllActiveBoundStages() & VK_SHADER_STAGE_VERTEX_BIT) == 0) {
         return skip;
@@ -2335,7 +2332,7 @@ bool CoreChecks::ValidateDrawVertexBinding(const LastBound &last_bound, const vv
                                      last_bound.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
                                      "(attribute binding %" PRIu32 ", attribute location %" PRIu32 ") The pStrides value (%" PRIu64
                                      ") parameter in the last call to %s is not 0 "
-                                     "and less than the extent of the binding for the attribute (%" PRIu64 ").",
+                                     "and is less than the extent of the binding for the attribute (%" PRIu64 ").",
                                      attr_desc.binding, attr_desc.location, vertex_buffer_binding->stride, String(vuid.function),
                                      attribute_binding_extent);
                 }
