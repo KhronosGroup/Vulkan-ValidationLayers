@@ -50,11 +50,11 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
         const std::vector<std::string> &initial_label_stack;
     };
 
-    using OnInstrumentionDescSetUpdate =
+    using OnInstrumentationDescSetUpdate =
         stdext::inplace_function<void(CommandBufferSubState &cb, VkPipelineBindPoint bind_point,
                                       VkDescriptorBufferInfo &out_buffer_info, uint32_t &out_dst_binding),
                                  48>;
-    using OnInstrumentionDescBufferUpdate =
+    using OnInstrumentationDescBufferUpdate =
         stdext::inplace_function<void(CommandBufferSubState &cb, VkPipelineBindPoint bind_point,
                                       VkDescriptorAddressInfoEXT &out_address_info, uint32_t &out_dst_binding),
                                  48>;
@@ -68,8 +68,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
         stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb, VkCommandBuffer per_pre_submission_cb)>;
     using OnPostCommandBufferSubmission =
         stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb, VkCommandBuffer per_post_submission_cb)>;
-    std::vector<OnInstrumentionDescSetUpdate> on_instrumentation_desc_set_update_functions;
-    std::vector<OnInstrumentionDescBufferUpdate> on_instrumentation_desc_buffer_update_functions;
+    std::vector<OnInstrumentationDescSetUpdate> on_instrumentation_desc_set_update_functions;
+    std::vector<OnInstrumentationDescBufferUpdate> on_instrumentation_desc_buffer_update_functions;
     std::vector<OnPreCommandBufferSubmission> on_pre_cb_submission_functions;
     std::vector<OnPostCommandBufferSubmission> on_post_cb_submission_functions;
     std::vector<OnCommandBufferCompletion> on_cb_completion_functions;

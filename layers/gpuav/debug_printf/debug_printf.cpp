@@ -234,7 +234,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
             format_string = std::string(op_string);
         } else {
             // We have plumbed the OpString from the instrumented shader
-            for (auto debug_instrumented_info : gpuav.intenral_only_debug_printf_) {
+            for (auto debug_instrumented_info : gpuav.internal_only_debug_printf_) {
                 if ((debug_instrumented_info.unique_shader_id == debug_record->shader_id) &&
                     (debug_record->format_string_id == debug_instrumented_info.op_string_id)) {
                     format_string = debug_instrumented_info.op_string_text;
