@@ -456,7 +456,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, ShaderObjectDraw) {
 
     VkVertexInputBindingDescription2EXT binding_desc = vku::InitStructHelper();
     binding_desc.binding = 0u;
-    binding_desc.stride = sizeof(float);
+    binding_desc.stride = sizeof(float) * 3u;
     binding_desc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
     binding_desc.divisor = 1u;
 
