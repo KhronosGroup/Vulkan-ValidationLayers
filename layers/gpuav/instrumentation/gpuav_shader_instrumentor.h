@@ -242,7 +242,7 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
     vvl::concurrent_unordered_map<uint32_t, InstrumentedShader> instrumented_shaders_map_;
     std::vector<VkDescriptorSetLayoutBinding> instrumentation_bindings_;
 
-    std::vector<spirv::InternalOnlyDebugPrintf> intenral_only_debug_printf_;
+    std::vector<spirv::InternalOnlyDebugPrintf> internal_only_debug_printf_;
 
     // Size to reserve in front of every resource descriptor buffer
     VkDeviceSize resource_descriptor_buffer_size_ = 0;
