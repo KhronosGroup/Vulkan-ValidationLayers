@@ -513,7 +513,7 @@ bool DebugPrintfPass::Instrument() {
                     for (const auto& debug_inst : module_.debug_source_) {
                         const uint32_t string_id = (*inst_it)->Word(5);
                         if (debug_inst->Opcode() == spv::OpString && debug_inst->ResultId() == string_id) {
-                            intenral_only_debug_printf_.emplace_back(
+                            internal_only_debug_printf_.emplace_back(
                                 InternalOnlyDebugPrintf{module_.settings_.shader_id, string_id, debug_inst->GetAsString(2)});
                         }
                     }

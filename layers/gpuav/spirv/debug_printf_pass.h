@@ -30,7 +30,7 @@ struct Type;
 class DebugPrintfPass : public Pass {
   public:
     DebugPrintfPass(Module& module, std::vector<InternalOnlyDebugPrintf>& debug_printf, uint32_t binding_slot = 0)
-        : Pass(module, kNullOffline), intenral_only_debug_printf_(debug_printf), binding_slot_(binding_slot) {}
+        : Pass(module, kNullOffline), internal_only_debug_printf_(debug_printf), binding_slot_(binding_slot) {}
     const char* Name() const final { return "DebugPrintfPass"; }
 
     bool Instrument() final;
@@ -64,7 +64,7 @@ class DebugPrintfPass : public Pass {
     bool Validate(const Function& current_function, const InstructionMeta& meta);
 
     // for debugging instrumented shaders
-    std::vector<InternalOnlyDebugPrintf>& intenral_only_debug_printf_;
+    std::vector<InternalOnlyDebugPrintf>& internal_only_debug_printf_;
 
     const uint32_t binding_slot_;
     uint32_t ext_import_id_ = 0;
