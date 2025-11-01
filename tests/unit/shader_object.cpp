@@ -5000,7 +5000,7 @@ TEST_F(NegativeShaderObject, MismatchedFormat64Components) {
 
     VkVertexInputBindingDescription2EXT vertex_binding_description = vku::InitStructHelper();
     vertex_binding_description.binding = 0u;
-    vertex_binding_description.stride = 16u;
+    vertex_binding_description.stride = 24u;
     vertex_binding_description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
     vertex_binding_description.divisor = 1u;
 
@@ -6938,6 +6938,171 @@ TEST_F(NegativeShaderObject, AdvancedBlendMaxAttachments) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-advancedBlendMaxColorAttachments-07480");
     vk::CmdDraw(m_command_buffer, 4u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeShaderObject, InvalidVertexBuffer) {
+    TEST_DESCRIPTION("Have Binding not be in a linear order");
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitRenderTarget();
+
+    const char* vs_source = R"glsl(
+        #version 450
+        layout(location=0) in vec4 x;
+        layout(location=1) in vec4 y;
+        layout(location=2) in vec4 z;
+        void main(){}
+    )glsl";
+
+    vkt::Buffer vtx_buf(*m_device, 32, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_source);
+    auto vs_shader_ci = ShaderCreateInfoNoNextStage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    vs_shader_ci.nextStage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    const vkt::Shader vert_shader(*m_device, vs_shader_ci);
+
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+    const vkt::Shader frag_shader(*m_device, ShaderCreateInfoNoNextStage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT));
+
+    VkVertexInputBindingDescription2EXT vtx_binding_des[3];
+    vtx_binding_des[0] = vku::InitStructHelper();
+    vtx_binding_des[0].binding = 3u;
+    vtx_binding_des[0].stride = 0u;
+    vtx_binding_des[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    vtx_binding_des[0].divisor = 1u;
+    vtx_binding_des[1] = vku::InitStructHelper();
+    vtx_binding_des[1].binding = 5u;
+    vtx_binding_des[1].stride = 0u;
+    vtx_binding_des[1].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    vtx_binding_des[1].divisor = 1u;
+    vtx_binding_des[2] = vku::InitStructHelper();
+    vtx_binding_des[2].binding = 2u;
+    vtx_binding_des[2].stride = 0u;
+    vtx_binding_des[2].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    vtx_binding_des[2].divisor = 1u;
+
+    VkVertexInputAttributeDescription2EXT vtx_attri_des[3];
+    vtx_attri_des[0] = vku::InitStructHelper();
+    vtx_attri_des[0].location = 0u;
+    vtx_attri_des[0].binding = 5u;
+    vtx_attri_des[0].format = VK_FORMAT_R8G8B8A8_UNORM;
+    vtx_attri_des[0].offset = 0u;
+    vtx_attri_des[1] = vku::InitStructHelper();
+    vtx_attri_des[1].location = 1u;
+    vtx_attri_des[1].binding = 3u;
+    vtx_attri_des[1].format = VK_FORMAT_R8G8B8A8_UNORM;
+    vtx_attri_des[1].offset = 0u;
+    vtx_attri_des[2] = vku::InitStructHelper();
+    vtx_attri_des[2].location = 2u;
+    vtx_attri_des[2].binding = 2u;
+    vtx_attri_des[2].format = VK_FORMAT_R8G8B8A8_UNORM;
+    vtx_attri_des[2].offset = 0u;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude();
+    m_command_buffer.BindShaders(vert_shader, frag_shader);
+    VkDeviceSize offset = 0;
+    // Forget to update binding 2
+    vk::CmdBindVertexBuffers(m_command_buffer, 5, 1, &vtx_buf.handle(), &offset);
+    vk::CmdBindVertexBuffers(m_command_buffer, 3, 1, &vtx_buf.handle(), &offset);
+    vk::CmdSetVertexInputEXT(m_command_buffer, 3u, vtx_binding_des, 3u, vtx_attri_des);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-04007");
+    vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeShaderObject, VertexStride) {
+    TEST_DESCRIPTION("Draw with vertex format components not matching vertex input format components.");
+
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitDynamicRenderTarget();
+
+    const char vert_src[] = R"glsl(
+        #version 460
+        layout(location = 0) in vec4 pos;
+        void main() {
+           gl_Position = vec4(pos.xy, pos.xy);
+        }
+    )glsl";
+
+    const vkt::Shader vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, vert_src);
+    const vkt::Shader frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude();
+    m_command_buffer.BindShaders(vert_shader, frag_shader);
+
+    VkVertexInputBindingDescription2EXT vertex_binding_description = vku::InitStructHelper();
+    vertex_binding_description.binding = 0u;
+    vertex_binding_description.stride = 8u;
+    vertex_binding_description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    vertex_binding_description.divisor = 1u;
+
+    VkVertexInputAttributeDescription2EXT vertex_attribute_description = vku::InitStructHelper();
+    vertex_attribute_description.location = 0u;
+    vertex_attribute_description.binding = 0u;
+    vertex_attribute_description.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    vertex_attribute_description.offset = 0u;
+
+    vk::CmdSetVertexInputEXT(m_command_buffer, 1u, &vertex_binding_description, 1u, &vertex_attribute_description);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindVertexBuffers2-pStrides-06209");
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeShaderObject, VertexMisalignedAccess) {
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitDynamicRenderTarget();
+
+    const char vert_src[] = R"glsl(
+        #version 460
+        layout(location = 0) in vec4 pos;
+        void main() {
+           gl_Position = pos;
+        }
+    )glsl";
+
+    const vkt::Shader vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, vert_src);
+    const vkt::Shader frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+
+    m_vertex_buffer = new vkt::Buffer(*m_device, 256u, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude();
+    m_command_buffer.BindShaders(vert_shader, frag_shader);
+
+    VkVertexInputBindingDescription2EXT vertex_binding_description = vku::InitStructHelper();
+    vertex_binding_description.binding = 0u;
+    vertex_binding_description.stride = 48u;
+    vertex_binding_description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    vertex_binding_description.divisor = 1u;
+
+    VkVertexInputAttributeDescription2EXT vertex_attribute_description = vku::InitStructHelper();
+    vertex_attribute_description.location = 0u;
+    vertex_attribute_description.binding = 0u;
+    vertex_attribute_description.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    vertex_attribute_description.offset = 6u;
+
+    vk::CmdSetVertexInputEXT(m_command_buffer, 1u, &vertex_binding_description, 1u, &vertex_attribute_description);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-02721");
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRendering();
