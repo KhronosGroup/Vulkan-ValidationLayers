@@ -3407,9 +3407,8 @@ TEST_F(NegativeCommand, ClearDepthStencilImage) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCommand, ClearDepthRangeUnrestricted) {
+TEST_F(NegativeCommand, ClearDepthImage) {
     TEST_DESCRIPTION("Test clearing without VK_EXT_depth_range_unrestricted");
-
     // Extension doesn't have feature bit, so not enabling extension invokes restrictions
     RETURN_IF_SKIP(Init());
 
@@ -3449,6 +3448,24 @@ TEST_F(NegativeCommand, ClearDepthRangeUnrestricted) {
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeCommand, ClearDepthImageWithNAN) {
+    TEST_DESCRIPTION("Clear depth image when depth clear value is NAN");
+    RETURN_IF_SKIP(Init());
+
+    VkFormat depth_stencil_format = FindSupportedDepthStencilFormat(Gpu());
+    vkt::Image depth_image(*m_device, 32, 32, depth_stencil_format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+
+    const VkImageSubresourceRange subresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1};
+    const VkClearDepthStencilValue nan_depth_clear_value = {std::numeric_limits<float>::quiet_NaN(), 0};
+    assert(std::isnan(nan_depth_clear_value.depth));
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkClearDepthStencilValue-depth-00022");
+    vk::CmdClearDepthStencilImage(m_command_buffer, depth_image, VK_IMAGE_LAYOUT_GENERAL, &nan_depth_clear_value, 1, &subresource);
+    m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
 
