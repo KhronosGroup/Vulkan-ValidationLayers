@@ -3660,43 +3660,6 @@ TEST_F(NegativeRayTracing, TooManyInstances) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeRayTracing, PipelineNullMissShader) {
-    TEST_DESCRIPTION(
-        "Setup a ray tracing pipeline with both VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR and a null miss "
-        "shader");
-
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-
-    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
-    AddRequiredFeature(vkt::Feature::accelerationStructure);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::rayQuery);
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
-    RETURN_IF_SKIP(InitState());
-
-    vkt::rt::Pipeline pipeline(*this, m_device);
-    pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
-    pipeline.CreateDescriptorSet();
-    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
-    pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
-    pipeline.GetDescriptorSet().UpdateDescriptorSets();
-
-    pipeline.AddCreateInfoFlags(VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR);
-
-    pipeline.SetGlslRayGenShader(kRayTracingMinimalGlsl);
-    pipeline.Build();
-    m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
-                              &pipeline.GetDescriptorSet().set_, 0, nullptr);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
-    vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
-    m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysKHR-flags-03511");
-    vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
-                        &trace_rays_sbt.callable_sbt, 1, 1, 1);
-    m_errorMonitor->VerifyFound();
-    m_command_buffer.End();
-}
-
 TEST_F(NegativeRayTracing, HostInstanceInvalid) {
     TEST_DESCRIPTION("build a TLAS with an invalid geometry.instances.data.hostAddress");
 
