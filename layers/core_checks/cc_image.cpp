@@ -971,7 +971,8 @@ bool CoreChecks::ValidateClearDepthStencilValue(VkCommandBuffer commandBuffer, V
     bool skip = false;
 
     if (!IsExtEnabled(extensions.vk_ext_depth_range_unrestricted)) {
-        if (!(clearValue.depth >= 0.0) || !(clearValue.depth <= 1.0)) {
+        const bool depth_in_unit_range = (clearValue.depth >= 0.0 && clearValue.depth <= 1.0);
+        if (!depth_in_unit_range) {
             skip |=
                 LogError("VUID-VkClearDepthStencilValue-depth-00022", commandBuffer, loc.dot(Field::depth),
                          "is %f (not within the [0.0, 1.0] range) but VK_EXT_depth_range_unrestricted extension is not enabled.",
