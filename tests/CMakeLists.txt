@@ -301,5 +301,6 @@ if(NOT VVL_SKIP_GTEST_DISCOVERY)
 endif()
 
 add_subdirectory(stress)
+add_subdirectory(undefined)
 add_subdirectory(layers)
 add_subdirectory(icd)
