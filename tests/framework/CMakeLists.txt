@@ -130,7 +130,7 @@ endif()
 
 function(configure_slang_for_target TARGET_NAME)
     if(WIN32)
-        add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+        add_custom_command(TARGET ${TARGET_NAME} PRE_LINK
             COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:${TARGET_NAME}> $<TARGET_RUNTIME_DLLS:${TARGET_NAME}>
             COMMAND_EXPAND_LISTS
         )
