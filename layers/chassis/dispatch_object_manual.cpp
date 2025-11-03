@@ -2010,6 +2010,19 @@ VkResult Device::DeferredOperationJoinKHR(VkDevice device, VkDeferredOperationKH
                 post_op_completion_fn();
             }
         }
+
+        // Some applications never call vkGetDeferredOperationResultKHR,
+        // so try to do it at join time to correctly setup state tracking
+        VkResult deferred_op_result = device_dispatch_table.GetDeferredOperationResultKHR(device, operation);
+        if (deferred_op_result == VK_SUCCESS) {
+            auto post_check_fns = deferred_operation_post_check.pop(operation);
+            auto pipelines_to_updates = deferred_operation_pipelines.pop(operation);
+            if (post_check_fns->first && pipelines_to_updates->first) {
+                for (auto &post_check_fn : post_check_fns->second) {
+                    post_check_fn(pipelines_to_updates->second);
+                }
+            }
+        }
     }
 
     return result;
@@ -2027,8 +2040,8 @@ VkResult Device::GetDeferredOperationResultKHR(VkDevice device, VkDeferredOperat
         // stored in deferred_operation_post_completion have been called
         auto post_op_completion_fns = deferred_operation_post_completion.pop(operation);
         if (post_op_completion_fns != deferred_operation_post_completion.end()) {
-            for (auto &post_op__completion_fn : post_op_completion_fns->second) {
-                post_op__completion_fn();
+            for (auto &post_op_completion_fn : post_op_completion_fns->second) {
+                post_op_completion_fn();
             }
         }
 

@@ -2795,7 +2795,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesDataSizeTooSmall
 }
 
 TEST_F(NegativeRayTracing, BuildAccelerationStructuresDeferredOperation) {
-    TEST_DESCRIPTION("Call vkBuildAccelerationStructuresKHR with a valid VkDeferredOperationKHR object");
+    TEST_DESCRIPTION("Call vkBuildAccelerationStructuresKHR with an invalid VkDeferredOperationKHR object");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::accelerationStructureHostCommands);
