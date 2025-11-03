@@ -2730,7 +2730,9 @@ bool CoreChecks::ValidateClusterAccelerationStructureCommandsInfoNV(
         case VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_MAX_ENUM_NV:
             break;
     }
-    if (command_infos.srcInfosArray.stride < stride_min) {
+
+    // "If the stride is 0, the structures are assumed to be packed tightly"
+    if (command_infos.srcInfosArray.stride < stride_min && command_infos.srcInfosArray.stride != 0) {
         skip |= LogError("VUID-VkClusterAccelerationStructureCommandsInfoNV-srcInfosArray-10476", objlist,
                          command_infos_loc.dot(Field::srcInfosArray).dot(Field::stride),
                          "(%" PRIu64 ") must be greater than size of %s (%" PRIu32 ")", command_infos.srcInfosArray.stride,

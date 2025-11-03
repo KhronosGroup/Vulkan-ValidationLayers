@@ -2455,7 +2455,7 @@ void DeviceState::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, V
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordCommand(record_obj.location);
     auto pipeline_state = Get<Pipeline>(pipeline);
-    ASSERT_AND_RETURN(pipeline);
+    ASSERT_AND_RETURN(pipeline_state);
     cb_state->RecordBindPipeline(pipelineBindPoint, *pipeline_state);
 
     if (!disabled[command_buffer_state]) {
