@@ -30,6 +30,7 @@
 #include "error_message/error_location.h"
 #include "error_message/logging.h"
 #include "generated/error_location_helper.h"
+#include "generated/vk_extension_helper.h"
 #include "generated/vk_object_types.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/image_state.h"
@@ -661,6 +662,12 @@ bool CoreChecks::ValidateDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayo
     uint64_t total_descriptors = 0;
 
     const bool push_descriptor_set = (create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT) != 0;
+
+    if (push_descriptor_set && !IsExtEnabledByCreateinfo(extensions.vk_khr_push_descriptor) && !enabled_features.pushDescriptor) {
+        skip |= LogError("VUID-VkDescriptorSetLayoutCreateInfo-flags-10354", device, create_info_loc,
+                         "was called but the VK_KHR_push_descriptor extension nor VkPhysicalDeviceVulkan14Features::pushDescriptor "
+                         "feature was enabled");
+    }
 
     uint32_t max_binding = 0;
 
@@ -3722,8 +3729,17 @@ bool CoreChecks::ValidateCmdPushDescriptorSet(const vvl::CommandBuffer &cb_state
     bool skip = false;
     const bool is_2 = loc.function != Func::vkCmdPushDescriptorSetKHR && loc.function != Func::vkCmdPushDescriptorSet;
 
+    if (!IsExtEnabledByCreateinfo(extensions.vk_khr_push_descriptor) && !enabled_features.pushDescriptor) {
+        const char *vuid = is_2 ? "VUID-vkCmdPushDescriptorSet2-None-10357" : "VUID-vkCmdPushDescriptorSet-None-10356";
+        skip |= LogError(vuid, cb_state.Handle(), loc,
+                         "was called but the VK_KHR_push_descriptor extension nor VkPhysicalDeviceVulkan14Features::pushDescriptor "
+                         "feature was enabled");
+    }
+
     auto pipeline_layout = Get<vvl::PipelineLayout>(layout);
-    if (!pipeline_layout) return skip;  // dynamicPipelineLayout
+    if (!pipeline_layout) {
+        return skip;  // dynamicPipelineLayout
+    }
 
     // Validate the set index points to a push descriptor set and is in range
     const auto &set_layouts = pipeline_layout->set_layouts;
@@ -3823,6 +3839,12 @@ bool CoreChecks::PreCallValidateCreateDescriptorUpdateTemplate(VkDevice device,
                          create_info_loc.dot(Field::descriptorSetLayout), "(%s) is invalid.",
                          FormatHandle(pCreateInfo->descriptorSetLayout).c_str());
     } else if (VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS == pCreateInfo->templateType) {
+        if (!IsExtEnabledByCreateinfo(extensions.vk_khr_push_descriptor) && !enabled_features.pushDescriptor) {
+            skip |= LogError("VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-10355", device, create_info_loc,
+                             "was called but the VK_KHR_push_descriptor extension nor "
+                             "VkPhysicalDeviceVulkan14Features::pushDescriptor feature was enabled");
+        }
+
         auto bind_point = pCreateInfo->pipelineBindPoint;
         const bool valid_bp = (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) || (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) ||
                               (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
@@ -3925,6 +3947,15 @@ bool CoreChecks::ValidateCmdPushDescriptorSetWithTemplate(VkCommandBuffer comman
 
     const bool is_2 =
         loc.function != Func::vkCmdPushDescriptorSetWithTemplateKHR && loc.function != Func::vkCmdPushDescriptorSetWithTemplate;
+
+    if (!IsExtEnabledByCreateinfo(extensions.vk_khr_push_descriptor) && !enabled_features.pushDescriptor) {
+        const char *vuid =
+            is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfo-None-10359" : "VUID-vkCmdPushDescriptorSetWithTemplate-None-10358";
+        skip |= LogError(vuid, commandBuffer, loc,
+                         "was called but the VK_KHR_push_descriptor extension nor VkPhysicalDeviceVulkan14Features::pushDescriptor "
+                         "feature was enabled");
+    }
+
     auto pipeline_layout = Get<vvl::PipelineLayout>(layout);
     if (!pipeline_layout) {
         return skip;  // dynamicPipelineLayout
