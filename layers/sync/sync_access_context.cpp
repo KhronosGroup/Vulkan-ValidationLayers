@@ -128,7 +128,7 @@ void AccessContext::InitFrom(const AccessContext &other) {
 }
 
 void AccessContext::Reset() {
-    access_state_map_.clear();
+    access_state_map_.Clear();
     prev_.clear();
     prev_by_subpass_.clear();
     async_.clear();
@@ -150,7 +150,7 @@ void AccessContext::TrimAndClearFirstAccess() {
     for (auto &[range, access] : access_state_map_) {
         access.Normalize();
     }
-    syncval::consolidate(access_state_map_);
+    Consolidate(access_state_map_);
 }
 
 void AccessContext::AddReferencedTags(ResourceUsageTagSet &used) const {
@@ -164,31 +164,6 @@ void AccessContext::ResolveFromContext(const AccessContext &from) {
     assert(!finalized_);
     auto noop_action = [](AccessState *access) {};
     from.ResolveAccessRange(kFullRange, noop_action, &access_state_map_, false);
-}
-
-// This function is a simplification of update_range_value from range_map.h that takes into account syncval specifics
-static void UpdateRangeValue(AccessMap &map, const AccessRange &range, const AccessState &access_state) {
-    using CachedLowerBound = syncval::cached_lower_bound_impl<AccessMap>;
-    CachedLowerBound pos(map, range.begin);
-    while (range.includes(pos->index)) {
-        if (!pos->valid) {
-            // Fill in the leading space (or in the case of pos at end the trailing space)
-            const auto start = pos->index;
-            auto it = pos->lower_bound;
-            const auto limit = (it != map.end()) ? std::min(it->first.begin, range.end) : range.end;
-            map.insert(it, std::make_pair(AccessRange(start, limit), access_state));
-            // We inserted before pos->lower_bound, so pos->lower_bound isn't invalid, but the associated index *is* and seek
-            // will fix this (and move the state to valid)
-            pos.seek(limit);
-        }
-        // Note that after the "fill" operation pos may have become valid so we check again
-        if (pos->valid) {
-            // "prefer_dest" means don't overwrite existing values, so we'll skip this interval.
-            // Point just past the end of this section,  if it's within the given range, it will get filled next iteration
-            // ++pos could move us past the end of range (which would exit the loop) so we don't use it.
-            pos.seek(pos->lower_bound->first.end);
-        }
-    }
 }
 
 void AccessContext::ResolvePreviousAccess(const AccessRange &range, AccessMap *descent_map, bool infill,
@@ -464,8 +439,8 @@ class EventBarrierHazardDetector {
           event_scope_(event_scope),
           scope_queue_id_(queue_id),
           scope_tag_(scope_tag),
-          scope_pos_(event_scope.cbegin()),
-          scope_end_(event_scope.cend()) {}
+          scope_pos_(event_scope.begin()),
+          scope_end_(event_scope.end()) {}
 
     HazardResult Detect(const AccessMap::const_iterator &pos) {
         // Need to piece together coverage of pos->first range:
@@ -508,7 +483,7 @@ class EventBarrierHazardDetector {
   private:
     bool ScopeInvalid() const { return scope_pos_ == scope_end_; }
     bool ScopeValid() const { return !ScopeInvalid(); }
-    void ScopeSeek(const AccessRange &range) { scope_pos_ = event_scope_.lower_bound(range); }
+    void ScopeSeek(const AccessRange &range) { scope_pos_ = event_scope_.LowerBound(range); }
 
     // Hiding away the std::pair grunge...
     ResourceAddress ScopeBegin() const { return scope_pos_->first.begin; }
@@ -566,7 +541,7 @@ AccessMap::iterator AccessContext::UpdateMemoryAccessStateFunctor::Infill(Access
                                                                           const AccessRange &range) const {
     // this is only called on gaps, and never returns a gap.
     context.ResolvePreviousAccess(range, accesses, true);
-    return accesses->lower_bound(range);
+    return accesses->LowerBound(range);
 }
 void AccessContext::UpdateMemoryAccessStateFunctor::operator()(const AccessMap::iterator &pos) const {
     auto &access_state = pos->second;

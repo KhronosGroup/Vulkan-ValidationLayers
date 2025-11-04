@@ -29,7 +29,6 @@ struct range {
 
     bool empty() const { return begin == end; }
     bool valid() const { return begin <= end; }
-    bool invalid() const { return !valid(); }
     bool non_empty() const { return begin < end; }  //  valid and !empty
 
     bool is_prior_to(const range &other) const { return end == other.begin; }
@@ -62,7 +61,7 @@ struct range {
     // only less or begin is less or if end is less when begin is equal
     bool operator<(const range &rhs) const {
         bool result = false;
-        if (invalid()) {
+        if (!valid()) {
             // all invalid < valid, allows map/set validity check by looking at begin()->first
             // all invalid are equal, thus only less if this is invalid and rhs is valid
             result = rhs.valid();

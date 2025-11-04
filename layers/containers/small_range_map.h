@@ -368,7 +368,7 @@ class small_range_map {
         // Remebering that invalid range.begin is the beginning the next used range.
         const auto small_key = make_small_range(key);
         const auto &range = ranges_[small_key.begin];
-        return range.invalid() && small_key.end <= range.begin;
+        return !range.valid() && small_key.end <= range.begin;
     }
     // Only call this with a valid beginning index
     iterator erase_impl(SmallIndex erase_index) {
@@ -619,7 +619,7 @@ class small_range_map {
     SmallIndex next_range(SmallIndex current) const {
         SmallIndex next = ranges_[current].end;
         // If the next range is invalid, skip to the next range, which *must* be (or be end)
-        if ((next < limit_) && ranges_[next].invalid()) {
+        if ((next < limit_) && !ranges_[next].valid()) {
             // For invalid ranges, begin is the beginning of the next range
             next = ranges_[next].begin;
             RANGE_ASSERT(next == limit_ || ranges_[next].valid());
