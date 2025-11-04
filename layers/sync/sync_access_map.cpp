@@ -19,6 +19,11 @@
 
 namespace syncval {
 
+void AccessMap::Assign(const AccessMap &other) {
+    auto temp_copy(other.impl_map_);
+    impl_map_.swap(temp_copy);
+}
+
 AccessMap::iterator AccessMap::LowerBound(ResourceAddress range_begin) {
     auto it = impl_map_.lower_bound(AccessRange(range_begin, range_begin));
     return it;

@@ -310,12 +310,16 @@ struct PendingBarriers {
 
 class AccessState {
   public:
-    AccessState() = default;
     ~AccessState();
     AccessState(const AccessState &other);
-    AccessState &operator=(const AccessState &other);
     AccessState(AccessState &&other);
-    AccessState &operator=(AccessState &&other);
+
+    // Use explicit default construction and assignment to control all places where this happens
+    static AccessState DefaultAccessState() { return {}; }
+    void Assign(const AccessState &other);
+    void Assign(AccessState &&other);
+    AccessState &operator=(const AccessState &other) = delete;
+    AccessState &operator=(AccessState &&other) = delete;
 
     HazardResult DetectHazard(const SyncAccessInfo &usage_info) const;
     HazardResult DetectMarkerHazard() const;
@@ -326,8 +330,8 @@ class AccessState {
                               bool detect_load_op_after_store_op_hazards) const;
 
     HazardResult DetectAsyncHazard(const SyncAccessInfo &usage_info, ResourceUsageTag start_tag, QueueId queue_id) const;
-    HazardResult DetectAsyncHazard(const AccessState &recorded_use, const ResourceUsageRange &tag_range,
-                                   ResourceUsageTag start_tag, QueueId queue_id) const;
+    HazardResult DetectAsyncHazard(const AccessState &recorded_use, const ResourceUsageRange &tag_range, ResourceUsageTag start_tag,
+                                   QueueId queue_id) const;
 
     HazardResult DetectBarrierHazard(const SyncAccessInfo &usage_info, QueueId queue_id, VkPipelineStageFlags2 source_exec_scope,
                                      const SyncAccessFlags &source_access_scope) const;
@@ -433,6 +437,7 @@ class AccessState {
     void UpdateStats(AccessContextStats &stats) const;
 
   private:
+    AccessState() = default;  // not accessible, use DefaultAccessState instead
     void CopySimpleMembers(const AccessState &other);
     bool IsRAWHazard(const SyncAccessInfo &usage_info) const;
 
@@ -451,6 +456,7 @@ class AccessState {
     void MergeReads(const AccessState &other);
     void ClearReadStates();
 
+  private:
     // The most recent write.
     // NOTE: For reads, each must be "safe" relative to its prior write, so we need
     // only to save the most recent write operation, since anything *transitively*

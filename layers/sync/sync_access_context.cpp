@@ -125,7 +125,7 @@ void AccessContext::InitFrom(uint32_t subpass, VkQueueFlags queue_flags,
 }
 
 void AccessContext::InitFrom(const AccessContext &other) {
-    access_state_map_ = other.access_state_map_;
+    access_state_map_.Assign(other.access_state_map_);
     prev_ = other.prev_;
     prev_by_subpass_ = other.prev_by_subpass_;
     async_ = other.async_;
@@ -184,7 +184,7 @@ void AccessContext::ResolvePreviousAccess(const AccessRange &range, AccessMap *d
     if (prev_.empty()) {
         if (range.non_empty() && infill) {
             // Fill the empty poritions of descent_map with the default_state with the barrier function applied (iff present)
-            AccessState access_state;
+            AccessState access_state = AccessState::DefaultAccessState();
             if (previous_barrier) {
                 (*previous_barrier)(&access_state);
             }
