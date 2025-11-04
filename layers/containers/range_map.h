@@ -400,10 +400,6 @@ class range_map {
 
     const_iterator upper_bound(const key_type &key) const { return const_iterator(upper_bound_impl(key)); }
 
-    range<iterator> bounds(const key_type &key) { return {lower_bound(key), upper_bound(key)}; }
-    range<const_iterator> cbounds(const key_type &key) const { return {lower_bound(key), upper_bound(key)}; }
-    range<const_iterator> bounds(const key_type &key) const { return cbounds(key); }
-
     using insert_pair = std::pair<iterator, bool>;
 
     // This is traditional no replacement insert.
@@ -484,10 +480,6 @@ class range_map {
 
     bool empty() const { return impl_map_.empty(); }
     size_type size() const { return impl_map_.size(); }
-
-    // For configuration/debug use // Use with caution...
-    ImplMap &get_implementation_map() { return impl_map_; }
-    const ImplMap &get_implementation_map() const { return impl_map_; }
 };
 
 template <typename Container>
@@ -914,10 +906,14 @@ class parallel_iterator {
     const value_type *operator->() const { return &pos_; }
 };
 
-template <typename DstRangeMap, typename SrcRangeMap, typename Updater,
-          typename SourceIterator = typename SrcRangeMap::const_iterator>
-void splice(DstRangeMap &to, const SrcRangeMap &from, SourceIterator begin, SourceIterator end, const Updater &updater) {
-    if (from.empty() || (begin == end) || (begin == from.cend())) return;  // nothing to merge.
+template <typename DstRangeMap, typename SrcRangeMap, typename Updater>
+void splice(DstRangeMap &to, const SrcRangeMap &from, const Updater &updater) {
+    typename SrcRangeMap::const_iterator begin = from.cbegin();
+    typename SrcRangeMap::const_iterator end = from.cend();
+
+    if (from.empty() || begin == end || begin == from.cend()) {
+        return;  // nothing to merge
+    }
 
     using ParallelIterator = parallel_iterator<DstRangeMap, const SrcRangeMap>;
     using Key = typename SrcRangeMap::key_type;
@@ -939,7 +935,7 @@ void splice(DstRangeMap &to, const SrcRangeMap &from, SourceIterator begin, Sour
                     updater.update(write_it->second, read_it->second);
                 } else {
                     // otherwise we need to split the destination range.
-                    auto value_to_update = write_it->second; // intentional copy
+                    auto value_to_update = write_it->second;  // intentional copy
                     updater.update(value_to_update, read_it->second);
                     auto intersected_range = write_it->first & range;
                     to.overwrite_range(to_lb->lower_bound, std::make_pair(intersected_range, value_to_update));
@@ -956,47 +952,6 @@ void splice(DstRangeMap &to, const SrcRangeMap &from, SourceIterator begin, Sour
         }
         ++par_it;  // next range over which both 'to' and 'from' stay constant
     }
-}
-// And short hand for "from begin to end"
-template <typename DstRangeMap, typename SrcRangeMap, typename Updater>
-void splice(DstRangeMap &to, const SrcRangeMap &from, const Updater &updater) {
-    splice(to, from, from.cbegin(), from.cend(), updater);
-}
-
-template <typename T>
-struct update_prefer_source {
-    bool update(T &dst, const T &src) const {
-        if (dst != src) {
-            dst = src;
-            return true;
-        }
-        return false;
-    }
-
-    std::optional<T> insert(const T &src) const { return std::optional<T>(vvl::in_place, src); }
-};
-
-template <typename T>
-struct update_prefer_dest {
-    bool update([[maybe_unused]] T &dst, [[maybe_unused]] const T &src) const { return false; }
-
-    std::optional<T> insert(const T &src) const { return std::optional<T>(vvl::in_place, src); }
-};
-
-template <typename RangeMap, typename SourceIterator = typename RangeMap::const_iterator>
-bool splice(RangeMap &to, const RangeMap &from, value_precedence arbiter, [[maybe_unused]] SourceIterator begin,
-            [[maybe_unused]] SourceIterator end) {
-    if (arbiter == value_precedence::prefer_source) {
-        return splice(to, from, from.cbegin(), from.cend(), update_prefer_source<typename RangeMap::mapped_type>());
-    } else {
-        return splice(to, from, from.cbegin(), from.cend(), update_prefer_dest<typename RangeMap::mapped_type>());
-    }
-}
-
-// And short hand for "from begin to end"
-template <typename RangeMap>
-bool splice(RangeMap &to, const RangeMap &from, value_precedence arbiter) {
-    return splice(to, from, arbiter, from.cbegin(), from.cend());
 }
 
 template <typename Map, typename Range = typename Map::key_type, typename MapValue = typename Map::mapped_type>

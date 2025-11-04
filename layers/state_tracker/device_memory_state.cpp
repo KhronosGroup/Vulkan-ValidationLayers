@@ -199,16 +199,16 @@ void vvl::BindableSparseMemoryTracker::BindMemory(StateObject *parent, std::shar
 BoundMemoryRange vvl::BindableSparseMemoryTracker::GetBoundMemoryRange(const MemoryRange &range) const {
     BoundMemoryRange mem_ranges;
     auto guard = ReadLockGuard{binding_lock_};
-    auto range_bounds = binding_map_.bounds(range);
+    auto begin = binding_map_.lower_bound(range);
+    auto end = binding_map_.upper_bound(range);
 
-    for (auto it = range_bounds.begin; it != range_bounds.end; ++it) {
+    for (auto it = begin; it != end; ++it) {
         const auto &[resource_range, memory_data] = *it;
         if (memory_data.memory_state && memory_data.memory_state->VkHandle() != VK_NULL_HANDLE) {
-            const VkDeviceSize memory_range_start = std::max(range.begin, memory_data.resource_offset) -
-                memory_data.resource_offset + memory_data.memory_offset;
-            const VkDeviceSize memory_range_end =
-                std::min(range.end, memory_data.resource_offset + resource_range.distance()) - memory_data.resource_offset +
-                memory_data.memory_offset;
+            const VkDeviceSize memory_range_start =
+                std::max(range.begin, memory_data.resource_offset) - memory_data.resource_offset + memory_data.memory_offset;
+            const VkDeviceSize memory_range_end = std::min(range.end, memory_data.resource_offset + resource_range.distance()) -
+                                                  memory_data.resource_offset + memory_data.memory_offset;
 
             mem_ranges[memory_data.memory_state->VkHandle()].emplace_back(memory_range_start, memory_range_end);
         }
@@ -220,10 +220,10 @@ BoundRanges vvl::BindableSparseMemoryTracker::GetBoundRanges(const BufferRange &
                                                              const std::vector<BufferRange> &buffer_ranges) const {
     BoundRanges memory_to_bound_ranges_map;
     auto guard = ReadLockGuard{binding_lock_};
+    auto begin = binding_map_.lower_bound(ranges_bounds);
+    auto end = binding_map_.upper_bound(ranges_bounds);
 
-    auto bound_memory_ranges = binding_map_.bounds(ranges_bounds);
-
-    for (auto it = bound_memory_ranges.begin; it != bound_memory_ranges.end; ++it) {
+    for (auto it = begin; it != end; ++it) {
         const auto &[bounds_buffer_range, bounds_buffer_range_memory] = *it;
 
         if (bounds_buffer_range_memory.memory_state && bounds_buffer_range_memory.memory_state->VkHandle() != VK_NULL_HANDLE) {
