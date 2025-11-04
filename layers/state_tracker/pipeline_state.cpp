@@ -120,7 +120,7 @@ std::vector<ShaderStageState> Pipeline::GetStageStates(const DeviceState &state_
             module_state = GetShaderModuleFromInlinedSpirv(state_data, stage_ci, stateless_data);
         }
 
-        stage_states.emplace_back(&stage_ci, nullptr, descriptor_set_layouts, module_state, module_state->spirv);
+        stage_states.emplace_back(&stage_ci, nullptr, descriptor_set_layouts, module_state, module_state->spirv, pipeline_layout);
 
         // If stage was found, do not try to look for it in library
         auto found_stage = std::find(lookup_in_library_stages.begin(), lookup_in_library_stages.end(), stage_ci.stage);
@@ -186,7 +186,7 @@ std::vector<ShaderStageState> Pipeline::GetStageStates(const DeviceState &state_
             continue;
         }
 
-        stage_states.emplace_back(stage_ci, nullptr, descriptor_set_layouts, module_state, module_state->spirv);
+        stage_states.emplace_back(stage_ci, nullptr, descriptor_set_layouts, module_state, module_state->spirv, pipeline_layout);
     }
 
     if (VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_CREATE_INFO_ARM == pipe_state.GetCreateInfoSType()) {
@@ -201,7 +201,7 @@ std::vector<ShaderStageState> Pipeline::GetStageStates(const DeviceState &state_
                         stage_ci.stage = entry_point->stage;
                         vku::safe_VkPipelineShaderStageCreateInfo safe_stage_ci = &stage_ci;
                         stage_states.emplace_back(&safe_stage_ci, nullptr, descriptor_set_layouts, module_state,
-                                                  module_state->spirv);
+                                                  module_state->spirv, pipeline_layout);
                     }
                 }
             }
@@ -241,7 +241,8 @@ std::vector<ShaderStageState> Pipeline::GetRayTracingStageStates(
         }
 
         if (module_state) {
-            stage_states.emplace_back(&stage_ci, nullptr, descriptor_set_layouts, module_state, module_state->spirv);
+            stage_states.emplace_back(&stage_ci, nullptr, descriptor_set_layouts, module_state, module_state->spirv,
+                                      pipeline_layout);
         }
     }
 
