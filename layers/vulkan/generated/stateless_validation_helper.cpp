@@ -26293,10 +26293,6 @@ bool Device::PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV(
                                         "VUID-VkClusterAccelerationStructureCommandsInfoNV-scratchData-parameter",
                                         pCommandInfos_loc.dot(Field::scratchData));
 
-        skip |= context.ValidateNotZero(pCommandInfos->srcInfosCount == 0,
-                                        "VUID-VkClusterAccelerationStructureCommandsInfoNV-srcInfosCount-parameter",
-                                        pCommandInfos_loc.dot(Field::srcInfosCount));
-
         skip |= context.ValidateFlags(
             pCommandInfos_loc.dot(Field::addressResolutionFlags),
             vvl::FlagBitmask::VkClusterAccelerationStructureAddressResolutionFlagBitsNV,
