@@ -18,6 +18,7 @@
 #pragma once
 
 #include "sync/sync_common.h"
+#include "sync/sync_access_map.h"
 #include "sync/sync_access_state.h"
 
 struct SubpassDependencyGraphNode;
@@ -52,7 +53,7 @@ template <typename RangeMap, typename RangeGen, typename Action>
 bool ForEachEntryInRangesUntil(const RangeMap &map, RangeGen &range_gen, Action &action) {
     using RangeType = typename RangeGen::RangeType;
     using IndexType = typename RangeType::index_type;
-    auto pos = map.lower_bound(*range_gen);
+    auto pos = map.LowerBound(*range_gen);
     const auto end = map.end();
     IndexType skip_limit = 0;
     for (; range_gen->non_empty() && pos != end; ++range_gen) {
@@ -74,10 +75,10 @@ bool ForEachEntryInRangesUntil(const RangeMap &map, RangeGen &range_gen, Action 
             ++pos;
             if (pos == end) break;
             if (pos->first.strictly_less(range)) {
-                pos = map.lower_bound(range);
+                pos = map.LowerBound(range);
                 if (pos == end) break;
             }
-            assert(pos == map.lower_bound(range));
+            assert(pos == map.LowerBound(range));
         }
 
         // If the range intersects pos->first, consider Action performed for that map entry, and
@@ -115,8 +116,7 @@ struct ApplyMarkupFunctor {
         if (!layout_transition) {
             return pos_hint;
         }
-        AccessState default_state;
-        auto inserted = accesses->insert(pos_hint, std::make_pair(range, default_state));
+        auto inserted = accesses->Insert(pos_hint, range, AccessState{});
         return inserted;
     }
     void operator()(const Iterator &pos) const {}
@@ -489,14 +489,9 @@ class AccessContext {
 // operations, as this simplifies the generic traversal.  So we wrap them in a semantics Adapter to get the same effect.
 template <typename Action>
 struct ActionToOpsAdapter {
-    using Map = AccessMap;
-    using Range = typename Map::key_type;
-    using Iterator = typename Map::iterator;
-    using IndexType = typename Map::index_type;
-
-    void infill(Map &accesses, const Iterator &pos, const Range &infill_range) const {
+    void infill(AccessMap &accesses, const AccessMap::iterator &pos, const AccessRange &infill_range) const {
         // Combine Infill and update operations to make the generic implementation simpler
-        Iterator infill = action.Infill(&accesses, pos, infill_range);
+        AccessMap::iterator infill = action.Infill(&accesses, pos, infill_range);
         if (infill == accesses.end()) return;  // Allow action to 'pass' on filling in the blanks
 
         // Need to apply the action to the Infill.  'infill_update_range' expect ops.infill to be completely done with
@@ -506,7 +501,7 @@ struct ActionToOpsAdapter {
             action(infill);
         }
     }
-    void update(const Iterator &pos) const { action(pos); }
+    void update(const AccessMap::iterator &pos) const { action(pos); }
     const Action &action;
 };
 
@@ -514,16 +509,16 @@ template <typename Action>
 void AccessContext::UpdateMemoryAccessRangeState(Action &action, const AccessRange &range) {
     assert(!finalized_);
     ActionToOpsAdapter<Action> ops{action};
-    infill_update_range(access_state_map_, range, ops);
+    InfillUpdateRange(access_state_map_, range, ops);
 }
 
 template <typename Action, typename RangeGen>
 void AccessContext::UpdateMemoryAccessState(const Action &action, RangeGen &range_gen) {
     assert(!finalized_);
     ActionToOpsAdapter<Action> ops{action};
-    auto pos = access_state_map_.lower_bound(*range_gen);
+    auto pos = access_state_map_.LowerBound(*range_gen);
     for (; range_gen->non_empty(); ++range_gen) {
-        pos = infill_update_range(access_state_map_, pos, *range_gen, ops);
+        pos = InfillUpdateRange(access_state_map_, pos, *range_gen, ops);
     }
 }
 
@@ -618,7 +613,7 @@ void AccessContext::ResolveAccessRange(const AccessRange &range, BarrierAction &
                                        bool recur_to_infill) const {
     if (!range.non_empty()) return;
 
-    RangeMergeIterator current(*resolve_map, access_state_map_, range.begin);
+    ParallelIterator current(*resolve_map, access_state_map_, range.begin);
     while (current->range.non_empty() && range.includes(current->range.begin)) {
         const auto current_range = current->range & range;
         if (current->pos_B->valid) {
@@ -626,12 +621,12 @@ void AccessContext::ResolveAccessRange(const AccessRange &range, BarrierAction &
             AccessState access(src_pos->second);  // intentional copy
             barrier_action(&access);
             if (current->pos_A->valid) {
-                const auto trimmed = syncval::split(current->pos_A->lower_bound, *resolve_map, current_range);
+                const auto trimmed = Split(current->pos_A->lower_bound, *resolve_map, current_range);
                 trimmed->second.Resolve(access);
-                current.invalidate_A(trimmed);
+                current.InvalidateA(trimmed);
             } else {
-                auto inserted = resolve_map->insert(current->pos_A->lower_bound, std::make_pair(current_range, access));
-                current.invalidate_A(inserted);  // Update the parallel iterator to point at the insert segment
+                auto inserted = resolve_map->Insert(current->pos_A->lower_bound, current_range, access);
+                current.InvalidateA(inserted);  // Update the parallel iterator to point at the insert segment
             }
         } else {
             // we have to descend to fill this gap
@@ -656,12 +651,12 @@ void AccessContext::ResolveAccessRange(const AccessRange &range, BarrierAction &
                 // not the end of the range is a gap.  For the seek to work, first we need to warn the parallel iterator
                 // we stepped on the dest map
                 const auto seek_to = recurrence_range.end - 1;  // The subtraction is safe as range can't be empty (loop condition)
-                current.invalidate_A();                         // Changes current->range
-                current.seek(seek_to);
+                current.InvalidateA();                         // Changes current->range
+                current.Seek(seek_to);
             } else if (!current->pos_A->valid && infill) {
                 // If we didn't find anything in the current range, and we aren't reccuring... we infill if required
-                auto inserted = resolve_map->insert(current->pos_A->lower_bound, std::make_pair(current->range, AccessState{}));
-                current.invalidate_A(inserted);  // Update the parallel iterator to point at the correct segment after insert
+                auto inserted = resolve_map->Insert(current->pos_A->lower_bound, current->range, AccessState{});
+                current.InvalidateA(inserted);  // Update the parallel iterator to point at the correct segment after insert
             }
         }
         if (current->range.non_empty()) {
@@ -724,8 +719,14 @@ HazardResult AccessContext::DetectPreviousHazard(Detector &detector, const Acces
 template <typename Predicate>
 void AccessContext::EraseIf(Predicate &&pred) {
     assert(!finalized_);
-    // Note: Don't forward, we don't want r-values moved, since we're going to make multiple calls.
-    vvl::EraseIf(access_state_map_, pred);
+    auto pos = access_state_map_.begin();
+    while (pos != access_state_map_.end()) {
+        if (pred(*pos)) {
+            pos = access_state_map_.Erase(pos);
+        } else {
+            ++pos;
+        }
+    }
 }
 
 template <typename ResolveOp>
