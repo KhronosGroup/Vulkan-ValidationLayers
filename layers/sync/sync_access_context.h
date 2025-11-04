@@ -626,7 +626,7 @@ void AccessContext::ResolveAccessRange(const AccessRange &range, BarrierAction &
             AccessState access(src_pos->second);  // intentional copy
             barrier_action(&access);
             if (current->pos_A->valid) {
-                const auto trimmed = sparse_container::split(current->pos_A->lower_bound, *resolve_map, current_range);
+                const auto trimmed = syncval::split(current->pos_A->lower_bound, *resolve_map, current_range);
                 trimmed->second.Resolve(access);
                 current.invalidate_A(trimmed);
             } else {

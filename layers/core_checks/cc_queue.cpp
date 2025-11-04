@@ -49,7 +49,6 @@ struct CommandBufferSubmitState {
     // This does not accumulate state from the previous submissions.
     QueryMap local_query_to_state_map;
     EventMap local_event_signal_info;
-    vvl::unordered_map<const vvl::Image *, ImageLayoutMap> local_image_layout_state;
     vvl::unordered_map<VkVideoSessionKHR, vvl::VideoSessionDeviceState> local_video_session_state{};
 
     CommandBufferSubmitState(const CoreChecks &c, const vvl::Queue &q) : core(c), queue_state(q) {

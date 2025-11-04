@@ -18,7 +18,8 @@
 #pragma once
 #include "sync/sync_commandbuffer.h"
 #include "state_tracker/queue_state.h"
-#include "containers/small_container.h"
+#include "containers/small_vector.h"
+#include "containers/range_map.h"
 
 namespace vvl {
 class CommandBuffer;
