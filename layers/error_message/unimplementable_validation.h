@@ -118,6 +118,16 @@ const char* unimplementable_validation[] = {
     "VUID-VkAccelerationStructureGeometryKHR-instances-parameter",
     "VUID-VkAccelerationStructureGeometryKHR-aabbs-parameter",
 
+    // We cover these in VUID-VkDeviceAddress-size-11364
+    // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7517#note_546958
+    "VUID-VkDescriptorAddressInfoEXT-address-parameter",
+    "VUID-VkStridedDeviceAddressRangeKHR-address-parameter",
+
+    // VUID-vkUpdateDescriptorSets-pDescriptorWrites-06238
+    // VUID-vkUpdateDescriptorSets-pDescriptorWrites-06239
+    // already covers these explicitly, this is just a left over generated VUID
+    "VUID-VkDescriptorImageInfo-commonparent",
+
     // These implicit VUs ask to check for a valid structure that has no sType,
     // there is nothing that can actually be validated
     //
@@ -434,6 +444,16 @@ const char* unimplementable_validation[] = {
     "VUID-vkRegisterDeviceEventEXT-pAllocator-parameter",
     "VUID-vkRegisterDisplayEventEXT-pAllocator-parameter",
     "VUID-vkAllocateMemory-pAllocator-parameter",
+    "VUID-vkCreateDataGraphPipelineSessionARM-pAllocator-parameter",
+    "VUID-vkCreateDataGraphPipelinesARM-pAllocator-parameter",
+    "VUID-vkCreateExternalComputeQueueNV-pAllocator-parameter",
+    "VUID-vkCreateSurfaceOHOS-pAllocator-parameter",
+    "VUID-vkCreateTensorViewARM-pAllocator-parameter",
+    "VUID-vkCreateTensorARM-pAllocator-parameter",
+    "VUID-vkDestroyDataGraphPipelineSessionARM-pAllocator-parameter",
+    "VUID-vkDestroyExternalComputeQueueNV-pAllocator-parameter",
+    "VUID-vkDestroyTensorARM-pAllocator-parameter",
+    "VUID-vkDestroyTensorViewARM-pAllocator-parameter",
 
     // Removed in https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/9302
     // Found these are not invalid actually
@@ -535,6 +555,23 @@ const char* unimplementable_validation[] = {
     "VUID-VkPhysicalDeviceVulkan12Properties-sType-sType",
     "VUID-VkPhysicalDeviceVulkan13Properties-sType-sType",
     "VUID-VkPhysicalDeviceVulkan14Properties-sType-sType",
+    "VUID-VkPhysicalDeviceClusterAccelerationStructurePropertiesNV-sType-sType",
+    "VUID-VkPhysicalDeviceCooperativeVectorPropertiesNV-sType-sType",
+    "VUID-VkPhysicalDeviceCopyMemoryIndirectPropertiesKHR-sType-sType",
+    "VUID-VkPhysicalDeviceDataGraphOperationSupportARM-name-parameter",
+    "VUID-VkPhysicalDeviceDescriptorBufferTensorPropertiesARM-sType-sType",
+    "VUID-VkPhysicalDeviceExternalComputeQueuePropertiesNV-sType-sType",
+    "VUID-VkPhysicalDeviceFragmentDensityMapLayeredPropertiesVALVE-sType-sType",
+    "VUID-VkPhysicalDeviceFragmentDensityMapOffsetPropertiesEXT-sType-sType",
+    "VUID-VkPhysicalDeviceMaintenance10PropertiesKHR-sType-sType",
+    "VUID-VkPhysicalDeviceMaintenance9PropertiesKHR-sType-sType",
+    "VUID-VkPhysicalDeviceMemoryDecompressionPropertiesEXT-sType-sType",
+    "VUID-VkPhysicalDevicePartitionedAccelerationStructurePropertiesNV-sType-sType",
+    "VUID-VkPhysicalDevicePerformanceCountersByRegionPropertiesARM",
+    "VUID-VkPhysicalDeviceTensorPropertiesARM-sType-sType",
+    "VUID-VkPhysicalDeviceTileMemoryHeapPropertiesQCOM-sType-sType",
+    "VUID-VkPhysicalDeviceTileShadingPropertiesQCOM-sType-sType",
+    "VUID-VkPhysicalDevicePresentationPropertiesOHOS-sType-sType",
 
     // Needs to be correct for VVL to even know about the struct
     "VUID-VkLayerSettingsCreateInfoEXT-sType-sType"

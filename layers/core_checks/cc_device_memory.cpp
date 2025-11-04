@@ -986,8 +986,9 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
         const VkImage dedicated_image = mem_info->GetDedicatedImage();
         if (dedicated_image != VK_NULL_HANDLE) {
             const LogObjectList objlist(buffer, memory);
-            skip |= LogError("VUID-vkBindBufferMemory-memory-10925", objlist,
-                             loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::pNext).dot(Field::image),
+            const char *vuid =
+                bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-10925" : "VUID-vkBindBufferMemory-memory-10925";
+            skip |= LogError(vuid, objlist, loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::pNext).dot(Field::image),
                              "is %s (not VK_NULL_HANDLE), but VkBindBufferMemoryInfo::buffer is %s.",
                              FormatHandle(dedicated_image).c_str(), FormatHandle(buffer).c_str());
         }
@@ -1874,10 +1875,12 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 const VkBuffer dedicated_buffer = mem_info->GetDedicatedBuffer();
                 if (dedicated_buffer != VK_NULL_HANDLE) {
                     const LogObjectList objlist(bind_info.image, bind_info.memory);
-                    skip |= LogError("VUID-vkBindImageMemory-memory-10926", objlist,
-                                     loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::pNext).dot(Field::buffer),
-                                     "is %s (not VK_NULL_HANDLE), but VkBindImageMemoryInfo::image is %s.",
-                                     FormatHandle(dedicated_buffer).c_str(), FormatHandle(bind_info.image).c_str());
+                    const char *vuid =
+                        bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-memory-10926" : "VUID-vkBindImageMemory-memory-10926";
+                    skip |=
+                        LogError(vuid, objlist, loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::pNext).dot(Field::buffer),
+                                 "is %s (not VK_NULL_HANDLE), but VkBindImageMemoryInfo::image is %s.",
+                                 FormatHandle(dedicated_buffer).c_str(), FormatHandle(bind_info.image).c_str());
                 }
 
                 auto chained_flags_struct = vku::FindStructInPNextChain<VkMemoryAllocateFlagsInfo>(mem_info->allocate_info.pNext);
