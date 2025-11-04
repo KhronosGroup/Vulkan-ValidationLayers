@@ -287,8 +287,7 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites(
         {spv::CapabilityFMAKHR, {0, &DeviceFeatures::shaderFmaFloat16, nullptr, ""}},
         {spv::CapabilityFMAKHR, {0, &DeviceFeatures::shaderFmaFloat32, nullptr, ""}},
         {spv::CapabilityFMAKHR, {0, &DeviceFeatures::shaderFmaFloat64, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityShader64BitIndexingEXT, {0, &DeviceFeatures::shader64BitIndexing, nullptr, ""}},
+        {spv::CapabilityShader64BitIndexingEXT, {0, &DeviceFeatures::shader64BitIndexing, nullptr, ""}},
     };
     // clang-format on
     return spirv_capabilities;
@@ -767,6 +766,8 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "RayTracingSpheresGeometryNV";
         case spv::CapabilityRayTracingLinearSweptSpheresGeometryNV:
             return "RayTracingLinearSweptSpheresGeometryNV";
+        case spv::CapabilityShader64BitIndexingEXT:
+            return "Shader64BitIndexingEXT";
         case spv::CapabilityCooperativeMatrixReductionsNV:
             return "CooperativeMatrixReductionsNV";
         case spv::CapabilityCooperativeMatrixConversionsNV:
@@ -827,8 +828,6 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "AtomicFloat16AddEXT";
         case spv::CapabilityArithmeticFenceEXT:
             return "ArithmeticFenceEXT";
-        case spv::CapabilityTaskSequenceINTEL:
-            return "TaskSequenceINTEL";
         case spv::CapabilitySubgroupBufferPrefetchINTEL:
             return "SubgroupBufferPrefetchINTEL";
         case spv::CapabilitySubgroup2DBlockIOINTEL:
@@ -1227,6 +1226,7 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityGraphARM, "VkPhysicalDeviceDataGraphFeaturesARM::dataGraph"},
     {spv::CapabilityUntypedPointersKHR, "VkPhysicalDeviceShaderUntypedPointersFeaturesKHR::shaderUntypedPointers"},
     {spv::CapabilityFMAKHR, "VkPhysicalDeviceShaderFmaFeaturesKHR::shaderFmaFloat16 OR VkPhysicalDeviceShaderFmaFeaturesKHR::shaderFmaFloat32 OR VkPhysicalDeviceShaderFmaFeaturesKHR::shaderFmaFloat64"},
+    {spv::CapabilityShader64BitIndexingEXT, "VkPhysicalDeviceShader64BitIndexingFeaturesEXT::shader64BitIndexing"},
     };
 
     // VUs before catch unknown capabilities

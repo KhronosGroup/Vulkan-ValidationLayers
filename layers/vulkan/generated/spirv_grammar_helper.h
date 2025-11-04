@@ -431,8 +431,6 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpRayQueryGetIntersectionWorldToObjectKHR:
         case spv::OpAtomicFAddEXT:
         case spv::OpArithmeticFenceEXT:
-        case spv::OpTaskSequenceCreateINTEL:
-        case spv::OpTaskSequenceGetINTEL:
         case spv::OpSubgroupMatrixMultiplyAccumulateINTEL:
         case spv::OpBitwiseFunctionINTEL:
         case spv::OpUntypedVariableLengthArrayINTEL:
@@ -885,9 +883,6 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpRayQueryGetIntersectionWorldToObjectKHR:
         case spv::OpAtomicFAddEXT:
         case spv::OpArithmeticFenceEXT:
-        case spv::OpTaskSequenceCreateINTEL:
-        case spv::OpTaskSequenceGetINTEL:
-        case spv::OpTypeTaskSequenceINTEL:
         case spv::OpSubgroupMatrixMultiplyAccumulateINTEL:
         case spv::OpBitwiseFunctionINTEL:
         case spv::OpUntypedVariableLengthArrayINTEL:
@@ -1298,7 +1293,6 @@ enum class SpvType {
     kCooperativeMatrixNV,
     kTensorLayoutNV,
     kTensorViewNV,
-    kTaskSequenceINTEL,
 };
 
 static constexpr SpvType GetSpvType(uint32_t opcode) {
@@ -1355,8 +1349,6 @@ static constexpr SpvType GetSpvType(uint32_t opcode) {
             return SpvType::kTensorLayoutNV;
         case spv::OpTypeTensorViewNV:
             return SpvType::kTensorViewNV;
-        case spv::OpTypeTaskSequenceINTEL:
-            return SpvType::kTaskSequenceINTEL;
         default:
             return SpvType::Empty;
     }
