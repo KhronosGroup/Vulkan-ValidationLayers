@@ -339,7 +339,7 @@ bool CoreChecks::ValidateCreateShadersSpirv(uint32_t createInfoCount, const VkSh
 
         // Finally, we have "pipeline" level information and can do validation we normally do at pipeline creation time
         vku::safe_VkShaderCreateInfoEXT safe_create_info = vku::safe_VkShaderCreateInfoEXT(&pCreateInfos[i]);
-        const ShaderStageState stage_state(nullptr, &safe_create_info, &set_layouts, nullptr, spirv);
+        const ShaderStageState stage_state(nullptr, &safe_create_info, &set_layouts, nullptr, spirv, VK_NULL_HANDLE);
         skip |= ValidateShaderStage(stage_state, nullptr, create_info_loc);
 
         if (create_info.stage == VK_SHADER_STAGE_MESH_BIT_EXT) {

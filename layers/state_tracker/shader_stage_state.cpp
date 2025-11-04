@@ -130,10 +130,11 @@ ShaderStageState::ShaderStageState(const vku::safe_VkPipelineShaderStageCreateIn
                                    const vku::safe_VkShaderCreateInfoEXT *shader_object_create_info,
                                    const vvl::DescriptorSetLayoutList *descriptor_set_layouts,
                                    std::shared_ptr<const vvl::ShaderModule> module_state,
-                                   std::shared_ptr<const spirv::Module> spirv_state)
+                                   std::shared_ptr<const spirv::Module> spirv_state, const VkPipelineLayout pipeline_layout)
     : module_state(module_state),
       spirv_state(spirv_state),
       pipeline_create_info(pipeline_create_info),
       shader_object_create_info(shader_object_create_info),
       descriptor_set_layouts(descriptor_set_layouts),
+      pipeline_layout(VK_NULL_HANDLE),
       entrypoint(spirv_state ? spirv_state->FindEntrypoint(GetPName(), GetStage()) : nullptr) {}
