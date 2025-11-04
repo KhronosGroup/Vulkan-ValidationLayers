@@ -1800,7 +1800,7 @@ VariableBase::VariableBase(const Module& module_state, const Instruction& insn, 
                            const ParsedInfo& parsed)
     : id(insn.ResultId()),
       type_id(insn.TypeId()),
-      data_type_id(insn.Opcode() == spv::OpUntypedVariableKHR ? insn.Word(4) : 0),
+      data_type_id((insn.Opcode() == spv::OpUntypedVariableKHR && insn.Length() > 4) ? insn.Word(4) : 0),
       storage_class(static_cast<spv::StorageClass>(insn.Word(3))),
       decorations(module_state.GetDecorationSet(id)),
       type_struct_info(module_state.GetTypeStructInfo(&insn)),
