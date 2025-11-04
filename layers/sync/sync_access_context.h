@@ -118,7 +118,7 @@ struct ApplyMarkupFunctor {
         if (!layout_transition) {
             return pos_hint;
         }
-        auto inserted = accesses->Insert(pos_hint, range, AccessState{});
+        auto inserted = accesses->Insert(pos_hint, range, AccessState::DefaultAccessState());
         return inserted;
     }
     void operator()(const Iterator &pos) const {}
@@ -660,7 +660,7 @@ void AccessContext::ResolveAccessRange(const AccessRange &range, BarrierAction &
                 current.SeekAfterModification(seek_to);
             } else if (!current.pos_A.inside_lower_bound_range && infill) {
                 // If we didn't find anything in the current range, and we aren't reccuring... we infill if required
-                auto inserted = resolve_map->Insert(current.pos_A.lower_bound, current.range, AccessState{});
+                auto inserted = resolve_map->Insert(current.pos_A.lower_bound, current.range, AccessState::DefaultAccessState());
                 current.OnCurrentRangeModified(inserted);
             }
         }

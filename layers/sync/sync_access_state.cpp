@@ -453,7 +453,7 @@ void AccessState::Resolve(const AccessState &other) {
                 //
                 // If this is a later write, we've reported any exsiting hazard, and we can just overwrite as the more recent
                 // operation
-                *this = other;
+                Assign(other);
                 skip_first = true;
             } else if (last_write->tag == other.last_write->tag) {
                 // In the *equals* case for write operations, we merged the write barriers and the read state (but without the
@@ -472,7 +472,7 @@ void AccessState::Resolve(const AccessState &other) {
         }
     } else if (other.last_write.has_value()) {  // && not this->last_write
         // Other has write and this doesn't, thus keep it, See first access NOTE above
-        *this = other;
+        Assign(other);
         skip_first = true;
     } else {  // not this->last_write OR other.last_write
         // Neither state has a write, just merge the reads
@@ -943,20 +943,19 @@ void AccessState::CopySimpleMembers(const AccessState &other) {
     input_attachment_read = other.input_attachment_read;
 }
 
-AccessState::AccessState(const AccessState &other) { *this = other; }
+AccessState::AccessState(const AccessState &other) { Assign(other); }
 
-AccessState &AccessState::operator=(const AccessState &other) {
+void AccessState::Assign(const AccessState &other) {
     CopySimpleMembers(other);
     ClearReadStates();
     for (const ReadState &read : other.GetReads()) {
         AddRead(read);
     }
-    return *this;
 }
 
-AccessState::AccessState(AccessState &&other) { *this = std::move(other); }
+AccessState::AccessState(AccessState &&other) { Assign(std::move(other)); }
 
-AccessState &AccessState::operator=(AccessState &&other) {
+void AccessState::Assign(AccessState &&other) {
     CopySimpleMembers(other);
 
     last_read_count = other.last_read_count;
@@ -969,7 +968,6 @@ AccessState &AccessState::operator=(AccessState &&other) {
     }
     other.last_reads = nullptr;
     other.last_read_count = 0;
-    return *this;
 }
 
 AccessState ::~AccessState() {

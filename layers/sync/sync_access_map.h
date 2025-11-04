@@ -59,6 +59,11 @@ class AccessMap {
     using const_iterator = ImplMap::const_iterator;
 
   public:
+    // Use explicit assignment to control all places where this happens
+    void Assign(const AccessMap &other);
+    AccessMap &operator=(const AccessMap &other) = delete;
+    AccessMap &operator=(AccessMap &&other) = delete;
+
     iterator begin() { return impl_map_.begin(); }
     const_iterator begin() const { return impl_map_.begin(); }
     iterator end() { return impl_map_.end(); }
