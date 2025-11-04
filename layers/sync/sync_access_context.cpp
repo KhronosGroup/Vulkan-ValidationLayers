@@ -150,7 +150,7 @@ void AccessContext::TrimAndClearFirstAccess() {
     for (auto &[range, access] : access_state_map_) {
         access.Normalize();
     }
-    sparse_container::consolidate(access_state_map_);
+    syncval::consolidate(access_state_map_);
 }
 
 void AccessContext::AddReferencedTags(ResourceUsageTagSet &used) const {
@@ -168,7 +168,7 @@ void AccessContext::ResolveFromContext(const AccessContext &from) {
 
 // This function is a simplification of update_range_value from range_map.h that takes into account syncval specifics
 static void UpdateRangeValue(AccessMap &map, const AccessRange &range, const AccessState &access_state) {
-    using CachedLowerBound = sparse_container::cached_lower_bound_impl<AccessMap>;
+    using CachedLowerBound = syncval::cached_lower_bound_impl<AccessMap>;
     CachedLowerBound pos(map, range.begin);
     while (range.includes(pos->index)) {
         if (!pos->valid) {

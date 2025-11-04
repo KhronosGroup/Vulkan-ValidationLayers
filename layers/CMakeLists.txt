@@ -436,6 +436,8 @@ target_sources(vvl PRIVATE
     sync/sync_access_context.cpp
     sync/sync_access_context.h
     sync/sync_access_flags.h
+    sync/sync_access_map.cpp
+    sync/sync_access_map.h
     sync/sync_access_state.cpp
     sync/sync_access_state.h
     sync/sync_barrier.cpp

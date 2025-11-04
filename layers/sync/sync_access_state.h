@@ -17,6 +17,7 @@
 
 #pragma once
 #include "sync/sync_common.h"
+#include "sync/sync_access_map.h"
 #include "sync/sync_barrier.h"
 #include "containers/span.h"
 #include <cstring>  // memcpy
@@ -482,8 +483,8 @@ class AccessState {
     bool input_attachment_read = false;
 };
 using AccessStateFunction = std::function<void(AccessState *)>;
-using AccessMap = sparse_container::range_map<ResourceAddress, AccessState>;
-using RangeMergeIterator = sparse_container::parallel_iterator<AccessMap, const AccessMap>;
+using AccessMap = syncval::range_map<ResourceAddress, AccessState>;
+using RangeMergeIterator = syncval::parallel_iterator<AccessMap, const AccessMap>;
 
 template <typename Predicate>
 bool AccessState::ClearPredicatedAccesses(Predicate &predicate) {
