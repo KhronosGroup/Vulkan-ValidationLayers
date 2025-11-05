@@ -860,33 +860,33 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats) {
     pipeline_depth.cb_ci_.attachmentCount = 0;
     pipeline_depth.CreateGraphicsPipeline();
 
-    VkFormat depthStencilFormat = FindSupportedDepthStencilFormat(Gpu());
+    VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
 
-    bool testStencil = false;
-    VkFormat stencilFormat = VK_FORMAT_UNDEFINED;
+    bool test_stencil = false;
+    VkFormat stencil_format = VK_FORMAT_UNDEFINED;
 
     if (FormatIsSupported(Gpu(), VK_FORMAT_S8_UINT, VK_IMAGE_TILING_OPTIMAL)) {
-        stencilFormat = VK_FORMAT_S8_UINT;
-        testStencil = true;
-    } else if ((depthStencilFormat != VK_FORMAT_D16_UNORM_S8_UINT) &&
+        stencil_format = VK_FORMAT_S8_UINT;
+        test_stencil = true;
+    } else if ((ds_format != VK_FORMAT_D16_UNORM_S8_UINT) &&
                FormatIsSupported(Gpu(), VK_FORMAT_D16_UNORM_S8_UINT, VK_IMAGE_TILING_OPTIMAL)) {
-        stencilFormat = VK_FORMAT_D16_UNORM_S8_UINT;
-        testStencil = true;
-    } else if ((depthStencilFormat != VK_FORMAT_D24_UNORM_S8_UINT) &&
+        stencil_format = VK_FORMAT_D16_UNORM_S8_UINT;
+        test_stencil = true;
+    } else if ((ds_format != VK_FORMAT_D24_UNORM_S8_UINT) &&
                FormatIsSupported(Gpu(), VK_FORMAT_D24_UNORM_S8_UINT, VK_IMAGE_TILING_OPTIMAL)) {
-        stencilFormat = VK_FORMAT_D24_UNORM_S8_UINT;
-        testStencil = true;
-    } else if ((depthStencilFormat != VK_FORMAT_D32_SFLOAT_S8_UINT) &&
+        stencil_format = VK_FORMAT_D24_UNORM_S8_UINT;
+        test_stencil = true;
+    } else if ((ds_format != VK_FORMAT_D32_SFLOAT_S8_UINT) &&
                FormatIsSupported(Gpu(), VK_FORMAT_D32_SFLOAT_S8_UINT, VK_IMAGE_TILING_OPTIMAL)) {
-        stencilFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
-        testStencil = true;
+        stencil_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
+        test_stencil = true;
     }
 
     CreatePipelineHelper pipeline_stencil(*this);
-    if (testStencil) {
+    if (test_stencil) {
         pipeline_rendering_info.colorAttachmentCount = 0;
         pipeline_rendering_info.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
-        pipeline_rendering_info.stencilAttachmentFormat = stencilFormat;
+        pipeline_rendering_info.stencilAttachmentFormat = stencil_format;
 
         pipeline_stencil.ds_ci_ = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
         pipeline_stencil.gp_ci_.pNext = &pipeline_rendering_info;
@@ -894,19 +894,20 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats) {
         pipeline_stencil.CreateGraphicsPipeline();
     }
 
-    vkt::Image colorImage(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    vkt::ImageView colorImageView = colorImage.CreateView();
+    vkt::Image color_image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView color_image_view = color_image.CreateView();
 
-    vkt::Image depthStencilImage(*m_device, 32, 32, depthStencilFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    vkt::ImageView depthStencilImageView = depthStencilImage.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::Image depth_stencil_image(*m_device, 32, 32, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::ImageView depth_stencil_image_view =
+        depth_stencil_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    color_attachment.imageView = colorImageView;
+    color_attachment.imageView = color_image_view;
 
     VkRenderingAttachmentInfo depth_stencil_attachment = vku::InitStructHelper();
     depth_stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    depth_stencil_attachment.imageView = depthStencilImageView;
+    depth_stencil_attachment.imageView = depth_stencil_image_view;
 
     VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.layerCount = 1;
@@ -943,7 +944,7 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats) {
     m_command_buffer.EndRendering();
 
     // Mismatching stencil format
-    if (testStencil) {
+    if (test_stencil) {
         begin_rendering_info.pDepthAttachment = nullptr;
         begin_rendering_info.pStencilAttachment = &depth_stencil_attachment;
         m_command_buffer.BeginRendering(begin_rendering_info);
@@ -982,19 +983,19 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats2) {
     pipeline_depth.cb_ci_.attachmentCount = 0;
     pipeline_depth.CreateGraphicsPipeline();
 
-    const VkFormat depthStencilFormat = FindSupportedDepthStencilFormat(Gpu());
+    const VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
     pipeline_rendering_info.colorAttachmentCount = 0;
     pipeline_rendering_info.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
-    pipeline_rendering_info.stencilAttachmentFormat = depthStencilFormat;
+    pipeline_rendering_info.stencilAttachmentFormat = ds_format;
 
     CreatePipelineHelper pipeline_stencil(*this, &pipeline_rendering_info);
     pipeline_stencil.ds_ci_ = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
     pipeline_stencil.cb_ci_.attachmentCount = 0;
     pipeline_stencil.CreateGraphicsPipeline();
 
-    vkt::Image colorImage(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image color_image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
-    vkt::Image depthStencilImage(*m_device, 32, 32, depthStencilFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::Image depth_stencil_image(*m_device, 32, 32, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -1070,12 +1071,12 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats3Color) {
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.CreateGraphicsPipeline();
 
-    vkt::Image colorImage(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    vkt::ImageView colorImageView = colorImage.CreateView();
+    vkt::Image color_image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView color_image_view = color_image.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    color_attachment.imageView = colorImageView;
+    color_attachment.imageView = color_image_view;
 
     VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.layerCount = 1;
@@ -1114,32 +1115,32 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats3DepthStencil) {
     pipe1.gp_ci_.pColorBlendState = nullptr;
     pipe1.CreateGraphicsPipeline();
 
-    VkFormat depthStencilFormat = FindSupportedDepthStencilFormat(Gpu());
+    VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
 
-    bool testStencil = false;
-    VkFormat stencilFormat = VK_FORMAT_UNDEFINED;
+    bool test_stencil = false;
+    VkFormat stencil_format = VK_FORMAT_UNDEFINED;
 
     if (FormatIsSupported(Gpu(), VK_FORMAT_S8_UINT, VK_IMAGE_TILING_OPTIMAL)) {
-        stencilFormat = VK_FORMAT_S8_UINT;
-        testStencil = true;
-    } else if ((depthStencilFormat != VK_FORMAT_D16_UNORM_S8_UINT) &&
+        stencil_format = VK_FORMAT_S8_UINT;
+        test_stencil = true;
+    } else if ((ds_format != VK_FORMAT_D16_UNORM_S8_UINT) &&
                FormatIsSupported(Gpu(), VK_FORMAT_D16_UNORM_S8_UINT, VK_IMAGE_TILING_OPTIMAL)) {
-        stencilFormat = VK_FORMAT_D16_UNORM_S8_UINT;
-        testStencil = true;
-    } else if ((depthStencilFormat != VK_FORMAT_D24_UNORM_S8_UINT) &&
+        stencil_format = VK_FORMAT_D16_UNORM_S8_UINT;
+        test_stencil = true;
+    } else if ((ds_format != VK_FORMAT_D24_UNORM_S8_UINT) &&
                FormatIsSupported(Gpu(), VK_FORMAT_D24_UNORM_S8_UINT, VK_IMAGE_TILING_OPTIMAL)) {
-        stencilFormat = VK_FORMAT_D24_UNORM_S8_UINT;
-        testStencil = true;
-    } else if ((depthStencilFormat != VK_FORMAT_D32_SFLOAT_S8_UINT) &&
+        stencil_format = VK_FORMAT_D24_UNORM_S8_UINT;
+        test_stencil = true;
+    } else if ((ds_format != VK_FORMAT_D32_SFLOAT_S8_UINT) &&
                FormatIsSupported(Gpu(), VK_FORMAT_D32_SFLOAT_S8_UINT, VK_IMAGE_TILING_OPTIMAL)) {
-        stencilFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
-        testStencil = true;
+        stencil_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
+        test_stencil = true;
     }
 
     CreatePipelineHelper pipe2(*this);
-    if (testStencil) {
+    if (test_stencil) {
         pipeline_rendering_info.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
-        pipeline_rendering_info.stencilAttachmentFormat = stencilFormat;
+        pipeline_rendering_info.stencilAttachmentFormat = stencil_format;
 
         pipe2.ds_ci_ = vku::InitStructHelper();
         pipe2.gp_ci_.pNext = &pipeline_rendering_info;
@@ -1148,12 +1149,13 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats3DepthStencil) {
         pipe2.CreateGraphicsPipeline();
     }
 
-    vkt::Image depthStencilImage(*m_device, 32, 32, depthStencilFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    vkt::ImageView depthStencilImageView = depthStencilImage.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::Image depth_stencil_image(*m_device, 32, 32, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::ImageView depth_stencil_image_view =
+        depth_stencil_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
     VkRenderingAttachmentInfo depth_stencil_attachment = vku::InitStructHelper();
     depth_stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    depth_stencil_attachment.imageView = depthStencilImageView;
+    depth_stencil_attachment.imageView = depth_stencil_image_view;
 
     VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.layerCount = 1;
@@ -1172,7 +1174,7 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats3DepthStencil) {
     m_command_buffer.EndRendering();
 
     // Mismatching stencil format
-    if (testStencil) {
+    if (test_stencil) {
         begin_rendering_info.pDepthAttachment = nullptr;
         begin_rendering_info.pStencilAttachment = &depth_stencil_attachment;
         m_command_buffer.BeginRendering(begin_rendering_info);
@@ -1195,12 +1197,12 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats4) {
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.CreateGraphicsPipeline();
 
-    vkt::Image colorImage(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    vkt::ImageView colorImageView = colorImage.CreateView();
+    vkt::Image color_image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView color_image_view = color_image.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    color_attachment.imageView = colorImageView;
+    color_attachment.imageView = color_image_view;
 
     VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.layerCount = 1;
@@ -1236,12 +1238,12 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentSamplesColor) {
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.CreateGraphicsPipeline();
 
-    vkt::Image colorImage(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    vkt::ImageView colorImageView = colorImage.CreateView();
+    vkt::Image color_image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView color_image_view = color_image.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    color_attachment.imageView = colorImageView;
+    color_attachment.imageView = color_image_view;
 
     VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.layerCount = 1;
@@ -1265,12 +1267,12 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentSamplesDepthStencil) {
     TEST_DESCRIPTION("Draw with Dynamic Rendering with mismatching depth/stencil sample counts");
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
-    VkFormat depthStencilFormat = FindSupportedDepthStencilFormat(Gpu());
+    VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
 
     VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
     pipeline_rendering_info.colorAttachmentCount = 0;
     pipeline_rendering_info.pColorAttachmentFormats = nullptr;
-    pipeline_rendering_info.depthAttachmentFormat = depthStencilFormat;
+    pipeline_rendering_info.depthAttachmentFormat = ds_format;
 
     CreatePipelineHelper pipe1(*this, &pipeline_rendering_info);
     pipe1.ms_ci_.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
@@ -1281,7 +1283,7 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentSamplesDepthStencil) {
 
     pipeline_rendering_info.colorAttachmentCount = 0;
     pipeline_rendering_info.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
-    pipeline_rendering_info.stencilAttachmentFormat = depthStencilFormat;
+    pipeline_rendering_info.stencilAttachmentFormat = ds_format;
 
     CreatePipelineHelper pipe2(*this, &pipeline_rendering_info);
     pipe2.ms_ci_.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
@@ -1290,12 +1292,13 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentSamplesDepthStencil) {
     pipe2.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe2.CreateGraphicsPipeline();
 
-    vkt::Image depthStencilImage(*m_device, 32, 32, depthStencilFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    vkt::ImageView depthStencilImageView = depthStencilImage.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::Image depth_stencil_image(*m_device, 32, 32, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::ImageView depth_stencil_image_view =
+        depth_stencil_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
     VkRenderingAttachmentInfo depth_stencil_attachment = vku::InitStructHelper();
     depth_stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    depth_stencil_attachment.imageView = depthStencilImageView;
+    depth_stencil_attachment.imageView = depth_stencil_image_view;
 
     VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.layerCount = 1;
@@ -1362,12 +1365,12 @@ TEST_F(NegativeDynamicRendering, MismatchingMixedAttachmentSamplesColor) {
     samples_info.colorAttachmentCount = 1;
     pipe.CreateGraphicsPipeline();
 
-    vkt::Image colorImage(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    vkt::ImageView colorImageView = colorImage.CreateView();
+    vkt::Image color_image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView color_image_view = color_image.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    color_attachment.imageView = colorImageView;
+    color_attachment.imageView = color_image_view;
 
     VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
@@ -1404,11 +1407,11 @@ TEST_F(NegativeDynamicRendering, MismatchingMixedAttachmentSamplesDepthStencil) 
 
     VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper(&samples_info);
 
-    VkFormat depthStencilFormat = FindSupportedDepthStencilFormat(Gpu());
+    VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
 
     pipeline_rendering_info.colorAttachmentCount = 0;
     pipeline_rendering_info.pColorAttachmentFormats = nullptr;
-    pipeline_rendering_info.depthAttachmentFormat = depthStencilFormat;
+    pipeline_rendering_info.depthAttachmentFormat = ds_format;
 
     samples_info.colorAttachmentCount = 0;
     samples_info.pColorAttachmentSamples = nullptr;
@@ -1422,7 +1425,7 @@ TEST_F(NegativeDynamicRendering, MismatchingMixedAttachmentSamplesDepthStencil) 
 
     pipeline_rendering_info.colorAttachmentCount = 0;
     pipeline_rendering_info.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
-    pipeline_rendering_info.stencilAttachmentFormat = depthStencilFormat;
+    pipeline_rendering_info.stencilAttachmentFormat = ds_format;
 
     CreatePipelineHelper pipe2(*this, &pipeline_rendering_info);
     pipe2.ds_ci_ = vku::InitStructHelper();
@@ -1430,12 +1433,13 @@ TEST_F(NegativeDynamicRendering, MismatchingMixedAttachmentSamplesDepthStencil) 
     pipe2.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe2.CreateGraphicsPipeline();
 
-    vkt::Image depthStencilImage(*m_device, 32, 32, depthStencilFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    vkt::ImageView depthStencilImageView = depthStencilImage.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::Image depth_stencil_image(*m_device, 32, 32, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::ImageView depth_stencil_image_view =
+        depth_stencil_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
     VkRenderingAttachmentInfo depth_stencil_attachment = vku::InitStructHelper();
     depth_stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    depth_stencil_attachment.imageView = depthStencilImageView;
+    depth_stencil_attachment.imageView = depth_stencil_image_view;
 
     VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
@@ -1642,22 +1646,21 @@ TEST_F(NegativeDynamicRendering, PipelineMissingFlags) {
 
     InitRenderTarget();
 
-    VkFormat depthStencilFormat = FindSupportedDepthStencilFormat(Gpu());
+    VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
 
     // Mostly likely will only find support for this on a custom profiles
-    if (!FormatFeaturesAreSupported(Gpu(), depthStencilFormat, VK_IMAGE_TILING_OPTIMAL,
+    if (!FormatFeaturesAreSupported(Gpu(), ds_format, VK_IMAGE_TILING_OPTIMAL,
                                     VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
         shading_rate = false;
     }
-    if (!FormatFeaturesAreSupported(Gpu(), depthStencilFormat, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT)) {
+    if (!FormatFeaturesAreSupported(Gpu(), ds_format, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT)) {
         fragment_density = false;
     }
     if (!fragment_density && !shading_rate) {
         GTEST_SKIP() << "shading rate / fragment shading not supported";
     }
 
-    auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, depthStencilFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
     if (shading_rate) {
         image_ci.usage |= VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
@@ -1958,11 +1961,11 @@ TEST_F(NegativeDynamicRendering, DeviceGroupRenderPassBeginInfo) {
     device_group_render_pass_begin_info.deviceRenderAreaCount = 1;
     device_group_render_pass_begin_info.pDeviceRenderAreas = &render_area;
 
-    vkt::Image colorImage(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    vkt::ImageView colorImageView = colorImage.CreateView();
+    vkt::Image color_image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView color_image_view = color_image.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
-    color_attachment.imageView = colorImageView;
+    color_attachment.imageView = color_image_view;
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     VkRenderingInfo begin_rendering_info = vku::InitStructHelper(&device_group_render_pass_begin_info);
@@ -2584,12 +2587,12 @@ TEST_F(NegativeDynamicRendering, AreaGreaterThanAttachmentExtent) {
         GTEST_SKIP() << "Tests for 1.0 only";
     }
 
-    vkt::Image colorImage(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    vkt::ImageView colorImageView = colorImage.CreateView();
+    vkt::Image color_image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView color_image_view = color_image.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    color_attachment.imageView = colorImageView;
+    color_attachment.imageView = color_image_view;
 
     VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.layerCount = 1;
@@ -2642,12 +2645,12 @@ TEST_F(NegativeDynamicRendering, AreaGreaterThanAttachmentExtent) {
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
     if ((ds_format != VK_FORMAT_UNDEFINED) && IsExtensionsEnabled(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) {
-        vkt::Image depthImage(*m_device, 32, 32, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-        vkt::ImageView depthImageView = depthImage.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
+        vkt::Image depth_image(*m_device, 32, 32, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+        vkt::ImageView depth_image_view = depth_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
 
         VkRenderingAttachmentInfo depth_attachment = vku::InitStructHelper();
         depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-        depth_attachment.imageView = depthImageView;
+        depth_attachment.imageView = depth_image_view;
 
         begin_rendering_info.colorAttachmentCount = 0;
         begin_rendering_info.pDepthAttachment = &depth_attachment;
@@ -2667,12 +2670,12 @@ TEST_F(NegativeDynamicRendering, DeviceGroupAreaGreaterThanAttachmentExtent) {
     AddOptionalExtensions(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
-    vkt::Image colorImage(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    vkt::ImageView colorImageView = colorImage.CreateView();
+    vkt::Image color_image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView color_image_view = color_image.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    color_attachment.imageView = colorImageView;
+    color_attachment.imageView = color_image_view;
 
     VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.layerCount = 1;
@@ -2725,12 +2728,12 @@ TEST_F(NegativeDynamicRendering, DeviceGroupAreaGreaterThanAttachmentExtent) {
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
     if ((ds_format != VK_FORMAT_UNDEFINED) && IsExtensionsEnabled(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) {
-        vkt::Image depthImage(*m_device, 32, 32, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-        vkt::ImageView depthImageView = depthImage.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
+        vkt::Image depth_image(*m_device, 32, 32, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+        vkt::ImageView depth_image_view = depth_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
 
         VkRenderingAttachmentInfo depth_attachment = vku::InitStructHelper();
         depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-        depth_attachment.imageView = depthImageView;
+        depth_attachment.imageView = depth_image_view;
 
         begin_rendering_info.colorAttachmentCount = 0;
         begin_rendering_info.pDepthAttachment = &depth_attachment;
@@ -2863,7 +2866,7 @@ TEST_F(NegativeDynamicRendering, InputAttachmentCapability) {
 
     InitRenderTarget();
 
-    const char *fsSource = R"(
+    const char *fs_source = R"(
                OpCapability Shader
                OpCapability InputAttachment
           %1 = OpExtInstImport "GLSL.std.450"
@@ -2886,7 +2889,7 @@ TEST_F(NegativeDynamicRendering, InputAttachmentCapability) {
                OpFunctionEnd
         )";
 
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
 
@@ -5333,11 +5336,11 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithMismatchingColorImageViewFor
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    vkt::ImageView imageView = image.CreateView();
+    vkt::ImageView image_view = image.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    color_attachment.imageView = imageView;
+    color_attachment.imageView = image_view;
 
     constexpr std::array bad_color_formats = {VK_FORMAT_R8G8B8A8_UINT};
 
@@ -5436,11 +5439,11 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithMismatchingDepthStencilImage
     }
 
     vkt::Image image(*m_device, 32, 32, depth_stencil_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    vkt::ImageView imageView = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
     VkRenderingAttachmentInfo depth_stencil_attachment = vku::InitStructHelper();
     depth_stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    depth_stencil_attachment.imageView = imageView;
+    depth_stencil_attachment.imageView = image_view;
 
     VkCommandBufferInheritanceRenderingInfo inheritance_rendering_info = vku::InitStructHelper();
     inheritance_rendering_info.depthAttachmentFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
@@ -5538,11 +5541,11 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithMismatchingImageViewRasteriz
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    vkt::ImageView imageView = image.CreateView();
+    vkt::ImageView image_view = image.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    color_attachment.imageView = imageView;
+    color_attachment.imageView = image_view;
 
     VkFormat color_formats = {VK_FORMAT_R8G8B8A8_UNORM};
 
@@ -5587,12 +5590,13 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithMismatchingImageViewRasteriz
     m_command_buffer.EndRendering();
 
     auto depth_stencil_format = FindSupportedDepthStencilFormat(Gpu());
-    vkt::Image depthStencilImage(*m_device, 32, 32, depth_stencil_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    vkt::ImageView depthStencilImageView = depthStencilImage.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::Image depth_stencil_image(*m_device, 32, 32, depth_stencil_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::ImageView depth_stencil_image_view =
+        depth_stencil_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
     VkRenderingAttachmentInfo depth_stencil_attachment = vku::InitStructHelper();
     depth_stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    depth_stencil_attachment.imageView = depthStencilImageView;
+    depth_stencil_attachment.imageView = depth_stencil_image_view;
 
     begin_rendering_info.colorAttachmentCount = 0;
     begin_rendering_info.pDepthAttachment = &depth_stencil_attachment;
@@ -5642,11 +5646,11 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithMismatchingImageViewAttachme
     }
 
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    vkt::ImageView imageView = image.CreateView();
+    vkt::ImageView image_view = image.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    color_attachment.imageView = imageView;
+    color_attachment.imageView = image_view;
 
     VkFormat color_formats = {VK_FORMAT_R8G8B8A8_UNORM};
 
@@ -5696,12 +5700,13 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithMismatchingImageViewAttachme
     m_command_buffer.EndRendering();
 
     auto depth_stencil_format = FindSupportedDepthStencilFormat(Gpu());
-    vkt::Image depthStencilImage(*m_device, 32, 32, depth_stencil_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    vkt::ImageView depthStencilImageView = depthStencilImage.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::Image depth_stencil_image(*m_device, 32, 32, depth_stencil_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::ImageView depth_stencil_image_view =
+        depth_stencil_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
     VkRenderingAttachmentInfo depth_stencil_attachment = vku::InitStructHelper();
     depth_stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    depth_stencil_attachment.imageView = depthStencilImageView;
+    depth_stencil_attachment.imageView = depth_stencil_image_view;
 
     samples_info.colorAttachmentCount = 0;
     samples_info.pColorAttachmentSamples = nullptr;
@@ -5752,12 +5757,12 @@ TEST_F(NegativeDynamicRendering, InSecondaryCommandBuffers) {
     CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
     pipe.CreateGraphicsPipeline();
 
-    VkCommandBufferInheritanceRenderingInfo inheritanceRenderingInfo = vku::InitStructHelper();
-    inheritanceRenderingInfo.colorAttachmentCount = 1;
-    inheritanceRenderingInfo.pColorAttachmentFormats = &format;
-    inheritanceRenderingInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    VkCommandBufferInheritanceRenderingInfo inheritance_rendering_info = vku::InitStructHelper();
+    inheritance_rendering_info.colorAttachmentCount = 1;
+    inheritance_rendering_info.pColorAttachmentFormats = &format;
+    inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
-    VkCommandBufferInheritanceInfo cbii = vku::InitStructHelper(&inheritanceRenderingInfo);
+    VkCommandBufferInheritanceInfo cbii = vku::InitStructHelper(&inheritance_rendering_info);
     cbii.renderPass = m_renderPass;
 
     VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();
@@ -5801,12 +5806,12 @@ TEST_F(NegativeDynamicRendering, DeviceGroupRenderArea) {
     TEST_DESCRIPTION("Begin rendering with invaid device group render area.");
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
-    VkRect2D renderArea = {{-1, 0}, {64, 64}};
+    VkRect2D render_area = {{-1, 0}, {64, 64}};
 
     VkDeviceGroupRenderPassBeginInfo device_group_render_pass_begin_info = vku::InitStructHelper();
     device_group_render_pass_begin_info.deviceMask = 0x1;
     device_group_render_pass_begin_info.deviceRenderAreaCount = 1;
-    device_group_render_pass_begin_info.pDeviceRenderAreas = &renderArea;
+    device_group_render_pass_begin_info.pDeviceRenderAreas = &render_area;
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -5823,27 +5828,27 @@ TEST_F(NegativeDynamicRendering, DeviceGroupRenderArea) {
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
-    renderArea = {{0, -1}, {64, 64}};
+    render_area = {{0, -1}, {64, 64}};
     m_errorMonitor->SetDesiredError("VUID-VkDeviceGroupRenderPassBeginInfo-offset-06167");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
-    renderArea = {{0, 0}, {0, 64}};
+    render_area = {{0, 0}, {0, 64}};
     m_errorMonitor->SetDesiredError("VUID-VkDeviceGroupRenderPassBeginInfo-extent-08998");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
-    renderArea = {{0, 0}, {64, 0}};
+    render_area = {{0, 0}, {64, 0}};
     m_errorMonitor->SetDesiredError("VUID-VkDeviceGroupRenderPassBeginInfo-extent-08999");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
-    renderArea = {{0, 0}, {m_device->Physical().limits_.maxFramebufferWidth + 1, 64}};
+    render_area = {{0, 0}, {m_device->Physical().limits_.maxFramebufferWidth + 1, 64}};
     m_errorMonitor->SetDesiredError("VUID-VkDeviceGroupRenderPassBeginInfo-offset-06168");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
-    renderArea = {{0, 0}, {64, m_device->Physical().limits_.maxFramebufferWidth + 1}};
+    render_area = {{0, 0}, {64, m_device->Physical().limits_.maxFramebufferWidth + 1}};
     m_errorMonitor->SetDesiredError("VUID-VkDeviceGroupRenderPassBeginInfo-offset-06169");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
@@ -5890,9 +5895,9 @@ TEST_F(NegativeDynamicRendering, EndRenderingWithIncorrectlyStartedRenderpassIns
     ASSERT_TRUE(rp.initialized());
 
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    vkt::ImageView imageView = image.CreateView();
+    vkt::ImageView image_view = image.CreateView();
 
-    vkt::Framebuffer fb(*m_device, rp, 1, &imageView.handle());
+    vkt::Framebuffer fb(*m_device, rp, 1, &image_view.handle());
 
     m_command_buffer.Begin();
 
@@ -5934,11 +5939,11 @@ TEST_F(NegativeDynamicRendering, EndRenderpassWithBeginRenderingRenderpassInstan
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    vkt::ImageView imageView = image.CreateView();
+    vkt::ImageView image_view = image.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    color_attachment.imageView = imageView;
+    color_attachment.imageView = image_view;
 
     VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.colorAttachmentCount = 1;
@@ -5953,14 +5958,14 @@ TEST_F(NegativeDynamicRendering, EndRenderpassWithBeginRenderingRenderpassInstan
     m_command_buffer.EndRenderPass();
     m_errorMonitor->VerifyFound();
 
-    VkSubpassEndInfo subpassEndInfo = vku::InitStructHelper();
+    VkSubpassEndInfo subpass_end_info = vku::InitStructHelper();
 
     vkt::CommandBuffer primary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     primary.Begin();
     primary.BeginRendering(begin_rendering_info);
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndRenderPass2-None-06171");
-    vk::CmdEndRenderPass2KHR(primary.handle(), &subpassEndInfo);
+    vk::CmdEndRenderPass2KHR(primary.handle(), &subpass_end_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -6102,7 +6107,7 @@ TEST_F(NegativeDynamicRendering, CreateGraphicsPipeline) {
     TEST_DESCRIPTION("Test for a creating a pipeline with VK_KHR_dynamic_rendering enabled");
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
-    const char *fsSource = R"glsl(
+    const char *fs_source = R"glsl(
         #version 450
         layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;
         layout(location=0) out vec4 color;
@@ -6110,7 +6115,7 @@ TEST_F(NegativeDynamicRendering, CreateGraphicsPipeline) {
            color = subpassLoad(x);
         }
     )glsl";
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     const vkt::DescriptorSetLayout dsl(*m_device,
                                        {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
@@ -6133,7 +6138,7 @@ TEST_F(NegativeDynamicRendering, CreateGraphicsPipelineNoInfo) {
     TEST_DESCRIPTION("Test for a creating a pipeline with VK_KHR_dynamic_rendering enabled but no rendering info struct.");
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
-    const char *fsSource = R"glsl(
+    const char *fs_source = R"glsl(
         #version 450
         layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;
         layout(location=0) out vec4 color;
@@ -6141,7 +6146,7 @@ TEST_F(NegativeDynamicRendering, CreateGraphicsPipelineNoInfo) {
            color = subpassLoad(x);
         }
     )glsl";
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     const vkt::DescriptorSetLayout dsl(*m_device,
                                        {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
