@@ -162,6 +162,8 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkP
         const Location flag_loc = pipeline->GetCreateFlagsLoc(create_info_loc);
         skip |= ValidatePipelineCacheControlFlags(pipeline->create_flags, flag_loc,
                                                   "VUID-VkRayTracingPipelineCreateInfoNV-pipelineCreationCacheControl-02905");
+        skip |= ValidatePipeline64BitIndexingFlags(pipeline->create_flags, flag_loc,
+                                                   "VUID-VkRayTracingPipelineCreateInfoNV-flags-11798");
 
         if (create_info.maxRecursionDepth > phys_dev_ext_props.ray_tracing_props_nv.maxRecursionDepth) {
             skip |= LogError("VUID-VkRayTracingPipelineCreateInfoNV-maxRecursionDepth-03457", device,
@@ -233,6 +235,8 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
         const Location flags_loc = pipeline->GetCreateFlagsLoc(create_info_loc);
         skip |= ValidatePipelineCacheControlFlags(pipeline->create_flags, flags_loc,
                                                   "VUID-VkRayTracingPipelineCreateInfoKHR-pipelineCreationCacheControl-02905");
+        skip |= ValidatePipeline64BitIndexingFlags(pipeline->create_flags, flags_loc,
+                                                   "VUID-VkRayTracingPipelineCreateInfoKHR-flags-11798");
 
         if (create_info.maxPipelineRayRecursionDepth > phys_dev_ext_props.ray_tracing_props_khr.maxRayRecursionDepth) {
             skip |=

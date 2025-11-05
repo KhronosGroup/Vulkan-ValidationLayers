@@ -49,6 +49,8 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
                                                   "VUID-VkComputePipelineCreateInfo-pipelineCreationCacheControl-02875");
         skip |= ValidatePipelineIndirectBindableFlags(pipeline->create_flags, flags_loc,
                                                       "VUID-VkComputePipelineCreateInfo-flags-09007");
+        skip |=
+            ValidatePipeline64BitIndexingFlags(pipeline->create_flags, flags_loc, "VUID-VkComputePipelineCreateInfo-flags-11798");
 
         if (const auto *pipeline_robustness_info =
                 vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfo>(pCreateInfos[i].pNext)) {

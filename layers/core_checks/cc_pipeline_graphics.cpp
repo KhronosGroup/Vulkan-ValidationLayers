@@ -161,6 +161,7 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const v
     skip |= ValidatePipelineCacheControlFlags(pipeline.create_flags, flags_loc,
                                               "VUID-VkGraphicsPipelineCreateInfo-pipelineCreationCacheControl-02878");
     skip |= ValidatePipelineProtectedAccessFlags(pipeline.create_flags, flags_loc);
+    skip |= ValidatePipeline64BitIndexingFlags(pipeline.create_flags, flags_loc, "VUID-VkGraphicsPipelineCreateInfo-flags-11798");
 
     const void *pipeline_pnext = pipeline.GetCreateInfoPNext();
     if (const auto *discard_rectangle_state =

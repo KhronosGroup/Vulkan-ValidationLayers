@@ -89,6 +89,19 @@ bool CoreChecks::ValidatePipelineProtectedAccessFlags(VkPipelineCreateFlags2 fla
     return skip;
 }
 
+bool CoreChecks::ValidatePipeline64BitIndexingFlags(VkPipelineCreateFlags2 flags, const Location &flags_loc,
+                                                    const char *vuid) const {
+    bool skip = false;
+    if (enabled_features.shader64BitIndexing == VK_FALSE) {
+        const VkPipelineCreateFlags2 invalid_flags = VK_PIPELINE_CREATE_2_64_BIT_INDEXING_BIT_EXT;
+        if ((flags & invalid_flags) != 0) {
+            skip |= LogError(vuid, device, flags_loc, "is %s but shader64BitIndexing feature was not enabled.",
+                             string_VkPipelineCreateFlags2(flags).c_str());
+        }
+    }
+    return skip;
+}
+
 // This can be chained in the vkCreate*Pipelines() function or the VkPipelineShaderStageCreateInfo
 bool CoreChecks::ValidatePipelineRobustnessCreateInfo(const vvl::Pipeline &pipeline,
                                                       const VkPipelineRobustnessCreateInfo &pipeline_robustness_info,

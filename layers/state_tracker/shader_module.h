@@ -167,6 +167,8 @@ struct ExecutionModeSet {
         geometry_input_line_adjacency_bit = 1ull << 40,
         geometry_input_triangle_bit = 1ull << 41,
         geometry_input_triangle_adjacency_bit = 1ull << 42,
+
+        shader_64bit_indexing = 1ull << 43,
     };
 
     // bits to know if things have been set or not by a Decoration
@@ -663,6 +665,7 @@ struct Module {
         std::vector<const Instruction *> cooperative_matrix_inst;
         std::vector<const Instruction *> cooperative_vector_inst;
         std::vector<const Instruction *> emit_mesh_tasks_inst;
+        std::vector<const Instruction *> array_length_inst;
 
         std::vector<spv::Capability> capability_list;
         // Code on the hot path can cache capabilities for fast access.
