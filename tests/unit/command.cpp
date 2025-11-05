@@ -4165,13 +4165,10 @@ TEST_F(NegativeCommand, ResolveImageFormat) {
     AddRequiredFeature(vkt::Feature::maintenance10);
     RETURN_IF_SKIP(Init());
 
-    if (FormatFeaturesAreSupported(Gpu(), VK_FORMAT_B8G8R8A8_UINT, VK_IMAGE_TILING_OPTIMAL,
-                                   VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
-        GTEST_SKIP() << "Need a format that does not support VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | "
-                        "VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT";
+    if (!IsPlatformMockICD()) {
+        GTEST_SKIP() << "Too hard to find unsupported format that works on real driver.";
     }
 
-    // Create two images of sample count 4 and try to Resolve between them
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_B8G8R8A8_UINT;
@@ -4180,24 +4177,23 @@ TEST_F(NegativeCommand, ResolveImageFormat) {
     image_ci.arrayLayers = 1;
     image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    // Note: Some implementations expect color attachment usage for any
-    // multisample surface
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     image_ci.flags = 0;
 
-    vkt::Image srcImage(*m_device, image_ci, vkt::set_layout);
+    vkt::Image src_image(*m_device, image_ci, vkt::set_layout);
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    vkt::Image dstImage(*m_device, image_ci, vkt::set_layout);
+    vkt::Image dst_image(*m_device, image_ci, vkt::set_layout);
 
     m_command_buffer.Begin();
-    VkImageResolve resolveRegion;
-    resolveRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    resolveRegion.srcOffset = {0, 0, 0};
-    resolveRegion.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    resolveRegion.dstOffset = {0, 0, 0};
-    resolveRegion.extent = {1, 1, 1};
+    VkImageResolve resolve_region;
+    resolve_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    resolve_region.srcOffset = {0, 0, 0};
+    resolve_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    resolve_region.dstOffset = {0, 0, 0};
+    resolve_region.extent = {1, 1, 1};
     m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-maintenance10-11799");
-    vk::CmdResolveImage(m_command_buffer, srcImage, VK_IMAGE_LAYOUT_GENERAL, dstImage, VK_IMAGE_LAYOUT_GENERAL, 1, &resolveRegion);
+    vk::CmdResolveImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_GENERAL, dst_image, VK_IMAGE_LAYOUT_GENERAL, 1,
+                        &resolve_region);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -4391,11 +4387,6 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageAspectMask) {
     AddRequiredFeature(vkt::Feature::maintenance10);
     RETURN_IF_SKIP(Init());
 
-    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_D16_UNORM, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
-        GTEST_SKIP() << "Required formats/features not supported";
-    }
-
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.format = VK_FORMAT_D16_UNORM;
     image_ci.extent = {32, 1, 1};
@@ -4406,6 +4397,9 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageAspectMask) {
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     image_ci.flags = 0;
     image_ci.imageType = VK_IMAGE_TYPE_2D;
+    if (!IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Multisample depth images not supported";
+    }
 
     vkt::Image src_depth_image(*m_device, image_ci, vkt::set_layout);
 
@@ -4450,11 +4444,6 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageIllegalAspectMaskValues) {
     AddRequiredFeature(vkt::Feature::maintenance10);
     RETURN_IF_SKIP(Init());
 
-    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_D16_UNORM, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
-        GTEST_SKIP() << "Required formats/features not supported";
-    }
-
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.format = VK_FORMAT_D16_UNORM;
     image_ci.extent = {32, 1, 1};
@@ -4465,6 +4454,9 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageIllegalAspectMaskValues) {
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     image_ci.flags = 0;
     image_ci.imageType = VK_IMAGE_TYPE_2D;
+    if (!IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Multisample depth images not supported";
+    }
 
     vkt::Image src_depth_image(*m_device, image_ci, vkt::set_layout);
 
@@ -4507,11 +4499,6 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageSrcAndDstAspectMasksDifferent) {
     AddRequiredFeature(vkt::Feature::maintenance10);
     RETURN_IF_SKIP(Init());
 
-    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_D16_UNORM, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
-        GTEST_SKIP() << "Required formats/features not supported";
-    }
-
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.format = VK_FORMAT_D16_UNORM;
     image_ci.extent = {32, 1, 1};
@@ -4522,7 +4509,9 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageSrcAndDstAspectMasksDifferent) {
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     image_ci.flags = 0;
     image_ci.imageType = VK_IMAGE_TYPE_2D;
-
+    if (!IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Multisample depth images not supported";
+    }
     vkt::Image src_depth_image(*m_device, image_ci, vkt::set_layout);
 
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -4563,11 +4552,6 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageResolveModeNone) {
     AddRequiredFeature(vkt::Feature::maintenance10);
     RETURN_IF_SKIP(Init());
 
-    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_D16_UNORM, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
-        GTEST_SKIP() << "Required formats/features not supported";
-    }
-
     VkPhysicalDeviceDepthStencilResolveProperties depth_stencil_resolve_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(depth_stencil_resolve_props);
     const bool has_depth_resolve_mode_sample_zero =
@@ -4588,6 +4572,9 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageResolveModeNone) {
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     image_ci.flags = 0;
     image_ci.imageType = VK_IMAGE_TYPE_2D;
+    if (!IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Multisample depth images not supported";
+    }
 
     vkt::Image src_depth_image(*m_device, image_ci, vkt::set_layout);
 
@@ -4634,11 +4621,6 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageResolveMode) {
     AddRequiredFeature(vkt::Feature::maintenance10);
     RETURN_IF_SKIP(Init());
 
-    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_D16_UNORM, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
-        GTEST_SKIP() << "Required formats/features not supported";
-    }
-
     VkPhysicalDeviceDepthStencilResolveProperties depth_stencil_resolve_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(depth_stencil_resolve_props);
     const bool has_depth_resolve_mode_sample_zero =
@@ -4659,6 +4641,9 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageResolveMode) {
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     image_ci.flags = 0;
     image_ci.imageType = VK_IMAGE_TYPE_2D;
+    if (!IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Multisample depth images not supported";
+    }
 
     vkt::Image src_depth_image(*m_device, image_ci, vkt::set_layout);
 
@@ -4705,12 +4690,6 @@ TEST_F(NegativeCommand, ResolveImage2StencilImageResolveMode) {
     AddRequiredFeature(vkt::Feature::maintenance10);
     RETURN_IF_SKIP(Init());
 
-    const VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
-    if (!FormatFeaturesAreSupported(Gpu(), ds_format, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
-        GTEST_SKIP() << "Required formats/features not supported";
-    }
-
     VkPhysicalDeviceDepthStencilResolveProperties depth_stencil_resolve_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(depth_stencil_resolve_props);
     const bool has_stencil_resolve_mode_sample_average =
@@ -4722,7 +4701,8 @@ TEST_F(NegativeCommand, ResolveImage2StencilImageResolveMode) {
         (depth_stencil_resolve_props.supportedDepthResolveModes & VK_RESOLVE_MODE_AVERAGE_BIT) != 0;
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
-    image_ci.format = ds_format;
+    image_ci.format = FindSupportedDepthStencilFormat(Gpu());
+    ;
     image_ci.extent = {32, 1, 1};
     image_ci.mipLevels = 1;
     image_ci.arrayLayers = 1;
@@ -4731,6 +4711,9 @@ TEST_F(NegativeCommand, ResolveImage2StencilImageResolveMode) {
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     image_ci.flags = 0;
     image_ci.imageType = VK_IMAGE_TYPE_2D;
+    if (!IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Multisample depth/stencil images not supported";
+    }
 
     vkt::Image src_depth_image(*m_device, image_ci, vkt::set_layout);
 
@@ -4780,12 +4763,6 @@ TEST_F(NegativeCommand, ResolveImage2DepthStencilImageResolveMode) {
     AddRequiredFeature(vkt::Feature::maintenance10);
     RETURN_IF_SKIP(Init());
 
-    const VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
-    if (!FormatFeaturesAreSupported(Gpu(), ds_format, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
-        GTEST_SKIP() << "Required formats/features not supported";
-    }
-
     VkPhysicalDeviceDepthStencilResolveProperties depth_stencil_resolve_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(depth_stencil_resolve_props);
     const bool has_stencil_resolve_mode_sample_average =
@@ -4797,7 +4774,8 @@ TEST_F(NegativeCommand, ResolveImage2DepthStencilImageResolveMode) {
         (depth_stencil_resolve_props.supportedDepthResolveModes & VK_RESOLVE_MODE_AVERAGE_BIT) != 0;
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
-    image_ci.format = ds_format;
+    image_ci.format = FindSupportedDepthStencilFormat(Gpu());
+    ;
     image_ci.extent = {32, 1, 1};
     image_ci.mipLevels = 1;
     image_ci.arrayLayers = 1;
@@ -4806,6 +4784,9 @@ TEST_F(NegativeCommand, ResolveImage2DepthStencilImageResolveMode) {
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     image_ci.flags = 0;
     image_ci.imageType = VK_IMAGE_TYPE_2D;
+    if (!IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Multisample depth/stencil images not supported";
+    }
 
     vkt::Image src_depth_image(*m_device, image_ci, vkt::set_layout);
 
@@ -4858,11 +4839,6 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageNoMaintenance10) {
     AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
     RETURN_IF_SKIP(Init());
 
-    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_D16_UNORM, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
-        GTEST_SKIP() << "Required formats/features not supported";
-    }
-
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.format = VK_FORMAT_D16_UNORM;
     image_ci.extent = {32, 1, 1};
@@ -4873,6 +4849,9 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageNoMaintenance10) {
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_ci.flags = 0;
     image_ci.imageType = VK_IMAGE_TYPE_2D;
+    if (!IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Multisample depth images not supported";
+    }
 
     vkt::Image src_depth_image(*m_device, image_ci, vkt::set_layout);
 
@@ -4917,10 +4896,6 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageResolveImageModeInfoBothSkipAndEn
 
     VkPhysicalDeviceMaintenance10PropertiesKHR maintenance_10_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(maintenance_10_props);
-    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_D16_UNORM, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
-        GTEST_SKIP() << "Required formats/features not supported";
-    }
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.format = VK_FORMAT_D16_UNORM;
@@ -4932,6 +4907,9 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageResolveImageModeInfoBothSkipAndEn
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     image_ci.flags = 0;
     image_ci.imageType = VK_IMAGE_TYPE_2D;
+    if (!IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Multisample depth images not supported";
+    }
 
     vkt::Image src_depth_image(*m_device, image_ci, vkt::set_layout);
 
@@ -4978,10 +4956,6 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageResolveImageModeInvalidMode) {
 
     VkPhysicalDeviceMaintenance10PropertiesKHR maintenance_10_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(maintenance_10_props);
-    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_D16_UNORM, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
-        GTEST_SKIP() << "Required formats/features not supported";
-    }
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.format = VK_FORMAT_D16_UNORM;
@@ -4993,6 +4967,9 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageResolveImageModeInvalidMode) {
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     image_ci.flags = 0;
     image_ci.imageType = VK_IMAGE_TYPE_2D;
+    if (!IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Multisample depth images not supported";
+    }
 
     vkt::Image src_depth_image(*m_device, image_ci, vkt::set_layout);
 
