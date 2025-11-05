@@ -765,6 +765,7 @@ class Device : public vvl::base::Device {
     bool manual_PreCallValidateCmdSetDepthClampRangeEXT(VkCommandBuffer commandBuffer, VkDepthClampModeEXT depthClampMode,
                                                         const VkDepthClampRangeEXT *pDepthClampRange, const Context &context) const;
 
+    bool ValidateCreateShadersFlags(VkShaderCreateFlagsEXT flags, VkShaderStageFlagBits stage, const Location &flag_loc) const;
     bool manual_PreCallValidateCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
                                                 const VkShaderCreateInfoEXT *pCreateInfos, const VkAllocationCallbacks *pAllocator,
                                                 VkShaderEXT *pShaders, const Context &context) const;

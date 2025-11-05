@@ -16,15 +16,13 @@ class PositiveShader64BitIndexing : public VkLayerTest {};
 
 TEST_F(PositiveShader64BitIndexing, PragmaEnableLength64) {
     TEST_DESCRIPTION("Validate length64 supported when enabled by shader execution mode");
-
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::shader64BitIndexing);
     AddRequiredFeature(vkt::Feature::shaderInt64);
     AddRequiredExtensions(VK_EXT_SHADER_64BIT_INDEXING_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    std::stringstream cs_source;
-    cs_source << R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         #extension GL_EXT_shader_64bit_indexing : enable
         #pragma shader_64bit_indexing
@@ -33,22 +31,20 @@ TEST_F(PositiveShader64BitIndexing, PragmaEnableLength64) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, cs_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
     pipe.CreateComputePipeline();
 }
 
 TEST_F(PositiveShader64BitIndexing, PipelineEnableLength64) {
     TEST_DESCRIPTION("Validate length64 supported when enabled by pipeline create flag");
-
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::shader64BitIndexing);
     AddRequiredFeature(vkt::Feature::shaderInt64);
     AddRequiredExtensions(VK_EXT_SHADER_64BIT_INDEXING_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    std::stringstream cs_source;
-    cs_source << R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         #extension GL_EXT_shader_64bit_indexing : enable
         layout(set = 0, binding = 0) readonly buffer B { float x[]; } b;
@@ -59,14 +55,13 @@ TEST_F(PositiveShader64BitIndexing, PipelineEnableLength64) {
     pipe_flags2.flags = VK_PIPELINE_CREATE_2_64_BIT_INDEXING_BIT_EXT;
 
     CreateComputePipelineHelper pipe(*this, &pipe_flags2);
-    pipe.cs_ = VkShaderObj(this, cs_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
     pipe.CreateComputePipeline();
 }
 
 TEST_F(PositiveShader64BitIndexing, ShaderEnableLength64) {
     TEST_DESCRIPTION("Validate length64 supported when enabled by shader create flag");
-
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::shader64BitIndexing);
     AddRequiredFeature(vkt::Feature::shaderInt64);
@@ -77,15 +72,14 @@ TEST_F(PositiveShader64BitIndexing, ShaderEnableLength64) {
     AddRequiredExtensions(VK_EXT_SHADER_64BIT_INDEXING_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    std::stringstream cs_source;
-    cs_source << R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         #extension GL_EXT_shader_64bit_indexing : enable
         layout(set = 0, binding = 0) readonly buffer B { float x[]; } b;
         void main(){ b.x.length64(); }
     )glsl";
 
-    const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source.str().c_str());
+    const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source);
 
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
@@ -94,13 +88,11 @@ TEST_F(PositiveShader64BitIndexing, ShaderEnableLength64) {
 
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &descriptor_set.layout_.handle());
     create_info.flags = VK_SHADER_CREATE_64_BIT_INDEXING_BIT_EXT;
-
     const vkt::Shader shader(*m_device, create_info);
 }
 
 TEST_F(PositiveShader64BitIndexing, CoopVecMul) {
     TEST_DESCRIPTION("Validate coopvec matmul 64-bit offset supported when enabled by pipeline create flag");
-
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::shader64BitIndexing);
     AddRequiredFeature(vkt::Feature::shaderInt64);
@@ -111,8 +103,7 @@ TEST_F(PositiveShader64BitIndexing, CoopVecMul) {
     AddRequiredExtensions(VK_NV_COOPERATIVE_VECTOR_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    std::stringstream cs_source;
-    cs_source << R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         #extension GL_NV_cooperative_vector : enable
         #extension GL_EXT_shader_explicit_arithmetic_types : enable
@@ -130,14 +121,13 @@ TEST_F(PositiveShader64BitIndexing, CoopVecMul) {
     pipe_flags2.flags = VK_PIPELINE_CREATE_2_64_BIT_INDEXING_BIT_EXT;
 
     CreateComputePipelineHelper pipe(*this, &pipe_flags2);
-    pipe.cs_ = VkShaderObj(this, cs_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
     pipe.CreateComputePipeline();
 }
 
 TEST_F(PositiveShader64BitIndexing, CoopVecLoad) {
     TEST_DESCRIPTION("Validate coopvec load 64-bit offset supported");
-
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::shader64BitIndexing);
     AddRequiredFeature(vkt::Feature::shaderInt64);
@@ -148,8 +138,7 @@ TEST_F(PositiveShader64BitIndexing, CoopVecLoad) {
     AddRequiredExtensions(VK_NV_COOPERATIVE_VECTOR_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    std::stringstream cs_source;
-    cs_source << R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         #extension GL_NV_cooperative_vector : enable
         #extension GL_EXT_shader_explicit_arithmetic_types : enable
@@ -166,7 +155,7 @@ TEST_F(PositiveShader64BitIndexing, CoopVecLoad) {
     pipe_flags2.flags = VK_PIPELINE_CREATE_2_64_BIT_INDEXING_BIT_EXT;
 
     CreateComputePipelineHelper pipe(*this, &pipe_flags2);
-    pipe.cs_ = VkShaderObj(this, cs_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
     pipe.CreateComputePipeline();
 }

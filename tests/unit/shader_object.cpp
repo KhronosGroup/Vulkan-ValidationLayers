@@ -61,8 +61,10 @@ TEST_F(NegativeShaderObject, LinkedComputeShader) {
 }
 
 TEST_F(NegativeShaderObject, InvalidFlags) {
-    TEST_DESCRIPTION("Create shader with invalid flags.");
-
+    AddRequiredExtensions(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::computeFullSubgroups);
+    AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
@@ -87,11 +89,6 @@ TEST_F(NegativeShaderObject, InvalidFlags) {
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-08486");
     create_info.flags = VK_SHADER_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_EXT;
-    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
-    m_errorMonitor->VerifyFound();
-
-    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-08488");
-    create_info.flags = VK_SHADER_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT;
     vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
@@ -3610,7 +3607,8 @@ TEST_F(NegativeShaderObject, SharedMemoryOverLimit) {
 }
 
 TEST_F(NegativeShaderObject, InvalidRequireFullSubgroupsFlag) {
-    TEST_DESCRIPTION("Create shader with invalid spirv code size.");
+    AddRequiredExtensions(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::computeFullSubgroups);
     RETURN_IF_SKIP(InitBasicShaderObject());
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
     VkShaderCreateInfoEXT create_info =

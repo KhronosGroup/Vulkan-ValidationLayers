@@ -1238,9 +1238,9 @@ bool CoreChecks::ValidateShader64BitIndexing(const spirv::Module &module_state, 
     for (const spirv::Instruction *array_length_inst : module_state.static_data_.array_length_inst) {
         const spirv::Instruction &insn = *array_length_inst;
         if (check(insn.Word(1))) {
-            skip |=
-                LogError("VUID-RuntimeSpirv-OpArrayLength-11807", module_state.handle(), loc,
-                         "SPIR-V (%s) contains 64-bit array length return type", string_VkShaderStageFlagBits(entrypoint.stage));
+            skip |= LogError("VUID-RuntimeSpirv-OpArrayLength-11807", module_state.handle(), loc,
+                             "SPIR-V (%s) contains 64-bit array length return type\n%s\n",
+                             string_VkShaderStageFlagBits(entrypoint.stage), module_state.DescribeInstruction(insn).c_str());
         }
     }
     return skip;
@@ -1889,7 +1889,6 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
 
     // First validate all things that don't require valid SPIR-V
     // this is found when using VK_EXT_shader_module_identifier
-    skip |= ValidateShaderSubgroupSizeControl(stage, stage_state, loc);
     skip |= ValidateSpecializations(stage_state.GetSpecializationInfo(), loc.dot(Field::pSpecializationInfo));
     if (pipeline) {
         skip |= ValidateShaderStageMaxResources(stage, *pipeline, loc);
