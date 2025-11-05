@@ -915,8 +915,6 @@ class CoreChecks : public vvl::DeviceProxy {
                                    const ShaderStageState& stage_state, const Location& loc) const;
     bool ValidateShaderResolveQCOM(const spirv::Module& module_state, VkShaderStageFlagBits stage, const vvl::Pipeline& pipeline,
                                    const Location& loc) const;
-    bool ValidateShaderSubgroupSizeControl(VkShaderStageFlagBits stage, const ShaderStageState& stage_state,
-                                           const Location& loc) const;
     bool ValidateWorkgroupSharedMemory(const spirv::Module& module_state, VkShaderStageFlagBits stage,
                                        uint32_t total_workgroup_shared_memory, const Location& loc) const;
     bool ValidateShaderTileImage(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,

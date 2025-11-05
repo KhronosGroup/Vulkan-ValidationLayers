@@ -142,6 +142,9 @@
                     "shaderFloat8": true,
                     "shaderFloat8CooperativeMatrix": true
                 },
+                "VkPhysicalDeviceShader64BitIndexingFeaturesEXT": {
+                    "shader64BitIndexing": true
+                },
                 "VkPhysicalDeviceShaderFmaFeaturesKHR": {
                     "shaderFmaFloat16": true,
                     "shaderFmaFloat32": true,
@@ -2385,6 +2388,7 @@
                 "VK_EXT_sampler_filter_minmax": 1,
                 "VK_EXT_scalar_block_layout": 1,
                 "VK_EXT_separate_stencil_usage": 1,
+                "VK_EXT_shader_64bit_indexing": 1,
                 "VK_EXT_shader_atomic_float": 1,
                 "VK_EXT_shader_atomic_float2": 1,
                 "VK_EXT_shader_demote_to_helper_invocation": 1,

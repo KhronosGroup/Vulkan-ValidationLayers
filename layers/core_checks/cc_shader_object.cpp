@@ -112,25 +112,6 @@ bool CoreChecks::ValidateCreateShadersLinking(uint32_t createInfoCount, const Vk
             }
         }
 
-        if ((create_info.flags & VK_SHADER_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_EXT) != 0 &&
-            enabled_features.attachmentFragmentShadingRate == VK_FALSE) {
-            skip |= LogError("VUID-VkShaderCreateInfoEXT-flags-08487", device, create_info_loc.dot(Field::flags),
-                             "is %s, but the attachmentFragmentShadingRate feature was not enabled.",
-                             string_VkShaderCreateFlagsEXT(create_info.flags).c_str());
-        }
-        if ((create_info.flags & VK_SHADER_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT) != 0 &&
-            enabled_features.fragmentDensityMap == VK_FALSE) {
-            skip |= LogError("VUID-VkShaderCreateInfoEXT-flags-08489", device, create_info_loc.dot(Field::flags),
-                             "is %s, but the fragmentDensityMap feature was not enabled.",
-                             string_VkShaderCreateFlagsEXT(create_info.flags).c_str());
-        }
-        if ((create_info.flags & VK_SHADER_CREATE_64_BIT_INDEXING_BIT_EXT) != 0 &&
-            enabled_features.shader64BitIndexing == VK_FALSE) {
-            skip |= LogError("VUID-VkShaderCreateInfoEXT-flags-11758", device, create_info_loc.dot(Field::flags),
-                             "is %s, but the shader64BitIndexing feature was not enabled.",
-                             string_VkShaderCreateFlagsEXT(create_info.flags).c_str());
-        }
-
         if ((create_info.flags & VK_SHADER_CREATE_LINK_STAGE_BIT_EXT) != 0) {
             const auto nextStage = FindNextStage(createInfoCount, pCreateInfos, create_info.stage);
             if (nextStage != 0 && create_info.nextStage != nextStage) {
@@ -218,25 +199,6 @@ bool CoreChecks::ValidateCreateShadersLinking(uint32_t createInfoCount, const Vk
             skip |= LogError("VUID-VkShaderCreateInfoEXT-nextStage-08436", device, create_info_loc.dot(Field::stage),
                              "is VK_SHADER_STAGE_MESH_BIT_EXT, but nextStage is %s.",
                              string_VkShaderStageFlags(create_info.nextStage).c_str());
-        }
-
-        if ((create_info.flags & VK_SHADER_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT) != 0 &&
-            enabled_features.subgroupSizeControl == VK_FALSE) {
-            skip |= LogError(
-                "VUID-VkShaderCreateInfoEXT-flags-09404", device, create_info_loc.dot(Field::flags),
-                "contains VK_SHADER_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT, but subgroupSizeControl feature is not enabled.");
-        }
-        if ((create_info.flags & VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT) != 0 &&
-            enabled_features.computeFullSubgroups == VK_FALSE) {
-            skip |= LogError(
-                "VUID-VkShaderCreateInfoEXT-flags-09405", device, create_info_loc.dot(Field::flags),
-                "contains VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT, but computeFullSubgroups feature is not enabled.");
-        }
-        if ((create_info.flags & VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT) != 0 &&
-            enabled_features.deviceGeneratedCommands == VK_FALSE) {
-            skip |= LogError(
-                " VUID-VkShaderCreateInfoEXT-flags-11005", device, create_info_loc.dot(Field::flags),
-                "contains VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT, but deviceGeneratedCommands feature is not enabled.");
         }
     }
 
