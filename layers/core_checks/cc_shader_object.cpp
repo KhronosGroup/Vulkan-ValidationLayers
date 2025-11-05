@@ -124,6 +124,12 @@ bool CoreChecks::ValidateCreateShadersLinking(uint32_t createInfoCount, const Vk
                              "is %s, but the fragmentDensityMap feature was not enabled.",
                              string_VkShaderCreateFlagsEXT(create_info.flags).c_str());
         }
+        if ((create_info.flags & VK_SHADER_CREATE_64_BIT_INDEXING_BIT_EXT) != 0 &&
+            enabled_features.shader64BitIndexing == VK_FALSE) {
+            skip |= LogError("VUID-VkShaderCreateInfoEXT-flags-11758", device, create_info_loc.dot(Field::flags),
+                             "is %s, but the shader64BitIndexing feature was not enabled.",
+                             string_VkShaderCreateFlagsEXT(create_info.flags).c_str());
+        }
 
         if ((create_info.flags & VK_SHADER_CREATE_LINK_STAGE_BIT_EXT) != 0) {
             const auto nextStage = FindNextStage(createInfoCount, pCreateInfos, create_info.stage);

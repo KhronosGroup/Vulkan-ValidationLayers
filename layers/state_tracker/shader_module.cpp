@@ -288,6 +288,9 @@ void ExecutionModeSet::Add(const Instruction& insn) {
         case spv::ExecutionModeDerivativeGroupQuadsKHR:
             flags |= derivative_group_quads;
             break;
+        case spv::ExecutionModeShader64BitIndexingEXT:
+            flags |= shader_64bit_indexing;
+            break;
         default:
             break;
     }
@@ -1186,6 +1189,11 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
                 break;
             case spv::OpFunctionCall:
                 func_call_instructions.push_back(&insn);
+                break;
+
+            case spv::OpArrayLength:
+            case spv::OpUntypedArrayLengthKHR:
+                array_length_inst.push_back(&insn);
                 break;
 
             default:
