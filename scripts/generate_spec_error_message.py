@@ -167,7 +167,8 @@ oversized_vus = {
     'VUID-RuntimeSpirv-OpTypeCooperativeMatrixMulAddNV-10059' : 'For OpTypeCooperativeMatrixMulAddNV, the operands must match a supported VkCooperativeMatrixPropertiesNV',
     'VUID-RuntimeSpirv-cooperativeMatrixFlexibleDimensions-10165' : 'For OpTypeCooperativeMatrixKHR, if the cooperativeMatrixFlexibleDimensions feature is enabled, the component type, scope, number of rows, and number of columns must match either one of the matrices in one of the supported VkCooperativeMatrixPropertiesKHR or VkCooperativeMatrixFlexibleDimensionsPropertiesNV',
     'VUID-RuntimeSpirv-cooperativeMatrixFlexibleDimensions-10166' : 'For OpCooperativeMatrixMulAddKHR, if the cooperativeMatrixFlexibleDimensions feature is enabled, the operands must match either one of the supported VkCooperativeMatrixPropertiesKHR or VkCooperativeMatrixFlexibleDimensionsPropertiesNV',
-    'VUID-RuntimeSpirv-pNext-09923' : 'The data graph pipeline must satisfies all constraints',
+    'VUID-RuntimeSpirv-pNext-09921' : 'The pConstants in the data graph pipeline must satisfy all constraints',
+    'VUID-RuntimeSpirv-pNext-09923' : 'The pResourceInfos in the data graph pipeline must satisfy all constraints',
 }
 
 def GenerateSpecErrorMessage(api : str, valid_usage_json : str, out_file : str):
