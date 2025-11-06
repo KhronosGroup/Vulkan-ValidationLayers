@@ -2226,11 +2226,11 @@
                     "maxTensorElements": 65536,
                     "maxPerDimensionTensorElements": 65536,
                     "maxTensorStride": 65536,
-                    "maxTensorSize": 524288,
-                    "maxTensorShaderAccessArrayLength": 16,
-                    "maxTensorShaderAccessSize": 16,
-                    "maxDescriptorSetStorageTensors": 500000,
-                    "maxPerStageDescriptorSetStorageTensors": 500000,
+                    "maxTensorSize": 65536,
+                    "maxTensorShaderAccessArrayLength": 4,
+                    "maxTensorShaderAccessSize": 4,
+                    "maxDescriptorSetStorageTensors": 16,
+                    "maxPerStageDescriptorSetStorageTensors": 16,
                     "maxDescriptorSetUpdateAfterBindStorageTensors": 500000,
                     "maxPerStageDescriptorUpdateAfterBindStorageTensors": 500000,
                     "shaderStorageTensorArrayNonUniformIndexingNative": true,
@@ -2238,7 +2238,6 @@
                         "VK_SHADER_STAGE_VERTEX_BIT",
                         "VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT",
                         "VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT",
-                        "VK_SHADER_STAGE_GEOMETRY_BIT",
                         "VK_SHADER_STAGE_FRAGMENT_BIT",
                         "VK_SHADER_STAGE_COMPUTE_BIT",
                         "VK_SHADER_STAGE_RAYGEN_BIT_KHR",
@@ -2248,8 +2247,7 @@
                         "VK_SHADER_STAGE_INTERSECTION_BIT_KHR",
                         "VK_SHADER_STAGE_CALLABLE_BIT_KHR",
                         "VK_SHADER_STAGE_TASK_BIT_EXT",
-                        "VK_SHADER_STAGE_MESH_BIT_EXT",
-                        "VK_SHADER_STAGE_SUBPASS_SHADING_BIT_HUAWEI"
+                        "VK_SHADER_STAGE_MESH_BIT_EXT"
                     ]
                 },
                 "VkPhysicalDeviceMaintenance10PropertiesKHR": {

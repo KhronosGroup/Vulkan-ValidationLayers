@@ -1196,6 +1196,14 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
                 array_length_inst.push_back(&insn);
                 break;
 
+            case spv::OpTypeTensorARM:
+            case spv::OpTensorReadARM:
+            case spv::OpTensorWriteARM:
+            case spv::OpTensorQuerySizeARM:
+                if (stateless_data) {
+                    stateless_data->tensor_inst.push_back(&insn);
+                }
+                break;
             default:
                 if (AtomicOperation(opcode)) {
                     if (stateless_data) {

@@ -184,26 +184,6 @@ TEST_F(PositiveDataGraph, ShaderModuleInPNext) {
     }
 }
 
-TEST_F(PositiveDataGraph, DataGraphAndComputeEntrypoints) {
-    TEST_DESCRIPTION("Create datagraph from spirv including Compute entrypoint.");
-    InitBasicDataGraph();
-    RETURN_IF_SKIP(Init());
-
-    // get spirv with 1 DataGraph and 1 Compute entrypoints
-    // NOTE: both OpEntrypoint and OpGraphEntryPointARM are named 'main'
-    const std::string mixed_entrypoints_spirv = vkt::dg::DataGraphPipelineHelper::GetSpirvMultiEntryComputeAndDataGraph();
-
-    // create graph at datagraph entrypoint
-    {
-        vkt::dg::HelperParameters params;
-        params.spirv_source = mixed_entrypoints_spirv.c_str();
-        params.entrypoint = "main";
-        vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
-
-        pipeline.CreateDataGraphPipeline();
-    }
-}
-
 TEST_F(PositiveDataGraph, DataGraphMultipleEntrypoints) {
     TEST_DESCRIPTION("Execute 2 different entrypoints in the datagraph's spirv.");
     InitBasicDataGraph();

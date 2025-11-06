@@ -2252,3 +2252,222 @@ TEST_F(NegativeTensor, DispatchShaderSpirvWrongFormat) {
         m_command_buffer.End();
     }
 }
+
+TEST_F(NegativeTensor, WrongStageInShader) {
+    TEST_DESCRIPTION("Try to create a shader with a tensor in the wrong stage.");
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    AddRequiredFeature(vkt::Feature::shaderTensorAccess);
+    RETURN_IF_SKIP(InitBasicTensor());
+
+    // trivial geometry shader with a dummy OpTypeTensorARM instruction thrown in
+    const char *spirv_string = R"(
+               OpCapability TensorsARM
+               OpCapability Shader
+               OpCapability Geometry
+               OpExtension "SPV_ARM_tensors"
+          %2 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Geometry %main "main" %_
+               OpExecutionMode %main InputPoints
+               OpExecutionMode %main Invocations 1
+               OpExecutionMode %main OutputPoints
+               OpExecutionMode %main OutputVertices 1
+               OpDecorate %gl_PerVertex Block
+               OpMemberDecorate %gl_PerVertex 0 BuiltIn Position
+               OpMemberDecorate %gl_PerVertex 1 BuiltIn PointSize
+               OpMemberDecorate %gl_PerVertex 2 BuiltIn ClipDistance
+               OpMemberDecorate %gl_PerVertex 3 BuiltIn CullDistance
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+     %tensor = OpTypeTensorARM %uint %uint_1
+%_arr_float_uint_1 = OpTypeArray %float %uint_1
+%gl_PerVertex = OpTypeStruct %v4float %float %_arr_float_uint_1 %_arr_float_uint_1
+%_ptr_Output_gl_PerVertex = OpTypePointer Output %gl_PerVertex
+          %_ = OpVariable %_ptr_Output_gl_PerVertex Output
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+    %float_1 = OpConstant %float 1
+  %float_0_5 = OpConstant %float 0.5
+    %float_0 = OpConstant %float 0
+         %20 = OpConstantComposite %v4float %float_1 %float_0_5 %float_0_5 %float_0
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+         %22 = OpAccessChain %_ptr_Output_v4float %_ %int_0
+               OpStore %22 %20
+               OpEmitVertex
+               OpReturn
+               OpFunctionEnd)";
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-shaderTensorSupportedStages-09901");
+    VkShaderObj shader(this, spirv_string, VK_SHADER_STAGE_GEOMETRY_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeTensor, GraphARMInShader) {
+    TEST_DESCRIPTION("Try to create a shader including the GraphARM capability.");
+    AddRequiredFeature(vkt::Feature::shaderTensorAccess);
+    AddRequiredFeature(vkt::Feature::dataGraph);
+    RETURN_IF_SKIP(InitBasicTensor());
+
+    vkt::dg::ModifiableShaderParameters params;
+    params.capabilities = "OpCapability GraphARM";
+    const std::string spirv_string = vkt::dg::DataGraphPipelineHelper::GetSpirvModifiableShader(params);
+
+    CreateComputePipelineHelper pipeline(*this);
+    // the GraphARM capability is caught also by spirv-val, causing 08737
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderModuleCreateInfo-pCode-08737");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-GraphARM-09922");
+    VkShaderObj shader(this, spirv_string.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeTensor, NoRankTensorInShader) {
+    TEST_DESCRIPTION("Try to create a shader including a tensor with no rank.");
+    AddRequiredFeature(vkt::Feature::shaderTensorAccess);
+    RETURN_IF_SKIP(InitBasicTensor());
+
+    vkt::dg::ModifiableShaderParameters params;
+    params.types = "%no_rank = OpTypeTensorARM %int";
+    const std::string spirv_string = vkt::dg::DataGraphPipelineHelper::GetSpirvModifiableShader(params);
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpTypeTensorARM-09907");
+    VkShaderObj shader(this, spirv_string.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeTensor, ShapedTensorInShader) {
+    TEST_DESCRIPTION("Try to create a shader including a tensor with shape.");
+    AddRequiredFeature(vkt::Feature::shaderTensorAccess);
+    RETURN_IF_SKIP(InitBasicTensor());
+
+    vkt::dg::ModifiableShaderParameters params;
+    params.types = R"(%uint_arr_2 = OpTypeArray %uint %uint_2
+%shape_2x2 = OpConstantComposite %uint_arr_2 %uint_2 %uint_2
+%has_shape = OpTypeTensorARM %int %uint_2 %shape_2x2)";
+    const std::string spirv_string = vkt::dg::DataGraphPipelineHelper::GetSpirvModifiableShader(params);
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpTypeTensorARM-09902");
+    VkShaderObj shader(this, spirv_string.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeTensor, TensorReadTooManyElementsInShader) {
+    TEST_DESCRIPTION("Try to read too many bytes from a tensor in a shader.");
+    AddRequiredFeature(vkt::Feature::shaderTensorAccess);
+    RETURN_IF_SKIP(InitBasicTensor());
+
+    // the values work with the mock ICD, but the test could fail on other systems
+    VkPhysicalDeviceTensorPropertiesARM tensor_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(tensor_properties);
+    if (tensor_properties.maxTensorShaderAccessSize > 32) {
+        GTEST_SKIP() << "The test will fail if maxTensorShaderAccessArrayLength > 32; the value on this system is "
+                     << tensor_properties.maxTensorShaderAccessArrayLength;
+    }
+
+    vkt::dg::ModifiableShaderParameters params;
+    params.types = R"(%uint_arr_1 = OpTypeArray %uint %uint_1
+%uint_32 = OpConstant %uint 32
+%int_arr_32 = OpTypeArray %int %uint_32
+%uint_arr_1_0 = OpConstantComposite %uint_arr_1 %uint_0)";
+    params.instructions = "%val = OpTensorReadARM %int_arr_32 %loaded_tens %uint_arr_1_0";
+    const std::string spirv_string = vkt::dg::DataGraphPipelineHelper::GetSpirvModifiableShader(params);
+
+    // given the values in the mock ICD, an array exceeding rule 9903 also exceeds 9904
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maxTensorShaderAccessArrayLength-09903");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maxTensorShaderAccessSize-09904");
+    VkShaderObj shader(this, spirv_string.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeTensor, TensorWriteTooManyElementsInShader) {
+    TEST_DESCRIPTION("Try to write too many bytes into a tensor in a shader.");
+    AddRequiredFeature(vkt::Feature::shaderTensorAccess);
+    RETURN_IF_SKIP(InitBasicTensor());
+
+    // the values work with the mock ICD, but the test could fail on other systems
+    VkPhysicalDeviceTensorPropertiesARM tensor_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(tensor_properties);
+    if (tensor_properties.maxTensorShaderAccessSize > 32) {
+        GTEST_SKIP() << "The test will fail if maxTensorShaderAccessArrayLength > 32; the value on this system is "
+                     << tensor_properties.maxTensorShaderAccessArrayLength;
+    }
+
+    vkt::dg::ModifiableShaderParameters params;
+    params.types = R"(%uint_arr_1 = OpTypeArray %uint %uint_1
+%uint_32 = OpConstant %uint 32
+%int_arr_32 = OpTypeArray %int %uint_32
+%int_0 = OpConstant %int 0
+%int_arr_32_all_0 = OpConstantComposite %int_arr_32
+    %int_0 %int_0 %int_0 %int_0 %int_0 %int_0 %int_0 %int_0
+    %int_0 %int_0 %int_0 %int_0 %int_0 %int_0 %int_0 %int_0
+    %int_0 %int_0 %int_0 %int_0 %int_0 %int_0 %int_0 %int_0
+    %int_0 %int_0 %int_0 %int_0 %int_0 %int_0 %int_0 %int_0
+%uint_arr_1_0 = OpConstantComposite %uint_arr_1 %uint_0)";
+    params.instructions = "OpTensorWriteARM %loaded_tens %uint_arr_1_0 %int_arr_32_all_0";
+    const std::string spirv_string = vkt::dg::DataGraphPipelineHelper::GetSpirvModifiableShader(params);
+
+    // given the values in the mock ICD, an array exceeding rule 9903 also exceeds 9904
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maxTensorShaderAccessArrayLength-09903");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maxTensorShaderAccessSize-09904");
+    VkShaderObj shader(this, spirv_string.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeTensor, TensorReadTooManyBytesInShader) {
+    TEST_DESCRIPTION("Try to read too many elements (but not bytes) from a tensor in a shader.");
+    AddRequiredFeature(vkt::Feature::shaderTensorAccess);
+    RETURN_IF_SKIP(InitBasicTensor());
+
+    // the values in the spirv work with the mock ICD, but the test could fail on other systems
+    VkPhysicalDeviceTensorPropertiesARM tensor_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(tensor_properties);
+    if (tensor_properties.maxTensorShaderAccessSize > 4) {
+        GTEST_SKIP() << "The test will fail if maxTensorShaderAccessSize > 4; the value on this system is "
+                     << tensor_properties.maxTensorShaderAccessSize;
+    }
+
+    vkt::dg::ModifiableShaderParameters params;
+    params.types = R"(%uint_arr_1 = OpTypeArray %uint %uint_1
+%int_arr_2 = OpTypeArray %int %uint_2
+%uint_arr_1_0 = OpConstantComposite %uint_arr_1 %uint_0)";
+    params.instructions = "%val = OpTensorReadARM %int_arr_2 %loaded_tens %uint_arr_1_0";
+    const std::string spirv_string = vkt::dg::DataGraphPipelineHelper::GetSpirvModifiableShader(params);
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maxTensorShaderAccessSize-09904");
+    VkShaderObj shader(this, spirv_string.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeTensor, TensorWriteTooManyBytesInShader) {
+    TEST_DESCRIPTION("Try to write too many elements (but not bytes) into a tensor in a shader.");
+    AddRequiredFeature(vkt::Feature::shaderTensorAccess);
+    RETURN_IF_SKIP(InitBasicTensor());
+
+    // the values in the spirv work with the mock ICD, but the test could fail on other systems
+    VkPhysicalDeviceTensorPropertiesARM tensor_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(tensor_properties);
+    if (tensor_properties.maxTensorShaderAccessSize > 4) {
+        GTEST_SKIP() << "The test will fail if maxTensorShaderAccessSize > 4; the value on this system is "
+                     << tensor_properties.maxTensorShaderAccessSize;
+    }
+
+    vkt::dg::ModifiableShaderParameters params;
+    params.types = R"(%uint_arr_1 = OpTypeArray %uint %uint_1
+%int_arr_2 = OpTypeArray %int %uint_2
+%int_0 = OpConstant %int 0
+%int_arr_2_0_0 = OpConstantComposite %int_arr_2 %int_0 %int_0
+%uint_arr_1_0 = OpConstantComposite %uint_arr_1 %uint_0)";
+    params.instructions = "OpTensorWriteARM %loaded_tens %uint_arr_1_0 %int_arr_2_0_0";
+    const std::string spirv_string = vkt::dg::DataGraphPipelineHelper::GetSpirvModifiableShader(params);
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maxTensorShaderAccessSize-09904");
+    VkShaderObj shader(this, spirv_string.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
+    m_errorMonitor->VerifyFound();
+}

@@ -38,6 +38,12 @@ struct HelperParameters {
     const char *entrypoint = "main";
 };
 
+struct ModifiableShaderParameters {
+    const char *capabilities = "";
+    const char *types = "";
+    const char *instructions = "";
+};
+
 class DataGraphPipelineHelper {
   public:
     std::vector<VkDescriptorSetLayoutBinding> descriptor_set_layout_bindings_;
@@ -61,9 +67,9 @@ class DataGraphPipelineHelper {
     void Destroy();
 
     static std::string GetSpirvBasicDataGraph(const char *inserted_line = "");
-    static std::string GetSpirvMultiEntryComputeAndDataGraph();
     static std::string GetSpirvMultiEntryTwoDataGraph();
-    static std::string GetSpirvBasicShader();
+    static inline std::string GetSpirvBasicShader() { return GetSpirvModifiableShader(); };
+    static std::string GetSpirvModifiableShader(const ModifiableShaderParameters &params = ModifiableShaderParameters());
 
     void InitPipelineResources(const std::vector<vkt::Tensor *> &tensors = {},
                                VkDescriptorType desc_type = VK_DESCRIPTOR_TYPE_TENSOR_ARM,
