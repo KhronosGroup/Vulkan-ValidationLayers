@@ -174,12 +174,12 @@ AccessMap::iterator Split(AccessMap::iterator in, AccessMap &map, const AccessRa
 }
 
 void UpdateRangeValue(AccessMap &map, const AccessRange &range, const AccessState &access_state) {
-    CachedLowerBound pos(map, range.begin);
-    while (range.includes(pos->index)) {
-        if (!pos->valid) {
+    AccessMapLocator pos(map, range.begin);
+    while (range.includes(pos.index)) {
+        if (!pos.inside_lower_bound_range) {
             // Fill in the leading space (or in the case of pos at end the trailing space)
-            const auto start = pos->index;
-            auto it = pos->lower_bound;
+            const auto start = pos.index;
+            auto it = pos.lower_bound;
             const auto limit = (it != map.end()) ? std::min(it->first.begin, range.end) : range.end;
             map.Insert(it, AccessRange(start, limit), access_state);
             // We inserted before pos->lower_bound, so pos->lower_bound isn't invalid, but the associated index *is* and seek
@@ -187,11 +187,11 @@ void UpdateRangeValue(AccessMap &map, const AccessRange &range, const AccessStat
             pos.Seek(limit);
         }
         // Note that after the "fill" operation pos may have become valid so we check again
-        if (pos->valid) {
+        if (pos.inside_lower_bound_range) {
             // "prefer_dest" means don't overwrite existing values, so we'll skip this interval.
             // Point just past the end of this section,  if it's within the given range, it will get filled next iteration
             // ++pos could move us past the end of range (which would exit the loop) so we don't use it.
-            pos.Seek(pos->lower_bound->first.end);
+            pos.Seek(pos.lower_bound->first.end);
         }
     }
 }
@@ -235,17 +235,84 @@ void Consolidate(AccessMap &map) {
     }
 }
 
+template <typename TAccessMap>
+TAccessMapLocator<TAccessMap>::TAccessMapLocator(TAccessMap &map, index_type index) : map_(&map), index(index) {
+    lower_bound = LowerBoundForIndex(index);
+    inside_lower_bound_range = InsideLowerBoundRange();
+}
+
+template <typename TAccessMap>
+TAccessMapLocator<TAccessMap>::TAccessMapLocator(TAccessMap &map, index_type index, const iterator &index_lower_bound)
+    : map_(&map), index(index), lower_bound(index_lower_bound) {
+    assert(LowerBoundForIndex(index) == index_lower_bound);
+    inside_lower_bound_range = InsideLowerBoundRange();
+}
+
+template <typename TAccessMap>
+void TAccessMapLocator<TAccessMap>::Seek(index_type seek_to) {
+    if (TrySeekLocal(seek_to)) {
+        return;
+    }
+    index = seek_to;
+    lower_bound = LowerBoundForIndex(seek_to);  // Expensive part
+    inside_lower_bound_range = InsideLowerBoundRange();
+}
+
+template <typename TAccessMap>
+bool TAccessMapLocator<TAccessMap>::TrySeekLocal(index_type seek_to) {
+    auto is_lower_than = [this](AccessMap::index_type index, const auto &it) { return it == map_->end() || index < it->first.end; };
+
+    // Already here
+    if (index == seek_to) {
+        return true;
+    }
+    // The optimization is only for forward movement
+    if (index < seek_to) {
+        // Check if the current range is still a valid lower bound
+        if (is_lower_than(seek_to, lower_bound)) {
+            assert(lower_bound == LowerBoundForIndex(seek_to));
+            index = seek_to;
+            inside_lower_bound_range = InsideLowerBoundRange();
+            return true;
+        }
+        // Check if the next range is a valid lower bound
+        auto next_it = lower_bound;
+        ++next_it;
+        if (is_lower_than(seek_to, next_it)) {
+            assert(next_it == LowerBoundForIndex(seek_to));
+            index = seek_to;
+            lower_bound = next_it;
+            inside_lower_bound_range = InsideLowerBoundRange();
+            return true;
+        }
+    }
+    return false;  // Need to re-search lower bound
+}
+
+template <typename TAccessMap>
+AccessMap::index_type TAccessMapLocator<TAccessMap>::DistanceToEdge() const {
+    if (lower_bound == map_->end()) {
+        return 0;
+    }
+    const index_type edge = inside_lower_bound_range ? lower_bound->first.end : lower_bound->first.begin;
+    return edge - index;
+}
+
+// Explicit instantiation of const and non-const locators
+template class TAccessMapLocator<AccessMap>;
+template class TAccessMapLocator<const AccessMap>;
+
 void ParallelIterator::operator++() {
     const index_type start = range_.end;         // we computed this the last time we set range
     const index_type delta = range_.distance();  // we computed this the last time we set range
     assert(delta != 0);                          // Trying to increment past end
 
-    pos_A_.offset(delta);
-    pos_B_.offset(delta);
+    pos_A_.Seek(pos_A_.index + delta);
+    pos_B_.Seek(pos_B_.index + delta);
 
     range_ = AccessRange(start, start + ComputeDelta());  // find the next boundary (must be after offset)
-    assert(pos_A_->index == start);
-    assert(pos_B_->index == start);
+    assert(pos_A_.index == start);
+    assert(pos_B_.index == start);
 }
 
 // Seeks to a specific index in both maps reseting range.  Cannot guarantee range.begin is on edge boundary,
@@ -254,37 +321,35 @@ void ParallelIterator::Seek(index_type index) {
     pos_A_.Seek(index);
     pos_B_.Seek(index);
     range_ = AccessRange(index, index + ComputeDelta());
-    assert(pos_A_->index == index);
-    assert(pos_A_->index == index);
+    assert(pos_A_.index == index);
+    assert(pos_B_.index == index);
 }
 
 void ParallelIterator::InvalidateA() {
     const index_type index = range_.begin;
-    pos_A_.Invalidate(index);
+    pos_A_ = AccessMapLocator(map_A_, index);
     range_ = AccessRange(index, index + ComputeDelta());
 }
 
-void ParallelIterator::InvalidateA(const iterator_A &hint) {
+void ParallelIterator::InvalidateA(const iterator &hint) {
     const index_type index = range_.begin;
-    pos_A_.Invalidate(hint, index);
+    pos_A_ = AccessMapLocator(map_A_, index, hint);
     range_ = AccessRange(index, index + ComputeDelta());
 }
 
 ParallelIterator::index_type ParallelIterator::ComputeDelta() {
-    const index_type delta_A = distance_to_edge(pos_A_);
-    const index_type delta_B = distance_to_edge(pos_B_);
-    index_type delta_min;
+    const index_type delta_A = pos_A_.DistanceToEdge();
+    const index_type delta_B = pos_B_.DistanceToEdge();
 
     // If either A or B are at end, there distance is *0*, so shouldn't be considered in the "distance to edge"
     if (delta_A == 0) {  // lower A is at end
-        delta_min = static_cast<index_type>(delta_B);
+        return delta_B;
     } else if (delta_B == 0) {  // lower B is at end
-        delta_min = static_cast<index_type>(delta_A);
+        return delta_A;
     } else {
-        // Neither are at end, use the nearest edge, s.t. over this range A and B are both constant
-        delta_min = std::min(static_cast<index_type>(delta_A), static_cast<index_type>(delta_B));
+        // Use the nearest edge, s.t. over this range A and B are both constant
+        return std::min(delta_A, delta_B);
     }
-    return delta_min;
 }
 
 }  // namespace syncval
