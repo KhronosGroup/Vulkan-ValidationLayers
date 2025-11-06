@@ -7450,7 +7450,7 @@ TEST_F(NegativeDynamicRendering, CountersByRegionARM) {
     TEST_DESCRIPTION("Test arguments initializing performance counters by region are valid.");
 
     AddRequiredExtensions(VK_ARM_PERFORMANCE_COUNTERS_BY_REGION_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
 
     VkPhysicalDevicePerformanceCountersByRegionPropertiesARM pc_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(pc_props);
@@ -7557,7 +7557,7 @@ TEST_F(NegativeDynamicRendering, MultiviewCountersByRegionARM) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_ARM_PERFORMANCE_COUNTERS_BY_REGION_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::multiview);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
 
     vkt::Buffer counter_buffer(*m_device, 16, 0, vkt::device_address);
     VkDeviceAddress counter_address = counter_buffer.Address();
