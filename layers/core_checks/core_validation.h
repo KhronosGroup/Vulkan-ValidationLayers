@@ -2004,6 +2004,11 @@ class CoreChecks : public vvl::DeviceProxy {
     bool PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                             const VkSubpassBeginInfo* pSubpassBeginInfo,
                                             const ErrorObject& error_obj) const override;
+    bool ValidateRenderPassPerformanceCountersByRegionBeginInfo(VkCommandBuffer commandBuffer,
+                                                                const VkRenderPassPerformanceCountersByRegionBeginInfoARM *counters_begin_info,
+                                                                const LogObjectList& objlist, uint32_t subpass_count,
+                                                                uint32_t layer_or_view_count, VkRect2D render_area,
+                                                                const Location& begin_loc) const;
     bool PreCallValidateCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
                                        const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,

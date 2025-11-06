@@ -27,10 +27,12 @@
 #include <vulkan/vulkan_core.h>
 #include "containers/container_utils.h"
 #include "core_checks/cc_state_tracker.h"
+#include "core_checks/cc_buffer_address.h"
 #include "core_validation.h"
 #include "error_message/error_location.h"
 #include "utils/convert_utils.h"
 #include "error_message/error_strings.h"
+#include "state_tracker/buffer_state.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/cmd_buffer_state.h"
@@ -615,6 +617,30 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const
                          "maintenance7 were not enabled.");
     }
 
+    const auto counters_begin_info = vku::FindStructInPNextChain<VkRenderPassPerformanceCountersByRegionBeginInfoARM>(pRenderPassBegin->pNext);
+    if (counters_begin_info) {
+        const LogObjectList objlist(cb_state.Handle(), rp_state->Handle());
+        uint32_t layer_or_view_count = 0;
+        if (rp_state->has_multiview_enabled) {
+            for (uint32_t i = 0; i < rp_state->create_info.subpassCount; ++i) {
+                uint32_t highest_view_bits = MostSignificantBit(rp_state->create_info.pSubpasses[i].viewMask);
+                if (highest_view_bits > layer_or_view_count) {
+                    layer_or_view_count = highest_view_bits;
+                }
+            }
+        } else {
+            if (rp_state->UsesDynamicRendering()) {
+                layer_or_view_count = rp_state->dynamic_rendering_begin_rendering_info.layerCount;
+            } else {
+                layer_or_view_count = fb_state->create_info.layers;
+            }
+        }
+
+        skip |= ValidateRenderPassPerformanceCountersByRegionBeginInfo(commandBuffer, counters_begin_info, objlist,
+                                                                    rp_state->create_info.subpassCount, layer_or_view_count,
+                                                                    pRenderPassBegin->renderArea, rp_begin_loc);
+    }
+
     return skip;
 }
 
@@ -633,6 +659,65 @@ bool CoreChecks::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffe
                                                     const VkSubpassBeginInfo *pSubpassBeginInfo,
                                                     const ErrorObject &error_obj) const {
     return ValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, pSubpassBeginInfo->contents, error_obj);
+}
+
+bool CoreChecks::ValidateRenderPassPerformanceCountersByRegionBeginInfo(VkCommandBuffer commandBuffer, const VkRenderPassPerformanceCountersByRegionBeginInfoARM *counters_begin_info,
+                                                                        const LogObjectList &objlist, uint32_t subpass_count,
+                                                                        uint32_t layer_or_view_count, VkRect2D render_area,
+                                                                        const Location &begin_loc) const {
+    bool skip = false;
+
+    if (counters_begin_info->counterAddressCount != subpass_count * layer_or_view_count) {
+        skip |= LogError("VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-counterAddressCount-11815", objlist,
+                         begin_loc.dot(Struct::VkRenderPassPerformanceCountersByRegionBeginInfoARM, Field::counterAddressCount),
+                         "(%" PRIu32 ") differs from the number of subpasses (%" PRIu32
+                         ") times the number of layers in the render pass instance (%" PRIu32 ").",
+                         counters_begin_info->counterAddressCount, subpass_count, layer_or_view_count);
+    }
+
+    uint32_t w = render_area.extent.width;
+    uint32_t h = render_area.extent.height;
+    uint32_t rw = phys_dev_ext_props.renderpass_counter_by_region_props.performanceCounterRegionSize.width;
+    uint32_t rh = phys_dev_ext_props.renderpass_counter_by_region_props.performanceCounterRegionSize.height;
+    uint32_t a = phys_dev_ext_props.renderpass_counter_by_region_props.rowStrideAlignment;
+    uint32_t ra = phys_dev_ext_props.renderpass_counter_by_region_props.regionAlignment;
+    uint32_t c = counters_begin_info->counterIndexCount;
+
+    uint32_t N = Align(vvl::GetQuotientCeil(w, rw) * Align(c * static_cast<uint32_t>(sizeof(uint32_t)), ra), a) *
+                 vvl::GetQuotientCeil(h, rh);
+
+    for (uint32_t i = 0; i < counters_begin_info->counterAddressCount; ++i) {
+        const auto buffer_states = GetBuffersByAddress(counters_begin_info->pCounterAddresses[i]);
+
+        for (auto& buffer_state : buffer_states) {
+            skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, begin_loc.dot(Struct::VkRenderPassPerformanceCountersByRegionBeginInfoARM, Field::pCounterAddresses),
+                                                  "VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-counterAddressCount-11816");
+        }
+
+        auto first_buffer = *buffer_states.begin();
+        auto buffer_range = first_buffer->DeviceAddressRange();
+        auto address = counters_begin_info->pCounterAddresses[i];
+        const vvl::range<VkDeviceSize> counter_address_range(address, address + N - 1);
+        if (!buffer_range.includes(counter_address_range)) {
+            skip |= LogError("VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-pCounterAddresses-11817", objlist, begin_loc.dot(Struct::VkRenderPassPerformanceCountersByRegionBeginInfoARM, Field::pCounterAddresses),
+                             "%s does not fully fit into the address range of the buffer %s.",
+                             string_range_hex(counter_address_range).c_str(), FormatHandle(*first_buffer).c_str());
+        }
+    }
+
+    if (counters_begin_info->counterIndexCount >
+        phys_dev_ext_props.renderpass_counter_by_region_props.maxPerRegionPerformanceCounters) {
+        skip |= LogError(
+            "VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-counterIndexCount-11818", objlist,
+            begin_loc.dot(Struct::VkRenderPassPerformanceCountersByRegionBeginInfoARM, Field::counterIndexCount),
+            "(%" PRIu32
+            ") is greater than VkPhysicalDevicePerformanceCountersByRegionPropertiesARM::maxPerRegionPerformanceCounters (%" PRIu32
+            ").",
+            counters_begin_info->counterIndexCount,
+            phys_dev_ext_props.renderpass_counter_by_region_props.maxPerRegionPerformanceCounters);
+    }
+
+    return skip;
 }
 
 bool CoreChecks::ValidateCmdEndRenderPass(const vvl::CommandBuffer& cb_state, const ErrorObject &error_obj) const {
@@ -3771,6 +3856,20 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
         skip |= LogError("VUID-VkRenderingInfo-viewMask-06128", commandBuffer, rendering_info_loc.dot(Field::viewMask),
                          "(0x%" PRIx32 ") most significant bit must be less than maxMultiviewViewCount (%" PRIu32 ")",
                          pRenderingInfo->viewMask, phys_dev_props_core11.maxMultiviewViewCount);
+    }
+
+    const auto counters_begin_info = vku::FindStructInPNextChain<VkRenderPassPerformanceCountersByRegionBeginInfoARM>(pRenderingInfo->pNext);
+    if (counters_begin_info) {
+        const LogObjectList objlist(cb_state->Handle());
+        uint32_t layer_or_view_count = 0;
+        if (enabled_features.multiview) {
+            layer_or_view_count = MostSignificantBit(pRenderingInfo->viewMask);
+        } else {
+            layer_or_view_count = pRenderingInfo->layerCount;
+        }
+
+        skip |= ValidateRenderPassPerformanceCountersByRegionBeginInfo(
+            commandBuffer, counters_begin_info, objlist, 1u, layer_or_view_count, pRenderingInfo->renderArea, rendering_info_loc);
     }
 
     return skip;
