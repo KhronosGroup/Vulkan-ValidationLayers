@@ -65,264 +65,99 @@ class AccessMap {
     ImplMap impl_map_;
 };
 
-// Forward index iterator, tracking an index value and the apropos lower bound.
-// Returns an index_type, lower_bound pair.  Supports ++,  offset, and seek affecting the index,
-// lower bound updates as needed. As the index may specify a range for which no entry exist, dereferenced
-// iterator includes an "valid" field, true IFF the lower_bound is not end() and contains [index, index +1)
-//
-// Must be explicitly invalidated when the underlying map is changed.
-class CachedLowerBound {
+// The locator tracks an index value and its corresponding lower bound in the access map.
+// Since the index may fall within a gap (no existing access map entry there),
+// an "inside_lower_bound_range" flag is used to detect this.
+// The locator must not be used after the underlying map is modified. Create a new locator instead.
+template <typename TAccessMap>
+class TAccessMapLocator {
   public:
+    using index_type = AccessMap::index_type;
+    using iterator = decltype(TAccessMap().begin());
+
+    TAccessMapLocator(TAccessMap &map, index_type index);
+    TAccessMapLocator(TAccessMap &map, index_type index, const iterator &index_lower_bound);
+
+    // Set current location to provided value and update lower bound if necessary
+    void Seek(index_type seek_to);
+
+    // Distance from current location to the next change in access map.
+    // The next change is either the end of the current range or the beginning
+    // of the next range. Return 0 if lower_bound points to the end of access map.
+    index_type DistanceToEdge() const;
+
+  private:
+    iterator LowerBoundForIndex(index_type index) const { return map_->LowerBound(AccessRange(index, index + 1)); }
+    bool InsideLowerBoundRange() const { return lower_bound != map_->end() && lower_bound->first.includes(index); }
+    bool TrySeekLocal(index_type seek_to);
+
+  private:
+    TAccessMap *map_;
+
+  public:
+    // Current location in the access map address space
+    index_type index;
+
+    // Lower bound for the current index.
+    // That's either existing range in the access map or the end sentinel
+    iterator lower_bound;
+
+    // If the current location (index) is inside the lower bound range
+    bool inside_lower_bound_range;
+};
+
+using AccessMapLocator = TAccessMapLocator<AccessMap>;
+using ConstAccessMapLocator = TAccessMapLocator<const AccessMap>;
+
+// Traverse access maps over the the same range, but without assumptions of aligned ranges.
+// ++ increments to the next point where one of the two maps changes range, giving a range
+// over which the two maps do not transition ranges
+class ParallelIterator {
+  public:
+    using index_type = AccessRange::index_type;
     using iterator = AccessMap::iterator;
-    using index_type = AccessMap::index_type;
 
-    // Both sides of the return pair are const'd because we're returning references/pointers to the *internal* state
-    // and we don't want and caller altering internal state.
+    // This is the value we'll always be returning, but the referenced object will be updated by the operations
     struct value_type {
-        const index_type &index;
-        const iterator &lower_bound;
-        const bool &valid;
-        value_type(const index_type &index, const iterator &lower_bound, bool &valid)
-            : index(index), lower_bound(lower_bound), valid(valid) {}
+        const AccessRange &range;
+        const AccessMapLocator &pos_A;
+        const ConstAccessMapLocator &pos_B;
+        value_type(const AccessRange &range, const AccessMapLocator &pos_A, const ConstAccessMapLocator &pos_B)
+            : range(range), pos_A(pos_A), pos_B(pos_B) {}
     };
 
-  private:
-    AccessMap *map_;
-    const iterator end_;
-    value_type pos_;
+    ParallelIterator(AccessMap &map_A, const AccessMap &map_B, index_type index)
+        : map_A_(map_A),
+          pos_A_(map_A, index),
+          pos_B_(map_B, index),
+          range_(index, index + ComputeDelta()),
+          pos_(range_, pos_A_, pos_B_) {}
 
-    index_type index_;
-    iterator lower_bound_;
-    bool valid_;
+    // Advance to the next spot one of the two maps changes
+    void operator++();
 
-    bool is_valid() const { return includes(index_); }
+    // Seeks to a specific index in both maps reseting range.
+    // Cannot guarantee range.begin is on edge boundary, but range.end will be.
+    // Lower bound objects assumed to invalidate their cached lower bounds on seek
+    void Seek(index_type index);
 
-    // Allow reuse of a type with const semantics
-    void set_value(const index_type &index, const iterator &it) {
-        assert(it == lower_bound(index));
-        index_ = index;
-        lower_bound_ = it;
-        valid_ = is_valid();
-    }
+    // Invalidates the lower_bound caches, reseting range.
+    // Cannot guarantee range.begin is on edge boundary, but range.end will be
+    void InvalidateA();
+    void InvalidateA(const iterator &hint);
 
-    void update(const index_type &index) {
-        assert(lower_bound_ == lower_bound(index));
-        index_ = index;
-        valid_ = is_valid();
-    }
-
-    iterator lower_bound(const index_type &index) { return map_->LowerBound(AccessRange(index, index + 1)); }
-    bool at_end(const iterator &it) const { return it == end_; }
-
-    bool is_lower_than(const index_type &index, const iterator &it) { return at_end(it) || (index < it->first.end); }
-
-  public:
-    // The cached lower bound knows the parent map, and thus can tell us this...
-    bool at_end() const { return at_end(lower_bound_); }
-    // includes(index) is a convenience function to test if the index would be in the currently cached lower bound
-    bool includes(const index_type &index) const { return !at_end() && lower_bound_->first.includes(index); }
-
-    // The return is const because we are sharing the internal state directly.
     const value_type &operator*() const { return pos_; }
     const value_type *operator->() const { return &pos_; }
 
-    // Advance the cached location by 1
-    CachedLowerBound &operator++() {
-        const index_type next = index_ + 1;
-        if (is_lower_than(next, lower_bound_)) {
-            update(next);
-        } else {
-            // if we're past pos_->second, next *must* be the new lower bound.
-            // NOTE: that next can't be past end, so lower_bound_ isn't end.
-            auto next_it = lower_bound_;
-            ++next_it;
-            set_value(next, next_it);
-
-            // However we *must* not be past next.
-            assert(is_lower_than(next, next_it));
-        }
-
-        return *this;
-    }
-
-    // seek(index) updates lower_bound for index, updating lower_bound_ as needed.
-    void Seek(index_type seek_to) {
-        // Optimize seeking to  forward
-        if (index_ == seek_to) {
-            // seek to self is a NOOP.  To reset lower bound after a map change, use invalidate
-        } else if (index_ < seek_to) {
-            // See if the current or next ranges are the appropriate lower_bound... should be a common use case
-            if (is_lower_than(seek_to, lower_bound_)) {
-                // lower_bound_ is still the correct lower bound
-                update(seek_to);
-            } else {
-                // Look to see if the next range is the new lower_bound (and we aren't at end)
-                auto next_it = lower_bound_;
-                ++next_it;
-                if (is_lower_than(seek_to, next_it)) {
-                    // next_it is the correct new lower bound
-                    set_value(seek_to, next_it);
-                } else {
-                    // We don't know where we are...  and we aren't going to walk the tree looking for seek_to.
-                    set_value(seek_to, lower_bound(seek_to));
-                }
-            }
-        } else {
-            // General case... this is += so we're not implmenting optimized negative offset logic
-            set_value(seek_to, lower_bound(seek_to));
-        }
-    }
-
-    // Advance the cached location by offset.
-    void offset(const index_type &offset) {
-        const index_type next = index_ + offset;
-        Seek(next);
-    }
-
-    // invalidate() resets the the lower_bound_ cache, needed after insert/erase/overwrite/split operations
-    // Pass index by value in case we are invalidating to index_ and set_value does a modify-in-place on index_
-    void Invalidate(index_type index) { set_value(index, lower_bound(index)); }
-
-    // For times when the application knows what it's done to the underlying map... (with assert in set_value)
-    void Invalidate(const iterator &hint, index_type index) { set_value(index, hint); }
-
-    CachedLowerBound(AccessMap &map, const index_type &index)
-        : map_(&map),
-          end_(map.end()),
-          pos_(index_, lower_bound_, valid_),
-          index_(index),
-          lower_bound_(lower_bound(index)),
-          valid_(is_valid()) {}
-};
-
-class CachedConstLowerBound {
-  public:
-    using iterator = AccessMap::const_iterator;
-    using index_type = AccessMap::index_type;
-
-    // Both sides of the return pair are const'd because we're returning references/pointers to the *internal* state
-    // and we don't want and caller altering internal state.
-    struct value_type {
-        const index_type &index;
-        const iterator &lower_bound;
-        const bool &valid;
-        value_type(const index_type &index_, const iterator &lower_bound_, bool &valid_)
-            : index(index_), lower_bound(lower_bound_), valid(valid_) {}
-    };
-
   private:
-    const AccessMap *map_;
-    const iterator end_;
+    AccessMap &map_A_;
+    AccessMapLocator pos_A_;
+    ConstAccessMapLocator pos_B_;
+    AccessRange range_;
     value_type pos_;
 
-    index_type index_;
-    iterator lower_bound_;
-    bool valid_;
-
-    bool is_valid() const { return includes(index_); }
-
-    // Allow reuse of a type with const semantics
-    void set_value(const index_type &index, const iterator &it) {
-        assert(it == lower_bound(index));
-        index_ = index;
-        lower_bound_ = it;
-        valid_ = is_valid();
-    }
-
-    void update(const index_type &index) {
-        assert(lower_bound_ == lower_bound(index));
-        index_ = index;
-        valid_ = is_valid();
-    }
-
-    iterator lower_bound(const index_type &index) { return map_->LowerBound(AccessRange(index, index + 1)); }
-    bool at_end(const iterator &it) const { return it == end_; }
-
-    bool is_lower_than(const index_type &index, const iterator &it) { return at_end(it) || (index < it->first.end); }
-
-  public:
-    // The cached lower bound knows the parent map, and thus can tell us this...
-    bool at_end() const { return at_end(lower_bound_); }
-    // includes(index) is a convenience function to test if the index would be in the currently cached lower bound
-    bool includes(const index_type &index) const { return !at_end() && lower_bound_->first.includes(index); }
-
-    // The return is const because we are sharing the internal state directly.
-    const value_type &operator*() const { return pos_; }
-    const value_type *operator->() const { return &pos_; }
-
-    // Advance the cached location by 1
-    void operator++() {
-        const index_type next = index_ + 1;
-        if (is_lower_than(next, lower_bound_)) {
-            update(next);
-        } else {
-            // if we're past pos_->second, next *must* be the new lower bound.
-            // NOTE: that next can't be past end, so lower_bound_ isn't end.
-            auto next_it = lower_bound_;
-            ++next_it;
-            set_value(next, next_it);
-
-            // However we *must* not be past next.
-            assert(is_lower_than(next, next_it));
-        }
-    }
-
-    // seek(index) updates lower_bound for index, updating lower_bound_ as needed.
-    void Seek(index_type seek_to) {
-        // Optimize seeking to  forward
-        if (index_ == seek_to) {
-            // seek to self is a NOOP.  To reset lower bound after a map change, use invalidate
-        } else if (index_ < seek_to) {
-            // See if the current or next ranges are the appropriate lower_bound... should be a common use case
-            if (is_lower_than(seek_to, lower_bound_)) {
-                // lower_bound_ is still the correct lower bound
-                update(seek_to);
-            } else {
-                // Look to see if the next range is the new lower_bound (and we aren't at end)
-                auto next_it = lower_bound_;
-                ++next_it;
-                if (is_lower_than(seek_to, next_it)) {
-                    // next_it is the correct new lower bound
-                    set_value(seek_to, next_it);
-                } else {
-                    // We don't know where we are...  and we aren't going to walk the tree looking for seek_to.
-                    set_value(seek_to, lower_bound(seek_to));
-                }
-            }
-        } else {
-            // General case... this is += so we're not implmenting optimized negative offset logic
-            set_value(seek_to, lower_bound(seek_to));
-        }
-    }
-
-    // Advance the cached location by offset.
-    void offset(const index_type &offset) {
-        const index_type next = index_ + offset;
-        Seek(next);
-    }
-
-    CachedConstLowerBound(const AccessMap &map, const index_type &index)
-        : map_(&map),
-          end_(map.end()),
-          pos_(index_, lower_bound_, valid_),
-          index_(index),
-          lower_bound_(lower_bound(index)),
-          valid_(is_valid()) {}
+    index_type ComputeDelta();
 };
-
-// The offset in index type to the next change (the end of the current range, or the transition from invalid to valid).
-// If invalid and at_end, returns 0.
-template <typename TCachedLowerBound>
-AccessMap::index_type distance_to_edge(const TCachedLowerBound &pos) {
-    if (pos->valid) {
-        // Distance to edge of
-        return pos->lower_bound->first.end - pos->index;
-    } else if (pos.at_end()) {
-        return 0;
-    } else {
-        return pos->lower_bound->first.begin - pos->index;
-    }
-}
 
 // Split a range into pieces bound by the intersection of the iterator's range and the supplied range
 AccessMap::iterator Split(AccessMap::iterator in, AccessMap &map, const AccessRange &range);
@@ -411,53 +246,5 @@ void InfillUpdateRange(AccessMap &map, const AccessRange &range, const InfillUpd
     auto pos = map.LowerBound(range);
     InfillUpdateRange(map, pos, range, ops);
 }
-
-// Traverse access maps over the the same range, but without assumptions of aligned ranges.
-// ++ increments to the next point where one of the two maps changes range, giving a range
-// over which the two maps do not transition ranges
-class ParallelIterator {
-  public:
-    using index_type = AccessRange::index_type;
-    using iterator_A = AccessMap::iterator;
-    using lower_bound_A = CachedLowerBound;
-    using iterator_B = AccessMap::const_iterator;
-    using lower_bound_B = CachedConstLowerBound;
-
-    // This is the value we'll always be returning, but the referenced object will be updated by the operations
-    struct value_type {
-        const AccessRange &range;
-        const lower_bound_A &pos_A;
-        const lower_bound_B &pos_B;
-        value_type(const AccessRange &range, const lower_bound_A &pos_A, const lower_bound_B &pos_B)
-            : range(range), pos_A(pos_A), pos_B(pos_B) {}
-    };
-
-    ParallelIterator(AccessMap &map_A, const AccessMap &map_B, index_type index)
-        : pos_A_(map_A, index), pos_B_(map_B, index), range_(index, index + ComputeDelta()), pos_(range_, pos_A_, pos_B_) {}
-
-    // Advance to the next spot one of the two maps changes
-    void operator++();
-
-    // Seeks to a specific index in both maps reseting range.
-    // Cannot guarantee range.begin is on edge boundary, but range.end will be.
-    // Lower bound objects assumed to invalidate their cached lower bounds on seek
-    void Seek(index_type index);
-
-    // Invalidates the lower_bound caches, reseting range.
-    // Cannot guarantee range.begin is on edge boundary, but range.end will be
-    void InvalidateA();
-    void InvalidateA(const iterator_A &hint);
-
-    const value_type &operator*() const { return pos_; }
-    const value_type *operator->() const { return &pos_; }
-
-  private:
-    lower_bound_A pos_A_;
-    lower_bound_B pos_B_;
-    AccessRange range_;
-    value_type pos_;
-
-    index_type ComputeDelta();
-};
 
 }  // namespace syncval
