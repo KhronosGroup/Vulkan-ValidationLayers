@@ -5060,11 +5060,9 @@ TEST_F(NegativeRenderPass, CountersByRegionARM) {
     AddRequiredExtensions(VK_ARM_PERFORMANCE_COUNTERS_BY_REGION_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    // Get relevant properties
     VkPhysicalDevicePerformanceCountersByRegionPropertiesARM pc_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(pc_props);
 
-    // Create counter buffers
     VkRect2D render_area{{0, 0}, {128u, 128u}};
 
     uint32_t w = render_area.extent.width;
@@ -5093,15 +5091,12 @@ TEST_F(NegativeRenderPass, CountersByRegionARM) {
     auto perf_begin_info = vku::InitStruct<VkRenderPassPerformanceCountersByRegionBeginInfoARM>(nullptr, 1u, counter_addresses,
                                                                                                 VK_TRUE, 1u, &counterID);
 
-    // Test render pass and rendering info
-    // Create a render pass with a single subpass
     VkSubpassDescription subpass{};
     auto render_pass_create_info = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 1u, nullptr, 1u, &subpass, 0u, nullptr);
     vkt::RenderPass render_pass(*m_device, render_pass_create_info);
     auto rp_begin =
         vku::InitStruct<VkRenderPassBeginInfo>(&perf_begin_info, render_pass.handle(), VK_NULL_HANDLE, render_area, 0u, nullptr);
 
-    // Create a rendering info
     VkRenderingInfo rendering_info = vku::InitStructHelper(&perf_begin_info);
     rendering_info.layerCount = 1;
     rendering_info.renderArea = render_area;
@@ -5180,10 +5175,8 @@ TEST_F(NegativeRenderPass, MultiviewCountersByRegionARM) {
     auto perf_begin_info = vku::InitStruct<VkRenderPassPerformanceCountersByRegionBeginInfoARM>(nullptr, 1u, &counter_address,
                                                                                                 VK_TRUE, 1u, &counterID);
 
-    // Test render pass and rendering info
     VkRect2D render_area{{0, 0}, {128u, 128u}};
 
-    // Create a render pass with a single subpass with multiview enabled
     VkSubpassDescription2 subpass{};
     subpass.viewMask = 0x1;
 
@@ -5192,7 +5185,6 @@ TEST_F(NegativeRenderPass, MultiviewCountersByRegionARM) {
     auto rp_begin =
         vku::InitStruct<VkRenderPassBeginInfo>(&perf_begin_info, render_pass.handle(), VK_NULL_HANDLE, render_area, 0u, nullptr);
 
-    // Create a rendering info
     VkRenderingInfo rendering_info = vku::InitStructHelper(&perf_begin_info);
     rendering_info.layerCount = 1;
     rendering_info.renderArea = render_area;
