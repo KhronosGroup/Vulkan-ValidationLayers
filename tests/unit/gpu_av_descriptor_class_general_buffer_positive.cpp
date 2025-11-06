@@ -1202,7 +1202,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, AtomicsDescriptorIndexDescript
     pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.CreateComputePipeline();
 
-    vkt::Buffer in_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer in_buffer(*m_device, 128, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
 
     vkt::Buffer descriptor_buffer(*m_device, 4096, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
 
@@ -1212,6 +1212,8 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, AtomicsDescriptorIndexDescript
     vkt::DescriptorGetInfo buffer_get_info(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, in_buffer, in_buffer.CreateInfo().size);
     vk::GetDescriptorEXT(*m_device, buffer_get_info, descriptor_buffer_properties.storageBufferDescriptorSize,
                          descriptor_data + buffer_offset);
+    vk::GetDescriptorEXT(*m_device, buffer_get_info, descriptor_buffer_properties.storageBufferDescriptorSize,
+                         descriptor_data + buffer_offset + descriptor_buffer_properties.storageBufferDescriptorSize);
 
     VkDescriptorBufferBindingInfoEXT buffer_binding_info = vku::InitStructHelper();
     buffer_binding_info.address = descriptor_buffer.Address();

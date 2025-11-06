@@ -297,7 +297,7 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageBindingPartiallyBoundDescri
     m_default_queue->SubmitAndWait(m_command_buffer);
 
     for (uint32_t i = 0; i < 4; ++i) {
-        ASSERT_EQ(float_clear.float32[i], payload->data[i]);
+        EXPECT_FLOAT_EQ(float_clear.float32[i], payload->data[i]);
     }
 }
 
