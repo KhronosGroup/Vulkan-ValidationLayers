@@ -677,10 +677,10 @@ bool CoreChecks::ValidateRenderPassPerformanceCountersByRegionBeginInfo(VkComman
     uint32_t region_alignment = phys_dev_ext_props.renderpass_counter_by_region_props.regionAlignment;
     uint32_t counter_index_count = counters_begin_info->counterIndexCount;
 
-    uint32_t counters_size = Align(vvl::GetQuotientCeil(ra_extent.width, pc_region_size.width) *
-                                       Align(counter_index_count * static_cast<uint32_t>(sizeof(uint32_t)), region_alignment),
-                                   row_stride_alignment) *
-                             vvl::GetQuotientCeil(ra_extent.height, pc_region_size.height);
+    uint32_t counter_buffer_size = Align(vvl::GetQuotientCeil(ra_extent.width, pc_region_size.width) *
+                                             Align(counter_index_count * static_cast<uint32_t>(sizeof(uint32_t)), region_alignment),
+                                         row_stride_alignment) *
+                                   vvl::GetQuotientCeil(ra_extent.height, pc_region_size.height);
 
     for (uint32_t i = 0; i < counters_begin_info->counterAddressCount; ++i) {
         const auto buffer_states = GetBuffersByAddress(counters_begin_info->pCounterAddresses[i]);
@@ -693,7 +693,7 @@ bool CoreChecks::ValidateRenderPassPerformanceCountersByRegionBeginInfo(VkComman
         auto first_buffer = *buffer_states.begin();
         auto buffer_range = first_buffer->DeviceAddressRange();
         auto address = counters_begin_info->pCounterAddresses[i];
-        const vvl::range<VkDeviceSize> counter_address_range(address, address + counters_size - 1);
+        const vvl::range<VkDeviceSize> counter_address_range(address, address + counter_buffer_size - 1);
         if (!buffer_range.includes(counter_address_range)) {
             skip |= LogError("VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-pCounterAddresses-11817", objlist, begin_loc.pNext(Struct::VkRenderPassPerformanceCountersByRegionBeginInfoARM, Field::pCounterAddresses),
                              "%s does not fully fit into the address range of the buffer %s.",
