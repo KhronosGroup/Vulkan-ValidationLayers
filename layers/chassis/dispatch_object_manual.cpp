@@ -471,6 +471,8 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
 #endif
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_memory_decompression,
                                              &phys_dev_ext_props.memory_decompression_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_arm_performance_counters_by_region,
+                                             &phys_dev_ext_props.renderpass_counter_by_region_props);
 
     // None of these "check if supported" features are possible without first having gpdp2 first
     if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) {

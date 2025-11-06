@@ -114,6 +114,7 @@ struct DeviceExtensionProperties {
     VkPhysicalDeviceExternalFormatResolvePropertiesANDROID android_format_resolve_props;
 #endif
     VkPhysicalDeviceMemoryDecompressionPropertiesEXT memory_decompression_props;
+    VkPhysicalDevicePerformanceCountersByRegionPropertiesARM renderpass_counter_by_region_props;
 };
 
 // This object holds all static state for the device (device properties, enabled extensions/features, etc.)
