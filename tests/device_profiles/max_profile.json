@@ -87,6 +87,9 @@
                     "deviceGeneratedCommands": true,
                     "dynamicGeneratedPipelineLayout": true
                 },
+                "VkPhysicalDeviceShaderUniformBufferUnsizedArrayFeaturesEXT": {
+                    "shaderUniformBufferUnsizedArray": true
+                },
                 "VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV": {
                     "deviceGeneratedCompute": true,
                     "deviceGeneratedComputePipelines": true,
@@ -636,6 +639,9 @@
                 "VkPhysicalDeviceAntiLagFeaturesAMD": {
                     "antiLag": true
                 },
+                "VkPhysicalDevicePerformanceCountersByRegionFeaturesARM": {
+                    "performanceCountersByRegion": true
+                },
                 "VkPhysicalDeviceDescriptorBufferTensorFeaturesARM": {
                     "descriptorBufferTensorDescriptors": true
                 },
@@ -911,6 +917,9 @@
                 },
                 "VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE": {
                     "fragmentDensityMapLayered": true
+                },
+                "VkPhysicalDeviceVideoEncodeRgbConversionFeaturesVALVE": {
+                    "videoEncodeRgbConversion": true
                 },
                 "VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT": {
                     "shaderModuleIdentifier": true
@@ -2195,12 +2204,25 @@
                     "shaderCoreCount": 4294967000,
                     "shaderWarpsPerCore": 4294967000
                 },
+                "VkPhysicalDevicePerformanceCountersByRegionPropertiesARM": {
+                    "maxPerRegionPerformanceCounters": 1,
+                    "performanceCounterRegionSize": {
+                        "width": 64,
+                        "height": 64
+                    },
+                    "rowStrideAlignment": 1,
+                    "regionAlignment": 1,
+                    "identityTransformOrder": true
+                },
                 "VkPhysicalDeviceRenderPassStripedPropertiesARM": {
                     "renderPassStripeGranularity": {
                         "width": 64,
                         "height": 64
                     },
                     "maxRenderPassStripes": 32
+                },
+                "VkPhysicalDevicePresentationPropertiesOHOS": {
+                    "sharedImage": true
                 },
                 "VkPhysicalDevicePipelineBinaryPropertiesKHR": {
                     "pipelineBinaryInternalCache": true,
@@ -2280,7 +2302,8 @@
                 "VK_ARM_shader_core_builtins": 1,
                 "VK_ARM_shader_core_properties": 1,
                 "VK_ARM_tensors": 1,
-                "VK_ARM_data_graph": 1,
+                "VK_ARM_performance_counters_by_region": 1,
+                "VK_ARM_render_pass_striped": 1,
                 "VK_EXT_4444_formats": 1,
                 "VK_EXT_acquire_drm_display": 1,
                 "VK_EXT_acquire_xlib_display": 1,
@@ -2401,6 +2424,7 @@
                 "VK_EXT_shader_subgroup_ballot": 1,
                 "VK_EXT_shader_subgroup_vote": 1,
                 "VK_EXT_shader_viewport_index_layer": 1,
+                "VK_EXT_shader_uniform_buffer_unsized_array": 1,
                 "VK_EXT_subgroup_size_control": 1,
                 "VK_EXT_subpass_merge_feedback": 1,
                 "VK_EXT_surface_maintenance1": 1,
@@ -2660,15 +2684,17 @@
                 "VK_QNX_external_memory_screen_buffer": 1,
                 "VK_QNX_screen_surface": 1,
                 "VK_OHOS_surface": 1,
+                "VK_OHOS_external_memory": 1,
+                "VK_OHOS_native_buffer": 1,
                 "VK_SEC_amigo_profiling": 1,
                 "VK_SEC_pipeline_cache_incremental_mode": 1,
                 "VK_VALVE_descriptor_set_host_mapping": 1,
                 "VK_VALVE_mutable_descriptor_type": 1,
                 "VK_VALVE_fragment_density_map_layered": 1,
+                "VK_VALVE_video_encode_rgb_conversion": 1,
                 "VK_EXT_image_sliced_view_of_3d": 1,
                 "VK_EXT_shader_tile_image": 1,
-                "VK_EXT_dynamic_rendering_unused_attachments": 1,
-                "VK_ARM_render_pass_striped": 1
+                "VK_EXT_dynamic_rendering_unused_attachments": 1
             },
             "formats": {
                 "VK_FORMAT_UNDEFINED": {
