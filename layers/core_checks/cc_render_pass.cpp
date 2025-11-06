@@ -629,11 +629,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const
                 }
             }
         } else {
-            if (rp_state->UsesDynamicRendering()) {
-                layer_or_view_count = rp_state->dynamic_rendering_begin_rendering_info.layerCount;
-            } else {
-                layer_or_view_count = fb_state->create_info.layers;
-            }
+            layer_or_view_count = fb_state->create_info.layers;
         }
 
         skip |= ValidateRenderPassPerformanceCountersByRegionBeginInfo(commandBuffer, counters_begin_info, objlist,
@@ -669,37 +665,37 @@ bool CoreChecks::ValidateRenderPassPerformanceCountersByRegionBeginInfo(VkComman
 
     if (counters_begin_info->counterAddressCount != subpass_count * layer_or_view_count) {
         skip |= LogError("VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-counterAddressCount-11815", objlist,
-                         begin_loc.dot(Struct::VkRenderPassPerformanceCountersByRegionBeginInfoARM, Field::counterAddressCount),
+                         begin_loc.pNext(Struct::VkRenderPassPerformanceCountersByRegionBeginInfoARM, Field::counterAddressCount),
                          "(%" PRIu32 ") differs from the number of subpasses (%" PRIu32
                          ") times the number of layers in the render pass instance (%" PRIu32 ").",
                          counters_begin_info->counterAddressCount, subpass_count, layer_or_view_count);
     }
 
-    uint32_t w = render_area.extent.width;
-    uint32_t h = render_area.extent.height;
-    uint32_t rw = phys_dev_ext_props.renderpass_counter_by_region_props.performanceCounterRegionSize.width;
-    uint32_t rh = phys_dev_ext_props.renderpass_counter_by_region_props.performanceCounterRegionSize.height;
-    uint32_t a = phys_dev_ext_props.renderpass_counter_by_region_props.rowStrideAlignment;
-    uint32_t ra = phys_dev_ext_props.renderpass_counter_by_region_props.regionAlignment;
-    uint32_t c = counters_begin_info->counterIndexCount;
+    VkExtent2D ra_extent = render_area.extent;
+    VkExtent2D pc_region_size = phys_dev_ext_props.renderpass_counter_by_region_props.performanceCounterRegionSize;
+    uint32_t row_stride_alignment = phys_dev_ext_props.renderpass_counter_by_region_props.rowStrideAlignment;
+    uint32_t region_alignment = phys_dev_ext_props.renderpass_counter_by_region_props.regionAlignment;
+    uint32_t counter_index_count = counters_begin_info->counterIndexCount;
 
-    uint32_t N = Align(vvl::GetQuotientCeil(w, rw) * Align(c * static_cast<uint32_t>(sizeof(uint32_t)), ra), a) *
-                 vvl::GetQuotientCeil(h, rh);
+    uint32_t counters_size = Align(vvl::GetQuotientCeil(ra_extent.width, pc_region_size.width) *
+                                       Align(counter_index_count * static_cast<uint32_t>(sizeof(uint32_t)), region_alignment),
+                                   row_stride_alignment) *
+                             vvl::GetQuotientCeil(ra_extent.height, pc_region_size.height);
 
     for (uint32_t i = 0; i < counters_begin_info->counterAddressCount; ++i) {
         const auto buffer_states = GetBuffersByAddress(counters_begin_info->pCounterAddresses[i]);
 
         for (auto& buffer_state : buffer_states) {
-            skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, begin_loc.dot(Struct::VkRenderPassPerformanceCountersByRegionBeginInfoARM, Field::pCounterAddresses),
+            skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, begin_loc.pNext(Struct::VkRenderPassPerformanceCountersByRegionBeginInfoARM, Field::pCounterAddresses),
                                                   "VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-counterAddressCount-11816");
         }
 
         auto first_buffer = *buffer_states.begin();
         auto buffer_range = first_buffer->DeviceAddressRange();
         auto address = counters_begin_info->pCounterAddresses[i];
-        const vvl::range<VkDeviceSize> counter_address_range(address, address + N - 1);
+        const vvl::range<VkDeviceSize> counter_address_range(address, address + counters_size - 1);
         if (!buffer_range.includes(counter_address_range)) {
-            skip |= LogError("VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-pCounterAddresses-11817", objlist, begin_loc.dot(Struct::VkRenderPassPerformanceCountersByRegionBeginInfoARM, Field::pCounterAddresses),
+            skip |= LogError("VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-pCounterAddresses-11817", objlist, begin_loc.pNext(Struct::VkRenderPassPerformanceCountersByRegionBeginInfoARM, Field::pCounterAddresses),
                              "%s does not fully fit into the address range of the buffer %s.",
                              string_range_hex(counter_address_range).c_str(), FormatHandle(*first_buffer).c_str());
         }
@@ -709,7 +705,7 @@ bool CoreChecks::ValidateRenderPassPerformanceCountersByRegionBeginInfo(VkComman
         phys_dev_ext_props.renderpass_counter_by_region_props.maxPerRegionPerformanceCounters) {
         skip |= LogError(
             "VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-counterIndexCount-11818", objlist,
-            begin_loc.dot(Struct::VkRenderPassPerformanceCountersByRegionBeginInfoARM, Field::counterIndexCount),
+            begin_loc.pNext(Struct::VkRenderPassPerformanceCountersByRegionBeginInfoARM, Field::counterIndexCount),
             "(%" PRIu32
             ") is greater than VkPhysicalDevicePerformanceCountersByRegionPropertiesARM::maxPerRegionPerformanceCounters (%" PRIu32
             ").",
