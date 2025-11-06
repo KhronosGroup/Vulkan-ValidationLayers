@@ -1464,23 +1464,25 @@ TEST_F(PositiveDescriptorBuffer, ImageLayoutIgnored) {
         image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 0, 1, 0, 1, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    const char *fsSource = R"glsl(
+    const char *fs_source = R"glsl(
             #version 450
             layout(location = 0) out vec4 color;
-            layout(set = 0, binding = 0, rgba8) readonly uniform image2D image1;
+            layout(set = 0, binding = 0) uniform sampler s;
+            layout(set = 0, binding = 1) uniform texture2D t;
             void main(){
-                color = imageLoad(image1, ivec2(0));
+                color = texture(sampler2D(t, s), vec2(0));
             }
         )glsl";
 
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+    std::vector<VkDescriptorSetLayoutBinding> bindings = {{0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                          {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}};
 
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
     ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
-    ds_layout_ci.bindingCount = 1u;
-    ds_layout_ci.pBindings = &binding;
+    ds_layout_ci.bindingCount = bindings.size();
+    ds_layout_ci.pBindings = bindings.data();
     vkt::DescriptorSetLayout descriptor_set_layout(*m_device, ds_layout_ci);
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_layout});
@@ -1491,14 +1493,19 @@ TEST_F(PositiveDescriptorBuffer, ImageLayoutIgnored) {
     pipe.gp_ci_.layout = pipeline_layout;
     pipe.CreateGraphicsPipeline();
 
-    vkt::Buffer descriptor_buffer(*m_device, 4096, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
+    vkt::Buffer descriptor_buffer(
+        *m_device, 4096, VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT,
+        vkt::device_address);
     uint8_t *descriptor_data = reinterpret_cast<uint8_t *>(descriptor_buffer.Memory().Map());
-    VkDeviceSize image_offset = descriptor_set_layout.GetDescriptorBufferBindingOffset(0);
 
-    vkt::DescriptorGetInfo image_get_info(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, sampler, image_view,
+    vkt::DescriptorGetInfo get_info_sampler(&sampler.handle());
+    vk::GetDescriptorEXT(device(), get_info_sampler, descriptor_buffer_properties.samplerDescriptorSize,
+                         descriptor_data + descriptor_set_layout.GetDescriptorBufferBindingOffset(0));
+
+    vkt::DescriptorGetInfo get_info_image(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_NULL_HANDLE, image_view,
                                           VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    vk::GetDescriptorEXT(*m_device, image_get_info, descriptor_buffer_properties.storageImageDescriptorSize,
-                         descriptor_data + image_offset);
+    vk::GetDescriptorEXT(device(), get_info_image, descriptor_buffer_properties.sampledImageDescriptorSize,
+                         descriptor_data + descriptor_set_layout.GetDescriptorBufferBindingOffset(1));
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
@@ -1506,7 +1513,8 @@ TEST_F(PositiveDescriptorBuffer, ImageLayoutIgnored) {
 
     VkDescriptorBufferBindingInfoEXT buffer_binding_info = vku::InitStructHelper();
     buffer_binding_info.address = descriptor_buffer.Address();
-    buffer_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+    buffer_binding_info.usage =
+        VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
 
     vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &buffer_binding_info);
     uint32_t buffer_index = 0u;
