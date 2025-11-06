@@ -46,81 +46,6 @@ void DataGraphPipelineHelper::CreateShaderModule(const char* spirv_source, const
     vvl::PnextChainAdd(&pipeline_ci_, &shader_module_ci_);
 }
 
-std::string DataGraphPipelineHelper::GetSpirvMultiEntryComputeAndDataGraph() {
-    return R"(
-; Commmon Compute and DataGraph section
-                                  OpCapability GraphARM
-                                  OpCapability TensorsARM
-                                  OpCapability Int8
-                                  OpCapability Int16
-                                  OpCapability Int64
-                                  OpCapability Shader
-                                  OpCapability VulkanMemoryModel
-                                  OpCapability Matrix
-                                  OpExtension "SPV_ARM_graph"
-                                  OpExtension "SPV_ARM_tensors"
-                                  OpExtension "SPV_KHR_vulkan_memory_model"
-                          %tosa = OpExtInstImport "TOSA.001000.1"
-                                  OpMemoryModel Logical Vulkan
-; Compute shader entrypoint declarations
-                                  OpEntryPoint GLCompute %main "main"
-                                  OpExecutionMode %main LocalSize 1 1 1
-; Common variables declarations
-                                  OpName %main_arg_0 "main_arg_0"
-                                  OpName %main_res_0 "main_res_0"
-                                  OpDecorate %main_arg_0 Binding 0
-                                  OpDecorate %main_arg_0 DescriptorSet 0
-                                  OpDecorate %main_res_0 Binding 1
-                                  OpDecorate %main_res_0 DescriptorSet 0
-; Compute shader types
-                          %void = OpTypeVoid
-                             %3 = OpTypeFunction %void
-; DataGraph types
-                         %uchar = OpTypeInt 8 0
-                          %uint = OpTypeInt 32 0
-                        %uint_4 = OpConstant %uint 4
-                        %uint_1 = OpConstant %uint 1
-                        %uint_8 = OpConstant %uint 8
-                       %uint_16 = OpConstant %uint 16
-                        %uint_0 = OpConstant %uint 0
-                        %uint_2 = OpConstant %uint 2
-                    %uint_arr_4 = OpTypeArray %uint %uint_4
-                    %uint_arr_1 = OpTypeArray %uint %uint_1
-           %uint_arr_4_1_8_16_4 = OpConstantComposite %uint_arr_4 %uint_1 %uint_8 %uint_16 %uint_4
-            %uint_arr_4_1_2_4_4 = OpConstantComposite %uint_arr_4 %uint_1 %uint_2 %uint_4 %uint_4
-            %uint_arr_4_1_4_8_4 = OpConstantComposite %uint_arr_4 %uint_1 %uint_4 %uint_8 %uint_4
-                  %uint_arr_1_2 = OpConstantComposite %uint_arr_1 %uint_2
-                  %uint_arr_1_4 = OpConstantComposite %uint_arr_1 %uint_4
-         %uchar_1_8_16_4_tensor = OpTypeTensorARM %uchar %uint_4 %uint_arr_4_1_8_16_4
-          %uchar_1_2_4_4_tensor = OpTypeTensorARM %uchar %uint_4 %uint_arr_4_1_2_4_4
-          %uchar_1_4_8_4_tensor = OpTypeTensorARM %uchar %uint_4 %uint_arr_4_1_4_8_4
-                 %uint_2_tensor = OpTypeTensorARM %uint %uint_1 %uint_arr_1_2
-                 %uint_4_tensor = OpTypeTensorARM %uint %uint_1 %uint_arr_1_4
-                     %constant0 = OpGraphConstantARM %uint_2_tensor 1
-                     %constant1 = OpGraphConstantARM %uint_4_tensor 0
-             %uint_2_tensor_2_2 = OpConstantComposite %uint_2_tensor %uint_2 %uint_2
-         %uint_4_tensor_0_0_0_0 = OpConstantComposite %uint_4_tensor %uint_0 %uint_0 %uint_0 %uint_0
-     %uchar_1_8_16_4_tensor_ptr = OpTypePointer UniformConstant %uchar_1_8_16_4_tensor
-      %uchar_1_2_4_4_tensor_ptr = OpTypePointer UniformConstant %uchar_1_2_4_4_tensor
-                    %main_arg_0 = OpVariable %uchar_1_8_16_4_tensor_ptr UniformConstant
-                    %main_res_0 = OpVariable %uchar_1_2_4_4_tensor_ptr UniformConstant
-                    %graph_type = OpTypeGraphARM 1 %uchar_1_8_16_4_tensor %uchar_1_2_4_4_tensor
-; Compute shader function definition
-                          %main = OpFunction %void None %3
-                             %5 = OpLabel
-                                  OpReturn
-                                  OpFunctionEnd
-; DataGraph graph definition
-                                  OpGraphEntryPointARM %graph_0 "main" %main_arg_0 %main_res_0
-                       %graph_0 = OpGraphARM %graph_type
-                          %in_0 = OpGraphInputARM %uchar_1_8_16_4_tensor %uint_0
-                          %op_0 = OpExtInst %uchar_1_4_8_4_tensor %tosa MAX_POOL2D  %uint_2_tensor_2_2 %uint_2_tensor_2_2 %uint_4_tensor_0_0_0_0 %uint_0 %in_0
-                          %op_1 = OpExtInst %uchar_1_2_4_4_tensor %tosa MAX_POOL2D  %uint_2_tensor_2_2 %uint_2_tensor_2_2 %uint_4_tensor_0_0_0_0 %uint_0 %op_0
-                                  OpGraphSetOutputARM %op_1 %uint_0
-                                  OpGraphEndARM
-)";
-}
-
 std::string DataGraphPipelineHelper::GetSpirvMultiEntryTwoDataGraph() {
     return R"(
                                   OpCapability GraphARM
@@ -259,14 +184,18 @@ std::string DataGraphPipelineHelper::GetSpirvBasicDataGraph(const char* inserted
     return ss.str();
 }
 
-std::string DataGraphPipelineHelper::GetSpirvBasicShader() {
-    return R"(
+// A command shader (for the majority of cases) that can be modified inserting
+// instructions in given sections. Without any insertions it's a basic shader.
+std::string DataGraphPipelineHelper::GetSpirvModifiableShader(const ModifiableShaderParameters& params) {
+    std::stringstream ss;
+    ss << R"(
 ; SPIRV
 ; Version: 1.6
 ; Generator: Khronos Glslang Reference Front End; 11
 ; Bound: 19
 ; Schema: 0
                OpCapability Shader
+)" << params.capabilities << R"(
                OpCapability TensorsARM
                OpExtension "SPV_ARM_tensors"
           %1 = OpExtInstImport "GLSL.std.450"
@@ -286,22 +215,26 @@ std::string DataGraphPipelineHelper::GetSpirvBasicShader() {
        %uint = OpTypeInt 32 0
 %_ptr_Function_uint = OpTypePointer Function %uint
         %int = OpTypeInt 32 1
+     %uint_0 = OpConstant %uint 0
      %uint_1 = OpConstant %uint 1
+     %uint_2 = OpConstant %uint 2
          %11 = OpTypeTensorARM %int %uint_1
+)" << params.types << R"(
 %_ptr_UniformConstant_11 = OpTypePointer UniformConstant %11
        %tens = OpVariable %_ptr_UniformConstant_11 UniformConstant
-     %uint_0 = OpConstant %uint 0
      %v3uint = OpTypeVector %uint 3
          %18 = OpConstantComposite %v3uint %uint_1 %uint_1 %uint_1
        %main = OpFunction %void None %3
           %5 = OpLabel
      %size_x = OpVariable %_ptr_Function_uint Function
-         %14 = OpLoad %11 %tens
-         %16 = OpTensorQuerySizeARM %uint %14 %uint_0
+%loaded_tens = OpLoad %11 %tens
+         %16 = OpTensorQuerySizeARM %uint %loaded_tens %uint_0
                OpStore %size_x %16
+)" << params.instructions << R"(
                OpReturn
                OpFunctionEnd
 )";
+    return ss.str();
 }
 
 void DataGraphPipelineHelper::InitPipelineResources(const std::vector<vkt::Tensor*>& tensors, VkDescriptorType desc_type,
