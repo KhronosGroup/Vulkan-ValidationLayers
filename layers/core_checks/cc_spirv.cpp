@@ -2192,6 +2192,7 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
     }
 
     for (const auto &variable : entrypoint.resource_interface_variables) {
+        variable.type_struct_info->GetSize(module_state);
         vvl::unordered_set<uint32_t> descriptor_type_set;
         TypeToDescriptorTypeSet(module_state, variable.type_id, variable.data_type_id, descriptor_type_set);
         skip |= ValidateShaderInterfaceVariable(module_state, variable, descriptor_type_set, loc);

@@ -6293,3 +6293,38 @@ TEST_F(NegativeDescriptors, ImmutableSamplerIdenticallyDefinedFilterMinmax) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeDescriptors, Test) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(CheckSlangSupport());
+
+    const char *slang_shader = R"slang(
+        struct Output {
+            uint a[2];
+        };
+
+        [[vk::binding(0, 0)]]
+        RWStructuredBuffer<Output> x;
+
+        [numthreads(1, 1, 1)]
+        void main(uint3 dispatchThreadID : SV_DispatchThreadID) {
+            x[0].a[dispatchThreadID.x] = 0;
+        }
+    )slang";
+
+    VkShaderObj cs_module = VkShaderObj(this, slang_shader, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_SLANG);
+
+    const vkt::DescriptorSetLayout descriptor_set_layout(
+        *m_device, {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_layout});
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.cp_ci_.stage = vku::InitStructHelper();
+    pipe.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    pipe.cp_ci_.stage.module = cs_module;
+    pipe.cp_ci_.stage.pName = "main";
+
+    pipe.CreateComputePipeline(false);
+}
