@@ -12,6 +12,7 @@
  */
 
 #include <vulkan/vulkan_core.h>
+#include "utils/math_utils.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/render_pass_helper.h"
@@ -1775,4 +1776,63 @@ TEST_F(PositiveDynamicRendering, DynamicRenderingUnusedAttachments) {
     }
 
     m_command_buffer.End();
+}
+
+TEST_F(PositiveDynamicRendering, CountersByRegionARM) {
+    TEST_DESCRIPTION("Test to validate begin rendering with VK_ARM_performance_counters_by_region.");
+
+    AddRequiredExtensions(VK_ARM_PERFORMANCE_COUNTERS_BY_REGION_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    VkPhysicalDevicePerformanceCountersByRegionPropertiesARM pc_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(pc_props);
+
+    VkRect2D render_area{{0, 0}, {128u, 128u}};
+    VkExtent2D ra_extent = render_area.extent;
+    VkExtent2D pc_region_size = pc_props.performanceCounterRegionSize;
+    uint32_t row_stride_alignment = pc_props.rowStrideAlignment;
+    uint32_t region_alignment = pc_props.regionAlignment;
+    uint32_t counter_index_count = 1u;
+
+    constexpr auto GetQuotientCeil = [](uint32_t numerator, uint32_t denominator) {
+        denominator = std::max(denominator, 1u);
+        return numerator / denominator + (numerator % denominator != 0);
+    };
+
+    uint32_t counter_buffer_size = Align(GetQuotientCeil(ra_extent.width, pc_region_size.width) *
+                                             Align(counter_index_count * static_cast<uint32_t>(sizeof(uint32_t)), region_alignment),
+                                         row_stride_alignment) *
+                                   GetQuotientCeil(ra_extent.height, pc_region_size.height);
+
+    VkDeviceAddress counter_addresses[1];
+    vkt::Buffer counter_buffer(*m_device, counter_buffer_size, 0, vkt::device_address);
+    counter_addresses[0] = counter_buffer.Address();
+
+    uint32_t counterID = 0;
+    auto perf_begin_info = vku::InitStruct<VkRenderPassPerformanceCountersByRegionBeginInfoARM>(nullptr, 1u, counter_addresses,
+                                                                                                VK_TRUE, 1u, &counterID);
+
+    {
+        VkSubpassDescription subpass{};
+        auto render_pass_create_info = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 1u, nullptr, 1u, &subpass, 0u, nullptr);
+        vkt::RenderPass render_pass(*m_device, render_pass_create_info);
+        auto rp_begin =
+            vku::InitStruct<VkRenderPassBeginInfo>(&perf_begin_info, render_pass.handle(), VK_NULL_HANDLE, render_area, 0u, nullptr);
+
+        m_command_buffer.Begin();
+        m_command_buffer.BeginRenderPass(rp_begin);
+        m_command_buffer.EndRenderPass();
+        m_command_buffer.End();
+    }
+
+    {
+        VkRenderingInfo rendering_info = vku::InitStructHelper(&perf_begin_info);
+        rendering_info.layerCount = 1;
+        rendering_info.renderArea = render_area;
+
+        m_command_buffer.Begin();
+        m_command_buffer.BeginRendering(rendering_info);
+        m_command_buffer.EndRendering();
+        m_command_buffer.End();
+    }
 }
