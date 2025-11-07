@@ -23,6 +23,7 @@
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/queue_state.h"
 #include "state_tracker/event_map.h"
+#include "state_tracker/shader_stage_state.h"
 
 class CoreChecks;
 
@@ -195,6 +196,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
   private:
     void ResetCBState();
     void UpdateActionPipelineState(LastBound &last_bound, const vvl::Pipeline &pipeline_state);
+    void UpdateActionShaderObjectState(LastBound &last_bound);
+    void UpdateActiveSlotsState(LastBound &last_bound, const ActiveSlotMap &active_slots);
 
     // Funnel because Image/Buffer copies have 2 variations for the regions
     template <typename RegionType>
