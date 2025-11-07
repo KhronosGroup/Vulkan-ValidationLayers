@@ -4033,9 +4033,8 @@ bool CoreChecks::ValidateCmdPushDescriptorSetWithTemplate(VkCommandBuffer comman
         skip |= LogError(vuid, commandBuffer, loc.dot(Field::pData), "is NULL.");
     } else if (!Get<vvl::DescriptorSetLayout>(dsl->VkHandle())) {
         const LogObjectList objlist(commandBuffer, descriptorUpdateTemplate, layout);
-        // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7772
         const char *vuid =
-            is_2 ? "UNASSIGNED-VkPushDescriptorSetWithTemplateInfo-dsl" : "UNASSIGNED-vkCmdPushDescriptorSetWithTemplate-dsl";
+            is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfo-set-11854" : "VUID-vkCmdPushDescriptorSetWithTemplate-set-11854";
         skip |= LogError(vuid, objlist, loc.dot(Field::set),
                          "(%" PRIu32
                          ") in the layout does not point to a valid VkDescriptorSetLayout, it is possible the "
