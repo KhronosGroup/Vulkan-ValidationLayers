@@ -19,7 +19,7 @@ cmake_minimum_required(VERSION 3.22.1)
 # The VERSION field is generated with the "--generated-version" flag in the generate_source.py script
 #
 # If working with unreleased extensions, make sure the header and validation version are all on the same header version
-project(VVL VERSION 1.4.331 LANGUAGES CXX)
+project(VVL VERSION 1.4.332 LANGUAGES CXX)
 
 # This variable enables downstream users to customize the target API
 # variant (e.g. Vulkan SC)

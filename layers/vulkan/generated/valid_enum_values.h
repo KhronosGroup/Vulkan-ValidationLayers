@@ -268,6 +268,8 @@ ValidValue stateless::Context::IsValidEnumValue(VkIndirectExecutionSetInfoTypeEX
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkIndirectCommandsTokenTypeEXT value) const;
 template <>
+ValidValue stateless::Context::IsValidEnumValue(VkDataGraphModelCacheTypeQCOM value) const;
+template <>
 ValidValue stateless::Context::IsValidEnumValue(VkBuildAccelerationStructureModeKHR value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkShaderGroupShaderKHR value) const;

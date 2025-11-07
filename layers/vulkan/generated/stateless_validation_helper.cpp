@@ -3215,8 +3215,17 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
-        // No Validation code for VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE structure members  -- Covers
-        // VUID-VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE-sType-sType
+        // Validation code for VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_LAYERED_FEATURES_VALVE: {  // Covers
+                                                                                               // VUID-VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc =
+                    loc.pNext(Struct::VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE);
+                VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE* structure =
+                    (VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::fragmentDensityMapLayered), structure->fragmentDensityMapLayered);
+            }
+        } break;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkPhysicalDevicePresentMeteringFeaturesNV structure members
@@ -3249,6 +3258,16 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceShader64BitIndexingFeaturesEXT);
                 VkPhysicalDeviceShader64BitIndexingFeaturesEXT* structure = (VkPhysicalDeviceShader64BitIndexingFeaturesEXT*)header;
                 skip |= ValidateBool32(pNext_loc.dot(Field::shader64BitIndexing), structure->shader64BitIndexing);
+            }
+        } break;
+
+        // Validation code for VkPhysicalDeviceDataGraphModelFeaturesQCOM structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_MODEL_FEATURES_QCOM: {  // Covers
+                                                                                  // VUID-VkPhysicalDeviceDataGraphModelFeaturesQCOM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceDataGraphModelFeaturesQCOM);
+                VkPhysicalDeviceDataGraphModelFeaturesQCOM* structure = (VkPhysicalDeviceDataGraphModelFeaturesQCOM*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::dataGraphModel), structure->dataGraphModel);
             }
         } break;
 
@@ -7703,6 +7722,25 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
         // No Validation code for VkSetPresentConfigNV structure members  -- Covers VUID-VkSetPresentConfigNV-sType-sType
 #endif  // VK_ENABLE_BETA_EXTENSIONS
 
+        // Validation code for VkDataGraphPipelineBuiltinModelCreateInfoQCOM structure members
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_BUILTIN_MODEL_CREATE_INFO_QCOM: {  // Covers
+                                                                                      // VUID-VkDataGraphPipelineBuiltinModelCreateInfoQCOM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkDataGraphPipelineBuiltinModelCreateInfoQCOM);
+                VkDataGraphPipelineBuiltinModelCreateInfoQCOM* structure = (VkDataGraphPipelineBuiltinModelCreateInfoQCOM*)header;
+                skip |= ValidateRequiredPointer(pNext_loc.dot(Field::pOperation), structure->pOperation,
+                                                "VUID-VkDataGraphPipelineBuiltinModelCreateInfoQCOM-pOperation-parameter");
+
+                if (structure->pOperation != nullptr) {
+                    [[maybe_unused]] const Location pOperation_loc = pNext_loc.dot(Field::pOperation);
+                    skip |= ValidateRangedEnum(pOperation_loc.dot(Field::operationType),
+                                               vvl::Enum::VkPhysicalDeviceDataGraphOperationTypeARM,
+                                               structure->pOperation->operationType,
+                                               "VUID-VkPhysicalDeviceDataGraphOperationSupportARM-operationType-parameter");
+                }
+            }
+        } break;
+
         // Validation code for VkWriteDescriptorSetAccelerationStructureKHR structure members
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR: {  // Covers
                                                                                    // VUID-VkWriteDescriptorSetAccelerationStructureKHR-sType-sType
@@ -7898,6 +7936,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_FEATURES_ARM,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_MODEL_FEATURES_QCOM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEDICATED_ALLOCATION_IMAGE_ALIASING_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DENSE_GEOMETRY_FORMAT_FEATURES_AMDX,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_BIAS_CONTROL_FEATURES_EXT,
@@ -25597,6 +25636,7 @@ bool Device::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkDefer
         for (uint32_t createInfoIndex = 0; createInfoIndex < createInfoCount; ++createInfoIndex) {
             [[maybe_unused]] const Location pCreateInfos_loc = loc.dot(Field::pCreateInfos, createInfoIndex);
             constexpr std::array allowed_structs_VkDataGraphPipelineCreateInfoARM = {
+                VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_BUILTIN_MODEL_CREATE_INFO_QCOM,
                 VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_COMPILER_CONTROL_CREATE_INFO_ARM,
                 VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_IDENTIFIER_CREATE_INFO_ARM,
                 VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SHADER_MODULE_CREATE_INFO_ARM,

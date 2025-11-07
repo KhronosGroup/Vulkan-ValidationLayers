@@ -687,6 +687,17 @@ void Instance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDevice
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_MODEL_FEATURES_QCOM: {
+                VkPhysicalDeviceDataGraphModelFeaturesQCOM supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceDataGraphModelFeaturesQCOM *enabling =
+                    reinterpret_cast<const VkPhysicalDeviceDataGraphModelFeaturesQCOM *>(current);
+                if (enabling->dataGraphModel && !supported.dataGraphModel) {
+                    ss << "VkPhysicalDeviceDataGraphModelFeaturesQCOM::dataGraphModel is not supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEDICATED_ALLOCATION_IMAGE_ALIASING_FEATURES_NV: {
                 VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
