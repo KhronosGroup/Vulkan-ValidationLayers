@@ -229,7 +229,7 @@ TEST_F(NegativePushDescriptor, TemplateDestroyDescriptorSetLayout) {
 
     m_command_buffer.Begin();
     vk::DestroyDescriptorSetLayout(device(), ds_layout, nullptr);
-    m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdPushDescriptorSetWithTemplate-dsl");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSetWithTemplate-set-11854");
     vk::CmdPushDescriptorSetWithTemplateKHR(m_command_buffer, update_template, pipeline_layout, 0, &update_template_data);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
