@@ -1127,6 +1127,21 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             return {&vk_struct->dataGraphUpdateAfterBind, "VkPhysicalDeviceDataGraphFeaturesARM::dataGraphUpdateAfterBind"};
         }
 
+        case Feature::dataGraphModel: {
+            auto vk_struct = const_cast<VkPhysicalDeviceDataGraphModelFeaturesQCOM *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceDataGraphModelFeaturesQCOM>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceDataGraphModelFeaturesQCOM;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->dataGraphModel, "VkPhysicalDeviceDataGraphModelFeaturesQCOM::dataGraphModel"};
+        }
+
         case Feature::dedicatedAllocationImageAliasing: {
             auto vk_struct = const_cast<VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV>(*inout_pnext_chain));

@@ -609,6 +609,8 @@ ValidValue stateless::Context::IsValidEnumValue(VkPipelineCacheHeaderVersion val
     switch (value) {
         case VK_PIPELINE_CACHE_HEADER_VERSION_ONE:
             return ValidValue::Valid;
+        case VK_PIPELINE_CACHE_HEADER_VERSION_DATA_GRAPH_QCOM:
+            return IsExtEnabled(extensions.vk_qcom_data_graph_model) ? ValidValue::Valid : ValidValue::NoExtension;
         default:
             return ValidValue::NotFound;
     };
@@ -2174,6 +2176,9 @@ ValidValue stateless::Context::IsValidEnumValue(VkPhysicalDeviceDataGraphProcess
     switch (value) {
         case VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_DEFAULT_ARM:
             return ValidValue::Valid;
+        case VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_NEURAL_QCOM:
+        case VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_COMPUTE_QCOM:
+            return IsExtEnabled(extensions.vk_qcom_data_graph_model) ? ValidValue::Valid : ValidValue::NoExtension;
         default:
             return ValidValue::NotFound;
     };
@@ -2184,6 +2189,9 @@ ValidValue stateless::Context::IsValidEnumValue(VkPhysicalDeviceDataGraphOperati
     switch (value) {
         case VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_SPIRV_EXTENDED_INSTRUCTION_SET_ARM:
             return ValidValue::Valid;
+        case VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_NEURAL_MODEL_QCOM:
+        case VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_BUILTIN_MODEL_QCOM:
+            return IsExtEnabled(extensions.vk_qcom_data_graph_model) ? ValidValue::Valid : ValidValue::NoExtension;
         default:
             return ValidValue::NotFound;
     };
@@ -2310,6 +2318,16 @@ ValidValue stateless::Context::IsValidEnumValue(VkIndirectCommandsTokenTypeEXT v
             return IsExtEnabled(extensions.vk_ext_mesh_shader) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_INDIRECT_COMMANDS_TOKEN_TYPE_TRACE_RAYS2_EXT:
             return IsExtEnabled(extensions.vk_khr_ray_tracing_maintenance1) ? ValidValue::Valid : ValidValue::NoExtension;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkDataGraphModelCacheTypeQCOM value) const {
+    switch (value) {
+        case VK_DATA_GRAPH_MODEL_CACHE_TYPE_GENERIC_BINARY_QCOM:
+            return ValidValue::Valid;
         default:
             return ValidValue::NotFound;
     };
@@ -2673,11 +2691,16 @@ const char* stateless::Context::DescribeEnum(VkIndexType value) const {
 
 template <>
 vvl::Extensions stateless::Context::GetEnumExtensions(VkPipelineCacheHeaderVersion value) const {
-    return {};
+    switch (value) {
+        case VK_PIPELINE_CACHE_HEADER_VERSION_DATA_GRAPH_QCOM:
+            return {vvl::Extension::_VK_QCOM_data_graph_model};
+        default:
+            return {};
+    };
 }
 template <>
 const char* stateless::Context::DescribeEnum(VkPipelineCacheHeaderVersion value) const {
-    return nullptr;
+    return string_VkPipelineCacheHeaderVersion(value);
 }
 
 template <>
@@ -3852,20 +3875,32 @@ const char* stateless::Context::DescribeEnum(VkDataGraphPipelinePropertyARM valu
 
 template <>
 vvl::Extensions stateless::Context::GetEnumExtensions(VkPhysicalDeviceDataGraphProcessingEngineTypeARM value) const {
-    return {};
+    switch (value) {
+        case VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_NEURAL_QCOM:
+        case VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_COMPUTE_QCOM:
+            return {vvl::Extension::_VK_QCOM_data_graph_model};
+        default:
+            return {};
+    };
 }
 template <>
 const char* stateless::Context::DescribeEnum(VkPhysicalDeviceDataGraphProcessingEngineTypeARM value) const {
-    return nullptr;
+    return string_VkPhysicalDeviceDataGraphProcessingEngineTypeARM(value);
 }
 
 template <>
 vvl::Extensions stateless::Context::GetEnumExtensions(VkPhysicalDeviceDataGraphOperationTypeARM value) const {
-    return {};
+    switch (value) {
+        case VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_NEURAL_MODEL_QCOM:
+        case VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_BUILTIN_MODEL_QCOM:
+            return {vvl::Extension::_VK_QCOM_data_graph_model};
+        default:
+            return {};
+    };
 }
 template <>
 const char* stateless::Context::DescribeEnum(VkPhysicalDeviceDataGraphOperationTypeARM value) const {
-    return nullptr;
+    return string_VkPhysicalDeviceDataGraphOperationTypeARM(value);
 }
 
 template <>
@@ -3958,6 +3993,15 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkIndirectCommandsTokenTyp
 template <>
 const char* stateless::Context::DescribeEnum(VkIndirectCommandsTokenTypeEXT value) const {
     return string_VkIndirectCommandsTokenTypeEXT(value);
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkDataGraphModelCacheTypeQCOM value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkDataGraphModelCacheTypeQCOM value) const {
+    return nullptr;
 }
 
 template <>

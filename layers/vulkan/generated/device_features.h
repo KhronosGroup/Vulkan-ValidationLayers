@@ -160,6 +160,8 @@ struct DeviceFeatures {
     bool dataGraphSpecializationConstants;
     // VkPhysicalDeviceDataGraphFeaturesARM
     bool dataGraphUpdateAfterBind;
+    // VkPhysicalDeviceDataGraphModelFeaturesQCOM
+    bool dataGraphModel;
     // VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV
     bool dedicatedAllocationImageAliasing;
     // VkPhysicalDeviceDenseGeometryFormatFeaturesAMDX

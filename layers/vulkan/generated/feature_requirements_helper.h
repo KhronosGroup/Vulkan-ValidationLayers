@@ -152,6 +152,8 @@ enum class Feature {
     dataGraphSpecializationConstants,
     // VkPhysicalDeviceDataGraphFeaturesARM
     dataGraphUpdateAfterBind,
+    // VkPhysicalDeviceDataGraphModelFeaturesQCOM
+    dataGraphModel,
     // VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV
     dedicatedAllocationImageAliasing,
     // VkPhysicalDeviceDenseGeometryFormatFeaturesAMDX

@@ -1871,6 +1871,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->shader64BitIndexing |= enabled->shader64BitIndexing == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_MODEL_FEATURES_QCOM: {
+                const VkPhysicalDeviceDataGraphModelFeaturesQCOM *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceDataGraphModelFeaturesQCOM *>(pNext);
+                features->dataGraphModel |= enabled->dataGraphModel == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CACHE_INCREMENTAL_MODE_FEATURES_SEC: {
                 const VkPhysicalDevicePipelineCacheIncrementalModeFeaturesSEC *enabled =
                     reinterpret_cast<const VkPhysicalDevicePipelineCacheIncrementalModeFeaturesSEC *>(pNext);

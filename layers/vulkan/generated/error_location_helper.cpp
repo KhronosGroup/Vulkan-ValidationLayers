@@ -977,6 +977,7 @@ const char* String(Struct structure) {
     {"VkCudaLaunchInfoNV", 19},
     {"VkCudaModuleCreateInfoNV", 25},
     {"VkD3D12FenceSubmitInfoKHR", 26},
+    {"VkDataGraphPipelineBuiltinModelCreateInfoQCOM", 46},
     {"VkDataGraphPipelineCompilerControlCreateInfoARM", 48},
     {"VkDataGraphPipelineConstantARM", 31},
     {"VkDataGraphPipelineConstantTensorSemiStructuredSparsityInfoARM", 63},
@@ -1390,6 +1391,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceCustomBorderColorFeaturesEXT", 45},
     {"VkPhysicalDeviceCustomBorderColorPropertiesEXT", 47},
     {"VkPhysicalDeviceDataGraphFeaturesARM", 37},
+    {"VkPhysicalDeviceDataGraphModelFeaturesQCOM", 43},
     {"VkPhysicalDeviceDataGraphOperationSupportARM", 45},
     {"VkPhysicalDeviceDataGraphProcessingEngineARM", 45},
     {"VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV", 59},
@@ -1729,6 +1731,7 @@ const char* String(Struct structure) {
     {"VkPipelineBinaryKeyKHR", 23},
     {"VkPipelineBinaryKeysAndDataKHR", 31},
     {"VkPipelineCacheCreateInfo", 26},
+    {"VkPipelineCacheHeaderVersionDataGraphQCOM", 42},
     {"VkPipelineCacheHeaderVersionOne", 32},
     {"VkPipelineColorBlendAdvancedStateCreateInfoEXT", 47},
     {"VkPipelineColorBlendAttachmentState", 36},
@@ -2257,6 +2260,8 @@ const char* String(Field field) {
     {"buildScratchSize", 17},
     {"buildType", 10},
     {"c", 2},
+    {"cacheType", 10},
+    {"cacheVersion", 13},
     {"callableShaderBindingOffset", 28},
     {"callableShaderBindingStride", 28},
     {"callableShaderBindingTableAddress", 34},
@@ -2427,6 +2432,7 @@ const char* String(Field field) {
     {"data", 5},
     {"dataGraph", 10},
     {"dataGraphDescriptorBuffer", 26},
+    {"dataGraphModel", 15},
     {"dataGraphPipeline", 18},
     {"dataGraphShaderModule", 22},
     {"dataGraphSpecializationConstants", 33},
@@ -3974,6 +3980,7 @@ const char* String(Field field) {
     {"pObjects", 9},
     {"pOffset", 8},
     {"pOffsets", 9},
+    {"pOperation", 11},
     {"pOpticalFlowImageFormatInfo", 28},
     {"pOverrideInfo", 14},
     {"pParametersAddInfo", 19},
@@ -5060,6 +5067,7 @@ const char* String(Field field) {
     {"timingCount", 12},
     {"tokenCount", 11},
     {"tokenType", 10},
+    {"toolchainVersion", 17},
     {"topology", 9},
     {"transform", 10},
     {"transformBlockSizes", 20},
@@ -5274,6 +5282,7 @@ const char* String(Enum value) {
     {"VkCoverageModulationModeNV", 27},
     {"VkCoverageReductionModeNV", 26},
     {"VkCubicFilterWeightsQCOM", 25},
+    {"VkDataGraphModelCacheTypeQCOM", 30},
     {"VkDataGraphPipelinePropertyARM", 31},
     {"VkDataGraphPipelineSessionBindPointARM", 39},
     {"VkDataGraphPipelineSessionBindPointTypeARM", 43},
@@ -5975,6 +5984,7 @@ const char* String(Extension extension) {
     {"VK_OHOS_external_memory", 24},
     {"VK_OHOS_native_buffer", 22},
     {"VK_OHOS_surface", 16},
+    {"VK_QCOM_data_graph_model", 25},
     {"VK_QCOM_filter_cubic_clamp", 27},
     {"VK_QCOM_filter_cubic_weights", 29},
     {"VK_QCOM_fragment_density_map_offset", 36},
@@ -6341,6 +6351,7 @@ bool IsFieldPointer(Field field) {
     case Field::pObjects:
     case Field::pOffset:
     case Field::pOffsets:
+    case Field::pOperation:
     case Field::pOpticalFlowImageFormatInfo:
     case Field::pOverrideInfo:
     case Field::pParametersAddInfo:
@@ -8803,6 +8814,10 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_64_BIT_INDEXING_FEATURES_EXT:
        return Struct::VkPhysicalDeviceShader64BitIndexingFeaturesEXT;
+    case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_BUILTIN_MODEL_CREATE_INFO_QCOM:
+       return Struct::VkDataGraphPipelineBuiltinModelCreateInfoQCOM;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_MODEL_FEATURES_QCOM:
+       return Struct::VkPhysicalDeviceDataGraphModelFeaturesQCOM;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CACHE_INCREMENTAL_MODE_FEATURES_SEC:
        return Struct::VkPhysicalDevicePipelineCacheIncrementalModeFeaturesSEC;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_UNIFORM_BUFFER_UNSIZED_ARRAY_FEATURES_EXT:
