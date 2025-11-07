@@ -31,6 +31,7 @@
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/query_state.h"
 #include "state_tracker/render_pass_state.h"
+#include "state_tracker/shader_object_state.h"
 
 // Location to add per-queue submit debug info if built with -D DEBUG_CAPTURE_KEYBOARD=ON
 void CoreChecks::DebugCapture() {}
@@ -94,38 +95,53 @@ void CommandBufferSubState::UpdateActionPipelineState(LastBound& last_bound, con
     }
 
     if (last_bound.desc_set_pipeline_layout) {
-        for (const auto& [set_index, binding_req_map] : pipeline_state.active_slots) {
-            if (set_index >= last_bound.ds_slots.size()) {
-                continue;
+        UpdateActiveSlotsState(last_bound, pipeline_state.active_slots);
+    }
+}
+
+void CommandBufferSubState::UpdateActionShaderObjectState(LastBound& last_bound) {
+    if (last_bound.desc_set_pipeline_layout) {
+        for (uint32_t stage = 0; stage < kShaderObjectStageCount; ++stage) {
+            const auto shader_object = last_bound.GetShaderState(static_cast<ShaderObjectStage>(stage));
+            if (shader_object) {
+                UpdateActiveSlotsState(last_bound, shader_object->active_slots);
             }
-            auto& ds_slot = last_bound.ds_slots[set_index];
-            // Pull the set node
-            auto& descriptor_set = ds_slot.ds_state;
-            if (!descriptor_set) {
-                continue;
+        }
+    }
+}
+
+void CommandBufferSubState::UpdateActiveSlotsState(LastBound& last_bound, const ActiveSlotMap& active_slots) {
+    for (const auto& [set_index, binding_req_map] : active_slots) {
+        if (set_index >= last_bound.ds_slots.size()) {
+            continue;
+        }
+        auto& ds_slot = last_bound.ds_slots[set_index];
+        // Pull the set node
+        auto& descriptor_set = ds_slot.ds_state;
+        if (!descriptor_set) {
+            continue;
+        }
+
+        // For the "bindless" style resource usage with many descriptors, need to optimize command <-> descriptor binding
+
+        // We can skip updating the state if "nothing" has changed since the last validation.
+        // See CoreChecks::ValidateActionState for more details.
+        const bool need_update =  // Update if descriptor set (or contents) has changed
+            ds_slot.validated_set != descriptor_set.get() ||
+            ds_slot.validated_set_change_count != descriptor_set->GetChangeCount() ||
+            (!base.dev_data.disabled[image_layout_validation] &&
+             ds_slot.validated_set_image_layout_change_count != base.image_layout_change_count);
+        if (need_update) {
+            if (!base.dev_data.disabled[command_buffer_state] && !descriptor_set->IsPushDescriptor()) {
+                base.AddChild(descriptor_set);
             }
 
-            // For the "bindless" style resource usage with many descriptors, need to optimize command <-> descriptor binding
+            // Bind this set and its active descriptor resources to the command buffer
+            descriptor_set->UpdateImageLayoutDrawStates(&base.dev_data, base, binding_req_map);
 
-            // We can skip updating the state if "nothing" has changed since the last validation.
-            // See CoreChecks::ValidateActionState for more details.
-            const bool need_update =  // Update if descriptor set (or contents) has changed
-                ds_slot.validated_set != descriptor_set.get() ||
-                ds_slot.validated_set_change_count != descriptor_set->GetChangeCount() ||
-                (!base.dev_data.disabled[image_layout_validation] &&
-                 ds_slot.validated_set_image_layout_change_count != base.image_layout_change_count);
-            if (need_update) {
-                if (!base.dev_data.disabled[command_buffer_state] && !descriptor_set->IsPushDescriptor()) {
-                    base.AddChild(descriptor_set);
-                }
-
-                // Bind this set and its active descriptor resources to the command buffer
-                descriptor_set->UpdateImageLayoutDrawStates(&base.dev_data, base, binding_req_map);
-
-                ds_slot.validated_set = descriptor_set.get();
-                ds_slot.validated_set_change_count = descriptor_set->GetChangeCount();
-                ds_slot.validated_set_image_layout_change_count = base.image_layout_change_count;
-            }
+            ds_slot.validated_set = descriptor_set.get();
+            ds_slot.validated_set_change_count = descriptor_set->GetChangeCount();
+            ds_slot.validated_set_image_layout_change_count = base.image_layout_change_count;
         }
     }
 }
@@ -134,6 +150,8 @@ void CommandBufferSubState::UpdateActionPipelineState(LastBound& last_bound, con
 void CommandBufferSubState::RecordActionCommand(LastBound& last_bound, const Location&) {
     if (last_bound.pipeline_state) {
         UpdateActionPipelineState(last_bound, *last_bound.pipeline_state);
+    } else {
+        UpdateActionShaderObjectState(last_bound);
     }
 }
 
