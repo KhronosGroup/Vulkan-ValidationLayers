@@ -623,6 +623,11 @@ TEST_F(NegativeImageLayout, CopyColorToDepthOnComputeQueue) {
     if (!compute_without_graphics_queue_i.has_value()) {
         GTEST_SKIP() << "Need a queue that supports compute but not graphics";
     }
+    const bool ds_supports_copy_on_compute_queue = FormatFeatures2AreSupported(
+        Gpu(), VK_FORMAT_D16_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_2_DEPTH_COPY_ON_COMPUTE_QUEUE_BIT_KHR);
+    if (ds_supports_copy_on_compute_queue) {
+        GTEST_SKIP() << "Test requires format features to not support depth copy on compute queue";
+    }
     vkt::CommandPool pool(*m_device, *compute_without_graphics_queue_i);
     vkt::CommandBuffer cb(*m_device, pool);
 
@@ -672,6 +677,9 @@ TEST_F(NegativeImageLayout, CopyColorToDepthOnTransferQueue) {
     }
     const bool ds_supports_copy_on_transfer_queue = FormatFeatures2AreSupported(
         Gpu(), VK_FORMAT_D16_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_2_DEPTH_COPY_ON_TRANSFER_QUEUE_BIT_KHR);
+    if (ds_supports_copy_on_transfer_queue) {
+        GTEST_SKIP() << "Test requires format features to not support depth copy on transfer queue";
+    }
 
     vkt::CommandPool pool(*m_device, *compute_without_graphics_queue_i);
     vkt::CommandBuffer cb(*m_device, pool);
@@ -701,9 +709,7 @@ TEST_F(NegativeImageLayout, CopyColorToDepthOnTransferQueue) {
     copy_region.dstOffset = {0, 0, 0};
     copy_region.extent = {1, 1, 1};
 
-    if (!ds_supports_copy_on_transfer_queue) {
-        m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-commandBuffer-11783");
-    }
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-commandBuffer-11783");
     vk::CmdCopyImage(cb, src_image, VK_IMAGE_LAYOUT_GENERAL, depth_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
 }
