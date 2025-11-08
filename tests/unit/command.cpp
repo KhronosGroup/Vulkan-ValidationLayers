@@ -4284,7 +4284,7 @@ TEST_F(NegativeCommand, ResolveImage2ColorImageAspectMask) {
 
     VkResolveImageModeInfoKHR resolve_mode = vku::InitStructHelper();
     resolve_mode.flags = VK_RESOLVE_IMAGE_SKIP_TRANSFER_FUNCTION_BIT_KHR;
-    resolve_mode.resolveMode = VK_RESOLVE_MODE_NONE;
+    resolve_mode.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
     resolve_mode.stencilResolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
     VkResolveImageInfo2KHR resolve_info = vku::InitStructHelper(&resolve_mode);
     resolve_info.srcImage = src_color_image;
@@ -4296,7 +4296,6 @@ TEST_F(NegativeCommand, ResolveImage2ColorImageAspectMask) {
 
     if (!maintenance10_props.resolveSrgbFormatSupportsTransferFunctionControl) {
         m_errorMonitor->SetDesiredError("VUID-VkResolveImageModeInfoKHR-flags-10996");
-        m_errorMonitor->SetDesiredError("VUID-VkResolveImageModeInfoKHR-flags-10997");
     } else {
         m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-pNext-10982");
         m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-pNext-10982");
