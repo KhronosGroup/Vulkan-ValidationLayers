@@ -107,6 +107,9 @@ bool IsImageFormatSupported(const VkPhysicalDevice gpu, const VkImageCreateInfo 
     if (ci.arrayLayers > props.maxArrayLayers) {
         return false;
     }
+    if ((ci.samples & props.sampleCounts) == 0) {
+        return false;
+    }
 
     return true;
 }
