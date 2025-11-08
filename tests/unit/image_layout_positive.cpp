@@ -946,3 +946,103 @@ TEST_F(PositiveImageLayout, DynamicRendering3DImageLayout) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveImageLayout, CopyColorToDepthOnComputeQueue) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_8_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_10_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance8);
+    AddRequiredFeature(vkt::Feature::maintenance10);
+    RETURN_IF_SKIP(Init());
+
+    auto compute_without_graphics_queue_i = m_device->QueueFamily(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
+    if (!compute_without_graphics_queue_i.has_value()) {
+        GTEST_SKIP() << "Need a queue that supports compute but not graphics";
+    }
+    const bool ds_supports_copy_on_compute_queue = FormatFeatures2AreSupported(
+        Gpu(), VK_FORMAT_D16_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_2_DEPTH_COPY_ON_COMPUTE_QUEUE_BIT_KHR);
+    if (!ds_supports_copy_on_compute_queue) {
+        GTEST_SKIP() << "Test requires format features to support depth copy on compute queue";
+    }
+    vkt::CommandPool pool(*m_device, *compute_without_graphics_queue_i);
+    vkt::CommandBuffer cb(*m_device, pool);
+
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R16_UINT;
+    image_create_info.extent = {32, 32, 1};
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 4;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_create_info.flags = 0;
+    vkt::Image src_image(*m_device, image_create_info, vkt::set_layout);
+
+    image_create_info.format = VK_FORMAT_D16_UNORM;
+    image_create_info.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    vkt::Image depth_image(*m_device, image_create_info, vkt::set_layout);
+
+    cb.Begin();
+    VkImageCopy copy_region{};
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
+    copy_region.srcOffset = {0, 0, 0};
+    copy_region.dstOffset = {0, 0, 0};
+    copy_region.extent = {1, 1, 1};
+
+    vk::CmdCopyImage(cb, src_image, VK_IMAGE_LAYOUT_GENERAL, depth_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+}
+
+TEST_F(PositiveImageLayout, CopyColorToDepthOnTransferQueue) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_8_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_10_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance8);
+    AddRequiredFeature(vkt::Feature::maintenance10);
+    RETURN_IF_SKIP(Init());
+
+    auto compute_without_graphics_queue_i =
+        m_device->QueueFamily(VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT);
+    if (!compute_without_graphics_queue_i.has_value()) {
+        GTEST_SKIP() << "Need a queue that supports transfer but not graphics";
+    }
+    const bool ds_supports_copy_on_transfer_queue = FormatFeatures2AreSupported(
+        Gpu(), VK_FORMAT_D16_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_2_DEPTH_COPY_ON_TRANSFER_QUEUE_BIT_KHR);
+    if (!ds_supports_copy_on_transfer_queue) {
+        GTEST_SKIP() << "Test requires format features to support depth copy on transfer queue";
+    }
+
+    vkt::CommandPool pool(*m_device, *compute_without_graphics_queue_i);
+    vkt::CommandBuffer cb(*m_device, pool);
+
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R16_UINT;
+    image_create_info.extent = {32, 32, 1};
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 4;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_create_info.flags = 0;
+    vkt::Image src_image(*m_device, image_create_info, vkt::set_layout);
+
+    image_create_info.format = VK_FORMAT_D16_UNORM;
+    image_create_info.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    vkt::Image depth_image(*m_device, image_create_info, vkt::set_layout);
+
+    cb.Begin();
+    VkImageCopy copy_region{};
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
+    copy_region.srcOffset = {0, 0, 0};
+    copy_region.dstOffset = {0, 0, 0};
+    copy_region.extent = {1, 1, 1};
+
+    vk::CmdCopyImage(cb, src_image, VK_IMAGE_LAYOUT_GENERAL, depth_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+}
