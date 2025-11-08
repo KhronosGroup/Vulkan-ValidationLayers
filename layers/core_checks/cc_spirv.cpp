@@ -1442,6 +1442,7 @@ bool CoreChecks::ValidateWorkgroupSharedMemory(const spirv::Module &module_state
                             "cooperativeMatrixWorkgroupScopeReservedSharedMemory (%" PRIu32 ").",
                             total_workgroup_shared_memory, phys_dev_props.limits.maxComputeSharedMemorySize,
                             phys_dev_ext_props.cooperative_matrix_props2_nv.cooperativeMatrixWorkgroupScopeReservedSharedMemory);
+                        break;
                     }
                 }
             }
