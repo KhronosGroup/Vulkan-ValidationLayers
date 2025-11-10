@@ -1291,7 +1291,73 @@ TEST_F(NegativeImageLayout, DynamicRenderingColorAttachmentLayoutSubmitTime) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginRendering-pRenderingInfo-09592");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeImageLayout, DynamicRenderingDepthAttachmentLayoutSubmitTime) {
+    TEST_DESCRIPTION("Depth attachment layout does not match expected layout. Submit time validation");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
+
+    const VkFormat depth_format = FindSupportedDepthOnlyFormat(Gpu());
+
+    vkt::Image image(*m_device, 128, 128, depth_format,
+                     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    VkRenderingAttachmentInfo depth_attachment = vku::InitStructHelper();
+    depth_attachment.imageView = image_view;
+    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {128, 128};
+    rendering_info.layerCount = 1;
+    rendering_info.pDepthAttachment = &depth_attachment;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginRendering-pRenderingInfo-09588");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeImageLayout, DynamicRenderingStencilAttachmentLayoutSubmitTime) {
+    TEST_DESCRIPTION("Stencil attachment layout does not match expected layout. Submit time validation");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
+
+    const VkFormat depth_stencil_format = FindSupportedDepthStencilFormat(Gpu());
+
+    vkt::Image image(*m_device, 128, 128, depth_stencil_format,
+                     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    VkRenderingAttachmentInfo stencil_attachment = vku::InitStructHelper();
+    stencil_attachment.imageView = image_view;
+    stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+    stencil_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    stencil_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {128, 128};
+    rendering_info.layerCount = 1;
+    rendering_info.pStencilAttachment = &stencil_attachment;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginRendering-pRenderingInfo-09590");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
