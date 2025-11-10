@@ -1070,7 +1070,7 @@ void vvl::ImageDescriptor::CopyUpdate(DescriptorSet &set_state, const vvl::Devic
 void vvl::ImageDescriptor::UpdateImageLayoutDrawState(vvl::CommandBuffer &cb_state) {
     // Add binding for image
     if (auto iv_state = GetImageViewState()) {
-        cb_state.TrackImageViewFirstLayout(*iv_state, image_layout_);
+        cb_state.TrackImageViewFirstLayout(*iv_state, image_layout_, nullptr);
     }
 }
 
@@ -1505,7 +1505,7 @@ void vvl::MutableDescriptor::UpdateImageLayoutDrawState(vvl::CommandBuffer &cb_s
     const vvl::DescriptorClass active_class = ActiveClass();
     if (active_class == DescriptorClass::Image || active_class == DescriptorClass::ImageSampler) {
         if (image_view_state_) {
-            cb_state.TrackImageViewFirstLayout(*image_view_state_, image_layout_);
+            cb_state.TrackImageViewFirstLayout(*image_view_state_, image_layout_, nullptr);
         }
     }
 }

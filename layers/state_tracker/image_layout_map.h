@@ -44,6 +44,11 @@ struct ImageLayoutState {
     // Aspect mask is used to normalize layouts before comparison.
     // TODO: consider storing two additional normalized layouts instead of this field
     VkImageAspectFlags aspect_mask;
+
+    // Submit time validation compares first_layout against image's current global layout.
+    // If not null, this vuid is used to report an error.
+    // If null, the current implementation will use VUID-vkCmdDraw-None-09600 until we fix all the places
+    const char* submit_time_layout_mismatch_vuid;
 };
 
 // Tracks image layout state of each subresource of a single image during record time.
@@ -65,7 +70,7 @@ bool UpdateCurrentLayout(CommandBufferImageLayoutMap& image_layout_map, subresou
 // Typically called by the APIs that specify the expected layout but do not perform a layout transition.
 // The VkImageLayout parameter must be unnormalized value (as defined by the API) so it can be used in the error messages.
 void TrackFirstLayout(CommandBufferImageLayoutMap& image_layout_map, subresource_adapter::RangeGenerator&& range_gen,
-                      VkImageLayout expected_layout, VkImageAspectFlags aspect_mask);
+                      VkImageLayout expected_layout, VkImageAspectFlags aspect_mask, const char* submit_time_layout_mismatch_vuid);
 
 // Iterate over layout map subresource ranges that intersect with the ranges defined by RangeGenerator.
 // Runs the callback on each matching layout map range.
