@@ -807,16 +807,14 @@ VKAPI_ATTR VkBool32 VKAPI_CALL MessengerLogCallback(VkDebugUtilsMessageSeverityF
     return false;
 }
 
+#ifdef VK_USE_PLATFORM_WIN32_KHR
 VKAPI_ATTR VkBool32 VKAPI_CALL MessengerWin32DebugOutputMsg(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
                                                             VkDebugUtilsMessageTypeFlagsEXT message_type,
                                                             const VkDebugUtilsMessengerCallbackDataEXT *callback_data,
                                                             [[maybe_unused]] void *user_data) {
     const std::string msg_buffer_str = CreateDefaultCallbackMessage(message_severity, message_type, *callback_data);
-    [[maybe_unused]] const char *cstr = msg_buffer_str.c_str();
-
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-    OutputDebugString(cstr);
-#endif
-
+    const char *cstr = msg_buffer_str.c_str();
+    OutputDebugStringA(cstr);
     return false;
 }
+#endif

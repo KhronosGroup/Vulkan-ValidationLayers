@@ -743,12 +743,14 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings *settings_data, VkuL
                                       " but VK_DBG_LAYER_ACTION_LOG_MSG was not set, so it won't be sent to the file.");
     }
 
+#ifdef VK_USE_PLATFORM_WIN32_KHR
     messenger = VK_NULL_HANDLE;
     if (debug_action & VK_DBG_LAYER_ACTION_DEBUG_OUTPUT) {
         dbg_create_info.pfnUserCallback = MessengerWin32DebugOutputMsg;
         dbg_create_info.pUserData = nullptr;
         LayerCreateMessengerCallback(debug_report, default_layer_callback, &dbg_create_info, &messenger);
     }
+#endif
 
     messenger = VK_NULL_HANDLE;
     if (debug_action & VK_DBG_LAYER_ACTION_BREAK) {
