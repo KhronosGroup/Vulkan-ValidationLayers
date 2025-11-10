@@ -46,7 +46,7 @@ struct SharedDrawValidationResources {
         dummy_buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         VmaAllocationCreateInfo alloc_info = {};
         alloc_info.usage = VMA_MEMORY_USAGE_AUTO;
-        if (gpuav.phys_dev_props.deviceType == VK_PHYSICAL_DEVICE_TYPE_CPU) {
+        if (gpuav.IsAllDeviceLocalMappable()) {
             alloc_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
         }
         const bool success = dummy_buffer.Create(&dummy_buffer_info, &alloc_info);

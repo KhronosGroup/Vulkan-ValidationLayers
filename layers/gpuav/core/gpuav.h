@@ -83,6 +83,7 @@ class Validator : public GpuShaderInstrumentor {
     void FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) final;
 
     void InternalVmaError(LogObjectList objlist, VkResult result, const char* const specific_message) const;
+    bool IsAllDeviceLocalMappable() const;
 
   private:
     void InitSettings(const Location& loc);
