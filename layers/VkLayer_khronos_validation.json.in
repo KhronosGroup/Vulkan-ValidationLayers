@@ -471,7 +471,7 @@
                                 {
                                     "key": "syncval_shader_accesses_heuristic",
                                     "label": "Shader accesses heuristic",
-                                    "description": "Take into account memory accesses performed by the shader based on SPIR-V static analysis. Warning: can produce false-positives, can ignore certain types of accesses.",
+                                    "description": "Take into account memory accesses performed by the shader based on SPIR-V static analysis. Warning: can produce false-positives, can ignore certain types of accesses, does not support VK_EXT_descriptor_buffer.",
                                     "type": "BOOL",
                                     "default": false,
                                     "dependence": {
