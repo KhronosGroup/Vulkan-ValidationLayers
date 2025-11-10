@@ -465,6 +465,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     // only when not using dynamic rendering
     vku::safe_VkRenderPassSampleLocationsBeginInfoEXT sample_locations_begin_info;
     std::vector<SubpassInfo> active_subpasses;
+    const char *DescribeActiveColorAttachment() const;
 
     VkSubpassContents active_subpass_contents;
     uint32_t GetActiveSubpass() const { return active_subpass_; }
