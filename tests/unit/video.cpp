@@ -424,6 +424,40 @@ TEST_F(NegativeVideo, CreateSessionInvalidStdHeaderVersion) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeVideo, CreateSessionUnsupportedCodecOp) {
+    TEST_DESCRIPTION("vkCreateVideoSessionKHR - unsupported video codec operation");
+
+    RETURN_IF_SKIP(Init());
+
+    VideoConfig config = GetConfig();
+    if (!config) {
+        GTEST_SKIP() << "Test requires video support";
+    }
+
+    uint32_t queue_family_index = VK_QUEUE_FAMILY_IGNORED;
+    for (uint32_t qfi = 0; qfi < QueueFamilyCount(); ++qfi) {
+        if ((QueueFamilyFlags(qfi) & (VK_QUEUE_VIDEO_DECODE_BIT_KHR | VK_QUEUE_VIDEO_ENCODE_BIT_KHR)) &&
+            ((QueueFamilyVideoCodecOps(qfi) & config.Profile()->videoCodecOperation) == 0)) {
+            queue_family_index = qfi;
+            break;
+        }
+    }
+
+    if (queue_family_index == VK_QUEUE_FAMILY_IGNORED) {
+        GTEST_SKIP() << "Test requires a queue family that supports video but not the specific codec op";
+    }
+
+    VkVideoSessionKHR session;
+    VkVideoSessionCreateInfoKHR create_info = *config.SessionCreateInfo();
+    create_info.pVideoProfile = config.Profile();
+    create_info.pStdHeaderVersion = config.StdVersion();
+    create_info.queueFamilyIndex = queue_family_index;
+
+    m_errorMonitor->SetDesiredError("VUID-VkVideoSessionCreateInfoKHR-pVideoProfile-11759");
+    vk::CreateVideoSessionKHR(device(), &create_info, nullptr, &session);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeVideo, BindVideoSessionMemory) {
     TEST_DESCRIPTION("vkBindVideoSessionMemoryKHR - memory binding related invalid usages");
 
@@ -690,7 +724,7 @@ TEST_F(NegativeVideo, BeginCodingUnsupportedCodecOp) {
 
     cb.Begin();
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginVideoCodingKHR-commandBuffer-07231");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginVideoCodingKHR-commandBuffer-11760");
     cb.BeginVideoCoding(context.Begin());
     m_errorMonitor->VerifyFound();
 

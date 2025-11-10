@@ -1759,7 +1759,7 @@ TEST_F(NegativeVideoDecode, DecodeInlineQueryIncompatibleQueueFamily) {
     cb.Begin();
 
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdBeginVideoCodingKHR-commandBuffer-cmdpool");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdBeginVideoCodingKHR-commandBuffer-07231");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdBeginVideoCodingKHR-commandBuffer-11760");
     cb.BeginVideoCoding(context.Begin());
 
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDecodeVideoKHR-commandBuffer-cmdpool");

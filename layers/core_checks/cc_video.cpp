@@ -4199,6 +4199,16 @@ bool CoreChecks::PreCallValidateCreateVideoSessionKHR(VkDevice device, const VkV
                 break;
         }
 
+        auto qf_ext_props = device_state->queue_family_ext_props[pCreateInfo->queueFamilyIndex];
+        if ((pCreateInfo->pVideoProfile->videoCodecOperation & qf_ext_props.video_props.videoCodecOperations) == 0) {
+            skip |= LogError("VUID-VkVideoSessionCreateInfoKHR-pVideoProfile-11759", device,
+                             create_info_loc.dot(Field::pVideoProfile).dot(Field::videoCodecOperation),
+                             "(%s) is not supported by the queue family index specified to create the video session.\n"
+                             "Supported video codec operations by the queue family: %s.",
+                             string_VkVideoCodecOperationFlagBitsKHR(pCreateInfo->pVideoProfile->videoCodecOperation),
+                             string_VkVideoCodecOperationFlagsKHR(qf_ext_props.video_props.videoCodecOperations).c_str());
+        }
+
         if (profile_desc.IsEncode()) {
             auto ir_create_info = vku::FindStructInPNextChain<VkVideoEncodeSessionIntraRefreshCreateInfoKHR>(pCreateInfo);
             if (ir_create_info) {
@@ -5029,16 +5039,13 @@ bool CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBu
 
     const Location begin_info_loc = error_obj.location.dot(Field::pBeginInfo);
 
-    auto qf_ext_props = device_state->queue_family_ext_props[cb_state->command_pool->queueFamilyIndex];
-
-    if ((qf_ext_props.video_props.videoCodecOperations & vs_state->GetCodecOp()) == 0) {
+    if (vs_state->create_info.queueFamilyIndex != cb_state->command_pool->queueFamilyIndex) {
         const LogObjectList objlist(commandBuffer, pBeginInfo->videoSession, cb_state->command_pool->Handle());
-        skip |= LogError("VUID-vkCmdBeginVideoCodingKHR-commandBuffer-07231", objlist, begin_info_loc.dot(Field::videoSession),
-                         "%s does not support video codec operation %s "
-                         "that %s specified in pBeginInfo->videoSession was created with.",
-                         FormatHandle(cb_state->command_pool->Handle()).c_str(),
-                         string_VkVideoCodecOperationFlagBitsKHR(vs_state->GetCodecOp()),
-                         FormatHandle(pBeginInfo->videoSession).c_str());
+        skip |= LogError("VUID-vkCmdBeginVideoCodingKHR-commandBuffer-11760", objlist, begin_info_loc.dot(Field::videoSession),
+                         "%s (queue family index %" PRIu32 ") and %s (queue family index %" PRIu32
+                         ") are not created with the same queue family index.",
+                         FormatHandle(pBeginInfo->videoSession).c_str(), vs_state->create_info.queueFamilyIndex,
+                         FormatHandle(cb_state->command_pool->Handle()).c_str(), cb_state->command_pool->queueFamilyIndex);
     }
 
     if (vs_state->GetUnboundMemoryBindingCount() > 0) {
