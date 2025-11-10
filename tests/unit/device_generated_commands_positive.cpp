@@ -35,8 +35,9 @@ void DeviceGeneratedCommandsTest::InitBasicDeviceGeneratedCommands() {
 
 // "If vkGetGeneratedCommandsMemoryRequirementsEXT returns a non-zero size, preprocessAddress must not be NULL"
 // Does the query and updates with preprocessAddress if needed
-void DeviceGeneratedCommandsTest::SetPreProcessBuffer(VkGeneratedCommandsInfoEXT& generated_commands_info) {
-    VkGeneratedCommandsMemoryRequirementsInfoEXT dgc_mem_reqs = vku::InitStructHelper();
+void DeviceGeneratedCommandsTest::SetPreProcessBuffer(VkGeneratedCommandsInfoEXT& generated_commands_info,
+                                                      void* pipeline_or_shader_object) {
+    VkGeneratedCommandsMemoryRequirementsInfoEXT dgc_mem_reqs = vku::InitStructHelper(pipeline_or_shader_object);
     dgc_mem_reqs.indirectCommandsLayout = generated_commands_info.indirectCommandsLayout;
     dgc_mem_reqs.indirectExecutionSet = generated_commands_info.indirectExecutionSet;
     dgc_mem_reqs.maxSequenceCount = generated_commands_info.maxSequenceCount;

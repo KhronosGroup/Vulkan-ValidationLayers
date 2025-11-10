@@ -247,7 +247,6 @@ bool CoreChecks::ValidateDynamicStateIsSet(const LastBound& last_bound_state, co
             case CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT:
                 vuid_str = vuid.set_line_stipple_enable_08669;
                 break;
-                ;
             default:
                 assert(false);
                 break;
@@ -516,8 +515,11 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
     if (has_pipeline) {
         if (!last_bound_state.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT) &&
             last_bound_state.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE)) {
-            skip |=
-                ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE, vuid);
+            // The vertex buffer for DGC needs to be validated in GPU-AV
+            if (vuid.loc().function != vvl::Func::vkCmdExecuteGeneratedCommandsEXT) {
+                skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE,
+                                                  vuid);
+            }
         }
     }
 

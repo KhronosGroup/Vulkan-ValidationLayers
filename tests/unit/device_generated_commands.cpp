@@ -2458,3 +2458,167 @@ TEST_F(NegativeDeviceGeneratedCommands, IndirectAddress) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeDeviceGeneratedCommands, ComputeRenderPass) {
+    RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
+    InitRenderTarget();
+
+    VkIndirectCommandsLayoutTokenEXT token = vku::InitStructHelper();
+    token.type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DISPATCH_EXT;
+    token.offset = 0;
+
+    VkIndirectCommandsLayoutCreateInfoEXT command_layout_ci = vku::InitStructHelper();
+    command_layout_ci.shaderStages = VK_SHADER_STAGE_COMPUTE_BIT;
+    command_layout_ci.pipelineLayout = VK_NULL_HANDLE;
+    command_layout_ci.tokenCount = 1;
+    command_layout_ci.pTokens = &token;
+    vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
+
+    VkPipelineCreateFlags2CreateInfo pipe_flags2 = vku::InitStructHelper();
+    pipe_flags2.flags = VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT;
+    CreateComputePipelineHelper pipe(*this, &pipe_flags2);
+    pipe.CreateComputePipeline();
+
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    vkt::Buffer block_buffer(*m_device, 64, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, kHostVisibleMemProps, &allocate_flag_info);
+
+    VkGeneratedCommandsPipelineInfoEXT pipeline_info = vku::InitStructHelper();
+    pipeline_info.pipeline = pipe;
+    VkGeneratedCommandsInfoEXT generated_commands_info = vku::InitStructHelper(&pipeline_info);
+    generated_commands_info.shaderStages = VK_SHADER_STAGE_COMPUTE_BIT;
+    generated_commands_info.indirectExecutionSet = VK_NULL_HANDLE;
+    generated_commands_info.indirectCommandsLayout = command_layout;
+    generated_commands_info.indirectAddressSize = 64;
+    generated_commands_info.indirectAddress = block_buffer.Address();
+    generated_commands_info.sequenceCountAddress = 0;
+    generated_commands_info.maxSequenceCount = 1;
+    generated_commands_info.maxDrawCount = 1;
+    SetPreProcessBuffer(generated_commands_info, &pipeline_info);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdExecuteGeneratedCommandsEXT-compute-dispatch");
+    vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer, false, &generated_commands_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDeviceGeneratedCommands, DrawNotSetDepthCompareOp) {
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState2);
+    RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
+    InitRenderTarget();
+
+    VkPipelineCreateFlags2CreateInfo pipe_flags2 = vku::InitStructHelper();
+    pipe_flags2.flags = VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT;
+    CreatePipelineHelper pipe(*this, &pipe_flags2);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_COMPARE_OP);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE);
+    pipe.CreateGraphicsPipeline();
+
+    VkIndirectCommandsLayoutTokenEXT token = vku::InitStructHelper();
+    token.type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_EXT;
+    token.offset = 0;
+
+    VkIndirectCommandsLayoutCreateInfoEXT command_layout_ci = vku::InitStructHelper();
+    command_layout_ci.shaderStages = VK_SHADER_STAGE_VERTEX_BIT;
+    command_layout_ci.pipelineLayout = VK_NULL_HANDLE;
+    command_layout_ci.tokenCount = 1;
+    command_layout_ci.pTokens = &token;
+
+    vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
+
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    vkt::Buffer block_buffer(*m_device, 64, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, kHostVisibleMemProps, &allocate_flag_info);
+
+    VkGeneratedCommandsPipelineInfoEXT pipeline_info = vku::InitStructHelper();
+    pipeline_info.pipeline = pipe;
+    VkGeneratedCommandsInfoEXT generated_commands_info = vku::InitStructHelper(&pipeline_info);
+    generated_commands_info.shaderStages = VK_SHADER_STAGE_VERTEX_BIT;
+    generated_commands_info.indirectExecutionSet = VK_NULL_HANDLE;
+    generated_commands_info.indirectCommandsLayout = command_layout;
+    generated_commands_info.indirectAddressSize = 64;
+    generated_commands_info.indirectAddress = block_buffer.Address();
+    generated_commands_info.sequenceCountAddress = 0;
+    generated_commands_info.maxSequenceCount = 1;
+    generated_commands_info.maxDrawCount = 1;
+    SetPreProcessBuffer(generated_commands_info, &pipeline_info);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdSetRasterizerDiscardEnableEXT(m_command_buffer, VK_FALSE);
+    vk::CmdSetDepthTestEnableEXT(m_command_buffer, VK_TRUE);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteGeneratedCommandsEXT-None-07845");
+    vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer, false, &generated_commands_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDeviceGeneratedCommands, RasterizationLineModeRectangular) {
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3LineRasterizationMode);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3LineStippleEnable);
+    AddRequiredFeature(vkt::Feature::rectangularLines);
+    AddRequiredFeature(vkt::Feature::bresenhamLines);
+    AddRequiredFeature(vkt::Feature::smoothLines);
+    RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
+    InitRenderTarget();
+
+    VkPipelineCreateFlags2CreateInfo pipe_flags2 = vku::InitStructHelper();
+    pipe_flags2.flags = VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT;
+    CreatePipelineHelper pipe(*this, &pipe_flags2);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT);
+    pipe.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR;
+    pipe.line_state_ci_.stippledLineEnable = VK_TRUE;  // ignored
+    pipe.line_state_ci_.lineStippleFactor = 1;
+    pipe.CreateGraphicsPipeline();
+
+    VkIndirectCommandsLayoutTokenEXT token = vku::InitStructHelper();
+    token.type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_EXT;
+    token.offset = 0;
+
+    VkIndirectCommandsLayoutCreateInfoEXT command_layout_ci = vku::InitStructHelper();
+    command_layout_ci.shaderStages = VK_SHADER_STAGE_VERTEX_BIT;
+    command_layout_ci.pipelineLayout = VK_NULL_HANDLE;
+    command_layout_ci.tokenCount = 1;
+    command_layout_ci.pTokens = &token;
+
+    vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
+
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    vkt::Buffer block_buffer(*m_device, 64, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, kHostVisibleMemProps, &allocate_flag_info);
+
+    VkGeneratedCommandsPipelineInfoEXT pipeline_info = vku::InitStructHelper();
+    pipeline_info.pipeline = pipe;
+    VkGeneratedCommandsInfoEXT generated_commands_info = vku::InitStructHelper(&pipeline_info);
+    generated_commands_info.shaderStages = VK_SHADER_STAGE_VERTEX_BIT;
+    generated_commands_info.indirectExecutionSet = VK_NULL_HANDLE;
+    generated_commands_info.indirectCommandsLayout = command_layout;
+    generated_commands_info.indirectAddressSize = 64;
+    generated_commands_info.indirectAddress = block_buffer.Address();
+    generated_commands_info.sequenceCountAddress = 0;
+    generated_commands_info.maxSequenceCount = 1;
+    generated_commands_info.maxDrawCount = 1;
+    SetPreProcessBuffer(generated_commands_info, &pipeline_info);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdSetLineStippleEnableEXT(m_command_buffer, VK_TRUE);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteGeneratedCommandsEXT-stippledLineEnable-07495");
+    vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer, false, &generated_commands_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
