@@ -465,6 +465,10 @@ TEST_F(NegativeGpuAVIndirectBuffer, Mesh) {
 #endif
 }
 
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11028
+// This test will get invalid vkCmdDrawMeshTasksIndirectCountEXT
+// to be executed by the driver, likely killing it.
+// Until GPU-AV manages to stop commands, this will stay disabled.
 TEST_F(NegativeGpuAVIndirectBuffer, DISABLED_MeshTask) {
     TEST_DESCRIPTION("GPU validation: Validate DrawMeshTasksIndirect* DrawBuffer contents");
     SetTargetApiVersion(VK_API_VERSION_1_3);
