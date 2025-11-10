@@ -96,6 +96,23 @@ struct DescriptorState {
     }
 };
 
+// To make things easy we make everything in GLSL a 32-bit stream to read later.
+// This is to help ensure we reconstruct the 64-bit value saved in the shader
+//
+// The GLSL should look like:
+//   uint64_t address;
+//   uint out_buffer[];
+//   out_buffer[0] = address;
+//   out_buffer[1] = address >> 32;
+[[maybe_unused]] static uint64_t GetUint64(const uint32_t* ptr) {
+    const uint32_t low = ptr[0];
+    const uint32_t high = ptr[1];
+    // Need to shift into uint before casting to signed int to avoid undefined behavior
+    // https://learn.microsoft.com/en-us/cpp/cpp/left-shift-and-right-shift-operators-input-and-output?view=msvc-170#footnotes
+    const uint64_t value_unsigned = (static_cast<uint64_t>(high) << 32) | low;
+    return value_unsigned;
+}
+
 }  // namespace glsl
 
 }  // namespace gpuav

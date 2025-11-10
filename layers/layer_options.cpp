@@ -202,6 +202,7 @@ const char *VK_LAYER_GPUAV_INDIRECT_DRAWS_BUFFERS = "gpuav_indirect_draws_buffer
 const char *VK_LAYER_GPUAV_INDIRECT_DISPATCHES_BUFFERS = "gpuav_indirect_dispatches_buffers";
 const char *VK_LAYER_GPUAV_INDIRECT_TRACE_RAYS_BUFFERS = "gpuav_indirect_trace_rays_buffers";
 const char *VK_LAYER_GPUAV_BUFFER_COPIES = "gpuav_buffer_copies";
+const char *VK_LAYER_GPUAV_COPY_MEMORY_INDIRECT = "gpuav_copy_memory_indirect";
 const char *VK_LAYER_GPUAV_INDEX_BUFFERS = "gpuav_index_buffers";
 
 // A temporary workaround until we get proper Descriptor Buffer support
@@ -934,6 +935,10 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         }
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_BUFFER_COPIES)) {
             vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_BUFFER_COPIES, gpuav_settings.validate_buffer_copies);
+        }
+        if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_COPY_MEMORY_INDIRECT)) {
+            vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_COPY_MEMORY_INDIRECT,
+                                    gpuav_settings.validate_copy_memory_indirect);
         }
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_INDEX_BUFFERS)) {
             vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_INDEX_BUFFERS, gpuav_settings.validate_index_buffers);

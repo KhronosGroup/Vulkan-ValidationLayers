@@ -85,6 +85,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/gpu_av_cooperative_vector_positive.cpp
     unit/gpu_av_copies.cpp
     unit/gpu_av_copies_positive.cpp
+    unit/gpu_av_copy_memory_indirect.cpp
+    unit/gpu_av_copy_memory_indirect_positive.cpp
     unit/gpu_av_debug_printf.cpp
     unit/gpu_av_descriptor_buffer_positive.cpp
     unit/gpu_av_descriptor_class_general_buffer.cpp

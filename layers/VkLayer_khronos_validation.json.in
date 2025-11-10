@@ -852,6 +852,20 @@
                                             }
                                         },
                                         {
+                                            "key": "gpuav_copy_memory_indirect",
+                                            "label": "VK_KHR_copy_memory_indirect",
+                                            "type": "BOOL",
+                                            "default": true,
+                                            "description": "Validate VK_KHR_copy_memory_indirect.",
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    { "key": "gpuav_enable", "value": true },
+                                                    { "key": "gpuav_buffers_validation", "value": true }
+                                                ]
+                                            }
+                                        },
+                                        {
                                             "key": "gpuav_index_buffers",
                                             "label": "Index buffers",
                                             "type": "BOOL",

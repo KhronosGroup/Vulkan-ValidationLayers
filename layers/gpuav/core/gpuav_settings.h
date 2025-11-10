@@ -32,6 +32,7 @@ struct GpuAVSettings {
     bool validate_indirect_dispatches_buffers = true;
     bool validate_indirect_trace_rays_buffers = true;
     bool validate_buffer_copies = true;
+    bool validate_copy_memory_indirect = true;
     bool validate_index_buffers = true;
 
     // Currently turned of due to some false positives still observed

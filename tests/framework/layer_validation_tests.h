@@ -256,6 +256,11 @@ class GpuAVDescriptorClassGeneralBuffer : public GpuAVTest {
                                   const char *expected_error = nullptr, uint32_t error_count = 1);
 };
 
+class GpuAVCopyMemoryIndirect : public GpuAVTest {
+  public:
+    void InitGpuAVCopyMemoryIndirect();
+};
+
 class GpuAVRayQueryTest : public GpuAVTest {
   public:
     void InitGpuAVRayQuery(std::vector<VkLayerSettingEXT> layer_settings = {});

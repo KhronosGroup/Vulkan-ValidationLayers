@@ -96,6 +96,8 @@ struct DispatchPushData {
 const uint kPreCopyBufferToImageBinding_SrcBuffer = 0;
 const uint kPreCopyBufferToImageBinding_CopySrcRegions = 1;
 
+const uint kPreCopyMemoryIndirectBinding = 0;
+
 #ifdef __cplusplus
 using IndirectCommandReference = uint64_t;
 #else

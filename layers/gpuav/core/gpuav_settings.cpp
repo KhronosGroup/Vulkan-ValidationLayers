@@ -48,13 +48,14 @@ void GpuAVSettings::DisableShaderInstrumentationAndOptions() {
 }
 bool GpuAVSettings::IsBufferValidationEnabled() const {
     return validate_indirect_draws_buffers || validate_indirect_dispatches_buffers || validate_indirect_trace_rays_buffers ||
-           validate_buffer_copies || validate_index_buffers;
+           validate_buffer_copies || validate_copy_memory_indirect || validate_index_buffers;
 }
 void GpuAVSettings::SetBufferValidationEnabled(bool enabled) {
     validate_indirect_draws_buffers = enabled;
     validate_indirect_dispatches_buffers = enabled;
     validate_indirect_trace_rays_buffers = enabled;
     validate_buffer_copies = enabled;
+    validate_copy_memory_indirect = enabled;
     validate_index_buffers = enabled;
 }
 
@@ -102,6 +103,7 @@ void GpuAVSettings::TracyLogSettings() const {
     VVL_TracyMessageStream("  validate_indirect_dispatches_buffers: " << validate_indirect_dispatches_buffers);
     VVL_TracyMessageStream("  validate_indirect_trace_rays_buffers: " << validate_indirect_trace_rays_buffers);
     VVL_TracyMessageStream("  validate_buffer_copies: " << validate_buffer_copies);
+    VVL_TracyMessageStream("  validate_copy_memory_indirect: " << validate_copy_memory_indirect);
     VVL_TracyMessageStream("  validate_index_buffers: " << validate_index_buffers);
     VVL_TracyMessageStream("  validate_image_layout: " << validate_image_layout);
     VVL_TracyMessageStream("  vma_linear_output: " << vma_linear_output);
