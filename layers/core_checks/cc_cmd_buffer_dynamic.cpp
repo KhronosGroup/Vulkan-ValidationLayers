@@ -557,8 +557,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipelineRenderPass(const LastBound& las
         }
     }
 
-    if (rp_state.UsesDynamicRendering() &&
-        (!IsExtEnabled(extensions.vk_ext_shader_object) || !last_bound_state.IsAnyGraphicsShaderBound())) {
+    if (rp_state.UsesDynamicRendering()) {
         skip |= ValidateDrawRenderingAttachmentLocation(cb_state, pipeline, vuid);
         skip |= ValidateDrawRenderingInputAttachmentIndex(cb_state, pipeline, vuid);
     }
