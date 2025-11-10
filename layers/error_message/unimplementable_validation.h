@@ -567,7 +567,7 @@ const char* unimplementable_validation[] = {
     "VUID-VkPhysicalDeviceMaintenance9PropertiesKHR-sType-sType",
     "VUID-VkPhysicalDeviceMemoryDecompressionPropertiesEXT-sType-sType",
     "VUID-VkPhysicalDevicePartitionedAccelerationStructurePropertiesNV-sType-sType",
-    "VUID-VkPhysicalDevicePerformanceCountersByRegionPropertiesARM",
+    "VUID-VkPhysicalDevicePerformanceCountersByRegionPropertiesARM-sType-sType",
     "VUID-VkPhysicalDeviceTensorPropertiesARM-sType-sType",
     "VUID-VkPhysicalDeviceTileMemoryHeapPropertiesQCOM-sType-sType",
     "VUID-VkPhysicalDeviceTileShadingPropertiesQCOM-sType-sType",

@@ -19,6 +19,7 @@
 #include <vulkan/vulkan_core.h>
 #include <spirv/unified1/spirv.hpp>
 #include "core_validation.h"
+#include "drawdispatch/drawdispatch_vuids.h"
 #include "error_message/error_strings.h"
 #include "generated/dispatch_functions.h"
 #include "state_tracker/device_generated_commands_state.h"
@@ -599,6 +600,16 @@ bool CoreChecks::PreCallValidateCmdExecuteGeneratedCommandsEXT(VkCommandBuffer c
     }
 
     skip |= ValidateGeneratedCommandsInfo(cb_state, *indirect_commands_layout, *pGeneratedCommandsInfo, isPreprocessed, info_loc);
+
+    // You can only have 1 "action token" so we know there is only a draw or dispatch or traceRay
+    // If a VkIndirectExecutionSetEXT is not used, we can guarantee the pipeline/shaderObject being used.
+    if (pGeneratedCommandsInfo->indirectExecutionSet == VK_NULL_HANDLE) {
+        const VkPipelineBindPoint vk_bind_point = ConvertStageToBindPoint(pGeneratedCommandsInfo->shaderStages);
+        const vvl::BindPoint vvl_bind_point = ConvertToVvlBindPoint(vk_bind_point);
+        const LastBound& last_bound = cb_state.lastBound[vvl_bind_point];
+        const vvl::DrawDispatchVuid& vuid = vvl::GetDrawDispatchVuid(error_obj.location.function);
+        skip |= ValidateActionState(last_bound, vuid);
+    }
 
     return skip;
 }

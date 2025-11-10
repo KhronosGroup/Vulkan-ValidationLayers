@@ -24,6 +24,7 @@
 #include "core_validation.h"
 #include "error_message/error_strings.h"
 #include "error_message/logging.h"
+#include "generated/error_location_helper.h"
 #include "generated/spirv_grammar_helper.h"
 #include "generated/vk_extension_helper.h"
 #include "state_tracker/buffer_state.h"
@@ -1619,6 +1620,11 @@ bool CoreChecks::ValidateActionStatePushConstant(const LastBound &last_bound_sta
     bool skip = false;
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
 
+    // Push constants validation for DGC will need to be done in GPU-AV
+    if (vuid.loc().function == vvl::Func::vkCmdExecuteGeneratedCommandsEXT) {
+        return skip;
+    }
+
     // Verify if push constants have been set
     // NOTE: Currently not checking whether active push constants are compatible with the active pipeline, nor whether the
     //       "life times" of push constants are correct.
@@ -2211,6 +2217,11 @@ bool CoreChecks::ValidateDrawVertexBinding(const LastBound &last_bound, const vv
     // Since we need to know if the Vertex shader actually declares/uses the Input Location, if the shader validation was disabled,
     // there will no SPIR-V to reflect the information from.
     if (disabled[shader_validation]) {
+        return skip;
+    }
+
+    // Vertex bindings validation for DGC will need to be done in GPU-AV
+    if (vuid.loc().function == vvl::Func::vkCmdExecuteGeneratedCommandsEXT) {
         return skip;
     }
 
