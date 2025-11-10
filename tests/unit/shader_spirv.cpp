@@ -12,6 +12,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <vulkan/vulkan_core.h>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 
@@ -2996,5 +2997,61 @@ TEST_F(NegativeShaderSpirv, ShaderFmaNon32) {
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-shaderFmaFloat16-10977");
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-shaderFmaFloat64-10979");
     VkShaderObj cs(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderSpirv, ShaderUniformBufferUnsizedArray) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    // Missing shaderUniformBufferUnsizedArray
+    RETURN_IF_SKIP(Init());
+
+    const char *spv_source = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %_ %__0
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %_runtimearr_uint ArrayStride 16
+               OpDecorate %SSBO Block
+               OpMemberDecorate %SSBO 0 Offset 0
+               OpDecorate %_ Binding 1
+               OpDecorate %_ DescriptorSet 0
+               OpDecorate %UBO Block
+               OpMemberDecorate %UBO 0 Offset 0
+               OpMemberDecorate %UBO 1 Offset 16
+               OpDecorate %__0 Binding 0
+               OpDecorate %__0 DescriptorSet 0
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%_runtimearr_uint = OpTypeRuntimeArray %uint
+       %SSBO = OpTypeStruct %_runtimearr_uint
+%_ptr_StorageBuffer_SSBO = OpTypePointer StorageBuffer %SSBO
+          %_ = OpVariable %_ptr_StorageBuffer_SSBO StorageBuffer
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+        %UBO = OpTypeStruct %uint %_runtimearr_uint
+%_ptr_Uniform_UBO = OpTypePointer Uniform %UBO
+        %__0 = OpVariable %_ptr_Uniform_UBO Uniform
+%_ptr_Uniform_uint = OpTypePointer Uniform %uint
+      %int_1 = OpConstant %int 1
+%_ptr_StorageBuffer_uint = OpTypePointer StorageBuffer %uint
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+         %20 = OpAccessChain %_ptr_Uniform_uint %__0 %int_0
+         %21 = OpLoad %uint %20
+         %23 = OpAccessChain %_ptr_Uniform_uint %__0 %int_1 %21
+         %24 = OpLoad %uint %20
+         %26 = OpAccessChain %_ptr_StorageBuffer_uint %_ %int_0 %21
+               OpStore %26 %24
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                          {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-shaderUniformBufferUnsizedArray-11806");
+    pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }

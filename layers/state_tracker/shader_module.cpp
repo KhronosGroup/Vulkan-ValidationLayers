@@ -2110,6 +2110,12 @@ bool ResourceInterfaceVariable::IsStorageBuffer(const ResourceInterfaceVariable&
     return ((uniform && buffer_block) || ((storage_buffer || physical_storage_buffer) && block));
 }
 
+bool ResourceInterfaceVariable::IsUniformBuffer(const ResourceInterfaceVariable& variable) {
+    const bool uniform = variable.storage_class == spv::StorageClassUniform;
+    const bool block = variable.type_struct_info && variable.type_struct_info->decorations.Has(DecorationSet::block_bit);
+    return (uniform && block);
+}
+
 ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state, const EntryPoint& entrypoint,
                                                      const Instruction& insn, const ParsedInfo& parsed)
     : VariableBase(module_state, insn, entrypoint.stage, parsed),
@@ -2117,7 +2123,8 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
       is_type_sampled_image(false),
       base_type(FindBaseType(*this, module_state)),
       is_runtime_descriptor_array(module_state.HasRuntimeArray(type_id)),
-      is_storage_buffer(IsStorageBuffer(*this)) {
+      is_storage_buffer(IsStorageBuffer(*this)),
+      is_uniform_buffer(IsUniformBuffer(*this)) {
     // to make sure no padding in-between the struct produce noise and force same data to become a different hash
     info = {};  // will be cleared with c++11 initialization
     info.image_dim = base_type.FindImageDim();
@@ -2261,7 +2268,10 @@ TaskPayloadVariable::TaskPayloadVariable(const Module& module_state, const Instr
 }
 
 TypeStructInfo::TypeStructInfo(const Module& module_state, const Instruction& struct_insn)
-    : id(struct_insn.Word(1)), length(struct_insn.Length() - 2), decorations(module_state.GetDecorationSet(id)) {
+    : id(struct_insn.Word(1)),
+      length(struct_insn.Length() - 2),
+      decorations(module_state.GetDecorationSet(id)),
+      has_runtime_array(false) {
     members.resize(length);
     for (uint32_t i = 0; i < length; i++) {
         Member& member = members[i];
@@ -2272,6 +2282,9 @@ TypeStructInfo::TypeStructInfo(const Module& module_state, const Instruction& st
         const auto it = decorations.member_decorations.find(i);
         if (it != decorations.member_decorations.end()) {
             member.decorations = &it->second;
+        }
+        if (member.insn->Opcode() == spv::OpTypeRuntimeArray) {
+            has_runtime_array = true;
         }
     }
 }

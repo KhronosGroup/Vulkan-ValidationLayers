@@ -1527,6 +1527,15 @@ bool CoreChecks::ValidateShaderInterfaceVariable(const spirv::Module &module_sta
                              variable.base_type.Describe().c_str());
         }
     }
+
+    if (variable.is_uniform_buffer && variable.type_struct_info && variable.type_struct_info->has_runtime_array &&
+        !enabled_features.shaderUniformBufferUnsizedArray) {
+        skip |= LogError("VUID-RuntimeSpirv-shaderUniformBufferUnsizedArray-11806", module_state.handle(), loc,
+                         "SPIR-V (%s) uses descriptor %s which is an uniform buffer with a runtime array, but "
+                         "shaderUniformBufferUnsizedArray was not enabled.",
+                         string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str());
+    }
+
     return skip;
 }
 
