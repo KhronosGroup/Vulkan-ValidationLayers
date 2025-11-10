@@ -42,7 +42,7 @@ struct ImageRegionIntersection {
     VkImageSubresourceLayers subresource = {};
     VkOffset3D offset = {0, 0, 0};
     VkExtent3D extent = {1, 1, 1};
-    bool has_instersection = false;
+    bool has_intersection = false;
     std::string String() const noexcept {
         std::stringstream ss;
         ss << "\nsubresource : { aspectMask: " << string_VkImageAspectFlags(subresource.aspectMask)
@@ -71,7 +71,7 @@ static ImageRegionIntersection GetRegionIntersection(const RegionType &region0, 
         result.subresource.baseArrayLayer = static_cast<uint32_t>(intersection.begin);
         result.subresource.layerCount = static_cast<uint32_t>(intersection.distance());
         result.subresource.mipLevel = region0.srcSubresource.mipLevel;
-        result.has_instersection = true;
+        result.has_intersection = true;
         switch (type) {
             case VK_IMAGE_TYPE_3D:
                 intersection =
@@ -80,7 +80,7 @@ static ImageRegionIntersection GetRegionIntersection(const RegionType &region0, 
                     result.offset.z = static_cast<int32_t>(intersection.begin);
                     result.extent.depth = static_cast<uint32_t>(intersection.distance());
                 } else {
-                    result.has_instersection = false;
+                    result.has_intersection = false;
                     return result;
                 }
                 [[fallthrough]];
@@ -91,7 +91,7 @@ static ImageRegionIntersection GetRegionIntersection(const RegionType &region0, 
                     result.offset.y = static_cast<int32_t>(intersection.begin);
                     result.extent.height = static_cast<uint32_t>(intersection.distance());
                 } else {
-                    result.has_instersection = false;
+                    result.has_intersection = false;
                     return result;
                 }
                 [[fallthrough]];
@@ -102,7 +102,7 @@ static ImageRegionIntersection GetRegionIntersection(const RegionType &region0, 
                     result.offset.x = static_cast<int32_t>(intersection.begin);
                     result.extent.width = static_cast<uint32_t>(intersection.distance());
                 } else {
-                    result.has_instersection = false;
+                    result.has_intersection = false;
                     return result;
                 }
                 break;
@@ -1757,7 +1757,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         if (srcImage == dstImage) {
             for (uint32_t j = 0; j < regionCount; j++) {
                 if (auto intersection = GetRegionIntersection(pRegions[i], pRegions[j], src_image_type, is_src_multiplane);
-                    intersection.has_instersection) {
+                    intersection.has_intersection) {
                     vuid = is_2 ? "VUID-VkCopyImageInfo2-pRegions-00124" : "VUID-vkCmdCopyImage-pRegions-00124";
                     skip |= LogError(vuid, all_objlist, loc,
                                      "pRegion[%" PRIu32 "] copy source overlaps with pRegions[%" PRIu32
