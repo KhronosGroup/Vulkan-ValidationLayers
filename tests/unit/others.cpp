@@ -11,6 +11,7 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
+//stype-check off
 
 #include <vulkan/vulkan_core.h>
 #include <algorithm>
@@ -1445,4 +1446,29 @@ TEST_F(VkLayerTest, DISABLED_MultipleExtensionOrDependency) {
     m_errorMonitor->SetDesiredError("VUID-vkCreateDevice-ppEnabledExtensionNames-01387");
     RETURN_IF_SKIP(Init());
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, CooperativeMatrixProps) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-Docs/issues/2613");
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrix);
+    RETURN_IF_SKIP(Init());
+    uint32_t count = 1;
+    {
+        VkCooperativeMatrixPropertiesKHR props;
+        props.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+        props.pNext = nullptr;
+        m_errorMonitor->SetDesiredError("VUID-VkCooperativeMatrixPropertiesKHR-sType-sType");
+        vk::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(Gpu(), &count, &props);
+        m_errorMonitor->VerifyFound();
+    }
+    {
+        VkQueueFamilyProperties2 props;
+        props.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+        props.pNext = nullptr;
+        m_errorMonitor->SetDesiredError("VUID-VkQueueFamilyProperties2-sType-sType");
+        vk::GetPhysicalDeviceQueueFamilyProperties2KHR(Gpu(), &count, &props);
+        m_errorMonitor->VerifyFound();
+    }
 }
