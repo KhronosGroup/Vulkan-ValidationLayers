@@ -406,7 +406,9 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
     skip |= ValidatePipelineBindPoint(*cb_state, pipelineBindPoint, error_obj.location);
 
     auto pipeline_ptr = Get<vvl::Pipeline>(pipeline);
-    ASSERT_AND_RETURN_SKIP(pipeline_ptr);
+    if (!pipeline_ptr) {
+        return skip;
+    }
     const vvl::Pipeline &pipeline_state = *pipeline_ptr;
 
     if (pipelineBindPoint != pipeline_state.pipeline_type) {

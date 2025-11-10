@@ -1791,16 +1791,18 @@ bool CoreChecks::PreCallValidateGetRayTracingShaderGroupHandlesKHR(VkDevice devi
                                                                    uint32_t groupCount, size_t dataSize, void *pData,
                                                                    const ErrorObject &error_obj) const {
     bool skip = false;
-    auto pipeline_ptr = Get<vvl::Pipeline>(pipeline);
-    ASSERT_AND_RETURN_SKIP(pipeline_ptr);
-    if (pipeline_ptr->pipeline_type != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
+    auto pipeline_state_ptr = Get<vvl::Pipeline>(pipeline);
+    if (!pipeline_state_ptr) {
+        return skip;
+    }
+    if (pipeline_state_ptr->pipeline_type != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
         skip |=
             LogError("VUID-vkGetRayTracingShaderGroupHandlesKHR-pipeline-04619", pipeline, error_obj.location.dot(Field::pipeline),
-                     "is a %s pipeline.", string_VkPipelineBindPoint(pipeline_ptr->pipeline_type));
+                     "is a %s pipeline.", string_VkPipelineBindPoint(pipeline_state_ptr->pipeline_type));
         return skip;
     }
 
-    const vvl::Pipeline &pipeline_state = *pipeline_ptr;
+    const vvl::Pipeline &pipeline_state = *pipeline_state_ptr;
     if (pipeline_state.create_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) {
         if (!enabled_features.pipelineLibraryGroupHandles) {
             skip |= LogError("VUID-vkGetRayTracingShaderGroupHandlesKHR-pipeline-07828", pipeline,
@@ -1849,7 +1851,9 @@ bool CoreChecks::PreCallValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR(
                          dataSize, phys_dev_ext_props.ray_tracing_props_khr.shaderGroupHandleCaptureReplaySize, groupCount);
     }
     auto pipeline_state = Get<vvl::Pipeline>(pipeline);
-    ASSERT_AND_RETURN_SKIP(pipeline_state);
+    if (!pipeline_state) {
+        return skip;
+    }
     if (pipeline_state->pipeline_type != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
         skip |= LogError("VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-pipeline-04620", pipeline,
                          error_obj.location.dot(Field::pipeline), "is a %s pipeline.",
@@ -1924,7 +1928,9 @@ bool CoreChecks::PreCallValidateGetRayTracingShaderGroupStackSizeKHR(VkDevice de
                                                                      const ErrorObject &error_obj) const {
     bool skip = false;
     auto pipeline_state = Get<vvl::Pipeline>(pipeline);
-    ASSERT_AND_RETURN_SKIP(pipeline_state);
+    if (!pipeline_state) {
+        return skip;
+    }
 
     if (pipeline_state->pipeline_type != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
         skip |= LogError("VUID-vkGetRayTracingShaderGroupStackSizeKHR-pipeline-04622", pipeline,
