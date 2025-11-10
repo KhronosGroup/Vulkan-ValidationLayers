@@ -45,10 +45,10 @@ static inline bool IsActionCommand(VkIndirectCommandsTokenTypeEXT type) {
 }
 
 // Make sure sub_range is contained inside the full_range
-bool PushConstantRangesContained(VkPushConstantRange full_range, VkPushConstantRange sub_range) {
-    const uint32_t start = full_range.offset;
-    const uint32_t end = start + full_range.size;
-    return (start >= sub_range.offset && end <= (sub_range.offset + sub_range.size));
+bool PushConstantRangesContained(VkPushConstantRange sub_range, VkPushConstantRange full_range) {
+    const uint32_t start = sub_range.offset;
+    const uint32_t end = start + sub_range.size;
+    return (start >= full_range.offset && end <= (full_range.offset + full_range.size));
 }
 
 bool CoreChecks::PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice device,
@@ -85,30 +85,54 @@ bool CoreChecks::PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice device,
 
             if (!dynamic_layout_create && pipeline_layout_state) {
                 const auto& layout_ranges = *pipeline_layout_state->push_constant_ranges_layout;
+                bool stage_found = false;
                 for (const auto& layout_range : layout_ranges) {
-                    if (!PushConstantRangesContained(token_range, layout_range)) {
-                        skip |= LogError("VUID-VkIndirectCommandsPushConstantTokenEXT-updateRange-11132",
-                                         pipeline_layout_state->Handle(), update_range_loc,
-                                         "is %s but the push constant range in "
-                                         "VkIndirectCommandsLayoutCreateInfoEXT::pipelineLayout is %s.",
-                                         string_VkPushConstantRange(token_range).c_str(),
-                                         string_VkPushConstantRange(layout_range).c_str());
+                    if ((token_range.stageFlags & layout_range.stageFlags) != 0) {
+                        stage_found = true;
+                        if (!PushConstantRangesContained(token_range, layout_range)) {
+                            skip |= LogError("VUID-VkIndirectCommandsPushConstantTokenEXT-updateRange-11132",
+                                             pipeline_layout_state->Handle(), update_range_loc,
+                                             "is %s but the push constant range in "
+                                             "VkIndirectCommandsLayoutCreateInfoEXT::pipelineLayout is %s.",
+                                             string_VkPushConstantRange(token_range).c_str(),
+                                             string_VkPushConstantRange(layout_range).c_str());
+                            break;
+                        }
                     }
-                    break;
+                }
+                if (!stage_found) {
+                    skip |= LogError("VUID-VkIndirectCommandsPushConstantTokenEXT-updateRange-11132",
+                                     pipeline_layout_state->Handle(), update_range_loc,
+                                     "is %s but there is no push constant range in "
+                                     "VkIndirectCommandsLayoutCreateInfoEXT::pipelineLayout for stage %s.",
+                                     string_VkPushConstantRange(token_range).c_str(),
+                                     string_VkShaderStageFlags(token_range.stageFlags).c_str());
                 }
 
             } else if (dynamic_layout_create) {
                 // TODO - Because of custom PushConstantRangesId, can't share logic when using dynamicGeneratedPipelineLayout
+                bool stage_found = false;
                 for (uint32_t pc_index = 0; pc_index < dynamic_layout_create->pushConstantRangeCount; pc_index++) {
                     const VkPushConstantRange& layout_range = dynamic_layout_create->pPushConstantRanges[pc_index];
-                    if (!PushConstantRangesContained(token_range, layout_range)) {
-                        skip |= LogError("VUID-VkIndirectCommandsPushConstantTokenEXT-updateRange-11132", device, update_range_loc,
+                    if ((token_range.stageFlags & layout_range.stageFlags) != 0) {
+                        stage_found = true;
+                        if (!PushConstantRangesContained(token_range, layout_range)) {
+                            skip |=
+                                LogError("VUID-VkIndirectCommandsPushConstantTokenEXT-updateRange-11132", device, update_range_loc,
                                          "is %s but the push constant range in "
                                          "VkPipelineLayoutCreateInfo::pPushConstantRanges[%" PRIu32 "] is %s.",
                                          string_VkPushConstantRange(token_range).c_str(), pc_index,
                                          string_VkPushConstantRange(layout_range).c_str());
+                            break;
+                        }
                     }
-                    break;
+                }
+                if (!stage_found) {
+                    skip |= LogError("VUID-VkIndirectCommandsPushConstantTokenEXT-updateRange-11132", device, update_range_loc,
+                                     "is %s but there is no push constant range in "
+                                     "VkPipelineLayoutCreateInfo::pPushConstantRanges for stage %s.",
+                                     string_VkPushConstantRange(token_range).c_str(),
+                                     string_VkShaderStageFlags(token_range.stageFlags).c_str());
                 }
             }
         } else if (token.type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_VERTEX_BUFFER_EXT) {
