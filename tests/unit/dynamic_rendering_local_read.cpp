@@ -1592,3 +1592,68 @@ TEST_F(NegativeDynamicRenderingLocalRead, RenderingInputAttachmentIndexInfoMisma
 
     begin_record_and_verify_cmd_buffers(secondary_cmd_buffer_begin_info);
 }
+
+TEST_F(NegativeDynamicRenderingLocalRead, CmdDrawColorIndexESOEnabled) {
+    TEST_DESCRIPTION(
+        "Validate that mapping is not applied in CmdDraw call if rendering is not started by vkCmdBeginRendering (when "
+        "VK_EXT_shader_object is enabled on the device");
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
+
+    VkFormat color_formats[] = {VK_FORMAT_UNDEFINED, VK_FORMAT_UNDEFINED};
+    uint32_t locations[] = {0, 1};
+    uint32_t inputs[] = {0, 1, 0};
+
+    VkRenderingInputAttachmentIndexInfo inputs_info = vku::InitStructHelper();
+    inputs_info.colorAttachmentCount = 2;
+    inputs_info.pColorAttachmentInputIndices = inputs;
+
+    VkRenderingAttachmentLocationInfo locations_info = vku::InitStructHelper(&inputs_info);
+    locations_info.colorAttachmentCount = 2;
+    locations_info.pColorAttachmentLocations = locations;
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper(&locations_info);
+    pipeline_rendering_info.colorAttachmentCount = 2;
+    pipeline_rendering_info.pColorAttachmentFormats = color_formats;
+
+    std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachments(2);
+    VkPipelineColorBlendStateCreateInfo cbi = vku::InitStructHelper();
+    cbi.attachmentCount = 2u;
+    cbi.pAttachments = color_blend_attachments.data();
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.gp_ci_.pColorBlendState = &cbi;
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingAttachmentInfo color_attachment[2] = {vku::InitStructHelper(), vku::InitStructHelper()};
+    color_attachment[0].imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    color_attachment[1].imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32, 32}};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 2;
+    rendering_info.pColorAttachments = &color_attachment[0];
+
+    m_command_buffer.BeginRendering(rendering_info);
+
+    VkRenderingAttachmentLocationInfo location_info = vku::InitStructHelper();
+    location_info.colorAttachmentCount = 2;
+    location_info.pColorAttachmentLocations = locations;
+
+    VkRenderingInputAttachmentIndexInfo input_info = vku::InitStructHelper();
+    input_info.colorAttachmentCount = 2;
+    input_info.pColorAttachmentInputIndices = &inputs[1];
+
+    vk::CmdSetRenderingAttachmentLocationsKHR(m_command_buffer, &location_info);
+    vk::CmdSetRenderingInputAttachmentIndicesKHR(m_command_buffer, &input_info);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09549");
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+}
