@@ -269,7 +269,8 @@ bool CoreChecks::ValidateCmdBufImageLayouts(
         sparse_container::parallel_iterator<const ImageLayoutMap> current_layout(local_layout_map, *global_layout_map,
                                                                                  pos->first.begin);
         while (pos != end) {
-            VkImageLayout first_layout = pos->second.first_layout;
+            const ImageLayoutState &cb_layout_state = pos->second;
+            VkImageLayout first_layout = cb_layout_state.first_layout;
             if (first_layout == kInvalidLayout) {
                 continue;
             }
@@ -293,10 +294,12 @@ bool CoreChecks::ValidateCmdBufImageLayouts(
                     for (auto index : vvl::range_view<decltype(intersected_range)>(intersected_range)) {
                         const auto subresource = image_state->subresource_encoder.Decode(index);
                         const LogObjectList objlist(cb_state.Handle(), image_state->Handle());
-                        // TODO - We need a way to map the action command to which caused this error
-                        const vvl::DrawDispatchVuid &vuid = GetDrawDispatchVuid(vvl::Func::vkCmdDraw);
+                        const vvl::DrawDispatchVuid &draw_dispatch_vuids = GetDrawDispatchVuid(vvl::Func::vkCmdDraw);
+                        const char *vuid = cb_layout_state.submit_time_layout_mismatch_vuid
+                                               ? cb_layout_state.submit_time_layout_mismatch_vuid
+                                               : draw_dispatch_vuids.image_layout_09600;
                         skip |= LogError(
-                            vuid.image_layout_09600, objlist, loc,
+                            vuid, objlist, loc,
                             "command buffer %s expects %s (subresource: %s) to be in layout %s--instead, current layout is %s.",
                             FormatHandle(cb_state).c_str(), FormatHandle(*image_state).c_str(),
                             string_VkImageSubresource(subresource).c_str(), string_VkImageLayout(first_layout),

@@ -118,12 +118,13 @@ bool UpdateCurrentLayout(CommandBufferImageLayoutMap& image_layout_map, RangeGen
 }
 
 void TrackFirstLayout(CommandBufferImageLayoutMap& image_layout_map, RangeGenerator&& range_gen, VkImageLayout expected_layout,
-                      VkImageAspectFlags aspect_mask) {
+                      VkImageAspectFlags aspect_mask, const char* submit_time_layout_mismatch_vuid) {
     assert(expected_layout != kInvalidLayout);
     ImageLayoutState entry{};
     entry.current_layout = kInvalidLayout;
     entry.first_layout = expected_layout;
     entry.aspect_mask = aspect_mask;
+    entry.submit_time_layout_mismatch_vuid = submit_time_layout_mismatch_vuid;
     UpdateLayoutMap(image_layout_map, std::move(range_gen), entry);
 }
 
