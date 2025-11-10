@@ -137,7 +137,7 @@ bool Device::manual_PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandB
     if (firstBinding + bindingCount > phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers) {
         skip |= LogError("VUID-vkCmdBindTransformFeedbackBuffersEXT-firstBinding-02357", commandBuffer,
                          error_obj.location.dot(Field::firstBinding),
-                         "(%" PRIu32 ") plus bindCount (%" PRIu32 ") is greater than maxTransformFeedbackBuffers (%" PRIu32 ").",
+                         "(%" PRIu32 ") plus bindingCount (%" PRIu32 ") is greater than maxTransformFeedbackBuffers (%" PRIu32 ").",
                          firstBinding, bindingCount, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers);
     }
 
