@@ -246,26 +246,8 @@ void BufferRange::Clear() const {
     memset((uint8_t *)offset_mapped_ptr, 0, static_cast<size_t>(size));
 }
 
-static bool IsAllDeviceLocalMappable(VkPhysicalDevice physical_device) {
-    VkPhysicalDeviceMemoryProperties mem_props;
-    DispatchGetPhysicalDeviceMemoryProperties(physical_device, &mem_props);
-
-    for (uint32_t i = 0; i < mem_props.memoryTypeCount; ++i) {
-        const VkMemoryPropertyFlags property_flags = mem_props.memoryTypes[i].propertyFlags;
-        const bool has_device_local = (property_flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) != 0;
-        const bool has_host_visible = (property_flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0;
-        if (has_device_local && !has_host_visible) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
 GpuResourcesManager::GpuResourcesManager(Validator &gpuav) : gpuav_(gpuav) {
-    // On machines where all memory types have both DEVICE_LOCAL and HOST_VISIBLE we need to let VMA know there will be host access,
-    // otherwise it will assert https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/issues/515
-    const bool force_host_access = IsAllDeviceLocalMappable(gpuav.physical_device);
+    const bool force_host_access = gpuav.IsAllDeviceLocalMappable();
 
     {
         VmaAllocationCreateInfo alloc_ci = {};

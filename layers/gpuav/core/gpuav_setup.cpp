@@ -437,6 +437,24 @@ void Validator::InternalVmaError(LogObjectList objlist, VkResult result, const c
     dispatch_device_->ReleaseValidationObject(LayerObjectTypeGpuAssisted);
 }
 
+// On machines where all memory types have both DEVICE_LOCAL and HOST_VISIBLE we need to let VMA know there will be host access,
+// otherwise it will assert https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/issues/515
+bool Validator::IsAllDeviceLocalMappable() const {
+    VkPhysicalDeviceMemoryProperties mem_props;
+    DispatchGetPhysicalDeviceMemoryProperties(physical_device, &mem_props);
+
+    for (uint32_t i = 0; i < mem_props.memoryTypeCount; ++i) {
+        const VkMemoryPropertyFlags property_flags = mem_props.memoryTypes[i].propertyFlags;
+        const bool has_device_local = (property_flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) != 0;
+        const bool has_host_visible = (property_flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0;
+        if (has_device_local && !has_host_visible) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 // Things like DescriptorHeap are singleton class that lives in GPU-AV, but are used when state tracking adds/destroy new resources
 // we need to track. One issue is on vkDestroyDevice we need to teardown the GPU-AV class, then after we try and destroy leaked
 // state objects (ex. user forgot to call vkDestroySampler).
