@@ -664,9 +664,9 @@ bool CoreChecks::ValidateDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayo
     const bool push_descriptor_set = (create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT) != 0;
 
     if (push_descriptor_set && !IsExtEnabledByCreateinfo(extensions.vk_khr_push_descriptor) && !enabled_features.pushDescriptor) {
-        skip |= LogError("VUID-VkDescriptorSetLayoutCreateInfo-flags-10354", device, create_info_loc,
-                         "was called but the VK_KHR_push_descriptor extension nor VkPhysicalDeviceVulkan14Features::pushDescriptor "
-                         "feature was enabled");
+        skip |= LogError("VUID-VkDescriptorSetLayoutCreateInfo-flags-10354", device, create_info_loc.dot(Field::flags),
+                         "contains VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT, but the VK_KHR_push_descriptor extension "
+                         "nor VkPhysicalDeviceVulkan14Features::pushDescriptor feature was enabled");
     }
 
     uint32_t max_binding = 0;
