@@ -87,7 +87,10 @@ class TAccessMapLocator {
     index_type DistanceToEdge() const;
 
   private:
-    iterator LowerBoundForIndex(index_type index) const { return map_->LowerBound(AccessRange(index, index + 1)); }
+    iterator LowerBoundForIndex(index_type index) const {
+        return index == std::numeric_limits<AccessRange::index_type>::max() ? map_->end()
+                                                                            : map_->LowerBound(AccessRange(index, index + 1));
+    }
     bool InsideLowerBoundRange() const { return lower_bound != map_->end() && lower_bound->first.includes(index); }
     bool TrySeekLocal(index_type seek_to);
 

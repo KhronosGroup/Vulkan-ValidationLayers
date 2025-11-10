@@ -33,6 +33,7 @@ void AccessMap::Erase(iterator first, iterator last) {
 }
 
 AccessMap::iterator AccessMap::LowerBound(const AccessRange &range) {
+    assert(range.valid());
     if (range.valid()) {
         // ImplMap doesn't give us what want with a direct query, it will give us the first entry contained (if any) in key,
         // not the first entry intersecting key, so, first look for the the first entry that starts at or after key.begin
@@ -56,6 +57,7 @@ AccessMap::iterator AccessMap::LowerBound(const AccessRange &range) {
 }
 
 AccessMap::const_iterator AccessMap::LowerBound(const AccessRange &range) const {
+    assert(range.valid());
     if (range.valid()) {
         // ImplMap doesn't give us what want with a direct query, it will give us the first entry contained (if any) in key,
         // not the first entry intersecting key, so, first look for the the first entry that starts at or after key.begin

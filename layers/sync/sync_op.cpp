@@ -132,6 +132,7 @@ class FilteredGeneratorGenerator {
     AccessRange AdvanceFilter() {
         ++filter_pos_;
         auto filter_range = FilterRange();
+        assert(filter_range.valid());
         if (filter_range.valid()) {
             FastForwardGen(filter_range);
         }
