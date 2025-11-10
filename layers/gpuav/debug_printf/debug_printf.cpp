@@ -17,6 +17,7 @@
 
 #include <vulkan/vulkan.h>
 #include "gpuav/debug_printf/debug_printf.h"
+#include "gpuav/resources/gpuav_shader_resources.h"
 #include "gpuav/shaders/gpuav_error_header.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
@@ -282,11 +283,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
                         }
 
                         const uint32_t *current_ptr = static_cast<uint32_t *>(current_value);
-                        const uint32_t low = *current_ptr;
-                        const uint32_t high = *(current_ptr + 1);
-                        // Need to shift into uint before casting to signed int to avoid undefined behavior
-                        // https://learn.microsoft.com/en-us/cpp/cpp/left-shift-and-right-shift-operators-input-and-output?view=msvc-170#footnotes
-                        const uint64_t value_unsigned = (static_cast<uint64_t>(high) << 32) | low;
+                        const uint64_t value_unsigned = glsl::GetUint64(current_ptr);
                         const int64_t value = static_cast<int64_t>(value_unsigned);
 
                         needed = std::snprintf(nullptr, 0, substring.string.c_str(), value) + 1;

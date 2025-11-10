@@ -73,6 +73,9 @@ extern const uint32_t instrumentation_vertex_attribute_fetch_oob_vert_function_0
 extern const uint32_t validation_cmd_copy_buffer_to_image_comp_size;
 extern const uint32_t validation_cmd_copy_buffer_to_image_comp[];
 
+extern const uint32_t validation_cmd_copy_memory_indirect_comp_size;
+extern const uint32_t validation_cmd_copy_memory_indirect_comp[];
+
 extern const uint32_t validation_cmd_count_buffer_comp_size;
 extern const uint32_t validation_cmd_count_buffer_comp[];
 

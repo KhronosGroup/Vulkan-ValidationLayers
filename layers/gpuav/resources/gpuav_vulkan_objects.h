@@ -90,6 +90,7 @@ struct BufferRange {
     VkDeviceAddress offset_address = 0;
     VmaAllocation vma_alloc = VK_NULL_HANDLE;  // Todo: get rid of this once host cached allocation are removed
 
+    VkDescriptorBufferInfo GetDescriptorBufferInfo() const { return {buffer, offset, size}; }
     void Clear() const;
 };
 

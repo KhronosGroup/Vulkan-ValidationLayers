@@ -70,6 +70,11 @@ khronos_validation.gpuav_buffer_copies = true
 # Validate buffers containing parameters used in indirect Vulkan commands, or used in copy commands
 khronos_validation.gpuav_buffers_validation = true
 
+# VK_KHR_copy_memory_indirect
+# =====================
+# Validate VK_KHR_copy_memory_indirect.
+khronos_validation.gpuav_copy_memory_indirect = true
+
 # Descriptors indexing
 # =====================
 # Enable descriptors and buffer out of bounds validation when using descriptor indexing

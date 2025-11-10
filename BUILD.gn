@@ -178,6 +178,8 @@ vvl_sources = [
   "layers/gpuav/validation_cmd/gpuav_validation_cmd_common.h",
   "layers/gpuav/validation_cmd/gpuav_copy_buffer_to_image.cpp",
   "layers/gpuav/validation_cmd/gpuav_copy_buffer_to_image.h",
+  "layers/gpuav/validation_cmd/gpuav_copy_memory_indirect.cpp",
+  "layers/gpuav/validation_cmd/gpuav_copy_memory_indirect.h",
   "layers/gpuav/validation_cmd/gpuav_dispatch.cpp",
   "layers/gpuav/validation_cmd/gpuav_dispatch.h",
   "layers/gpuav/validation_cmd/gpuav_draw.cpp",

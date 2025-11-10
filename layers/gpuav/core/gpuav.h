@@ -205,6 +205,12 @@ class Validator : public GpuShaderInstrumentor {
                                                const RecordObject&) final;
     void PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo,
                                             const RecordObject&) final;
+    void PreCallRecordCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer,
+                                               const VkCopyMemoryIndirectInfoKHR* pCopyMemoryIndirectInfo,
+                                               const RecordObject& record_obj) final;
+    void PreCallRecordCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer,
+                                                      const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo,
+                                                      const RecordObject& record_obj) final;
 
     bool ValidateProtectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, const Location& image_loc,
                                 const char* vuid, const char* more_message = "") const final;

@@ -37,7 +37,7 @@ const int kErrorGroupGpuPreTraceRays = 6;
 const int kErrorGroupGpuCopyBufferToImage = 7;
 const int kErrorGroupInstDescriptorClass = 8;
 const int kErrorGroupInstIndexedDraw = 9;
-const int kErrorGroupInst_Reserved_6452 = 10;  // Saved for future extension MR 6452
+const int kErrorGroupInstCopyMemoryIndirect = 10;
 
 // We just take ExecutionModel and normalize it so we only use 5 bits to store it
 const int kExecutionModelVertex = 0;
@@ -131,6 +131,15 @@ const int kErrorSubCodePreTraceRaysLimitVolume = 4;
 // Pre Copy Buffer To Image
 //
 const int kErrorSubCodePreCopyBufferToImageBufferTexel = 1;
+
+// Pre Copy Memory Indirect
+//
+const int kErrorSubCodePreCopyMemoryIndirectSrcAddressAligned = 1;
+const int kErrorSubCodePreCopyMemoryIndirectDstAddressAligned = 2;
+const int kErrorSubCodePreCopyMemoryIndirectSizeAligned = 3;
+const int kErrorSubCodePreCopyMemoryToImageIndirectSrcAddressAligned = 4;
+const int kErrorSubCodePreCopyMemoryToImageIndirectBufferRowLength = 5;
+const int kErrorSubCodePreCopyMemoryToImageIndirectBufferImageHeight = 6;
 
 #ifdef __cplusplus
 }  // namespace glsl

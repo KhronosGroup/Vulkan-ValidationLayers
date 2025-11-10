@@ -1,0 +1,99 @@
+// Copyright (c) 2022-2025 The Khronos Group Inc.
+// Copyright (c) 2022-2025 Valve Corporation
+// Copyright (c) 2022-2025 LunarG, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#version 460
+#extension GL_GOOGLE_include_directive : enable
+
+#include "common.h"
+#include "push_data.h"
+
+// Same as VkCopyMemoryIndirectCommandKHR
+// (Use camelCase to match Vulkan API)
+layout(buffer_reference, scalar) buffer CopyMemoryIndirectCommand {
+    uint64_t srcAddress;
+    uint64_t dstAddress;
+    uint64_t size;
+};
+
+// Same as VkCopyMemoryToImageIndirectCommandKHR
+// (Use camelCase to match Vulkan API)
+layout(buffer_reference, scalar) buffer CopyMemoryToImageIndirectCommand {
+    uint64_t srcAddress;
+    uint bufferRowLength;
+    uint bufferImageHeight;
+    // VkImageSubresourceLayers
+    uint aspectMmask;
+    uint mipLevel;
+    uint baseArrayLayer;
+    uint layerCount;
+    // VkOffset3D
+    int imageOffset_x;
+    int imageOffset_y;
+    int imageOffset_z;
+    // VkExtent3D
+    uint imageExtent_width;
+    uint imageExtent_height;
+    uint imageExtent_depth;
+};
+
+struct CopyMemoryIndirectApiData {
+    // VkStridedDeviceAddressRangeKHR
+    uint64_t range_address;
+    uint range_size;
+    uint range_stride;
+    // VkCopyMemoryIndirectInfoKHR::copyCount
+    uint copy_count;
+    // vkCmdCopyMemoryIndirectKHR vs vkCmdCopyMemoryToImageIndirectKHR
+    bool is_image_copy;
+};
+
+layout(set = kValPipeDescSet, binding = kPreCopyMemoryIndirectBinding, scalar) buffer SrcBuffer {
+    CopyMemoryIndirectApiData api;
+};
+
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+void main() {
+    for (uint copy_i = 0; copy_i < api.copy_count; copy_i++) {
+        uint64_t command_address = api.range_address + (api.range_stride * copy_i);
+
+        if (api.is_image_copy) {
+            CopyMemoryToImageIndirectCommand command = CopyMemoryToImageIndirectCommand(command_address);
+            if ((command.srcAddress & 3ul) != 0) {
+                GpuavLogError4(kErrorGroupInstCopyMemoryIndirect, kErrorSubCodePreCopyMemoryToImageIndirectSrcAddressAligned,
+                                uint(command.srcAddress), uint(command.srcAddress >> 32), copy_i, 0);
+            } else if (command.bufferRowLength != 0 && command.bufferRowLength < command.imageExtent_width) {
+                GpuavLogError4(kErrorGroupInstCopyMemoryIndirect, kErrorSubCodePreCopyMemoryToImageIndirectBufferRowLength,
+                                command.bufferRowLength, command.imageExtent_width, copy_i, 0);
+            } else if (command.bufferImageHeight != 0 && command.bufferImageHeight < command.imageExtent_height) {
+                GpuavLogError4(kErrorGroupInstCopyMemoryIndirect, kErrorSubCodePreCopyMemoryToImageIndirectBufferImageHeight,
+                                command.bufferImageHeight, command.imageExtent_height, copy_i, 0);
+            }
+        } else {
+            CopyMemoryIndirectCommand command = CopyMemoryIndirectCommand(command_address);
+            if ((command.srcAddress & 3ul) != 0) {
+                GpuavLogError4(kErrorGroupInstCopyMemoryIndirect, kErrorSubCodePreCopyMemoryIndirectSrcAddressAligned,
+                                uint(command.srcAddress), uint(command.srcAddress >> 32), copy_i, 0);
+            } else if ((command.dstAddress & 3ul) != 0) {
+                GpuavLogError4(kErrorGroupInstCopyMemoryIndirect, kErrorSubCodePreCopyMemoryIndirectDstAddressAligned,
+                                uint(command.dstAddress), uint(command.dstAddress >> 32), copy_i, 0);
+            } else if ((command.size & 3ul) != 0) {
+                GpuavLogError4(kErrorGroupInstCopyMemoryIndirect, kErrorSubCodePreCopyMemoryIndirectSizeAligned,
+                                uint(command.size), uint(command.size >> 32), copy_i, 0);
+            }
+        }
+    }
+}

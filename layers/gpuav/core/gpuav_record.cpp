@@ -29,6 +29,7 @@
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "gpuav/validation_cmd/gpuav_copy_buffer_to_image.h"
+#include "gpuav/validation_cmd/gpuav_copy_memory_indirect.h"
 #include "gpuav/validation_cmd/gpuav_dispatch.h"
 #include "gpuav/validation_cmd/gpuav_draw.h"
 #include "gpuav/validation_cmd/gpuav_trace_rays.h"
@@ -705,6 +706,24 @@ void Validator::PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer
                                                    const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     valcmd::CopyBufferToImage(*this, record_obj.location, SubState(*cb_state), pCopyBufferToImageInfo);
+}
+
+void Validator::PreCallRecordCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer,
+                                                      const VkCopyMemoryIndirectInfoKHR *pCopyMemoryIndirectInfo,
+                                                      const RecordObject &record_obj) {
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    const valcmd::CopyMemoryIndirectCommon copy_info = {pCopyMemoryIndirectInfo->copyCount,
+                                                        pCopyMemoryIndirectInfo->copyAddressRange};
+    valcmd::CopyMemoryIndirect(*this, record_obj.location, SubState(*cb_state), copy_info);
+}
+
+void Validator::PreCallRecordCmdCopyMemoryToImageIndirectKHR(
+    VkCommandBuffer commandBuffer, const VkCopyMemoryToImageIndirectInfoKHR *pCopyMemoryToImageIndirectInfo,
+    const RecordObject &record_obj) {
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    const valcmd::CopyMemoryIndirectCommon copy_info = {pCopyMemoryToImageIndirectInfo->copyCount,
+                                                        pCopyMemoryToImageIndirectInfo->copyAddressRange};
+    valcmd::CopyMemoryIndirect(*this, record_obj.location, SubState(*cb_state), copy_info);
 }
 
 // Validates the buffer is allowed to be protected

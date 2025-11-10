@@ -55,6 +55,7 @@ static void ValidateLayerSettingsProvided(const VkLayerSettingsCreateInfoEXT &la
         else if (strcmp(VK_LAYER_GPUAV_BUFFER_ADDRESS_OOB, name) == 0) { required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT; }
         else if (strcmp(VK_LAYER_GPUAV_BUFFER_COPIES, name) == 0) { required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT; }
         else if (strcmp(VK_LAYER_GPUAV_BUFFERS_VALIDATION, name) == 0) { required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT; }
+        else if (strcmp(VK_LAYER_GPUAV_COPY_MEMORY_INDIRECT, name) == 0) { required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT; }
         else if (strcmp(VK_LAYER_GPUAV_DESCRIPTOR_CHECKS, name) == 0) { required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT; }
         else if (strcmp(VK_LAYER_GPUAV_ENABLE, name) == 0) { required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT; }
         else if (strcmp(VK_LAYER_GPUAV_FORCE_ON_ROBUSTNESS, name) == 0) { required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT; }
