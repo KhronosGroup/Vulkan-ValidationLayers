@@ -469,3 +469,42 @@ TEST_F(PositiveDeviceGeneratedCommands, IndirectExecutionSetNullLayout) {
     vk::CreateIndirectExecutionSetEXT(*m_device, &indirect_execution_set_ci, nullptr, &indirect_execution_set);
     vk::DestroyIndirectExecutionSetEXT(*m_device, indirect_execution_set, nullptr);
 }
+
+TEST_F(PositiveDeviceGeneratedCommands, PushConstantMultipleRanges) {
+    RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
+
+    VkIndirectCommandsPushConstantTokenEXT pc_token_vert;
+    pc_token_vert.updateRange = {VK_SHADER_STAGE_VERTEX_BIT, 0, 16};
+
+    VkIndirectCommandsPushConstantTokenEXT pc_token_frag;
+    pc_token_frag.updateRange = {VK_SHADER_STAGE_FRAGMENT_BIT, 16, 16};
+
+    VkIndirectCommandsLayoutTokenEXT tokens[3];
+    tokens[0] = vku::InitStructHelper();
+    tokens[0].type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_CONSTANT_EXT;
+    tokens[0].data.pPushConstant = &pc_token_vert;
+    tokens[0].offset = 0;
+
+    tokens[1] = vku::InitStructHelper();
+    tokens[1].type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_CONSTANT_EXT;
+    tokens[1].data.pPushConstant = &pc_token_frag;
+    tokens[1].offset = 8;
+
+    tokens[2] = vku::InitStructHelper();
+    tokens[2].type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_EXT;
+    tokens[2].offset = 16;
+
+    std::vector<VkPushConstantRange> pc_ranges = {
+        {VK_SHADER_STAGE_VERTEX_BIT, 0, 16},
+        {VK_SHADER_STAGE_FRAGMENT_BIT, 16, 16},
+    };
+
+    vkt::PipelineLayout pipeline_layout(*m_device, {}, pc_ranges);
+    VkIndirectCommandsLayoutCreateInfoEXT command_layout_ci = vku::InitStructHelper();
+    command_layout_ci.shaderStages = VK_SHADER_STAGE_VERTEX_BIT;
+    command_layout_ci.pipelineLayout = pipeline_layout;
+    command_layout_ci.tokenCount = 3;
+    command_layout_ci.pTokens = tokens;
+
+    vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
+}
