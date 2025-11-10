@@ -1125,10 +1125,12 @@ bool CoreChecks::ValidateDrawDynamicStateValue(const LastBound& last_bound_state
                                             VK_FORMAT_R32_UINT, VK_FORMAT_R32_SINT})) {
                         const char* vuid_string =
                             has_pipeline ? vuid.set_coverage_to_color_location_07490 : vuid.set_coverage_to_color_location_09420;
-                        skip |= LogError(vuid_string, cb_state.Handle(), vuid.loc(),
-                                         "coverageToColorLocation (%" PRIu32
-                                         ") set by vkCmdSetCoverageToColorLocationNV points to a color attachment with format %s.",
-                                         cb_state.dynamic_state_value.coverage_to_color_location, string_VkFormat(format));
+                        skip |=
+                            LogError(vuid_string, cb_state.Handle(), vuid.loc(),
+                                     "coverageToColorLocation (%" PRIu32
+                                     ") set by vkCmdSetCoverageToColorLocationNV points to a color attachment with format %s.\n%s",
+                                     cb_state.dynamic_state_value.coverage_to_color_location, string_VkFormat(format),
+                                     cb_state.DescribeActiveColorAttachment());
                     }
                 }
             }

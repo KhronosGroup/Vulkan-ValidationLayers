@@ -189,6 +189,17 @@ void CommandBuffer::SetActiveSubpass(uint32_t subpass) {
     active_subpass_sample_count_ = std::nullopt;
 }
 
+// Put here, instead of vvl::RenderPass for ease of access
+const char *CommandBuffer::DescribeActiveColorAttachment() const {
+    if (!active_render_pass) {
+        return "";
+    } else if (active_render_pass->UsesDynamicRendering()) {
+        return "Active color attachments are those where VkRenderingInfo::pColorAttachments[i].imageView != VK_NULL_HANDLE";
+    } else {
+        return "Active color attachments are those where pSubpasses[i].pColorAttachments[i].attachment != VK_ATTACHMENT_UNUSED";
+    }
+}
+
 CommandBuffer::CommandBuffer(DeviceState &dev, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *allocate_info,
                              const vvl::CommandPool *pool)
     : RefcountedStateObject(handle, kVulkanObjectTypeCommandBuffer),
