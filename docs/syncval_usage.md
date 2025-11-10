@@ -123,7 +123,7 @@ The pipelined and multi-threaded nature of Vulkan makes it particularly importan
 - Dynamic Rendering support
 
 ### Known Limitations
-- Does not support precise tracking of descriptors accessed by the shader (requires integration with GPU-AV)
+- Does not support precise tracking of descriptors accessed by the shader (requires integration with GPU-AV). This includes both classic VkDescriptorSet and VK_EXT_descriptor_buffer APIs
 - Hazards related to memory aliasing are not detected properly
 - Indirectly accessed (indirect/indexed) buffers validated at *binding* granularity. (Every valid location assumed to be accessed.)
 - Queue family ownership transfer not supported
