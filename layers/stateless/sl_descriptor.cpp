@@ -631,8 +631,9 @@ bool Device::ValidateDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayoutCr
                         skip |= LogError(
                             "VUID-VkDescriptorSetLayoutCreateInfo-pBindings-07303", device,
                             binding_loc.pNext(Struct::VkMutableDescriptorTypeCreateInfoEXT, Field::mutableDescriptorTypeListCount),
-                            "(%" PRIu32 ") is less than %" PRIu32 " but descriptorType is VK_DESCRIPTOR_TYPE_MUTABLE_EXT", i,
-                            mutable_descriptor_type->mutableDescriptorTypeListCount);
+                            "(%" PRIu32 ") is less than or equal to %" PRIu32 ", but pBindings[%" PRIu32
+                            " ].descriptorType is VK_DESCRIPTOR_TYPE_MUTABLE_EXT",
+                            mutable_descriptor_type->mutableDescriptorTypeListCount, i, i);
                     }
                 } else {
                     skip |= LogError("VUID-VkDescriptorSetLayoutCreateInfo-pBindings-07303", device,
