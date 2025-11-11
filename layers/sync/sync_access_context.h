@@ -35,6 +35,8 @@ class VideoSession;
 
 namespace syncval {
 
+class SyncValidator;
+
 bool SimpleBinding(const vvl::Bindable &bindable);
 VkDeviceSize ResourceBaseAddress(const vvl::Buffer &buffer);
 
@@ -341,6 +343,7 @@ class AccessContext {
     void ClearAsyncContexts() { async_.clear(); }
 
     AccessContext() = default;
+    AccessContext(const SyncValidator &validator) : validator(&validator) {}
 
     // Disable implicit copy operations and rely on explicit InitFrom.
     // AccessContext is a heavy object and there must be no possibility of an accidental copy.
@@ -461,6 +464,9 @@ class AccessContext {
 
     template <typename Detector>
     HazardResult DetectPreviousHazard(Detector &detector, const AccessRange &range) const;
+
+  public:
+    const SyncValidator *validator = nullptr;
 
   private:
     AccessMap access_state_map_;

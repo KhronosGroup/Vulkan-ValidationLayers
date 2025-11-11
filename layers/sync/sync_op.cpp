@@ -991,7 +991,7 @@ SyncOpSetEvent::SyncOpSetEvent(vvl::Func command, const SyncValidator &sync_stat
     //       access context (include barrier state for chaining) won't necessarily contain the needed information at Wait
     //       or Submit time reference.
     if (access_context) {
-        auto new_context = std::make_shared<AccessContext>();
+        auto new_context = std::make_shared<AccessContext>(sync_state);
         new_context->InitFrom(*access_context);
         recorded_context_ = new_context;
     }
@@ -1004,7 +1004,7 @@ SyncOpSetEvent::SyncOpSetEvent(vvl::Func command, const SyncValidator &sync_stat
       src_exec_scope_(SyncExecScope::MakeSrc(queue_flags, sync_utils::GetExecScopes(dep_info).src)),
       dep_info_(new vku::safe_VkDependencyInfo(&dep_info)) {
     if (access_context) {
-        auto new_context = std::make_shared<AccessContext>();
+        auto new_context = std::make_shared<AccessContext>(sync_state);
         new_context->InitFrom(*access_context);
         recorded_context_ = new_context;
     }
@@ -1100,7 +1100,7 @@ void SyncOpSetEvent::ReplayRecord(CommandExecutionContext &exec_context, Resourc
     const QueueId queue_id = exec_context.GetQueueId();
 
     // Note: merged_context is a copy of the access_context, combined with the recorded context
-    auto merged_context = std::make_shared<AccessContext>();
+    auto merged_context = std::make_shared<AccessContext>(*access_context->validator);
     merged_context->InitFrom(*access_context);
     merged_context->ResolveFromContext(QueueTagOffsetBarrierAction(queue_id, exec_tag), *recorded_context_);
     merged_context->TrimAndClearFirstAccess();  // Ensure the copy is minimal and normalized
@@ -1175,7 +1175,7 @@ bool SyncOpBeginRenderPass::Validate(const CommandBufferAccessContext &cb_contex
     // Construct the state to validate against (since validation is const and RecordCmdBeginRenderPass hasn't happened yet).
     // TODO: investigate if using nullptr in InitFrom is safe (this just follows the initial implementation - it assumes
     // that array of subpass dependencies won't be indexed, but it's not obvious).
-    AccessContext temp_context;
+    AccessContext temp_context(cb_context.GetSyncState());
 
     temp_context.InitFrom(subpass, cb_context.GetQueueFlags(), rp_state.subpass_dependencies, nullptr,
                           cb_context.GetCurrentAccessContext());
@@ -1382,7 +1382,7 @@ AccessContext *ReplayState::RenderPassReplayState::Begin(VkQueueFlags queue_flag
     begin_op = &begin_op_;
     replay_context = &rp_context->GetSubpassContexts()[0];
     subpass = 0;
-    subpass_contexts = InitSubpassContexts(queue_flags, *rp_context->GetRenderPassState(), &external_context);
+    subpass_contexts = InitSubpassContexts(queue_flags, *rp_context->GetRenderPassState(), external_context);
 
     // Replace the Async contexts with the the async context of the "external" context
     // For replay we don't care about async subpasses, just async queue batches

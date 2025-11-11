@@ -272,18 +272,17 @@ QueueBatchContext::QueueBatchContext(const SyncValidator& sync_state, const Queu
     : CommandExecutionContext(sync_state, queue_state.GetQueueFlags()),
       queue_state_(&queue_state),
       tag_range_(0, 0),
+      access_context_(sync_state),
       current_access_context_(&access_context_),
-      batch_log_(),
       queue_sync_tag_(sync_state.GetQueueIdLimit(), ResourceUsageTag(0)) {
     sync_state_.stats.AddQueueBatchContext();
 }
 
 QueueBatchContext::QueueBatchContext(const SyncValidator& sync_state)
     : CommandExecutionContext(sync_state, 0),
-      queue_state_(),
       tag_range_(0, 0),
+      access_context_(sync_state),
       current_access_context_(&access_context_),
-      batch_log_(),
       queue_sync_tag_(sync_state.GetQueueIdLimit(), ResourceUsageTag(0)) {
     sync_state_.stats.AddQueueBatchContext();
 }
