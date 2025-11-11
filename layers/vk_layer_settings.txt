@@ -38,7 +38,7 @@ khronos_validation.check_shaders_caching = true
 # Debug Action
 # =====================
 # Specifies what action is to be taken when a layer reports information
-khronos_validation.debug_action = VK_DBG_LAYER_ACTION_LOG_MSG
+khronos_validation.debug_action = VK_DBG_LAYER_ACTION_LOG_MSG,VK_DBG_LAYER_ACTION_DEBUG_OUTPUT
 
 # Max Duplicated Messages
 # =====================
@@ -212,7 +212,7 @@ khronos_validation.syncval_message_extra_properties = false
 
 # Shader accesses heuristic
 # =====================
-# Take into account memory accesses performed by the shader based on SPIR-V static analysis. Warning: can produce false-positives, can ignore certain types of accesses.
+# Take into account memory accesses performed by the shader based on SPIR-V static analysis. Warning: can produce false-positives, can ignore certain types of accesses, does not support VK_EXT_descriptor_buffer.
 khronos_validation.syncval_shader_accesses_heuristic = false
 
 # Submit time validation

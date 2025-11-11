@@ -88,7 +88,7 @@ HazardResult AccessState::DetectMarkerHazard() const {
 }
 
 HazardResult AccessState::DetectHazard(const SyncAccessInfo &usage_info, const OrderingBarrier &ordering, SyncFlags flags,
-                                       QueueId queue_id) const {
+                                       QueueId queue_id, bool detect_load_op_after_store_op_hazards) const {
     // The ordering guarantees act as barriers to the last accesses, independent of synchronization operations
     const VkPipelineStageFlagBits2 usage_stage = usage_info.stage_mask;
     const SyncAccessIndex access_index = usage_info.access_index;
@@ -112,7 +112,9 @@ HazardResult AccessState::DetectHazard(const SyncAccessInfo &usage_info, const O
 
                 // LoadOp after StoreOp happens only if accesses are from different render pass instances.
                 // Such accesses are not implicitly synchronized.
-                if (last_write->IsStoreOp() && (flags & SyncFlag::kLoadOp)) {
+                const bool load_op_after_store_op = last_write->IsStoreOp() && (flags & SyncFlag::kLoadOp);
+                const bool validate_load_op_after_store_op = detect_load_op_after_store_op_hazards && load_op_after_store_op;
+                if (validate_load_op_after_store_op) {
                     most_recent_is_ordered = false;
                 }
 
@@ -163,8 +165,9 @@ HazardResult AccessState::DetectHazard(const SyncAccessInfo &usage_info, const O
     // Only check for WAW if there are no reads since last_write
     if (last_write.has_value()) {
         // Check if it's two ordered write accesses
-        const bool different_render_pass_instances = (last_write->IsStoreOp() && (flags & SyncFlag::kLoadOp));
-        if (last_write->IsOrdered(ordering, queue_id) && usage_write_is_ordered && !different_render_pass_instances) {
+        const bool load_op_after_store_op = last_write->IsStoreOp() && (flags & SyncFlag::kLoadOp);
+        const bool validate_load_op_after_store_op = detect_load_op_after_store_op_hazards && load_op_after_store_op;
+        if (last_write->IsOrdered(ordering, queue_id) && usage_write_is_ordered && !validate_load_op_after_store_op) {
             return {};
         }
 
@@ -187,8 +190,8 @@ HazardResult AccessState::DetectHazard(const SyncAccessInfo &usage_info, const O
     return {};
 }
 
-HazardResult AccessState::DetectHazard(const AccessState &recorded_use, QueueId queue_id,
-                                       const ResourceUsageRange &tag_range) const {
+HazardResult AccessState::DetectHazard(const AccessState &recorded_use, QueueId queue_id, const ResourceUsageRange &tag_range,
+                                       bool detect_load_op_after_store_op_hazards) const {
     HazardResult hazard;
     const auto &recorded_accesses = recorded_use.first_accesses_;
     uint32_t count = recorded_accesses.size();
@@ -210,7 +213,7 @@ HazardResult AccessState::DetectHazard(const AccessState &recorded_use, QueueId 
             }
 
             const auto &first_ordering = GetOrderingRules(first.ordering_rule);
-            hazard = DetectHazard(*first.usage_info, first_ordering, first.flags, queue_id);
+            hazard = DetectHazard(*first.usage_info, first_ordering, first.flags, queue_id, detect_load_op_after_store_op_hazards);
             if (hazard.IsHazard()) {
                 hazard.AddRecordedAccess(first);
                 return hazard;
@@ -244,7 +247,8 @@ HazardResult AccessState::DetectHazard(const AccessState &recorded_use, QueueId 
                     // if there are any first use reads, we suppress WAW by injecting the active context write in the ordering rule
                     barrier.access_scope |= last_access.usage_info->access_bit;
                 }
-                hazard = DetectHazard(*last_access.usage_info, barrier, last_access.flags, queue_id);
+                hazard = DetectHazard(*last_access.usage_info, barrier, last_access.flags, queue_id,
+                                      detect_load_op_after_store_op_hazards);
                 if (hazard.IsHazard()) {
                     hazard.AddRecordedAccess(last_access);
                     return hazard;

@@ -21,6 +21,7 @@
 #include "state_tracker/render_pass_state.h"
 #include "sync/sync_access_context.h"
 #include "sync/sync_image.h"
+#include "sync/sync_validation.h"
 
 namespace syncval {
 
@@ -42,25 +43,36 @@ class HazardDetectorWithOrdering {
     const SyncAccessInfo &access_info_;
     const SyncOrdering ordering_rule_;
     const SyncFlags flags_;
+    const bool detect_load_op_after_store_op_hazards;
 
   public:
+    HazardDetectorWithOrdering(SyncAccessIndex access_index, SyncOrdering ordering, SyncFlags flags,
+                               bool detect_load_op_after_store_op_hazards)
+        : access_info_(GetAccessInfo(access_index)),
+          ordering_rule_(ordering),
+          flags_(flags),
+          detect_load_op_after_store_op_hazards(detect_load_op_after_store_op_hazards) {}
+
     HazardResult Detect(const AccessMap::const_iterator &pos) const {
         const OrderingBarrier &ordering = GetOrderingRules(ordering_rule_);
-        return pos->second.DetectHazard(access_info_, ordering, flags_, kQueueIdInvalid);
+        return pos->second.DetectHazard(access_info_, ordering, flags_, kQueueIdInvalid, detect_load_op_after_store_op_hazards);
     }
     HazardResult DetectAsync(const AccessMap::const_iterator &pos, ResourceUsageTag start_tag, QueueId queue_id) const {
         return pos->second.DetectAsyncHazard(access_info_, start_tag, queue_id);
     }
-    HazardDetectorWithOrdering(SyncAccessIndex access_index, SyncOrdering ordering, SyncFlags flags = 0)
-        : access_info_(GetAccessInfo(access_index)), ordering_rule_(ordering), flags_(flags) {}
 };
 
 class HazardDetectFirstUse {
   public:
-    HazardDetectFirstUse(const AccessState &recorded_use, QueueId queue_id, const ResourceUsageRange &tag_range)
-        : recorded_use_(recorded_use), queue_id_(queue_id), tag_range_(tag_range) {}
+    HazardDetectFirstUse(const AccessState &recorded_use, QueueId queue_id, const ResourceUsageRange &tag_range,
+                         bool detect_load_op_after_store_op_hazards)
+        : recorded_use_(recorded_use),
+          queue_id_(queue_id),
+          tag_range_(tag_range),
+          detect_load_op_after_store_op_hazards(detect_load_op_after_store_op_hazards) {}
+
     HazardResult Detect(const AccessMap::const_iterator &pos) const {
-        return pos->second.DetectHazard(recorded_use_, queue_id_, tag_range_);
+        return pos->second.DetectHazard(recorded_use_, queue_id_, tag_range_, detect_load_op_after_store_op_hazards);
     }
     HazardResult DetectAsync(const AccessMap::const_iterator &pos, ResourceUsageTag start_tag, QueueId queue_id) const {
         return pos->second.DetectAsyncHazard(recorded_use_, tag_range_, start_tag, queue_id);
@@ -70,6 +82,7 @@ class HazardDetectFirstUse {
     const AccessState &recorded_use_;
     const QueueId queue_id_;
     const ResourceUsageRange &tag_range_;
+    const bool detect_load_op_after_store_op_hazards;
 };
 
 struct HazardDetectorMarker {
@@ -370,7 +383,8 @@ HazardResult AccessContext::DetectHazard(const ImageRangeGen &ref_range_gen, Syn
         return DetectHazardGeneratedRanges(detector, ref_range_gen, DetectOptions::kDetectAll);
     }
 
-    HazardDetectorWithOrdering detector(current_usage, ordering_rule, flags);
+    HazardDetectorWithOrdering detector(current_usage, ordering_rule, flags,
+                                        validator->syncval_settings.load_op_after_store_op_validation);
     return DetectHazardGeneratedRanges(detector, ref_range_gen, DetectOptions::kDetectAll);
 }
 
@@ -378,13 +392,15 @@ HazardResult AccessContext::DetectHazard(const vvl::ImageView &image_view, const
                                          SyncAccessIndex current_usage, SyncOrdering ordering_rule) const {
     // range_gen is non-temporary to avoid an additional copy
     ImageRangeGen range_gen(MakeImageRangeGen(image_view, offset, extent));
-    HazardDetectorWithOrdering detector(current_usage, ordering_rule);
+    HazardDetectorWithOrdering detector(current_usage, ordering_rule, 0,
+                                        validator->syncval_settings.load_op_after_store_op_validation);
     return DetectHazardGeneratedRanges(detector, range_gen, DetectOptions::kDetectAll);
 }
 
 HazardResult AccessContext::DetectHazard(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
                                          SyncAccessIndex current_usage, SyncOrdering ordering_rule, SyncFlags flags) const {
-    HazardDetectorWithOrdering detector(current_usage, ordering_rule, flags);
+    HazardDetectorWithOrdering detector(current_usage, ordering_rule, flags,
+                                        validator->syncval_settings.load_op_after_store_op_validation);
     return DetectHazard(detector, view_gen, gen_type, DetectOptions::kDetectAll);
 }
 
@@ -406,7 +422,8 @@ HazardResult AccessContext::DetectHazard(const vvl::Image &image, const VkImageS
         HazardDetector detector(current_usage);
         return DetectHazard(detector, image, subresource_range, offset, extent, is_depth_sliced, DetectOptions::kDetectAll);
     }
-    HazardDetectorWithOrdering detector(current_usage, ordering_rule);
+    HazardDetectorWithOrdering detector(current_usage, ordering_rule, 0,
+                                        validator->syncval_settings.load_op_after_store_op_validation);
     return DetectHazard(detector, image, subresource_range, offset, extent, is_depth_sliced, DetectOptions::kDetectAll);
 }
 
@@ -561,7 +578,8 @@ HazardResult AccessContext::DetectFirstUseHazard(QueueId queue_id, const Resourc
             // For single tag first accesses we have exact search and can assert the find
             assert(access.FirstAccessInTagRange(tag_range));
 
-            HazardDetectFirstUse detector(access, queue_id, tag_range);
+            HazardDetectFirstUse detector(access, queue_id, tag_range,
+                                          validator->syncval_settings.load_op_after_store_op_validation);
             HazardResult hazard = access_context.DetectHazardRange(detector, access_range, DetectOptions::kDetectAll);
             if (hazard.IsHazard()) {
                 return hazard;
@@ -577,7 +595,8 @@ HazardResult AccessContext::DetectFirstUseHazard(QueueId queue_id, const Resourc
                 continue;
             }
 
-            HazardDetectFirstUse detector(access, queue_id, tag_range);
+            HazardDetectFirstUse detector(access, queue_id, tag_range,
+                                          validator->syncval_settings.load_op_after_store_op_validation);
             HazardResult hazard = access_context.DetectHazardRange(detector, access_range, DetectOptions::kDetectAll);
             if (hazard.IsHazard()) {
                 return hazard;
@@ -591,7 +610,8 @@ HazardResult AccessContext::DetectFirstUseHazard(QueueId queue_id, const Resourc
             if (!recorded_access.second.FirstAccessInTagRange(tag_range)) {
                 continue;
             }
-            HazardDetectFirstUse detector(recorded_access.second, queue_id, tag_range);
+            HazardDetectFirstUse detector(recorded_access.second, queue_id, tag_range,
+                                          validator->syncval_settings.load_op_after_store_op_validation);
             HazardResult hazard = access_context.DetectHazardRange(detector, recorded_access.first, DetectOptions::kDetectAll);
             if (hazard.IsHazard()) {
                 return hazard;

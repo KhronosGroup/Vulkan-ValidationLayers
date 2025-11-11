@@ -20,5 +20,11 @@
 struct SyncValSettings {
     bool submit_time_validation = true;
     bool shader_accesses_heuristic = false;
+
+    // This validation currently is controlled only by the settings and is disabled by default.
+    // There is a discussion https://gitlab.khronos.org/vulkan/vulkan/-/issues/4513 to clarify
+    // the spec and under which conditions this validation should be active.
+    bool load_op_after_store_op_validation = false;
+
     bool message_extra_properties = false;
 };
