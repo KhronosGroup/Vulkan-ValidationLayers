@@ -7450,12 +7450,13 @@ TEST_F(NegativeDynamicRendering, CountersByRegionARM) {
     TEST_DESCRIPTION("Test arguments initializing performance counters by region are valid.");
 
     AddRequiredExtensions(VK_ARM_PERFORMANCE_COUNTERS_BY_REGION_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
     VkPhysicalDevicePerformanceCountersByRegionPropertiesARM pc_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(pc_props);
 
-    VkRect2D render_area{{0, 0}, {128u, 128u}};
+    VkRect2D render_area{{0, 0}, {32u, 32u}};
     VkExtent2D ra_extent = render_area.extent;
     VkExtent2D pc_region_size = pc_props.performanceCounterRegionSize;
     uint32_t row_stride_alignment = pc_props.rowStrideAlignment;
@@ -7472,9 +7473,13 @@ TEST_F(NegativeDynamicRendering, CountersByRegionARM) {
                                          row_stride_alignment) *
                                    GetQuotientCeil(ra_extent.height, pc_region_size.height);
 
+    if (counter_buffer_size == 0u) {
+        GTEST_SKIP() << "Test cannot proceed with a counter buffer of size 0";
+    }
+
     VkDeviceAddress counter_addresses[2];
-    vkt::Buffer counter_buffer(*m_device, counter_buffer_size, 0, vkt::device_address);
-    vkt::Buffer counter_buffer_extra(*m_device, counter_buffer_size, 0, vkt::device_address);
+    vkt::Buffer counter_buffer(*m_device, counter_buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
+    vkt::Buffer counter_buffer_extra(*m_device, counter_buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
     counter_addresses[0] = counter_buffer.Address();
     counter_addresses[1] = counter_buffer_extra.Address();
 
@@ -7482,11 +7487,12 @@ TEST_F(NegativeDynamicRendering, CountersByRegionARM) {
     auto perf_begin_info = vku::InitStruct<VkRenderPassPerformanceCountersByRegionBeginInfoARM>(nullptr, 1u, counter_addresses,
                                                                                                 VK_TRUE, 1u, &counterID);
 
-    VkSubpassDescription subpass{};
-    auto render_pass_create_info = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 1u, nullptr, 1u, &subpass, 0u, nullptr);
+    VkSubpassDescription2 subpass = vku::InitStructHelper();
+    auto render_pass_create_info = vku::InitStruct<VkRenderPassCreateInfo2>(nullptr, 0u, 0u, nullptr, 1u, &subpass, 0u, nullptr);
     vkt::RenderPass render_pass(*m_device, render_pass_create_info);
+    vkt::Framebuffer framebuffer(*m_device, render_pass, 0, nullptr);
     auto rp_begin =
-        vku::InitStruct<VkRenderPassBeginInfo>(&perf_begin_info, render_pass.handle(), VK_NULL_HANDLE, render_area, 0u, nullptr);
+        vku::InitStruct<VkRenderPassBeginInfo>(&perf_begin_info, render_pass.handle(), framebuffer.handle(), render_area, 0u, nullptr);
 
     VkRenderingInfo rendering_info = vku::InitStructHelper(&perf_begin_info);
     rendering_info.layerCount = 1;
@@ -7502,15 +7508,13 @@ TEST_F(NegativeDynamicRendering, CountersByRegionARM) {
         m_errorMonitor->SetDesiredError("VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-counterAddressCount-11815");
         m_command_buffer.BeginRendering(rendering_info);
         m_errorMonitor->VerifyFound();
+        m_command_buffer.End();
 
         perf_begin_info.counterAddressCount = 1;
     }
 
     {
-        VkBufferCreateInfo counter_buffer_create_info = vku::InitStructHelper();
-        counter_buffer_create_info.size = counter_buffer_size;
-        vkt::Buffer counter_buffer_unbound(*m_device, counter_buffer_create_info, vkt::no_mem);
-        counter_addresses[0] = counter_buffer_unbound.Address();
+        counter_buffer.Memory().Destroy();
 
         CreateRenderPassBeginTest(m_command_buffer, &rp_begin, false,
                             "VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-pCounterAddresses-11816", nullptr);
@@ -7519,12 +7523,14 @@ TEST_F(NegativeDynamicRendering, CountersByRegionARM) {
         m_errorMonitor->SetDesiredError("VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-pCounterAddresses-11816");
         m_command_buffer.BeginRendering(rendering_info);
         m_errorMonitor->VerifyFound();
+        m_command_buffer.End();
 
+        counter_buffer = vkt::Buffer(*m_device, counter_buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
         counter_addresses[0] = counter_buffer.Address();
     }
 
     {
-        vkt::Buffer counter_buffer_too_small(*m_device, counter_buffer_size - 1, 0, vkt::device_address);
+        vkt::Buffer counter_buffer_too_small(*m_device, counter_buffer_size - 1, VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
         counter_addresses[0] = counter_buffer_too_small.Address();
 
         CreateRenderPassBeginTest(m_command_buffer, &rp_begin, false,
@@ -7534,6 +7540,7 @@ TEST_F(NegativeDynamicRendering, CountersByRegionARM) {
         m_errorMonitor->SetDesiredError("VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-pCounterAddresses-11817");
         m_command_buffer.BeginRendering(rendering_info);
         m_errorMonitor->VerifyFound();
+        m_command_buffer.End();
 
         counter_addresses[0] = counter_buffer.Address();
     }
@@ -7548,6 +7555,7 @@ TEST_F(NegativeDynamicRendering, CountersByRegionARM) {
         m_errorMonitor->SetDesiredError("VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-counterIndexCount-11818");
         m_command_buffer.BeginRendering(rendering_info);
         m_errorMonitor->VerifyFound();
+        m_command_buffer.End();
     }
 }
 
@@ -7556,30 +7564,55 @@ TEST_F(NegativeDynamicRendering, MultiviewCountersByRegionARM) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_ARM_PERFORMANCE_COUNTERS_BY_REGION_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::multiview);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
-    vkt::Buffer counter_buffer(*m_device, 16, 0, vkt::device_address);
-    VkDeviceAddress counter_address = counter_buffer.Address();
+    VkPhysicalDevicePerformanceCountersByRegionPropertiesARM pc_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(pc_props);
+
+    VkRect2D render_area{{0, 0}, {32u, 32u}};
+    VkExtent2D ra_extent = render_area.extent;
+    VkExtent2D pc_region_size = pc_props.performanceCounterRegionSize;
+    uint32_t row_stride_alignment = pc_props.rowStrideAlignment;
+    uint32_t region_alignment = pc_props.regionAlignment;
+    uint32_t counter_index_count = 1u;
+
+    constexpr auto GetQuotientCeil = [](uint32_t numerator, uint32_t denominator) {
+        denominator = std::max(denominator, 1u);
+        return numerator / denominator + (numerator % denominator != 0);
+    };
+
+    uint32_t counter_buffer_size = Align(GetQuotientCeil(ra_extent.width, pc_region_size.width) *
+                                             Align(counter_index_count * static_cast<uint32_t>(sizeof(uint32_t)), region_alignment),
+                                         row_stride_alignment) *
+                                   GetQuotientCeil(ra_extent.height, pc_region_size.height);
+
+    if (counter_buffer_size == 0u) {
+        GTEST_SKIP() << "Test cannot proceed with a counter buffer of size 0";
+    }
+
+    VkDeviceAddress counter_addresses[2];
+    vkt::Buffer counter_buffer(*m_device, counter_buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
+    vkt::Buffer counter_buffer_extra(*m_device, counter_buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
+    counter_addresses[0] = counter_buffer.Address();
+    counter_addresses[1] = counter_buffer_extra.Address();
 
     uint32_t counterID = 0;
-    auto perf_begin_info = vku::InitStruct<VkRenderPassPerformanceCountersByRegionBeginInfoARM>(nullptr, 1u, &counter_address,
+    auto perf_begin_info = vku::InitStruct<VkRenderPassPerformanceCountersByRegionBeginInfoARM>(nullptr, 1u, counter_addresses,
                                                                                                 VK_TRUE, 1u, &counterID);
 
-    VkRect2D render_area{{0, 0}, {128u, 128u}};
-
-    VkSubpassDescription2 subpass{};
+    VkSubpassDescription2 subpass = vku::InitStructHelper();
     subpass.viewMask = 0x1;
-
-    auto render_pass_create_info = vku::InitStruct<VkRenderPassCreateInfo2>(nullptr, 0u, 1u, nullptr, 1u, &subpass, 0u, nullptr);
+    auto render_pass_create_info = vku::InitStruct<VkRenderPassCreateInfo2>(nullptr, 0u, 0u, nullptr, 1u, &subpass, 0u, nullptr);
     vkt::RenderPass render_pass(*m_device, render_pass_create_info);
+    vkt::Framebuffer framebuffer(*m_device, render_pass, 0, nullptr);
     auto rp_begin =
-        vku::InitStruct<VkRenderPassBeginInfo>(&perf_begin_info, render_pass.handle(), VK_NULL_HANDLE, render_area, 0u, nullptr);
+        vku::InitStruct<VkRenderPassBeginInfo>(&perf_begin_info, render_pass.handle(), framebuffer.handle(), render_area, 0u, nullptr);
 
     VkRenderingInfo rendering_info = vku::InitStructHelper(&perf_begin_info);
     rendering_info.layerCount = 1;
     rendering_info.renderArea = render_area;
-    rendering_info.viewMask = 0x1;
 
     {
         perf_begin_info.counterAddressCount = 2;
@@ -7591,6 +7624,7 @@ TEST_F(NegativeDynamicRendering, MultiviewCountersByRegionARM) {
         m_errorMonitor->SetDesiredError("VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-counterAddressCount-11815");
         m_command_buffer.BeginRendering(rendering_info);
         m_errorMonitor->VerifyFound();
+        m_command_buffer.End();
 
         perf_begin_info.counterAddressCount = 1;
     }

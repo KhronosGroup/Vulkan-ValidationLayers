@@ -1782,6 +1782,7 @@ TEST_F(PositiveDynamicRendering, CountersByRegionARM) {
     TEST_DESCRIPTION("Test to validate begin rendering with VK_ARM_performance_counters_by_region.");
 
     AddRequiredExtensions(VK_ARM_PERFORMANCE_COUNTERS_BY_REGION_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
     VkPhysicalDevicePerformanceCountersByRegionPropertiesARM pc_props = vku::InitStructHelper();
@@ -1804,6 +1805,10 @@ TEST_F(PositiveDynamicRendering, CountersByRegionARM) {
                                          row_stride_alignment) *
                                    GetQuotientCeil(ra_extent.height, pc_region_size.height);
 
+    if (counter_buffer_size == 0u) {
+        GTEST_SKIP() << "Test cannot proceed with a counter buffer of size 0";
+    }
+
     VkDeviceAddress counter_addresses[1];
     vkt::Buffer counter_buffer(*m_device, counter_buffer_size, 0, vkt::device_address);
     counter_addresses[0] = counter_buffer.Address();
@@ -1813,11 +1818,12 @@ TEST_F(PositiveDynamicRendering, CountersByRegionARM) {
                                                                                                 VK_TRUE, 1u, &counterID);
 
     {
-        VkSubpassDescription subpass{};
-        auto render_pass_create_info = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 1u, nullptr, 1u, &subpass, 0u, nullptr);
+        VkSubpassDescription2 subpass = vku::InitStructHelper();
+        auto render_pass_create_info = vku::InitStruct<VkRenderPassCreateInfo2>(nullptr, 0u, 0u, nullptr, 1u, &subpass, 0u, nullptr);
         vkt::RenderPass render_pass(*m_device, render_pass_create_info);
+        vkt::Framebuffer framebuffer(*m_device, render_pass, 0, nullptr);
         auto rp_begin =
-            vku::InitStruct<VkRenderPassBeginInfo>(&perf_begin_info, render_pass.handle(), VK_NULL_HANDLE, render_area, 0u, nullptr);
+            vku::InitStruct<VkRenderPassBeginInfo>(&perf_begin_info, render_pass.handle(), framebuffer.handle(), render_area, 0u, nullptr);
 
         m_command_buffer.Begin();
         m_command_buffer.BeginRenderPass(rp_begin);
