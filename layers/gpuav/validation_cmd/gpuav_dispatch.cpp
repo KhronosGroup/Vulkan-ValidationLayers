@@ -35,13 +35,8 @@ struct DispatchValidationShader {
     valpipe::BoundStorageBuffer indirect_buffer_binding = {glsl::kPreDispatchBinding_DispatchIndirectBuffer};
 
     static std::vector<VkDescriptorSetLayoutBinding> GetDescriptorSetLayoutBindings() {
-        std::vector<VkDescriptorSetLayoutBinding> bindings = {
-            {glsl::kPreDispatchBinding_DispatchIndirectBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
-             nullptr},  // indirect buffer
-
-        };
-
-        return bindings;
+        return {{glsl::kPreDispatchBinding_DispatchIndirectBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
+                 VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
     }
 
     std::vector<VkWriteDescriptorSet> GetDescriptorWrites(VkDescriptorSet desc_set) const {
@@ -72,6 +67,7 @@ void DispatchIndirect(Validator &gpuav, const Location &loc, CommandBufferSubSta
         gpuav.shared_resources_manager.GetOrCreate<valpipe::ComputePipeline<DispatchValidationShader>>(
             gpuav, loc, val_cmd_common.error_logging_desc_set_layout_);
     if (!validation_pipeline.valid) {
+        gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to create DispatchValidationShader.");
         return;
     }
 
@@ -90,6 +86,7 @@ void DispatchIndirect(Validator &gpuav, const Location &loc, CommandBufferSubSta
 
         if (!BindShaderResources(validation_pipeline, gpuav, cb_state, cb_state.compute_index, cb_state.GetErrorLoggerIndex(),
                                  shader_resources)) {
+            gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to GetManagedDescriptorSet in BindShaderResources");
             return;
         }
     }

@@ -38,13 +38,10 @@ struct CopyBufferToImageValidationShader {
     valpipe::BoundStorageBuffer copy_src_regions_buffer_binding = {glsl::kPreCopyBufferToImageBinding_CopySrcRegions};
 
     static std::vector<VkDescriptorSetLayoutBinding> GetDescriptorSetLayoutBindings() {
-        std::vector<VkDescriptorSetLayoutBinding> bindings = {
-            {glsl::kPreCopyBufferToImageBinding_SrcBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
-             nullptr},
-            {glsl::kPreCopyBufferToImageBinding_CopySrcRegions, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
-             nullptr}};
-
-        return bindings;
+        return {{glsl::kPreCopyBufferToImageBinding_SrcBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
+                 nullptr},
+                {glsl::kPreCopyBufferToImageBinding_CopySrcRegions, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
+                 VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
     }
 
     std::vector<VkWriteDescriptorSet> GetDescriptorWrites(VkDescriptorSet desc_set) const {
@@ -99,6 +96,7 @@ void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubSt
         gpuav.shared_resources_manager.GetOrCreate<valpipe::ComputePipeline<CopyBufferToImageValidationShader>>(
             gpuav, loc, val_cmd_common.error_logging_desc_set_layout_);
     if (!validation_pipeline.valid) {
+        gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to create CopyBufferToImageValidationShader.");
         return;
     }
 
@@ -138,9 +136,6 @@ void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubSt
         const VkDeviceSize buffer_size =
             uniform_buffer_constants_byte_size + sizeof(BufferImageCopy) * copy_buffer_to_img_info->regionCount;
         vko::BufferRange copy_src_regions_mem_buffer_range = cb_state.gpu_resources_manager.GetHostCoherentBufferRange(buffer_size);
-        if (copy_src_regions_mem_buffer_range.buffer == VK_NULL_HANDLE) {
-            return;
-        }
 
         auto gpu_regions_u32_ptr = (uint32_t *)copy_src_regions_mem_buffer_range.offset_mapped_ptr;
 
@@ -200,12 +195,11 @@ void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubSt
         gpu_regions_u32_ptr[7] = 0;
 
         shader_resources.src_buffer_binding.info = {copy_buffer_to_img_info->srcBuffer, 0, VK_WHOLE_SIZE};
-        shader_resources.copy_src_regions_buffer_binding.info = {copy_src_regions_mem_buffer_range.buffer,
-                                                                 copy_src_regions_mem_buffer_range.offset,
-                                                                 copy_src_regions_mem_buffer_range.size};
+        shader_resources.copy_src_regions_buffer_binding.info = copy_src_regions_mem_buffer_range.GetDescriptorBufferInfo();
 
         if (!BindShaderResources(validation_pipeline, gpuav, cb_state, cb_state.compute_index, cb_state.GetErrorLoggerIndex(),
                                  shader_resources)) {
+            gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to GetManagedDescriptorSet in BindShaderResources");
             return;
         }
 
