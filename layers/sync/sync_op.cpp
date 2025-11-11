@@ -73,7 +73,7 @@ class MapRangesRangeGenerator {
         }
     }
     void SeekBegin() {
-        map_pos_ = map_->LowerBound(range_);
+        map_pos_ = map_->LowerBound(range_.begin);
         UpdateCurrent();
     }
 
@@ -161,7 +161,7 @@ class FilteredGeneratorGenerator {
                 retry_count++;
             } else {
                 // Okay we've tried walking, do a seek.
-                filter_pos_ = filter_->LowerBound(range);
+                filter_pos_ = filter_->LowerBound(range.begin);
                 break;
             }
         }
@@ -185,7 +185,7 @@ class FilteredGeneratorGenerator {
             current_ = {};
             filter_pos_ = filter_->end();
         } else {
-            filter_pos_ = filter_->LowerBound(gen_range);
+            filter_pos_ = filter_->LowerBound(gen_range.begin);
             current_ = gen_range & FilterRange();
         }
     }
