@@ -814,7 +814,7 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03380", device,
                                          viewport_loc.dot(Field::scissorCount),
                                          "(%" PRIu32 ") must be zero when VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT is used.",
-                                         viewport_state.viewportCount);
+                                         viewport_state.scissorCount);
                     }
                 } else {
                     if (viewport_state.scissorCount == 0) {
