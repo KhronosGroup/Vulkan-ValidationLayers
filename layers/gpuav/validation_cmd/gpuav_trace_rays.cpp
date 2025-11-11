@@ -58,6 +58,7 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
         gpuav.shared_resources_manager.GetOrCreate<valpipe::ComputePipeline<TraceRaysValidationShader>>(
             gpuav, loc, val_cmd_common.error_logging_desc_set_layout_);
     if (!validation_pipeline.valid) {
+        gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to create TraceRaysValidationShader.");
         return;
     }
 
@@ -87,6 +88,7 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
 
         if (!BindShaderResources(validation_pipeline, gpuav, cb_state, cb_state.compute_index, cb_state.GetErrorLoggerIndex(),
                                  shader_resources)) {
+            gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to GetManagedDescriptorSet in BindShaderResources");
             return;
         }
     }

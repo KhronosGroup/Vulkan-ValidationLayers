@@ -69,6 +69,7 @@ void CopyMemoryIndirect(Validator &gpuav, const Location &loc, CommandBufferSubS
         gpuav.shared_resources_manager.GetOrCreate<valpipe::ComputePipeline<CopyMemoryIndirectValidationShader>>(
             gpuav, loc, val_cmd_common.error_logging_desc_set_layout_);
     if (!validation_pipeline.valid) {
+        gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to create CopyMemoryIndirectValidationShader.");
         return;
     }
 
@@ -90,7 +91,6 @@ void CopyMemoryIndirect(Validator &gpuav, const Location &loc, CommandBufferSubS
 
         const VkDeviceSize buffer_size = sizeof(CopyMemoryIndirectApiData);
         vko::BufferRange api_input_buffer_range = cb_state.gpu_resources_manager.GetHostCoherentBufferRange(buffer_size);
-        assert(api_input_buffer_range.buffer != VK_NULL_HANDLE);
 
         auto gpu_region_ptr = (CopyMemoryIndirectApiData *)api_input_buffer_range.offset_mapped_ptr;
         gpu_region_ptr->range_address = api_copy_info.address_range.address;
@@ -104,6 +104,7 @@ void CopyMemoryIndirect(Validator &gpuav, const Location &loc, CommandBufferSubS
 
         if (!BindShaderResources(validation_pipeline, gpuav, cb_state, cb_state.compute_index, cb_state.GetErrorLoggerIndex(),
                                  shader_resources)) {
+            gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to GetManagedDescriptorSet in BindShaderResources");
             return;
         }
     }
