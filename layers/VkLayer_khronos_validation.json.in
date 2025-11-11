@@ -482,6 +482,20 @@
                                     }
                                 },
                                 {
+                                    "key": "syncval_load_op_after_store_op_validation",
+                                    "label": "LoadOp after StoreOp validation",
+                                    "description": "Detect LoadOp after StoreOp hazards between render pass instances.",
+                                    "view": "HIDDEN",
+                                    "type": "BOOL",
+                                    "default": false,
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            { "key": "validate_sync", "value": true }
+                                        ]
+                                    }
+                                },
+                                {
                                     "key": "syncval_reporting",
                                     "label": "Error messages",
                                     "description": "Options to configure synchronization validation error reporting",
