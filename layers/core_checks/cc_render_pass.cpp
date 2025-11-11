@@ -687,7 +687,7 @@ bool CoreChecks::ValidateRenderPassPerformanceCountersByRegionBeginInfo(VkComman
 
         for (auto& buffer_state : buffer_states) {
             skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, begin_loc.pNext(Struct::VkRenderPassPerformanceCountersByRegionBeginInfoARM, Field::pCounterAddresses),
-                                                  "VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-counterAddressCount-11816");
+                                                  "VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-pCounterAddresses-11816");
         }
 
         auto first_buffer = *buffer_states.begin();
