@@ -7468,14 +7468,15 @@ TEST_F(NegativeDynamicRendering, CountersByRegionARM) {
         return numerator / denominator + (numerator % denominator != 0);
     };
 
-    uint32_t counter_buffer_size = Align(GetQuotientCeil(ra_extent.width, pc_region_size.width) *
-                                             Align(counter_index_count * static_cast<uint32_t>(sizeof(uint32_t)), region_alignment),
-                                         row_stride_alignment) *
-                                   GetQuotientCeil(ra_extent.height, pc_region_size.height);
-
-    if (counter_buffer_size == 0u) {
-        GTEST_SKIP() << "Test cannot proceed with a counter buffer of size 0";
+    if (pc_region_size.width == 0u || pc_region_size.height == 0u || row_stride_alignment == 0u || region_alignment == 0u) {
+        GTEST_SKIP() << "Test cannot proceed without correct VkPhysicalDevicePerformanceCountersByRegionPropertiesARM";
     }
+
+    uint32_t counter_buffer_size =
+        AlignToMultiple(GetQuotientCeil(ra_extent.width, pc_region_size.width) *
+                            AlignToMultiple(counter_index_count * static_cast<uint32_t>(sizeof(uint32_t)), region_alignment),
+                        row_stride_alignment) *
+        GetQuotientCeil(ra_extent.height, pc_region_size.height);
 
     VkDeviceAddress counter_addresses[2];
     vkt::Buffer counter_buffer(*m_device, counter_buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
@@ -7578,19 +7579,20 @@ TEST_F(NegativeDynamicRendering, MultiviewCountersByRegionARM) {
     uint32_t region_alignment = pc_props.regionAlignment;
     uint32_t counter_index_count = 1u;
 
+    if (pc_region_size.width == 0u || pc_region_size.height == 0u || row_stride_alignment == 0u || region_alignment == 0u) {
+        GTEST_SKIP() << "Test cannot proceed without correct VkPhysicalDevicePerformanceCountersByRegionPropertiesARM";
+    }
+
     constexpr auto GetQuotientCeil = [](uint32_t numerator, uint32_t denominator) {
         denominator = std::max(denominator, 1u);
         return numerator / denominator + (numerator % denominator != 0);
     };
 
-    uint32_t counter_buffer_size = Align(GetQuotientCeil(ra_extent.width, pc_region_size.width) *
-                                             Align(counter_index_count * static_cast<uint32_t>(sizeof(uint32_t)), region_alignment),
-                                         row_stride_alignment) *
-                                   GetQuotientCeil(ra_extent.height, pc_region_size.height);
-
-    if (counter_buffer_size == 0u) {
-        GTEST_SKIP() << "Test cannot proceed with a counter buffer of size 0";
-    }
+    uint32_t counter_buffer_size =
+        AlignToMultiple(GetQuotientCeil(ra_extent.width, pc_region_size.width) *
+                            AlignToMultiple(counter_index_count * static_cast<uint32_t>(sizeof(uint32_t)), region_alignment),
+                        row_stride_alignment) *
+        GetQuotientCeil(ra_extent.height, pc_region_size.height);
 
     VkDeviceAddress counter_addresses[2];
     vkt::Buffer counter_buffer(*m_device, counter_buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
