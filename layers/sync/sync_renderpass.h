@@ -76,7 +76,7 @@ struct BeginRenderingCmdState {
 };
 
 std::unique_ptr<AccessContext[]> InitSubpassContexts(VkQueueFlags queue_flags, const vvl::RenderPass &rp_state,
-                                                     const AccessContext *external_context);
+                                                     const AccessContext &external_context);
 
 class RenderPassAccessContext {
   public:
@@ -84,7 +84,7 @@ class RenderPassAccessContext {
                                                            const std::vector<const vvl::ImageView *> &attachment_views);
     RenderPassAccessContext() : rp_state_(nullptr), render_area_(VkRect2D()), current_subpass_(0) {}
     RenderPassAccessContext(const vvl::RenderPass &rp_state, const VkRect2D &render_area, VkQueueFlags queue_flags,
-                            const std::vector<const vvl::ImageView *> &attachment_views, const AccessContext *external_context);
+                            const std::vector<const vvl::ImageView *> &attachment_views, const AccessContext &external_context);
 
     static bool ValidateLayoutTransitions(const CommandBufferAccessContext &cb_context, const AccessContext &access_context,
                                           const vvl::RenderPass &rp_state, const VkRect2D &render_area, uint32_t subpass,

@@ -216,7 +216,7 @@ CommandBufferAccessContext::CommandBufferAccessContext(const SyncValidator &sync
       cbs_referenced_(std::make_shared<CommandBufferSet>()),
       command_number_(0),
       reset_count_(0),
-      cb_access_context_(),
+      cb_access_context_(sync_validator),
       current_context_(&cb_access_context_),
       events_context_(),
       render_pass_contexts_(),
@@ -1160,7 +1160,7 @@ ResourceUsageTag CommandBufferAccessContext::RecordBeginRenderPass(vvl::Func com
     AddCommandHandle(barrier_tag, rp_state.Handle());
     const auto load_tag = NextSubcommandTag(command, ResourceUsageRecord::SubcommandType::kLoadOp);
     render_pass_contexts_.emplace_back(
-        std::make_unique<RenderPassAccessContext>(rp_state, render_area, GetQueueFlags(), attachment_views, &cb_access_context_));
+        std::make_unique<RenderPassAccessContext>(rp_state, render_area, GetQueueFlags(), attachment_views, cb_access_context_));
     current_renderpass_context_ = render_pass_contexts_.back().get();
     current_renderpass_context_->RecordBeginRenderPass(barrier_tag, load_tag);
     current_context_ = &current_renderpass_context_->CurrentContext();

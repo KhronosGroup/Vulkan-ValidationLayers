@@ -87,12 +87,14 @@ class UpdateStateResolveAction {
 };
 
 std::unique_ptr<AccessContext[]> InitSubpassContexts(VkQueueFlags queue_flags, const vvl::RenderPass &rp_state,
-                                                     const AccessContext *external_context) {
+                                                     const AccessContext &external_context) {
     const uint32_t subpass_count = rp_state.create_info.subpassCount;
     auto subpass_contexts = std::make_unique<AccessContext[]>(subpass_count);
     // Add this for all subpasses here so that they exsist during next subpass validation
     for (uint32_t pass = 0; pass < subpass_count; pass++) {
-        subpass_contexts[pass].InitFrom(pass, queue_flags, rp_state.subpass_dependencies, subpass_contexts.get(), external_context);
+        subpass_contexts[pass].validator = external_context.validator;
+        subpass_contexts[pass].InitFrom(pass, queue_flags, rp_state.subpass_dependencies, subpass_contexts.get(),
+                                        &external_context);
     }
     return subpass_contexts;
 }
@@ -133,7 +135,7 @@ static SyncAccessIndex DepthStencilLoadUsage(VkAttachmentLoadOp load_op) {
 // Caller must manage returned pointer
 static AccessContext *CreateStoreResolveProxyContext(const AccessContext &context, const vvl::RenderPass &rp_state,
                                                      uint32_t subpass, const AttachmentViewGenVector &attachment_views) {
-    auto *proxy = new AccessContext();
+    auto *proxy = new AccessContext(*context.validator);
     proxy->InitFrom(context);
     RenderPassAccessContext::UpdateAttachmentResolveAccess(rp_state, attachment_views, subpass, kInvalidTag, *proxy);
     RenderPassAccessContext::UpdateAttachmentStoreAccess(rp_state, attachment_views, subpass, kInvalidTag, *proxy);
@@ -720,7 +722,7 @@ bool RenderPassAccessContext::ValidateNextSubpass(const CommandBufferAccessConte
         // To avoid complex (and buggy) duplication of the affect of layout transitions on load operations, we'll record them
         // on a copy of the (empty) next context.
         // Note: The resource access map should be empty so hopefully this copy isn't too horrible from a perf POV.
-        AccessContext temp_context;
+        AccessContext temp_context(cb_context.GetSyncState());
         temp_context.InitFrom(next_context);
         RecordLayoutTransitions(*rp_state_, next_subpass, attachment_views_, kInvalidTag, temp_context);
         skip |= ValidateLoadOperation(cb_context, temp_context, *rp_state_, render_area_, next_subpass, attachment_views_, command);
@@ -856,7 +858,7 @@ AttachmentViewGenVector RenderPassAccessContext::CreateAttachmentViewGen(
 RenderPassAccessContext::RenderPassAccessContext(const vvl::RenderPass &rp_state, const VkRect2D &render_area,
                                                  VkQueueFlags queue_flags,
                                                  const std::vector<const vvl::ImageView *> &attachment_views,
-                                                 const AccessContext *external_context)
+                                                 const AccessContext &external_context)
     : rp_state_(&rp_state), render_area_(render_area), current_subpass_(0U), attachment_views_() {
     // Add this for all subpasses here so that they exist during next subpass validation
     subpass_contexts_ = InitSubpassContexts(queue_flags, rp_state, external_context);
