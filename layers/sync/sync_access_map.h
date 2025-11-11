@@ -51,8 +51,8 @@ class AccessMap {
     void Clear() { impl_map_.clear(); }
     iterator Erase(const iterator &pos);
     void Erase(iterator first, iterator last);
-    iterator LowerBound(const AccessRange &range);
-    const_iterator LowerBound(const AccessRange &range) const;
+    iterator LowerBound(ResourceAddress range_begin);
+    const_iterator LowerBound(ResourceAddress range_begin) const;
     iterator Insert(const_iterator hint, const AccessRange &range, const AccessState &access_state);
     iterator Split(const iterator split_it, const index_type &index);
     size_t Size() const { return impl_map_.size(); }
@@ -87,10 +87,7 @@ class TAccessMapLocator {
     index_type DistanceToEdge() const;
 
   private:
-    iterator LowerBoundForIndex(index_type index) const {
-        return index == std::numeric_limits<AccessRange::index_type>::max() ? map_->end()
-                                                                            : map_->LowerBound(AccessRange(index, index + 1));
-    }
+    iterator LowerBoundForIndex(index_type index) const { return map_->LowerBound(index); }
     bool InsideLowerBoundRange() const { return lower_bound != map_->end() && lower_bound->first.includes(index); }
     bool TrySeekLocal(index_type seek_to);
 
@@ -181,14 +178,14 @@ template <typename InfillUpdateOps>
 AccessMap::iterator InfillUpdateRange(AccessMap &map, AccessMap::iterator pos, const AccessRange &range,
                                       const InfillUpdateOps &ops) {
     const auto end = map.end();
-    assert((pos == end) || (pos == map.LowerBound(range)) || pos->first.strictly_less(range));
+    assert((pos == end) || (pos == map.LowerBound(range.begin)) || pos->first.strictly_less(range));
 
     if (range.empty()) {
         return pos;
     }
     if (pos == end) {
         // Only pass pos == end for range tail after last entry
-        assert(end == map.LowerBound(range));
+        assert(end == map.LowerBound(range.begin));
     } else if (pos->first.strictly_less(range)) {
         // pos isn't lower_bound for range (it's less than range), however, if range is monotonically increasing it's likely
         // the next entry in the map will be the lower bound.
@@ -197,9 +194,9 @@ AccessMap::iterator InfillUpdateRange(AccessMap &map, AccessMap::iterator pos, c
         // (pos + 1) must be the lower_bound, otherwise we have to look for it O(log n)
         ++pos;
         if ((pos != end) && pos->first.strictly_less(range)) {
-            pos = map.LowerBound(range);
+            pos = map.LowerBound(range.begin);
         }
-        assert(pos == map.LowerBound(range));
+        assert(pos == map.LowerBound(range.begin));
     }
 
     if ((pos != end) && (range.begin > pos->first.begin)) {
@@ -246,7 +243,7 @@ void InfillUpdateRange(AccessMap &map, const AccessRange &range, const InfillUpd
     if (range.empty()) {
         return;
     }
-    auto pos = map.LowerBound(range);
+    auto pos = map.LowerBound(range.begin);
     InfillUpdateRange(map, pos, range, ops);
 }
 

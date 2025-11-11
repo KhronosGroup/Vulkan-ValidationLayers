@@ -500,7 +500,7 @@ class EventBarrierHazardDetector {
   private:
     bool ScopeInvalid() const { return scope_pos_ == scope_end_; }
     bool ScopeValid() const { return !ScopeInvalid(); }
-    void ScopeSeek(const AccessRange &range) { scope_pos_ = event_scope_.LowerBound(range); }
+    void ScopeSeek(const AccessRange &range) { scope_pos_ = event_scope_.LowerBound(range.begin); }
 
     // Hiding away the std::pair grunge...
     ResourceAddress ScopeBegin() const { return scope_pos_->first.begin; }
@@ -556,9 +556,12 @@ HazardResult AccessContext::DetectImageBarrierHazard(const vvl::Image &image, Vk
 
 AccessMap::iterator AccessContext::UpdateMemoryAccessStateFunctor::Infill(AccessMap *accesses, const Iterator &pos_hint,
                                                                           const AccessRange &range) const {
+    // InfillUpdateRange calls infill operation with not empty ranges
+    assert(range.non_empty());
+
     // this is only called on gaps, and never returns a gap.
     context.ResolvePreviousAccess(range, accesses, true);
-    return accesses->LowerBound(range);
+    return accesses->LowerBound(range.begin);
 }
 void AccessContext::UpdateMemoryAccessStateFunctor::operator()(const AccessMap::iterator &pos) const {
     auto &access_state = pos->second;

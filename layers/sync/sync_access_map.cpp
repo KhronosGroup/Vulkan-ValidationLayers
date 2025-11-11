@@ -32,52 +32,42 @@ void AccessMap::Erase(iterator first, iterator last) {
     }
 }
 
-AccessMap::iterator AccessMap::LowerBound(const AccessRange &range) {
-    assert(range.valid());
-    if (range.valid()) {
-        // ImplMap doesn't give us what want with a direct query, it will give us the first entry contained (if any) in key,
-        // not the first entry intersecting key, so, first look for the the first entry that starts at or after key.begin
-        // with the operator > in range, we can safely use an empty range for comparison
-        auto lower = impl_map_.lower_bound(AccessRange(range.begin, range.begin));
+AccessMap::iterator AccessMap::LowerBound(ResourceAddress range_begin) {
+    // ImplMap doesn't give us what want with a direct query, it will give us the first entry contained (if any) in key,
+    // not the first entry intersecting key, so, first look for the the first entry that starts at or after key.begin
+    // with the operator > in range, we can safely use an empty range for comparison
+    auto lower = impl_map_.lower_bound(AccessRange(range_begin, range_begin));
 
-        // If there is a preceding entry it's possible that begin is included, as all we know is that lower.begin >= key.begin
-        // or lower is at end
-        if (lower != begin()) {
-            auto prev = lower;
-            --prev;
-            // If the previous entry includes begin (and we know key.begin > prev.begin) then prev is actually lower
-            if (range.begin < prev->first.end) {
-                lower = prev;
-            }
+    // If there is a preceding entry it's possible that begin is included, as all we know is that lower.begin >= key.begin
+    // or lower is at end
+    if (lower != begin()) {
+        auto prev = lower;
+        --prev;
+        // If the previous entry includes begin (and we know key.begin > prev.begin) then prev is actually lower
+        if (range_begin < prev->first.end) {
+            lower = prev;
         }
-        return lower;
     }
-    // Range is ill-formed
-    return end();  // Point safely to nothing
+    return lower;
 }
 
-AccessMap::const_iterator AccessMap::LowerBound(const AccessRange &range) const {
-    assert(range.valid());
-    if (range.valid()) {
-        // ImplMap doesn't give us what want with a direct query, it will give us the first entry contained (if any) in key,
-        // not the first entry intersecting key, so, first look for the the first entry that starts at or after key.begin
-        // with the operator > in range, we can safely use an empty range for comparison
-        auto lower = impl_map_.lower_bound(AccessRange(range.begin, range.begin));
+AccessMap::const_iterator AccessMap::LowerBound(ResourceAddress range_begin) const {
+    // ImplMap doesn't give us what want with a direct query, it will give us the first entry contained (if any) in key,
+    // not the first entry intersecting key, so, first look for the the first entry that starts at or after key.begin
+    // with the operator > in range, we can safely use an empty range for comparison
+    auto lower = impl_map_.lower_bound(AccessRange(range_begin, range_begin));
 
-        // If there is a preceding entry it's possible that begin is included, as all we know is that lower.begin >= key.begin
-        // or lower is at end
-        if (lower != begin()) {
-            auto prev = lower;
-            --prev;
-            // If the previous entry includes begin (and we know key.begin > prev.begin) then prev is actually lower
-            if (range.begin < prev->first.end) {
-                lower = prev;
-            }
+    // If there is a preceding entry it's possible that begin is included, as all we know is that lower.begin >= key.begin
+    // or lower is at end
+    if (lower != begin()) {
+        auto prev = lower;
+        --prev;
+        // If the previous entry includes begin (and we know key.begin > prev.begin) then prev is actually lower
+        if (range_begin < prev->first.end) {
+            lower = prev;
         }
-        return lower;
     }
-    // Range is ill-formed
-    return end();  // Point safely to nothing
+    return lower;
 }
 
 AccessMap::iterator AccessMap::Insert(const_iterator hint, const AccessRange &range, const AccessState &access_state) {
@@ -113,7 +103,7 @@ std::pair<AccessMap::iterator, bool> AccessMap::Insert(const AccessRange &range,
     }
     // Look for range conflicts (and an insertion point, which makes the lower_bound *not* wasted work)
     // we don't have to check upper if just check that lower doesn't intersect (which it would if lower != upper)
-    auto lower = LowerBound(range);
+    auto lower = LowerBound(range.begin);
     if (lower == end() || !lower->first.intersects(range)) {
         // range is not even partially overlapped, and lower is strictly > than key
         return {impl_map_.emplace_hint(lower, range, access_state), true};

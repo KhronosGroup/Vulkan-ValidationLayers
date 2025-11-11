@@ -55,7 +55,7 @@ template <typename RangeMap, typename RangeGen, typename Action>
 bool ForEachEntryInRangesUntil(const RangeMap &map, RangeGen &range_gen, Action &action) {
     using RangeType = typename RangeGen::RangeType;
     using IndexType = typename RangeType::index_type;
-    auto pos = map.LowerBound(*range_gen);
+    auto pos = map.LowerBound((*range_gen).begin);
     const auto end = map.end();
     IndexType skip_limit = 0;
     for (; range_gen->non_empty() && pos != end; ++range_gen) {
@@ -77,10 +77,10 @@ bool ForEachEntryInRangesUntil(const RangeMap &map, RangeGen &range_gen, Action 
             ++pos;
             if (pos == end) break;
             if (pos->first.strictly_less(range)) {
-                pos = map.LowerBound(range);
+                pos = map.LowerBound(range.begin);
                 if (pos == end) break;
             }
-            assert(pos == map.LowerBound(range));
+            assert(pos == map.LowerBound(range.begin));
         }
 
         // If the range intersects pos->first, consider Action performed for that map entry, and
@@ -522,7 +522,7 @@ template <typename Action, typename RangeGen>
 void AccessContext::UpdateMemoryAccessState(const Action &action, RangeGen &range_gen) {
     assert(!finalized_);
     ActionToOpsAdapter<Action> ops{action};
-    auto pos = access_state_map_.LowerBound(*range_gen);
+    auto pos = access_state_map_.LowerBound(range_gen->begin);
     for (; range_gen->non_empty(); ++range_gen) {
         pos = InfillUpdateRange(access_state_map_, pos, *range_gen, ops);
     }
