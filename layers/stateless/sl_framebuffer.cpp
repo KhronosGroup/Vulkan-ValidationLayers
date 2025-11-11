@@ -29,7 +29,7 @@ bool Device::manual_PreCallValidateCreateFramebuffer(VkDevice device, const VkFr
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
 
     if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) == 0) {
-        skip |= context.ValidateArray(create_info_loc.dot(Field::attachmentCount), error_obj.location.dot(Field::pAttachments),
+        skip |= context.ValidateArray(create_info_loc.dot(Field::attachmentCount), create_info_loc.dot(Field::pAttachments),
                                       pCreateInfo->attachmentCount, &pCreateInfo->pAttachments, false, true, kVUIDUndefined,
                                       "VUID-VkFramebufferCreateInfo-flags-02778");
         // VUID-VkFramebufferCreateInfo-flags-02778 above is already checking if pAttachments is NULL
@@ -37,7 +37,7 @@ bool Device::manual_PreCallValidateCreateFramebuffer(VkDevice device, const VkFr
             for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
                 if (pCreateInfo->pAttachments[i] == VK_NULL_HANDLE) {
                     skip |=
-                        LogError("VUID-VkFramebufferCreateInfo-flags-02778", device, error_obj.location.dot(Field::pAttachments, i),
+                        LogError("VUID-VkFramebufferCreateInfo-flags-02778", device, create_info_loc.dot(Field::pAttachments, i),
                                  "is VK_NULL_HANDLE, but must be a valid VkImageView handle");
                 }
             }
