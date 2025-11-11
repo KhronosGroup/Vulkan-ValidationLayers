@@ -95,6 +95,15 @@ constexpr T Align(T x, T p2) {
     return (x + p2 - 1) & ~(p2 - 1);
 }
 
+// Given any positive p (not necessarily power of two),
+// returns the smallest multiple of p greater than or equal to x
+template <typename T>
+constexpr T AlignToMultiple(T x, T p) {
+    static_assert(std::numeric_limits<T>::is_integer, "Unsigned integer required.");
+    static_assert(std::is_unsigned<T>::value, "Unsigned integer required.");
+    return ((x + p - 1) / p) * p;
+}
+
 // Returns the 0-based index of the LSB. An input mask of 0 yields -1
 static inline int LeastSignificantBit(uint32_t mask) { return u_ffs(static_cast<int>(mask)) - 1; }
 
@@ -110,7 +119,7 @@ static inline bool IsBetweenInclusive(VkDeviceSize value, VkDeviceSize min, VkDe
     return (value >= min) && (value <= max);
 }
 
-static inline bool IsBetweenInclusive(const VkExtent2D &value, const VkExtent2D &min, const VkExtent2D &max) {
+static inline bool IsBetweenInclusive(const VkExtent2D& value, const VkExtent2D& min, const VkExtent2D& max) {
     return IsBetweenInclusive(value.width, min.width, max.width) && IsBetweenInclusive(value.height, min.height, max.height);
 }
 
@@ -125,7 +134,7 @@ static inline bool IsIntegerMultipleOf(VkDeviceSize value, VkDeviceSize granular
     }
 }
 
-static inline bool IsIntegerMultipleOf(const VkOffset2D &value, const VkOffset2D &granularity) {
+static inline bool IsIntegerMultipleOf(const VkOffset2D& value, const VkOffset2D& granularity) {
     return IsIntegerMultipleOf(value.x, granularity.x) && IsIntegerMultipleOf(value.y, granularity.y);
 }
 
@@ -147,7 +156,7 @@ static inline VkDeviceSize SafeDivision(VkDeviceSize dividend, VkDeviceSize divi
 }
 
 // For spots we care if one pointer is null, or if both are not null, are the same values
-static inline bool EqualValuesOrBothNull(const uint32_t *a, const uint32_t *b) {
+static inline bool EqualValuesOrBothNull(const uint32_t* a, const uint32_t* b) {
     if (!a || !b) {
         return a == b;
     }
