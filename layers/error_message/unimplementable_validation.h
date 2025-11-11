@@ -148,6 +148,7 @@ const char* unimplementable_validation[] = {
     "VUID-VkBufferImageCopy2-imageSubresource-parameter",
     "VUID-VkMemoryToImageCopy-imageSubresource-parameter",
     "VUID-VkImageToMemoryCopy-imageSubresource-parameter",
+    "VUID-VkCopyMemoryToImageIndirectCommandKHR-imageSubresource-parameter",
     // VkImageSubresourceRange
     "VUID-VkImageMemoryBarrier-subresourceRange-parameter",
     "VUID-VkImageMemoryBarrier2-subresourceRange-parameter",

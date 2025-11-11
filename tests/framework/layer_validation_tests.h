@@ -258,7 +258,7 @@ class GpuAVDescriptorClassGeneralBuffer : public GpuAVTest {
 
 class GpuAVCopyMemoryIndirect : public GpuAVTest {
   public:
-    void InitGpuAVCopyMemoryIndirect();
+    void InitGpuAVCopyMemoryIndirect(bool safe_mode = true);
 };
 
 class GpuAVRayQueryTest : public GpuAVTest {

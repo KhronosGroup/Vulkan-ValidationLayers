@@ -19,16 +19,16 @@
 
 class PositiveGpuAVCopyMemoryIndirect : public GpuAVCopyMemoryIndirect {};
 
-void GpuAVCopyMemoryIndirect::InitGpuAVCopyMemoryIndirect() {
+void GpuAVCopyMemoryIndirect::InitGpuAVCopyMemoryIndirect(bool safe_mode) {
     AddRequiredExtensions(VK_KHR_COPY_MEMORY_INDIRECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::indirectMemoryCopy);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitGpuAvFramework({}, safe_mode));
     RETURN_IF_SKIP(InitState());
 }
 
 TEST_F(PositiveGpuAVCopyMemoryIndirect, Basic) {
-    RETURN_IF_SKIP(InitGpuAVCopyMemoryIndirect());
+    RETURN_IF_SKIP(InitGpuAVCopyMemoryIndirect(false));
 
     vkt::Buffer src_payload(*m_device, 16, 0, vkt::device_address);
     vkt::Buffer dst_payload(*m_device, 16, 0, vkt::device_address);
@@ -70,7 +70,7 @@ TEST_F(PositiveGpuAVCopyMemoryIndirect, Basic) {
 }
 
 TEST_F(PositiveGpuAVCopyMemoryIndirect, MultiCopy) {
-    RETURN_IF_SKIP(InitGpuAVCopyMemoryIndirect());
+    RETURN_IF_SKIP(InitGpuAVCopyMemoryIndirect(false));
 
     vkt::Buffer src1_payload(*m_device, 32, 0, vkt::device_address);
     vkt::Buffer src2_payload(*m_device, 32, 0, vkt::device_address);
@@ -130,7 +130,7 @@ TEST_F(PositiveGpuAVCopyMemoryIndirect, MultiCopy) {
 
 TEST_F(PositiveGpuAVCopyMemoryIndirect, Image) {
     AddRequiredFeature(vkt::Feature::indirectMemoryToImageCopy);
-    RETURN_IF_SKIP(InitGpuAVCopyMemoryIndirect());
+    RETURN_IF_SKIP(InitGpuAVCopyMemoryIndirect(false));
 
     vkt::Buffer src_payload(*m_device, 512, 0, vkt::device_address);
     vkt::Image dst_image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM,
@@ -169,7 +169,7 @@ TEST_F(PositiveGpuAVCopyMemoryIndirect, Image) {
 TEST_F(PositiveGpuAVCopyMemoryIndirect, GpuUpdate) {
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
-    RETURN_IF_SKIP(InitGpuAVCopyMemoryIndirect());
+    RETURN_IF_SKIP(InitGpuAVCopyMemoryIndirect(false));
 
     vkt::Buffer src_payload(*m_device, 16, 0, vkt::device_address);
     vkt::Buffer dst_payload(*m_device, 16, 0, vkt::device_address);
