@@ -140,6 +140,9 @@ const int kErrorSubCodePreCopyMemoryIndirectSizeAligned = 3;
 const int kErrorSubCodePreCopyMemoryToImageIndirectSrcAddressAligned = 4;
 const int kErrorSubCodePreCopyMemoryToImageIndirectBufferRowLength = 5;
 const int kErrorSubCodePreCopyMemoryToImageIndirectBufferImageHeight = 6;
+const int kErrorSubCodePreCopyMemoryIndirectSrcAddressInvalid = 7;
+const int kErrorSubCodePreCopyMemoryIndirectDstAddressInvalid = 8;
+const int kErrorSubCodePreCopyMemoryToImageIndirectSrcAddressInvalid = 9;
 
 #ifdef __cplusplus
 }  // namespace glsl

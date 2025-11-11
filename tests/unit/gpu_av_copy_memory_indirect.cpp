@@ -12,6 +12,7 @@
 
 #include <gtest/gtest.h>
 #include <vulkan/vulkan_core.h>
+#include <cstdint>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/descriptor_helper.h"
 #include "sync_helper.h"
@@ -86,7 +87,8 @@ TEST_F(NegativeGpuAVCopyMemoryIndirect, DstAddressAlignment) {
 }
 
 TEST_F(NegativeGpuAVCopyMemoryIndirect, SizeAlignment) {
-    RETURN_IF_SKIP(InitGpuAVCopyMemoryIndirect());
+    // Want a test that is unsafe, this should likely not crash, just give bad values
+    RETURN_IF_SKIP(InitGpuAVCopyMemoryIndirect(false));
 
     vkt::Buffer src_payload(*m_device, 16, 0, vkt::device_address);
     vkt::Buffer dst_payload(*m_device, 16, 0, vkt::device_address);
@@ -264,6 +266,7 @@ TEST_F(NegativeGpuAVCopyMemoryIndirect, Combined) {
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
+
 TEST_F(NegativeGpuAVCopyMemoryIndirect, GpuUpdate) {
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
@@ -311,6 +314,81 @@ TEST_F(NegativeGpuAVCopyMemoryIndirect, GpuUpdate) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryIndirectCommandKHR-size-10960");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVCopyMemoryIndirect, NullAddress) {
+    RETURN_IF_SKIP(InitGpuAVCopyMemoryIndirect());
+
+    vkt::Buffer src_payload(*m_device, 16, 0, vkt::device_address);
+    vkt::Buffer dst_payload(*m_device, 16, 0, vkt::device_address);
+
+    vkt::Buffer indirect_buffer(*m_device, 64, 0, vkt::device_address);
+    auto *indirect_buffer_ptr = (VkCopyMemoryIndirectCommandKHR *)indirect_buffer.Memory().Map();
+    indirect_buffer_ptr[0].srcAddress = 0;
+    indirect_buffer_ptr[0].dstAddress = dst_payload.Address();
+    indirect_buffer_ptr[0].size = 8;
+    indirect_buffer_ptr[0].srcAddress = src_payload.Address();
+    indirect_buffer_ptr[0].dstAddress = 0;
+    indirect_buffer_ptr[0].size = 8;
+
+    VkStridedDeviceAddressRangeKHR address_range = {};
+    address_range.address = indirect_buffer.Address();
+    address_range.size = 64;
+    address_range.stride = sizeof(VkCopyMemoryIndirectCommandKHR);
+
+    VkCopyMemoryIndirectInfoKHR copy_info = vku::InitStructHelper();
+    copy_info.copyCount = 2;
+    copy_info.copyAddressRange = address_range;
+    copy_info.srcCopyFlags = VK_ADDRESS_COPY_DEVICE_LOCAL_BIT_KHR;
+    copy_info.dstCopyFlags = VK_ADDRESS_COPY_DEVICE_LOCAL_BIT_KHR;
+
+    m_command_buffer.Begin();
+    vk::CmdCopyMemoryIndirectKHR(m_command_buffer, &copy_info);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryIndirectCommandKHR-srcAddress-parameter");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryIndirectCommandKHR-dstAddress-parameter");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVCopyMemoryIndirect, ManyCopies) {
+    RETURN_IF_SKIP(InitGpuAVCopyMemoryIndirect());
+    const uint32_t copy_count = 512;
+
+    vkt::Buffer src_payload(*m_device, 16, 0, vkt::device_address);
+    vkt::Buffer dst_payload(*m_device, 16, 0, vkt::device_address);
+
+    const uint32_t indirect_buffer_size = sizeof(VkCopyMemoryIndirectCommandKHR) * copy_count;
+    vkt::Buffer indirect_buffer(*m_device, indirect_buffer_size, 0, vkt::device_address);
+    auto *indirect_buffer_ptr = (VkCopyMemoryIndirectCommandKHR *)indirect_buffer.Memory().Map();
+    for (uint32_t i = 0; i < copy_count; i++) {
+        indirect_buffer_ptr[i].srcAddress = src_payload.Address();
+        indirect_buffer_ptr[i].dstAddress = dst_payload.Address();
+        indirect_buffer_ptr[i].size = 8;
+    }
+
+    indirect_buffer_ptr[copy_count - 1].size = 7;
+
+    VkStridedDeviceAddressRangeKHR address_range = {};
+    address_range.address = indirect_buffer.Address();
+    address_range.size = indirect_buffer_size;
+    address_range.stride = sizeof(VkCopyMemoryIndirectCommandKHR);
+
+    VkCopyMemoryIndirectInfoKHR copy_info = vku::InitStructHelper();
+    copy_info.copyCount = copy_count;
+    copy_info.copyAddressRange = address_range;
+    copy_info.srcCopyFlags = VK_ADDRESS_COPY_DEVICE_LOCAL_BIT_KHR;
+    copy_info.dstCopyFlags = VK_ADDRESS_COPY_DEVICE_LOCAL_BIT_KHR;
+
+    m_command_buffer.Begin();
+    vk::CmdCopyMemoryIndirectKHR(m_command_buffer, &copy_info);
+    m_command_buffer.End();
+
+    // VUID-VkCopyMemoryIndirectCommandKHR-srcAddress-10958
+    m_errorMonitor->SetDesiredError("copy [511]");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }

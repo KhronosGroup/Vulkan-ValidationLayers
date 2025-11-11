@@ -17,6 +17,7 @@
 
 #include <cstdint>
 #include "gpuav/validation_cmd/gpuav_copy_memory_indirect.h"
+#include "generated/dispatch_functions.h"
 #include "generated/error_location_helper.h"
 #include "gpuav/core/gpuav.h"
 #include "gpuav/core/gpuav_validation_pipeline.h"
@@ -29,6 +30,13 @@
 
 namespace gpuav {
 namespace valcmd {
+
+static constexpr std::string_view kWarningCopyMemoryIndirectCommand =
+    "WARNING - Memory in VkCopyMemoryIndirectCommandKHR was update with safe values to ensure vkCmdCopyMemoryIndirectKHR won't "
+    "crash in the driver.";
+static constexpr std::string_view kWarningCopyMemoryToImageIndirectCommand =
+    "WARNING - Memory in VkCopyMemoryToImageIndirectCommandKHR was update with safe values to ensure "
+    "vkCmdCopyMemoryToImageIndirectKHR won't crash in the driver.";
 
 struct CopyMemoryIndirectValidationShader {
     static size_t GetSpirvSize() { return validation_cmd_copy_memory_indirect_comp_size * sizeof(uint32_t); }
@@ -63,6 +71,10 @@ void CopyMemoryIndirect(Validator &gpuav, const Location &loc, CommandBufferSubS
         return;
     }
 
+    if (api_copy_info.count == 0) {
+        return;
+    }
+
     ValidationCommandsCommon &val_cmd_common =
         cb_state.shared_resources_cache.GetOrCreate<ValidationCommandsCommon>(gpuav, cb_state, loc);
     valpipe::ComputePipeline<CopyMemoryIndirectValidationShader> &validation_pipeline =
@@ -86,7 +98,10 @@ void CopyMemoryIndirect(Validator &gpuav, const Location &loc, CommandBufferSubS
             uint32_t range_size;
             uint32_t range_stride;
             uint32_t copy_count;
-            bool is_image_copy;
+            // Tried to make boolean, found GLSL alignment was off from C++
+            // So keeping these as dwords
+            uint32_t is_image_copy;
+            uint32_t safe_mode;
         };
 
         const VkDeviceSize buffer_size = sizeof(CopyMemoryIndirectApiData);
@@ -99,6 +114,7 @@ void CopyMemoryIndirect(Validator &gpuav, const Location &loc, CommandBufferSubS
         gpu_region_ptr->range_stride = (uint32_t)api_copy_info.address_range.stride;
         gpu_region_ptr->copy_count = api_copy_info.count;
         gpu_region_ptr->is_image_copy = loc.function == vvl::Func::vkCmdCopyMemoryToImageIndirectKHR;
+        gpu_region_ptr->safe_mode = gpuav.gpuav_settings.safe_mode;
 
         shader_resources.api_input_buffer_binding.info = api_input_buffer_range.GetDescriptorBufferInfo();
 
@@ -114,7 +130,29 @@ void CopyMemoryIndirect(Validator &gpuav, const Location &loc, CommandBufferSubS
     {
         DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, validation_pipeline.pipeline);
 
-        DispatchCmdDispatch(cb_state.VkHandle(), 1, 1, 1);
+        // For simplicity, only validate up to maxComputeWorkGroupCount copies
+        uint32_t work_group_count = std::min(api_copy_info.count, gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[0]);
+        // we set "local_size_x = 32" in GLSL shader
+        work_group_count = work_group_count / 32 + uint32_t(work_group_count % 32 > 0);
+
+        DispatchCmdDispatch(cb_state.VkHandle(), work_group_count, 1, 1);
+
+        // If in safe mode, invalid copies specified in the indirect buffer will be set to "safe" values by the validation shader,
+        // so accesses to it need to be synchronised.
+        if (gpuav.gpuav_settings.safe_mode) {
+            // TODO - Would be better to use a VkBufferMemoryBarrier, but that would involve having to figure out what the indirect
+            // VkBuffer handle is
+            VkMemoryBarrier2 memory_barrier = vku::InitStructHelper();
+            memory_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+            memory_barrier.srcAccessMask = VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_SHADER_WRITE_BIT;
+            memory_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_INDIRECT_BIT_KHR;
+            memory_barrier.dstAccessMask = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
+            VkDependencyInfo dep_info = vku::InitStructHelper();
+            dep_info.dependencyFlags = 0;
+            dep_info.memoryBarrierCount = 1;
+            dep_info.pMemoryBarriers = &memory_barrier;
+            DispatchCmdPipelineBarrier2(cb_state.VkHandle(), &dep_info);
+        }
     }
 
     CommandBufferSubState::ErrorLoggerFunc error_logger = [&gpuav, api_copy_info](const uint32_t *error_record,
@@ -133,15 +171,42 @@ void CopyMemoryIndirect(Validator &gpuav, const Location &loc, CommandBufferSubS
         const uint32_t copy_index = error_record[kValCmdErrorPayloadDword_2];
         const VkDeviceSize offset = api_copy_info.address_range.stride * copy_index;
         switch (error_sub_code) {
+            case kErrorSubCodePreCopyMemoryIndirectSrcAddressInvalid: {
+                const uint64_t src_address = payload_start;
+                skip |= gpuav.LogError("VUID-VkCopyMemoryIndirectCommandKHR-srcAddress-parameter", objlist, loc_with_debug_region,
+                                       "VkCopyMemoryIndirectInfoKHR::copyAddressRange.address (0x%" PRIx64 ") + (stride [%" PRIu64
+                                       "] * copy [%" PRIu32 "]) is 0x%" PRIx64
+                                       " which has a VkCopyMemoryIndirectCommandKHR::srcAddress of 0x%" PRIx64
+                                       " which is not a valid VkDeviceAddress.\n%s",
+                                       api_copy_info.address_range.address, api_copy_info.address_range.stride, copy_index,
+                                       api_copy_info.address_range.address + offset, src_address,
+                                       gpuav.gpuav_settings.safe_mode ? kWarningCopyMemoryIndirectCommand.data() : "");
+
+                break;
+            }
             case kErrorSubCodePreCopyMemoryIndirectSrcAddressAligned: {
                 const uint64_t src_address = payload_start;
                 skip |= gpuav.LogError("VUID-VkCopyMemoryIndirectCommandKHR-srcAddress-10958", objlist, loc_with_debug_region,
                                        "VkCopyMemoryIndirectInfoKHR::copyAddressRange.address (0x%" PRIx64 ") + (stride [%" PRIu64
                                        "] * copy [%" PRIu32 "]) is 0x%" PRIx64
                                        " which has a VkCopyMemoryIndirectCommandKHR::srcAddress of 0x%" PRIx64
-                                       " which is not aligned to 4.",
+                                       " which is not aligned to 4.\n%s",
                                        api_copy_info.address_range.address, api_copy_info.address_range.stride, copy_index,
-                                       api_copy_info.address_range.address + offset, src_address);
+                                       api_copy_info.address_range.address + offset, src_address,
+                                       gpuav.gpuav_settings.safe_mode ? kWarningCopyMemoryIndirectCommand.data() : "");
+
+                break;
+            }
+            case kErrorSubCodePreCopyMemoryIndirectDstAddressInvalid: {
+                const uint64_t dst_address = payload_start;
+                skip |= gpuav.LogError("VUID-VkCopyMemoryIndirectCommandKHR-dstAddress-parameter", objlist, loc_with_debug_region,
+                                       "VkCopyMemoryIndirectInfoKHR::copyAddressRange.address (0x%" PRIx64 ") + (stride [%" PRIu64
+                                       "] * copy [%" PRIu32 "]) is 0x%" PRIx64
+                                       " which has a VkCopyMemoryIndirectCommandKHR::dstAddress of 0x%" PRIx64
+                                       " which is not a valid VkDeviceAddress.\n%s",
+                                       api_copy_info.address_range.address, api_copy_info.address_range.stride, copy_index,
+                                       api_copy_info.address_range.address + offset, dst_address,
+                                       gpuav.gpuav_settings.safe_mode ? kWarningCopyMemoryIndirectCommand.data() : "");
 
                 break;
             }
@@ -151,33 +216,51 @@ void CopyMemoryIndirect(Validator &gpuav, const Location &loc, CommandBufferSubS
                                        "VkCopyMemoryIndirectInfoKHR::copyAddressRange.address (0x%" PRIx64 ") + (stride [%" PRIu64
                                        "] * copy [%" PRIu32 "]) is 0x%" PRIx64
                                        " which has a VkCopyMemoryIndirectCommandKHR::dstAddress of 0x%" PRIx64
-                                       " which is not aligned to 4.",
+                                       " which is not aligned to 4.\n%s",
                                        api_copy_info.address_range.address, api_copy_info.address_range.stride, copy_index,
-                                       api_copy_info.address_range.address + offset, dst_address);
+                                       api_copy_info.address_range.address + offset, dst_address,
+                                       gpuav.gpuav_settings.safe_mode ? kWarningCopyMemoryIndirectCommand.data() : "");
 
                 break;
             }
             case kErrorSubCodePreCopyMemoryIndirectSizeAligned: {
                 const uint64_t command_size = payload_start;
-                skip |=
-                    gpuav.LogError("VUID-VkCopyMemoryIndirectCommandKHR-size-10960", objlist, loc_with_debug_region,
-                                   "VkCopyMemoryIndirectInfoKHR::copyAddressRange.address (0x%" PRIx64 ") + (stride [%" PRIu64
-                                   "] * copy [%" PRIu32 "]) is 0x%" PRIx64
-                                   " which has a VkCopyMemoryIndirectCommandKHR::size of %" PRIu64 " which is not aligned to 4.",
-                                   api_copy_info.address_range.address, api_copy_info.address_range.stride, copy_index,
-                                   api_copy_info.address_range.address + offset, command_size);
+                skip |= gpuav.LogError("VUID-VkCopyMemoryIndirectCommandKHR-size-10960", objlist, loc_with_debug_region,
+                                       "VkCopyMemoryIndirectInfoKHR::copyAddressRange.address (0x%" PRIx64 ") + (stride [%" PRIu64
+                                       "] * copy [%" PRIu32 "]) is 0x%" PRIx64
+                                       " which has a VkCopyMemoryIndirectCommandKHR::size of %" PRIu64
+                                       " which is not aligned to 4.\n%s",
+                                       api_copy_info.address_range.address, api_copy_info.address_range.stride, copy_index,
+                                       api_copy_info.address_range.address + offset, command_size,
+                                       gpuav.gpuav_settings.safe_mode ? kWarningCopyMemoryIndirectCommand.data() : "");
 
                 break;
             }
             case kErrorSubCodePreCopyMemoryToImageIndirectSrcAddressAligned: {
                 const uint64_t src_address = payload_start;
-                skip |= gpuav.LogError(
-                    "VUID-VkCopyMemoryToImageIndirectCommandKHR-srcAddress-10963", objlist, loc_with_debug_region,
-                    "VkCopyMemoryToImageIndirectInfoKHR::copyAddressRange.address (0x%" PRIx64 ") + (stride [%" PRIu64
-                    "] * copy [%" PRIu32 "]) is 0x%" PRIx64
-                    " which has a VkCopyMemoryToImageIndirectCommandKHR::srcAddress of 0x%" PRIx64 " which is not aligned to 4.",
-                    api_copy_info.address_range.address, api_copy_info.address_range.stride, copy_index,
-                    api_copy_info.address_range.address + offset, src_address);
+                skip |=
+                    gpuav.LogError("VUID-VkCopyMemoryToImageIndirectCommandKHR-srcAddress-10963", objlist, loc_with_debug_region,
+                                   "VkCopyMemoryToImageIndirectInfoKHR::copyAddressRange.address (0x%" PRIx64
+                                   ") + (stride [%" PRIu64 "] * copy [%" PRIu32 "]) is 0x%" PRIx64
+                                   " which has a VkCopyMemoryToImageIndirectCommandKHR::srcAddress of 0x%" PRIx64
+                                   " which is not aligned to 4.\n%s",
+                                   api_copy_info.address_range.address, api_copy_info.address_range.stride, copy_index,
+                                   api_copy_info.address_range.address + offset, src_address,
+                                   gpuav.gpuav_settings.safe_mode ? kWarningCopyMemoryToImageIndirectCommand.data() : "");
+
+                break;
+            }
+            case kErrorSubCodePreCopyMemoryToImageIndirectSrcAddressInvalid: {
+                const uint64_t src_address = payload_start;
+                skip |= gpuav.LogError("VUID-VkCopyMemoryToImageIndirectCommandKHR-srcAddress-parameter", objlist,
+                                       loc_with_debug_region,
+                                       "VkCopyMemoryToImageIndirectInfoKHR::copyAddressRange.address (0x%" PRIx64
+                                       ") + (stride [%" PRIu64 "] * copy [%" PRIu32 "]) is 0x%" PRIx64
+                                       " which has a VkCopyMemoryToImageIndirectCommandKHR::srcAddress of 0x%" PRIx64
+                                       " which is not a valid VkDeviceAddress.\n%s",
+                                       api_copy_info.address_range.address, api_copy_info.address_range.stride, copy_index,
+                                       api_copy_info.address_range.address + offset, src_address,
+                                       gpuav.gpuav_settings.safe_mode ? kWarningCopyMemoryToImageIndirectCommand.data() : "");
 
                 break;
             }
@@ -189,9 +272,10 @@ void CopyMemoryIndirect(Validator &gpuav, const Location &loc, CommandBufferSubS
                                        "VkCopyMemoryToImageIndirectInfoKHR::copyAddressRange.address (0x%" PRIx64
                                        ") + (stride [%" PRIu64 "] * copy [%" PRIu32 "]) is 0x%" PRIx64
                                        " which has a VkCopyMemoryToImageIndirectCommandKHR::bufferRowLength of %" PRIu32
-                                       " is less than the imageExtent.width (%" PRIu32 ")",
+                                       " is less than the imageExtent.width (%" PRIu32 ")\n%s",
                                        api_copy_info.address_range.address, api_copy_info.address_range.stride, copy_index,
-                                       api_copy_info.address_range.address + offset, buffer_row_length, image_extent_width);
+                                       api_copy_info.address_range.address + offset, buffer_row_length, image_extent_width,
+                                       gpuav.gpuav_settings.safe_mode ? kWarningCopyMemoryToImageIndirectCommand.data() : "");
 
                 break;
             }
@@ -203,9 +287,10 @@ void CopyMemoryIndirect(Validator &gpuav, const Location &loc, CommandBufferSubS
                                        "VkCopyMemoryToImageIndirectInfoKHR::copyAddressRange.address (0x%" PRIx64
                                        ") + (stride [%" PRIu64 "] * copy [%" PRIu32 "]) is 0x%" PRIx64
                                        " which has a VkCopyMemoryToImageIndirectCommandKHR::bufferImageHeight of %" PRIu32
-                                       " is less than the imageExtent.height (%" PRIu32 ")",
+                                       " is less than the imageExtent.height (%" PRIu32 ")\n%s",
                                        api_copy_info.address_range.address, api_copy_info.address_range.stride, copy_index,
-                                       api_copy_info.address_range.address + offset, buffer_image_height, image_extent_height);
+                                       api_copy_info.address_range.address + offset, buffer_image_height, image_extent_height,
+                                       gpuav.gpuav_settings.safe_mode ? kWarningCopyMemoryToImageIndirectCommand.data() : "");
 
                 break;
             }

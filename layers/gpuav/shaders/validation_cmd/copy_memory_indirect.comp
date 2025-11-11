@@ -57,43 +57,97 @@ struct CopyMemoryIndirectApiData {
     // VkCopyMemoryIndirectInfoKHR::copyCount
     uint copy_count;
     // vkCmdCopyMemoryIndirectKHR vs vkCmdCopyMemoryToImageIndirectKHR
-    bool is_image_copy;
+    uint is_image_copy;
+    uint safe_mode;
 };
 
 layout(set = kValPipeDescSet, binding = kPreCopyMemoryIndirectBinding, scalar) buffer SrcBuffer {
     CopyMemoryIndirectApiData api;
 };
 
-layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+
+// TODO - For now only checking null, but we need a way (not just here) to easily verify a valid VkDeviceAddress value on the GPU
+bool ValidDeviceAddress(uint64_t address) {
+    return address != 0ul;
+}
+
+// We attempt to make the address safe as there is no way to stop the copy that is about to happen
+void MakeSafeBuffer(uint64_t command_address) {
+    if (api.safe_mode != 0) {
+        CopyMemoryIndirectCommand command = CopyMemoryIndirectCommand(command_address);
+        // range_address is a "safe" address as we know it is valid
+        command.srcAddress = api.range_address;
+        command.dstAddress = api.range_address;
+        command.size = 0;
+    }
+}
+void MakeSafeImage(uint64_t command_address) {
+    if (api.safe_mode != 0) {
+        CopyMemoryToImageIndirectCommand command = CopyMemoryToImageIndirectCommand(command_address);
+        // range_address is a "safe" address as we know it is valid
+        command.srcAddress = api.range_address;
+        command.bufferRowLength = 0;
+        command.bufferImageHeight = 0;
+        command.imageOffset_x = 0;
+        command.imageOffset_y = 0;
+        command.imageOffset_z = 0;
+        command.imageExtent_width = 0;
+        command.imageExtent_height = 0;
+        command.imageExtent_depth = 0;
+    }
+}
 
 void main() {
-    for (uint copy_i = 0; copy_i < api.copy_count; copy_i++) {
-        uint64_t command_address = api.range_address + (api.range_stride * copy_i);
+    // We dispatch multiple threads to work on all the copies
+    const uint tid = gl_GlobalInvocationID.x;
+    if (tid >= api.copy_count) {
+        return;
+    }
 
-        if (api.is_image_copy) {
-            CopyMemoryToImageIndirectCommand command = CopyMemoryToImageIndirectCommand(command_address);
-            if ((command.srcAddress & 3ul) != 0) {
-                GpuavLogError4(kErrorGroupInstCopyMemoryIndirect, kErrorSubCodePreCopyMemoryToImageIndirectSrcAddressAligned,
-                                uint(command.srcAddress), uint(command.srcAddress >> 32), copy_i, 0);
-            } else if (command.bufferRowLength != 0 && command.bufferRowLength < command.imageExtent_width) {
-                GpuavLogError4(kErrorGroupInstCopyMemoryIndirect, kErrorSubCodePreCopyMemoryToImageIndirectBufferRowLength,
-                                command.bufferRowLength, command.imageExtent_width, copy_i, 0);
-            } else if (command.bufferImageHeight != 0 && command.bufferImageHeight < command.imageExtent_height) {
-                GpuavLogError4(kErrorGroupInstCopyMemoryIndirect, kErrorSubCodePreCopyMemoryToImageIndirectBufferImageHeight,
-                                command.bufferImageHeight, command.imageExtent_height, copy_i, 0);
-            }
-        } else {
-            CopyMemoryIndirectCommand command = CopyMemoryIndirectCommand(command_address);
-            if ((command.srcAddress & 3ul) != 0) {
-                GpuavLogError4(kErrorGroupInstCopyMemoryIndirect, kErrorSubCodePreCopyMemoryIndirectSrcAddressAligned,
-                                uint(command.srcAddress), uint(command.srcAddress >> 32), copy_i, 0);
-            } else if ((command.dstAddress & 3ul) != 0) {
-                GpuavLogError4(kErrorGroupInstCopyMemoryIndirect, kErrorSubCodePreCopyMemoryIndirectDstAddressAligned,
-                                uint(command.dstAddress), uint(command.dstAddress >> 32), copy_i, 0);
-            } else if ((command.size & 3ul) != 0) {
-                GpuavLogError4(kErrorGroupInstCopyMemoryIndirect, kErrorSubCodePreCopyMemoryIndirectSizeAligned,
-                                uint(command.size), uint(command.size >> 32), copy_i, 0);
-            }
+    uint64_t command_address = api.range_address + (api.range_stride * tid);
+
+    if (api.is_image_copy != 0) {
+        CopyMemoryToImageIndirectCommand command = CopyMemoryToImageIndirectCommand(command_address);
+        if (!ValidDeviceAddress(command.srcAddress)) {
+            GpuavLogError4(kErrorGroupInstCopyMemoryIndirect, kErrorSubCodePreCopyMemoryToImageIndirectSrcAddressInvalid,
+                            uint(command.srcAddress), uint(command.srcAddress >> 32), tid, 0);
+            MakeSafeImage(command_address);
+        } else if ((command.srcAddress & 3ul) != 0) {
+            GpuavLogError4(kErrorGroupInstCopyMemoryIndirect, kErrorSubCodePreCopyMemoryToImageIndirectSrcAddressAligned,
+                            uint(command.srcAddress), uint(command.srcAddress >> 32), tid, 0);
+            MakeSafeImage(command_address);
+        } else if (command.bufferRowLength != 0 && command.bufferRowLength < command.imageExtent_width) {
+            GpuavLogError4(kErrorGroupInstCopyMemoryIndirect, kErrorSubCodePreCopyMemoryToImageIndirectBufferRowLength,
+                            command.bufferRowLength, command.imageExtent_width, tid, 0);
+            MakeSafeImage(command_address);
+        } else if (command.bufferImageHeight != 0 && command.bufferImageHeight < command.imageExtent_height) {
+            GpuavLogError4(kErrorGroupInstCopyMemoryIndirect, kErrorSubCodePreCopyMemoryToImageIndirectBufferImageHeight,
+                            command.bufferImageHeight, command.imageExtent_height, tid, 0);
+            MakeSafeImage(command_address);
+        }
+    } else {
+        CopyMemoryIndirectCommand command = CopyMemoryIndirectCommand(command_address);
+        if (!ValidDeviceAddress(command.srcAddress)) {
+            GpuavLogError4(kErrorGroupInstCopyMemoryIndirect, kErrorSubCodePreCopyMemoryIndirectSrcAddressInvalid,
+                            uint(command.srcAddress), uint(command.srcAddress >> 32), tid, 0);
+            MakeSafeBuffer(command_address);
+        } else if (!ValidDeviceAddress(command.dstAddress)) {
+            GpuavLogError4(kErrorGroupInstCopyMemoryIndirect, kErrorSubCodePreCopyMemoryIndirectDstAddressInvalid,
+                            uint(command.dstAddress), uint(command.dstAddress >> 32), tid, 0);
+            MakeSafeBuffer(command_address);
+        } else if ((command.srcAddress & 3ul) != 0) {
+            GpuavLogError4(kErrorGroupInstCopyMemoryIndirect, kErrorSubCodePreCopyMemoryIndirectSrcAddressAligned,
+                            uint(command.srcAddress), uint(command.srcAddress >> 32), tid, 0);
+            MakeSafeBuffer(command_address);
+        } else if ((command.dstAddress & 3ul) != 0) {
+            GpuavLogError4(kErrorGroupInstCopyMemoryIndirect, kErrorSubCodePreCopyMemoryIndirectDstAddressAligned,
+                            uint(command.dstAddress), uint(command.dstAddress >> 32), tid, 0);
+            MakeSafeBuffer(command_address);
+        } else if ((command.size & 3ul) != 0) {
+            GpuavLogError4(kErrorGroupInstCopyMemoryIndirect, kErrorSubCodePreCopyMemoryIndirectSizeAligned,
+                            uint(command.size), uint(command.size >> 32), tid, 0);
+            MakeSafeBuffer(command_address);
         }
     }
 }
