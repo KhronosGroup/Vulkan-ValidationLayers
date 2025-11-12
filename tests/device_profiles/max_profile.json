@@ -2204,16 +2204,6 @@
                     "shaderCoreCount": 4294967000,
                     "shaderWarpsPerCore": 4294967000
                 },
-                "VkPhysicalDevicePerformanceCountersByRegionPropertiesARM": {
-                    "maxPerRegionPerformanceCounters": 1,
-                    "performanceCounterRegionSize": {
-                        "width": 64,
-                        "height": 64
-                    },
-                    "rowStrideAlignment": 1,
-                    "regionAlignment": 1,
-                    "identityTransformOrder": true
-                },
                 "VkPhysicalDeviceRenderPassStripedPropertiesARM": {
                     "renderPassStripeGranularity": {
                         "width": 64,

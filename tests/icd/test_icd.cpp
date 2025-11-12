@@ -1327,6 +1327,16 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties2(VkPhysicalDevice 
         coop_vec_nv_props->cooperativeVectorTrainingFloat32Accumulation = VK_TRUE;
     }
 
+    auto* perf_counters_props =
+        vku::FindStructInPNextChain<VkPhysicalDevicePerformanceCountersByRegionPropertiesARM>(pProperties->pNext);
+    if (perf_counters_props) {
+        perf_counters_props->maxPerRegionPerformanceCounters = 1;
+        perf_counters_props->performanceCounterRegionSize = {64, 64};
+        perf_counters_props->rowStrideAlignment = 1;
+        perf_counters_props->regionAlignment = 1;
+        perf_counters_props->identityTransformOrder = true;
+    }
+
     const uint32_t num_copy_layouts = 5;
     const VkImageLayout HostCopyLayouts[]{
         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,        VK_IMAGE_LAYOUT_GENERAL,
