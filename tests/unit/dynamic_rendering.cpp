@@ -7545,6 +7545,17 @@ TEST_F(NegativeDynamicRendering, CountersByRegionARM) {
     {
         perf_begin_info.counterIndexCount = pc_props.maxPerRegionPerformanceCounters + 1;
 
+        uint32_t extended_counter_buffer_size =
+            AlignToMultiple(
+                GetQuotientCeil(ra_extent.width, pc_region_size.width) *
+                    AlignToMultiple(perf_begin_info.counterIndexCount * static_cast<uint32_t>(sizeof(uint32_t)), region_alignment),
+                row_stride_alignment) *
+            GetQuotientCeil(ra_extent.height, pc_region_size.height);
+
+        vkt::Buffer extended_counter_buffer(*m_device, extended_counter_buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                            vkt::device_address);
+        counter_addresses[0] = extended_counter_buffer.Address();
+
         CreateRenderPassBeginTest(m_command_buffer, &rp_begin, false,
                             "VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-counterIndexCount-11818", nullptr);
 
