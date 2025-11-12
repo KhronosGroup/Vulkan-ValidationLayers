@@ -183,11 +183,18 @@ bool BufferAddressValidation<ChecksCount>::LogInvalidBuffers(const CoreChecks& v
         std::stringstream ss;
         ss << "[0x" << std::hex << device_address << ", 0x" << (device_address + range_size) << ") (";
         if (range_size == VK_WHOLE_SIZE) {
-            ss << "VK_WHOLE_SIZE";  // Not really sure what this means in practice yet, but alert the user
+            ss << "VK_WHOLE_SIZE";
         } else {
             ss << std::dec << range_size << " bytes";
         }
         ss << ") has no buffer(s) associated that are valid.\n";
+
+        // VK_WHOLE_SIZE is "allowed" in VkDescriptorAddressInfoEXT to express a null descriptor
+        // Everywhere else, it is invalid (https://gitlab.khronos.org/vulkan/vulkan/-/issues/4538)
+        if (range_size == VK_WHOLE_SIZE) {
+            ss << "(VK_WHOLE_SIZE can't be used alongside a VkDeviceAdress, there is no guarantee which VkBuffer is used so the "
+                  "user needs to provide a size.)\n";
+        }
         error_msg_beginning = ss.str();
     } else {
         std::stringstream ss;
