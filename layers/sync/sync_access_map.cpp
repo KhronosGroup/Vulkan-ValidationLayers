@@ -266,44 +266,37 @@ AccessMap::index_type TAccessMapLocator<TAccessMap>::DistanceToEdge() const {
 template class TAccessMapLocator<AccessMap>;
 template class TAccessMapLocator<const AccessMap>;
 
-void ParallelIterator::operator++() {
-    const index_type start = range_.end;         // we computed this the last time we set range
-    const index_type delta = range_.distance();  // we computed this the last time we set range
-    assert(delta != 0);                          // Trying to increment past end
-
-    pos_A_.Seek(pos_A_.index + delta);
-    pos_B_.Seek(pos_B_.index + delta);
-
-    range_ = AccessRange(start, start + ComputeDelta());  // find the next boundary (must be after offset)
-    assert(pos_A_.index == start);
-    assert(pos_B_.index == start);
+void ParallelIterator::OnCurrentRangeModified(const iterator &new_lower_bound) {
+    // Only map A can be modified, map B is constant
+    pos_A = AccessMapLocator(map_A_, range.begin, new_lower_bound);
+    range.end = range.begin + ComputeDelta();
 }
 
-// Seeks to a specific index in both maps reseting range.  Cannot guarantee range.begin is on edge boundary,
-/// but range.end will be.  Lower bound objects assumed to invalidate their cached lower bounds on seek.
-void ParallelIterator::Seek(index_type index) {
-    pos_A_.Seek(index);
-    pos_B_.Seek(index);
-    range_ = AccessRange(index, index + ComputeDelta());
-    assert(pos_A_.index == index);
-    assert(pos_B_.index == index);
+void ParallelIterator::SeekAfterModification(index_type index) {
+    // Destination map locator must be reinitialized after modification.
+    // Seek() (potentially more efficient) can only be used when there is no modification.
+    pos_A = AccessMapLocator(map_A_, index);
+
+    pos_B.Seek(index);
+    range = AccessRange(index, index + ComputeDelta());
 }
 
-void ParallelIterator::InvalidateA() {
-    const index_type index = range_.begin;
-    pos_A_ = AccessMapLocator(map_A_, index);
-    range_ = AccessRange(index, index + ComputeDelta());
-}
+void ParallelIterator::NextRange() {
+    const index_type start = range.end;
+    const index_type delta = range.distance();
+    assert(delta != 0);  // Trying to increment past end
 
-void ParallelIterator::InvalidateA(const iterator &hint) {
-    const index_type index = range_.begin;
-    pos_A_ = AccessMapLocator(map_A_, index, hint);
-    range_ = AccessRange(index, index + ComputeDelta());
+    pos_A.Seek(pos_A.index + delta);
+    pos_B.Seek(pos_B.index + delta);
+
+    range = AccessRange(start, start + ComputeDelta());
+    assert(pos_A.index == start);
+    assert(pos_B.index == start);
 }
 
 ParallelIterator::index_type ParallelIterator::ComputeDelta() {
-    const index_type delta_A = pos_A_.DistanceToEdge();
-    const index_type delta_B = pos_B_.DistanceToEdge();
+    const index_type delta_A = pos_A.DistanceToEdge();
+    const index_type delta_B = pos_B.DistanceToEdge();
 
     // If either A or B are at end, there distance is *0*, so shouldn't be considered in the "distance to edge"
     if (delta_A == 0) {  // lower A is at end

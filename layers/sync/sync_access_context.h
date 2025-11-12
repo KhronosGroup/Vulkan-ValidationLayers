@@ -620,19 +620,19 @@ void AccessContext::ResolveAccessRange(const AccessRange &range, BarrierAction &
     if (!range.non_empty()) return;
 
     ParallelIterator current(*resolve_map, access_state_map_, range.begin);
-    while (current->range.non_empty() && range.includes(current->range.begin)) {
-        const auto current_range = current->range & range;
-        if (current->pos_B.inside_lower_bound_range) {
-            const auto &src_pos = current->pos_B.lower_bound;
+    while (current.range.non_empty() && range.includes(current.range.begin)) {
+        const auto current_range = current.range & range;
+        if (current.pos_B.inside_lower_bound_range) {
+            const auto &src_pos = current.pos_B.lower_bound;
             AccessState access(src_pos->second);  // intentional copy
             barrier_action(&access);
-            if (current->pos_A.inside_lower_bound_range) {
-                const auto trimmed = Split(current->pos_A.lower_bound, *resolve_map, current_range);
+            if (current.pos_A.inside_lower_bound_range) {
+                const auto trimmed = Split(current.pos_A.lower_bound, *resolve_map, current_range);
                 trimmed->second.Resolve(access);
-                current.InvalidateA(trimmed);
+                current.OnCurrentRangeModified(trimmed);
             } else {
-                auto inserted = resolve_map->Insert(current->pos_A.lower_bound, current_range, access);
-                current.InvalidateA(inserted);  // Update the parallel iterator to point at the insert segment
+                auto inserted = resolve_map->Insert(current.pos_A.lower_bound, current_range, access);
+                current.OnCurrentRangeModified(inserted);
             }
         } else {
             // we have to descend to fill this gap
@@ -641,38 +641,37 @@ void AccessContext::ResolveAccessRange(const AccessRange &range, BarrierAction &
                 // The current context is empty for the current range, so recur to fill the gap.
                 // Since we will be recurring back up the DAG, expand the gap descent to cover the full range for which B
                 // is not valid, to minimize that recurrence
-                if (current->pos_B.lower_bound == access_state_map_.end()) {
+                if (current.pos_B.lower_bound == access_state_map_.end()) {
                     // Do the remainder here....
                     recurrence_range.end = range.end;
                 } else {
                     // Recur only over the range until B becomes valid (within the limits of range).
-                    recurrence_range.end = std::min(range.end, current->pos_B.lower_bound->first.begin);
+                    recurrence_range.end = std::min(range.end, current.pos_B.lower_bound->first.begin);
                 }
                 ResolvePreviousAccessStack(recurrence_range, resolve_map, infill, barrier_action);
 
-                // Given that there could be gaps we need to seek carefully to not repeatedly search the same gaps in the next
-                // iterator of the outer while.
-
-                // Set the parallel iterator to the end of this range s.t. ++ will move us to the next range whether or
-                // not the end of the range is a gap.  For the seek to work, first we need to warn the parallel iterator
-                // we stepped on the dest map
-                const auto seek_to = recurrence_range.end - 1;  // The subtraction is safe as range can't be empty (loop condition)
-                current.InvalidateA();                         // Changes current->range
-                current.Seek(seek_to);
-            } else if (!current->pos_A.inside_lower_bound_range && infill) {
+                // recurrence_range is already processed and it can be larger than the current_range.
+                // The NextRange might move to the range that is still inside recurrence_range, but we
+                // need the range that goes after recurrence_range. Seek to the end of recurrence_range,
+                // so NextRange will get the expected range.
+                // TODO: it might be simpler to seek directly to recurrence_range.end without calling NextRange().
+                assert(recurrence_range.non_empty());
+                const auto seek_to = recurrence_range.end - 1;
+                current.SeekAfterModification(seek_to);
+            } else if (!current.pos_A.inside_lower_bound_range && infill) {
                 // If we didn't find anything in the current range, and we aren't reccuring... we infill if required
-                auto inserted = resolve_map->Insert(current->pos_A.lower_bound, current->range, AccessState{});
-                current.InvalidateA(inserted);  // Update the parallel iterator to point at the correct segment after insert
+                auto inserted = resolve_map->Insert(current.pos_A.lower_bound, current.range, AccessState{});
+                current.OnCurrentRangeModified(inserted);
             }
         }
-        if (current->range.non_empty()) {
-            ++current;
+        if (current.range.non_empty()) {
+            current.NextRange();
         }
     }
 
     // Infill if range goes passed both the current and resolve map prior contents
-    if (recur_to_infill && (current->range.end < range.end)) {
-        AccessRange trailing_fill_range = {current->range.end, range.end};
+    if (recur_to_infill && (current.range.end < range.end)) {
+        AccessRange trailing_fill_range = {current.range.end, range.end};
         ResolvePreviousAccessStack<BarrierAction>(trailing_fill_range, resolve_map, infill, barrier_action);
     }
 }

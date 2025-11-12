@@ -128,54 +128,37 @@ class TAccessMapLocator {
 using AccessMapLocator = TAccessMapLocator<AccessMap>;
 using ConstAccessMapLocator = TAccessMapLocator<const AccessMap>;
 
-// Traverse access maps over the the same range, but without assumptions of aligned ranges.
-// ++ increments to the next point where one of the two maps changes range, giving a range
-// over which the two maps do not transition ranges
+// Traverse access maps over the same range in parallel.
+// NextRange advances to the next point where either map starts or finishes a range segment.
+// Returns a range over which the two maps do not transition ranges.
 class ParallelIterator {
   public:
     using index_type = AccessRange::index_type;
     using iterator = AccessMap::iterator;
 
-    // This is the value we'll always be returning, but the referenced object will be updated by the operations
-    struct value_type {
-        const AccessRange &range;
-        const AccessMapLocator &pos_A;
-        const ConstAccessMapLocator &pos_B;
-        value_type(const AccessRange &range, const AccessMapLocator &pos_A, const ConstAccessMapLocator &pos_B)
-            : range(range), pos_A(pos_A), pos_B(pos_B) {}
-    };
-
     ParallelIterator(AccessMap &map_A, const AccessMap &map_B, index_type index)
-        : map_A_(map_A),
-          pos_A_(map_A, index),
-          pos_B_(map_B, index),
-          range_(index, index + ComputeDelta()),
-          pos_(range_, pos_A_, pos_B_) {}
+        : map_A_(map_A), pos_A(map_A, index), pos_B(map_B, index), range(index, index + ComputeDelta()) {}
 
-    // Advance to the next spot one of the two maps changes
-    void operator++();
+    // Must be called when destination map's current range is modified to update cached lower bound.
+    // The lower bound corresponds to range.begin position.
+    // No guarantee range.begin is on the edge boundary, but range.end is.
+    void OnCurrentRangeModified(const iterator &new_lower_bound);
 
-    // Seeks to a specific index in both maps reseting range.
-    // Cannot guarantee range.begin is on edge boundary, but range.end will be.
-    // Lower bound objects assumed to invalidate their cached lower bounds on seek
-    void Seek(index_type index);
+    // Seeks to a specific index in both maps after destination map was potentially modified.
+    // No guarantee range.begin is on the edge boundary, but range.end is.
+    void SeekAfterModification(index_type index);
 
-    // Invalidates the lower_bound caches, reseting range.
-    // Cannot guarantee range.begin is on edge boundary, but range.end will be
-    void InvalidateA();
-    void InvalidateA(const iterator &hint);
-
-    const value_type &operator*() const { return pos_; }
-    const value_type *operator->() const { return &pos_; }
+    // Advance to the next spot where one of the maps changes
+    void NextRange();
 
   private:
     AccessMap &map_A_;
-    AccessMapLocator pos_A_;
-    ConstAccessMapLocator pos_B_;
-    AccessRange range_;
-    value_type pos_;
-
     index_type ComputeDelta();
+
+  public:
+    AccessMapLocator pos_A;
+    ConstAccessMapLocator pos_B;
+    AccessRange range;
 };
 
 // Split a range into pieces bound by the intersection of the iterator's range and the supplied range
