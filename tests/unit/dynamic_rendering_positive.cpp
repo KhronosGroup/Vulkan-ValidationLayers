@@ -1795,10 +1795,6 @@ TEST_F(PositiveDynamicRendering, CountersByRegionARM) {
     uint32_t region_alignment = pc_props.regionAlignment;
     uint32_t counter_index_count = 1u;
 
-    if (pc_region_size.width == 0u || pc_region_size.height == 0u || row_stride_alignment == 0u || region_alignment == 0u) {
-        GTEST_SKIP() << "Test cannot proceed without correct VkPhysicalDevicePerformanceCountersByRegionPropertiesARM";
-    }
-
     constexpr auto GetQuotientCeil = [](uint32_t numerator, uint32_t denominator) {
         denominator = std::max(denominator, 1u);
         return numerator / denominator + (numerator % denominator != 0);
@@ -1822,7 +1818,7 @@ TEST_F(PositiveDynamicRendering, CountersByRegionARM) {
         VkSubpassDescription2 subpass = vku::InitStructHelper();
         auto render_pass_create_info = vku::InitStruct<VkRenderPassCreateInfo2>(nullptr, 0u, 0u, nullptr, 1u, &subpass, 0u, nullptr);
         vkt::RenderPass render_pass(*m_device, render_pass_create_info);
-        vkt::Framebuffer framebuffer(*m_device, render_pass, 0, nullptr);
+        vkt::Framebuffer framebuffer(*m_device, render_pass, 0, nullptr, ra_extent.width, ra_extent.height);
         auto rp_begin =
             vku::InitStruct<VkRenderPassBeginInfo>(&perf_begin_info, render_pass.handle(), framebuffer.handle(), render_area, 0u, nullptr);
 
