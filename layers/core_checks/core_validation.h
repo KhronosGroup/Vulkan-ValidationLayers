@@ -2005,7 +2005,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                             const VkSubpassBeginInfo* pSubpassBeginInfo,
                                             const ErrorObject& error_obj) const override;
     bool ValidateRenderPassPerformanceCountersByRegionBeginInfo(VkCommandBuffer commandBuffer,
-                                                                const VkRenderPassPerformanceCountersByRegionBeginInfoARM *counters_begin_info,
+                                                                const VkRenderPassPerformanceCountersByRegionBeginInfoARM &counters_begin_info,
                                                                 const LogObjectList& objlist, uint32_t subpass_count,
                                                                 uint32_t layer_or_view_count, VkRect2D render_area,
                                                                 const Location& begin_loc) const;

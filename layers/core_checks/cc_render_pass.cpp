@@ -27,7 +27,6 @@
 #include <vulkan/vulkan_core.h>
 #include "containers/container_utils.h"
 #include "core_checks/cc_state_tracker.h"
-#include "core_checks/cc_buffer_address.h"
 #include "core_validation.h"
 #include "error_message/error_location.h"
 #include "utils/convert_utils.h"
@@ -632,7 +631,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const
             layer_or_view_count = fb_state->create_info.layers;
         }
 
-        skip |= ValidateRenderPassPerformanceCountersByRegionBeginInfo(commandBuffer, counters_begin_info, objlist,
+        skip |= ValidateRenderPassPerformanceCountersByRegionBeginInfo(commandBuffer, *counters_begin_info, objlist,
                                                                     rp_state->create_info.subpassCount, layer_or_view_count,
                                                                     pRenderPassBegin->renderArea, rp_begin_loc);
     }
@@ -657,25 +656,25 @@ bool CoreChecks::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffe
     return ValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, pSubpassBeginInfo->contents, error_obj);
 }
 
-bool CoreChecks::ValidateRenderPassPerformanceCountersByRegionBeginInfo(VkCommandBuffer commandBuffer, const VkRenderPassPerformanceCountersByRegionBeginInfoARM *counters_begin_info,
+bool CoreChecks::ValidateRenderPassPerformanceCountersByRegionBeginInfo(VkCommandBuffer commandBuffer, const VkRenderPassPerformanceCountersByRegionBeginInfoARM &counters_begin_info,
                                                                         const LogObjectList &objlist, uint32_t subpass_count,
                                                                         uint32_t layer_or_view_count, VkRect2D render_area,
                                                                         const Location &begin_loc) const {
     bool skip = false;
 
-    if (counters_begin_info->counterAddressCount != subpass_count * layer_or_view_count) {
+    if (counters_begin_info.counterAddressCount != subpass_count * layer_or_view_count) {
         skip |= LogError("VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-counterAddressCount-11815", objlist,
                          begin_loc.pNext(Struct::VkRenderPassPerformanceCountersByRegionBeginInfoARM, Field::counterAddressCount),
                          "(%" PRIu32 ") differs from the number of subpasses (%" PRIu32
                          ") times the number of layers in the render pass instance (%" PRIu32 ").",
-                         counters_begin_info->counterAddressCount, subpass_count, layer_or_view_count);
+                         counters_begin_info.counterAddressCount, subpass_count, layer_or_view_count);
     }
 
     VkExtent2D ra_extent = render_area.extent;
     VkExtent2D pc_region_size = phys_dev_ext_props.renderpass_counter_by_region_props.performanceCounterRegionSize;
     uint32_t row_stride_alignment = phys_dev_ext_props.renderpass_counter_by_region_props.rowStrideAlignment;
     uint32_t region_alignment = phys_dev_ext_props.renderpass_counter_by_region_props.regionAlignment;
-    uint32_t counter_index_count = counters_begin_info->counterIndexCount;
+    uint32_t counter_index_count = counters_begin_info.counterIndexCount;
 
     uint32_t counter_buffer_size =
         AlignToMultiple(vvl::GetQuotientCeil(ra_extent.width, pc_region_size.width) *
@@ -683,8 +682,8 @@ bool CoreChecks::ValidateRenderPassPerformanceCountersByRegionBeginInfo(VkComman
                         row_stride_alignment) *
         vvl::GetQuotientCeil(ra_extent.height, pc_region_size.height);
 
-    for (uint32_t i = 0; i < counters_begin_info->counterAddressCount; ++i) {
-        const auto buffer_states = GetBuffersByAddress(counters_begin_info->pCounterAddresses[i]);
+    for (uint32_t i = 0; i < counters_begin_info.counterAddressCount; ++i) {
+        const auto buffer_states = GetBuffersByAddress(counters_begin_info.pCounterAddresses[i]);
 
         for (auto& buffer_state : buffer_states) {
             skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, begin_loc.pNext(Struct::VkRenderPassPerformanceCountersByRegionBeginInfoARM, Field::pCounterAddresses),
@@ -693,7 +692,7 @@ bool CoreChecks::ValidateRenderPassPerformanceCountersByRegionBeginInfo(VkComman
 
         auto first_buffer = *buffer_states.begin();
         auto buffer_range = first_buffer->DeviceAddressRange();
-        auto address = counters_begin_info->pCounterAddresses[i];
+        auto address = counters_begin_info.pCounterAddresses[i];
         const vvl::range<VkDeviceSize> counter_address_range(address, address + counter_buffer_size - 1);
         if (!buffer_range.includes(counter_address_range)) {
             skip |= LogError("VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-pCounterAddresses-11817", objlist, begin_loc.pNext(Struct::VkRenderPassPerformanceCountersByRegionBeginInfoARM, Field::pCounterAddresses),
@@ -702,7 +701,7 @@ bool CoreChecks::ValidateRenderPassPerformanceCountersByRegionBeginInfo(VkComman
         }
     }
 
-    if (counters_begin_info->counterIndexCount >
+    if (counters_begin_info.counterIndexCount >
         phys_dev_ext_props.renderpass_counter_by_region_props.maxPerRegionPerformanceCounters) {
         skip |= LogError(
             "VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-counterIndexCount-11818", objlist,
@@ -710,7 +709,7 @@ bool CoreChecks::ValidateRenderPassPerformanceCountersByRegionBeginInfo(VkComman
             "(%" PRIu32
             ") is greater than VkPhysicalDevicePerformanceCountersByRegionPropertiesARM::maxPerRegionPerformanceCounters (%" PRIu32
             ").",
-            counters_begin_info->counterIndexCount,
+            counters_begin_info.counterIndexCount,
             phys_dev_ext_props.renderpass_counter_by_region_props.maxPerRegionPerformanceCounters);
     }
 
@@ -3866,7 +3865,7 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
         }
 
         skip |= ValidateRenderPassPerformanceCountersByRegionBeginInfo(
-            commandBuffer, counters_begin_info, objlist, 1u, layer_or_view_count, pRenderingInfo->renderArea, rendering_info_loc);
+            commandBuffer, *counters_begin_info, objlist, 1u, layer_or_view_count, pRenderingInfo->renderArea, rendering_info_loc);
     }
 
     return skip;
