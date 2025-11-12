@@ -360,7 +360,7 @@ TEST_F(PositiveDeviceGeneratedCommands, ExecuteShaderObjectVertex) {
     tokens[1].offset = 8;
 
     VkIndirectCommandsLayoutCreateInfoEXT command_layout_ci = vku::InitStructHelper();
-    command_layout_ci.shaderStages = VK_INDIRECT_EXECUTION_SET_INFO_TYPE_SHADER_OBJECTS_EXT;
+    command_layout_ci.shaderStages = VK_SHADER_STAGE_VERTEX_BIT;
     command_layout_ci.pipelineLayout = VK_NULL_HANDLE;
     command_layout_ci.tokenCount = 2;
     command_layout_ci.pTokens = tokens;
@@ -403,6 +403,72 @@ TEST_F(PositiveDeviceGeneratedCommands, ExecuteShaderObjectVertex) {
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT};
     vk::CmdBindShadersEXT(m_command_buffer, 1u, stages, shaders);
+    SetDefaultDynamicStatesAll(m_command_buffer);
+    vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer, false, &generated_commands_info);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveDeviceGeneratedCommands, ExecuteShaderObjectMesh) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddRequiredFeature(vkt::Feature::taskShader);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
+    InitRenderTarget();
+
+    VkIndirectCommandsLayoutTokenEXT tokens = vku::InitStructHelper();
+    tokens.type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_EXT;
+    tokens.offset = 0;
+
+    VkIndirectCommandsLayoutCreateInfoEXT command_layout_ci = vku::InitStructHelper();
+    command_layout_ci.shaderStages = VK_SHADER_STAGE_MESH_BIT_EXT;
+    command_layout_ci.pipelineLayout = VK_NULL_HANDLE;
+    command_layout_ci.tokenCount = 1;
+    command_layout_ci.pTokens = &tokens;
+    vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
+
+    const auto spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
+    VkShaderCreateInfoEXT mesh_create_info = ShaderCreateInfoFlag(
+        spv, VK_SHADER_STAGE_MESH_BIT_EXT, VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT | VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT);
+    const vkt::Shader mesh_shader(*m_device, mesh_create_info);
+    const VkShaderEXT shaders[] = {mesh_shader};
+
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    vkt::Buffer block_buffer(*m_device, 64, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, kHostVisibleMemProps, &allocate_flag_info);
+
+    VkGeneratedCommandsShaderInfoEXT init_shader_info = vku::InitStructHelper();
+    init_shader_info.shaderCount = 1;
+    init_shader_info.pShaders = shaders;
+
+    VkGeneratedCommandsInfoEXT generated_commands_info = vku::InitStructHelper(&init_shader_info);
+    generated_commands_info.shaderStages = VK_SHADER_STAGE_MESH_BIT_EXT;
+    generated_commands_info.indirectExecutionSet = VK_NULL_HANDLE;
+    generated_commands_info.indirectCommandsLayout = command_layout;
+    generated_commands_info.indirectAddressSize = 64;
+    generated_commands_info.indirectAddress = block_buffer.Address();
+    generated_commands_info.sequenceCountAddress = 0;
+    generated_commands_info.maxSequenceCount = 1;
+    generated_commands_info.maxDrawCount = 1;
+    SetPreProcessBuffer(generated_commands_info, &init_shader_info);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_MESH_BIT_EXT};
+    vk::CmdBindShadersEXT(m_command_buffer, 1u, stages, shaders);
+    const VkShaderEXT null_shader = VK_NULL_HANDLE;
+    VkShaderStageFlagBits null_stages = VK_SHADER_STAGE_VERTEX_BIT;
+    vk::CmdBindShadersEXT(m_command_buffer, 1u, &null_stages, &null_shader);
+    null_stages = VK_SHADER_STAGE_FRAGMENT_BIT;
+    vk::CmdBindShadersEXT(m_command_buffer, 1u, &null_stages, &null_shader);
+    null_stages = VK_SHADER_STAGE_TASK_BIT_EXT;
+    vk::CmdBindShadersEXT(m_command_buffer, 1u, &null_stages, &null_shader);
     SetDefaultDynamicStatesAll(m_command_buffer);
     vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer, false, &generated_commands_info);
     m_command_buffer.EndRendering();
