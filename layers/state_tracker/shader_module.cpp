@@ -2248,6 +2248,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
         info.numeric_type = module_state.GetNumericType(base_type.Word(2));
         info.bit_width = (uint8_t)module_state.GetTypeBitsSize(&base_type);
         info.vk_format = GetTensorFormat(info.numeric_type, info.bit_width);
+        info.tensor_rank = module_state.GetConstantValueById(base_type.Word(3));
     }
 
     info.access_mask = access_mask;

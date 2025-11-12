@@ -1514,7 +1514,9 @@ TEST_F(NegativeTensor, DestroyTensorViewInUse) {
     AddRequiredFeature(vkt::Feature::timelineSemaphore);
     RETURN_IF_SKIP(InitBasicTensor());
 
-    vkt::Tensor tensor(*m_device);
+    VkTensorDescriptionARM desc = TensorShaderDesc();
+    VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
+    vkt::Tensor tensor(*m_device, info);
     tensor.BindToMem();
 
     VkTensorViewCreateInfoARM tensor_view_create_info = vku::InitStructHelper();
@@ -1525,7 +1527,7 @@ TEST_F(NegativeTensor, DestroyTensorViewInUse) {
     vkt::Buffer buffer(*m_device, tensor.GetMemoryReqs().memoryRequirements.size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     CreateComputePipelineHelper pipe(*m_device);
-    pipe.cs_ = VkShaderObj::CreateFromGLSL(this, tensor_shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj::CreateFromGLSL(this, GetGLSLBasicShader().c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
 
     std::vector<VkDescriptorSetLayoutBinding> bindings = {
         {0, VK_DESCRIPTOR_TYPE_TENSOR_ARM, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
@@ -2200,6 +2202,98 @@ TEST_F(NegativeTensor, DescriptorBindingUpdateAfterBindTensorNoFeature) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeTensor, DispatchShaderSpirvWrongUsage) {
+    TEST_DESCRIPTION("Use a tensor in a Spir-V shader with wrong usage");
+    AddRequiredExtensions(VK_ARM_DATA_GRAPH_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dataGraph);
+    AddRequiredFeature(vkt::Feature::shaderTensorAccess);
+    RETURN_IF_SKIP(InitBasicTensor());
+
+    VkTensorDescriptionARM desc = TensorShaderDesc();
+    desc.usage = VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM;  // error: MUST include VK_TENSOR_USAGE_SHADER_BIT_ARM
+
+    vkt::Tensor tensor(*m_device, desc);
+    tensor.BindToMem();
+
+    VkTensorViewCreateInfoARM tensor_view_create_info = vku::InitStructHelper();
+    tensor_view_create_info.tensor = tensor.handle();
+    tensor_view_create_info.format = tensor.Format();
+    vkt::TensorView view(*m_device, tensor_view_create_info);
+
+    vkt::Buffer buffer(*m_device, tensor.GetMemoryReqs().memoryRequirements.size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+    CreateComputePipelineHelper pipe(*m_device);
+    const std::string spirv_source = vkt::dg::DataGraphPipelineHelper::GetSpirvBasicShader();
+    pipe.cs_ = VkShaderObj(this, spirv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
+
+    std::vector<VkDescriptorSetLayoutBinding> bindings = {
+        {0, VK_DESCRIPTOR_TYPE_TENSOR_ARM, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+
+    pipe.dsl_bindings_.resize(bindings.size());
+    memcpy(pipe.dsl_bindings_.data(), bindings.data(), bindings.size() * sizeof(VkDescriptorSetLayoutBinding));
+    pipe.CreateComputePipeline();
+    pipe.descriptor_set_.WriteDescriptorTensorInfo(0, &view.handle());
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(1, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_.set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-pDescription-09900");
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeTensor, DispatchShaderSpirvMismatchedRank) {
+    TEST_DESCRIPTION("Use a tensor in a Spir-V shader with mismatched rank in Vulkan description and Spirv type");
+    AddRequiredFeature(vkt::Feature::shaderTensorAccess);
+    RETURN_IF_SKIP(InitBasicTensor());
+
+    VkTensorDescriptionARM desc = TensorShaderDesc();
+    std::vector<int64_t> dimensions{1, 4, 4};
+    desc.dimensionCount = dimensions.size();
+    desc.pDimensions = dimensions.data();
+
+    vkt::Tensor tensor(*m_device, desc);
+    tensor.BindToMem();
+
+    VkTensorViewCreateInfoARM tensor_view_create_info = vku::InitStructHelper();
+    tensor_view_create_info.tensor = tensor.handle();
+    tensor_view_create_info.format = tensor.Format();
+    vkt::TensorView view(*m_device, tensor_view_create_info);
+
+    vkt::Buffer buffer(*m_device, tensor.GetMemoryReqs().memoryRequirements.size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+    CreateComputePipelineHelper pipe(*m_device);
+    const std::string spirv_source = vkt::dg::DataGraphPipelineHelper::GetSpirvBasicShader();
+    pipe.cs_ = VkShaderObj(this, spirv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
+
+    std::vector<VkDescriptorSetLayoutBinding> bindings = {
+        {0, VK_DESCRIPTOR_TYPE_TENSOR_ARM, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+
+    pipe.dsl_bindings_.resize(bindings.size());
+    memcpy(pipe.dsl_bindings_.data(), bindings.data(), bindings.size() * sizeof(VkDescriptorSetLayoutBinding));
+    pipe.CreateComputePipeline();
+    pipe.descriptor_set_.WriteDescriptorTensorInfo(0, &view.handle());
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(1, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_.set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-dimensionCount-09905");
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeTensor, DispatchShaderSpirvWrongFormat) {
     TEST_DESCRIPTION("Use a tensor in a Spir-V shader with mismatched VkFormat and Spirv type");
     AddRequiredFeature(vkt::Feature::shaderTensorAccess);
@@ -2207,14 +2301,9 @@ TEST_F(NegativeTensor, DispatchShaderSpirvWrongFormat) {
 
     // the format matching the SPIRV is VK_FORMAT_R32_SINT: different type, sign or bit width must return an error
     for (auto format : {VK_FORMAT_R8_SINT, VK_FORMAT_R32_UINT, VK_FORMAT_R32_SFLOAT, VK_FORMAT_R8_BOOL_ARM}) {
-        VkTensorDescriptionARM desc = vku::InitStructHelper();
-        const std::vector<int64_t> dimensions{2ul};
-        desc.dimensionCount = dimensions.size();
-        desc.pDimensions = dimensions.data();
+        VkTensorDescriptionARM desc = DefaultDesc();
         desc.pStrides = nullptr;
-        desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
         desc.format = format;
-        desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
 
         vkt::Tensor tensor(*m_device, desc);
         tensor.BindToMem();

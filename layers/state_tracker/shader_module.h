@@ -465,10 +465,12 @@ struct ResourceInterfaceVariable : public VariableBase {
         uint8_t bit_width{0};
 
         spv::Dim image_dim;
-        bool is_image_array;
-        bool is_multisampled;
+        bool is_image_array{false};
+        bool is_multisampled{false};
 
         ImageInstruction image_insn;
+
+        uint32_t tensor_rank{0};
 
         bool is_read_without_format{false};   // For storage images
         bool is_write_without_format{false};  // For storage images
