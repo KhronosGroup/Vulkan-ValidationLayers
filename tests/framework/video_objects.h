@@ -278,8 +278,10 @@ class VideoConfig {
         picture_format_props_.clear();
         dpb_format_props_.clear();
 
-        picture_format_props_ = picture_format_props;
-        dpb_format_props_ = dpb_format_props;
+        std::copy_if(picture_format_props.begin(), picture_format_props.end(), std::back_inserter(picture_format_props_),
+                     IsTestableVideoFormat);
+        std::copy_if(dpb_format_props.begin(), dpb_format_props.end(), std::back_inserter(dpb_format_props_),
+                     IsTestableVideoFormat);
 
         session_create_info_.pictureFormat = picture_format_props[0].format;
         session_create_info_.referencePictureFormat = dpb_format_props[0].format;
@@ -291,10 +293,14 @@ class VideoConfig {
         emphasis_map_format_props_.clear();
 
         for (const auto& delta_map_format_prop : delta_map_format_props) {
-            quant_delta_map_format_props_.emplace_back(&delta_map_format_prop);
+            if (IsTestableVideoFormat(delta_map_format_prop)) {
+                quant_delta_map_format_props_.emplace_back(&delta_map_format_prop);
+            }
         }
         for (const auto& emphasis_map_format_prop : emphasis_map_format_props) {
-            emphasis_map_format_props_.emplace_back(&emphasis_map_format_prop);
+            if (IsTestableVideoFormat(emphasis_map_format_prop)) {
+                emphasis_map_format_props_.emplace_back(&emphasis_map_format_prop);
+            }
         }
     }
 
@@ -499,6 +505,10 @@ class VideoConfig {
     std::vector<vku::safe_VkVideoFormatPropertiesKHR> quant_delta_map_format_props_{};
     std::vector<vku::safe_VkVideoFormatPropertiesKHR> emphasis_map_format_props_{};
     VkVideoEncodeIntraRefreshModeFlagBitsKHR intra_refresh_mode_{VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_NONE_KHR};
+
+    static bool IsTestableVideoFormat(const VkVideoFormatPropertiesKHR& format) {
+        return format.imageTiling == VK_IMAGE_TILING_LINEAR || format.imageTiling == VK_IMAGE_TILING_OPTIMAL;
+    }
 };
 
 class BitstreamBuffer {
