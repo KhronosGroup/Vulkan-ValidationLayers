@@ -296,7 +296,9 @@ struct DrawDispatchVuid {
     const char* line_rasterization_10608 = kVUIDUndefined;
     // Ray tracing
     const char* ray_tracing_pipeline_stack_size_09458 = kVUIDUndefined;
-    // SPIR-V
+    // TensorARM
+    const char* tensorARM_pDescription_09900 = kVUIDUndefined;
+    const char* tensorARM_dimensionCount_09905 = kVUIDUndefined;
     const char* spirv_OpTypeTensorARM_09906 = kVUIDUndefined;
 };
 

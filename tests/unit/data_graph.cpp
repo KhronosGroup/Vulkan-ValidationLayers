@@ -239,29 +239,11 @@ TEST_F(NegativeDataGraph, CreateDataGraphPipelinesTypeMismatch) {
 }
 
 static void InitDefaultComputePipeline(CreateComputePipelineHelper &pipeline, VkRenderFramework *framework) {
-    char const *cs_source = R"glsl(
-        #version 450
-        #extension GL_ARM_tensors : require
-        #extension GL_EXT_shader_explicit_arithmetic_types : require
-        layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
-        layout(set=0, binding=0) uniform tensorARM<int32_t, 1> tens;
-        layout(set=0, binding=1, std430) buffer asd {
-        	int32_t out_data[];
-        };
-        void main()
-        {
-        	const uint size_x = tensorSizeARM(tens, 0);
-        	const uint x = gl_GlobalInvocationID.x % size_x;
-        	const uint out_index = gl_GlobalInvocationID.x;
-        	tensorReadARM(tens, uint[](x), out_data[out_index]);
-        }
-            )glsl";
-
     std::vector<VkDescriptorSetLayoutBinding> bindings = {
         {0, VK_DESCRIPTOR_TYPE_TENSOR_ARM, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
         {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
 
-    pipeline.cs_ = VkShaderObj::CreateFromGLSL(framework, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipeline.cs_ = VkShaderObj::CreateFromGLSL(framework, TensorTest::GetGLSLBasicShader().c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
     pipeline.dsl_bindings_.resize(bindings.size());
     memcpy(pipeline.dsl_bindings_.data(), bindings.data(), bindings.size() * sizeof(VkDescriptorSetLayoutBinding));
     pipeline.CreateComputePipeline();

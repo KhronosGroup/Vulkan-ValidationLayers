@@ -1245,17 +1245,34 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
 
     // TODO: Waiting on spec clarification for vkCmdDispatchDataGraphARM:
     // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4505
-    if (loc.Get().function != Func::vkCmdDispatchDataGraphARM &&
-        resource_variable.info.vk_format != tensor_view_state->create_info.format) {
-        const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), tensor_view_state->Handle());
-        skip |= LogError(
-            vuids->spirv_OpTypeTensorARM_09906, objlist, loc.Get(),
-            "the %s is using tensor %s that was created with %s but doesn't match the OpTypeTensorARM of type %s and width %" PRIu32
-            " (equivalent to %s).%s",
-            DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
-            FormatHandle(tensor_view_state->Handle()).c_str(), string_VkFormat(tensor_view_state->create_info.format),
-            spirv::string_NumericType(resource_variable.info.numeric_type), resource_variable.info.bit_width,
-            string_VkFormat(resource_variable.info.vk_format), DescribeInstruction().c_str());
+    if (loc.Get().function != Func::vkCmdDispatchDataGraphARM) {
+        if ((tensor_state->create_info.pDescription->usage & VK_TENSOR_USAGE_SHADER_BIT_ARM) == 0) {
+            const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), tensor_state->Handle());
+            skip |= LogError(
+                vuids->tensorARM_pDescription_09900, objlist, loc.Get(),
+                "the %s is using tensor %s created with usage %s, which doesn't include VK_TENSOR_USAGE_SHADER_BIT_ARM.%s",
+                DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(tensor_state->Handle()).c_str(),
+                string_VkTensorUsageFlagBitsARM(tensor_state->create_info.pDescription->usage), DescribeInstruction().c_str());
+        }
+        if (resource_variable.info.tensor_rank != tensor_state->create_info.pDescription->dimensionCount) {
+            const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), tensor_state->Handle());
+            skip |= LogError(
+                vuids->tensorARM_dimensionCount_09905, objlist, loc.Get(),
+                "the %s is using tensor %s created with dimensionCount %" PRIu32 ", but the corresponding OpTypeTensorARM has rank %" PRIu32 ".%s",
+                DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(tensor_state->Handle()).c_str(),
+                tensor_state->create_info.pDescription->dimensionCount, resource_variable.info.tensor_rank, DescribeInstruction().c_str());
+        }
+        if (resource_variable.info.vk_format != tensor_view_state->create_info.format) {
+            const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), tensor_view_state->Handle());
+            skip |= LogError(
+                vuids->spirv_OpTypeTensorARM_09906, objlist, loc.Get(),
+                "the %s is using tensor %s that was created with %s but doesn't match the OpTypeTensorARM of type %s and width %" PRIu32
+                " (equivalent to %s).%s",
+                DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
+                FormatHandle(tensor_view_state->Handle()).c_str(), string_VkFormat(tensor_view_state->create_info.format),
+                spirv::string_NumericType(resource_variable.info.numeric_type), resource_variable.info.bit_width,
+                string_VkFormat(resource_variable.info.vk_format), DescribeInstruction().c_str());
+        }
     }
 
     return skip;
