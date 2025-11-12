@@ -19,6 +19,16 @@
 
 namespace syncval {
 
+AccessMap::iterator AccessMap::LowerBound(ResourceAddress range_begin) {
+    auto it = impl_map_.lower_bound(AccessRange(range_begin, range_begin));
+    return it;
+}
+
+AccessMap::const_iterator AccessMap::LowerBound(ResourceAddress range_begin) const {
+    auto it = impl_map_.lower_bound(AccessRange(range_begin, range_begin));
+    return it;
+}
+
 AccessMap::iterator AccessMap::Erase(const iterator &pos) {
     assert(pos != end());
     return impl_map_.erase(pos);
@@ -30,44 +40,6 @@ void AccessMap::Erase(iterator first, iterator last) {
         assert(current != end());
         current = impl_map_.erase(current);
     }
-}
-
-AccessMap::iterator AccessMap::LowerBound(ResourceAddress range_begin) {
-    // ImplMap doesn't give us what want with a direct query, it will give us the first entry contained (if any) in key,
-    // not the first entry intersecting key, so, first look for the the first entry that starts at or after key.begin
-    // with the operator > in range, we can safely use an empty range for comparison
-    auto lower = impl_map_.lower_bound(AccessRange(range_begin, range_begin));
-
-    // If there is a preceding entry it's possible that begin is included, as all we know is that lower.begin >= key.begin
-    // or lower is at end
-    if (lower != begin()) {
-        auto prev = lower;
-        --prev;
-        // If the previous entry includes begin (and we know key.begin > prev.begin) then prev is actually lower
-        if (range_begin < prev->first.end) {
-            lower = prev;
-        }
-    }
-    return lower;
-}
-
-AccessMap::const_iterator AccessMap::LowerBound(ResourceAddress range_begin) const {
-    // ImplMap doesn't give us what want with a direct query, it will give us the first entry contained (if any) in key,
-    // not the first entry intersecting key, so, first look for the the first entry that starts at or after key.begin
-    // with the operator > in range, we can safely use an empty range for comparison
-    auto lower = impl_map_.lower_bound(AccessRange(range_begin, range_begin));
-
-    // If there is a preceding entry it's possible that begin is included, as all we know is that lower.begin >= key.begin
-    // or lower is at end
-    if (lower != begin()) {
-        auto prev = lower;
-        --prev;
-        // If the previous entry includes begin (and we know key.begin > prev.begin) then prev is actually lower
-        if (range_begin < prev->first.end) {
-            lower = prev;
-        }
-    }
-    return lower;
 }
 
 AccessMap::iterator AccessMap::Insert(const_iterator hint, const AccessRange &range, const AccessState &access_state) {

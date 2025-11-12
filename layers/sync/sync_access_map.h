@@ -32,9 +32,25 @@
 
 namespace syncval {
 
+// There are two types of comparisons of AccessMap ranges:
+//  a)  Two non-empty, non-overlapping ranges.
+//      This happens when we compare two ranges from the access map, for example, during insert operation.
+//      The "less" comparison that works here is: (range_a.end <= range_b.begin)
+//
+//  b)  Non-empty range vs empty range. The empty range here is a single point passed to LowerBound.
+//      We compare this single point against non-empty ranges from the access map.
+//      The "less" comparison from a) works for b) too, except one configuration, when point A coincides
+//      with the beginning of non-empty range B. The comparison must return false here (e.g. not less).
+//      That's because the lower bound for such point A is a range B itself. The comparision from a) has
+//      to be extended with additional check: (range_a.begin < range_b.begin). This correctly handles
+//      this special case and does not affect result of (range_a.end <= range_b.begin) in all other cases.
+struct AccessMapCompare {
+    bool operator()(const AccessRange &a, const AccessRange &b) const { return a.end <= b.begin && a.begin < b.begin; }
+};
+
 // Implements an ordered map of non-overlapping, non-empty ranges
 class AccessMap {
-    using ImplMap = std::map<AccessRange, AccessState>;
+    using ImplMap = std::map<AccessRange, AccessState, AccessMapCompare>;
 
   public:
     using index_type = ResourceAddress;
@@ -48,14 +64,17 @@ class AccessMap {
     iterator end() { return impl_map_.end(); }
     const_iterator end() const { return impl_map_.end(); }
 
+    iterator LowerBound(ResourceAddress range_begin);
+    const_iterator LowerBound(ResourceAddress range_begin) const;
+    size_t Size() const { return impl_map_.size(); }
+
     void Clear() { impl_map_.clear(); }
     iterator Erase(const iterator &pos);
     void Erase(iterator first, iterator last);
-    iterator LowerBound(ResourceAddress range_begin);
-    const_iterator LowerBound(ResourceAddress range_begin) const;
     iterator Insert(const_iterator hint, const AccessRange &range, const AccessState &access_state);
     iterator Split(const iterator split_it, const index_type &index);
-    size_t Size() const { return impl_map_.size(); }
+
+    AccessMap() : impl_map_(AccessMapCompare()) {}
 
   private:
     // No replacement insert
