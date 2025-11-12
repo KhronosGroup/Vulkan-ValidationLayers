@@ -693,7 +693,7 @@ bool CoreChecks::ValidateRenderPassPerformanceCountersByRegionBeginInfo(VkComman
         auto first_buffer = *buffer_states.begin();
         auto buffer_range = first_buffer->DeviceAddressRange();
         auto address = counters_begin_info.pCounterAddresses[i];
-        const vvl::range<VkDeviceSize> counter_address_range(address, address + counter_buffer_size - 1);
+        const vvl::range<VkDeviceSize> counter_address_range(address, address + counter_buffer_size);
         if (!buffer_range.includes(counter_address_range)) {
             skip |= LogError("VUID-VkRenderPassPerformanceCountersByRegionBeginInfoARM-pCounterAddresses-11817", objlist, begin_loc.pNext(Struct::VkRenderPassPerformanceCountersByRegionBeginInfoARM, Field::pCounterAddresses),
                              "%s does not fully fit into the address range of the buffer %s.",
