@@ -86,7 +86,7 @@ bool CoreChecks::ValidatePerformanceQueryResults(const vvl::QueryPool &query_poo
                          FormatHandle(query_pool_state).c_str(), invalid_flags_string.c_str());
     }
 
-    for (uint32_t query_index = firstQuery; query_index < queryCount; query_index++) {
+    for (uint32_t query_index = firstQuery; query_index < firstQuery + queryCount; query_index++) {
         uint32_t submitted = 0;
         for (uint32_t pass_index = 0; pass_index < query_pool_state.n_performance_passes; pass_index++) {
             auto state = query_pool_state.GetQueryState(query_index, pass_index);
@@ -491,12 +491,12 @@ bool CoreChecks::ValidateBeginQuery(const vvl::CommandBuffer &cb_state, const Qu
                 const LogObjectList objlist(cb_state.Handle(), cb_state.command_pool->Handle(), query_obj.pool);
                 skip |= LogError(vuid, objlist, loc.dot(Field::queryPool),
                                  "was created with VkQueryPoolPerformanceCreateInfoKHR::queueFamilyIndex (%" PRIu32
-                                 ") but the command buffer is from a comment pool created with "
+                                 ") but the command buffer is from a command pool created with "
                                  "VkCommandPoolCreateInfo::queueFamilyIndex (%" PRIu32 ").",
                                  query_pool_state->perf_counter_queue_family_index, cb_state.command_pool->queueFamilyIndex);
             }
             break;
-        } break;
+        }
         case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR:
         case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR: {
             const char *vuid =
@@ -1356,7 +1356,7 @@ void CoreChecks::PostCallRecordGetQueryPoolResults(VkDevice device, VkQueryPool 
     ASSERT_AND_RETURN(query_pool_state);
 
     if ((flags & VK_QUERY_RESULT_PARTIAL_BIT) == 0) {
-        for (uint32_t i = firstQuery; i < queryCount; ++i) {
+        for (uint32_t i = firstQuery; i < firstQuery + queryCount; ++i) {
             query_pool_state->SetQueryState(i, 0, QUERYSTATE_AVAILABLE);
         }
     }
