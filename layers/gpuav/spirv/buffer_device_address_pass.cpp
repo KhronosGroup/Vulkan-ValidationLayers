@@ -221,7 +221,8 @@ bool BufferDeviceAddressPass::Instrument() {
                         load_type_pointer->inst_.StorageClass() == spv::StorageClassPhysicalStorageBuffer) {
                         const Type* struct_type = module_.type_manager_.FindTypeById(load_type_pointer->inst_.Operand(1));
                         if (struct_type && struct_type->spv_type_ == SpvType::kStruct) {
-                            const uint32_t struct_offset = FindOffsetInStruct(struct_type->Id(), false, access_chain_insts);
+                            const uint32_t struct_offset =
+                                FindOffsetInStruct(struct_type->Id(), nullptr, false, access_chain_insts);
                             if (struct_offset == 0) continue;
                             uint32_t inst_position = meta.target_instruction->GetPositionOffset();
                             block_skip_list_.insert(inst_position);

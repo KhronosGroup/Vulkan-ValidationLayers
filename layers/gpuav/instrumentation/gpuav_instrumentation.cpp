@@ -847,7 +847,8 @@ bool LogMessageInstDescriptorClass(Validator &gpuav, const CommandBufferSubState
 
     const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
     switch (error_sub_code) {
-        case kErrorSubCodeDescriptorClassGeneralBufferBounds: {
+        case kErrorSubCodeDescriptorClassGeneralBufferBounds:
+        case kErrorSubCodeDescriptorClassGeneralBufferCoopMatBounds: {
             if (binding_state->descriptor_class != vvl::DescriptorClass::GeneralBuffer) {
                 assert(false);
                 return false;
@@ -864,6 +865,9 @@ bool LogMessageInstDescriptorClass(Validator &gpuav, const CommandBufferSubState
                 // This will only get called when using nullDescriptor without bindless
                 strm << "Trying to access a null descriptor, but vkUpdateDescriptorSets was not called with VK_NULL_HANDLE for "
                         "this descriptor. ";
+            }
+            if (error_sub_code == kErrorSubCodeDescriptorClassGeneralBufferCoopMatBounds) {
+                strm << "\nFor VK_KHR_cooperative_matrix this is invalid unless cooperativeMatrixRobustBufferAccess is enabled.";
             }
 
             if (binding_state->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||

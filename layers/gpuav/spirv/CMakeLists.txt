@@ -37,6 +37,7 @@ target_sources(gpu_av_spirv PRIVATE
     log_error_pass.cpp
 
     # Framework
+    cooperative_matrix.h
     function_basic_block.h
     function_basic_block.cpp
     interface.h

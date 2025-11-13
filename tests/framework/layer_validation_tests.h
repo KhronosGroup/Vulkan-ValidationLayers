@@ -256,6 +256,15 @@ class GpuAVDescriptorClassGeneralBuffer : public GpuAVTest {
                                   const char *expected_error = nullptr, uint32_t error_count = 1);
 };
 
+class GpuAVDescriptorClassGeneralBufferCoopMat : public GpuAVTest {
+  public:
+    void InitCooperativeMatrixKHR(VkShaderStageFlags required_stage = 0, bool safe_mode = true);
+    void BasicComputeTest(const char *shader, int source_type, VkDeviceSize buffer_size, const char *expected_error = nullptr,
+                          uint32_t error_count = 1);
+    void Has16x16UintProperty();
+    std::vector<VkCooperativeMatrixPropertiesKHR> coop_matrix_props;
+};
+
 class GpuAVCopyMemoryIndirect : public GpuAVTest {
   public:
     void InitGpuAVCopyMemoryIndirect(bool safe_mode = true);

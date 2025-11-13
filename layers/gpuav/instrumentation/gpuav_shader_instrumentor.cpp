@@ -1524,6 +1524,10 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
             // But for what we are checking for, can rely on robustBufferAccess
             spirv::DescriptorClassTexelBufferPass texel_buffer_pass(module);
             modified |= texel_buffer_pass.Run();
+        } else if (modified_features.cooperativeMatrix && !modified_features.cooperativeMatrixRobustBufferAccess) {
+            // Cooperative Matrix OOB rules are unique and have their own robustness feature, so still need to run the pass
+            spirv::DescriptorClassGeneralBufferPass general_buffer_pass(module);
+            modified |= general_buffer_pass.Run();
         }
     }
 

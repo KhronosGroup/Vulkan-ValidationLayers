@@ -72,6 +72,8 @@ const int kErrorSubCodeDescriptorIndexingDestroyed = 3;
 const int kErrorSubCodeDescriptorClassGeneralBufferBounds = 1;
 // Texel Buffers
 const int kErrorSubCodeDescriptorClassTexelBufferBounds = 2;
+// Buffers, but with Cooperative Matrix
+const int kErrorSubCodeDescriptorClassGeneralBufferCoopMatBounds = 3;
 
 // Buffer Device Address
 //

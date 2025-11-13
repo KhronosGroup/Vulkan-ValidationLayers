@@ -15,6 +15,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <cstdint>
 #include "pass.h"
 
 namespace gpuav {
@@ -53,15 +54,21 @@ class DescriptorClassGeneralBufferPass : public Pass {
         // Capture the upper bound offset into the struct the instruction accesses
         // Will be zero if we can't determine it (or in Safe Mode)
         uint32_t access_offset = 0;
+
+        CooperativeMatrixAccess coop_mat_access{};
     };
 
     bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta);
     void CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
 
-    uint32_t GetLinkFunctionId();
+    uint32_t GetLinkFunctionId(bool is_coop_mat);
 
     // Function IDs to link in
     uint32_t link_function_id_ = 0;
+    uint32_t link_coop_mat_function_id_ = 0;
+
+    const bool has_robustness;
+    const bool has_coop_mat_robustness;
 };
 
 }  // namespace spirv

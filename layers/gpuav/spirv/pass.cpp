@@ -16,12 +16,14 @@
 #include "pass.h"
 #include <cstdint>
 #include <spirv/unified1/spirv.hpp>
+#include "cooperative_matrix.h"
 #include "function_basic_block.h"
 #include "generated/spirv_grammar_helper.h"
 #include "link.h"
 #include "state_tracker/shader_instruction.h"
 #include "module.h"
 #include "gpuav/shaders/gpuav_error_codes.h"
+#include "type_manager.h"
 
 namespace gpuav {
 namespace spirv {
@@ -359,7 +361,7 @@ uint32_t Pass::FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride, bool c
 // Because access chains indexes can be runtime values, we need to build arithmetic logic in the SPIR-V to get the runtime value of
 // the indexing
 uint32_t Pass::GetLastByte(const Type& descriptor_type, const std::vector<const Instruction*>& access_chain_insts,
-                           BasicBlock& block, InstructionIt* inst_it) {
+                           const CooperativeMatrixAccess& coop_mat_access, BasicBlock& block, InstructionIt* inst_it) {
     assert(!access_chain_insts.empty());
     uint32_t current_type_id = 0;
     const uint32_t reset_ac_word = 4;  // points to first "Index" operand of an OpAccessChain
@@ -375,7 +377,7 @@ uint32_t Pass::GetLastByte(const Type& descriptor_type, const std::vector<const 
         return 0;
     }
 
-    const Type& uint32_type = module_.type_manager_.GetTypeInt(32, false);
+    const uint32_t uint32_type_id = module_.type_manager_.GetTypeInt(32, false).Id();
 
     // instruction that will have calculated the sum of the byte offset
     uint32_t sum_id = 0;
@@ -417,8 +419,7 @@ uint32_t Pass::GetLastByte(const Type& descriptor_type, const std::vector<const 
                 const uint32_t ac_index_id_32 = ConvertTo32(ac_index_id, block, inst_it);
 
                 current_offset_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpIMul, {uint32_type.Id(), current_offset_id, array_stride_id, ac_index_id_32},
-                                        inst_it);
+                block.CreateInstruction(spv::OpIMul, {uint32_type_id, current_offset_id, array_stride_id, ac_index_id_32}, inst_it);
 
                 // Get element type for next step
                 current_type_id = current_type->inst_.Operand(0);
@@ -443,7 +444,7 @@ uint32_t Pass::GetLastByte(const Type& descriptor_type, const std::vector<const 
 
                 const uint32_t ac_index_id_32 = ConvertTo32(ac_index_id, block, inst_it);
                 current_offset_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpIMul, {uint32_type.Id(), current_offset_id, col_stride_id, ac_index_id_32}, inst_it);
+                block.CreateInstruction(spv::OpIMul, {uint32_type_id, current_offset_id, col_stride_id, ac_index_id_32}, inst_it);
 
                 // Get element type for next step
                 current_type_id = vec_type_id;
@@ -456,14 +457,14 @@ uint32_t Pass::GetLastByte(const Type& descriptor_type, const std::vector<const 
                 const uint32_t ac_index_id_32 = ConvertTo32(ac_index_id, block, inst_it);
                 if (in_matrix && !col_major) {
                     current_offset_id = module_.TakeNextId();
-                    block.CreateInstruction(spv::OpIMul, {uint32_type.Id(), current_offset_id, matrix_stride_id, ac_index_id_32},
+                    block.CreateInstruction(spv::OpIMul, {uint32_type_id, current_offset_id, matrix_stride_id, ac_index_id_32},
                                             inst_it);
                 } else {
                     const uint32_t component_type_size = FindTypeByteSize(component_type_id);
                     const uint32_t size_id = module_.type_manager_.GetConstantUInt32(component_type_size).Id();
 
                     current_offset_id = module_.TakeNextId();
-                    block.CreateInstruction(spv::OpIMul, {uint32_type.Id(), current_offset_id, size_id, ac_index_id_32}, inst_it);
+                    block.CreateInstruction(spv::OpIMul, {uint32_type_id, current_offset_id, size_id, ac_index_id_32}, inst_it);
                 }
                 // Get element type for next step
                 current_type_id = component_type_id;
@@ -500,7 +501,7 @@ uint32_t Pass::GetLastByte(const Type& descriptor_type, const std::vector<const 
             sum_id = current_offset_id;
         } else {
             const uint32_t new_sum_id = module_.TakeNextId();
-            block.CreateInstruction(spv::OpIAdd, {uint32_type.Id(), new_sum_id, sum_id, current_offset_id}, inst_it);
+            block.CreateInstruction(spv::OpIAdd, {uint32_type_id, new_sum_id, sum_id, current_offset_id}, inst_it);
             sum_id = new_sum_id;
         }
 
@@ -511,14 +512,48 @@ uint32_t Pass::GetLastByte(const Type& descriptor_type, const std::vector<const 
         }
     }
 
-    // Add in offset of last byte of referenced object
-    const uint32_t accessed_type_size = FindTypeByteSize(current_type_id, matrix_stride, col_major, in_matrix);
+    // Add in offset of last byte of referenced object.
+    uint32_t accessed_type_size = 0;
+
+    // For CooperativeMatrix the |current_type_id| will be an an Int or Float as that is the element type being accessed
+    if (coop_mat_access.used) {
+        // The stride here could be constant, so if it is, just use it, otherwise will need to build it via SPIR-V
+        if (coop_mat_access.stride_value != 0) {
+            accessed_type_size = coop_mat_access.Size();
+        } else if (coop_mat_access.is_row_major) {
+            // equation: ((rows - 1) * stride + columns) * component_size
+            const uint32_t rows_m1_id = module_.type_manager_.GetConstantUInt32(coop_mat_access.rows - 1).Id();
+            const uint32_t columns_id = module_.type_manager_.GetConstantUInt32(coop_mat_access.columns).Id();
+            const uint32_t component_size_id = module_.type_manager_.GetConstantUInt32(coop_mat_access.component_size).Id();
+
+            uint32_t x1 = module_.TakeNextId();
+            uint32_t x2 = module_.TakeNextId();
+            sum_id = module_.TakeNextId();
+            block.CreateInstruction(spv::OpIMul, {uint32_type_id, x1, rows_m1_id, coop_mat_access.stride_id}, inst_it);
+            block.CreateInstruction(spv::OpIAdd, {uint32_type_id, x2, x1, columns_id}, inst_it);
+            block.CreateInstruction(spv::OpIMul, {uint32_type_id, sum_id, x2, component_size_id}, inst_it);
+        } else {
+            // equation: ((columns - 1) * stride_value + rows) * component_size;
+            const uint32_t columns_m1_id = module_.type_manager_.GetConstantUInt32(coop_mat_access.columns - 1).Id();
+            const uint32_t row_id = module_.type_manager_.GetConstantUInt32(coop_mat_access.rows).Id();
+            const uint32_t component_size_id = module_.type_manager_.GetConstantUInt32(coop_mat_access.component_size).Id();
+
+            uint32_t x1 = module_.TakeNextId();
+            uint32_t x2 = module_.TakeNextId();
+            sum_id = module_.TakeNextId();
+            block.CreateInstruction(spv::OpIMul, {uint32_type_id, x1, columns_m1_id, coop_mat_access.stride_id}, inst_it);
+            block.CreateInstruction(spv::OpIAdd, {uint32_type_id, x2, x1, row_id}, inst_it);
+            block.CreateInstruction(spv::OpIMul, {uint32_type_id, sum_id, x2, component_size_id}, inst_it);
+        }
+    } else {
+        accessed_type_size = FindTypeByteSize(current_type_id, matrix_stride, col_major, in_matrix);
+    }
     const uint32_t last_byte_index = accessed_type_size - 1;
 
     const uint32_t last_byte_index_id = module_.type_manager_.GetConstantUInt32(last_byte_index).Id();
 
     const uint32_t new_sum_id = module_.TakeNextId();
-    block.CreateInstruction(spv::OpIAdd, {uint32_type.Id(), new_sum_id, sum_id, last_byte_index_id}, inst_it);
+    block.CreateInstruction(spv::OpIAdd, {uint32_type_id, new_sum_id, sum_id, last_byte_index_id}, inst_it);
     return new_sum_id;
 }
 
@@ -535,7 +570,7 @@ uint32_t Pass::GetLastByte(const Type& descriptor_type, const std::vector<const 
 //
 // it will return `7` because it covers [4, 7] bytes of the descriptor
 // (This matches the GetLastByte() check)
-uint32_t Pass::FindOffsetInStruct(uint32_t struct_id, bool is_descriptor_array,
+uint32_t Pass::FindOffsetInStruct(uint32_t struct_id, const CooperativeMatrixAccess* coop_mat_access, bool is_descriptor_array,
                                   const std::vector<const Instruction*>& access_chain_insts) const {
     assert(!access_chain_insts.empty());
     uint32_t last_byte_offset = 0;
@@ -544,6 +579,15 @@ uint32_t Pass::FindOffsetInStruct(uint32_t struct_id, bool is_descriptor_array,
 
     if (is_descriptor_array) {
         ac_word_index++;  // this jumps over the array of descriptors so we first start on the descriptor itself
+    }
+
+    uint32_t known_access_size = 0;
+    if (coop_mat_access && coop_mat_access->used) {
+        known_access_size = coop_mat_access->Size();
+        if (known_access_size == 0) {
+            // If size is known to be dynamic don't spend more time
+            return 0;
+        }
     }
 
     uint32_t matrix_stride = 0;
@@ -649,11 +693,58 @@ uint32_t Pass::FindOffsetInStruct(uint32_t struct_id, bool is_descriptor_array,
     }
 
     // Add in offset of last byte of referenced object
-    const uint32_t accessed_type_size = FindTypeByteSize(current_type_id, matrix_stride, col_major, in_matrix);
+    // Things like CooperativeMatrix will have the size calculated already
+    const uint32_t accessed_type_size =
+        (known_access_size != 0) ? known_access_size : FindTypeByteSize(current_type_id, matrix_stride, col_major, in_matrix);
     const uint32_t last_byte_index = accessed_type_size - 1;
     last_byte_offset += last_byte_index;
 
     return last_byte_offset;
+}
+
+// Unlike a normal load/store where we get the size by looking at the type that is loaded/stored,
+// With CoopMat, we need both the OpTypeCooperativeMatrixKHR and the OpCooperativeMatrixLoadKHR/OpCooperativeMatrixStoreKHR together
+// to calculate the access size.
+CooperativeMatrixAccess Pass::GetCooperativeMatrixAccess(const Instruction& inst, const Function& function) const {
+    CooperativeMatrixAccess info;
+
+    // TODO - When adding Coop Mat to Descriptor Indexing, will likely want a better way to signal things than this bool
+    info.used = true;
+
+    info.is_load = inst.Opcode() == spv::OpCooperativeMatrixLoadKHR;  // else is store
+
+    // For stores, we assume the Object operand points to a load to get the type
+    uint32_t coop_mat_type_id = info.is_load ? inst.TypeId() : function.FindInstruction(inst.Word(2))->TypeId();
+    info.type = module_.type_manager_.FindTypeById(coop_mat_type_id);
+    assert(info.type && info.type->spv_type_ == SpvType::kCooperativeMatrixKHR);
+
+    // Currently we don't save/cache the size of each type because we still need to extract the rows/column info. This the tradeoff
+    // of having a simplified single Type class
+    const Type* component_type = module_.type_manager_.FindTypeById(info.type->inst_.Word(2));
+    info.component_size = module_.type_manager_.TypeLength(*component_type);
+
+    const Constant* rows_const = module_.type_manager_.FindConstantById(info.type->inst_.Word(4));
+    const Constant* columns_const = module_.type_manager_.FindConstantById(info.type->inst_.Word(5));
+    // TODO - Need to handle spec constant here, for now return zero to have things not blowup
+    assert(rows_const && !rows_const->is_spec_constant_ && columns_const && !columns_const->is_spec_constant_);
+    info.rows = rows_const->inst_.Operand(0);
+    info.columns = columns_const->inst_.Operand(0);
+
+    info.stride_id = info.is_load ? inst.Word(5) : inst.Word(4);
+    if (const Constant* stride = module_.type_manager_.FindConstantById(info.stride_id)) {
+        info.stride_value = stride->inst_.Operand(0);
+    } else {
+        info.stride_value = 0;
+    }
+
+    const uint32_t memory_layout_id = info.is_load ? inst.Word(4) : inst.Word(3);
+    const Constant* memory_layout = module_.type_manager_.FindConstantById(memory_layout_id);
+    assert(memory_layout && !memory_layout->is_spec_constant_);
+    const uint32_t memory_layout_value = memory_layout->inst_.Operand(0);
+    info.is_row_major = memory_layout_value == spv::CooperativeMatrixLayoutRowMajorKHR;
+    assert(info.is_row_major || memory_layout_value == spv::CooperativeMatrixLayoutColumnMajorKHR);
+
+    return info;
 }
 
 // Generate code to convert integer id to 32bit, if needed.
