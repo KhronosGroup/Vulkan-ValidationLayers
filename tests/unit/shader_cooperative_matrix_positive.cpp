@@ -46,13 +46,22 @@ const char *vkComponentTypeToGLSL(VkComponentTypeKHR type) {
     }
 }
 
-void CooperativeMatrixTest::InitCooperativeMatrixKHR() {
+void CooperativeMatrixTest::InitCooperativeMatrixKHR(VkShaderStageFlags required_stage) {
     AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
     // glslang will generate OpCapability VulkanMemoryModel and need entension enabled
     AddRequiredExtensions(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::cooperativeMatrix);
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
     RETURN_IF_SKIP(Init());
+
+    if (required_stage != 0) {
+        VkPhysicalDeviceCooperativeMatrixPropertiesKHR props = vku::InitStructHelper();
+        GetPhysicalDeviceProperties2(props);
+        if ((props.cooperativeMatrixSupportedStages & required_stage) == 0) {
+            GTEST_SKIP() << "required stage is not supported";
+        }
+    }
+
     uint32_t props_count = 0;
     vk::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(Gpu(), &props_count, nullptr);
     for (uint32_t i = 0; i < props_count; i++) {
@@ -146,16 +155,13 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixNV) {
     RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceFloat16Int8FeaturesKHR float16_features = vku::InitStructHelper();
+    // The NV and KHR share the same feature name, so set it without AddRequiredFeature
     VkPhysicalDeviceCooperativeMatrixFeaturesNV cooperative_matrix_features = vku::InitStructHelper(&float16_features);
     VkPhysicalDeviceVulkanMemoryModelFeaturesKHR memory_model_features = vku::InitStructHelper(&cooperative_matrix_features);
     GetPhysicalDeviceFeatures2(memory_model_features);
     RETURN_IF_SKIP(InitState(nullptr, &memory_model_features));
 
-    std::vector<VkDescriptorSetLayoutBinding> bindings(0);
-    const vkt::DescriptorSetLayout dsl(*m_device, bindings);
-    const vkt::PipelineLayout pl(*m_device, {&dsl});
-
-    const char *csSource = R"glsl(
+    const char *cs_source = R"glsl(
         #version 450
         #extension GL_NV_cooperative_matrix : enable
         #extension GL_KHR_shader_subgroup_basic : enable
@@ -175,7 +181,7 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixNV) {
         }
     )glsl";
 
-    const uint32_t specData[] = {
+    const uint32_t spec_data[] = {
         16,
         8,
     };
@@ -184,15 +190,15 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixNV) {
         {1, sizeof(uint32_t) * 1, sizeof(uint32_t)},
     };
 
-    VkSpecializationInfo specInfo = {
+    VkSpecializationInfo spec_info = {
         2,
         entries,
-        sizeof(specData),
-        specData,
+        sizeof(spec_data),
+        spec_data,
     };
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL, &specInfo);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL, &spec_info);
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
@@ -201,17 +207,9 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixNV) {
 TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixKHR) {
     TEST_DESCRIPTION("Test VK_KHR_cooperative_matrix.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_16BIT_STORAGE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderFloat16);
     AddRequiredFeature(vkt::Feature::storageBuffer16BitAccess);
-    RETURN_IF_SKIP(InitCooperativeMatrixKHR());
-
-    VkPhysicalDeviceCooperativeMatrixPropertiesKHR props = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(props);
-    if ((props.cooperativeMatrixSupportedStages & VK_SHADER_STAGE_COMPUTE_BIT) == 0) {
-        GTEST_SKIP() << "Compute stage is not supported";
-    }
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR(VK_SHADER_STAGE_COMPUTE_BIT));
 
     VkCooperativeMatrixPropertiesKHR subgroup_prop = vku::InitStructHelper();
     bool found_scope_subgroup = false;
@@ -227,15 +225,13 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixKHR) {
         GTEST_SKIP() << "VK_SCOPE_SUBGROUP_KHR not Found";
     }
 
-    const VkSampler *ptr = nullptr;
-    const std::vector<VkDescriptorSetLayoutBinding> bindings = {
-        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, ptr},
-        {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, ptr},
-        {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, ptr},
-        {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, ptr},
-    };
-    const vkt::DescriptorSetLayout dsl(*m_device, bindings);
-    const vkt::PipelineLayout pl(*m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                           {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                           {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                       });
 
     std::string css = R"glsl(
          #version 450 core
@@ -286,8 +282,6 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixKHR) {
 TEST_F(PositiveShaderCooperativeMatrix, RequiredSubgroupSize) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9843");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_16BIT_STORAGE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderFloat16);
     AddRequiredFeature(vkt::Feature::storageBuffer16BitAccess);
     AddRequiredFeature(vkt::Feature::subgroupSizeControl);
@@ -296,10 +290,7 @@ TEST_F(PositiveShaderCooperativeMatrix, RequiredSubgroupSize) {
         GTEST_SKIP() << "This makes assumption about possible coop matrix subgroup size and support.";
     }
 
-    const std::vector<VkDescriptorSetLayoutBinding> bindings = {
-        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-    };
-    const vkt::DescriptorSetLayout dsl(*m_device, bindings);
+    const vkt::DescriptorSetLayout dsl(*m_device, {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr});
     const vkt::PipelineLayout pipeline_layout(*m_device, {&dsl});
 
     const char *cs_source = R"glsl(
@@ -354,10 +345,7 @@ TEST_F(PositiveShaderCooperativeMatrix, RequiredVulkanVersionPipeline) {
         GTEST_SKIP() << "This makes assumption about possible coop matrix subgroup size and support.";
     }
 
-    const std::vector<VkDescriptorSetLayoutBinding> bindings = {
-        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-    };
-    const vkt::DescriptorSetLayout dsl(*m_device, bindings);
+    const vkt::DescriptorSetLayout dsl(*m_device, {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr});
     const vkt::PipelineLayout pipeline_layout(*m_device, {&dsl});
 
     const char *cs_source = R"glsl(
@@ -400,11 +388,8 @@ TEST_F(PositiveShaderCooperativeMatrix, RequiredVulkanVersionShaderObject) {
         GTEST_SKIP() << "This makes assumption about possible coop matrix subgroup size and support.";
     }
 
-    const std::vector<VkDescriptorSetLayoutBinding> bindings = {
-        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-    };
-    const vkt::DescriptorSetLayout dsl(*m_device, bindings);
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device,
+                                       {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr});
 
     const char *cs_source = R"glsl(
          #version 450 core
@@ -456,9 +441,7 @@ TEST_F(PositiveShaderCooperativeMatrix, BFloat16) {
 
 TEST_F(PositiveShaderCooperativeMatrix, Float8) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_FLOAT8_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::storageBuffer8BitAccess);
     AddRequiredFeature(vkt::Feature::shaderFloat8);
     AddRequiredFeature(vkt::Feature::shaderFloat8CooperativeMatrix);
@@ -480,4 +463,64 @@ TEST_F(PositiveShaderCooperativeMatrix, Float8) {
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
     pipe.CreateComputePipeline();
+}
+
+TEST_F(PositiveShaderCooperativeMatrix, Int8) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::shaderInt8);
+    AddRequiredFeature(vkt::Feature::storageBuffer8BitAccess);
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR(VK_SHADER_STAGE_COMPUTE_BIT));
+
+    VkCooperativeMatrixPropertiesKHR subgroup_prop = vku::InitStructHelper();
+    bool found = false;
+    for (const auto &prop : coop_matrix_props) {
+        if (prop.scope == VK_SCOPE_SUBGROUP_KHR && prop.KSize == 16 && prop.MSize == 16 && prop.NSize == 16 &&
+            prop.AType == VK_COMPONENT_TYPE_UINT8_KHR && prop.BType == VK_COMPONENT_TYPE_UINT8_KHR &&
+            prop.CType == VK_COMPONENT_TYPE_UINT32_KHR && prop.ResultType == VK_COMPONENT_TYPE_UINT32_KHR) {
+            found = true;
+            subgroup_prop = prop;
+            break;
+        }
+    }
+    if (!found) {
+        GTEST_SKIP() << "desired VkCooperativeMatrixPropertiesKHR not found";
+    }
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    vkt::PipelineLayout pl(*m_device, {&descriptor_set.layout_});
+
+    std::string css = R"glsl(
+         #version 450 core
+         #pragma use_vulkan_memory_model
+         #extension GL_KHR_shader_subgroup_basic : enable
+         #extension GL_KHR_memory_scope_semantics : enable
+         #extension GL_KHR_cooperative_matrix : enable
+         #extension GL_EXT_shader_explicit_arithmetic_types : enable
+         #extension GL_EXT_shader_explicit_arithmetic_types_int8 : enable
+         layout(local_size_x = 64) in;
+         layout(set=0, binding=0) coherent buffer InputA { uint8_t x[]; } inputA;
+         layout(set=0, binding=1) coherent buffer InputB { uint8_t x[]; } inputB;
+         layout(set=0, binding=2) coherent buffer InputC { uint32_t x[]; } inputC;
+         layout(set=0, binding=3) coherent buffer Output { uint32_t x[]; } outputO;
+         coopmat<uint8_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> matA;
+         coopmat<uint8_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseB> matB;
+         coopmat<uint32_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator> matC;
+         coopmat<uint32_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator> matO;
+         void main() {
+             coopMatLoad(matA, inputA.x, 0, 16, gl_CooperativeMatrixLayoutRowMajor);
+             coopMatLoad(matB, inputB.x, 0, 16, gl_CooperativeMatrixLayoutRowMajor);
+             coopMatLoad(matC, inputC.x, 0, 16, gl_CooperativeMatrixLayoutRowMajor);
+             matO = coopMatMulAdd(matA, matB, matC);
+             coopMatStore(matO, outputO.x, 0, 16, gl_CooperativeMatrixLayoutRowMajor);
+         }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(this, css.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
+    pipe.cp_ci_.layout = pl;
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
 }
