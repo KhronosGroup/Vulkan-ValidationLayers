@@ -24,10 +24,10 @@ TEST_F(PositiveShaderCooperativeVector, ConvertCooperativeVectorMatrixNV) {
     RETURN_IF_SKIP(Init());
 
     VkConvertCooperativeVectorMatrixInfoNV info = vku::InitStructHelper();
-    size_t dstSize = 16 * 32 * 2;
+    size_t dst_size = 16 * 32 * 2;
     info.srcSize = 16 * 32 * 2;
     info.srcData.hostAddress = nullptr;
-    info.pDstSize = &dstSize;
+    info.pDstSize = &dst_size;
     info.dstData.hostAddress = nullptr;
     info.srcComponentType = VK_COMPONENT_TYPE_FLOAT16_KHR;
     info.dstComponentType = VK_COMPONENT_TYPE_FLOAT16_KHR;
@@ -56,9 +56,9 @@ TEST_F(PositiveShaderCooperativeVector, CmdConvertCooperativeVectorMatrixNV) {
     RETURN_IF_SKIP(Init());
 
     VkConvertCooperativeVectorMatrixInfoNV info = vku::InitStructHelper();
-    size_t dstSize = 16 * 32 * 2;
+    size_t dst_size = 16 * 32 * 2;
     info.srcSize = 16 * 32 * 2;
-    info.pDstSize = &dstSize;
+    info.pDstSize = &dst_size;
     info.srcComponentType = VK_COMPONENT_TYPE_FLOAT16_KHR;
     info.dstComponentType = VK_COMPONENT_TYPE_FLOAT16_KHR;
     info.numRows = 16;
@@ -82,7 +82,6 @@ TEST_F(PositiveShaderCooperativeVector, CmdConvertCooperativeVectorMatrixNV) {
 
 TEST_F(PositiveShaderCooperativeVector, CooperativeVectorSPIRV) {
     TEST_DESCRIPTION("Validate Cooperative Vector SPIR-V environment rules.");
-
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_NV_COOPERATIVE_VECTOR_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::cooperativeVector);
@@ -117,11 +116,7 @@ TEST_F(PositiveShaderCooperativeVector, CooperativeVectorSPIRV) {
        }
     )glsl";
 
-    const std::vector<VkDescriptorSetLayoutBinding> bindings = {
-        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-    };
-    const vkt::DescriptorSetLayout dsl(*m_device, bindings);
-    const vkt::PipelineLayout pl(*m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr});
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = VkShaderObj(this, vt_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
@@ -147,11 +142,7 @@ TEST_F(PositiveShaderCooperativeVector, CooperativeVectorTraingingSPIRV) {
         GTEST_SKIP() << "cooperativeVectorTrainingFloat16Accumulation not supported";
     }
 
-    const std::vector<VkDescriptorSetLayoutBinding> bindings = {
-        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-    };
-    const vkt::DescriptorSetLayout dsl(*m_device, bindings);
-    const vkt::PipelineLayout pl(*m_device, {&dsl});
+    const vkt::DescriptorSetLayout dsl(*m_device, {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr});
 
     const char *vt_source = R"glsl(
         #version 450

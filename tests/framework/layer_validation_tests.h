@@ -440,7 +440,7 @@ class WsiTest : public VkLayerTest {
 
 class CooperativeMatrixTest : public VkLayerTest {
   public:
-    void InitCooperativeMatrixKHR();
+    void InitCooperativeMatrixKHR(VkShaderStageFlags required_stage = 0);
     bool HasValidProperty(VkScopeKHR scope, uint32_t m, uint32_t n, uint32_t k, VkComponentTypeKHR type);
     std::vector<VkCooperativeMatrixPropertiesKHR> coop_matrix_props;
     std::vector<VkCooperativeMatrixFlexibleDimensionsPropertiesNV> coop_matrix_flex_props;

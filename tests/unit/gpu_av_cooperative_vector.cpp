@@ -27,11 +27,10 @@ void NegativeGpuAVCooperativeVector::RunTest(const char *expected_error, const c
     AddRequiredExtensions(VK_NV_COOPERATIVE_VECTOR_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_REPLICATED_COMPOSITES_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitGpuAvFramework());
-
     AddRequiredFeature(vkt::Feature::shaderReplicatedComposites);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::cooperativeVector);
+    RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
     vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
