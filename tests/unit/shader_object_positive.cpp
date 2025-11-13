@@ -15,13 +15,13 @@
 #include "../framework/shader_templates.h"
 #include "utils/math_utils.h"
 
-void ShaderObjectTest::InitBasicShaderObject() {
+void ShaderObjectTest::InitBasicShaderObject(void *instance_pnext) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::shaderObject);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(Init(nullptr, nullptr, instance_pnext));
 }
 
 void ShaderObjectTest::InitBasicMeshShaderObject(APIVersion target_api_version) {

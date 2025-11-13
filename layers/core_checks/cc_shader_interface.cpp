@@ -665,7 +665,7 @@ bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bou
                 pipeline->fragment_shader_state->fragment_shader->spirv) {
                 module_state = pipeline->fragment_shader_state->fragment_shader->spirv.get();
             } else if (!pipeline) {
-                const vvl::ShaderObject *shader_object = last_bound_state.GetShaderStateIfValid(ShaderObjectStage::FRAGMENT);
+                const vvl::ShaderObject *shader_object = last_bound_state.GetShaderObjectStateIfValid(ShaderObjectStage::FRAGMENT);
                 if (shader_object && shader_object->spirv) {
                     module_state = shader_object->spirv.get();
                 }

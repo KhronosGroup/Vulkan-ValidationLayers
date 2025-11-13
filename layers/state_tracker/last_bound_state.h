@@ -132,17 +132,17 @@ struct LastBound {
     VkPrimitiveTopology ClipSpaceTopology() const;
     VkPrimitiveTopology GetRasterizationInputTopology() const;
 
-    VkShaderEXT GetShader(ShaderObjectStage stage) const;
-    vvl::ShaderObject *GetShaderState(ShaderObjectStage stage) const;
-    const vvl::ShaderObject *GetShaderStateIfValid(ShaderObjectStage stage) const;
+    VkShaderEXT GetShaderObject(ShaderObjectStage stage) const;
+    vvl::ShaderObject *GetShaderObjectState(ShaderObjectStage stage) const;
+    const vvl::ShaderObject *GetShaderObjectStateIfValid(ShaderObjectStage stage) const;
     // Return compute shader for compute pipeline, vertex or mesh shader for graphics
     const vvl::ShaderObject *GetFirstShader() const;
     bool HasShaderObjects() const;
-    bool IsValidShaderBound(ShaderObjectStage stage) const;
-    bool IsValidShaderOrNullBound(ShaderObjectStage stage) const;
-    std::vector<vvl::ShaderObject *> GetAllBoundGraphicsShaders();
-    bool IsAnyGraphicsShaderBound() const;
-    bool IsFragmentBound() const;
+    bool IsValidShaderObjectBound(ShaderObjectStage stage) const;
+    bool IsValidShaderObjectOrNullBound(ShaderObjectStage stage) const;
+    std::vector<vvl::ShaderObject *> GetAllBoundGraphicsShaderObjects();
+    bool IsStageBound(VkShaderStageFlagBits stage) const;
+    bool IsAnyGraphicsStageBound() const;
     VkShaderStageFlags GetAllActiveBoundStages() const;
     bool IsBoundSetCompatible(uint32_t set, const vvl::PipelineLayout &pipeline_layout) const;
     bool IsBoundSetCompatible(uint32_t set, const vvl::ShaderObject &shader_object_state) const;

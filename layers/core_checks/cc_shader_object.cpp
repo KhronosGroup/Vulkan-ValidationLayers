@@ -254,10 +254,6 @@ bool CoreChecks::ValidateCreateShadersMesh(const VkShaderCreateInfoEXT& create_i
 bool CoreChecks::ValidateCreateShadersSpirv(uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
                                             const Location& loc, chassis::ShaderObject& chassis_state) const {
     bool skip = false;
-    // If user has VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT, just skip all things related to creating the shader object
-    if (disabled[shader_validation]) {
-        return skip;
-    }
 
     struct Tesc {
         bool is_linked = false;
@@ -282,7 +278,19 @@ bool CoreChecks::ValidateCreateShadersSpirv(uint32_t createInfoCount, const VkSh
     ValidationCache* cache = CastFromHandle<ValidationCache*>(core_validation_cache);
 
     for (uint32_t i = 0; i < createInfoCount; ++i) {
+        // First validate all things that don't require valid SPIR-V
+        // this is found when using VK_EXT_shader_module_identifier
         const VkShaderCreateInfoEXT& create_info = pCreateInfos[i];
+        if (create_info.pSpecializationInfo) {
+            vku::safe_VkSpecializationInfo safe_specialization_info(create_info.pSpecializationInfo);
+            skip |= ValidateSpecializations(&safe_specialization_info, loc.dot(Field::pSpecializationInfo));
+        }
+
+        // If user disabled shader validation, just skip all things related to spir-v
+        if (disabled[shader_validation]) {
+            continue;
+        }
+
         // Will be empty if not VK_SHADER_CODE_TYPE_SPIRV_EXT
         const std::shared_ptr<spirv::Module> spirv = chassis_state.module_states[i];
 
@@ -575,21 +583,22 @@ bool CoreChecks::PreCallValidateGetShaderBinaryDataEXT(VkDevice device, VkShader
 bool CoreChecks::ValidateDrawShaderObjectNextStage(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
 
-    const auto& stages = last_bound_state.IsValidShaderBound(ShaderObjectStage::VERTEX)
+    const auto& stages = last_bound_state.IsValidShaderObjectBound(ShaderObjectStage::VERTEX)
                              ? vvl::span<const VkShaderStageFlagBits>(graphics_stages)
                              : vvl::span<const VkShaderStageFlagBits>(mesh_stages);
     VkShaderStageFlagBits previous_stage = VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
     for (const auto stage : stages) {
         const ShaderObjectStage shader_object_stage = VkShaderStageToShaderObjectStage(stage);
-        if (!last_bound_state.IsValidShaderBound(shader_object_stage)) {
+        if (!last_bound_state.IsValidShaderObjectBound(shader_object_stage)) {
             continue;
         }
         if (previous_stage != VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM) {
-            const auto previous_state = last_bound_state.GetShaderStateIfValid(VkShaderStageToShaderObjectStage(previous_stage));
+            const auto previous_state =
+                last_bound_state.GetShaderObjectStateIfValid(VkShaderStageToShaderObjectStage(previous_stage));
             ASSERT_AND_CONTINUE(previous_state);
             if ((previous_state->create_info.flags & VK_SHADER_CREATE_LINK_STAGE_BIT_EXT) == 0 &&
                 (previous_state->create_info.nextStage & stage) == 0) {
-                const auto state = last_bound_state.GetShaderStateIfValid(shader_object_stage);
+                const auto state = last_bound_state.GetShaderObjectStateIfValid(shader_object_stage);
                 const LogObjectList objlist(last_bound_state.cb_state.Handle(), previous_state->Handle(), state->Handle());
                 skip |= LogError(vuid.next_stage_10745, objlist, vuid.loc(),
                                  "The combination of graphic shader objects bound is invalid, because "
@@ -612,8 +621,8 @@ bool CoreChecks::ValidateDrawShaderObjectBoundShader(const LastBound& last_bound
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
 
-    if (!last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::VERTEX)) {
-        const bool tried_mesh = last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::MESH);
+    if (!last_bound_state.IsValidShaderObjectOrNullBound(ShaderObjectStage::VERTEX)) {
+        const bool tried_mesh = last_bound_state.IsValidShaderObjectOrNullBound(ShaderObjectStage::MESH);
         skip |= LogError(
             vuid.vertex_shader_08684, cb_state.Handle(), vuid.loc(),
             "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
@@ -621,38 +630,38 @@ bool CoreChecks::ValidateDrawShaderObjectBoundShader(const LastBound& last_bound
             tried_mesh ? " (Even if you are using a mesh shader, a VK_NULL_HANDLE must be bound to the vertex stage)" : "");
     }
     if (enabled_features.tessellationShader &&
-        !last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::TESSELLATION_CONTROL)) {
+        !last_bound_state.IsValidShaderObjectOrNullBound(ShaderObjectStage::TESSELLATION_CONTROL)) {
         skip |= LogError(vuid.tessellation_control_shader_08685, cb_state.Handle(), vuid.loc(),
                          "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
                          "VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT. (If the tessellationShader is enabled, the stage "
                          "needs to be provided, it can be bound with VK_NULL_HANDLE)");
     }
     if (enabled_features.tessellationShader &&
-        !last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::TESSELLATION_EVALUATION)) {
+        !last_bound_state.IsValidShaderObjectOrNullBound(ShaderObjectStage::TESSELLATION_EVALUATION)) {
         skip |= LogError(vuid.tessellation_evaluation_shader_08686, cb_state.Handle(), vuid.loc(),
                          "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
                          "VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT. (If the tessellationShader is enabled, the stage "
                          "needs to be provided, it can be bound with VK_NULL_HANDLE)");
     }
-    if (enabled_features.geometryShader && !last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::GEOMETRY)) {
+    if (enabled_features.geometryShader && !last_bound_state.IsValidShaderObjectOrNullBound(ShaderObjectStage::GEOMETRY)) {
         skip |= LogError(vuid.geometry_shader_08687, cb_state.Handle(), vuid.loc(),
                          "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
                          "VK_SHADER_STAGE_GEOMETRY_BIT. (If the geometryShader is enabled, the stage needs to be provided, it can "
                          "be bound with VK_NULL_HANDLE)");
     }
-    if (!last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::FRAGMENT)) {
+    if (!last_bound_state.IsValidShaderObjectOrNullBound(ShaderObjectStage::FRAGMENT)) {
         skip |= LogError(vuid.fragment_shader_08688, cb_state.Handle(), vuid.loc(),
                          "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
                          "VK_SHADER_STAGE_FRAGMENT_BIT (Even if you are trying to a vertex/mesh only draw, a VK_NULL_HANDLE must "
                          "be bound to the fragment stage)");
     }
-    if (enabled_features.taskShader && !last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::TASK)) {
+    if (enabled_features.taskShader && !last_bound_state.IsValidShaderObjectOrNullBound(ShaderObjectStage::TASK)) {
         skip |= LogError(vuid.task_shader_08689, cb_state.Handle(), vuid.loc(),
                          "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
                          "VK_SHADER_STAGE_TASK_BIT. (If the taskShader is enabled, the stage needs to be provided, it can be bound "
                          "with VK_NULL_HANDLE)");
     }
-    if (enabled_features.meshShader && !last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::MESH)) {
+    if (enabled_features.meshShader && !last_bound_state.IsValidShaderObjectOrNullBound(ShaderObjectStage::MESH)) {
         skip |= LogError(vuid.mesh_shader_08690, cb_state.Handle(), vuid.loc(),
                          "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
                          "VK_SHADER_STAGE_MESH_BIT. (If the meshShader is enabled, the stage needs to be provided, it can be bound "
@@ -700,13 +709,13 @@ bool CoreChecks::ValidateDrawShaderObjectLinking(const LastBound& last_bound_sta
         for (const auto& linked_shader : last_bound_state.shader_object_states[i]->linked_shaders) {
             bool found = false;
             for (uint32_t j = 0; j < kShaderObjectStageCount; ++j) {
-                if (linked_shader == last_bound_state.GetShader(static_cast<ShaderObjectStage>(j))) {
+                if (linked_shader == last_bound_state.GetShaderObject(static_cast<ShaderObjectStage>(j))) {
                     found = true;
                     break;
                 }
             }
             if (!found) {
-                const VkShaderEXT bound_shader = last_bound_state.GetShader(static_cast<ShaderObjectStage>(i));
+                const VkShaderEXT bound_shader = last_bound_state.GetShaderObject(static_cast<ShaderObjectStage>(i));
                 const auto missing_shader = Get<vvl::ShaderObject>(linked_shader);
                 const LogObjectList objlist(cb_state.Handle(), bound_shader, missing_shader->Handle());
                 skip |=
@@ -728,7 +737,7 @@ bool CoreChecks::ValidateDrawShaderObjectLinking(const LastBound& last_bound_sta
 
     for (const auto stage : graphics_stages) {
         if (skip) break;
-        consumer = last_bound_state.GetShaderState(VkShaderStageToShaderObjectStage(stage));
+        consumer = last_bound_state.GetShaderObjectState(VkShaderStageToShaderObjectStage(stage));
         if (!consumer) continue;
         if (next_stage != VK_SHADER_STAGE_ALL && consumer->create_info.stage != next_stage) {
             const LogObjectList objlist(cb_state.Handle(), consumer->Handle());
@@ -841,9 +850,9 @@ bool CoreChecks::ValidateDrawShaderObjectMesh(const LastBound& last_bound_state,
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
 
-    const VkShaderEXT vertex_shader_handle = last_bound_state.GetShader(ShaderObjectStage::VERTEX);
-    const VkShaderEXT task_shader_handle = last_bound_state.GetShader(ShaderObjectStage::TASK);
-    const VkShaderEXT mesh_shader_handle = last_bound_state.GetShader(ShaderObjectStage::MESH);
+    const VkShaderEXT vertex_shader_handle = last_bound_state.GetShaderObject(ShaderObjectStage::VERTEX);
+    const VkShaderEXT task_shader_handle = last_bound_state.GetShaderObject(ShaderObjectStage::TASK);
+    const VkShaderEXT mesh_shader_handle = last_bound_state.GetShaderObject(ShaderObjectStage::MESH);
     const bool has_vertex_shader = vertex_shader_handle != VK_NULL_HANDLE;
     const bool has_task_shader = task_shader_handle != VK_NULL_HANDLE;
     const bool has_mesh_shader = mesh_shader_handle != VK_NULL_HANDLE;
@@ -893,7 +902,7 @@ bool CoreChecks::ValidateDrawShaderObjectMesh(const LastBound& last_bound_state,
     }
 
     if (enabled_features.taskShader && enabled_features.meshShader && is_mesh_command && has_mesh_shader) {
-        if (const auto mesh_state = last_bound_state.GetShaderState(ShaderObjectStage::MESH)) {
+        if (const auto mesh_state = last_bound_state.GetShaderObjectState(ShaderObjectStage::MESH)) {
             const bool no_task_shader_flag = (mesh_state->create_info.flags & VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT) != 0;
 
             if (!no_task_shader_flag && !has_task_shader) {
@@ -908,7 +917,7 @@ bool CoreChecks::ValidateDrawShaderObjectMesh(const LastBound& last_bound_state,
                     FormatHandle(mesh_shader_handle).c_str(), FormatHandle(task_shader_handle).c_str());
             }
 
-            if (const vvl::ShaderObject* task_state = last_bound_state.GetShaderState(ShaderObjectStage::TASK)) {
+            if (const vvl::ShaderObject* task_state = last_bound_state.GetShaderObjectState(ShaderObjectStage::TASK)) {
                 if (task_state->spirv && mesh_state->entrypoint) {
                     skip |= ValidateTaskPayload(*task_state->spirv, *mesh_state->entrypoint, vuid.loc());
                 }
@@ -917,9 +926,9 @@ bool CoreChecks::ValidateDrawShaderObjectMesh(const LastBound& last_bound_state,
     }
 
     if (is_mesh_command) {
-        const VkShaderEXT tesc_shader_handle = last_bound_state.GetShader(ShaderObjectStage::TESSELLATION_CONTROL);
-        const VkShaderEXT tese_shader_handle = last_bound_state.GetShader(ShaderObjectStage::TESSELLATION_EVALUATION);
-        const VkShaderEXT geom_shader_handle = last_bound_state.GetShader(ShaderObjectStage::GEOMETRY);
+        const VkShaderEXT tesc_shader_handle = last_bound_state.GetShaderObject(ShaderObjectStage::TESSELLATION_CONTROL);
+        const VkShaderEXT tese_shader_handle = last_bound_state.GetShaderObject(ShaderObjectStage::TESSELLATION_EVALUATION);
+        const VkShaderEXT geom_shader_handle = last_bound_state.GetShaderObject(ShaderObjectStage::GEOMETRY);
         const bool has_tesc_shader = tesc_shader_handle != VK_NULL_HANDLE;
         const bool has_tese_shader = tese_shader_handle != VK_NULL_HANDLE;
         const bool has_geom_shader = geom_shader_handle != VK_NULL_HANDLE;

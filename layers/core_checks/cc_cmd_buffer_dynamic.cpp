@@ -278,8 +278,9 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
     const bool has_rasterization_pipeline = has_pipeline && !(last_bound_state.pipeline_state->active_shaders &
                                                               (VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT));
     // TODO - Spec clarification and testing still to prove pipeline can just check active stages only
-    const bool vertex_shader_bound = has_rasterization_pipeline || last_bound_state.IsValidShaderBound(ShaderObjectStage::VERTEX);
-    const bool fragment_shader_bound = has_pipeline || last_bound_state.IsValidShaderBound(ShaderObjectStage::FRAGMENT);
+    const bool vertex_shader_bound =
+        has_rasterization_pipeline || last_bound_state.IsValidShaderObjectBound(ShaderObjectStage::VERTEX);
+    const bool fragment_shader_bound = has_pipeline || last_bound_state.IsValidShaderObjectBound(ShaderObjectStage::FRAGMENT);
     const bool geom_shader_bound = (bound_stages & VK_SHADER_STAGE_GEOMETRY_BIT) != 0;
     const bool tesc_shader_bound = (bound_stages & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) != 0;
     const bool tese_shader_bound = (bound_stages & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) != 0;
@@ -849,6 +850,36 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
 bool CoreChecks::ValidateDrawDynamicStateVertex(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
 
+    if (!last_bound_state.IsStageBound(VK_SHADER_STAGE_VERTEX_BIT)) {
+        return skip;  // using mesh shaders
+    }
+
+    const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
+    if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE) &&
+        cb_state.dynamic_state_value.primitive_restart_enable) {
+        const VkPrimitiveTopology topology = last_bound_state.GetVertexInputAssemblerTopology();
+        if (!enabled_features.primitiveTopologyListRestart) {
+            if (IsValueIn(topology,
+                          {VK_PRIMITIVE_TOPOLOGY_POINT_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+                           VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY})) {
+                skip |=
+                    LogError(vuid.primitive_restart_list_09637, cb_state.Handle(), vuid.loc(),
+                             "%s is %s, the primitiveTopologyListRestart feature was not enabled, but "
+                             "vkCmdSetPrimitiveRestartEnable last set primitiveRestartEnable to VK_TRUE.",
+                             last_bound_state.DescribeVertexInputAssemblerTopology().c_str(), string_VkPrimitiveTopology(topology));
+            }
+        }
+        if (!enabled_features.primitiveTopologyPatchListRestart) {
+            if (topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
+                skip |= LogError(
+                    vuid.primitive_restart_patch_10909, cb_state.Handle(), vuid.loc(),
+                    "%s is VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, the primitiveTopologyPatchListRestart feature was not enabled, but "
+                    "vkCmdSetPrimitiveRestartEnable last set primitiveRestartEnable to VK_TRUE.",
+                    last_bound_state.DescribeVertexInputAssemblerTopology().c_str());
+            }
+        }
+    }
+
     const spirv::Module* vert_spirv_state = nullptr;
     const spirv::EntryPoint* vert_entrypoint = nullptr;
     if (last_bound_state.pipeline_state) {
@@ -858,14 +889,13 @@ bool CoreChecks::ValidateDrawDynamicStateVertex(const LastBound& last_bound_stat
                 vert_entrypoint = stage_state.entrypoint.get();
             }
         }
-    } else if (const auto& vertex_state = last_bound_state.GetShaderState(ShaderObjectStage::VERTEX)) {
+    } else if (const auto& vertex_state = last_bound_state.GetShaderObjectState(ShaderObjectStage::VERTEX)) {
         vert_spirv_state = vertex_state->spirv.get();
         vert_entrypoint = vertex_state->entrypoint.get();
     }
     if (!vert_spirv_state || !vert_entrypoint) {
         return skip;  // Mesh shader
     }
-    const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
 
     if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
         for (const auto* variable_ptr : vert_entrypoint->user_defined_interface_variables) {
@@ -935,31 +965,6 @@ bool CoreChecks::ValidateDrawDynamicStateVertex(const LastBound& last_bound_stat
         }
     }
 
-    if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE) &&
-        cb_state.dynamic_state_value.primitive_restart_enable) {
-        const VkPrimitiveTopology topology = last_bound_state.GetVertexInputAssemblerTopology();
-        if (!enabled_features.primitiveTopologyListRestart) {
-            if (IsValueIn(topology,
-                          {VK_PRIMITIVE_TOPOLOGY_POINT_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-                           VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY})) {
-                skip |=
-                    LogError(vuid.primitive_restart_list_09637, cb_state.Handle(), vuid.loc(),
-                             "%s is %s, the primitiveTopologyListRestart feature was not enabled, but "
-                             "vkCmdSetPrimitiveRestartEnable last set primitiveRestartEnable to VK_TRUE.",
-                             last_bound_state.DescribeVertexInputAssemblerTopology().c_str(), string_VkPrimitiveTopology(topology));
-            }
-        }
-        if (!enabled_features.primitiveTopologyPatchListRestart) {
-            if (topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
-                skip |= LogError(
-                    vuid.primitive_restart_patch_10909, cb_state.Handle(), vuid.loc(),
-                    "%s is VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, the primitiveTopologyPatchListRestart feature was not enabled, but "
-                    "vkCmdSetPrimitiveRestartEnable last set primitiveRestartEnable to VK_TRUE.",
-                    last_bound_state.DescribeVertexInputAssemblerTopology().c_str());
-            }
-        }
-    }
-
     // With VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY and dynamicPrimitiveTopologyUnrestricted (for pipeline) we have a runtime check that
     // the topology makes sense
     if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY)) {
@@ -1004,7 +1009,7 @@ bool CoreChecks::ValidateDrawDynamicStateFragment(const LastBound& last_bound_st
                 frag_spirv_state = stage_state.spirv_state.get();
             }
         }
-    } else if (const auto& fragment_state = last_bound_state.GetShaderState(ShaderObjectStage::FRAGMENT)) {
+    } else if (const auto& fragment_state = last_bound_state.GetShaderObjectState(ShaderObjectStage::FRAGMENT)) {
         frag_spirv_state = fragment_state->spirv.get();
     }
     if (!frag_spirv_state) {
@@ -1079,7 +1084,7 @@ bool CoreChecks::ValidateDrawDynamicStateValue(const LastBound& last_bound_state
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
     const auto pipeline_state = last_bound_state.pipeline_state;
     const bool has_pipeline = last_bound_state.pipeline_state != nullptr;
-    const bool fragment_shader_bound = has_pipeline || last_bound_state.IsValidShaderBound(ShaderObjectStage::FRAGMENT);
+    const bool fragment_shader_bound = has_pipeline || last_bound_state.IsValidShaderObjectBound(ShaderObjectStage::FRAGMENT);
 
     if (!last_bound_state.IsRasterizationDisabled()) {
         if (IsExtEnabled(extensions.vk_ext_discard_rectangles) && last_bound_state.IsDiscardRectangleEnable() &&
@@ -1270,7 +1275,7 @@ bool CoreChecks::ValidateDrawDynamicStateValue(const LastBound& last_bound_state
             if (has_pipeline) {
                 objlist.add(pipeline_state->Handle());
             } else {
-                objlist.add(last_bound_state.GetShader(ShaderObjectStage::FRAGMENT));
+                objlist.add(last_bound_state.GetShaderObject(ShaderObjectStage::FRAGMENT));
             }
             const char* vuid_string =
                 has_pipeline ? vuid.dynamic_alpha_to_coverage_component_08919 : vuid.alpha_component_word_08920;

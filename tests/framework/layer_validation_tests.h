@@ -379,7 +379,7 @@ class GpuAVRayTracingTest : public GpuAVTest, public RayTracingTest {};
 
 class ShaderObjectTest : public virtual VkLayerTest {
   public:
-    void InitBasicShaderObject();
+    void InitBasicShaderObject(void *instance_pnext = nullptr);
     void InitBasicMeshShaderObject(APIVersion target_api_version);
 
     // Many tests just need a basic vert/frag shader

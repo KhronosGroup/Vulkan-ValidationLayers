@@ -35,21 +35,6 @@
 
 using RangeGenerator = subresource_adapter::RangeGenerator;
 
-static ShaderObjectStage inline ConvertToShaderObjectStage(VkShaderStageFlagBits stage) {
-    if (stage == VK_SHADER_STAGE_VERTEX_BIT) return ShaderObjectStage::VERTEX;
-    if (stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) return ShaderObjectStage::TESSELLATION_CONTROL;
-    if (stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) return ShaderObjectStage::TESSELLATION_EVALUATION;
-    if (stage == VK_SHADER_STAGE_GEOMETRY_BIT) return ShaderObjectStage::GEOMETRY;
-    if (stage == VK_SHADER_STAGE_FRAGMENT_BIT) return ShaderObjectStage::FRAGMENT;
-    if (stage == VK_SHADER_STAGE_COMPUTE_BIT) return ShaderObjectStage::COMPUTE;
-    if (stage == VK_SHADER_STAGE_TASK_BIT_EXT) return ShaderObjectStage::TASK;
-    if (stage == VK_SHADER_STAGE_MESH_BIT_EXT) return ShaderObjectStage::MESH;
-
-    assert(false);
-
-    return ShaderObjectStage::LAST;
-}
-
 // Dynamic Rendering we know it is depth only, but for VkRenderPass, we need to check incase it is a stencil only attachment
 bool AttachmentInfo::IsDepth() const {
     return type == Type::Depth ||
@@ -2122,7 +2107,7 @@ bool CommandBuffer::HasExternalFormatResolveAttachment() const {
 
 void CommandBuffer::BindShader(VkShaderStageFlagBits shader_stage, vvl::ShaderObject *shader_object_state) {
     auto &last_bound_state = lastBound[ConvertStageToVvlBindPoint(shader_stage)];
-    const auto stage_index = static_cast<uint32_t>(ConvertToShaderObjectStage(shader_stage));
+    const auto stage_index = static_cast<uint32_t>(VkShaderStageToShaderObjectStage(shader_stage));
     last_bound_state.shader_object_bound[stage_index] = true;
     last_bound_state.shader_object_states[stage_index] = shader_object_state;
 }
@@ -2153,7 +2138,7 @@ LogObjectList CommandBuffer::GetObjectList(VkShaderStageFlagBits stage) const {
 
     if (pipeline_state) {
         objlist.add(pipeline_state->Handle());
-    } else if (VkShaderEXT shader = last_bound.GetShader(ConvertToShaderObjectStage(stage))) {
+    } else if (VkShaderEXT shader = last_bound.GetShaderObject(VkShaderStageToShaderObjectStage(stage))) {
         objlist.add(shader);
     }
     return objlist;
@@ -2168,30 +2153,30 @@ LogObjectList CommandBuffer::GetObjectList(VkPipelineBindPoint pipeline_bind_poi
     if (pipeline_state) {
         objlist.add(pipeline_state->Handle());
     } else if (pipeline_bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
-        if (VkShaderEXT shader = last_bound.GetShader(ShaderObjectStage::COMPUTE)) {
+        if (VkShaderEXT shader = last_bound.GetShaderObject(ShaderObjectStage::COMPUTE)) {
             objlist.add(shader);
         }
     } else if (pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
         // If using non-compute, need to check all graphics stages
-        if (VkShaderEXT shader = last_bound.GetShader(ShaderObjectStage::VERTEX)) {
+        if (VkShaderEXT shader = last_bound.GetShaderObject(ShaderObjectStage::VERTEX)) {
             objlist.add(shader);
         }
-        if (VkShaderEXT shader = last_bound.GetShader(ShaderObjectStage::TESSELLATION_CONTROL)) {
+        if (VkShaderEXT shader = last_bound.GetShaderObject(ShaderObjectStage::TESSELLATION_CONTROL)) {
             objlist.add(shader);
         }
-        if (VkShaderEXT shader = last_bound.GetShader(ShaderObjectStage::TESSELLATION_EVALUATION)) {
+        if (VkShaderEXT shader = last_bound.GetShaderObject(ShaderObjectStage::TESSELLATION_EVALUATION)) {
             objlist.add(shader);
         }
-        if (VkShaderEXT shader = last_bound.GetShader(ShaderObjectStage::GEOMETRY)) {
+        if (VkShaderEXT shader = last_bound.GetShaderObject(ShaderObjectStage::GEOMETRY)) {
             objlist.add(shader);
         }
-        if (VkShaderEXT shader = last_bound.GetShader(ShaderObjectStage::FRAGMENT)) {
+        if (VkShaderEXT shader = last_bound.GetShaderObject(ShaderObjectStage::FRAGMENT)) {
             objlist.add(shader);
         }
-        if (VkShaderEXT shader = last_bound.GetShader(ShaderObjectStage::MESH)) {
+        if (VkShaderEXT shader = last_bound.GetShaderObject(ShaderObjectStage::MESH)) {
             objlist.add(shader);
         }
-        if (VkShaderEXT shader = last_bound.GetShader(ShaderObjectStage::TASK)) {
+        if (VkShaderEXT shader = last_bound.GetShaderObject(ShaderObjectStage::TASK)) {
             objlist.add(shader);
         }
     }

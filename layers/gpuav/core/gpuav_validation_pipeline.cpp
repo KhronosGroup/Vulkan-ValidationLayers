@@ -148,9 +148,9 @@ void RestorablePipelineState::Create(CommandBufferSubState &cb_state, VkPipeline
     } else {
         assert(shader_objects_.empty());
         if (vvl_bind_point == vvl::BindPointGraphics) {
-            shader_objects_ = last_bound.GetAllBoundGraphicsShaders();
+            shader_objects_ = last_bound.GetAllBoundGraphicsShaderObjects();
         } else if (vvl_bind_point == vvl::BindPointCompute) {
-            auto compute_shader = last_bound.GetShaderState(ShaderObjectStage::COMPUTE);
+            auto compute_shader = last_bound.GetShaderObjectState(ShaderObjectStage::COMPUTE);
             if (compute_shader) {
                 shader_objects_.emplace_back(compute_shader);
             }
