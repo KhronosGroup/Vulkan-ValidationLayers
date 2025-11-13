@@ -1335,7 +1335,7 @@ bool Device::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCa
                                        "UNASSIGNED-VkShaderModuleValidationCacheCreateInfoEXT-validationCache-parent",
                                        pNext_loc.dot(Field::validationCache));
             }
-            skip |= ValidateObject(pCreateInfos[index0].layout, kVulkanObjectTypePipelineLayout, false,
+            skip |= ValidateObject(pCreateInfos[index0].layout, kVulkanObjectTypePipelineLayout, false, false,
                                    "VUID-VkComputePipelineCreateInfo-layout-parameter",
                                    "VUID-VkComputePipelineCreateInfo-commonparent", index0_loc.dot(Field::layout));
             if ((pCreateInfos[index0].flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) && (pCreateInfos[index0].basePipelineIndex == -1))
@@ -1366,20 +1366,6 @@ bool Device::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCa
     }
 
     return skip;
-}
-
-void Device::PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                                  const VkComputePipelineCreateInfo* pCreateInfos,
-                                                  const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                  const RecordObject& record_obj) {
-    if (VK_ERROR_VALIDATION_FAILED_EXT == record_obj.result) return;
-    if (pPipelines) {
-        for (uint32_t index = 0; index < createInfoCount; index++) {
-            if (!pPipelines[index]) continue;
-            tracker.CreateObject(pPipelines[index], kVulkanObjectTypePipeline, pAllocator,
-                                 record_obj.location.dot(Field::pPipelines, index), device);
-        }
-    }
 }
 
 bool Device::PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator,
@@ -1413,13 +1399,6 @@ bool Device::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipeli
     }
 
     return skip;
-}
-
-void Device::PostCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
-                                                const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout,
-                                                const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
-    tracker.CreateObject(*pPipelineLayout, kVulkanObjectTypePipelineLayout, pAllocator, record_obj.location, device);
 }
 
 bool Device::PreCallValidateDestroyPipelineLayout(VkDevice device, VkPipelineLayout pipelineLayout,
@@ -1483,13 +1462,6 @@ void Device::PreCallRecordDestroySampler(VkDevice device, VkSampler sampler, con
     RecordDestroyObject(sampler, kVulkanObjectTypeSampler, record_obj.location);
 }
 
-void Device::PostCallRecordCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
-                                                     const VkAllocationCallbacks* pAllocator, VkDescriptorSetLayout* pSetLayout,
-                                                     const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
-    tracker.CreateObject(*pSetLayout, kVulkanObjectTypeDescriptorSetLayout, pAllocator, record_obj.location, device);
-}
-
 bool Device::PreCallValidateDestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout,
                                                        const VkAllocationCallbacks* pAllocator,
                                                        const ErrorObject& error_obj) const {
@@ -1526,7 +1498,7 @@ bool Device::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, VkPip
     bool skip = false;
     // Checked by chassis: commandBuffer: "VUID-vkCmdBindPipeline-commandBuffer-parameter"
     // Checked by chassis: commandBuffer: "VUID-vkCmdBindPipeline-commonparent"
-    skip |= ValidateObject(pipeline, kVulkanObjectTypePipeline, false, "VUID-vkCmdBindPipeline-pipeline-parameter",
+    skip |= ValidateObject(pipeline, kVulkanObjectTypePipeline, false, false, "VUID-vkCmdBindPipeline-pipeline-parameter",
                            "VUID-vkCmdBindPipeline-commonparent", error_obj.location.dot(Field::pipeline));
 
     return skip;
@@ -5798,7 +5770,7 @@ bool Device::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipel
                     }
                 }
             }
-            skip |= ValidateObject(pCreateInfos[index0].layout, kVulkanObjectTypePipelineLayout, false,
+            skip |= ValidateObject(pCreateInfos[index0].layout, kVulkanObjectTypePipelineLayout, false, false,
                                    "VUID-VkRayTracingPipelineCreateInfoNV-layout-parameter",
                                    "VUID-VkRayTracingPipelineCreateInfoNV-commonparent", index0_loc.dot(Field::layout));
             if ((pCreateInfos[index0].flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) && (pCreateInfos[index0].basePipelineIndex == -1))
@@ -5809,20 +5781,6 @@ bool Device::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipel
     }
 
     return skip;
-}
-
-void Device::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                                       const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
-                                                       const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                       const RecordObject& record_obj) {
-    if (VK_ERROR_VALIDATION_FAILED_EXT == record_obj.result) return;
-    if (pPipelines) {
-        for (uint32_t index = 0; index < createInfoCount; index++) {
-            if (!pPipelines[index]) continue;
-            tracker.CreateObject(pPipelines[index], kVulkanObjectTypePipeline, pAllocator,
-                                 record_obj.location.dot(Field::pPipelines, index), device);
-        }
-    }
 }
 
 bool Device::PreCallValidateGetRayTracingShaderGroupHandlesKHR(VkDevice device, VkPipeline pipeline, uint32_t firstGroup,
@@ -7947,7 +7905,7 @@ bool Device::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkDefer
     if (pCreateInfos) {
         for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pCreateInfos, index0);
-            skip |= ValidateObject(pCreateInfos[index0].layout, kVulkanObjectTypePipelineLayout, false,
+            skip |= ValidateObject(pCreateInfos[index0].layout, kVulkanObjectTypePipelineLayout, false, false,
                                    "VUID-VkDataGraphPipelineCreateInfoARM-layout-parameter",
                                    "UNASSIGNED-VkDataGraphPipelineCreateInfoARM-layout-parent", index0_loc.dot(Field::layout));
             if ([[maybe_unused]] auto pNext =
@@ -7962,21 +7920,6 @@ bool Device::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkDefer
     }
 
     return skip;
-}
-
-void Device::PostCallRecordCreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                                       VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                                       const VkDataGraphPipelineCreateInfoARM* pCreateInfos,
-                                                       const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                       const RecordObject& record_obj) {
-    if (VK_ERROR_VALIDATION_FAILED_EXT == record_obj.result) return;
-    if (pPipelines) {
-        for (uint32_t index = 0; index < createInfoCount; index++) {
-            if (!pPipelines[index]) continue;
-            tracker.CreateObject(pPipelines[index], kVulkanObjectTypePipeline, pAllocator,
-                                 record_obj.location.dot(Field::pPipelines, index), device);
-        }
-    }
 }
 
 bool Device::PreCallValidateCreateDataGraphPipelineSessionARM(VkDevice device,
