@@ -1130,7 +1130,8 @@ std::string string_VideoProfileDesc(const vvl::VideoProfileDesc &profile) {
     };
 
     ss << string_video_component_bit_depth(internal_profile.base.lumaBitDepth);
-    if (internal_profile.base.lumaBitDepth != internal_profile.base.chromaBitDepth) {
+    if (internal_profile.base.chromaSubsampling != VK_VIDEO_CHROMA_SUBSAMPLING_MONOCHROME_BIT_KHR &&
+        internal_profile.base.lumaBitDepth != internal_profile.base.chromaBitDepth) {
         ss << ":" << string_video_component_bit_depth(internal_profile.base.chromaBitDepth);
     }
     ss << "-bit) ";
