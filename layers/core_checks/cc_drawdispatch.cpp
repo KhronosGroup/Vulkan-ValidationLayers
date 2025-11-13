@@ -581,9 +581,8 @@ bool CoreChecks::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffe
         if ((offset + sizeof(VkDispatchIndirectCommand)) > indirect_buffer_state->create_info.size) {
             skip |= LogError("VUID-vkCmdDispatchIndirect-offset-00407", cb_state.GetObjectList(VK_SHADER_STAGE_COMPUTE_BIT),
                              error_obj.location,
-                             "The (offset + sizeof(VkDrawIndexedIndirectCommand)) (%" PRIu64
-                             ")  is greater than the "
-                             "size of the buffer (%" PRIu64 ").",
+                             "The (offset + sizeof(VkDispatchIndirectCommand)) (%" PRIu64
+                             ") is greater than the size of the buffer (%" PRIu64 ").",
                              offset + sizeof(VkDispatchIndirectCommand), indirect_buffer_state->create_info.size);
         }
     }
