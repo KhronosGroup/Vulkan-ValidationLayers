@@ -105,6 +105,7 @@ class Module {
     // Helpers
     bool HasCapability(spv::Capability capability);
     void AddCapability(spv::Capability capability);
+    void RemoveCapability(spv::Capability capability);
     void AddExtension(const char* extension);
     void AddDebugName(const char* name, uint32_t id);
     void AddDecoration(uint32_t target_id, spv::Decoration decoration, const std::vector<uint32_t>& operands);

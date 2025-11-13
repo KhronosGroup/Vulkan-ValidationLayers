@@ -14,6 +14,7 @@
  */
 
 #include "descriptor_class_general_buffer_pass.h"
+#include "generated/device_features.h"
 #include "generated/spirv_grammar_helper.h"
 #include "containers/container_utils.h"
 #include "state_tracker/shader_instruction.h"
@@ -32,13 +33,24 @@ const static OfflineModule kOfflineModule = {instrumentation_descriptor_class_ge
 
 const static OfflineFunction kOfflineFunction = {"inst_descriptor_class_general_buffer",
                                                  instrumentation_descriptor_class_general_buffer_comp_function_0_offset};
+const static OfflineFunction kOfflineFunctionCoopMat = {"inst_descriptor_class_general_buffer_coop_mat",
+                                                        instrumentation_descriptor_class_general_buffer_comp_function_1_offset};
 
-DescriptorClassGeneralBufferPass::DescriptorClassGeneralBufferPass(Module& module) : Pass(module, kOfflineModule) {
+DescriptorClassGeneralBufferPass::DescriptorClassGeneralBufferPass(Module& module)
+    : Pass(module, kOfflineModule),
+      has_robustness(module.enabled_features_.robustBufferAccess),
+      has_coop_mat_robustness(module.enabled_features_.cooperativeMatrixRobustBufferAccess) {
     module.use_bda_ = true;
 }
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
-uint32_t DescriptorClassGeneralBufferPass::GetLinkFunctionId() { return GetLinkFunction(link_function_id_, kOfflineFunction); }
+uint32_t DescriptorClassGeneralBufferPass::GetLinkFunctionId(bool is_coop_mat) {
+    if (is_coop_mat) {
+        return GetLinkFunction(link_coop_mat_function_id_, kOfflineFunctionCoopMat);
+    } else {
+        return GetLinkFunction(link_function_id_, kOfflineFunction);
+    }
+}
 
 void DescriptorClassGeneralBufferPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
     assert(!meta.access_chain_insts.empty());
@@ -46,7 +58,7 @@ void DescriptorClassGeneralBufferPass::CreateFunctionCall(BasicBlock& block, Ins
     const uint32_t descriptor_index_id = CastToUint32(meta.descriptor_index_id, block, inst_it);  // might be int32
 
     const uint32_t descriptor_offset_id =
-        GetLastByte(*meta.descriptor_type, meta.access_chain_insts, block, inst_it);  // Get Last Byte Index
+        GetLastByte(*meta.descriptor_type, meta.access_chain_insts, meta.coop_mat_access, block, inst_it);
 
     BindingLayout binding_layout = module_.set_index_to_bindings_layout_lut_[meta.descriptor_set][meta.descriptor_binding];
     const Constant& binding_layout_offset = module_.type_manager_.GetConstantUInt32(binding_layout.start);
@@ -55,7 +67,8 @@ void DescriptorClassGeneralBufferPass::CreateFunctionCall(BasicBlock& block, Ins
     const uint32_t inst_position_id = module_.type_manager_.CreateConstantUInt32(inst_position).Id();
 
     const uint32_t function_result = module_.TakeNextId();
-    const uint32_t function_def = GetLinkFunctionId();
+    const bool is_coop_mat = meta.coop_mat_access.used;
+    const uint32_t function_def = GetLinkFunctionId(is_coop_mat);
     const uint32_t void_type = module_.type_manager_.GetTypeVoid().Id();
 
     block.CreateInstruction(spv::OpFunctionCall,
@@ -70,7 +83,13 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
                                                                InstructionMeta& meta) {
     const uint32_t opcode = inst.Opcode();
 
-    if (!IsValueIn(spv::Op(opcode), {spv::OpLoad, spv::OpStore, spv::OpAtomicStore, spv::OpAtomicLoad, spv::OpAtomicExchange})) {
+    if (!IsValueIn(spv::Op(opcode), {spv::OpLoad, spv::OpStore, spv::OpAtomicStore, spv::OpAtomicLoad, spv::OpAtomicExchange,
+                                     spv::OpCooperativeMatrixLoadKHR, spv::OpCooperativeMatrixStoreKHR})) {
+        return false;
+    }
+
+    bool is_coop_mat = opcode == spv::OpCooperativeMatrixLoadKHR || opcode == spv::OpCooperativeMatrixStoreKHR;
+    if ((is_coop_mat && has_coop_mat_robustness) || (!is_coop_mat && has_robustness)) {
         return false;
     }
 
@@ -147,8 +166,14 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
         return false;
     }
 
+    // The way CoopMat works, we need to get the size here as the type is not found in the access chains
+    if (is_coop_mat) {
+        meta.coop_mat_access = GetCooperativeMatrixAccess(inst, function);
+    }
+
     if (!module_.settings_.safe_mode) {
-        meta.access_offset = FindOffsetInStruct(meta.descriptor_id, is_descriptor_array, meta.access_chain_insts);
+        meta.access_offset =
+            FindOffsetInStruct(meta.descriptor_id, &meta.coop_mat_access, is_descriptor_array, meta.access_chain_insts);
     }
 
     // Save information to be used to make the Function

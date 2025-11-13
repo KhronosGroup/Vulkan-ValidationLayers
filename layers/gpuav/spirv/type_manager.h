@@ -183,6 +183,7 @@ class TypeManager {
     std::vector<const Type*> sampled_image_types_;
     std::vector<const Type*> array_types_;
     std::vector<const Type*> runtime_array_types_;
+    std::vector<const Type*> coop_mat_types_;
     std::vector<const Type*> pointer_types_;
     std::vector<const Type*> forward_pointer_types_;
     std::vector<const Type*> function_types_;

@@ -57,7 +57,8 @@ static const VulkanTypedHandle kNoObjects;
 void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceCreateInfo *modified_create_info,
                            const Location &loc) {
     // Query things here to make sure we don't attempt to add a feature this is just not supported
-    VkPhysicalDeviceRobustness2FeaturesKHR supported_robustness2_feature = vku::InitStructHelper();
+    VkPhysicalDeviceCooperativeMatrixFeaturesKHR supported_coop_mat_feature = vku::InitStructHelper();
+    VkPhysicalDeviceRobustness2FeaturesKHR supported_robustness2_feature = vku::InitStructHelper(&supported_coop_mat_feature);
     VkPhysicalDevice8BitStorageFeatures supported_8bit_feature = vku::InitStructHelper(&supported_robustness2_feature);
     VkPhysicalDeviceBufferDeviceAddressFeatures supported_bda_feature = vku::InitStructHelper(&supported_8bit_feature);
     VkPhysicalDeviceScalarBlockLayoutFeatures supported_scalar_feature = vku::InitStructHelper(&supported_bda_feature);
@@ -352,6 +353,20 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
                     new_robust_buffer_2_feature.robustImageAccess2 = VK_TRUE;
                 }
                 vku::AddToPnext(*modified_create_info, new_robust_buffer_2_feature);
+            }
+        }
+    }
+
+    if (gpuav_settings.force_on_robustness && supported_coop_mat_feature.cooperativeMatrixRobustBufferAccess) {
+        // Because they need to have VkPhysicalDeviceCooperativeMatrixFeaturesKHR::cooperativeMatrix to even use this extensions, we
+        // don't add it, we only need to update the other feature bit for them
+        if (auto *coop_mat_feature = const_cast<VkPhysicalDeviceCooperativeMatrixFeaturesKHR *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceCooperativeMatrixFeaturesKHR>(modified_create_info))) {
+            if (!coop_mat_feature->cooperativeMatrixRobustBufferAccess) {
+                AdjustmentWarning(
+                    kNoObjects, loc,
+                    "Forcing VkPhysicalDeviceCooperativeMatrixFeaturesKHR::cooperativeMatrixRobustBufferAccess to VK_TRUE");
+                coop_mat_feature->cooperativeMatrixRobustBufferAccess = VK_TRUE;
             }
         }
     }

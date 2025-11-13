@@ -100,6 +100,9 @@ const Type& TypeManager::AddType(std::unique_ptr<Instruction> new_inst, SpvType 
         case SpvType::kFunction:
             function_types_.push_back(new_type);
             break;
+        case SpvType::kCooperativeMatrixKHR:
+            coop_mat_types_.push_back(new_type);
+            break;
         case SpvType::kStruct:
             break;  // don't track structs currently
         case SpvType::kCooperativeVectorNV:

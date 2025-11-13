@@ -18,6 +18,9 @@
 
 #version 450
 #extension GL_GOOGLE_include_directive : enable
+// Required to be supported in Vulkan 1.1
+#extension GL_KHR_shader_subgroup_basic : enable
+
 #include "common_descriptor_sets.h"
 #include "error_payload.h"
 
@@ -62,5 +65,26 @@ void inst_descriptor_class_general_buffer(const uint inst_offset, const uint des
                             byte_offset,
                             resource_size
                         );
+    }
+}
+
+// Same thing as above, just uses a different SubCode and dedicated function name and using subgroupElect
+void inst_descriptor_class_general_buffer_coop_mat(const uint inst_offset, const uint desc_set, const uint desc_index, const uint byte_offset, const uint binding_layout_offset) {
+    // CoopMat is done (currently) at a subgroup level, so if 1 thread is wrong, by definition the subgroup is all invalid.
+    // To not spam the user, report only 1 error per subgroup
+    if (subgroupElect()) {
+        DescriptorSetType descriptor_set_type = gpuav.descriptor_set_types[desc_set];
+        const uint global_descriptor_index = binding_layout_offset + desc_index;
+        // check that the offset is in bounds
+        uint resource_size = descriptor_set_type.data[global_descriptor_index].y;
+        if (byte_offset >= resource_size) {
+            error_payload = ErrorPayload(
+                                inst_offset,
+                                SpecConstantLinkShaderId | (kErrorGroupInstDescriptorClass << kErrorGroupShift) | (kErrorSubCodeDescriptorClassGeneralBufferCoopMatBounds << kErrorSubCodeShift),
+                                (desc_set << kInstDescriptorIndexingSetShift) | global_descriptor_index,
+                                byte_offset,
+                                resource_size
+                            );
+        }
     }
 }

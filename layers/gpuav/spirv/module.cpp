@@ -269,6 +269,16 @@ void Module::AddCapability(spv::Capability capability) {
     }
 }
 
+void Module::RemoveCapability(spv::Capability capability) {
+    for (auto it = capabilities_.begin(); it != capabilities_.end();) {
+        if (it->get()->Word(1) == capability) {
+            it = capabilities_.erase(it);
+            return;
+        } else {
+            ++it;
+        }
+    }
+}
 void Module::AddExtension(const char* extension) {
     std::vector<uint32_t> words;
     StringToSpirv(extension, words);
@@ -771,6 +781,10 @@ void Module::PostProcess() {
     if (header_.version == spirv_version_1_0) {
         // SPV_KHR_storage_buffer_storage_class is needed, but glslang removes it from linking functions
         AddExtension("SPV_KHR_storage_buffer_storage_class");
+
+        // Subgroups where added in Vulkan 1.1, so SPIR-V 1.0 can't use them
+        // This is a bad hack around for someone using a SPIR-V 1.0
+        RemoveCapability(spv::CapabilityGroupNonUniform);
     }
 }
 

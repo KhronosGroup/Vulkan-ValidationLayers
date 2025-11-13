@@ -15,7 +15,9 @@
 #pragma once
 
 #include <stdint.h>
+#include <cstdint>
 #include <spirv/unified1/spirv.hpp>
+#include "cooperative_matrix.h"
 #include "function_basic_block.h"
 #include "link.h"
 #include "containers/custom_containers.h"
@@ -62,10 +64,12 @@ class Pass {
     const Instruction* GetMemberDecoration(uint32_t id, uint32_t member_index, spv::Decoration decoration) const;
 
     uint32_t FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride = 0, bool col_major = false, bool in_matrix = false) const;
-    uint32_t GetLastByte(const Type& descriptor_type, const std::vector<const Instruction*>& access_chain_insts, BasicBlock& block,
-                         InstructionIt* inst_it);
-    uint32_t FindOffsetInStruct(uint32_t struct_id, bool is_descriptor_array,
+    // Currently only used in the General Buffer OOB check, put here so it can be adapted for general use if needed
+    uint32_t GetLastByte(const Type& descriptor_type, const std::vector<const Instruction*>& access_chain_insts,
+                         const CooperativeMatrixAccess& coop_mat_access, BasicBlock& block, InstructionIt* inst_it);
+    uint32_t FindOffsetInStruct(uint32_t struct_id, const CooperativeMatrixAccess* coop_mat_access, bool is_descriptor_array,
                                 const std::vector<const Instruction*>& access_chain_insts) const;
+    CooperativeMatrixAccess GetCooperativeMatrixAccess(const Instruction& inst, const Function& function) const;
 
     // Generate SPIR-V needed to help convert things to be uniformly uint32_t
     // If no inst_it is passed in, any new instructions will be added to end of the Block
