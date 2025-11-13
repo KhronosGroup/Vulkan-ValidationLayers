@@ -1255,7 +1255,7 @@ TEST_F(NegativeQuery, PerformanceQueryIntel) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeQuery, PoolInUseDestroyedSignaled) {
+TEST_F(NegativeQuery, PoolInUseDestroyed) {
     TEST_DESCRIPTION("Delete in-use query pool.");
 
     RETURN_IF_SKIP(Init());

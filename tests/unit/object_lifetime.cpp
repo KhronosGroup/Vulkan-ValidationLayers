@@ -632,7 +632,7 @@ TEST_F(NegativeObjectLifetime, FramebufferAttachmentMemoryFreed) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeObjectLifetime, DescriptorPoolInUseDestroyedSignaled) {
+TEST_F(NegativeObjectLifetime, DescriptorPoolInUseDestroyed) {
     TEST_DESCRIPTION("Delete a DescriptorPool with a DescriptorSet that is in use.");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -680,7 +680,7 @@ TEST_F(NegativeObjectLifetime, DescriptorPoolInUseDestroyedSignaled) {
     // TODO : It seems Validation layers think ds_pool was already destroyed, even though it wasn't?
 }
 
-TEST_F(NegativeObjectLifetime, FramebufferInUseDestroyedSignaled) {
+TEST_F(NegativeObjectLifetime, FramebufferInUseDestroyed) {
     TEST_DESCRIPTION("Delete in-use framebuffer.");
     RETURN_IF_SKIP(Init());
     VkFormatProperties format_properties;
@@ -763,7 +763,7 @@ TEST_F(NegativeObjectLifetime, PushDescriptorUniformDestroySignaled) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeObjectLifetime, FramebufferImageInUseDestroyedSignaled) {
+TEST_F(NegativeObjectLifetime, FramebufferImageInUseDestroyed) {
     TEST_DESCRIPTION("Delete in-use image that's child of framebuffer.");
     RETURN_IF_SKIP(Init());
 
@@ -797,7 +797,7 @@ TEST_F(NegativeObjectLifetime, FramebufferImageInUseDestroyedSignaled) {
     fb.Destroy();
 }
 
-TEST_F(NegativeObjectLifetime, EventInUseDestroyedSignaled) {
+TEST_F(NegativeObjectLifetime, EventInUseDestroyed) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -816,11 +816,7 @@ TEST_F(NegativeObjectLifetime, EventInUseDestroyedSignaled) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeObjectLifetime, InUseDestroyedSignaled) {
-    TEST_DESCRIPTION(
-        "Use vkCmdExecuteCommands with invalid state in primary and secondary command buffers. Delete objects that are in use. "
-        "Call VkQueueSubmit with an event that has been deleted.");
-
+TEST_F(NegativeObjectLifetime, MiscInUseDestroyed) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -884,7 +880,7 @@ TEST_F(NegativeObjectLifetime, InUseDestroyedSignaled) {
     vk::DestroyEvent(device(), event, nullptr);
 }
 
-TEST_F(NegativeObjectLifetime, PipelineInUseDestroyedSignaled) {
+TEST_F(NegativeObjectLifetime, PipelineInUseDestroyed) {
     TEST_DESCRIPTION("Delete in-use pipeline.");
 
     RETURN_IF_SKIP(Init());
@@ -920,7 +916,7 @@ TEST_F(NegativeObjectLifetime, PipelineInUseDestroyedSignaled) {
     vk::DestroyPipeline(*m_device, delete_this_pipeline, nullptr);
 }
 
-TEST_F(NegativeObjectLifetime, ImageViewInUseDestroyedSignaled) {
+TEST_F(NegativeObjectLifetime, ImageViewInUseDestroyed) {
     TEST_DESCRIPTION("Delete in-use imageView.");
 
     RETURN_IF_SKIP(Init());
@@ -976,7 +972,7 @@ TEST_F(NegativeObjectLifetime, ImageViewInUseDestroyedSignaled) {
     vk::DestroySampler(device(), sampler, nullptr);
 }
 
-TEST_F(NegativeObjectLifetime, BufferViewInUseDestroyedSignaled) {
+TEST_F(NegativeObjectLifetime, BufferViewInUseDestroyed) {
     TEST_DESCRIPTION("Delete in-use bufferView.");
 
     RETURN_IF_SKIP(Init());
@@ -1039,7 +1035,7 @@ TEST_F(NegativeObjectLifetime, BufferViewInUseDestroyedSignaled) {
     vk::DestroyBufferView(device(), view, NULL);
 }
 
-TEST_F(NegativeObjectLifetime, SamplerInUseDestroyedSignaled) {
+TEST_F(NegativeObjectLifetime, SamplerInUseDestroyed) {
     TEST_DESCRIPTION("Delete in-use sampler.");
 
     RETURN_IF_SKIP(Init());
