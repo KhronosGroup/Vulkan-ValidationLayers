@@ -20,6 +20,7 @@
 #include "object_lifetime_validation.h"
 #include "chassis/dispatch_object.h"
 #include "containers/small_vector.h"
+#include "containers/span.h"
 
 namespace object_lifetimes {
 
@@ -56,19 +57,91 @@ VulkanTypedHandle ObjTrackStateTypedHandle(const ObjTrackState &track_state) {
     return typed_handle;
 }
 
+void ObjTrackState::MakePoisonous(Tracker &tracker, VulkanTypedHandle poisoner,
+                                  const std::vector<VulkanTypedHandle> &parent_poison_chain) {
+    if ((status & OBJSTATUS_POISONED) != 0) {
+        return;  // Already poisoned, once is enough
+    }
+
+    status |= OBJSTATUS_POISONED;
+
+    assert(poison_chain.empty());
+    poison_chain.insert(poison_chain.begin(), parent_poison_chain.begin(), parent_poison_chain.end());
+    poison_chain.emplace_back(poisoner);
+
+    // Stop propagating poisoness if current object is pipeline layout and maintenance4 is enabled.
+    // Pipeline layout itself remains poisoned (you can't use it) but all the objects that used it
+    // upon creation are still valid (according to maintenance4).
+    if (object_type == kVulkanObjectTypePipelineLayout && tracker.IsMaintenance4Enabled()) {
+        return;
+    }
+
+    // Propagate poisoness to the users of this object
+    for (VulkanTypedHandle poisonee : objects_to_poison) {
+        if (auto poisonee_state = tracker.GetObjectState(poisonee)) {
+            poisonee_state->MakePoisonous(tracker, ObjTrackStateTypedHandle(*this), poison_chain);
+        }
+    }
+}
+
+std::shared_ptr<ObjTrackState> Tracker::GetObjectState(VulkanTypedHandle typed_handle) const {
+    auto it = object_map[typed_handle.type].find(typed_handle.handle);
+    if (it != object_map[typed_handle.type].end()) {
+        return it->second;
+    }
+    return {};
+}
+
 bool Tracker::TracksObject(uint64_t object_handle, VulkanObjectType object_type) const {
-    // Look for object in object map
     return object_map[object_type].contains(object_handle);
 }
 
-bool Tracker::CheckObjectValidity(uint64_t object_handle, VulkanObjectType object_type, const char *invalid_handle_vuid,
-                                   const char *wrong_parent_vuid, const Location &loc, VulkanObjectType parent_type) const {
-    constexpr bool skip = false;
+void Tracker::RegisterPoisonPair(ObjTrackState &poisonee, VulkanTypedHandle poisoner) {
+    if (auto poisoner_state = GetObjectState(poisoner)) {
+        poisoner_state->objects_to_poison.emplace(ObjTrackStateTypedHandle(poisonee));
+        poisonee.poisoners.emplace_back(poisoner);
+    }
+}
 
-    // If this instance of lifetime validation tracks the object, report success
-    if (TracksObject(object_handle, object_type)) {
+bool Tracker::CheckPoisoning(const ObjTrackState &object_state, const char *vuid, const Location &loc) const {
+    bool skip = false;
+    if ((object_state.status & OBJSTATUS_POISONED) != 0) {
+        const VulkanTypedHandle typed_handle = ObjTrackStateTypedHandle(object_state);
+        LogObjectList objlist(handle_, typed_handle);
+        skip |= LogError(vuid, objlist, loc, "(%s) %s", FormatHandle(typed_handle).c_str(),
+                         DescribePoisonChain(object_state.poison_chain).c_str());
+    }
+    return skip;
+}
+
+std::string Tracker::DescribePoisonChain(const std::vector<VulkanTypedHandle> &poison_chain) const {
+    std::ostringstream ss;
+    assert(!poison_chain.empty());
+    for (size_t i = poison_chain.size() - 1; i > 0; i--) {
+        ss << "references " << FormatHandle(poison_chain[i]) << " which became invalid because it ";
+    }
+    ss << "references deleted object " << FormatHandle(poison_chain[0]);
+    return ss.str();
+}
+
+bool Tracker::CheckObjectValidity(uint64_t object_handle, VulkanObjectType object_type, bool poisoned_object_allowed,
+                                  const char *invalid_handle_vuid, const char *wrong_parent_vuid, const Location &loc,
+                                  VulkanObjectType parent_type) const {
+    bool skip = false;
+
+    // TODO: this will be passed directly as parameter
+    VulkanTypedHandle typed_handle;
+    typed_handle.handle = object_handle;
+    typed_handle.type = object_type;
+
+    // Check if this instance of lifetime validation tracks the object
+    if (auto object_state = GetObjectState(typed_handle)) {
+        if (!poisoned_object_allowed) {
+            skip |= CheckPoisoning(*object_state, invalid_handle_vuid, loc);
+        }
         return skip;
     }
+
     // Object not found, look for it in other device object maps
     const Tracker *other_lifetimes = nullptr;
     {
@@ -100,13 +173,16 @@ bool Tracker::CheckObjectValidity(uint64_t object_handle, VulkanObjectType objec
                     FormatHandle(handle_).c_str());
 }
 
-void Tracker::SetDeviceHandle(VkDevice device) { handle_ = VulkanTypedHandle(device, kVulkanObjectTypeDevice); }
+void Tracker::SetDeviceHandle(const Device &device) {
+    handle_ = VulkanTypedHandle(device.device, kVulkanObjectTypeDevice);
+    is_device_maintenance4_enabled_ = device.enabled_features.maintenance4;
+}
 
 void Tracker::SetInstanceHandle(VkInstance instance) { handle_ = VulkanTypedHandle(instance, kVulkanObjectTypeInstance); }
 
 void Device::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
     BaseClass::FinishDeviceSetup(pCreateInfo, loc);
-    tracker.SetDeviceHandle(device);
+    tracker.SetDeviceHandle(*this);
 }
 
 bool Device::CheckPipelineObjectValidity(uint64_t object_handle, const char *invalid_handle_vuid, const Location &loc) const {
@@ -159,7 +235,8 @@ void Tracker::DestroyUndestroyedObjects(VulkanObjectType object_type, const Loca
 bool Device::ValidateAnonymousObject(uint64_t object, VkObjectType core_object_type, const char *invalid_handle_vuid,
                                      const char *wrong_parent_vuid, const Location &loc) const {
     auto object_type = ConvertCoreObjectToVulkanObject(core_object_type);
-    return tracker.CheckObjectValidity(object, object_type, invalid_handle_vuid, wrong_parent_vuid, loc, kVulkanObjectTypeDevice);
+    return tracker.CheckObjectValidity(object, object_type, true, invalid_handle_vuid, wrong_parent_vuid, loc,
+                                       kVulkanObjectTypeDevice);
 }
 
 void Device::AllocateCommandBuffer(const VkCommandPool command_pool, const VkCommandBuffer command_buffer,
@@ -683,6 +760,31 @@ bool Device::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkD
     return skip;
 }
 
+void Device::PostCallRecordCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
+                                                     const VkAllocationCallbacks *pAllocator, VkDescriptorSetLayout *pSetLayout,
+                                                     const RecordObject &record_obj) {
+    if (record_obj.result < VK_SUCCESS) return;
+    tracker.CreateObject(*pSetLayout, kVulkanObjectTypeDescriptorSetLayout, pAllocator, record_obj.location, device);
+
+    // Setup poisoning
+    for (const VkDescriptorSetLayoutBinding &binding : vvl::make_span(pCreateInfo->pBindings, pCreateInfo->bindingCount)) {
+        if (binding.descriptorType != VK_DESCRIPTOR_TYPE_SAMPLER &&
+            binding.descriptorType != VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+            continue;
+        }
+        if (!binding.pImmutableSamplers) {
+            continue;
+        }
+        const VulkanTypedHandle set_layout_handle(*pSetLayout, kVulkanObjectTypeDescriptorSetLayout);
+        if (auto set_layout_state = tracker.GetObjectState(set_layout_handle)) {
+            for (VkSampler immutable_sampler : vvl::make_span(binding.pImmutableSamplers, binding.descriptorCount)) {
+                const VulkanTypedHandle immutable_sampler_handle(immutable_sampler, kVulkanObjectTypeSampler);
+                tracker.RegisterPoisonPair(*set_layout_state, immutable_sampler_handle);
+            }
+        }
+    }
+}
+
 bool Device::PreCallValidateGetDescriptorSetLayoutSupport(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
                                                           VkDescriptorSetLayoutSupport *pSupport,
                                                           const ErrorObject &error_obj) const {
@@ -690,6 +792,22 @@ bool Device::PreCallValidateGetDescriptorSetLayoutSupport(VkDevice device, const
     // Checked by chassis: device: "VUID-vkGetDescriptorSetLayoutSupport-device-parameter"
     skip |= ValidateDescriptorSetLayoutCreateInfo(*pCreateInfo, error_obj.location.dot(Field::pCreateInfo));
     return skip;
+}
+
+void Device::PostCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
+                                                const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
+                                                const RecordObject &record_obj) {
+    if (record_obj.result < VK_SUCCESS) return;
+    tracker.CreateObject(*pPipelineLayout, kVulkanObjectTypePipelineLayout, pAllocator, record_obj.location, device);
+
+    // Setup poisoning
+    const VulkanTypedHandle pipeline_layout_handle(*pPipelineLayout, kVulkanObjectTypePipelineLayout);
+    if (auto pipeline_layout_state = tracker.GetObjectState(pipeline_layout_handle)) {
+        for (VkDescriptorSetLayout set_layout : vvl::make_span(pCreateInfo->pSetLayouts, pCreateInfo->setLayoutCount)) {
+            const VulkanTypedHandle set_layout_handle(set_layout, kVulkanObjectTypeDescriptorSetLayout);
+            tracker.RegisterPoisonPair(*pipeline_layout_state, set_layout_handle);
+        }
+    }
 }
 
 bool Instance::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
@@ -1291,7 +1409,7 @@ bool Device::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDefe
                     }
                 }
             }
-            skip |= ValidateObject(pCreateInfos[index0].layout, kVulkanObjectTypePipelineLayout, false,
+            skip |= ValidateObject(pCreateInfos[index0].layout, kVulkanObjectTypePipelineLayout, false, false,
                                    "VUID-VkRayTracingPipelineCreateInfoKHR-layout-parameter",
                                    "VUID-VkRayTracingPipelineCreateInfoKHR-commonparent", create_info_loc.dot(Field::layout));
             if ((pCreateInfos[index0].flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) && (pCreateInfos[index0].basePipelineIndex == -1))
@@ -1340,10 +1458,43 @@ void Device::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDefer
                     continue;  // vkspec.html#pipelines-multiple
                 }
                 tracker.CreateObject(pipeline_handle, kVulkanObjectTypePipeline, pAllocator, record_obj.location, device);
+                RegisterCommonPipelinePoisoning(pCreateInfos, pPipelines, index);
             }
         }
     }
 }
+
+void Device::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                       const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
+                                                       const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                                       const RecordObject &record_obj) {
+    if (VK_ERROR_VALIDATION_FAILED_EXT == record_obj.result) return;
+    if (pPipelines) {
+        for (uint32_t index = 0; index < createInfoCount; index++) {
+            if (!pPipelines[index]) continue;
+            tracker.CreateObject(pPipelines[index], kVulkanObjectTypePipeline, pAllocator,
+                                 record_obj.location.dot(Field::pPipelines, index), device);
+            RegisterCommonPipelinePoisoning(pCreateInfos, pPipelines, index);
+        }
+    }
+}
+
+void Device::PostCallRecordCreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                       VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                       const VkDataGraphPipelineCreateInfoARM *pCreateInfos,
+                                                       const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                                       const RecordObject &record_obj) {
+    if (VK_ERROR_VALIDATION_FAILED_EXT == record_obj.result) return;
+    if (pPipelines) {
+        for (uint32_t index = 0; index < createInfoCount; index++) {
+            if (!pPipelines[index]) continue;
+            tracker.CreateObject(pPipelines[index], kVulkanObjectTypePipeline, pAllocator,
+                                 record_obj.location.dot(Field::pPipelines, index), device);
+            RegisterCommonPipelinePoisoning(pCreateInfos, pPipelines, index);
+        }
+    }
+}
+
 #ifdef VK_USE_PLATFORM_METAL_EXT
 bool Device::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT *pMetalObjectsInfo,
                                                   const ErrorObject &error_obj) const {
@@ -1459,6 +1610,21 @@ bool Device::PreCallValidateGetPrivateData(VkDevice device, VkObjectType objectT
                        "VUID-vkGetPrivateData-privateDataSlot-parent", error_obj.location.dot(Field::privateDataSlot));
 
     return skip;
+}
+
+void Device::PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                  const VkComputePipelineCreateInfo *pCreateInfos,
+                                                  const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                                  const RecordObject &record_obj) {
+    if (VK_ERROR_VALIDATION_FAILED_EXT == record_obj.result) return;
+    if (pPipelines) {
+        for (uint32_t index = 0; index < createInfoCount; index++) {
+            if (!pPipelines[index]) continue;
+            tracker.CreateObject(pPipelines[index], kVulkanObjectTypePipeline, pAllocator,
+                                 record_obj.location.dot(Field::pPipelines, index), device);
+            RegisterCommonPipelinePoisoning(pCreateInfos, pPipelines, index);
+        }
+    }
 }
 
 void Device::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,

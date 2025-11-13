@@ -145,6 +145,12 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
             # For tracking lifetime of linked GPL libraries
             'vkCreateGraphicsPipelines',
             'vkCreatePipelineBinariesKHR',
+            # For tracking poisoned objects
+            'vkCreateDescriptorSetLayout',
+            'vkCreatePipelineLayout',
+            'vkCreateComputePipelines',
+            'vkCreateRayTracingPipelinesNV',
+            'vkCreateDataGraphPipelinesARM',
         ]
 
         # These VUIDS are not implicit, but are best handled in this layer. Codegen for vkDestroy calls will generate a key
@@ -1024,7 +1030,15 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
                         pre_call_validate += 'auto instance_object_lifetimes = static_cast<Instance*>(dispatch_instance_->GetValidationObject(container_type));\n'
                         pre_call_validate += f'skip |= instance_object_lifetimes->ValidateObject({prefix}{member.name}, kVulkanObjectType{member.type[2:]}, {nullAllowed}, {param_vuid}, {parent_vuid}, {location}{parent_object_type});\n'
                     else:
-                        pre_call_validate += f'skip |= ValidateObject({prefix}{member.name}, kVulkanObjectType{member.type[2:]}, {nullAllowed}, {param_vuid}, {parent_vuid}, {location}{parent_object_type});\n'
+                        # TODO: describe in more general way which commands and which parameters to check for poisoned objects
+                        # NOTE: graphics pipeline is not checked because of GPL, ray tracing KHR is also in the manual code
+                        check_poisoned_layout = (topCommand in ['vkCreateComputePipelines', 'vkCreateRayTracingPipelinesNV', 'vkCreateDataGraphPipelinesARM']) and member.name == 'layout'
+                        check_poisoned_layout = check_poisoned_layout or (topCommand == 'vkCmdBindPipeline' and member.name == 'pipeline')
+
+                        if check_poisoned_layout:
+                            pre_call_validate += f'skip |= ValidateObject({prefix}{member.name}, kVulkanObjectType{member.type[2:]}, {nullAllowed}, false, {param_vuid}, {parent_vuid}, {location}{parent_object_type});\n'
+                        else:
+                            pre_call_validate += f'skip |= ValidateObject({prefix}{member.name}, kVulkanObjectType{member.type[2:]}, {nullAllowed}, {param_vuid}, {parent_vuid}, {location}{parent_object_type});\n'
 
             # Handle Structs that contain objects at some level
             elif member.type in self.vk.structs:
