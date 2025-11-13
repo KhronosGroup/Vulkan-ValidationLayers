@@ -567,7 +567,9 @@ bool CoreChecks::ValidatePipelineBindPoint(const vvl::CommandBuffer &cb_state, V
 // Validate that data for each specialization entry is fully contained within the buffer.
 bool CoreChecks::ValidateSpecializations(const vku::safe_VkSpecializationInfo *spec, const Location &loc) const {
     bool skip = false;
-    if (!spec) return skip;
+    if (!spec) {
+        return skip;
+    }
 
     for (auto i = 0u; i < spec->mapEntryCount; i++) {
         const Location map_loc = loc.dot(Field::pMapEntries, i);

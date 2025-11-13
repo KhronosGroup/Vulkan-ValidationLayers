@@ -463,10 +463,10 @@ static bool WasInstrumented(const LastBound &last_bound) {
     }
     for (uint32_t i = 0; i < kShaderObjectStageCount; ++i) {
         const auto stage = static_cast<ShaderObjectStage>(i);
-        if (!last_bound.IsValidShaderBound(stage)) {
+        if (!last_bound.IsValidShaderObjectBound(stage)) {
             continue;
         }
-        if (const vvl::ShaderObject *shader_object_state = last_bound.GetShaderState(stage)) {
+        if (const vvl::ShaderObject *shader_object_state = last_bound.GetShaderObjectState(stage)) {
             auto &sub_state = SubState(*shader_object_state);
             if (sub_state.was_instrumented) {
                 return true;

@@ -300,7 +300,13 @@ TEST_F(NegativePipelineTopology, DynamicPrimitiveRestartEnable) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState2);
-    RETURN_IF_SKIP(Init());
+    // Should work without looking at the SPIR-V
+    const VkLayerSettingEXT settings[] = {{OBJECT_LAYER_NAME, "check_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse}};
+    VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, settings};
+
+    RETURN_IF_SKIP(InitFramework(&create_info));
+    RETURN_IF_SKIP(InitState());
+
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
@@ -326,7 +332,13 @@ TEST_F(NegativePipelineTopology, DynamicPrimitiveRestartEnablePatchList) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState2);
     AddRequiredFeature(vkt::Feature::tessellationShader);
-    RETURN_IF_SKIP(Init());
+    // Should work without looking at the SPIR-V
+    const VkLayerSettingEXT settings[] = {{OBJECT_LAYER_NAME, "check_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse}};
+    VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, settings};
+
+    RETURN_IF_SKIP(InitFramework(&create_info));
+    RETURN_IF_SKIP(InitState());
+
     InitRenderTarget();
 
     VkShaderObj tcs(this, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);

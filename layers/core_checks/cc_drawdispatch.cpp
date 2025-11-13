@@ -539,7 +539,7 @@ bool CoreChecks::PreCallValidateCmdDispatchBase(VkCommandBuffer commandBuffer, u
                                  baseGroupX, baseGroupY, baseGroupZ);
             }
         } else {
-            const auto *shader_object = last_bound_state.GetShaderState(ShaderObjectStage::COMPUTE);
+            const auto *shader_object = last_bound_state.GetShaderObjectState(ShaderObjectStage::COMPUTE);
             if (shader_object && ((shader_object->create_info.flags & VK_SHADER_CREATE_DISPATCH_BASE_BIT_EXT) == 0)) {
                 skip |= LogError("VUID-vkCmdDispatchBase-baseGroupX-00427", cb_state.GetObjectList(VK_SHADER_STAGE_COMPUTE_BIT),
                                  error_obj.location,
@@ -1373,8 +1373,8 @@ bool CoreChecks::ValidateActionState(const LastBound &last_bound_state, const Dr
     } else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
         skip |= InsideRenderPass(cb_state, loc, vuid.compute_inside_rp_10672);
 
-        if (!pipeline && !last_bound_state.IsValidShaderBound(ShaderObjectStage::COMPUTE)) {
-            const bool is_null_bound = last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::COMPUTE);
+        if (!pipeline && !last_bound_state.IsValidShaderObjectBound(ShaderObjectStage::COMPUTE)) {
+            const bool is_null_bound = last_bound_state.IsValidShaderObjectOrNullBound(ShaderObjectStage::COMPUTE);
             return LogError(
                 vuid.compute_not_bound_10743, cb_state.GetObjectList(bind_point), loc,
                 "No compute shader is bound, before this dispatch command, you either need to call vkCmdBindPipeline with a valid "
@@ -1829,7 +1829,7 @@ bool CoreChecks::ValidateDrawFragmentShadingRate(const LastBound &last_bound_sta
         }
     } else {
         for (uint32_t stage = 0; stage < kShaderObjectStageCount; ++stage) {
-            const auto shader_object = last_bound_state.GetShaderState(static_cast<ShaderObjectStage>(stage));
+            const auto shader_object = last_bound_state.GetShaderObjectState(static_cast<ShaderObjectStage>(stage));
             if (shader_object && shader_object->entrypoint &&
                 shader_object->entrypoint->written_builtin_primitive_shading_rate_khr) {
                 if (cb_state.dynamic_state_value.viewport_count != 1) {
@@ -1854,24 +1854,26 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
 
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
     const bool has_pipeline = last_bound_state.pipeline_state != nullptr;
+
     if (has_pipeline && !last_bound_state.pipeline_state->ColorBlendState()) {
         return skip;
     }
 
-    const spirv::EntryPoint *fragment_entry_point = last_bound_state.GetFragmentEntryPoint();
-    if (last_bound_state.IsRasterizationDisabled() || !fragment_entry_point) {
+    if (last_bound_state.IsRasterizationDisabled()) {
         return skip;
     }
 
-    if (enabled_features.colorWriteEnable && last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT) &&
-        cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT)) {
-        // Found in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4116 that not setting all attachment can invalidate previous
-        // calls, so the last call needs to have set them all
-        const uint32_t blend_attachment_count = (uint32_t)cb_state.active_color_attachments_index.size();
-        const uint32_t dynamic_attachment_count = cb_state.dynamic_state_value.color_write_enable_attachment_count;
-        if (dynamic_attachment_count < blend_attachment_count) {
-            LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
-            skip |= LogError(vuid.dynamic_color_write_enable_count_07750, objlist, vuid.loc(),
+    if (last_bound_state.IsStageBound(VK_SHADER_STAGE_FRAGMENT_BIT)) {
+        if (enabled_features.colorWriteEnable && last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT) &&
+            cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT)) {
+            // Found in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4116 that not setting all attachment can invalidate
+            // previous calls, so the last call needs to have set them all
+            const uint32_t blend_attachment_count = (uint32_t)cb_state.active_color_attachments_index.size();
+            const uint32_t dynamic_attachment_count = cb_state.dynamic_state_value.color_write_enable_attachment_count;
+            if (dynamic_attachment_count < blend_attachment_count) {
+                LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
+                skip |=
+                    LogError(vuid.dynamic_color_write_enable_count_07750, objlist, vuid.loc(),
                              "There are currently (%" PRIu32
                              ") active color attachments, but the last call to vkCmdSetColorWriteEnableEXT() only set the color "
                              "write enables for attachmentCount of %" PRIu32
@@ -1879,21 +1881,9 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
                              blend_attachment_count, dynamic_attachment_count,
                              cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT).c_str(),
                              cb_state.DescribeActiveColorAttachment());
+            }
         }
     }
-
-    const auto get_max_fragment_location = [fragment_entry_point]() {
-        uint32_t max_fragment_location = 0;
-        for (const auto *variable : fragment_entry_point->user_defined_interface_variables) {
-            if (variable->storage_class != spv::StorageClassOutput) {
-                continue;
-            }
-            if (variable->decorations.location != spirv::kInvalidValue) {
-                max_fragment_location = std::max(max_fragment_location, variable->decorations.location);
-            }
-        }
-        return max_fragment_location;
-    };
 
     const bool dynamic_equation = last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT);
     const bool dynamic_advanced = last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT);
@@ -2023,7 +2013,23 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
                              cb_state.DescribeActiveColorAttachment());
         }
 
-        if (last_bound_state.IsDualBlending(color_index)) {
+        // Validation needing access to spir-v information
+        // ---
+        const spirv::EntryPoint *fragment_entry_point = last_bound_state.GetFragmentEntryPoint();
+        if (fragment_entry_point && last_bound_state.IsDualBlending(color_index)) {
+            const auto get_max_fragment_location = [fragment_entry_point]() {
+                uint32_t max_fragment_location = 0;
+                for (const auto *variable : fragment_entry_point->user_defined_interface_variables) {
+                    if (variable->storage_class != spv::StorageClassOutput) {
+                        continue;
+                    }
+                    if (variable->decorations.location != spirv::kInvalidValue) {
+                        max_fragment_location = std::max(max_fragment_location, variable->decorations.location);
+                    }
+                }
+                return max_fragment_location;
+            };
+
             const uint32_t max_fragment_location = get_max_fragment_location();
             if (max_fragment_location >= phys_dev_props.limits.maxFragmentDualSrcAttachments) {
                 skip |= LogError(vuid.blend_dual_source_09239, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
@@ -2044,7 +2050,7 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound &last_bound_st
 
 bool CoreChecks::ValidateDrawAttachmentSampleLocation(const LastBound &last_bound_state, const vvl::DrawDispatchVuid &vuid) const {
     bool skip = false;
-    if (!last_bound_state.IsFragmentBound()) {
+    if (!last_bound_state.IsStageBound(VK_SHADER_STAGE_FRAGMENT_BIT)) {
         return skip;
     }
 
@@ -2153,11 +2159,11 @@ bool CoreChecks::ValidateDrawTessellation(const LastBound &last_bound_state, con
             }
         }
     } else {
-        const auto tesc_shader = last_bound_state.GetShaderState(ShaderObjectStage::TESSELLATION_CONTROL);
+        const auto tesc_shader = last_bound_state.GetShaderObjectState(ShaderObjectStage::TESSELLATION_CONTROL);
         if (tesc_shader && tesc_shader->entrypoint) {
             tesc_execution_mode = &tesc_shader->entrypoint->execution_mode;
         }
-        const auto tese_shader = last_bound_state.GetShaderState(ShaderObjectStage::TESSELLATION_EVALUATION);
+        const auto tese_shader = last_bound_state.GetShaderObjectState(ShaderObjectStage::TESSELLATION_EVALUATION);
         if (tese_shader && tese_shader->entrypoint) {
             tese_execution_mode = &tese_shader->entrypoint->execution_mode;
         }

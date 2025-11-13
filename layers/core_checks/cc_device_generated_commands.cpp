@@ -665,11 +665,11 @@ bool CoreChecks::ValidateGeneratedCommandsInitialShaderState(const vvl::CommandB
     } else if (indirect_execution_set.is_shader_objects) {
         // Shader Objects only has compute or graphics
         if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
-            if (!last_bound.IsValidShaderBound(ShaderObjectStage::COMPUTE)) {
+            if (!last_bound.IsValidShaderObjectBound(ShaderObjectStage::COMPUTE)) {
                 skip |= LogError(vuid, objlist, cb_loc, "has not had a compute VkShaderEXT bound yet.");
             }
         } else if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-            if (!last_bound.IsAnyGraphicsShaderBound()) {
+            if (!last_bound.IsAnyGraphicsStageBound()) {
                 skip |= LogError(vuid, objlist, cb_loc, "has not had a graphics VkShaderEXT bound yet.");
             }
         }

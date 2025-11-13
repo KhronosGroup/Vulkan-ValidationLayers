@@ -214,7 +214,12 @@ TEST_F(NegativeDynamicState, ScissorNotBound) {
 TEST_F(NegativeDynamicState, BlendConstantsNotBound) {
     TEST_DESCRIPTION(
         "Run a simple draw calls to validate failure when Blend Constants dynamic state is required but not correctly bound.");
-    RETURN_IF_SKIP(Init());
+    // Should work without looking at the SPIR-V
+    const VkLayerSettingEXT settings[] = {{OBJECT_LAYER_NAME, "check_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse}};
+    VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, settings};
+
+    RETURN_IF_SKIP(InitFramework(&create_info));
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
@@ -2787,7 +2792,13 @@ TEST_F(NegativeDynamicState, ColorWriteNotSet) {
 
     AddRequiredExtensions(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::colorWriteEnable);
-    RETURN_IF_SKIP(Init());
+    // Should work without looking at the SPIR-V
+    const VkLayerSettingEXT settings[] = {{OBJECT_LAYER_NAME, "check_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse}};
+    VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, settings};
+
+    RETURN_IF_SKIP(InitFramework(&create_info));
+    RETURN_IF_SKIP(InitState());
+
     InitRenderTarget(2);
 
     VkPipelineColorBlendAttachmentState color_blend[2] = {};

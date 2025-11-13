@@ -3622,8 +3622,10 @@ TEST_F(NegativeShaderObject, InvalidRequireFullSubgroupsFlag) {
 
 TEST_F(NegativeShaderObject, SpecializationMapEntryOffset) {
     TEST_DESCRIPTION("Create shader with invalid specialization map entry offset.");
-    RETURN_IF_SKIP(InitBasicShaderObject());
-
+    // Should work without looking at the SPIR-V
+    const VkLayerSettingEXT settings[] = {{OBJECT_LAYER_NAME, "check_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse}};
+    VkLayerSettingsCreateInfoEXT layer_settings_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, settings};
+    RETURN_IF_SKIP(InitBasicShaderObject(&layer_settings_ci));
     const char kVertexSource[] = R"glsl(
         #version 460
         layout (constant_id = 0) const int v = 0;
@@ -3658,7 +3660,10 @@ TEST_F(NegativeShaderObject, SpecializationMapEntryOffset) {
 
 TEST_F(NegativeShaderObject, SpecializationMapEntrySize) {
     TEST_DESCRIPTION("Create shader with specialization map entry out of bounds.");
-    RETURN_IF_SKIP(InitBasicShaderObject());
+    // Should work without looking at the SPIR-V
+    const VkLayerSettingEXT settings[] = {{OBJECT_LAYER_NAME, "check_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse}};
+    VkLayerSettingsCreateInfoEXT layer_settings_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, settings};
+    RETURN_IF_SKIP(InitBasicShaderObject(&layer_settings_ci));
 
     const char kVertexSource[] = R"glsl(
         #version 460
@@ -3730,7 +3735,10 @@ TEST_F(NegativeShaderObject, SpecializationMismatch) {
 
 TEST_F(NegativeShaderObject, SpecializationSameConstantId) {
     TEST_DESCRIPTION("Create shader with non unique specialization map entries.");
-    RETURN_IF_SKIP(InitBasicShaderObject());
+    // Should work without looking at the SPIR-V
+    const VkLayerSettingEXT settings[] = {{OBJECT_LAYER_NAME, "check_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse}};
+    VkLayerSettingsCreateInfoEXT layer_settings_ci = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, settings};
+    RETURN_IF_SKIP(InitBasicShaderObject(&layer_settings_ci));
 
     const char kVertexSource[] = R"glsl(
         #version 460

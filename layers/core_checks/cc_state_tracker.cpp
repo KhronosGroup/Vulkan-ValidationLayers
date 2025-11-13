@@ -102,7 +102,7 @@ void CommandBufferSubState::UpdateActionPipelineState(LastBound& last_bound, con
 void CommandBufferSubState::UpdateActionShaderObjectState(LastBound& last_bound) {
     if (last_bound.desc_set_pipeline_layout) {
         for (uint32_t stage = 0; stage < kShaderObjectStageCount; ++stage) {
-            const auto shader_object = last_bound.GetShaderState(static_cast<ShaderObjectStage>(stage));
+            const auto shader_object = last_bound.GetShaderObjectState(static_cast<ShaderObjectStage>(stage));
             if (shader_object) {
                 UpdateActiveSlotsState(last_bound, shader_object->active_slots);
             }
