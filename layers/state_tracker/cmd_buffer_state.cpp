@@ -879,8 +879,8 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo &rendering_info, 
         depth_attachment.type = AttachmentInfo::Type::Depth;
         depth_attachment.layout = rendering_info.pDepthAttachment->imageLayout;
         if (depth_attachment.image_view) {
-            TrackImageViewFirstLayout(*depth_attachment.image_view, rendering_info.pDepthAttachment->imageLayout,
-                                      "VUID-vkCmdBeginRendering-pRenderingInfo-09588");
+            TrackDepthAttachmentFirstLayout(*depth_attachment.image_view, rendering_info.pDepthAttachment->imageLayout,
+                                            "VUID-vkCmdBeginRendering-pRenderingInfo-09588");
         }
         if (rendering_info.pDepthAttachment->resolveMode != VK_RESOLVE_MODE_NONE &&
             rendering_info.pDepthAttachment->resolveImageView != VK_NULL_HANDLE) {
@@ -897,8 +897,8 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo &rendering_info, 
         stencil_attachment.type = AttachmentInfo::Type::Stencil;
         stencil_attachment.layout = rendering_info.pStencilAttachment->imageLayout;
         if (stencil_attachment.image_view) {
-            TrackImageViewFirstLayout(*stencil_attachment.image_view, rendering_info.pStencilAttachment->imageLayout,
-                                      "VUID-vkCmdBeginRendering-pRenderingInfo-09590");
+            TrackStencilAttachmentFirstLayout(*stencil_attachment.image_view, rendering_info.pStencilAttachment->imageLayout,
+                                              "VUID-vkCmdBeginRendering-pRenderingInfo-09590");
         }
         if (rendering_info.pStencilAttachment->resolveMode != VK_RESOLVE_MODE_NONE &&
             rendering_info.pStencilAttachment->resolveImageView != VK_NULL_HANDLE) {
@@ -1644,6 +1644,34 @@ void CommandBuffer::TrackImageViewFirstLayout(const vvl::ImageView &view_state, 
     if (auto image_layout_map = GetOrCreateImageLayoutMap(*view_state.image_state.get())) {
         RangeGenerator range_gen(view_state.range_generator);
         TrackFirstLayout(*image_layout_map, std::move(range_gen), layout, view_state.normalized_subresource_range.aspectMask,
+                         submit_time_layout_mismatch_vuid);
+    }
+}
+
+void CommandBuffer::TrackDepthAttachmentFirstLayout(const vvl::ImageView &view_state, VkImageLayout layout,
+                                                    const char *submit_time_layout_mismatch_vuid) {
+    if (auto image_layout_map = GetOrCreateImageLayoutMap(*view_state.image_state.get())) {
+        // According to the spec for dynamic rendering depth attachment, we must ignore
+        // the aspect used to create the image view and use the DEPTH aspect instead
+        VkImageSubresourceRange image_layout_range = view_state.GetRangeGeneratorRange(dev_data.extensions);
+        image_layout_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        RangeGenerator range_gen(view_state.image_state->subresource_encoder, image_layout_range);
+
+        TrackFirstLayout(*image_layout_map, std::move(range_gen), layout, VK_IMAGE_ASPECT_DEPTH_BIT,
+                         submit_time_layout_mismatch_vuid);
+    }
+}
+
+void CommandBuffer::TrackStencilAttachmentFirstLayout(const vvl::ImageView &view_state, VkImageLayout layout,
+                                                      const char *submit_time_layout_mismatch_vuid) {
+    if (auto image_layout_map = GetOrCreateImageLayoutMap(*view_state.image_state.get())) {
+        // According to the spec for dynamic rendering stencil attachment, we must ignore
+        // the aspect used to create the image view and use the STENCIL aspect instead
+        VkImageSubresourceRange image_layout_range = view_state.GetRangeGeneratorRange(dev_data.extensions);
+        image_layout_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+        RangeGenerator range_gen(view_state.image_state->subresource_encoder, image_layout_range);
+
+        TrackFirstLayout(*image_layout_map, std::move(range_gen), layout, VK_IMAGE_ASPECT_STENCIL_BIT,
                          submit_time_layout_mismatch_vuid);
     }
 }
