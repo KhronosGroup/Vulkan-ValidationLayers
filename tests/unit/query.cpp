@@ -1444,6 +1444,29 @@ TEST_F(NegativeQuery, ResultStatusOnly) {
     AddRequiredExtensions(VK_KHR_VIDEO_QUEUE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
+    uint32_t qf_count;
+    vk::GetPhysicalDeviceQueueFamilyProperties2(Gpu(), &qf_count, nullptr);
+
+    std::vector<VkQueueFamilyProperties2> queueFamilyProps2(qf_count, vku::InitStruct<VkQueueFamilyProperties2>());
+    std::vector<VkQueueFamilyQueryResultStatusPropertiesKHR> queueFamilyQueryResultStatusProps(
+        qf_count, vku::InitStruct<VkQueueFamilyQueryResultStatusPropertiesKHR>());
+    for (uint32_t i = 0; i < qf_count; ++i) {
+        queueFamilyProps2[i].pNext = &queueFamilyQueryResultStatusProps[i];
+    }
+    vk::GetPhysicalDeviceQueueFamilyProperties2(Gpu(), &qf_count, queueFamilyProps2.data());
+
+    bool has_queue_with_result_status_only_support = false;
+    for (uint32_t qfi = 0; qfi < qf_count; ++qfi) {
+        if (queueFamilyQueryResultStatusProps[qfi].queryResultStatusSupport) {
+            has_queue_with_result_status_only_support = true;
+            break;
+        }
+    }
+
+    if (!has_queue_with_result_status_only_support) {
+        GTEST_SKIP() << "Test requires queue to support result status queries";
+    }
+
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR, 1);
     if (!query_pool.initialized()) {
         GTEST_SKIP() << "Required query not supported";
