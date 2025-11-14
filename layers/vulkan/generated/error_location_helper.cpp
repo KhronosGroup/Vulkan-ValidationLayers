@@ -60,6 +60,7 @@ const char* String(Func func) {
     {"vkBuildAccelerationStructuresKHR", 33},
     {"vkBuildMicromapsEXT", 20},
     {"vkCmdBeginConditionalRenderingEXT", 34},
+    {"vkCmdBeginCustomResolveEXT", 27},
     {"vkCmdBeginDebugUtilsLabelEXT", 29},
     {"vkCmdBeginPerTileExecutionQCOM", 31},
     {"vkCmdBeginQuery", 16},
@@ -861,6 +862,7 @@ const char* String(Struct structure) {
     {"VkAttachmentSampleLocationsEXT", 31},
     {"VkBaseInStructure", 18},
     {"VkBaseOutStructure", 19},
+    {"VkBeginCustomResolveInfoEXT", 28},
     {"VkBindAccelerationStructureMemoryInfoNV", 40},
     {"VkBindBufferMemoryDeviceGroupInfo", 34},
     {"VkBindBufferMemoryInfo", 23},
@@ -976,6 +978,7 @@ const char* String(Struct structure) {
     {"VkCudaFunctionCreateInfoNV", 27},
     {"VkCudaLaunchInfoNV", 19},
     {"VkCudaModuleCreateInfoNV", 25},
+    {"VkCustomResolveCreateInfoEXT", 29},
     {"VkD3D12FenceSubmitInfoKHR", 26},
     {"VkDataGraphPipelineBuiltinModelCreateInfoQCOM", 46},
     {"VkDataGraphPipelineCompilerControlCreateInfoARM", 48},
@@ -1390,6 +1393,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceCudaKernelLaunchPropertiesNV", 45},
     {"VkPhysicalDeviceCustomBorderColorFeaturesEXT", 45},
     {"VkPhysicalDeviceCustomBorderColorPropertiesEXT", 47},
+    {"VkPhysicalDeviceCustomResolveFeaturesEXT", 41},
     {"VkPhysicalDeviceDataGraphFeaturesARM", 37},
     {"VkPhysicalDeviceDataGraphModelFeaturesQCOM", 43},
     {"VkPhysicalDeviceDataGraphOperationSupportARM", 45},
@@ -1595,7 +1599,8 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT", 62},
     {"VkPhysicalDeviceRawAccessChainsFeaturesNV", 42},
     {"VkPhysicalDeviceRayQueryFeaturesKHR", 36},
-    {"VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV", 54},
+    {"VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT", 55},
+    {"VkPhysicalDeviceRayTracingInvocationReorderPropertiesEXT", 57},
     {"VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV", 56},
     {"VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV", 55},
     {"VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR", 50},
@@ -2428,6 +2433,7 @@ const char* String(Field field) {
     {"customBorderColor", 18},
     {"customBorderColorWithoutFormat", 31},
     {"customBorderColors", 19},
+    {"customResolve", 14},
     {"customSampleOrderCount", 23},
     {"data", 5},
     {"dataGraph", 10},
@@ -3369,6 +3375,7 @@ const char* String(Field field) {
     {"maxSequencesCount", 18},
     {"maxSets", 8},
     {"maxSgprAllocation", 18},
+    {"maxShaderBindingTableRecordIndex", 33},
     {"maxShaderCount", 15},
     {"maxShaderGroupStride", 21},
     {"maxSingleReferenceCount", 24},
@@ -3671,6 +3678,7 @@ const char* String(Field field) {
     {"pAttachmentInitialSampleLocations", 34},
     {"pAttachments", 13},
     {"pAttributes", 12},
+    {"pBeginCustomResolveInfo", 24},
     {"pBeginInfo", 11},
     {"pBinaries", 10},
     {"pBindDescriptorBufferEmbeddedSamplersInfo", 42},
@@ -5362,7 +5370,7 @@ const char* String(Enum value) {
     {"VkQueryType", 12},
     {"VkQueueGlobalPriority", 22},
     {"VkRasterizationOrderAMD", 24},
-    {"VkRayTracingInvocationReorderModeNV", 36},
+    {"VkRayTracingInvocationReorderModeEXT", 37},
     {"VkRayTracingLssIndexingModeNV", 30},
     {"VkRayTracingLssPrimitiveEndCapsModeNV", 38},
     {"VkRayTracingShaderGroupTypeKHR", 31},
@@ -5625,6 +5633,7 @@ const char* String(Extension extension) {
     {"VK_EXT_conditional_rendering", 29},
     {"VK_EXT_conservative_rasterization", 34},
     {"VK_EXT_custom_border_color", 27},
+    {"VK_EXT_custom_resolve", 22},
     {"VK_EXT_debug_marker", 20},
     {"VK_EXT_debug_report", 20},
     {"VK_EXT_debug_utils", 19},
@@ -5711,6 +5720,7 @@ const char* String(Extension extension) {
     {"VK_EXT_provoking_vertex", 24},
     {"VK_EXT_queue_family_foreign", 28},
     {"VK_EXT_rasterization_order_attachment_access", 45},
+    {"VK_EXT_ray_tracing_invocation_reorder", 38},
     {"VK_EXT_rgba10x6_formats", 24},
     {"VK_EXT_robustness2", 19},
     {"VK_EXT_sample_locations", 24},
@@ -6042,6 +6052,7 @@ bool IsFieldPointer(Field field) {
     case Field::pAttachmentInitialSampleLocations:
     case Field::pAttachments:
     case Field::pAttributes:
+    case Field::pBeginCustomResolveInfo:
     case Field::pBeginInfo:
     case Field::pBinaries:
     case Field::pBindDescriptorBufferEmbeddedSamplersInfo:
@@ -8530,8 +8541,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_PROPERTIES_NV:
        return Struct::VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV;
-    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_NV:
-       return Struct::VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_EXT:
+       return Struct::VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_VECTOR_PROPERTIES_NV:
        return Struct::VkPhysicalDeviceCooperativeVectorPropertiesNV;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_VECTOR_FEATURES_NV:
@@ -8756,6 +8767,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceImageAlignmentControlPropertiesMESA;
     case VK_STRUCTURE_TYPE_IMAGE_ALIGNMENT_CONTROL_CREATE_INFO_MESA:
        return Struct::VkImageAlignmentControlCreateInfoMESA;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_PROPERTIES_EXT:
+       return Struct::VkPhysicalDeviceRayTracingInvocationReorderPropertiesEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_CONTROL_FEATURES_EXT:
        return Struct::VkPhysicalDeviceDepthClampControlFeaturesEXT;
     case VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_DEPTH_CLAMP_CONTROL_CREATE_INFO_EXT:
@@ -8814,6 +8827,12 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_64_BIT_INDEXING_FEATURES_EXT:
        return Struct::VkPhysicalDeviceShader64BitIndexingFeaturesEXT;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_RESOLVE_FEATURES_EXT:
+       return Struct::VkPhysicalDeviceCustomResolveFeaturesEXT;
+    case VK_STRUCTURE_TYPE_BEGIN_CUSTOM_RESOLVE_INFO_EXT:
+       return Struct::VkBeginCustomResolveInfoEXT;
+    case VK_STRUCTURE_TYPE_CUSTOM_RESOLVE_CREATE_INFO_EXT:
+       return Struct::VkCustomResolveCreateInfoEXT;
     case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_BUILTIN_MODEL_CREATE_INFO_QCOM:
        return Struct::VkDataGraphPipelineBuiltinModelCreateInfoQCOM;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_MODEL_FEATURES_QCOM:

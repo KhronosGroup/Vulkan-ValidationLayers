@@ -527,6 +527,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_partitioned_acceleration_structure{kNotSupported};
     ExtEnabled vk_ext_device_generated_commands{kNotSupported};
     ExtEnabled vk_mesa_image_alignment_control{kNotSupported};
+    ExtEnabled vk_ext_ray_tracing_invocation_reorder{kNotSupported};
     ExtEnabled vk_ext_depth_clamp_control{kNotSupported};
     ExtEnabled vk_ohos_native_buffer{kNotSupported};
     ExtEnabled vk_huawei_hdr_vivid{kNotSupported};
@@ -541,6 +542,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_fragment_density_map_offset{kNotSupported};
     ExtEnabled vk_ext_zero_initialize_device_memory{kNotSupported};
     ExtEnabled vk_ext_shader_64bit_indexing{kNotSupported};
+    ExtEnabled vk_ext_custom_resolve{kNotSupported};
     ExtEnabled vk_qcom_data_graph_model{kNotSupported};
     ExtEnabled vk_sec_pipeline_cache_incremental_mode{kNotSupported};
     ExtEnabled vk_ext_shader_uniform_buffer_unsized_array{kNotSupported};
@@ -998,6 +1000,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_NV_partitioned_acceleration_structure:
         case vvl::Extension::_VK_EXT_device_generated_commands:
         case vvl::Extension::_VK_MESA_image_alignment_control:
+        case vvl::Extension::_VK_EXT_ray_tracing_invocation_reorder:
         case vvl::Extension::_VK_EXT_depth_clamp_control:
         case vvl::Extension::_VK_OHOS_native_buffer:
         case vvl::Extension::_VK_HUAWEI_hdr_vivid:
@@ -1012,6 +1015,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_EXT_fragment_density_map_offset:
         case vvl::Extension::_VK_EXT_zero_initialize_device_memory:
         case vvl::Extension::_VK_EXT_shader_64bit_indexing:
+        case vvl::Extension::_VK_EXT_custom_resolve:
         case vvl::Extension::_VK_QCOM_data_graph_model:
         case vvl::Extension::_VK_SEC_pipeline_cache_incremental_mode:
         case vvl::Extension::_VK_EXT_shader_uniform_buffer_unsized_array:

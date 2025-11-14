@@ -2004,6 +2004,9 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdEndRendering2EXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdEndRendering2EXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdEndRendering2EXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdBeginCustomResolveEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdBeginCustomResolveEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdBeginCustomResolveEXT);
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateAccelerationStructureKHR);

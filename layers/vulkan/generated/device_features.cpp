@@ -1619,9 +1619,9 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->multiviewPerViewViewports |= enabled->multiviewPerViewViewports == VK_TRUE;
                 break;
             }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_NV: {
-                const VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV *enabled =
-                    reinterpret_cast<const VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV *>(pNext);
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_EXT: {
+                const VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT *>(pNext);
                 features->rayTracingInvocationReorder |= enabled->rayTracingInvocationReorder == VK_TRUE;
                 break;
             }
@@ -1869,6 +1869,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 const VkPhysicalDeviceShader64BitIndexingFeaturesEXT *enabled =
                     reinterpret_cast<const VkPhysicalDeviceShader64BitIndexingFeaturesEXT *>(pNext);
                 features->shader64BitIndexing |= enabled->shader64BitIndexing == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_RESOLVE_FEATURES_EXT: {
+                const VkPhysicalDeviceCustomResolveFeaturesEXT *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceCustomResolveFeaturesEXT *>(pNext);
+                features->customResolve |= enabled->customResolve == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_MODEL_FEATURES_QCOM: {

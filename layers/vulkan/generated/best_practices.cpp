@@ -119,6 +119,8 @@ DeprecationData GetDeprecatedData(vvl::Extension extension_name) {
         {vvl::Extension::_VK_EXT_descriptor_indexing, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_2}}},
         {vvl::Extension::_VK_EXT_shader_viewport_index_layer, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_2}}},
         {vvl::Extension::_VK_NV_ray_tracing, {DeprecationReason::Deprecated, {vvl::Extension::_VK_KHR_ray_tracing_pipeline}}},
+        {vvl::Extension::_VK_QCOM_render_pass_shader_resolve,
+         {DeprecationReason::Promoted, {vvl::Extension::_VK_EXT_custom_resolve}}},
         {vvl::Extension::_VK_EXT_global_priority, {DeprecationReason::Promoted, {vvl::Extension::_VK_KHR_global_priority}}},
         {vvl::Extension::_VK_EXT_calibrated_timestamps,
          {DeprecationReason::Promoted, {vvl::Extension::_VK_KHR_calibrated_timestamps}}},
@@ -174,6 +176,8 @@ DeprecationData GetDeprecatedData(vvl::Extension extension_name) {
         {vvl::Extension::_VK_NV_memory_decompression,
          {DeprecationReason::Promoted, {vvl::Extension::_VK_EXT_memory_decompression}}},
         {vvl::Extension::_VK_EXT_pipeline_protected_access, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_4}}},
+        {vvl::Extension::_VK_NV_ray_tracing_invocation_reorder,
+         {DeprecationReason::Promoted, {vvl::Extension::_VK_EXT_ray_tracing_invocation_reorder}}},
         {vvl::Extension::_VK_EXT_vertex_attribute_robustness,
          {DeprecationReason::Promoted, {vvl::Extension::_VK_KHR_maintenance9}}},
     };

@@ -4554,6 +4554,12 @@ static inline void DispatchCmdEndRendering2EXT(VkCommandBuffer commandBuffer, co
     dispatch->CmdEndRendering2EXT(commandBuffer, pRenderingEndInfo);
 }
 
+static inline void DispatchCmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer,
+                                                    const VkBeginCustomResolveInfoEXT* pBeginCustomResolveInfo) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdBeginCustomResolveEXT(commandBuffer, pBeginCustomResolveInfo);
+}
+
 static inline VkResult DispatchCreateAccelerationStructureKHR(VkDevice device,
                                                               const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                               const VkAllocationCallbacks* pAllocator,

@@ -142,6 +142,8 @@ enum class Feature {
     customBorderColorWithoutFormat,
     // VkPhysicalDeviceCustomBorderColorFeaturesEXT
     customBorderColors,
+    // VkPhysicalDeviceCustomResolveFeaturesEXT
+    customResolve,
     // VkPhysicalDeviceDataGraphFeaturesARM
     dataGraph,
     // VkPhysicalDeviceDataGraphFeaturesARM
@@ -716,7 +718,7 @@ enum class Feature {
     shaderRawAccessChains,
     // VkPhysicalDeviceRayQueryFeaturesKHR
     rayQuery,
-    // VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV
+    // VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT
     rayTracingInvocationReorder,
     // VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV
     linearSweptSpheres,

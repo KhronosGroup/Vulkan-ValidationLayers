@@ -919,12 +919,6 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
                     return {vvl::Extension::_VK_NVX_multiview_per_view_attributes};
                 }
             }
-            if (value & (VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM | VK_SUBPASS_DESCRIPTION_SHADER_RESOLVE_BIT_QCOM)) {
-                if ((instance_function && !IsExtSupported(extensions.vk_qcom_render_pass_shader_resolve)) ||
-                    (!instance_function && !IsExtEnabled(extensions.vk_qcom_render_pass_shader_resolve))) {
-                    return {vvl::Extension::_VK_QCOM_render_pass_shader_resolve};
-                }
-            }
             if (value & (VK_SUBPASS_DESCRIPTION_TILE_SHADING_APRON_BIT_QCOM)) {
                 if ((instance_function && !IsExtSupported(extensions.vk_qcom_tile_shading)) ||
                     (!instance_function && !IsExtEnabled(extensions.vk_qcom_tile_shading))) {
@@ -946,6 +940,14 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
                 if ((instance_function && !IsExtSupported(extensions.vk_ext_legacy_dithering)) ||
                     (!instance_function && !IsExtEnabled(extensions.vk_ext_legacy_dithering))) {
                     return {vvl::Extension::_VK_EXT_legacy_dithering};
+                }
+            }
+            if (value & (VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_EXT | VK_SUBPASS_DESCRIPTION_CUSTOM_RESOLVE_BIT_EXT)) {
+                if ((instance_function && !IsExtSupported(extensions.vk_qcom_render_pass_shader_resolve) &&
+                     !IsExtSupported(extensions.vk_ext_custom_resolve)) ||
+                    (!instance_function && !IsExtEnabled(extensions.vk_qcom_render_pass_shader_resolve) &&
+                     !IsExtEnabled(extensions.vk_ext_custom_resolve))) {
+                    return {vvl::Extension::_VK_QCOM_render_pass_shader_resolve, vvl::Extension::_VK_EXT_custom_resolve};
                 }
             }
             return {};
@@ -1030,6 +1032,12 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
                     return {vvl::Extension::_VK_ANDROID_external_format_resolve};
                 }
             }
+            if (value & (VK_RESOLVE_MODE_CUSTOM_BIT_EXT)) {
+                if ((instance_function && !IsExtSupported(extensions.vk_ext_custom_resolve)) ||
+                    (!instance_function && !IsExtEnabled(extensions.vk_ext_custom_resolve))) {
+                    return {vvl::Extension::_VK_EXT_custom_resolve};
+                }
+            }
             return {};
         case vvl::FlagBitmask::VkRenderingFlagBits:
             if (value & (VK_RENDERING_ENABLE_LEGACY_DITHERING_BIT_EXT)) {
@@ -1050,6 +1058,12 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
                 if ((instance_function && !IsExtSupported(extensions.vk_valve_fragment_density_map_layered)) ||
                     (!instance_function && !IsExtEnabled(extensions.vk_valve_fragment_density_map_layered))) {
                     return {vvl::Extension::_VK_VALVE_fragment_density_map_layered};
+                }
+            }
+            if (value & (VK_RENDERING_FRAGMENT_REGION_BIT_EXT | VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT)) {
+                if ((instance_function && !IsExtSupported(extensions.vk_ext_custom_resolve)) ||
+                    (!instance_function && !IsExtEnabled(extensions.vk_ext_custom_resolve))) {
+                    return {vvl::Extension::_VK_EXT_custom_resolve};
                 }
             }
             if (value & (VK_RENDERING_LOCAL_READ_CONCURRENT_ACCESS_CONTROL_BIT_KHR)) {

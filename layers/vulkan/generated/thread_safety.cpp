@@ -8685,6 +8685,20 @@ void Device::PostCallRecordCmdEndRendering2EXT(VkCommandBuffer commandBuffer, co
     PostCallRecordCmdEndRendering2KHR(commandBuffer, pRenderingEndInfo, record_obj);
 }
 
+void Device::PreCallRecordCmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer,
+                                                   const VkBeginCustomResolveInfoEXT* pBeginCustomResolveInfo,
+                                                   const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void Device::PostCallRecordCmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer,
+                                                    const VkBeginCustomResolveInfoEXT* pBeginCustomResolveInfo,
+                                                    const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
 void Device::PreCallRecordCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                          const VkAllocationCallbacks* pAllocator,
                                                          VkAccelerationStructureKHR* pAccelerationStructure,

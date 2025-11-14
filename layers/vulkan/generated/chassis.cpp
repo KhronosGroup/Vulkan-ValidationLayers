@@ -33854,6 +33854,51 @@ VKAPI_ATTR void VKAPI_CALL CmdEndRendering2EXT(VkCommandBuffer commandBuffer, co
     }
 }
 
+VKAPI_ATTR void VKAPI_CALL CmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer,
+                                                    const VkBeginCustomResolveInfoEXT* pBeginCustomResolveInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdBeginCustomResolveEXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkCmdBeginCustomResolveEXT");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdBeginCustomResolveEXT]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdBeginCustomResolveEXT(commandBuffer, pBeginCustomResolveInfo, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCmdBeginCustomResolveEXT);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkCmdBeginCustomResolveEXT");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCmdBeginCustomResolveEXT]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdBeginCustomResolveEXT(commandBuffer, pBeginCustomResolveInfo, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkCmdBeginCustomResolveEXT");
+        device_dispatch->CmdBeginCustomResolveEXT(commandBuffer, pBeginCustomResolveInfo);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkCmdBeginCustomResolveEXT");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdBeginCustomResolveEXT]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdBeginCustomResolveEXT(commandBuffer, pBeginCustomResolveInfo, record_obj);
+        }
+    }
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(VkDevice device,
                                                               const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                               const VkAllocationCallbacks* pAllocator,
@@ -35883,6 +35928,7 @@ const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap() {
         {"vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM",
          {kFuncTypePdev, (void*)EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM}},
         {"vkCmdEndRendering2EXT", {kFuncTypeDev, (void*)CmdEndRendering2EXT}},
+        {"vkCmdBeginCustomResolveEXT", {kFuncTypeDev, (void*)CmdBeginCustomResolveEXT}},
         {"vkCreateAccelerationStructureKHR", {kFuncTypeDev, (void*)CreateAccelerationStructureKHR}},
         {"vkDestroyAccelerationStructureKHR", {kFuncTypeDev, (void*)DestroyAccelerationStructureKHR}},
         {"vkCmdBuildAccelerationStructuresKHR", {kFuncTypeDev, (void*)CmdBuildAccelerationStructuresKHR}},

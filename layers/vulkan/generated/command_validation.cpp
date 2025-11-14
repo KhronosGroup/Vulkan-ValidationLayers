@@ -2451,6 +2451,15 @@ static const vvl::unordered_map<Func, CommandValidationInfo> kCommandValidationT
     "VUID-vkCmdEndRendering2KHR-suspended",
     true, true, false,
 }},
+{Func::vkCmdBeginCustomResolveEXT, {
+    "VUID-vkCmdBeginCustomResolveEXT-commandBuffer-recording",
+    nullptr,
+    VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdBeginCustomResolveEXT-commandBuffer-cmdpool",
+    CommandScope::Inside, "VUID-vkCmdBeginCustomResolveEXT-renderpass",
+    CommandScope::Outside, "VUID-vkCmdBeginCustomResolveEXT-videocoding",
+    "VUID-vkCmdBeginCustomResolveEXT-suspended",
+    false, true, false,
+}},
 {Func::vkCmdBuildAccelerationStructuresKHR, {
     "VUID-vkCmdBuildAccelerationStructuresKHR-commandBuffer-recording",
     nullptr,

@@ -1603,6 +1603,9 @@ bool PreCallValidateGetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExterna
 #endif  // VK_USE_PLATFORM_METAL_EXT
 bool PreCallValidateCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo,
                                         const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer,
+                                             const VkBeginCustomResolveInfoEXT* pBeginCustomResolveInfo,
+                                             const ErrorObject& error_obj) const override;
 bool PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator,
                                                    VkAccelerationStructureKHR* pAccelerationStructure,

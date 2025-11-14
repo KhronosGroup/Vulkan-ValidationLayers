@@ -150,6 +150,8 @@ struct DeviceFeatures {
     bool customBorderColorWithoutFormat;
     // VkPhysicalDeviceCustomBorderColorFeaturesEXT
     bool customBorderColors;
+    // VkPhysicalDeviceCustomResolveFeaturesEXT
+    bool customResolve;
     // VkPhysicalDeviceDataGraphFeaturesARM
     bool dataGraph;
     // VkPhysicalDeviceDataGraphFeaturesARM
@@ -726,7 +728,7 @@ struct DeviceFeatures {
     bool shaderRawAccessChains;
     // VkPhysicalDeviceRayQueryFeaturesKHR
     bool rayQuery;
-    // VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV
+    // VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT
     bool rayTracingInvocationReorder;
     // VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV
     bool linearSweptSpheres;
