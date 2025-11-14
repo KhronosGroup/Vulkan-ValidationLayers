@@ -6044,6 +6044,17 @@ virtual void PreCallRecordCmdEndRendering2EXT(VkCommandBuffer commandBuffer, con
                                               const RecordObject& record_obj) {}
 virtual void PostCallRecordCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo,
                                                const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer,
+                                                     const VkBeginCustomResolveInfoEXT* pBeginCustomResolveInfo,
+                                                     const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer,
+                                                   const VkBeginCustomResolveInfoEXT* pBeginCustomResolveInfo,
+                                                   const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer,
+                                                    const VkBeginCustomResolveInfoEXT* pBeginCustomResolveInfo,
+                                                    const RecordObject& record_obj) {}
 virtual bool PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator,
                                                            VkAccelerationStructureKHR* pAccelerationStructure,

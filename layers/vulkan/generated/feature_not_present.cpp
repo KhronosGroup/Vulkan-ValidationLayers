@@ -664,6 +664,17 @@ void Instance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDevice
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_RESOLVE_FEATURES_EXT: {
+                VkPhysicalDeviceCustomResolveFeaturesEXT supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceCustomResolveFeaturesEXT *enabling =
+                    reinterpret_cast<const VkPhysicalDeviceCustomResolveFeaturesEXT *>(current);
+                if (enabling->customResolve && !supported.customResolve) {
+                    ss << "VkPhysicalDeviceCustomResolveFeaturesEXT::customResolve is not supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_FEATURES_ARM: {
                 VkPhysicalDeviceDataGraphFeaturesARM supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
@@ -2415,14 +2426,14 @@ void Instance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDevice
                 }
                 break;
             }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_NV: {
-                VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV supported = vku::InitStructHelper();
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_EXT: {
+                VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV *enabling =
-                    reinterpret_cast<const VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV *>(current);
+                const VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT *enabling =
+                    reinterpret_cast<const VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT *>(current);
                 if (enabling->rayTracingInvocationReorder && !supported.rayTracingInvocationReorder) {
-                    ss << "VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV::rayTracingInvocationReorder is not supported\n";
+                    ss << "VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT::rayTracingInvocationReorder is not supported\n";
                 }
                 break;
             }

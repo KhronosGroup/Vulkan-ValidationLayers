@@ -4446,6 +4446,14 @@ void PreCallRecordCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRen
 void PostCallRecordCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR* pRenderingEndInfo,
                                        const RecordObject& record_obj) override;
 
+void PreCallRecordCmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer,
+                                           const VkBeginCustomResolveInfoEXT* pBeginCustomResolveInfo,
+                                           const RecordObject& record_obj) override;
+
+void PostCallRecordCmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer,
+                                            const VkBeginCustomResolveInfoEXT* pBeginCustomResolveInfo,
+                                            const RecordObject& record_obj) override;
+
 void PreCallRecordCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator,
                                                  VkAccelerationStructureKHR* pAccelerationStructure,

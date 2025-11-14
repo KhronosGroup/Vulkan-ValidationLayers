@@ -2794,14 +2794,14 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
-        // Validation code for VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV structure members
-        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_NV: {  // Covers
-                                                                                              // VUID-VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV-sType-sType
+        // Validation code for VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_EXT: {  // Covers
+                                                                                               // VUID-VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT-sType-sType
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc =
-                    loc.pNext(Struct::VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV);
-                VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV* structure =
-                    (VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV*)header;
+                    loc.pNext(Struct::VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT);
+                VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT* structure =
+                    (VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT*)header;
                 skip |= ValidateBool32(pNext_loc.dot(Field::rayTracingInvocationReorder), structure->rayTracingInvocationReorder);
             }
         } break;
@@ -3258,6 +3258,16 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceShader64BitIndexingFeaturesEXT);
                 VkPhysicalDeviceShader64BitIndexingFeaturesEXT* structure = (VkPhysicalDeviceShader64BitIndexingFeaturesEXT*)header;
                 skip |= ValidateBool32(pNext_loc.dot(Field::shader64BitIndexing), structure->shader64BitIndexing);
+            }
+        } break;
+
+        // Validation code for VkPhysicalDeviceCustomResolveFeaturesEXT structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_RESOLVE_FEATURES_EXT: {  // Covers
+                                                                               // VUID-VkPhysicalDeviceCustomResolveFeaturesEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceCustomResolveFeaturesEXT);
+                VkPhysicalDeviceCustomResolveFeaturesEXT* structure = (VkPhysicalDeviceCustomResolveFeaturesEXT*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::customResolve), structure->customResolve);
             }
         } break;
 
@@ -7722,6 +7732,15 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
         // No Validation code for VkSetPresentConfigNV structure members  -- Covers VUID-VkSetPresentConfigNV-sType-sType
 #endif  // VK_ENABLE_BETA_EXTENSIONS
 
+        // Validation code for VkCustomResolveCreateInfoEXT structure members
+        case VK_STRUCTURE_TYPE_CUSTOM_RESOLVE_CREATE_INFO_EXT: {  // Covers VUID-VkCustomResolveCreateInfoEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkCustomResolveCreateInfoEXT);
+                VkCustomResolveCreateInfoEXT* structure = (VkCustomResolveCreateInfoEXT*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::customResolve), structure->customResolve);
+            }
+        } break;
+
         // Validation code for VkDataGraphPipelineBuiltinModelCreateInfoQCOM structure members
         case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_BUILTIN_MODEL_CREATE_INFO_QCOM: {  // Covers
                                                                                       // VUID-VkDataGraphPipelineBuiltinModelCreateInfoQCOM-sType-sType
@@ -7935,6 +7954,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUBIC_WEIGHTS_FEATURES_QCOM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_RESOLVE_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_FEATURES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_MODEL_FEATURES_QCOM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEDICATED_ALLOCATION_IMAGE_ALIASING_FEATURES_NV,
@@ -8054,7 +8074,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAW_ACCESS_CHAINS_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR,
-            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_NV,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_LINEAR_SWEPT_SPHERES_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MAINTENANCE_1_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MOTION_BLUR_FEATURES_NV,
@@ -10447,6 +10467,7 @@ bool Device::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineC
             [[maybe_unused]] const Location pCreateInfos_loc = loc.dot(Field::pCreateInfos, createInfoIndex);
             constexpr std::array allowed_structs_VkGraphicsPipelineCreateInfo = {
                 VK_STRUCTURE_TYPE_ATTACHMENT_SAMPLE_COUNT_INFO_AMD,
+                VK_STRUCTURE_TYPE_CUSTOM_RESOLVE_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID,
                 VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_OHOS,
                 VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_LIBRARY_CREATE_INFO_EXT,
@@ -11395,6 +11416,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice phys
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROVOKING_VERTEX_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PUSH_DESCRIPTOR_PROPERTIES,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_PROPERTIES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_NV,
@@ -25085,6 +25107,7 @@ bool Device::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t createInf
         for (uint32_t createInfoIndex = 0; createInfoIndex < createInfoCount; ++createInfoIndex) {
             [[maybe_unused]] const Location pCreateInfos_loc = loc.dot(Field::pCreateInfos, createInfoIndex);
             constexpr std::array allowed_structs_VkShaderCreateInfoEXT = {
+                VK_STRUCTURE_TYPE_CUSTOM_RESOLVE_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO,
                 VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT};
 
@@ -26934,6 +26957,20 @@ bool Device::PreCallValidateCmdEndRendering2EXT(VkCommandBuffer commandBuffer, c
     return skip;
 }
 
+bool Device::PreCallValidateCmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer,
+                                                     const VkBeginCustomResolveInfoEXT* pBeginCustomResolveInfo,
+                                                     const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_ext_custom_resolve))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_custom_resolve});
+    skip |= context.ValidateStructType(
+        loc.dot(Field::pBeginCustomResolveInfo), pBeginCustomResolveInfo, VK_STRUCTURE_TYPE_BEGIN_CUSTOM_RESOLVE_INFO_EXT, false,
+        "VUID-vkCmdBeginCustomResolveEXT-pBeginCustomResolveInfo-parameter", "VUID-VkBeginCustomResolveInfoEXT-sType-sType");
+    return skip;
+}
+
 bool Device::PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator,
                                                            VkAccelerationStructureKHR* pAccelerationStructure,
@@ -28312,6 +28349,7 @@ bool Device::ValidateCommandBufferInheritanceInfo(const Context& context, const 
         VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDER_PASS_TRANSFORM_INFO_QCOM,
         VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO,
         VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_VIEWPORT_SCISSOR_INFO_NV,
+        VK_STRUCTURE_TYPE_CUSTOM_RESOLVE_CREATE_INFO_EXT,
         VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID,
         VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_OHOS,
         VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_ATTRIBUTES_INFO_NVX,

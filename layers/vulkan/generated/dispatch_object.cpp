@@ -8944,6 +8944,10 @@ void Device::CmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderin
     device_dispatch_table.CmdEndRendering2EXT(commandBuffer, pRenderingEndInfo);
 }
 
+void Device::CmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer, const VkBeginCustomResolveInfoEXT* pBeginCustomResolveInfo) {
+    device_dispatch_table.CmdBeginCustomResolveEXT(commandBuffer, pBeginCustomResolveInfo);
+}
+
 VkResult Device::CreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator,
                                                 VkAccelerationStructureKHR* pAccelerationStructure) {
