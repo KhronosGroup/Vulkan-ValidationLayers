@@ -352,7 +352,7 @@ vvl::span<const vku::safe_VkSurfaceFormat2KHR> Surface::GetFormats(bool get_surf
         } else {
             result.resize(count);
             for (uint32_t surface_format_index = 0; surface_format_index < count; ++surface_format_index) {
-                result.emplace_back(&formats2[surface_format_index]);
+                result[surface_format_index] = &formats2[surface_format_index];
             }
         }
     } else {
