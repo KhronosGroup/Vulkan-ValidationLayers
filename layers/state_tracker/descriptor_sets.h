@@ -218,7 +218,11 @@ class DescriptorSetLayoutDef {
     VkDescriptorBindingFlags GetDescriptorBindingFlagsFromBinding(const uint32_t binding) const {
         return GetDescriptorBindingFlagsFromIndex(GetIndexFromBinding(binding));
     }
+
+    // Return array with a size of descriptorCount for the given binding index,
+    // or an emtpy array if the binding does not use immutable samplers
     const std::vector<vku::safe_VkSamplerCreateInfo> &GetImmutableSamplerCreateInfosFromIndex(uint32_t index) const;
+
     size_t GetImmutableSamplersCombinedHashFromIndex(uint32_t index) const;
 
     bool IsTypeMutable(const VkDescriptorType type, uint32_t binding) const;
