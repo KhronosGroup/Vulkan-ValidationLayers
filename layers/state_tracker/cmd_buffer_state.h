@@ -721,6 +721,10 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void SetImageViewLayout(const vvl::ImageView &view_state, VkImageLayout layout, VkImageLayout layoutStencil);
     void TrackImageViewFirstLayout(const vvl::ImageView &view_state, VkImageLayout layout,
                                    const char *submit_time_layout_mismatch_vuid);
+    void TrackDepthAttachmentFirstLayout(const vvl::ImageView &view_state, VkImageLayout layout,
+                                         const char *submit_time_layout_mismatch_vuid);
+    void TrackStencilAttachmentFirstLayout(const vvl::ImageView &view_state, VkImageLayout layout,
+                                           const char *submit_time_layout_mismatch_vuid);
 
     void SetImageLayout(const vvl::Image &image_state, const VkImageSubresourceRange &normalized_subresource_range,
                         VkImageLayout layout, VkImageLayout expected_layout = kInvalidLayout);
