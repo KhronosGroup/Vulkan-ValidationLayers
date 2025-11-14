@@ -333,10 +333,13 @@ vvl::DescriptorSetLayoutDef::DescriptorSetLayoutDef(vvl::DeviceState &device_sta
         }
         // Get immutable samplers info
         if (binding_info.pImmutableSamplers != nullptr) {
+            // Lazy allocation to avoid allocating array for layouts that don't use immutable samplers.
+            // Elements that correspond to bindings that do not use immutable samplers will be empty.
             if (immutable_sampler_create_infos_.empty()) {
                 immutable_sampler_create_infos_.resize(binding_count_);
                 immutable_sampler_combined_hashes_.resize(binding_count_, 0);
             }
+
             immutable_sampler_create_infos_[binding_index].resize(binding_info.descriptorCount, {});
             hash_util::HashCombiner samplers_hc;
             for (uint32_t array_index = 0; array_index < binding_info.descriptorCount; array_index++) {
@@ -538,18 +541,16 @@ bool vvl::ImmutableSamplersAreEqual(const DescriptorSetLayoutDef &dsl_def1, cons
     if (hash1 != hash2) {
         return false;
     }
-    for (uint32_t i = 0; i < binding_index; i++) {
-        const std::vector<vku::safe_VkSamplerCreateInfo> &create_infos1 =
-            dsl_def1.GetImmutableSamplerCreateInfosFromIndex(binding_index);
-        const std::vector<vku::safe_VkSamplerCreateInfo> &create_infos2 =
-            dsl_def1.GetImmutableSamplerCreateInfosFromIndex(binding_index);
-        if (create_infos1.size() != create_infos2.size()) {
+    const std::vector<vku::safe_VkSamplerCreateInfo> &create_infos1 =
+        dsl_def1.GetImmutableSamplerCreateInfosFromIndex(binding_index);
+    const std::vector<vku::safe_VkSamplerCreateInfo> &create_infos2 =
+        dsl_def1.GetImmutableSamplerCreateInfosFromIndex(binding_index);
+    if (create_infos1.size() != create_infos2.size()) {
+        return false;
+    }
+    for (size_t s = 0; s < create_infos1.size(); s++) {
+        if (!CompareSamplerCreateInfo(*create_infos1[s].ptr(), *create_infos2[s].ptr())) {
             return false;
-        }
-        for (size_t s = 0; s < create_infos1.size(); s++) {
-            if (!CompareSamplerCreateInfo(*create_infos1[s].ptr(), *create_infos2[s].ptr())) {
-                return false;
-            }
         }
     }
     return true;
