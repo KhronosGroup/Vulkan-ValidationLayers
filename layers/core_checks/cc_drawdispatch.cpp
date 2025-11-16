@@ -1009,7 +1009,7 @@ bool CoreChecks::ValidateCmdTraceRaysIndirect(const Location &loc, const LastBou
     bool skip = false;
     const bool is_2khr = loc.function == Func::vkCmdTraceRaysIndirect2KHR;
 
-    const char *usage_vuid = is_2khr ? " VUID-vkCmdTraceRaysIndirect2KHR-indirectDeviceAddress-03633"
+    const char *usage_vuid = is_2khr ? "VUID-vkCmdTraceRaysIndirect2KHR-indirectDeviceAddress-03633"
                                      : "VUID-vkCmdTraceRaysIndirectKHR-indirectDeviceAddress-03633";
     BufferAddressValidation<1> buffer_address_validator = {
         {{{usage_vuid,
