@@ -635,14 +635,14 @@ bool CoreChecks::ValidateFramebufferAndRenderPassLayouts(const vvl::CommandBuffe
                 continue;
             }
 
-            // NOTE: can't use directly view_state->range_generator since we need to modify aspectMask
-            VkImageSubresourceRange layout_range = view_state->GetRangeGeneratorRange(device_state->extensions);
-            layout_range.aspectMask = test_aspect;
+            // Cannot use view_state->range_generator directly since we need to modify aspectMask
+            VkImageSubresourceRange image_layout_range = view_state->GetRangeGeneratorRange(device_state->extensions);
+            image_layout_range.aspectMask = test_aspect;
 
             LayoutUseCheckAndMessage layout_check(check_layout, test_aspect);
 
             skip |= ForEachMatchingLayoutMapRange(
-                *image_layout_map, RangeGenerator(image_state->subresource_encoder, layout_range),
+                *image_layout_map, RangeGenerator(image_state->subresource_encoder, image_layout_range),
                 [this, &layout_check, i, cb = cb_state.Handle(), render_pass = render_pass,
                  framebuffer = framebuffer_state.Handle(), image = view_state->image_state->Handle(),
                  image_view = view_state->Handle(), attachment_loc,
@@ -783,10 +783,14 @@ bool CoreChecks::ValidateRenderingAttachmentCurrentLayout(const vvl::CommandBuff
         return skip;
     }
 
+    // Cannot use view_state->range_generator directly since we need to modify aspectMask
+    VkImageSubresourceRange image_layout_range = image_view_state->GetRangeGeneratorRange(device_state->extensions);
+    image_layout_range.aspectMask = aspect_mask;
+
     LayoutUseCheckAndMessage layout_check(attachment_info.imageLayout, aspect_mask);
 
     skip |= ForEachMatchingLayoutMapRange(
-        *image_layout_map, RangeGenerator(image_view_state->range_generator),
+        *image_layout_map, RangeGenerator(image_view_state->image_state->subresource_encoder, image_layout_range),
         [this, &cb_state, &image_state, &image_view_state, &layout_check, vuid, attachment_loc](const LayoutRange &range,
                                                                                                 const ImageLayoutState &state) {
             bool local_skip = false;
