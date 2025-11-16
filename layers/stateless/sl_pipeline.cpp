@@ -1413,7 +1413,7 @@ bool Device::ValidateDepthClampRange(const VkDepthClampRangeEXT &depth_clamp_ran
 
     if (!IsExtEnabled(extensions.vk_ext_depth_range_unrestricted)) {
         if (depth_clamp_range.minDepthClamp < 0.0) {
-            skip |= LogError("VUID-VkDepthClampRangeEXT-pDepthClampRange-09648", device, loc.dot(Field::minDepth),
+            skip |= LogError("VUID-VkDepthClampRangeEXT-pDepthClampRange-09648", device, loc.dot(Field::minDepthClamp),
                              "(%f) is below 0.0 (and VK_EXT_depth_range_unrestricted is not enabled).",
                              depth_clamp_range.minDepthClamp);
         }
