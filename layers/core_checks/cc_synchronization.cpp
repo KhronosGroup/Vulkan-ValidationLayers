@@ -2509,7 +2509,7 @@ bool CoreChecks::ValidateDynamicRenderingPipelineStage(const LogObjectList &objl
     if (HasFramebufferStagePipelineStageFlags(stage_mask) && loc.field == Field::srcStageMask &&
         (dependency_flags & VK_DEPENDENCY_BY_REGION_BIT) != VK_DEPENDENCY_BY_REGION_BIT) {
         const auto &vuid = GetDynamicRenderingBarrierVUID(loc, vvl::DynamicRenderingBarrierError::kDependencyFlags);
-        skip |= LogError(vuid, objlist, loc, "must contain VK_DEPENDENCY_BY_REGION_BIT.");
+        skip |= LogError(vuid, objlist, loc.prev->dot(Field::dependencyFlags), "must contain VK_DEPENDENCY_BY_REGION_BIT.");
     }
     return skip;
 }
