@@ -865,6 +865,62 @@ TEST_F(PositiveImageLayout, DepthSliceTransitionCriteriaNotMet) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
+TEST_F(PositiveImageLayout, SeparateDepthAspectTransition) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11083
+    TEST_DESCRIPTION("Test separate depth aspect transition in depth-stencil image");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::separateDepthStencilLayouts);
+    RETURN_IF_SKIP(Init());
+
+    auto depth_stencil_format = FindSupportedDepthStencilFormat(Gpu());
+
+    vkt::Image ds_image(*m_device, 32, 32, depth_stencil_format,
+                        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::ImageView ds_image_view = ds_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    // At first transition both depth and stencil
+    VkImageMemoryBarrier2 transition0 = vku::InitStructHelper();
+    transition0.dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    transition0.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    transition0.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    transition0.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    transition0.image = ds_image;
+    transition0.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1};
+
+    // Then transition only depth
+    VkImageMemoryBarrier2 transition1 = vku::InitStructHelper();
+    transition1.srcStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    transition1.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    transition1.dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    transition1.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    transition1.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    transition1.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    transition1.image = ds_image;
+    transition1.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1};
+
+    VkRenderingAttachmentInfo depth_attachment = vku::InitStructHelper();
+    depth_attachment.imageView = ds_image_view;
+    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {32, 32};
+    rendering_info.layerCount = 1;
+    rendering_info.pDepthAttachment = &depth_attachment;
+
+    m_command_buffer.Begin();
+    m_command_buffer.Barrier(transition0);
+    m_command_buffer.Barrier(transition1);
+
+    // In the original issue the final result of two transitions did not match expected layout for rendering
+    m_command_buffer.BeginRendering(rendering_info);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveImageLayout, SeparateStencilAspectTransition) {
     TEST_DESCRIPTION("Separate stencil aspect transition of depth-stencil image");
     SetTargetApiVersion(VK_API_VERSION_1_3);
