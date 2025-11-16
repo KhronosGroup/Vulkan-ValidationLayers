@@ -3499,6 +3499,11 @@ void DeviceState::PostCallRecordCmdEndRendering(VkCommandBuffer commandBuffer, c
 
 void DeviceState::PostCallRecordCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT *pRenderingEndInfo,
                                                     const RecordObject &record_obj) {
+    PostCallRecordCmdEndRendering2KHR(commandBuffer, pRenderingEndInfo, record_obj);
+}
+
+void DeviceState::PostCallRecordCmdEndRendering2KHR(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR *pRenderingEndInfo,
+                                                    const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordEndRendering(pRenderingEndInfo, record_obj.location);
 }
