@@ -201,7 +201,7 @@ jobs:
   androidOnLinux:
     needs: check_vvl
     runs-on: ubuntu-24.04
-    if: github.ref == 'refs/heads/main'
+    if: "!contains(github.head_ref || github.ref, 'SKIP-CI')"
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
