@@ -764,7 +764,8 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings *settings_data, VkuL
 
 #define NEW_SETTING_NAME_AND_ENV(setting) setting, #setting
 
-std::string GetDeprecatedEnabledDisabledSettingsWarning() {
+#if 0
+static std::string GetDeprecatedEnabledDisabledSettingsWarning() {
     struct DS {
         const char *deprecated_setting;
         const char *new_setting;
@@ -796,7 +797,7 @@ std::string GetDeprecatedEnabledDisabledSettingsWarning() {
 
     return ss.str();
 }
-
+#endif
 #undef NEW_SETTING_NAME_AND_ENV
 
 static const char *GetDefaultPrefix() {
@@ -1081,10 +1082,11 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     }
 
     const bool use_fine_grained_settings = disabled.empty() && enabled.empty();
-
+#if 0
     if (!disabled.empty() || !enabled.empty()) {
         setting_warnings.emplace_back(GetDeprecatedEnabledDisabledSettingsWarning());
     }
+#endif
 
     // Only read the legacy enables flags when used, not their replacement.
     // Avoid Android C.I. performance regression from reading Android env variables
