@@ -52,6 +52,7 @@ jobs:
   linux:
     needs: check_vvl
     runs-on: ubuntu-24.04
+    if: "!contains(github.head_ref || github.ref, 'SKIP-CI')"
     name: "linux (address sanitizer, ${{matrix.config}}, custom_hash_map ${{matrix.custom_hash_map}} )"
     strategy:
       fail-fast: false
@@ -93,6 +94,7 @@ jobs:
   linux-tsan:
     needs: check_vvl
     runs-on: ubuntu-24.04
+    if: "!contains(github.head_ref || github.ref, 'SKIP-CI')"
     name: "linux (thread sanitizer, ${{matrix.config}}, custom_hash_map ${{matrix.custom_hash_map}} )"
     strategy:
       fail-fast: false
@@ -129,6 +131,7 @@ jobs:
   linux-ubsan:
     needs: check_vvl
     runs-on: ubuntu-24.04
+    if: "!contains(github.head_ref || github.ref, 'SKIP-CI')"
     name: "linux (undefined behavior sanitizer, debug)"
     strategy:
       fail-fast: false
@@ -151,6 +154,7 @@ jobs:
   linux_back_compat:
     needs: check_vvl
     runs-on: ubuntu-22.04
+    if: "!contains(github.head_ref || github.ref, 'SKIP-CI')"
     name: "Ubuntu Backcompat"
     steps:
       - uses: actions/checkout@v5
@@ -197,6 +201,7 @@ jobs:
   androidOnLinux:
     needs: check_vvl
     runs-on: ubuntu-24.04
+    if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -221,6 +226,7 @@ jobs:
   windows:
     needs: check_vvl
     runs-on: windows-2022
+    if: "!contains(github.head_ref || github.ref, 'SKIP-CI')"
     strategy:
       matrix:
         arch: [ amd64, amd64_x86 ]
@@ -299,6 +305,7 @@ jobs:
   android:
       needs: check_vvl
       runs-on: ubuntu-24.04
+      if: "!contains(github.head_ref || github.ref, 'SKIP-CI')"
       strategy:
         matrix:
           abi: [ arm64-v8a ]
@@ -372,6 +379,7 @@ jobs:
     # androidOnLinux does a basic build and only takes a 2 or 3 minutes to normally run
     needs: androidOnLinux
     runs-on: macos-latest
+    if: "!contains(github.head_ref || github.ref, 'SKIP-CI')"
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -403,6 +411,7 @@ jobs:
   mingw:
     needs: check_vvl
     runs-on: windows-latest
+    if: "!contains(github.head_ref || github.ref, 'SKIP-CI')"
     defaults:
       run:
         shell: bash
@@ -430,6 +439,7 @@ jobs:
   chromium:
     needs: check_vvl
     runs-on: ubuntu-latest
+    if: "!contains(github.head_ref || github.ref, 'SKIP-CI')"
     strategy:
       matrix:
         args:
@@ -452,3 +462,32 @@ jobs:
       - run: scripts/update_deps.py --dir ext --no-build
       - run: scripts/generate_source.py --verify ext/Vulkan-Headers/registry/ ext/SPIRV-Headers/include/spirv/unified1/
       - run: scripts/vk_validation_stats.py ext/Vulkan-Headers/registry/validusage.json -summary -c
+
+  # "Collector Job" to funnel the requirements to a single action
+  # This allows branches with SKIP-CI to skip down here, and still "pass"
+  all-tests-passed:
+    runs-on: ubuntu-latest
+    if: always()
+    # List of all jobs required
+    needs: [android, chromium, linux, windows]
+    steps:
+      - name: Check status of jobs
+        run: |
+          # If any dependency failed, we fail.
+          # If they were skipped or succeeded, we pass.
+
+          # JSON hack to check results of all 'needs'
+          RESULTS='${{ toJSON(needs) }}'
+
+          if echo "$RESULTS" | grep -q '"result": "failure"'; then
+            echo "One of the required jobs failed."
+            exit 1
+          fi
+
+          if echo "$RESULTS" | grep -q '"result": "cancelled"'; then
+            echo "Job was cancelled."
+            exit 1
+          fi
+
+          echo "MERGE AWAY!"
+          exit 0
