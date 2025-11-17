@@ -545,3 +545,79 @@ TEST_F(PositiveSecondaryCommandBuffer, NestedDrawWithoutInline) {
     vk::CmdDraw(secondary, 3, 1, 0, 0);
     secondary.End();
 }
+
+TEST_F(PositiveSecondaryCommandBuffer, CustomResolveDynamicRendering) {
+    TEST_DESCRIPTION("Call vkCmdBeginCustomResolveEXT in the secondary");
+    AddRequiredExtensions(VK_EXT_CUSTOM_RESOLVE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::customResolve);
+    RETURN_IF_SKIP(Init());
+
+    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    VkCustomResolveCreateInfoEXT custom_resolve_info = vku::InitStructHelper();
+    custom_resolve_info.customResolve = VK_FALSE;
+    custom_resolve_info.colorAttachmentCount = 1;
+    custom_resolve_info.pColorAttachmentFormats = &color_format;
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper(&custom_resolve_info);
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+
+    CreatePipelineHelper pipe_1(*this, &pipeline_rendering_info);
+    pipe_1.CreateGraphicsPipeline();
+
+    custom_resolve_info.customResolve = VK_TRUE;
+    CreatePipelineHelper pipe_2(*this, &pipeline_rendering_info);
+    pipe_2.CreateGraphicsPipeline();
+
+    VkCommandBufferInheritanceRenderingInfo inheritance_rendering_info = vku::InitStructHelper(&custom_resolve_info);
+    inheritance_rendering_info.flags = VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT;
+    inheritance_rendering_info.colorAttachmentCount = 1;
+    inheritance_rendering_info.pColorAttachmentFormats = &color_format;
+    inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
+
+    const VkCommandBufferInheritanceInfo cmdbuff_ii = vku::InitStructHelper(&inheritance_rendering_info);
+    VkCommandBufferBeginInfo cmdbuff_bi = vku::InitStructHelper();
+    cmdbuff_bi.flags = 0;
+    cmdbuff_bi.pInheritanceInfo = &cmdbuff_ii;
+
+    VkImageCreateInfo image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, color_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    vkt::Image color_image(*m_device, image_ci);
+    vkt::ImageView color_image_view = color_image.CreateView();
+
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    vkt::Image resolve_image(*m_device, image_ci);
+    vkt::ImageView resolve_image_view = resolve_image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.imageView = color_image_view;
+    color_attachment.resolveMode = VK_RESOLVE_MODE_CUSTOM_BIT_EXT;
+    color_attachment.resolveImageView = resolve_image_view;
+    color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    begin_rendering_info.flags = VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT;
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin(&cmdbuff_bi);
+    secondary.BeginRendering(begin_rendering_info);
+    VkBeginCustomResolveInfoEXT begin_resolve_info = vku::InitStructHelper();
+    vk::CmdBeginCustomResolveEXT(secondary, &begin_resolve_info);
+
+    vk::CmdBindPipeline(secondary, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_2);
+    vk::CmdDraw(secondary, 3, 1, 0, 0);
+    secondary.EndRendering();
+    secondary.End();
+
+    m_command_buffer.Begin();
+    vk::CmdExecuteCommands(m_command_buffer, 1, &secondary.handle());
+    m_command_buffer.End();
+}

@@ -2183,6 +2183,43 @@ TEST_F(PositivePipeline, BlendDisabled) {
     m_command_buffer.End();
 }
 
+TEST_F(PositivePipeline, CustomResolve) {
+    AddRequiredExtensions(VK_EXT_CUSTOM_RESOLVE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::customResolve);
+    RETURN_IF_SKIP(Init());
+
+    VkFormat color_formats[2] = {VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM};
+    VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
+
+    VkCustomResolveCreateInfoEXT custom_resolve_info = vku::InitStructHelper();
+    custom_resolve_info.customResolve = VK_TRUE;
+    custom_resolve_info.colorAttachmentCount = 1;
+    custom_resolve_info.pColorAttachmentFormats = &color_formats[0];
+    custom_resolve_info.depthAttachmentFormat = ds_format;
+    custom_resolve_info.stencilAttachmentFormat = VK_FORMAT_UNDEFINED;
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper(&custom_resolve_info);
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_formats[1];
+
+    VkPipelineDepthStencilStateCreateInfo ds_ci = vku::InitStructHelper();
+    {
+        CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+        pipe.gp_ci_.pDepthStencilState = &ds_ci;
+        pipe.CreateGraphicsPipeline();
+    }
+
+    custom_resolve_info.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
+    custom_resolve_info.stencilAttachmentFormat = ds_format;
+    {
+        CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+        pipe.gp_ci_.pDepthStencilState = &ds_ci;
+        pipe.CreateGraphicsPipeline();
+    }
+}
+
 TEST_F(PositivePipeline, NullDepthStencilState) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);

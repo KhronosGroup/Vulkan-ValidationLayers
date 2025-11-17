@@ -73,6 +73,7 @@ struct DecorationBase {
         input_attachment_bit = 1 << 8,
         per_task_nv = 1 << 9,
         per_primitive_ext = 1 << 10,
+        sample_bit = 1 << 11,
     };
 
     // bits to know if things have been set or not by a Decoration

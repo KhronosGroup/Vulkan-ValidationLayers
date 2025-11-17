@@ -671,6 +671,12 @@ bool Device::manual_PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuff
                          "is %s, but nestedCommandBuffer and maintenance7 feature were not enabled.",
                          string_VkRenderingFlags(pRenderingInfo->flags).c_str());
     }
+    if ((pRenderingInfo->flags & (VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT | VK_RENDERING_FRAGMENT_REGION_BIT_EXT)) != 0 &&
+        !enabled_features.customResolve) {
+        skip |=
+            LogError("VUID-VkRenderingInfo-flags-11514", commandBuffer, rendering_info_loc.dot(Field::flags),
+                     "is %s, but customResolve feature were not enabled.", string_VkRenderingFlags(pRenderingInfo->flags).c_str());
+    }
     if (pRenderingInfo->layerCount > device_limits.maxFramebufferLayers) {
         skip |= LogError("VUID-VkRenderingInfo-layerCount-07817", commandBuffer, rendering_info_loc.dot(Field::layerCount),
                          "(%" PRIu32 ") is greater than maxFramebufferLayers (%" PRIu32 ").", pRenderingInfo->layerCount,
@@ -789,6 +795,26 @@ bool Device::ValidateRenderingAttachmentFeedbackLoopInfo(VkCommandBuffer command
     return skip;
 }
 
+bool Device::ValidateRenderingCustomResolve(VkCommandBuffer commandBuffer, VkRenderingFlags rendering_flags,
+                                            VkResolveModeFlagBits resolve_mode, const Location &attachment_loc) const {
+    bool skip = false;
+
+    if (rendering_flags & VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT) {
+        if (!IsValueIn(resolve_mode, {VK_RESOLVE_MODE_CUSTOM_BIT_EXT, VK_RESOLVE_MODE_NONE})) {
+            skip |=
+                LogError("VUID-VkRenderingInfo-flags-11516", commandBuffer, attachment_loc.dot(Field::resolveMode),
+                         "is %s but VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT flag is set.", string_VkResolveModeFlagBits(resolve_mode));
+        }
+    } else if (resolve_mode == VK_RESOLVE_MODE_CUSTOM_BIT_EXT) {
+        skip |=
+            LogError("VUID-VkRenderingInfo-pColorAttachments-11515", commandBuffer, attachment_loc.dot(Field::resolveMode),
+                     "is VK_RESOLVE_MODE_CUSTOM_BIT_EXT but VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT flag is missing (flags set %s).",
+                     string_VkRenderingFlags(rendering_flags).c_str());
+    }
+
+    return skip;
+}
+
 bool Device::ValidateBeginRenderingColorAttachment(VkCommandBuffer commandBuffer, const VkRenderingInfo &rendering_info,
                                                    const Location &rendering_info_loc) const {
     bool skip = false;
@@ -797,8 +823,10 @@ bool Device::ValidateBeginRenderingColorAttachment(VkCommandBuffer commandBuffer
         if (color_attachment.imageView == VK_NULL_HANDLE) continue;
         const Location color_attachment_loc = rendering_info_loc.dot(Field::pColorAttachments, i);
 
+        const VkResolveModeFlagBits resolve_mode = color_attachment.resolveMode;
         skip |= ValidateRenderingAttachmentFeedbackLoopInfo(commandBuffer, color_attachment, color_attachment_loc);
         skip |= ValidateRenderingAttachmentLayout(commandBuffer, color_attachment, color_attachment_loc);
+        skip |= ValidateRenderingCustomResolve(commandBuffer, rendering_info.flags, resolve_mode, color_attachment_loc);
 
         const VkImageLayout image_layout = color_attachment.imageLayout;
         if (image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
@@ -807,7 +835,6 @@ bool Device::ValidateBeginRenderingColorAttachment(VkCommandBuffer commandBuffer
                              color_attachment_loc.dot(Field::imageLayout), "is %s.", string_VkImageLayout(image_layout));
         }
 
-        const VkResolveModeFlagBits resolve_mode = color_attachment.resolveMode;
         const VkImageLayout resolve_image_layout = color_attachment.resolveImageLayout;
         if (resolve_mode != VK_RESOLVE_MODE_NONE) {
             if (resolve_image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
@@ -863,6 +890,7 @@ bool Device::ValidateBeginRenderingDepthAttachment(VkCommandBuffer commandBuffer
 
     skip |= ValidateRenderingAttachmentFeedbackLoopInfo(commandBuffer, depth_attachment, attachment_loc);
     skip |= ValidateRenderingAttachmentLayout(commandBuffer, depth_attachment, attachment_loc);
+    skip |= ValidateRenderingCustomResolve(commandBuffer, rendering_info.flags, depth_attachment.resolveMode, attachment_loc);
 
     if (depth_attachment.imageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
         skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-06092", commandBuffer, attachment_loc.dot(Field::imageLayout),
@@ -913,6 +941,7 @@ bool Device::ValidateBeginRenderingStencilAttachment(VkCommandBuffer commandBuff
 
     skip |= ValidateRenderingAttachmentFeedbackLoopInfo(commandBuffer, stencil_attachment, attachment_loc);
     skip |= ValidateRenderingAttachmentLayout(commandBuffer, stencil_attachment, attachment_loc);
+    skip |= ValidateRenderingCustomResolve(commandBuffer, rendering_info.flags, stencil_attachment.resolveMode, attachment_loc);
 
     if (stencil_attachment.imageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
         skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-06094", commandBuffer, attachment_loc.dot(Field::imageLayout),

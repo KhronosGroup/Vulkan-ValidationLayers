@@ -132,6 +132,10 @@ struct LastBound {
     VkPrimitiveTopology ClipSpaceTopology() const;
     VkPrimitiveTopology GetRasterizationInputTopology() const;
 
+    bool IsSampleShadingEnabled() const;
+    float GetMinSampleShading() const;
+    std::string DescribeSampleShading() const;
+
     VkShaderEXT GetShaderObject(ShaderObjectStage stage) const;
     vvl::ShaderObject *GetShaderObjectState(ShaderObjectStage stage) const;
     const vvl::ShaderObject *GetShaderObjectStateIfValid(ShaderObjectStage stage) const;

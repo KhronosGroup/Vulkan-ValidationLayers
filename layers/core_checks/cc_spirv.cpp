@@ -1246,20 +1246,23 @@ bool CoreChecks::ValidateShader64BitIndexing(const spirv::Module &module_state, 
     return skip;
 }
 
-bool CoreChecks::ValidateShaderResolveQCOM(const spirv::Module &module_state, VkShaderStageFlagBits stage,
-                                           const vvl::Pipeline &pipeline, const Location &loc) const {
+bool CoreChecks::ValidateSubpassCustomeResolve(const spirv::Module &module_state, VkShaderStageFlagBits stage,
+                                               const vvl::Pipeline &pipeline, const Location &loc) const {
     bool skip = false;
 
-    // If the pipeline's subpass description contains flag VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM,
+    // If the pipeline's subpass description contains flag VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_EXT,
     // then the fragment shader must not enable the SPIRV SampleRateShading capability.
     if (stage == VK_SHADER_STAGE_FRAGMENT_BIT && module_state.HasCapability(spv::CapabilitySampleRateShading)) {
         const auto &rp_state = pipeline.RenderPassState();
-        auto subpass_flags = (!rp_state) ? 0 : rp_state->create_info.pSubpasses[pipeline.Subpass()].flags;
-        if ((subpass_flags & VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM) != 0) {
+        if (!rp_state || rp_state->UsesDynamicRendering()) {
+            return skip;
+        }
+        const VkSubpassDescriptionFlags subpass_flags = rp_state->create_info.pSubpasses[pipeline.Subpass()].flags;
+        if ((subpass_flags & VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_EXT) != 0) {
             const LogObjectList objlist(module_state.handle(), rp_state->Handle());
             skip |= LogError("VUID-RuntimeSpirv-SampleRateShading-06378", objlist, loc,
                              "SPIR-V (Fragment stage) enables SampleRateShading capability "
-                             "and the subpass flags includes VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM.");
+                             "and the subpass flags includes VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_EXT.");
         }
     }
 
@@ -2151,8 +2154,8 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
         if (enabled_features.primitiveFragmentShadingRate) {
             skip |= ValidatePrimitiveRateShaderState(module_state, entrypoint, *pipeline, stage, loc);
         }
-        if (IsExtEnabled(extensions.vk_qcom_render_pass_shader_resolve)) {
-            skip |= ValidateShaderResolveQCOM(module_state, stage, *pipeline, loc);
+        if (enabled_features.customResolve || IsExtEnabled(extensions.vk_qcom_render_pass_shader_resolve)) {
+            skip |= ValidateSubpassCustomeResolve(module_state, stage, *pipeline, loc);
         }
         skip |= ValidatePointSizeShaderState(module_state, entrypoint, *pipeline, stage, loc);
         skip |= ValidatePrimitiveTopology(module_state, entrypoint, *pipeline, loc);

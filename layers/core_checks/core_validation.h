@@ -286,6 +286,8 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateDrawDepthStencilAttachments(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawTessellation(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawVertexBinding(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
+    bool ValidateDrawCustomResolve(const LastBound& last_bound_state, const vvl::RenderPass& rp_state,
+                                   const core::CommandBufferSubState& cb_sub_state, const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateDrawDynamicRenderingFsOutputs(const LastBound& last_bound_state, const vvl::CommandBuffer& cb_state,
                                                const Location& loc) const;
     bool ValidateDrawDynamicRenderpassExternalFormatResolve(const LastBound& last_bound_state, const vvl::RenderPass& rp_state,
@@ -913,8 +915,9 @@ class CoreChecks : public vvl::DeviceProxy {
                                    const Location& loc) const;
     bool ValidateCooperativeVector(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                    const ShaderStageState& stage_state, const Location& loc) const;
-    bool ValidateShaderResolveQCOM(const spirv::Module& module_state, VkShaderStageFlagBits stage, const vvl::Pipeline& pipeline,
-                                   const Location& loc) const;
+    bool ValidateSubpassCustomeResolve(const spirv::Module& module_state, VkShaderStageFlagBits stage,
+                                       const vvl::Pipeline& pipeline, const Location& loc) const;
+    bool ValidateCustomResolveCreateInfoEXT(const VkCustomResolveCreateInfoEXT& create_info, const Location& loc) const;
     bool ValidateWorkgroupSharedMemory(const spirv::Module& module_state, VkShaderStageFlagBits stage,
                                        uint32_t total_workgroup_shared_memory, const Location& loc) const;
     bool ValidateShaderTileImage(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
@@ -2589,6 +2592,9 @@ class CoreChecks : public vvl::DeviceProxy {
                                                        const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer, VkImageAspectFlags aspectMask,
                                                               const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer,
+                                                 const VkBeginCustomResolveInfoEXT* pBeginCustomResolveInfo,
+                                                 const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer,
                                                         const VkConditionalRenderingBeginInfoEXT* pConditionalRenderingBegin,
                                                         const ErrorObject& error_obj) const override;

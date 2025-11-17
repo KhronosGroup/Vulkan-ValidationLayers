@@ -1052,6 +1052,8 @@ class Device : public vvl::base::Device {
     bool ValidateRenderingAttachmentFeedbackLoopInfo(VkCommandBuffer commandBuffer,
                                                      const VkRenderingAttachmentInfo &attachment_info,
                                                      const Location &attachment_loc) const;
+    bool ValidateRenderingCustomResolve(VkCommandBuffer commandBuffer, VkRenderingFlags rendering_flags,
+                                        VkResolveModeFlagBits resolve_mode, const Location &attachment_loc) const;
     bool ValidateBeginRenderingColorAttachment(VkCommandBuffer commandBuffer, const VkRenderingInfo &rendering_info,
                                                const Location &rendering_info_loc) const;
     bool ValidateBeginRenderingDepthAttachment(VkCommandBuffer commandBuffer, const VkRenderingInfo &rendering_info,
