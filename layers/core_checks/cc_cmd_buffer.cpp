@@ -279,7 +279,7 @@ bool CoreChecks::ValidateBeginCommandBufferInheritanceInfo(const vvl::CommandBuf
         (info.queryFlags & VK_QUERY_CONTROL_PRECISE_BIT)) {
         skip |= LogError("VUID-vkBeginCommandBuffer-commandBuffer-00052", cb_state.Handle(), inheritance_loc,
                          "Secondary %s must not have VK_QUERY_CONTROL_PRECISE_BIT if "
-                         "occulusionQuery is disabled or the device does not support precise occlusion queries.",
+                         "occlusionQuery is disabled or the device does not support precise occlusion queries.",
                          FormatHandle(cb_state.Handle()).c_str());
     }
     auto p_inherited_viewport_scissor_info =
