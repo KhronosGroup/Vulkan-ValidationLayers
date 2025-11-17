@@ -240,6 +240,11 @@ class GpuAVTest : public virtual VkLayerTest {
     VkValidationFeaturesEXT GetGpuAvValidationFeatures();
 };
 
+class GpuAVGpuAVShaderSanitizer : public GpuAVTest {
+  public:
+    void SimpleZeroComputeTest(const char *shader, int source_type, const char *expected_error = nullptr, uint32_t error_count = 1);
+};
+
 class GpuAVBufferDeviceAddressTest : public GpuAVTest {
   public:
     void InitGpuVUBufferDeviceAddress(bool safe_mode = true);

@@ -792,6 +792,21 @@
                                                     { "key": "gpuav_shader_instrumentation", "value": true }
                                                 ]
                                             }
+                                        },
+                                        {
+                                            "key": "gpuav_shader_sanitizer",
+                                            "label": "Shader Sanitizer",
+                                            "description": "Things invalid to do in SPIR-V but don't have a dedicated check (example: dividing an int by zero, reaching OpUnreachable, invalid casting, overflow/undeflow). When in safe mode, will modify the invalid usage.",
+                                            "type": "BOOL",
+                                            "view": "DEBUG",
+                                            "default": true,
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    { "key": "gpuav_enable", "value": true },
+                                                    { "key": "gpuav_shader_instrumentation", "value": true }
+                                                ]
+                                            }
                                         }
                                     ]
                                 },

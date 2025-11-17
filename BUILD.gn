@@ -248,6 +248,8 @@ vvl_sources = [
   "layers/gpuav/spirv/pass.h",
   "layers/gpuav/spirv/ray_query_pass.cpp",
   "layers/gpuav/spirv/ray_query_pass.h",
+  "layers/gpuav/spirv/sanitizer_pass.cpp",
+  "layers/gpuav/spirv/sanitizer_pass.h",
   "layers/gpuav/spirv/debug_printf_pass.cpp",
   "layers/gpuav/spirv/debug_printf_pass.h",
   "layers/gpuav/spirv/type_manager.cpp",

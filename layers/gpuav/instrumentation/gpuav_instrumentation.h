@@ -111,5 +111,6 @@ bool LogMessageInstDescriptorClass(Validator& gpuav, const CommandBufferSubState
                                    const InstrumentationErrorBlob& instrumentation_error_blob);
 bool LogMessageInstBufferDeviceAddress(const uint32_t* error_record, std::string& out_error_msg, std::string& out_vuid_msg);
 bool LogMessageInstRayQuery(const uint32_t* error_record, std::string& out_error_msg, std::string& out_vuid_msg);
+bool LogMessageInstSanitizer(const uint32_t* error_record, std::string& out_error_msg, std::string& out_vuid_msg);
 
 }  // namespace gpuav

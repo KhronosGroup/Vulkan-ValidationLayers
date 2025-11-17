@@ -1,4 +1,4 @@
-/* Copyright (c) 2024-2025 LunarG, Inc.
+/* Copyright (c) 2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,21 +20,28 @@
 namespace gpuav {
 namespace spirv {
 
-// Create a pass to instrument SPV_KHR_ray_query instructions
-class RayQueryPass : public Pass {
+// This pass catches things that are not a dedicated VU, things such as, but not limited to
+// - dividing by zero (for an int)
+// - overflows
+// - undefined casting
+// - reaching OpUnreachable
+// - etc
+class SanitizerPass : public Pass {
   public:
-    RayQueryPass(Module& module);
-    const char* Name() const final { return "RayQueryPass"; }
+    SanitizerPass(Module& module);
+    const char* Name() const final { return "SanitizerPass"; }
     bool Instrument() final;
     void PrintDebugInfo() const final;
 
   private:
     // This is metadata tied to a single instruction gathered during RequiresInstrumentation() to be used later
     struct InstructionMeta {
+        const Type* result_type = nullptr;
         const Instruction* target_instruction = nullptr;
     };
 
     bool RequiresInstrumentation(const Instruction& inst, InstructionMeta& meta);
+
     uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
 
     uint32_t GetLinkFunctionId();

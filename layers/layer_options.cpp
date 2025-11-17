@@ -194,6 +194,7 @@ const char *VK_LAYER_GPUAV_BUFFER_ADDRESS_OOB = "gpuav_buffer_address_oob";
 const char *VK_LAYER_GPUAV_VALIDATE_RAY_QUERY = "gpuav_validate_ray_query";
 const char *VK_LAYER_GPUAV_POST_PROCESS_DESCRIPTOR_INDEXING = "gpuav_post_process_descriptor_indexing";
 const char *VK_LAYER_GPUAV_VERTEX_ATTRIBUTE_FETCH_OOB = "gpuav_vertex_attribute_fetch_oob";
+const char *VK_LAYER_GPUAV_SHADER_SANITIZER = "gpuav_shader_sanitizer";
 const char *VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS = "gpuav_select_instrumented_shaders";
 const char *VK_LAYER_GPUAV_SHADERS_TO_INSTRUMENT = "gpuav_shaders_to_instrument";
 
@@ -895,6 +896,11 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_RAY_QUERY)) {
             vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_RAY_QUERY,
                                     gpuav_settings.shader_instrumentation.ray_query);
+        }
+
+        if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_SHADER_SANITIZER)) {
+            vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_SHADER_SANITIZER,
+                                    gpuav_settings.shader_instrumentation.sanitizer);
         }
 
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS)) {

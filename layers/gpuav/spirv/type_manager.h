@@ -62,6 +62,7 @@ struct Type {
     bool IsArray() const;
     bool IsSignedInt() const;
     bool IsIVec3(const TypeManager& type_manager) const;
+    uint32_t VectorSize() const;
 
     const SpvType spv_type_;
     const Instruction& inst_;
@@ -147,6 +148,7 @@ class TypeManager {
     const Constant& CreateConstantUInt32(uint32_t value);
     const Constant& GetConstantUInt32(uint32_t value);
     const Constant& GetConstantZeroUint32();
+    const Constant& GetConstantOneUint32();
     const Constant& GetConstantZeroFloat32();
     const Constant& GetConstantZeroVec3();
     const Constant& GetConstantZeroUvec4();
@@ -193,6 +195,7 @@ class TypeManager {
     std::vector<const Constant*> int_32bit_constants_;
     std::vector<const Constant*> float_32bit_constants_;
     const Constant* uint_32bit_zero_constants_ = nullptr;
+    const Constant* uint_32bit_one_constants_ = nullptr;
     const Constant* float_32bit_zero_constants_ = nullptr;
     const Constant* vec3_zero_constants_ = nullptr;
     const Constant* uvec4_zero_constants_ = nullptr;

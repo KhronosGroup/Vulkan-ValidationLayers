@@ -24,6 +24,7 @@
 #include "gpuav/core/gpuav.h"
 #include "gpuav/core/gpuav_constants.h"
 #include "gpuav/error_message/gpuav_vuids.h"
+#include "gpuav/shaders/gpuav_error_codes.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/shaders/gpuav_error_header.h"
@@ -1161,6 +1162,25 @@ bool LogMessageInstIndexedDraw(Validator &gpuav, const uint32_t *error_record, s
     return true;
 }
 
+bool LogMessageInstSanitizer(const uint32_t *error_record, std::string &out_error_msg, std::string &out_vuid_msg) {
+    using namespace glsl;
+    bool error_found = true;
+    std::ostringstream strm;
+
+    const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
+    switch (error_sub_code) {
+        case kErrorSubCodeSanitizerDivideZero: {
+            strm << "Integer divide by zero.";
+            out_vuid_msg = "UNASSIGNED-SPIRV-Sanitizer-Divide-By-Zero";
+        } break;
+        default:
+            error_found = false;
+            break;
+    }
+    out_error_msg += strm.str();
+    return error_found;
+}
+
 // Pull together all the information from the debug record to build the error message strings,
 // and then assemble them into a single message string.
 // Retrieve the shader program referenced by the unique shader ID provided in the debug record.
@@ -1203,6 +1223,9 @@ bool LogInstrumentationError(Validator &gpuav, const CommandBufferSubState &cb_s
         case glsl::kErrorGroupInstIndexedDraw:
             error_found = LogMessageInstIndexedDraw(gpuav, error_record, error_msg, vuid_msg, loc_with_debug_region,
                                                     instrumentation_error_blob);
+            break;
+        case glsl::kErrorGroupInstSanitizer:
+            error_found = LogMessageInstSanitizer(error_record, error_msg, vuid_msg);
             break;
         default:
             break;
