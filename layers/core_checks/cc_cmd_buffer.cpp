@@ -1975,7 +1975,7 @@ bool CoreChecks::PreCallValidateCmdEndConditionalRenderingEXT(VkCommandBuffer co
     const bool in_render_pass = cb_state->active_render_pass != nullptr;
     if (!cb_state->conditional_rendering_inside_render_pass && in_render_pass) {
         skip |= LogError("VUID-vkCmdEndConditionalRenderingEXT-None-01986", commandBuffer, error_obj.location,
-                         "Conditional rendering was begun outside outside of a render "
+                         "Conditional rendering was begun outside of a render "
                          "pass instance, but a render pass instance is currently active in the command buffer.");
     }
     if (cb_state->conditional_rendering_inside_render_pass && in_render_pass &&
