@@ -51,8 +51,6 @@ std::string DataGraphPipelineHelper::GetSpirvMultiEntryTwoDataGraph() {
                                   OpCapability GraphARM
                                   OpCapability TensorsARM
                                   OpCapability Int8
-                                  OpCapability Int16
-                                  OpCapability Int64
                                   OpCapability Shader
                                   OpCapability VulkanMemoryModel
                                   OpCapability Matrix
@@ -126,8 +124,6 @@ std::string DataGraphPipelineHelper::GetSpirvBasicDataGraph(const char* inserted
                                   OpCapability GraphARM
                                   OpCapability TensorsARM
                                   OpCapability Int8
-                                  OpCapability Int16
-                                  OpCapability Int64
                                   OpCapability Shader
                                   OpCapability VulkanMemoryModel
                                   OpCapability Matrix

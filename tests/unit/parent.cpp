@@ -920,18 +920,14 @@ TEST_F(NegativeParent, MapMemory2) {
 
 TEST_F(NegativeParent, DataGraphPipeline) {
     TEST_DESCRIPTION("Test VUID-*-commonparent checks not sharing the same Device");
-
-    SetTargetApiVersion(VK_API_VERSION_1_3);
+    SetTargetApiVersion(VK_API_VERSION_1_4);
     AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
     AddRequiredExtensions(VK_ARM_DATA_GRAPH_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tensors);
+    AddRequiredFeature(vkt::Feature::dataGraph);
     AddRequiredFeature(vkt::Feature::shaderTensorAccess);
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
-    AddRequiredFeature(vkt::Feature::dataGraph);
     AddRequiredFeature(vkt::Feature::shaderInt8);
-    AddRequiredFeature(vkt::Feature::shaderInt16);
-    AddRequiredFeature(vkt::Feature::shaderInt64);
-    AddRequiredFeature(vkt::Feature::shaderFloat16);
-    AddRequiredFeature(vkt::Feature::tensors);
     RETURN_IF_SKIP(Init());
 
     auto features = m_device->Physical().Features();
@@ -942,7 +938,7 @@ TEST_F(NegativeParent, DataGraphPipeline) {
     VkDataGraphPipelineInfoARM pipeline_info = vku::InitStructHelper();
     pipeline_info.dataGraphPipeline = pipeline.Handle();
 
-    /* query with pData null, to get back the required dataSize. Enough to trigger the VUID */
+    // query with pData null, to get back the required dataSize. Enough to trigger the VUID
     VkDataGraphPipelinePropertyQueryResultARM query_result = vku::InitStructHelper();
     query_result.property = VK_DATA_GRAPH_PIPELINE_PROPERTY_CREATION_LOG_ARM;
     query_result.pData = nullptr;
@@ -957,17 +953,14 @@ TEST_F(NegativeParent, DataGraphPipelineSessionBindPointRequirements) {
     TEST_DESCRIPTION(
         "Try to get the bind point requirements for DataGraphPipelineSession using a different device than the device used to "
         "create the session");
-    SetTargetApiVersion(VK_API_VERSION_1_3);
+    SetTargetApiVersion(VK_API_VERSION_1_4);
     AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
     AddRequiredExtensions(VK_ARM_DATA_GRAPH_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tensors);
     AddRequiredFeature(vkt::Feature::dataGraph);
     AddRequiredFeature(vkt::Feature::shaderTensorAccess);
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
     AddRequiredFeature(vkt::Feature::shaderInt8);
-    AddRequiredFeature(vkt::Feature::shaderInt16);
-    AddRequiredFeature(vkt::Feature::shaderInt64);
-    AddRequiredFeature(vkt::Feature::shaderFloat16);
-    AddRequiredFeature(vkt::Feature::tensors);
     RETURN_IF_SKIP(Init());
 
     auto features = m_device->Physical().Features();
@@ -987,5 +980,68 @@ TEST_F(NegativeParent, DataGraphPipelineSessionBindPointRequirements) {
 
     m_errorMonitor->SetDesiredError("VUID-vkGetDataGraphPipelineSessionBindPointRequirementsARM-session-09783");
     vk::GetDataGraphPipelineSessionBindPointRequirementsARM(m_second_device->handle(), &req_info, &count, nullptr);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeParent, DataGraphPipelineSessionMemoryRequirements) {
+    TEST_DESCRIPTION(
+        "Try to get the memory requirements for DataGraphPipelineSession using a different device than the device used to create "
+        "the session");
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_ARM_DATA_GRAPH_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tensors);
+    AddRequiredFeature(vkt::Feature::dataGraph);
+    AddRequiredFeature(vkt::Feature::shaderTensorAccess);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    AddRequiredFeature(vkt::Feature::shaderInt8);
+    RETURN_IF_SKIP(Init());
+
+    auto features = m_device->Physical().Features();
+    m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
+
+    vkt::dg::DataGraphPipelineHelper pipeline(*this);
+    pipeline.CreateDataGraphPipeline();
+
+    VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
+    session_ci.dataGraphPipeline = pipeline.Handle();
+
+    vkt::DataGraphPipelineSession session(*m_device, session_ci);
+
+    VkDataGraphPipelineSessionMemoryRequirementsInfoARM req_info = vku::InitStructHelper();
+    req_info.session = session.handle();
+    VkMemoryRequirements2 mem_req = vku::InitStructHelper();
+
+    m_errorMonitor->SetDesiredError("VUID-vkGetDataGraphPipelineSessionMemoryRequirementsARM-session-09950");
+    vk::GetDataGraphPipelineSessionMemoryRequirementsARM(m_second_device->handle(), &req_info, &mem_req);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeParent, DataGraphPipelineSessionAvailableProperties) {
+    TEST_DESCRIPTION(
+        "Try to get the available properties for DataGraphPipeline using a different device than the device used to create the "
+        "session");
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_ARM_DATA_GRAPH_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tensors);
+    AddRequiredFeature(vkt::Feature::dataGraph);
+    AddRequiredFeature(vkt::Feature::shaderTensorAccess);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    AddRequiredFeature(vkt::Feature::shaderInt8);
+    RETURN_IF_SKIP(Init());
+
+    auto features = m_device->Physical().Features();
+    m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
+
+    vkt::dg::DataGraphPipelineHelper pipeline(*this);
+    pipeline.CreateDataGraphPipeline();
+    VkDataGraphPipelineInfoARM pipeline_info = vku::InitStructHelper();
+    pipeline_info.dataGraphPipeline = pipeline.Handle();
+
+    // query with VkDataGraphPipelinePropertyARM null, to get back the required prop_count. Enough to trigger the VUID
+    uint32_t prop_count;
+    m_errorMonitor->SetDesiredError("VUID-vkGetDataGraphPipelineAvailablePropertiesARM-dataGraphPipeline-09888");
+    vk::GetDataGraphPipelineAvailablePropertiesARM(m_second_device->handle(), &pipeline_info, &prop_count, nullptr);
     m_errorMonitor->VerifyFound();
 }
