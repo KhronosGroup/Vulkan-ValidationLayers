@@ -13,7 +13,8 @@
  * limitations under the License.
  */
 
-#include "ray_query_pass.h"
+#include "sanitizer_pass.h"
+#include "containers/container_utils.h"
 #include "module.h"
 #include <spirv/unified1/spirv.hpp>
 #include <iostream>
@@ -23,48 +24,65 @@
 namespace gpuav {
 namespace spirv {
 
-const static OfflineModule kOfflineModule = {instrumentation_ray_query_comp, instrumentation_ray_query_comp_size,
+const static OfflineModule kOfflineModule = {instrumentation_sanitizer_comp, instrumentation_sanitizer_comp_size,
                                              UseErrorPayloadVariable};
 
-const static OfflineFunction kOfflineFunction = {"inst_ray_query", instrumentation_ray_query_comp_function_0_offset};
+const static OfflineFunction kOfflineFunction = {"inst_sanitizer_divide_by_zero", instrumentation_sanitizer_comp_function_0_offset};
 
-RayQueryPass::RayQueryPass(Module& module) : Pass(module, kOfflineModule) { module.use_bda_ = true; }
+SanitizerPass::SanitizerPass(Module& module) : Pass(module, kOfflineModule) {}
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
-uint32_t RayQueryPass::GetLinkFunctionId() { return GetLinkFunction(link_function_id_, kOfflineFunction); }
+uint32_t SanitizerPass::GetLinkFunctionId() { return GetLinkFunction(link_function_id_, kOfflineFunction); }
 
-uint32_t RayQueryPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
+uint32_t SanitizerPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
     const uint32_t function_result = module_.TakeNextId();
     const uint32_t function_def = GetLinkFunctionId();
     const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
 
-    const uint32_t ray_flags_id = meta.target_instruction->Operand(2);
-    const uint32_t ray_origin_id = meta.target_instruction->Operand(4);
-    const uint32_t ray_tmin_id = meta.target_instruction->Operand(5);
-    const uint32_t ray_direction_id = meta.target_instruction->Operand(6);
-    const uint32_t ray_tmax_id = meta.target_instruction->Operand(7);
-
     const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
     const uint32_t inst_position_id = module_.type_manager_.CreateConstantUInt32(inst_position).Id();
 
-    block.CreateInstruction(spv::OpFunctionCall,
-                            {bool_type, function_result, function_def, inst_position_id, ray_flags_id, ray_origin_id, ray_tmin_id,
-                             ray_direction_id, ray_tmax_id},
-                            inst_it);
+    uint32_t divisor_id = meta.target_instruction->Word(4);
+    if (meta.target_instruction->Opcode() == spv::OpSDiv) {
+        const Type& uint32_type = module_.type_manager_.GetTypeInt(32, false);
+        const uint32_t new_id = module_.TakeNextId();
+        block.CreateInstruction(spv::OpBitcast, {uint32_type.Id(), new_id, divisor_id}, inst_it);
+        divisor_id = new_id;
+    }
+
+    block.CreateInstruction(spv::OpFunctionCall, {bool_type, function_result, function_def, inst_position_id, divisor_id}, inst_it);
     module_.need_log_error_ = true;
     return function_result;
 }
 
-bool RayQueryPass::RequiresInstrumentation(const Instruction& inst, InstructionMeta& meta) {
-    const uint32_t opcode = inst.Opcode();
-    if (opcode != spv::OpRayQueryInitializeKHR) {
-        return false;
+bool SanitizerPass::RequiresInstrumentation(const Instruction& inst, InstructionMeta& meta) {
+    const spv::Op opcode = (spv::Op)inst.Opcode();
+
+    if (IsValueIn(opcode, {spv::OpUDiv, spv::OpSDiv})) {
+        // Note - It is valid to divide by zero for a float (you get NaN), but invalid for an int.
+        //
+        // If its a constant, no reason to instrument, unless its a constant value of zero,
+        // then it is only invalid if executed on the GPU.
+        if (const Constant* constant = module_.type_manager_.FindConstantById(inst.Word(4))) {
+            if (constant->GetValueUint32() != 0) {
+                return false;
+            }
+        }
+        meta.result_type = module_.type_manager_.FindTypeById(inst.TypeId());
+        if (meta.result_type->VectorSize() > 0) {
+            // TODO - Figure out how dividing by a vector of zero is suppose to work
+            // https://gitlab.khronos.org/spirv/SPIR-V/-/issues/900
+            return false;
+        }
+
+        meta.target_instruction = &inst;
+        return true;
     }
-    meta.target_instruction = &inst;
-    return true;
+
+    return false;
 }
 
-bool RayQueryPass::Instrument() {
+bool SanitizerPass::Instrument() {
     // Can safely loop function list as there is no injecting of new Functions until linking time
     for (const auto& function : module_.functions_) {
         if (function->instrumentation_added_) continue;
@@ -105,8 +123,8 @@ bool RayQueryPass::Instrument() {
     return instrumentations_count_ != 0;
 }
 
-void RayQueryPass::PrintDebugInfo() const {
-    std::cout << "RayQueryPass instrumentation count: " << instrumentations_count_ << '\n';
+void SanitizerPass::PrintDebugInfo() const {
+    std::cout << "SanitizerPass instrumentation count: " << instrumentations_count_ << '\n';
 }
 
 }  // namespace spirv

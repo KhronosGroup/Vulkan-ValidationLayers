@@ -190,7 +190,7 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
         case SpvType::kBool: {
             // cast to uint32_t via an OpSelect
             const uint32_t zero_id = module_.type_manager_.GetConstantZeroUint32().Id();
-            const uint32_t one_id = module_.type_manager_.GetConstantUInt32(1).Id();
+            const uint32_t one_id = module_.type_manager_.GetConstantOneUint32().Id();
             const uint32_t select_id = module_.TakeNextId();
             block.CreateInstruction(spv::OpSelect, {uint32_type_id, select_id, argument_id, one_id, zero_id}, inst_it);
             params.push_back(select_id);
@@ -398,7 +398,7 @@ void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_
     const Type& uint32_type = module_.type_manager_.GetTypeInt(32, false);
     const uint32_t pointer_type_id = module_.type_manager_.GetTypePointer(spv::StorageClassStorageBuffer, uint32_type).Id();
     const uint32_t zero_id = module_.type_manager_.GetConstantZeroUint32().Id();
-    const uint32_t one_id = module_.type_manager_.GetConstantUInt32(1).Id();
+    const uint32_t one_id = module_.type_manager_.GetConstantOneUint32().Id();
     const uint32_t byte_written_id = module_.type_manager_.GetConstantUInt32(byte_written).Id();
     uint32_t atomic_add_id = 0;
 

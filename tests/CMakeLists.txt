@@ -104,6 +104,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/gpu_av_positive.cpp
     unit/gpu_av_shader_object_positive.cpp
     unit/gpu_av_shader_debug_info.cpp
+    unit/gpu_av_shader_sanitizer.cpp
+    unit/gpu_av_shader_sanitizer_positive.cpp
     unit/gpu_av_spirv.cpp
     unit/gpu_av_spirv_positive.cpp
     unit/gpu_av_ray_query.cpp

@@ -546,6 +546,18 @@ const Constant& TypeManager::GetConstantZeroUint32() {
     return *uint_32bit_zero_constants_;
 }
 
+// It is common to use uint32_t(1), so having it cached is helpful
+const Constant& TypeManager::GetConstantOneUint32() {
+    if (!uint_32bit_one_constants_) {
+        const Type& uint_32_type = GetTypeInt(32, 0);
+        uint_32bit_one_constants_ = FindConstantInt32(uint_32_type.Id(), 1);
+        if (!uint_32bit_one_constants_) {
+            uint_32bit_one_constants_ = &CreateConstantUInt32(1);
+        }
+    }
+    return *uint_32bit_one_constants_;
+}
+
 // It is common to use float(0) as a default, so having it cached is helpful
 const Constant& TypeManager::GetConstantZeroFloat32() {
     if (!float_32bit_zero_constants_) {
@@ -640,6 +652,13 @@ bool Type::IsIVec3(const TypeManager& type_manager) const {
         }
     }
     return false;
+}
+
+uint32_t Type::VectorSize() const {
+    if (spv_type_ == SpvType::kVector) {
+        return inst_.Word(3);
+    }
+    return 0;
 }
 
 uint32_t Constant::GetValueUint32() const {

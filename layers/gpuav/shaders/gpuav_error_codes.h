@@ -38,6 +38,7 @@ const int kErrorGroupGpuCopyBufferToImage = 7;
 const int kErrorGroupInstDescriptorClass = 8;
 const int kErrorGroupInstIndexedDraw = 9;
 const int kErrorGroupGpuCopyMemoryIndirect = 10;
+const int kErrorGroupInstSanitizer = 11;
 
 // We just take ExecutionModel and normalize it so we only use 5 bits to store it
 const int kExecutionModelVertex = 0;
@@ -97,6 +98,10 @@ const int kErrorSubCodeRayQueryDirectionFinite = 12;
 //
 const int kErrorSubCode_IndexedDraw_OOBVertexIndex = 1;
 const int kErrorSubCode_IndexedDraw_OOBInstanceIndex = 2;
+
+// Sanitizer
+//
+const int kErrorSubCodeSanitizerDivideZero = 1;
 
 // Pre Draw
 //

@@ -130,6 +130,11 @@ khronos_validation.gpuav_select_instrumented_shaders = false
 # Instrument shaders to validate descriptors, descriptor indexing, buffer device addresses and ray queries. Warning: will considerably slow down shader executions.
 khronos_validation.gpuav_shader_instrumentation = true
 
+# Shader Sanitizer
+# =====================
+# Things invalid to do in SPIR-V but don't have a dedicated check (example: dividing an int by zero, reaching OpUnreachable, invalid casting, overflow/undeflow). When in safe mode, will modify the invalid usage.
+khronos_validation.gpuav_shader_sanitizer = true
+
 # Shader/pipeline name regexes
 # =====================
 # Any shader or pipeline library debug name (set with vkSetDebugUtilsObjectNameEXT) fully matching any listed regular expression will be instrumented when creating pipelines with those shaders or libraries. Regex grammar: Modified ECMAScript. No support for shader objects yet. Warning: instrumentation being performed at final pipeline creation time, if shaders modules have already been destroyed at this step (possible when using pipeline libraries), they won't be found by this regex selection system. In this case, consider naming pipeline libraries instead.

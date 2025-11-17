@@ -56,6 +56,7 @@ struct GpuAVSettings {
         bool ray_query = true;
         bool post_process_descriptor_indexing = true;
         bool vertex_attribute_fetch_oob = true;
+        bool sanitizer = true;
     } shader_instrumentation;
 
     bool IsShaderInstrumentationEnabled() const;

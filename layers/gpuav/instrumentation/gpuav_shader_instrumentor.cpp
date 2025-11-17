@@ -50,6 +50,7 @@
 #include "gpuav/spirv/debug_printf_pass.h"
 #include "gpuav/spirv/post_process_descriptor_indexing_pass.h"
 #include "gpuav/spirv/vertex_attribute_fetch_oob_pass.h"
+#include "gpuav/spirv/sanitizer_pass.h"
 
 #include <cassert>
 #include <string>
@@ -1549,6 +1550,12 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
             spirv::VertexAttributeFetchOobPass pass(module);
             modified |= pass.Run();
         }
+    }
+
+    // Currently only runs in Safe Mode until have perf numbers how costly it is to enable
+    if (gpuav_settings.shader_instrumentation.sanitizer && gpuav_settings.safe_mode) {
+        spirv::SanitizerPass pass(module);
+        modified |= pass.Run();
     }
 
     // If we have passes that require inject LogError before the shader end we do it now.
