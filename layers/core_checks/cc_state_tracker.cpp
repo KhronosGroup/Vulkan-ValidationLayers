@@ -64,6 +64,12 @@ void CommandBufferSubState::Begin(const VkCommandBufferBeginInfo& begin_info) {
                                                  p_viewport_depths + p_inherited_viewport_scissor_info->viewportDepthCount);
             }
         }
+
+        if (auto custom_resolve_ci =
+                vku::FindStructInPNextChain<VkCustomResolveCreateInfoEXT>(begin_info.pInheritanceInfo->pNext)) {
+            custom_resolve.inherited_struct = true;
+            custom_resolve.inherited_resolve = custom_resolve_ci->customResolve;
+        }
     }
 }
 
@@ -146,6 +152,32 @@ void CommandBufferSubState::UpdateActiveSlotsState(LastBound& last_bound, const 
     }
 }
 
+void CommandBufferSubState::UpdateCustomResolve(LastBound& last_bound) {
+    // we only need to record the first time custom resolved is used to compare to future usages
+    if (!custom_resolve.started && !custom_resolve.used) {
+        return;
+    }
+    custom_resolve.used = true;
+
+    const VkCustomResolveCreateInfoEXT* create_info = nullptr;
+    if (last_bound.cb_state.IsSecondary()) {
+        create_info = vku::FindStructInPNextChain<VkCustomResolveCreateInfoEXT>(last_bound.cb_state.inheritance_info.pNext);
+    } else if (last_bound.pipeline_state && last_bound.pipeline_state->fragment_output_state) {
+        // Will get normal and GPL Fragment Output pipelines
+        create_info = vku::FindStructInPNextChain<VkCustomResolveCreateInfoEXT>(
+            last_bound.pipeline_state->fragment_output_state->parent.GetCreateInfoPNext());
+    }
+
+    if (create_info) {
+        custom_resolve.color_formats.reserve(create_info->colorAttachmentCount);
+        for (uint32_t i = 0; i < create_info->colorAttachmentCount; i++) {
+            custom_resolve.color_formats.emplace_back(create_info->pColorAttachmentFormats[i]);
+        }
+        custom_resolve.depth_format = create_info->depthAttachmentFormat;
+        custom_resolve.stencil_format = create_info->stencilAttachmentFormat;
+    }
+}
+
 // Common logic after any draw/dispatch/traceRays
 void CommandBufferSubState::RecordActionCommand(LastBound& last_bound, const Location&) {
     if (last_bound.pipeline_state) {
@@ -153,6 +185,7 @@ void CommandBufferSubState::RecordActionCommand(LastBound& last_bound, const Loc
     } else {
         UpdateActionShaderObjectState(last_bound);
     }
+    UpdateCustomResolve(last_bound);
 }
 
 void CommandBufferSubState::RecordBindPipeline(VkPipelineBindPoint bind_point, vvl::Pipeline& pipeline) {
@@ -210,6 +243,11 @@ void CommandBufferSubState::RecordNextSubpass(const VkSubpassBeginInfo&, const V
     validator.TransitionSubpassLayouts(base, *base.active_render_pass, base.GetActiveSubpass());
 }
 
+void CommandBufferSubState::RecordBeginRendering(const VkRenderingInfo& rendering_info, const Location& loc) {
+    custom_resolve.started = false;
+    custom_resolve.used = false;
+}
+
 void CommandBufferSubState::RecordBeginRenderPass(const VkRenderPassBeginInfo& render_pass_begin, const VkSubpassBeginInfo&,
                                                   const Location&) {
     ASSERT_AND_RETURN(base.active_render_pass);
@@ -238,6 +276,8 @@ void CommandBufferSubState::RecordEndRendering(const VkRenderingEndInfoEXT* pRen
 void CommandBufferSubState::RecordEndRenderPass(const VkSubpassEndInfo*, const Location&) {
     validator.TransitionFinalSubpassLayouts(base);
 }
+
+void CommandBufferSubState::RecordBeginCustomResolve() { custom_resolve.started = true; }
 
 template <typename RegionType>
 void CommandBufferSubState::RecordCopyBufferCommon(vvl::Buffer& src_buffer_state, vvl::Buffer& dst_buffer_state,
@@ -980,6 +1020,15 @@ void CommandBufferSubState::ResetCBState() {
 
     // VK_EXT_nested_command_buffer
     nesting_level = 0;
+
+    // VK_EXT_custom_resolve
+    custom_resolve.started = false;
+    custom_resolve.used = false;
+    custom_resolve.inherited_struct = false;
+    custom_resolve.inherited_resolve = false;
+    custom_resolve.color_formats.clear();
+    custom_resolve.depth_format = VK_FORMAT_UNDEFINED;
+    custom_resolve.stencil_format = VK_FORMAT_UNDEFINED;
 
     // Submit time validation
     queue_submit_functions.clear();

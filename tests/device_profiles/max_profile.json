@@ -80,6 +80,9 @@
                     "variableMultisampleRate": true,
                     "inheritedQueries": true
                 },
+                "VkPhysicalDeviceCustomResolveFeaturesEXT": {
+                    "customResolve": true
+                },
                 "VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV": {
                     "deviceGeneratedCommands": true
                 },
@@ -2307,6 +2310,7 @@
                 "VK_EXT_conditional_rendering": 1,
                 "VK_EXT_conservative_rasterization": 1,
                 "VK_EXT_custom_border_color": 1,
+                "VK_EXT_custom_resolve": 1,
                 "VK_EXT_debug_marker": 1,
                 "VK_EXT_debug_report": 1,
                 "VK_EXT_debug_utils": 1,

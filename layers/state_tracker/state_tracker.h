@@ -1255,6 +1255,9 @@ class DeviceState : public vvl::base::Device {
                                            const VkSubpassBeginInfo* pSubpassBeginInfo, const RecordObject& record_obj) override;
     void PostCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                               const VkSubpassBeginInfo* pSubpassBeginInfo, const RecordObject& record_obj) override;
+    void PostCallRecordCmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer,
+                                                const VkBeginCustomResolveInfoEXT* pBeginCustomResolveInfo,
+                                                const RecordObject& record_obj) override;
     void PostCallRecordCmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoBeginCodingInfoKHR* pBeginInfo,
                                               const RecordObject& record_obj) override;
     void PostCallRecordCmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,

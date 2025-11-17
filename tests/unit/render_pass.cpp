@@ -712,10 +712,9 @@ TEST_F(NegativeRenderPass, AttachmentsMisc) {
     }
 }
 
-TEST_F(NegativeRenderPass, ShaderResolveQCOM) {
-    TEST_DESCRIPTION("Ensure RenderPass create meets the requirements for QCOM_render_pass_shader_resolve");
-
-    AddRequiredExtensions(VK_QCOM_RENDER_PASS_SHADER_RESOLVE_EXTENSION_NAME);
+TEST_F(NegativeRenderPass, CustomResolve) {
+    AddRequiredExtensions(VK_EXT_CUSTOM_RESOLVE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::customResolve);
     AddOptionalExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     const bool rp2Supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
@@ -771,7 +770,7 @@ TEST_F(NegativeRenderPass, ShaderResolveQCOM) {
     // Create a resolve subpass where the pResolveattachments are not VK_ATTACHMENT_UNUSED
     VkSubpassDescription test_subpass = subpass;
     test_subpass.pResolveAttachments = resolve.data();
-    test_subpass.flags = VK_SUBPASS_DESCRIPTION_SHADER_RESOLVE_BIT_QCOM;
+    test_subpass.flags = VK_SUBPASS_DESCRIPTION_CUSTOM_RESOLVE_BIT_EXT;
     VkRenderPassCreateInfo test_rpci = rpci;
     test_rpci.pSubpasses = &test_subpass;
 
@@ -782,7 +781,7 @@ TEST_F(NegativeRenderPass, ShaderResolveQCOM) {
     {
         VkSubpassDescription subpasses[2] = {subpass, subpass};
         subpasses[0].pResolveAttachments = nullptr;
-        subpasses[0].flags = VK_SUBPASS_DESCRIPTION_SHADER_RESOLVE_BIT_QCOM;
+        subpasses[0].flags = VK_SUBPASS_DESCRIPTION_CUSTOM_RESOLVE_BIT_EXT;
         subpasses[1].pResolveAttachments = nullptr;
         subpasses[1].flags = 0;
 
@@ -792,6 +791,26 @@ TEST_F(NegativeRenderPass, ShaderResolveQCOM) {
         CreateRenderPassTest(test2_rpci, rp2Supported, "VUID-VkSubpassDescription-flags-03343",
                              "VUID-VkSubpassDescription2-flags-04909");
     }
+}
+
+TEST_F(NegativeRenderPass, CustomResolveNonDynamicRendering) {
+    AddRequiredExtensions(VK_EXT_CUSTOM_RESOLVE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::customResolve);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    m_command_buffer.Begin();
+    VkBeginCustomResolveInfoEXT begin_resolve_info = vku::InitStructHelper();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginCustomResolveEXT-renderpass");
+    vk::CmdBeginCustomResolveEXT(m_command_buffer, &begin_resolve_info);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginCustomResolveEXT-commandBuffer-11517");
+    vk::CmdBeginCustomResolveEXT(m_command_buffer, &begin_resolve_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeRenderPass, AttachmentReferenceLayout) {

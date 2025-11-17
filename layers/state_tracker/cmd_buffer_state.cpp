@@ -933,6 +933,13 @@ void CommandBuffer::RecordEndRendering(const VkRenderingEndInfoEXT *pRenderingEn
     active_color_attachments_index.clear();
 }
 
+void CommandBuffer::RecordBeginCustomResolve(const Location &loc) {
+    RecordCommand(loc);
+    for (auto &item : sub_states_) {
+        item.second->RecordBeginCustomResolve();
+    }
+}
+
 void CommandBuffer::RecordBeginVideoCoding(const VkVideoBeginCodingInfoKHR &begin_info, const Location &loc) {
     RecordCommand(loc);
     bound_video_session = dev_data.Get<vvl::VideoSession>(begin_info.videoSession);

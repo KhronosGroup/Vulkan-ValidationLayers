@@ -3441,6 +3441,13 @@ void DeviceState::PostCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBu
     PostCallRecordCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, record_obj);
 }
 
+void DeviceState::PostCallRecordCmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer,
+                                                         const VkBeginCustomResolveInfoEXT *pBeginCustomResolveInfo,
+                                                         const RecordObject &record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->RecordBeginCustomResolve(record_obj.location);
+}
+
 void DeviceState::PostCallRecordCmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoBeginCodingInfoKHR *pBeginInfo,
                                                        const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);

@@ -6950,6 +6950,53 @@ TEST_F(NegativeShaderObject, AdvancedBlendMaxAttachments) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeShaderObject, CustomResolveSampleShadingImplicit) {
+    AddRequiredExtensions(VK_EXT_CUSTOM_RESOLVE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::customResolve);
+    AddRequiredFeature(vkt::Feature::sampleRateShading);
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    CreateMinimalShaders();
+
+    const char* fs_source = R"glsl(
+        #version 450
+        layout(location = 0) out vec4 color;
+        void main() {
+            color = vec4(gl_SamplePosition.xyxy);
+        }
+    )glsl";
+
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source);
+    VkShaderCreateInfoEXT fs_ci = ShaderCreateInfo(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    const vkt::Shader frag_shader(*m_device, fs_ci);
+
+    vkt::Image color_image(*m_device, 128, 128, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView color_view = color_image.CreateView();
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.imageView = color_view;
+
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    begin_rendering_info.flags = VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT | VK_RENDERING_FRAGMENT_REGION_BIT_EXT;
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(begin_rendering_info);
+    SetDefaultDynamicStatesExclude({}, false, m_command_buffer);
+    VkBeginCustomResolveInfoEXT begin_resolve_info = vku::InitStructHelper();
+    vk::CmdBeginCustomResolveEXT(m_command_buffer, &begin_resolve_info);
+    m_command_buffer.BindShaders(m_vert_shader, frag_shader);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-flags-11521");
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeShaderObject, InvalidVertexBuffer) {
     TEST_DESCRIPTION("Have Binding not be in a linear order");
     RETURN_IF_SKIP(InitBasicShaderObject());

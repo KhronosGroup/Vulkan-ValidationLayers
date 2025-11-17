@@ -101,6 +101,9 @@ void DecorationSet::Add(uint32_t decoration, uint32_t value) {
             flags |= input_attachment_bit;
             input_attachment_index_start = value;
             break;
+        case spv::DecorationSample:
+            flags |= sample_bit;
+            break;
         default:
             DecorationBase::Add(decoration, value);
     }

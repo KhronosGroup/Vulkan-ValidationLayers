@@ -531,26 +531,26 @@ TEST_F(NegativePipeline, SubpassRasterizationSamples) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativePipeline, RenderPassShaderResolveQCOM) {
-    TEST_DESCRIPTION("Test pipeline creation VUIDs added with VK_QCOM_render_pass_shader_resolve extension.");
-    AddRequiredExtensions(VK_QCOM_RENDER_PASS_SHADER_RESOLVE_EXTENSION_NAME);
+TEST_F(NegativePipeline, RenderPassCustomeResolve) {
+    AddRequiredExtensions(VK_EXT_CUSTOM_RESOLVE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::customResolve);
     AddRequiredFeature(vkt::Feature::sampleRateShading);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     // Create a renderPass with two attachments (0=Color, 1=Input)
-    VkAttachmentReference attachmentRefs[2] = {};
-    attachmentRefs[0].layout = VK_IMAGE_LAYOUT_GENERAL;
-    attachmentRefs[0].attachment = 0;
-    attachmentRefs[1].layout = VK_IMAGE_LAYOUT_GENERAL;
-    attachmentRefs[1].attachment = 1;
+    VkAttachmentReference attachment_refs[2] = {};
+    attachment_refs[0].layout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment_refs[0].attachment = 0;
+    attachment_refs[1].layout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment_refs[1].attachment = 1;
 
     VkSubpassDescription subpass = {};
-    subpass.flags = VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM;
+    subpass.flags = VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_EXT;
     subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &attachmentRefs[0];
+    subpass.pColorAttachments = &attachment_refs[0];
     subpass.inputAttachmentCount = 1;
-    subpass.pInputAttachments = &attachmentRefs[1];
+    subpass.pInputAttachments = &attachment_refs[1];
 
     VkRenderPassCreateInfo rpci = vku::InitStructHelper();
     rpci.subpassCount = 1;
@@ -581,7 +581,7 @@ TEST_F(NegativePipeline, RenderPassShaderResolveQCOM) {
     ASSERT_TRUE(renderpass2.initialized());
 
     // shader uses gl_SamplePosition which causes the SPIR-V to include SampleRateShading capability
-    const char *sampleRateFragShaderText = R"glsl(
+    static const char *shader_source = R"glsl(
         #version 450
         layout(location = 0) out vec4 uFragColor;
         void main() {
@@ -589,7 +589,7 @@ TEST_F(NegativePipeline, RenderPassShaderResolveQCOM) {
         }
     )glsl";
 
-    VkShaderObj fs_sampleRate(this, sampleRateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs_sample_rate(this, shader_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineMultisampleStateCreateInfo ms_state = vku::InitStructHelper();
     ms_state.flags = 0;
@@ -606,8 +606,6 @@ TEST_F(NegativePipeline, RenderPassShaderResolveQCOM) {
     pipe.cb_attachments_.blendEnable = VK_TRUE;
     pipe.gp_ci_.pMultisampleState = &ms_state;
 
-    // Create a pipeline with a subpass using VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM,
-    // but where sample count of input attachment doesnt match rasterizationSamples
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-rasterizationSamples-04899");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
@@ -616,20 +614,114 @@ TEST_F(NegativePipeline, RenderPassShaderResolveQCOM) {
     ms_state.sampleShadingEnable = VK_TRUE;
     pipe.gp_ci_.renderPass = renderpass2;
 
-    // Create a pipeline with a subpass using VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM,
-    // and with sampleShadingEnable enabled in the pipeline
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-sampleShadingEnable-04900");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
     ms_state.sampleShadingEnable = VK_FALSE;
-    pipe.shader_stages_[1] = fs_sampleRate.GetStageCreateInfo();
+    pipe.shader_stages_[1] = fs_sample_rate.GetStageCreateInfo();
 
-    // Create a pipeline with a subpass using VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM,
-    // and with SampleRateShading capability enabled in the SPIR-V fragment shader
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-SampleRateShading-06378");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativePipeline, CustomResolvePipelineFormat) {
+    AddRequiredExtensions(VK_EXT_CUSTOM_RESOLVE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::customResolve);
+    RETURN_IF_SKIP(Init());
+
+    VkFormat color_formats[2] = {VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM};
+    VkCustomResolveCreateInfoEXT custom_resolve_info = vku::InitStructHelper();
+    custom_resolve_info.customResolve = VK_TRUE;
+    custom_resolve_info.colorAttachmentCount = 2;
+    custom_resolve_info.pColorAttachmentFormats = &color_formats[0];
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper(&custom_resolve_info);
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_formats[1];
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-11504");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativePipeline, CustomResolveSampleShadingImplicit) {
+    AddRequiredExtensions(VK_EXT_CUSTOM_RESOLVE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::customResolve);
+    AddRequiredFeature(vkt::Feature::sampleRateShading);
+    RETURN_IF_SKIP(Init());
+
+    char const *vs_source = R"glsl(
+        #version 460
+        layout(location = 0) out vec4 samp;
+        void main(){
+           gl_Position = vec4(1.0);
+        }
+    )glsl";
+
+    char const *fs_source = R"glsl(
+        #version 460
+        layout(location = 0) in sample vec4 samp; // implicitly sets with Sample Decoration
+        layout(location = 0) out vec4 color;
+        void main() {
+            color = samp;
+        }
+    )glsl";
+    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
+    VkCustomResolveCreateInfoEXT custom_resolve_info = vku::InitStructHelper();
+    custom_resolve_info.customResolve = VK_TRUE;
+    custom_resolve_info.colorAttachmentCount = 1;
+    custom_resolve_info.pColorAttachmentFormats = &color_format;
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper(&custom_resolve_info);
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+
+    VkImageCreateInfo image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, color_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    vkt::Image color_image(*m_device, image_ci);
+    vkt::ImageView color_image_view = color_image.CreateView();
+
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    vkt::Image resolve_image(*m_device, image_ci);
+    vkt::ImageView resolve_image_view = resolve_image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.imageView = color_image_view;
+    color_attachment.resolveMode = VK_RESOLVE_MODE_CUSTOM_BIT_EXT;
+    color_attachment.resolveImageView = resolve_image_view;
+    color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    begin_rendering_info.flags = VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT | VK_RENDERING_FRAGMENT_REGION_BIT_EXT;
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(begin_rendering_info);
+    VkBeginCustomResolveInfoEXT begin_resolve_info = vku::InitStructHelper();
+    vk::CmdBeginCustomResolveEXT(m_command_buffer, &begin_resolve_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-flags-11521");
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativePipeline, RasterizerDiscardWithFragmentShader) {

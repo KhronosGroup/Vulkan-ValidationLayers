@@ -1705,8 +1705,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                     }
                 }
 
-                //  VK_QCOM_render_pass_shader_resolve check of resolve attachmnents
-                if ((subpass.flags & VK_SUBPASS_DESCRIPTION_SHADER_RESOLVE_BIT_QCOM) != 0) {
+                if ((subpass.flags & VK_SUBPASS_DESCRIPTION_CUSTOM_RESOLVE_BIT_EXT) != 0) {
                     const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-flags-04907" : "VUID-VkSubpassDescription-flags-03341";
                     skip |= LogError(vuid, device, resolve_loc,
                                      "contains a reference to attachment %" PRIu32 " instead of being VK_ATTACHMENT_UNUSED.",
@@ -2276,12 +2275,12 @@ bool CoreChecks::ValidateRenderPassDAG(const VkRenderPassCreateInfo2 &create_inf
                                  dependency.srcSubpass);
             }
         } else if ((dependency.srcSubpass < dependency.dstSubpass) &&
-                   ((create_info.pSubpasses[dependency.srcSubpass].flags & VK_SUBPASS_DESCRIPTION_SHADER_RESOLVE_BIT_QCOM) != 0)) {
+                   ((create_info.pSubpasses[dependency.srcSubpass].flags & VK_SUBPASS_DESCRIPTION_CUSTOM_RESOLVE_BIT_EXT) != 0)) {
             vuid = use_rp2 ? "VUID-VkSubpassDescription2-flags-04909" : "VUID-VkSubpassDescription-flags-03343";
             skip |= LogError(vuid, device, dependencies_loc,
                              "specifies that subpass %" PRIu32
                              " has a dependency on a later subpass"
-                             "and includes VK_SUBPASS_DESCRIPTION_SHADER_RESOLVE_BIT_QCOM subpass flags.",
+                             "and includes VK_SUBPASS_DESCRIPTION_CUSTOM_RESOLVE_BIT_EXT subpass flags.",
                              dependency.srcSubpass);
         }
     }
@@ -2694,8 +2693,7 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 &crea
                 string_VkFormat(resolve_attachment_format), string_VkFormatFeatureFlags2(potential_format_features).c_str());
         }
 
-        //  VK_QCOM_render_pass_shader_resolve check of depth/stencil attachmnent
-        if ((subpass.flags & VK_SUBPASS_DESCRIPTION_SHADER_RESOLVE_BIT_QCOM) != 0) {
+        if ((subpass.flags & VK_SUBPASS_DESCRIPTION_CUSTOM_RESOLVE_BIT_EXT) != 0) {
             skip |= LogError("VUID-VkSubpassDescription2-flags-04908", device, subpass_loc,
                              "enables shader resolve, which requires the depth/stencil resolve attachment"
                              " must be VK_ATTACHMENT_UNUSED, but a reference to attachment %" PRIu32 " was found instead.",
@@ -2994,7 +2992,8 @@ bool CoreChecks::ValidateRenderingAttachmentInfoResolveMode(VkCommandBuffer comm
     // First validate things when resolve mode can be NONE
     const VkFormat image_view_format = image_view_state.create_info.format;
     if ((!vkuFormatIsSINT(image_view_format) && !vkuFormatIsUINT(image_view_format)) && vkuFormatIsColor(image_view_format) &&
-        !(attachment_info.resolveMode == VK_RESOLVE_MODE_NONE || attachment_info.resolveMode == VK_RESOLVE_MODE_AVERAGE_BIT)) {
+        !IsValueIn(attachment_info.resolveMode,
+                   {VK_RESOLVE_MODE_NONE, VK_RESOLVE_MODE_AVERAGE_BIT, VK_RESOLVE_MODE_CUSTOM_BIT_EXT})) {
         const LogObjectList objlist(commandBuffer, attachment_info.imageView);
         skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-06129", objlist, attachment_loc.dot(Field::resolveMode),
                          "(%s) must be VK_RESOLVE_MODE_NONE or VK_RESOLVE_MODE_AVERAGE_BIT for non-integer formats (%s)",
@@ -3002,7 +3001,8 @@ bool CoreChecks::ValidateRenderingAttachmentInfoResolveMode(VkCommandBuffer comm
     }
 
     if ((vkuFormatIsSINT(image_view_format) || vkuFormatIsUINT(image_view_format)) && vkuFormatIsColor(image_view_format) &&
-        !(attachment_info.resolveMode == VK_RESOLVE_MODE_NONE || attachment_info.resolveMode == VK_RESOLVE_MODE_SAMPLE_ZERO_BIT)) {
+        !IsValueIn(attachment_info.resolveMode,
+                   {VK_RESOLVE_MODE_NONE, VK_RESOLVE_MODE_SAMPLE_ZERO_BIT, VK_RESOLVE_MODE_CUSTOM_BIT_EXT})) {
         const LogObjectList objlist(commandBuffer, attachment_info.imageView);
         skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-06130", objlist, attachment_loc.dot(Field::resolveMode),
                          "(%s) must be VK_RESOLVE_MODE_NONE or VK_RESOLVE_MODE_SAMPLE_ZERO_BIT for integer formats (%s)",
@@ -3053,7 +3053,8 @@ bool CoreChecks::ValidateRenderingAttachmentInfoResolveMode(VkCommandBuffer comm
                          string_VkResolveModeFlagBits(attachment_info.resolveMode));
     }
 
-    if (resolve_view_state && (image_view_format != resolve_view_state->create_info.format)) {
+    if (attachment_info.resolveMode != VK_RESOLVE_MODE_CUSTOM_BIT_EXT && resolve_view_state &&
+        (image_view_format != resolve_view_state->create_info.format)) {
         const LogObjectList objlist(commandBuffer, attachment_info.resolveImageView, image_view_state.Handle());
         skip |=
             LogError("VUID-VkRenderingAttachmentInfo-imageView-06865", objlist, attachment_loc.dot(Field::resolveImageView),
@@ -5589,4 +5590,80 @@ bool CoreChecks::PreCallValidateCmdSetRenderingInputAttachmentIndicesKHR(
     VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfoKHR *pLocationInfo,
     const ErrorObject &error_obj) const {
     return PreCallValidateCmdSetRenderingInputAttachmentIndices(commandBuffer, pLocationInfo, error_obj);
+}
+
+bool CoreChecks::ValidateCustomResolveCreateInfoEXT(const VkCustomResolveCreateInfoEXT &create_info, const Location &loc) const {
+    bool skip = false;
+    if (create_info.colorAttachmentCount > phys_dev_props.limits.maxColorAttachments) {
+        skip |= LogError("VUID-VkCustomResolveCreateInfoEXT-colorAttachmentCount-11507", device,
+                         loc.pNext(Struct::VkCustomResolveCreateInfoEXT, Field::colorAttachmentCount),
+                         "(%" PRIu32
+                         ") must be less than or equal to "
+                         "maxColorAttachments (%" PRIu32 ").",
+                         create_info.colorAttachmentCount, phys_dev_props.limits.maxColorAttachments);
+    }
+    for (uint32_t i = 0; i < create_info.colorAttachmentCount; i++) {
+        const VkFormat color_format = create_info.pColorAttachmentFormats[i];
+        if (color_format == VK_FORMAT_UNDEFINED) {
+            continue;
+        }
+        if (!vkuFormatIsColor(color_format)) {
+            skip |= LogError("VUID-VkCustomResolveCreateInfoEXT-pColorAttachmentFormats-11510", device,
+                             loc.pNext(Struct::VkCustomResolveCreateInfoEXT, Field::pColorAttachmentFormats, i),
+                             "(%s) is not a valid color format.", string_VkFormat(color_format));
+        } else {
+            const VkFormatFeatureFlags2 format_features = GetPotentialFormatFeatures(color_format);
+            if ((format_features & (VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV)) ==
+                0) {
+                skip |= LogError("VUID-VkCustomResolveCreateInfoEXT-pColorAttachmentFormats-11510", device,
+                                 loc.pNext(Struct::VkCustomResolveCreateInfoEXT, Field::pColorAttachmentFormats, i),
+                                 "(%s) is missing VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT or "
+                                 "VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV support\n(supported features: %s)",
+                                 string_VkFormat(color_format), string_VkFormatFeatureFlags2(format_features).c_str());
+            }
+        }
+    }
+    if (create_info.depthAttachmentFormat != VK_FORMAT_UNDEFINED) {
+        if (!vkuFormatHasDepth(create_info.depthAttachmentFormat)) {
+            skip |= LogError(" VUID-VkCustomResolveCreateInfoEXT-depthAttachmentFormat-11508", device,
+                             loc.pNext(Struct::VkCustomResolveCreateInfoEXT, Field::depthAttachmentFormat),
+                             "(%s) is not a valid depth format.", string_VkFormat(create_info.depthAttachmentFormat));
+        } else {
+            const VkFormatFeatureFlags2 format_features = GetPotentialFormatFeatures(create_info.depthAttachmentFormat);
+            if ((format_features & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
+                skip |= LogError("VUID-VkCustomResolveCreateInfoEXT-depthAttachmentFormat-11509", device,
+                                 loc.pNext(Struct::VkCustomResolveCreateInfoEXT, Field::depthAttachmentFormat),
+                                 "(%s) is missing VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT support\n(supported features: %s)",
+                                 string_VkFormat(create_info.depthAttachmentFormat),
+                                 string_VkFormatFeatureFlags2(format_features).c_str());
+            }
+        }
+    }
+    if (create_info.stencilAttachmentFormat != VK_FORMAT_UNDEFINED) {
+        if (!vkuFormatHasStencil(create_info.stencilAttachmentFormat)) {
+            skip |= LogError("VUID-VkCustomResolveCreateInfoEXT-stencilAttachmentFormat-11511", device,
+                             loc.pNext(Struct::VkCustomResolveCreateInfoEXT, Field::stencilAttachmentFormat),
+                             "(%s) is not a valid stencil format.", string_VkFormat(create_info.stencilAttachmentFormat));
+        } else {
+            const VkFormatFeatureFlags2 format_features = GetPotentialFormatFeatures(create_info.stencilAttachmentFormat);
+            if ((format_features & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
+                skip |= LogError("VUID-VkCustomResolveCreateInfoEXT-stencilAttachmentFormat-11512", device,
+                                 loc.pNext(Struct::VkCustomResolveCreateInfoEXT, Field::stencilAttachmentFormat),
+                                 "(%s) is missing VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT support\n(supported features: %s)",
+                                 string_VkFormat(create_info.stencilAttachmentFormat),
+                                 string_VkFormatFeatureFlags2(format_features).c_str());
+            }
+        }
+
+        if (create_info.depthAttachmentFormat != VK_FORMAT_UNDEFINED &&
+            create_info.stencilAttachmentFormat != VK_FORMAT_UNDEFINED &&
+            create_info.stencilAttachmentFormat != create_info.depthAttachmentFormat) {
+            skip |=
+                LogError("VUID-VkCustomResolveCreateInfoEXT-depthAttachmentFormat-11513", device,
+                         loc.pNext(Struct::VkCustomResolveCreateInfoEXT, Field::stencilAttachmentFormat),
+                         "(%s) is not the same as depthAttachmentFormat (%s).",
+                         string_VkFormat(create_info.stencilAttachmentFormat), string_VkFormat(create_info.depthAttachmentFormat));
+        }
+    }
+    return skip;
 }

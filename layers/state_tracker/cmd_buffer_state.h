@@ -628,6 +628,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void UpdateSubpassAttachments();
     void RecordEndRendering(const VkRenderingEndInfoEXT *pRenderingEndInfo, const Location &loc);
     void RecordEndRenderPass(const VkSubpassEndInfo *subpass_end_info, const Location &loc);
+    void RecordBeginCustomResolve(const Location &loc);
 
     void RecordBeginVideoCoding(const VkVideoBeginCodingInfoKHR &begin_info, const Location &loc);
     void RecordEndVideoCoding(const Location &loc);
@@ -878,6 +879,7 @@ class CommandBufferSubState {
     // Note - these are called prior to the renderPass object being destroyed
     virtual void RecordEndRendering(const VkRenderingEndInfoEXT *pRenderingEndInfo) {}
     virtual void RecordEndRenderPass(const VkSubpassEndInfo *subpass_end_info, const Location &loc) {}
+    virtual void RecordBeginCustomResolve() {}
 
     virtual void RecordBeginQuery(const QueryObject &query_obj, const Location &loc) {}
     virtual void RecordEndQuery(const QueryObject &query_obj, const Location &loc) {}

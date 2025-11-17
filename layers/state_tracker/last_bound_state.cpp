@@ -708,6 +708,85 @@ VkPrimitiveTopology LastBound::GetRasterizationInputTopology() const {
     return topology;
 }
 
+bool LastBound::IsSampleShadingEnabled() const {
+    // There is no dynamic state for sampleShadingEnable (or minSampleShading) and instead it can be implicitly set in one of 3 ways
+    // as described in https://godbolt.org/z/7KdqafWrj
+    auto fragment_entry_point = GetFragmentEntryPoint();
+    if (!fragment_entry_point) {
+        return false;  // if no fragment shader, no sample shading
+    }
+
+    for (const auto &variable : fragment_entry_point->stage_interface_variables) {
+        if (variable.storage_class != spv::StorageClassInput) {
+            continue;
+        }
+        if (variable.decorations.Has(spirv::DecorationSet::sample_bit) || variable.decorations.builtin == spv::BuiltInSampleId ||
+            variable.decorations.builtin == spv::BuiltInSamplePosition) {
+            return true;
+        }
+    }
+
+    // Need to check implicit first as it override the explicit values
+    if (pipeline_state) {
+        if (auto ms_state = pipeline_state->MultisampleState()) {
+            return ms_state->sampleShadingEnable;  // explicitly enabled
+        }
+    }
+
+    return false;
+}
+
+float LastBound::GetMinSampleShading() const {
+    // assumes sample shading is enabled, the minSampleShading can have 2 values
+    // 1. If explicitly enabled, read minSampleShading from pipeline state
+    // 2. If implicitly enabled, it is always going to be 1.0
+    if (pipeline_state) {
+        if (auto ms_state = pipeline_state->MultisampleState()) {
+            return ms_state->minSampleShading;
+        }
+    }
+    return 1.0;
+}
+
+std::string LastBound::DescribeSampleShading() const {
+    std::stringstream ss;
+    ss << "Sample Shading was enbled ";
+
+    bool is_implicit = false;
+    if (auto fragment_entry_point = GetFragmentEntryPoint()) {
+        for (const auto &variable : fragment_entry_point->stage_interface_variables) {
+            if (variable.storage_class != spv::StorageClassInput) {
+                continue;
+            }
+            if (variable.decorations.Has(spirv::DecorationSet::sample_bit)) {
+                ss << "implicitly in the fragment shader because there is a Sample decorated input variable.";
+                is_implicit = true;
+                break;
+            } else if (variable.decorations.builtin == spv::BuiltInSampleId) {
+                ss << "implicitly in the fragment shader because there is a SampleId BuiltIn decorated input variable. "
+                      "(gl_SampleID)";
+                is_implicit = true;
+                break;
+            } else if (variable.decorations.builtin == spv::BuiltInSamplePosition) {
+                ss << "implicitly in the fragment shader because there is a SamplePosition BuiltIn decorated input variable. "
+                      "(gl_SamplePosition)";
+                is_implicit = true;
+                break;
+            }
+        }
+    }
+    if (is_implicit) {
+        ss << "\nminSampleShading is always 1.0 when sample shading is implicitly enabled";
+    } else if (pipeline_state && pipeline_state->MultisampleState()) {
+        ss << "explicitly from VkPipelineMultisampleStateCreateInfo::sampleShadingEnable set to "
+              "VK_TRUE.\nVkPipelineMultisampleStateCreateInfo::minSampleShading = "
+           << pipeline_state->MultisampleState()->minSampleShading;
+    } else {
+        assert(false);
+    }
+    return ss.str();
+}
+
 VkShaderEXT LastBound::GetShaderObject(ShaderObjectStage stage) const {
     if (!IsValidShaderObjectBound(stage) || GetShaderObjectState(stage) == nullptr) {
         return VK_NULL_HANDLE;
