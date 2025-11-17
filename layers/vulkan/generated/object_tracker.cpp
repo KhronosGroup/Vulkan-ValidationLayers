@@ -7954,10 +7954,10 @@ bool Device::PreCallValidateGetDataGraphPipelineSessionMemoryRequirementsARM(
     // Checked by chassis: device: "VUID-vkGetDataGraphPipelineSessionMemoryRequirementsARM-device-parameter"
     if (pInfo) {
         [[maybe_unused]] const Location pInfo_loc = error_obj.location.dot(Field::pInfo);
-        skip |= ValidateObject(pInfo->session, kVulkanObjectTypeDataGraphPipelineSessionARM, false,
-                               "VUID-VkDataGraphPipelineSessionMemoryRequirementsInfoARM-session-parameter",
-                               "UNASSIGNED-VkDataGraphPipelineSessionMemoryRequirementsInfoARM-session-parent",
-                               pInfo_loc.dot(Field::session));
+        skip |=
+            ValidateObject(pInfo->session, kVulkanObjectTypeDataGraphPipelineSessionARM, false,
+                           "VUID-VkDataGraphPipelineSessionMemoryRequirementsInfoARM-session-parameter",
+                           "VUID-vkGetDataGraphPipelineSessionMemoryRequirementsARM-session-09950", pInfo_loc.dot(Field::session));
     }
 
     return skip;
@@ -8028,7 +8028,7 @@ bool Device::PreCallValidateGetDataGraphPipelineAvailablePropertiesARM(VkDevice 
         [[maybe_unused]] const Location pPipelineInfo_loc = error_obj.location.dot(Field::pPipelineInfo);
         skip |= ValidateObject(pPipelineInfo->dataGraphPipeline, kVulkanObjectTypePipeline, false,
                                "VUID-VkDataGraphPipelineInfoARM-dataGraphPipeline-parameter",
-                               "UNASSIGNED-VkDataGraphPipelineInfoARM-dataGraphPipeline-parent",
+                               "VUID-vkGetDataGraphPipelineAvailablePropertiesARM-dataGraphPipeline-09888",
                                pPipelineInfo_loc.dot(Field::dataGraphPipeline));
     }
 

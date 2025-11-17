@@ -745,12 +745,17 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
         # Same as above, but memberName has naming collision so need to use struct name as well
         if commandName == 'vkCreateGraphicsPipelines' and structName == 'VkGraphicsPipelineShaderGroupsCreateInfoNV' and memberName == 'pPipelines':
             return '"UNASSIGNED-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-parent"'
+
         if commandName == 'vkGetDataGraphPipelineSessionBindPointRequirementsARM' and memberName == 'session':
             return '"VUID-vkGetDataGraphPipelineSessionBindPointRequirementsARM-session-09783"'
+        if structName == 'VkDataGraphPipelineSessionMemoryRequirementsInfoARM' and memberName == 'session':
+            return '"VUID-vkGetDataGraphPipelineSessionMemoryRequirementsARM-session-09950"'
 
         if structName == 'VkDataGraphPipelineInfoARM' and memberName == 'dataGraphPipeline':
             if commandName == 'vkGetDataGraphPipelinePropertiesARM':
                 return '"VUID-vkGetDataGraphPipelinePropertiesARM-dataGraphPipeline-09802"'
+            if commandName == 'vkGetDataGraphPipelineAvailablePropertiesARM':
+                return '"VUID-vkGetDataGraphPipelineAvailablePropertiesARM-dataGraphPipeline-09888"'
 
         # These are cases where multiple commands call the struct
         if structName == 'VkPipelineExecutableInfoKHR' and memberName == 'pipeline':
@@ -852,10 +857,6 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
             return '"UNASSIGNED-VkDataGraphPipelineSessionCreateInfoARM-dataGraphPipeline-parent"'
         if structName == 'VkDataGraphPipelineSessionBindPointRequirementsInfoARM' and memberName == 'session':
             return '"UNASSIGNED-VkDataGraphPipelineSessionBindPointRequirementsInfoARM-session-parent"'
-        if structName == 'VkDataGraphPipelineSessionMemoryRequirementsInfoARM' and memberName == 'session':
-            return '"UNASSIGNED-VkDataGraphPipelineSessionMemoryRequirementsInfoARM-session-parent"'
-        if structName == 'VkDataGraphPipelineInfoARM' and memberName == 'dataGraphPipeline':
-            return '"UNASSIGNED-VkDataGraphPipelineInfoARM-dataGraphPipeline-parent"'
         if structName == 'VkCopyMemoryToImageIndirectInfoKHR' and memberName == 'dstImage':
             return '"UNASSIGNED-VkCopyMemoryToImageIndirectInfoKHR-dstImage-parent"'
 

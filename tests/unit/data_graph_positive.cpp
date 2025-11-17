@@ -23,8 +23,6 @@ void DataGraphTest::InitBasicDataGraph() {
     AddRequiredFeature(vkt::Feature::shaderTensorAccess);
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
     AddRequiredFeature(vkt::Feature::shaderInt8);
-    AddRequiredFeature(vkt::Feature::shaderInt16);
-    AddRequiredFeature(vkt::Feature::shaderInt64);
 }
 
 const std::string DataGraphTest::IncorrectSpirvMessage{"test incorrect. Possible causes: incorrect spirv, or inconsistency between spirv and tensor/constant declarations\n"} ;

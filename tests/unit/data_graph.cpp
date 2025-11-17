@@ -600,6 +600,37 @@ TEST_F(NegativeDataGraph, BindSessionObjectIndexTooLarge) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDataGraph, BindSessionObjectWrongBindPoint) {
+    TEST_DESCRIPTION("Try to bind a DataGraphPipelineSession with the wrong bindpoint");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    vkt::dg::DataGraphPipelineHelper pipeline(*this);
+    pipeline.CreateDataGraphPipeline();
+
+    VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
+    session_ci.dataGraphPipeline = pipeline.Handle();
+
+    vkt::DataGraphPipelineSession session(*m_device, session_ci);
+
+    session.GetMemoryReqs();
+    CheckSessionMemory(session);
+
+    std::vector<vkt::DeviceMemory> device_mem(session.BindPointsCount());
+    session.AllocSessionMem(device_mem);
+
+    auto session_bind_infos = InitSessionBindInfo(session, device_mem);
+    session_bind_infos[0].bindPoint =
+        static_cast<VkDataGraphPipelineSessionBindPointARM>(VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_MAX_ENUM_ARM - 1);
+
+    m_errorMonitor->SetDesiredError("VUID-VkBindDataGraphPipelineSessionMemoryInfoARM-bindPoint-09786");
+    // VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_TRANSIENT_ARM is the only legal value for bindPoint, so whatever we
+    // put in place of it, we also trigger this implicit check:
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkBindDataGraphPipelineSessionMemoryInfoARM-bindPoint-parameter");
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDataGraph, DestroySessionInUse) {
     TEST_DESCRIPTION("Try destroying a datagraph pipeline session while it is in use");
     InitBasicDataGraph();
