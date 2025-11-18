@@ -1162,13 +1162,11 @@ TEST_F(NegativeRayTracing, CmdTraceRaysKHR) {
     RETURN_IF_SKIP(InitState());
 
     // Create ray tracing pipeline
+    const vkt::PipelineLayout pipeline_layout(*m_device, {});
     VkPipeline raytracing_pipeline = VK_NULL_HANDLE;
     {
-        const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
         VkShaderObj rgen_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
         VkShaderObj chit_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
-
-        const vkt::PipelineLayout pipeline_layout(*m_device, {});
 
         std::array<VkPipelineShaderStageCreateInfo, 2> shader_stages;
         shader_stages[0] = vku::InitStructHelper();
@@ -5478,13 +5476,11 @@ TEST_F(NegativeRayTracing, CmdBuildClusterAccelerationStructureIndirectValidatio
     m_errorMonitor->VerifyFound();
     command_info.scratchData = scratch_buffer.Address();
 
+    const vkt::PipelineLayout pipeline_layout(*m_device, {});
     VkPipeline raytracing_pipeline = VK_NULL_HANDLE;
     {
-        const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
         VkShaderObj rgen_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
         VkShaderObj chit_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
-
-        const vkt::PipelineLayout pipeline_layout(*m_device, {});
 
         std::array<VkPipelineShaderStageCreateInfo, 2> shader_stages;
         shader_stages[0] = vku::InitStructHelper();
