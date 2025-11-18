@@ -21,10 +21,8 @@
 #include "../framework/thread_helper.h"
 
 void VkBestPracticesLayerTest::InitBestPracticesFramework(const char *vendor_checks_to_enable) {
-    // Enable the vendor-specific checks spcified by vendor_checks_to_enable
-    const char *input_values[] = {vendor_checks_to_enable};
-    const VkLayerSettingEXT settings[] = {{OBJECT_LAYER_NAME, "enables", VK_LAYER_SETTING_TYPE_STRING_EXT,
-                                           static_cast<uint32_t>(std::size(input_values)), input_values}};
+    const VkLayerSettingEXT settings[] = {
+        {OBJECT_LAYER_NAME, vendor_checks_to_enable, VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue}};
 
     const VkLayerSettingsCreateInfoEXT layer_settings_create_info{VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr,
                                                                   static_cast<uint32_t>(std::size(settings)), settings};
