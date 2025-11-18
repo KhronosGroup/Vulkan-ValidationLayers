@@ -20,7 +20,7 @@
 #include "../framework/ray_tracing_objects.h"
 
 // Tests for NVIDIA-specific best practices
-const char *kEnableNVIDIAValidation = "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_NVIDIA";
+const char *kEnableNVIDIAValidation = "validate_best_practices_nvidia";
 
 static constexpr float defaultQueuePriority = 0.0f;
 

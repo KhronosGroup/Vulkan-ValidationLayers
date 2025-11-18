@@ -18,7 +18,7 @@
 #include "binding.h"
 #include <algorithm>
 
-const char* kEnableArmValidation = "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM";
+const char* kEnableArmValidation = "validate_best_practices_arm";
 
 class VkArmBestPracticesLayerTest : public VkBestPracticesLayerTest {};
 
