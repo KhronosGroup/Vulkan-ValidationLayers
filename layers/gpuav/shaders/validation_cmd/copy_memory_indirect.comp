@@ -110,42 +110,42 @@ void main() {
     if (api.is_image_copy != 0) {
         CopyMemoryToImageIndirectCommand command = CopyMemoryToImageIndirectCommand(command_address);
         if (!ValidDeviceAddress(command.srcAddress)) {
-            GpuavLogError4(kErrorGroupInstCopyMemoryIndirect, kErrorSubCodePreCopyMemoryToImageIndirectSrcAddressInvalid,
+            GpuavLogError4(kErrorGroupGpuCopyMemoryIndirect, kErrorSubCodePreCopyMemoryToImageIndirectSrcAddressInvalid,
                             uint(command.srcAddress), uint(command.srcAddress >> 32), tid, 0);
             MakeSafeImage(command_address);
         } else if ((command.srcAddress & 3ul) != 0) {
-            GpuavLogError4(kErrorGroupInstCopyMemoryIndirect, kErrorSubCodePreCopyMemoryToImageIndirectSrcAddressAligned,
+            GpuavLogError4(kErrorGroupGpuCopyMemoryIndirect, kErrorSubCodePreCopyMemoryToImageIndirectSrcAddressAligned,
                             uint(command.srcAddress), uint(command.srcAddress >> 32), tid, 0);
             MakeSafeImage(command_address);
         } else if (command.bufferRowLength != 0 && command.bufferRowLength < command.imageExtent_width) {
-            GpuavLogError4(kErrorGroupInstCopyMemoryIndirect, kErrorSubCodePreCopyMemoryToImageIndirectBufferRowLength,
+            GpuavLogError4(kErrorGroupGpuCopyMemoryIndirect, kErrorSubCodePreCopyMemoryToImageIndirectBufferRowLength,
                             command.bufferRowLength, command.imageExtent_width, tid, 0);
             MakeSafeImage(command_address);
         } else if (command.bufferImageHeight != 0 && command.bufferImageHeight < command.imageExtent_height) {
-            GpuavLogError4(kErrorGroupInstCopyMemoryIndirect, kErrorSubCodePreCopyMemoryToImageIndirectBufferImageHeight,
+            GpuavLogError4(kErrorGroupGpuCopyMemoryIndirect, kErrorSubCodePreCopyMemoryToImageIndirectBufferImageHeight,
                             command.bufferImageHeight, command.imageExtent_height, tid, 0);
             MakeSafeImage(command_address);
         }
     } else {
         CopyMemoryIndirectCommand command = CopyMemoryIndirectCommand(command_address);
         if (!ValidDeviceAddress(command.srcAddress)) {
-            GpuavLogError4(kErrorGroupInstCopyMemoryIndirect, kErrorSubCodePreCopyMemoryIndirectSrcAddressInvalid,
+            GpuavLogError4(kErrorGroupGpuCopyMemoryIndirect, kErrorSubCodePreCopyMemoryIndirectSrcAddressInvalid,
                             uint(command.srcAddress), uint(command.srcAddress >> 32), tid, 0);
             MakeSafeBuffer(command_address);
         } else if (!ValidDeviceAddress(command.dstAddress)) {
-            GpuavLogError4(kErrorGroupInstCopyMemoryIndirect, kErrorSubCodePreCopyMemoryIndirectDstAddressInvalid,
+            GpuavLogError4(kErrorGroupGpuCopyMemoryIndirect, kErrorSubCodePreCopyMemoryIndirectDstAddressInvalid,
                             uint(command.dstAddress), uint(command.dstAddress >> 32), tid, 0);
             MakeSafeBuffer(command_address);
         } else if ((command.srcAddress & 3ul) != 0) {
-            GpuavLogError4(kErrorGroupInstCopyMemoryIndirect, kErrorSubCodePreCopyMemoryIndirectSrcAddressAligned,
+            GpuavLogError4(kErrorGroupGpuCopyMemoryIndirect, kErrorSubCodePreCopyMemoryIndirectSrcAddressAligned,
                             uint(command.srcAddress), uint(command.srcAddress >> 32), tid, 0);
             MakeSafeBuffer(command_address);
         } else if ((command.dstAddress & 3ul) != 0) {
-            GpuavLogError4(kErrorGroupInstCopyMemoryIndirect, kErrorSubCodePreCopyMemoryIndirectDstAddressAligned,
+            GpuavLogError4(kErrorGroupGpuCopyMemoryIndirect, kErrorSubCodePreCopyMemoryIndirectDstAddressAligned,
                             uint(command.dstAddress), uint(command.dstAddress >> 32), tid, 0);
             MakeSafeBuffer(command_address);
         } else if ((command.size & 3ul) != 0) {
-            GpuavLogError4(kErrorGroupInstCopyMemoryIndirect, kErrorSubCodePreCopyMemoryIndirectSizeAligned,
+            GpuavLogError4(kErrorGroupGpuCopyMemoryIndirect, kErrorSubCodePreCopyMemoryIndirectSizeAligned,
                             uint(command.size), uint(command.size >> 32), tid, 0);
             MakeSafeBuffer(command_address);
         }
