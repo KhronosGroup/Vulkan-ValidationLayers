@@ -16,7 +16,7 @@
 #include "../framework/pipeline_helper.h"
 
 // Tests for AMD-specific best practices
-const char *kEnableAMDValidation = "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD";
+const char *kEnableAMDValidation = "validate_best_practices_amd";
 
 class VkAmdBestPracticesLayerTest : public VkBestPracticesLayerTest {};
 
