@@ -49,7 +49,7 @@
 #include "gpuav/spirv/ray_query_pass.h"
 #include "gpuav/spirv/debug_printf_pass.h"
 #include "gpuav/spirv/post_process_descriptor_indexing_pass.h"
-#include "gpuav/spirv/vertex_attribute_fetch_oob.h"
+#include "gpuav/spirv/vertex_attribute_fetch_oob_pass.h"
 
 #include <cassert>
 #include <string>
@@ -1546,7 +1546,7 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
 
     if (gpuav_settings.shader_instrumentation.vertex_attribute_fetch_oob) {
         if (!modified_features.robustBufferAccess) {
-            spirv::VertexAttributeFetchOob pass(module);
+            spirv::VertexAttributeFetchOobPass pass(module);
             modified |= pass.Run();
         }
     }

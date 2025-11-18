@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "vertex_attribute_fetch_oob.h"
+#include "vertex_attribute_fetch_oob_pass.h"
 #include "module.h"
 #include "generated/gpuav_offline_spirv.h"
 
@@ -32,11 +32,11 @@ const static OfflineModule kOfflineModule = {instrumentation_vertex_attribute_fe
 const static OfflineFunction kOfflineFunction = {"inst_vertex_attribute_fetch_oob",
                                                  instrumentation_vertex_attribute_fetch_oob_vert_function_0_offset};
 
-VertexAttributeFetchOob::VertexAttributeFetchOob(Module& module) : Pass(module, kOfflineModule) {}
+VertexAttributeFetchOobPass::VertexAttributeFetchOobPass(Module& module) : Pass(module, kOfflineModule) {}
 
-uint32_t VertexAttributeFetchOob::GetLinkFunctionId() { return GetLinkFunction(link_function_id_, kOfflineFunction); }
+uint32_t VertexAttributeFetchOobPass::GetLinkFunctionId() { return GetLinkFunction(link_function_id_, kOfflineFunction); }
 
-bool VertexAttributeFetchOob::Instrument() {
+bool VertexAttributeFetchOobPass::Instrument() {
     for (const auto& entry_point_inst : module_.entry_points_) {
         const uint32_t execution_model = entry_point_inst->Word(1);
         if (execution_model != spv::ExecutionModelVertex) continue;
@@ -76,8 +76,8 @@ bool VertexAttributeFetchOob::Instrument() {
     return false;
 }
 
-void VertexAttributeFetchOob::PrintDebugInfo() const {
-    std::cout << "VertexAttributeFetchOob instrumentation performed: " << std::boolalpha << instrumentation_performed << '\n';
+void VertexAttributeFetchOobPass::PrintDebugInfo() const {
+    std::cout << "VertexAttributeFetchOobPass instrumentation performed: " << std::boolalpha << instrumentation_performed << '\n';
     VVL_TracyPlot(__FUNCTION__, int64_t(instrumentation_performed));
 }
 

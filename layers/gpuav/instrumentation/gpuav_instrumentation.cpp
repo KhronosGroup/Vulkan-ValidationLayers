@@ -30,7 +30,7 @@
 #include "gpuav/debug_printf/debug_printf.h"
 #include "containers/limits.h"
 
-#include "gpuav/spirv/vertex_attribute_fetch_oob.h"
+#include "gpuav/spirv/vertex_attribute_fetch_oob_pass.h"
 
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/descriptor_sets.h"
