@@ -162,7 +162,7 @@ void CopyMemoryIndirect(Validator &gpuav, const Location &loc, CommandBufferSubS
         using namespace glsl;
 
         const uint32_t error_group = error_record[kHeaderShaderIdErrorOffset] >> kErrorGroupShift;
-        if (error_group != kErrorGroupInstCopyMemoryIndirect) {
+        if (error_group != kErrorGroupGpuCopyMemoryIndirect) {
             return skip;
         }
 

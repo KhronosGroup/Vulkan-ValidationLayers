@@ -37,7 +37,7 @@ const int kErrorGroupGpuPreTraceRays = 6;
 const int kErrorGroupGpuCopyBufferToImage = 7;
 const int kErrorGroupInstDescriptorClass = 8;
 const int kErrorGroupInstIndexedDraw = 9;
-const int kErrorGroupInstCopyMemoryIndirect = 10;
+const int kErrorGroupGpuCopyMemoryIndirect = 10;
 
 // We just take ExecutionModel and normalize it so we only use 5 bits to store it
 const int kExecutionModelVertex = 0;
