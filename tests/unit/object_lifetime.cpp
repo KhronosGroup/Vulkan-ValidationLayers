@@ -1089,6 +1089,50 @@ TEST_F(NegativeObjectLifetime, SamplerInUseDestroyed) {
     vk::DestroySampler(device(), sampler, NULL);  // Destroyed for real
 }
 
+TEST_F(NegativeObjectLifetime, ImmutableSamplerInUseDestroyed) {
+    TEST_DESCRIPTION("Delete in-use immutable sampler.");
+    RETURN_IF_SKIP(Init());
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL,
+                                                  &sampler.handle()};
+    vkt::DescriptorSetLayout set_layout(*m_device, binding);
+    vkt::PipelineLayout pipeline_layout(*m_device, {&set_layout});
+
+    sampler.Destroy();
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cp_ci_.layout = pipeline_layout;
+    m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-layout-parameter");
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeObjectLifetime, ImmutableSamplerInUseDestroyed2) {
+    TEST_DESCRIPTION("Delete in-use immutable sampler.");
+    RETURN_IF_SKIP(Init());
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    OneOffDescriptorSet descriptor_set(
+        m_device, {
+                      {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, &sampler.handle()},
+                  });
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    pipe.CreateComputePipeline();
+
+    sampler.Destroy();
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-pipeline-parameter");
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeObjectLifetime, CmdBufferEventDestroyed) {
     TEST_DESCRIPTION("Attempt to draw with a command buffer that is invalid due to an event dependency being destroyed.");
     RETURN_IF_SKIP(Init());

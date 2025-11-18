@@ -1040,44 +1040,6 @@ TEST_F(PositiveYcbcr, DescriptorIndexNotYCbcr) {
     pipe.CreateComputePipeline();
 }
 
-TEST_F(PositiveYcbcr, DescriptorIndexNotYCbcrDestroyed) {
-    TEST_DESCRIPTION("Make sure we detect immutable samplers array are actually YCBcr");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
-    RETURN_IF_SKIP(Init());
-
-    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
-    VkSampler samplers[4] = {sampler, sampler, sampler, sampler};
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4, VK_SHADER_STAGE_COMPUTE_BIT, samplers},
-                                           {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                       });
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
-
-    // Can destroyed because samplers were embedded
-    sampler.Destroy();
-
-    const char* cs_source = R"glsl(
-        #version 460
-        #extension GL_EXT_nonuniform_qualifier : require
-        layout(set = 0, binding = 0) uniform sampler2D ycbcr[4];
-        layout(set = 0, binding = 1) buffer SSBO {
-            vec4 result;
-            uint x;
-        };
-
-        void main() {
-            result = texture(ycbcr[x], vec2(0)); // valid because not YCbCr
-        }
-    )glsl";
-
-    CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.cp_ci_.layout = pipeline_layout;
-    pipe.CreateComputePipeline();
-}
-
 TEST_F(PositiveYcbcr, ArrayOfImagesSometimesUsedForYcbcr) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
