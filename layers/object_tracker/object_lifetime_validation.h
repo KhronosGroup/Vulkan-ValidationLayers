@@ -22,22 +22,20 @@
 
 namespace object_lifetimes {
 
-// Object Status -- used to track state of individual objects
-typedef VkFlags ObjectStatusFlags;
-enum ObjectStatusFlagBits {
-    OBJSTATUS_NONE = 0x0,              // No status is set
-    OBJSTATUS_CUSTOM_ALLOCATOR = 0x1,  // Allocated with custom allocator
-    OBJSTATUS_POISONED = 0x2           // This object references destoyed objects
+enum ObjectStatusFlags {
+    kObjectStatusNone = 0x0,
+    kObjectStatusCustomAllocator = 0x1,  // Allocated with custom allocator
+    kObjectStatusPoisoned = 0x2          // This object references destoyed objects
 };
 
-struct ObjTrackState;
+struct ObjectState;
 class Tracker;
 class Device;
 
-using object_map_type = vvl::concurrent_unordered_map<uint64_t, std::shared_ptr<ObjTrackState>, 6>;
+using ObjectMap = vvl::concurrent_unordered_map<uint64_t, std::shared_ptr<ObjectState>, 6>;
 
 // Used for GPL and we know there are at most only 4 libraries that should be used
-using object_list_map_type = vvl::concurrent_unordered_map<uint64_t, small_vector<std::shared_ptr<ObjTrackState>, 4>, 6>;
+using ObjectMapGPL = vvl::concurrent_unordered_map<uint64_t, small_vector<std::shared_ptr<ObjectState>, 4>, 6>;
 
 struct VulkanTypedHandlerHasher {
     size_t operator()(const VulkanTypedHandle &typed_handle) const {
@@ -45,13 +43,15 @@ struct VulkanTypedHandlerHasher {
     }
 };
 
-// Object and state information structure
-struct ObjTrackState {
-    uint64_t handle;                                               // Object handle (new)
-    VulkanObjectType object_type;                                  // Object type identifier
-    ObjectStatusFlags status;                                      // Object state
-    uint64_t parent_object;                                        // Parent object
-    std::unique_ptr<vvl::unordered_set<uint64_t> > child_objects;  // Child objects (used for VkDescriptorPool only)
+// Per vulkan object state
+struct ObjectState {
+    uint64_t handle;
+    VulkanObjectType object_type;
+    uint32_t status_flags;
+    uint64_t parent_object;
+
+    // Child objects (used for VkDescriptorPool only)
+    std::unique_ptr<vvl::unordered_set<uint64_t> > child_objects;
 
     // The objects to poison if the current object becomes poisoned.
     // These objects reference the current object in some way.
@@ -72,7 +72,7 @@ class Tracker : public Logger {
   public:
     Tracker(DebugReport *dr) : Logger(dr) {}
 
-    std::shared_ptr<ObjTrackState> GetObjectState(VulkanTypedHandle typed_handle) const;
+    std::shared_ptr<ObjectState> GetObjectState(VulkanTypedHandle typed_handle) const;
 
     void DestroyUndestroyedObjects(VulkanObjectType object_type, const Location &loc);
 
@@ -88,7 +88,7 @@ class Tracker : public Logger {
             object != HandleToUint64(VK_NULL_HANDLE)) {
             auto item = object_map[object_type].find(object);
             if (item != object_map[object_type].end()) {
-                auto allocated_with_custom = (item->second->status & OBJSTATUS_CUSTOM_ALLOCATOR) != 0;
+                auto allocated_with_custom = (item->second->status_flags & kObjectStatusCustomAllocator) != 0;
                 if (allocated_with_custom && !custom_allocator && expected_custom_allocator_code != kVUIDUndefined) {
                     // This check only verifies that custom allocation callbacks were provided to both Create and Destroy calls,
                     // it cannot verify that these allocation callbacks are compatible with each other.
@@ -110,13 +110,12 @@ class Tracker : public Logger {
 
     template <typename T1>
     bool ValidateObject(T1 object, VulkanObjectType object_type, bool null_allowed, bool poisoned_object_allowed,
-                        const char *invalid_handle_vuid, const char *wrong_parent_vuid, const Location &loc,
-                        VulkanObjectType parent_type = kVulkanObjectTypeDevice) const {
+                        const char *invalid_handle_vuid, const char *wrong_parent_vuid, const Location &loc) const {
         if (null_allowed && (object == VK_NULL_HANDLE)) {
             return false;
         }
         return CheckObjectValidity(HandleToUint64(object), object_type, poisoned_object_allowed, invalid_handle_vuid,
-                                   wrong_parent_vuid, loc, parent_type);
+                                   wrong_parent_vuid, loc);
     }
 
     template <typename T1, typename T2>
@@ -129,9 +128,9 @@ class Tracker : public Logger {
         if (itr != obj_map.end()) {
             return;
         }
-        auto node = std::make_shared<ObjTrackState>();
+        auto node = std::make_shared<ObjectState>();
         node->object_type = object_type;
-        node->status = custom_allocator ? OBJSTATUS_CUSTOM_ALLOCATOR : OBJSTATUS_NONE;
+        node->status_flags = custom_allocator ? kObjectStatusCustomAllocator : kObjectStatusNone;
         node->handle = object_handle;
         node->parent_object = HandleToUint64(parent_object);
 
@@ -181,19 +180,19 @@ class Tracker : public Logger {
 
     bool TracksObject(uint64_t object_handle, VulkanObjectType object_type) const;
 
-    void RegisterPoisonPair(ObjTrackState &poisonee, VulkanTypedHandle poisoner);
-    bool CheckPoisoning(const ObjTrackState &object_state, const char *vuid, const Location &loc) const;
+    void RegisterPoisonPair(ObjectState &poisonee, VulkanTypedHandle poisoner);
+    bool CheckPoisoning(const ObjectState &object_state, const char *vuid, const Location &loc) const;
     std::string DescribePoisonChain(const std::vector<VulkanTypedHandle> &poison_chain) const;
 
     bool CheckObjectValidity(uint64_t object_handle, VulkanObjectType object_type, bool poisoned_object_allowed,
-                             const char *invalid_handle_vuid, const char *wrong_parent_vuid, const Location &loc,
-                             VulkanObjectType parent_type) const;
-    // Vector of unordered_maps per object type to hold ObjTrackState info
-    object_map_type object_map[kVulkanObjectTypeMax + 1];
+                             const char *invalid_handle_vuid, const char *wrong_parent_vuid, const Location &loc) const;
 
     void SetDeviceHandle(const Device& device);
     void SetInstanceHandle(VkInstance instance);
     bool IsMaintenance4Enabled() const { return is_device_maintenance4_enabled_; }
+
+  public:
+    ObjectMap object_map[kVulkanObjectTypeMax + 1];
 
   private:
     // We don't know the handle (VkDevice or VkInstance) when Tracker is created and need to set afterwards
@@ -231,10 +230,8 @@ class Instance : public vvl::base::Instance {
     }
     template <typename T1>
     bool ValidateObject(T1 object, VulkanObjectType object_type, bool null_allowed, const char *invalid_handle_vuid,
-                        const char *wrong_parent_vuid, const Location &loc,
-                        VulkanObjectType parent_type = kVulkanObjectTypeDevice) const {
-        return tracker.ValidateObject(object, object_type, null_allowed, true, invalid_handle_vuid, wrong_parent_vuid, loc,
-                                      parent_type);
+                        const char *wrong_parent_vuid, const Location &loc) const {
+        return tracker.ValidateObject(object, object_type, null_allowed, true, invalid_handle_vuid, wrong_parent_vuid, loc);
     }
     void DestroyObjectSilently(uint64_t object, VulkanObjectType object_type, const Location &loc) {
         return tracker.DestroyObjectSilently(object, object_type, loc);
@@ -266,7 +263,7 @@ class Device : public vvl::base::Device {
     WriteLockGuard WriteSharedLock() { return WriteLockGuard(object_lifetime_mutex); }
     ReadLockGuard ReadSharedLock() const { return ReadLockGuard(object_lifetime_mutex); }
 
-    object_list_map_type linked_graphics_pipeline_map;
+    ObjectMapGPL linked_graphics_pipeline_map;
 
     // Constructor for object lifetime tracking
     Device(vvl::dispatch::Device *dev, Instance *instance);
@@ -306,8 +303,7 @@ class Device : public vvl::base::Device {
 
     template <typename T1>
     bool ValidateObject(T1 object, VulkanObjectType object_type, bool null_allowed, bool poisoned_object_allowed,
-                        const char *invalid_handle_vuid, const char *wrong_parent_vuid, const Location &loc,
-                        VulkanObjectType parent_type = kVulkanObjectTypeDevice) const {
+                        const char *invalid_handle_vuid, const char *wrong_parent_vuid, const Location &loc) const {
         uint64_t object_handle = HandleToUint64(object);
 
         // special case if for pipeline if using GPL
@@ -326,14 +322,13 @@ class Device : public vvl::base::Device {
             }
         }
         return tracker.ValidateObject(object, object_type, null_allowed, poisoned_object_allowed, invalid_handle_vuid,
-                                      wrong_parent_vuid, loc, parent_type);
+                                      wrong_parent_vuid, loc);
     }
 
     template <typename T1>
     bool ValidateObject(T1 object, VulkanObjectType object_type, bool null_allowed, const char *invalid_handle_vuid,
-                        const char *wrong_parent_vuid, const Location &loc,
-                        VulkanObjectType parent_type = kVulkanObjectTypeDevice) const {
-        return ValidateObject(object, object_type, null_allowed, true, invalid_handle_vuid, wrong_parent_vuid, loc, parent_type);
+                        const char *wrong_parent_vuid, const Location &loc) const {
+        return ValidateObject(object, object_type, null_allowed, true, invalid_handle_vuid, wrong_parent_vuid, loc);
     }
 
     void DestroyObjectSilently(uint64_t object, VulkanObjectType object_type, const Location &loc) {
