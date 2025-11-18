@@ -46,7 +46,7 @@ struct VertexAttributeFetchOff {
         }
         valid = true;
 
-        auto vertex_attribute_fetch_limits_buffer_ptr = (uint32_t *)buffer.GetMappedPtr();
+        auto vertex_attribute_fetch_limits_buffer_ptr = (uint32_t*)buffer.GetMappedPtr();
         vertex_attribute_fetch_limits_buffer_ptr[0] = 0u;  // has_max_vbb_vertex_input_rate
         vertex_attribute_fetch_limits_buffer_ptr[2] = 0u;  // has_max_vbb_instance_input_rate
     }
@@ -57,10 +57,10 @@ struct VertexAttributeFetchOff {
 namespace spirv {
 
 // Validating validating that gl_VertexID is an index within bound vertex buffers
-class VertexAttributeFetchOob : public Pass {
+class VertexAttributeFetchOobPass : public Pass {
   public:
-    VertexAttributeFetchOob(Module& module);
-    const char* Name() const final { return "VertexAttributeFetchOob"; }
+    VertexAttributeFetchOobPass(Module& module);
+    const char* Name() const final { return "VertexAttributeFetchOobPass"; }
 
     bool Instrument();
     void PrintDebugInfo() const final;
