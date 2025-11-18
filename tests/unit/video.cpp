@@ -1775,13 +1775,8 @@ TEST_F(NegativeVideo, BeginQueryIncompatibleQueueFamily) {
 
     RETURN_IF_SKIP(Init());
 
-    VideoConfig config = GetConfig();
-    if (!config) {
-        GTEST_SKIP() << "Test requires video support";
-    }
-
-    if (!QueueFamilySupportsResultStatusOnlyQueries(config.QueueFamilyIndex())) {
-        GTEST_SKIP() << "Test requires video queue to support result status queries";
+    if (!HasQueueFamilySupportsResultStatusOnlyQueries()) {
+        GTEST_SKIP() << "Test requires at least one queue family to support result status queries";
     }
 
     uint32_t queue_family_index = VK_QUEUE_FAMILY_IGNORED;
@@ -2016,13 +2011,12 @@ TEST_F(NegativeVideo, GetQueryPoolResultsStatusBit) {
 
     RETURN_IF_SKIP(Init());
 
-    VideoConfig config = GetConfig();
-    if (!config) {
-        GTEST_SKIP() << "Test requires video support";
+    if (!HasQueueFamilySupportsResultStatusOnlyQueries()) {
+        GTEST_SKIP() << "Test requires at least one queue family to support result status queries";
     }
 
-    if (!QueueFamilySupportsResultStatusOnlyQueries(config.QueueFamilyIndex())) {
-        GTEST_SKIP() << "Test requires video queue to support result status queries";
+    if (!GetConfig()) {
+        GTEST_SKIP() << "Test requires video support";
     }
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR, 1);
@@ -2066,13 +2060,12 @@ TEST_F(NegativeVideo, CopyQueryPoolResultsStatusBit) {
 
     RETURN_IF_SKIP(Init());
 
-    VideoConfig config = GetConfig();
-    if (!config) {
-        GTEST_SKIP() << "Test requires video support";
+    if (!HasQueueFamilySupportsResultStatusOnlyQueries()) {
+        GTEST_SKIP() << "Test requires at least one queue family to support result status queries";
     }
 
-    if (!QueueFamilySupportsResultStatusOnlyQueries(config.QueueFamilyIndex())) {
-        GTEST_SKIP() << "Test requires video queue to support result status queries";
+    if (!GetConfig()) {
+        GTEST_SKIP() << "Test requires video support";
     }
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR, 1);

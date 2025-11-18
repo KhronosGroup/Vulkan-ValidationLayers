@@ -2562,6 +2562,10 @@ TEST_F(NegativeVideoEncode, EncodeInlineQueryIncompatibleQueueFamily) {
     AddRequiredFeature(vkt::Feature::videoMaintenance1);
     RETURN_IF_SKIP(Init());
 
+    if (!HasQueueFamilySupportsResultStatusOnlyQueries()) {
+        GTEST_SKIP() << "Test requires at least one queue family to support result status queries";
+    }
+
     uint32_t queue_family_index = VK_QUEUE_FAMILY_IGNORED;
     for (uint32_t qfi = 0; qfi < QueueFamilyCount(); ++qfi) {
         if (!QueueFamilySupportsResultStatusOnlyQueries(qfi)) {
