@@ -621,3 +621,60 @@ TEST_F(PositiveSecondaryCommandBuffer, CustomResolveDynamicRendering) {
     vk::CmdExecuteCommands(m_command_buffer, 1, &secondary.handle());
     m_command_buffer.End();
 }
+
+TEST_F(PositiveSecondaryCommandBuffer, CustomResolveDynamicRenderingInputAttachmentIndex) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11099");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_CUSTOM_RESOLVE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::customResolve);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::dynamicRenderingLocalRead);
+    RETURN_IF_SKIP(Init());
+
+    const VkFormat depth_format = FindSupportedDepthOnlyFormat(Gpu());
+
+    VkCustomResolveCreateInfoEXT custom_resolve_info = vku::InitStructHelper();
+    custom_resolve_info.customResolve = VK_TRUE;
+    custom_resolve_info.colorAttachmentCount = 0;
+    custom_resolve_info.pColorAttachmentFormats = nullptr;
+    custom_resolve_info.depthAttachmentFormat = depth_format;
+    custom_resolve_info.stencilAttachmentFormat = VK_FORMAT_UNDEFINED;
+
+    uint32_t zero = 0;
+    VkRenderingInputAttachmentIndexInfo input_info = vku::InitStructHelper(&custom_resolve_info);
+    input_info.colorAttachmentCount = 0;
+    input_info.pColorAttachmentInputIndices = nullptr;
+    input_info.pDepthInputAttachmentIndex = &zero;
+    input_info.pStencilInputAttachmentIndex = nullptr;
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper(&input_info);
+    pipeline_rendering_info.colorAttachmentCount = 0;
+    pipeline_rendering_info.pColorAttachmentFormats = nullptr;
+    pipeline_rendering_info.depthAttachmentFormat = depth_format;
+    pipeline_rendering_info.stencilAttachmentFormat = VK_FORMAT_UNDEFINED;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.ds_ci_ = vku::InitStructHelper();
+    pipe.CreateGraphicsPipeline();
+
+    VkCommandBufferInheritanceRenderingInfo inheritance_rendering_info = vku::InitStructHelper(&input_info);
+    inheritance_rendering_info.flags = VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT;
+    inheritance_rendering_info.colorAttachmentCount = 0;
+    inheritance_rendering_info.pColorAttachmentFormats = nullptr;
+    inheritance_rendering_info.depthAttachmentFormat = depth_format;
+    inheritance_rendering_info.stencilAttachmentFormat = VK_FORMAT_UNDEFINED;
+    inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+    const VkCommandBufferInheritanceInfo cmdbuff_ii = vku::InitStructHelper(&inheritance_rendering_info);
+    VkCommandBufferBeginInfo cmdbuff_bi = vku::InitStructHelper();
+    cmdbuff_bi.pInheritanceInfo = &cmdbuff_ii;
+    cmdbuff_bi.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin(&cmdbuff_bi);
+    vk::CmdBindPipeline(secondary, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDraw(secondary, 3, 1, 0, 0);
+    secondary.End();
+}

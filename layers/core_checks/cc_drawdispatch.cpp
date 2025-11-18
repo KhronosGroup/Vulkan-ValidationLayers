@@ -2384,12 +2384,14 @@ bool CoreChecks::ValidateDrawCustomResolve(const LastBound &last_bound, const vv
     bool skip = false;
 
     const VkRenderingFlags rendering_flags = rp_state.GetRenderingFlags();
+    const vvl::Struct flags_struct = rp_state.use_dynamic_rendering_inherited ? vvl::Struct::VkCommandBufferInheritanceRenderingInfo
+                                                                              : vvl::Struct::VkRenderingInfo;
     if (rendering_flags & VK_RENDERING_FRAGMENT_REGION_BIT_EXT) {
         if (last_bound.IsSampleShadingEnabled() && last_bound.GetMinSampleShading() != 0.0) {
-            skip |= LogError(
-                vuid.custom_resolve_11521, cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
-                "VkRenderingInfo::flags includes VK_RENDERING_FRAGMENT_REGION_BIT_EXT, but minSampleShading needs to be 0\n%s",
-                last_bound.DescribeSampleShading().c_str());
+            skip |=
+                LogError(vuid.custom_resolve_11521, cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
+                         "%s::flags includes VK_RENDERING_FRAGMENT_REGION_BIT_EXT, but minSampleShading needs to be 0\n%s",
+                         String(flags_struct), last_bound.DescribeSampleShading().c_str());
         }
     }
 
@@ -2446,10 +2448,11 @@ bool CoreChecks::ValidateDrawCustomResolve(const LastBound &last_bound, const vv
     if (rp_has_custom_resolve) {
         if (!pipeline_cr_info) {
             if (!enabled_features.dynamicRenderingUnusedAttachments) {
-                skip |= LogError(
-                    vuid.custom_resolve_11522, cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
-                    "VkRenderingInfo::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, but the bound pipeline was not "
-                    "created with a VkCustomResolveCreateInfoEXT struct");
+                skip |= LogError(vuid.custom_resolve_11522, cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
+                                 vuid.loc(),
+                                 "%s::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, but the bound pipeline was not "
+                                 "created with a VkCustomResolveCreateInfoEXT struct",
+                                 String(flags_struct));
             }
         } else if (cb_sub_state.custom_resolve.started && !pipeline_cr_info->customResolve) {
             if (!enabled_features.dynamicRenderingUnusedAttachments) {
@@ -2473,8 +2476,9 @@ bool CoreChecks::ValidateDrawCustomResolve(const LastBound &last_bound, const vv
         }
     } else if (pipeline_cr_info) {
         skip |= LogError(vuid.custom_resolve_11523, cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
-                         "VkRenderingInfo::flags did not include VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, but the bound pipeline was "
-                         "created with a VkCustomResolveCreateInfoEXT struct");
+                         "%s::flags did not include VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, but the bound pipeline was "
+                         "created with a VkCustomResolveCreateInfoEXT struct",
+                         String(flags_struct));
     }
 
     // Not what to do for VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT cases
@@ -2487,10 +2491,11 @@ bool CoreChecks::ValidateDrawCustomResolve(const LastBound &last_bound, const vv
     if (pipeline_cr_info->colorAttachmentCount != rendering_info.colorAttachmentCount &&
         !enabled_features.dynamicRenderingUnusedAttachments) {
         skip |= LogError(vuid.custom_resolve_11861, cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
-                         "VkRenderingInfo::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, but the bound pipeline "
+                         "%s::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, but the bound pipeline "
                          "VkCustomResolveCreateInfoEXT::colorAttachmentCount (%" PRIu32
-                         ") doesn't match VkRenderingInfo::colorAttachmentCount (%" PRIu32 ")",
-                         pipeline_cr_info->colorAttachmentCount, rendering_info.colorAttachmentCount);
+                         ") doesn't match %s::colorAttachmentCount (%" PRIu32 ")",
+                         String(flags_struct), pipeline_cr_info->colorAttachmentCount, String(flags_struct),
+                         rendering_info.colorAttachmentCount);
     }
 
     const uint32_t max_used_count = std::min(rendering_info.colorAttachmentCount, pipeline_cr_info->colorAttachmentCount);
