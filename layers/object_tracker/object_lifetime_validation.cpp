@@ -49,7 +49,7 @@ Device::~Device() {
     lifetime_set.erase(&tracker);
 }
 
-VulkanTypedHandle ObjTrackStateTypedHandle(const ObjTrackState &track_state) {
+VulkanTypedHandle ObjTrackStateTypedHandle(const ObjectState &track_state) {
     // TODO: Unify Typed Handle representation (i.e. VulkanTypedHandle everywhere there are handle/type pairs)
     VulkanTypedHandle typed_handle;
     typed_handle.handle = track_state.handle;
@@ -57,13 +57,13 @@ VulkanTypedHandle ObjTrackStateTypedHandle(const ObjTrackState &track_state) {
     return typed_handle;
 }
 
-void ObjTrackState::MakePoisonous(Tracker &tracker, VulkanTypedHandle poisoner,
-                                  const std::vector<VulkanTypedHandle> &parent_poison_chain) {
-    if ((status & OBJSTATUS_POISONED) != 0) {
+void ObjectState::MakePoisonous(Tracker &tracker, VulkanTypedHandle poisoner,
+                                const std::vector<VulkanTypedHandle> &parent_poison_chain) {
+    if ((status_flags & kObjectStatusPoisoned) != 0) {
         return;  // Already poisoned, once is enough
     }
 
-    status |= OBJSTATUS_POISONED;
+    status_flags |= kObjectStatusPoisoned;
 
     assert(poison_chain.empty());
     poison_chain.insert(poison_chain.begin(), parent_poison_chain.begin(), parent_poison_chain.end());
@@ -84,7 +84,7 @@ void ObjTrackState::MakePoisonous(Tracker &tracker, VulkanTypedHandle poisoner,
     }
 }
 
-std::shared_ptr<ObjTrackState> Tracker::GetObjectState(VulkanTypedHandle typed_handle) const {
+std::shared_ptr<ObjectState> Tracker::GetObjectState(VulkanTypedHandle typed_handle) const {
     auto it = object_map[typed_handle.type].find(typed_handle.handle);
     if (it != object_map[typed_handle.type].end()) {
         return it->second;
@@ -96,16 +96,16 @@ bool Tracker::TracksObject(uint64_t object_handle, VulkanObjectType object_type)
     return object_map[object_type].contains(object_handle);
 }
 
-void Tracker::RegisterPoisonPair(ObjTrackState &poisonee, VulkanTypedHandle poisoner) {
+void Tracker::RegisterPoisonPair(ObjectState &poisonee, VulkanTypedHandle poisoner) {
     if (auto poisoner_state = GetObjectState(poisoner)) {
         poisoner_state->objects_to_poison.emplace(ObjTrackStateTypedHandle(poisonee));
         poisonee.poisoners.emplace_back(poisoner);
     }
 }
 
-bool Tracker::CheckPoisoning(const ObjTrackState &object_state, const char *vuid, const Location &loc) const {
+bool Tracker::CheckPoisoning(const ObjectState &object_state, const char *vuid, const Location &loc) const {
     bool skip = false;
-    if ((object_state.status & OBJSTATUS_POISONED) != 0) {
+    if ((object_state.status_flags & kObjectStatusPoisoned) != 0) {
         const VulkanTypedHandle typed_handle = ObjTrackStateTypedHandle(object_state);
         LogObjectList objlist(handle_, typed_handle);
         skip |= LogError(vuid, objlist, loc, "(%s) %s", FormatHandle(typed_handle).c_str(),
@@ -125,8 +125,7 @@ std::string Tracker::DescribePoisonChain(const std::vector<VulkanTypedHandle> &p
 }
 
 bool Tracker::CheckObjectValidity(uint64_t object_handle, VulkanObjectType object_type, bool poisoned_object_allowed,
-                                  const char *invalid_handle_vuid, const char *wrong_parent_vuid, const Location &loc,
-                                  VulkanObjectType parent_type) const {
+                                  const char *invalid_handle_vuid, const char *wrong_parent_vuid, const Location &loc) const {
     bool skip = false;
 
     // TODO: this will be passed directly as parameter
@@ -235,8 +234,7 @@ void Tracker::DestroyUndestroyedObjects(VulkanObjectType object_type, const Loca
 bool Device::ValidateAnonymousObject(uint64_t object, VkObjectType core_object_type, const char *invalid_handle_vuid,
                                      const char *wrong_parent_vuid, const Location &loc) const {
     auto object_type = ConvertCoreObjectToVulkanObject(core_object_type);
-    return tracker.CheckObjectValidity(object, object_type, true, invalid_handle_vuid, wrong_parent_vuid, loc,
-                                       kVulkanObjectTypeDevice);
+    return tracker.CheckObjectValidity(object, object_type, true, invalid_handle_vuid, wrong_parent_vuid, loc);
 }
 
 void Device::AllocateCommandBuffer(const VkCommandPool command_pool, const VkCommandBuffer command_buffer,
@@ -493,7 +491,7 @@ bool Instance::ReportLeakedObjects(VulkanObjectType object_type, const std::stri
         (object_type == kVulkanObjectTypeImage)
             ? tracker.object_map[object_type].snapshot(
                   [swapchain_snapshot =
-                       tracker.object_map[kVulkanObjectTypeSwapchainKHR].snapshot()](const std::shared_ptr<ObjTrackState> &pNode) {
+                       tracker.object_map[kVulkanObjectTypeSwapchainKHR].snapshot()](const std::shared_ptr<ObjectState> &pNode) {
                       return std::find_if(swapchain_snapshot.begin(), swapchain_snapshot.end(), [&](const auto &swapchain_item) {
                                  return pNode->parent_object == swapchain_item.second->handle;
                              }) == swapchain_snapshot.end();
@@ -925,7 +923,7 @@ void Device::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR sw
 
     auto &image_map = tracker.object_map[kVulkanObjectTypeImage];
     auto snapshot = image_map.snapshot(
-        [swapchain](const std::shared_ptr<ObjTrackState> &pNode) { return pNode->parent_object == HandleToUint64(swapchain); });
+        [swapchain](const std::shared_ptr<ObjectState> &pNode) { return pNode->parent_object == HandleToUint64(swapchain); });
     for (const auto &itr : snapshot) {
         image_map.erase(itr.first);
     }
@@ -953,7 +951,7 @@ bool Device::PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptorPool
 void Device::PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
                                              const VkDescriptorSet *pDescriptorSets, const RecordObject &record_obj) {
     auto lock = WriteSharedLock();
-    std::shared_ptr<ObjTrackState> pool_node = nullptr;
+    std::shared_ptr<ObjectState> pool_node = nullptr;
     auto itr = tracker.object_map[kVulkanObjectTypeDescriptorPool].find(HandleToUint64(descriptorPool));
     if (itr != tracker.object_map[kVulkanObjectTypeDescriptorPool].end()) {
         pool_node = itr->second;
@@ -1014,7 +1012,7 @@ bool Device::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool co
                            "VUID-vkDestroyCommandPool-commandPool-parent", command_pool_loc);
 
     auto snapshot = tracker.object_map[kVulkanObjectTypeCommandBuffer].snapshot(
-        [commandPool](const std::shared_ptr<ObjTrackState> &pNode) { return pNode->parent_object == HandleToUint64(commandPool); });
+        [commandPool](const std::shared_ptr<ObjectState> &pNode) { return pNode->parent_object == HandleToUint64(commandPool); });
     for (const auto &itr : snapshot) {
         auto node = itr.second;
         skip |= ValidateCommandBuffer(commandPool, reinterpret_cast<VkCommandBuffer>(itr.first), command_pool_loc);
@@ -1030,7 +1028,7 @@ bool Device::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool co
 void Device::PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks *pAllocator,
                                              const RecordObject &record_obj) {
     auto snapshot = tracker.object_map[kVulkanObjectTypeCommandBuffer].snapshot(
-        [commandPool](const std::shared_ptr<ObjTrackState> &pNode) { return pNode->parent_object == HandleToUint64(commandPool); });
+        [commandPool](const std::shared_ptr<ObjectState> &pNode) { return pNode->parent_object == HandleToUint64(commandPool); });
     // A CommandPool's cmd buffers are implicitly deleted when pool is deleted. Remove this pool's cmdBuffers from cmd buffer map.
     for (const auto &itr : snapshot) {
         RecordDestroyObject(reinterpret_cast<VkCommandBuffer>(itr.first), kVulkanObjectTypeCommandBuffer, record_obj.location);
@@ -1645,7 +1643,7 @@ void Device::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCa
             if (auto pNext = vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(pCreateInfos[index].pNext)) {
                 if ((pNext->libraryCount > 0) && (pNext->pLibraries)) {
                     const uint64_t linked_handle = HandleToUint64(pipeline_handle);
-                    small_vector<std::shared_ptr<ObjTrackState>, 4> libraries;
+                    small_vector<std::shared_ptr<ObjectState>, 4> libraries;
                     for (uint32_t index2 = 0; index2 < pNext->libraryCount; ++index2) {
                         const uint64_t library_handle = HandleToUint64(pNext->pLibraries[index2]);
                         const auto &linked_pipeline = tracker.object_map[kVulkanObjectTypePipeline].find(library_handle);
