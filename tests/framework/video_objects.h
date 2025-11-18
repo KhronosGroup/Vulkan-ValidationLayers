@@ -3365,6 +3365,15 @@ class VkVideoLayerTest : public VkLayerTest {
         return queue_family_query_result_status_props_[qfi].queryResultStatusSupport;
     }
 
+    bool HasQueueFamilySupportsResultStatusOnlyQueries() const {
+        for (size_t qfi = 0; qfi < queue_family_video_props_.size(); qfi++) {
+            if (queue_family_query_result_status_props_[qfi].queryResultStatusSupport) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     bool IsProtectedNoFaultSupported() const { return protected_no_fault_supported_; }
 
     void SetInstancePNext(void* pNext) { instance_pnext_ = pNext; }
