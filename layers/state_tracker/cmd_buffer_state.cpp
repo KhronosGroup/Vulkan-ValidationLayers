@@ -1245,10 +1245,12 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
                     active_render_pass = std::make_shared<vvl::RenderPass>(inheritance_rendering_info);
 
                     InitDefaultRenderingAttachments(rendering_attachments, inheritance_rendering_info->colorAttachmentCount);
-                    if (auto locations = vku::FindStructInPNextChain<VkRenderingAttachmentLocationInfo>(inheritance_rendering_info->pNext)) {
+                    if (auto locations =
+                            vku::FindStructInPNextChain<VkRenderingAttachmentLocationInfo>(pBeginInfo->pInheritanceInfo->pNext)) {
                         SetRenderingAttachmentLocations(rendering_attachments, locations);
                     }
-                    if (auto indexes = vku::FindStructInPNextChain<VkRenderingInputAttachmentIndexInfo>(inheritance_rendering_info->pNext)) {
+                    if (auto indexes =
+                            vku::FindStructInPNextChain<VkRenderingInputAttachmentIndexInfo>(pBeginInfo->pInheritanceInfo->pNext)) {
                         SetRenderingInputAttachmentIndices(rendering_attachments, indexes);
                     }
                 }
