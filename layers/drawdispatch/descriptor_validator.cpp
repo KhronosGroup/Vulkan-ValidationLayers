@@ -464,9 +464,15 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             }
         }
 
+        const bool format_mismatch =
+            image_view_ci.format != VK_FORMAT_UNDEFINED && resource_variable.info.vk_format != VK_FORMAT_UNDEFINED &&
+            image_view_ci.format != resource_variable.info.vk_format &&
+            // This a common case for swapchains and leads to more issues then it solves to warn about
+            // https://gitlab.freedesktop.org/mesa/mesa/-/issues/14307
+            !(image_view_ci.format == VK_FORMAT_B8G8R8A8_UNORM && resource_variable.info.vk_format == VK_FORMAT_R8G8B8A8_UNORM &&
+              image_state->IsSwapchainImage());
         // Check for only_report_errors last (to save a nesting), this string building is expensive if being spammed constantly
-        if (image_view_ci.format != VK_FORMAT_UNDEFINED && resource_variable.info.vk_format != VK_FORMAT_UNDEFINED &&
-            image_view_ci.format != resource_variable.info.vk_format && !dev_proxy.global_settings.only_report_errors) {
+        if (format_mismatch && !dev_proxy.global_settings.only_report_errors) {
             // This warning was added after being discussed in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4128
             auto set = descriptor_set.Handle();
             const LogObjectList objlist(this->objlist, set, image_view);
