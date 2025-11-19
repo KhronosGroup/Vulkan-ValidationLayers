@@ -471,8 +471,9 @@ std::string ErrorMessages::FirstUseError(const HazardResult& hazard, const Comma
 
     // Use generic "resource" when resource handle is not specified for some reason (likely just a missing code).
     // TODO: specify resources in EndRenderPass (NegativeSyncVal.QSOBarrierHazard).
-    const std::string resource_description =
-        recorded_usage_info.resource_handle ? validator_.FormatHandle(recorded_usage_info.resource_handle) : "resource";
+    const std::string resource_description = (recorded_usage_info.resource_handle != NullVulkanTypedHandle)
+                                                 ? validator_.FormatHandle(recorded_usage_info.resource_handle)
+                                                 : "resource";
     return Error(hazard, exec_context, recorded_usage_info.command, resource_description, "SubmitTimeError", additional_info);
 }
 

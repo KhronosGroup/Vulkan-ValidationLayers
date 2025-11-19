@@ -48,7 +48,7 @@ class ValidateResolveAction {
 
             // TODO: this error message is not triggered by the tests
             std::stringstream ss;
-            ss << view_gen.GetViewState()->Handle();
+            ss << validator.FormatHandle(view_gen.GetViewState()->Handle());
             ss << " (" << aspect_name << " " << resolve_action_name;
             ss << ", attachment " << src_at;
             ss << ", resolve attachment " << dst_at;

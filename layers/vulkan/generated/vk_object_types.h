@@ -25,6 +25,7 @@
 
 #pragma once
 #include "utils/cast_utils.h"
+#include "utils/hash_util.h"
 
 // Object Type enum for validation layer internal object handling
 typedef enum VulkanObjectType {
@@ -1266,8 +1267,18 @@ struct VulkanTypedHandle {
 #endif  // TYPESAFE_NONDISPATCHABLE_HANDLES
         return CastFromUint64<Handle>(handle);
     }
-    VulkanTypedHandle() : handle(CastToUint64(VK_NULL_HANDLE)), type(kVulkanObjectTypeUnknown) {}
-    operator bool() const { return handle != 0; }
+    constexpr VulkanTypedHandle() : handle(0), type(kVulkanObjectTypeUnknown) {}
+    bool operator==(const VulkanTypedHandle& other) const { return handle == other.handle && type == other.type; }
+    bool operator!=(const VulkanTypedHandle& other) const { return !(*this == other); }
 };
+constexpr VulkanTypedHandle NullVulkanTypedHandle = VulkanTypedHandle{};
+namespace std {
+template <>
+struct hash<VulkanTypedHandle> {
+    size_t operator()(VulkanTypedHandle obj) const noexcept {
+        return hash_util::HashCombiner().Combine(obj.handle).Combine(obj.type).Value();
+    }
+};
+}  // namespace std
 
 // NOLINTEND

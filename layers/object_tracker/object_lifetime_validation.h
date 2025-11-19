@@ -18,7 +18,6 @@
 
 #include "chassis/validation_object.h"
 #include "containers/small_vector.h"
-#include "utils/hash_util.h"
 
 namespace object_lifetimes {
 
@@ -37,16 +36,6 @@ using ObjectMap = vvl::concurrent_unordered_map<uint64_t, std::shared_ptr<Object
 // Used for GPL and we know there are at most only 4 libraries that should be used
 using ObjectMapGPL = vvl::concurrent_unordered_map<uint64_t, small_vector<std::shared_ptr<ObjectState>, 4>, 6>;
 
-struct VulkanTypedHandleHasher {
-    size_t operator()(VulkanTypedHandle typed_handle) const {
-        return hash_util::HashCombiner().Combine(typed_handle.handle).Combine(typed_handle.type).Value();
-    }
-};
-
-struct VulkanTypedHandleComparator {
-    bool operator()(VulkanTypedHandle a, VulkanTypedHandle b) const { return a.handle == b.handle && a.type == b.type; }
-};
-
 struct ObjectState {
     uint64_t handle;
     VulkanObjectType object_type;
@@ -58,7 +47,7 @@ struct ObjectState {
 
     // The objects to poison if the current object becomes poisoned.
     // These objects reference the current object in some way.
-    vvl::unordered_set<VulkanTypedHandle, VulkanTypedHandleHasher, VulkanTypedHandleComparator> objects_to_poison;
+    vvl::unordered_set<VulkanTypedHandle> objects_to_poison;
 
     // The objects that can poison this object (they have this object in their objects_to_poison list).
     // When the current object is destroyed it has to remove itself from all registered poisoners.
