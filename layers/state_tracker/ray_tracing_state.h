@@ -174,6 +174,7 @@ class AccelerationStructureKHR : public StateObject, public SubStateManager<Acce
     std::shared_ptr<vvl::Buffer> buffer_state{};
     // Used in case buffer_state->deviceAddress is 0 (happens if app never queried address)
     const VkDeviceAddress buffer_device_address = 0;
+    VkDeviceAddress acceleration_structure_address = 0;
     std::optional<vku::safe_VkAccelerationStructureBuildGeometryInfoKHR> build_info_khr{};
     std::vector<VkAccelerationStructureBuildRangeInfoKHR> build_range_infos{};
     // You can't have is_built == false and a build_info_khr, but you can have is_built == true and no build_info_khr,

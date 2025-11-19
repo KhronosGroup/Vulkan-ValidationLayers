@@ -311,8 +311,8 @@ target_sources(vvl PRIVATE
     gpuav/validation_cmd/gpuav_draw.cpp
     gpuav/validation_cmd/gpuav_dispatch.h
     gpuav/validation_cmd/gpuav_dispatch.cpp
-    gpuav/validation_cmd/gpuav_trace_rays.h
-    gpuav/validation_cmd/gpuav_trace_rays.cpp
+    gpuav/validation_cmd/gpuav_ray_tracing.h
+    gpuav/validation_cmd/gpuav_ray_tracing.cpp
     gpuav/validation_cmd/gpuav_copy_buffer_to_image.h
     gpuav/validation_cmd/gpuav_copy_buffer_to_image.cpp
     gpuav/validation_cmd/gpuav_copy_memory_indirect.h

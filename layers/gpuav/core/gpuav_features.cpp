@@ -57,7 +57,9 @@ static const VulkanTypedHandle kNoObjects;
 void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceCreateInfo *modified_create_info,
                            const Location &loc) {
     // Query things here to make sure we don't attempt to add a feature this is just not supported
-    VkPhysicalDeviceCooperativeMatrixFeaturesKHR supported_coop_mat_feature = vku::InitStructHelper();
+    VkPhysicalDeviceDescriptorIndexingFeatures supported_desc_indexing_feature = vku::InitStructHelper();
+    VkPhysicalDeviceCooperativeMatrixFeaturesKHR supported_coop_mat_feature =
+        vku::InitStructHelper(&supported_desc_indexing_feature);
     VkPhysicalDeviceRobustness2FeaturesKHR supported_robustness2_feature = vku::InitStructHelper(&supported_coop_mat_feature);
     VkPhysicalDevice8BitStorageFeatures supported_8bit_feature = vku::InitStructHelper(&supported_robustness2_feature);
     VkPhysicalDeviceBufferDeviceAddressFeatures supported_bda_feature = vku::InitStructHelper(&supported_8bit_feature);
@@ -368,6 +370,43 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
                     "Forcing VkPhysicalDeviceCooperativeMatrixFeaturesKHR::cooperativeMatrixRobustBufferAccess to VK_TRUE");
                 coop_mat_feature->cooperativeMatrixRobustBufferAccess = VK_TRUE;
             }
+        }
+    }
+
+    if (gpuav_settings.validate_acceleration_structures_builds && supported_desc_indexing_feature.runtimeDescriptorArray) {
+        auto add_runtime_desc_array_feature = [this, &loc, modified_create_info]() {
+            if (auto *desc_indexing_features = const_cast<VkPhysicalDeviceDescriptorIndexingFeatures *>(
+                    vku::FindStructInPNextChain<VkPhysicalDeviceDescriptorIndexingFeatures>(modified_create_info))) {
+                if (!desc_indexing_features->runtimeDescriptorArray) {
+                    AdjustmentWarning(kNoObjects, loc,
+                                      "Forcing VkPhysicalDeviceDescriptorIndexingFeatures::runtimeDescriptorArray to VK_TRUE");
+                    desc_indexing_features->runtimeDescriptorArray = VK_TRUE;
+                }
+            } else {
+                AdjustmentWarning(kNoObjects, loc,
+                                  "Adding a VkPhysicalDeviceDescriptorIndexingFeatures to pNext with runtimeDescriptorArray "
+                                  "set to VK_TRUE");
+                VkPhysicalDeviceDescriptorIndexingFeatures new_desc_indexing_features = vku::InitStructHelper();
+                new_desc_indexing_features.runtimeDescriptorArray = VK_TRUE;
+                vku::AddToPnext(*modified_create_info, new_desc_indexing_features);
+            }
+        };
+
+        if (api_version >= VK_API_VERSION_1_2) {
+            if (auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
+                    vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext))) {
+                if (!features12->runtimeDescriptorArray) {
+                    AdjustmentWarning(kNoObjects, loc,
+                                      "Forcing VkPhysicalDeviceVulkan12Features::runtimeDescriptorArray to VK_TRUE");
+                    features12->runtimeDescriptorArray = VK_TRUE;
+                }
+            } else {
+                add_runtime_desc_array_feature();
+            }
+        } else if (IsExtensionAvailable(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, available_extensions)) {
+            // Only adds if not found already
+            vku::AddExtension(*modified_create_info, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+            add_runtime_desc_array_feature();
         }
     }
 }
