@@ -46,7 +46,7 @@ bool CooperativeMatrixHelper::SupportsStage(VkShaderStageFlags required_stage) {
 }
 
 bool CooperativeMatrixHelper::Has8BitComponentType(const VkCooperativeMatrixPropertiesKHR &prop) const {
-    static const VkComponentTypeKHR type_8bit[6] = {
+    const VkComponentTypeKHR type_8bit[6] = {
         VK_COMPONENT_TYPE_SINT8_KHR,       VK_COMPONENT_TYPE_UINT8_KHR,       VK_COMPONENT_TYPE_SINT8_PACKED_NV,
         VK_COMPONENT_TYPE_UINT8_PACKED_NV, VK_COMPONENT_TYPE_FLOAT8_E4M3_EXT, VK_COMPONENT_TYPE_FLOAT8_E5M2_EXT,
     };
@@ -55,8 +55,8 @@ bool CooperativeMatrixHelper::Has8BitComponentType(const VkCooperativeMatrixProp
 }
 
 bool CooperativeMatrixHelper::Has64BitComponentType(const VkCooperativeMatrixPropertiesKHR &prop) const {
-    static const VkComponentTypeKHR type_64bit[3] = {VK_COMPONENT_TYPE_FLOAT64_KHR, VK_COMPONENT_TYPE_SINT64_KHR,
-                                                     VK_COMPONENT_TYPE_UINT64_KHR};
+    const VkComponentTypeKHR type_64bit[3] = {VK_COMPONENT_TYPE_FLOAT64_KHR, VK_COMPONENT_TYPE_SINT64_KHR,
+                                              VK_COMPONENT_TYPE_UINT64_KHR};
     return IsValueIn(prop.AType, type_64bit) || IsValueIn(prop.BType, type_64bit) || IsValueIn(prop.CType, type_64bit) ||
            IsValueIn(prop.ResultType, type_64bit);
 }
