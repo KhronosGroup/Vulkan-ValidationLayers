@@ -84,17 +84,22 @@ void ObjectState::MakePoisonous(Tracker &tracker, VulkanTypedHandle poisoner,
     }
 }
 
-std::shared_ptr<ObjectState> Tracker::GetObjectState(VulkanTypedHandle typed_handle) const {
-    auto it = object_map[typed_handle.type].find(typed_handle.handle);
-    if (it != object_map[typed_handle.type].end()) {
+VulkanTypedHandle ObjectState::TypedHandle() const {
+    VulkanTypedHandle typed_handle;
+    typed_handle.handle = handle;
+    typed_handle.type = object_type;
+    return typed_handle;
+}
+
+std::shared_ptr<ObjectState> Tracker::GetObjectState(VulkanTypedHandle object) const {
+    auto it = object_map[object.type].find(object.handle);
+    if (it != object_map[object.type].end()) {
         return it->second;
     }
     return {};
 }
 
-bool Tracker::TracksObject(uint64_t object_handle, VulkanObjectType object_type) const {
-    return object_map[object_type].contains(object_handle);
-}
+bool Tracker::TracksObject(VulkanTypedHandle object) const { return object_map[object.type].contains(object.handle); }
 
 void Tracker::RegisterPoisonPair(ObjectState &poisonee, VulkanTypedHandle poisoner) {
     if (auto poisoner_state = GetObjectState(poisoner)) {
@@ -124,17 +129,12 @@ std::string Tracker::DescribePoisonChain(const std::vector<VulkanTypedHandle> &p
     return ss.str();
 }
 
-bool Tracker::CheckObjectValidity(uint64_t object_handle, VulkanObjectType object_type, bool poisoned_object_allowed,
-                                  const char *invalid_handle_vuid, const char *wrong_parent_vuid, const Location &loc) const {
+bool Tracker::CheckObjectValidity(VulkanTypedHandle object, bool poisoned_object_allowed, const char *invalid_handle_vuid,
+                                  const char *wrong_parent_vuid, const Location &loc) const {
     bool skip = false;
 
-    // TODO: this will be passed directly as parameter
-    VulkanTypedHandle typed_handle;
-    typed_handle.handle = object_handle;
-    typed_handle.type = object_type;
-
     // Check if this instance of lifetime validation tracks the object
-    if (auto object_state = GetObjectState(typed_handle)) {
+    if (auto object_state = GetObjectState(object)) {
         if (!poisoned_object_allowed) {
             skip |= CheckPoisoning(*object_state, invalid_handle_vuid, loc);
         }
@@ -146,7 +146,7 @@ bool Tracker::CheckObjectValidity(uint64_t object_handle, VulkanObjectType objec
     {
         ReadLockGuard lock(lifetime_set_mutex);
         for (const auto *lifetimes : lifetime_set) {
-            if (lifetimes != this && lifetimes->TracksObject(object_handle, object_type)) {
+            if (lifetimes != this && lifetimes->TracksObject(object)) {
                 other_lifetimes = lifetimes;
                 break;
             }
@@ -155,7 +155,7 @@ bool Tracker::CheckObjectValidity(uint64_t object_handle, VulkanObjectType objec
     // Object was not found anywhere
     if (!other_lifetimes) {
         return LogError(invalid_handle_vuid, handle_, loc, "Invalid %s Object 0x%" PRIxLEAST64 ".",
-                        string_VulkanObjectType(object_type), object_handle);
+                        string_VulkanObjectType(object.type), object.handle);
     }
     // Anonymous object validation does not check parent, only that the object exists
     if (wrong_parent_vuid == kVUIDUndefined) {
@@ -168,7 +168,7 @@ bool Tracker::CheckObjectValidity(uint64_t object_handle, VulkanObjectType objec
                     "(%s 0x%" PRIxLEAST64
                     ") was created, allocated or retrieved from %s, but command is using (or its dispatchable parameter is "
                     "associated with) %s",
-                    string_VulkanObjectType(object_type), object_handle, FormatHandle(other_lifetimes->handle_).c_str(),
+                    string_VulkanObjectType(object.type), object.handle, FormatHandle(other_lifetimes->handle_).c_str(),
                     FormatHandle(handle_).c_str());
 }
 
@@ -185,39 +185,121 @@ void Device::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Loca
 }
 
 bool Device::CheckPipelineObjectValidity(uint64_t object_handle, const char *invalid_handle_vuid, const Location &loc) const {
-     bool skip = false;
-     const auto &itr = linked_graphics_pipeline_map.find(object_handle);
-     if (itr == linked_graphics_pipeline_map.end()) {
-         return skip;  // no-linked
-     }
-     for (const auto &pipeline : itr->second) {
-         if (!tracker.TracksObject(pipeline->handle, kVulkanObjectTypePipeline)) {
-             skip |= LogError(invalid_handle_vuid, instance, loc,
-                              "Invalid VkPipeline Object 0x%" PRIxLEAST64
-                              " as it was created with VkPipelineLibraryCreateInfoKHR::pLibraries 0x%" PRIxLEAST64
-                              " that doesn't exist anymore. The application must maintain the lifetime of a pipeline library based "
-                              "on the pipelines that link with it.",
-                              object_handle, pipeline->handle);
-             break;
-         } else {
-             // Libaries pipeline can have their own nested libraries
-             skip |= CheckPipelineObjectValidity(pipeline->handle, invalid_handle_vuid, loc);
-         }
-     }
-     return skip;
+    bool skip = false;
+    const auto &itr = linked_graphics_pipeline_map.find(object_handle);
+    if (itr == linked_graphics_pipeline_map.end()) {
+        return skip;  // no-linked
+    }
+    for (const auto &pipeline : itr->second) {
+        if (!tracker.TracksObject(pipeline->TypedHandle())) {
+            skip |= LogError(invalid_handle_vuid, instance, loc,
+                             "Invalid VkPipeline Object 0x%" PRIxLEAST64
+                             " as it was created with VkPipelineLibraryCreateInfoKHR::pLibraries 0x%" PRIxLEAST64
+                             " that doesn't exist anymore. The application must maintain the lifetime of a pipeline library based "
+                             "on the pipelines that link with it.",
+                             object_handle, pipeline->handle);
+            break;
+        } else {
+            // Libaries pipeline can have their own nested libraries
+            skip |= CheckPipelineObjectValidity(pipeline->handle, invalid_handle_vuid, loc);
+        }
+    }
+    return skip;
 }
 
-void Tracker::DestroyObjectSilently(uint64_t object, VulkanObjectType object_type, const Location &loc) {
-    assert(object != HandleToUint64(VK_NULL_HANDLE));
+void Tracker::CreateObject(VulkanTypedHandle object, const VkAllocationCallbacks *pAllocator, const Location &loc,
+                           uint64_t parent_handle) {
+    if (TracksObject(object)) {
+        return;
+    }
 
-    auto item = object_map[object_type].pop(object);
-    if (item == object_map[object_type].end()) {
+    auto node = std::make_shared<ObjectState>();
+    node->object_type = object.type;
+    node->status_flags = (pAllocator != nullptr) ? kObjectStatusCustomAllocator : kObjectStatusNone;
+    node->handle = object.handle;
+    node->parent_object = parent_handle;
+
+    const bool inserted = object_map[object.type].insert(object.handle, node);
+    if (!inserted) {
+        // The object should not already exist. If we couldn't add it to the map, there was probably
+        // a race condition in the app. Report an error and move on.
+        // TODO should this be an error? https://gitlab.khronos.org/vulkan/vulkan/-/issues/3616
+        LogError("UNASSIGNED-ObjectTracker-Insert", object, loc,
+                 "Couldn't insert %s Object 0x%" PRIxLEAST64
+                 ", already existed. This should not happen and may indicate a "
+                 "race condition in the application.",
+                 string_VulkanObjectType(object.type), object.handle);
+        return;
+    }
+    if (object.type == kVulkanObjectTypeDescriptorPool) {
+        node->child_objects.reset(new vvl::unordered_set<uint64_t>);
+    }
+}
+
+bool Tracker::ValidateDestroyObject(VulkanTypedHandle object, const VkAllocationCallbacks *pAllocator,
+                                    const char *expected_custom_allocator_code, const char *expected_default_allocator_code,
+                                    const Location &loc) const {
+    bool skip = false;
+
+    const uint64_t object_handle = object.handle;
+    const VulkanObjectType object_type = object.type;
+    const bool custom_allocator = pAllocator != nullptr;
+
+    if ((expected_custom_allocator_code != kVUIDUndefined || expected_default_allocator_code != kVUIDUndefined) &&
+        object_handle != HandleToUint64(VK_NULL_HANDLE)) {
+        auto item = object_map[object_type].find(object_handle);
+        if (item != object_map[object_type].end()) {
+            auto allocated_with_custom = (item->second->status_flags & kObjectStatusCustomAllocator) != 0;
+            if (allocated_with_custom && !custom_allocator && expected_custom_allocator_code != kVUIDUndefined) {
+                // This check only verifies that custom allocation callbacks were provided to both Create and Destroy calls,
+                // it cannot verify that these allocation callbacks are compatible with each other.
+                skip |=
+                    LogError(expected_custom_allocator_code, object, loc,
+                             "Custom allocator not specified while destroying %s obj 0x%" PRIxLEAST64 " but specified at creation.",
+                             string_VulkanObjectType(object_type), object_handle);
+            } else if (!allocated_with_custom && custom_allocator && expected_default_allocator_code != kVUIDUndefined) {
+                skip |=
+                    LogError(expected_default_allocator_code, object, loc,
+                             "Custom allocator specified while destroying %s obj 0x%" PRIxLEAST64 " but not specified at creation.",
+                             string_VulkanObjectType(object_type), object_handle);
+            }
+        }
+    }
+    return skip;
+}
+
+void Tracker::RecordDestroyObject(VulkanTypedHandle object, const Location &loc) {
+    if (auto object_state = GetObjectState(object)) {
+        // Poison users of this object (except the scenarios when users don't care)
+        const bool pipeline_layout_maintenance4 = object.type == kVulkanObjectTypePipelineLayout && is_device_maintenance4_enabled_;
+        const bool poison_users = !pipeline_layout_maintenance4;
+        if (poison_users) {
+            for (VulkanTypedHandle poisonee : object_state->objects_to_poison) {
+                if (auto poisonee_state = GetObjectState(poisonee)) {
+                    poisonee_state->MakePoisonous(*this, object, {});
+                }
+            }
+        }
+        // Tell poisoners no need to poison this object, it's destroyed
+        for (VulkanTypedHandle poisoner : object_state->poisoners) {
+            if (auto poisoner_state = GetObjectState(poisoner)) {
+                poisoner_state->objects_to_poison.erase(object);
+            }
+        }
+        DestroyObjectSilently(object, loc);
+    }
+}
+
+void Tracker::DestroyObjectSilently(VulkanTypedHandle object, const Location &loc) {
+    assert(object.handle);
+    auto item = object_map[object.type].pop(object.handle);
+    if (item == object_map[object.type].end()) {
         // We've already checked that the object exists. If we couldn't find and atomically remove it
         // from the map, there must have been a race condition in the app. Report an error and move on.
         (void)LogError("UNASSIGNED-ObjectTracker-Destroy", handle_, loc,
                        "Couldn't destroy %s Object 0x%" PRIxLEAST64
                        ", not found. This should not happen and may indicate a race condition in the application.",
-                       string_VulkanObjectType(object_type), object);
+                       string_VulkanObjectType(object.type), object.handle);
 
         return;
     }
@@ -225,16 +307,20 @@ void Tracker::DestroyObjectSilently(uint64_t object, VulkanObjectType object_typ
 
 void Tracker::DestroyUndestroyedObjects(VulkanObjectType object_type, const Location &loc) {
     auto snapshot = object_map[object_type].snapshot();
+    VulkanTypedHandle object;
+    object.type = object_type;
     for (const auto &item : snapshot) {
-        auto object_info = item.second;
-        DestroyObjectSilently(object_info->handle, object_type, loc);
+        object.handle = item.second->handle;
+        DestroyObjectSilently(object, loc);
     }
 }
 
 bool Device::ValidateAnonymousObject(uint64_t object, VkObjectType core_object_type, const char *invalid_handle_vuid,
                                      const char *wrong_parent_vuid, const Location &loc) const {
-    auto object_type = ConvertCoreObjectToVulkanObject(core_object_type);
-    return tracker.CheckObjectValidity(object, object_type, true, invalid_handle_vuid, wrong_parent_vuid, loc);
+    VulkanTypedHandle typed_handle;
+    typed_handle.handle = object;
+    typed_handle.type = ConvertCoreObjectToVulkanObject(core_object_type);
+    return tracker.CheckObjectValidity(typed_handle, true, invalid_handle_vuid, wrong_parent_vuid, loc);
 }
 
 void Device::AllocateCommandBuffer(const VkCommandPool command_pool, const VkCommandBuffer command_buffer,

@@ -37,13 +37,16 @@ using ObjectMap = vvl::concurrent_unordered_map<uint64_t, std::shared_ptr<Object
 // Used for GPL and we know there are at most only 4 libraries that should be used
 using ObjectMapGPL = vvl::concurrent_unordered_map<uint64_t, small_vector<std::shared_ptr<ObjectState>, 4>, 6>;
 
-struct VulkanTypedHandlerHasher {
-    size_t operator()(const VulkanTypedHandle &typed_handle) const {
+struct VulkanTypedHandleHasher {
+    size_t operator()(VulkanTypedHandle typed_handle) const {
         return hash_util::HashCombiner().Combine(typed_handle.handle).Combine(typed_handle.type).Value();
     }
 };
 
-// Per vulkan object state
+struct VulkanTypedHandleComparator {
+    bool operator()(VulkanTypedHandle a, VulkanTypedHandle b) const { return a.handle == b.handle && a.type == b.type; }
+};
+
 struct ObjectState {
     uint64_t handle;
     VulkanObjectType object_type;
@@ -55,7 +58,7 @@ struct ObjectState {
 
     // The objects to poison if the current object becomes poisoned.
     // These objects reference the current object in some way.
-    vvl::unordered_set<VulkanTypedHandle, VulkanTypedHandlerHasher> objects_to_poison;
+    vvl::unordered_set<VulkanTypedHandle, VulkanTypedHandleHasher, VulkanTypedHandleComparator> objects_to_poison;
 
     // The objects that can poison this object (they have this object in their objects_to_poison list).
     // When the current object is destroyed it has to remove itself from all registered poisoners.
@@ -66,46 +69,21 @@ struct ObjectState {
     std::vector<VulkanTypedHandle> poison_chain;
 
     void MakePoisonous(Tracker &tracker, VulkanTypedHandle poisoner, const std::vector<VulkanTypedHandle> &parent_poison_chain);
+    VulkanTypedHandle TypedHandle() const;
 };
 
 class Tracker : public Logger {
   public:
     Tracker(DebugReport *dr) : Logger(dr) {}
 
-    std::shared_ptr<ObjectState> GetObjectState(VulkanTypedHandle typed_handle) const;
-
-    void DestroyUndestroyedObjects(VulkanObjectType object_type, const Location &loc);
+    std::shared_ptr<ObjectState> GetObjectState(VulkanTypedHandle object) const;
 
     template <typename T1>
     bool ValidateDestroyObject(T1 object_handle, VulkanObjectType object_type, const VkAllocationCallbacks *pAllocator,
                                const char *expected_custom_allocator_code, const char *expected_default_allocator_code,
                                const Location &loc) const {
-        auto object = HandleToUint64(object_handle);
-        const bool custom_allocator = pAllocator != nullptr;
-        bool skip = false;
-
-        if ((expected_custom_allocator_code != kVUIDUndefined || expected_default_allocator_code != kVUIDUndefined) &&
-            object != HandleToUint64(VK_NULL_HANDLE)) {
-            auto item = object_map[object_type].find(object);
-            if (item != object_map[object_type].end()) {
-                auto allocated_with_custom = (item->second->status_flags & kObjectStatusCustomAllocator) != 0;
-                if (allocated_with_custom && !custom_allocator && expected_custom_allocator_code != kVUIDUndefined) {
-                    // This check only verifies that custom allocation callbacks were provided to both Create and Destroy calls,
-                    // it cannot verify that these allocation callbacks are compatible with each other.
-                    skip |= LogError(expected_custom_allocator_code, object_handle, loc,
-                                     "Custom allocator not specified while destroying %s obj 0x%" PRIxLEAST64
-                                     " but specified at creation.",
-                                     string_VulkanObjectType(object_type), object);
-
-                } else if (!allocated_with_custom && custom_allocator && expected_default_allocator_code != kVUIDUndefined) {
-                    skip |= LogError(expected_default_allocator_code, object_handle, loc,
-                                     "Custom allocator specified while destroying %s obj 0x%" PRIxLEAST64
-                                     " but not specified at creation.",
-                                     string_VulkanObjectType(object_type), object);
-                }
-            }
-        }
-        return skip;
+        return ValidateDestroyObject(VulkanTypedHandle(object_handle, object_type), pAllocator, expected_custom_allocator_code,
+                                     expected_default_allocator_code, loc);
     }
 
     template <typename T1>
@@ -114,82 +92,42 @@ class Tracker : public Logger {
         if (null_allowed && (object == VK_NULL_HANDLE)) {
             return false;
         }
-        return CheckObjectValidity(HandleToUint64(object), object_type, poisoned_object_allowed, invalid_handle_vuid,
+        return CheckObjectValidity(VulkanTypedHandle(object, object_type), poisoned_object_allowed, invalid_handle_vuid,
                                    wrong_parent_vuid, loc);
     }
 
     template <typename T1, typename T2>
     void CreateObject(T1 object, VulkanObjectType object_type, const VkAllocationCallbacks *pAllocator, const Location &loc,
                       T2 parent_object) {
-        uint64_t object_handle = HandleToUint64(object);
-        const bool custom_allocator = (pAllocator != nullptr);
-        auto &obj_map = object_map[object_type];
-        auto itr = obj_map.find(object_handle);
-        if (itr != obj_map.end()) {
-            return;
-        }
-        auto node = std::make_shared<ObjectState>();
-        node->object_type = object_type;
-        node->status_flags = custom_allocator ? kObjectStatusCustomAllocator : kObjectStatusNone;
-        node->handle = object_handle;
-        node->parent_object = HandleToUint64(parent_object);
-
-        const bool inserted = obj_map.insert(object_handle, node);
-        if (!inserted) {
-            // The object should not already exist. If we couldn't add it to the map, there was probably
-            // a race condition in the app. Report an error and move on.
-            // TODO should this be an error? https://gitlab.khronos.org/vulkan/vulkan/-/issues/3616
-            LogError("UNASSIGNED-ObjectTracker-Insert", object, loc,
-                     "Couldn't insert %s Object 0x%" PRIxLEAST64
-                     ", already existed. This should not happen and may indicate a "
-                     "race condition in the application.",
-                     string_VulkanObjectType(object_type), object_handle);
-            return;
-        }
-        if (object_type == kVulkanObjectTypeDescriptorPool) {
-            node->child_objects.reset(new vvl::unordered_set<uint64_t>);
-        }
+        CreateObject(VulkanTypedHandle(object, object_type), pAllocator, loc, HandleToUint64(parent_object));
     }
-
-    void DestroyObjectSilently(uint64_t object, VulkanObjectType object_type, const Location &loc);
 
     template <typename T1>
     void RecordDestroyObject(T1 object_handle, VulkanObjectType object_type, const Location &loc) {
-        const VulkanTypedHandle object_typed_handle(object_handle, object_type);
-        if (auto object_state = GetObjectState(object_typed_handle)) {
-            // Poison users of this object (except the scenarios when users don't care)
-            const bool pipeline_layout_maintenance4 =
-                object_type == kVulkanObjectTypePipelineLayout && is_device_maintenance4_enabled_;
-            const bool poison_users = !pipeline_layout_maintenance4;
-            if (poison_users) {
-                for (VulkanTypedHandle poisonee : object_state->objects_to_poison) {
-                    if (auto poisonee_state = GetObjectState(poisonee)) {
-                        poisonee_state->MakePoisonous(*this, object_typed_handle, {});
-                    }
-                }
-            }
-            // Tell poisoners no need to poison this object, it's destroyed
-            for (VulkanTypedHandle poisoner : object_state->poisoners) {
-                if (auto poisoner_state = GetObjectState(poisoner)) {
-                    poisoner_state->objects_to_poison.erase(object_typed_handle);
-                }
-            }
-            DestroyObjectSilently(object_state->handle, object_type, loc);
-        }
+        RecordDestroyObject(VulkanTypedHandle(object_handle, object_type), loc);
     }
 
-    bool TracksObject(uint64_t object_handle, VulkanObjectType object_type) const;
+    bool TracksObject(VulkanTypedHandle object) const;
+    bool CheckObjectValidity(VulkanTypedHandle object, bool poisoned_object_allowed, const char *invalid_handle_vuid,
+                             const char *wrong_parent_vuid, const Location &loc) const;
+    void DestroyObjectSilently(VulkanTypedHandle object, const Location &loc);
+    void DestroyUndestroyedObjects(VulkanObjectType object_type, const Location &loc);
 
     void RegisterPoisonPair(ObjectState &poisonee, VulkanTypedHandle poisoner);
     bool CheckPoisoning(const ObjectState &object_state, const char *vuid, const Location &loc) const;
     std::string DescribePoisonChain(const std::vector<VulkanTypedHandle> &poison_chain) const;
 
-    bool CheckObjectValidity(uint64_t object_handle, VulkanObjectType object_type, bool poisoned_object_allowed,
-                             const char *invalid_handle_vuid, const char *wrong_parent_vuid, const Location &loc) const;
-
     void SetDeviceHandle(const Device& device);
     void SetInstanceHandle(VkInstance instance);
     bool IsMaintenance4Enabled() const { return is_device_maintenance4_enabled_; }
+
+  private:
+    void CreateObject(VulkanTypedHandle object, const VkAllocationCallbacks *pAllocator, const Location &loc,
+                      uint64_t parent_handle);
+    bool ValidateDestroyObject(VulkanTypedHandle object, const VkAllocationCallbacks *pAllocator,
+                               const char *expected_custom_allocator_code, const char *expected_default_allocator_code,
+                               const Location &loc) const;
+    void RecordDestroyObject(VulkanTypedHandle object, const Location &loc);
 
   public:
     ObjectMap object_map[kVulkanObjectTypeMax + 1];
@@ -233,9 +171,7 @@ class Instance : public vvl::base::Instance {
                         const char *wrong_parent_vuid, const Location &loc) const {
         return tracker.ValidateObject(object, object_type, null_allowed, true, invalid_handle_vuid, wrong_parent_vuid, loc);
     }
-    void DestroyObjectSilently(uint64_t object, VulkanObjectType object_type, const Location &loc) {
-        return tracker.DestroyObjectSilently(object, object_type, loc);
-    }
+    void DestroyObjectSilently(VulkanTypedHandle object, const Location &loc) { return tracker.DestroyObjectSilently(object, loc); }
     template <typename T1>
     void RecordDestroyObject(T1 object, VulkanObjectType object_type, const Location &loc) {
         tracker.RecordDestroyObject(object, object_type, loc);
@@ -331,9 +267,6 @@ class Device : public vvl::base::Device {
         return ValidateObject(object, object_type, null_allowed, true, invalid_handle_vuid, wrong_parent_vuid, loc);
     }
 
-    void DestroyObjectSilently(uint64_t object, VulkanObjectType object_type, const Location &loc) {
-        return tracker.DestroyObjectSilently(object, object_type, loc);
-    }
     template <typename T1>
     void RecordDestroyObject(T1 object, VulkanObjectType object_type, const Location &loc) {
         tracker.RecordDestroyObject(object, object_type, loc);
