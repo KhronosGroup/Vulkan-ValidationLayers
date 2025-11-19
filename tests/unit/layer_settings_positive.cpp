@@ -25,14 +25,12 @@ TEST_F(PositiveLayerSettings, AllSettings) {
     const uint32_t one = 1;
     const uint32_t one_k = 1024;
     std::vector<VkLayerSettingEXT> settings = {{
-        {OBJECT_LAYER_NAME, "enables", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, &some_string},
         {OBJECT_LAYER_NAME, "validate_best_practices", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable},
         {OBJECT_LAYER_NAME, "validate_best_practices_arm", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable},
         {OBJECT_LAYER_NAME, "validate_best_practices_amd", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable},
         {OBJECT_LAYER_NAME, "validate_best_practices_img", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable},
         {OBJECT_LAYER_NAME, "validate_best_practices_nvidia", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable},
         {OBJECT_LAYER_NAME, "validate_sync", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable},
-        {OBJECT_LAYER_NAME, "disables", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, &some_string},
         {OBJECT_LAYER_NAME, "check_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable},
         {OBJECT_LAYER_NAME, "thread_safety", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable},
         {OBJECT_LAYER_NAME, "stateless_param", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable},
