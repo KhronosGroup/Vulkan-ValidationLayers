@@ -162,4 +162,9 @@ struct CreateBuffer {
     vku::safe_VkBufferCreateInfo modified_create_info;
 };
 
+struct BuildAccelerationStructures {
+    // Used by GPU-AV to turn off application made AS build commands in case it turns an this command into an indirect build
+    bool app_dispatch = true;
+};
+
 }  // namespace chassis

@@ -46,6 +46,7 @@ class DispatchVectorGenerator(BaseGenerator):
         'vkCreateRayTracingPipelinesNV',
         'vkCreateRayTracingPipelinesKHR',
         'vkCreateDataGraphPipelinesARM',
+        'vkCmdBuildAccelerationStructuresKHR'
     )
 
     # We need to skip any signatures that pass around chassis_modification_state structs

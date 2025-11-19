@@ -224,7 +224,8 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkCmdBuildClusterAccelerationStructureIndirectNV',
             'vkGetClusterAccelerationStructureBuildSizesNV',
             'vkCmdResolveImage',
-            'vkCmdResolveImage2'
+            'vkCmdResolveImage2',
+            'vkCmdBuildAccelerationStructuresKHR'
         ]
 
         # Commands to ignore

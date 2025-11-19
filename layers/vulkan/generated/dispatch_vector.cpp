@@ -2013,9 +2013,6 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyAccelerationStructureKHR);
     BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyAccelerationStructureKHR);
     BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyAccelerationStructureKHR);
-    BUILD_DISPATCH_VECTOR(PreCallValidateCmdBuildAccelerationStructuresKHR);
-    BUILD_DISPATCH_VECTOR(PreCallRecordCmdBuildAccelerationStructuresKHR);
-    BUILD_DISPATCH_VECTOR(PostCallRecordCmdBuildAccelerationStructuresKHR);
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdBuildAccelerationStructuresIndirectKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdBuildAccelerationStructuresIndirectKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdBuildAccelerationStructuresIndirectKHR);

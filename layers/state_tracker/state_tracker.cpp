@@ -5931,7 +5931,9 @@ void DeviceState::PostCallRecordGetShaderModuleCreateInfoIdentifierEXT(VkDevice,
 
 void DeviceState::PostCallRecordGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
                                                        const RecordObject &record_obj) {
-    if (record_obj.device_address == 0) return;
+    if (record_obj.device_address == 0) {
+        return;
+    }
     if (auto buffer_state = Get<Buffer>(pInfo->buffer)) {
         WriteLockGuard guard(buffer_address_lock_);
         // address is used for GPU-AV and ray tracing buffer validation

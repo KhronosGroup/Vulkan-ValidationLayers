@@ -58,6 +58,7 @@ struct ShaderBinaryData;
 struct CreatePipelineLayout;
 struct CreateBuffer;
 struct CmdBindDescriptorBuffers;
+struct BuildAccelerationStructures;
 }  // namespace chassis
 
 namespace vvl {
@@ -447,6 +448,19 @@ class Device : public Logger {
                                                           const RecordObject& record_obj,
                                                           chassis::CmdBindDescriptorBuffers& chassis_state) {
         PreCallRecordCmdBindDescriptorBuffersEXT(commandBuffer, bufferCount, pBindingInfos, record_obj);
+    }
+
+    virtual void PreCallRecordCmdBuildAccelerationStructuresKHR(
+        VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+        const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos, const RecordObject& record_obj,
+        chassis::BuildAccelerationStructures&) {
+        PreCallRecordCmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos, record_obj);
+    }
+    virtual void PostCallRecordCmdBuildAccelerationStructuresKHR(
+        VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+        const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos, const RecordObject& record_obj,
+        chassis::BuildAccelerationStructures&) {
+        PostCallRecordCmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos, record_obj);
     }
 
 #include "generated/validation_object_device_methods.h"

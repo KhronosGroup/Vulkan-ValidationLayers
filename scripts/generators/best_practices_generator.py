@@ -46,6 +46,7 @@ class BestPracticesOutputGenerator(BaseGenerator):
             'vkCreateShaderModule' : 'chassis::CreateShaderModule',
             'vkCreateShadersEXT' : 'chassis::ShaderObject',
             'vkAllocateDescriptorSets' : 'vvl::AllocateDescriptorSetsData',
+            'vkCmdBuildAccelerationStructuresKHR' : 'chassis::BuildAccelerationStructures',
         }
         self.pipeline_parameter_map = {
             'vkCreateGraphicsPipelines' : ', chassis::CreateGraphicsPipelines& chassis_state',

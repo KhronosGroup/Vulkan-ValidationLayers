@@ -94,4 +94,8 @@ VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(VkDevice device, VkVali
                                                          void* pData);
 VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount,
                                                         VkPhysicalDevice* pPhysicalDevices);
+
+VKAPI_ATTR void VKAPI_CALL CmdBuildAccelerationStructuresKHR(
+    VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos);
 }  // namespace vulkan_layer_chassis
