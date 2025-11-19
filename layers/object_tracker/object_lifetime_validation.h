@@ -18,6 +18,7 @@
 
 #include "chassis/validation_object.h"
 #include "containers/small_vector.h"
+#include "containers/span.h"
 
 namespace object_lifetimes {
 
@@ -44,6 +45,11 @@ struct ObjectState {
 
     // Child objects (used for VkDescriptorPool only)
     std::unique_ptr<vvl::unordered_set<uint64_t> > child_objects;
+
+    // ObjectState can be accessed from multiple threads
+    mutable std::shared_mutex poison_lock;
+    auto WriteLock() const { return std::unique_lock<std::shared_mutex>(poison_lock); }
+    auto ReadLock() const { return std::shared_lock<std::shared_mutex>(poison_lock); }
 
     // The objects to poison if the current object becomes poisoned.
     // These objects reference the current object in some way.
@@ -96,13 +102,27 @@ class Tracker : public Logger {
         RecordDestroyObject(VulkanTypedHandle(object_handle, object_type), loc);
     }
 
+    template <typename PoisonerVkType>
+    void RegisterPoisonPairs(VulkanTypedHandle poisonee, vvl::span<PoisonerVkType> poisoners, VulkanObjectType poisoner_type) {
+        if (auto poisonee_state = GetObjectState(poisonee)) {
+            auto poisonee_lock = poisonee_state->WriteLock();
+            for (PoisonerVkType poisoner_vk_handle : poisoners) {
+                const VulkanTypedHandle poisoner(poisoner_vk_handle, poisoner_type);
+                if (auto poisoner_state = GetObjectState(poisoner)) {
+                    auto poisoner_lock = poisoner_state->WriteLock();
+                    poisoner_state->objects_to_poison.emplace(poisonee);
+                }
+            }
+        }
+    }
+
     bool TracksObject(VulkanTypedHandle object) const;
     bool CheckObjectValidity(VulkanTypedHandle object, bool poisoned_object_allowed, const char *invalid_handle_vuid,
                              const char *wrong_parent_vuid, const Location &loc) const;
     void DestroyObjectSilently(VulkanTypedHandle object, const Location &loc);
     void DestroyUndestroyedObjects(VulkanObjectType object_type, const Location &loc);
 
-    void RegisterPoisonPair(ObjectState &poisonee, VulkanTypedHandle poisoner);
+    void RegisterPoisonPair(VulkanTypedHandle poisonee, VulkanTypedHandle poisoner);
     bool CheckPoisoning(const ObjectState &object_state, const char *vuid, const Location &loc) const;
     std::string DescribePoisonChain(const std::vector<VulkanTypedHandle> &poison_chain) const;
 
@@ -266,10 +286,8 @@ class Device : public vvl::base::Device {
     template <typename TCreateInfo>
     void RegisterCommonPipelinePoisoning(const TCreateInfo *create_infos, const VkPipeline *pipelines, uint32_t pipeline_index) {
         const VulkanTypedHandle pipeline_handle(pipelines[pipeline_index], kVulkanObjectTypePipeline);
-        if (auto pipeline_state = tracker.GetObjectState(pipeline_handle)) {
-            const VulkanTypedHandle pipeline_layout_handle(create_infos[pipeline_index].layout, kVulkanObjectTypePipelineLayout);
-            tracker.RegisterPoisonPair(*pipeline_state, pipeline_layout_handle);
-        }
+        const VulkanTypedHandle pipeline_layout_handle(create_infos[pipeline_index].layout, kVulkanObjectTypePipelineLayout);
+        tracker.RegisterPoisonPair(pipeline_handle, pipeline_layout_handle);
     }
 
 #include "generated/object_tracker_device_methods.h"
