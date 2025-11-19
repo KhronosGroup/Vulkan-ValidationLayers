@@ -15,6 +15,7 @@
 
 #include "post_process_descriptor_indexing_pass.h"
 
+#include "containers/container_utils.h"
 #include "module.h"
 #include "generated/gpuav_offline_spirv.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
@@ -62,10 +63,10 @@ void PostProcessDescriptorIndexingPass::CreateFunctionCall(BasicBlock& block, In
 
 bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& function, const Instruction& inst,
                                                                 InstructionMeta& meta) {
-    const uint32_t opcode = inst.Opcode();
+    const spv::Op opcode = (spv::Op)inst.Opcode();
 
     const Instruction* var_inst = nullptr;
-    if (opcode == spv::OpLoad || opcode == spv::OpStore) {
+    if (IsValueIn(opcode, {spv::OpLoad, spv::OpStore, spv::OpCooperativeMatrixLoadKHR, spv::OpCooperativeMatrixStoreKHR})) {
         const Variable* variable = nullptr;
         const Instruction* access_chain_inst = function.FindInstruction(inst.Operand(0));
         // We need to walk down possibly multiple chained OpAccessChains or OpCopyObject to get the variable

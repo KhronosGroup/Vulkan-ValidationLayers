@@ -14,6 +14,7 @@
  */
 
 #include "descriptor_indexing_oob_pass.h"
+#include "containers/container_utils.h"
 #include "link.h"
 #include "module.h"
 #include <spirv/unified1/spirv.hpp>
@@ -133,7 +134,7 @@ uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, Instru
 }
 
 bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta) {
-    const uint32_t opcode = inst.Opcode();
+    const spv::Op opcode = (spv::Op)inst.Opcode();
 
     bool array_found = false;
     const Instruction* sampler_load_inst = nullptr;
@@ -172,7 +173,8 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
             // There is no array of this descriptor, so we essentially have an array of 1
             meta.descriptor_index_id = module_.type_manager_.GetConstantZeroUint32().Id();
         }
-    } else if (opcode == spv::OpLoad || opcode == spv::OpStore || AtomicOperation(opcode)) {
+    } else if (IsValueIn(opcode, {spv::OpLoad, spv::OpStore, spv::OpCooperativeMatrixLoadKHR, spv::OpCooperativeMatrixStoreKHR}) ||
+               AtomicOperation(opcode)) {
         // Buffer and Buffer Atomics and Storage Images
 
         const Variable* variable = nullptr;
