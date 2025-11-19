@@ -365,3 +365,24 @@ TEST_F(PositiveThreading, GetPhysicalDeviceFeatures) {
         vk::DestroyInstance(instance, nullptr);
     }
 }
+
+TEST_F(PositiveThreading, ObjectTrackerPoisoning) {
+    TEST_DESCRIPTION("Test that object tracker poisoning setup works in threaded environment");
+    RETURN_IF_SKIP(Init());
+
+    const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    vkt::DescriptorSetLayout set_layout(*m_device, binding);
+
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
+    pipeline_layout_ci.setLayoutCount = 1;
+    pipeline_layout_ci.pSetLayouts = &set_layout.handle();
+
+    auto thread_func = [this, &pipeline_layout_ci]() {
+        std::vector<vkt::PipelineLayout> pipeline_layouts;
+        for (uint32_t i = 0; i < 5000; i++) {
+            pipeline_layouts.emplace_back(*m_device, pipeline_layout_ci);
+        }
+    };
+    std::array<std::thread, 2> threads = {std::thread(thread_func), std::thread(thread_func)};
+    for (auto &t : threads) t.join();
+}
