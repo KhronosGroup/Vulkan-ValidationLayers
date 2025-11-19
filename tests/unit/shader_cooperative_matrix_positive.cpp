@@ -15,132 +15,15 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/shader_object_helper.h"
-#include "containers/container_utils.h"
+#include "cooperative_matrix_helper.h"
 
-const char *vkComponentTypeToGLSL(VkComponentTypeKHR type) {
-    switch (type) {
-        case VK_COMPONENT_TYPE_FLOAT16_KHR:
-            return "float16_t";
-        case VK_COMPONENT_TYPE_FLOAT32_KHR:
-            return "float32_t";
-        case VK_COMPONENT_TYPE_FLOAT64_KHR:
-            return "float64_t";
-        case VK_COMPONENT_TYPE_SINT8_KHR:
-            return "int8_t";
-        case VK_COMPONENT_TYPE_SINT16_KHR:
-            return "int16_t";
-        case VK_COMPONENT_TYPE_SINT32_KHR:
-            return "int32_t";
-        case VK_COMPONENT_TYPE_SINT64_KHR:
-            return "int64_t";
-        case VK_COMPONENT_TYPE_UINT8_KHR:
-            return "uint8_t";
-        case VK_COMPONENT_TYPE_UINT16_KHR:
-            return "uint16_t";
-        case VK_COMPONENT_TYPE_UINT32_KHR:
-            return "uint32_t";
-        case VK_COMPONENT_TYPE_UINT64_KHR:
-            return "uint64_t";
-        default:
-            return "unknown";
-    }
-}
-
-void CooperativeMatrixTest::InitCooperativeMatrixKHR(VkShaderStageFlags required_stage) {
+void CooperativeMatrixTest::InitCooperativeMatrixKHR() {
     AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
     // glslang will generate OpCapability VulkanMemoryModel and need entension enabled
     AddRequiredExtensions(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::cooperativeMatrix);
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
     RETURN_IF_SKIP(Init());
-
-    if (required_stage != 0) {
-        VkPhysicalDeviceCooperativeMatrixPropertiesKHR props = vku::InitStructHelper();
-        GetPhysicalDeviceProperties2(props);
-        if ((props.cooperativeMatrixSupportedStages & required_stage) == 0) {
-            GTEST_SKIP() << "required stage is not supported";
-        }
-    }
-
-    uint32_t props_count = 0;
-    vk::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(Gpu(), &props_count, nullptr);
-    for (uint32_t i = 0; i < props_count; i++) {
-        coop_matrix_props.emplace_back(vku::InitStruct<VkCooperativeMatrixPropertiesKHR>());
-    }
-    vk::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(Gpu(), &props_count, coop_matrix_props.data());
-
-    if (IsExtensionsEnabled(VK_NV_COOPERATIVE_MATRIX_2_EXTENSION_NAME)) {
-        props_count = 0;
-        vk::GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(Gpu(), &props_count, nullptr);
-        for (uint32_t i = 0; i < props_count; i++) {
-            coop_matrix_flex_props.emplace_back(vku::InitStruct<VkCooperativeMatrixFlexibleDimensionsPropertiesNV>());
-        }
-        vk::GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(Gpu(), &props_count, coop_matrix_flex_props.data());
-    }
-}
-
-bool CooperativeMatrixTest::HasValidProperty(VkScopeKHR scope, uint32_t m, uint32_t n, uint32_t k, VkComponentTypeKHR type) {
-    bool found_a = false;
-    bool found_b = false;
-    bool found_c = false;
-    bool found_r = false;
-    for (const auto &prop : coop_matrix_props) {
-        if (prop.scope == scope && prop.AType == type && prop.MSize == m && prop.KSize == k) {
-            found_a = true;
-        }
-        if (prop.scope == scope && prop.BType == type && prop.KSize == k && prop.NSize == n) {
-            found_b = true;
-        }
-        if (prop.scope == scope && prop.CType == type && prop.MSize == m && prop.NSize == n) {
-            found_c = true;
-        }
-        if (prop.scope == scope && prop.ResultType == type && prop.MSize == m && prop.NSize == n) {
-            found_r = true;
-        }
-    }
-    if (found_a && found_b && found_c && found_r) {
-        return true;
-    }
-
-    found_a = false;
-    found_b = false;
-    found_c = false;
-    found_r = false;
-    for (const auto &prop : coop_matrix_flex_props) {
-        if (prop.scope == scope && prop.AType == type && (m % prop.MGranularity) == 0 && (k % prop.KGranularity) == 0) {
-            found_a = true;
-        }
-        if (prop.scope == scope && prop.BType == type && (k % prop.KGranularity) == 0 && (n % prop.NGranularity) == 0) {
-            found_b = true;
-        }
-        if (prop.scope == scope && prop.CType == type && (m % prop.MGranularity) == 0 && (n % prop.NGranularity) == 0) {
-            found_c = true;
-        }
-        if (prop.scope == scope && prop.ResultType == type && (m % prop.MGranularity) == 0 && (n % prop.NGranularity) == 0) {
-            found_r = true;
-        }
-    }
-    if (found_a && found_b && found_c && found_r) {
-        return true;
-    }
-
-    return false;
-}
-
-bool CooperativeMatrixTest::Has8BitComponentType(const VkCooperativeMatrixPropertiesKHR &prop) {
-    static const VkComponentTypeKHR type_8bit[6] = {
-        VK_COMPONENT_TYPE_SINT8_KHR,       VK_COMPONENT_TYPE_UINT8_KHR,       VK_COMPONENT_TYPE_SINT8_PACKED_NV,
-        VK_COMPONENT_TYPE_UINT8_PACKED_NV, VK_COMPONENT_TYPE_FLOAT8_E4M3_EXT, VK_COMPONENT_TYPE_FLOAT8_E5M2_EXT,
-    };
-    return IsValueIn(prop.AType, type_8bit) || IsValueIn(prop.BType, type_8bit) || IsValueIn(prop.CType, type_8bit) ||
-           IsValueIn(prop.ResultType, type_8bit);
-}
-
-bool CooperativeMatrixTest::Has64BitComponentType(const VkCooperativeMatrixPropertiesKHR &prop) {
-    static const VkComponentTypeKHR type_64bit[3] = {VK_COMPONENT_TYPE_FLOAT64_KHR, VK_COMPONENT_TYPE_SINT64_KHR,
-                                                     VK_COMPONENT_TYPE_UINT64_KHR};
-    return IsValueIn(prop.AType, type_64bit) || IsValueIn(prop.BType, type_64bit) || IsValueIn(prop.CType, type_64bit) ||
-           IsValueIn(prop.ResultType, type_64bit);
 }
 
 class PositiveShaderCooperativeMatrix : public CooperativeMatrixTest {};
@@ -209,13 +92,14 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixKHR) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::shaderFloat16);
     AddRequiredFeature(vkt::Feature::storageBuffer16BitAccess);
-    RETURN_IF_SKIP(InitCooperativeMatrixKHR(VK_SHADER_STAGE_COMPUTE_BIT));
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR());
+    CooperativeMatrixHelper helper(*this);
 
     VkCooperativeMatrixPropertiesKHR subgroup_prop = vku::InitStructHelper();
     bool found_scope_subgroup = false;
-    for (const auto &prop : coop_matrix_props) {
+    for (const auto &prop : helper.coop_matrix_props) {
         // We only have the 16-bit features enabled, but 32-bit also works
-        if (prop.scope == VK_SCOPE_SUBGROUP_KHR && !Has8BitComponentType(prop) && !Has64BitComponentType(prop)) {
+        if (prop.scope == VK_SCOPE_SUBGROUP_KHR && !helper.Has8BitComponentType(prop) && !helper.Has64BitComponentType(prop)) {
             found_scope_subgroup = true;
             subgroup_prop = prop;
             break;
@@ -267,10 +151,10 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixKHR) {
     replace(css, "%M%", std::to_string(subgroup_prop.MSize));
     replace(css, "%N%", std::to_string(subgroup_prop.NSize));
     replace(css, "%K%", std::to_string(subgroup_prop.KSize));
-    replace(css, "%type_A%", vkComponentTypeToGLSL(subgroup_prop.AType));
-    replace(css, "%type_B%", vkComponentTypeToGLSL(subgroup_prop.BType));
-    replace(css, "%type_C%", vkComponentTypeToGLSL(subgroup_prop.CType));
-    replace(css, "%type_R%", vkComponentTypeToGLSL(subgroup_prop.ResultType));
+    replace(css, "%type_A%", helper.VkComponentTypeToGLSL(subgroup_prop.AType));
+    replace(css, "%type_B%", helper.VkComponentTypeToGLSL(subgroup_prop.BType));
+    replace(css, "%type_C%", helper.VkComponentTypeToGLSL(subgroup_prop.CType));
+    replace(css, "%type_R%", helper.VkComponentTypeToGLSL(subgroup_prop.ResultType));
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = VkShaderObj(this, css.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
@@ -469,20 +353,9 @@ TEST_F(PositiveShaderCooperativeMatrix, Int8) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::shaderInt8);
     AddRequiredFeature(vkt::Feature::storageBuffer8BitAccess);
-    RETURN_IF_SKIP(InitCooperativeMatrixKHR(VK_SHADER_STAGE_COMPUTE_BIT));
-
-    VkCooperativeMatrixPropertiesKHR subgroup_prop = vku::InitStructHelper();
-    bool found = false;
-    for (const auto &prop : coop_matrix_props) {
-        if (prop.scope == VK_SCOPE_SUBGROUP_KHR && prop.KSize == 16 && prop.MSize == 16 && prop.NSize == 16 &&
-            prop.AType == VK_COMPONENT_TYPE_UINT8_KHR && prop.BType == VK_COMPONENT_TYPE_UINT8_KHR &&
-            prop.CType == VK_COMPONENT_TYPE_UINT32_KHR && prop.ResultType == VK_COMPONENT_TYPE_UINT32_KHR) {
-            found = true;
-            subgroup_prop = prop;
-            break;
-        }
-    }
-    if (!found) {
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR());
+    CooperativeMatrixHelper helper(*this);
+    if (!helper.Has16x16UintProperty()) {
         GTEST_SKIP() << "desired VkCooperativeMatrixPropertiesKHR not found";
     }
 

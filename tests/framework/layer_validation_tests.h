@@ -263,11 +263,9 @@ class GpuAVDescriptorClassGeneralBuffer : public GpuAVTest {
 
 class GpuAVDescriptorClassGeneralBufferCoopMat : public GpuAVTest {
   public:
-    void InitCooperativeMatrixKHR(VkShaderStageFlags required_stage = 0, bool safe_mode = true);
+    void InitCooperativeMatrixKHR(bool safe_mode = true);
     void BasicComputeTest(const char *shader, int source_type, VkDeviceSize buffer_size, const char *expected_error = nullptr,
                           uint32_t error_count = 1);
-    void Has16x16UintProperty();
-    std::vector<VkCooperativeMatrixPropertiesKHR> coop_matrix_props;
 };
 
 class GpuAVCopyMemoryIndirect : public GpuAVTest {
@@ -437,13 +435,7 @@ class WsiTest : public VkLayerTest {
 
 class CooperativeMatrixTest : public VkLayerTest {
   public:
-    void InitCooperativeMatrixKHR(VkShaderStageFlags required_stage = 0);
-    bool HasValidProperty(VkScopeKHR scope, uint32_t m, uint32_t n, uint32_t k, VkComponentTypeKHR type);
-    std::vector<VkCooperativeMatrixPropertiesKHR> coop_matrix_props;
-    std::vector<VkCooperativeMatrixFlexibleDimensionsPropertiesNV> coop_matrix_flex_props;
-
-    bool Has8BitComponentType(const VkCooperativeMatrixPropertiesKHR &prop);
-    bool Has64BitComponentType(const VkCooperativeMatrixPropertiesKHR &prop);
+    void InitCooperativeMatrixKHR();
 };
 
 class ParentTest : public VkLayerTest {
