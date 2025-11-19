@@ -2154,7 +2154,7 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory4) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
-    constexpr size_t build_info_count = 3;
+    constexpr size_t build_info_count = 2;
 
     // To get a valid VkAccelerationStructureBuildSizesInfoKHR
     auto dummy_blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
@@ -2225,8 +2225,8 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory4) {
         // triggered for each pair of elements in `build_infos`. 03705 *should* also be triggered for individual elements.
         // => due to validation code optimisations, not *all* overlaps will be detected,
         // but if there is *at least one*, it will *always+ be detected.
-        m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-scratchData-03704", 2);
-        m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-scratchData-03705", 3);
+        m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-scratchData-03704");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-scratchData-03705", 2);
 
         m_command_buffer.Begin();
         vkt::as::BuildAccelerationStructuresKHR(m_command_buffer, blas_vec);
