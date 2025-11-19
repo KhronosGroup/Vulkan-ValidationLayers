@@ -105,7 +105,7 @@ class GpuResourcesManager {
     vko::BufferRange GetHostCachedBufferRange(VkDeviceSize size);
     void FlushAllocation(const vko::BufferRange &buffer_range);
     void InvalidateAllocation(const vko::BufferRange &buffer_range);
-    vko::BufferRange GetDeviceLocalBufferRange(VkDeviceSize size);
+    vko::BufferRange GetDeviceLocalBufferRange(VkDeviceSize size, VkDeviceSize alignment = 1);
     vko::BufferRange GetDeviceLocalIndirectBufferRange(VkDeviceSize size);
     vko::BufferRange GetStagingBufferRange(VkDeviceSize size);
 

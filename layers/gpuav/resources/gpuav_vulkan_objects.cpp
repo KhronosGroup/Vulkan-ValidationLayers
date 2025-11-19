@@ -353,13 +353,14 @@ void GpuResourcesManager::InvalidateAllocation(const vko::BufferRange &buffer_ra
     vmaInvalidateAllocation(gpuav_.vma_allocator_, buffer_range.vma_alloc, 0, VK_WHOLE_SIZE);
 }
 
-vko::BufferRange GpuResourcesManager::GetDeviceLocalBufferRange(VkDeviceSize size) {
+vko::BufferRange GpuResourcesManager::GetDeviceLocalBufferRange(VkDeviceSize size, VkDeviceSize alignment) {
     // Kind of arbitrary, considered "big enough"
     constexpr VkDeviceSize min_buffer_block_size = 4 * 1024;
     // Buffers are used as storage buffers, align to corresponding limit
-    const VkDeviceSize alignment =
+    VkDeviceSize alloc_alignment =
         std::max<VkDeviceSize>(gpuav_.phys_dev_props.limits.minStorageBufferOffsetAlignment, buffer_address_alignment);
-    return buffer_caches_.device_local.GetBufferRange(gpuav_, size, alignment, min_buffer_block_size);
+    alloc_alignment = std::max(alloc_alignment, alignment);
+    return buffer_caches_.device_local.GetBufferRange(gpuav_, size, alloc_alignment, min_buffer_block_size);
 }
 
 vko::BufferRange GpuResourcesManager::GetDeviceLocalIndirectBufferRange(VkDeviceSize size) {
