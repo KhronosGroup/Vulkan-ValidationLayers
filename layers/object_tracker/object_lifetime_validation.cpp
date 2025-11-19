@@ -19,8 +19,6 @@
 #include "generated/vk_object_types.h"
 #include "object_lifetime_validation.h"
 #include "chassis/dispatch_object.h"
-#include "containers/small_vector.h"
-#include "containers/span.h"
 
 namespace object_lifetimes {
 
@@ -59,6 +57,7 @@ VulkanTypedHandle ObjTrackStateTypedHandle(const ObjectState &track_state) {
 
 void ObjectState::MakePoisonous(Tracker &tracker, VulkanTypedHandle poisoner,
                                 const std::vector<VulkanTypedHandle> &parent_poison_chain) {
+    auto lock = WriteLock();
     if ((status_flags & kObjectStatusPoisoned) != 0) {
         return;  // Already poisoned, once is enough
     }
@@ -101,15 +100,24 @@ std::shared_ptr<ObjectState> Tracker::GetObjectState(VulkanTypedHandle object) c
 
 bool Tracker::TracksObject(VulkanTypedHandle object) const { return object_map[object.type].contains(object.handle); }
 
-void Tracker::RegisterPoisonPair(ObjectState &poisonee, VulkanTypedHandle poisoner) {
-    if (auto poisoner_state = GetObjectState(poisoner)) {
-        poisoner_state->objects_to_poison.emplace(ObjTrackStateTypedHandle(poisonee));
-        poisonee.poisoners.emplace_back(poisoner);
+void Tracker::RegisterPoisonPair(VulkanTypedHandle poisonee, VulkanTypedHandle poisoner) {
+    auto poisonee_state = GetObjectState(poisonee);
+    auto poisoner_state = GetObjectState(poisoner);
+    if (poisonee_state && poisoner_state) {
+        {
+            auto lock = poisoner_state->WriteLock();
+            poisoner_state->objects_to_poison.emplace(poisonee);
+        }
+        {
+            auto lock = poisonee_state->WriteLock();
+            poisonee_state->poisoners.emplace_back(poisoner);
+        }
     }
 }
 
 bool Tracker::CheckPoisoning(const ObjectState &object_state, const char *vuid, const Location &loc) const {
     bool skip = false;
+    auto lock = object_state.ReadLock();
     if ((object_state.status_flags & kObjectStatusPoisoned) != 0) {
         const VulkanTypedHandle typed_handle = ObjTrackStateTypedHandle(object_state);
         LogObjectList objlist(handle_, typed_handle);
@@ -270,20 +278,28 @@ bool Tracker::ValidateDestroyObject(VulkanTypedHandle object, const VkAllocation
 
 void Tracker::RecordDestroyObject(VulkanTypedHandle object, const Location &loc) {
     if (auto object_state = GetObjectState(object)) {
-        // Poison users of this object (except the scenarios when users don't care)
-        const bool pipeline_layout_maintenance4 = object.type == kVulkanObjectTypePipelineLayout && is_device_maintenance4_enabled_;
-        const bool poison_users = !pipeline_layout_maintenance4;
-        if (poison_users) {
-            for (VulkanTypedHandle poisonee : object_state->objects_to_poison) {
-                if (auto poisonee_state = GetObjectState(poisonee)) {
-                    poisonee_state->MakePoisonous(*this, object, {});
+        {
+            // Lock to iterate over objects_to_poison and poisoners arrays
+            // NOTE: another possible solution is to get the snapshots of these array
+            auto read_lock = object_state->ReadLock();
+
+            // Poison users of this object (except the scenarios when users don't care)
+            const bool pipeline_layout_maintenance4 =
+                object.type == kVulkanObjectTypePipelineLayout && is_device_maintenance4_enabled_;
+            const bool poison_users = !pipeline_layout_maintenance4;
+            if (poison_users) {
+                for (VulkanTypedHandle poisonee : object_state->objects_to_poison) {
+                    if (auto poisonee_state = GetObjectState(poisonee)) {
+                        poisonee_state->MakePoisonous(*this, object, {});
+                    }
                 }
             }
-        }
-        // Tell poisoners no need to poison this object, it's destroyed
-        for (VulkanTypedHandle poisoner : object_state->poisoners) {
-            if (auto poisoner_state = GetObjectState(poisoner)) {
-                poisoner_state->objects_to_poison.erase(object);
+            // Tell poisoners no need to poison this object, it's destroyed
+            for (VulkanTypedHandle poisoner : object_state->poisoners) {
+                if (auto poisoner_state = GetObjectState(poisoner)) {
+                    auto poisoner_lock = poisoner_state->WriteLock();
+                    poisoner_state->objects_to_poison.erase(object);
+                }
             }
         }
         DestroyObjectSilently(object, loc);
@@ -860,12 +876,8 @@ void Device::PostCallRecordCreateDescriptorSetLayout(VkDevice device, const VkDe
             continue;
         }
         const VulkanTypedHandle set_layout_handle(*pSetLayout, kVulkanObjectTypeDescriptorSetLayout);
-        if (auto set_layout_state = tracker.GetObjectState(set_layout_handle)) {
-            for (VkSampler immutable_sampler : vvl::make_span(binding.pImmutableSamplers, binding.descriptorCount)) {
-                const VulkanTypedHandle immutable_sampler_handle(immutable_sampler, kVulkanObjectTypeSampler);
-                tracker.RegisterPoisonPair(*set_layout_state, immutable_sampler_handle);
-            }
-        }
+        const auto immutable_samplers = vvl::make_span(binding.pImmutableSamplers, binding.descriptorCount);
+        tracker.RegisterPoisonPairs(set_layout_handle, immutable_samplers, kVulkanObjectTypeSampler);
     }
 }
 
@@ -886,12 +898,8 @@ void Device::PostCallRecordCreatePipelineLayout(VkDevice device, const VkPipelin
 
     // Setup poisoning
     const VulkanTypedHandle pipeline_layout_handle(*pPipelineLayout, kVulkanObjectTypePipelineLayout);
-    if (auto pipeline_layout_state = tracker.GetObjectState(pipeline_layout_handle)) {
-        for (VkDescriptorSetLayout set_layout : vvl::make_span(pCreateInfo->pSetLayouts, pCreateInfo->setLayoutCount)) {
-            const VulkanTypedHandle set_layout_handle(set_layout, kVulkanObjectTypeDescriptorSetLayout);
-            tracker.RegisterPoisonPair(*pipeline_layout_state, set_layout_handle);
-        }
-    }
+    const auto set_layouts = vvl::make_span(pCreateInfo->pSetLayouts, pCreateInfo->setLayoutCount);
+    tracker.RegisterPoisonPairs(pipeline_layout_handle, set_layouts, kVulkanObjectTypeDescriptorSetLayout);
 }
 
 bool Instance::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
