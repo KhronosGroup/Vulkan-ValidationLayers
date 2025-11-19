@@ -2027,8 +2027,8 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
 
                 if (map_entry.size != spec_const_size) {
                     std::stringstream name;
-                    if (module_state.handle()) {
-                        name << "shader module " << module_state.handle();
+                    if (module_state.handle() != NullVulkanTypedHandle) {
+                        name << "shader module " << FormatHandle(module_state.handle());
                     } else {
                         name << "shader object";
                     }
