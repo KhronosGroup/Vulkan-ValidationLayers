@@ -134,6 +134,16 @@ std::string Tracker::DescribePoisonChain(const std::vector<VulkanTypedHandle> &p
         ss << "references " << FormatHandle(poison_chain[i]) << " which became invalid because it ";
     }
     ss << "references deleted object " << FormatHandle(poison_chain[0]);
+
+    // If enablindg maintenance4 makes this setup valid, let the users know
+    if (!is_device_maintenance4_enabled_) {
+        auto pipeline_layout_it = std::find_if(poison_chain.begin(), poison_chain.end(),
+                                               [](const auto handle) { return handle.type == kVulkanObjectTypePipelineLayout; });
+        if (pipeline_layout_it != poison_chain.end()) {
+            ss << ". Note that enabling the maintenance4 allows you to destroy the VkPipelineLayout and child objects after being "
+                  "used.";
+        }
+    }
     return ss.str();
 }
 
