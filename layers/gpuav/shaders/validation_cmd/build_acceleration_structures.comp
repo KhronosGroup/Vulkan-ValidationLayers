@@ -1,0 +1,81 @@
+// Copyright (c) 2022-2025 The Khronos Group Inc.
+// Copyright (c) 2022-2025 Valve Corporation
+// Copyright (c) 2022-2025 LunarG, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#version 460
+#extension GL_GOOGLE_include_directive : enable
+
+#extension GL_EXT_debug_printf : enable
+
+#include "common.h"
+#include "build_acceleration_structures.h"
+
+layout(push_constant, scalar)
+uniform PushConstants {
+    AccelerationStructureReferencePushData pc;
+};
+
+layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+void main() {
+    uint tid = gl_GlobalInvocationID.x;
+
+    uint primitive_count = pc.ptr_to_accel_struct_build_range_infos.infos[ pc.flattened_build_range_i ].primitiveCount;
+
+    uint as_instance_i = tid;
+    if (as_instance_i >= primitive_count) {
+        return;
+    }
+
+    debugPrintfEXT("tid: %u\n", tid);
+    debugPrintfEXT("pc.blas_array_start_addr: 0x%p\n", pc.blas_array_start_addr);
+    debugPrintfEXT("pc.ptr_to_ptr_to_accel_structs_metadata: 0x%p\n", pc.ptr_to_ptr_to_accel_structs_metadata);
+
+    debugPrintfEXT("pc.ptr_to_ptr_to_accel_structs_metadata.ptr: 0x%p\n", pc.ptr_to_ptr_to_accel_structs_metadata.ptr);
+    debugPrintfEXT("pc.ptr_to_accel_struct_build_range_infos: 0x%p\n", pc.ptr_to_accel_struct_build_range_infos);
+    debugPrintfEXT("pc.flattened_build_range_i: %u\n", pc.flattened_build_range_i);
+
+    debugPrintfEXT("pc.ptr_to_ptr_to_accel_structs_metadata.ptr.accel_structs_metadata_count: %u\n", pc.ptr_to_ptr_to_accel_structs_metadata.ptr.metadata_count);
+
+    const uint64_t accel_struct_addr = pc.blas_array_start_addr.blas_array[as_instance_i].accelerationStructureReference;
+    debugPrintfEXT("pc.blas_array_start_addr.blas_array[ %u ].accelerationStructureReference: %ul\n", as_instance_i, accel_struct_addr);
+
+    int error_subcode = kErrorSubCode_PreBuildAccelerationStructures_InvalidAS;
+    for (uint as_metadata_i = 0; as_metadata_i < pc.ptr_to_ptr_to_accel_structs_metadata.ptr.metadata_count; ++as_metadata_i) {
+        AccelerationStructureMetadata accel_struct_metadata = pc.ptr_to_ptr_to_accel_structs_metadata.ptr.metadata[as_metadata_i];
+
+        const uint64_t addr = uint64_t(accel_struct_metadata.address_low) | (uint64_t(accel_struct_metadata.address_high) << 32u);
+        debugPrintfEXT("pc.ptr_to_ptr_to_accel_structs_metadata.ptr.accel_structs_metadata[ %u ]:\n    %ul\n    %u\n", as_metadata_i, addr, accel_struct_metadata.buffer_status);
+        if (addr == accel_struct_addr) {
+            if (accel_struct_metadata.buffer_status == 1u) {
+                error_subcode = 0;
+            } else {
+                error_subcode = kErrorSubCode_PreBuildAccelerationStructures_DestroyedASBuffer;
+            }
+            break;
+        }
+    }
+
+    if (error_subcode != 0) {
+        // Remove invalid BLAS reference from the build list
+        pc.blas_array_start_addr.blas_array[as_instance_i] = pc.blas_array_start_addr.blas_array[primitive_count - 1];
+        pc.ptr_to_accel_struct_build_range_infos.infos[ pc.flattened_build_range_i ].primitiveCount -= 1;
+        --as_instance_i;
+        --primitive_count;
+
+        GpuavLogError2(kErrorGroupGpuPreBuildAccelerationStructures, error_subcode, uint(accel_struct_addr), uint(accel_struct_addr >> 32u));
+    }
+
+
+}

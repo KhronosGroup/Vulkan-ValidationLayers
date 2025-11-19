@@ -479,7 +479,10 @@ TEST_F(NegativeGpuAV, ForceUniformAndStorageBuffer8BitAccess) {
     AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     AddRequiredFeature(vkt::Feature::shaderInt64);
-    RETURN_IF_SKIP(InitGpuAvFramework());
+
+    std::vector<VkLayerSettingEXT> layer_settings(1);
+    layer_settings[0] = {OBJECT_LAYER_NAME, "gpuav_acceleration_structures_builds", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse};
+    RETURN_IF_SKIP(InitGpuAvFramework(layer_settings));
 
     if (!DeviceExtensionSupported(VK_KHR_8BIT_STORAGE_EXTENSION_NAME)) {
         GTEST_SKIP() << VK_KHR_8BIT_STORAGE_EXTENSION_NAME << " not supported, skipping test";

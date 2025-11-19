@@ -407,6 +407,26 @@ void Validator::InitSettings(const Location &loc) {
         }
     }
 
+    if (gpuav_settings.validate_build_acceleration_structures) {
+        if (!IsExtEnabled(extensions.vk_khr_acceleration_structure)) {
+            AdjustmentWarning(device, loc,
+                              "VK_KHR_acceleration_structure is either disabled or not available on this device, turning validate "
+                              "acceleration structures build commands off.");
+            gpuav_settings.validate_build_acceleration_structures = false;
+        } else {
+            VkPhysicalDeviceAccelerationStructureFeaturesKHR supported_as_features = vku::InitStructHelper();
+            VkPhysicalDeviceFeatures2 as_features_2 = vku::InitStructHelper(&supported_as_features);
+            DispatchGetPhysicalDeviceFeatures2(physical_device, &as_features_2);
+            if (!supported_as_features.accelerationStructureIndirectBuild) {
+                AdjustmentWarning(
+                    device, loc,
+                    "VkPhysicalDeviceAccelerationStructureFeaturesKHR::accelerationStructureIndirectBuild feature is not "
+                    "available, GPU-AV cannot validate acceleration structures build commands.");
+                gpuav_settings.validate_build_acceleration_structures = false;
+            }
+        }
+    }
+
     // If we have turned off all the possible things to instrument, turn off everything fully
     if (!gpuav_settings.IsShaderInstrumentationEnabled()) {
         gpuav_settings.DisableShaderInstrumentationAndOptions();

@@ -55,6 +55,11 @@ khronos_validation.enable_message_limit = true
 # Enable fine grained locking for Core Validation, which should improve performance in multithreaded applications. This setting allows the optimization to be disabled for debugging.
 khronos_validation.fine_grained_locking = true
 
+# Acceleration structures builds
+# =====================
+# Validate invalid acceleration structures references in TLAS build commands.
+khronos_validation.gpuav_acceleration_structures_builds = true
+
 # Out of bounds buffer device addresses
 # =====================
 # Check for invalid access using buffer device address
@@ -133,7 +138,7 @@ khronos_validation.gpuav_shader_instrumentation = true
 # Shader/pipeline name regexes
 # =====================
 # Any shader or pipeline library debug name (set with vkSetDebugUtilsObjectNameEXT) fully matching any listed regular expression will be instrumented when creating pipelines with those shaders or libraries. Regex grammar: Modified ECMAScript. No support for shader objects yet. Warning: instrumentation being performed at final pipeline creation time, if shaders modules have already been destroyed at this step (possible when using pipeline libraries), they won't be found by this regex selection system. In this case, consider naming pipeline libraries instead.
-khronos_validation.gpuav_shaders_to_instrument =
+khronos_validation.gpuav_shaders_to_instrument = 
 
 # RayQuery SPIR-V instructions
 # =====================
@@ -168,7 +173,7 @@ khronos_validation.message_format_json = false
 # Mute Message VUIDs
 # =====================
 # List of VUIDs and VUID identifiers which are to be IGNORED by the validation layer
-khronos_validation.message_id_filter =
+khronos_validation.message_id_filter = 
 
 # Object Lifetime
 # =====================
