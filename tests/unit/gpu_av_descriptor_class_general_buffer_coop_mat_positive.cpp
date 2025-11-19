@@ -15,10 +15,11 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
+#include "cooperative_matrix_helper.h"
 
 class PositiveGpuAVDescriptorClassGeneralBufferCoopMat : public GpuAVDescriptorClassGeneralBufferCoopMat {};
 
-void GpuAVDescriptorClassGeneralBufferCoopMat::InitCooperativeMatrixKHR(VkShaderStageFlags required_stage, bool safe_mode) {
+void GpuAVDescriptorClassGeneralBufferCoopMat::InitCooperativeMatrixKHR(bool safe_mode) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
     // glslang will generate OpCapability VulkanMemoryModel and need entension enabled
@@ -27,44 +28,16 @@ void GpuAVDescriptorClassGeneralBufferCoopMat::InitCooperativeMatrixKHR(VkShader
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
     RETURN_IF_SKIP(InitGpuAvFramework({}, safe_mode));
     RETURN_IF_SKIP(InitState());
-
-    if (required_stage != 0) {
-        VkPhysicalDeviceCooperativeMatrixPropertiesKHR props = vku::InitStructHelper();
-        GetPhysicalDeviceProperties2(props);
-        if ((props.cooperativeMatrixSupportedStages & required_stage) == 0) {
-            GTEST_SKIP() << "required stage is not supported";
-        }
-    }
-
-    uint32_t props_count = 0;
-    vk::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(Gpu(), &props_count, nullptr);
-    for (uint32_t i = 0; i < props_count; i++) {
-        coop_matrix_props.emplace_back(vku::InitStruct<VkCooperativeMatrixPropertiesKHR>());
-    }
-    vk::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(Gpu(), &props_count, coop_matrix_props.data());
-}
-
-// Known to be supported on NVIDIA and RADV
-void GpuAVDescriptorClassGeneralBufferCoopMat::Has16x16UintProperty() {
-    bool found = false;
-    for (const auto &prop : coop_matrix_props) {
-        if (prop.scope == VK_SCOPE_SUBGROUP_KHR && prop.KSize == 16 && prop.MSize == 16 && prop.NSize == 16 &&
-            prop.AType == VK_COMPONENT_TYPE_UINT8_KHR && prop.BType == VK_COMPONENT_TYPE_UINT8_KHR &&
-            prop.CType == VK_COMPONENT_TYPE_UINT32_KHR && prop.ResultType == VK_COMPONENT_TYPE_UINT32_KHR) {
-            found = true;
-            break;
-        }
-    }
-    if (!found) {
-        GTEST_SKIP() << "desired VkCooperativeMatrixPropertiesKHR not found";
-    }
 }
 
 void GpuAVDescriptorClassGeneralBufferCoopMat::BasicComputeTest(const char *shader, int source_type, VkDeviceSize buffer_size,
                                                                 const char *expected_error, uint32_t error_count) {
     const bool safe_mode = expected_error != nullptr;
-    RETURN_IF_SKIP(InitCooperativeMatrixKHR(VK_SHADER_STAGE_COMPUTE_BIT, safe_mode));
-    RETURN_IF_SKIP(Has16x16UintProperty());
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR(safe_mode));
+    CooperativeMatrixHelper helper(*this);
+    if (!helper.Has16x16UintProperty()) {
+        GTEST_SKIP() << "16x16 Uint Property not found";
+    }
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
@@ -91,8 +64,11 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBufferCoopMat, Basic) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::shaderInt8);
     AddRequiredFeature(vkt::Feature::storageBuffer8BitAccess);
-    RETURN_IF_SKIP(InitCooperativeMatrixKHR(VK_SHADER_STAGE_COMPUTE_BIT, false));
-    RETURN_IF_SKIP(Has16x16UintProperty());
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR(false));
+    CooperativeMatrixHelper helper(*this);
+    if (!helper.Has16x16UintProperty()) {
+        GTEST_SKIP() << "16x16 Uint Property not found";
+    }
 
     const char *cs_source = R"glsl(
          #version 450 core
@@ -153,8 +129,11 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBufferCoopMat, BDA) {
     AddRequiredFeature(vkt::Feature::shaderInt8);
     AddRequiredFeature(vkt::Feature::storageBuffer8BitAccess);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    RETURN_IF_SKIP(InitCooperativeMatrixKHR(VK_SHADER_STAGE_COMPUTE_BIT, false));
-    RETURN_IF_SKIP(Has16x16UintProperty());
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR(false));
+    CooperativeMatrixHelper helper(*this);
+    if (!helper.Has16x16UintProperty()) {
+        GTEST_SKIP() << "16x16 Uint Property not found";
+    }
 
     const char *cs_source = R"glsl(
          #version 450 core
@@ -297,13 +276,10 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBufferCoopMat, RobustnessForced) {
         GTEST_SKIP() << "cooperativeMatrixRobustBufferAccess is not supported";
     }
 
-    uint32_t props_count = 0;
-    vk::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(Gpu(), &props_count, nullptr);
-    for (uint32_t i = 0; i < props_count; i++) {
-        coop_matrix_props.emplace_back(vku::InitStruct<VkCooperativeMatrixPropertiesKHR>());
+    CooperativeMatrixHelper helper(*this);
+    if (!helper.Has16x16UintProperty()) {
+        GTEST_SKIP() << "16x16 Uint Property not found";
     }
-    vk::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(Gpu(), &props_count, coop_matrix_props.data());
-    RETURN_IF_SKIP(Has16x16UintProperty());
 
     const char *cs_source = R"glsl(
          #version 450 core
@@ -344,8 +320,11 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBufferCoopMat, DynamicStrideAndElement
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::shaderInt8);
     AddRequiredFeature(vkt::Feature::storageBuffer8BitAccess);
-    RETURN_IF_SKIP(InitCooperativeMatrixKHR(VK_SHADER_STAGE_COMPUTE_BIT, false));
-    RETURN_IF_SKIP(Has16x16UintProperty());
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR(false));
+    CooperativeMatrixHelper helper(*this);
+    if (!helper.Has16x16UintProperty()) {
+        GTEST_SKIP() << "16x16 Uint Property not found";
+    }
 
     const char *cs_source = R"glsl(
          #version 450 core

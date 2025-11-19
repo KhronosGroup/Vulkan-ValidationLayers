@@ -14,6 +14,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
+#include "cooperative_matrix_helper.h"
 
 class NegativeGpuAVDescriptorClassGeneralBufferCoopMat : public GpuAVDescriptorClassGeneralBufferCoopMat {};
 
@@ -152,8 +153,11 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBufferCoopMat, Mix) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::shaderInt8);
     AddRequiredFeature(vkt::Feature::storageBuffer8BitAccess);
-    RETURN_IF_SKIP(InitCooperativeMatrixKHR(VK_SHADER_STAGE_COMPUTE_BIT, true));
-    RETURN_IF_SKIP(Has16x16UintProperty());
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR(true));
+    CooperativeMatrixHelper helper(*this);
+    if (!helper.Has16x16UintProperty()) {
+        GTEST_SKIP() << "16x16 Uint Property not found";
+    }
 
     const char* cs_source = R"glsl(
          #version 450 core
@@ -234,8 +238,11 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBufferCoopMat, DynamicStride) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::shaderInt8);
     AddRequiredFeature(vkt::Feature::storageBuffer8BitAccess);
-    RETURN_IF_SKIP(InitCooperativeMatrixKHR(VK_SHADER_STAGE_COMPUTE_BIT, false));
-    RETURN_IF_SKIP(Has16x16UintProperty());
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR(true));
+    CooperativeMatrixHelper helper(*this);
+    if (!helper.Has16x16UintProperty()) {
+        GTEST_SKIP() << "16x16 Uint Property not found";
+    }
 
     const char* cs_source = R"glsl(
          #version 450 core
@@ -285,8 +292,11 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBufferCoopMat, DynamicElement) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::shaderInt8);
     AddRequiredFeature(vkt::Feature::storageBuffer8BitAccess);
-    RETURN_IF_SKIP(InitCooperativeMatrixKHR(VK_SHADER_STAGE_COMPUTE_BIT, false));
-    RETURN_IF_SKIP(Has16x16UintProperty());
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR(true));
+    CooperativeMatrixHelper helper(*this);
+    if (!helper.Has16x16UintProperty()) {
+        GTEST_SKIP() << "16x16 Uint Property not found";
+    }
 
     const char* cs_source = R"glsl(
          #version 450 core

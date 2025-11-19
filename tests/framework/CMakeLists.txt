@@ -35,6 +35,8 @@ add_library(vk_test_framework STATIC
     binding.h
     binding.cpp
     buffer_helper.h
+    cooperative_matrix_helper.h
+    cooperative_matrix_helper.cpp
     test_framework.cpp
     ray_tracing_objects.h
     ray_tracing_objects.cpp

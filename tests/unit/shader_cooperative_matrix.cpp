@@ -12,9 +12,11 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <vulkan/vulkan_core.h>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/shader_object_helper.h"
+#include "cooperative_matrix_helper.h"
 
 class NegativeShaderCooperativeMatrix : public CooperativeMatrixTest {};
 
@@ -73,15 +75,14 @@ TEST_F(NegativeShaderCooperativeMatrix, UnsupportedStageUint32) {
     TEST_DESCRIPTION("Test error using cooperative matrix in unsupported stage");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     RETURN_IF_SKIP(InitCooperativeMatrixKHR());
+    CooperativeMatrixHelper helper(*this);
     InitRenderTarget();
 
-    if (!HasValidProperty(VK_SCOPE_SUBGROUP_KHR, 16, 16, 16, VK_COMPONENT_TYPE_UINT32_KHR)) {
+    if (!helper.HasValidProperty(VK_SCOPE_SUBGROUP_KHR, 16, 16, 16, VK_COMPONENT_TYPE_UINT32_KHR)) {
         GTEST_SKIP() << "Valid Property not found";
     }
 
-    VkPhysicalDeviceCooperativeMatrixPropertiesKHR props = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(props);
-    if ((props.cooperativeMatrixSupportedStages & VK_SHADER_STAGE_VERTEX_BIT) != 0) {
+    if (helper.SupportsStage(VK_SHADER_STAGE_VERTEX_BIT)) {
         GTEST_SKIP() << "Cannot execute test due to vertex stage expected to be unsupported";
     }
 
@@ -115,15 +116,14 @@ TEST_F(NegativeShaderCooperativeMatrix, UnsupportedStageFloat16) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::shaderFloat16);
     RETURN_IF_SKIP(InitCooperativeMatrixKHR());
+    CooperativeMatrixHelper helper(*this);
     InitRenderTarget();
 
-    if (!HasValidProperty(VK_SCOPE_SUBGROUP_KHR, 8, 8, 16, VK_COMPONENT_TYPE_FLOAT16_KHR)) {
+    if (!helper.HasValidProperty(VK_SCOPE_SUBGROUP_KHR, 8, 8, 16, VK_COMPONENT_TYPE_FLOAT16_KHR)) {
         GTEST_SKIP() << "Valid Property not found";
     }
 
-    VkPhysicalDeviceCooperativeMatrixPropertiesKHR props = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(props);
-    if ((props.cooperativeMatrixSupportedStages & VK_SHADER_STAGE_VERTEX_BIT) != 0) {
+    if (helper.SupportsStage(VK_SHADER_STAGE_VERTEX_BIT)) {
         GTEST_SKIP() << "Cannot execute test due to vertex stage expected to be unsupported";
     }
 
@@ -156,7 +156,7 @@ TEST_F(NegativeShaderCooperativeMatrix, ParametersMatchProperties) {
     TEST_DESCRIPTION("Test that parameters match one of the matrices in any of the supported VkCooperativeMatrixPropertiesKHR");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::shaderFloat16);
-    RETURN_IF_SKIP(InitCooperativeMatrixKHR(VK_SHADER_STAGE_COMPUTE_BIT));
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR());
 
     VkPhysicalDeviceVulkan11Properties props11 = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(props11);
@@ -191,8 +191,9 @@ TEST_F(NegativeShaderCooperativeMatrix, DimXMultipleSubgroupSize) {
     AddRequiredFeature(vkt::Feature::shaderFloat16);
     AddRequiredFeature(vkt::Feature::maintenance4);
     RETURN_IF_SKIP(InitCooperativeMatrixKHR());
+    CooperativeMatrixHelper helper(*this);
 
-    if (!HasValidProperty(VK_SCOPE_SUBGROUP_KHR, 16, 16, 16, VK_COMPONENT_TYPE_FLOAT16_KHR)) {
+    if (!helper.HasValidProperty(VK_SCOPE_SUBGROUP_KHR, 16, 16, 16, VK_COMPONENT_TYPE_FLOAT16_KHR)) {
         GTEST_SKIP() << "Valid Property not found";
     }
 
@@ -245,8 +246,9 @@ TEST_F(NegativeShaderCooperativeMatrix, DimXMultipleSubgroupSizeWorkgroupScope) 
     AddRequiredFeature(vkt::Feature::cooperativeMatrixFlexibleDimensions);
     AddRequiredFeature(vkt::Feature::maintenance4);
     RETURN_IF_SKIP(InitCooperativeMatrixKHR());
+    CooperativeMatrixHelper helper(*this);
 
-    if (!HasValidProperty(VK_SCOPE_WORKGROUP_KHR, 32, 32, 32, VK_COMPONENT_TYPE_FLOAT16_KHR)) {
+    if (!helper.HasValidProperty(VK_SCOPE_WORKGROUP_KHR, 32, 32, 32, VK_COMPONENT_TYPE_FLOAT16_KHR)) {
         GTEST_SKIP() << "Valid Property not found";
     }
 
@@ -298,8 +300,9 @@ TEST_F(NegativeShaderCooperativeMatrix, SameScope) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::shaderFloat16);
     RETURN_IF_SKIP(InitCooperativeMatrixKHR());
+    CooperativeMatrixHelper helper(*this);
 
-    if (!HasValidProperty(VK_SCOPE_SUBGROUP_KHR, 16, 16, 16, VK_COMPONENT_TYPE_FLOAT16_KHR)) {
+    if (!helper.HasValidProperty(VK_SCOPE_SUBGROUP_KHR, 16, 16, 16, VK_COMPONENT_TYPE_FLOAT16_KHR)) {
         GTEST_SKIP() << "Valid Property not found";
     }
 
@@ -359,8 +362,9 @@ TEST_F(NegativeShaderCooperativeMatrix, WorkgroupScope) {
     AddRequiredFeature(vkt::Feature::shaderFloat16);
     AddRequiredFeature(vkt::Feature::cooperativeMatrixFlexibleDimensions);
     RETURN_IF_SKIP(InitCooperativeMatrixKHR());
+    CooperativeMatrixHelper helper(*this);
 
-    if (!HasValidProperty(VK_SCOPE_WORKGROUP_KHR, 32, 32, 32, VK_COMPONENT_TYPE_FLOAT16_KHR)) {
+    if (!helper.HasValidProperty(VK_SCOPE_WORKGROUP_KHR, 32, 32, 32, VK_COMPONENT_TYPE_FLOAT16_KHR)) {
         GTEST_SKIP() << "Valid Property not found";
     }
 
@@ -397,8 +401,9 @@ TEST_F(NegativeShaderCooperativeMatrix, WorkgroupScopeMaxDimensions) {
     AddRequiredFeature(vkt::Feature::cooperativeMatrixFlexibleDimensions);
     AddRequiredFeature(vkt::Feature::cooperativeMatrixWorkgroupScope);
     RETURN_IF_SKIP(InitCooperativeMatrixKHR());
+    CooperativeMatrixHelper helper(*this);
 
-    if (!HasValidProperty(VK_SCOPE_WORKGROUP_KHR, 32, 32, 32, VK_COMPONENT_TYPE_FLOAT16_KHR)) {
+    if (!helper.HasValidProperty(VK_SCOPE_WORKGROUP_KHR, 32, 32, 32, VK_COMPONENT_TYPE_FLOAT16_KHR)) {
         GTEST_SKIP() << "Valid Property not found";
     }
 
@@ -457,8 +462,9 @@ TEST_F(NegativeShaderCooperativeMatrix, WorkgroupScopeMaxSharedMemory) {
     AddRequiredFeature(vkt::Feature::cooperativeMatrixFlexibleDimensions);
     AddRequiredFeature(vkt::Feature::cooperativeMatrixWorkgroupScope);
     RETURN_IF_SKIP(InitCooperativeMatrixKHR());
+    CooperativeMatrixHelper helper(*this);
 
-    if (!HasValidProperty(VK_SCOPE_WORKGROUP_KHR, 32, 32, 32, VK_COMPONENT_TYPE_FLOAT16_KHR)) {
+    if (!helper.HasValidProperty(VK_SCOPE_WORKGROUP_KHR, 32, 32, 32, VK_COMPONENT_TYPE_FLOAT16_KHR)) {
         GTEST_SKIP() << "Valid Property not found";
     }
 
@@ -512,7 +518,8 @@ TEST_F(NegativeShaderCooperativeMatrix, MatchSizeWithProperties) {
     TEST_DESCRIPTION("Check size match properties");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::shaderFloat16);
-    RETURN_IF_SKIP(InitCooperativeMatrixKHR(VK_SHADER_STAGE_COMPUTE_BIT));
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR());
+    CooperativeMatrixHelper helper(*this);
 
     VkPhysicalDeviceVulkan11Properties props11 = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(props11);
@@ -520,7 +527,7 @@ TEST_F(NegativeShaderCooperativeMatrix, MatchSizeWithProperties) {
         GTEST_SKIP() << "local_size_x (32) is not a multiple of subgroupSize";
     }
 
-    if (HasValidProperty(VK_SCOPE_SUBGROUP_KHR, 8, 8, 16, VK_COMPONENT_TYPE_FLOAT16_KHR)) {
+    if (helper.HasValidProperty(VK_SCOPE_SUBGROUP_KHR, 8, 8, 16, VK_COMPONENT_TYPE_FLOAT16_KHR)) {
         GTEST_SKIP() << "Valid Property found, need invalid to test";
     }
 
@@ -554,7 +561,7 @@ TEST_F(NegativeShaderCooperativeMatrix, SignedCheck) {
     TEST_DESCRIPTION("Test that if component type of is signed check that appropriate MatrixSignedComponents is present");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::shaderFloat16);
-    RETURN_IF_SKIP(InitCooperativeMatrixKHR(VK_SHADER_STAGE_COMPUTE_BIT));
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR());
 
     // OpExtension "SPV_KHR_storage_buffer_storage_class"
     const std::string cs_source_template = R"glsl(
