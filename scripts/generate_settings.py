@@ -49,11 +49,13 @@ def GenerateTextFile(all_settings):
             default = 'true' if setting['default'] is True else 'false'
         if type == 'FLAGS' or type == 'LIST':
             default = ','.join(default)
-
+        default = str(default)
+        if default:
+            default = " " + default
         out.append(f'# {setting["label"]}')
         out.append('# =====================')
         out.append(f'# {setting["description"]}')
-        out.append(f'khronos_validation.{setting["key"]} = {default}\n')
+        out.append(f'khronos_validation.{setting["key"]} ={default}\n')
 
     text_output = common_ci.RepoRelative('layers/vk_layer_settings.txt')
     with open(text_output, 'w') as file:

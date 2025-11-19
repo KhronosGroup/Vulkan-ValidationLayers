@@ -55,6 +55,11 @@ khronos_validation.enable_message_limit = true
 # Enable fine grained locking for Core Validation, which should improve performance in multithreaded applications. This setting allows the optimization to be disabled for debugging.
 khronos_validation.fine_grained_locking = true
 
+# Acceleration structures builds
+# =====================
+# Validate acceleration structures references in TLAS build commands.
+khronos_validation.gpuav_acceleration_structures_builds = true
+
 # Out of bounds buffer device addresses
 # =====================
 # Check for invalid access using buffer device address

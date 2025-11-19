@@ -1,0 +1,66 @@
+// Copyright (c) 2022-2025 The Khronos Group Inc.
+// Copyright (c) 2022-2025 Valve Corporation
+// Copyright (c) 2022-2025 LunarG, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#version 460
+#extension GL_GOOGLE_include_directive : enable
+
+
+#include "common.h"
+#include "build_acceleration_structures.h"
+
+layout(push_constant, scalar)
+uniform PushConstants {
+    AccelerationStructureReferencePushData pc;
+};
+
+layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+void main() {
+    const uint as_instance_i = gl_GlobalInvocationID.x;
+    if (as_instance_i >= pc.blas_array_size) {
+        return;
+    }
+
+    uint64_t accel_struct_addr = 0;
+    if (pc.is_array_of_pointers == 0) {
+        accel_struct_addr = pc.blas_array_start_addr.blas_array[as_instance_i].accelerationStructureReference;
+    } else {
+        accel_struct_addr = pc.blas_ptr_array_start_addr.blas_ptr_array[as_instance_i].as_instance.accelerationStructureReference;
+    }
+
+    int error_subcode = kErrorSubCode_PreBuildAccelerationStructures_InvalidAS;
+    for (uint as_metadata_i = 0; as_metadata_i < pc.ptr_to_ptr_to_accel_structs_metadata.ptr.metadata_count; ++as_metadata_i) {
+        AccelerationStructureMetadata accel_struct_metadata = pc.ptr_to_ptr_to_accel_structs_metadata.ptr.metadata[as_metadata_i];
+
+        const uint64_t addr = uint64_t(accel_struct_metadata.address_low) | (uint64_t(accel_struct_metadata.address_high) << 32u);
+        if (addr == accel_struct_addr) {
+            if (accel_struct_metadata.buffer_status == 1u) {
+                error_subcode = 0;
+            } else {
+                error_subcode = kErrorSubCode_PreBuildAccelerationStructures_DestroyedASBuffer;
+            }
+            break;
+        }
+    }
+
+    if (error_subcode != 0) {
+        pc.blas_array_start_addr.blas_array[as_instance_i].instanceCustomIndex_and_mask &= 0xffffff;// Set mask to 0, so instance cannot get hit
+        pc.blas_array_start_addr.blas_array[as_instance_i].accelerationStructureReference = pc.valid_dummy_blas_addr;// Point to a valid dummy blas
+
+        GpuavLogError4(kErrorGroupGpuPreBuildAccelerationStructures, error_subcode, uint(accel_struct_addr), uint(accel_struct_addr >> 32u), as_instance_i, pc.blas_array_i);
+    }
+
+
+}
