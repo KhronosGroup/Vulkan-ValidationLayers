@@ -669,6 +669,238 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
 
                 skip |= ValidateDeviceAddress(aabbs_data_loc.dot(Field::deviceAddress), cb_objlist, aabbs.data.deviceAddress);
             }
+        } else if (geom_data.geometryType == VK_GEOMETRY_TYPE_SPHERES_NV) {
+            const Location p_geom_geom_spheres_loc = p_geom_geom_loc.pNext(Struct::VkAccelerationStructureGeometrySpheresDataNV);
+            auto sphere_struct = reinterpret_cast<VkAccelerationStructureGeometrySpheresDataNV const *>(geom_data.pNext);
+            ASSERT_AND_RETURN_SKIP(sphere_struct);
+            skip |= buffer_check(geom_i, sphere_struct->vertexData, p_geom_geom_spheres_loc.dot(Field::vertexData));
+            skip |= buffer_check(geom_i, sphere_struct->indexData, p_geom_geom_spheres_loc.dot(Field::indexData));
+            skip |= buffer_check(geom_i, sphere_struct->radiusData, p_geom_geom_spheres_loc.dot(Field::radiusData));
+
+            if (geometry_build_range_primitive_count > 0) {
+                if (sphere_struct->indexType == VK_INDEX_TYPE_NONE_KHR) {
+                    if (sphere_struct->indexData.deviceAddress != 0) {
+                        skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-11846",
+                                                   "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-11846"),
+                                         cmd_buffer, p_geom_geom_spheres_loc.dot(Field::indexData).dot(Field::deviceAddress),
+                                         "(0x%" PRIx64 ") is not 0 when indexType is VK_INDEX_TYPE_NONE_KHR.",
+                                         sphere_struct->indexData.deviceAddress);
+                    }
+                } else {
+                    if (sphere_struct->indexData.deviceAddress == 0) {
+                        skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-11847",
+                                                   "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-11847"),
+                                         cmd_buffer, p_geom_geom_spheres_loc.dot(Field::indexData).dot(Field::deviceAddress),
+                                         "is zero");
+                    }
+                    skip |= ValidateDeviceAddress(p_geom_geom_spheres_loc.dot(Field::indexData).dot(Field::deviceAddress),
+                                                  cb_objlist, sphere_struct->indexData.deviceAddress);
+                }
+                if (sphere_struct->vertexData.deviceAddress == 0) {
+                    skip |=
+                        LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-11848",
+                                           "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-11848"),
+                                 cmd_buffer, p_geom_geom_spheres_loc.dot(Field::vertexData).dot(Field::deviceAddress), "is zero");
+                }
+                skip |= ValidateDeviceAddress(p_geom_geom_spheres_loc.dot(Field::vertexData).dot(Field::deviceAddress), cb_objlist,
+                                              sphere_struct->vertexData.deviceAddress);
+                if (sphere_struct->radiusData.deviceAddress == 0) {
+                    skip |=
+                        LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-11849",
+                                           "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-11849"),
+                                 cmd_buffer, p_geom_geom_spheres_loc.dot(Field::radiusData).dot(Field::deviceAddress), "is zero");
+                }
+                skip |= ValidateDeviceAddress(p_geom_geom_spheres_loc.dot(Field::radiusData).dot(Field::deviceAddress), cb_objlist,
+                                              sphere_struct->radiusData.deviceAddress);
+            }
+
+            const VkFormatProperties3KHR vertex_properties = GetPDFormatProperties(sphere_struct->vertexFormat);
+            const VkFormatProperties3KHR radius_properties = GetPDFormatProperties(sphere_struct->radiusFormat);
+
+            if (!(vertex_properties.bufferFeatures & VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR)) {
+                skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexFormat-10434", cmd_buffer,
+                                 p_geom_geom_spheres_loc.dot(Field::vertexFormat),
+                                 "is %s which doesn't support VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR.\n"
+                                 "(supported bufferFeatures: %s)",
+                                 string_VkFormat(sphere_struct->vertexFormat),
+                                 string_VkFormatFeatureFlags2(vertex_properties.bufferFeatures).c_str());
+            } else {
+                if (vkuFormatIsPacked(sphere_struct->vertexFormat)) {
+                    const uint32_t format_block_size = vkuFormatTexelBlockSize(sphere_struct->vertexFormat);
+                    if (SafeModulo(sphere_struct->vertexStride, format_block_size) != 0) {
+                        skip |=
+                            LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexStride-10431", cmd_buffer,
+                                     p_geom_geom_spheres_loc.dot(Field::vertexStride),
+                                     "is %" PRIu64 " and is not aligned to the texel block size (%" PRIu32
+                                     ") of vertexFormat "
+                                     "%s",
+                                     sphere_struct->vertexStride, format_block_size, string_VkFormat(sphere_struct->vertexFormat));
+                    }
+
+                } else {
+                    const uint32_t format_component_count = vkuFormatComponentCount(sphere_struct->vertexFormat);
+                    const VKU_FORMAT_INFO format_info = vkuGetFormatInfo(sphere_struct->vertexFormat);
+                    uint32_t min_component_bits_size = format_info.components[0].size;
+                    for (uint32_t component_i = 1; component_i < format_component_count; ++component_i) {
+                        min_component_bits_size = std::min(format_info.components[component_i].size, min_component_bits_size);
+                    }
+                    const uint32_t min_component_byte_size = min_component_bits_size / 8;
+                    if (SafeModulo(sphere_struct->vertexData.deviceAddress, min_component_byte_size) != 0) {
+                        skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03711",
+                                                   "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03711"),
+                                         cmd_buffer, p_geom_geom_spheres_loc.dot(Field::vertexData).dot(Field::deviceAddress),
+                                         "is 0x%" PRIx64 " and is not aligned to the minimum component byte size (%" PRIu32
+                                         ") of vertexFormat "
+                                         "%s",
+                                         sphere_struct->vertexData.deviceAddress, min_component_byte_size,
+                                         string_VkFormat(sphere_struct->vertexFormat));
+                    }
+                    if (SafeModulo(sphere_struct->vertexStride, min_component_byte_size) != 0) {
+                        skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexStride-10431", cmd_buffer,
+                                         p_geom_geom_spheres_loc.dot(Field::vertexStride),
+                                         "is %" PRIu64 " and is not aligned to the minimum component byte size (%" PRIu32
+                                         ") of vertexFormat "
+                                         "%s",
+                                         sphere_struct->vertexStride, min_component_byte_size,
+                                         string_VkFormat(sphere_struct->vertexFormat));
+                    }
+                }
+            }
+
+            if (!(vertex_properties.bufferFeatures & VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR)) {
+                skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexFormat-10434", cmd_buffer,
+                                 p_geom_geom_spheres_loc.dot(Field::vertexFormat),
+                                 "is %s which doesn't support VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR.\n"
+                                 "(supported bufferFeatures: %s)",
+                                 string_VkFormat(sphere_struct->vertexFormat),
+                                 string_VkFormatFeatureFlags2(vertex_properties.bufferFeatures).c_str());
+            }
+
+            if (!(radius_properties.bufferFeatures & VK_FORMAT_FEATURE_2_ACCELERATION_STRUCTURE_RADIUS_BUFFER_BIT_NV)) {
+                skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-radiusFormat-10435", cmd_buffer,
+                                 p_geom_geom_spheres_loc.dot(Field::radiusFormat),
+                                 "is %s which doesn't support VK_FORMAT_FEATURE_2_ACCELERATION_STRUCTURE_RADIUS_BUFFER_BIT_NV.\n"
+                                 "(supported bufferFeatures: %s)",
+                                 string_VkFormat(sphere_struct->radiusFormat),
+                                 string_VkFormatFeatureFlags2(radius_properties.bufferFeatures).c_str());
+            }
+        } else if (geom_data.geometryType == VK_GEOMETRY_TYPE_LINEAR_SWEPT_SPHERES_NV) {
+            const Location p_geom_geom_linear_spheres_loc =
+                p_geom_geom_loc.pNext(Struct::VkAccelerationStructureGeometryLinearSweptSpheresDataNV);
+            auto sphere_linear_struct =
+                reinterpret_cast<VkAccelerationStructureGeometryLinearSweptSpheresDataNV const *>(geom_data.pNext);
+            ASSERT_AND_RETURN_SKIP(sphere_linear_struct);
+            skip |= buffer_check(geom_i, sphere_linear_struct->vertexData, p_geom_geom_linear_spheres_loc.dot(Field::vertexData));
+            skip |= buffer_check(geom_i, sphere_linear_struct->indexData, p_geom_geom_linear_spheres_loc.dot(Field::indexData));
+            skip |= buffer_check(geom_i, sphere_linear_struct->radiusData, p_geom_geom_linear_spheres_loc.dot(Field::radiusData));
+
+            if (geometry_build_range_primitive_count > 0) {
+                if (sphere_linear_struct->indexType == VK_INDEX_TYPE_NONE_KHR) {
+                    if (sphere_linear_struct->indexData.deviceAddress != 0) {
+                        skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-11850",
+                                                   "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-11850"),
+                                         cmd_buffer, p_geom_geom_linear_spheres_loc.dot(Field::indexData).dot(Field::deviceAddress),
+                                         "(0x%" PRIx64 ") is not 0 when indexType is VK_INDEX_TYPE_NONE_KHR.",
+                                         sphere_linear_struct->indexData.deviceAddress);
+                    }
+                } else {
+                    if (sphere_linear_struct->indexData.deviceAddress == 0) {
+                        skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-11851",
+                                                   "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-11851"),
+                                         cmd_buffer, p_geom_geom_linear_spheres_loc.dot(Field::indexData).dot(Field::deviceAddress),
+                                         "is zero");
+                    }
+                    skip |= ValidateDeviceAddress(p_geom_geom_linear_spheres_loc.dot(Field::indexData).dot(Field::deviceAddress),
+                                                  cb_objlist, sphere_linear_struct->indexData.deviceAddress);
+                }
+                if (sphere_linear_struct->vertexData.deviceAddress == 0) {
+                    skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-11852",
+                                               "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-11852"),
+                                     cmd_buffer, p_geom_geom_linear_spheres_loc.dot(Field::vertexData).dot(Field::deviceAddress),
+                                     "is zero");
+                }
+                skip |= ValidateDeviceAddress(p_geom_geom_linear_spheres_loc.dot(Field::vertexData).dot(Field::deviceAddress),
+                                              cb_objlist, sphere_linear_struct->vertexData.deviceAddress);
+                if (sphere_linear_struct->radiusData.deviceAddress == 0) {
+                    skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-11853",
+                                               "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-11853"),
+                                     cmd_buffer, p_geom_geom_linear_spheres_loc.dot(Field::radiusData).dot(Field::deviceAddress),
+                                     "is zero");
+                }
+                skip |= ValidateDeviceAddress(p_geom_geom_linear_spheres_loc.dot(Field::radiusData).dot(Field::deviceAddress),
+                                              cb_objlist, sphere_linear_struct->radiusData.deviceAddress);
+            }
+            const VkFormatProperties3KHR vertex_properties = GetPDFormatProperties(sphere_linear_struct->vertexFormat);
+            const VkFormatProperties3KHR radius_properties = GetPDFormatProperties(sphere_linear_struct->radiusFormat);
+
+            if (!(vertex_properties.bufferFeatures & VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR)) {
+                skip |= LogError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-vertexFormat-10423", cmd_buffer,
+                                 p_geom_geom_linear_spheres_loc.dot(Field::vertexFormat),
+                                 "is %s which doesn't support VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR.\n"
+                                 "(supported bufferFeatures: %s)",
+                                 string_VkFormat(sphere_linear_struct->vertexFormat),
+                                 string_VkFormatFeatureFlags2(vertex_properties.bufferFeatures).c_str());
+            }
+
+            else {
+                if (vkuFormatIsPacked(sphere_linear_struct->vertexFormat)) {
+                    const uint32_t format_block_size = vkuFormatTexelBlockSize(sphere_linear_struct->vertexFormat);
+                    if (SafeModulo(sphere_linear_struct->vertexStride, format_block_size) != 0) {
+                        skip |= LogError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-vertexFormat-10423",
+                                         cmd_buffer, p_geom_geom_linear_spheres_loc.dot(Field::vertexStride),
+                                         "is %" PRIu64 " and is not aligned to the texel block size (%" PRIu32
+                                         ") of vertexFormat "
+                                         "%s",
+                                         sphere_linear_struct->vertexStride, format_block_size,
+                                         string_VkFormat(sphere_linear_struct->vertexFormat));
+                    }
+                } else {
+                    const uint32_t format_component_count = vkuFormatComponentCount(sphere_linear_struct->vertexFormat);
+                    const VKU_FORMAT_INFO format_info = vkuGetFormatInfo(sphere_linear_struct->vertexFormat);
+                    uint32_t min_component_bits_size = format_info.components[0].size;
+                    for (uint32_t component_i = 1; component_i < format_component_count; ++component_i) {
+                        min_component_bits_size = std::min(format_info.components[component_i].size, min_component_bits_size);
+                    }
+                    const uint32_t min_component_byte_size = min_component_bits_size / 8;
+                    if (SafeModulo(sphere_linear_struct->vertexData.deviceAddress, min_component_byte_size) != 0) {
+                        skip |=
+                            LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03711",
+                                               "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03711"),
+                                     cmd_buffer, p_geom_geom_linear_spheres_loc.dot(Field::vertexData).dot(Field::deviceAddress),
+                                     "is 0x%" PRIx64 " and is not aligned to the minimum component byte size (%" PRIu32
+                                     ") of vertexFormat "
+                                     "%s",
+                                     sphere_linear_struct->vertexData.deviceAddress, min_component_byte_size,
+                                     string_VkFormat(sphere_linear_struct->vertexFormat));
+                    }
+                    if (SafeModulo(sphere_linear_struct->vertexStride, min_component_byte_size) != 0) {
+                        skip |= LogError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-vertexStride-10421",
+                                         cmd_buffer, p_geom_geom_linear_spheres_loc.dot(Field::vertexStride),
+                                         "is %" PRIu64 " and is not aligned to the minimum component byte size (%" PRIu32
+                                         ") of vertexFormat "
+                                         "%s",
+                                         sphere_linear_struct->vertexStride, min_component_byte_size,
+                                         string_VkFormat(sphere_linear_struct->vertexFormat));
+                    }
+                }
+            }
+
+            if (!(radius_properties.bufferFeatures & VK_FORMAT_FEATURE_2_ACCELERATION_STRUCTURE_RADIUS_BUFFER_BIT_NV)) {
+                skip |= LogError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-radiusFormat-10424", cmd_buffer,
+                                 p_geom_geom_linear_spheres_loc.dot(Field::radiusFormat),
+                                 "is %s which doesn't support VK_FORMAT_FEATURE_2_ACCELERATION_STRUCTURE_RADIUS_BUFFER_BIT_NV.\n"
+                                 "(supported bufferFeatures: %s)",
+                                 string_VkFormat(sphere_linear_struct->radiusFormat),
+                                 string_VkFormatFeatureFlags2(radius_properties.bufferFeatures).c_str());
+            }
+
+            if (sphere_linear_struct->indexingMode == VK_RAY_TRACING_LSS_INDEXING_MODE_SUCCESSIVE_NV) {
+                if (!sphere_linear_struct->indexData.deviceAddress && !sphere_linear_struct->indexData.hostAddress) {
+                    skip |= LogError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-indexingMode-10427", cmd_buffer,
+                                     p_geom_geom_linear_spheres_loc.dot(Field::indexData),
+                                     "shouldn't be NUll if indexing mode is VK_RAY_TRACING_LSS_INDEXING_MODE_SUCCESSIVE_NV.");
+                }
+            }
         }
     }
 
