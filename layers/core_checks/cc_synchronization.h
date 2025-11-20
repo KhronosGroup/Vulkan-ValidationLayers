@@ -50,7 +50,12 @@ struct SemaphoreSubmitState {
 
     VkQueue AnotherQueueWaits(const vvl::Semaphore &semaphore_state) const;
 
-    bool ValidateBinaryWait(const Location &loc, VkQueue queue, const vvl::Semaphore &semaphore_state);
-    bool ValidateWaitSemaphore(const Location &wait_semaphore_loc, const vvl::Semaphore &semaphore_state, uint64_t value);
-    bool ValidateSignalSemaphore(const Location &signal_semaphore_loc, const vvl::Semaphore &semaphore_state, uint64_t value);
+    bool ValidateBinaryWait(const Location &semaphore_loc, const vvl::Semaphore &semaphore_state);
+    bool ValidateTimelineWait(const Location &semaphore_loc, const vvl::Semaphore &semaphore_state, uint64_t value);
+    bool ValidateWaitSemaphore(const Location &semaphore_loc, const vvl::Semaphore &semaphore_state, uint64_t value);
+
+
+    bool ValidateBinarySignal(const Location &semaphore_loc, const vvl::Semaphore &semaphore_state);
+    bool ValidateTimelineSignal(const Location &semaphore_loc, const vvl::Semaphore &semaphore_state, uint64_t value);
+    bool ValidateSignalSemaphore(const Location &semaphore_loc, const vvl::Semaphore &semaphore_state, uint64_t value);
 };
