@@ -813,6 +813,36 @@ TEST_F(PositiveDynamicRendering, SuspendSecondaryResumeInPrimary) {
     m_default_queue->Wait();
 }
 
+TEST_F(PositiveDynamicRendering, SuspendThenActionCommandSubmitDebugUtils) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::CommandBuffer command_buffers[2] = {{*m_device, m_command_pool}, {*m_device, m_command_pool}};
+
+    command_buffers[0].Begin();
+    command_buffers[0].BeginRendering(GetSimpleSuspendInfo());
+    command_buffers[0].EndRendering();
+    command_buffers[0].End();
+
+    command_buffers[1].Begin();
+    // You are allowed to call Debug utils commands at anytime
+    VkDebugUtilsLabelEXT label = vku::InitStructHelper();
+    label.pLabelName = "test";
+    vk::CmdBeginDebugUtilsLabelEXT(command_buffers[1], &label);
+    vk::CmdEndDebugUtilsLabelEXT(command_buffers[1]);
+    vk::CmdInsertDebugUtilsLabelEXT(command_buffers[1], &label);
+    command_buffers[1].BeginRendering(GetSimpleResumeInfo());
+    command_buffers[1].EndRendering();
+    command_buffers[1].End();
+
+    m_default_queue->Submit2({command_buffers[0], command_buffers[1]});
+    m_default_queue->Wait();
+}
+
 TEST_F(PositiveDynamicRendering, WithShaderTileImageAndBarrier) {
     TEST_DESCRIPTION("Test setting memory barrier with shader tile image features are enabled.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
