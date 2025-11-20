@@ -1065,6 +1065,59 @@ bool Device::ValidateAccelerationStructureBuildGeometryInfoKHR(const Context &co
                                  aabbs_loc.dot(Field::stride), "(%" PRIu64 ") must be less than or equal to 2^32-1.", aabbs.stride);
             }
         }
+        if (geom.geometryType == VK_GEOMETRY_TYPE_SPHERES_NV) {
+            auto sphere_struct = reinterpret_cast<VkAccelerationStructureGeometrySpheresDataNV const *>(geom.pNext);
+            if (!enabled_features.spheres) {
+                skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-None-10429", device,
+                                 geometry_loc.pNext(Struct::VkAccelerationStructureGeometrySpheresDataNV),
+                                 "The spheres feature must be enabled");
+            }
+            if (sphere_struct->vertexStride > vvl::kU32Max) {
+                skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexStride-10432", handle,
+                                 geometry_loc.pNext(Struct::VkAccelerationStructureGeometrySpheresDataNV).dot(Field::vertexStride),
+                                 "(%" PRIu64 ") must be less than or equal to 2^32-1.", sphere_struct->vertexStride);
+            }
+            if (sphere_struct->radiusStride > vvl::kU32Max) {
+                skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexStride-10432", handle,
+                                 geometry_loc.pNext(Struct::VkAccelerationStructureGeometrySpheresDataNV).dot(Field::radiusStride),
+                                 "(%" PRIu64 ") must be less than or equal to 2^32-1.", sphere_struct->radiusStride);
+            }
+            if (sphere_struct->indexType != VK_INDEX_TYPE_UINT16 && sphere_struct->indexType != VK_INDEX_TYPE_UINT32 &&
+                sphere_struct->indexType != VK_INDEX_TYPE_NONE_KHR) {
+                skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-indexData-10437", handle,
+                                 geometry_loc.pNext(Struct::VkAccelerationStructureGeometrySpheresDataNV).dot(Field::indexType),
+                                 "is %s.", string_VkIndexType(sphere_struct->indexType));
+            }
+        }
+        if (geom.geometryType == VK_GEOMETRY_TYPE_LINEAR_SWEPT_SPHERES_NV) {
+            auto sphere_linear_struct =
+                reinterpret_cast<VkAccelerationStructureGeometryLinearSweptSpheresDataNV const *>(geom.pNext);
+            if (!enabled_features.linearSweptSpheres) {
+                skip |= LogError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-None-10419", device,
+                                 geometry_loc.pNext(Struct::VkAccelerationStructureGeometryLinearSweptSpheresDataNV),
+                                 "The linearSweptSpheres feature must be enabled");
+            }
+            if (sphere_linear_struct->vertexStride > vvl::kU32Max) {
+                skip |= LogError(
+                    "VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-vertexStride-10422", handle,
+                    geometry_loc.pNext(Struct::VkAccelerationStructureGeometryLinearSweptSpheresDataNV).dot(Field::vertexStride),
+                    "(%" PRIu64 ") must be less than or equal to 2^32-1.", sphere_linear_struct->vertexStride);
+            }
+            if (sphere_linear_struct->radiusStride > vvl::kU32Max) {
+                skip |= LogError(
+                    "VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-vertexStride-10422", handle,
+                    geometry_loc.pNext(Struct::VkAccelerationStructureGeometryLinearSweptSpheresDataNV).dot(Field::radiusStride),
+                    "(%" PRIu64 ") must be less than or equal to 2^32-1.", sphere_linear_struct->radiusStride);
+            }
+            if (sphere_linear_struct->indexType != VK_INDEX_TYPE_UINT16 &&
+                sphere_linear_struct->indexType != VK_INDEX_TYPE_UINT32 &&
+                sphere_linear_struct->indexType != VK_INDEX_TYPE_NONE_KHR) {
+                skip |= LogError(
+                    "VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-indexData-10428", handle,
+                    geometry_loc.pNext(Struct::VkAccelerationStructureGeometryLinearSweptSpheresDataNV).dot(Field::indexType),
+                    "is %s.", string_VkIndexType(sphere_linear_struct->indexType));
+            }
+        }
         if (info.type == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR && geom.geometryType != VK_GEOMETRY_TYPE_INSTANCES_KHR) {
             skip |=
                 LogError("VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-03789", handle,
@@ -1276,7 +1329,7 @@ bool Device::manual_PreCallValidateCmdBuildAccelerationStructuresKHR(
                                      ") is superior to VkPhysicalDeviceAccelerationStructurePropertiesKHR::maxInstanceCount "
                                      "(%" PRIu64 ").",
                                      geom_i, build_range.primitiveCount, phys_dev_ext_props.acc_structure_props.maxPrimitiveCount);
-                    }
+                }
             }
         }
         skip |= context.ValidateArray(info_loc.dot(Field::geometryCount), error_obj.location.dot(Field::ppBuildRangeInfos, info_i),
@@ -1550,6 +1603,60 @@ bool Device::manual_PreCallValidateBuildAccelerationStructuresKHR(
                 if (!geom.geometry.instances.data.hostAddress) {
                     skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03778", device,
                                      info_loc.dot(Field::instances).dot(Field::data).dot(Field::hostAddress), "is NULL.");
+                }
+            } else if (geom.geometryType == VK_GEOMETRY_TYPE_SPHERES_NV) {
+                auto sphere_struct = reinterpret_cast<VkAccelerationStructureGeometrySpheresDataNV const *>(geom.pNext);
+                if (sphere_struct) {
+                    if (sphere_struct->indexType == VK_INDEX_TYPE_NONE_KHR) {
+                        if (sphere_struct->indexData.hostAddress != 0) {
+                            skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-11822", device,
+                                             info_loc.dot(Field::spheres).dot(Field::indexData).dot(Field::hostAddress),
+                                             "(%p) is not 0 when indexType is VK_INDEX_TYPE_NONE_KHR.",
+                                             sphere_struct->indexData.hostAddress);
+                        }
+                    } else {
+                        if (sphere_struct->indexData.hostAddress == 0) {
+                            skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-11823", device,
+                                             info_loc.dot(Field::spheres).dot(Field::indexData).dot(Field::hostAddress), "is 0");
+                        }
+                    }
+                    if (sphere_struct->vertexData.hostAddress == 0) {
+                        skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-11824", device,
+                                         info_loc.dot(Field::spheres).dot(Field::vertexData).dot(Field::hostAddress), "is 0");
+                    }
+                    if (sphere_struct->radiusData.hostAddress == 0) {
+                        skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-11825", device,
+                                         info_loc.dot(Field::spheres).dot(Field::radiusData).dot(Field::hostAddress), "is 0");
+                    }
+                }
+            } else if (geom.geometryType == VK_GEOMETRY_TYPE_LINEAR_SWEPT_SPHERES_NV) {
+                auto sphere_linear_struct =
+                    reinterpret_cast<VkAccelerationStructureGeometryLinearSweptSpheresDataNV const *>(geom.pNext);
+                if (sphere_linear_struct) {
+                    if (sphere_linear_struct->indexType == VK_INDEX_TYPE_NONE_KHR) {
+                        if (sphere_linear_struct->indexData.hostAddress != 0) {
+                            skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-11826", device,
+                                             info_loc.dot(Field::linearSweptSpheres).dot(Field::indexData).dot(Field::hostAddress),
+                                             "(%p) is not 0 when indexType is VK_INDEX_TYPE_NONE_KHR.",
+                                             sphere_linear_struct->indexData.hostAddress);
+                        }
+                    } else {
+                        if (sphere_linear_struct->indexData.hostAddress == 0) {
+                            skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-11827", device,
+                                             info_loc.dot(Field::linearSweptSpheres).dot(Field::indexData).dot(Field::hostAddress),
+                                             "is 0");
+                        }
+                    }
+                    if (sphere_linear_struct->vertexData.hostAddress == 0) {
+                        skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-11828", device,
+                                         info_loc.dot(Field::linearSweptSpheres).dot(Field::vertexData).dot(Field::hostAddress),
+                                         "is 0");
+                    }
+                    if (sphere_linear_struct->radiusData.hostAddress == 0) {
+                        skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-11829", device,
+                                         info_loc.dot(Field::linearSweptSpheres).dot(Field::radiusData).dot(Field::hostAddress),
+                                         "is 0");
+                    }
                 }
             }
         }
@@ -2218,9 +2325,9 @@ bool Device::manual_PreCallValidateCmdBuildClusterAccelerationStructureIndirectN
     }
 
     if (IsValueIn(input.opType, {VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_NV,
-        VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_TEMPLATE_NV,
-        VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_INSTANTIATE_TRIANGLE_CLUSTER_NV,
-        VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_GET_CLUSTER_TEMPLATE_INDICES_NV})) {
+                                 VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_TEMPLATE_NV,
+                                 VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_INSTANTIATE_TRIANGLE_CLUSTER_NV,
+                                 VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_GET_CLUSTER_TEMPLATE_INDICES_NV})) {
         skip |= ValidateClusterAccelerationStructureTriangleClusterInputNV(context, *input.opInput.pTriangleClusters,
                                                                            op_input_loc.dot(Field::pTriangleClusters));
     }
@@ -2246,9 +2353,9 @@ bool Device::manual_PreCallValidateGetClusterAccelerationStructureBuildSizesNV(
     }
 
     if (IsValueIn(pInfo->opType, {VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_NV,
-        VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_TEMPLATE_NV,
-        VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_INSTANTIATE_TRIANGLE_CLUSTER_NV,
-        VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_GET_CLUSTER_TEMPLATE_INDICES_NV})) {
+                                  VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_TEMPLATE_NV,
+                                  VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_INSTANTIATE_TRIANGLE_CLUSTER_NV,
+                                  VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_GET_CLUSTER_TEMPLATE_INDICES_NV})) {
         skip |= ValidateClusterAccelerationStructureTriangleClusterInputNV(context, *pInfo->opInput.pTriangleClusters,
                                                                            op_input_loc.dot(Field::pTriangleClusters));
     }
