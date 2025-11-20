@@ -156,6 +156,14 @@ class CommandValidationOutputGenerator(BaseGenerator):
             is_action = 'true' if 'action' in command.tasks else 'false'
             is_synchronization = 'true' if 'synchronization' in command.tasks else 'false'
 
+            # These should not be marked as action/sync/state commands
+            # https://gitlab.khronos.org/vulkan/vulkan/-/issues/4558
+            if command.name in ['vkCmdBeginDebugUtilsLabelEXT','vkCmdEndDebugUtilsLabelEXT', 'vkCmdInsertDebugUtilsLabelEXT',
+                                'vkCmdDebugMarkerBeginEXT', 'vkCmdDebugMarkerEndEXT', 'vkCmdDebugMarkerInsertEXT']:
+                is_state = 'false'
+                is_action = 'false'
+                is_synchronization = 'false'
+
             vuid = 'kVUIDUndefined'
             if is_action == 'true' or is_synchronization == 'true':
                 vuid = getVUID(self.valid_vuids, f'VUID-{alias_name}-suspended')
