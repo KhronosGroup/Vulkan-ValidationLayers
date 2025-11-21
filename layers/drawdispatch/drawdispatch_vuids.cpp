@@ -4383,8 +4383,7 @@ struct DispatchVuidsCmdDispatchBase: DrawDispatchVuid {
 
 struct DispatchVuidsCmdExecuteGeneratedCommandsEXT : DrawDispatchVuid {
     DispatchVuidsCmdExecuteGeneratedCommandsEXT() : DrawDispatchVuid(Func::vkCmdExecuteGeneratedCommandsEXT) {
-        // VUID being assigned https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7807
-        compute_inside_rp_10672                  = "UNASSIGNED-vkCmdExecuteGeneratedCommandsEXT-compute-dispatch";
+        compute_inside_rp_10672                  = "VUID-vkCmdExecuteGeneratedCommandsEXT-indirectCommandsLayout-12202";
         pipeline_bound_08606                     = "VUID-vkCmdExecuteGeneratedCommandsEXT-None-08606";
         compatible_pipeline_08600                = "VUID-vkCmdExecuteGeneratedCommandsEXT-None-08600";
         render_pass_compatible_02684             = "VUID-vkCmdExecuteGeneratedCommandsEXT-renderPass-02684";
