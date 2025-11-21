@@ -80,7 +80,10 @@ bool Device::manual_PreCallValidateCreateBuffer(VkDevice device, const VkBufferC
         }
     }
 
-    if (enabled_features.maintenance4 && pCreateInfo->size > phys_dev_props_core13.maxBufferSize) {
+    // From https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11121
+    // Likely issue with the features/versions using, but safely check for maxBufferSize being zero to help limit false positives
+    if (enabled_features.maintenance4 && pCreateInfo->size > phys_dev_props_core13.maxBufferSize &&
+        phys_dev_props_core13.maxBufferSize != 0) {
         skip |= LogError("VUID-VkBufferCreateInfo-size-06409", device, create_info_loc.dot(Field::size),
                          "(%" PRIu64
                          ") is larger than the maximum allowed buffer size "
