@@ -114,6 +114,12 @@ class Semaphore : public RefcountedStateObject {
     // Look for most recent / highest payload operation that matches
     std::optional<SemOp> LastOp(const std::function<bool(OpType op_type, uint64_t payload, bool is_pending)> &filter) const;
 
+    std::optional<uint64_t> GetSmallestPendingSignalValue() const;
+    std::optional<uint64_t> GetSmallestPendingPayload() const;  // either signal or wait
+    std::optional<uint64_t> GetLargestPendingPayload() const;   // either signal or wait
+
+    std::optional<SubmissionReference> GetPendingBinarySignalSubmission() const;
+
     // Returns pending queue submission that waits on this binary semaphore.
     std::optional<SubmissionReference> GetPendingBinaryWaitSubmission() const;
 
@@ -174,6 +180,8 @@ class Semaphore : public RefcountedStateObject {
     void WaitTimePoint(std::shared_future<void> &&waiter, uint64_t payload, bool unblock_validation_object, const Location &loc);
 
   private:
+    DeviceState &device_;
+
     enum Scope scope_ { kInternal };
     std::optional<VkExternalSemaphoreHandleTypeFlagBits> imported_handle_type_;  // has value when scope is not kInternal
 
@@ -187,8 +195,8 @@ class Semaphore : public RefcountedStateObject {
     // Timeline operations can be added in any order and multiple wait operations
     // can use the same payload value.
     std::map<uint64_t, TimePoint> timeline_;
+
     mutable std::shared_mutex lock_;
-    DeviceState &dev_data_;
 
     // Reference to the swapchain image if the semaphore was used by the acquire operation.
     // The semaphore wait operation uses this to mark the image as acquired and safe to use.
