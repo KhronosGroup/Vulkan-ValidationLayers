@@ -2499,7 +2499,7 @@ TEST_F(NegativeDeviceGeneratedCommands, ComputeRenderPass) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
-    m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdExecuteGeneratedCommandsEXT-compute-dispatch");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteGeneratedCommandsEXT-indirectCommandsLayout-12202");
     vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer, false, &generated_commands_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();
