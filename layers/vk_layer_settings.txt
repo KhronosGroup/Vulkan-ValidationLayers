@@ -182,7 +182,7 @@ khronos_validation.object_lifetime = true
 
 # Printf buffer size
 # =====================
-# Set the size in bytes of the buffer per draw/dispatch/traceRays to hold the messages
+# Set the size in bytes of the buffer per VkCommandBuffer to hold the messages (Each message is about 50 bytes)
 khronos_validation.printf_buffer_size = 1024
 
 # Debug Printf

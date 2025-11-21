@@ -590,7 +590,7 @@
                                 {
                                     "key": "printf_buffer_size",
                                     "label": "Printf buffer size",
-                                    "description": "Set the size in bytes of the buffer per draw/dispatch/traceRays to hold the messages",
+                                    "description": "Set the size in bytes of the buffer per VkCommandBuffer to hold the messages (Each message is about 50 bytes)",
                                     "type": "INT",
                                     "default": 1024,
                                     "range": {

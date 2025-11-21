@@ -381,10 +381,19 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
         output_record_i += debug_record->size;
     }
     if ((output_record_i - gpuav::kDebugPrintfOutputBufferData) < output_buffer_dwords_counts) {
+        // Originally we had this to log a warning, but if using the default settings, warnings are hidden.
+        // We report this information the same we report the "real" debug printf message so we know it is seen
         std::stringstream message;
-        message << "Debug Printf message was truncated due to a buffer size (" << gpuav.gpuav_settings.debug_printf_buffer_size
-                << ") being too small for the messages. (This can be adjusted with VK_LAYER_PRINTF_BUFFER_SIZE or vkconfig)";
-        gpuav.InternalWarning(buffer_info.objlist, loc, message.str().c_str());
+        message << "[WARNING] Debug Printf message was truncated due to the buffer size ("
+                << gpuav.gpuav_settings.debug_printf_buffer_size << ") being too small for the messages consuming "
+                << output_buffer_dwords_counts
+                << " bytes.\nThis can be adjusted setting env var VK_LAYER_PRINTF_BUFFER_SIZE=" << output_buffer_dwords_counts
+                << " or in vkconfig)";
+        if (gpuav.gpuav_settings.debug_printf_to_stdout) {
+            std::cout << message.str() << "\n";
+        } else {
+            gpuav.LogInfo("VVL-DEBUG-PRINTF", buffer_info.objlist, loc, "%s", message.str().c_str());
+        }
     }
 
     // Only memset what is needed, in case we are only using a small portion of a large buffer_size.

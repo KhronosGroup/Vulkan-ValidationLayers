@@ -3132,8 +3132,12 @@ TEST_F(NegativeDebugPrintf, ShaderObjectUnusedBoundDescriptor) {
 }
 
 TEST_F(NegativeDebugPrintf, OverflowBuffer) {
-    TEST_DESCRIPTION("go over the default VK_LAYER_PRINTF_BUFFER_SIZE limit");
-    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    TEST_DESCRIPTION("go over the VK_LAYER_PRINTF_BUFFER_SIZE limit");
+    uint32_t value = 128;
+    const VkLayerSettingEXT settings = {OBJECT_LAYER_NAME, "printf_buffer_size", VK_LAYER_SETTING_TYPE_UINT32_EXT, 1, &value};
+    VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
+                                                               &settings};
+    RETURN_IF_SKIP(InitDebugPrintfFramework(&layer_settings_create_info));
     RETURN_IF_SKIP(InitState());
 
     const char *shader_source = R"glsl(
@@ -3154,15 +3158,19 @@ TEST_F(NegativeDebugPrintf, OverflowBuffer) {
     vk::CmdDispatch(m_command_buffer, 4, 4, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredWarning(
-        "Debug Printf message was truncated due to a buffer size (1024) being too small for the messages");
+    m_errorMonitor->SetDesiredInfo("WorkGroup");  // actual message
+    m_errorMonitor->SetDesiredInfo("Debug Printf message was truncated");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDebugPrintf, OverflowBufferLoop) {
-    TEST_DESCRIPTION("go over the default VK_LAYER_PRINTF_BUFFER_SIZE limit... by a LOT");
-    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    TEST_DESCRIPTION("go over the VK_LAYER_PRINTF_BUFFER_SIZE limit... by a LOT");
+    uint32_t value = 128;
+    const VkLayerSettingEXT settings = {OBJECT_LAYER_NAME, "printf_buffer_size", VK_LAYER_SETTING_TYPE_UINT32_EXT, 1, &value};
+    VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
+                                                               &settings};
+    RETURN_IF_SKIP(InitDebugPrintfFramework(&layer_settings_create_info));
     RETURN_IF_SKIP(InitState());
 
     const char *shader_source = R"glsl(
@@ -3185,8 +3193,8 @@ TEST_F(NegativeDebugPrintf, OverflowBufferLoop) {
     vk::CmdDispatch(m_command_buffer, 4, 4, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredWarning(
-        "Debug Printf message was truncated due to a buffer size (1024) being too small for the messages");
+    m_errorMonitor->SetDesiredInfo("WorkGroup");  // actual message
+    m_errorMonitor->SetDesiredInfo("Debug Printf message was truncated");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
