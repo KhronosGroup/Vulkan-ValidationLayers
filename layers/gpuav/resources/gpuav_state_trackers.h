@@ -74,7 +74,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     std::vector<OnPostCommandBufferSubmission> on_post_cb_submission_functions;
     std::vector<OnCommandBufferCompletion> on_cb_completion_functions;
 
-    vko::SharedResourcesCache shared_resources_cache;
+    vko::SharedResourcesCache<false> shared_resources_cache;
 
     // Used to track which spot in the command buffer the error came from
     uint32_t draw_index = 0;
@@ -195,7 +195,7 @@ class QueueSubState : public vvl::QueueSubState {
     void PostSubmit(std::deque<vvl::QueueSubmission> &submissions) override;
     void Retire(vvl::QueueSubmission &) override;
 
-    vko::SharedResourcesCache shared_resources_cache;
+    vko::SharedResourcesCache<false> shared_resources_cache;
 
   protected:
     void SubmitBarrier(const Location &loc, uint64_t seq);
