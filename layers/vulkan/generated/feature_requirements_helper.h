@@ -718,7 +718,7 @@ enum class Feature {
     shaderRawAccessChains,
     // VkPhysicalDeviceRayQueryFeaturesKHR
     rayQuery,
-    // VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT
+    // VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT, VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV
     rayTracingInvocationReorder,
     // VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV
     linearSweptSpheres,

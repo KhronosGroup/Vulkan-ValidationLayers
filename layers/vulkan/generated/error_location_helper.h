@@ -1594,6 +1594,7 @@ enum class Struct {
     VkPhysicalDeviceRawAccessChainsFeaturesNV,
     VkPhysicalDeviceRayQueryFeaturesKHR,
     VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT,
+    VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV,
     VkPhysicalDeviceRayTracingInvocationReorderPropertiesEXT,
     VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV,
     VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV,

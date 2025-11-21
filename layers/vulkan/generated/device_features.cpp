@@ -1619,9 +1619,9 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->multiviewPerViewViewports |= enabled->multiviewPerViewViewports == VK_TRUE;
                 break;
             }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_EXT: {
-                const VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT *enabled =
-                    reinterpret_cast<const VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT *>(pNext);
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_NV: {
+                const VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV *>(pNext);
                 features->rayTracingInvocationReorder |= enabled->rayTracingInvocationReorder == VK_TRUE;
                 break;
             }
@@ -1795,6 +1795,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 const VkPhysicalDeviceImageAlignmentControlFeaturesMESA *enabled =
                     reinterpret_cast<const VkPhysicalDeviceImageAlignmentControlFeaturesMESA *>(pNext);
                 features->imageAlignmentControl |= enabled->imageAlignmentControl == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_EXT: {
+                const VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT *>(pNext);
+                features->rayTracingInvocationReorder |= enabled->rayTracingInvocationReorder == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_CONTROL_FEATURES_EXT: {

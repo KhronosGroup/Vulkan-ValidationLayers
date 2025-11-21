@@ -2794,14 +2794,14 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
-        // Validation code for VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT structure members
-        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_EXT: {  // Covers
-                                                                                               // VUID-VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT-sType-sType
+        // Validation code for VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_NV: {  // Covers
+                                                                                              // VUID-VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV-sType-sType
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc =
-                    loc.pNext(Struct::VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT);
-                VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT* structure =
-                    (VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT*)header;
+                    loc.pNext(Struct::VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV);
+                VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV* structure =
+                    (VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV*)header;
                 skip |= ValidateBool32(pNext_loc.dot(Field::rayTracingInvocationReorder), structure->rayTracingInvocationReorder);
             }
         } break;
@@ -3122,6 +3122,18 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
                 VkPhysicalDeviceImageAlignmentControlFeaturesMESA* structure =
                     (VkPhysicalDeviceImageAlignmentControlFeaturesMESA*)header;
                 skip |= ValidateBool32(pNext_loc.dot(Field::imageAlignmentControl), structure->imageAlignmentControl);
+            }
+        } break;
+
+        // Validation code for VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_EXT: {  // Covers
+                                                                                               // VUID-VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc =
+                    loc.pNext(Struct::VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT);
+                VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT* structure =
+                    (VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::rayTracingInvocationReorder), structure->rayTracingInvocationReorder);
             }
         } break;
 
@@ -7089,7 +7101,8 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
             if (is_const_param) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkImportNativeBufferInfoOHOS);
                 VkImportNativeBufferInfoOHOS* structure = (VkImportNativeBufferInfoOHOS*)header;
-                skip |= ValidateRequiredPointer(pNext_loc.dot(Field::buffer), structure->buffer, kVUIDUndefined);
+                skip |= ValidateRequiredPointer(pNext_loc.dot(Field::buffer), structure->buffer,
+                                                "VUID-VkImportNativeBufferInfoOHOS-buffer-parameter");
             }
         } break;
 
@@ -8075,6 +8088,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAW_ACCESS_CHAINS_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_LINEAR_SWEPT_SPHERES_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MAINTENANCE_1_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MOTION_BLUR_FEATURES_NV,
