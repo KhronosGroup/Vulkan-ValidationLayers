@@ -44,11 +44,11 @@ uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, Instruct
     const uint32_t pointer_id = meta.target_instruction->Operand(0);
 
     // Convert reference pointer to uint64
-    const Type& uint64_type = module_.type_manager_.GetTypeInt(64, 0);
+    const Type& uint64_type = type_manager_.GetTypeInt(64, 0);
     const uint32_t address_id = module_.TakeNextId();
     block.CreateInstruction(spv::OpConvertPtrToU, {uint64_type.Id(), address_id, pointer_id}, inst_it);
 
-    const uint32_t access_size_id = module_.type_manager_.GetConstantUInt32(meta.access_size).Id();
+    const uint32_t access_size_id = type_manager_.GetConstantUInt32(meta.access_size).Id();
     const uint32_t opcode = meta.target_instruction->Opcode();
 
     uint32_t access_type_value = 0;
@@ -58,11 +58,11 @@ uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, Instruct
     if (meta.type_is_struct) {
         access_type_value |= 1 << glsl::kInstBuffAddrAccessPayloadShiftIsStruct;
     }
-    const Constant& access_type = module_.type_manager_.GetConstantUInt32(access_type_value);
-    const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
+    const Constant& access_type = type_manager_.GetConstantUInt32(access_type_value);
+    const uint32_t bool_type = type_manager_.GetTypeBool().Id();
 
     const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
-    const uint32_t inst_position_id = module_.type_manager_.CreateConstantUInt32(inst_position).Id();
+    const uint32_t inst_position_id = type_manager_.CreateConstantUInt32(inst_position).Id();
 
     uint32_t function_range_result = 0;  // only take next ID if needed
     const uint32_t function_range_id = GetLinkFunction(function_range_id_, kOfflineFunctionRange);
@@ -85,7 +85,7 @@ uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, Instruct
 
             // If there is only a single access found, range diff is zero and this becomes a "normal" check automatically
             const uint32_t full_access_range = (range.max_struct_offsets - range.min_struct_offsets) + meta.access_size;
-            const uint32_t full_range_id = module_.type_manager_.GetConstantUInt32(full_access_range).Id();
+            const uint32_t full_range_id = type_manager_.GetConstantUInt32(full_access_range).Id();
             function_range_result = module_.TakeNextId();
             block.CreateInstruction(spv::OpFunctionCall,
                                     {bool_type, function_range_result, function_range_id, inst_position_id, address_id,
@@ -95,7 +95,7 @@ uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, Instruct
         }
     }
 
-    const Constant& alignment_constant = module_.type_manager_.GetConstantUInt32(meta.alignment_literal);
+    const Constant& alignment_constant = type_manager_.GetConstantUInt32(meta.alignment_literal);
 
     const uint32_t function_align_result = module_.TakeNextId();
     const uint32_t function_align_id = GetLinkFunction(function_align_id_, kOfflineFunctionAlign);
@@ -153,7 +153,7 @@ bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, 
     }
 
     // Get the OpTypePointer
-    const Type* op_type_pointer = module_.type_manager_.FindTypeById(meta.pointer_inst->TypeId());
+    const Type* op_type_pointer = type_manager_.FindTypeById(meta.pointer_inst->TypeId());
     if (!op_type_pointer || op_type_pointer->spv_type_ != SpvType::kPointer ||
         op_type_pointer->inst_.Operand(0) != spv::StorageClassPhysicalStorageBuffer) {
         return false;
@@ -161,7 +161,7 @@ bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, 
 
     // The OpTypePointer's type
     uint32_t accessed_type_id = op_type_pointer->inst_.Operand(1);
-    const Type* accessed_type = module_.type_manager_.FindTypeById(accessed_type_id);
+    const Type* accessed_type = type_manager_.FindTypeById(accessed_type_id);
     if (!accessed_type) {
         assert(false);
         return false;
@@ -170,7 +170,7 @@ bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, 
     // This might be an OpTypeStruct, even if some compilers are smart enough (know Mesa is) to detect only the first part of a
     // struct is loaded, we have to assume the entire struct is loaded and the entire memory is accessed (see
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8089)
-    meta.access_size = module_.type_manager_.TypeLength(*accessed_type);
+    meta.access_size = type_manager_.TypeLength(*accessed_type);
     // Will mark this is a struct acess to inform the user
     meta.type_is_struct = accessed_type->spv_type_ == SpvType::kStruct;
 
@@ -216,10 +216,10 @@ bool BufferDeviceAddressPass::Instrument() {
                     }
                     if (access_chain_insts.empty() || !next_inst) continue;
 
-                    const Type* load_type_pointer = module_.type_manager_.FindTypeById(next_inst->TypeId());
+                    const Type* load_type_pointer = type_manager_.FindTypeById(next_inst->TypeId());
                     if (load_type_pointer && load_type_pointer->spv_type_ == SpvType::kPointer &&
                         load_type_pointer->inst_.StorageClass() == spv::StorageClassPhysicalStorageBuffer) {
-                        const Type* struct_type = module_.type_manager_.FindTypeById(load_type_pointer->inst_.Operand(1));
+                        const Type* struct_type = type_manager_.FindTypeById(load_type_pointer->inst_.Operand(1));
                         if (struct_type && struct_type->spv_type_ == SpvType::kStruct) {
                             const uint32_t struct_offset =
                                 FindOffsetInStruct(struct_type->Id(), nullptr, false, access_chain_insts);

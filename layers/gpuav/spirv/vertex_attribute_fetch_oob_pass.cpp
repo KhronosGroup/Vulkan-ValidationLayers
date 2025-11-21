@@ -62,7 +62,7 @@ bool VertexAttributeFetchOobPass::Instrument() {
             ++stage_info_inst_it;
 
             std::vector<uint32_t> index_validation_inst_words;
-            const uint32_t void_type = module_.type_manager_.GetTypeVoid().Id();
+            const uint32_t void_type = type_manager_.GetTypeVoid().Id();
             const uint32_t function_result = module_.TakeNextId();
             const uint32_t function_def = GetLinkFunctionId();
 

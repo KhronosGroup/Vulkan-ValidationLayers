@@ -28,6 +28,9 @@
 namespace gpuav {
 namespace spirv {
 
+Pass::Pass(Module& module, const OfflineModule& offline)
+    : module_(module), type_manager_(module_.type_manager_), link_info_(offline) {}
+
 bool Pass::Run() {
     const bool modified = Instrument();
     if (module_.settings_.print_debug_info) {
@@ -60,12 +63,12 @@ const Variable& Pass::GetBuiltinVariable(uint32_t built_in) {
 
     // Currently we only ever needed Input variables and the built-ins we are using are not those that can be used by both Input and
     // Output storage classes
-    const Variable* built_in_variable = module_.type_manager_.FindVariableById(variable_id);
+    const Variable* built_in_variable = type_manager_.FindVariableById(variable_id);
     if (!built_in_variable) {
-        const Type& pointer_type = module_.type_manager_.GetTypePointerBuiltInInput(spv::BuiltIn(built_in));
+        const Type& pointer_type = type_manager_.GetTypePointerBuiltInInput(spv::BuiltIn(built_in));
         auto new_inst = std::make_unique<Instruction>(4, spv::OpVariable);
         new_inst->Fill({pointer_type.Id(), variable_id, spv::StorageClassInput});
-        built_in_variable = &module_.type_manager_.AddVariable(std::move(new_inst), pointer_type);
+        built_in_variable = &type_manager_.AddVariable(std::move(new_inst), pointer_type);
         module_.AddInterfaceVariables(built_in_variable->Id(), spv::StorageClassInput);
     }
 
@@ -87,15 +90,15 @@ uint32_t Pass::GetStageInfo(Function& function, const BasicBlock& target_block_i
     InstructionIt inst_it = block.GetFirstInjectableInstrution();
 
     // Stage info is always passed in as a uvec4
-    const Type& uint32_type = module_.type_manager_.GetTypeInt(32, false);
-    const Type& uvec4_type = module_.type_manager_.GetTypeVector(uint32_type, 4);
-    const uint32_t uint32_0_id = module_.type_manager_.GetConstantZeroUint32().Id();
+    const Type& uint32_type = type_manager_.GetTypeInt(32, false);
+    const Type& uvec4_type = type_manager_.GetTypeVector(uint32_type, 4);
+    const uint32_t uint32_0_id = type_manager_.GetConstantZeroUint32().Id();
     uint32_t stage_info[4] = {uint32_0_id, uint32_0_id, uint32_0_id, uint32_0_id};
 
     if (module_.entry_points_.size() > 1) {
         // For Multi Entry Points it currently a lot of work to scan every function to see where it will be called from
         // For now we will just report it is "unknown" and skip printing that part of the error message
-        stage_info[0] = module_.type_manager_.GetConstantUInt32(glsl::kExecutionModelMultiEntryPoint).Id();
+        stage_info[0] = type_manager_.GetConstantUInt32(glsl::kExecutionModelMultiEntryPoint).Id();
     } else {
         spv::ExecutionModel execution_model = spv::ExecutionModel(module_.entry_points_.begin()->get()->Operand(0));
 
@@ -124,12 +127,12 @@ uint32_t Pass::GetStageInfo(Function& function, const BasicBlock& target_block_i
         } else if (execution_model == spv::ExecutionModelMeshEXT) {
             normalized_execution_model = glsl::kExecutionModelMeshEXT;
         }
-        stage_info[0] = module_.type_manager_.GetConstantUInt32(normalized_execution_model).Id();
+        stage_info[0] = type_manager_.GetConstantUInt32(normalized_execution_model).Id();
 
         // Gets BuiltIn variable and creates a valid OpLoad of it
         auto create_load = [this, &block, &inst_it](spv::BuiltIn built_in) {
             const Variable& variable = GetBuiltinVariable(built_in);
-            const Type* pointer_type = variable.PointerType(module_.type_manager_);
+            const Type* pointer_type = variable.PointerType(type_manager_);
             const uint32_t load_id = module_.TakeNextId();
             block.CreateInstruction(spv::OpLoad, {pointer_type->Id(), load_id, variable.Id()}, &inst_it);
             return load_id;
@@ -175,13 +178,13 @@ uint32_t Pass::GetStageInfo(Function& function, const BasicBlock& target_block_i
             case spv::ExecutionModelMeshEXT: {
                 // This can be both a uvec3 or ivec3 so need to cast if ivec3
                 const Variable& variable = GetBuiltinVariable(spv::BuiltInGlobalInvocationId);
-                const Type* pointer_type = variable.PointerType(module_.type_manager_);
+                const Type* pointer_type = variable.PointerType(type_manager_);
                 const uint32_t load_id = module_.TakeNextId();
                 block.CreateInstruction(spv::OpLoad, {pointer_type->Id(), load_id, variable.Id()}, &inst_it);
                 uint32_t final_load_id = load_id;
 
-                if (pointer_type->IsIVec3(module_.type_manager_)) {
-                    const Type& vec3_type = module_.type_manager_.GetTypeVector(uint32_type, 3);
+                if (pointer_type->IsIVec3(type_manager_)) {
+                    const Type& vec3_type = type_manager_.GetTypeVector(uint32_type, 3);
                     final_load_id = module_.TakeNextId();
                     block.CreateInstruction(spv::OpBitcast, {vec3_type.Id(), final_load_id, load_id}, &inst_it);
                 }
@@ -209,7 +212,7 @@ uint32_t Pass::GetStageInfo(Function& function, const BasicBlock& target_block_i
                 stage_info[1] = CastToUint32(primitive_id, block, &inst_it);
 
                 // convert vec3 to uvec3
-                const Type& uvec3_type = module_.type_manager_.GetTypeVector(uint32_type, 3);
+                const Type& uvec3_type = type_manager_.GetTypeVector(uint32_type, 3);
                 const uint32_t load_id = create_load(spv::BuiltInTessCoord);
                 const uint32_t bitcast_id = module_.TakeNextId();
                 block.CreateInstruction(spv::OpBitcast, {uvec3_type.Id(), bitcast_id, load_id}, &inst_it);
@@ -270,7 +273,7 @@ const Instruction* Pass::GetMemberDecoration(uint32_t id, uint32_t member_index,
 // different depending where it is used. Because of this, we need to have a higher level view what is going on in order to correctly
 // figure out the size of a given type.
 uint32_t Pass::FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride, bool col_major, bool in_matrix) const {
-    const Type& type = *module_.type_manager_.FindTypeById(type_id);
+    const Type& type = *type_manager_.FindTypeById(type_id);
     switch (type.spv_type_) {
         case SpvType::kPointer:
             return 8;  // Assuming PhysicalStorageBuffer pointer
@@ -282,13 +285,13 @@ uint32_t Pass::FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride, bool c
             if (col_major) {
                 return type.inst_.Word(3) * matrix_stride;
             } else {
-                const Type* vector_type = module_.type_manager_.FindTypeById(type.inst_.Word(2));
+                const Type* vector_type = type_manager_.FindTypeById(type.inst_.Word(2));
                 return vector_type->inst_.Word(3) * matrix_stride;
             }
         }
         case SpvType::kVector: {
             uint32_t size = type.inst_.Word(3);
-            const Type* component_type = module_.type_manager_.FindTypeById(type.inst_.Word(2));
+            const Type* component_type = type_manager_.FindTypeById(type.inst_.Word(2));
             // if vector in row major matrix, the vector is strided so return the number of bytes spanned by the vector
             if (in_matrix && !col_major && matrix_stride > 0) {
                 return (size - 1) * matrix_stride + FindTypeByteSize(component_type->Id());
@@ -307,7 +310,7 @@ uint32_t Pass::FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride, bool c
         }
         case SpvType::kArray: {
             const uint32_t array_stride = GetDecoration(type_id, spv::DecorationArrayStride)->Word(3);
-            const Constant* count = module_.type_manager_.FindConstantById(type.inst_.Operand(1));
+            const Constant* count = type_manager_.FindConstantById(type.inst_.Operand(1));
             // TODO - Need to handle spec constant here, for now return one to have things not blowup
             assert(count && !count->is_spec_constant_);
             const uint32_t array_length = (count && !count->is_spec_constant_) ? count->inst_.Operand(0) : 1;
@@ -335,7 +338,7 @@ uint32_t Pass::FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride, bool c
             }
 
             const uint32_t last_offset_id = type.inst_.Operand(highest_element_index);
-            const Type* last_offset_type = module_.type_manager_.FindTypeById(last_offset_id);
+            const Type* last_offset_type = type_manager_.FindTypeById(last_offset_id);
             uint32_t highest_element_size = 0;
             if (last_offset_type->spv_type_ == SpvType::kMatrix) {
                 // TODO - We need a better way to handle Matrix at the end of structs
@@ -377,7 +380,7 @@ uint32_t Pass::GetLastByte(const Type& descriptor_type, const std::vector<const 
         return 0;
     }
 
-    const uint32_t uint32_type_id = module_.type_manager_.GetTypeInt(32, false).Id();
+    const uint32_t uint32_type_id = type_manager_.GetTypeInt(32, false).Id();
 
     // instruction that will have calculated the sum of the byte offset
     uint32_t sum_id = 0;
@@ -409,13 +412,13 @@ uint32_t Pass::GetLastByte(const Type& descriptor_type, const std::vector<const 
         const uint32_t ac_index_id = (*access_chain_iter)->Word(ac_word_index);
         uint32_t current_offset_id = 0;
 
-        const Type* current_type = module_.type_manager_.FindTypeById(current_type_id);
+        const Type* current_type = type_manager_.FindTypeById(current_type_id);
         switch (current_type->spv_type_) {
             case SpvType::kArray:
             case SpvType::kRuntimeArray: {
                 // Get array stride and multiply by current index
                 const uint32_t array_stride = GetDecoration(current_type_id, spv::DecorationArrayStride)->Word(3);
-                const uint32_t array_stride_id = module_.type_manager_.GetConstantUInt32(array_stride).Id();
+                const uint32_t array_stride_id = type_manager_.GetConstantUInt32(array_stride).Id();
                 const uint32_t ac_index_id_32 = ConvertTo32(ac_index_id, block, inst_it);
 
                 current_offset_id = module_.TakeNextId();
@@ -428,7 +431,7 @@ uint32_t Pass::GetLastByte(const Type& descriptor_type, const std::vector<const 
                 if (matrix_stride == 0) {
                     module_.InternalError(Name(), "GetLastByte is missing matrix stride");
                 }
-                matrix_stride_id = module_.type_manager_.GetConstantUInt32(matrix_stride).Id();
+                matrix_stride_id = type_manager_.GetConstantUInt32(matrix_stride).Id();
                 uint32_t vec_type_id = current_type->inst_.Operand(0);
 
                 // If column major, multiply column index by matrix stride, otherwise by vector component size and save matrix
@@ -437,9 +440,9 @@ uint32_t Pass::GetLastByte(const Type& descriptor_type, const std::vector<const 
                 if (col_major) {
                     col_stride_id = matrix_stride_id;
                 } else {
-                    const uint32_t component_type_id = module_.type_manager_.FindTypeById(vec_type_id)->inst_.Operand(0);
+                    const uint32_t component_type_id = type_manager_.FindTypeById(vec_type_id)->inst_.Operand(0);
                     const uint32_t col_stride = FindTypeByteSize(component_type_id);
-                    col_stride_id = module_.type_manager_.GetConstantUInt32(col_stride).Id();
+                    col_stride_id = type_manager_.GetConstantUInt32(col_stride).Id();
                 }
 
                 const uint32_t ac_index_id_32 = ConvertTo32(ac_index_id, block, inst_it);
@@ -461,7 +464,7 @@ uint32_t Pass::GetLastByte(const Type& descriptor_type, const std::vector<const 
                                             inst_it);
                 } else {
                     const uint32_t component_type_size = FindTypeByteSize(component_type_id);
-                    const uint32_t size_id = module_.type_manager_.GetConstantUInt32(component_type_size).Id();
+                    const uint32_t size_id = type_manager_.GetConstantUInt32(component_type_size).Id();
 
                     current_offset_id = module_.TakeNextId();
                     block.CreateInstruction(spv::OpIMul, {uint32_type_id, current_offset_id, size_id, ac_index_id_32}, inst_it);
@@ -471,11 +474,11 @@ uint32_t Pass::GetLastByte(const Type& descriptor_type, const std::vector<const 
             } break;
             case SpvType::kStruct: {
                 // Get buffer byte offset for the referenced member
-                const Constant* member_constant = module_.type_manager_.FindConstantById(ac_index_id);
+                const Constant* member_constant = type_manager_.FindConstantById(ac_index_id);
                 assert(!member_constant->is_spec_constant_);
                 uint32_t member_index = member_constant->inst_.Operand(0);
                 uint32_t member_offset = GetMemberDecoration(current_type_id, member_index, spv::DecorationOffset)->Word(4);
-                current_offset_id = module_.type_manager_.GetConstantUInt32(member_offset).Id();
+                current_offset_id = type_manager_.GetConstantUInt32(member_offset).Id();
 
                 // Look for matrix stride for this member if there is one. The matrix
                 // stride is not on the matrix type, but in a OpMemberDecorate on the
@@ -522,9 +525,9 @@ uint32_t Pass::GetLastByte(const Type& descriptor_type, const std::vector<const 
             accessed_type_size = coop_mat_access.Size();
         } else if (coop_mat_access.is_row_major) {
             // equation: ((rows - 1) * stride + columns) * component_size
-            const uint32_t rows_m1_id = module_.type_manager_.GetConstantUInt32(coop_mat_access.rows - 1).Id();
-            const uint32_t columns_id = module_.type_manager_.GetConstantUInt32(coop_mat_access.columns).Id();
-            const uint32_t component_size_id = module_.type_manager_.GetConstantUInt32(coop_mat_access.component_size).Id();
+            const uint32_t rows_m1_id = type_manager_.GetConstantUInt32(coop_mat_access.rows - 1).Id();
+            const uint32_t columns_id = type_manager_.GetConstantUInt32(coop_mat_access.columns).Id();
+            const uint32_t component_size_id = type_manager_.GetConstantUInt32(coop_mat_access.component_size).Id();
 
             uint32_t x1 = module_.TakeNextId();
             uint32_t x2 = module_.TakeNextId();
@@ -534,9 +537,9 @@ uint32_t Pass::GetLastByte(const Type& descriptor_type, const std::vector<const 
             block.CreateInstruction(spv::OpIMul, {uint32_type_id, sum_id, x2, component_size_id}, inst_it);
         } else {
             // equation: ((columns - 1) * stride_value + rows) * component_size;
-            const uint32_t columns_m1_id = module_.type_manager_.GetConstantUInt32(coop_mat_access.columns - 1).Id();
-            const uint32_t row_id = module_.type_manager_.GetConstantUInt32(coop_mat_access.rows).Id();
-            const uint32_t component_size_id = module_.type_manager_.GetConstantUInt32(coop_mat_access.component_size).Id();
+            const uint32_t columns_m1_id = type_manager_.GetConstantUInt32(coop_mat_access.columns - 1).Id();
+            const uint32_t row_id = type_manager_.GetConstantUInt32(coop_mat_access.rows).Id();
+            const uint32_t component_size_id = type_manager_.GetConstantUInt32(coop_mat_access.component_size).Id();
 
             uint32_t x1 = module_.TakeNextId();
             uint32_t x2 = module_.TakeNextId();
@@ -550,7 +553,7 @@ uint32_t Pass::GetLastByte(const Type& descriptor_type, const std::vector<const 
     }
     const uint32_t last_byte_index = accessed_type_size - 1;
 
-    const uint32_t last_byte_index_id = module_.type_manager_.GetConstantUInt32(last_byte_index).Id();
+    const uint32_t last_byte_index_id = type_manager_.GetConstantUInt32(last_byte_index).Id();
 
     const uint32_t new_sum_id = module_.TakeNextId();
     block.CreateInstruction(spv::OpIAdd, {uint32_type_id, new_sum_id, sum_id, last_byte_index_id}, inst_it);
@@ -607,7 +610,7 @@ uint32_t Pass::FindOffsetInStruct(uint32_t struct_id, const CooperativeMatrixAcc
     // Walk down access chains to build up the offset
     while (access_chain_iter != access_chain_insts.rend()) {
         const uint32_t ac_index_id = (*access_chain_iter)->Word(ac_word_index);
-        const Constant* index_constant = module_.type_manager_.FindConstantById(ac_index_id);
+        const Constant* index_constant = type_manager_.FindConstantById(ac_index_id);
         if (!index_constant || index_constant->inst_.Opcode() != spv::OpConstant) {
             return 0;  // Access Chain has dynamic value
         }
@@ -615,7 +618,7 @@ uint32_t Pass::FindOffsetInStruct(uint32_t struct_id, const CooperativeMatrixAcc
 
         uint32_t current_offset = 0;
 
-        const Type* current_type = module_.type_manager_.FindTypeById(current_type_id);
+        const Type* current_type = type_manager_.FindTypeById(current_type_id);
         switch (current_type->spv_type_) {
             case SpvType::kArray:
             case SpvType::kRuntimeArray: {
@@ -638,7 +641,7 @@ uint32_t Pass::FindOffsetInStruct(uint32_t struct_id, const CooperativeMatrixAcc
                 if (col_major) {
                     col_stride = matrix_stride;
                 } else {
-                    const uint32_t component_type_id = module_.type_manager_.FindTypeById(vec_type_id)->inst_.Operand(0);
+                    const uint32_t component_type_id = type_manager_.FindTypeById(vec_type_id)->inst_.Operand(0);
                     col_stride = FindTypeByteSize(component_type_id);
                 }
 
@@ -715,30 +718,30 @@ CooperativeMatrixAccess Pass::GetCooperativeMatrixAccess(const Instruction& inst
 
     // For stores, we assume the Object operand points to a load to get the type
     uint32_t coop_mat_type_id = info.is_load ? inst.TypeId() : function.FindInstruction(inst.Word(2))->TypeId();
-    info.type = module_.type_manager_.FindTypeById(coop_mat_type_id);
+    info.type = type_manager_.FindTypeById(coop_mat_type_id);
     assert(info.type && info.type->spv_type_ == SpvType::kCooperativeMatrixKHR);
 
     // Currently we don't save/cache the size of each type because we still need to extract the rows/column info. This the tradeoff
     // of having a simplified single Type class
-    const Type* component_type = module_.type_manager_.FindTypeById(info.type->inst_.Word(2));
-    info.component_size = module_.type_manager_.TypeLength(*component_type);
+    const Type* component_type = type_manager_.FindTypeById(info.type->inst_.Word(2));
+    info.component_size = type_manager_.TypeLength(*component_type);
 
-    const Constant* rows_const = module_.type_manager_.FindConstantById(info.type->inst_.Word(4));
-    const Constant* columns_const = module_.type_manager_.FindConstantById(info.type->inst_.Word(5));
+    const Constant* rows_const = type_manager_.FindConstantById(info.type->inst_.Word(4));
+    const Constant* columns_const = type_manager_.FindConstantById(info.type->inst_.Word(5));
     // TODO - Need to handle spec constant here, for now return zero to have things not blowup
     assert(rows_const && !rows_const->is_spec_constant_ && columns_const && !columns_const->is_spec_constant_);
     info.rows = rows_const->inst_.Operand(0);
     info.columns = columns_const->inst_.Operand(0);
 
     info.stride_id = info.is_load ? inst.Word(5) : inst.Word(4);
-    if (const Constant* stride = module_.type_manager_.FindConstantById(info.stride_id)) {
+    if (const Constant* stride = type_manager_.FindConstantById(info.stride_id)) {
         info.stride_value = stride->inst_.Operand(0);
     } else {
         info.stride_value = 0;
     }
 
     const uint32_t memory_layout_id = info.is_load ? inst.Word(4) : inst.Word(3);
-    const Constant* memory_layout = module_.type_manager_.FindConstantById(memory_layout_id);
+    const Constant* memory_layout = type_manager_.FindConstantById(memory_layout_id);
     assert(memory_layout && !memory_layout->is_spec_constant_);
     const uint32_t memory_layout_value = memory_layout->inst_.Operand(0);
     info.is_row_major = memory_layout_value == spv::CooperativeMatrixLayoutRowMajorKHR;
@@ -751,13 +754,13 @@ CooperativeMatrixAccess Pass::GetCooperativeMatrixAccess(const Instruction& inst
 uint32_t Pass::ConvertTo32(uint32_t id, BasicBlock& block, InstructionIt* inst_it) const {
     // Find type doing the indexing into the access chain
     const Type* type = nullptr;
-    const Constant* constant = module_.type_manager_.FindConstantById(id);
+    const Constant* constant = type_manager_.FindConstantById(id);
     if (constant) {
         type = &constant->type_;
     } else {
         const Instruction* inst = block.function_.FindInstruction(id);
         if (inst) {
-            type = module_.type_manager_.FindTypeById(inst->TypeId());
+            type = type_manager_.FindTypeById(inst->TypeId());
         }
     }
     if (!type) {
@@ -770,7 +773,7 @@ uint32_t Pass::ConvertTo32(uint32_t id, BasicBlock& block, InstructionIt* inst_i
 
     const bool is_signed = type->inst_.Word(3) != 0;
     const uint32_t new_id = module_.TakeNextId();
-    const Type& uint32_type = module_.type_manager_.GetTypeInt(32, false);
+    const Type& uint32_type = type_manager_.GetTypeInt(32, false);
     if (is_signed) {
         block.CreateInstruction(spv::OpSConvert, {uint32_type.Id(), new_id, id}, inst_it);
     } else {
@@ -785,13 +788,13 @@ uint32_t Pass::CastToUint32(uint32_t id, BasicBlock& block, InstructionIt* inst_
     uint32_t int32_id = ConvertTo32(id, block, inst_it);
 
     const Type* type = nullptr;
-    const Constant* constant = module_.type_manager_.FindConstantById(int32_id);
+    const Constant* constant = type_manager_.FindConstantById(int32_id);
     if (constant) {
         type = &constant->type_;
     } else {
         const Instruction* inst = block.function_.FindInstruction(int32_id);
         if (inst) {
-            type = module_.type_manager_.FindTypeById(inst->TypeId());
+            type = type_manager_.FindTypeById(inst->TypeId());
         }
     }
     if (!type) {
@@ -803,7 +806,7 @@ uint32_t Pass::CastToUint32(uint32_t id, BasicBlock& block, InstructionIt* inst_
         return int32_id;
     }
 
-    const Type& uint32_type = module_.type_manager_.GetTypeInt(32, false);
+    const Type& uint32_type = type_manager_.GetTypeInt(32, false);
     const uint32_t new_id = module_.TakeNextId();
     block.CreateInstruction(spv::OpBitcast, {uint32_type.Id(), new_id, int32_id}, inst_it);
     return new_id;  // Return an id to the Uint equivalent.
@@ -888,12 +891,12 @@ InjectConditionalData Pass::InjectFunctionPre(Function& function, const BasicBlo
     const uint32_t target_inst_id = target_inst.ResultId();
     if (target_inst_id != 0) {
         const uint32_t phi_id = module_.TakeNextId();
-        const Type& phi_type = *module_.type_manager_.FindTypeById(target_inst.TypeId());
+        const Type& phi_type = *type_manager_.FindTypeById(target_inst.TypeId());
         uint32_t null_id = 0;
         // Can't create ConstantNull of pointer type, so convert uint64 zero to pointer
         if (phi_type.spv_type_ == SpvType::kPointer) {
-            const Type& uint64_type = module_.type_manager_.GetTypeInt(64, false);
-            const Constant& null_constant = module_.type_manager_.GetConstantNull(uint64_type);
+            const Type& uint64_type = type_manager_.GetTypeInt(64, false);
+            const Constant& null_constant = type_manager_.GetConstantNull(uint64_type);
             null_id = module_.TakeNextId();
             // We need to put any intermittent instructions here so Phi is first in the merge block
             invalid_block.CreateInstruction(spv::OpConvertUToPtr, {phi_type.Id(), null_id, null_constant.Id()});
@@ -911,7 +914,7 @@ InjectConditionalData Pass::InjectFunctionPre(Function& function, const BasicBlo
                 module_.AddCapability(capability);
             }
 
-            null_id = module_.type_manager_.GetConstantNull(phi_type).Id();
+            null_id = type_manager_.GetConstantNull(phi_type).Id();
         }
 
         // replace before creating instruction, otherwise will over-write itself
@@ -923,9 +926,9 @@ InjectConditionalData Pass::InjectFunctionPre(Function& function, const BasicBlo
     // When skipping some instructions, we need something valid to replace it
     if (target_inst.Opcode() == spv::OpRayQueryInitializeKHR) {
         // Currently assume the RayQuery and AS object were valid already
-        const uint32_t uint32_0_id = module_.type_manager_.GetConstantZeroUint32().Id();
-        const uint32_t float32_0_id = module_.type_manager_.GetConstantZeroFloat32().Id();
-        const uint32_t vec3_0_id = module_.type_manager_.GetConstantZeroVec3().Id();
+        const uint32_t uint32_0_id = type_manager_.GetConstantZeroUint32().Id();
+        const uint32_t float32_0_id = type_manager_.GetConstantZeroFloat32().Id();
+        const uint32_t vec3_0_id = type_manager_.GetConstantZeroVec3().Id();
         invalid_block.CreateInstruction(spv::OpRayQueryInitializeKHR,
                                         {target_inst.Operand(0), target_inst.Operand(1), uint32_0_id, uint32_0_id, vec3_0_id,
                                          float32_0_id, vec3_0_id, float32_0_id});

@@ -36,7 +36,7 @@ uint32_t RayQueryPass::GetLinkFunctionId() { return GetLinkFunction(link_functio
 uint32_t RayQueryPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
     const uint32_t function_result = module_.TakeNextId();
     const uint32_t function_def = GetLinkFunctionId();
-    const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
+    const uint32_t bool_type = type_manager_.GetTypeBool().Id();
 
     const uint32_t ray_flags_id = meta.target_instruction->Operand(2);
     const uint32_t ray_origin_id = meta.target_instruction->Operand(4);
@@ -45,7 +45,7 @@ uint32_t RayQueryPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst
     const uint32_t ray_tmax_id = meta.target_instruction->Operand(7);
 
     const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
-    const uint32_t inst_position_id = module_.type_manager_.CreateConstantUInt32(inst_position).Id();
+    const uint32_t inst_position_id = type_manager_.CreateConstantUInt32(inst_position).Id();
 
     block.CreateInstruction(spv::OpFunctionCall,
                             {bool_type, function_result, function_def, inst_position_id, ray_flags_id, ray_origin_id, ray_tmin_id,

@@ -26,6 +26,7 @@ namespace gpuav {
 namespace spirv {
 
 class Module;
+class TypeManager;
 struct Variable;
 struct BasicBlock;
 struct Type;
@@ -82,8 +83,9 @@ class Pass {
     void InjectFunctionPost(BasicBlock& original_block, const InjectConditionalData& ic_data);
 
   protected:
-    Pass(Module& module, const OfflineModule& offline) : module_(module), link_info_(offline) {}
+    Pass(Module& module, const OfflineModule& offline);
     Module& module_;
+    TypeManager& type_manager_;  // reference here since passes use this a lot
 
     // As various things are modifiying the instruction streams, we need to get back to where we were.
     // (normally set in the RequiresInstrumentation call)

@@ -38,7 +38,7 @@ void LogErrorPass::ClearErrorPayloadVariable(Function& function) {
     // First time we clear, we add the private variable to the global scope
     if (module_.error_payload_variable_id_ == 0) {
         module_.error_payload_variable_id_ = module_.TakeNextId();
-        const Type& uint32_type = module_.type_manager_.GetTypeInt(32, false);
+        const Type& uint32_type = type_manager_.GetTypeInt(32, false);
 
         const uint32_t struct_type_id = module_.TakeNextId();
         auto new_struct_inst = std::make_unique<Instruction>(7, spv::OpTypeStruct);
@@ -50,21 +50,21 @@ void LogErrorPass::ClearErrorPayloadVariable(Function& function) {
             uint32_type.Id(),  // uint parameter_1;
             uint32_type.Id(),  // uint parameter_2;
         });
-        const Type& struct_type = module_.type_manager_.AddType(std::move(new_struct_inst), SpvType::kStruct);
-        module_.type_manager_.AddStructTypeForLinking(&struct_type);
-        const Type& pointer_type = module_.type_manager_.GetTypePointer(spv::StorageClassPrivate, struct_type);
+        const Type& struct_type = type_manager_.AddType(std::move(new_struct_inst), SpvType::kStruct);
+        type_manager_.AddStructTypeForLinking(&struct_type);
+        const Type& pointer_type = type_manager_.GetTypePointer(spv::StorageClassPrivate, struct_type);
         {
             auto new_inst = std::make_unique<Instruction>(4, spv::OpVariable);
             new_inst->Fill({pointer_type.Id(), module_.error_payload_variable_id_, spv::StorageClassPrivate});
-            module_.type_manager_.AddVariable(std::move(new_inst), pointer_type);
+            type_manager_.AddVariable(std::move(new_inst), pointer_type);
         }
 
-        const uint32_t uint32_0_id = module_.type_manager_.GetConstantZeroUint32().Id();
+        const uint32_t uint32_0_id = type_manager_.GetConstantZeroUint32().Id();
         const uint32_t constant_id = module_.TakeNextId();
         {
             auto new_inst = std::make_unique<Instruction>(8, spv::OpConstantComposite);
             new_inst->Fill({struct_type.Id(), constant_id, uint32_0_id, uint32_0_id, uint32_0_id, uint32_0_id, uint32_0_id});
-            const Constant& clear_constant = module_.type_manager_.AddConstant(std::move(new_inst), struct_type);
+            const Constant& clear_constant = type_manager_.AddConstant(std::move(new_inst), struct_type);
             error_payload_variable_clear_ = clear_constant.Id();
         }
     }
@@ -81,7 +81,7 @@ void LogErrorPass::CreateFunctionCallLogError(Function& function, BasicBlock& bl
     const uint32_t stage_info_id = GetStageInfo(function, block, *inst_it);
 
     const uint32_t function_result = module_.TakeNextId();
-    const uint32_t void_type = module_.type_manager_.GetTypeVoid().Id();
+    const uint32_t void_type = type_manager_.GetTypeVoid().Id();
     block.CreateInstruction(spv::OpFunctionCall, {void_type, function_result, link_function_id_, stage_info_id}, inst_it);
 }
 

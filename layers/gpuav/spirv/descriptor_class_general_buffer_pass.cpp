@@ -54,22 +54,22 @@ uint32_t DescriptorClassGeneralBufferPass::GetLinkFunctionId(bool is_coop_mat) {
 
 void DescriptorClassGeneralBufferPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
     assert(!meta.access_chain_insts.empty());
-    const Constant& set_constant = module_.type_manager_.GetConstantUInt32(meta.descriptor_set);
+    const Constant& set_constant = type_manager_.GetConstantUInt32(meta.descriptor_set);
     const uint32_t descriptor_index_id = CastToUint32(meta.descriptor_index_id, block, inst_it);  // might be int32
 
     const uint32_t descriptor_offset_id =
         GetLastByte(*meta.descriptor_type, meta.access_chain_insts, meta.coop_mat_access, block, inst_it);
 
     BindingLayout binding_layout = module_.set_index_to_bindings_layout_lut_[meta.descriptor_set][meta.descriptor_binding];
-    const Constant& binding_layout_offset = module_.type_manager_.GetConstantUInt32(binding_layout.start);
+    const Constant& binding_layout_offset = type_manager_.GetConstantUInt32(binding_layout.start);
 
     const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
-    const uint32_t inst_position_id = module_.type_manager_.CreateConstantUInt32(inst_position).Id();
+    const uint32_t inst_position_id = type_manager_.CreateConstantUInt32(inst_position).Id();
 
     const uint32_t function_result = module_.TakeNextId();
     const bool is_coop_mat = meta.coop_mat_access.used;
     const uint32_t function_def = GetLinkFunctionId(is_coop_mat);
-    const uint32_t void_type = module_.type_manager_.GetTypeVoid().Id();
+    const uint32_t void_type = type_manager_.GetTypeVoid().Id();
 
     block.CreateInstruction(spv::OpFunctionCall,
                             {void_type, function_result, function_def, inst_position_id, set_constant.Id(), descriptor_index_id,
@@ -103,7 +103,7 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
     while (next_access_chain && next_access_chain->IsNonPtrAccessChain()) {
         meta.access_chain_insts.push_back(next_access_chain);
         const uint32_t access_chain_base_id = next_access_chain->Operand(0);
-        variable = module_.type_manager_.FindVariableById(access_chain_base_id);
+        variable = type_manager_.FindVariableById(access_chain_base_id);
         if (variable) {
             break;  // found
         }
@@ -118,7 +118,7 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
         return false;
     }
 
-    meta.descriptor_type = variable->PointerType(module_.type_manager_);
+    meta.descriptor_type = variable->PointerType(type_manager_);
     if (!meta.descriptor_type || meta.descriptor_type->spv_type_ == SpvType::kRuntimeArray) {
         return false;  // TODO - Currently we mark these as "bindless"
     }
@@ -128,7 +128,7 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
 
     // Check for deprecated storage block form
     if (storage_class == spv::StorageClassUniform) {
-        assert(module_.type_manager_.FindTypeById(meta.descriptor_id)->spv_type_ == SpvType::kStruct && "unexpected block type");
+        assert(type_manager_.FindTypeById(meta.descriptor_id)->spv_type_ == SpvType::kStruct && "unexpected block type");
 
         const bool block_found = GetDecoration(meta.descriptor_id, spv::DecorationBlock) != nullptr;
 
@@ -140,7 +140,7 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
     }
 
     // Grab front() as it will be the "final" type we access
-    const Type* value_type = module_.type_manager_.FindValueTypeById(meta.access_chain_insts.front()->TypeId());
+    const Type* value_type = type_manager_.FindValueTypeById(meta.access_chain_insts.front()->TypeId());
     if (!value_type) return false;
 
     if (is_descriptor_array) {
@@ -148,7 +148,7 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
         meta.descriptor_index_id = meta.access_chain_insts.back()->Operand(1);
     } else {
         // There is no array of this descriptor, so we essentially have an array of 1
-        meta.descriptor_index_id = module_.type_manager_.GetConstantZeroUint32().Id();
+        meta.descriptor_index_id = type_manager_.GetConstantZeroUint32().Id();
     }
 
     for (const auto& annotation : module_.annotations_) {
