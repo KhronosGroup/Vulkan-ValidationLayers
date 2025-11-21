@@ -2329,34 +2329,15 @@ TEST_F(NegativeYcbcr, MixingYcbcrWithNonYcbcrInArray) {
     vkt::Sampler sampler_ycbcr(*m_device, SafeSaneSamplerCreateInfo(&conversion_info));
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
     VkSampler samplers[4] = {sampler, sampler_ycbcr, sampler, sampler};
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_SAMPLER, 4, VK_SHADER_STAGE_COMPUTE_BIT, samplers},
-                                           {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                           {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                       });
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    const char *cs_source = R"glsl(
-        #version 460
-        #extension GL_EXT_nonuniform_qualifier : require
-        layout(set = 0, binding = 0) uniform sampler s[4];
-        layout(set = 0, binding = 1) uniform texture2D kTextures2D;
-        layout(set = 0, binding = 2) buffer SSBO {
-            vec4 result;
-            uint x;
-        };
+    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_SAMPLER, 4, VK_SHADER_STAGE_COMPUTE_BIT, samplers};
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
+    ds_layout_ci.bindingCount = 1;
+    ds_layout_ci.pBindings = &binding;
 
-        void main() {
-            result = texture(sampler2D(kTextures2D, s[x]), vec2(0));
-        }
-    )glsl";
-
-    CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.cp_ci_.layout = pipeline_layout;
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-10715");
-    pipe.CreateComputePipeline();
+    VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutBinding-descriptorType-12200");
+    vk::CreateDescriptorSetLayout(*m_device, &ds_layout_ci, nullptr, &ds_layout);
     m_errorMonitor->VerifyFound();
 }
 
