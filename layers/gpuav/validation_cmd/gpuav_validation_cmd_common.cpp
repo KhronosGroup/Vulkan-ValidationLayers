@@ -44,9 +44,11 @@ static void BindErrorLoggingDescSet(Validator &gpuav, CommandBufferSubState &cb_
 void BindShaderResourcesHelper(Validator &gpuav, CommandBufferSubState &cb_state, uint32_t cmd_index, uint32_t error_logger_index,
                                VkPipelineLayout pipeline_layout, VkDescriptorSet desc_set,
                                const std::vector<VkWriteDescriptorSet> &descriptor_writes, const uint32_t push_constants_byte_size,
-                               const void *push_constants) {
+                               const void *push_constants, bool bind_error_logging_desc_set) {
     // Error logging resources
-    BindErrorLoggingDescSet(gpuav, cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, cmd_index, error_logger_index);
+    if (bind_error_logging_desc_set) {
+        BindErrorLoggingDescSet(gpuav, cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, cmd_index, error_logger_index);
+    }
 
     // Any push constants byte size below 4 is illegal. Can come from empty push constant struct
     if (push_constants_byte_size >= 4) {
@@ -54,7 +56,7 @@ void BindShaderResourcesHelper(Validator &gpuav, CommandBufferSubState &cb_state
                                  push_constants);
     }
 
-    if (!descriptor_writes.empty()) {
+    if (desc_set != VK_NULL_HANDLE && !descriptor_writes.empty()) {
         // Specific resources
         DispatchUpdateDescriptorSets(gpuav.device, uint32_t(descriptor_writes.size()), descriptor_writes.data(), 0, nullptr);
 

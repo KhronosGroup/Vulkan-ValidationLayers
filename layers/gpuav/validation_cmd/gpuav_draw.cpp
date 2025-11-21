@@ -93,11 +93,10 @@ struct FirstInstanceValidationShader {
                 {glsl::kPreDrawBinding_CountBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
     }
 
-    std::vector<VkWriteDescriptorSet> GetDescriptorWrites(VkDescriptorSet desc_set) const {
+    std::vector<VkWriteDescriptorSet> GetDescriptorWrites() const {
         std::vector<VkWriteDescriptorSet> desc_writes(2);
 
         desc_writes[0] = vku::InitStructHelper();
-        desc_writes[0].dstSet = desc_set;
         desc_writes[0].dstBinding = draw_buffer_binding.binding;
         desc_writes[0].dstArrayElement = 0;
         desc_writes[0].descriptorCount = 1;
@@ -105,7 +104,6 @@ struct FirstInstanceValidationShader {
         desc_writes[0].pBufferInfo = &draw_buffer_binding.info;
 
         desc_writes[1] = vku::InitStructHelper();
-        desc_writes[1].dstSet = desc_set;
         desc_writes[1].dstBinding = count_buffer_binding.binding;
         desc_writes[1].dstArrayElement = 0;
         desc_writes[1].descriptorCount = 1;
@@ -297,11 +295,10 @@ struct CountBufferValidationShader {
         return {{glsl::kPreDrawBinding_CountBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
     }
 
-    std::vector<VkWriteDescriptorSet> GetDescriptorWrites(VkDescriptorSet desc_set) const {
+    std::vector<VkWriteDescriptorSet> GetDescriptorWrites() const {
         std::vector<VkWriteDescriptorSet> desc_writes(1);
 
         desc_writes[0] = vku::InitStructHelper();
-        desc_writes[0].dstSet = desc_set;
         desc_writes[0].dstBinding = count_buffer_binding.binding;
         desc_writes[0].dstArrayElement = 0;
         desc_writes[0].descriptorCount = 1;
@@ -450,11 +447,10 @@ struct MeshValidationShader {
                 {glsl::kPreDrawBinding_CountBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
     }
 
-    std::vector<VkWriteDescriptorSet> GetDescriptorWrites(VkDescriptorSet desc_set) const {
+    std::vector<VkWriteDescriptorSet> GetDescriptorWrites() const {
         std::vector<VkWriteDescriptorSet> desc_writes(2);
 
         desc_writes[0] = vku::InitStructHelper();
-        desc_writes[0].dstSet = desc_set;
         desc_writes[0].dstBinding = draw_buffer_binding.binding;
         desc_writes[0].dstArrayElement = 0;
         desc_writes[0].descriptorCount = 1;
@@ -462,7 +458,6 @@ struct MeshValidationShader {
         desc_writes[0].pBufferInfo = &draw_buffer_binding.info;
 
         desc_writes[1] = vku::InitStructHelper();
-        desc_writes[1].dstSet = desc_set;
         desc_writes[1].dstBinding = count_buffer_binding.binding;
         desc_writes[1].dstArrayElement = 0;
         desc_writes[1].descriptorCount = 1;
@@ -694,11 +689,10 @@ struct DrawIndexedIndirectIndexBufferShader {
                 {glsl::kPreDrawBinding_IndexBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
     }
 
-    std::vector<VkWriteDescriptorSet> GetDescriptorWrites(VkDescriptorSet desc_set) const {
+    std::vector<VkWriteDescriptorSet> GetDescriptorWrites() const {
         std::vector<VkWriteDescriptorSet> desc_writes(2);
 
         desc_writes[0] = vku::InitStructHelper();
-        desc_writes[0].dstSet = desc_set;
         desc_writes[0].dstBinding = draw_buffer_binding.binding;
         desc_writes[0].dstArrayElement = 0;
         desc_writes[0].descriptorCount = 1;
@@ -706,7 +700,6 @@ struct DrawIndexedIndirectIndexBufferShader {
         desc_writes[0].pBufferInfo = &draw_buffer_binding.info;
 
         desc_writes[1] = vku::InitStructHelper();
-        desc_writes[1].dstSet = desc_set;
         desc_writes[1].dstBinding = count_buffer_binding.binding;
         desc_writes[1].dstArrayElement = 0;
         desc_writes[1].descriptorCount = 1;
@@ -735,11 +728,10 @@ struct SetupDrawCountDispatchIndirectShader {
         return bindings;
     }
 
-    std::vector<VkWriteDescriptorSet> GetDescriptorWrites(VkDescriptorSet desc_set) const {
+    std::vector<VkWriteDescriptorSet> GetDescriptorWrites() const {
         std::vector<VkWriteDescriptorSet> desc_writes(2);
 
         desc_writes[0] = vku::InitStructHelper();
-        desc_writes[0].dstSet = desc_set;
         desc_writes[0].dstBinding = count_buffer_binding.binding;
         desc_writes[0].dstArrayElement = 0;
         desc_writes[0].descriptorCount = 1;
@@ -747,7 +739,6 @@ struct SetupDrawCountDispatchIndirectShader {
         desc_writes[0].pBufferInfo = &count_buffer_binding.info;
 
         desc_writes[1] = vku::InitStructHelper();
-        desc_writes[1].dstSet = desc_set;
         desc_writes[1].dstBinding = dispatch_indirect_buffer_binding.binding;
         desc_writes[1].dstArrayElement = 0;
         desc_writes[1].descriptorCount = 1;

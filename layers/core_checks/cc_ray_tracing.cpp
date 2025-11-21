@@ -509,7 +509,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                 pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-geometry-03673",
                           "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-geometry-03673"),
                 objlist, geom_loc,
-                "has no buffer which created with VK_BUFFER_USAGE_2_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR.");
+                "has no buffer which was created with VK_BUFFER_USAGE_2_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR.");
         }
 
         return false;
