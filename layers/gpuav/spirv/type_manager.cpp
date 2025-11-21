@@ -529,10 +529,10 @@ const Constant& TypeManager::GetConstantUInt32(uint32_t value) {
         return GetConstantZeroUint32();
     }
 
-    const Type& uint32_type = module_.type_manager_.GetTypeInt(32, 0);
-    const Constant* constant = module_.type_manager_.FindConstantInt32(uint32_type.Id(), value);
+    const Type& uint32_type = GetTypeInt(32, 0);
+    const Constant* constant = FindConstantInt32(uint32_type.Id(), value);
     if (!constant) {
-        constant = &module_.type_manager_.CreateConstantUInt32(value);
+        constant = &CreateConstantUInt32(value);
     }
     return *constant;
 }
@@ -581,7 +581,7 @@ const Constant& TypeManager::GetConstantZeroVec3() {
     if (!vec3_zero_constants_) {
         const Type& float_32_type = GetTypeFloat(32);
         const Type& vec3_type = GetTypeVector(float_32_type, 3);
-        const uint32_t float32_0_id = module_.type_manager_.GetConstantZeroFloat32().Id();
+        const uint32_t float32_0_id = GetConstantZeroFloat32().Id();
 
         const uint32_t constant_id = module_.TakeNextId();
         auto new_inst = std::make_unique<Instruction>(6, spv::OpConstantComposite);
@@ -594,9 +594,9 @@ const Constant& TypeManager::GetConstantZeroVec3() {
 // It is common to use uvec4(0) as a default, so having it cached is helpful
 const Constant& TypeManager::GetConstantZeroUvec4() {
     if (!uvec4_zero_constants_) {
-        const Type& uint32_type = module_.type_manager_.GetTypeInt(32, false);
-        const Type& uvec4_type = module_.type_manager_.GetTypeVector(uint32_type, 4);
-        const uint32_t uint32_0_id = module_.type_manager_.GetConstantZeroUint32().Id();
+        const Type& uint32_type = GetTypeInt(32, false);
+        const Type& uvec4_type = GetTypeVector(uint32_type, 4);
+        const uint32_t uint32_0_id = GetConstantZeroUint32().Id();
 
         const uint32_t constant_id = module_.TakeNextId();
         auto new_inst = std::make_unique<Instruction>(7, spv::OpConstantComposite);

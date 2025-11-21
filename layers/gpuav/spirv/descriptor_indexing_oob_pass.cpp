@@ -52,8 +52,8 @@ uint32_t DescriptorIndexingOOBPass::GetLinkFunctionId(bool is_combined_image_sam
 }
 
 uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
-    const Constant& set_constant = module_.type_manager_.GetConstantUInt32(meta.descriptor_set);
-    const Constant& binding_constant = module_.type_manager_.GetConstantUInt32(meta.descriptor_binding);
+    const Constant& set_constant = type_manager_.GetConstantUInt32(meta.descriptor_set);
+    const Constant& binding_constant = type_manager_.GetConstantUInt32(meta.descriptor_binding);
     const uint32_t descriptor_index_id = CastToUint32(meta.descriptor_index_id, block, inst_it);  // might be int32
 
     if (meta.image_inst) {
@@ -85,15 +85,15 @@ uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, Instru
     }
 
     BindingLayout binding_layout = module_.set_index_to_bindings_layout_lut_[meta.descriptor_set][meta.descriptor_binding];
-    const Constant& binding_layout_size = module_.type_manager_.GetConstantUInt32(binding_layout.count);
-    const Constant& binding_layout_offset = module_.type_manager_.GetConstantUInt32(binding_layout.start);
+    const Constant& binding_layout_size = type_manager_.GetConstantUInt32(binding_layout.count);
+    const Constant& binding_layout_offset = type_manager_.GetConstantUInt32(binding_layout.start);
 
     const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
-    const uint32_t inst_position_id = module_.type_manager_.CreateConstantUInt32(inst_position).Id();
+    const uint32_t inst_position_id = type_manager_.CreateConstantUInt32(inst_position).Id();
 
     uint32_t function_result = module_.TakeNextId();
     const uint32_t function_def = GetLinkFunctionId(meta.is_combined_image_sampler);
-    const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
+    const uint32_t bool_type = type_manager_.GetTypeBool().Id();
 
     block.CreateInstruction(spv::OpFunctionCall,
                             {bool_type, function_result, function_def, inst_position_id, set_constant.Id(), binding_constant.Id(),
@@ -110,15 +110,15 @@ uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, Instru
         const uint32_t valid_image = function_result;
         const uint32_t valid_sampler = module_.TakeNextId();
 
-        const Constant& sampler_set_constant = module_.type_manager_.GetConstantUInt32(meta.sampler_descriptor_set);
-        const Constant& sampler_binding_constant = module_.type_manager_.GetConstantUInt32(meta.sampler_descriptor_binding);
+        const Constant& sampler_set_constant = type_manager_.GetConstantUInt32(meta.sampler_descriptor_set);
+        const Constant& sampler_binding_constant = type_manager_.GetConstantUInt32(meta.sampler_descriptor_binding);
         const uint32_t sampler_descriptor_index_id =
             CastToUint32(meta.sampler_descriptor_index_id, block, inst_it);  // might be int32
 
         BindingLayout sampler_binding_layout =
             module_.set_index_to_bindings_layout_lut_[meta.sampler_descriptor_set][meta.sampler_descriptor_binding];
-        const Constant& sampler_binding_layout_size = module_.type_manager_.GetConstantUInt32(sampler_binding_layout.count);
-        const Constant& sampler_binding_layout_offset = module_.type_manager_.GetConstantUInt32(sampler_binding_layout.start);
+        const Constant& sampler_binding_layout_size = type_manager_.GetConstantUInt32(sampler_binding_layout.count);
+        const Constant& sampler_binding_layout_offset = type_manager_.GetConstantUInt32(sampler_binding_layout.start);
 
         block.CreateInstruction(
             spv::OpFunctionCall,
@@ -148,10 +148,10 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
         const Variable* variable = nullptr;
         const Instruction* access_chain_inst = function.FindInstruction(image_texel_ptr_inst->Operand(0));
         if (access_chain_inst) {
-            variable = module_.type_manager_.FindVariableById(access_chain_inst->Operand(0));
+            variable = type_manager_.FindVariableById(access_chain_inst->Operand(0));
         } else {
             // if no array, will point right to a variable
-            variable = module_.type_manager_.FindVariableById(image_texel_ptr_inst->Operand(0));
+            variable = type_manager_.FindVariableById(image_texel_ptr_inst->Operand(0));
         }
 
         if (!variable) {
@@ -159,7 +159,7 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
         }
         meta.var_inst = &variable->inst_;
 
-        const Type* pointer_type = variable->PointerType(module_.type_manager_);
+        const Type* pointer_type = variable->PointerType(type_manager_);
         if (!pointer_type) {
             module_.InternalError(Name(), "Pointer type not found");
             return false;
@@ -171,7 +171,7 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
             meta.descriptor_index_id = access_chain_inst->Operand(1);
         } else {
             // There is no array of this descriptor, so we essentially have an array of 1
-            meta.descriptor_index_id = module_.type_manager_.GetConstantZeroUint32().Id();
+            meta.descriptor_index_id = type_manager_.GetConstantZeroUint32().Id();
         }
     } else if (IsValueIn(opcode, {spv::OpLoad, spv::OpStore, spv::OpCooperativeMatrixLoadKHR, spv::OpCooperativeMatrixStoreKHR}) ||
                AtomicOperation(opcode)) {
@@ -182,7 +182,7 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
         // We need to walk down possibly multiple chained OpAccessChains or OpCopyObject to get the variable
         while (access_chain_inst && access_chain_inst->IsNonPtrAccessChain()) {
             const uint32_t access_chain_base_id = access_chain_inst->Operand(0);
-            variable = module_.type_manager_.FindVariableById(access_chain_base_id);
+            variable = type_manager_.FindVariableById(access_chain_base_id);
             if (variable) {
                 break;  // found
             }
@@ -203,7 +203,7 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
             return false;  // Prevents things like Push Constants
         }
 
-        const Type* pointer_type = variable->PointerType(module_.type_manager_);
+        const Type* pointer_type = variable->PointerType(type_manager_);
         if (!pointer_type) {
             module_.InternalError(Name(), "Pointer type not found");
             return false;
@@ -214,7 +214,7 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
             meta.descriptor_index_id = access_chain_inst->Operand(1);
         } else {
             // There is no array of this descriptor, so we essentially have an array of 1
-            meta.descriptor_index_id = module_.type_manager_.GetConstantZeroUint32().Id();
+            meta.descriptor_index_id = type_manager_.GetConstantZeroUint32().Id();
         }
     } else {
         // sampled image (non-atomic)
@@ -242,7 +242,7 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
             load_inst = function.FindInstruction(load_operand);
 
             if (!load_inst) {
-                assert(module_.type_manager_.IsUndef(load_operand));
+                assert(type_manager_.IsUndef(load_operand));
                 return false;  //
             } else if (load_inst->Opcode() == spv::OpSampledImage) {
                 sampler_load_inst = function.FindInstruction(load_inst->Operand(1));
@@ -260,7 +260,7 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
         meta.var_inst = function.FindInstruction(load_inst->Operand(0));
         if (!meta.var_inst) {
             // can be a global variable
-            const Variable* global_var = module_.type_manager_.FindVariableById(load_inst->Operand(0));
+            const Variable* global_var = type_manager_.FindVariableById(load_inst->Operand(0));
             meta.var_inst = global_var ? &global_var->inst_ : nullptr;
         }
         if (!meta.var_inst || (!meta.var_inst->IsNonPtrAccessChain() && meta.var_inst->Opcode() != spv::OpVariable)) {
@@ -276,14 +276,14 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
                 return false;
             }
 
-            const Variable* variable = module_.type_manager_.FindVariableById(meta.var_inst->Operand(0));
+            const Variable* variable = type_manager_.FindVariableById(meta.var_inst->Operand(0));
             if (!variable) {
                 module_.InternalError(Name(), "OpAccessChain base is not a variable");
                 return false;
             }
             meta.var_inst = &variable->inst_;
         } else {
-            meta.descriptor_index_id = module_.type_manager_.GetConstantZeroUint32().Id();
+            meta.descriptor_index_id = type_manager_.GetConstantZeroUint32().Id();
         }
     }
 
@@ -329,7 +329,7 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
         meta.sampler_var_inst = function.FindInstruction(sampler_load_inst->Operand(0));
         if (!meta.sampler_var_inst) {
             // can be a global variable
-            const Variable* global_var = module_.type_manager_.FindVariableById(sampler_load_inst->Operand(0));
+            const Variable* global_var = type_manager_.FindVariableById(sampler_load_inst->Operand(0));
             meta.sampler_var_inst = global_var ? &global_var->inst_ : nullptr;
         }
         if (!meta.sampler_var_inst ||
@@ -346,14 +346,14 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
                 return false;
             }
 
-            const Variable* variable = module_.type_manager_.FindVariableById(meta.sampler_var_inst->Operand(0));
+            const Variable* variable = type_manager_.FindVariableById(meta.sampler_var_inst->Operand(0));
             if (!variable) {
                 module_.InternalError(Name(), "Sampler OpAccessChain base is not a variable");
                 return false;
             }
             meta.sampler_var_inst = &variable->inst_;
         } else {
-            meta.sampler_descriptor_index_id = module_.type_manager_.GetConstantZeroUint32().Id();
+            meta.sampler_descriptor_index_id = type_manager_.GetConstantZeroUint32().Id();
         }
 
         variable_id = meta.sampler_var_inst->ResultId();
