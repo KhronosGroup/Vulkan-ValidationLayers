@@ -1600,6 +1600,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceRawAccessChainsFeaturesNV", 42},
     {"VkPhysicalDeviceRayQueryFeaturesKHR", 36},
     {"VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT", 55},
+    {"VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV", 54},
     {"VkPhysicalDeviceRayTracingInvocationReorderPropertiesEXT", 57},
     {"VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV", 56},
     {"VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV", 55},
@@ -8541,8 +8542,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_PROPERTIES_NV:
        return Struct::VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV;
-    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_EXT:
-       return Struct::VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_NV:
+       return Struct::VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_VECTOR_PROPERTIES_NV:
        return Struct::VkPhysicalDeviceCooperativeVectorPropertiesNV;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_VECTOR_FEATURES_NV:
@@ -8769,6 +8770,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkImageAlignmentControlCreateInfoMESA;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_PROPERTIES_EXT:
        return Struct::VkPhysicalDeviceRayTracingInvocationReorderPropertiesEXT;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_EXT:
+       return Struct::VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_CONTROL_FEATURES_EXT:
        return Struct::VkPhysicalDeviceDepthClampControlFeaturesEXT;
     case VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_DEPTH_CLAMP_CONTROL_CREATE_INFO_EXT:

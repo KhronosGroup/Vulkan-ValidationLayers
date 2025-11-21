@@ -2437,6 +2437,17 @@ void Instance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDevice
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_NV: {
+                VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV *enabling =
+                    reinterpret_cast<const VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV *>(current);
+                if (enabling->rayTracingInvocationReorder && !supported.rayTracingInvocationReorder) {
+                    ss << "VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV::rayTracingInvocationReorder is not supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_LINEAR_SWEPT_SPHERES_FEATURES_NV: {
                 VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV supported = vku::InitStructHelper();
                 features_2.pNext = &supported;

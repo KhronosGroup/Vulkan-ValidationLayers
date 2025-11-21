@@ -728,7 +728,7 @@ struct DeviceFeatures {
     bool shaderRawAccessChains;
     // VkPhysicalDeviceRayQueryFeaturesKHR
     bool rayQuery;
-    // VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT
+    // VkPhysicalDeviceRayTracingInvocationReorderFeaturesEXT, VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV
     bool rayTracingInvocationReorder;
     // VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV
     bool linearSweptSpheres;
