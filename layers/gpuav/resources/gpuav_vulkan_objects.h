@@ -220,11 +220,17 @@ class CommandPool {
 };
 
 // Cache a single object of type T. Key is *only* based on typeid(T)
+template <bool concurrent>
 class SharedResourcesCache {
   public:
     // Try get an object, returns null if not found
     template <typename T>
     T *TryGet() {
+        std::unique_lock<std::mutex> lock(mtx, std::defer_lock);
+        if (concurrent) {
+            lock.lock();
+        }
+
         auto entry = shared_validation_resources_map_.find(typeid(T));
         if (entry == shared_validation_resources_map_.cend()) {
             return nullptr;
@@ -234,6 +240,11 @@ class SharedResourcesCache {
     }
     template <typename T>
     const T *TryGet() const {
+        std::unique_lock<std::mutex> lock(mtx, std::defer_lock);
+        if (concurrent) {
+            lock.lock();
+        }
+
         auto entry = shared_validation_resources_map_.find(typeid(T));
         if (entry == shared_validation_resources_map_.cend()) {
             return nullptr;
@@ -263,8 +274,13 @@ class SharedResourcesCache {
     template <typename T, class... ConstructorTypes>
     T &GetOrCreate(ConstructorTypes &&...args) {
         T *t = TryGet<T>();
-        if (t) return *t;
-
+        if (t) {
+            return *t;
+        }
+        std::unique_lock<std::mutex> lock(mtx, std::defer_lock);
+        if (concurrent) {
+            lock.lock();
+        }
         auto entry =
             shared_validation_resources_map_.insert({typeid(T), {new T(std::forward<ConstructorTypes>(args)...), [](void *ptr) {
                                                                      auto obj = static_cast<T *>(ptr);
@@ -273,7 +289,13 @@ class SharedResourcesCache {
         return *static_cast<T *>(entry.first->second.first);
     }
 
-    void Clear();
+    void Clear() {
+        for (auto &[key, value] : shared_validation_resources_map_) {
+            auto &[object, destructor] = value;
+            destructor(object);
+        }
+        shared_validation_resources_map_.clear();
+    }
 
   private:
     using TypeInfoRef = std::reference_wrapper<const std::type_info>;
@@ -283,7 +305,7 @@ class SharedResourcesCache {
     struct EqualTo {
         bool operator()(TypeInfoRef lhs, TypeInfoRef rhs) const { return lhs.get() == rhs.get(); }
     };
-
+    mutable std::mutex mtx;
     vvl::unordered_map<TypeInfoRef, std::pair<void * /*object*/, void (*)(void *) /*object destructor*/>, Hasher, EqualTo>
         shared_validation_resources_map_;
 };
