@@ -730,6 +730,7 @@ bool CoreChecks::ValidateDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayo
         if ((binding_info.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER ||
              binding_info.descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) &&
             binding_info.pImmutableSamplers) {
+            bool first_has_ycbcr = false;
             for (uint32_t j = 0; j < binding_info.descriptorCount; j++) {
                 auto sampler_state = Get<vvl::Sampler>(binding_info.pImmutableSamplers[j]);
                 if (sampler_state && (sampler_state->create_info.borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
@@ -738,6 +739,19 @@ bool CoreChecks::ValidateDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayo
                                      binding_loc.dot(Field::pImmutableSamplers, j),
                                      "(%s) presented as immutable has a custom border color.",
                                      FormatHandle(binding_info.pImmutableSamplers[j]).c_str());
+                }
+
+                if (j == 0) {
+                    first_has_ycbcr = sampler_state->sampler_conversion != VK_NULL_HANDLE;
+                } else {
+                    const bool has_ycbcr = sampler_state->sampler_conversion != VK_NULL_HANDLE;
+                    if (first_has_ycbcr != has_ycbcr) {
+                        skip |= LogError("VUID-VkDescriptorSetLayoutBinding-descriptorType-12200", device,
+                                         binding_loc.dot(Field::pImmutableSamplers, j),
+                                         "(%s) %s a YCbCr Sampler which doesn't match pImmutableSamplers[0] (%s).",
+                                         FormatHandle(binding_info.pImmutableSamplers[j]).c_str(), has_ycbcr ? "is" : "is not",
+                                         FormatHandle(binding_info.pImmutableSamplers[0]).c_str());
+                    }
                 }
             }
         }
