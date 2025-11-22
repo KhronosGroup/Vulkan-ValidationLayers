@@ -639,7 +639,7 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
                                 sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_64_BIT);
         m_errorMonitor->VerifyFound();
         if (IsExtensionsEnabled(VK_KHR_VIDEO_QUEUE_EXTENSION_NAME)) {
-            m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-queryType-09440");
+            m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-queryType-11874");
             vk::GetQueryPoolResults(device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(), &results[0],
                                     sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_WITH_STATUS_BIT_KHR);
             m_errorMonitor->VerifyFound();
