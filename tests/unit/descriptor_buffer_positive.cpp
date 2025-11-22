@@ -1781,11 +1781,12 @@ TEST_F(PositiveDescriptorBuffer, PushDescriptor) {
     descriptor_buffer_push_descriptor_buffer_handle.buffer = descriptor_buffer;
 
     VkDescriptorBufferBindingInfoEXT descriptor_buffer_binding_info = vku::InitStructHelper();
-    if (!descriptor_buffer_properties.bufferlessPushDescriptors) {
-        descriptor_buffer_binding_info.pNext = &descriptor_buffer_push_descriptor_buffer_handle;
-    }
     descriptor_buffer_binding_info.address = descriptor_buffer.Address();
     descriptor_buffer_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+    if (!descriptor_buffer_properties.bufferlessPushDescriptors) {
+        descriptor_buffer_binding_info.pNext = &descriptor_buffer_push_descriptor_buffer_handle;
+        descriptor_buffer_binding_info.usage |= VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT;
+    }
     vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &descriptor_buffer_binding_info);
 
     const uint32_t index = 0;
