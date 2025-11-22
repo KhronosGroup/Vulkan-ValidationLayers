@@ -606,6 +606,25 @@ const Constant& TypeManager::GetConstantZeroUvec4() {
     return *uvec4_zero_constants_;
 }
 
+const Constant& TypeManager::GetConstantZeroVector(const Type& vector_type) {
+    assert(vector_type.spv_type_ == SpvType::kVector);
+    const Type* component_type = FindTypeById(vector_type.inst_.Word(2));
+
+    const uint32_t vector_length = vector_type.VectorSize();
+    auto new_inst = std::make_unique<Instruction>(3 + vector_length, spv::OpConstantComposite);
+
+    const uint32_t constant_id = module_.TakeNextId();
+    std::vector<uint32_t> words = {vector_type.Id(), constant_id};
+
+    const uint32_t null_type_id = GetConstantNull(*component_type).Id();
+    for (uint32_t i = 0; i < vector_length; i++) {
+        words.emplace_back(null_type_id);
+    }
+    new_inst->Fill(words);
+
+    return AddConstant(std::move(new_inst), vector_type);
+}
+
 const Constant& TypeManager::GetConstantNull(const Type& type) {
     for (const auto& constant : null_constants_) {
         if (constant->type_.Id() == type.Id()) {
@@ -662,6 +681,13 @@ uint32_t Type::VectorSize() const {
         return inst_.Word(3);
     }
     return 0;
+}
+
+bool Type::Is64Bit() const {
+    if (spv_type_ == SpvType::kFloat || spv_type_ == SpvType::kInt) {
+        return inst_.Word(2) == 64;
+    }
+    return false;
 }
 
 uint32_t Constant::GetValueUint32() const {

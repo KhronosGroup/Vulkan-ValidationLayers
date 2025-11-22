@@ -20,6 +20,8 @@
 namespace gpuav {
 namespace spirv {
 
+struct Constant;
+
 // This pass catches things that are not a dedicated VU, things such as, but not limited to
 // - dividing by zero (for an int)
 // - overflows
@@ -42,9 +44,12 @@ class SanitizerPass : public Pass {
 
     bool RequiresInstrumentation(const Instruction& inst, InstructionMeta& meta);
 
+    uint32_t DivideByZeroCheck(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
     uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
 
     uint32_t GetLinkFunctionId();
+
+    bool IsConstantZero(const Constant& constant) const;
 
     // Function IDs to link in
     uint32_t link_function_id_ = 0;

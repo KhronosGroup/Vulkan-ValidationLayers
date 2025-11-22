@@ -63,6 +63,8 @@ struct Type {
     bool IsSignedInt() const;
     bool IsIVec3(const TypeManager& type_manager) const;
     uint32_t VectorSize() const;
+    // 64-bit floats/int take up 2 dwords
+    bool Is64Bit() const;
 
     const SpvType spv_type_;
     const Instruction& inst_;
@@ -152,6 +154,7 @@ class TypeManager {
     const Constant& GetConstantZeroFloat32();
     const Constant& GetConstantZeroVec3();
     const Constant& GetConstantZeroUvec4();
+    const Constant& GetConstantZeroVector(const Type& vector_type);
     const Constant& GetConstantNull(const Type& type);
 
     const Variable& AddVariable(std::unique_ptr<Instruction> new_inst, const Type& type);
