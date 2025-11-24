@@ -57,7 +57,16 @@ void QueueSubmissionValidator::Validate(const vvl::QueueSubmission& submission) 
     for (uint32_t i = 0; i < (uint32_t)submission.signal_semaphores.size(); ++i) {
         const auto& signal = submission.signal_semaphores[i];
         const uint64_t current_payload = signal.semaphore->CurrentPayload();
-        if (signal.payload < current_payload) {
+
+        // Check only the case where the signal value is less than the current payload.
+        // Equality (also invalid) is handled during QueueSubmit. We can do such an early
+        // equality check because execution reordering of submits cannot change the result
+        // of comparison of equal values. On the other hand, for not equal values the
+        // result of comparison depends on the ordering of submits, which is only known at
+        // execution time (here).
+        const bool invlid_signal_value = signal.payload < current_payload;
+
+        if (invlid_signal_value) {
             const Location signal_semaphore_loc = GetSignaledSemaphoreLocation(submission.loc.Get(), i);
             const auto& vuid = GetQueueSubmitVUID(signal_semaphore_loc, vvl::SubmitError::kTimelineSemSmallValue);
             core_checks.LogError(vuid, signal.semaphore->Handle(), signal_semaphore_loc,
