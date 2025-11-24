@@ -1631,7 +1631,7 @@ TEST_F(NegativeTensor, DestroyTensorViewInUse) {
     vkt::Buffer buffer(*m_device, tensor.GetMemoryReqs().memoryRequirements.size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     CreateComputePipelineHelper pipe(*m_device);
-    pipe.cs_ = VkShaderObj::CreateFromGLSL(this, GetGLSLBasicShader().c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj::CreateFromGLSL(this, kMinimalTensorGlsl, VK_SHADER_STAGE_COMPUTE_BIT);
 
     std::vector<VkDescriptorSetLayoutBinding> bindings = {
         {0, VK_DESCRIPTOR_TYPE_TENSOR_ARM, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
