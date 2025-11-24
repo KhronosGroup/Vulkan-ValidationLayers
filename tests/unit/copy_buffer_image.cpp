@@ -3291,6 +3291,35 @@ TEST_F(NegativeCopyBufferImage, CopyColorToDepthMaintenanc8DepthStencil) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeCopyBufferImage, CopyDepthToDepthStencilMaintenanc8Depth) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::maintenance8);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_8_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    const VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
+
+    if (!FormatFeaturesAreSupported(Gpu(), ds_format, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature)) {
+        GTEST_SKIP() << "Required Depth/Stencil features not supported";
+    }
+
+    vkt::Image depth_stencil_image_1(*m_device, 128, 128, ds_format, kSrcDstUsage);
+    vkt::Image depth_stencil_image_2(*m_device, 128, 128, ds_format, kSrcDstUsage);
+
+    VkImageCopy copy_region;
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
+    copy_region.srcOffset = {0, 0, 0};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
+    copy_region.dstOffset = {0, 0, 0};
+    copy_region.extent = {64, 64, 1};
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-pRegions-12201");
+    vk::CmdCopyImage(m_command_buffer, depth_stencil_image_1, VK_IMAGE_LAYOUT_GENERAL, depth_stencil_image_2,
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeCopyBufferImage, CopyColorToDepthMaintenanc8Compatible) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredFeature(vkt::Feature::maintenance8);
