@@ -727,31 +727,43 @@ bool CoreChecks::ValidateDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayo
             }
         }
 
+        // "If descriptorType is not one of these descriptor types, then pImmutableSamplers is ignored."
         if ((binding_info.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER ||
              binding_info.descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) &&
             binding_info.pImmutableSamplers) {
             bool first_has_ycbcr = false;
             for (uint32_t j = 0; j < binding_info.descriptorCount; j++) {
                 auto sampler_state = Get<vvl::Sampler>(binding_info.pImmutableSamplers[j]);
-                if (sampler_state && (sampler_state->create_info.borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
-                                      sampler_state->create_info.borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT)) {
+                ASSERT_AND_CONTINUE(sampler_state);
+                if (sampler_state->create_info.borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
+                    sampler_state->create_info.borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT) {
                     skip |= LogError("VUID-VkDescriptorSetLayoutBinding-pImmutableSamplers-04009", device,
                                      binding_loc.dot(Field::pImmutableSamplers, j),
                                      "(%s) presented as immutable has a custom border color.",
                                      FormatHandle(binding_info.pImmutableSamplers[j]).c_str());
                 }
 
+                const bool has_ycbcr = sampler_state->sampler_conversion != VK_NULL_HANDLE;
+                if (has_ycbcr && binding_info.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER) {
+                    // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7858
+                    skip |= LogError("UNASSIGNED-VkDescriptorSetLayoutBinding-descriptorType-sampler-ycbcr", device,
+                                     binding_loc.dot(Field::pImmutableSamplers, j),
+                                     "(%s) is a YCbCr Sampler (%s) which is only possible to use with "
+                                     "VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER.",
+                                     FormatHandle(binding_info.pImmutableSamplers[j]).c_str(),
+                                     FormatHandle(sampler_state->sampler_conversion).c_str());
+                    break;  // all samplers are going to be invalid as well
+                }
+
                 if (j == 0) {
-                    first_has_ycbcr = sampler_state->sampler_conversion != VK_NULL_HANDLE;
-                } else {
-                    const bool has_ycbcr = sampler_state->sampler_conversion != VK_NULL_HANDLE;
-                    if (first_has_ycbcr != has_ycbcr) {
-                        skip |= LogError("VUID-VkDescriptorSetLayoutBinding-descriptorType-12200", device,
-                                         binding_loc.dot(Field::pImmutableSamplers, j),
-                                         "(%s) %s a YCbCr Sampler which doesn't match pImmutableSamplers[0] (%s).",
-                                         FormatHandle(binding_info.pImmutableSamplers[j]).c_str(), has_ycbcr ? "is" : "is not",
-                                         FormatHandle(binding_info.pImmutableSamplers[0]).c_str());
-                    }
+                    first_has_ycbcr = has_ycbcr;
+                } else if (first_has_ycbcr != has_ycbcr) {
+                    skip |= LogError("VUID-VkDescriptorSetLayoutBinding-descriptorType-12200", device,
+                                     binding_loc.dot(Field::pImmutableSamplers, j),
+                                     "(%s) %s a YCbCr Sampler which doesn't match pImmutableSamplers[0] (%s).",
+                                     FormatHandle(binding_info.pImmutableSamplers[j]).c_str(), has_ycbcr ? "is" : "is not",
+                                     FormatHandle(binding_info.pImmutableSamplers[0]).c_str());
+                    break;  // all samplers are going to be invalid as well
                 }
             }
         }

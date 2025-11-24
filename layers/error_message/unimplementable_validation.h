@@ -123,6 +123,14 @@ const char* unimplementable_validation[] = {
     "VUID-VkDescriptorAddressInfoEXT-address-parameter",
     "VUID-VkStridedDeviceAddressRangeKHR-address-parameter",
 
+    // These were added as a fix for https://gitlab.khronos.org/vulkan/vulkan/-/issues/4544
+    // But really the "real" fix is banning it earlier https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7858
+    // These should be removed from the spec, as they are not needed/possible anymore,
+    // ... but that is an annoying challenge for the WG, so leaving them here
+    "VUID-RuntimeSpirv-OpTypeSampler-12203",
+    "VUID-RuntimeSpirv-OpTypeImage-12204",
+    "VUID-RuntimeSpirv-OpTypeImage-12207",
+
     // VUID-vkUpdateDescriptorSets-pDescriptorWrites-06238
     // VUID-vkUpdateDescriptorSets-pDescriptorWrites-06239
     // already covers these explicitly, this is just a left over generated VUID

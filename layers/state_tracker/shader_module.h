@@ -424,8 +424,6 @@ struct ResourceInterfaceVariable : public VariableBase {
 
     // The index of vector is index of image. (TODO - this doesn't work for GPU-AV)
     std::vector<vvl::unordered_set<SamplerUsedByImage>> samplers_used_by_image;
-    // workaround for YCbCr to track sampler variables until |samplers_used_by_image| is fixed
-    vvl::unordered_set<YcbcrSamplerUsedByImage> ycbcr_samplers_used_by_image;
 
     // For storage images - list of Texel component length the OpImageWrite
     std::vector<uint32_t> write_without_formats_component_count_list;

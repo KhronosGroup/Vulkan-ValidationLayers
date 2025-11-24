@@ -952,16 +952,9 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateShaderInterfaceVariable(const spirv::Module& module_state, const spirv::ResourceInterfaceVariable& variable,
                                          vvl::unordered_set<uint32_t>& descriptor_type_set, const Location& loc) const;
     bool ValidateShaderYcbcrSampler(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
-                                    const vvl::DescriptorSetLayoutList& all_dsl,
                                     const vvl::DescriptorSetLayout& descriptor_set_layout,
                                     const VkDescriptorSetLayoutBinding& binding, const spirv::ResourceInterfaceVariable& variable,
                                     const LogObjectList& objlist, const Location& loc) const;
-    bool ValidateShaderYcbcrSamplerAccess(const vvl::DescriptorSetLayout& descriptor_set_layout,
-                                          const VkDescriptorSetLayoutBinding& binding,
-                                          const spirv::ResourceInterfaceVariable& image_variable,
-                                          const spirv::ResourceInterfaceVariable* sampler_variable,
-                                          const YcbcrSamplerUsedByImage* sampler_info, const LogObjectList& objlist,
-                                          const Location& loc) const;
     bool ValidateShader64BitIndexing(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                      const ShaderStageState& stage_state, const vvl::Pipeline* pipeline, const Location& loc) const;
     bool ValidateTransformFeedbackPipeline(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
