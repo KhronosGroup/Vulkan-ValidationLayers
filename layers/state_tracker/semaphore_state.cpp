@@ -194,6 +194,44 @@ std::optional<vvl::Semaphore::SemOp> vvl::Semaphore::LastOp(const std::function<
     return result;
 }
 
+std::optional<uint64_t> vvl::Semaphore::CheckForLargerOrEqualPayload(uint64_t signal_value) const {
+    assert(type == VK_SEMAPHORE_TYPE_TIMELINE);
+    auto guard = ReadLock();
+
+    for (auto pos = timeline_.rbegin(); pos != timeline_.rend(); ++pos) {
+        const uint64_t payload = pos->first;
+
+        // We iterate in descending payload order. Once we reach a payload
+        // smaller than the signal value, we can stop early (none of the remaining
+        // payload values will be greater than or equal to the signal value).
+        if (payload < signal_value) {
+            break;
+        }
+
+        const TimePoint &timepoint = pos->second;
+        if (timepoint.signal_submit) {
+            // Equal values comparison can't be affected by execution reordering of submits,
+            // so we can report error here instead of waiting for execution time validation
+            // (there is also related comment in cc_submit.cpp)
+            if (signal_value == payload) {
+                return payload;
+            }
+
+            // Pending signals are validated at execution time (cc_submit.cpp).
+            // Check here only signals from vkSignalSemaphore
+            const bool pending = timepoint.signal_submit->queue != nullptr;
+            if (!pending && signal_value < payload) {
+                return payload;
+            }
+        }
+    }
+
+    if (completed_.op_type == kSignal && signal_value <= completed_.payload) {
+        return completed_.payload;
+    }
+    return {};
+}
+
 std::optional<uint64_t> vvl::Semaphore::GetSmallestPendingSignalValue() const {
     assert(type == VK_SEMAPHORE_TYPE_TIMELINE);
     auto guard = ReadLock();

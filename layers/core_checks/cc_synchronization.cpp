@@ -160,6 +160,25 @@ bool SemaphoreSubmitState::CheckSemaphoreValue(
     return false;
 }
 
+bool SemaphoreSubmitState::CheckTimelineSignalValue(const vvl::Semaphore &semaphore_state, uint64_t value, std::string &where,
+                                                    uint64_t &bad_value) {
+    if (auto it = timeline_signals.find(semaphore_state.VkHandle()); it != timeline_signals.end()) {
+        const uint64_t current_submit_signal = it->second;
+        if (value <= current_submit_signal) {
+            where = "current submit's signal";
+            bad_value = current_submit_signal;
+            return true;
+        }
+    }
+    std::optional<uint64_t> bad_payload = semaphore_state.CheckForLargerOrEqualPayload(value);
+    if (bad_payload) {
+        where = "current";
+        bad_value = *bad_payload;
+        return true;
+    }
+    return false;
+}
+
 bool SemaphoreSubmitState::ValidateBinaryWait(const Location &loc, const vvl::Semaphore &semaphore_state) {
     bool skip = false;
     auto semaphore = semaphore_state.VkHandle();
@@ -363,24 +382,12 @@ bool SemaphoreSubmitState::ValidateTimelineSignal(const Location &semaphore_loc,
                                                   uint64_t value) {
     bool skip = false;
 
-    auto must_be_greater = [value](const vvl::Semaphore::OpType op_type, uint64_t payload, bool is_pending) {
-        if (op_type != vvl::Semaphore::OpType::kSignal) {
-            return false;
-        }
-        // duplicate signal values are never allowed.
-        if (value == payload) {
-            return true;
-        }
-        // exact value ordering cannot be determined until execution time
-        return !is_pending && value < payload;
-    };
-
     const VkSemaphore semaphore = semaphore_state.VkHandle();
     TimelineMaxDiffCheck exceeds_max_diff(value, core.phys_dev_props_core12.maxTimelineSemaphoreValueDifference);
     uint64_t bad_value = 0;
     std::string where;
 
-    if (CheckSemaphoreValue(semaphore_state, where, bad_value, must_be_greater)) {
+    if (CheckTimelineSignalValue(semaphore_state, value, where, bad_value)) {
         const auto &vuid = GetQueueSubmitVUID(semaphore_loc, vvl::SubmitError::kTimelineSemSmallValue);
         LogObjectList objlist(semaphore, queue);
         skip |=

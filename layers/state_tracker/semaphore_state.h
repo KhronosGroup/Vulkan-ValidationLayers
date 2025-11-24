@@ -114,6 +114,11 @@ class Semaphore : public RefcountedStateObject {
     // Look for most recent / highest payload operation that matches
     std::optional<SemOp> LastOp(const std::function<bool(OpType op_type, uint64_t payload, bool is_pending)> &filter) const;
 
+    // Return the current (not pending) payload if it is greater than or equal to the signal value,
+    // or return a pending payload if it is equal to the signal value.
+    // Return an empty object if none of the above conditions are met.
+    std::optional<uint64_t> CheckForLargerOrEqualPayload(uint64_t signal_value) const;
+
     std::optional<uint64_t> GetSmallestPendingSignalValue() const;
     std::optional<uint64_t> GetSmallestPendingPayload() const;  // either signal or wait
     std::optional<uint64_t> GetLargestPendingPayload() const;   // either signal or wait
@@ -129,8 +134,15 @@ class Semaphore : public RefcountedStateObject {
     // "and any semaphore signal operations on which it depends must have also been submitted for execution"
     std::optional<SemaphoreInfo> GetPendingBinarySignalTimelineDependency() const;
 
-    // Current payload value.
-    // If a queue submission command is pending execution, then the returned value may immediately be out of date
+    // Payload from the last completed (synchronized) semaphore operation.
+    // If a queue submission command is pending execution, then the returned value may immediately be out of date.
+    //
+    // NOTE: when there are no host signals (vkSignalSemaphore) this values is actually the current payload value.
+    // When the host signals are registered the current payload is determined by the most recent host signal and
+    // in that case this value is just a payload of the most recent completed/synchronized operation.
+    // TODO: this function should always return current payload value (take into account vkSignalSemaphore payloads
+    // that are registered in timeline), otherwise it is not well defined. We might also need to update other code
+    // if this function changes behavior (some logic might go away or get simplified if this function is fixed).
     uint64_t CurrentPayload() const;
 
     bool CanBinaryBeSignaled() const;
