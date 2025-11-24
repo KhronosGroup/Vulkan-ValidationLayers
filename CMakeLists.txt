@@ -209,7 +209,7 @@ endif()
 
 add_subdirectory(layers)
 
-if(MSVC)
+if(MSVC AND UPDATE_DEPS)
     set(SCRIPTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
     file(GLOB_RECURSE SCRIPTS
         "${SCRIPTS_DIR}/*.py"
