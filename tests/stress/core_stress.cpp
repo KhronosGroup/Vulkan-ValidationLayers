@@ -254,3 +254,21 @@ TEST_F(StressCore, BufferCopiesSparseBuffer2) {
     // Wait for operations to finish before destroying anything
     m_default_queue->Wait();
 }
+
+TEST_F(StressCore, SignalSemaphoreManyTimes) {
+    // On good enough machines (2025) this should take less than a second, on slower machines maybe few seconds.
+    // With the regression, expect the running time to range from tens of seconds up to a few minutes.
+    TEST_DESCRIPTION("Signaling semaphore many time without waiting should not cause slow down");
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+
+    const int N = 10000;
+    for (int i = 1; i <= N; i++) {
+        m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(semaphore, i));
+    }
+    m_device->Wait();
+}
