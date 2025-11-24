@@ -79,3 +79,56 @@ TEST_F(PositiveGpuAVShaderSanitizer, DivideByOne) {
 
     SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL);
 }
+
+TEST_F(PositiveGpuAVShaderSanitizer, Mod) {
+    const char* cs_source = R"glsl(
+        #version 450 core
+        layout(set=0, binding=0) buffer SSBO {
+            int a[2];
+            uvec4 b[2];
+            ivec3 c[2];
+        };
+
+        void main() {
+            a[0] = 5 % (a[1] - 1);
+            b[0] = uvec4(1) % (uvec4(1) + b[0]);
+        }
+    )glsl";
+
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL);
+}
+
+TEST_F(PositiveGpuAVShaderSanitizer, SRem) {
+    const char* cs_source = R"asm(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %SSBO Block
+               OpMemberDecorate %SSBO 0 Offset 0
+               OpMemberDecorate %SSBO 1 Offset 4
+               OpDecorate %_ Binding 0
+               OpDecorate %_ DescriptorSet 0
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+       %SSBO = OpTypeStruct %int %int
+%_ptr_StorageBuffer_SSBO = OpTypePointer StorageBuffer %SSBO
+          %_ = OpVariable %_ptr_StorageBuffer_SSBO StorageBuffer
+      %int_1 = OpConstant %int 1
+      %int_0 = OpConstant %int 0
+%_ptr_StorageBuffer_int = OpTypePointer StorageBuffer %int
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+         %15 = OpAccessChain %_ptr_StorageBuffer_int %_ %int_0
+         %16 = OpLoad %int %15
+         %17 = OpIAdd %int %16 %int_1
+         %18 = OpSRem %int %int_1 %17
+         %19 = OpAccessChain %_ptr_StorageBuffer_int %_ %int_1
+               OpStore %19 %18
+               OpReturn
+               OpFunctionEnd
+    )asm";
+
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_ASM);
+}
