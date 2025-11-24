@@ -41,18 +41,6 @@ struct SamplerUsedByImage {
     size_t Hash() const;
 };
 
-// TODO - This is duplicated work of SamplerUsedByImage and need to combine
-// Information we need to store because when we find this, the resource_interface_variable_map might not have the sampler
-// information yet
-struct YcbcrSamplerUsedByImage {
-    uint32_t variable_id;
-    uint32_t image_access_chain_index;
-    uint32_t sampler_access_chain_index;
-
-    bool operator==(const YcbcrSamplerUsedByImage &other) const;
-    size_t Hash() const;
-};
-
 namespace std {
 template <>
 struct hash<DescriptorSlot> {
@@ -61,10 +49,6 @@ struct hash<DescriptorSlot> {
 template <>
 struct hash<SamplerUsedByImage> {
     size_t operator()(SamplerUsedByImage s) const noexcept { return s.Hash(); }
-};
-template <>
-struct hash<YcbcrSamplerUsedByImage> {
-    size_t operator()(const YcbcrSamplerUsedByImage &s) const { return s.Hash(); }
 };
 }  // namespace std
 

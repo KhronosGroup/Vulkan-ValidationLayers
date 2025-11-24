@@ -401,22 +401,22 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
             const spirv::Instruction *cols_insn = module_state.FindDef(insn->Word(5));
 
             all_constant = true;
-            uint32_t tmp_scope = 0;  // TODO - Remove GetIntConstantValue
-            if (!stage_state.GetInt32ConstantValue(*scope_insn, &tmp_scope)) {
+            uint32_t tmp_scope = 0;
+            if (!stage_state.constants.GetInt32Value(*scope_insn, &tmp_scope)) {
                 all_constant = false;
             }
             scope = VkScopeKHR(tmp_scope);
-            if (!stage_state.GetInt32ConstantValue(*rows_insn, &rows)) {
+            if (!stage_state.constants.GetInt32Value(*rows_insn, &rows)) {
                 all_constant = false;
             }
-            if (!stage_state.GetInt32ConstantValue(*cols_insn, &cols)) {
+            if (!stage_state.constants.GetInt32Value(*cols_insn, &cols)) {
                 all_constant = false;
             }
             component_type = GetComponentType(component_type_insn, is_signed_int);
 
             if (insn->Opcode() == spv::OpTypeCooperativeMatrixKHR) {
                 const spirv::Instruction *use_insn = module_state.FindDef(insn->Word(6));
-                if (!stage_state.GetInt32ConstantValue(*use_insn, &use)) {
+                if (!stage_state.constants.GetInt32Value(*use_insn, &use)) {
                     all_constant = false;
                 }
             }
@@ -859,7 +859,7 @@ bool CoreChecks::ValidateCooperativeVector(const spirv::Module &module_state, co
             const spirv::Instruction *component_count_insn = module_state.FindDef(insn->Word(3));
 
             all_constant = true;
-            if (!stage_state.GetInt32ConstantValue(*component_count_insn, &component_count)) {
+            if (!stage_state.constants.GetInt32Value(*component_count_insn, &component_count)) {
                 all_constant = false;
             }
             component_type = GetComponentType(component_type_insn, is_signed);
@@ -964,18 +964,18 @@ bool CoreChecks::ValidateCooperativeVector(const spirv::Module &module_state, co
                 uint32_t matrix_interpretation{};
                 uint32_t bias_interpretation{};
                 bool transpose{};
-                if (!stage_state.GetInt32ConstantValue(*module_state.FindDef(insn.Word(4)), &input_interpretation)) {
+                if (!stage_state.constants.GetInt32Value(*module_state.FindDef(insn.Word(4)), &input_interpretation)) {
                     all_constant = false;
                 }
-                if (!stage_state.GetInt32ConstantValue(*module_state.FindDef(insn.Word(7)), &matrix_interpretation)) {
+                if (!stage_state.constants.GetInt32Value(*module_state.FindDef(insn.Word(7)), &matrix_interpretation)) {
                     all_constant = false;
                 }
                 if (insn.Opcode() == spv::OpCooperativeVectorMatrixMulAddNV) {
-                    if (!stage_state.GetInt32ConstantValue(*module_state.FindDef(insn.Word(10)), &bias_interpretation)) {
+                    if (!stage_state.constants.GetInt32Value(*module_state.FindDef(insn.Word(10)), &bias_interpretation)) {
                         all_constant = false;
                     }
                 }
-                if (!stage_state.GetBooleanConstantValue(*module_state.FindDef(insn.Word(11 + biasOffset)), &transpose)) {
+                if (!stage_state.constants.GetBooleanValue(*module_state.FindDef(insn.Word(11 + biasOffset)), &transpose)) {
                     all_constant = false;
                 }
 
@@ -1013,7 +1013,7 @@ bool CoreChecks::ValidateCooperativeVector(const spirv::Module &module_state, co
                 }
 
                 uint32_t memory_layout{};
-                if (stage_state.GetInt32ConstantValue(*module_state.FindDef(insn.Word(10 + biasOffset)), &memory_layout)) {
+                if (stage_state.constants.GetInt32Value(*module_state.FindDef(insn.Word(10 + biasOffset)), &memory_layout)) {
                     if ((matrix_interpretation == VK_COMPONENT_TYPE_FLOAT_E4M3_NV ||
                          matrix_interpretation == VK_COMPONENT_TYPE_FLOAT_E5M2_NV) &&
                         !(memory_layout == VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_INFERENCING_OPTIMAL_NV ||
@@ -1073,7 +1073,7 @@ bool CoreChecks::ValidateCooperativeVector(const spirv::Module &module_state, co
 
             case spv::OpCooperativeVectorOuterProductAccumulateNV: {
                 uint32_t matrix_interpretation{};
-                if (stage_state.GetInt32ConstantValue(*module_state.FindDef(insn.Word(6)), &matrix_interpretation)) {
+                if (stage_state.constants.GetInt32Value(*module_state.FindDef(insn.Word(6)), &matrix_interpretation)) {
                     switch (matrix_interpretation) {
                         case VK_COMPONENT_TYPE_FLOAT16_KHR:
                             if (!phys_dev_ext_props.cooperative_vector_props_nv.cooperativeVectorTrainingFloat16Accumulation) {
@@ -1119,7 +1119,7 @@ bool CoreChecks::ValidateCooperativeVector(const spirv::Module &module_state, co
                 }
 
                 uint32_t memory_layout{};
-                if (stage_state.GetInt32ConstantValue(*module_state.FindDef(insn.Word(5)), &memory_layout)) {
+                if (stage_state.constants.GetInt32Value(*module_state.FindDef(insn.Word(5)), &memory_layout)) {
                     if (memory_layout != VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_TRAINING_OPTIMAL_NV) {
                         skip |=
                             LogError("VUID-RuntimeSpirv-OpCooperativeVectorOuterProductAccumulateNV-10093", module_state.handle(),
@@ -2615,9 +2615,9 @@ bool CoreChecks::ValidateEmitMeshTasksSize(const spirv::Module &module_state, co
     for (const spirv::Instruction &insn : module_state.static_data_.instructions) {
         if (insn.Opcode() == spv::OpEmitMeshTasksEXT) {
             uint32_t x, y, z;
-            bool found_x = stage_state.GetInt32ConstantValue(*module_state.FindDef(insn.Word(1)), &x);
-            bool found_y = stage_state.GetInt32ConstantValue(*module_state.FindDef(insn.Word(2)), &y);
-            bool found_z = stage_state.GetInt32ConstantValue(*module_state.FindDef(insn.Word(3)), &z);
+            bool found_x = stage_state.constants.GetInt32Value(*module_state.FindDef(insn.Word(1)), &x);
+            bool found_y = stage_state.constants.GetInt32Value(*module_state.FindDef(insn.Word(2)), &y);
+            bool found_z = stage_state.constants.GetInt32Value(*module_state.FindDef(insn.Word(3)), &z);
             if (found_x && x > phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[0]) {
                 skip |= LogError("VUID-RuntimeSpirv-TaskEXT-07299", module_state.handle(), loc,
                                  "SPIR-V (%s) is emitting %" PRIu32
