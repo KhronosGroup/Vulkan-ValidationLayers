@@ -76,59 +76,9 @@ const void *ShaderStageState::GetPNext() const {
     return (pipeline_create_info) ? pipeline_create_info->pNext : shader_object_create_info->pNext;
 }
 
-bool ShaderStageState::GetInt32ConstantValue(const spirv::Instruction &insn, uint32_t *value) const {
-    const spirv::Instruction *type_id = spirv_state->FindDef(insn.Word(1));
-    if (type_id->Opcode() != spv::OpTypeInt || type_id->Word(2) != 32) {
-        return false;
-    }
-
-    if (insn.Opcode() == spv::OpConstant) {
-        *value = insn.Word(3);
-        return true;
-    } else if (insn.Opcode() == spv::OpSpecConstant) {
-        *value = insn.Word(3);  // default value
-        const auto *spec_info = GetSpecializationInfo();
-        const uint32_t spec_id = spirv_state->static_data_.id_to_spec_id.at(insn.Word(2));
-        if (spec_info && spec_id < spec_info->mapEntryCount) {
-            memcpy(value, (uint8_t *)spec_info->pData + spec_info->pMapEntries[spec_id].offset,
-                   spec_info->pMapEntries[spec_id].size);
-        }
-        return true;
-    }
-
-    // This means the value is not known until runtime and will need to be checked in GPU-AV
-    return false;
-}
-
-bool ShaderStageState::GetBooleanConstantValue(const spirv::Instruction &insn, bool *value) const {
-    const spirv::Instruction *type_id = spirv_state->FindDef(insn.Word(1));
-    if (type_id->Opcode() != spv::OpTypeBool) {
-        return false;
-    }
-
-    if (insn.Opcode() == spv::OpConstantFalse) {
-        *value = false;
-        return true;
-    } else if (insn.Opcode() == spv::OpConstantTrue) {
-        *value = true;
-        return true;
-    } else if (insn.Opcode() == spv::OpSpecConstantTrue || insn.Opcode() == spv::OpSpecConstantFalse) {
-        *value = insn.Opcode() == spv::OpSpecConstantTrue;  // default value
-        const auto *spec_info = GetSpecializationInfo();
-        const uint32_t spec_id = spirv_state->static_data_.id_to_spec_id.at(insn.Word(2));
-        if (spec_info && spec_id < spec_info->mapEntryCount) {
-            memcpy(value, (uint8_t *)spec_info->pData + spec_info->pMapEntries[spec_id].offset, 1);
-        }
-        return true;
-    }
-
-    // This means the value is not known until runtime and will need to be checked in GPU-AV
-    return false;
-}
-
-ShaderStageState::ShaderStageState(const vku::safe_VkPipelineShaderStageCreateInfo *pipeline_create_info,
-                                   const vku::safe_VkShaderCreateInfoEXT *shader_object_create_info,
-                                   const vvl::DescriptorSetLayoutList *descriptor_set_layouts,
+ShaderStageState::ShaderStageState(const vku::safe_VkPipelineShaderStageCreateInfo* pipeline_create_info,
+                                   const vku::safe_VkShaderCreateInfoEXT* shader_object_create_info,
+                                   const vvl::DescriptorSetLayoutList* descriptor_set_layouts,
                                    std::shared_ptr<const vvl::ShaderModule> module_state,
                                    std::shared_ptr<const spirv::Module> spirv_state, const VkPipelineLayout pipeline_layout)
     : module_state(module_state),
@@ -137,4 +87,5 @@ ShaderStageState::ShaderStageState(const vku::safe_VkPipelineShaderStageCreateIn
       shader_object_create_info(shader_object_create_info),
       descriptor_set_layouts(descriptor_set_layouts),
       pipeline_layout(VK_NULL_HANDLE),
-      entrypoint(spirv_state ? spirv_state->FindEntrypoint(GetPName(), GetStage()) : nullptr) {}
+      entrypoint(spirv_state ? spirv_state->FindEntrypoint(GetPName(), GetStage()) : nullptr),
+      constants(spirv_state.get(), GetSpecializationInfo()->ptr()) {}

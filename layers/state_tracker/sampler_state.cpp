@@ -37,17 +37,6 @@ size_t SamplerUsedByImage::Hash() const {
     return hc.Value();
 }
 
-bool YcbcrSamplerUsedByImage::operator==(const YcbcrSamplerUsedByImage &rhs) const {
-    return variable_id == rhs.variable_id && image_access_chain_index == rhs.image_access_chain_index &&
-           sampler_access_chain_index == rhs.sampler_access_chain_index;
-}
-
-size_t YcbcrSamplerUsedByImage::Hash() const {
-    hash_util::HashCombiner hc;
-    hc << variable_id << image_access_chain_index << sampler_access_chain_index;
-    return hc.Value();
-}
-
 namespace vvl {
 
 Sampler::Sampler(const VkSampler handle, const VkSamplerCreateInfo *pCreateInfo)

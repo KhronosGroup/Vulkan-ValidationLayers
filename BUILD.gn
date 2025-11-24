@@ -305,6 +305,8 @@ vvl_sources = [
   "layers/state_tracker/sampler_state.h",
   "layers/state_tracker/semaphore_state.cpp",
   "layers/state_tracker/semaphore_state.h",
+  "layers/state_tracker/shader_constant_state.cpp",
+  "layers/state_tracker/shader_constant_state.h",
   "layers/state_tracker/shader_instruction.cpp",
   "layers/state_tracker/shader_instruction.h",
   "layers/state_tracker/shader_module.cpp",

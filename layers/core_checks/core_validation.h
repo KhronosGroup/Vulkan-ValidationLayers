@@ -65,7 +65,6 @@ struct SemaphoreSubmitState;
 struct LastBound;
 struct ShaderStageState;
 struct ImageCopyRegion;
-struct YcbcrSamplerUsedByImage;
 class ValidationCache;
 
 namespace core {
