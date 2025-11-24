@@ -71,18 +71,6 @@ WriteLockGuard CoreChecks::WriteLock() {
     }
 }
 
-struct TimelineMaxDiffCheck {
-    TimelineMaxDiffCheck(uint64_t value_, uint64_t max_diff_) : value(value_), max_diff(max_diff_) {}
-
-    // compute the differents between 2 timeline values, without rollover if the difference is greater than INT64_MAX
-    uint64_t AbsDiff(uint64_t a, uint64_t b) { return a > b ? a - b : b - a; }
-
-    bool operator()(const vvl::Semaphore::OpType, uint64_t payload, bool is_pending) { return AbsDiff(value, payload) > max_diff; }
-
-    uint64_t value;
-    uint64_t max_diff;
-};
-
 bool SemaphoreSubmitState::CanWaitBinary(const vvl::Semaphore &semaphore_state) const {
     assert(semaphore_state.type == VK_SEMAPHORE_TYPE_BINARY);
     // Check if current submission has signaled or unsignaled the semaphore
@@ -127,13 +115,13 @@ VkQueue SemaphoreSubmitState::AnotherQueueWaits(const vvl::Semaphore &semaphore_
     return VK_NULL_HANDLE;
 }
 
-bool SemaphoreSubmitState::CheckSemaphoreValue(
-    const vvl::Semaphore &semaphore_state, std::string &where, uint64_t &bad_value,
-    std::function<bool(const vvl::Semaphore::OpType, uint64_t, bool is_pending)> compare_func) {
+bool SemaphoreSubmitState::CheckTimelineMaxDiff(const vvl::Semaphore &semaphore_state, uint64_t value, std::string &where,
+                                                uint64_t &bad_value) {
+    const uint64_t max_diff = core.phys_dev_props_core12.maxTimelineSemaphoreValueDifference;
+
     auto current_signal = timeline_signals.find(semaphore_state.VkHandle());
-    // NOTE: for purposes of validation, duplicate operations in the same submission are not yet pending.
     if (current_signal != timeline_signals.end()) {
-        if (compare_func(vvl::Semaphore::kSignal, current_signal->second, false)) {
+        if (AbsDiff(value, current_signal->second) > max_diff) {
             where = "current submit's signal";
             bad_value = current_signal->second;
             return true;
@@ -141,20 +129,23 @@ bool SemaphoreSubmitState::CheckSemaphoreValue(
     }
     auto current_wait = timeline_waits.find(semaphore_state.VkHandle());
     if (current_wait != timeline_waits.end()) {
-        if (compare_func(vvl::Semaphore::kWait, current_wait->second, false)) {
+        if (AbsDiff(value, current_wait->second) > max_diff) {
             where = "current submit's wait";
             bad_value = current_wait->second;
             return true;
         }
     }
-    auto pending = semaphore_state.LastOp(compare_func);
-    if (pending) {
-        if (pending->payload == semaphore_state.CurrentPayload()) {
+    auto payload_optype = semaphore_state.CheckMaxDiffThreshold(value);
+    if (payload_optype.has_value()) {
+        const uint64_t payload = payload_optype->first;
+        const vvl::Semaphore::OpType op_type = payload_optype->second;
+
+        if (payload == semaphore_state.CurrentPayload()) {
             where = "current";
         } else {
-            where = pending->op_type == vvl::Semaphore::OpType::kSignal ? "pending signal" : "pending wait";
+            where = op_type == vvl::Semaphore::OpType::kSignal ? "pending signal" : "pending wait";
         }
-        bad_value = pending->payload;
+        bad_value = payload;
         return true;
     }
     return false;
@@ -216,9 +207,8 @@ bool SemaphoreSubmitState::ValidateTimelineWait(const Location &semaphore_loc, c
     bool skip = false;
     uint64_t bad_value = 0;
     std::string where;
-    TimelineMaxDiffCheck exceeds_max_diff(value, core.phys_dev_props_core12.maxTimelineSemaphoreValueDifference);
     const VkSemaphore handle = semaphore_state.VkHandle();
-    if (CheckSemaphoreValue(semaphore_state, where, bad_value, exceeds_max_diff)) {
+    if (CheckTimelineMaxDiff(semaphore_state, value, where, bad_value)) {
         const auto &vuid = GetQueueSubmitVUID(semaphore_loc, vvl::SubmitError::kTimelineSemMaxDiff);
         skip |= core.LogError(vuid, handle, semaphore_loc,
                               "value (%" PRIu64 ") exceeds limit regarding %s semaphore %s value (%" PRIu64 ").", value,
@@ -383,7 +373,6 @@ bool SemaphoreSubmitState::ValidateTimelineSignal(const Location &semaphore_loc,
     bool skip = false;
 
     const VkSemaphore semaphore = semaphore_state.VkHandle();
-    TimelineMaxDiffCheck exceeds_max_diff(value, core.phys_dev_props_core12.maxTimelineSemaphoreValueDifference);
     uint64_t bad_value = 0;
     std::string where;
 
@@ -394,7 +383,7 @@ bool SemaphoreSubmitState::ValidateTimelineSignal(const Location &semaphore_loc,
             core.LogError(vuid, objlist, semaphore_loc,
                           "signal value (%" PRIu64 ") in %s must be greater than %s timeline semaphore %s value (%" PRIu64 ")",
                           value, core.FormatHandle(queue).c_str(), where.c_str(), core.FormatHandle(semaphore).c_str(), bad_value);
-    } else if (CheckSemaphoreValue(semaphore_state, where, bad_value, exceeds_max_diff)) {
+    } else if (CheckTimelineMaxDiff(semaphore_state, value, where, bad_value)) {
         const auto &vuid = GetQueueSubmitVUID(semaphore_loc, vvl::SubmitError::kTimelineSemMaxDiff);
         LogObjectList objlist(semaphore, queue);
         skip |= core.LogError(vuid, objlist, semaphore_loc,
@@ -1637,20 +1626,18 @@ bool CoreChecks::PreCallValidateSignalSemaphore(VkDevice device, const VkSemapho
     std::optional<uint64_t> smallest_pending_payload = semaphore_state->GetSmallestPendingPayload();
     std::optional<uint64_t> largest_pending_payload = semaphore_state->GetLargestPendingPayload();
 
-    auto abs_diff = [](uint64_t a, uint64_t b) { return a > b ? a - b : b - a; };
+    const uint64_t max_diff = phys_dev_props_core12.maxTimelineSemaphoreValueDifference;
 
     uint64_t bad_value = 0;
     const char *where = nullptr;
 
-    if (abs_diff(current_payload, pSignalInfo->value) > phys_dev_props_core12.maxTimelineSemaphoreValueDifference) {
+    if (AbsDiff(current_payload, pSignalInfo->value) > max_diff) {
         bad_value = current_payload;
         where = "current";
-    } else if (smallest_pending_payload && abs_diff(*smallest_pending_payload, pSignalInfo->value) >
-                                               phys_dev_props_core12.maxTimelineSemaphoreValueDifference) {
+    } else if (smallest_pending_payload && AbsDiff(*smallest_pending_payload, pSignalInfo->value) > max_diff) {
         bad_value = *smallest_pending_payload;
         where = "pending";
-    } else if (largest_pending_payload &&
-               abs_diff(*largest_pending_payload, pSignalInfo->value) > phys_dev_props_core12.maxTimelineSemaphoreValueDifference) {
+    } else if (largest_pending_payload && AbsDiff(*largest_pending_payload, pSignalInfo->value) > max_diff) {
         bad_value = *largest_pending_payload;
         where = "pending";
     }
