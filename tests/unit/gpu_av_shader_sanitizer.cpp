@@ -125,6 +125,73 @@ TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroUDiv8Bit) {
     SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "UNASSIGNED-SPIRV-Sanitizer-Divide-By-Zero");
 }
 
+TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroUMod) {
+    const char* cs_source = R"glsl(
+        #version 450 core
+        layout(set=0, binding=0) buffer SSBO {
+            uint index;
+            uint result;
+        };
+
+        void main() {
+            result = 5 % index;
+        }
+    )glsl";
+
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "UNASSIGNED-SPIRV-Sanitizer-Divide-By-Zero");
+}
+
+TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroSMod) {
+    const char* cs_source = R"glsl(
+            #version 450 core
+            layout(set=0, binding=0) buffer SSBO {
+                ivec2 index;
+                ivec2 result;
+            };
+
+            void main() {
+                result = ivec2(5) % index;
+            }
+    )glsl";
+
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "UNASSIGNED-SPIRV-Sanitizer-Divide-By-Zero");
+}
+
+TEST_F(NegativeGpuAVShaderSanitizer, SRem) {
+    const char* cs_source = R"asm(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %SSBO Block
+               OpMemberDecorate %SSBO 0 Offset 0
+               OpMemberDecorate %SSBO 1 Offset 4
+               OpDecorate %_ Binding 0
+               OpDecorate %_ DescriptorSet 0
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+       %SSBO = OpTypeStruct %int %int
+%_ptr_StorageBuffer_SSBO = OpTypePointer StorageBuffer %SSBO
+          %_ = OpVariable %_ptr_StorageBuffer_SSBO StorageBuffer
+      %int_1 = OpConstant %int 1
+      %int_0 = OpConstant %int 0
+%_ptr_StorageBuffer_int = OpTypePointer StorageBuffer %int
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+         %15 = OpAccessChain %_ptr_StorageBuffer_int %_ %int_0
+         %16 = OpLoad %int %15
+         %17 = OpIAdd %int %16 %int_0
+         %18 = OpSRem %int %int_1 %17
+         %19 = OpAccessChain %_ptr_StorageBuffer_int %_ %int_1
+               OpStore %19 %18
+               OpReturn
+               OpFunctionEnd
+    )asm";
+
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_ASM, "UNASSIGNED-SPIRV-Sanitizer-Divide-By-Zero");
+}
+
 TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroIntDivConstant) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
     RETURN_IF_SKIP(InitGpuAvFramework());

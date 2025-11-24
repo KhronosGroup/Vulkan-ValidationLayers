@@ -105,7 +105,7 @@ bool SanitizerPass::IsConstantZero(const Constant& constant) const {
 bool SanitizerPass::RequiresInstrumentation(const Instruction& inst, InstructionMeta& meta) {
     const spv::Op opcode = (spv::Op)inst.Opcode();
 
-    if (IsValueIn(opcode, {spv::OpUDiv, spv::OpSDiv})) {
+    if (IsValueIn(opcode, {spv::OpUDiv, spv::OpSDiv, spv::OpUMod, spv::OpSMod, spv::OpSRem})) {
         // Note - It is valid to divide by zero for a float (you get NaN), but invalid for an int.
         if (const Constant* constant = type_manager_.FindConstantById(inst.Word(4))) {
             // If its a constant, no reason to instrument, unless its a constant value of zero,
