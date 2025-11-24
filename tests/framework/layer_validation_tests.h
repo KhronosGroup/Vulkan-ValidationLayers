@@ -415,7 +415,6 @@ class TensorTest : public VkLayerTest {
     static VkTensorDescriptionARM DefaultDesc();
     static VkTensorDescriptionARM TensorShaderDesc();
     static VkTensorCreateInfoARM DefaultCreateInfo(VkTensorDescriptionARM *desc = nullptr);
-    static const std::string GetGLSLBasicShader();
 };
 
 class DataGraphTest : public VkLayerTest {

@@ -20,6 +20,7 @@ void DataGraphTest::InitBasicDataGraph() {
     AddRequiredExtensions(VK_ARM_DATA_GRAPH_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::tensors);
     AddRequiredFeature(vkt::Feature::dataGraph);
+    AddRequiredFeature(vkt::Feature::dataGraphShaderModule);
     AddRequiredFeature(vkt::Feature::shaderTensorAccess);
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
     AddRequiredFeature(vkt::Feature::shaderInt8);

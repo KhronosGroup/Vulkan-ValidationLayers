@@ -38,7 +38,7 @@ VkTensorDescriptionARM TensorTest::DefaultDesc() {
     return desc;
 }
 
-// Tensor matching GetGLSLBasicShader and GetSpirvBasicShader
+// Tensor matching kMinimalTensorGlsl and GetSpirvBasicShader
 VkTensorDescriptionARM TensorTest::TensorShaderDesc() {
     static std::vector<int64_t> dimensions{2};
     static VkTensorDescriptionARM desc = vku::InitStructHelper();
@@ -58,27 +58,6 @@ VkTensorCreateInfoARM TensorTest::DefaultCreateInfo(VkTensorDescriptionARM* desc
     info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     return info;
-}
-
-const std::string TensorTest::GetGLSLBasicShader() {
-    return R"glsl(
-#version 450
-#extension GL_ARM_tensors : require
-#extension GL_EXT_shader_explicit_arithmetic_types : require
-layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
-layout(set=0, binding=0) uniform tensorARM<int32_t, 1> tens;
-layout(set=0, binding=1, std430) buffer asd {
-    int32_t out_data[];
-};
-void main()
-{
-    const uint size_x = tensorSizeARM(tens, 0);
-    const uint x = gl_GlobalInvocationID.x % size_x;
-    const uint out_index = gl_GlobalInvocationID.x;
-
-    tensorReadARM(tens, uint[](x), out_data[out_index]);
-}
-)glsl";
 }
 
 TEST_F(PositiveTensor, CreateTensor) {
@@ -151,7 +130,7 @@ TEST_F(PositiveTensor, DispatchShaderGLSL) {
     vkt::Buffer buffer(*m_device, tensor.GetMemoryReqs().memoryRequirements.size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     CreateComputePipelineHelper pipe(*m_device);
-    pipe.cs_ = VkShaderObj::CreateFromGLSL(this, GetGLSLBasicShader().c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj::CreateFromGLSL(this, kMinimalTensorGlsl, VK_SHADER_STAGE_COMPUTE_BIT);
 
     std::vector<VkDescriptorSetLayoutBinding> bindings = {
         {0, VK_DESCRIPTOR_TYPE_TENSOR_ARM, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
