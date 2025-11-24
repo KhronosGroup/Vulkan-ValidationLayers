@@ -45,9 +45,7 @@ struct SemaphoreSubmitState {
     bool CanWaitBinary(const vvl::Semaphore &semaphore_state) const;
     bool CanSignalBinary(const vvl::Semaphore &semaphore_state, VkQueue &other_queue, vvl::Func &other_acquire_command) const;
 
-    bool CheckSemaphoreValue(const vvl::Semaphore &semaphore_state, std::string &where, uint64_t &bad_value,
-                             std::function<bool(const vvl::Semaphore::OpType, uint64_t, bool is_pending)> compare_func);
-
+    bool CheckTimelineMaxDiff(const vvl::Semaphore &semaphore_state, uint64_t value, std::string &where, uint64_t &bad_value);
     bool CheckTimelineSignalValue(const vvl::Semaphore &semaphore_state, uint64_t value, std::string &where, uint64_t &bad_value);
 
     VkQueue AnotherQueueWaits(const vvl::Semaphore &semaphore_state) const;

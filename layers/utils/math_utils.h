@@ -162,3 +162,9 @@ static inline bool EqualValuesOrBothNull(const uint32_t* a, const uint32_t* b) {
     }
     return *a == *b;
 }
+
+template <typename T>
+constexpr T AbsDiff(T a, T b) {
+    static_assert(std::is_unsigned_v<T>);
+    return a > b ? a - b : b - a;
+}

@@ -111,12 +111,15 @@ class Semaphore : public RefcountedStateObject {
     // Process signal by retiring timeline timepoints up to the specified payload
     void RetireSignal(uint64_t payload);
 
-    // Look for most recent / highest payload operation that matches
-    std::optional<SemOp> LastOp(const std::function<bool(OpType op_type, uint64_t payload, bool is_pending)> &filter) const;
+    // Return the payload (current or pending) for which the given value exceeds the
+    // maxTimelineSemaphoreValueDifference threshold.
+    // Return an empty result if the threshould is not exceeded.
+    std::optional<std::pair<uint64_t, vvl::Semaphore::OpType>> CheckMaxDiffThreshold(uint64_t value) const;
 
     // Return the current (not pending) payload if it is greater than or equal to the signal value,
     // or return a pending payload if it is equal to the signal value.
     // Return an empty object if none of the above conditions are met.
+    // NOTE: validation of arbitrary pending payloads is postponed to execution time (so batch order is resolved).
     std::optional<uint64_t> CheckForLargerOrEqualPayload(uint64_t signal_value) const;
 
     std::optional<uint64_t> GetSmallestPendingSignalValue() const;

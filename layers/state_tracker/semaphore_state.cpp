@@ -20,6 +20,7 @@
 #include "state_tracker/queue_state.h"
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/wsi_state.h"
+#include "utils/math_utils.h"
 
 static bool CanSignalBinarySemaphoreAfterOperation(vvl::Semaphore::OpType op_type) {
     return op_type == vvl::Semaphore::kNone || op_type == vvl::Semaphore::kWait;
@@ -161,37 +162,34 @@ void vvl::Semaphore::EnqueueAcquire(vvl::Func acquire_command) {
     timeline_[payload].acquire_command.emplace(acquire_command);
 }
 
-std::optional<vvl::Semaphore::SemOp> vvl::Semaphore::LastOp(const std::function<bool(OpType, uint64_t, bool)> &filter) const {
+std::optional<std::pair<uint64_t, vvl::Semaphore::OpType>> vvl::Semaphore::CheckMaxDiffThreshold(uint64_t value) const {
+    assert(type == VK_SEMAPHORE_TYPE_TIMELINE);
     auto guard = ReadLock();
-    std::optional<SemOp> result;
 
-    for (auto pos = timeline_.rbegin(); pos != timeline_.rend(); ++pos) {
-        uint64_t payload = pos->first;
-        auto &timepoint = pos->second;
-        for (auto &op : timepoint.wait_submits) {
-            if (!filter || filter(kWait, payload, true)) {
-                result.emplace(SemOp(kWait, op, payload));
-                break;
-            }
-        }
-        if (!result && timepoint.signal_submit) {
-            // vkSemaphoreSignal can't be a pending operation, it signals immediately
-            const bool pending = timepoint.signal_submit->queue != nullptr;
+    const uint64_t max_diff = device_.phys_dev_props_core12.maxTimelineSemaphoreValueDifference;
 
-            if (!filter || filter(kSignal, payload, pending)) {
-                result.emplace(SemOp(kSignal, *timepoint.signal_submit, payload));
-                break;
-            }
+    // Because pending payload values are ordered, we only need to check the largest and smallest
+    // pending values. No need to iterate over all timeline entries.
+    if (!timeline_.empty()) {
+        // Smallest payload
+        const auto &[payload_a, timepoint_a] = *timeline_.begin();
+        if (AbsDiff(value, payload_a) > max_diff) {
+            return std::make_pair(payload_a, timepoint_a.HasWaiters() ? kWait : kSignal);
         }
-        if (!result && timepoint.acquire_command && (!filter || filter(kBinaryAcquire, payload, true))) {
-            result.emplace(SemOp(*timepoint.acquire_command, payload));
-            break;
+        // Largest payload
+        const auto &[payload_b, timepoint_b] = *timeline_.rbegin();
+        if (AbsDiff(value, payload_b) > max_diff) {
+            return std::make_pair(payload_b, timepoint_b.HasWaiters() ? kWait : kSignal);
         }
     }
-    if (!result && (!filter || filter(completed_.op_type, completed_.payload, false))) {
-        result.emplace(completed_);
+
+    // Check current payload.
+    // TODO: this needs to be updated when the implementation starts properly tracking
+    // current payload value by taking into account vkSignalSemaphore signals.
+    if (AbsDiff(value, completed_.payload) > max_diff) {
+        return std::make_pair(completed_.payload, completed_.op_type);
     }
-    return result;
+    return {};
 }
 
 std::optional<uint64_t> vvl::Semaphore::CheckForLargerOrEqualPayload(uint64_t signal_value) const {
