@@ -34,7 +34,7 @@ TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroUDivScalar) {
         }
     )glsl";
 
-    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "UNASSIGNED-SPIRV-Sanitizer-Divide-By-Zero");
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "SPIRV-Sanitizer-Divide-By-Zero");
 }
 
 TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroSDivScalar) {
@@ -50,7 +50,7 @@ TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroSDivScalar) {
         }
     )glsl";
 
-    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "UNASSIGNED-SPIRV-Sanitizer-Divide-By-Zero");
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "SPIRV-Sanitizer-Divide-By-Zero");
 }
 
 TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroUDivVector) {
@@ -66,7 +66,7 @@ TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroUDivVector) {
         }
     )glsl";
 
-    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "UNASSIGNED-SPIRV-Sanitizer-Divide-By-Zero");
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "SPIRV-Sanitizer-Divide-By-Zero");
 }
 
 TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroSDivVector) {
@@ -82,7 +82,7 @@ TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroSDivVector) {
         }
     )glsl";
 
-    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "UNASSIGNED-SPIRV-Sanitizer-Divide-By-Zero");
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "SPIRV-Sanitizer-Divide-By-Zero");
 }
 
 TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroUDivVector64) {
@@ -100,7 +100,7 @@ TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroUDivVector64) {
         }
     )glsl";
 
-    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "UNASSIGNED-SPIRV-Sanitizer-Divide-By-Zero");
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "SPIRV-Sanitizer-Divide-By-Zero");
 }
 
 TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroUDiv8Bit) {
@@ -122,7 +122,7 @@ TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroUDiv8Bit) {
         }
     )glsl";
 
-    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "UNASSIGNED-SPIRV-Sanitizer-Divide-By-Zero");
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "SPIRV-Sanitizer-Divide-By-Zero");
 }
 
 TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroUMod) {
@@ -138,7 +138,7 @@ TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroUMod) {
         }
     )glsl";
 
-    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "UNASSIGNED-SPIRV-Sanitizer-Divide-By-Zero");
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "SPIRV-Sanitizer-Divide-By-Zero");
 }
 
 TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroSMod) {
@@ -154,7 +154,7 @@ TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroSMod) {
             }
     )glsl";
 
-    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "UNASSIGNED-SPIRV-Sanitizer-Divide-By-Zero");
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "SPIRV-Sanitizer-Divide-By-Zero");
 }
 
 TEST_F(NegativeGpuAVShaderSanitizer, SRem) {
@@ -189,7 +189,7 @@ TEST_F(NegativeGpuAVShaderSanitizer, SRem) {
                OpFunctionEnd
     )asm";
 
-    SimpleZeroComputeTest(cs_source, SPV_SOURCE_ASM, "UNASSIGNED-SPIRV-Sanitizer-Divide-By-Zero");
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_ASM, "SPIRV-Sanitizer-Divide-By-Zero");
 }
 
 TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroIntDivConstant) {
@@ -279,7 +279,7 @@ TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroIntDivConstant) {
         vk::CmdDispatch(m_command_buffer, 1, 1, 1);
         m_command_buffer.End();
 
-        m_errorMonitor->SetDesiredError("UNASSIGNED-SPIRV-Sanitizer-Divide-By-Zero");
+        m_errorMonitor->SetDesiredError("SPIRV-Sanitizer-Divide-By-Zero");
         m_default_queue->SubmitAndWait(m_command_buffer);
         m_errorMonitor->VerifyFound();
     };

@@ -21,6 +21,7 @@
 
 #include "chassis/chassis_modification_state.h"
 #include "containers/small_vector.h"
+#include "generated/spirv_grammar_helper.h"
 #include "gpuav/core/gpuav.h"
 #include "gpuav/core/gpuav_constants.h"
 #include "gpuav/error_message/gpuav_vuids.h"
@@ -1162,6 +1163,13 @@ bool LogMessageInstIndexedDraw(Validator &gpuav, const uint32_t *error_record, s
     return true;
 }
 
+static std::string GetSpirvSpecLink(const uint32_t opcode) {
+    // Currently the Working Group decided to not provide "real" VUIDs as it would become duplicating the SPIR-V spec
+    // So these are not "UNASSIGNED", but instead are "SPIRV" VUs because we can point to the instruction in the SPIR-V spec
+    // (https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7853)
+    return "\nSee more at https://registry.khronos.org/SPIR-V/specs/unified1/SPIRV.html#" + std::string(string_SpvOpcode(opcode));
+}
+
 bool LogMessageInstSanitizer(const uint32_t *error_record, std::string &out_error_msg, std::string &out_vuid_msg) {
     using namespace glsl;
     bool error_found = true;
@@ -1170,8 +1178,16 @@ bool LogMessageInstSanitizer(const uint32_t *error_record, std::string &out_erro
     const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
     switch (error_sub_code) {
         case kErrorSubCodeSanitizerDivideZero: {
-            strm << "Integer divide by zero.";
-            out_vuid_msg = "UNASSIGNED-SPIRV-Sanitizer-Divide-By-Zero";
+            const uint32_t opcode = error_record[kInstLogErrorParameterOffset_0];
+            const uint32_t vector_size = error_record[kInstLogErrorParameterOffset_1];
+            strm << "Integer divide by zero. Operand 2 of " << string_SpvOpcode(opcode) << " is ";
+            if (vector_size == 0) {
+                strm << "zero";
+            } else {
+                strm << "a " << vector_size << "-wide vector which contains a zero value";
+            }
+            strm << GetSpirvSpecLink(opcode);
+            out_vuid_msg = "SPIRV-Sanitizer-Divide-By-Zero";
         } break;
         default:
             error_found = false;

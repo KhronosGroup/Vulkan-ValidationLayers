@@ -67,9 +67,13 @@ uint32_t SanitizerPass::CreateFunctionCall(BasicBlock& block, InstructionIt* ins
     const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
     const uint32_t inst_position_id = type_manager_.CreateConstantUInt32(inst_position).Id();
 
-    uint32_t is_valid_id = DivideByZeroCheck(block, inst_it, meta);
+    const uint32_t is_valid_id = DivideByZeroCheck(block, inst_it, meta);
 
-    block.CreateInstruction(spv::OpFunctionCall, {bool_type, function_result, function_def, is_valid_id, inst_position_id},
+    const uint32_t opcode_id = type_manager_.CreateConstantUInt32(meta.target_instruction->Opcode()).Id();
+    const uint32_t vector_size_id = type_manager_.CreateConstantUInt32(meta.result_type->VectorSize()).Id();
+
+    block.CreateInstruction(spv::OpFunctionCall,
+                            {bool_type, function_result, function_def, is_valid_id, inst_position_id, opcode_id, vector_size_id},
                             inst_it);
     module_.need_log_error_ = true;
     return function_result;

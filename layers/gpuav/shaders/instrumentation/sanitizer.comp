@@ -22,7 +22,7 @@
 #include "error_payload.h"
 
 // Instead of having to support many permutation of GLSL, do the check in C++ and just use this to report the error
-bool inst_sanitizer_divide_by_zero(const bool is_invalid, const uint inst_offset)
+bool inst_sanitizer_divide_by_zero(const bool is_invalid, const uint inst_offset, const uint opcode, const uint vector_size)
 {
     // Using a boolean here allows us to just calculate an expression and pass the result here to save us needing to do un-fun control flow.
     // In practice, the driver's compiler will detect this easily and fold in the function for us
@@ -30,8 +30,8 @@ bool inst_sanitizer_divide_by_zero(const bool is_invalid, const uint inst_offset
         error_payload = ErrorPayload(
                         inst_offset,
                         SpecConstantLinkShaderId | (kErrorGroupInstSanitizer << kErrorGroupShift) | (kErrorSubCodeSanitizerDivideZero << kErrorSubCodeShift),
-                        0,
-                        0,
+                        opcode,
+                        vector_size,
                         0);
         return false;
     }
