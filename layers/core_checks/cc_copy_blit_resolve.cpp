@@ -1728,6 +1728,15 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                 }
             }
 
+            if ((src_aspect & both_depth_and_stencil) && (dst_aspect & both_depth_and_stencil)) {
+                if (src_aspect != dst_aspect) {
+                    vuid = is_2 ? "VUID-VkCopyImageInfo2-pRegions-12201" : "VUID-vkCmdCopyImage-pRegions-12201";
+                    skip |= LogError(vuid, all_objlist, src_subresource_loc.dot(Field::aspectMask),
+                                     "(%s) does not match dstSubresource.aspectMask (%s).",
+                                     string_VkImageAspectFlags(src_aspect).c_str(), string_VkImageAspectFlags(dst_aspect).c_str());
+                }
+            }
+
             if (dst_aspect == VK_IMAGE_ASPECT_COLOR_BIT) {
                 if ((src_aspect & both_depth_and_stencil) == both_depth_and_stencil) {
                     vuid = is_2 ? "VUID-VkCopyImageInfo2-dstSubresource-10215" : "VUID-vkCmdCopyImage-dstSubresource-10215";
