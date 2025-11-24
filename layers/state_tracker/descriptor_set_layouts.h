@@ -35,8 +35,7 @@ struct DescriptorSetLayoutList {
 
   std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>> list;
 
-  const vvl::DescriptorSetLayout* FindFromVariable(const spirv::ResourceInterfaceVariable &variable) const;
-  bool HasYcbcrSamplers() const;
+  const vvl::DescriptorSetLayout* FindFromVariable(const spirv::ResourceInterfaceVariable& variable) const;
 };
 
 }  // namespace vvl

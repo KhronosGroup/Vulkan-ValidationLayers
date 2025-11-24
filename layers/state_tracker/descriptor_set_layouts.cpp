@@ -33,13 +33,4 @@ const vvl::DescriptorSetLayout *DescriptorSetLayoutList::FindFromVariable(const 
     return nullptr;
 }
 
-bool DescriptorSetLayoutList::HasYcbcrSamplers() const {
-    for (const auto &layout : list) {
-        if (layout && layout->HasYcbcrSamplers()) {
-            return true;
-        }
-    }
-    return false;
-}
-
 }  // namespace vvl

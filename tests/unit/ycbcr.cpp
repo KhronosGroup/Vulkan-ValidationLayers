@@ -1663,7 +1663,7 @@ TEST_F(NegativeYcbcr, TexelFetch) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.gp_ci_.layout = pipeline_layout;
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-10716");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpTypeSampledImage-12206");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -1700,7 +1700,7 @@ TEST_F(NegativeYcbcr, TexelFetchArray) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.gp_ci_.layout = pipeline_layout;
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-10716");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpTypeSampledImage-12206");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -1739,7 +1739,7 @@ TEST_F(NegativeYcbcr, TexelFetchIndexed) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[0] = vs.GetStageCreateInfo();
     pipe.gp_ci_.layout = pipeline_layout;
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-10716");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpTypeSampledImage-12206");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -1779,7 +1779,7 @@ TEST_F(NegativeYcbcr, TexelFetchNonArrayPartiallyBound) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[0] = vs.GetStageCreateInfo();
     pipe.gp_ci_.layout = pipeline_layout;
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-10716");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpTypeSampledImage-12206");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -1816,7 +1816,7 @@ TEST_F(NegativeYcbcr, TexelFetchDestroyedSampler) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.gp_ci_.layout = pipeline_layout;
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-10716");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpTypeSampledImage-12206");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -1851,7 +1851,7 @@ TEST_F(NegativeYcbcr, TextureGather) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.gp_ci_.layout = pipeline_layout;
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-10716");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpTypeSampledImage-12206");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -2088,7 +2088,7 @@ TEST_F(NegativeYcbcr, DescriptorIndexCombinedSampledImage) {
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.cp_ci_.layout = pipeline_layout;
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-10715");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-12205");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -2102,220 +2102,15 @@ TEST_F(NegativeYcbcr, DescriptorIndexNonCombinedSampledImage) {
     auto conversion_info = conversion.ConversionInfo();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo(&conversion_info));
     VkSampler samplers[4] = {sampler, sampler, sampler, sampler};
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 4, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_SAMPLER, 4, VK_SHADER_STAGE_COMPUTE_BIT, samplers},
-                                           {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                       });
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    const char *cs_source = R"glsl(
-        #version 460
-        #extension GL_EXT_nonuniform_qualifier : require
-        layout(set = 0, binding = 0) uniform texture2D kTextures2D[4];
-        layout(set = 0, binding = 1) uniform sampler kSamplers[4];
-        layout(set = 0, binding = 2) buffer SSBO {
-            vec4 result;
-            uint x;
-        };
+    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_SAMPLER, 4, VK_SHADER_STAGE_COMPUTE_BIT, samplers};
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
+    ds_layout_ci.bindingCount = 1;
+    ds_layout_ci.pBindings = &binding;
 
-        void main() {
-            // try and mask with valid access before and after
-            result = texture(sampler2D(kTextures2D[3], kSamplers[0]), vec2(0));
-            result = texture(sampler2D(kTextures2D[3], kSamplers[x]), vec2(0));
-            result = texture(sampler2D(kTextures2D[3], kSamplers[0]), vec2(0));
-        }
-    )glsl";
-
-    CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.cp_ci_.layout = pipeline_layout;
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-10715");
-    pipe.CreateComputePipeline();
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeYcbcr, DescriptorIndexNonCombinedSampledImage2) {
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
-    RETURN_IF_SKIP(Init());
-
-    vkt::SamplerYcbcrConversion conversion(*m_device, VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM);
-    auto conversion_info = conversion.ConversionInfo();
-    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo(&conversion_info));
-
-    VkSampler samplers[4] = {sampler, sampler, sampler, sampler};
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 4, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_SAMPLER, 4, VK_SHADER_STAGE_COMPUTE_BIT, samplers},
-                                           {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                       });
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
-
-    const char *cs_source = R"glsl(
-        #version 460
-        #extension GL_EXT_nonuniform_qualifier : require
-        layout(set = 0, binding = 0) uniform texture2D kTextures2D[4];
-        layout(set = 0, binding = 1) uniform sampler kSamplers[4];
-        layout(set = 0, binding = 2) buffer SSBO {
-            vec4 result;
-            uint x;
-        };
-
-        void main() {
-            // try and mask with valid access before and after
-            result = texture(sampler2D(kTextures2D[0], kSamplers[2]), vec2(0));
-            result = texture(sampler2D(kTextures2D[x], kSamplers[2]), vec2(0));
-            result = texture(sampler2D(kTextures2D[0], kSamplers[2]), vec2(0));
-        }
-    )glsl";
-
-    CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.cp_ci_.layout = pipeline_layout;
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-10715");
-    pipe.CreateComputePipeline();
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeYcbcr, DescriptorIndexNonCombinedSampledImage3) {
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
-    RETURN_IF_SKIP(Init());
-
-    vkt::SamplerYcbcrConversion conversion(*m_device, VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM);
-    auto conversion_info = conversion.ConversionInfo();
-    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo(&conversion_info));
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 4, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, &sampler.handle()},
-                                           {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                       });
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
-
-    const char *cs_source = R"glsl(
-        #version 460
-        #extension GL_EXT_nonuniform_qualifier : require
-        layout(set = 0, binding = 0) uniform texture2D kTextures2D[4];
-        layout(set = 0, binding = 1) uniform sampler kSamplers;
-        layout(set = 0, binding = 2) buffer SSBO {
-            vec4 result;
-            uint x;
-        };
-
-        void main() {
-            // try and mask with valid access before and after
-            result = texture(sampler2D(kTextures2D[3], kSamplers), vec2(0));
-            result = texture(sampler2D(kTextures2D[x], kSamplers), vec2(0));
-            result = texture(sampler2D(kTextures2D[3], kSamplers), vec2(0));
-        }
-    )glsl";
-
-    CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.cp_ci_.layout = pipeline_layout;
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-10715");
-    pipe.CreateComputePipeline();
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeYcbcr, DescriptorIndexNonCombinedSampledImage4) {
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
-    RETURN_IF_SKIP(Init());
-
-    vkt::SamplerYcbcrConversion conversion(*m_device, VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM);
-    auto conversion_info = conversion.ConversionInfo();
-    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo(&conversion_info));
-    VkSampler samplers[4] = {sampler, sampler, sampler, sampler};
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_SAMPLER, 4, VK_SHADER_STAGE_COMPUTE_BIT, samplers},
-                                           {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                       });
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
-
-    const char *cs_source = R"glsl(
-        #version 460
-        #extension GL_EXT_nonuniform_qualifier : require
-        layout(set = 0, binding = 0) uniform texture2D kTextures2D;
-        layout(set = 0, binding = 1) uniform sampler kSamplers[4];
-        layout(set = 0, binding = 2) buffer SSBO {
-            vec4 result;
-            uint x;
-        };
-
-        void main() {
-            // try and mask with valid access before and after
-            result = texture(sampler2D(kTextures2D, kSamplers[3]), vec2(0));
-            result = texture(sampler2D(kTextures2D, kSamplers[x]), vec2(0));
-            result = texture(sampler2D(kTextures2D, kSamplers[3]), vec2(0));
-        }
-    )glsl";
-
-    CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.cp_ci_.layout = pipeline_layout;
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-10715");
-    pipe.CreateComputePipeline();
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeYcbcr, DescriptorIndexNonCombinedSampledImageMix) {
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
-    RETURN_IF_SKIP(Init());
-
-    vkt::SamplerYcbcrConversion conversion(*m_device, VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM);
-    auto conversion_info = conversion.ConversionInfo();
-    vkt::Sampler sampler_ycbcr(*m_device, SafeSaneSamplerCreateInfo(&conversion_info));
-    vkt::Sampler sampler_normal(*m_device, SafeSaneSamplerCreateInfo());
-
-    VkSampler samplers_ycbcr[4] = {sampler_ycbcr, sampler_ycbcr, sampler_ycbcr, sampler_ycbcr};
-    VkSampler samplers_normal[4] = {sampler_normal, sampler_normal, sampler_normal, sampler_normal};
-    OneOffDescriptorSet descriptor_set0(m_device,
-                                        {
-                                            {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 4, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                            {1, VK_DESCRIPTOR_TYPE_SAMPLER, 4, VK_SHADER_STAGE_COMPUTE_BIT, samplers_normal},
-                                            {2, VK_DESCRIPTOR_TYPE_SAMPLER, 4, VK_SHADER_STAGE_COMPUTE_BIT, samplers_ycbcr},
-                                            {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                        });
-    OneOffDescriptorSet descriptor_set1(m_device, {
-                                                      {0, VK_DESCRIPTOR_TYPE_SAMPLER, 4, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                                  });
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set0.layout_, &descriptor_set1.layout_});
-
-    const char *cs_source = R"glsl(
-        #version 460
-        layout(set = 0, binding = 0) uniform texture2D kTextures2D[4];
-        layout(set = 0, binding = 1) uniform sampler normal0[4];
-        layout(set = 1, binding = 0) uniform sampler normal1[4];
-        layout(set = 0, binding = 2) uniform sampler ycbcr[4];
-        layout(set = 0, binding = 3) buffer SSBO {
-            vec4 result;
-            uint x;
-        };
-
-        void main() {
-            result = texture(sampler2D(kTextures2D[1], normal0[1]), vec2(0));
-            result += texture(sampler2D(kTextures2D[1], normal0[1]), vec2(0));
-            result += texture(sampler2D(kTextures2D[1], ycbcr[0]), vec2(0));
-            result += texture(sampler2D(kTextures2D[1], ycbcr[x]), vec2(0));
-            result += texture(sampler2D(kTextures2D[1], ycbcr[2]), vec2(0));
-            result += texture(sampler2D(kTextures2D[1], normal1[1]), vec2(0));
-            result += texture(sampler2D(kTextures2D[1], normal1[1]), vec2(0));
-        }
-    )glsl";
-
-    CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.cp_ci_.layout = pipeline_layout;
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-10715");
-    pipe.CreateComputePipeline();
+    VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDescriptorSetLayoutBinding-descriptorType-sampler-ycbcr");
+    vk::CreateDescriptorSetLayout(*m_device, &ds_layout_ci, nullptr, &ds_layout);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2330,7 +2125,7 @@ TEST_F(NegativeYcbcr, MixingYcbcrWithNonYcbcrInArray) {
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
     VkSampler samplers[4] = {sampler, sampler_ycbcr, sampler, sampler};
 
-    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_SAMPLER, 4, VK_SHADER_STAGE_COMPUTE_BIT, samplers};
+    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4, VK_SHADER_STAGE_COMPUTE_BIT, samplers};
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
     ds_layout_ci.bindingCount = 1;
     ds_layout_ci.pBindings = &binding;
@@ -2384,7 +2179,7 @@ TEST_F(NegativeYcbcr, DescriptorIndexSlang) {
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_SLANG);
     pipe.cp_ci_.layout = pipeline_layout;
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-10715");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-12205");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -2424,53 +2219,8 @@ TEST_F(NegativeYcbcr, DescriptorIndexShaderObject) {
         }
     )glsl";
 
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-10715");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-12205");
     const vkt::Shader comp_shader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source),
                                   &descriptor_set.layout_.handle());
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeYcbcr, DescriptorIndexShaderObjectMultipleSet) {
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::shaderObject);
-    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
-    RETURN_IF_SKIP(Init());
-
-    vkt::SamplerYcbcrConversion conversion(*m_device, VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM);
-    auto conversion_info = conversion.ConversionInfo();
-    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo(&conversion_info));
-
-    VkSampler samplers[4] = {sampler, sampler, sampler, sampler};
-    OneOffDescriptorSet descriptor_set0(m_device,
-                                        {
-                                            {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 4, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                            {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                        });
-    OneOffDescriptorSet descriptor_set1(m_device, {
-                                                      {0, VK_DESCRIPTOR_TYPE_SAMPLER, 4, VK_SHADER_STAGE_COMPUTE_BIT, samplers},
-                                                  });
-    VkDescriptorSetLayout layouts[2] = {descriptor_set0.layout_, descriptor_set1.layout_};
-
-    const char *cs_source = R"glsl(
-        #version 460
-        #extension GL_EXT_nonuniform_qualifier : require
-        layout(set = 0, binding = 0) uniform texture2D kTextures2D[4];
-        layout(set = 1, binding = 0) uniform sampler kSamplers[4];
-        layout(set = 0, binding = 1) buffer SSBO {
-            vec4 result;
-            uint x;
-        };
-
-        void main() {
-            result = texture(sampler2D(kTextures2D[1], kSamplers[0]), vec2(0));
-            result = texture(sampler2D(kTextures2D[2], kSamplers[x]), vec2(0));
-            result = texture(sampler2D(kTextures2D[3], kSamplers[0]), vec2(0));
-        }
-    )glsl";
-
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-10715");
-    auto cs_spirv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source);
-    const vkt::Shader comp_shader(*m_device, ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, 2, layouts));
     m_errorMonitor->VerifyFound();
 }

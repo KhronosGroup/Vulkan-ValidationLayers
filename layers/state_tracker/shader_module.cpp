@@ -2235,9 +2235,6 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                     for (const Instruction* sampler_insn : image_access.variable_sampler_insn) {
                         const uint32_t sampler_variable_id = sampler_insn->ResultId();
 
-                        ycbcr_samplers_used_by_image.emplace(YcbcrSamplerUsedByImage{
-                            sampler_variable_id, image_access.image_access_chain_index, image_access.sampler_access_chain_index});
-
                         const auto& decoration_set = module_state.GetDecorationSet(sampler_variable_id);
                         samplers_used_by_image[image_index].emplace(
                             SamplerUsedByImage{DescriptorSlot{decoration_set.set, decoration_set.binding}, sampler_index});
