@@ -885,11 +885,11 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     }
     const std::string string_disabled = Merge(disabled);
     SetLocalDisableSetting(string_disabled, ",", settings_data->disabled);
-
+#if 0
     if (!disabled.empty() || !enabled.empty()) {
         setting_warnings.emplace_back(GetDeprecatedEnabledDisabledSettingsWarning());
     }
-
+#endif
     GlobalSettings &global_settings = *settings_data->global_settings;
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_FINE_GRAINED_LOCKING)) {
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_FINE_GRAINED_LOCKING, global_settings.fine_grained_locking);
