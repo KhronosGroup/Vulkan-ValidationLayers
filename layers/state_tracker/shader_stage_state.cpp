@@ -88,4 +88,4 @@ ShaderStageState::ShaderStageState(const vku::safe_VkPipelineShaderStageCreateIn
       descriptor_set_layouts(descriptor_set_layouts),
       pipeline_layout(VK_NULL_HANDLE),
       entrypoint(spirv_state ? spirv_state->FindEntrypoint(GetPName(), GetStage()) : nullptr),
-      constants(spirv_state.get(), GetSpecializationInfo()->ptr()) {}
+      constants(spirv_state.get(), GetSpecializationInfo()) {}
