@@ -108,6 +108,9 @@ class GeometryKHR {
     // Instance
     GeometryKHR& AddInstanceDeviceAccelStructRef(const vkt::Device& device, VkAccelerationStructureKHR blas,
                                                  const VkAccelerationStructureInstanceKHR& instance);
+
+    // Both the host stored and device stored instances will be updated
+    void UpdateAccelerationStructureInstance(size_t i, std::function<void(VkAccelerationStructureInstanceKHR&)> f);
     GeometryKHR& AddInstanceHostAccelStructRef(VkAccelerationStructureKHR blas);
     GeometryKHR& SetInstancesDeviceAddress(VkDeviceAddress address);
     GeometryKHR& SetInstanceHostAccelStructRef(VkAccelerationStructureKHR blas, uint32_t instance_i);
@@ -373,6 +376,9 @@ BuildGeometryInfoKHR BuildOnDeviceTopLevel(const vkt::Device& device, vkt::Queue
 // clang-format on
 vkt::as::BuildGeometryInfoKHR GetCubesTLAS(vkt::Device& device, vkt::CommandBuffer& cb, vkt::Queue& queue,
                                            std::shared_ptr<vkt::as::BuildGeometryInfoKHR>& out_cube_blas);
+
+vkt::as::BuildGeometryInfoKHR CreateTLAS(vkt::Device& device, std::vector<vkt::as::GeometryKHR>&& blas_vec);
+
 }  // namespace blueprint
 }  // namespace as
 

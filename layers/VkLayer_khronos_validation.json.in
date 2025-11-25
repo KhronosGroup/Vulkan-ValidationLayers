@@ -907,6 +907,20 @@
                                                     { "key": "gpuav_buffers_validation", "value": true }
                                                 ]
                                             }
+                                        },
+                                        {
+                                            "key": "gpuav_acceleration_structures_builds",
+                                            "label": "Acceleration structures builds",
+                                            "type": "BOOL",
+                                            "default": true,
+                                            "description": "Validate acceleration structures references in TLAS build commands.",
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    { "key": "gpuav_enable", "value": true },
+                                                    { "key": "gpuav_buffers_validation", "value": true }
+                                                ]
+                                            }
                                         }
                                     ]
                                 },

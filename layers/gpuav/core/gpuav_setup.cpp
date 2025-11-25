@@ -366,6 +366,18 @@ struct BufferContent : public Setting {
                "gpuav_buffers_validation]";
     }
 };
+
+struct AccelerationStructuresBuild : public Setting {
+    bool IsEnabled(const GpuAVSettings &settings) { return settings.validate_acceleration_structures_builds; }
+    // Validation shader branches on a push constant value to fetch different descriptors
+    bool HasRequiredFeatures(const DeviceFeatures &features) { return features.runtimeDescriptorArray; }
+    void Disable(GpuAVSettings &settings) { settings.validate_acceleration_structures_builds = false; }
+    std::string DisableMessage() {
+        return "Acceleration structure builds validation option was enabled, but the runtimeDescriptorArray feature was not "
+               "supported [Disabling "
+               "gpuav_acceleration_structures_builds]";
+    }
+};
 }  // namespace setting
 
 // At this point extensions/features may have been turned on by us in PreCallRecord.
@@ -375,7 +387,9 @@ void Validator::InitSettings(const Location &loc) {
     setting::RayQuery ray_query;
     setting::BufferCopies buffer_copies;
     setting::BufferContent buffer_content;
-    std::array<setting::Setting *, 4> all_settings = {&buffer_device_address, &ray_query, &buffer_copies, &buffer_content};
+    setting::AccelerationStructuresBuild as_builds;
+    std::array<setting::Setting *, 5> all_settings = {&buffer_device_address, &ray_query, &buffer_copies, &buffer_content,
+                                                      &as_builds};
 
     for (auto &setting_object : all_settings) {
         if (setting_object->IsEnabled(gpuav_settings) && !setting_object->HasRequiredFeatures(modified_features)) {

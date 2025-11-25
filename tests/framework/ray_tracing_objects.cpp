@@ -236,6 +236,13 @@ GeometryKHR &GeometryKHR::AddInstanceDeviceAccelStructRef(const vkt::Device &dev
     return *this;
 }
 
+void GeometryKHR::UpdateAccelerationStructureInstance(size_t i, std::function<void(VkAccelerationStructureInstanceKHR &)> f) {
+    assert(i < instances_.vk_instances.size());
+    f(instances_.vk_instances[i]);
+    auto instance_buffer_ptr = static_cast<VkAccelerationStructureInstanceKHR *>(instances_.buffer.Memory().Map());
+    f(instance_buffer_ptr[i]);
+}
+
 GeometryKHR &GeometryKHR::AddInstanceHostAccelStructRef(VkAccelerationStructureKHR blas) {
     instances_.vk_instances.emplace_back(VkAccelerationStructureInstanceKHR{});
     ++primitive_count_;
@@ -1772,12 +1779,6 @@ vkt::as::BuildGeometryInfoKHR GetCubesTLAS(vkt::Device &device, vkt::CommandBuff
     queue.Submit(cb);
     device.Wait();
 
-    vkt::as::BuildGeometryInfoKHR tlas(&device);
-
-    tlas.SetType(VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR);
-    tlas.SetBuildType(VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR);
-    tlas.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR);
-
     std::vector<vkt::as::GeometryKHR> cube_instances(1);
     cube_instances[0].SetType(vkt::as::GeometryKHR::Type::Instance);
 
@@ -1805,22 +1806,10 @@ vkt::as::BuildGeometryInfoKHR GetCubesTLAS(vkt::Device &device, vkt::CommandBuff
     cube_instance_2.instanceCustomIndex = 0;
     // Cube instance 2 will be associated to closest hit shader 2
     cube_instance_2.instanceShaderBindingTableRecordOffset = 1;
+
     cube_instances[0].AddInstanceDeviceAccelStructRef(device, out_cube_blas->GetDstAS()->handle(), cube_instance_2);
 
-    tlas.SetGeometries(std::move(cube_instances));
-    tlas.SetBuildRanges(tlas.GetBuildRangeInfosFromGeometries());
-
-    // Set source and destination acceleration structures info. Does not create handles, it is done in Build()
-    tlas.SetSrcAS(vkt::as::blueprint::AccelStructNull(device));
-    auto dstAsSize = tlas.GetSizeInfo().accelerationStructureSize;
-    auto dst_as = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(device, dstAsSize);
-    dst_as->SetType(VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR);
-    tlas.SetDstAS(std::move(dst_as));
-    tlas.SetUpdateDstAccelStructSizeBeforeBuild(true);
-
-    tlas.SetInfoCount(1);
-    tlas.SetNullInfos(false);
-    tlas.SetNullBuildRangeInfos(false);
+    vkt::as::BuildGeometryInfoKHR tlas = CreateTLAS(device, std::move(cube_instances));
 
     cb.Begin();
     tlas.BuildCmdBuffer(cb);
@@ -1828,6 +1817,30 @@ vkt::as::BuildGeometryInfoKHR GetCubesTLAS(vkt::Device &device, vkt::CommandBuff
 
     queue.Submit(cb);
     device.Wait();
+
+    return tlas;
+}
+
+vkt::as::BuildGeometryInfoKHR CreateTLAS(vkt::Device &device, std::vector<vkt::as::GeometryKHR> &&blas_vec) {
+    vkt::as::BuildGeometryInfoKHR tlas(&device);
+
+    tlas.SetType(VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR);
+    tlas.SetBuildType(VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR);
+    tlas.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR);
+
+    tlas.SetGeometries(std::move(blas_vec));
+    tlas.SetBuildRanges(tlas.GetBuildRangeInfosFromGeometries());
+
+    // Set source and destination acceleration structures info. Does not create handles, it is done in Build()
+    tlas.SetSrcAS(vkt::as::blueprint::AccelStructNull(device));
+    const VkDeviceSize dst_as_size = tlas.GetSizeInfo().accelerationStructureSize;
+    auto dst_as = vkt::as::blueprint::AccelStructSimpleOnDeviceTopLevel(device, dst_as_size);
+    tlas.SetDstAS(std::move(dst_as));
+    tlas.SetUpdateDstAccelStructSizeBeforeBuild(true);
+
+    tlas.SetInfoCount(1);
+    tlas.SetNullInfos(false);
+    tlas.SetNullBuildRangeInfos(false);
 
     return tlas;
 }

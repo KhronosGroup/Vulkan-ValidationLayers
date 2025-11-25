@@ -173,6 +173,16 @@ class Validator : public GpuShaderInstrumentor {
     void PreCallRecordCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
                                          uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ,
                                          const RecordObject& record_obj) final;
+    void PreCallRecordDestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStructureKHR accelerationStructure,
+                                                      const VkAllocationCallbacks* pAllocator,
+                                                      const RecordObject& record_obj) final;
+    void PostCallRecordGetAccelerationStructureDeviceAddressKHR(VkDevice device,
+                                                                const VkAccelerationStructureDeviceAddressInfoKHR* pInfo,
+                                                                const RecordObject& record_obj) final;
+    void PreCallRecordCmdBuildAccelerationStructuresKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                                        const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+                                                        const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos,
+                                                        const RecordObject& record_obj) final;
     void PreCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
                                      VkDeviceSize raygenShaderBindingOffset, VkBuffer missShaderBindingTableBuffer,
                                      VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
@@ -246,7 +256,7 @@ class Validator : public GpuShaderInstrumentor {
     // We find ourselves constantly needing to create some resource for the "lifetime of GPU-AV"
     // We don't want a messy global space to managae it and use this to allow each check to manage the resource where it is used.
     // The goal is the first time we need the resource, we create it then, and afterwards, its cached and we can regain
-    vko::SharedResourcesCache shared_resources_manager;
+    vko::SharedResourcesCache<true> shared_resources_manager;
 
     PFN_vkSetDeviceLoaderData vk_set_device_loader_data_;
 

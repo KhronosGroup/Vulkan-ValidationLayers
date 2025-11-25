@@ -141,14 +141,6 @@ void DescriptorSetManager::PutBackDescriptorSet(VkDescriptorPool desc_pool, VkDe
     return;
 }
 
-void SharedResourcesCache::Clear() {
-    for (auto &[key, value] : shared_validation_resources_map_) {
-        auto &[object, destructor] = value;
-        destructor(object);
-    }
-    shared_validation_resources_map_.clear();
-}
-
 void *Buffer::GetMappedPtr() const { return mapped_ptr; }
 
 void Buffer::FlushAllocation(VkDeviceSize offset, VkDeviceSize size) const {

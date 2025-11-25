@@ -39,11 +39,10 @@ struct DispatchValidationShader {
                  VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
     }
 
-    std::vector<VkWriteDescriptorSet> GetDescriptorWrites(VkDescriptorSet desc_set) const {
+    std::vector<VkWriteDescriptorSet> GetDescriptorWrites() const {
         std::vector<VkWriteDescriptorSet> desc_writes(1);
 
         desc_writes[0] = vku::InitStructHelper();
-        desc_writes[0].dstSet = desc_set;
         desc_writes[0].dstBinding = indirect_buffer_binding.binding;
         desc_writes[0].dstArrayElement = 0;
         desc_writes[0].descriptorCount = 1;
