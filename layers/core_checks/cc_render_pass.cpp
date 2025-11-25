@@ -4262,7 +4262,7 @@ bool CoreChecks::InsideRenderPass(const vvl::CommandBuffer &cb_state, const Loca
     bool skip = false;
     if (cb_state.active_render_pass) {
         if (cb_state.active_render_pass->use_dynamic_rendering) {
-            skip =
+            skip |=
                 LogError(vuid, cb_state.Handle(), loc,
                          "It is invalid to issue this call inside an active render pass instance begun with vkCmdBeginRendering.");
         } else if (cb_state.active_render_pass->use_dynamic_rendering_inherited) {
@@ -4272,7 +4272,7 @@ bool CoreChecks::InsideRenderPass(const vvl::CommandBuffer &cb_state, const Loca
                          "VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT and viewed as being inside a render pass instance begun "
                          "with vkCmdBeginRendering.");
         } else {
-            skip = LogError(vuid, cb_state.Handle(), loc, "It is invalid to issue this call inside an active %s.",
+            skip |= LogError(vuid, cb_state.Handle(), loc, "It is invalid to issue this call inside an active %s.",
                             FormatHandle(cb_state.active_render_pass->Handle()).c_str());
         }
     }
