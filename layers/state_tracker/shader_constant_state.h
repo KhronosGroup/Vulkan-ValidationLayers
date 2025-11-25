@@ -37,6 +37,8 @@ class ConstantState {
     bool GetBooleanValue(const spirv::Instruction& insn, bool* value) const;
     bool GetInt32Value(const spirv::Instruction& insn, uint32_t* value) const;
 
+    uint32_t GetSpecConstInt32Value(const spirv::Instruction& insn) const;
+
   private:
     const spirv::Module* module_state = nullptr;
     const VkSpecializationInfo* spec_info = nullptr;  // will be a copy of a safe_struct

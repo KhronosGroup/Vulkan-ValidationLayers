@@ -763,14 +763,14 @@ StaticImageAccess::StaticImageAccess(const Module& module_state, const Instructi
                 case spv::OpInBoundsAccessChain:
                 case spv::OpPtrAccessChain:
                 case spv::OpInBoundsPtrAccessChain: {
-                    // If Image is an array (but not descriptor indexing), then need to get the index.
+                    // If Image is an array (but not descriptor indexing), then need to get the index if possible.
                     const Instruction* const_def = module_state.GetAnyConstantDef(find_insn->Word(4));
                     if (const_def && (const_def->Opcode() == spv::OpConstant || const_def->Opcode() == spv::OpSpecConstant)) {
-                        bool non_spec_const = const_def->Opcode() == spv::OpConstant;
+                        const bool spec_const = const_def->Opcode() != spv::OpConstant;
                         if (sampler) {
-                            sampler_access_chain_index = non_spec_const ? const_def->GetConstantValue() : kSpecConstant;
+                            sampler_access_chain_index = spec_const ? kSpecConstant : const_def->GetConstantValue();
                         } else {
-                            image_access_chain_index = non_spec_const ? const_def->GetConstantValue() : kSpecConstant;
+                            image_access_chain_index = spec_const ? kSpecConstant : const_def->GetConstantValue();
                         }
                     }
                     find_insn = module_state.FindDef(find_insn->Word(3));
@@ -1104,10 +1104,21 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
                 load_pointer_ids.emplace_back(insn.Word(3));  // object id or AccessChain id
                 break;
             }
+
             case spv::OpAccessChain:
-            case spv::OpInBoundsAccessChain: {
+            case spv::OpInBoundsAccessChain:
+            case spv::OpPtrAccessChain:
+            case spv::OpInBoundsPtrAccessChain: {
                 const uint32_t base_id = insn.Word(3);
                 parsed.access_chain_map[base_id].push_back(&insn);
+
+                // some builtins, like Position, can have empty access chains
+                if (insn.Length() > 4) {
+                    const Instruction* const_def = module_state.GetAnyConstantDef(insn.Word(4));
+                    if (const_def && const_def->Opcode() == spv::OpSpecConstant) {
+                        descriptor_indexing_spec_const_ac_inst.emplace_back(&insn);
+                    }
+                }
                 break;
             }
             case spv::OpImageTexelPointer: {
@@ -2153,9 +2164,6 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
         if (is_sampled_without_sampler) {
             if (info.image_dim == spv::DimSubpassData) {
                 is_input_attachment = true;
-                if (array_length != spirv::kRuntimeArray) {
-                    input_attachment_index_read.resize(array_length);
-                }
             } else if (info.image_dim == spv::DimBuffer) {
                 is_storage_texel_buffer = true;
             } else {
@@ -2196,21 +2204,20 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                         info.is_read_without_format |= true;
                     }
 
-                    // If accessed in an array, track which indexes were read, if not runtime array
-                    if (is_input_attachment && !module_state.HasRuntimeArray(type_id)) {
-                        // TODO - Handle spec constats
-                        if (image_access.image_access_chain_index != kInvalidValue &&
-                            image_access.image_access_chain_index != kSpecConstant) {
-                            input_attachment_index_read[image_access.image_access_chain_index] = true;
+                    // Track all array index statically known being accessed
+                    if (is_input_attachment && array_length > 1) {
+                        if (image_access.image_access_chain_index == kInvalidValue) {
+                            // Dynamic, requires GPU-AV
+                        } else if (image_access.image_access_chain_index == kSpecConstant) {
+                            // We don't have spec constant data now, will look later
+                            input_attachment_index_has_spec_constant = true;
                         } else {
-                            // if InputAttachment is accessed from load, just a single, non-array, index
-                            input_attachment_index_read.resize(1);
-                            input_attachment_index_read[0] = true;
+                            input_attachment_index_read.emplace(image_access.image_access_chain_index);
                         }
                     }
                 }
 
-                // Only tied to the image
+                // Only tied to the image (not the sampler when using non-COMBINED_IMAGE_SAMPLER)
                 if (array_length != 0 && image_access.image_access_chain_index == kInvalidValue) {
                     all_constant_integral_expressions = false;
                 }
