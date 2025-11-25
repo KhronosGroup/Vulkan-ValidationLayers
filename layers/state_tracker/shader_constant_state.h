@@ -19,6 +19,10 @@
 #pragma once
 #include <vulkan/vulkan.h>
 
+namespace vku {
+struct safe_VkSpecializationInfo;
+}  // namespace vku
+
 namespace spirv {
 struct Module;
 class Instruction;
@@ -32,7 +36,7 @@ class Instruction;
 // TODO - Need to handle OpSpecConstantOp
 class ConstantState {
   public:
-    ConstantState(const spirv::Module* module_state, const VkSpecializationInfo* info);
+    ConstantState(const spirv::Module* module_state, const vku::safe_VkSpecializationInfo* info);
 
     bool GetBooleanValue(const spirv::Instruction& insn, bool* value) const;
     bool GetInt32Value(const spirv::Instruction& insn, uint32_t* value) const;
@@ -41,7 +45,7 @@ class ConstantState {
 
   private:
     const spirv::Module* module_state = nullptr;
-    const VkSpecializationInfo* spec_info = nullptr;  // will be a copy of a safe_struct
+    const vku::safe_VkSpecializationInfo* spec_info = nullptr;
 };
 
 }  // namespace spirv

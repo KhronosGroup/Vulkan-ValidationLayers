@@ -22,7 +22,7 @@
 
 namespace spirv {
 
-ConstantState::ConstantState(const spirv::Module* module_state, const VkSpecializationInfo* spec_info)
+ConstantState::ConstantState(const spirv::Module* module_state, const vku::safe_VkSpecializationInfo* spec_info)
     : module_state(module_state), spec_info(spec_info) {}
 
 bool ConstantState::GetBooleanValue(const spirv::Instruction& insn, bool* value) const {
