@@ -1370,39 +1370,40 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView &view_state, VkImageLa
             break;
     }
 
-    // All the following types share the same image layouts
-    // checkf or Storage Images above
-    if ((type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) || (type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) ||
-        (type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
-        // Test that the layout is compatible with the descriptorType for the two sampled image types
-        const static std::array<VkImageLayout, 3> valid_layouts = {
-            {VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL}};
-
+    if (type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE || type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER ||
+        type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
         struct ExtensionLayout {
             VkImageLayout layout;
             ExtEnabled DeviceExtensions::*extension;
         };
-        const static std::array<ExtensionLayout, 9> extended_layouts{{
+        const static std::array<VkImageLayout, 3> shared_layouts = {
+            {VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL}};
+        const static std::array<ExtensionLayout, 9> shared_extended_layouts{{
             //  Note double brace req'd for aggregate initialization
             {VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR, &DeviceExtensions::vk_khr_shared_presentable_image},
             {VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL, &DeviceExtensions::vk_khr_maintenance2},
             {VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, &DeviceExtensions::vk_khr_maintenance2},
             {VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, &DeviceExtensions::vk_khr_synchronization2},
-            {VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, &DeviceExtensions::vk_khr_synchronization2},
             {VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, &DeviceExtensions::vk_khr_separate_depth_stencil_layouts},
             {VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL, &DeviceExtensions::vk_khr_separate_depth_stencil_layouts},
             {VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT, &DeviceExtensions::vk_ext_attachment_feedback_loop_layout},
+        }};
+        const static std::array<ExtensionLayout, 9> input_attachment_extended_layouts{{
             {VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ, &DeviceExtensions::vk_khr_dynamic_rendering_local_read},
         }};
         auto is_layout = [image_layout, this](const ExtensionLayout &ext_layout) {
             return IsExtEnabled(extensions.*(ext_layout.extension)) && (ext_layout.layout == image_layout);
         };
 
-        const bool valid_layout = (std::find(valid_layouts.cbegin(), valid_layouts.cend(), image_layout) != valid_layouts.cend()) ||
-                                  std::any_of(extended_layouts.cbegin(), extended_layouts.cend(), is_layout);
+        bool is_valid = std::find(shared_layouts.begin(), shared_layouts.end(), image_layout) != shared_layouts.end();
+        if (!is_valid) {
+            is_valid = std::any_of(shared_extended_layouts.cbegin(), shared_extended_layouts.cend(), is_layout);
+        }
+        if (!is_valid && type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
+            is_valid = std::any_of(input_attachment_extended_layouts.cbegin(), input_attachment_extended_layouts.cend(), is_layout);
+        }
 
-        if (!valid_layout) {
-            // The following works as currently all 3 descriptor types share the same set of valid layouts
+        if (!is_valid) {
             const char *vuid = kVUIDUndefined;
             switch (type) {
                 case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
@@ -1423,9 +1424,16 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView &view_state, VkImageLa
                       << FormatHandle(image) << " in imageView " << FormatHandle(view_state.Handle())
                       << ". Allowed layouts are: VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, "
                       << "VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL";
-            for (auto &ext_layout : extended_layouts) {
+            for (auto &ext_layout : shared_extended_layouts) {
                 if (IsExtEnabled(extensions.*(ext_layout.extension))) {
                     error_str << ", " << string_VkImageLayout(ext_layout.layout);
+                }
+            }
+            if (type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
+                for (auto &ext_layout : input_attachment_extended_layouts) {
+                    if (IsExtEnabled(extensions.*(ext_layout.extension))) {
+                        error_str << ", " << string_VkImageLayout(ext_layout.layout);
+                    }
                 }
             }
             skip |= LogError(vuid, objlist, image_info_loc, "%s", error_str.str().c_str());
