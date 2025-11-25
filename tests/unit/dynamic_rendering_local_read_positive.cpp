@@ -483,3 +483,50 @@ TEST_F(PositiveDynamicRenderingLocalRead, GPL) {
     vk::CmdSetRenderingInputAttachmentIndicesKHR(m_command_buffer, &inputs_info);
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
 }
+
+TEST_F(PositiveDynamicRenderingLocalRead, CmdDrawColorIndexUnusedAttachment) {
+    TEST_DESCRIPTION("Validate that mapping is not applied in CmdDraw call if rendering is not started by vkCmdBeginRendering");
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
+
+    VkFormat color_formats[] = {VK_FORMAT_UNDEFINED, VK_FORMAT_UNDEFINED};
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 2;
+    pipeline_rendering_info.pColorAttachmentFormats = color_formats;
+
+    std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachments(2);
+    VkPipelineColorBlendStateCreateInfo cbi = vku::InitStructHelper();
+    cbi.attachmentCount = 2u;
+    cbi.pAttachments = color_blend_attachments.data();
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.gp_ci_.pColorBlendState = &cbi;
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingAttachmentInfo color_attachment[2] = {vku::InitStructHelper(), vku::InitStructHelper()};
+    color_attachment[0].imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    color_attachment[1].imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32, 32}};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 2;
+    rendering_info.pColorAttachments = &color_attachment[0];
+
+    m_command_buffer.BeginRendering(rendering_info);
+
+    uint32_t input_indices[] = {VK_ATTACHMENT_UNUSED, VK_ATTACHMENT_UNUSED};
+
+    VkRenderingInputAttachmentIndexInfo input_attachment_index_info = vku::InitStructHelper();
+    input_attachment_index_info.colorAttachmentCount = 2u;
+    input_attachment_index_info.pColorAttachmentInputIndices = input_indices;
+    vk::CmdSetRenderingInputAttachmentIndicesKHR(m_command_buffer, &input_attachment_index_info);
+
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
