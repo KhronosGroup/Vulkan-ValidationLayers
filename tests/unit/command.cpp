@@ -4379,7 +4379,7 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageAspectMask) {
     image_ci.arrayLayers = 1;
     image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_ci.flags = 0;
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     if (!IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
@@ -4414,7 +4414,6 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageAspectMask) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-srcSubresource-11800");
     m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-dstSubresource-11801");
-    m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcImage-10984");
 
     resolve_info.srcImage = src_depth_image;
     vk::CmdResolveImage2KHR(m_command_buffer, &resolve_info);
@@ -4436,7 +4435,7 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageIllegalAspectMaskValues) {
     image_ci.arrayLayers = 1;
     image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_ci.flags = 0;
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     if (!IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
@@ -4491,7 +4490,7 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageSrcAndDstAspectMasksDifferent) {
     image_ci.arrayLayers = 1;
     image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_ci.flags = 0;
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     if (!IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
@@ -4554,7 +4553,7 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageResolveModeNone) {
     image_ci.arrayLayers = 1;
     image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_ci.flags = 0;
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     if (!IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
@@ -4588,7 +4587,6 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageResolveModeNone) {
     resolve_info.pRegions = &resolve_region;
 
     resolve_info.srcImage = src_depth_image;
-    m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcImage-10984");
     m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcImage-10989");
     m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcImage-10987");
     if (!has_stencil_resolve_mode_sample_average) {
@@ -4623,7 +4621,7 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageResolveMode) {
     image_ci.arrayLayers = 1;
     image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_ci.flags = 0;
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     if (!IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
@@ -4657,7 +4655,6 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageResolveMode) {
     resolve_info.pRegions = &resolve_region;
 
     resolve_info.srcImage = src_depth_image;
-    m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcImage-10984");
     m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcImage-10989");
     if (!has_stencil_resolve_mode_sample_average) {
         m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcImage-10990");
@@ -4887,7 +4884,7 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageResolveImageModeInfoBothSkipAndEn
     image_ci.arrayLayers = 1;
     image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_ci.flags = 0;
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     if (!IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
@@ -4947,7 +4944,7 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageResolveImageModeInvalidMode) {
     image_ci.arrayLayers = 1;
     image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_ci.flags = 0;
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     if (!IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {

@@ -750,3 +750,62 @@ TEST_F(PositiveCommand, ResolveImageImageTypeRemainingLayerCount) {
     vk::CmdResolveImage(m_command_buffer, src_image_2D, VK_IMAGE_LAYOUT_GENERAL, dst_image_3D, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveCommand, ResolveImageDepthSampleZero) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_10_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    AddRequiredFeature(vkt::Feature::maintenance10);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceDepthStencilResolveProperties depth_stencil_resolve_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(depth_stencil_resolve_props);
+    if ((depth_stencil_resolve_props.supportedDepthResolveModes & VK_RESOLVE_MODE_SAMPLE_ZERO_BIT) == 0) {
+        GTEST_SKIP() << "supportedDepthResolveModes does not include VK_RESOLVE_MODE_SAMPLE_ZERO_BIT";
+    }
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_D16_UNORM;
+    image_ci.extent = {16u, 16u, 1u};
+    image_ci.mipLevels = 1u;
+    image_ci.arrayLayers = 1u;
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    if (!IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Multisample depth images not supported";
+    }
+
+    vkt::Image src_depth_image(*m_device, image_ci, vkt::set_layout);
+
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    vkt::Image dst_depth_image(*m_device, image_ci, vkt::set_layout);
+
+    m_command_buffer.Begin();
+
+    VkImageResolve2KHR resolve_region = vku::InitStructHelper();
+    resolve_region.srcSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
+    resolve_region.srcOffset = {0, 0, 0};
+    resolve_region.dstSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
+    resolve_region.dstOffset = {0, 0, 0};
+    resolve_region.extent = {1, 1, 1};
+
+    VkResolveImageModeInfoKHR resolve_mode = vku::InitStructHelper();
+    resolve_mode.flags = 0;
+    resolve_mode.resolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
+    resolve_mode.stencilResolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+    VkResolveImageInfo2KHR resolve_info = vku::InitStructHelper(&resolve_mode);
+    resolve_info.srcImage = src_depth_image;
+    resolve_info.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    resolve_info.dstImage = dst_depth_image;
+    resolve_info.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    resolve_info.regionCount = 1;
+    resolve_info.pRegions = &resolve_region;
+
+    resolve_info.srcImage = src_depth_image;
+    vk::CmdResolveImage2KHR(m_command_buffer, &resolve_info);
+    m_command_buffer.End();
+}
