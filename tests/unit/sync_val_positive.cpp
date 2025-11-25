@@ -3411,3 +3411,60 @@ TEST_F(PositiveSyncVal, ResumeLoadOpAfterStoreOp2) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveSyncVal, VertexStride) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11093
+    TEST_DESCRIPTION("Test that vertex stride does not hazard with the next sub-allocation");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+    InitRenderTarget();
+
+    const uint32_t vertex_count = 251;
+    const uint32_t vertex_size = 3 * sizeof(float);                  // 12
+    const uint32_t vertex_buffer_size = vertex_count * vertex_size;  // 3012
+    const VkDeviceSize first_vertex_buffer_offset = 0;
+    const VkDeviceSize second_vertex_buffer_offset = vertex_buffer_size;
+
+    vkt::Buffer source_buffer(*m_device, vertex_buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer vertex_data(*m_device, 2 * vertex_buffer_size,
+                            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    VkBufferCopy copy_to_first_vertex_buffer{0, first_vertex_buffer_offset, vertex_buffer_size};
+    VkBufferCopy copy_to_second_vertex_buffer{0, second_vertex_buffer_offset, vertex_buffer_size};
+
+    VkVertexInputBindingDescription vertex_binding = {0, 300, VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription vertex_attrib = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
+
+    CreatePipelineHelper pipe(*this);
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexBindingDescriptions = &vertex_binding;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = &vertex_attrib;
+    pipe.CreateGraphicsPipeline();
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT;
+    barrier.dstAccessMask = VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT;
+
+    m_command_buffer.Begin();
+    vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &vertex_data.handle(), &first_vertex_buffer_offset);
+    vk::CmdCopyBuffer(m_command_buffer, source_buffer, vertex_data, 1, &copy_to_first_vertex_buffer);
+    m_command_buffer.Barrier(barrier);
+
+    // stride is 300 bytes and the next draw consumes 11 vertices.
+    // The offset of the last 10th vertex is 300 * 10 = 3000 so its data is in the range [3000, 3012).
+    // The stride is not extended after the last vertex, so it's safe to start the second sub-allocation
+    // with an offset 3012.
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDraw(m_command_buffer, 11, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+
+    // Copy to the second sub-allocation, this should not hazard with the previous draw
+    vk::CmdCopyBuffer(m_command_buffer, source_buffer, vertex_data, 1, &copy_to_second_vertex_buffer);
+
+    m_command_buffer.End();
+}
