@@ -1329,7 +1329,7 @@ bool CoreChecks::ValidateDrawRenderingAttachmentLocation(const vvl::CommandBuffe
             } else {
                 ss << "was not called in this render pass so the index (" << i << ") is the implicit location";
             }
-            skip = LogError(vuid.dynamic_rendering_local_location_09548, objlist, vuid.loc(), "%s", ss.str().c_str());
+            skip |= LogError(vuid.dynamic_rendering_local_location_09548, objlist, vuid.loc(), "%s", ss.str().c_str());
             break;
         }
     }
@@ -1384,7 +1384,7 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
             } else {
                 ss << "was not called in this render pass so the index (" << i << ") is the implicit location";
             }
-            skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(), "%s", ss.str().c_str());
+            skip |= LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(), "%s", ss.str().c_str());
             break;
         }
     }
@@ -1403,7 +1403,7 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
         } else {
             ss << "was not called in this render pass so pDepthInputAttachmentIndex is implicitly NULL";
         }
-        skip = LogError(vuid.dynamic_rendering_local_index_10927, objlist, vuid.loc(), "%s", ss.str().c_str());
+        skip |= LogError(vuid.dynamic_rendering_local_index_10927, objlist, vuid.loc(), "%s", ss.str().c_str());
     }
 
     if (!EqualValuesOrBothNull(pipeline_stencil_index, cb_state.rendering_attachments.stencil_index)) {
@@ -1421,7 +1421,7 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
         } else {
             ss << "was not called in this render pass so pStencilInputAttachmentIndex is implicitly NULL";
         }
-        skip = LogError(vuid.dynamic_rendering_local_index_10928, objlist, vuid.loc(), "%s", ss.str().c_str());
+        skip |= LogError(vuid.dynamic_rendering_local_index_10928, objlist, vuid.loc(), "%s", ss.str().c_str());
     }
     return skip;
 }

@@ -1461,7 +1461,7 @@ bool CoreChecks::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, ui
                                        "maintenance8 feature must be enabled."
                                      : "");
             } else if (!is_transfer_use_all_only) {
-                skip = LogError("VUID-vkCmdWaitEvents2-maintenance8-10205", objlist, dep_info_loc.dot(Field::dependencyFlags),
+                skip |= LogError("VUID-vkCmdWaitEvents2-maintenance8-10205", objlist, dep_info_loc.dot(Field::dependencyFlags),
                                 "(%s) but only VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR and "
                                 "VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR are allowed.",
                                 string_VkDependencyFlags(pDependencyInfos[i].dependencyFlags).c_str());
@@ -1493,7 +1493,7 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier(
 
     if (!enabled_features.maintenance8 &&
         (dependencyFlags & VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR)) {
-        skip = LogError("VUID-vkCmdPipelineBarrier-maintenance8-10206", objlist, error_obj.location.dot(Field::dependencyFlags),
+        skip |= LogError("VUID-vkCmdPipelineBarrier-maintenance8-10206", objlist, error_obj.location.dot(Field::dependencyFlags),
                         "VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR is used, but maintenance8 feature "
                         "was not enabled.");
     }
@@ -2736,7 +2736,7 @@ bool CoreChecks::ValidateTensorQueueFamilyIndex(uint32_t src_q, uint32_t dst_q, 
         }
     } else if (VK_SHARING_MODE_CONCURRENT == tensor_state.create_info.sharingMode) {
         if (src_q != VK_QUEUE_FAMILY_IGNORED || dst_q != VK_QUEUE_FAMILY_IGNORED) {
-            skip = LogError(
+            skip |= LogError(
                 "VUID-VkTensorMemoryBarrierARM-tensor-09755", objlist, loc,
                 "Tensor (%s) was created with a sharing mode VK_SHARING_MODE_CONCURRENT but either/or srcQueueFamilyIndex (%" PRIu32
                 ") and "
