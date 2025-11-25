@@ -2883,46 +2883,23 @@ bool CoreChecks::ValidateClusterAccelerationStructureCommandsInfoNV(
     }
 
     if (command_infos.input.opMode == VK_CLUSTER_ACCELERATION_STRUCTURE_OP_MODE_COMPUTE_SIZES_NV) {
-        if (command_infos.dstSizesArray.deviceAddress == 0 ||
-            GetBuffersByAddress(command_infos.dstSizesArray.deviceAddress).empty()) {
-            skip |=
-                LogError("VUID-VkClusterAccelerationStructureCommandsInfoNV-opMode-10470", objlist,
-                         command_infos_loc.dot(Field::dstSizesArray).dot(Field::deviceAddress),
-                         "(0x%" PRIx64
-                         ") must be a valid address if input::opMode is VK_CLUSTER_ACCELERATION_STRUCTURE_OP_MODE_COMPUTE_SIZES_NV",
-                         command_infos.dstSizesArray.deviceAddress);
+        if (command_infos.dstSizesArray.deviceAddress == 0) {
+            skip |= LogError("VUID-VkClusterAccelerationStructureCommandsInfoNV-opMode-10470", objlist,
+                             command_infos_loc.dot(Field::dstSizesArray).dot(Field::deviceAddress),
+                             "is zero, but input::opMode is VK_CLUSTER_ACCELERATION_STRUCTURE_OP_MODE_COMPUTE_SIZES_NV");
         }
+        skip |= ValidateDeviceAddress(command_infos_loc.dot(Field::dstSizesArray).dot(Field::deviceAddress), objlist,
+                                      command_infos.dstSizesArray.deviceAddress);
     }
 
     if (command_infos.input.opMode == VK_CLUSTER_ACCELERATION_STRUCTURE_OP_MODE_EXPLICIT_DESTINATIONS_NV) {
         if (command_infos.dstAddressesArray.deviceAddress == 0) {
-            skip |= LogError(
-                "VUID-VkClusterAccelerationStructureCommandsInfoNV-opMode-10471", objlist,
-                command_infos_loc.dot(Field::dstAddressesArray).dot(Field::deviceAddress),
-                "(0x%" PRIx64
-                ") must be a valid address if input::opMode is VK_CLUSTER_ACCELERATION_STRUCTURE_OP_MODE_EXPLICIT_DESTINATIONS_NV",
-                command_infos.dstAddressesArray.deviceAddress);
-        } else {
-            if (!invalid_triangle_input &&
-                command_infos.input.opType != VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_MOVE_OBJECTS_NV) {
-                BufferAddressValidation<1> dst_addresses_size_validator = {{{
-                    {"VUID-VkClusterAccelerationStructureCommandsInfoNV-opMode-10471",
-                     [&accelerationStructure_size](const vvl::Buffer &buffer_state) {
-                         return buffer_state.create_info.size < accelerationStructure_size.accelerationStructureSize;
-                     },
-                     [&accelerationStructure_size]() {
-                         return "The accelerationStructureSize (" +
-                                std::to_string(accelerationStructure_size.accelerationStructureSize) +
-                                ") does not fit in any buffer";
-                     },
-                     kEmptyErrorMsgBuffer},
-                }}};
-
-                skip |= dst_addresses_size_validator.ValidateDeviceAddress(
-                    *this, command_infos_loc.dot(Field::dstAddressesArray).dot(Field::deviceAddress), objlist,
-                    command_infos.dstAddressesArray.deviceAddress, accelerationStructure_size.accelerationStructureSize);
-            }
+            skip |= LogError("VUID-VkClusterAccelerationStructureCommandsInfoNV-opMode-10471", objlist,
+                             command_infos_loc.dot(Field::dstAddressesArray).dot(Field::deviceAddress),
+                             "is zero, but input::opMode is VK_CLUSTER_ACCELERATION_STRUCTURE_OP_MODE_EXPLICIT_DESTINATIONS_NV");
         }
+        skip |= ValidateDeviceAddress(command_infos_loc.dot(Field::dstAddressesArray).dot(Field::deviceAddress), objlist,
+                                      command_infos.dstAddressesArray.deviceAddress);
     }
 
     if (command_infos.dstAddressesArray.deviceAddress != 0 && command_infos.dstAddressesArray.stride < 8) {
