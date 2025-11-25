@@ -3812,20 +3812,22 @@ bool CoreChecks::ValidateResolveImageModeInfo(VkCommandBuffer commandBuffer, con
                          string_VkResolveModeFlagBits(resolve_mode_info->resolveMode));
     }
 
-    if (!vkuFormatIsSampledInt(src_image_state->create_info.format) &&
-        resolve_mode_info->resolveMode != VK_RESOLVE_MODE_AVERAGE_BIT) {
-        skip |= LogError("VUID-VkResolveImageInfo2-srcImage-10984", src_objlist, src_image_loc, "has format %s but %s is %s.",
-                         string_VkFormat(src_image_state->create_info.format),
-                         resolve_info_loc.pNext(Struct::VkResolveImageModeInfoKHR, Field::resolveMode).Fields().c_str(),
-                         string_VkResolveModeFlagBits(resolve_mode_info->resolveMode));
-    }
+    if (vkuFormatIsColor(src_image_state->create_info.format)) {
+        if (!vkuFormatIsSampledInt(src_image_state->create_info.format) &&
+            resolve_mode_info->resolveMode != VK_RESOLVE_MODE_AVERAGE_BIT) {
+            skip |= LogError("VUID-VkResolveImageInfo2-srcImage-10984", src_objlist, src_image_loc, "has format %s but %s is %s.",
+                             string_VkFormat(src_image_state->create_info.format),
+                             resolve_info_loc.pNext(Struct::VkResolveImageModeInfoKHR, Field::resolveMode).Fields().c_str(),
+                             string_VkResolveModeFlagBits(resolve_mode_info->resolveMode));
+        }
 
-    if (vkuFormatIsSampledInt(src_image_state->create_info.format) &&
-        resolve_mode_info->resolveMode != VK_RESOLVE_MODE_SAMPLE_ZERO_BIT) {
-        skip |= LogError("VUID-VkResolveImageInfo2-srcImage-10985", src_objlist, src_image_loc, "has format %s but %s is %s.",
-                         string_VkFormat(src_image_state->create_info.format),
-                         resolve_info_loc.pNext(Struct::VkResolveImageModeInfoKHR, Field::resolveMode).Fields().c_str(),
-                         string_VkResolveModeFlagBits(resolve_mode_info->resolveMode));
+        if (vkuFormatIsSampledInt(src_image_state->create_info.format) &&
+            resolve_mode_info->resolveMode != VK_RESOLVE_MODE_SAMPLE_ZERO_BIT) {
+            skip |= LogError("VUID-VkResolveImageInfo2-srcImage-10985", src_objlist, src_image_loc, "has format %s but %s is %s.",
+                             string_VkFormat(src_image_state->create_info.format),
+                             resolve_info_loc.pNext(Struct::VkResolveImageModeInfoKHR, Field::resolveMode).Fields().c_str(),
+                             string_VkResolveModeFlagBits(resolve_mode_info->resolveMode));
+        }
     }
 
     if (vkuFormatIsDepthOrStencil(src_image_state->create_info.format)) {
