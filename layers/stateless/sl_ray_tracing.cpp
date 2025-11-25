@@ -1328,7 +1328,7 @@ bool Device::manual_PreCallValidateCmdBuildAccelerationStructuresKHR(
                                      "[%" PRIu32 "].primitiveCount (%" PRIu32
                                      ") is superior to VkPhysicalDeviceAccelerationStructurePropertiesKHR::maxInstanceCount "
                                      "(%" PRIu64 ").",
-                                     geom_i, build_range.primitiveCount, phys_dev_ext_props.acc_structure_props.maxPrimitiveCount);
+                                     geom_i, build_range.primitiveCount, phys_dev_ext_props.acc_structure_props.maxInstanceCount);
                 }
             }
         }
