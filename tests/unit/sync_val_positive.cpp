@@ -485,7 +485,7 @@ TEST_F(PositiveSyncVal, DynamicRenderingWithBarrier) {
     pipe_read.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT};
     pipe_read.CreateGraphicsPipeline();
     pipe_read.descriptor_set_->WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
-                                                        VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
+                                                        VK_IMAGE_LAYOUT_GENERAL);
     pipe_read.descriptor_set_->UpdateDescriptorSets();
 
     VkMemoryBarrier2 barrier = vku::InitStructHelper();
@@ -496,7 +496,7 @@ TEST_F(PositiveSyncVal, DynamicRenderingWithBarrier) {
 
     VkRenderingAttachmentInfo attachment = vku::InitStructHelper();
     attachment.imageView = image_view;
-    attachment.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+    attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
     attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 
@@ -549,7 +549,7 @@ TEST_F(PositiveSyncVal, DynamicRenderingWithBarrier2) {
     pipe_read.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT};
     pipe_read.CreateGraphicsPipeline();
     pipe_read.descriptor_set_->WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
-                                                        VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
+                                                        VK_IMAGE_LAYOUT_GENERAL);
 
     CreatePipelineHelper pipe_write(*this, &pipeline_rendering_info);
     pipe_write.shader_stages_ = {vs.GetStageCreateInfo(), fs_write.GetStageCreateInfo()};
@@ -564,7 +564,7 @@ TEST_F(PositiveSyncVal, DynamicRenderingWithBarrier2) {
 
     VkRenderingAttachmentInfo attachment = vku::InitStructHelper();
     attachment.imageView = image_view;
-    attachment.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+    attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
     attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 
