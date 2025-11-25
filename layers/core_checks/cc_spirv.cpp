@@ -48,8 +48,9 @@
 #include "utils/math_utils.h"
 
 // Validate use of input attachments against subpass structure
-bool CoreChecks::ValidateShaderInputAttachment(const spirv::Module &module_state, const vvl::Pipeline &pipeline,
-                                               const spirv::ResourceInterfaceVariable &variable, const Location &loc) const {
+bool CoreChecks::ValidateShaderInputAttachment(const spirv::Module& module_state, const ShaderStageState& stage_state,
+                                               const vvl::Pipeline& pipeline, const spirv::ResourceInterfaceVariable& variable,
+                                               const Location& loc) const {
     bool skip = false;
     assert(variable.is_input_attachment);
 
@@ -59,37 +60,62 @@ bool CoreChecks::ValidateShaderInputAttachment(const spirv::Module &module_state
         return skip;
     }
 
-    for (uint32_t i = 0; i < variable.input_attachment_index_read.size(); i++) {
-        // If the attachment is not read from, nothing to validate
-        if (!variable.input_attachment_index_read[i]) {
-            continue;
-        }
-        const auto rpci = rp_state->create_info.ptr();
-        const uint32_t subpass = pipeline.Subpass();
-        const auto subpass_description = rpci->pSubpasses[subpass];
-        const auto input_attachments = subpass_description.pInputAttachments;
-        // offsets by the InputAttachmentIndex decoration
-        const uint32_t input_attachment_index = variable.decorations.input_attachment_index_start + i;
+    const auto rpci = rp_state->create_info.ptr();
+    const uint32_t subpass = pipeline.Subpass();
+    const auto subpass_description = rpci->pSubpasses[subpass];
+    const auto input_attachments = subpass_description.pInputAttachments;
 
+    auto print_index = [variable](uint32_t i) {
+        std::stringstream ss;
+        ss << variable.DescribeDescriptor() << " has an InputAttachmentIndex of "
+           << variable.decorations.input_attachment_index_start;
+        if (variable.array_length > 1) {
+            ss << ", plus " << (i - variable.decorations.input_attachment_index_start) << " from indexing into the array,";
+        }
+        return ss.str();
+    };
+
+    // Use a lambda here, because of the various ways we can aquire the index
+    const LogObjectList objlist(module_state.handle(), pipeline.Handle(), rp_state->Handle());
+    auto validate = [this, input_attachments, loc, subpass, subpass_description, print_index,
+                     objlist](const uint32_t input_attachment_index) {
+        bool skip = false;
         // Same error, but provide more useful message 'how' VK_ATTACHMENT_UNUSED is derived
         if (!input_attachments) {
-            const LogObjectList objlist(module_state.handle(), rp_state->Handle());
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06038", objlist, loc,
-                             "SPIR-V consumes input attachment index %" PRIu32 " but pSubpasses[%" PRIu32
-                             "].pInputAttachments is NULL.",
-                             input_attachment_index, subpass);
+                             "%s but pSubpasses[%" PRIu32 "].pInputAttachments is NULL.",
+                             print_index(input_attachment_index).c_str(), subpass);
         } else if (input_attachment_index >= subpass_description.inputAttachmentCount) {
-            const LogObjectList objlist(module_state.handle(), rp_state->Handle());
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06038", objlist, loc,
-                             "SPIR-V consumes input attachment index %" PRIu32 " but that is not less than the pSubpasses[%" PRIu32
-                             "].inputAttachmentCount (%" PRIu32 ").",
-                             input_attachment_index, subpass, subpass_description.inputAttachmentCount);
+                             "%s but that is not less than the pSubpasses[%" PRIu32 "].inputAttachmentCount (%" PRIu32 ").",
+                             print_index(input_attachment_index).c_str(), subpass, subpass_description.inputAttachmentCount);
         } else if (input_attachments[input_attachment_index].attachment == VK_ATTACHMENT_UNUSED) {
-            const LogObjectList objlist(module_state.handle(), rp_state->Handle());
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06038", objlist, loc,
-                             "SPIR-V consumes input attachment index %" PRIu32 " but pSubpasses[%" PRIu32
-                             "].pInputAttachments[%" PRIu32 "].attachment is VK_ATTACHMENT_UNUSED.",
-                             input_attachment_index, subpass, input_attachment_index);
+                             "%s but pSubpasses[%" PRIu32 "].pInputAttachments[%" PRIu32 "].attachment is VK_ATTACHMENT_UNUSED.",
+                             print_index(input_attachment_index).c_str(), subpass, input_attachment_index);
+        }
+        return skip;
+    };
+
+    // - most likely case, there is a single, non-array, input attachment, just check the InputAttachmentIndex
+    // - but there might be an array, used are static SPIR-V parsing to find which indexes had constant accesses
+    // - if the indexing is done via a spec constant, we will defer here, as this is tied to the current pipeline we are in
+    if (variable.array_length > 1) {
+        for (const auto i : variable.input_attachment_index_read) {
+            // offsets by the InputAttachmentIndex decoration
+            skip |= validate(variable.decorations.input_attachment_index_start + i);
+        }
+    } else {
+        skip |= validate(variable.decorations.input_attachment_index_start);
+    }
+    if (variable.input_attachment_index_has_spec_constant) {
+        for (const spirv::Instruction* ac_inst : module_state.static_data_.descriptor_indexing_spec_const_ac_inst) {
+            if (variable.id != ac_inst->Word(3)) {
+                continue;
+            }
+            const spirv::Instruction* spec_const_inst = module_state.FindDef(ac_inst->Word(4));
+            const uint32_t index = stage_state.constants.GetSpecConstInt32Value(*spec_const_inst);
+            skip |= validate(variable.decorations.input_attachment_index_start + index);
         }
     }
 
@@ -1595,7 +1621,7 @@ bool CoreChecks::ValidateShaderInterfaceVariableDSL(const spirv::Module &module_
                          string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
                          string_VkDescriptorType(binding->descriptorType), string_DescriptorTypeSet(descriptor_type_set).c_str(),
                          print_dsl_info().c_str());
-    } else if (binding->descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK && variable.array_length) {
+    } else if (binding->descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK && variable.array_length > 0) {
         skip |=
             LogError(GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::Inline_10391), objlist, loc,
                      "SPIR-V (%s) uses descriptor %s as VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, but it is an array of descriptor. "
@@ -2150,7 +2176,7 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
         }
         if (pipeline) {
             if (variable.decorations.Has(spirv::DecorationSet::input_attachment_bit)) {
-                skip |= ValidateShaderInputAttachment(module_state, *pipeline, variable, loc);
+                skip |= ValidateShaderInputAttachment(module_state, stage_state, *pipeline, variable, loc);
             }
         }
     }

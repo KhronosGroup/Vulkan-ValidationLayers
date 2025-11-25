@@ -428,10 +428,9 @@ struct ResourceInterfaceVariable : public VariableBase {
     // For storage images - list of Texel component length the OpImageWrite
     std::vector<uint32_t> write_without_formats_component_count_list;
 
-    // A variable can have an array of indexes, need to track which are written to
-    // can't use bitset because number of indexes isn't known until runtime
-    // This array will match the OpTypeArray and not consider the InputAttachmentIndex
-    std::vector<bool> input_attachment_index_read;
+    // Index into input attachment array that have been read
+    vvl::unordered_set<uint32_t> input_attachment_index_read;
+    bool input_attachment_index_has_spec_constant{false};
 
     // Type once array/pointer are stripped
     // most likely will be OpTypeImage, OpTypeStruct, OpTypeSampler, or OpTypeAccelerationStructureKHR
@@ -671,6 +670,13 @@ struct Module {
         std::vector<const Instruction *> cooperative_vector_inst;
         std::vector<const Instruction *> emit_mesh_tasks_inst;
         std::vector<const Instruction *> array_length_inst;
+
+        // For descriptor indexing there are 3 situations
+        //  1. OpConstant is used, we will find later
+        //  2. The value is dynamic, caught in GPU-AV
+        //  3. OpSpecConstant, which we can detect, but not until we have the values
+        // We only need to check index 1, since you can't have double array of descriptors
+        std::vector<const Instruction*> descriptor_indexing_spec_const_ac_inst;
 
         std::vector<spv::Capability> capability_list;
         // Code on the hot path can cache capabilities for fast access.

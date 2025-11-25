@@ -73,4 +73,14 @@ bool ConstantState::GetInt32Value(const spirv::Instruction& insn, uint32_t* valu
     return false;
 }
 
+uint32_t ConstantState::GetSpecConstInt32Value(const spirv::Instruction& insn) const {
+    assert(insn.Opcode() == spv::OpSpecConstant);
+    uint32_t value = insn.Word(3);  // default value
+    const uint32_t spec_id = module_state->static_data_.id_to_spec_id.at(insn.Word(2));
+    if (spec_info && spec_id < spec_info->mapEntryCount) {
+        memcpy(&value, (uint8_t*)spec_info->pData + spec_info->pMapEntries[spec_id].offset, spec_info->pMapEntries[spec_id].size);
+    }
+    return value;
+}
+
 }  // namespace spirv
