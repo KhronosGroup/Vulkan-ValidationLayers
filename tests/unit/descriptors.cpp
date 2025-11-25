@@ -675,6 +675,33 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetIntegrity) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDescriptors, WriteDescriptorSetInputAttachment) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11098");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    const VkFormat depth_format = FindSupportedDepthOnlyFormat(Gpu());
+    vkt::Image depth_image(*m_device, 8, 8, depth_format, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+    vkt::ImageView image_view = depth_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    VkDescriptorImageInfo image_info = {VK_NULL_HANDLE, image_view, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL};
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}});
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstSet = descriptor_set.set_;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.dstArrayElement = 0;
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+    descriptor_write.pImageInfo = &image_info;
+
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-04151");
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDescriptors, WriteImmutableSampler) {
     RETURN_IF_SKIP(Init());
 
