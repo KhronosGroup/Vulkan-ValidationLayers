@@ -763,29 +763,28 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings *settings_data, VkuL
     }
 }
 
-#define NEW_SETTING_NAME_AND_ENV(setting) setting, #setting
-
 // Set as deprecated after the 1.4.328 SDK release
-std::string GetDeprecatedEnabledDisabledSettingsWarning() {
+static std::string GetDeprecatedEnabledDisabledSettingsWarning() {
     struct DS {
         const char *deprecated_setting;
         const char *new_setting;
         const char *new_setting_env_var;
     };
     const std::array deprecated_to_new_settings = {
-        DS{"VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT", NEW_SETTING_NAME_AND_ENV(VK_LAYER_GPUAV_ENABLE)},
-        DS{"VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT", NEW_SETTING_NAME_AND_ENV(VK_LAYER_VALIDATE_BEST_PRACTICES)},
-        DS{"VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT", NEW_SETTING_NAME_AND_ENV(VK_LAYER_PRINTF_ENABLE)},
-        DS{"VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT", NEW_SETTING_NAME_AND_ENV(VK_LAYER_VALIDATE_SYNC)},
+        DS{"VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT", VK_LAYER_GPUAV_ENABLE, "VK_LAYER_GPUAV_ENABLE"},
+        DS{"VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT", VK_LAYER_VALIDATE_BEST_PRACTICES, "VK_LAYER_VALIDATE_BEST_PRACTICES"},
+        DS{"VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT", VK_LAYER_PRINTF_ENABLE, "VK_LAYER_PRINTF_ENABLE"},
+        DS{"VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT", VK_LAYER_VALIDATE_SYNC, "VK_LAYER_VALIDATE_SYNC"},
 
         DS{"VK_VALIDATION_FEATURE_DISABLE_ALL_EXT", "<no new setting>", "<no environment variable>"},
-        DS{"VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT", NEW_SETTING_NAME_AND_ENV(VK_LAYER_CHECK_SHADERS)},
-        DS{"VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT", NEW_SETTING_NAME_AND_ENV(VK_LAYER_THREAD_SAFETY)},
-        DS{"VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT", NEW_SETTING_NAME_AND_ENV(VK_LAYER_STATELESS_PARAM)},
-        DS{"VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT", NEW_SETTING_NAME_AND_ENV(VK_LAYER_OBJECT_LIFETIME)},
-        DS{"VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT", NEW_SETTING_NAME_AND_ENV(VK_LAYER_VALIDATE_CORE)},
-        DS{"VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT", NEW_SETTING_NAME_AND_ENV(VK_LAYER_UNIQUE_HANDLES)},
-        DS{"VK_VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHE_EXT", NEW_SETTING_NAME_AND_ENV(VK_LAYER_CHECK_SHADERS_CACHING)}};
+        DS{"VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT", VK_LAYER_CHECK_SHADERS, "VK_LAYER_CHECK_SHADERS"},
+        DS{"VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT", VK_LAYER_THREAD_SAFETY, "VK_LAYER_THREAD_SAFETY"},
+        DS{"VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT", VK_LAYER_STATELESS_PARAM, "VK_LAYER_STATELESS_PARAM"},
+        DS{"VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT", VK_LAYER_OBJECT_LIFETIME, "VK_LAYER_OBJECT_LIFETIME"},
+        DS{"VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT", VK_LAYER_VALIDATE_CORE, "VK_LAYER_VALIDATE_CORE"},
+        DS{"VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT", VK_LAYER_UNIQUE_HANDLES, "VK_LAYER_UNIQUE_HANDLES"},
+        DS{"VK_VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHE_EXT", VK_LAYER_CHECK_SHADERS_CACHING,
+           "VK_LAYER_CHECK_SHADERS_CACHING"}};
 
     std::stringstream ss;
     ss << "Application is using deprecated \"enables\" (env var: VK_LAYER_ENABLES) and/or \"disables\" (env var: VK_LAYER_ENABLES) "
@@ -798,8 +797,6 @@ std::string GetDeprecatedEnabledDisabledSettingsWarning() {
 
     return ss.str();
 }
-
-#undef NEW_SETTING_NAME_AND_ENV
 
 static const char *GetDefaultPrefix() {
 #ifdef __ANDROID__
@@ -885,11 +882,11 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     }
     const std::string string_disabled = Merge(disabled);
     SetLocalDisableSetting(string_disabled, ",", settings_data->disabled);
-#if 0
+
     if (!disabled.empty() || !enabled.empty()) {
         setting_warnings.emplace_back(GetDeprecatedEnabledDisabledSettingsWarning());
     }
-#endif
+
     GlobalSettings &global_settings = *settings_data->global_settings;
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_FINE_GRAINED_LOCKING)) {
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_FINE_GRAINED_LOCKING, global_settings.fine_grained_locking);
