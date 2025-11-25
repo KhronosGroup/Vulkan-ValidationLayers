@@ -1366,6 +1366,9 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
     // and we should only check the attachments that will be rendered to
     uint32_t count = std::min(pipeline_color_count, color_index_count);
     for (uint32_t i = 0; i < count; i++) {
+        if (!pipeline_color_indexes && cb_state.rendering_attachments.color_indexes[i] == VK_ATTACHMENT_UNUSED) {
+            continue;
+        }
         uint32_t pipeline_color_index = pipeline_color_indexes ? pipeline_color_indexes[i] : i;
         if (pipeline_color_index != cb_state.rendering_attachments.color_indexes[i]) {
             const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
@@ -1377,7 +1380,7 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
             }
             ss << ", but doesn't match this render pass instance because vkCmdSetRenderingInputAttachmentIndices ";
             if (cb_state.rendering_attachments.set_color_indexes) {
-                ss << "last set pColorAttachmentInputIndices[" << i << "] to " << cb_state.rendering_attachments.color_locations[i];
+                ss << "last set pColorAttachmentInputIndices[" << i << "] to " << cb_state.rendering_attachments.color_indexes[i];
             } else {
                 ss << "was not called in this render pass so the index (" << i << ") is the implicit location";
             }
