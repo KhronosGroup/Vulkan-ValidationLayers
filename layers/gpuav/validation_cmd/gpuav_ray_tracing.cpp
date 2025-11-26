@@ -53,10 +53,6 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
         return;
     }
 
-    if (!gpuav.modified_features.shaderInt64) {
-        return;
-    }
-
     valpipe::RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
 
     ValidationCommandsCommon& val_cmd_common =
@@ -412,10 +408,6 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
                                  const VkAccelerationStructureBuildRangeInfoKHR* const* build_ranges_infos) {
     VVL_ZoneScoped;
     if (!gpuav.gpuav_settings.validate_acceleration_structures_builds) {
-        return;
-    }
-
-    if (!gpuav.modified_features.shaderInt64) {
         return;
     }
 

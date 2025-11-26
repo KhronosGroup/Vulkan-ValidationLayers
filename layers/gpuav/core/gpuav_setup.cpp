@@ -333,7 +333,7 @@ struct BufferDeviceAddress : public Setting {
     bool HasRequiredFeatures(const DeviceFeatures &features) { return features.shaderInt64; }
     void Disable(GpuAVSettings &settings) { settings.shader_instrumentation.buffer_device_address = false; }
     std::string DisableMessage() {
-        return "Buffer Device Address validation option was enabled, but the shaderInt64 feature was not supported [Disabling "
+        return "Buffer Device Address validation option was enabled, but the shaderInt64 feature are not supported. [Disabling "
                "gpuav_buffer_address_oob]";
     }
 };
@@ -343,7 +343,7 @@ struct RayQuery : public Setting {
     bool HasRequiredFeatures(const DeviceFeatures &features) { return features.rayQuery; }
     void Disable(GpuAVSettings &settings) { settings.shader_instrumentation.ray_query = false; }
     std::string DisableMessage() {
-        return "Ray Query validation option was enabled, but the rayQuery feature was not supported [Disabling "
+        return "Ray Query validation option was enabled, but the rayQuery feature are not supported. [Disabling "
                "gpuav_validate_ray_query]";
     }
 };
@@ -353,7 +353,7 @@ struct BufferCopies : public Setting {
     bool HasRequiredFeatures(const DeviceFeatures &features) { return features.storageBuffer8BitAccess; }
     void Disable(GpuAVSettings &settings) { settings.validate_buffer_copies = false; }
     std::string DisableMessage() {
-        return "Buffer copies option was enabled, but the storageBuffer8BitAccess feature was not supported [Disabling "
+        return "Buffer copies option was enabled, but the storageBuffer8BitAccess feature are not supported. [Disabling "
                "gpuav_buffer_copies]";
     }
 };
@@ -362,7 +362,7 @@ struct BufferContent : public Setting {
     bool HasRequiredFeatures(const DeviceFeatures &features) { return features.shaderInt64; }
     void Disable(GpuAVSettings &settings) { settings.SetBufferValidationEnabled(false); }
     std::string DisableMessage() {
-        return "Buffer content validation option was enabled, but the shaderInt64 feature was not supported [Disabling "
+        return "Buffer content validation option was enabled, but the shaderInt64 feature are not supported. [Disabling "
                "gpuav_buffers_validation]";
     }
 };
@@ -370,11 +370,11 @@ struct BufferContent : public Setting {
 struct AccelerationStructuresBuild : public Setting {
     bool IsEnabled(const GpuAVSettings &settings) { return settings.validate_acceleration_structures_builds; }
     // Validation shader branches on a push constant value to fetch different descriptors
-    bool HasRequiredFeatures(const DeviceFeatures &features) { return features.runtimeDescriptorArray; }
+    bool HasRequiredFeatures(const DeviceFeatures &features) { return features.shaderInt64 && features.runtimeDescriptorArray; }
     void Disable(GpuAVSettings &settings) { settings.validate_acceleration_structures_builds = false; }
     std::string DisableMessage() {
-        return "Acceleration structure builds validation option was enabled, but the runtimeDescriptorArray feature was not "
-               "supported [Disabling "
+        return "Acceleration structure builds validation option was enabled, but the shaderInt64 or runtimeDescriptorArray features are not "
+               "supported. [Disabling "
                "gpuav_acceleration_structures_builds]";
     }
 };

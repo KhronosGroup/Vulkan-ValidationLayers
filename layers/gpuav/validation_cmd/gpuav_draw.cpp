@@ -316,10 +316,6 @@ void CountBuffer(Validator &gpuav, CommandBufferSubState &cb_state, const Locati
         return;
     }
 
-    if (!gpuav.modified_features.shaderInt64) {
-        return;
-    }
-
     auto draw_buffer_state = gpuav.Get<vvl::Buffer>(api_buffer);
     if (!draw_buffer_state) {
         gpuav.InternalError(LogObjectList(cb_state.VkHandle(), api_buffer), loc, "buffer must be a valid VkBuffer handle");
