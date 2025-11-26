@@ -82,6 +82,8 @@ class Instruction {
     bool IsImageArray() const;
     bool IsImageMultisampled() const;
     bool IsTensor() const;
+    bool IsConstant() const;
+    bool IsSpecConstant() const;
 
     // Auto-generated helper functions
     spv::StorageClass StorageClass() const;

@@ -141,8 +141,8 @@ uint32_t Instruction::GetConstantValue() const {
     // This should be a OpConstant (not a OpSpecConstant), if this asserts then 2 things are happening
     // 1. This function is being used where we don't actually know it is a constant and is a bug in the validation layers
     // 2. The CreateFoldSpecConstantOpAndCompositePass didn't fully fold everything and is a bug in spirv-opt
-    assert(Opcode() == spv::OpConstant);
-    return Word(3);
+    assert(Opcode() == spv::OpConstant || Opcode() == spv::OpConstantNull);
+    return Opcode() == spv::OpConstantNull ? 0 : Word(3);
 }
 
 // The idea of this function is to not have to constantly lookup which operand for the width
@@ -204,6 +204,41 @@ bool Instruction::IsImageMultisampled() const {
 }
 
 bool Instruction::IsTensor() const { return (Opcode() == spv::OpTypeTensorARM); }
+
+// Returns "any" constant
+bool Instruction::IsConstant() const {
+    switch (Opcode()) {
+        case spv::OpConstantTrue:
+        case spv::OpConstantFalse:
+        case spv::OpConstant:
+        case spv::OpConstantComposite:
+        case spv::OpConstantSampler:
+        case spv::OpConstantNull:
+        case spv::OpSpecConstantTrue:
+        case spv::OpSpecConstantFalse:
+        case spv::OpSpecConstant:
+        case spv::OpSpecConstantComposite:
+        case spv::OpSpecConstantOp:
+            return true;
+        default:
+            break;
+    }
+    return false;
+}
+
+bool Instruction::IsSpecConstant() const {
+    switch (Opcode()) {
+        case spv::OpSpecConstantTrue:
+        case spv::OpSpecConstantFalse:
+        case spv::OpSpecConstant:
+        case spv::OpSpecConstantComposite:
+        case spv::OpSpecConstantOp:
+            return true;
+        default:
+            break;
+    }
+    return false;
+}
 
 spv::StorageClass Instruction::StorageClass() const {
     spv::StorageClass storage_class = spv::StorageClassMax;

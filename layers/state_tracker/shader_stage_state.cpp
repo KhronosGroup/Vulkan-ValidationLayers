@@ -76,9 +76,9 @@ const void *ShaderStageState::GetPNext() const {
     return (pipeline_create_info) ? pipeline_create_info->pNext : shader_object_create_info->pNext;
 }
 
-ShaderStageState::ShaderStageState(const vku::safe_VkPipelineShaderStageCreateInfo* pipeline_create_info,
-                                   const vku::safe_VkShaderCreateInfoEXT* shader_object_create_info,
-                                   const vvl::DescriptorSetLayoutList* descriptor_set_layouts,
+ShaderStageState::ShaderStageState(const vku::safe_VkPipelineShaderStageCreateInfo *pipeline_create_info,
+                                   const vku::safe_VkShaderCreateInfoEXT *shader_object_create_info,
+                                   const vvl::DescriptorSetLayoutList *descriptor_set_layouts,
                                    std::shared_ptr<const vvl::ShaderModule> module_state,
                                    std::shared_ptr<const spirv::Module> spirv_state, const VkPipelineLayout pipeline_layout)
     : module_state(module_state),
@@ -87,5 +87,4 @@ ShaderStageState::ShaderStageState(const vku::safe_VkPipelineShaderStageCreateIn
       shader_object_create_info(shader_object_create_info),
       descriptor_set_layouts(descriptor_set_layouts),
       pipeline_layout(VK_NULL_HANDLE),
-      entrypoint(spirv_state ? spirv_state->FindEntrypoint(GetPName(), GetStage()) : nullptr),
-      constants(spirv_state.get(), GetSpecializationInfo()) {}
+      entrypoint(spirv_state ? spirv_state->FindEntrypoint(GetPName(), GetStage()) : nullptr) {}

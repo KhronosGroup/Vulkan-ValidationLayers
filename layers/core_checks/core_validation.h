@@ -913,7 +913,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                    const ShaderStageState& stage_state, const spirv::LocalSize& local_size,
                                    const Location& loc) const;
     bool ValidateCooperativeVector(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
-                                   const ShaderStageState& stage_state, const Location& loc) const;
+                                   const Location& loc) const;
     bool ValidateSubpassCustomeResolve(const spirv::Module& module_state, VkShaderStageFlagBits stage,
                                        const vvl::Pipeline& pipeline, const Location& loc) const;
     bool ValidateCustomResolveCreateInfoEXT(const VkCustomResolveCreateInfoEXT& create_info, const Location& loc) const;
@@ -2294,7 +2294,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateTaskMeshWorkGroupSizes(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                         const spirv::LocalSize& local_size, const Location& loc) const;
     bool ValidateEmitMeshTasksSize(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
-                                   const ShaderStageState& stage_state, const Location& loc) const;
+                                   const Location& loc) const;
     bool ValidateMeshMemorySize(const spirv::Module& module_state, uint32_t total_workgroup_shared_memory,
                                 uint32_t total_task_payload_memory, const Location& loc) const;
     bool ValidateTaskPayload(const spirv::Module& task_state, const spirv::EntryPoint& mesh_entrypoint, const Location& loc) const;

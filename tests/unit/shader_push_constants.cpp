@@ -536,9 +536,7 @@ TEST_F(NegativeShaderPushConstants, MultipleEntryPoint) {
     pipe.CreateGraphicsPipeline();
 }
 
-// This is not working because of a bug in the Spec Constant logic
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5911
-TEST_F(NegativeShaderPushConstants, DISABLED_SpecConstantSize) {
+TEST_F(NegativeShaderPushConstants, SpecConstantSize) {
     TEST_DESCRIPTION("Use SpecConstant to adjust size of Push Constant Block");
     RETURN_IF_SKIP(Init());
 
@@ -575,7 +573,7 @@ TEST_F(NegativeShaderPushConstants, DISABLED_SpecConstantSize) {
     pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
                                              &specialization_info);
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, {push_constant_range});
-    m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-layout-07987");
+    m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-layout-10069");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }

@@ -396,8 +396,6 @@ target_sources(vvl PRIVATE
     state_tracker/render_pass_state.h
     state_tracker/sampler_state.cpp
     state_tracker/sampler_state.h
-    state_tracker/shader_constant_state.cpp
-    state_tracker/shader_constant_state.h
     state_tracker/shader_instruction.cpp
     state_tracker/shader_instruction.h
     state_tracker/shader_module.cpp

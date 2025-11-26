@@ -2446,9 +2446,7 @@ TEST_F(NegativeShaderSpirv, DescriptorCountConstant) {
     m_errorMonitor->VerifyFound();
 }
 
-// This is not working because of a bug in the Spec Constant logic
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5911
-TEST_F(NegativeShaderSpirv, DISABLED_DescriptorCountSpecConstant) {
+TEST_F(NegativeShaderSpirv, DescriptorCountSpecConstant) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -2456,6 +2454,34 @@ TEST_F(NegativeShaderSpirv, DISABLED_DescriptorCountSpecConstant) {
         #version 450
         layout (constant_id = 0) const int index = 2;
         layout (set = 0, binding = 0) uniform sampler2D tex[index];
+        layout (location = 0) out vec4 out_color;
+        void main() {
+            out_color = textureLodOffset(tex[1], vec2(0), 0, ivec2(0));
+        }
+    )glsl";
+
+    uint32_t data = 4;  // over VkDescriptorSetLayoutBinding::descriptorCount
+    VkSpecializationMapEntry entry = {0, 0, sizeof(uint32_t)};
+    VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &data};
+    const VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specialization_info);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-layout-07991");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderSpirv, DescriptorCountSpecConstantOp) {
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const char *fsSource = R"glsl(
+        #version 450
+        layout (constant_id = 0) const int index = 2;
+        // The length is now a OpSpecConstantOp
+        layout (set = 0, binding = 0) uniform sampler2D tex[index > 3 ? 3 : index];
         layout (location = 0) out vec4 out_color;
         void main() {
             out_color = textureLodOffset(tex[1], vec2(0), 0, ivec2(0));

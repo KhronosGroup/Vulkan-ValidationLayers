@@ -1012,8 +1012,7 @@ TEST_F(NegativeSubpass, InputAttachmentMissingSpecConstant) {
     m_errorMonitor->VerifyFound();
 }
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5911
-TEST_F(NegativeSubpass, DISABLED_InputAttachmentMissingSpecConstant2) {
+TEST_F(NegativeSubpass, InputAttachmentMissingSpecConstant2) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 

@@ -432,8 +432,8 @@ struct ResourceInterfaceVariable : public VariableBase {
     std::vector<uint32_t> write_without_formats_component_count_list;
 
     // Index into input attachment array that have been read
+    // If there is no array, index 0 is marked if the single image is read
     vvl::unordered_set<uint32_t> input_attachment_index_read;
-    bool input_attachment_index_has_spec_constant{false};
 
     // Type once array/pointer are stripped
     // most likely will be OpTypeImage, OpTypeStruct, OpTypeSampler, or OpTypeAccelerationStructureKHR
@@ -770,9 +770,11 @@ struct Module {
 
     uint32_t CalculateWorkgroupSharedMemory() const;
 
-    const Instruction *GetConstantDef(uint32_t id) const;
     const Instruction *GetAnyConstantDef(uint32_t id) const;
     uint32_t GetConstantValueById(uint32_t id) const;
+    bool GetBoolIfConstant(const spirv::Instruction &insn, bool *value) const;
+    bool GetInt32IfConstant(const spirv::Instruction &insn, uint32_t *value) const;
+
     uint32_t GetLocationsConsumedByType(uint32_t type) const;
     uint32_t GetComponentsConsumedByType(uint32_t type) const;
     NumericType GetNumericType(uint32_t type) const;
