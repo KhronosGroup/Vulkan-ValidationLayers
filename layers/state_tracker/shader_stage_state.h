@@ -20,7 +20,6 @@
 #include <vulkan/vulkan.h>
 #include <memory>
 #include "containers/custom_containers.h"
-#include "shader_constant_state.h"
 
 namespace vku {
 struct safe_VkPipelineShaderStageCreateInfo;
@@ -51,7 +50,6 @@ struct ShaderStageState {
     VkPipelineLayout pipeline_layout;
     // If null, means it is an empty object, no SPIR-V backing it
     std::shared_ptr<const spirv::EntryPoint> entrypoint;
-    const spirv::ConstantState constants;
 
     ShaderStageState(const vku::safe_VkPipelineShaderStageCreateInfo *pipeline_create_info,
                      const vku::safe_VkShaderCreateInfoEXT *shader_object_create_info,

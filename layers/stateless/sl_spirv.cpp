@@ -914,8 +914,9 @@ bool SpirvValidator::ValidateMemoryScope(const spirv::Module &module_state, cons
     const auto &entry = OpcodeMemoryScopePosition(insn.Opcode());
     if (entry > 0) {
         const uint32_t scope_id = insn.Word(entry);
-        const spirv::Instruction *scope_def = module_state.GetConstantDef(scope_id);
-        if (scope_def) {
+        const spirv::Instruction *scope_def = module_state.GetAnyConstantDef(scope_id);
+        // Very very low chance using spec constant to set memory scope
+        if (scope_def && scope_def->Opcode() == spv::OpConstant) {
             const spv::Scope scope_type = spv::Scope(scope_def->GetConstantValue());
             if (enabled_features.vulkanMemoryModel && !enabled_features.vulkanMemoryModelDeviceScope &&
                 scope_type == spv::Scope::ScopeDevice) {

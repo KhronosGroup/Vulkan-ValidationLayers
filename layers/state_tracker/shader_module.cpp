@@ -560,8 +560,9 @@ bool EntryPoint::IsBuiltInWritten(spv::BuiltIn built_in, const Module& module_st
 
             // We know for sure any built-in inside a block are only 1-element deep so can just check the "Indexes 0" operand
             // Also no built-in we are dealing with are inside array-of-structs
-            const Instruction* value_def = module_state.GetConstantDef(access_chain_insn->Word(4));
-            if (value_def) {
+            const Instruction* value_def = module_state.GetAnyConstantDef(access_chain_insn->Word(4));
+            // Very very low chance using a spec constant to dynamically pick which built-in member of a struct to access
+            if (value_def && value_def->Opcode() == spv::OpConstant) {
                 const uint32_t value = value_def->GetConstantValue();
                 if (value == member_index) {
                     return true;
@@ -765,8 +766,8 @@ StaticImageAccess::StaticImageAccess(const Module& module_state, const Instructi
                 case spv::OpInBoundsPtrAccessChain: {
                     // If Image is an array (but not descriptor indexing), then need to get the index if possible.
                     const Instruction* const_def = module_state.GetAnyConstantDef(find_insn->Word(4));
-                    if (const_def && (const_def->Opcode() == spv::OpConstant || const_def->Opcode() == spv::OpSpecConstant)) {
-                        const bool spec_const = const_def->Opcode() != spv::OpConstant;
+                    if (const_def->IsConstant()) {
+                        const bool spec_const = const_def->IsSpecConstant();
                         if (sampler) {
                             sampler_access_chain_index = spec_const ? kSpecConstant : const_def->GetConstantValue();
                         } else {
@@ -1597,6 +1598,7 @@ uint32_t Module::CalculateWorkgroupSharedMemory() const {
 
 // If the instruction at |id| is a OpConstant or copy of a constant, returns the instruction
 // Cases such as runtime arrays, will not find a constant and return NULL
+// Might return a OpSpecConstant
 const Instruction* Module::GetAnyConstantDef(uint32_t id) const {
     const Instruction* value = FindDef(id);
 
@@ -1608,30 +1610,61 @@ const Instruction* Module::GetAnyConstantDef(uint32_t id) const {
     return value;
 }
 
-// TODO - Need a better systematic way to handle Spec Constants
-const Instruction* Module::GetConstantDef(uint32_t id) const {
-    const Instruction* value = GetAnyConstantDef(id);
-    if (value && (value->Opcode() == spv::OpConstant)) {
-        return value;
-    }
-    return nullptr;
-}
-
 // Returns the constant value described by the instruction at |id|
 // Caller ensures there can't be a runtime array or specialization constants
 uint32_t Module::GetConstantValueById(uint32_t id) const {
-    const Instruction* value = GetConstantDef(id);
+    const Instruction* value = GetAnyConstantDef(id);
 
     // If this hit, most likley a runtime array (probably from VK_EXT_descriptor_indexing)
     // or unhandled specialization constants
-    // Caller needs to call GetConstantDef() and check if null
-    if (!value) {
+    if (!value || value->Opcode() != spv::OpConstant) {
         // TODO - still not fixed
         // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6293
         return 1;
     }
 
     return value->GetConstantValue();
+}
+
+bool Module::GetBoolIfConstant(const spirv::Instruction& insn, bool* value) const {
+    const spirv::Instruction* type_id = FindDef(insn.Word(1));
+    if (type_id->Opcode() != spv::OpTypeBool) {
+        return false;
+    }
+    // Spec constants should be frozen/folded before calling this
+    assert(insn.Opcode() != spv::OpSpecConstantTrue && insn.Opcode() != spv::OpSpecConstantFalse);
+
+    if (insn.Opcode() == spv::OpConstantFalse || insn.Opcode() == spv::OpConstantNull) {
+        *value = false;
+        return true;
+    } else if (insn.Opcode() == spv::OpConstantTrue) {
+        *value = true;
+        return true;
+    }
+
+    // This means the value is not known until runtime and will need to be checked in GPU-AV
+    return false;
+}
+
+bool Module::GetInt32IfConstant(const spirv::Instruction& insn, uint32_t* value) const {
+    const spirv::Instruction* type_id = FindDef(insn.Word(1));
+    // TODO - Need to handle 64-bit ints
+    if (type_id->Opcode() != spv::OpTypeInt || type_id->Word(2) > 32) {
+        return false;
+    }
+    // Spec constants should be frozen/folded before calling this
+    assert(insn.Opcode() != spv::OpSpecConstant && insn.Opcode() != spv::OpSpecConstantComposite);
+
+    if (insn.Opcode() == spv::OpConstant) {
+        *value = insn.Word(3);
+        return true;
+    } else if (insn.Opcode() == spv::OpConstantNull) {
+        *value = 0;
+        return true;
+    }
+
+    // This means the value is not known until runtime and will need to be checked in GPU-AV
+    return false;
 }
 
 // Returns the number of Location slots used for a given ID reference to a OpType*
@@ -2204,13 +2237,13 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                     }
 
                     // Track all array index statically known being accessed
-                    if (is_input_attachment && IsArray()) {
-                        if (image_access.image_access_chain_index == kInvalidValue) {
-                            // Dynamic, requires GPU-AV
-                        } else if (image_access.image_access_chain_index == kSpecConstant) {
-                            // We don't have spec constant data now, will look later
-                            input_attachment_index_has_spec_constant = true;
-                        } else {
+                    if (is_input_attachment) {
+                        if (!IsArray()) {
+                            input_attachment_index_read.emplace(0);
+                        } else if (image_access.image_access_chain_index != kInvalidValue &&
+                                   image_access.image_access_chain_index != kSpecConstant) {
+                            // Non-constant index requires GPU-AV
+                            // Spec Constants are handled after constant folding
                             input_attachment_index_read.emplace(image_access.image_access_chain_index);
                         }
                     }
@@ -2339,17 +2372,7 @@ TypeStructSize TypeStructInfo::GetSize(const Module& module_state) const {
     }
 
     const auto& highest_member = members[highest_element_index];
-    uint32_t highest_element_size = 0;
-    if (highest_member.insn->Opcode() == spv::OpTypeArray &&
-        module_state.FindDef(highest_member.insn->Word(3))->Opcode() == spv::OpSpecConstant) {
-        // TODO - This is a work-around because currently we only apply SpecConstant for workgroup size
-        // The shader validation needs to be fixed so we handle all cases when spec constant are applied, while still being catious
-        // of the fact that information is not known until pipeline creation (not at shader module creation time)
-        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5911
-        highest_element_size = module_state.FindDef(highest_member.insn->Word(3))->Word(3);
-    } else {
-        highest_element_size = module_state.GetTypeBytesSize(highest_member.insn);
-    }
+    const uint32_t highest_element_size = module_state.GetTypeBytesSize(highest_member.insn);
     size = (highest_element_size + highest_element_offset) - offset;
 
     return {offset, size};
@@ -2398,7 +2421,8 @@ uint32_t Module::GetTypeBitsSize(const Instruction* insn) const {
         const Instruction* element_type = FindDef(insn->Word(2));
         const uint32_t element_width = GetTypeBitsSize(element_type);
         const Instruction* length_type = FindDef(insn->Word(3));
-        const uint32_t length = length_type->GetConstantValue();
+        // If a spec constant is used to size the array, use a safe value, it will get reevaluated later
+        const uint32_t length = length_type->Opcode() == spv::OpConstant ? length_type->GetConstantValue() : 1;
 
         // ArrayStride is only between element, not applied on the end of last element
         // Things like Private variable don't have explicit layout and can use element size
