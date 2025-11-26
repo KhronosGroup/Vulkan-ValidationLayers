@@ -2141,7 +2141,6 @@ bool ResourceInterfaceVariable::IsUniformBuffer(const ResourceInterfaceVariable&
 ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state, const EntryPoint& entrypoint,
                                                      const Instruction& insn, const ParsedInfo& parsed)
     : VariableBase(module_state, insn, entrypoint.stage, parsed),
-      array_length(0),  // updated in FindBaseType (if array is found)
       is_type_sampled_image(false),
       base_type(FindBaseType(*this, module_state)),
       is_runtime_descriptor_array(module_state.HasRuntimeArray(type_id)),
@@ -2205,7 +2204,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                     }
 
                     // Track all array index statically known being accessed
-                    if (is_input_attachment && array_length > 1) {
+                    if (is_input_attachment && IsArray()) {
                         if (image_access.image_access_chain_index == kInvalidValue) {
                             // Dynamic, requires GPU-AV
                         } else if (image_access.image_access_chain_index == kSpecConstant) {
@@ -2218,7 +2217,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                 }
 
                 // Only tied to the image (not the sampler when using non-COMBINED_IMAGE_SAMPLER)
-                if (array_length != 0 && image_access.image_access_chain_index == kInvalidValue) {
+                if (IsArray() && image_access.image_access_chain_index == kInvalidValue) {
                     all_constant_integral_expressions = false;
                 }
 
