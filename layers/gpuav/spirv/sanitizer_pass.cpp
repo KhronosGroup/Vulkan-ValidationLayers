@@ -15,6 +15,8 @@
 
 #include "sanitizer_pass.h"
 #include "containers/container_utils.h"
+#include "function_basic_block.h"
+#include "gpuav/shaders/gpuav_error_codes.h"
 #include "module.h"
 #include <spirv/unified1/spirv.hpp>
 #include <iostream>
@@ -27,12 +29,21 @@ namespace spirv {
 const static OfflineModule kOfflineModule = {instrumentation_sanitizer_comp, instrumentation_sanitizer_comp_size,
                                              UseErrorPayloadVariable};
 
-const static OfflineFunction kOfflineFunction = {"inst_sanitizer_divide_by_zero", instrumentation_sanitizer_comp_function_0_offset};
+const static OfflineFunction kOfflineFunctions[glsl::kErrorSubCodeSanitizerCount] = {
+    {"empty", 0},
+    {"inst_sanitizer_divide_by_zero", instrumentation_sanitizer_comp_function_0_offset},
+    {"inst_sanitizer_image_gather", instrumentation_sanitizer_comp_function_1_offset}};
 
-SanitizerPass::SanitizerPass(Module& module) : Pass(module, kOfflineModule) {}
+SanitizerPass::SanitizerPass(Module& module) : Pass(module, kOfflineModule) {
+    for (uint32_t i = 0; i < glsl::kErrorSubCodeSanitizerCount; i++) {
+        link_function_ids_[i] = 0;
+    }
+}
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
-uint32_t SanitizerPass::GetLinkFunctionId() { return GetLinkFunction(link_function_id_, kOfflineFunction); }
+uint32_t SanitizerPass::GetLinkFunctionId(uint32_t sub_code) {
+    return GetLinkFunction(link_function_ids_[sub_code], kOfflineFunctions[sub_code]);
+}
 
 // We do the check for zero in C++ to make it easier to handle the various cases of signed/unsigned/64bit/etc
 // Returns an ID of type OpTypeBool
@@ -61,20 +72,34 @@ uint32_t SanitizerPass::DivideByZeroCheck(BasicBlock& block, InstructionIt* inst
 
 uint32_t SanitizerPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
     const uint32_t function_result = module_.TakeNextId();
-    const uint32_t function_def = GetLinkFunctionId();
-    const uint32_t bool_type = type_manager_.GetTypeBool().Id();
+    const uint32_t function_def = GetLinkFunctionId(meta.sub_code);
 
     const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
     const uint32_t inst_position_id = type_manager_.CreateConstantUInt32(inst_position).Id();
 
-    const uint32_t is_valid_id = DivideByZeroCheck(block, inst_it, meta);
+    if (meta.sub_code == glsl::kErrorSubCodeSanitizerDivideZero) {
+        const uint32_t is_valid_id = DivideByZeroCheck(block, inst_it, meta);
 
-    const uint32_t opcode_id = type_manager_.CreateConstantUInt32(meta.target_instruction->Opcode()).Id();
-    const uint32_t vector_size_id = type_manager_.CreateConstantUInt32(meta.result_type->VectorSize()).Id();
+        const uint32_t bool_type = type_manager_.GetTypeBool().Id();
+        const uint32_t opcode_id = type_manager_.CreateConstantUInt32(meta.target_instruction->Opcode()).Id();
+        const uint32_t vector_size_id = type_manager_.CreateConstantUInt32(meta.result_type->VectorSize()).Id();
 
-    block.CreateInstruction(spv::OpFunctionCall,
-                            {bool_type, function_result, function_def, is_valid_id, inst_position_id, opcode_id, vector_size_id},
-                            inst_it);
+        block.CreateInstruction(
+            spv::OpFunctionCall,
+            {bool_type, function_result, function_def, is_valid_id, inst_position_id, opcode_id, vector_size_id}, inst_it);
+    } else if (meta.sub_code == glsl::kErrorSubCodeSanitizerImageGather) {
+        const uint32_t void_type = type_manager_.GetTypeVoid().Id();
+        // If the OpConstant was a signed int, this will "cast" it by making a new OpConstant with the same value
+        const uint32_t component_value_id = type_manager_.CreateConstantUInt32(meta.constant_value).Id();
+        // Because we know this is 100% is an error if executed, just replace with a safe value
+        const uint32_t safe_value_id = type_manager_.GetConstantZeroUint32().Id();
+        const_cast<Instruction*>(meta.target_instruction)->UpdateWord(5, safe_value_id);
+        block.CreateInstruction(spv::OpFunctionCall,
+                                {void_type, function_result, function_def, inst_position_id, component_value_id}, inst_it);
+    } else {
+        assert(false);
+    }
+
     module_.need_log_error_ = true;
     return function_result;
 }
@@ -121,7 +146,21 @@ bool SanitizerPass::RequiresInstrumentation(const Instruction& inst, Instruction
         }
         meta.result_type = type_manager_.FindTypeById(inst.TypeId());
         meta.target_instruction = &inst;
+        meta.sub_code = glsl::kErrorSubCodeSanitizerDivideZero;
         return true;
+    } else if (opcode == spv::OpImageGather) {
+        // 04664 requires this to be a constant
+        if (const Constant* constant = type_manager_.FindConstantById(inst.Word(5))) {
+            const uint32_t constant_value = constant->GetValueUint32();
+            // TODO - Support spec constants
+            if (!constant->is_spec_constant_ && constant_value > 3) {
+                meta.target_instruction = &inst;
+                meta.sub_code = glsl::kErrorSubCodeSanitizerImageGather;
+                meta.skip_safe_mode = true;
+                meta.constant_value = constant_value;
+                return true;
+            }
+        }
     }
 
     return false;
@@ -150,7 +189,7 @@ bool SanitizerPass::Instrument() {
                 if (IsMaxInstrumentationsCount()) continue;
                 instrumentations_count_++;
 
-                if (!module_.settings_.safe_mode) {
+                if (!module_.settings_.safe_mode || meta.skip_safe_mode) {
                     CreateFunctionCall(current_block, &inst_it, meta);
                 } else {
                     InjectConditionalData ic_data = InjectFunctionPre(*function.get(), block_it, inst_it);

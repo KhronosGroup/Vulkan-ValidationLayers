@@ -15,6 +15,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "gpuav/shaders/gpuav_error_codes.h"
 #include "pass.h"
 
 namespace gpuav {
@@ -40,6 +41,14 @@ class SanitizerPass : public Pass {
     struct InstructionMeta {
         const Type* result_type = nullptr;
         const Instruction* target_instruction = nullptr;
+
+        uint32_t sub_code = glsl::kErrorSubCodeSanitizerEmpty;
+
+        // There are cases where it is easier to just adjust the bad code than if/else wrap it
+        bool skip_safe_mode = false;
+
+        // Used to pass along constant values found
+        uint32_t constant_value = 0;
     };
 
     bool RequiresInstrumentation(const Instruction& inst, InstructionMeta& meta);
@@ -47,12 +56,12 @@ class SanitizerPass : public Pass {
     uint32_t DivideByZeroCheck(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
     uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
 
-    uint32_t GetLinkFunctionId();
+    uint32_t GetLinkFunctionId(uint32_t sub_code);
 
     bool IsConstantZero(const Constant& constant) const;
 
     // Function IDs to link in
-    uint32_t link_function_id_ = 0;
+    uint32_t link_function_ids_[glsl::kErrorSubCodeSanitizerCount];
 };
 
 }  // namespace spirv
