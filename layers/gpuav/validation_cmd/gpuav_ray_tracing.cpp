@@ -624,17 +624,24 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
             case kErrorSubCode_PreBuildAccelerationStructures_DestroyedASBuffer: {
                 auto& as_addr_to_as_buffer = gpuav.shared_resources_manager.Get<AccelerationStructuresAddrToStateObjectMap>();
                 auto found_as = as_addr_to_as_buffer.map.find(accel_struct_addr);
-                std::stringstream ss;
+                std::stringstream ss_as;
+                std::stringstream ss_buffer;
                 if (found_as != as_addr_to_as_buffer.map.end()) {
-                    ss << "Corresponding acceleration structure: " << gpuav.FormatHandle(found_as->second->VkHandle());
+                    ss_as << "Acceleration structure corresponding to reference: "
+                          << gpuav.FormatHandle(found_as->second->VkHandle());
+                    if (found_as->second->buffer_state) {
+                        ss_buffer << "(" << gpuav.FormatHandle(found_as->second->buffer_state->VkHandle()) << ") ";
+                    }
                 } else {
-                    ss << "Could not map acceleration structure reference to its corresponding handle, this is most likely a "
-                          "validation bug.";
+                    ss_as << "Could not map acceleration structure reference to its corresponding handle, this is most likely a "
+                             "validation bug";
                 }
-                const std::string ss_str = ss.str();
-                skip |=
-                    gpuav.LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-06707", objlist, loc_with_debug_region,
-                                   "%s - underlying buffer has been destroyed. %s", invalid_blas_loc_str.c_str(), ss_str.c_str());
+
+                const std::string ss_as_str = ss_as.str();
+                const std::string ss_buffer_str = ss_buffer.str();
+                skip |= gpuav.LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-06707", objlist, loc_with_debug_region,
+                                       "%s - underlying buffer %shas been destroyed. %s.", invalid_blas_loc_str.c_str(),
+                                       ss_buffer_str.c_str(), ss_as_str.c_str());
                 break;
             }
 

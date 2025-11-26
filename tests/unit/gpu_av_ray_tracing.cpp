@@ -1633,18 +1633,17 @@ TEST_F(NegativeGpuAVRayTracing, InvalidBlasReference3) {
         vkt::as::BuildAccelerationStructuresKHR(m_command_buffer, tlas_build_info);
         m_command_buffer.End();
 
+        const VkDeviceAddress cube_blas_addr = cube_blas.GetDstAS()->GetAccelerationStructureDeviceAddress();
         // Destroy buffer, but BLAS will be referenced in a TLAS build command
         cube_blas.GetDstAS()->GetBuffer().Destroy();
 
         std::stringstream expected_error_1;
         expected_error_1 << "Infos\\[0\\].pGeometries\\[0\\].geometry.instances<VkAccelerationStructureInstance>\\[0\\] \\(0x"
-                         << std::hex << cube_blas.GetDstAS()->GetAccelerationStructureDeviceAddress()
-                         << "\\).*underlying buffer has been destroyed.*acceleration structure.*"
+                         << std::hex << cube_blas_addr << "\\).*underlying buffer.*VkAccelerationStructureKHR.*"
                          << CastFromHandle<uint64_t>(cube_blas.GetDstAS()->handle());
         std::stringstream expected_error_2;
         expected_error_2 << "Infos\\[0\\].pGeometries\\[0\\].geometry.instances<VkAccelerationStructureInstance>\\[1\\] \\(0x"
-                         << std::hex << cube_blas.GetDstAS()->GetAccelerationStructureDeviceAddress()
-                         << "\\).*underlying buffer has been destroyed.*acceleration structure.*"
+                         << std::hex << cube_blas_addr << "\\).*underlying buffer.*VkAccelerationStructureKHR.*"
                          << CastFromHandle<uint64_t>(cube_blas.GetDstAS()->handle());
         m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-06707", expected_error_1.str());
         m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-06707", expected_error_2.str());
