@@ -362,7 +362,7 @@ bool Device::ValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateI
 
             if (attachment.samples != VK_SAMPLE_COUNT_1_BIT) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-flags-11777" : "VUID-VkAttachmentDescription-flags-11777";
-                skip |= LogError(vuid, device, attachment_loc.dot(Field::flags), "is %s but %s is %s.",
+                skip |= LogError(vuid, device, attachment_loc.dot(Field::samples), "is %s but %s is %s.",
                                  string_VkSampleCountFlags(attachment.samples).c_str(),
                                  attachment_loc.dot(Field::flags).Fields().c_str(),
                                  string_VkAttachmentDescriptionFlags(attachment.flags).c_str());
