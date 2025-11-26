@@ -247,48 +247,6 @@ std::optional<uint64_t> vvl::Semaphore::GetSmallestPendingSignalValue() const {
     return {};
 }
 
-std::optional<uint64_t> vvl::Semaphore::GetSmallestPendingPayload() const {
-    assert(type == VK_SEMAPHORE_TYPE_TIMELINE);
-    auto guard = ReadLock();
-    for (const auto &[payload, timepoint] : timeline_) {  // iterate payloads in increasing order
-        if (timepoint.signal_submit) {
-            const bool pending = timepoint.signal_submit->queue != nullptr;
-            if (pending) {
-                return payload;
-            }
-        }
-        for (const SubmissionReference &wait_submit : timepoint.wait_submits) {
-            const bool pending = wait_submit.queue != nullptr;
-            if (pending) {
-                return payload;
-            }
-        }
-    }
-    return {};
-}
-
-std::optional<uint64_t> vvl::Semaphore::GetLargestPendingPayload() const {
-    assert(type == VK_SEMAPHORE_TYPE_TIMELINE);
-    auto guard = ReadLock();
-    for (auto it = timeline_.rbegin(); it != timeline_.rend(); it++) {  // iterate payloads in decreasing order
-        const uint64_t payload = it->first;
-        const TimePoint &timepoint = it->second;
-        if (timepoint.signal_submit) {
-            const bool pending = timepoint.signal_submit->queue != nullptr;
-            if (pending) {
-                return payload;
-            }
-        }
-        for (const SubmissionReference &wait_submit : timepoint.wait_submits) {
-            const bool pending = wait_submit.queue != nullptr;
-            if (pending) {
-                return payload;
-            }
-        }
-    }
-    return {};
-}
-
 std::optional<vvl::SubmissionReference> vvl::Semaphore::GetPendingBinarySignalSubmission() const {
     assert(type == VK_SEMAPHORE_TYPE_BINARY);
     auto guard = ReadLock();

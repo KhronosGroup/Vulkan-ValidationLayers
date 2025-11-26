@@ -123,8 +123,6 @@ class Semaphore : public RefcountedStateObject {
     std::optional<uint64_t> CheckForLargerOrEqualPayload(uint64_t signal_value) const;
 
     std::optional<uint64_t> GetSmallestPendingSignalValue() const;
-    std::optional<uint64_t> GetSmallestPendingPayload() const;  // either signal or wait
-    std::optional<uint64_t> GetLargestPendingPayload() const;   // either signal or wait
 
     std::optional<SubmissionReference> GetPendingBinarySignalSubmission() const;
 
