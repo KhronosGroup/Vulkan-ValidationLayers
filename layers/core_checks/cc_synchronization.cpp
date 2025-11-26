@@ -1623,25 +1623,19 @@ bool CoreChecks::PreCallValidateSignalSemaphore(VkDevice device, const VkSemapho
         return skip;
     }
 
-    std::optional<uint64_t> smallest_pending_payload = semaphore_state->GetSmallestPendingPayload();
-    std::optional<uint64_t> largest_pending_payload = semaphore_state->GetLargestPendingPayload();
-
-    const uint64_t max_diff = phys_dev_props_core12.maxTimelineSemaphoreValueDifference;
-
     uint64_t bad_value = 0;
     const char *where = nullptr;
-
-    if (AbsDiff(current_payload, pSignalInfo->value) > max_diff) {
-        bad_value = current_payload;
-        where = "current";
-    } else if (smallest_pending_payload && AbsDiff(*smallest_pending_payload, pSignalInfo->value) > max_diff) {
-        bad_value = *smallest_pending_payload;
-        where = "pending";
-    } else if (largest_pending_payload && AbsDiff(*largest_pending_payload, pSignalInfo->value) > max_diff) {
-        bad_value = *largest_pending_payload;
-        where = "pending";
+    auto payload_optype = semaphore_state->CheckMaxDiffThreshold(pSignalInfo->value);
+    if (payload_optype.has_value()) {
+        const uint64_t payload = payload_optype->first;
+        const vvl::Semaphore::OpType op_type = payload_optype->second;
+        if (payload == semaphore_state->CurrentPayload()) {
+            where = "current";
+        } else {
+            where = op_type == vvl::Semaphore::OpType::kSignal ? "pending signal" : "pending wait";
+        }
+        bad_value = payload;
     }
-
     if (where) {
         const Location loc = error_obj.location.dot(Struct::VkSemaphoreSignalInfo, Field::value);
         const auto &vuid = GetQueueSubmitVUID(loc, vvl::SubmitError::kTimelineSemMaxDiff);
