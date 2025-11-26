@@ -255,10 +255,11 @@ TEST_F(StressCore, BufferCopiesSparseBuffer2) {
     m_default_queue->Wait();
 }
 
-TEST_F(StressCore, SignalSemaphoreManyTimes) {
-    // On good enough machines (2025) this should take less than a second, on slower machines maybe few seconds.
-    // With the regression, expect the running time to range from tens of seconds up to a few minutes.
-    TEST_DESCRIPTION("Signaling semaphore many time without waiting should not cause slow down");
+TEST_F(StressCore, SignalSemaphoreFromQueueSubmitManyTimes) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5171
+    // On good enough machines (2025) this should take around a second, on slower machines maybe few seconds.
+    // In case of regression, expect the running time to range from tens of seconds up to a few minutes.
+    TEST_DESCRIPTION("Signal semaphore from vkQueueSubmit many time without waiting");
     AddRequiredFeature(vkt::Feature::timelineSemaphore);
     AddRequiredFeature(vkt::Feature::synchronization2);
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -266,9 +267,28 @@ TEST_F(StressCore, SignalSemaphoreManyTimes) {
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
 
-    const int N = 10000;
+    const int N = 15'000;
     for (int i = 1; i <= N; i++) {
         m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(semaphore, i));
+    }
+    m_device->Wait();
+}
+
+TEST_F(StressCore, SignalSemaphoreFromHostManyTimes) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9264
+    // On good enough machines (2025) this should take around a second, on slower machines maybe few seconds.
+    // In case of regression, expect the running time to range from tens of seconds up to a few minutes.
+    TEST_DESCRIPTION("Signal semaphore from vkSignalSemaphore many time without waiting");
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+
+    const int N = 15'000;
+    for (int i = 1; i <= N; i++) {
+        semaphore.Signal(i);
     }
     m_device->Wait();
 }
