@@ -414,9 +414,6 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBu
             skip |= ValidateCmdDrawStrideWithBuffer(cb_state, "VUID-vkCmdDrawIndexedIndirect-drawCount-00540", stride,
                                                     Struct::VkDrawIndexedIndirectCommand, sizeof(VkDrawIndexedIndirectCommand),
                                                     drawCount, offset, *indirect_buffer_state, error_obj.location);
-        } else if (offset & 3) {
-            skip |= LogError("VUID-vkCmdDrawIndexedIndirect-offset-02710", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
-                             error_obj.location.dot(Field::offset), "(%" PRIu64 ") must be a multiple of 4.", offset);
         } else if ((drawCount == 1) && (offset + sizeof(VkDrawIndexedIndirectCommand)) > indirect_buffer_state->create_info.size) {
             LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
             objlist.add(buffer);
@@ -425,6 +422,10 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBu
                              ") is not less than "
                              "or equal to the size of buffer (%" PRIu64 ").",
                              (offset + sizeof(VkDrawIndexedIndirectCommand)), indirect_buffer_state->create_info.size);
+        }
+        if (offset & 3) {
+            skip |= LogError("VUID-vkCmdDrawIndexedIndirect-offset-02710", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
+                             error_obj.location.dot(Field::offset), "(%" PRIu64 ") must be a multiple of 4.", offset);
         }
     }
 
