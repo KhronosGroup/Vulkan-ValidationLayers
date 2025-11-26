@@ -2737,7 +2737,7 @@ bool CoreChecks::PreCallValidateTransitionImageLayout(VkDevice device, uint32_t 
                                  "VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL or VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL"
                                  " (oldLayout = %s and newLayout = %s).",
                                  string_VkImageAspectFlags(aspect_mask).c_str(), string_VkImageLayout(transition.oldLayout),
-                                 string_VkImageLayout(transition.oldLayout));
+                                 string_VkImageLayout(transition.newLayout));
             }
         }
         if (aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) {
@@ -2752,7 +2752,7 @@ bool CoreChecks::PreCallValidateTransitionImageLayout(VkDevice device, uint32_t 
                                  "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL or VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL"
                                  " (oldLayout = %s and newLayout = %s).",
                                  string_VkImageAspectFlags(aspect_mask).c_str(), string_VkImageLayout(transition.oldLayout),
-                                 string_VkImageLayout(transition.oldLayout));
+                                 string_VkImageLayout(transition.newLayout));
             }
         }
         if (!IsValueIn(transition.oldLayout,
