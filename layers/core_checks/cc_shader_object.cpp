@@ -881,7 +881,7 @@ bool CoreChecks::ValidateDrawShaderObjectMesh(const LastBound& last_bound_state,
         }
         if (has_vertex_shader) {
             skip |= LogError(vuid.vert_task_mesh_shader_08696, cb_state.Handle(), vuid.loc(),
-                             "Vertex shader (%s) is bound, but %s bound as well.", FormatHandle(mesh_shader_handle).c_str(),
+                             "Vertex shader (%s) is bound, but %s bound as well.", FormatHandle(vertex_shader_handle).c_str(),
                              print_mesh_task().c_str());
         }
     }
