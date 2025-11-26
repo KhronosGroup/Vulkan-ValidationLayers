@@ -1854,6 +1854,7 @@ TEST_F(NegativeCommand, IndirectDraw) {
 
     vkt::Buffer draw_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     vkt::Buffer draw_buffer_correct(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+    vkt::Buffer draw_buffer_large(*m_device, sizeof(VkDrawIndirectCommand) * 16u, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
     vkt::Buffer index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
 
@@ -1870,7 +1871,7 @@ TEST_F(NegativeCommand, IndirectDraw) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirect-offset-02710");
-    vk::CmdDrawIndexedIndirect(m_command_buffer, draw_buffer_correct, 2, 1, sizeof(VkDrawIndexedIndirectCommand));
+    vk::CmdDrawIndexedIndirect(m_command_buffer, draw_buffer_large, 2, 1, sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();
@@ -5042,4 +5043,31 @@ TEST_F(NegativeCommand, ResolveImage2ColorImageResolveModeSampleZero) {
     m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcImage-10984");
     vk::CmdResolveImage2KHR(m_command_buffer, &resolve_info);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeCommand, DrawIndexedIndirectOffset) {
+    AddRequiredFeature(vkt::Feature::multiDrawIndirect);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+
+    vkt::Buffer draw_buffer_correct(*m_device, sizeof(VkDrawIndirectCommand) * 16u, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+    vkt::Buffer index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirect-offset-02710");
+    vk::CmdDrawIndexedIndirect(m_command_buffer, draw_buffer_correct, 3u, 2u, sizeof(VkDrawIndexedIndirectCommand));
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
 }
