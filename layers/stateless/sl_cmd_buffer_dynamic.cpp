@@ -153,8 +153,8 @@ bool Device::manual_PreCallValidateCmdSetVertexInputEXT(VkCommandBuffer commandB
             auto const &binding_it = vertex_bindings.find(binding);
             if (binding_it != vertex_bindings.cend()) {
                 skip |= LogError("VUID-vkCmdSetVertexInputEXT-pVertexBindingDescriptions-04794", commandBuffer,
-                                 error_obj.location.dot(Field::pVertexBindingDescriptions, binding),
-                                 "is already in pVertexBindingDescriptions[%" PRIu32 "].", *binding_it);
+                                 error_obj.location.dot(Field::pVertexBindingDescriptions, i),
+                                 "and pVertexBindingDescriptions[%" PRIu32 "] are both %" PRIu32 ".", *binding_it, binding);
                 break;
             }
             vertex_bindings.insert(binding);
@@ -166,8 +166,8 @@ bool Device::manual_PreCallValidateCmdSetVertexInputEXT(VkCommandBuffer commandB
             auto const &location_it = vertex_locations.find(location);
             if (location_it != vertex_locations.cend()) {
                 skip |= LogError("VUID-vkCmdSetVertexInputEXT-pVertexAttributeDescriptions-04795", commandBuffer,
-                                 error_obj.location.dot(Field::pVertexAttributeDescriptions, location),
-                                 "is already in pVertexAttributeDescriptions[%" PRIu32 "].", *location_it);
+                                 error_obj.location.dot(Field::pVertexAttributeDescriptions, i),
+                                 "and pVertexAttributeDescriptions[%" PRIu32 "] are both %" PRIu32 ".", *location_it, location);
                 break;
             }
             vertex_locations.insert(location);
