@@ -17,6 +17,7 @@ This directory contains more detailed information about how each part of the Val
     - [Object Lifetimes](./object_lifetimes.md)
     - [VK_KHR_portability_subset](./portability_validation.md)
     - [Shader Validation](./shader_validation.md)
+        - [Shader Sanitizer](./shader_sanitizer.md)
     - [Stateless Parameter Validation](./stateless_validation.md)
     - [Synchronization Validation Design](./syncval_design.md)
         - [Synchronization Validation Usage](./syncval_usage.md)

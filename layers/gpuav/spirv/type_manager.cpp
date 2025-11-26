@@ -691,8 +691,8 @@ bool Type::Is64Bit() const {
 }
 
 uint32_t Constant::GetValueUint32() const {
-    assert(inst_.Opcode() == spv::OpConstant);
-    return inst_.Word(3);
+    assert(inst_.Opcode() == spv::OpConstant || inst_.Opcode() == spv::OpConstantNull);
+    return inst_.Opcode() == spv::OpConstantNull ? 0 : inst_.Word(3);
 }
 
 void TypeManager::AddUndef(std::unique_ptr<Instruction> new_inst) {
