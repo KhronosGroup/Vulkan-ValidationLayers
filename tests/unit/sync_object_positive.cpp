@@ -2254,6 +2254,17 @@ TEST_F(PositiveSyncObject, TimelineHostSignalThenHostWait) {
     semaphore.Wait(1, kWaitTimeout);
 }
 
+TEST_F(PositiveSyncObject, TimelineTwoHostSignals) {
+    TEST_DESCRIPTION("Signal on the host two times");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    semaphore.Signal(1);
+    semaphore.Signal(2);
+}
+
 TEST_F(PositiveSyncObject, TimelineSubmitSignalThenHostWaitSmallerValue) {
     TEST_DESCRIPTION("Submit signal then wait smaller value on the host");
     SetTargetApiVersion(VK_API_VERSION_1_2);

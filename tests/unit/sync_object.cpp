@@ -4120,6 +4120,19 @@ TEST_F(NegativeSyncObject, ImageBarrierStageNotSupportedByQueue) {
     compute_cb.End();
 }
 
+TEST_F(NegativeSyncObject, TimelineTwoHostSignals) {
+    TEST_DESCRIPTION("Signal on the host two times");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    semaphore.Signal(2);
+    m_errorMonitor->SetDesiredError("VUID-VkSemaphoreSignalInfo-value-03258");
+    semaphore.Signal(1);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeSyncObject, TimelineHostSignalAndInUseTracking) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8476");
     SetTargetApiVersion(VK_API_VERSION_1_2);
