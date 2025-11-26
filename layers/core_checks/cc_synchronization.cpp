@@ -140,7 +140,7 @@ bool SemaphoreSubmitState::CheckTimelineMaxDiff(const vvl::Semaphore &semaphore_
         const uint64_t payload = payload_optype->first;
         const vvl::Semaphore::OpType op_type = payload_optype->second;
 
-        if (payload == semaphore_state.CurrentPayload()) {
+        if (payload == semaphore_state.CompletedPayload()) {
             where = "current";
         } else {
             where = op_type == vvl::Semaphore::OpType::kSignal ? "pending signal" : "pending wait";
@@ -1629,7 +1629,7 @@ bool CoreChecks::PreCallValidateSignalSemaphore(VkDevice device, const VkSemapho
     if (payload_optype.has_value()) {
         const uint64_t payload = payload_optype->first;
         const vvl::Semaphore::OpType op_type = payload_optype->second;
-        if (payload == semaphore_state->CurrentPayload()) {
+        if (payload == semaphore_state->CompletedPayload()) {
             where = "current";
         } else {
             where = op_type == vvl::Semaphore::OpType::kSignal ? "pending signal" : "pending wait";
