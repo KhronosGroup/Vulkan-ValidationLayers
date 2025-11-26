@@ -51,9 +51,9 @@ vvl::Semaphore::Semaphore(DeviceState &device, VkSemaphore handle, const VkSemap
       metal_semaphore_export(GetMetalExport(pCreateInfo)),
 #endif  // VK_USE_PLATFORM_METAL_EXT
       device_(device),
-      completed_{type == VK_SEMAPHORE_TYPE_TIMELINE ? kSignal : kNone, SubmissionReference{},
-                 type_create_info ? type_create_info->initialValue : 0},
-      next_payload_(completed_.payload + 1) {
+      current_payload_(type_create_info ? type_create_info->initialValue : 0),
+      completed_{type == VK_SEMAPHORE_TYPE_TIMELINE ? kSignal : kNone, SubmissionReference{}, current_payload_},
+      next_payload_(current_payload_ + 1) {
 }
 
 const VulkanTypedHandle *vvl::Semaphore::InUse() const {
@@ -106,8 +106,18 @@ void vvl::Semaphore::EnqueueSignal(const SubmissionReference &signal_submit, uin
     if (type == VK_SEMAPHORE_TYPE_BINARY) {
         payload = next_payload_++;
     }
-    // Check there is no existing signal, validation should enforce this
-    assert(timeline_.find(payload) == timeline_.end() || !timeline_.find(payload)->second.signal_submit.has_value());
+
+    // Host signal (vkSignalSemaphore) updates payload immediately.
+    // NOTE: This also handles vkLatencySleepNV, which expects an external
+    // signal that we can't track, so we simulate it as already available.
+    if (signal_submit.queue == nullptr) {
+        assert(type == VK_SEMAPHORE_TYPE_TIMELINE);
+        // Non-increasing signal value, do not track it. Validation phase already reported this.
+        if (payload <= current_payload_) {
+            return;
+        }
+        current_payload_ = payload;
+    }
 
     timeline_[payload].signal_submit.emplace(signal_submit);
 }
@@ -127,6 +137,7 @@ void vvl::Semaphore::EnqueueWait(const SubmissionReference &wait_submit, uint64_
             if (scope_ != vvl::Semaphore::kInternal) {
                 // for external semaphore mark wait as completed, no guarantee of signal visibility
                 completed_ = SemOp(kWait, wait_submit, 0);
+                current_payload_ = 0;
                 return;
             } else {
                 // generate binary payload value from the last completed signals
@@ -303,9 +314,14 @@ std::optional<vvl::SemaphoreInfo> vvl::Semaphore::GetPendingBinarySignalTimeline
     return signal_submit->queue->FindTimelineWaitWithoutResolvingSignal(signal_submit->seq);
 }
 
-uint64_t vvl::Semaphore::CurrentPayload() const {
+uint64_t vvl::Semaphore::CompletedPayload() const {
     auto guard = ReadLock();
     return completed_.payload;
+}
+
+uint64_t vvl::Semaphore::CurrentPayload() const {
+    auto guard = ReadLock();
+    return current_payload_;
 }
 
 bool vvl::Semaphore::CanBinaryBeSignaled() const {
@@ -548,6 +564,13 @@ void vvl::Semaphore::RetireTimePoint(uint64_t payload, OpType completed_op, Subm
     }
     timeline_.erase(timeline_.begin(), it);
     completed_ = SemOp(completed_op, completed_submit, payload);
+
+    // Update the current payload only if a given payload is larger.
+    // vkSignalSemaphore updates the current payload immediately, so it can be
+    // larger than the given payload from the most recently synchronized batch.
+    if (payload > current_payload_) {
+        current_payload_ = payload;
+    }
 }
 
 void vvl::Semaphore::WaitTimePoint(std::shared_future<void> &&waiter, uint64_t payload, bool unblock_validation_object,

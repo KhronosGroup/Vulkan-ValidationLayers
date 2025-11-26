@@ -144,6 +144,10 @@ class Semaphore : public RefcountedStateObject {
     // TODO: this function should always return current payload value (take into account vkSignalSemaphore payloads
     // that are registered in timeline), otherwise it is not well defined. We might also need to update other code
     // if this function changes behavior (some logic might go away or get simplified if this function is fixed).
+    uint64_t CompletedPayload() const;
+
+    // Return semaphore's current payload.
+    // If a queue submission command is pending execution, then the returned value may immediately be out of date.
     uint64_t CurrentPayload() const;
 
     bool CanBinaryBeSignaled() const;
@@ -197,6 +201,8 @@ class Semaphore : public RefcountedStateObject {
 
     enum Scope scope_ { kInternal };
     std::optional<VkExternalSemaphoreHandleTypeFlagBits> imported_handle_type_;  // has value when scope is not kInternal
+
+    uint64_t current_payload_;
 
     // the most recently completed operation
     SemOp completed_;
