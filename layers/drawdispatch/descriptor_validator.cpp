@@ -157,7 +157,7 @@ bool DescriptorValidator::ValidateDescriptorsStatic(const spirv::ResourceInterfa
     // the pipeline layout more info https://gitlab.khronos.org/vulkan/vulkan/-/issues/4383
     uint32_t count = binding.count;
     // if using VARIABLE_DESCRIPTOR_COUNT, we will still use binding.count as that will be the adjusted value
-    if (resource_variable.array_length != 0 && descriptor_set.GetVariableDescriptorCount() == 0) {
+    if (resource_variable.IsArray() && descriptor_set.GetVariableDescriptorCount() == 0) {
         count = resource_variable.array_length;
     }
 
@@ -440,7 +440,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                 DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
                 string_VkImageViewType(image_view_ci.viewType), string_SpvDim(dim), is_image_array,
                 SuggestImageViewType(dim, is_image_array),
-                (is_gpu_av && resource_variable.array_length > 1)
+                (is_gpu_av && resource_variable.IsArray())
                     ? "\nAdvice: The dimension is tied to descriptor variable, so for descriptor indexing, you might need to "
                       "express two different arrays of different types that share the same descriptor binding."
                     : "",

@@ -69,7 +69,7 @@ bool CoreChecks::ValidateShaderInputAttachment(const spirv::Module& module_state
         std::stringstream ss;
         ss << variable.DescribeDescriptor() << " has an InputAttachmentIndex of "
            << variable.decorations.input_attachment_index_start;
-        if (variable.array_length > 1) {
+        if (variable.IsArray()) {
             ss << ", plus " << (i - variable.decorations.input_attachment_index_start) << " from indexing into the array,";
         }
         return ss.str();
@@ -100,7 +100,7 @@ bool CoreChecks::ValidateShaderInputAttachment(const spirv::Module& module_state
     // - most likely case, there is a single, non-array, input attachment, just check the InputAttachmentIndex
     // - but there might be an array, used are static SPIR-V parsing to find which indexes had constant accesses
     // - if the indexing is done via a spec constant, we will defer here, as this is tied to the current pipeline we are in
-    if (variable.array_length > 1) {
+    if (variable.IsArray()) {
         for (const auto i : variable.input_attachment_index_read) {
             // offsets by the InputAttachmentIndex decoration
             skip |= validate(variable.decorations.input_attachment_index_start + i);
@@ -1544,7 +1544,7 @@ bool CoreChecks::ValidateShaderInterfaceVariable(const spirv::Module &module_sta
     }
 
     if (!variable.decorations.Has(spirv::DecorationSet::input_attachment_bit) && variable.info.image_dim == spv::DimSubpassData) {
-        if (variable.array_length != 0) {
+        if (variable.IsArray()) {
             skip |= LogError("VUID-RuntimeSpirv-OpTypeImage-09644", module_state.handle(), loc,
                              "the variable is an array of OpTypeImage with Dim::SubpassData, but it is missing the "
                              "InputAttachmentIndex decoration.\n%s\n",
@@ -1621,25 +1621,33 @@ bool CoreChecks::ValidateShaderInterfaceVariableDSL(const spirv::Module &module_
                          string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
                          string_VkDescriptorType(binding->descriptorType), string_DescriptorTypeSet(descriptor_type_set).c_str(),
                          print_dsl_info().c_str());
-    } else if (binding->descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK && variable.array_length > 0) {
+    } else if (binding->descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK && variable.IsArray()) {
         skip |=
             LogError(GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::Inline_10391), objlist, loc,
                      "SPIR-V (%s) uses descriptor %s as VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, but it is an array of descriptor. "
                      "(from %s)",
                      string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(), print_dsl_info().c_str());
 
-    } else if (binding->descriptorCount < variable.array_length && variable.array_length != spirv::kRuntimeArray) {
-        skip |= LogError(GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::DescriptorCount_07991), objlist, loc,
-                         "SPIR-V (%s) uses descriptor %s with a VkDescriptorSetLayoutBinding::descriptorCount of %" PRIu32
-                         ", but requires at least %" PRIu32 " in the SPIR-V. (from %s)",
-                         string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
-                         binding->descriptorCount, variable.array_length, print_dsl_info().c_str());
-    } else if (binding->descriptorCount == 0 && variable.array_length == spirv::kRuntimeArray) {
-        skip |=
-            LogError(GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::DescriptorCount_07991), objlist, loc,
-                     "SPIR-V (%s) uses a runtime descriptor array %s with a VkDescriptorSetLayoutBinding::descriptorCount of 0 "
-                     "but requires at least 1 descriptor. (from %s)",
-                     string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(), print_dsl_info().c_str());
+    } else {
+        if (variable.IsRuntimeArray()) {
+            if (binding->descriptorCount == 0) {
+                skip |= LogError(
+                    GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::DescriptorCount_07991), objlist, loc,
+                    "SPIR-V (%s) uses a runtime descriptor array %s with a VkDescriptorSetLayoutBinding::descriptorCount of 0 "
+                    "but requires at least 1 descriptor. (from %s)",
+                    string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(), print_dsl_info().c_str());
+            }
+        } else {
+            const uint32_t array_length = variable.array_length;
+            if (binding->descriptorCount < array_length) {
+                skip |= LogError(GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::DescriptorCount_07991),
+                                 objlist, loc,
+                                 "SPIR-V (%s) uses descriptor %s with a VkDescriptorSetLayoutBinding::descriptorCount of %" PRIu32
+                                 ", but requires at least %" PRIu32 " in the SPIR-V. (from %s)",
+                                 string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
+                                 binding->descriptorCount, array_length, print_dsl_info().c_str());
+            }
+        }
     }
 
     return skip;
@@ -2035,6 +2043,7 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
         optimizer.RegisterPass(spvtools::CreateFoldSpecConstantOpAndCompositePass());
 
         // Apply the specialization-constant values and revalidate the shader module is valid.
+        // Example of the SPIR-V Optimization occuring (https://godbolt.org/z/Y7WYczEq4)
         std::vector<uint32_t> specialized_spirv;
         auto const optimized =
             optimizer.Run(module_state.words_.data(), module_state.words_.size(), &specialized_spirv, spirv_val_options, true);

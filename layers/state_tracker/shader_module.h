@@ -417,7 +417,10 @@ struct StageInterfaceVariable : public VariableBase {
 struct ResourceInterfaceVariable : public VariableBase {
     // If the type is a OpTypeArray save the length
     // Will be kRuntimeArray (non-zero) for runtime arrays
-    uint32_t array_length;
+    // Will be kSpecConstant (non-zero) if needs to be resolved later
+    uint32_t array_length{0};
+    bool IsRuntimeArray() const { return array_length == kRuntimeArray; }
+    bool IsArray() const { return array_length != 0; }
 
     // OpTypeSampledImage (used for combined image samplers)
     bool is_type_sampled_image;
