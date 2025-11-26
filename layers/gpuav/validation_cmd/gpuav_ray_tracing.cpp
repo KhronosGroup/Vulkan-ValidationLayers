@@ -195,8 +195,8 @@ struct AccelerationStructureMetadata {
     uint32_t buffer_status;
 };
 
-struct AccelerationStructuresAddrToBufferMap {
-    vvl::concurrent_unordered_map<VkDeviceAddress, std::shared_ptr<vvl::Buffer>> map;
+struct AccelerationStructuresAddrToStateObjectMap {
+    vvl::concurrent_unordered_map<VkDeviceAddress, std::shared_ptr<vvl::AccelerationStructureKHR>> map;
 };
 
 void RecordGetAccelerationStructureDeviceAddress(Validator& gpuav, VkAccelerationStructureKHR as, VkDeviceAddress as_addr) {
@@ -210,8 +210,8 @@ void RecordGetAccelerationStructureDeviceAddress(Validator& gpuav, VkAcceleratio
 
     if (auto as_state = gpuav.Get<vvl::AccelerationStructureKHR>(as)) {
         as_state->acceleration_structure_address = as_addr;
-        auto& as_addr_to_as_buffer = gpuav.shared_resources_manager.GetOrCreate<AccelerationStructuresAddrToBufferMap>();
-        as_addr_to_as_buffer.map.insert(as_addr, as_state->buffer_state);
+        auto& as_addr_to_as_buffer = gpuav.shared_resources_manager.GetOrCreate<AccelerationStructuresAddrToStateObjectMap>();
+        as_addr_to_as_buffer.map.insert(as_addr, as_state);
     }
 }
 
@@ -222,7 +222,7 @@ void RemoveAccelerationStrutureDeviceAddress(Validator& gpuav, VkAccelerationStr
 
     if (auto as_state = gpuav.Get<vvl::AccelerationStructureKHR>(as)) {
         if (as_state->acceleration_structure_address != 0) {
-            auto* as_addr_to_as_buffer = gpuav.shared_resources_manager.TryGet<AccelerationStructuresAddrToBufferMap>();
+            auto* as_addr_to_as_buffer = gpuav.shared_resources_manager.TryGet<AccelerationStructuresAddrToStateObjectMap>();
             if (as_addr_to_as_buffer) {
                 as_addr_to_as_buffer->map.erase(as_state->acceleration_structure_address);
                 as_state->acceleration_structure_address = 0;
@@ -472,15 +472,9 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
         [ptr_to_accel_structs_metadata_buffer](Validator& gpuav, CommandBufferSubState& cb, VkCommandBuffer per_submission_cb) {
             VVL_ZoneScopedN("validate_as_builds_pre_submit");
             // #ARNO_TODO Refacto the "copy to buffer" part
-            auto* as_addr_to_as_buffer = gpuav.shared_resources_manager.TryGet<AccelerationStructuresAddrToBufferMap>();
-            if (!as_addr_to_as_buffer) {
-                assert(false);
-                gpuav.InternalError(LogObjectList(), Location(vvl::Func::vkQueueSubmit),
-                                    "Failed to get AccelerationStructuresAddrToBufferMap.");
-                return;
-            }
+            auto& as_addr_to_as_buffer = gpuav.shared_resources_manager.Get<AccelerationStructuresAddrToStateObjectMap>();
             // #ARNO_TODO Definitely can see this become a big perf bottleneck
-            auto as_addr_to_as_buffer_snapshot = as_addr_to_as_buffer->map.snapshot();
+            auto as_addr_to_as_buffer_snapshot = as_addr_to_as_buffer.map.snapshot();
 
             vko::BufferRange accel_structs_metadata_buffer = cb.gpu_resources_manager.GetHostCoherentBufferRange(
                 as_addr_to_as_buffer_snapshot.size() * sizeof(AccelerationStructureMetadata));
@@ -490,9 +484,9 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
 
             auto as_metadata_ptr = (AccelerationStructureMetadata*)(accel_structs_metadata_buffer_u32_ptr + 1);
             uint32_t written_count = 0;
-            for (const auto& [device_addr, as_buffer] : as_addr_to_as_buffer_snapshot) {
+            for (const auto& [device_addr, as] : as_addr_to_as_buffer_snapshot) {
                 as_metadata_ptr[written_count++] = {uint32_t(device_addr), uint32_t(device_addr >> 32u),
-                                                    uint32_t(as_buffer && !as_buffer->Destroyed())};
+                                                    uint32_t(as->buffer_state && !as->buffer_state->Destroyed())};
             }
 
             // Fill a GPU buffer with a pointer to the AS metadata
@@ -628,8 +622,19 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
                 break;
             }
             case kErrorSubCode_PreBuildAccelerationStructures_DestroyedASBuffer: {
-                skip |= gpuav.LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-06707", objlist, loc_with_debug_region,
-                                       "%s - underlying buffer has been destroyed.", invalid_blas_loc_str.c_str());
+                auto& as_addr_to_as_buffer = gpuav.shared_resources_manager.Get<AccelerationStructuresAddrToStateObjectMap>();
+                auto found_as = as_addr_to_as_buffer.map.find(accel_struct_addr);
+                std::stringstream ss;
+                if (found_as != as_addr_to_as_buffer.map.end()) {
+                    ss << "Corresponding acceleration structure: " << gpuav.FormatHandle(found_as->second->VkHandle());
+                } else {
+                    ss << "Could not map acceleration structure reference to its corresponding handle, this is most likely a "
+                          "validation bug.";
+                }
+                const std::string ss_str = ss.str();
+                skip |=
+                    gpuav.LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-06707", objlist, loc_with_debug_region,
+                                   "%s - underlying buffer has been destroyed. %s", invalid_blas_loc_str.c_str(), ss_str.c_str());
                 break;
             }
 
