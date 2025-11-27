@@ -469,7 +469,7 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
             auto as_addr_to_as_buffer_snapshot = as_addr_to_as_buffer.map.snapshot();
 
             vko::BufferRange accel_structs_metadata_buffer = cb.gpu_resources_manager.GetHostCoherentBufferRange(
-                as_addr_to_as_buffer_snapshot.size() * sizeof(AccelerationStructureMetadata));
+                sizeof(uint32_t) + as_addr_to_as_buffer_snapshot.size() * sizeof(AccelerationStructureMetadata));
             auto accel_structs_metadata_buffer_u32_ptr = (uint32_t*)accel_structs_metadata_buffer.offset_mapped_ptr;
 
             *accel_structs_metadata_buffer_u32_ptr = (uint32_t)as_addr_to_as_buffer_snapshot.size();
