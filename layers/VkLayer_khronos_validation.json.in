@@ -199,7 +199,7 @@
                         { "key": "gpuav_select_instrumented_shaders", "value": false },
                         { "key": "gpuav_buffers_validation", "value": true },
                         { "key": "validate_best_practices", "value": false },
-                        { "key": "report_flags", "value": [ "error" ] },
+                        { "key": "report_flags", "value": [ "error", "warn" ] },
                         { "key": "debug_action", "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG", "VK_DBG_LAYER_ACTION_DEBUG_OUTPUT" ] },
                         { "key": "enable_message_limit", "value": true }
                     ]
@@ -226,7 +226,7 @@
                         { "key": "gpuav_enable", "value": false },
                         { "key": "printf_enable", "value": true },
                         { "key": "validate_best_practices", "value": false },
-                        { "key": "report_flags",  "value": [ "error", "info" ] },
+                        { "key": "report_flags",  "value": [ "error", "warn", "info" ] },
                         { "key": "debug_action",  "value": [] },
                         { "key": "enable_message_limit", "value": false }
                     ]
