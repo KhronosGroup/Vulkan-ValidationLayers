@@ -202,7 +202,10 @@ class Semaphore : public RefcountedStateObject {
     enum Scope scope_ { kInternal };
     std::optional<VkExternalSemaphoreHandleTypeFlagBits> imported_handle_type_;  // has value when scope is not kInternal
 
-    uint64_t current_payload_;
+    uint64_t current_payload_ = 0;
+
+    // Empty if there are no pending signals. Used only for timeline semaphores
+    std::optional<uint64_t> smallest_pending_signal_value_;
 
     // the most recently completed operation
     SemOp completed_;

@@ -105,18 +105,24 @@ void vvl::Semaphore::EnqueueSignal(const SubmissionReference &signal_submit, uin
     auto guard = WriteLock();
     if (type == VK_SEMAPHORE_TYPE_BINARY) {
         payload = next_payload_++;
-    }
-
-    // Host signal (vkSignalSemaphore) updates payload immediately.
-    // NOTE: This also handles vkLatencySleepNV, which expects an external
-    // signal that we can't track, so we simulate it as already available.
-    if (signal_submit.queue == nullptr) {
+    } else {
         assert(type == VK_SEMAPHORE_TYPE_TIMELINE);
-        // Non-increasing signal value, do not track it. Validation phase already reported this.
-        if (payload <= current_payload_) {
-            return;
+        // Host signal (vkSignalSemaphore) updates payload immediately.
+        // This also handles vkLatencySleepNV external signal.
+        if (signal_submit.queue == nullptr) {
+            // Non-increasing signal value, do not track it. Validation phase already reported this.
+            if (payload <= current_payload_) {
+                return;
+            }
+            current_payload_ = payload;
         }
-        current_payload_ = payload;
+
+        // Track smallest pending signal
+        if (signal_submit.queue != nullptr) {
+            if (!smallest_pending_signal_value_.has_value() || payload < *smallest_pending_signal_value_) {
+                smallest_pending_signal_value_ = payload;
+            }
+        }
     }
 
     timeline_[payload].signal_submit.emplace(signal_submit);
@@ -244,18 +250,7 @@ std::optional<uint64_t> vvl::Semaphore::CheckForLargerOrEqualPayload(uint64_t si
 std::optional<uint64_t> vvl::Semaphore::GetSmallestPendingSignalValue() const {
     assert(type == VK_SEMAPHORE_TYPE_TIMELINE);
     auto guard = ReadLock();
-    for (const auto &[payload, timepoint] : timeline_) {  // iterate payloads in increasing order
-        if (!timepoint.signal_submit) {
-            continue;
-        }
-        if (timepoint.signal_submit->queue == nullptr) {
-            // If queue is null then it's vkSemaphoreSignal.
-            // Host signals are not pending operations, they happen immediately.
-            continue;
-        }
-        return payload;
-    }
-    return {};
+    return smallest_pending_signal_value_;
 }
 
 std::optional<vvl::SubmissionReference> vvl::Semaphore::GetPendingBinarySignalSubmission() const {
@@ -565,11 +560,32 @@ void vvl::Semaphore::RetireTimePoint(uint64_t payload, OpType completed_op, Subm
     timeline_.erase(timeline_.begin(), it);
     completed_ = SemOp(completed_op, completed_submit, payload);
 
-    // Update the current payload only if a given payload is larger.
+    // Update the current payload only if the given payload is larger.
     // vkSignalSemaphore updates the current payload immediately, so it can be
     // larger than the given payload from the most recently synchronized batch.
     if (payload > current_payload_) {
         current_payload_ = payload;
+    }
+
+    // Update smallest pending signal
+    if (type == VK_SEMAPHORE_TYPE_TIMELINE) {
+        if (timeline_.empty()) {
+            smallest_pending_signal_value_.reset();
+        } else if (smallest_pending_signal_value_.has_value() && timeline_.begin()->first > *smallest_pending_signal_value_) {
+            smallest_pending_signal_value_.reset();
+            for (const auto &[payload, timepoint] : timeline_) {
+                if (!timepoint.signal_submit.has_value()) {
+                    continue;
+                }
+
+                // host signals must always go before pending signals and at this point
+                // we iterate over pending operations
+                assert(timepoint.signal_submit->queue != nullptr);
+
+                smallest_pending_signal_value_ = payload;
+                break;
+            }
+        }
     }
 }
 
