@@ -115,59 +115,48 @@ VkQueue SemaphoreSubmitState::AnotherQueueWaits(const vvl::Semaphore &semaphore_
     return VK_NULL_HANDLE;
 }
 
-bool SemaphoreSubmitState::CheckTimelineMaxDiff(const vvl::Semaphore &semaphore_state, uint64_t value, std::string &where,
-                                                uint64_t &bad_value) {
+std::optional<uint64_t> SemaphoreSubmitState::CheckTimelineMaxDiff(const vvl::Semaphore &semaphore_state, uint64_t value,
+                                                                   const char *&payload_type) {
     const uint64_t max_diff = core.phys_dev_props_core12.maxTimelineSemaphoreValueDifference;
-
     auto current_signal = timeline_signals.find(semaphore_state.VkHandle());
     if (current_signal != timeline_signals.end()) {
         if (AbsDiff(value, current_signal->second) > max_diff) {
-            where = "current submit's signal";
-            bad_value = current_signal->second;
-            return true;
+            payload_type = "current submit's signal";
+            return current_signal->second;
         }
     }
     auto current_wait = timeline_waits.find(semaphore_state.VkHandle());
     if (current_wait != timeline_waits.end()) {
         if (AbsDiff(value, current_wait->second) > max_diff) {
-            where = "current submit's wait";
-            bad_value = current_wait->second;
-            return true;
+            payload_type = "current submit's wait";
+            return current_wait->second;
         }
     }
-    auto payload_optype = semaphore_state.CheckMaxDiffThreshold(value);
-    if (payload_optype.has_value()) {
-        const uint64_t payload = payload_optype->first;
-        const vvl::Semaphore::OpType op_type = payload_optype->second;
-
-        if (payload == semaphore_state.CompletedPayload()) {
-            where = "current";
-        } else {
-            where = op_type == vvl::Semaphore::OpType::kSignal ? "pending signal" : "pending wait";
-        }
-        bad_value = payload;
-        return true;
-    }
-    return false;
+    return semaphore_state.CheckMaxDiffThreshold(value, payload_type);
 }
 
-bool SemaphoreSubmitState::CheckTimelineSignalValue(const vvl::Semaphore &semaphore_state, uint64_t value, std::string &where,
-                                                    uint64_t &bad_value) {
+std::optional<uint64_t> SemaphoreSubmitState::CheckTimelineSignalTooSmall(const vvl::Semaphore &semaphore_state, uint64_t value,
+                                                                          const char *&payload_type) {
     if (auto it = timeline_signals.find(semaphore_state.VkHandle()); it != timeline_signals.end()) {
         const uint64_t current_submit_signal = it->second;
         if (value <= current_submit_signal) {
-            where = "current submit's signal";
-            bad_value = current_submit_signal;
-            return true;
+            payload_type = "current submit's signal";
+            return current_submit_signal;
         }
     }
-    std::optional<uint64_t> bad_payload = semaphore_state.CheckForLargerOrEqualPayload(value);
-    if (bad_payload) {
-        where = "current";
-        bad_value = *bad_payload;
-        return true;
+    const uint64_t current_payload = semaphore_state.CurrentPayload();
+    if (value <= current_payload) {
+        payload_type = "current";
+        return current_payload;
     }
-    return false;
+    // Pending signals in general are validated at execution time (cc_submit.cpp).
+    // But since comparisons of equal values are not affected by submit reordering, we can
+    // report the error immediately if the pending signal value matches the value being validated.
+    if (semaphore_state.HasPendingTimelineSignal(value)) {
+        payload_type = "pending";
+        return value;
+    }
+    return {};
 }
 
 bool SemaphoreSubmitState::ValidateBinaryWait(const Location &loc, const vvl::Semaphore &semaphore_state) {
@@ -205,16 +194,14 @@ bool SemaphoreSubmitState::ValidateBinaryWait(const Location &loc, const vvl::Se
 bool SemaphoreSubmitState::ValidateTimelineWait(const Location &semaphore_loc, const vvl::Semaphore &semaphore_state,
                                                 uint64_t value) {
     bool skip = false;
-    uint64_t bad_value = 0;
-    std::string where;
-    const VkSemaphore handle = semaphore_state.VkHandle();
-    if (CheckTimelineMaxDiff(semaphore_state, value, where, bad_value)) {
+    const char *payload_type = nullptr;
+    if (std::optional<uint64_t> far_away_payload = CheckTimelineMaxDiff(semaphore_state, value, payload_type)) {
         const auto &vuid = GetQueueSubmitVUID(semaphore_loc, vvl::SubmitError::kTimelineSemMaxDiff);
-        skip |= core.LogError(vuid, handle, semaphore_loc,
+        skip |= core.LogError(vuid, semaphore_state.Handle(), semaphore_loc,
                               "value (%" PRIu64 ") exceeds limit regarding %s semaphore %s value (%" PRIu64 ").", value,
-                              where.c_str(), core.FormatHandle(handle).c_str(), bad_value);
+                              payload_type, core.FormatHandle(semaphore_state.Handle()).c_str(), *far_away_payload);
     } else {
-        timeline_waits[handle] = value;
+        timeline_waits[semaphore_state.VkHandle()] = value;
     }
     return skip;
 }
@@ -371,26 +358,23 @@ bool SemaphoreSubmitState::ValidateBinarySignal(const Location &semaphore_loc, c
 bool SemaphoreSubmitState::ValidateTimelineSignal(const Location &semaphore_loc, const vvl::Semaphore &semaphore_state,
                                                   uint64_t value) {
     bool skip = false;
+    const char *where = nullptr;
 
-    const VkSemaphore semaphore = semaphore_state.VkHandle();
-    uint64_t bad_value = 0;
-    std::string where;
-
-    if (CheckTimelineSignalValue(semaphore_state, value, where, bad_value)) {
+    if (std::optional<uint64_t> larger_or_equal_payload = CheckTimelineSignalTooSmall(semaphore_state, value, where)) {
         const auto &vuid = GetQueueSubmitVUID(semaphore_loc, vvl::SubmitError::kTimelineSemSmallValue);
-        LogObjectList objlist(semaphore, queue);
-        skip |=
-            core.LogError(vuid, objlist, semaphore_loc,
-                          "signal value (%" PRIu64 ") in %s must be greater than %s timeline semaphore %s value (%" PRIu64 ")",
-                          value, core.FormatHandle(queue).c_str(), where.c_str(), core.FormatHandle(semaphore).c_str(), bad_value);
-    } else if (CheckTimelineMaxDiff(semaphore_state, value, where, bad_value)) {
-        const auto &vuid = GetQueueSubmitVUID(semaphore_loc, vvl::SubmitError::kTimelineSemMaxDiff);
-        LogObjectList objlist(semaphore, queue);
+        LogObjectList objlist(semaphore_state.Handle(), queue);
         skip |= core.LogError(vuid, objlist, semaphore_loc,
-                              "value (%" PRIu64 ") exceeds limit regarding %s semaphore %s value (%" PRIu64 ").", value,
-                              where.c_str(), core.FormatHandle(semaphore).c_str(), bad_value);
+                              "signal value (%" PRIu64 ") in %s must be greater than %s timeline semaphore %s value (%" PRIu64 ")",
+                              value, core.FormatHandle(queue).c_str(), where, core.FormatHandle(semaphore_state.Handle()).c_str(),
+                              *larger_or_equal_payload);
+    } else if (std::optional<uint64_t> far_away_payload = CheckTimelineMaxDiff(semaphore_state, value, where)) {
+        const auto &vuid = GetQueueSubmitVUID(semaphore_loc, vvl::SubmitError::kTimelineSemMaxDiff);
+        LogObjectList objlist(semaphore_state.Handle(), queue);
+        skip |= core.LogError(vuid, objlist, semaphore_loc,
+                              "value (%" PRIu64 ") exceeds limit regarding %s semaphore %s value (%" PRIu64 ").", value, where,
+                              core.FormatHandle(semaphore_state.Handle()).c_str(), *far_away_payload);
     } else {
-        timeline_signals[semaphore] = value;
+        timeline_signals[semaphore_state.VkHandle()] = value;
     }
     return skip;
 }
@@ -1607,41 +1591,28 @@ bool CoreChecks::PreCallValidateSignalSemaphore(VkDevice device, const VkSemapho
     }
 
     const uint64_t current_payload = semaphore_state->CurrentPayload();
-
-    if (current_payload >= pSignalInfo->value) {
+    if (pSignalInfo->value <= current_payload) {
         skip |= LogError("VUID-VkSemaphoreSignalInfo-value-03258", pSignalInfo->semaphore, signal_loc.dot(Field::value),
                          "(%" PRIu64 ") must be greater than current semaphore %s value (%" PRIu64 ").", pSignalInfo->value,
                          FormatHandle(pSignalInfo->semaphore).c_str(), current_payload);
         return skip;
     }
 
-    std::optional<uint64_t> pending_signal_value = semaphore_state->GetSmallestPendingSignalValue();
-    if (pending_signal_value.has_value() && pSignalInfo->value >= *pending_signal_value) {
+    std::optional<uint64_t> smallest_pending_signal = semaphore_state->GetSmallestPendingTimelineSignal();
+    if (smallest_pending_signal.has_value() && pSignalInfo->value >= *smallest_pending_signal) {
         skip |= LogError("VUID-VkSemaphoreSignalInfo-value-03259", pSignalInfo->semaphore, signal_loc.dot(Field::value),
                          "(%" PRIu64 ") must be less than value of any pending signal operation (%" PRIu64 ") for semaphore %s.",
-                         pSignalInfo->value, *pending_signal_value, FormatHandle(pSignalInfo->semaphore).c_str());
+                         pSignalInfo->value, *smallest_pending_signal, FormatHandle(pSignalInfo->semaphore).c_str());
         return skip;
     }
 
-    uint64_t bad_value = 0;
-    const char *where = nullptr;
-    auto payload_optype = semaphore_state->CheckMaxDiffThreshold(pSignalInfo->value);
-    if (payload_optype.has_value()) {
-        const uint64_t payload = payload_optype->first;
-        const vvl::Semaphore::OpType op_type = payload_optype->second;
-        if (payload == semaphore_state->CompletedPayload()) {
-            where = "current";
-        } else {
-            where = op_type == vvl::Semaphore::OpType::kSignal ? "pending signal" : "pending wait";
-        }
-        bad_value = payload;
-    }
-    if (where) {
+    const char *payload_type = nullptr;
+    if (auto far_away_payload = semaphore_state->CheckMaxDiffThreshold(pSignalInfo->value, payload_type)) {
         const Location loc = error_obj.location.dot(Struct::VkSemaphoreSignalInfo, Field::value);
         const auto &vuid = GetQueueSubmitVUID(loc, vvl::SubmitError::kTimelineSemMaxDiff);
         skip |= LogError(vuid, semaphore_state->Handle(), loc,
                          "(%" PRIu64 ") exceeds limit regarding %s semaphore %s payload (%" PRIu64 ").", pSignalInfo->value,
-                         FormatHandle(*semaphore_state).c_str(), where, bad_value);
+                         FormatHandle(*semaphore_state).c_str(), payload_type, *far_away_payload);
     }
     return skip;
 }

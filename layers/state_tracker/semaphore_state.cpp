@@ -179,75 +179,54 @@ void vvl::Semaphore::EnqueueAcquire(vvl::Func acquire_command) {
     timeline_[payload].acquire_command.emplace(acquire_command);
 }
 
-std::optional<std::pair<uint64_t, vvl::Semaphore::OpType>> vvl::Semaphore::CheckMaxDiffThreshold(uint64_t value) const {
+std::optional<uint64_t> vvl::Semaphore::CheckMaxDiffThreshold(uint64_t value, const char *&payload_type) const {
     assert(type == VK_SEMAPHORE_TYPE_TIMELINE);
     auto guard = ReadLock();
 
     const uint64_t max_diff = device_.phys_dev_props_core12.maxTimelineSemaphoreValueDifference;
 
-    // Because pending payload values are ordered, we only need to check the largest and smallest
-    // pending values. No need to iterate over all timeline entries.
-    if (!timeline_.empty()) {
-        // Smallest payload
-        const auto &[payload_a, timepoint_a] = *timeline_.begin();
-        if (AbsDiff(value, payload_a) > max_diff) {
-            return std::make_pair(payload_a, timepoint_a.HasWaiters() ? kWait : kSignal);
-        }
-        // Largest payload
-        const auto &[payload_b, timepoint_b] = *timeline_.rbegin();
-        if (AbsDiff(value, payload_b) > max_diff) {
-            return std::make_pair(payload_b, timepoint_b.HasWaiters() ? kWait : kSignal);
-        }
+    // Check the current payload
+    if (AbsDiff(value, current_payload_) > max_diff) {
+        payload_type = "current";
+        return current_payload_;
     }
 
-    // Check current payload.
-    // TODO: this needs to be updated when the implementation starts properly tracking
-    // current payload value by taking into account vkSignalSemaphore signals.
-    if (AbsDiff(value, completed_.payload) > max_diff) {
-        return std::make_pair(completed_.payload, completed_.op_type);
+    // It is enough to check only the first (smallest payload) and last (largest payload) entries.
+    // If either exceeds the threshold, it must be a pending operation, since the current payload
+    // has already been checked. One of these entries may equal the current payload (e.g., for
+    // host signals), but in that case it will not exceed the threshold.
+    if (!timeline_.empty()) {
+        const auto &[first_payload, first_timepoint] = *timeline_.begin();
+        if (AbsDiff(value, first_payload) > max_diff) {
+            payload_type = first_timepoint.HasWaiters() ? "pending wait" : "pending signal";
+            return first_payload;
+        }
+        const auto &[last_payload, last_timepoint] = *timeline_.rbegin();
+        if (AbsDiff(value, last_payload) > max_diff) {
+            payload_type = last_timepoint.HasWaiters() ? "pending wait" : "pending signal";
+            return last_payload;
+        }
     }
     return {};
 }
 
-std::optional<uint64_t> vvl::Semaphore::CheckForLargerOrEqualPayload(uint64_t signal_value) const {
+bool vvl::Semaphore::HasPendingTimelineSignal(uint64_t signal_value) const {
     assert(type == VK_SEMAPHORE_TYPE_TIMELINE);
     auto guard = ReadLock();
 
-    for (auto pos = timeline_.rbegin(); pos != timeline_.rend(); ++pos) {
-        const uint64_t payload = pos->first;
-
-        // We iterate in descending payload order. Once we reach a payload
-        // smaller than the signal value, we can stop early (none of the remaining
-        // payload values will be greater than or equal to the signal value).
-        if (payload < signal_value) {
-            break;
-        }
-
-        const TimePoint &timepoint = pos->second;
-        if (timepoint.signal_submit) {
-            // Equal values comparison can't be affected by execution reordering of submits,
-            // so we can report error here instead of waiting for execution time validation
-            // (there is also related comment in cc_submit.cpp)
-            if (signal_value == payload) {
-                return payload;
-            }
-
-            // Pending signals are validated at execution time (cc_submit.cpp).
-            // Check here only signals from vkSignalSemaphore
-            const bool pending = timepoint.signal_submit->queue != nullptr;
-            if (!pending && signal_value < payload) {
-                return payload;
-            }
-        }
+    auto it = timeline_.find(signal_value);
+    if (it == timeline_.end()) {
+        return false;
     }
-
-    if (completed_.op_type == kSignal && signal_value <= completed_.payload) {
-        return completed_.payload;
+    const TimePoint &timepoint = it->second;
+    if (!timepoint.signal_submit.has_value()) {
+        return false;
     }
-    return {};
+    const bool pending = timepoint.signal_submit->queue != nullptr;
+    return pending;
 }
 
-std::optional<uint64_t> vvl::Semaphore::GetSmallestPendingSignalValue() const {
+std::optional<uint64_t> vvl::Semaphore::GetSmallestPendingTimelineSignal() const {
     assert(type == VK_SEMAPHORE_TYPE_TIMELINE);
     auto guard = ReadLock();
     return smallest_pending_signal_value_;
@@ -307,11 +286,6 @@ std::optional<vvl::SemaphoreInfo> vvl::Semaphore::GetPendingBinarySignalTimeline
     }
 
     return signal_submit->queue->FindTimelineWaitWithoutResolvingSignal(signal_submit->seq);
-}
-
-uint64_t vvl::Semaphore::CompletedPayload() const {
-    auto guard = ReadLock();
-    return completed_.payload;
 }
 
 uint64_t vvl::Semaphore::CurrentPayload() const {

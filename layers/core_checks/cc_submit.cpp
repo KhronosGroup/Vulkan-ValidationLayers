@@ -56,7 +56,7 @@ void QueueSubmissionValidator::Validate(const vvl::QueueSubmission& submission) 
     // Ensure that timeline signals are monotonically increasing values
     for (uint32_t i = 0; i < (uint32_t)submission.signal_semaphores.size(); ++i) {
         const auto& signal = submission.signal_semaphores[i];
-        const uint64_t current_payload = signal.semaphore->CompletedPayload();
+        const uint64_t current_payload = signal.semaphore->CurrentPayload();
 
         // Check only the case where the signal value is less than the current payload.
         // Equality (also invalid) is handled during QueueSubmit. We can do such an early
