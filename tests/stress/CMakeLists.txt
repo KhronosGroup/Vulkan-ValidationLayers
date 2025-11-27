@@ -26,6 +26,7 @@ target_sources(vk_layer_validation_stress PRIVATE
     core_stress.cpp
     gpu_av_stress.cpp
     sync_val_stress.cpp
+    core_performance.cpp
 )
 
 get_target_property(TEST_SOURCES vk_layer_validation_stress SOURCES)
