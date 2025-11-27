@@ -4236,6 +4236,43 @@ TEST_F(NegativeSyncObject, DecreasingTimelineSignals) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeSyncObject, TimelineHostSignalLargerThanPendingSignal) {
+    TEST_DESCRIPTION("Timeline host signal can't be larger than pending signal");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+
+    m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(semaphore, 2));
+    m_errorMonitor->SetDesiredError("VUID-VkSemaphoreSignalInfo-value-03259");
+    semaphore.Signal(3);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeSyncObject, TimelineHostSignalLargerThanPendingSignal2) {
+    TEST_DESCRIPTION("Timeline host signal can't be larger than pending signal");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    if (!m_second_queue) {
+        GTEST_SKIP() << "2 queues are needed";
+    }
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+
+    m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineWait(semaphore, 2), vkt::TimelineSignal(semaphore, 4));
+    m_second_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(semaphore, 2));
+    m_errorMonitor->SetDesiredError("VUID-VkSemaphoreSignalInfo-value-03259");
+    semaphore.Signal(3);
+    m_errorMonitor->VerifyFound();
+    m_device->Wait();
+}
+
 TEST_F(NegativeSyncObject, DifferentSignalingOrderThanSubmitOrder) {
     TEST_DESCRIPTION("Timeline values are increasing in submit order but reordered by wait-before-signal at runtime");
     SetTargetApiVersion(VK_API_VERSION_1_2);

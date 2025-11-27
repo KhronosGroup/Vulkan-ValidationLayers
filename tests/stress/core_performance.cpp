@@ -55,7 +55,7 @@ TEST_F(PerformanceCore, SignalSemaphoreFromHostManyTimes) {
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
 
-    const int N = 15'000;
+    const int N = 100'000;
     for (int i = 1; i <= N; i++) {
         semaphore.Signal(i);
     }
