@@ -26,7 +26,7 @@
 
 bool CoreChecks::ValidateDataGraphPipelineShaderModuleCreateInfo(VkDevice device,
                                                                  const VkDataGraphPipelineShaderModuleCreateInfoARM& dg_shader_ci,
-                                                                 const Location& create_info_loc,
+                                                                 const Location& dg_shader_ci_loc,
                                                                  const vvl::Pipeline& pipeline) const {
     bool skip = false;
 
@@ -34,7 +34,7 @@ bool CoreChecks::ValidateDataGraphPipelineShaderModuleCreateInfo(VkDevice device
         if (!enabled_features.dataGraphSpecializationConstants) {
             if (dg_shader_ci.pSpecializationInfo) {
                 skip |= LogError("VUID-VkDataGraphPipelineShaderModuleCreateInfoARM-dataGraphSpecializationConstants-09849", device,
-                                 create_info_loc.pNext(Struct::VkDataGraphPipelineShaderModuleCreateInfoARM, Field::pSpecializationInfo),
+                                 dg_shader_ci_loc.dot(Field::pSpecializationInfo),
                                  "(%p) is not null but dataGraphSpecializationConstants feature is not enabled",
                                  dg_shader_ci.pSpecializationInfo);
             }
@@ -43,7 +43,7 @@ bool CoreChecks::ValidateDataGraphPipelineShaderModuleCreateInfo(VkDevice device
 
     for (uint32_t j = 0; j < dg_shader_ci.constantCount; j++) {
         skip |= ValidateTensorSemiStructuredSparsityInfo(device, dg_shader_ci.pConstants[j],
-                                                         create_info_loc.dot(Field::pConstants, j), pipeline);
+                                                         dg_shader_ci_loc.dot(Field::pConstants, j), pipeline);
     }
 
     return skip;
@@ -231,7 +231,8 @@ bool CoreChecks::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkD
             }
 
             // 2 possible ways to pass the shader, 1 and ONLY 1 MUST be present:
-            // VkShaderModuleCreateInfo or VkDataGraphPipelineShaderModuleCreateInfoARM::module.
+            // - VkShaderModuleCreateInfo (shader_module_ci), or
+            // - VkDataGraphPipelineShaderModuleCreateInfoARM::module (dg_shader_ci->module)
             if (const auto* shader_module_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(create_info.pNext)) {
                 if (dg_shader_ci->module) {
                     skip |= LogError("VUID-VkDataGraphPipelineShaderModuleCreateInfoARM-pNext-09873", device,
@@ -251,7 +252,7 @@ bool CoreChecks::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkD
             }
 
             // remaining checks for shader module: create info and spirv
-            skip |= ValidateDataGraphPipelineShaderModuleCreateInfo(device, *dg_shader_ci, create_info_loc, *pipeline);
+            skip |= ValidateDataGraphPipelineShaderModuleCreateInfo(device, *dg_shader_ci, dg_shader_ci_loc, *pipeline);
             skip |= ValidateDataGraphPipelineShaderModuleSpirv(device, create_info, create_info_loc, *pipeline);
         } else if (dg_pipeline_identifier_ci) {
             // TODO: add here validation for datagraph defined as cache object
