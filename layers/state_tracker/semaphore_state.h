@@ -111,18 +111,14 @@ class Semaphore : public RefcountedStateObject {
     // Process signal by retiring timeline timepoints up to the specified payload
     void RetireSignal(uint64_t payload);
 
-    // Return the payload (current or pending) for which the given value exceeds the
-    // maxTimelineSemaphoreValueDifference threshold.
+    // Return the payload (current or pending) for which the given value exceeds the max diff threshold.
     // Return an empty result if the threshould is not exceeded.
-    std::optional<std::pair<uint64_t, vvl::Semaphore::OpType>> CheckMaxDiffThreshold(uint64_t value) const;
+    std::optional<uint64_t> CheckMaxDiffThreshold(uint64_t value, const char *&payload_type) const;
 
-    // Return the current (not pending) payload if it is greater than or equal to the signal value,
-    // or return a pending payload if it is equal to the signal value.
-    // Return an empty object if none of the above conditions are met.
-    // NOTE: validation of arbitrary pending payloads is postponed to execution time (so batch order is resolved).
-    std::optional<uint64_t> CheckForLargerOrEqualPayload(uint64_t signal_value) const;
+    // Return true if there is a pending timeline signal with a given value
+    bool HasPendingTimelineSignal(uint64_t signal_value) const;
 
-    std::optional<uint64_t> GetSmallestPendingSignalValue() const;
+    std::optional<uint64_t> GetSmallestPendingTimelineSignal() const;
 
     std::optional<SubmissionReference> GetPendingBinarySignalSubmission() const;
 
@@ -134,17 +130,6 @@ class Semaphore : public RefcountedStateObject {
     // This is used to validate VUs (such as VUID-vkQueueSubmit-pWaitSemaphores-03238) that have this statement:
     // "and any semaphore signal operations on which it depends must have also been submitted for execution"
     std::optional<SemaphoreInfo> GetPendingBinarySignalTimelineDependency() const;
-
-    // Payload from the last completed (synchronized) semaphore operation.
-    // If a queue submission command is pending execution, then the returned value may immediately be out of date.
-    //
-    // NOTE: when there are no host signals (vkSignalSemaphore) this values is actually the current payload value.
-    // When the host signals are registered the current payload is determined by the most recent host signal and
-    // in that case this value is just a payload of the most recent completed/synchronized operation.
-    // TODO: this function should always return current payload value (take into account vkSignalSemaphore payloads
-    // that are registered in timeline), otherwise it is not well defined. We might also need to update other code
-    // if this function changes behavior (some logic might go away or get simplified if this function is fixed).
-    uint64_t CompletedPayload() const;
 
     // Return semaphore's current payload.
     // If a queue submission command is pending execution, then the returned value may immediately be out of date.
