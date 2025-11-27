@@ -482,7 +482,8 @@ bool CoreChecks::ValidateImageExternalMemory(const VkImageCreateInfo &create_inf
         if (create_info.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED) {
             skip |= LogError("VUID-VkImageCreateInfo-pNext-01443", device,
                              create_info_loc.pNext(Struct::VkExternalMemoryImageCreateInfo, Field::handleTypes),
-                             "is %" PRIu32 " but the initialLayout is %s.", external_memory_create_info->handleTypes,
+                             "is %s (non-zero) but the initialLayout is %s.",
+                             string_VkExternalMemoryHandleTypeFlags(external_memory_create_info->handleTypes).c_str(),
                              string_VkImageLayout(create_info.initialLayout));
         }
         // Check external memory handle types compatibility
@@ -547,7 +548,8 @@ bool CoreChecks::ValidateImageExternalMemory(const VkImageCreateInfo &create_inf
         if (create_info.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED) {
             skip |= LogError("VUID-VkImageCreateInfo-pNext-01443", device,
                              create_info_loc.pNext(Struct::VkExternalMemoryImageCreateInfoNV, Field::handleTypes),
-                             "is %" PRIu32 " but pCreateInfo->initialLayout is %s.", external_memory_create_info_nv->handleTypes,
+                             "is %s (non-zero) but pCreateInfo->initialLayout is %s.",
+                             string_VkExternalMemoryHandleTypeFlagsNV(external_memory_create_info_nv->handleTypes).c_str(),
                              string_VkImageLayout(create_info.initialLayout));
         }
         // Check external memory handle types compatibility
