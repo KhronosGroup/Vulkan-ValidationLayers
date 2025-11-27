@@ -118,7 +118,7 @@ bool DebugReport::LogMessage(VkFlags msg_flags, std::string_view vuid_text, cons
         // We want to print DebugPrintf message forever, otherwise user will mistake duplicate limit for things not printing
         (vuid_hash == 0x4fe1fef9) ||
         // GPU-AV gives lots of warnings on setup to inform user which settings we are adjusting under them
-        (vuid_hash == 0x24b5c69f);
+        (vuid_hash == 0x86fe6721);
 
     // This lock needs to be here, duplicate_message_count_map is not safe to update on multiple threads
     // see https://issues.angleproject.org/issues/450466850
