@@ -133,7 +133,7 @@ TEST_F(NegativeMesh, BasicUsage) {
             helper.shader_stages_ = {ms_xfb.GetStageCreateInfo(), fs.GetStageCreateInfo()};
         };
         CreatePipelineHelper::OneshotTest(*this, break_vp4, kErrorBit,
-                                          std::vector<std::string>({" VUID-VkGraphicsPipelineCreateInfo-None-02322"}));
+                                          std::vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-None-02322"}));
 
         // invalid dynamic state with mesh shader
         std::vector<VkDynamicState> dyn_states[] = {
