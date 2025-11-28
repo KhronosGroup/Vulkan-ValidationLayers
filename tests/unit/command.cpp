@@ -4588,7 +4588,6 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageResolveModeNone) {
     resolve_info.pRegions = &resolve_region;
 
     resolve_info.srcImage = src_depth_image;
-    m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcImage-10989");
     m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcImage-10987");
     if (!has_stencil_resolve_mode_sample_average) {
         m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcImage-10990");
@@ -5070,4 +5069,60 @@ TEST_F(NegativeCommand, DrawIndexedIndirectOffset) {
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
+}
+
+TEST_F(NegativeCommand, ResolveImage2StencilResolveMode) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_10_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance10);
+    RETURN_IF_SKIP(Init());
+
+    VkFormat format = FindSupportedStencilOnlyFormat(gpu_);
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.format = format;
+    image_ci.extent = {32, 1, 1};
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_ci.flags = 0;
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    if (!IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Multisample depth images not supported";
+    }
+
+    vkt::Image src_depth_image(*m_device, image_ci, vkt::set_layout);
+
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    vkt::Image dst_depth_image(*m_device, image_ci, vkt::set_layout);
+
+    m_command_buffer.Begin();
+
+    VkImageResolve2KHR resolve_region = vku::InitStructHelper();
+    resolve_region.srcSubresource = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
+    resolve_region.srcOffset = {0, 0, 0};
+    resolve_region.dstSubresource = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
+    resolve_region.dstOffset = {0, 0, 0};
+    resolve_region.extent = {1, 1, 1};
+
+    VkResolveImageModeInfoKHR resolve_mode = vku::InitStructHelper();
+    resolve_mode.flags = 0;
+    resolve_mode.resolveMode = VK_RESOLVE_MODE_NONE;
+    resolve_mode.stencilResolveMode = VK_RESOLVE_MODE_NONE;
+    VkResolveImageInfo2KHR resolve_info = vku::InitStructHelper(&resolve_mode);
+    resolve_info.srcImage = src_depth_image;
+    resolve_info.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    resolve_info.dstImage = dst_depth_image;
+    resolve_info.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    resolve_info.regionCount = 1;
+    resolve_info.pRegions = &resolve_region;
+
+    resolve_info.srcImage = src_depth_image;
+    m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcImage-10988");
+    vk::CmdResolveImage2KHR(m_command_buffer, &resolve_info);
+    m_errorMonitor->VerifyFound();
 }
