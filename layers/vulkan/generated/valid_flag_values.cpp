@@ -1094,6 +1094,12 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
                     return {vvl::Extension::_VK_KHR_swapchain_mutable_format};
                 }
             }
+            if (value & (VK_SWAPCHAIN_CREATE_PRESENT_TIMING_BIT_EXT)) {
+                if ((instance_function && !IsExtSupported(extensions.vk_ext_present_timing)) ||
+                    (!instance_function && !IsExtEnabled(extensions.vk_ext_present_timing))) {
+                    return {vvl::Extension::_VK_EXT_present_timing};
+                }
+            }
             if (value & (VK_SWAPCHAIN_CREATE_PRESENT_ID_2_BIT_KHR)) {
                 if ((instance_function && !IsExtSupported(extensions.vk_khr_present_id2)) ||
                     (!instance_function && !IsExtEnabled(extensions.vk_khr_present_id2))) {
@@ -1647,6 +1653,12 @@ std::string stateless::Context::DescribeFlagBitmaskValue(vvl::FlagBitmask flag_b
             return string_VkGeometryInstanceFlagsKHR(value);
         case vvl::FlagBitmask::VkBuildAccelerationStructureFlagBitsKHR:
             return string_VkBuildAccelerationStructureFlagsKHR(value);
+        case vvl::FlagBitmask::VkPresentStageFlagBitsEXT:
+            return string_VkPresentStageFlagsEXT(value);
+        case vvl::FlagBitmask::VkPastPresentationTimingFlagBitsEXT:
+            return string_VkPastPresentationTimingFlagsEXT(value);
+        case vvl::FlagBitmask::VkPresentTimingInfoFlagBitsEXT:
+            return string_VkPresentTimingInfoFlagsEXT(value);
         case vvl::FlagBitmask::VkIndirectStateFlagBitsNV:
             return string_VkIndirectStateFlagsNV(value);
         case vvl::FlagBitmask::VkIndirectCommandsLayoutUsageFlagBitsNV:
