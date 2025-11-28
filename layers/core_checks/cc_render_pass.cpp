@@ -5625,7 +5625,7 @@ bool CoreChecks::ValidateCustomResolveCreateInfoEXT(const VkCustomResolveCreateI
     }
     if (create_info.depthAttachmentFormat != VK_FORMAT_UNDEFINED) {
         if (!vkuFormatHasDepth(create_info.depthAttachmentFormat)) {
-            skip |= LogError(" VUID-VkCustomResolveCreateInfoEXT-depthAttachmentFormat-11508", device,
+            skip |= LogError("VUID-VkCustomResolveCreateInfoEXT-depthAttachmentFormat-11508", device,
                              loc.pNext(Struct::VkCustomResolveCreateInfoEXT, Field::depthAttachmentFormat),
                              "(%s) is not a valid depth format.", string_VkFormat(create_info.depthAttachmentFormat));
         } else {
