@@ -2278,6 +2278,23 @@ void Instance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDevice
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_TIMING_FEATURES_EXT: {
+                VkPhysicalDevicePresentTimingFeaturesEXT supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDevicePresentTimingFeaturesEXT *enabling =
+                    reinterpret_cast<const VkPhysicalDevicePresentTimingFeaturesEXT *>(current);
+                if (enabling->presentTiming && !supported.presentTiming) {
+                    ss << "VkPhysicalDevicePresentTimingFeaturesEXT::presentTiming is not supported\n";
+                }
+                if (enabling->presentAtAbsoluteTime && !supported.presentAtAbsoluteTime) {
+                    ss << "VkPhysicalDevicePresentTimingFeaturesEXT::presentAtAbsoluteTime is not supported\n";
+                }
+                if (enabling->presentAtRelativeTime && !supported.presentAtRelativeTime) {
+                    ss << "VkPhysicalDevicePresentTimingFeaturesEXT::presentAtRelativeTime is not supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_WAIT_2_FEATURES_KHR: {
                 VkPhysicalDevicePresentWait2FeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;

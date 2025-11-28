@@ -4615,8 +4615,27 @@ bool Device::PreCallValidateReleaseSwapchainImagesKHR(VkDevice device, const VkR
 // vkGetPhysicalDeviceCalibrateableTimeDomainsKHR:
 // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceCalibrateableTimeDomainsKHR-physicalDevice-parameter"
 
-// vkGetCalibratedTimestampsKHR:
-// Checked by chassis: device: "VUID-vkGetCalibratedTimestampsKHR-device-parameter"
+bool Device::PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
+                                                       const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
+                                                       uint64_t* pMaxDeviation, const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkGetCalibratedTimestampsKHR-device-parameter"
+    if (pTimestampInfos) {
+        for (uint32_t index0 = 0; index0 < timestampCount; ++index0) {
+            [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pTimestampInfos, index0);
+            if ([[maybe_unused]] auto pNext =
+                    vku::FindStructInPNextChain<VkSwapchainCalibratedTimestampInfoEXT>(pTimestampInfos[index0].pNext)) {
+                [[maybe_unused]] const Location pNext_loc = index0_loc.pNext(Struct::VkSwapchainCalibratedTimestampInfoEXT);
+                skip |= ValidateObject(pNext->swapchain, kVulkanObjectTypeSwapchainKHR, false,
+                                       "VUID-VkSwapchainCalibratedTimestampInfoEXT-swapchain-parameter",
+                                       "UNASSIGNED-VkSwapchainCalibratedTimestampInfoEXT-swapchain-parent",
+                                       pNext_loc.dot(Field::swapchain));
+            }
+        }
+    }
+
+    return skip;
+}
 
 bool Device::PreCallValidateCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
                                                       const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo,
@@ -5860,8 +5879,12 @@ bool Device::PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuff
 // vkGetPhysicalDeviceCalibrateableTimeDomainsEXT:
 // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceCalibrateableTimeDomainsKHR-physicalDevice-parameter"
 
-// vkGetCalibratedTimestampsEXT:
-// Checked by chassis: device: "VUID-vkGetCalibratedTimestampsKHR-device-parameter"
+bool Device::PreCallValidateGetCalibratedTimestampsEXT(VkDevice device, uint32_t timestampCount,
+                                                       const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
+                                                       uint64_t* pMaxDeviation, const ErrorObject& error_obj) const {
+    return PreCallValidateGetCalibratedTimestampsKHR(device, timestampCount, pTimestampInfos, pTimestamps, pMaxDeviation,
+                                                     error_obj);
+}
 
 // vkCmdDrawMeshTasksNV:
 // Checked by chassis: commandBuffer: "VUID-vkCmdDrawMeshTasksNV-commandBuffer-parameter"
@@ -5907,6 +5930,60 @@ bool Device::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer comm
 
 // vkGetQueueCheckpointData2NV:
 // Checked by chassis: queue: "VUID-vkGetQueueCheckpointData2NV-queue-parameter"
+
+bool Device::PreCallValidateSetSwapchainPresentTimingQueueSizeEXT(VkDevice device, VkSwapchainKHR swapchain, uint32_t size,
+                                                                  const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkSetSwapchainPresentTimingQueueSizeEXT-device-parameter"
+    skip |= ValidateObject(
+        swapchain, kVulkanObjectTypeSwapchainKHR, false, "VUID-vkSetSwapchainPresentTimingQueueSizeEXT-swapchain-parameter",
+        "VUID-vkSetSwapchainPresentTimingQueueSizeEXT-swapchain-parent", error_obj.location.dot(Field::swapchain));
+
+    return skip;
+}
+
+bool Device::PreCallValidateGetSwapchainTimingPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                            VkSwapchainTimingPropertiesEXT* pSwapchainTimingProperties,
+                                                            uint64_t* pSwapchainTimingPropertiesCounter,
+                                                            const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkGetSwapchainTimingPropertiesEXT-device-parameter"
+    skip |= ValidateObject(swapchain, kVulkanObjectTypeSwapchainKHR, false,
+                           "VUID-vkGetSwapchainTimingPropertiesEXT-swapchain-parameter",
+                           "VUID-vkGetSwapchainTimingPropertiesEXT-swapchain-parent", error_obj.location.dot(Field::swapchain));
+
+    return skip;
+}
+
+bool Device::PreCallValidateGetSwapchainTimeDomainPropertiesEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                                VkSwapchainTimeDomainPropertiesEXT* pSwapchainTimeDomainProperties,
+                                                                uint64_t* pTimeDomainsCounter, const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkGetSwapchainTimeDomainPropertiesEXT-device-parameter"
+    skip |= ValidateObject(swapchain, kVulkanObjectTypeSwapchainKHR, false,
+                           "VUID-vkGetSwapchainTimeDomainPropertiesEXT-swapchain-parameter",
+                           "VUID-vkGetSwapchainTimeDomainPropertiesEXT-swapchain-parent", error_obj.location.dot(Field::swapchain));
+
+    return skip;
+}
+
+bool Device::PreCallValidateGetPastPresentationTimingEXT(VkDevice device,
+                                                         const VkPastPresentationTimingInfoEXT* pPastPresentationTimingInfo,
+                                                         VkPastPresentationTimingPropertiesEXT* pPastPresentationTimingProperties,
+                                                         const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkGetPastPresentationTimingEXT-device-parameter"
+    if (pPastPresentationTimingInfo) {
+        [[maybe_unused]] const Location pPastPresentationTimingInfo_loc =
+            error_obj.location.dot(Field::pPastPresentationTimingInfo);
+        skip |= ValidateObject(pPastPresentationTimingInfo->swapchain, kVulkanObjectTypeSwapchainKHR, false,
+                               "VUID-VkPastPresentationTimingInfoEXT-swapchain-parameter",
+                               "UNASSIGNED-VkPastPresentationTimingInfoEXT-swapchain-parent",
+                               pPastPresentationTimingInfo_loc.dot(Field::swapchain));
+    }
+
+    return skip;
+}
 
 // vkInitializePerformanceApiINTEL:
 // Checked by chassis: device: "VUID-vkInitializePerformanceApiINTEL-device-parameter"

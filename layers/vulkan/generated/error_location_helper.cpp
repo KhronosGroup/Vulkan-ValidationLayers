@@ -614,6 +614,7 @@ const char* String(Func func) {
     {"vkGetMicromapBuildSizesEXT", 27},
     {"vkGetNativeBufferPropertiesOHOS", 32},
     {"vkGetPartitionedAccelerationStructuresBuildSizesNV", 51},
+    {"vkGetPastPresentationTimingEXT", 31},
     {"vkGetPastPresentationTimingGOOGLE", 34},
     {"vkGetPerformanceParameterINTEL", 31},
     {"vkGetPhysicalDeviceCalibrateableTimeDomainsEXT", 47},
@@ -720,6 +721,8 @@ const char* String(Func func) {
     {"vkGetSwapchainGrallocUsageOHOS", 31},
     {"vkGetSwapchainImagesKHR", 24},
     {"vkGetSwapchainStatusKHR", 24},
+    {"vkGetSwapchainTimeDomainPropertiesEXT", 38},
+    {"vkGetSwapchainTimingPropertiesEXT", 34},
     {"vkGetTensorMemoryRequirementsARM", 33},
     {"vkGetTensorOpaqueCaptureDescriptorDataARM", 42},
     {"vkGetTensorViewOpaqueCaptureDescriptorDataARM", 46},
@@ -779,6 +782,7 @@ const char* String(Func func) {
     {"vkSetLocalDimmingAMD", 21},
     {"vkSetPrivateData", 17},
     {"vkSetPrivateDataEXT", 20},
+    {"vkSetSwapchainPresentTimingQueueSizeEXT", 40},
     {"vkSignalSemaphore", 18},
     {"vkSignalSemaphoreKHR", 21},
     {"vkSubmitDebugUtilsMessageEXT", 29},
@@ -1331,7 +1335,10 @@ const char* String(Struct structure) {
     {"VkPartitionedAccelerationStructureUpdateInstanceDataNV", 55},
     {"VkPartitionedAccelerationStructureWriteInstanceDataNV", 54},
     {"VkPartitionedAccelerationStructureWritePartitionTranslationDataNV", 66},
+    {"VkPastPresentationTimingEXT", 28},
     {"VkPastPresentationTimingGOOGLE", 31},
+    {"VkPastPresentationTimingInfoEXT", 32},
+    {"VkPastPresentationTimingPropertiesEXT", 38},
     {"VkPerTileBeginInfoQCOM", 23},
     {"VkPerTileEndInfoQCOM", 21},
     {"VkPerformanceConfigurationAcquireInfoINTEL", 43},
@@ -1581,6 +1588,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDevicePresentIdFeaturesKHR", 37},
     {"VkPhysicalDevicePresentMeteringFeaturesNV", 42},
     {"VkPhysicalDevicePresentModeFifoLatestReadyFeaturesKHR", 54},
+    {"VkPhysicalDevicePresentTimingFeaturesEXT", 41},
     {"VkPhysicalDevicePresentWait2FeaturesKHR", 40},
     {"VkPhysicalDevicePresentWaitFeaturesKHR", 39},
     {"VkPhysicalDevicePresentationPropertiesOHOS", 43},
@@ -1802,8 +1810,12 @@ const char* String(Struct structure) {
     {"VkPresentInfoKHR", 17},
     {"VkPresentRegionKHR", 19},
     {"VkPresentRegionsKHR", 20},
+    {"VkPresentStageTimeEXT", 22},
     {"VkPresentTimeGOOGLE", 20},
     {"VkPresentTimesInfoGOOGLE", 25},
+    {"VkPresentTimingInfoEXT", 23},
+    {"VkPresentTimingSurfaceCapabilitiesEXT", 38},
+    {"VkPresentTimingsInfoEXT", 24},
     {"VkPresentWait2InfoKHR", 22},
     {"VkPrivateDataSlotCreateInfo", 28},
     {"VkProtectedSubmitInfo", 22},
@@ -1952,6 +1964,7 @@ const char* String(Struct structure) {
     {"VkSurfacePresentModeKHR", 24},
     {"VkSurfacePresentScalingCapabilitiesKHR", 39},
     {"VkSurfaceProtectedCapabilitiesKHR", 34},
+    {"VkSwapchainCalibratedTimestampInfoEXT", 38},
     {"VkSwapchainCounterCreateInfoEXT", 32},
     {"VkSwapchainCreateInfoKHR", 25},
     {"VkSwapchainDisplayNativeHdrCreateInfoAMD", 41},
@@ -1962,6 +1975,8 @@ const char* String(Struct structure) {
     {"VkSwapchainPresentModeInfoKHR", 30},
     {"VkSwapchainPresentModesCreateInfoKHR", 37},
     {"VkSwapchainPresentScalingCreateInfoKHR", 39},
+    {"VkSwapchainTimeDomainPropertiesEXT", 35},
+    {"VkSwapchainTimingPropertiesEXT", 31},
     {"VkSysmemColorSpaceFUCHSIA", 26},
     {"VkTensorCaptureDescriptorDataInfoARM", 37},
     {"VkTensorCopyARM", 16},
@@ -3994,6 +4009,8 @@ const char* String(Field field) {
     {"pOverrideInfo", 14},
     {"pParametersAddInfo", 19},
     {"pParams", 8},
+    {"pPastPresentationTimingInfo", 28},
+    {"pPastPresentationTimingProperties", 34},
     {"pPeerMemoryFeatures", 20},
     {"pPerTileBeginInfo", 18},
     {"pPerTileEndInfo", 16},
@@ -4026,6 +4043,7 @@ const char* String(Field field) {
     {"pPresentInfo", 13},
     {"pPresentModeCount", 18},
     {"pPresentModes", 14},
+    {"pPresentStages", 15},
     {"pPresentWait2Info", 18},
     {"pPresentationInfo", 18},
     {"pPresentationTimingCount", 25},
@@ -4164,6 +4182,9 @@ const char* String(Field field) {
     {"pSwapchain", 11},
     {"pSwapchainImageCount", 21},
     {"pSwapchainImages", 17},
+    {"pSwapchainTimeDomainProperties", 31},
+    {"pSwapchainTimingProperties", 27},
+    {"pSwapchainTimingPropertiesCounter", 34},
     {"pSwapchains", 12},
     {"pTag", 5},
     {"pTagInfo", 9},
@@ -4177,10 +4198,13 @@ const char* String(Field field) {
     {"pTileOffsets", 13},
     {"pTileSizes", 11},
     {"pTimeDomainCount", 17},
+    {"pTimeDomainIds", 15},
     {"pTimeDomains", 13},
+    {"pTimeDomainsCounter", 20},
     {"pTimes", 7},
     {"pTimestampInfos", 16},
     {"pTimestamps", 12},
+    {"pTimingInfos", 13},
     {"pTimings", 9},
     {"pTokens", 8},
     {"pToolCount", 11},
@@ -4380,6 +4404,10 @@ const char* String(Field field) {
     {"preprocessBuffer", 17},
     {"preprocessOffset", 17},
     {"preprocessSize", 15},
+    {"presentAtAbsoluteTime", 22},
+    {"presentAtAbsoluteTimeSupported", 31},
+    {"presentAtRelativeTime", 22},
+    {"presentAtRelativeTimeSupported", 31},
     {"presentBarrier", 15},
     {"presentBarrierEnable", 21},
     {"presentBarrierSupported", 24},
@@ -4397,10 +4425,16 @@ const char* String(Field field) {
     {"presentMode", 12},
     {"presentModeCount", 17},
     {"presentModeFifoLatestReady", 27},
+    {"presentStage", 13},
+    {"presentStageCount", 18},
+    {"presentStageQueries", 20},
     {"presentStartTimeUs", 19},
+    {"presentTiming", 14},
+    {"presentTimingSupported", 23},
     {"presentWait", 12},
     {"presentWait2", 13},
     {"presentWait2Supported", 22},
+    {"presentationTimingCount", 24},
     {"preserveAttachmentCount", 24},
     {"primaryMajor", 13},
     {"primaryMinor", 13},
@@ -4521,6 +4555,7 @@ const char* String(Field field) {
     {"referencePictureFormat", 23},
     {"referenceSlotCount", 19},
     {"refreshDuration", 16},
+    {"refreshInterval", 16},
     {"refreshRate", 12},
     {"regionAlignment", 16},
     {"regionCount", 12},
@@ -4537,6 +4572,7 @@ const char* String(Field field) {
     {"renderSubmitStartTimeUs", 24},
     {"renderpass", 11},
     {"reportAddressBinding", 21},
+    {"reportComplete", 15},
     {"reportedAddress", 16},
     {"representativeFragmentTest", 27},
     {"representativeFragmentTestEnable", 33},
@@ -5016,6 +5052,8 @@ const char* String(Field field) {
     {"sz", 3},
     {"tagName", 8},
     {"tagSize", 8},
+    {"targetTime", 11},
+    {"targetTimeDomainPresentStage", 29},
     {"taskCount", 10},
     {"taskShader", 11},
     {"templateType", 13},
@@ -5066,7 +5104,11 @@ const char* String(Field field) {
     {"tileSize", 9},
     {"tilesOffset", 12},
     {"tiling", 7},
+    {"time", 5},
     {"timeDomain", 11},
+    {"timeDomainCount", 16},
+    {"timeDomainId", 13},
+    {"timeDomainsCounter", 19},
     {"timelineSemaphore", 18},
     {"timeout", 8},
     {"timestampComputeAndGraphics", 28},
@@ -5074,6 +5116,7 @@ const char* String(Field field) {
     {"timestampPeriod", 16},
     {"timestampValidBits", 19},
     {"timingCount", 12},
+    {"timingPropertiesCounter", 24},
     {"tokenCount", 11},
     {"tokenType", 10},
     {"toolchainVersion", 17},
@@ -5496,6 +5539,7 @@ const char* String(FlagBitmask value) {
     {"VkOpticalFlowSessionCreateFlagBitsNV", 37},
     {"VkOpticalFlowUsageFlagBitsNV", 29},
     {"VkPartitionedAccelerationStructureInstanceFlagBitsNV", 53},
+    {"VkPastPresentationTimingFlagBitsEXT", 36},
     {"VkPeerMemoryFeatureFlagBits", 28},
     {"VkPerformanceCounterDescriptionFlagBitsKHR", 43},
     {"VkPhysicalDeviceSchedulingControlsFlagBitsARM", 46},
@@ -5512,6 +5556,8 @@ const char* String(FlagBitmask value) {
     {"VkPipelineStageFlagBits2", 25},
     {"VkPresentGravityFlagBitsKHR", 28},
     {"VkPresentScalingFlagBitsKHR", 28},
+    {"VkPresentStageFlagBitsEXT", 26},
+    {"VkPresentTimingInfoFlagBitsEXT", 31},
     {"VkQueryControlFlagBits", 23},
     {"VkQueryPipelineStatisticFlagBits", 33},
     {"VkQueryPoolCreateFlagBits", 26},
@@ -5715,6 +5761,7 @@ const char* String(Extension extension) {
     {"VK_EXT_pipeline_robustness", 27},
     {"VK_EXT_post_depth_coverage", 27},
     {"VK_EXT_present_mode_fifo_latest_ready", 38},
+    {"VK_EXT_present_timing", 22},
     {"VK_EXT_primitive_topology_list_restart", 39},
     {"VK_EXT_primitives_generated_query", 34},
     {"VK_EXT_private_data", 20},
@@ -6368,6 +6415,8 @@ bool IsFieldPointer(Field field) {
     case Field::pOverrideInfo:
     case Field::pParametersAddInfo:
     case Field::pParams:
+    case Field::pPastPresentationTimingInfo:
+    case Field::pPastPresentationTimingProperties:
     case Field::pPeerMemoryFeatures:
     case Field::pPerTileBeginInfo:
     case Field::pPerTileEndInfo:
@@ -6400,6 +6449,7 @@ bool IsFieldPointer(Field field) {
     case Field::pPresentInfo:
     case Field::pPresentModeCount:
     case Field::pPresentModes:
+    case Field::pPresentStages:
     case Field::pPresentWait2Info:
     case Field::pPresentationInfo:
     case Field::pPresentationTimingCount:
@@ -6538,6 +6588,9 @@ bool IsFieldPointer(Field field) {
     case Field::pSwapchain:
     case Field::pSwapchainImageCount:
     case Field::pSwapchainImages:
+    case Field::pSwapchainTimeDomainProperties:
+    case Field::pSwapchainTimingProperties:
+    case Field::pSwapchainTimingPropertiesCounter:
     case Field::pSwapchains:
     case Field::pTag:
     case Field::pTagInfo:
@@ -6551,10 +6604,13 @@ bool IsFieldPointer(Field field) {
     case Field::pTileOffsets:
     case Field::pTileSizes:
     case Field::pTimeDomainCount:
+    case Field::pTimeDomainIds:
     case Field::pTimeDomains:
+    case Field::pTimeDomainsCounter:
     case Field::pTimes:
     case Field::pTimestampInfos:
     case Field::pTimestamps:
+    case Field::pTimingInfos:
     case Field::pTimings:
     case Field::pTokens:
     case Field::pToolCount:
@@ -7918,6 +7974,26 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkQueueFamilyCheckpointProperties2NV;
     case VK_STRUCTURE_TYPE_CHECKPOINT_DATA_2_NV:
        return Struct::VkCheckpointData2NV;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_TIMING_FEATURES_EXT:
+       return Struct::VkPhysicalDevicePresentTimingFeaturesEXT;
+    case VK_STRUCTURE_TYPE_PRESENT_TIMING_SURFACE_CAPABILITIES_EXT:
+       return Struct::VkPresentTimingSurfaceCapabilitiesEXT;
+    case VK_STRUCTURE_TYPE_SWAPCHAIN_CALIBRATED_TIMESTAMP_INFO_EXT:
+       return Struct::VkSwapchainCalibratedTimestampInfoEXT;
+    case VK_STRUCTURE_TYPE_SWAPCHAIN_TIMING_PROPERTIES_EXT:
+       return Struct::VkSwapchainTimingPropertiesEXT;
+    case VK_STRUCTURE_TYPE_SWAPCHAIN_TIME_DOMAIN_PROPERTIES_EXT:
+       return Struct::VkSwapchainTimeDomainPropertiesEXT;
+    case VK_STRUCTURE_TYPE_PAST_PRESENTATION_TIMING_INFO_EXT:
+       return Struct::VkPastPresentationTimingInfoEXT;
+    case VK_STRUCTURE_TYPE_PAST_PRESENTATION_TIMING_EXT:
+       return Struct::VkPastPresentationTimingEXT;
+    case VK_STRUCTURE_TYPE_PAST_PRESENTATION_TIMING_PROPERTIES_EXT:
+       return Struct::VkPastPresentationTimingPropertiesEXT;
+    case VK_STRUCTURE_TYPE_PRESENT_TIMING_INFO_EXT:
+       return Struct::VkPresentTimingInfoEXT;
+    case VK_STRUCTURE_TYPE_PRESENT_TIMINGS_INFO_EXT:
+       return Struct::VkPresentTimingsInfoEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_FUNCTIONS_2_FEATURES_INTEL:
        return Struct::VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL;
     case VK_STRUCTURE_TYPE_INITIALIZE_PERFORMANCE_API_INFO_INTEL:
