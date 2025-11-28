@@ -3867,7 +3867,7 @@ bool CoreChecks::ValidateResolveImageModeInfo(VkCommandBuffer commandBuffer, con
                              string_VkResolveModeFlagBits(resolve_mode_info->resolveMode));
         }
 
-        if (first_region_with_stencil_aspect != vvl::kNoIndex32 && resolve_mode_info->resolveMode == VK_RESOLVE_MODE_NONE) {
+        if (first_region_with_stencil_aspect != vvl::kNoIndex32 && resolve_mode_info->stencilResolveMode == VK_RESOLVE_MODE_NONE) {
             skip |= LogError("VUID-VkResolveImageInfo2-srcImage-10988", src_objlist,
                              resolve_info_loc.dot(Field::pRegions, first_region_with_stencil_aspect).dot(Field::aspectMask),
                              "has VK_IMAGE_ASPECT_STENCIL_BIT but %s is %s.",
@@ -3875,7 +3875,7 @@ bool CoreChecks::ValidateResolveImageModeInfo(VkCommandBuffer commandBuffer, con
                              string_VkResolveModeFlagBits(resolve_mode_info->resolveMode));
         }
 
-        if (first_region_with_depth_aspect != vvl::kNoIndex32 &&
+        if (first_region_with_depth_aspect != vvl::kNoIndex32 && resolve_mode_info->resolveMode != VK_RESOLVE_MODE_NONE &&
             ((resolve_mode_info->resolveMode & phys_dev_props_core12.supportedDepthResolveModes) == 0)) {
             skip |= LogError("VUID-VkResolveImageInfo2-srcImage-10989", src_objlist,
                              resolve_info_loc.dot(Field::pRegions, first_region_with_depth_aspect).dot(Field::aspectMask),
@@ -3886,7 +3886,7 @@ bool CoreChecks::ValidateResolveImageModeInfo(VkCommandBuffer commandBuffer, con
                              string_VkResolveModeFlagBits(resolve_mode_info->resolveMode));
         }
 
-        if (first_region_with_stencil_aspect != vvl::kNoIndex32 &&
+        if (first_region_with_stencil_aspect != vvl::kNoIndex32 && resolve_mode_info->stencilResolveMode != VK_RESOLVE_MODE_NONE &&
             ((resolve_mode_info->stencilResolveMode & phys_dev_props_core12.supportedStencilResolveModes) == 0)) {
             skip |= LogError("VUID-VkResolveImageInfo2-srcImage-10990", src_objlist,
                              resolve_info_loc.dot(Field::pRegions, first_region_with_stencil_aspect).dot(Field::aspectMask),
