@@ -2179,12 +2179,11 @@ bool CoreChecks::ValidateDrawTessellation(const LastBound &last_bound_state, con
         return skip;  // Occurs if using binary shader object
     }
 
-    // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7694
     const uint32_t tesc_subdivision = tesc_execution_mode->GetTessellationSubdivision();
     const uint32_t tese_subdivision = tese_execution_mode->GetTessellationSubdivision();
     if (tesc_subdivision != spirv::kInvalidValue && tese_subdivision != spirv::kInvalidValue &&
         tesc_subdivision != tese_subdivision) {
-        skip |= LogError("UNASSIGNED-vkCmdDraw-tessellation-subdivision",
+        skip |= LogError(vuid.tessellation_subdivision_12239,
                          last_bound_state.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
                          "The subdivision specified in tessellation control shader (%s) does not match the subdivision in "
                          "tessellation evaluation shader (%s).",
@@ -2195,7 +2194,7 @@ bool CoreChecks::ValidateDrawTessellation(const LastBound &last_bound_state, con
     const uint32_t tese_orientation = tese_execution_mode->GetTessellationOrientation();
     if (tesc_orientation != spirv::kInvalidValue && tese_orientation != spirv::kInvalidValue &&
         tesc_orientation != tese_orientation) {
-        skip |= LogError("UNASSIGNED-vkCmdDraw-tessellation-orientation",
+        skip |= LogError(vuid.tessellation_triangles_12240,
                          last_bound_state.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
                          "The orientation specified in tessellation control shader (%s) does not match the orientation in "
                          "tessellation evaluation shader (%s).",
@@ -2205,8 +2204,8 @@ bool CoreChecks::ValidateDrawTessellation(const LastBound &last_bound_state, con
     const uint32_t tesc_spacing = tesc_execution_mode->GetTessellationSpacing();
     const uint32_t tese_spacing = tese_execution_mode->GetTessellationSpacing();
     if (tesc_spacing != spirv::kInvalidValue && tese_spacing != spirv::kInvalidValue && tesc_spacing != tese_spacing) {
-        skip |= LogError("UNASSIGNED-vkCmdDraw-tessellation-spacing",
-                         last_bound_state.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
+        skip |= LogError(vuid.tessellation_segment_12241, last_bound_state.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
+                         vuid.loc(),
                          "The spacing specified in tessellation control shader (%s) does not match the spacing in "
                          "tessellation evaluation shader (%s).",
                          string_SpvExecutionMode(tesc_spacing), string_SpvExecutionMode(tese_spacing));
@@ -2214,7 +2213,7 @@ bool CoreChecks::ValidateDrawTessellation(const LastBound &last_bound_state, con
     const uint32_t tesc_patch_size = tesc_execution_mode->output_vertices;
     const uint32_t tese_patch_size = tese_execution_mode->output_vertices;
     if (tesc_patch_size != spirv::kInvalidValue && tese_patch_size != spirv::kInvalidValue && tesc_patch_size != tese_patch_size) {
-        skip |= LogError("UNASSIGNED-vkCmdDraw-tessellation-patch-size",
+        skip |= LogError(vuid.tessellation_patch_size_12242,
                          last_bound_state.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
                          "The OutputVertices (patch size) specified in tessellation control shader (%" PRIu32
                          ") does not match the spacing in "

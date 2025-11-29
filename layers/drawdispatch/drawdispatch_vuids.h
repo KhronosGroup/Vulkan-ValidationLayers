@@ -264,6 +264,10 @@ struct DrawDispatchVuid {
     const char* shaders_push_constants_08878 = kVUIDUndefined;
     const char* shaders_descriptor_layouts_08879 = kVUIDUndefined;
     const char* draw_shaders_no_task_mesh_08885 = kVUIDUndefined;
+    const char* tessellation_subdivision_12239 = kVUIDUndefined;
+    const char* tessellation_triangles_12240 = kVUIDUndefined;
+    const char* tessellation_segment_12241 = kVUIDUndefined;
+    const char* tessellation_patch_size_12242 = kVUIDUndefined;
     const char* set_line_width_08617 = kVUIDUndefined;
     const char* set_viewport_with_count_08642 = kVUIDUndefined;
     const char* alpha_component_word_08920 = kVUIDUndefined;
