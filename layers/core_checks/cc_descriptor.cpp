@@ -745,8 +745,7 @@ bool CoreChecks::ValidateDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayo
 
                 const bool has_ycbcr = sampler_state->sampler_conversion != VK_NULL_HANDLE;
                 if (has_ycbcr && binding_info.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER) {
-                    // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7858
-                    skip |= LogError("UNASSIGNED-VkDescriptorSetLayoutBinding-descriptorType-sampler-ycbcr", device,
+                    skip |= LogError("VUID-VkDescriptorSetLayoutBinding-descriptorType-12215", device,
                                      binding_loc.dot(Field::pImmutableSamplers, j),
                                      "(%s) is a YCbCr Sampler (%s) which is only possible to use with "
                                      "VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER.",
