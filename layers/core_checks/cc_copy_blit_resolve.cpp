@@ -3944,7 +3944,11 @@ bool CoreChecks::ValidateStridedDeviceAddressRange(VkCommandBuffer command_buffe
                          "is zero, but size is non-zero (%" PRIu64 ")", strided_range.size);
     }
 
-    BufferAddressValidation<1> buffer_address_validator = {
+    const char *usage_vuid = strided_range_loc.function == Func::vkCmdCopyMemoryIndirectKHR
+                                 ? "VUID-VkCopyMemoryIndirectInfoKHR-copyAddressRange-12210"
+                                 : "VUID-VkCopyMemoryToImageIndirectInfoKHR-copyAddressRange-12213";
+
+    BufferAddressValidation<2> buffer_address_validator = {
         {{{"VUID-VkStridedDeviceAddressRangeKHR-address-11365",
            [&strided_range](const vvl::Buffer &buffer_state) {
                const VkDeviceSize end = buffer_state.create_info.size - (strided_range.address - buffer_state.deviceAddress);
@@ -3954,7 +3958,11 @@ bool CoreChecks::ValidateStridedDeviceAddressRange(VkCommandBuffer command_buffe
                return "The VkStridedDeviceAddressRangeKHR::size (" + std::to_string(strided_range.size) +
                       ") bytes does not fit in any buffer";
            },
-           kEmptyErrorMsgBuffer}}}};
+           kEmptyErrorMsgBuffer},
+
+          {usage_vuid,
+           [](const vvl::Buffer &buffer_state) { return (buffer_state.usage & VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT) == 0; },
+           []() { return "The following buffers are missing VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT"; }, kUsageErrorMsgBuffer}}}};
 
     skip |= buffer_address_validator.ValidateDeviceAddress(
         *this, strided_range_loc.dot(Field::address), LogObjectList(command_buffer), strided_range.address, strided_range.size);

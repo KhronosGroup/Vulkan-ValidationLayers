@@ -25,7 +25,7 @@ TEST_F(NegativeGpuAVCopyMemoryIndirect, SrcAddressAlignment) {
     vkt::Buffer src_payload(*m_device, 16, 0, vkt::device_address);
     vkt::Buffer dst_payload(*m_device, 16, 0, vkt::device_address);
 
-    vkt::Buffer indirect_buffer(*m_device, 64, 0, vkt::device_address);
+    vkt::Buffer indirect_buffer(*m_device, 64, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
     auto *indirect_buffer_ptr = (VkCopyMemoryIndirectCommandKHR *)indirect_buffer.Memory().Map();
     indirect_buffer_ptr->srcAddress = src_payload.Address() + 1;
     indirect_buffer_ptr->dstAddress = dst_payload.Address();
@@ -57,7 +57,7 @@ TEST_F(NegativeGpuAVCopyMemoryIndirect, DstAddressAlignment) {
     vkt::Buffer src_payload(*m_device, 32, 0, vkt::device_address);
     vkt::Buffer dst_payload(*m_device, 32, 0, vkt::device_address);
 
-    vkt::Buffer indirect_buffer(*m_device, 64, 0, vkt::device_address);
+    vkt::Buffer indirect_buffer(*m_device, 64, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
     auto *indirect_buffer_ptr = (VkCopyMemoryIndirectCommandKHR *)indirect_buffer.Memory().Map();
     indirect_buffer_ptr[0].srcAddress = src_payload.Address();
     indirect_buffer_ptr[0].dstAddress = dst_payload.Address();
@@ -93,7 +93,7 @@ TEST_F(NegativeGpuAVCopyMemoryIndirect, SizeAlignment) {
     vkt::Buffer src_payload(*m_device, 16, 0, vkt::device_address);
     vkt::Buffer dst_payload(*m_device, 16, 0, vkt::device_address);
 
-    vkt::Buffer indirect_buffer(*m_device, 64, 0, vkt::device_address);
+    vkt::Buffer indirect_buffer(*m_device, 64, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
     auto *indirect_buffer_ptr = (VkCopyMemoryIndirectCommandKHR *)indirect_buffer.Memory().Map();
     indirect_buffer_ptr->srcAddress = src_payload.Address();
     indirect_buffer_ptr->dstAddress = dst_payload.Address();
@@ -127,7 +127,7 @@ TEST_F(NegativeGpuAVCopyMemoryIndirect, ImageSrcAddress) {
     vkt::Image dst_image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM,
                          VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
-    vkt::Buffer indirect_buffer(*m_device, 64, 0, vkt::device_address);
+    vkt::Buffer indirect_buffer(*m_device, 64, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
     auto *indirect_buffer_ptr = (VkCopyMemoryToImageIndirectCommandKHR *)indirect_buffer.Memory().Map();
     indirect_buffer_ptr->srcAddress = src_payload.Address() + 1;
     indirect_buffer_ptr->bufferRowLength = 8;
@@ -167,7 +167,7 @@ TEST_F(NegativeGpuAVCopyMemoryIndirect, ImageExtent) {
     vkt::Image dst_image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM,
                          VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
-    vkt::Buffer indirect_buffer(*m_device, 128, 0, vkt::device_address);
+    vkt::Buffer indirect_buffer(*m_device, 128, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
     auto *indirect_buffer_ptr = (VkCopyMemoryToImageIndirectCommandKHR *)indirect_buffer.Memory().Map();
     indirect_buffer_ptr[0].srcAddress = src_payload.Address();
     indirect_buffer_ptr[0].bufferRowLength = 1;  // invalid
@@ -218,8 +218,8 @@ TEST_F(NegativeGpuAVCopyMemoryIndirect, Combined) {
     vkt::Image dst_image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM,
                          VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
-    vkt::Buffer indirect_buffer1(*m_device, 64, 0, vkt::device_address);
-    vkt::Buffer indirect_buffer2(*m_device, 64, 0, vkt::device_address);
+    vkt::Buffer indirect_buffer1(*m_device, 64, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer indirect_buffer2(*m_device, 64, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
     auto *indirect_buffer1_ptr = (VkCopyMemoryToImageIndirectCommandKHR *)indirect_buffer1.Memory().Map();
     indirect_buffer1_ptr->srcAddress = src_payload.Address() + 1;
     indirect_buffer1_ptr->bufferRowLength = 8;
@@ -275,7 +275,8 @@ TEST_F(NegativeGpuAVCopyMemoryIndirect, GpuUpdate) {
     vkt::Buffer src_payload(*m_device, 16, 0, vkt::device_address);
     vkt::Buffer dst_payload(*m_device, 16, 0, vkt::device_address);
 
-    vkt::Buffer indirect_buffer(*m_device, 64, VK_BUFFER_USAGE_2_TRANSFER_DST_BIT, vkt::device_address);
+    vkt::Buffer indirect_buffer(*m_device, 64, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                vkt::device_address);
     auto *indirect_buffer_ptr = (VkCopyMemoryIndirectCommandKHR *)indirect_buffer.Memory().Map();
     indirect_buffer_ptr->srcAddress = src_payload.Address();
     indirect_buffer_ptr->dstAddress = dst_payload.Address();
@@ -324,7 +325,7 @@ TEST_F(NegativeGpuAVCopyMemoryIndirect, NullAddress) {
     vkt::Buffer src_payload(*m_device, 16, 0, vkt::device_address);
     vkt::Buffer dst_payload(*m_device, 16, 0, vkt::device_address);
 
-    vkt::Buffer indirect_buffer(*m_device, 64, 0, vkt::device_address);
+    vkt::Buffer indirect_buffer(*m_device, 64, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
     auto *indirect_buffer_ptr = (VkCopyMemoryIndirectCommandKHR *)indirect_buffer.Memory().Map();
     indirect_buffer_ptr[0].srcAddress = 0;
     indirect_buffer_ptr[0].dstAddress = dst_payload.Address();
@@ -362,7 +363,7 @@ TEST_F(NegativeGpuAVCopyMemoryIndirect, ManyCopies) {
     vkt::Buffer dst_payload(*m_device, 16, 0, vkt::device_address);
 
     const uint32_t indirect_buffer_size = sizeof(VkCopyMemoryIndirectCommandKHR) * copy_count;
-    vkt::Buffer indirect_buffer(*m_device, indirect_buffer_size, 0, vkt::device_address);
+    vkt::Buffer indirect_buffer(*m_device, indirect_buffer_size, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
     auto *indirect_buffer_ptr = (VkCopyMemoryIndirectCommandKHR *)indirect_buffer.Memory().Map();
     for (uint32_t i = 0; i < copy_count; i++) {
         indirect_buffer_ptr[i].srcAddress = src_payload.Address();
