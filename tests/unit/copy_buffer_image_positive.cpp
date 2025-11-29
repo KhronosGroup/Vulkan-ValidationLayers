@@ -1744,7 +1744,7 @@ TEST_F(PositiveCopyBufferImage, MemoryIndirect) {
     };
     const VkDeviceSize buffer_size = sizeof(cmds);
 
-    vkt::Buffer indirect_buffer(*m_device, buffer_size, 0, vkt::device_address);
+    vkt::Buffer indirect_buffer(*m_device, buffer_size, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
     void *indirect_buffer_data = indirect_buffer.Memory().Map();
     memcpy(indirect_buffer_data, cmds, buffer_size);
 
@@ -1788,7 +1788,7 @@ TEST_F(PositiveCopyBufferImage, MemoryToImageIndirect) {
 
     VkCopyMemoryToImageIndirectCommandKHR cmds[2] = {cmd1, cmd2};
 
-    vkt::Buffer indirect_buffer(*m_device, sizeof(cmds), 0, vkt::device_address);
+    vkt::Buffer indirect_buffer(*m_device, sizeof(cmds), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
     void *indirect_buffer_data = indirect_buffer.Memory().Map();
     memcpy(indirect_buffer_data, cmds, sizeof(cmds));
 

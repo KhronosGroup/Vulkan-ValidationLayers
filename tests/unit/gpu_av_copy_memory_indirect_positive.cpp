@@ -39,7 +39,7 @@ TEST_F(PositiveGpuAVCopyMemoryIndirect, Basic) {
     src_payload_ptr[2] = 9;
     src_payload_ptr[3] = 12;
 
-    vkt::Buffer indirect_buffer(*m_device, 64, 0, vkt::device_address);
+    vkt::Buffer indirect_buffer(*m_device, 64, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
     auto *indirect_buffer_ptr = (VkCopyMemoryIndirectCommandKHR *)indirect_buffer.Memory().Map();
     indirect_buffer_ptr->srcAddress = src_payload.Address();
     indirect_buffer_ptr->dstAddress = dst_payload.Address();
@@ -88,7 +88,7 @@ TEST_F(PositiveGpuAVCopyMemoryIndirect, MultiCopy) {
     src2_payload_ptr[2] = 6;
     src2_payload_ptr[3] = 8;
 
-    vkt::Buffer indirect_buffer(*m_device, 512, 0, vkt::device_address);
+    vkt::Buffer indirect_buffer(*m_device, 512, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
     auto *indirect_buffer_ptr = (VkCopyMemoryIndirectCommandKHR *)indirect_buffer.Memory().Map();
     indirect_buffer_ptr[0].srcAddress = src1_payload.Address();
     indirect_buffer_ptr[0].dstAddress = dst_payload.Address();
@@ -136,7 +136,7 @@ TEST_F(PositiveGpuAVCopyMemoryIndirect, Image) {
     vkt::Image dst_image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM,
                          VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
-    vkt::Buffer indirect_buffer(*m_device, 64, 0, vkt::device_address);
+    vkt::Buffer indirect_buffer(*m_device, 64, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
     auto *indirect_buffer_ptr = (VkCopyMemoryToImageIndirectCommandKHR *)indirect_buffer.Memory().Map();
     indirect_buffer_ptr->srcAddress = src_payload.Address();
     indirect_buffer_ptr->bufferRowLength = 8;
@@ -174,7 +174,8 @@ TEST_F(PositiveGpuAVCopyMemoryIndirect, GpuUpdate) {
     vkt::Buffer src_payload(*m_device, 16, 0, vkt::device_address);
     vkt::Buffer dst_payload(*m_device, 16, 0, vkt::device_address);
 
-    vkt::Buffer indirect_buffer(*m_device, 64, VK_BUFFER_USAGE_2_TRANSFER_DST_BIT, vkt::device_address);
+    vkt::Buffer indirect_buffer(*m_device, 64, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                vkt::device_address);
     auto *indirect_buffer_ptr = (VkCopyMemoryIndirectCommandKHR *)indirect_buffer.Memory().Map();
     indirect_buffer_ptr->srcAddress = src_payload.Address();
     indirect_buffer_ptr->dstAddress = dst_payload.Address();
