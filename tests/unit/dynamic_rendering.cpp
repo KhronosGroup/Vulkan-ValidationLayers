@@ -6093,7 +6093,7 @@ TEST_F(NegativeDynamicRendering, PipelineRenderingViewMaskParameter) {
     GetPhysicalDeviceProperties2(multiview_props);
 
     if (multiview_props.maxMultiviewViewCount == 32) {
-        GTEST_SKIP() << "TVUID is not testable as maxMultiviewViewCount is 32";
+        GTEST_SKIP() << "VUID is not testable as maxMultiviewViewCount is 32";
     }
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06578");

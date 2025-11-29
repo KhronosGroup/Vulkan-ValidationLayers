@@ -517,11 +517,11 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ObjectUniformBufferTooSmall) {
         }
         )glsl";
 
-    std::vector<const char *> expecetd_errors(gpuav::glsl::kMaxErrorsPerCmd, "VUID-vkCmdDraw-None-08612");
+    std::vector<const char *> expected_errors(gpuav::glsl::kMaxErrorsPerCmd, "VUID-vkCmdDraw-None-08612");
     ShaderBufferSizeTest(4,  // buffer size
                          0,  // binding offset
                          4,  // binding range
-                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource, expecetd_errors, true);
+                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource, expected_errors, true);
 }
 
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, GPLWrite) {
