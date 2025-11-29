@@ -17,6 +17,7 @@
 
 #include "gpuav/instrumentation/gpuav_instrumentation.h"
 #include <vulkan/vulkan_core.h>
+#include <spirv/unified1/spirv.hpp>
 #include <vulkan/utility/vk_struct_helper.hpp>
 
 #include "chassis/chassis_modification_state.h"
@@ -1188,6 +1189,18 @@ bool LogMessageInstSanitizer(const uint32_t *error_record, std::string &out_erro
             }
             strm << GetSpirvSpecLink(opcode);
             out_vuid_msg = "SPIRV-Sanitizer-Divide-By-Zero";
+        } break;
+        case kErrorSubCodeSanitizerImageGather: {
+            const uint32_t component_value = error_record[kInstLogErrorParameterOffset_0];
+            const int32_t signed_value = (int32_t)component_value;
+            strm << "OpImageGather has a component value of ";
+            if (signed_value > 0) {
+                strm << component_value;
+            } else {
+                strm << signed_value;
+            }
+            strm << ", but it must be 0, 1, 2, or 3" << GetSpirvSpecLink(spv::OpImageGather);
+            out_vuid_msg = "SPIRV-Sanitizer-Image-Gather";
         } break;
         default:
             error_found = false;

@@ -392,7 +392,8 @@ void Module::LinkFunctions(const LinkInfo& info) {
     // track the incoming SSA IDs with what they are in the module
     // < old_id, new_id >
     vvl::unordered_map<uint32_t, uint32_t> id_swap_map;
-    uint32_t function_type_id = 0;
+    // If we have 2 functions in our GLSL, we need to map the OpTypeFunction later
+    vvl::unordered_map<uint32_t, uint32_t> function_type_id_map;
 
     // Track all decorations and add after when have full id_swap_map
     InstructionList decorations;
@@ -511,12 +512,13 @@ void Module::LinkFunctions(const LinkInfo& info) {
                     new_inst->ReplaceLinkedId(id_swap_map);
                     // First swap out IDs so comparison will be the same
                     const Type* function_type = type_manager_.FindFunctionType(*new_inst.get());
+                    const uint32_t old_function_type_id = new_inst->ResultId();
                     if (function_type) {
                         // Just reuse non-unique OpTypeFunction
-                        function_type_id = function_type->Id();
+                        function_type_id_map[old_function_type_id] = function_type->Id();
                     } else {
-                        function_type_id = TakeNextId();
-                        type_id = function_type_id;
+                        type_id = TakeNextId();
+                        function_type_id_map[old_function_type_id] = type_id;
                         new_inst->ReplaceResultId(type_id);
                         type_manager_.AddType(std::move(new_inst), spv_type).Id();
                     }
@@ -678,7 +680,7 @@ void Module::LinkFunctions(const LinkInfo& info) {
                 // - There is zero way to truely check if it supported or not
                 // - We reworked our functions to be smaller because we have to assume it will be inlined
                 new_inst->UpdateWord(3, spv::FunctionControlMaskNone);
-                new_inst->UpdateWord(4, function_type_id);
+                new_inst->UpdateWord(4, function_type_id_map[new_inst->Word(4)]);
             } else if (opcode == spv::OpLabel) {
                 uint32_t new_result_id = id_swap_map[new_inst->ResultId()];
                 new_inst->ReplaceResultId(new_result_id);

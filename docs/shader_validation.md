@@ -64,6 +64,7 @@ All Shader Validation can be broken into 4 types of checks
   - Vertex input, fragment output, etc
 - Draw time
   - making sure bound descriptor matches up what is being touched
+- [Sanitization](shader_sanitizer.md)
 
 ## Design details
 

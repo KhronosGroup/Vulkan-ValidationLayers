@@ -37,3 +37,14 @@ bool inst_sanitizer_divide_by_zero(const bool is_invalid, const uint inst_offset
     }
     return true;
 }
+
+// If we see this, this is basically an assert, just report the error
+void inst_sanitizer_image_gather(const uint inst_offset, const uint component)
+{
+    error_payload = ErrorPayload(
+                    inst_offset,
+                    SpecConstantLinkShaderId | (kErrorGroupInstSanitizer << kErrorGroupShift) | (kErrorSubCodeSanitizerImageGather << kErrorSubCodeShift),
+                    component,
+                    0,
+                    0);
+}

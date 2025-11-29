@@ -104,7 +104,10 @@ const int kErrorSubCode_IndexedDraw_OOBInstanceIndex = 2;
 
 // Sanitizer
 //
+const int kErrorSubCodeSanitizerEmpty = 0;  // reserved to mean no error was set
 const int kErrorSubCodeSanitizerDivideZero = 1;
+const int kErrorSubCodeSanitizerImageGather = 2;
+const int kErrorSubCodeSanitizerCount = 3;  // update when adding new item
 
 // Pre Draw
 //
