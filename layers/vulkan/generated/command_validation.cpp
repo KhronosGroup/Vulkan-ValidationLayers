@@ -1216,7 +1216,7 @@ static const vvl::unordered_map<Func, CommandValidationInfo> kCommandValidationT
     CommandScope::Both, kVUIDUndefined,
     CommandScope::Both, kVUIDUndefined,
     kVUIDUndefined,
-    false, false, false,
+    true, false, false,
 }},
 {Func::vkCmdDebugMarkerEndEXT, {
     "VUID-vkCmdDebugMarkerEndEXT-commandBuffer-recording",
@@ -1225,7 +1225,7 @@ static const vvl::unordered_map<Func, CommandValidationInfo> kCommandValidationT
     CommandScope::Both, kVUIDUndefined,
     CommandScope::Both, kVUIDUndefined,
     kVUIDUndefined,
-    false, false, false,
+    true, false, false,
 }},
 {Func::vkCmdDebugMarkerInsertEXT, {
     "VUID-vkCmdDebugMarkerInsertEXT-commandBuffer-recording",
@@ -1234,7 +1234,7 @@ static const vvl::unordered_map<Func, CommandValidationInfo> kCommandValidationT
     CommandScope::Both, kVUIDUndefined,
     CommandScope::Both, kVUIDUndefined,
     kVUIDUndefined,
-    false, false, false,
+    true, false, false,
 }},
 {Func::vkCmdBindTransformFeedbackBuffersEXT, {
     "VUID-vkCmdBindTransformFeedbackBuffersEXT-commandBuffer-recording",
@@ -1378,7 +1378,7 @@ static const vvl::unordered_map<Func, CommandValidationInfo> kCommandValidationT
     CommandScope::Both, kVUIDUndefined,
     CommandScope::Both, kVUIDUndefined,
     kVUIDUndefined,
-    false, false, false,
+    true, false, false,
 }},
 {Func::vkCmdEndDebugUtilsLabelEXT, {
     "VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-recording",
@@ -1387,7 +1387,7 @@ static const vvl::unordered_map<Func, CommandValidationInfo> kCommandValidationT
     CommandScope::Both, kVUIDUndefined,
     CommandScope::Both, kVUIDUndefined,
     kVUIDUndefined,
-    false, false, false,
+    true, false, false,
 }},
 {Func::vkCmdInsertDebugUtilsLabelEXT, {
     "VUID-vkCmdInsertDebugUtilsLabelEXT-commandBuffer-recording",
@@ -1396,7 +1396,7 @@ static const vvl::unordered_map<Func, CommandValidationInfo> kCommandValidationT
     CommandScope::Both, kVUIDUndefined,
     CommandScope::Both, kVUIDUndefined,
     kVUIDUndefined,
-    false, false, false,
+    true, false, false,
 }},
 {Func::vkCmdInitializeGraphScratchMemoryAMDX, {
     "VUID-vkCmdInitializeGraphScratchMemoryAMDX-commandBuffer-recording",
