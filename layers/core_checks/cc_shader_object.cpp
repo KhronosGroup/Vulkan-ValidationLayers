@@ -338,7 +338,7 @@ bool CoreChecks::ValidateCreateShadersSpirv(uint32_t createInfoCount, const VkSh
             } else if (create_info.stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) {
                 if (execution_mode.output_vertices == spirv::kInvalidValue) {
                     skip |=
-                        LogError("VUID-VkShaderCreateInfoEXT-codeType-08875", device, create_info_loc.dot(Field::stage),
+                        LogError("VUID-VkShaderCreateInfoEXT-codeType-12226", device, create_info_loc.dot(Field::stage),
                                  "is VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, but OutputVertices (patch size) is not specified.");
                 } else if (execution_mode.output_vertices == 0u ||
                            execution_mode.output_vertices > phys_dev_props.limits.maxTessellationPatchSize) {

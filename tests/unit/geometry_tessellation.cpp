@@ -1589,10 +1589,10 @@ TEST_F(NegativeGeometryTessellation, MismatchedTessellationExecutionModesDraw) {
     SetDefaultDynamicStatesExclude();
     vk::CmdSetPrimitiveTopologyEXT(m_command_buffer, VK_PRIMITIVE_TOPOLOGY_PATCH_LIST);
     vk::CmdBindShadersEXT(m_command_buffer, 4, stages, shaders);
-    m_errorMonitor->SetDesiredWarning("UNASSIGNED-vkCmdDraw-tessellation-subdivision");
-    m_errorMonitor->SetDesiredWarning("UNASSIGNED-vkCmdDraw-tessellation-orientation");
-    m_errorMonitor->SetDesiredWarning("UNASSIGNED-vkCmdDraw-tessellation-spacing");
-    m_errorMonitor->SetDesiredWarning("UNASSIGNED-vkCmdDraw-tessellation-patch-size");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-OpExecutionMode-12239");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-OpExecutionMode-12240");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-OpExecutionMode-12241");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-OpExecutionMode-12242");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRendering();

@@ -6182,7 +6182,7 @@ TEST_F(NegativeShaderObject, MissingTessellationControlPatchSize) {
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tesc_src, spv);
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
     VkShaderEXT shader;
-    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-codeType-08875");
+    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-codeType-12226");
     vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
