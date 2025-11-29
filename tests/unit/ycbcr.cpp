@@ -2109,7 +2109,7 @@ TEST_F(NegativeYcbcr, DescriptorIndexNonCombinedSampledImage) {
     ds_layout_ci.pBindings = &binding;
 
     VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkDescriptorSetLayoutBinding-descriptorType-sampler-ycbcr");
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutBinding-descriptorType-12215");
     vk::CreateDescriptorSetLayout(*m_device, &ds_layout_ci, nullptr, &ds_layout);
     m_errorMonitor->VerifyFound();
 }
