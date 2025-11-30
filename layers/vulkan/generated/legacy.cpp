@@ -34,7 +34,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceFeatures(VkPhysicalDevice physica
     if (api_version >= VK_API_VERSION_1_1) {
         reported = true;
         LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
-                   "vkGetPhysicalDeviceFeatures is a a legacy command and this VkInstance was created with VK_VERSION_1_1 which "
+                   "vkGetPhysicalDeviceFeatures is a legacy command and this VkInstance was created with VK_VERSION_1_1 which "
                    "contains vkGetPhysicalDeviceFeatures2 that can be used instead.\nSee more information about this legacy in the "
                    "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
     } else if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) {
@@ -57,7 +57,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceFormatProperties(VkPhysicalDevice
     if (api_version >= VK_API_VERSION_1_1) {
         reported = true;
         LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
-                   "vkGetPhysicalDeviceFormatProperties is a a legacy command and this VkInstance was created with VK_VERSION_1_1 "
+                   "vkGetPhysicalDeviceFormatProperties is a legacy command and this VkInstance was created with VK_VERSION_1_1 "
                    "which contains vkGetPhysicalDeviceFormatProperties2 that can be used instead.\nSee more information about this "
                    "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
     } else if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) {
@@ -83,7 +83,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceImageFormatProperties(VkPhysicalD
         reported = true;
         LogWarning(
             "WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
-            "vkGetPhysicalDeviceImageFormatProperties is a a legacy command and this VkInstance was created with VK_VERSION_1_1 "
+            "vkGetPhysicalDeviceImageFormatProperties is a legacy command and this VkInstance was created with VK_VERSION_1_1 "
             "which contains vkGetPhysicalDeviceImageFormatProperties2 that can be used instead.\nSee more information about this "
             "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
     } else if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) {
@@ -105,7 +105,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceProperties(VkPhysicalDevice physi
     if (api_version >= VK_API_VERSION_1_1) {
         reported = true;
         LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
-                   "vkGetPhysicalDeviceProperties is a a legacy command and this VkInstance was created with VK_VERSION_1_1 which "
+                   "vkGetPhysicalDeviceProperties is a legacy command and this VkInstance was created with VK_VERSION_1_1 which "
                    "contains vkGetPhysicalDeviceProperties2 that can be used instead.\nSee more information about this legacy in "
                    "the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
     } else if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) {
@@ -130,7 +130,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalD
         reported = true;
         LogWarning(
             "WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
-            "vkGetPhysicalDeviceQueueFamilyProperties is a a legacy command and this VkInstance was created with VK_VERSION_1_1 "
+            "vkGetPhysicalDeviceQueueFamilyProperties is a legacy command and this VkInstance was created with VK_VERSION_1_1 "
             "which contains vkGetPhysicalDeviceQueueFamilyProperties2 that can be used instead.\nSee more information about this "
             "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
     } else if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) {
@@ -153,7 +153,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceMemoryProperties(VkPhysicalDevice
     if (api_version >= VK_API_VERSION_1_1) {
         reported = true;
         LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
-                   "vkGetPhysicalDeviceMemoryProperties is a a legacy command and this VkInstance was created with VK_VERSION_1_1 "
+                   "vkGetPhysicalDeviceMemoryProperties is a legacy command and this VkInstance was created with VK_VERSION_1_1 "
                    "which contains vkGetPhysicalDeviceMemoryProperties2 that can be used instead.\nSee more information about this "
                    "legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
     } else if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) {
@@ -191,7 +191,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceSparseImageFormatProperties(VkPhy
     if (api_version >= VK_API_VERSION_1_1) {
         reported = true;
         LogWarning("WARNING-legacy-gpdp2", physicalDevice, error_obj.location,
-                   "vkGetPhysicalDeviceSparseImageFormatProperties is a a legacy command and this VkInstance was created with "
+                   "vkGetPhysicalDeviceSparseImageFormatProperties is a legacy command and this VkInstance was created with "
                    "VK_VERSION_1_1 which contains vkGetPhysicalDeviceSparseImageFormatProperties2 that can be used instead.\nSee "
                    "more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-gpdp2");
@@ -215,7 +215,7 @@ bool Device::PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebuff
     if (api_version >= VK_API_VERSION_1_4) {
         reported = true;
         LogWarning("WARNING-legacy-dynamicrendering", device, error_obj.location,
-                   "vkCreateFramebuffer is a a legacy command and this VkDevice was created with VK_VERSION_1_4 which contains the "
+                   "vkCreateFramebuffer is a legacy command and this VkDevice was created with VK_VERSION_1_4 which contains the "
                    "new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-dynamicrendering");
     } else if (IsExtEnabled(extensions.vk_khr_dynamic_rendering_local_read)) {
@@ -237,7 +237,7 @@ bool Device::PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPass
     if (api_version >= VK_API_VERSION_1_2) {
         reported = true;
         LogWarning("WARNING-legacy-renderpass2", device, error_obj.location,
-                   "vkCreateRenderPass is a a legacy command and this VkDevice was created with VK_VERSION_1_2 which contains "
+                   "vkCreateRenderPass is a legacy command and this VkDevice was created with VK_VERSION_1_2 which contains "
                    "vkCreateRenderPass2 that can be used instead.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-renderpass2");
     } else if (IsExtEnabled(extensions.vk_khr_create_renderpass2)) {
@@ -258,7 +258,7 @@ bool Device::PreCallValidateGetRenderAreaGranularity(VkDevice device, VkRenderPa
     if (api_version >= VK_API_VERSION_1_4) {
         reported = true;
         LogWarning("WARNING-legacy-dynamicrendering", device, error_obj.location,
-                   "vkGetRenderAreaGranularity is a a legacy command and this VkDevice was created with VK_VERSION_1_4 which "
+                   "vkGetRenderAreaGranularity is a legacy command and this VkDevice was created with VK_VERSION_1_4 which "
                    "contains the new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-dynamicrendering");
     } else if (IsExtEnabled(extensions.vk_khr_dynamic_rendering_local_read)) {
@@ -280,7 +280,7 @@ bool Device::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, co
     if (api_version >= VK_API_VERSION_1_2) {
         reported = true;
         LogWarning("WARNING-legacy-renderpass2", device, error_obj.location,
-                   "vkCmdBeginRenderPass is a a legacy command and this VkDevice was created with VK_VERSION_1_2 which contains "
+                   "vkCmdBeginRenderPass is a legacy command and this VkDevice was created with VK_VERSION_1_2 which contains "
                    "vkCmdBeginRenderPass2 that can be used instead.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-renderpass2");
     } else if (IsExtEnabled(extensions.vk_khr_create_renderpass2)) {
@@ -301,7 +301,7 @@ bool Device::PreCallValidateCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubp
     if (api_version >= VK_API_VERSION_1_2) {
         reported = true;
         LogWarning("WARNING-legacy-renderpass2", device, error_obj.location,
-                   "vkCmdNextSubpass is a a legacy command and this VkDevice was created with VK_VERSION_1_2 which contains "
+                   "vkCmdNextSubpass is a legacy command and this VkDevice was created with VK_VERSION_1_2 which contains "
                    "vkCmdNextSubpass2 that can be used instead.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-renderpass2");
     } else if (IsExtEnabled(extensions.vk_khr_create_renderpass2)) {
@@ -321,7 +321,7 @@ bool Device::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, cons
     if (api_version >= VK_API_VERSION_1_2) {
         reported = true;
         LogWarning("WARNING-legacy-renderpass2", device, error_obj.location,
-                   "vkCmdEndRenderPass is a a legacy command and this VkDevice was created with VK_VERSION_1_2 which contains "
+                   "vkCmdEndRenderPass is a legacy command and this VkDevice was created with VK_VERSION_1_2 which contains "
                    "vkCmdEndRenderPass2 that can be used instead.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-renderpass2");
     } else if (IsExtEnabled(extensions.vk_khr_create_renderpass2)) {
@@ -343,7 +343,7 @@ bool Device::PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPas
     if (api_version >= VK_API_VERSION_1_4) {
         reported = true;
         LogWarning("WARNING-legacy-dynamicrendering", device, error_obj.location,
-                   "vkCreateRenderPass2 is a a legacy command and this VkDevice was created with VK_VERSION_1_4 which contains the "
+                   "vkCreateRenderPass2 is a legacy command and this VkDevice was created with VK_VERSION_1_4 which contains the "
                    "new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-dynamicrendering");
     } else if (IsExtEnabled(extensions.vk_khr_dynamic_rendering_local_read)) {
@@ -364,8 +364,8 @@ bool Device::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, c
     if (api_version >= VK_API_VERSION_1_4) {
         reported = true;
         LogWarning("WARNING-legacy-dynamicrendering", device, error_obj.location,
-                   "vkCmdBeginRenderPass2 is a a legacy command and this VkDevice was created with VK_VERSION_1_4 which contains "
-                   "the new feature to replace it.\nSee more information about this legacy in the specification: "
+                   "vkCmdBeginRenderPass2 is a legacy command and this VkDevice was created with VK_VERSION_1_4 which contains the "
+                   "new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-dynamicrendering");
     } else if (IsExtEnabled(extensions.vk_khr_dynamic_rendering_local_read)) {
         reported = true;
@@ -385,8 +385,8 @@ bool Device::PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer, const
     if (api_version >= VK_API_VERSION_1_4) {
         reported = true;
         LogWarning("WARNING-legacy-dynamicrendering", device, error_obj.location,
-                   "vkCmdNextSubpass2 is a a legacy command and this VkDevice was created with VK_VERSION_1_4 which contains the "
-                   "new feature to replace it.\nSee more information about this legacy in the specification: "
+                   "vkCmdNextSubpass2 is a legacy command and this VkDevice was created with VK_VERSION_1_4 which contains the new "
+                   "feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-dynamicrendering");
     } else if (IsExtEnabled(extensions.vk_khr_dynamic_rendering_local_read)) {
         reported = true;
@@ -406,7 +406,7 @@ bool Device::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, con
     if (api_version >= VK_API_VERSION_1_4) {
         reported = true;
         LogWarning("WARNING-legacy-dynamicrendering", device, error_obj.location,
-                   "vkCmdEndRenderPass2 is a a legacy command and this VkDevice was created with VK_VERSION_1_4 which contains the "
+                   "vkCmdEndRenderPass2 is a legacy command and this VkDevice was created with VK_VERSION_1_4 which contains the "
                    "new feature to replace it.\nSee more information about this legacy in the specification: "
                    "https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-dynamicrendering");
     } else if (IsExtEnabled(extensions.vk_khr_dynamic_rendering_local_read)) {
