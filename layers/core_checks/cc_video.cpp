@@ -5162,10 +5162,11 @@ bool CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBu
                         skip |= LogError("VUID-VkVideoBeginCodingInfoKHR-slotIndex-07245", objlist, reference_image_view_loc,
                                          "(%s created from %s) was not created "
                                          "with VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR thus it cannot be used as "
-                                         "a reference picture with %s that was created with a decode operation.",
+                                         "a reference picture with %s that was created with a decode operation.\n%s",
                                          FormatHandle(reference_resource.image_view_state->Handle()).c_str(),
                                          FormatHandle(reference_resource.image_state->Handle()).c_str(),
-                                         FormatHandle(pBeginInfo->videoSession).c_str());
+                                         FormatHandle(pBeginInfo->videoSession).c_str(),
+                                         reference_resource.image_view_state->DescribeImageUsage(*this).c_str());
                     }
 
                     if (vs_state->IsEncode() && (supported_usage & VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR) == 0) {
@@ -5175,10 +5176,11 @@ bool CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBu
                         skip |= LogError("VUID-VkVideoBeginCodingInfoKHR-slotIndex-07246", objlist, reference_image_view_loc,
                                          "(%s created from %s) was not created "
                                          "with VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR thus it cannot be used as "
-                                         "a reference picture with %s that was created with an encode operation.",
+                                         "a reference picture with %s that was created with an encode operation.\n%s",
                                          FormatHandle(reference_resource.image_view_state->Handle()).c_str(),
                                          FormatHandle(reference_resource.image_state->Handle()).c_str(),
-                                         FormatHandle(pBeginInfo->videoSession).c_str());
+                                         FormatHandle(pBeginInfo->videoSession).c_str(),
+                                         reference_resource.image_view_state->DescribeImageUsage(*this).c_str());
                     }
 
                     last_dpb_image = reference_resource.image_state.get();
@@ -5605,9 +5607,10 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
             skip |= LogError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07146", objlist, dst_image_view_loc,
                              "(%s created from %s) was not created with VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR "
                              "thus it cannot be used as a decode output picture with the bound video session %s "
-                             "that was created with a decode operation.",
+                             "that was created with a decode operation.\n%s",
                              FormatHandle(dst_resource.image_view_state->Handle()).c_str(),
-                             FormatHandle(dst_resource.image_state->Handle()).c_str(), FormatHandle(*vs_state).c_str());
+                             FormatHandle(dst_resource.image_state->Handle()).c_str(), FormatHandle(*vs_state).c_str(),
+                             dst_resource.image_view_state->DescribeImageUsage(*this).c_str());
         }
 
         bool dst_same_as_setup = (setup_resource == dst_resource);
@@ -5884,11 +5887,11 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
                 const LogObjectList objlist(commandBuffer, iv_state->Handle());
                 skip |= LogError(
                     valid_usage.image_view_mismatch_vuid, objlist, encode_info_loc.dot(Field::flags),
-                    "contains %s but the image view specified in %s (%s created from %s) was not created with %s.",
+                    "contains %s but the image view specified in %s (%s created from %s) was not created with %s.\n%s",
                     string_VkVideoEncodeFlagBitsKHR(valid_usage.encode_flag),
                     encode_info_loc.pNext(Struct::VkVideoEncodeQuantizationMapInfoKHR, Field::quantizationMap).Fields().c_str(),
                     FormatHandle(*iv_state).c_str(), FormatHandle(*iv_state->image_state).c_str(),
-                    string_VkImageUsageFlagBits(valid_usage.image_usage_flag));
+                    string_VkImageUsageFlagBits(valid_usage.image_usage_flag), iv_state->DescribeImageUsage(*this).c_str());
             }
         }
     }
@@ -6093,9 +6096,10 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
             skip |= LogError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-08210", objlist, src_image_view_loc,
                              "(%s created from %s) was not created with VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR "
                              "thus it cannot be used as an encode input picture with the bound video session %s "
-                             "that was created with an encode operation.",
+                             "that was created with an encode operation.\n%s",
                              FormatHandle(src_resource.image_view_state->Handle()).c_str(),
-                             FormatHandle(src_resource.image_state->Handle()).c_str(), FormatHandle(*vs_state).c_str());
+                             FormatHandle(src_resource.image_state->Handle()).c_str(), FormatHandle(*vs_state).c_str(),
+                             src_resource.image_view_state->DescribeImageUsage(*this).c_str());
         }
 
         skip |=

@@ -318,6 +318,8 @@ class ImageView : public StateObject, public SubStateManager<ImageViewSubState> 
     static VkImageSubresourceRange NormalizeImageViewSubresourceRange(const Image &image_state,
                                                                       const VkImageViewCreateInfo &image_view_ci);
     VkImageSubresourceRange GetRangeGeneratorRange(const DeviceExtensions &extensions) const;
+
+    std::string DescribeImageUsage(const Logger& logger) const;
 };
 
 class ImageViewSubState {

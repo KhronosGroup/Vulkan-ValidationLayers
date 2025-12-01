@@ -1921,10 +1921,11 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo &create
     const VkImageType image_type = image_state.create_info.imageType;
     const VkImageViewType view_type = create_info.viewType;
 
-    // If there's a chained VkImageViewUsageCreateInfo struct, modify image_usage to match
+    // If there's a chained VkImageViewUsageCreateInfo struct, modify |image_usage| to match.
+    // VkImageViewUsageCreateInfo must have a subset (no new usage) and remaining checks only look for inclusion of usage flag
     VkImageUsageFlags image_usage = image_state.create_info.usage;
-    if (const auto chained_ivuci_struct = vku::FindStructInPNextChain<VkImageViewUsageCreateInfo>(create_info.pNext);
-        chained_ivuci_struct) {
+
+    if (const auto chained_ivuci_struct = vku::FindStructInPNextChain<VkImageViewUsageCreateInfo>(create_info.pNext)) {
         if (IsExtEnabled(extensions.vk_khr_maintenance2)) {
             const auto image_stencil_struct =
                 vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image_state.create_info.pNext);
