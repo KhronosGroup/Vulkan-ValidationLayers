@@ -256,7 +256,7 @@ class Validator : public GpuShaderInstrumentor {
     // We find ourselves constantly needing to create some resource for the "lifetime of GPU-AV"
     // We don't want a messy global space to managae it and use this to allow each check to manage the resource where it is used.
     // The goal is the first time we need the resource, we create it then, and afterwards, its cached and we can regain
-    vko::SharedResourcesCache<true> shared_resources_manager;
+    vko::SharedResourcesCache<true> shared_resources_cache;
 
     PFN_vkSetDeviceLoaderData vk_set_device_loader_data_;
 

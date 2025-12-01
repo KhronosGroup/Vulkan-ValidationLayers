@@ -46,39 +46,39 @@ void Validator::Created(vvl::CommandBuffer &cb_state) {
 void Validator::Created(vvl::Queue &queue) { queue.SetSubState(container_type, std::make_unique<QueueSubState>(*this, queue)); }
 
 void Validator::Created(vvl::Image &obj) {
-    DescriptorHeap &desc_heap = shared_resources_manager.Get<DescriptorHeap>();
+    DescriptorHeap &desc_heap = shared_resources_cache.Get<DescriptorHeap>();
     obj.SetSubState(container_type, std::make_unique<ImageSubState>(obj, desc_heap));
 }
 void Validator::Created(vvl::ImageView &obj) {
-    DescriptorHeap &desc_heap = shared_resources_manager.Get<DescriptorHeap>();
+    DescriptorHeap &desc_heap = shared_resources_cache.Get<DescriptorHeap>();
     obj.SetSubState(container_type, std::make_unique<ImageViewSubState>(obj, desc_heap));
 }
 void Validator::Created(vvl::Buffer &obj) {
-    DescriptorHeap &desc_heap = shared_resources_manager.Get<DescriptorHeap>();
+    DescriptorHeap &desc_heap = shared_resources_cache.Get<DescriptorHeap>();
     obj.SetSubState(container_type, std::make_unique<BufferSubState>(obj, desc_heap));
 }
 void Validator::Created(vvl::BufferView &obj) {
-    DescriptorHeap &desc_heap = shared_resources_manager.Get<DescriptorHeap>();
+    DescriptorHeap &desc_heap = shared_resources_cache.Get<DescriptorHeap>();
     obj.SetSubState(container_type, std::make_unique<BufferViewSubState>(obj, desc_heap));
 }
 void Validator::Created(vvl::Sampler &obj) {
-    DescriptorHeap &desc_heap = shared_resources_manager.Get<DescriptorHeap>();
+    DescriptorHeap &desc_heap = shared_resources_cache.Get<DescriptorHeap>();
     obj.SetSubState(container_type, std::make_unique<SamplerSubState>(obj, desc_heap));
 }
 void Validator::Created(vvl::AccelerationStructureNV &obj) {
-    DescriptorHeap &desc_heap = shared_resources_manager.Get<DescriptorHeap>();
+    DescriptorHeap &desc_heap = shared_resources_cache.Get<DescriptorHeap>();
     obj.SetSubState(container_type, std::make_unique<AccelerationStructureNVSubState>(obj, desc_heap));
 }
 void Validator::Created(vvl::AccelerationStructureKHR &obj) {
-    DescriptorHeap &desc_heap = shared_resources_manager.Get<DescriptorHeap>();
+    DescriptorHeap &desc_heap = shared_resources_cache.Get<DescriptorHeap>();
     obj.SetSubState(container_type, std::make_unique<AccelerationStructureKHRSubState>(obj, desc_heap));
 }
 void Validator::Created(vvl::Tensor &obj) {
-    DescriptorHeap &desc_heap = shared_resources_manager.Get<DescriptorHeap>();
+    DescriptorHeap &desc_heap = shared_resources_cache.Get<DescriptorHeap>();
     obj.SetSubState(container_type, std::make_unique<TensorSubState>(obj, desc_heap));
 }
 void Validator::Created(vvl::TensorView &obj) {
-    DescriptorHeap &desc_heap = shared_resources_manager.Get<DescriptorHeap>();
+    DescriptorHeap &desc_heap = shared_resources_cache.Get<DescriptorHeap>();
     obj.SetSubState(container_type, std::make_unique<TensorViewSubState>(obj, desc_heap));
 }
 void Validator::Created(vvl::ShaderObject &obj) { obj.SetSubState(container_type, std::make_unique<ShaderObjectSubState>(obj)); }

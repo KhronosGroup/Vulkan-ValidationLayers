@@ -133,16 +133,16 @@ void FirstInstance(Validator &gpuav, CommandBufferSubState &cb_state, const Loca
                                             error_logger_i = cb_state.GetErrorLoggerIndex(),
                                             loc](Validator &gpuav, CommandBufferSubState &cb_state) {
         SharedDrawValidationResources &shared_draw_validation_resources =
-            gpuav.shared_resources_manager.GetOrCreate<SharedDrawValidationResources>(gpuav);
+            gpuav.shared_resources_cache.GetOrCreate<SharedDrawValidationResources>(gpuav);
         if (!shared_draw_validation_resources.valid) {
             gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to create SharedDrawValidationResources.");
             return;
         }
-        ValidationCommandsCommon &val_cmd_common =
-            cb_state.shared_resources_cache.GetOrCreate<ValidationCommandsCommon>(gpuav, cb_state, loc);
+        ValidationCommandsGpuavState &val_cmd_gpuav_state =
+            gpuav.shared_resources_cache.GetOrCreate<ValidationCommandsGpuavState>(gpuav, loc);
         valpipe::ComputePipeline<FirstInstanceValidationShader> &validation_pipeline =
-            gpuav.shared_resources_manager.GetOrCreate<valpipe::ComputePipeline<FirstInstanceValidationShader>>(
-                gpuav, loc, val_cmd_common.error_logging_desc_set_layout_);
+            gpuav.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<FirstInstanceValidationShader>>(
+                gpuav, loc, val_cmd_gpuav_state.error_logging_desc_set_layout_);
         if (!validation_pipeline.valid) {
             gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to create FirstInstanceValidationShader.");
             return;
@@ -327,17 +327,16 @@ void CountBuffer(Validator &gpuav, CommandBufferSubState &cb_state, const Locati
                                             draw_i = cb_state.draw_index, error_logger_i = cb_state.GetErrorLoggerIndex(),
                                             loc](Validator &gpuav, CommandBufferSubState &cb_state) {
         SharedDrawValidationResources &shared_draw_validation_resources =
-            gpuav.shared_resources_manager.GetOrCreate<SharedDrawValidationResources>(gpuav);
+            gpuav.shared_resources_cache.GetOrCreate<SharedDrawValidationResources>(gpuav);
         if (!shared_draw_validation_resources.valid) {
             gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to create SharedDrawValidationResources.");
             return;
         }
-        ValidationCommandsCommon &val_cmd_common =
-            cb_state.shared_resources_cache.GetOrCreate<ValidationCommandsCommon>(gpuav, cb_state, loc);
-
+        ValidationCommandsGpuavState &val_cmd_gpuav_state =
+            gpuav.shared_resources_cache.GetOrCreate<ValidationCommandsGpuavState>(gpuav, loc);
         valpipe::ComputePipeline<CountBufferValidationShader> &validation_pipeline =
-            gpuav.shared_resources_manager.GetOrCreate<valpipe::ComputePipeline<CountBufferValidationShader>>(
-                gpuav, loc, val_cmd_common.error_logging_desc_set_layout_);
+            gpuav.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<CountBufferValidationShader>>(
+                gpuav, loc, val_cmd_gpuav_state.error_logging_desc_set_layout_);
         if (!validation_pipeline.valid) {
             gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to create CountBufferValidationShader.");
             return;
@@ -485,16 +484,16 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
          api_count_buffer_offset, api_draw_count, is_task_shader, draw_i = cb_state.draw_index,
          error_logger_i = cb_state.GetErrorLoggerIndex(), loc](Validator &gpuav, CommandBufferSubState &cb_state) {
             SharedDrawValidationResources &shared_draw_validation_resources =
-                gpuav.shared_resources_manager.GetOrCreate<SharedDrawValidationResources>(gpuav);
+                gpuav.shared_resources_cache.GetOrCreate<SharedDrawValidationResources>(gpuav);
             if (!shared_draw_validation_resources.valid) {
                 gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to create SharedDrawValidationResources.");
                 return;
             }
-            ValidationCommandsCommon &val_cmd_common =
-                cb_state.shared_resources_cache.GetOrCreate<ValidationCommandsCommon>(gpuav, cb_state, loc);
+            ValidationCommandsGpuavState &val_cmd_gpuav_state =
+                gpuav.shared_resources_cache.GetOrCreate<ValidationCommandsGpuavState>(gpuav, loc);
             valpipe::ComputePipeline<MeshValidationShader> &validation_pipeline =
-                gpuav.shared_resources_manager.GetOrCreate<valpipe::ComputePipeline<MeshValidationShader>>(
-                    gpuav, loc, val_cmd_common.error_logging_desc_set_layout_);
+                gpuav.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<MeshValidationShader>>(
+                    gpuav, loc, val_cmd_gpuav_state.error_logging_desc_set_layout_);
             if (!validation_pipeline.valid) {
                 gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to create MeshValidationShader.");
                 return;
@@ -782,22 +781,22 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
                                             draw_i = cb_state.draw_index, error_logger_i = cb_state.GetErrorLoggerIndex(),
                                             loc](Validator &gpuav, CommandBufferSubState &cb_state) {
         SharedDrawValidationResources &shared_draw_validation_resources =
-            gpuav.shared_resources_manager.GetOrCreate<SharedDrawValidationResources>(gpuav);
+            gpuav.shared_resources_cache.GetOrCreate<SharedDrawValidationResources>(gpuav);
         if (!shared_draw_validation_resources.valid) {
             gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to create SharedDrawValidationResources.");
             return;
         }
         valpipe::ComputePipeline<SetupDrawCountDispatchIndirectShader> &setup_validation_dispatch_pipeline =
-            gpuav.shared_resources_manager.GetOrCreate<valpipe::ComputePipeline<SetupDrawCountDispatchIndirectShader>>(gpuav, loc);
+            gpuav.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<SetupDrawCountDispatchIndirectShader>>(gpuav, loc);
         if (!setup_validation_dispatch_pipeline.valid) {
             gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to create SetupDrawCountDispatchIndirectShader.");
             return;
         }
-        ValidationCommandsCommon &val_cmd_common =
-            cb_state.shared_resources_cache.GetOrCreate<ValidationCommandsCommon>(gpuav, cb_state, loc);
+        ValidationCommandsGpuavState &val_cmd_gpuav_state =
+            gpuav.shared_resources_cache.GetOrCreate<ValidationCommandsGpuavState>(gpuav, loc);
         valpipe::ComputePipeline<DrawIndexedIndirectIndexBufferShader> &validation_pipeline =
-            gpuav.shared_resources_manager.GetOrCreate<valpipe::ComputePipeline<DrawIndexedIndirectIndexBufferShader>>(
-                gpuav, loc, val_cmd_common.error_logging_desc_set_layout_);
+            gpuav.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<DrawIndexedIndirectIndexBufferShader>>(
+                gpuav, loc, val_cmd_gpuav_state.error_logging_desc_set_layout_);
         if (!validation_pipeline.valid) {
             gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to create DrawIndexedIndirectIndexBufferShader.");
             return;

@@ -92,7 +92,7 @@ struct DescriptorChecksCbState {
 
 void DescriptorChecksOnFinishDeviceSetup(Validator& gpuav) {
     if (!gpuav.gpuav_settings.shader_instrumentation.descriptor_checks) {
-        gpuav.shared_resources_manager.GetOrCreate<DescriptorHeap>(gpuav, 0);
+        gpuav.shared_resources_cache.GetOrCreate<DescriptorHeap>(gpuav, 0);
         return;
     }
 
@@ -105,7 +105,7 @@ void DescriptorChecksOnFinishDeviceSetup(Validator& gpuav) {
         num_descs = glsl::kDebugInputBindlessMaxDescriptors;
     }
 
-    gpuav.shared_resources_manager.GetOrCreate<DescriptorHeap>(gpuav, num_descs);
+    gpuav.shared_resources_cache.GetOrCreate<DescriptorHeap>(gpuav, num_descs);
 }
 
 void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState& cb) {
@@ -123,7 +123,7 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
             dc_cb_state.last_bound_desc_sets_state_ssbo.Clear();
             auto desc_state_ssbo =
                 static_cast<glsl::BoundDescriptorSetsStateSSBO*>(dc_cb_state.last_bound_desc_sets_state_ssbo.offset_mapped_ptr);
-            desc_state_ssbo->descriptor_init_status = gpuav.shared_resources_manager.Get<DescriptorHeap>().GetDeviceAddress();
+            desc_state_ssbo->descriptor_init_status = gpuav.shared_resources_cache.Get<DescriptorHeap>().GetDeviceAddress();
 
             for (size_t bound_ds_i = 0; bound_ds_i < desc_binding_cmd.bound_descriptor_sets.size(); ++bound_ds_i) {
                 auto& bound_ds = desc_binding_cmd.bound_descriptor_sets[bound_ds_i];

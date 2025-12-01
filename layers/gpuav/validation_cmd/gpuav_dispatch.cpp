@@ -59,12 +59,11 @@ void DispatchIndirect(Validator &gpuav, const Location &loc, CommandBufferSubSta
         return;
     }
 
-    ValidationCommandsCommon &val_cmd_common =
-        cb_state.shared_resources_cache.GetOrCreate<ValidationCommandsCommon>(gpuav, cb_state, loc);
-
+    ValidationCommandsGpuavState &val_cmd_gpuav_state =
+        gpuav.shared_resources_cache.GetOrCreate<ValidationCommandsGpuavState>(gpuav, loc);
     valpipe::ComputePipeline<DispatchValidationShader> &validation_pipeline =
-        gpuav.shared_resources_manager.GetOrCreate<valpipe::ComputePipeline<DispatchValidationShader>>(
-            gpuav, loc, val_cmd_common.error_logging_desc_set_layout_);
+        gpuav.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<DispatchValidationShader>>(
+            gpuav, loc, val_cmd_gpuav_state.error_logging_desc_set_layout_);
     if (!validation_pipeline.valid) {
         gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to create DispatchValidationShader.");
         return;

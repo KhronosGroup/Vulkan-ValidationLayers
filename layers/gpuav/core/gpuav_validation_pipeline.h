@@ -69,9 +69,9 @@ void BindShaderResourcesHelper(Validator& gpuav, CommandBufferSubState& cb_state
 template <typename ShaderResources>
 class ComputePipeline {
   public:
-    ComputePipeline(Validator& gpuav, const Location& loc, VkDescriptorSetLayout additional_desc_set_layout = VK_NULL_HANDLE) {
+    ComputePipeline(Validator& gpuav, const Location& loc, VkDescriptorSetLayout error_logging_desc_set = VK_NULL_HANDLE) {
         std::vector<VkDescriptorSetLayoutBinding> specific_bindings = ShaderResources::GetDescriptorSetLayoutBindings();
-        valid = internal::CreateComputePipelineHelper(gpuav, loc, specific_bindings, additional_desc_set_layout,
+        valid = internal::CreateComputePipelineHelper(gpuav, loc, specific_bindings, error_logging_desc_set,
                                                       sizeof(ShaderResources::push_constants),
                                                       uint32_t(ShaderResources::GetSpirvSize()), ShaderResources::GetSpirv(),
                                                       device, specific_desc_set_layout, pipeline_layout, shader_module, pipeline);
