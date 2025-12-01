@@ -1085,22 +1085,12 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
         }
 
         if (framebuffer_attachment_image_info->usage != image_view_state->inherited_usage) {
-            // Give clearer message if this error is due to the "inherited" part or not
-            if (image_create_info->usage == image_view_state->inherited_usage) {
-                skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-04627", objlist, attachment_loc.dot(Field::usage),
-                                 "is (%s), but the VkFramebuffer was created with "
-                                 "vkFramebufferAttachmentsCreateInfo::pAttachmentImageInfos[%" PRIu32 "].usage = %s.",
-                                 string_VkImageUsageFlags(image_create_info->usage).c_str(), i,
-                                 string_VkImageUsageFlags(framebuffer_attachment_image_info->usage).c_str());
-            } else {
-                skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-04627", objlist, attachment_loc.dot(Field::usage),
-                                 "is (%s), which has an inherited usage subset from VkImageViewUsageCreateInfo of (%s), but the "
-                                 "VkFramebuffer was created with vkFramebufferAttachmentsCreateInfo::pAttachmentImageInfos[%" PRIu32
-                                 "].usage = %s.",
-                                 string_VkImageUsageFlags(image_create_info->usage).c_str(),
-                                 string_VkImageUsageFlags(image_view_state->inherited_usage).c_str(), i,
-                                 string_VkImageUsageFlags(framebuffer_attachment_image_info->usage).c_str());
-            }
+            skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-04627", objlist, attachment_loc.dot(Field::usage),
+                             "is (%s), but the VkFramebuffer was created with "
+                             "vkFramebufferAttachmentsCreateInfo::pAttachmentImageInfos[%" PRIu32 "].usage = %s.\n%s",
+                             string_VkImageUsageFlags(image_create_info->usage).c_str(), i,
+                             string_VkImageUsageFlags(framebuffer_attachment_image_info->usage).c_str(),
+                             image_view_state->DescribeImageUsage(*this).c_str());
         }
 
         const auto view_width = std::max(1u, image_create_info->extent.width >> subresource_range.baseMipLevel);
@@ -3261,10 +3251,11 @@ bool CoreChecks::ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer comman
         auto fragment_density_map_view_state = Get<vvl::ImageView>(fragment_density_map_attachment_info->imageView);
         ASSERT_AND_RETURN_SKIP(fragment_density_map_view_state);
         if ((fragment_density_map_view_state->inherited_usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) == 0) {
-            const LogObjectList objlist(commandBuffer, fragment_density_map_attachment_info->imageView);
+            const LogObjectList objlist(commandBuffer, fragment_density_map_attachment_info->imageView,
+                                        fragment_density_map_view_state->image_state->Handle());
             skip |= LogError("VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-imageView-06158", objlist, view_loc,
-                             "usage (%s) does not include VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT.",
-                             string_VkImageUsageFlags(fragment_density_map_view_state->inherited_usage).c_str());
+                             "internal image usage did not include VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT.\n%s",
+                             fragment_density_map_view_state->DescribeImageUsage(*this).c_str());
         }
         if ((fragment_density_map_view_state->image_state->create_info.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) > 0) {
             const LogObjectList objlist(commandBuffer, fragment_density_map_attachment_info->imageView,
@@ -3387,7 +3378,8 @@ bool CoreChecks::ValidateBeginRenderingFragmentShadingRate(VkCommandBuffer comma
     if ((view_state->inherited_usage & VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR) == 0) {
         skip |= LogError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06148", objlist,
                          rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::imageView),
-                         "was not created with VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR.");
+                         "was not created with VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR.\n%s",
+                         view_state->DescribeImageUsage(*this).c_str());
     }
 
     const VkComponentMapping components = view_state->create_info.components;
@@ -3891,9 +3883,10 @@ bool CoreChecks::ValidateBeginRenderingColorAttachment(const vvl::CommandBuffer 
             const LogObjectList objlist(commandBuffer, image_view_state->Handle(), image_state.Handle());
             const Location color_image_view = color_attachment_loc.dot(Field::imageView);
 
-            if (!(image_state.create_info.usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)) {
+            if (!(image_view_state->inherited_usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)) {
                 skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06087", objlist, color_image_view,
-                                 "must have been created with VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT.");
+                                 "must have been created with VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT.\n%s",
+                                 image_view_state->DescribeImageUsage(*this).c_str());
             }
 
             const VkComponentMapping components = image_view_state->create_info.components;
@@ -4051,9 +4044,10 @@ bool CoreChecks::ValidateBeginRenderingDepthAttachment(const vvl::CommandBuffer 
         const LogObjectList objlist(commandBuffer, depth_view_state->Handle(), image_state.Handle());
         const Location depth_image_view = depth_attachment_loc.dot(Field::imageView);
 
-        if (!(image_state.create_info.usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
+        if (!(depth_view_state->inherited_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
             skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-06088", objlist, depth_attachment_loc.dot(Field::imageView),
-                             "internal image must have been created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT.");
+                             "internal image must have been created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT.\n%s",
+                             depth_view_state->DescribeImageUsage(*this).c_str());
         }
 
         if (!vkuFormatHasDepth(depth_view_state->create_info.format)) {
@@ -4137,9 +4131,10 @@ bool CoreChecks::ValidateBeginRenderingStencilAttachment(const vvl::CommandBuffe
         const LogObjectList objlist(commandBuffer, stencil_view_state->Handle(), image_state.Handle());
         const Location stencil_image_view = stencil_attachment_loc.dot(Field::imageView);
 
-        if (!(image_state.create_info.usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
+        if (!(stencil_view_state->inherited_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
             skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-06089", objlist, stencil_attachment_loc.dot(Field::imageView),
-                             "internal image must have been created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT.");
+                             "internal image must have been created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT.\n%s",
+                             stencil_view_state->DescribeImageUsage(*this).c_str());
         }
 
         if (!vkuFormatHasStencil(stencil_view_state->create_info.format)) {

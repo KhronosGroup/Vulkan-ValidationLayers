@@ -19,8 +19,10 @@
  */
 #include "state_tracker/image_state.h"
 #include <vulkan/utility/vk_format_utils.h>
+#include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/vulkan_core.h>
 #include <cstdint>
+#include <sstream>
 #include <string>
 #include "error_message/error_strings.h"
 #include "state_tracker/state_tracker.h"
@@ -650,6 +652,17 @@ bool ImageView::OverlapSubresource(const ImageView &compare_view) const {
         return false;
     }
     return true;
+}
+
+std::string ImageView::DescribeImageUsage(const Logger& logger) const {
+    std::stringstream ss;
+    ss << logger.FormatHandle(create_info.image) << " was created with "
+       << string_VkImageUsageFlags(image_state->create_info.usage);
+    // Even if using VkImageViewUsageCreateInfo, only worth showing if they are different
+    if (inherited_usage != image_state->create_info.usage) {
+        ss << ", but VkImageViewUsageCreateInfo overwrote it with " << string_VkImageUsageFlags(inherited_usage);
+    }
+    return ss.str();
 }
 
 }  // namespace vvl
