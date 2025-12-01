@@ -3117,8 +3117,9 @@ bool CoreChecks::PreCallValidateGetAccelerationStructureOpaqueCaptureDescriptorD
     return skip;
 }
 
-bool CoreChecks::ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoEXT &address_info,
-                                                  const Location &address_loc) const {
+// Could be a VkBufferUsageFlagBits, but simpler for the string_VkBufferUsageFlags function to be used in the lambda
+bool CoreChecks::ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoEXT& address_info, const Location& address_loc,
+                                                  VkBufferUsageFlags buffer_usage, const char* usage_vuid) const {
     bool skip = false;
 
     if (address_info.range == 0) {
@@ -3140,9 +3141,9 @@ bool CoreChecks::ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoE
         }
     }
 
-    BufferAddressValidation<1> buffer_address_validator = {
+    BufferAddressValidation<2> buffer_address_validator = {
         {{{"VUID-VkDescriptorAddressInfoEXT-range-08045",
-           [&address_info](const vvl::Buffer &buffer_state) {
+           [&address_info](const vvl::Buffer& buffer_state) {
                const VkDeviceSize end = buffer_state.create_info.size - (address_info.address - buffer_state.deviceAddress);
                return address_info.range > end;
            },
@@ -3150,7 +3151,11 @@ bool CoreChecks::ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoE
                return "The VkDescriptorAddressInfoEXT::range (" + std::to_string(address_info.range) +
                       ") bytes does not fit in any buffer";
            },
-           kEmptyErrorMsgBuffer}}}};
+           kEmptyErrorMsgBuffer},
+
+          {usage_vuid, [buffer_usage](const vvl::Buffer& buffer_state) { return (buffer_state.usage & buffer_usage) == 0; },
+           [buffer_usage]() { return "The following buffers are missing " + string_VkBufferUsageFlags(buffer_usage); },
+           kUsageErrorMsgBuffer}}}};
 
     skip |= buffer_address_validator.ValidateDeviceAddress(*this, address_loc.dot(Field::address), LogObjectList(device),
                                                            address_info.address, address_info.range);
@@ -3298,6 +3303,8 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
     const VkDescriptorAddressInfoEXT *address_info = nullptr;
     Field data_field = Field::Empty;
     const Location descriptor_info_loc = error_obj.location.dot(Field::pDescriptorInfo);
+    VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_FLAG_BITS_MAX_ENUM;
+    const char* usage_vuid = kVUIDUndefined;
     switch (pDescriptorInfo->type) {
         case VK_DESCRIPTOR_TYPE_SAMPLER:
             data_field = Field::pSampler;
@@ -3313,16 +3320,36 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
                                  "is VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, but "
                                  "pCombinedImageSampler->sampler is not a valid sampler.");
             }
-            if ((pDescriptorInfo->data.pCombinedImageSampler->imageView != VK_NULL_HANDLE) &&
-                (Get<vvl::ImageView>(pDescriptorInfo->data.pCombinedImageSampler->imageView).get() == nullptr)) {
-                skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-08020", device, descriptor_info_loc.dot(Field::type),
-                                 "is VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, but "
-                                 "pCombinedImageSampler->imageView is not a valid image view.");
+            if (pDescriptorInfo->data.pCombinedImageSampler->imageView != VK_NULL_HANDLE) {
+                if (const auto image_view_state = Get<vvl::ImageView>(pDescriptorInfo->data.pCombinedImageSampler->imageView)) {
+                    if (!(image_view_state->inherited_usage & VK_IMAGE_USAGE_SAMPLED_BIT)) {
+                        skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-12216", image_view_state->Handle(),
+                                         descriptor_info_loc.dot(Field::type),
+                                         "is VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, but pCombinedImageSampler->imageView "
+                                         "internal image (%s) was not created with VK_IMAGE_USAGE_SAMPLED_BIT\nWas created with %s",
+                                         FormatHandle(image_view_state->create_info.image).c_str(),
+                                         string_VkImageUsageFlags(image_view_state->inherited_usage).c_str());
+                    }
+                } else {
+                    skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-08020", device, descriptor_info_loc.dot(Field::type),
+                                     "is VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, but "
+                                     "pCombinedImageSampler->imageView (%s) is not a valid image view.",
+                                     FormatHandle(pDescriptorInfo->data.pCombinedImageSampler->imageView).c_str());
+                }
             }
             break;
         case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
             data_field = Field::pInputAttachmentImage;
-            if (Get<vvl::ImageView>(pDescriptorInfo->data.pInputAttachmentImage->imageView).get() == nullptr) {
+            if (const auto image_view_state = Get<vvl::ImageView>(pDescriptorInfo->data.pInputAttachmentImage->imageView)) {
+                if (!(image_view_state->inherited_usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) {
+                    skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-12219", image_view_state->Handle(),
+                                     descriptor_info_loc.dot(Field::type),
+                                     "is VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, but pInputAttachmentImage->imageView internal image "
+                                     "(%s) was not created with VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT\nWas created with %s",
+                                     FormatHandle(image_view_state->create_info.image).c_str(),
+                                     string_VkImageUsageFlags(image_view_state->inherited_usage).c_str());
+                }
+            } else {
                 skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-08021", device, descriptor_info_loc.dot(Field::type),
                                  "is VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, but "
                                  "pInputAttachmentImage->imageView is not valid image view.");
@@ -3330,20 +3357,40 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
             break;
         case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
             data_field = Field::pSampledImage;
-            if (pDescriptorInfo->data.pSampledImage && (pDescriptorInfo->data.pSampledImage->imageView != VK_NULL_HANDLE) &&
-                (Get<vvl::ImageView>(pDescriptorInfo->data.pSampledImage->imageView).get() == nullptr)) {
-                skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-08022", device, descriptor_info_loc.dot(Field::type),
-                                 "is VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, but "
-                                 "pSampledImage->imageView is not a valid image view.");
+            if (pDescriptorInfo->data.pSampledImage && pDescriptorInfo->data.pSampledImage->imageView != VK_NULL_HANDLE) {
+                if (const auto image_view_state = Get<vvl::ImageView>(pDescriptorInfo->data.pSampledImage->imageView)) {
+                    if (!(image_view_state->inherited_usage & VK_IMAGE_USAGE_SAMPLED_BIT)) {
+                        skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-12217", image_view_state->Handle(),
+                                         descriptor_info_loc.dot(Field::type),
+                                         "is VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, but pSampledImage->imageView internal image (%s) "
+                                         "was not created with VK_IMAGE_USAGE_SAMPLED_BIT\nWas created with %s",
+                                         FormatHandle(image_view_state->create_info.image).c_str(),
+                                         string_VkImageUsageFlags(image_view_state->inherited_usage).c_str());
+                    }
+                } else {
+                    skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-08022", device, descriptor_info_loc.dot(Field::type),
+                                     "is VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, but "
+                                     "pSampledImage->imageView is not a valid image view.");
+                }
             }
             break;
         case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
             data_field = Field::pStorageImage;
-            if (pDescriptorInfo->data.pStorageImage && (pDescriptorInfo->data.pStorageImage->imageView != VK_NULL_HANDLE) &&
-                (Get<vvl::ImageView>(pDescriptorInfo->data.pStorageImage->imageView).get() == nullptr)) {
-                skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-08023", device, descriptor_info_loc.dot(Field::type),
-                                 "is VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, but "
-                                 "pStorageImage->imageView is not a valid image view.");
+            if (pDescriptorInfo->data.pStorageImage && pDescriptorInfo->data.pStorageImage->imageView != VK_NULL_HANDLE) {
+                if (const auto image_view_state = Get<vvl::ImageView>(pDescriptorInfo->data.pStorageImage->imageView)) {
+                    if (!(image_view_state->inherited_usage & VK_IMAGE_USAGE_STORAGE_BIT)) {
+                        skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-12218", image_view_state->Handle(),
+                                         descriptor_info_loc.dot(Field::type),
+                                         "is VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, but pStorageImage->imageView internal image (%s) "
+                                         "was not created with VK_IMAGE_USAGE_STORAGE_BIT\nWas created with %s",
+                                         FormatHandle(image_view_state->create_info.image).c_str(),
+                                         string_VkImageUsageFlags(image_view_state->inherited_usage).c_str());
+                    }
+                } else {
+                    skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-08023", device, descriptor_info_loc.dot(Field::type),
+                                     "is VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, but "
+                                     "pStorageImage->imageView is not a valid image view.");
+                }
             }
             break;
 
@@ -3351,18 +3398,26 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
         case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
             data_field = Field::pUniformTexelBuffer;
             address_info = pDescriptorInfo->data.pUniformTexelBuffer;
+            buffer_usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
+            usage_vuid = "VUID-VkDescriptorGetInfoEXT-type-12222";
             break;
         case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
             data_field = Field::pStorageTexelBuffer;
             address_info = pDescriptorInfo->data.pStorageTexelBuffer;
+            buffer_usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
+            usage_vuid = "VUID-VkDescriptorGetInfoEXT-type-12223";
             break;
         case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
             data_field = Field::pUniformBuffer;
             address_info = pDescriptorInfo->data.pUniformBuffer;
+            buffer_usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+            usage_vuid = "VUID-VkDescriptorGetInfoEXT-type-12220";
             break;
         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
             data_field = Field::pStorageBuffer;
             address_info = pDescriptorInfo->data.pStorageBuffer;
+            buffer_usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+            usage_vuid = "VUID-VkDescriptorGetInfoEXT-type-12221";
             break;
 
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:  // not full implemented
@@ -3494,7 +3549,7 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
                                           VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER})) {
         // Can be null if using nullDescriptor
         if (address_info) {
-            skip |= ValidateDescriptorAddressInfoEXT(*address_info, data_loc.dot(data_field));
+            skip |= ValidateDescriptorAddressInfoEXT(*address_info, data_loc.dot(data_field), buffer_usage, usage_vuid);
         }
     }
 

@@ -185,7 +185,7 @@ TEST_F(PositiveDescriptorBuffer, Basic) {
     TEST_DESCRIPTION("Tries to use a full workflow (For Resource descriptors).");
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
-    vkt::Buffer buffer_data(*m_device, 16, 0, vkt::device_address);
+    vkt::Buffer buffer_data(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     uint32_t *data = (uint32_t *)buffer_data.Memory().Map();
     data[0] = 8;
     data[1] = 12;
@@ -256,7 +256,7 @@ TEST_F(PositiveDescriptorBuffer, BasicSampler) {
     vkt::DescriptorSetLayout ds_layout(*m_device, bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
     vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout});
 
-    vkt::Buffer result_buffer(*m_device, 32, 0, vkt::device_address);
+    vkt::Buffer result_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::ImageView image_view = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
@@ -334,7 +334,7 @@ TEST_F(PositiveDescriptorBuffer, MultipleDescriptors) {
     vkt::DescriptorSetLayout ds_layout(*m_device, bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
     vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout});
 
-    vkt::Buffer result_buffer(*m_device, 32, 0, vkt::device_address);
+    vkt::Buffer result_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::ImageView image_view = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
@@ -406,7 +406,7 @@ TEST_F(PositiveDescriptorBuffer, MultipleSet) {
     TEST_DESCRIPTION("Have a single VkBuffer of data spread across 3 different sets.");
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
-    vkt::Buffer buffer_data(*m_device, 16, 0, vkt::device_address);
+    vkt::Buffer buffer_data(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     uint32_t *data = (uint32_t *)buffer_data.Memory().Map();
     data[0] = 8;
     data[1] = 12;
@@ -484,7 +484,7 @@ TEST_F(PositiveDescriptorBuffer, MultipleBinding) {
     TEST_DESCRIPTION("Have a single VkBuffer of data spread across 3 different bindings in the same set.");
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
-    vkt::Buffer buffer_data(*m_device, 16, 0, vkt::device_address);
+    vkt::Buffer buffer_data(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     uint32_t *data = (uint32_t *)buffer_data.Memory().Map();
     data[0] = 8;
     data[1] = 12;
@@ -567,9 +567,9 @@ TEST_F(PositiveDescriptorBuffer, MultipleBinding) {
 TEST_F(PositiveDescriptorBuffer, DescriptorIndexing) {
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
-    vkt::Buffer buffer_0(*m_device, 16, 0, vkt::device_address);
-    vkt::Buffer buffer_1(*m_device, 16, 0, vkt::device_address);
-    vkt::Buffer buffer_2(*m_device, 16, 0, vkt::device_address);
+    vkt::Buffer buffer_0(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer buffer_1(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer buffer_2(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     uint32_t *data = (uint32_t *)buffer_0.Memory().Map();
     data[0] = 8;
     data = (uint32_t *)buffer_1.Memory().Map();
@@ -765,7 +765,7 @@ TEST_F(PositiveDescriptorBuffer, BindingOffsets) {
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
     // Will write "42" to offset[0], [64], and [256]
-    vkt::Buffer buffer_data(*m_device, 1024, 0, vkt::device_address);
+    vkt::Buffer buffer_data(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
 
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     vkt::DescriptorSetLayout ds_layout(*m_device, binding, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
@@ -844,7 +844,7 @@ TEST_F(PositiveDescriptorBuffer, ShaderObject) {
     AddRequiredFeature(vkt::Feature::shaderObject);
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
-    vkt::Buffer buffer_data(*m_device, 16, 0, vkt::device_address);
+    vkt::Buffer buffer_data(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     uint32_t *data = (uint32_t *)buffer_data.Memory().Map();
     data[0] = 8;
     data[1] = 12;
@@ -914,7 +914,7 @@ TEST_F(PositiveDescriptorBuffer, NotInvalidatedLegacy) {
     legacy_ds.WriteDescriptorBufferInfo(0, legacy_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     legacy_ds.UpdateDescriptorSets();
 
-    vkt::Buffer buffer_data(*m_device, 16, 0, vkt::device_address);
+    vkt::Buffer buffer_data(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     vkt::DescriptorSetLayout ds_layout(*m_device, binding, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
 
     VkDeviceSize ds_layout_size = ds_layout.GetDescriptorBufferSize();
