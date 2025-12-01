@@ -54,12 +54,23 @@ template <typename ShaderResources>
     return true;
 }
 
-class ValidationCommandsCommon {
+class ValidationCommandsGpuavState {
   public:
-    ValidationCommandsCommon(Validator& gpuav, CommandBufferSubState& cb, const Location& loc);
-    ~ValidationCommandsCommon();
+    ValidationCommandsGpuavState(Validator& gpuav, const Location& loc);
+    ~ValidationCommandsGpuavState();
 
     VkDescriptorSetLayout error_logging_desc_set_layout_ = VK_NULL_HANDLE;
+
+  private:
+    Validator& gpuav_;
+};
+
+class ValidationCommandsCbState {
+  public:
+    ValidationCommandsCbState(Validator& gpuav, CommandBufferSubState& cb, VkDescriptorSetLayout error_logging_desc_set_layout,
+                              const Location& loc);
+    ~ValidationCommandsCbState();
+
     VkDescriptorSet error_logging_desc_set_ = VK_NULL_HANDLE;
     VkDescriptorPool validation_cmd_desc_pool_ = VK_NULL_HANDLE;
 

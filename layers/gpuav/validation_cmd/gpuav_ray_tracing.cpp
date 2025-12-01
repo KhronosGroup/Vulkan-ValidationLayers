@@ -55,11 +55,11 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
 
     valpipe::RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
 
-    ValidationCommandsCommon& val_cmd_common =
-        cb_state.shared_resources_cache.GetOrCreate<ValidationCommandsCommon>(gpuav, cb_state, loc);
+    ValidationCommandsGpuavState& val_cmd_gpuav_state =
+        gpuav.shared_resources_cache.GetOrCreate<ValidationCommandsGpuavState>(gpuav, loc);
     valpipe::ComputePipeline<TraceRaysValidationShader>& validation_pipeline =
-        gpuav.shared_resources_manager.GetOrCreate<valpipe::ComputePipeline<TraceRaysValidationShader>>(
-            gpuav, loc, val_cmd_common.error_logging_desc_set_layout_);
+        gpuav.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<TraceRaysValidationShader>>(
+            gpuav, loc, val_cmd_gpuav_state.error_logging_desc_set_layout_);
     if (!validation_pipeline.valid) {
         gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to create TraceRaysValidationShader.");
         return;
@@ -206,7 +206,7 @@ void RecordGetAccelerationStructureDeviceAddress(Validator& gpuav, VkAcceleratio
 
     if (auto as_state = gpuav.Get<vvl::AccelerationStructureKHR>(as)) {
         as_state->acceleration_structure_address = as_addr;
-        auto& as_addr_to_as_buffer = gpuav.shared_resources_manager.GetOrCreate<AccelerationStructuresAddrToStateObjectMap>();
+        auto& as_addr_to_as_buffer = gpuav.shared_resources_cache.GetOrCreate<AccelerationStructuresAddrToStateObjectMap>();
         as_addr_to_as_buffer.map.insert(as_addr, as_state);
     }
 }
@@ -218,7 +218,7 @@ void RemoveAccelerationStrutureDeviceAddress(Validator& gpuav, VkAccelerationStr
 
     if (auto as_state = gpuav.Get<vvl::AccelerationStructureKHR>(as)) {
         if (as_state->acceleration_structure_address != 0) {
-            auto* as_addr_to_as_buffer = gpuav.shared_resources_manager.TryGet<AccelerationStructuresAddrToStateObjectMap>();
+            auto* as_addr_to_as_buffer = gpuav.shared_resources_cache.TryGet<AccelerationStructuresAddrToStateObjectMap>();
             if (as_addr_to_as_buffer) {
                 as_addr_to_as_buffer->map.erase(as_state->acceleration_structure_address);
                 as_state->acceleration_structure_address = 0;
@@ -442,11 +442,11 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
 
     valpipe::RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
 
-    ValidationCommandsCommon& val_cmd_common =
-        cb_state.shared_resources_cache.GetOrCreate<ValidationCommandsCommon>(gpuav, cb_state, loc);
+    ValidationCommandsGpuavState& val_cmd_gpuav_state =
+        gpuav.shared_resources_cache.GetOrCreate<ValidationCommandsGpuavState>(gpuav, loc);
     valpipe::ComputePipeline<BuildAccelerationStructuresValidationShader>& validation_pipeline =
-        gpuav.shared_resources_manager.GetOrCreate<valpipe::ComputePipeline<BuildAccelerationStructuresValidationShader>>(
-            gpuav, loc, val_cmd_common.error_logging_desc_set_layout_);
+        gpuav.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<BuildAccelerationStructuresValidationShader>>(
+            gpuav, loc, val_cmd_gpuav_state.error_logging_desc_set_layout_);
     if (!validation_pipeline.valid) {
         return;
     }
@@ -454,7 +454,7 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
     vko::BufferRange ptr_to_accel_structs_metadata_buffer =
         cb_state.gpu_resources_manager.GetDeviceLocalBufferRange(sizeof(VkDeviceAddress));
 
-    DummyBLAS& dummy_blas = gpuav.shared_resources_manager.GetOrCreate<DummyBLAS>(gpuav, cb_state);
+    DummyBLAS& dummy_blas = gpuav.shared_resources_cache.GetOrCreate<DummyBLAS>(gpuav, cb_state);
 
     BuildAccelerationStructuresValidationShader shader_resources;
     shader_resources.push_constants.ptr_to_ptr_to_accel_structs_metadata = ptr_to_accel_structs_metadata_buffer.offset_address;
@@ -464,7 +464,7 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
         [ptr_to_accel_structs_metadata_buffer](Validator& gpuav, CommandBufferSubState& cb, VkCommandBuffer per_submission_cb) {
             VVL_ZoneScopedN("validate_as_builds_pre_submit");
             // #ARNO_TODO Refacto the "copy to buffer" part
-            auto& as_addr_to_as_buffer = gpuav.shared_resources_manager.Get<AccelerationStructuresAddrToStateObjectMap>();
+            auto& as_addr_to_as_buffer = gpuav.shared_resources_cache.Get<AccelerationStructuresAddrToStateObjectMap>();
             // #ARNO_TODO Definitely can see this become a big perf bottleneck
             auto as_addr_to_as_buffer_snapshot = as_addr_to_as_buffer.map.snapshot();
 
@@ -614,7 +614,7 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
                 break;
             }
             case kErrorSubCode_PreBuildAccelerationStructures_DestroyedASBuffer: {
-                auto& as_addr_to_as_buffer = gpuav.shared_resources_manager.Get<AccelerationStructuresAddrToStateObjectMap>();
+                auto& as_addr_to_as_buffer = gpuav.shared_resources_cache.Get<AccelerationStructuresAddrToStateObjectMap>();
                 auto found_as = as_addr_to_as_buffer.map.find(accel_struct_addr);
                 std::stringstream ss_as;
                 std::stringstream ss_buffer;
