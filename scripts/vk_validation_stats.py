@@ -479,6 +479,7 @@ def main(argv):
     layer_source_files = [repo_relative(path) for path in [
         'layers/error_message/unimplementable_validation.h',
         'layers/state_tracker/video_session_state.cpp',
+        'layers/state_tracker/cmd_buffer_state.cpp',
         'layers/layer_options.cpp',
         'layers/core_checks/cc_buffer_address.h',
         f'layers/{args.api}/generated/stateless_validation_helper.cpp',
