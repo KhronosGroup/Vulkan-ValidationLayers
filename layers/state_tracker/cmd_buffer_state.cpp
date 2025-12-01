@@ -843,8 +843,9 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo &rendering_info, 
     active_attachments.clear();
     // add 2 for the Depth and Stencil
     // multiple by 2 because every attachment might have a resolve
-    // add 1 for FragmentDensityMap (doesn't need a resolve)
-    uint32_t attachment_count = ((rendering_info.colorAttachmentCount + 2) * 2) + 1;
+    uint32_t attachment_count = (rendering_info.colorAttachmentCount + 2) * 2;
+    attachment_count += 1;  // FragmentDensityMap (doesn't need a resolve)
+    attachment_count += 1;  // FragmentShadingRate (doesn't need a resolve)
 
     // Currently reserve the maximum possible size for |active_attachments| so when looping, we NEED to check for null
     active_attachments.resize(attachment_count);
@@ -915,6 +916,19 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo &rendering_info, 
         fdm_attachment.image_view = dev_data.Get<vvl::ImageView>(fragment_density_map_info->imageView).get();
         fdm_attachment.type = AttachmentInfo::Type::FragmentDensityMap;
         fdm_attachment.layout = fragment_density_map_info->imageLayout;
+    }
+
+    if (auto fsr_attachment_info =
+            vku::FindStructInPNextChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(rendering_info.pNext)) {
+        auto &fsr_attachment = active_attachments[GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::FragmentShadingRate)];
+        fsr_attachment.image_view = dev_data.Get<vvl::ImageView>(fsr_attachment_info->imageView).get();
+        fsr_attachment.type = AttachmentInfo::Type::FragmentShadingRate;
+        fsr_attachment.layout = fsr_attachment_info->imageLayout;
+        if (fsr_attachment.image_view) {
+            // VU being worked on https://gitlab.khronos.org/vulkan/vulkan/-/issues/4577
+            TrackImageViewFirstLayout(*fsr_attachment.image_view, fsr_attachment_info->imageLayout,
+                                      "UNASSIGNED-vkCmdBeginRendering-fsr-attachment-layout");
+        }
     }
 
     for (auto &item : sub_states_) {
@@ -2127,6 +2141,8 @@ uint32_t CommandBuffer::GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type 
             return color_offset + 3;
         case AttachmentInfo::Type::FragmentDensityMap:
             return color_offset + 4;
+        case AttachmentInfo::Type::FragmentShadingRate:
+            return color_offset + 5;
         default:
             assert(false);
     }

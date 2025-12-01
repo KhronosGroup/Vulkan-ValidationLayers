@@ -1044,6 +1044,64 @@ TEST_F(PositiveImageLayout, DynamicRenderingColorAttachmentLayoutSubmitTime) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
+TEST_F(PositiveImageLayout, DynamicRenderingFragmentShadingRate) {
+    TEST_DESCRIPTION("Test dynamic rendering FSR attachment layout tracking");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(fsr_properties);
+    const VkExtent2D fsr_cell = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
+
+    vkt::Image image(*m_device, 128, 128, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    vkt::Image fsr_image(*m_device, 128 / fsr_cell.width, 128 / fsr_cell.height, VK_FORMAT_R8_UINT,
+                         VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::ImageView fsr_image_view = fsr_image.CreateView();
+    fsr_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+    VkRenderingFragmentShadingRateAttachmentInfoKHR fsr_attachment = vku::InitStructHelper();
+    fsr_attachment.imageView = fsr_image_view;
+    fsr_attachment.imageLayout = VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR;
+    fsr_attachment.shadingRateAttachmentTexelSize = fsr_cell;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper(&fsr_attachment);
+    rendering_info.renderArea.extent = {128, 128};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
+    layout_transition.srcStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
+    layout_transition.srcAccessMask = VK_ACCESS_2_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR;
+    layout_transition.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+    layout_transition.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    // The test checks that VkRenderingFragmentShadingRateAttachmentInfoKHR::imageLayout is
+    // tracked properly and matches transition's oldLayout.
+    layout_transition.oldLayout = VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR;
+    layout_transition.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    layout_transition.image = fsr_image;
+    layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    m_command_buffer.EndRendering();
+    m_command_buffer.Barrier(layout_transition);
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveImageLayout, DynamicRendering3DImageLayout) {
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10951
     TEST_DESCRIPTION("Use 3d image slice as dynamic rendering attachment and validate its layout");
