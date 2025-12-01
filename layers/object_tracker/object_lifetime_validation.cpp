@@ -1511,9 +1511,11 @@ bool Device::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDefe
                     }
                 }
             }
-            skip |= ValidateObject(pCreateInfos[index0].layout, kVulkanObjectTypePipelineLayout, false, false,
-                                   "VUID-VkRayTracingPipelineCreateInfoKHR-layout-parameter",
-                                   "VUID-VkRayTracingPipelineCreateInfoKHR-commonparent", create_info_loc.dot(Field::layout));
+            if (pCreateInfos[index0].layout) {
+                skip |= ValidateObject(pCreateInfos[index0].layout, kVulkanObjectTypePipelineLayout, false,
+                                       "VUID-VkRayTracingPipelineCreateInfoKHR-layout-parameter",
+                                       "VUID-VkRayTracingPipelineCreateInfoKHR-commonparent", create_info_loc.dot(Field::layout));
+            }
             if ((pCreateInfos[index0].flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) && (pCreateInfos[index0].basePipelineIndex == -1))
                 skip |= ValidateObject(pCreateInfos[index0].basePipelineHandle, kVulkanObjectTypePipeline, false,
                                        "VUID-VkRayTracingPipelineCreateInfoKHR-flags-07984",

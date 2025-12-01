@@ -1863,7 +1863,7 @@ VariableBase::VariableBase(const Module& module_state, const Instruction& insn, 
                            const ParsedInfo& parsed)
     : id(insn.ResultId()),
       type_id(insn.TypeId()),
-      data_type_id(insn.Opcode() == spv::OpUntypedVariableKHR ? insn.Word(4) : 0),
+      data_type_id((insn.Opcode() == spv::OpUntypedVariableKHR && insn.Length() > 4) ? insn.Word(4) : 0),
       storage_class(static_cast<spv::StorageClass>(insn.Word(3))),
       decorations(module_state.GetDecorationSet(id)),
       type_struct_info(module_state.GetTypeStructInfo(&insn)),
@@ -2281,8 +2281,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                 }
             }
         }
-    }
-    if (base_type.Opcode() == spv::OpTypeTensorARM) {
+    } else if (base_type.Opcode() == spv::OpTypeTensorARM) {
         is_storage_tensor = true;
         info.numeric_type = module_state.GetNumericType(base_type.Word(2));
         info.bit_width = (uint8_t)module_state.GetTypeBitsSize(&base_type);
@@ -2463,6 +2462,8 @@ uint32_t Module::GetTypeBitsSize(const Instruction* insn) const {
         bit_size = type->GetBitWidth();
     } else if (opcode == spv::OpTypeVoid) {
         // Sampled Type of OpTypeImage can be a void
+        bit_size = 0;
+    } else if (opcode == spv::OpTypeSampler) {
         bit_size = 0;
     } else {
         bit_size = insn->GetBitWidth();

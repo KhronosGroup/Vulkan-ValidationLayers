@@ -98,8 +98,8 @@ struct DecorationBase {
 // Can't have nested structs with OpMemberDecorate, this class prevents accidently creating a 2nd level of member decorations,
 struct DecorationSet : public DecorationBase {
     // For descriptors
-    uint32_t set = 0;
-    uint32_t binding = 0;
+    uint32_t set = kInvalidValue;
+    uint32_t binding = kInvalidValue;
 
     // Value of InputAttachmentIndex the variable starts
     uint32_t input_attachment_index_start = kInvalidValue;
