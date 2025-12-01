@@ -30,7 +30,7 @@ TEST_F(PositiveGpuAVDescriptorBuffer, BasicCompute) {
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
 
-    vkt::Buffer buffer_data(*m_device, 16, 0, vkt::device_address);
+    vkt::Buffer buffer_data(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     uint32_t *data = (uint32_t *)buffer_data.Memory().Map();
     data[0] = 8;
     data[1] = 12;
@@ -112,7 +112,7 @@ TEST_F(PositiveGpuAVDescriptorBuffer, BasicGraphics) {
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
 
-    vkt::Buffer bda(*m_device, 16, 0, vkt::device_address);
+    vkt::Buffer bda(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     vkt::Buffer ssbo_0(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     vkt::Buffer ubo_1(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
     auto ssbo_ptr = (VkDeviceAddress *)ssbo_0.Memory().Map();

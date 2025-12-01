@@ -13,6 +13,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <vulkan/vulkan_core.h>
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
@@ -1036,7 +1037,7 @@ TEST_F(NegativeDescriptorBuffer, LegacyDescriptorInvalidate) {
     legacy_ds.WriteDescriptorBufferInfo(0, legacy_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     legacy_ds.UpdateDescriptorSets();
 
-    vkt::Buffer buffer_data(*m_device, 16, 0, vkt::device_address);
+    vkt::Buffer buffer_data(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     vkt::DescriptorSetLayout ds_layout(*m_device, binding, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
     vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout});
 
@@ -1378,7 +1379,9 @@ TEST_F(NegativeDescriptorBuffer, DescriptorGetInfoAddressRange) {
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 4096;
-    buffer_ci.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+    buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                      VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT |
+                      VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     vkt::Buffer d_buffer(*m_device, buffer_ci, vkt::no_mem);
 
     VkDescriptorAddressInfoEXT dai = vku::InitStructHelper();
@@ -1638,6 +1641,74 @@ TEST_F(NegativeDescriptorBuffer, DescriptorGetInfo) {
     dgi.data.pStorageTexelBuffer = &dai;
     m_errorMonitor->SetDesiredError("VUID-VkDeviceAddress-size-11364");
     vk::GetDescriptorEXT(device(), &dgi, descriptor_buffer_properties.storageBufferDescriptorSize, &buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptorBuffer, GetDescriptorImageUsage) {
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    vkt::Buffer descriptor_buffer(
+        *m_device, 4096, VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT,
+        vkt::device_address);
+    uint8_t* data = (uint8_t*)descriptor_buffer.Memory().Map();
+
+    vkt::DescriptorGetInfo get_info_combined(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, sampler, image_view,
+                                             VK_IMAGE_LAYOUT_GENERAL);
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorGetInfoEXT-type-12216");
+    vk::GetDescriptorEXT(device(), get_info_combined, descriptor_buffer_properties.combinedImageSamplerDescriptorSize, data);
+    m_errorMonitor->VerifyFound();
+
+    vkt::DescriptorGetInfo get_info_sampled(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_NULL_HANDLE, image_view, VK_IMAGE_LAYOUT_GENERAL);
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorGetInfoEXT-type-12217");
+    vk::GetDescriptorEXT(device(), get_info_sampled, descriptor_buffer_properties.sampledImageDescriptorSize, data);
+    m_errorMonitor->VerifyFound();
+
+    vkt::DescriptorGetInfo get_info_storage(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_NULL_HANDLE, image_view, VK_IMAGE_LAYOUT_GENERAL);
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorGetInfoEXT-type-12218");
+    vk::GetDescriptorEXT(device(), get_info_storage, descriptor_buffer_properties.storageImageDescriptorSize, data);
+    m_errorMonitor->VerifyFound();
+
+    vkt::DescriptorGetInfo get_info_input(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_NULL_HANDLE, image_view, VK_IMAGE_LAYOUT_GENERAL);
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorGetInfoEXT-type-12219");
+    vk::GetDescriptorEXT(device(), get_info_input, descriptor_buffer_properties.inputAttachmentDescriptorSize, data);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptorBuffer, GetDescriptorBufferUsage) {
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+
+    vkt::Buffer buffer_data(*m_device, 16, 0, vkt::device_address);
+
+    vkt::Buffer storage_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, vkt::device_address);
+    vkt::BufferView storage_buffer_view(*m_device, storage_buffer, VK_FORMAT_R32_UINT);
+    vkt::Buffer uniform_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, vkt::device_address);
+    vkt::BufferView uniform_buffer_view(*m_device, uniform_buffer, VK_FORMAT_R32_UINT);
+
+    vkt::Buffer descriptor_buffer(*m_device, 4096, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
+    uint8_t* data = (uint8_t*)descriptor_buffer.Memory().Map();
+
+    vkt::DescriptorGetInfo get_info_uniform(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, buffer_data, 16);
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorGetInfoEXT-type-12220");
+    vk::GetDescriptorEXT(device(), get_info_uniform, descriptor_buffer_properties.uniformBufferDescriptorSize, data);
+    m_errorMonitor->VerifyFound();
+
+    vkt::DescriptorGetInfo get_info_storage(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_data, 16);
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorGetInfoEXT-type-12221");
+    vk::GetDescriptorEXT(device(), get_info_storage, descriptor_buffer_properties.storageBufferDescriptorSize, data);
+    m_errorMonitor->VerifyFound();
+
+    vkt::DescriptorGetInfo get_info_tex_uniform(VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, buffer_data, 16, VK_FORMAT_R32_UINT);
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorGetInfoEXT-type-12222");
+    vk::GetDescriptorEXT(device(), get_info_tex_uniform, descriptor_buffer_properties.uniformTexelBufferDescriptorSize, data);
+    m_errorMonitor->VerifyFound();
+
+    vkt::DescriptorGetInfo get_info_tex_storage(VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, buffer_data, 16, VK_FORMAT_R32_UINT);
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorGetInfoEXT-type-12223");
+    vk::GetDescriptorEXT(device(), get_info_tex_storage, descriptor_buffer_properties.storageTexelBufferDescriptorSize, data);
     m_errorMonitor->VerifyFound();
 }
 
