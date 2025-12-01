@@ -336,7 +336,7 @@ bool Device::ValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateI
             VK_ATTACHMENT_DESCRIPTION_RESOLVE_ENABLE_TRANSFER_FUNCTION_BIT_KHR;
         if ((attachment.flags & both_skip_enable_transfer_flags) == both_skip_enable_transfer_flags) {
             vuid = use_rp2 ? "VUID-VkAttachmentDescription2-flags-11773" : "VUID-VkAttachmentDescription-flags-11773";
-            skip |= LogError(vuid, device, create_info_loc.dot(Field::flags), "is %s.",
+            skip |= LogError(vuid, device, attachment_loc.dot(Field::flags), "is %s.",
                              string_VkAttachmentDescriptionFlags(attachment.flags).c_str());
         }
 
