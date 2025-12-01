@@ -76,6 +76,10 @@ bool Device::ValidatePushConstantRange(uint32_t push_constant_range_count, const
                                        const Location &loc) const {
     bool skip = false;
 
+    if (!push_constant_ranges) {
+        return skip;  // incase base count is sent in with null and push constants are ignored
+    }
+
     for (uint32_t i = 0; i < push_constant_range_count; ++i) {
         const Location pc_loc = loc.dot(Field::pPushConstantRanges, i);
         const uint32_t offset = push_constant_ranges[i].offset;
