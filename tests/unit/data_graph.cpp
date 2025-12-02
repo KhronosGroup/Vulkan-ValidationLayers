@@ -1421,3 +1421,66 @@ TEST_F(NegativeDataGraph, DataGraphShaderModuleSpirvRuntimeArraySizeZero) {
     pipeline.CreateDataGraphPipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDataGraph, DataGraphTensorNoShape) {
+    TEST_DESCRIPTION("Create a datagraph using tensors without shape.");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    // input and output variables are tensors without a shape, rank only (%tensor_r4)
+    static const char *tensorNoShapeDataGraphSpirv = R"spirv(
+                            OpCapability GraphARM
+                            OpCapability TensorsARM
+                            OpCapability Int8
+                            OpCapability Shader
+                            OpCapability VulkanMemoryModel
+                            OpCapability Matrix
+                            OpExtension "SPV_ARM_graph"
+                            OpExtension "SPV_ARM_tensors"
+                            OpExtension "SPV_KHR_vulkan_memory_model"
+                    %tosa = OpExtInstImport "TOSA.001000.1"
+                            OpMemoryModel Logical Vulkan
+                            OpName %main_arg_0 "main_arg_0"
+                            OpName %main_res_0 "main_res_0"
+                            OpDecorate %main_arg_0 Binding 0
+                            OpDecorate %main_arg_0 DescriptorSet 0
+                            OpDecorate %main_res_0 Binding 1
+                            OpDecorate %main_res_0 DescriptorSet 0
+                      %i8 = OpTypeInt 8 0
+                     %i32 = OpTypeInt 32 0
+                   %i32_0 = OpConstant %i32 0
+                   %i32_1 = OpConstant %i32 1
+                   %i32_2 = OpConstant %i32 2
+                   %i32_4 = OpConstant %i32 4
+               %i32_arr_1 = OpTypeArray %i32 %i32_1
+               %i32_arr_4 = OpTypeArray %i32 %i32_4
+             %i32_arr_1_2 = OpConstantComposite %i32_arr_1 %i32_2
+             %i32_arr_1_4 = OpConstantComposite %i32_arr_1 %i32_4
+            %i32_2_tensor = OpTypeTensorARM %i32 %i32_1 %i32_arr_1_2
+            %i32_4_tensor = OpTypeTensorARM %i32 %i32_1 %i32_arr_1_4
+               %tensor_r4 = OpTypeTensorARM %i8 %i32_4
+           %ptr_tensor_r4 = OpTypePointer UniformConstant %tensor_r4
+        %i32_2_tensor_2_2 = OpConstantComposite %i32_2_tensor %i32_2 %i32_2
+    %i32_4_tensor_0_0_0_0 = OpConstantComposite %i32_4_tensor %i32_0 %i32_0 %i32_0 %i32_0
+              %main_arg_0 = OpVariable %ptr_tensor_r4 UniformConstant
+              %main_res_0 = OpVariable %ptr_tensor_r4 UniformConstant
+              %graph_type = OpTypeGraphARM 1 %tensor_r4 %tensor_r4
+                            OpGraphEntryPointARM %graph_0 "main" %main_arg_0 %main_res_0
+                 %graph_0 = OpGraphARM %graph_type
+                    %in_0 = OpGraphInputARM %tensor_r4 %i32_0
+                    %op_0 = OpExtInst %tensor_r4 %tosa MAX_POOL2D  %i32_2_tensor_2_2 %i32_2_tensor_2_2 %i32_4_tensor_0_0_0_0 %i32_0 %in_0
+                    %op_1 = OpExtInst %tensor_r4 %tosa MAX_POOL2D  %i32_2_tensor_2_2 %i32_2_tensor_2_2 %i32_4_tensor_0_0_0_0 %i32_0 %op_0
+                            OpGraphSetOutputARM %op_1 %i32_0
+                            OpGraphEndARM
+)spirv";
+
+    vkt::dg::HelperParameters params;
+    params.spirv_source = tensorNoShapeDataGraphSpirv;
+    vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
+
+    // 2 tensors, 2 errors
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09919");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09919");
+    pipeline.CreateDataGraphPipeline();
+    m_errorMonitor->VerifyFound();
+}
