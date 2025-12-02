@@ -361,7 +361,7 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, const std::vector<std::s
                         cst::indices_count);
                 } else {
                     // normal case
-                    CommandErrorLogger &error_logger = command_error_loggers_[error_logger_i];
+                    const CommandErrorLogger &error_logger = GetErrorLogger(error_logger_i);
                     const LogObjectList objlist(queue, error_logger.objlist);
 
                     std::string debug_region_name = GetDebugLabelRegion(error_logger.label_cmd_i, initial_label_stack);

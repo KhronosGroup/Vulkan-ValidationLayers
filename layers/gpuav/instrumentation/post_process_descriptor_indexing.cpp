@@ -13,8 +13,6 @@
  * limitations under the License.
  */
 
-#include "gpuav/instrumentation/post_process_descriptor_indexing.h"
-
 #include "drawdispatch/descriptor_validator.h"
 #include "gpuav/core/gpuav.h"
 #include "gpuav/core/gpuav_constants.h"
@@ -51,7 +49,7 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
         });
 
     cb.on_instrumentation_desc_set_update_functions.emplace_back(
-        [dummy_buffer_range = vko::BufferRange{}](CommandBufferSubState& cb, VkPipelineBindPoint,
+        [dummy_buffer_range = vko::BufferRange{}](CommandBufferSubState& cb, VkPipelineBindPoint, const Location&,
                                                   VkDescriptorBufferInfo& out_buffer_info, uint32_t& out_dst_binding) mutable {
             PostProcessingCbState* pp_cb_state = cb.shared_resources_cache.TryGet<PostProcessingCbState>();
             if (pp_cb_state) {

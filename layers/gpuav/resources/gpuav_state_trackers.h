@@ -50,8 +50,13 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
         const std::vector<std::string> &initial_label_stack;
     };
 
+    using InstrumentationErrorLogger =
+        stdext::inplace_function<bool(Validator &gpuav, const Location &loc, const uint32_t *error_record,
+                                      std::string &out_error_msg, std::string &out_vuid_msg)>;
+    using OnInstrumentationErrorLoggerRegister = stdext::inplace_function<InstrumentationErrorLogger(
+        Validator &gpuav, CommandBufferSubState &cb, const LastBound &last_bound)>;
     using OnInstrumentationDescSetUpdate =
-        stdext::inplace_function<void(CommandBufferSubState &cb, VkPipelineBindPoint bind_point,
+        stdext::inplace_function<void(CommandBufferSubState &cb, VkPipelineBindPoint bind_point, const Location &loc,
                                       VkDescriptorBufferInfo &out_buffer_info, uint32_t &out_dst_binding),
                                  48>;
     using OnInstrumentationDescBufferUpdate =
@@ -68,6 +73,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
         stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb, VkCommandBuffer per_pre_submission_cb), 48>;
     using OnPostCommandBufferSubmission =
         stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb, VkCommandBuffer per_post_submission_cb)>;
+    std::vector<OnInstrumentationErrorLoggerRegister> on_instrumentation_error_logger_register_functions;
     std::vector<OnInstrumentationDescSetUpdate> on_instrumentation_desc_set_update_functions;
     std::vector<OnInstrumentationDescBufferUpdate> on_instrumentation_desc_buffer_update_functions;
     std::vector<OnPreCommandBufferSubmission> on_pre_cb_submission_functions;
@@ -131,7 +137,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     using ErrorLoggerFunc =
         stdext::inplace_function<bool(const uint32_t *error_record, const Location &loc_with_debug_region,
                                       const LogObjectList &objlist),
-                                 248 /*lambda storage size (bytes), large enough to store biggest error lambda*/>;
+                                 80 /*lambda storage size (bytes), large enough to store biggest error lambda*/>;
     struct CommandErrorLogger {
         vvl::LocationCapture loc;
         LogObjectList objlist;
