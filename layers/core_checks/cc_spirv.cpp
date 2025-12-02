@@ -2748,7 +2748,7 @@ bool CoreChecks::ValidateTaskPayload(const spirv::Module &task_state, const spir
     return skip;
 }
 
-bool CoreChecks::ValidateDataGraphPipelineShaderModuleSpirv(VkDevice device, const VkDataGraphPipelineCreateInfoARM& create_info, const Location& create_info_loc, const vvl::Pipeline& pipeline) const {
+bool CoreChecks::ValidateDataGraphPipelineShaderModuleSpirv(VkDevice device, const VkDataGraphPipelineCreateInfoARM& create_info, const Location& create_info_loc, const VkDataGraphPipelineShaderModuleCreateInfoARM& dg_shader_ci, const vvl::Pipeline& pipeline) const {
     bool skip = false;
     if (pipeline.stage_states.size() == 0) {
         // no ShaderModule defined
@@ -2758,38 +2758,55 @@ bool CoreChecks::ValidateDataGraphPipelineShaderModuleSpirv(VkDevice device, con
     const auto &stage_state = pipeline.stage_states[0];
     ASSERT_AND_RETURN_SKIP(stage_state.spirv_state.get());
     const spirv::Module &module_spirv = *stage_state.spirv_state.get();
+    const Location dg_shader_ci_loc = create_info_loc.pNext(Struct::VkDataGraphPipelineShaderModuleCreateInfoARM);
 
     // location where the VkShaderModule was defined: VkDataGraphPipelineShaderModuleCreateInfoARM or VkShaderModuleCreateInfo?
-    auto dg_shader_ci = vku::FindStructInPNextChain<VkDataGraphPipelineShaderModuleCreateInfoARM>(create_info.pNext);
-    const Location dg_shader_ci_loc = create_info_loc.pNext(Struct::VkDataGraphPipelineShaderModuleCreateInfoARM);
-    const Location module_loc = (dg_shader_ci && dg_shader_ci->module) ? dg_shader_ci_loc.dot(Field::module) : create_info_loc.pNext(Struct::VkShaderModuleCreateInfo);
+    const Location module_loc =
+        (dg_shader_ci.module) ? dg_shader_ci_loc.dot(Field::module) : create_info_loc.pNext(Struct::VkShaderModuleCreateInfo);
 
-    if (!enabled_features.dataGraphSpecializationConstants) {
-        if (module_spirv.static_data_.has_specialization_constants) {
-            skip |= LogError("VUID-VkDataGraphPipelineShaderModuleCreateInfoARM-dataGraphSpecializationConstants-09849", device,
-                             module_loc,
-                             "contains OpSpec* instruction(s), but the dataGraphSpecializationConstants feature is not enabled.");
+    if (!enabled_features.dataGraphSpecializationConstants && module_spirv.static_data_.has_specialization_constants) {
+        skip |=
+            LogError("VUID-VkDataGraphPipelineShaderModuleCreateInfoARM-dataGraphSpecializationConstants-09849", device, module_loc,
+                     "contains OpSpec* instruction(s), but the dataGraphSpecializationConstants feature is not enabled.");
+    }
+
+    std::shared_ptr<spirv::EntryPoint> entry_point = nullptr;
+    for (auto &ep : module_spirv.static_data_.entry_points) {
+        if (!ep->is_data_graph) {
+            continue;
+        }
+
+        if (ep->name.compare(dg_shader_ci.pName) == 0) {
+            entry_point = ep;
+            break;
         }
     }
 
-    std::vector<std::pair<uint32_t, uint32_t>> tensor_bindings;
-    bool name_found = false;
-    for (auto &entry_point : module_spirv.static_data_.entry_points) {
-        if (!entry_point->is_data_graph)
-            continue;
-
-        if (dg_shader_ci && entry_point->name.compare(dg_shader_ci->pName) == 0) {
-            name_found = true;
-        }
-
-        for (const auto &variable : entry_point->resource_interface_variables) {
-            vvl::unordered_set<uint32_t> descriptor_type_set;
-            TypeToDescriptorTypeSet(module_spirv, variable.type_id, variable.data_type_id, descriptor_type_set);
-            skip |= ValidateShaderInterfaceVariable(module_spirv, variable, descriptor_type_set, module_loc);
-            skip |= ValidateShaderInterfaceVariableDSL(module_spirv, *entry_point, stage_state, variable, descriptor_type_set, module_loc);
-            if (variable.is_storage_tensor) {
-                tensor_bindings.push_back({variable.decorations.set, variable.decorations.binding});
+    if (!entry_point) {
+        std::stringstream wrong_names;
+        for (const auto &entry_point : module_spirv.static_data_.entry_points) {
+            if (!wrong_names.str().empty()) {
+                wrong_names << ", ";
             }
+            wrong_names << entry_point->name;
+        }
+        skip |= LogError("VUID-VkDataGraphPipelineShaderModuleCreateInfoARM-pName-09872", device,
+                         dg_shader_ci_loc.dot(Field::pName), " is '%s' but names in OpGraphEntryPointARM instructions are: '%s'",
+                         dg_shader_ci.pName, wrong_names.str().c_str());
+
+        // from here on we must have the correct entrypoint
+        return skip;
+    }
+
+    std::vector<std::pair<uint32_t, uint32_t>> tensor_bindings;
+    for (const auto &variable : entry_point->resource_interface_variables) {
+        vvl::unordered_set<uint32_t> descriptor_type_set;
+        TypeToDescriptorTypeSet(module_spirv, variable.type_id, variable.data_type_id, descriptor_type_set);
+        skip |= ValidateShaderInterfaceVariable(module_spirv, variable, descriptor_type_set, module_loc);
+        skip |=
+            ValidateShaderInterfaceVariableDSL(module_spirv, *entry_point, stage_state, variable, descriptor_type_set, module_loc);
+        if (variable.is_storage_tensor) {
+            tensor_bindings.push_back({variable.decorations.set, variable.decorations.binding});
         }
     }
 
@@ -2804,53 +2821,37 @@ bool CoreChecks::ValidateDataGraphPipelineShaderModuleSpirv(VkDevice device, con
         }
     }
 
-    if (dg_shader_ci) {
-        if (!name_found) {
-            std::stringstream wrong_names;
-            for (const auto& entry_point : module_spirv.static_data_.entry_points) {
-                if (!wrong_names.str().empty()) {
-                    wrong_names << ", ";
+    for (uint32_t j = 0; j < dg_shader_ci.constantCount; j++) {
+        auto &constant = dg_shader_ci.pConstants[j];
+        const Location constant_loc = dg_shader_ci_loc.dot(Field::pConstants, j);
+        if (graph_constant_map.find(constant.id) == graph_constant_map.end()) {
+            std::stringstream const_ids;
+            for (auto &c : graph_constant_map) {
+                if (!const_ids.str().empty()) {
+                    const_ids << ", ";
                 }
-                wrong_names << entry_point->name;
+                const_ids << c.first;
             }
-            skip |= LogError("VUID-VkDataGraphPipelineShaderModuleCreateInfoARM-pName-09872", device,
-                            dg_shader_ci_loc.dot(Field::pName),
-                            " is '%s' but names in OpGraphEntryPointARM instructions are: '%s'", dg_shader_ci->pName,
-                            wrong_names.str().c_str());
-        }
-
-        for (uint32_t j = 0; j < dg_shader_ci->constantCount; j++) {
-            auto& constant = dg_shader_ci->pConstants[j];
-            const Location constant_loc = dg_shader_ci_loc.dot(Field::pConstants, j);
-            if (graph_constant_map.find(constant.id) == graph_constant_map.end()) {
-                std::stringstream const_ids;
-                for (auto &c : graph_constant_map) {
-                    if (!const_ids.str().empty()) {
-                        const_ids << ", ";
-                    }
-                    const_ids << c.first;
-                }
-                skip |= LogError(
-                    "VUID-VkDataGraphPipelineShaderModuleCreateInfoARM-id-09774", device, constant_loc.dot(Field::id),
-                    "(%" PRIu32 ") does not match any of the GraphConstantIDs ([%s]) used by OpGraphConstantARM instructions in module",
-                    constant.id, const_ids.str().c_str());
-            } else {
-                if (std::find(graph_tensor_ids.begin(), graph_tensor_ids.end(), graph_constant_map[constant.id]) !=
-                    graph_tensor_ids.end()) {
-                    auto *tensor_desc = vku::FindStructInPNextChain<VkTensorDescriptionARM>(constant.pNext);
-                    if (!tensor_desc) {
-                        skip |=
-                            LogError("VUID-VkDataGraphPipelineConstantARM-id-09850", device, constant_loc,
-                                    "(%" PRIu32
-                                    ") is a graph constant of tensor type, but there is no VkTensorDescriptionARM in the pNext chain",
-                                    constant.id);
-                    } else if ((tensor_desc->usage & VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM) == 0) {
-                        skip |= LogError(
-                            "VUID-VkDataGraphPipelineConstantARM-id-09850", device, constant_loc.dot(Field::id),
-                            "(%" PRIu32
-                            ") is a graph constant of tensor type but its matching VkTensorDescriptionARM has an invalid usage (%s)",
-                            constant.id, string_VkTensorUsageFlagsARM(tensor_desc->usage).c_str());
-                    }
+            skip |= LogError(
+                "VUID-VkDataGraphPipelineShaderModuleCreateInfoARM-id-09774", device, constant_loc.dot(Field::id),
+                "(%" PRIu32 ") does not match any of the GraphConstantIDs ([%s]) used by OpGraphConstantARM instructions in module",
+                constant.id, const_ids.str().c_str());
+        } else {
+            if (std::find(graph_tensor_ids.begin(), graph_tensor_ids.end(), graph_constant_map[constant.id]) !=
+                graph_tensor_ids.end()) {
+                auto *tensor_desc = vku::FindStructInPNextChain<VkTensorDescriptionARM>(constant.pNext);
+                if (!tensor_desc) {
+                    skip |=
+                        LogError("VUID-VkDataGraphPipelineConstantARM-id-09850", device, constant_loc,
+                                 "(%" PRIu32
+                                 ") is a graph constant of tensor type, but there is no VkTensorDescriptionARM in the pNext chain",
+                                 constant.id);
+                } else if ((tensor_desc->usage & VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM) == 0) {
+                    skip |= LogError(
+                        "VUID-VkDataGraphPipelineConstantARM-id-09850", device, constant_loc.dot(Field::id),
+                        "(%" PRIu32
+                        ") is a graph constant of tensor type but its matching VkTensorDescriptionARM has an invalid usage (%s)",
+                        constant.id, string_VkTensorUsageFlagsARM(tensor_desc->usage).c_str());
                 }
             }
         }
