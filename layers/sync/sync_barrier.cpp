@@ -168,8 +168,10 @@ SyncBarrier::SyncBarrier(const SyncExecScope &src_exec, VkAccessFlags2 src_acces
                          VkAccessFlags2 dst_access_mask)
     : src_exec_scope(src_exec),
       src_access_scope(AccessScope(src_exec.valid_accesses, src_access_mask)),
+      original_src_access(src_access_mask),
       dst_exec_scope(dst_exec),
-      dst_access_scope(AccessScope(dst_exec.valid_accesses, dst_access_mask)) {}
+      dst_access_scope(AccessScope(dst_exec.valid_accesses, dst_access_mask)),
+      original_dst_access(dst_access_mask) {}
 
 SyncBarrier::SyncBarrier(VkQueueFlags queue_flags, const VkSubpassDependency2 &subpass) {
     const auto barrier = vku::FindStructInPNextChain<VkMemoryBarrier2>(subpass.pNext);
@@ -177,18 +179,22 @@ SyncBarrier::SyncBarrier(VkQueueFlags queue_flags, const VkSubpassDependency2 &s
         auto src = SyncExecScope::MakeSrc(queue_flags, barrier->srcStageMask);
         src_exec_scope = src;
         src_access_scope = AccessScope(src.valid_accesses, barrier->srcAccessMask);
+        original_src_access = barrier->srcAccessMask;
 
         auto dst = SyncExecScope::MakeDst(queue_flags, barrier->dstStageMask);
         dst_exec_scope = dst;
         dst_access_scope = AccessScope(dst.valid_accesses, barrier->dstAccessMask);
+        original_dst_access = barrier->dstAccessMask;
     } else {
         auto src = SyncExecScope::MakeSrc(queue_flags, subpass.srcStageMask);
         src_exec_scope = src;
         src_access_scope = AccessScope(src.valid_accesses, subpass.srcAccessMask);
+        original_src_access = subpass.srcAccessMask;
 
         auto dst = SyncExecScope::MakeDst(queue_flags, subpass.dstStageMask);
         dst_exec_scope = dst;
         dst_access_scope = AccessScope(dst.valid_accesses, subpass.dstAccessMask);
+        original_dst_access = subpass.dstAccessMask;
     }
 }
 
