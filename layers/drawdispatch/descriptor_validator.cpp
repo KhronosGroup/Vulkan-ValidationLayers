@@ -92,8 +92,10 @@ std::string DescriptorValidator::DescribeDescriptor(const spirv::ResourceInterfa
             break;
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
-        case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
             ss << "acceleration structure ";
+            break;
+        case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
+            ss << "partitioned acceleration structure ";
             break;
         case VK_DESCRIPTOR_TYPE_TENSOR_ARM:
             ss << "tensor ";
