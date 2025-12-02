@@ -224,31 +224,36 @@ std::string DescriptorSetLayoutDef::DescribeDifference(uint32_t index, const Des
     } else if (lhs_bindings.size() != rhs_bindings.size()) {
         ss << "binding count " << lhs_bindings.size() << " doesn't match " << rhs_bindings.size();
     } else {
+        bool found = false;
         for (uint32_t i = 0; i < lhs_bindings.size(); i++) {
+            if (found) {
+                break;
+            }
             const auto &l = lhs_bindings[i];
             const auto &r = rhs_bindings[i];
             if (l.binding != r.binding) {
                 ss << "VkDescriptorSetLayoutBinding::binding " << l.binding << " doesn't match " << r.binding;
-                break;
+                found = true;
             } else if (l.descriptorType != r.descriptorType) {
                 ss << "binding " << i << " descriptorType " << string_VkDescriptorType(l.descriptorType) << " doesn't match "
                    << string_VkDescriptorType(r.descriptorType);
-                break;
+                found = true;
             } else if (l.descriptorCount != r.descriptorCount) {
                 ss << "binding " << i << " descriptorCount " << l.descriptorCount << " doesn't match " << r.descriptorCount;
-                break;
+                found = true;
             } else if (l.stageFlags != r.stageFlags) {
                 ss << "binding " << i << " stageFlags " << string_VkShaderStageFlags(l.stageFlags) << " doesn't match "
                    << string_VkShaderStageFlags(r.stageFlags);
-                break;
+                found = true;
             } else if ((l.pImmutableSamplers && !r.pImmutableSamplers) || (!l.pImmutableSamplers && r.pImmutableSamplers)) {
                 ss << "binding " << i << " pImmutableSamplers doesn't match as one is null and one in non-null";
-                break;
+                found = true;
             } else if (l.pImmutableSamplers) {
                 for (uint32_t s = 0; s < l.descriptorCount; s++) {
                     if (l.pImmutableSamplers[s] != r.pImmutableSamplers[s]) {
                         ss << "binding " << i << " pImmutableSamplers[" << s << "] " << l.pImmutableSamplers[s] << " doesn't match "
                            << r.pImmutableSamplers[s];
+                        found = true;
                         break;
                     }
                 }
@@ -256,8 +261,11 @@ std::string DescriptorSetLayoutDef::DescribeDifference(uint32_t index, const Des
                 // These have been sorted already so can direct compare
                 ss << "Mutable types doesn't match at binding " << i << "\n[" << PrintMutableTypes(i) << "]\ndoesn't match"
                    << "\n[" << other.PrintMutableTypes(i) << "]";
+                found = true;
             }
         }
+        // If we got here, we failed IsBoundSetCompatible() but didn't find what was different, likely missing a case
+        assert(found);
     }
     ss << '\n';
     return ss.str();
