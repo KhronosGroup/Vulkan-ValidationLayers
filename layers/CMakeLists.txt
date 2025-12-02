@@ -329,12 +329,14 @@ target_sources(vvl PRIVATE
     gpuav/instrumentation/gpuav_shader_instrumentor.h
     gpuav/instrumentation/gpuav_instrumentation.h
     gpuav/instrumentation/gpuav_instrumentation.cpp
-    gpuav/instrumentation/buffer_device_address.h
     gpuav/instrumentation/buffer_device_address.cpp
     gpuav/instrumentation/descriptor_checks.h
     gpuav/instrumentation/descriptor_checks.cpp
-    gpuav/instrumentation/post_process_descriptor_indexing.h
     gpuav/instrumentation/post_process_descriptor_indexing.cpp
+    gpuav/instrumentation/ray_query.cpp
+    gpuav/instrumentation/register_validation.h
+    gpuav/instrumentation/sanitizer.cpp
+    gpuav/instrumentation/vertex_attribute_fetch_oob.cpp
     gpuav/resources/gpuav_state_trackers.cpp
     gpuav/resources/gpuav_state_trackers.h
     gpuav/resources/gpuav_shader_resources.h

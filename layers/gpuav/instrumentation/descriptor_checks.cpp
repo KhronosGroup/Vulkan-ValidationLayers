@@ -14,8 +14,11 @@
  */
 
 #include "gpuav/core/gpuav.h"
+#include "gpuav/error_message/gpuav_vuids.h"
 #include "gpuav/resources/gpuav_shader_resources.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
+#include "gpuav/shaders/gpuav_error_codes.h"
+#include "gpuav/shaders/gpuav_error_header.h"
 
 namespace gpuav {
 
@@ -113,6 +116,224 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
         return;
     }
 
+    cb.on_instrumentation_error_logger_register_functions.emplace_back([](Validator& gpuav, CommandBufferSubState& cb,
+                                                                          const LastBound& last_bound) {
+        // We want to grab the last (current) element in descriptor_binding_commands, but as a std::vector, the reference might be
+        // garbage later, so just hold the index for later. It is possible to have no descriptor sets bound, for example if using
+        // push constants.
+        uint32_t descriptor_binding_index = vvl::kNoIndex32;
+        DescriptorSetBindings* desc_set_bindings = cb.shared_resources_cache.TryGet<DescriptorSetBindings>();
+        if (desc_set_bindings && !desc_set_bindings->descriptor_set_binding_commands.empty()) {
+            descriptor_binding_index = uint32_t(desc_set_bindings->descriptor_set_binding_commands.size() - 1);
+        }
+
+        CommandBufferSubState::InstrumentationErrorLogger inst_error_logger = [&cb, descriptor_binding_index](
+                                                                                  Validator& gpuav, const Location& loc,
+                                                                                  const uint32_t* error_record,
+                                                                                  std::string& out_error_msg,
+                                                                                  std::string& out_vuid_msg) {
+            using namespace glsl;
+
+            bool error_found = false;
+            const uint32_t error_group = error_record[glsl::kHeaderShaderIdErrorOffset] >> glsl::kErrorGroupShift;
+            if (error_group != kErrorGroupInstDescriptorIndexingOOB) {
+                return error_found;
+            }
+            error_found = true;
+
+            std::ostringstream strm;
+            const GpuVuid& vuid = GetGpuVuid(loc.function);
+
+            if (descriptor_binding_index == vvl::kNoIndex32) {
+                assert(false);  // This means we have hit a situtation where there are no descriptors bound
+                return false;
+            }
+            const DescriptorSetBindings& desc_set_bindings = cb.shared_resources_cache.Get<DescriptorSetBindings>();
+            const auto& descriptor_sets =
+                desc_set_bindings.descriptor_set_binding_commands[descriptor_binding_index].bound_descriptor_sets;
+
+            // Currently we only encode the descriptor index here and save the binding in a parameter slot
+            // The issue becomes if the user has kErrorSubCodeDescriptorIndexingBounds then we can't back track to the exact binding
+            // because they have gone over it
+            const uint32_t encoded_set_index = error_record[kInstDescriptorIndexingSetAndIndexOffset];
+            const uint32_t set_num = encoded_set_index >> kInstDescriptorIndexingSetShift;
+            const uint32_t descriptor_index = encoded_set_index & kInstDescriptorIndexingIndexMask;
+            const uint32_t binding_num = error_record[kInstDescriptorIndexingParamOffset_1];
+
+            const uint32_t array_length = error_record[kInstDescriptorIndexingParamOffset_0];
+
+            const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
+            switch (error_sub_code) {
+                case kErrorSubCodeDescriptorIndexingBounds: {
+                    strm << "(set = " << set_num << ", binding = " << binding_num << ") Index of " << descriptor_index
+                         << " used to index descriptor array of length " << array_length << ".";
+                    out_vuid_msg = vuid.descriptor_index_oob_10068;
+                    error_found = true;
+                } break;
+
+                case kErrorSubCodeDescriptorIndexingUninitialized: {
+                    const auto& dsl = descriptor_sets[set_num]->Layout();
+                    strm << "(set = " << set_num << ", binding = " << binding_num << ") Descriptor index " << descriptor_index
+                         << " is uninitialized.";
+
+                    if (descriptor_index == 0 && array_length == 1) {
+                        strm << " (There is no array, but descriptor is viewed as having an array of length 1)";
+                    }
+
+                    const VkDescriptorBindingFlags binding_flags = dsl.GetDescriptorBindingFlagsFromBinding(binding_num);
+                    if (binding_flags & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT) {
+                        strm << " VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT was used and the original descriptorCount ("
+                             << dsl.GetDescriptorCountFromBinding(binding_num)
+                             << ") could have been reduced during AllocateDescriptorSets.";
+                    } else if (gpuav.enabled_features.nullDescriptor) {
+                        strm << " nullDescriptor feature is on, but vkUpdateDescriptorSets was not called with VK_NULL_HANDLE for "
+                                "this "
+                                "descriptor.";
+                    }
+
+                    out_vuid_msg = vuid.invalid_descriptor_08114;
+                    error_found = true;
+                } break;
+
+                case kErrorSubCodeDescriptorIndexingDestroyed: {
+                    strm << "(set = " << set_num << ", binding = " << binding_num << ") Descriptor index " << descriptor_index
+                         << " references a resource that was destroyed.";
+
+                    if (descriptor_index == 0 && array_length == 1) {
+                        strm << " (There is no array, but descriptor is viewed as having an array of length 1)";
+                    }
+
+                    out_vuid_msg = "UNASSIGNED-Descriptor destroyed";
+                    error_found = true;
+                } break;
+            }
+            out_error_msg += strm.str();
+            return error_found;
+        };
+
+        return inst_error_logger;
+    });
+
+    cb.on_instrumentation_error_logger_register_functions.emplace_back([](Validator& gpuav, CommandBufferSubState& cb,
+                                                                          const LastBound& last_bound) {
+        // We want to grab the last (current) element in descriptor_binding_commands, but as a std::vector, the reference might be
+        // garbage later, so just hold the index for later. It is possible to have no descriptor sets bound, for example if using
+        // push constants.
+        uint32_t descriptor_binding_index = vvl::kNoIndex32;
+        DescriptorSetBindings* desc_set_bindings = cb.shared_resources_cache.TryGet<DescriptorSetBindings>();
+        if (desc_set_bindings && !desc_set_bindings->descriptor_set_binding_commands.empty()) {
+            descriptor_binding_index = uint32_t(desc_set_bindings->descriptor_set_binding_commands.size() - 1);
+        }
+
+        bool uses_shader_object = last_bound.pipeline_state == nullptr;
+
+        CommandBufferSubState::InstrumentationErrorLogger inst_error_logger = [&cb, descriptor_binding_index, uses_shader_object](
+                                                                                  Validator& gpuav, const Location& loc,
+                                                                                  const uint32_t* error_record,
+                                                                                  std::string& out_error_msg,
+                                                                                  std::string& out_vuid_msg) {
+            using namespace glsl;
+            bool error_found = false;
+            const uint32_t error_group = error_record[glsl::kHeaderShaderIdErrorOffset] >> glsl::kErrorGroupShift;
+            if (error_group != kErrorGroupInstDescriptorClass) {
+                return error_found;
+            }
+            error_found = true;
+            std::ostringstream strm;
+            const GpuVuid& vuid = GetGpuVuid(loc.function);
+
+            if (descriptor_binding_index == vvl::kNoIndex32) {
+                assert(false);  // This means we have hit a situtation where there are no descriptors bound
+                return false;
+            }
+            const DescriptorSetBindings& desc_set_bindings = cb.shared_resources_cache.Get<DescriptorSetBindings>();
+            const auto& descriptor_sets =
+                desc_set_bindings.descriptor_set_binding_commands[descriptor_binding_index].bound_descriptor_sets;
+
+            const uint32_t encoded_set_index = error_record[kInstDescriptorIndexingSetAndIndexOffset];
+            const uint32_t set_num = encoded_set_index >> kInstDescriptorIndexingSetShift;
+            const uint32_t global_descriptor_index = encoded_set_index & kInstDescriptorIndexingIndexMask;
+
+            const auto descriptor_set_state = descriptor_sets[set_num];
+            auto [binding_num, desc_index] = descriptor_set_state->GetBindingAndIndex(global_descriptor_index);
+
+            const auto* binding_state = descriptor_set_state->GetBinding(binding_num);
+
+            strm << "(set = " << set_num << ", binding = " << binding_num << ", index " << desc_index << ") ";
+
+            const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
+            switch (error_sub_code) {
+                case kErrorSubCodeDescriptorClassGeneralBufferBounds:
+                case kErrorSubCodeDescriptorClassGeneralBufferCoopMatBounds: {
+                    if (binding_state->descriptor_class != vvl::DescriptorClass::GeneralBuffer) {
+                        assert(false);
+                        return false;
+                    }
+                    const vvl::Buffer* buffer_state =
+                        static_cast<const vvl::BufferBinding*>(binding_state)->descriptors[desc_index].GetBufferState();
+                    if (buffer_state) {
+                        const uint32_t byte_offset = error_record[kInstDescriptorIndexingParamOffset_0];
+                        const uint32_t resource_size = error_record[kInstDescriptorIndexingParamOffset_1];
+                        strm << " access out of bounds. The descriptor buffer (" << gpuav.FormatHandle(buffer_state->Handle())
+                             << ") size is " << buffer_state->create_info.size << " bytes, " << resource_size
+                             << " bytes were bound, and the highest out of bounds access was at [" << byte_offset << "] bytes";
+                    } else {
+                        // This will only get called when using nullDescriptor without bindless
+                        strm << "Trying to access a null descriptor, but vkUpdateDescriptorSets was not called with VK_NULL_HANDLE "
+                                "for "
+                                "this descriptor. ";
+                    }
+                    if (error_sub_code == kErrorSubCodeDescriptorClassGeneralBufferCoopMatBounds) {
+                        strm << "\nFor VK_KHR_cooperative_matrix this is invalid unless cooperativeMatrixRobustBufferAccess is "
+                                "enabled.";
+                    }
+
+                    if (binding_state->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
+                        binding_state->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
+                        out_vuid_msg = uses_shader_object ? vuid.uniform_access_oob_08612 : vuid.uniform_access_oob_06935;
+                    } else {
+                        out_vuid_msg = uses_shader_object ? vuid.storage_access_oob_08613 : vuid.storage_access_oob_06936;
+                    }
+                } break;
+
+                case kErrorSubCodeDescriptorClassTexelBufferBounds: {
+                    if (binding_state->descriptor_class != vvl::DescriptorClass::TexelBuffer) {
+                        assert(false);
+                        return false;
+                    }
+
+                    const vvl::BufferView* buffer_view_state =
+                        static_cast<const vvl::TexelBinding*>(binding_state)->descriptors[desc_index].GetBufferViewState();
+                    if (buffer_view_state) {
+                        const uint32_t byte_offset = error_record[kInstDescriptorIndexingParamOffset_0];
+                        const uint32_t resource_size = error_record[kInstDescriptorIndexingParamOffset_1];
+
+                        strm << " access out of bounds. The descriptor texel buffer ("
+                             << gpuav.FormatHandle(buffer_view_state->Handle()) << ") size is " << resource_size
+                             << " texels and the highest out of bounds access was at [" << byte_offset << "] bytes";
+                    } else {
+                        // This will only get called when using nullDescriptor without bindless
+                        strm << "Trying to access a null descriptor, but vkUpdateDescriptorSets was not called with VK_NULL_HANDLE "
+                                "for "
+                                "this descriptor. ";
+                    }
+
+                    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/3977
+                    out_vuid_msg = "UNASSIGNED-Descriptor Texel Buffer texel out of bounds";
+                } break;
+
+                default:
+                    error_found = false;
+                    assert(false);  // other OOB checks are not implemented yet
+            }
+
+            out_error_msg += strm.str();
+            return error_found;
+        };
+
+        return inst_error_logger;
+    });
+
     DescriptorSetBindings& desc_set_bindings = cb.shared_resources_cache.GetOrCreate<DescriptorSetBindings>();
 
     desc_set_bindings.on_update_bound_descriptor_sets.emplace_back(
@@ -143,7 +364,7 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
         });
 
     cb.on_instrumentation_desc_set_update_functions.emplace_back(
-        [dummy_buffer_range = vko::BufferRange{}](CommandBufferSubState& cb, VkPipelineBindPoint,
+        [dummy_buffer_range = vko::BufferRange{}](CommandBufferSubState& cb, VkPipelineBindPoint, const Location&,
                                                   VkDescriptorBufferInfo& out_buffer_info, uint32_t& out_dst_binding) mutable {
             DescriptorChecksCbState* dc_cb_state = cb.shared_resources_cache.TryGet<DescriptorChecksCbState>();
             if (dc_cb_state) {

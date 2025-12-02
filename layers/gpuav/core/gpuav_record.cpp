@@ -15,17 +15,14 @@
  * limitations under the License.
  */
 
-#include <cstdint>
-#include <vulkan/utility/vk_safe_struct.hpp>
 #include "chassis/chassis_modification_state.h"
 #include "gpuav/core/gpuav.h"
 #include "gpuav/core/gpuav_constants.h"
 #include "gpuav/debug_printf/debug_printf.h"
 #include "gpuav/descriptor_validation/gpuav_descriptor_validation.h"
-#include "gpuav/instrumentation/buffer_device_address.h"
 #include "gpuav/instrumentation/descriptor_checks.h"
 #include "gpuav/instrumentation/gpuav_instrumentation.h"
-#include "gpuav/instrumentation/post_process_descriptor_indexing.h"
+#include "gpuav/instrumentation/register_validation.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "gpuav/validation_cmd/gpuav_copy_buffer_to_image.h"
@@ -34,6 +31,9 @@
 #include "gpuav/validation_cmd/gpuav_draw.h"
 #include "gpuav/validation_cmd/gpuav_ray_tracing.h"
 #include "utils/math_utils.h"
+
+#include <cstdint>
+#include <vulkan/utility/vk_safe_struct.hpp>
 
 namespace gpuav {
 
@@ -156,6 +156,9 @@ void Validator::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, c
     RegisterDescriptorChecksValidation(*this, gpuav_cb_state);
     RegisterPostProcessingValidation(*this, gpuav_cb_state);
     RegisterBufferDeviceAddressValidation(*this, gpuav_cb_state);
+    RegisterVertexAttributeFetchOobValidation(*this, gpuav_cb_state);
+    RegisterRayQueryValidation(*this, gpuav_cb_state);
+    RegisterSanitizer(*this, gpuav_cb_state);
     debug_printf::RegisterDebugPrintf(*this, gpuav_cb_state);
 }
 

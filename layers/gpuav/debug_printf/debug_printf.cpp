@@ -415,7 +415,7 @@ void RegisterDebugPrintf(Validator &gpuav, CommandBufferSubState &cb_state) {
 
     cb_state.on_instrumentation_desc_set_update_functions.emplace_back(
         [debug_printf_buffer_size = gpuav.gpuav_settings.debug_printf_buffer_size](
-            CommandBufferSubState &cb, VkPipelineBindPoint bind_point, VkDescriptorBufferInfo &out_buffer_info,
+            CommandBufferSubState &cb, VkPipelineBindPoint bind_point, const Location &, VkDescriptorBufferInfo &out_buffer_info,
             uint32_t &out_dst_binding) {
             vko::BufferRange debug_printf_output_buffer =
                 cb.gpu_resources_manager.GetHostCoherentBufferRange(debug_printf_buffer_size);
