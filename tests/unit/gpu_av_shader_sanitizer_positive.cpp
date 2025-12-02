@@ -234,11 +234,12 @@ TEST_F(PositiveGpuAVShaderSanitizer, MultiplePass) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450 core
         layout(set=0, binding=0) buffer SSBO {
             int a;
             vec4 b;
+            float c;
         };
 
         layout(set=0, binding=1) uniform sampler2D tex;
@@ -246,6 +247,7 @@ TEST_F(PositiveGpuAVShaderSanitizer, MultiplePass) {
         void main() {
             a = 2 / a;
             vec4 b = textureGather(tex, vec2(0), 0);
+            c = mod(4.0, c);
         }
     )glsl";
 

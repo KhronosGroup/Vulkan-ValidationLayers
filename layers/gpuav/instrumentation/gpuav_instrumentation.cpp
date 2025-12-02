@@ -1181,11 +1181,15 @@ bool LogMessageInstSanitizer(const uint32_t *error_record, std::string &out_erro
         case kErrorSubCodeSanitizerDivideZero: {
             const uint32_t opcode = error_record[kInstLogErrorParameterOffset_0];
             const uint32_t vector_size = error_record[kInstLogErrorParameterOffset_1];
-            strm << "Integer divide by zero. Operand 2 of " << string_SpvOpcode(opcode) << " is ";
+            const bool is_float = opcode == spv::OpFMod || opcode == spv::OpFRem;
+            strm << (is_float ? "Float" : "Integer") << " divide by zero. Operand 2 of " << string_SpvOpcode(opcode) << " is ";
             if (vector_size == 0) {
-                strm << "zero";
+                strm << "zero.";
             } else {
-                strm << "a " << vector_size << "-wide vector which contains a zero value";
+                strm << "a " << vector_size << "-wide vector which contains a zero value.";
+            }
+            if (is_float) {
+                strm << " The result value is undefined.";
             }
             strm << GetSpirvSpecLink(opcode);
             out_vuid_msg = "SPIRV-Sanitizer-Divide-By-Zero";
