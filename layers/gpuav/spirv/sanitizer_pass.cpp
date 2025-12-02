@@ -52,17 +52,20 @@ uint32_t SanitizerPass::DivideByZeroCheck(BasicBlock& block, InstructionIt* inst
     const uint32_t vector_size = meta.result_type->VectorSize();
     const uint32_t divisor_id = meta.target_instruction->Word(4);
 
+    const bool is_float = meta.target_instruction->Opcode() == spv::OpFMod || meta.target_instruction->Opcode() == spv::OpFRem;
+    const spv::Op compare_op = is_float ? spv::OpFOrdEqual : spv::OpIEqual;
+
     if (vector_size == 0) {
         const uint32_t null_type_id = type_manager_.GetConstantNull(*meta.result_type).Id();
         const uint32_t compare_id = module_.TakeNextId();
-        block.CreateInstruction(spv::OpIEqual, {bool_type.Id(), compare_id, null_type_id, divisor_id}, inst_it);
+        block.CreateInstruction(compare_op, {bool_type.Id(), compare_id, null_type_id, divisor_id}, inst_it);
         return compare_id;
     } else {
         const Type& bool_vector_type = type_manager_.GetTypeVector(bool_type, vector_size);
         const uint32_t zero_id = type_manager_.GetConstantZeroVector(*meta.result_type).Id();
 
         const uint32_t compare_id = module_.TakeNextId();
-        block.CreateInstruction(spv::OpIEqual, {bool_vector_type.Id(), compare_id, zero_id, divisor_id}, inst_it);
+        block.CreateInstruction(compare_op, {bool_vector_type.Id(), compare_id, zero_id, divisor_id}, inst_it);
 
         const uint32_t any_id = module_.TakeNextId();
         block.CreateInstruction(spv::OpAny, {bool_type.Id(), any_id, compare_id}, inst_it);
@@ -134,7 +137,7 @@ bool SanitizerPass::IsConstantZero(const Constant& constant) const {
 bool SanitizerPass::RequiresInstrumentation(const Instruction& inst, InstructionMeta& meta) {
     const spv::Op opcode = (spv::Op)inst.Opcode();
 
-    if (IsValueIn(opcode, {spv::OpUDiv, spv::OpSDiv, spv::OpUMod, spv::OpSMod, spv::OpSRem})) {
+    if (IsValueIn(opcode, {spv::OpUDiv, spv::OpSDiv, spv::OpUMod, spv::OpSMod, spv::OpSRem, spv::OpFMod, spv::OpFRem})) {
         // Note - It is valid to divide by zero for a float (you get NaN), but invalid for an int.
         if (const Constant* constant = type_manager_.FindConstantById(inst.Word(4))) {
             // If its a constant, no reason to instrument, unless its a constant value of zero,
@@ -144,6 +147,12 @@ bool SanitizerPass::RequiresInstrumentation(const Instruction& inst, Instruction
                 return false;
             }
         }
+
+        // FMod/FRem are exceptions for float, they have undefined value if zero
+        if (opcode == spv::OpFMod || opcode == spv::OpFRem) {
+            meta.skip_safe_mode = true;
+        }
+
         meta.result_type = type_manager_.FindTypeById(inst.TypeId());
         meta.target_instruction = &inst;
         meta.sub_code = glsl::kErrorSubCodeSanitizerDivideZero;

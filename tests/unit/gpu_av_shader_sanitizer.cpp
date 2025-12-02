@@ -192,6 +192,57 @@ TEST_F(NegativeGpuAVShaderSanitizer, SRem) {
     SimpleZeroComputeTest(cs_source, SPV_SOURCE_ASM, "SPIRV-Sanitizer-Divide-By-Zero");
 }
 
+TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroFModScalar) {
+    const char* cs_source = R"glsl(
+            #version 450 core
+            layout(set=0, binding=0) buffer SSBO {
+                float index;
+                float result;
+            };
+
+            void main() {
+                result = mod(result, index);
+            }
+    )glsl";
+
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "SPIRV-Sanitizer-Divide-By-Zero");
+}
+
+TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroFModVector) {
+    const char* cs_source = R"glsl(
+            #version 450 core
+            layout(set=0, binding=0) buffer SSBO {
+                vec2 index;
+                vec2 result;
+            };
+
+            void main() {
+                index.x = 1.0f;
+                result = mod(result, index);
+            }
+    )glsl";
+
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "SPIRV-Sanitizer-Divide-By-Zero");
+}
+
+TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroFMod64) {
+    AddRequiredFeature(vkt::Feature::shaderFloat64);
+    const char* cs_source = R"glsl(
+        #version 450 core
+        #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
+        layout(set=0, binding=0) buffer SSBO {
+            float64_t index;
+            float64_t result;
+        };
+
+        void main() {
+            float64_t result = mod(result, index);
+        }
+    )glsl";
+
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_GLSL, "SPIRV-Sanitizer-Divide-By-Zero");
+}
+
 TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroIntDivConstant) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
     RETURN_IF_SKIP(InitGpuAvFramework());
@@ -219,6 +270,7 @@ TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroIntDivConstant) {
                OpMemberDecorate %SSBO 3 Offset 16
                OpMemberDecorate %SSBO 4 Offset 32
                OpMemberDecorate %SSBO 5 Offset 48
+               OpMemberDecorate %SSBO 6 Offset 64
                OpDecorate %var Binding 0
                OpDecorate %var DescriptorSet 0
        %void = OpTypeVoid
@@ -226,6 +278,7 @@ TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroIntDivConstant) {
        %uint = OpTypeInt 32 0
      %uint64 = OpTypeInt 64 0
         %int = OpTypeInt 32 1
+      %float = OpTypeFloat 32
      %v2uint = OpTypeVector %uint 2
       %v3int = OpTypeVector %int 3
      %v4uint = OpTypeVector %uint 4
@@ -236,17 +289,19 @@ TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroIntDivConstant) {
       %int_3 = OpConstant %int 3
       %int_4 = OpConstant %int 4
       %int_5 = OpConstant %int 5
+      %int_6 = OpConstant %int 6
      %uint_0 = OpConstant %uint 0
      %uint_1 = OpConstant %uint 1
   %uint_null = OpConstantNull %uint
    %uint64_0 = OpConstant %uint64 0
+    %float_0 = OpConstant %float 0
 
 %u32v2_1_null = OpConstantComposite %v2uint %uint_1 %uint_null
    %i32v3_000 = OpConstantComposite %v3int %int_0 %int_0 %int_0
   %u32v4_1101 = OpConstantComposite %v4uint %uint_1 %uint_1 %uint_0 %uint_1
   %u32v4_null = OpConstantNull %v4uint
 
-       %SSBO = OpTypeStruct %uint %int %uint64 %v2uint %v3int %v4uint
+       %SSBO = OpTypeStruct %uint %int %uint64 %v2uint %v3int %v4uint %float
    %ptr_ssbo = OpTypePointer StorageBuffer %SSBO
         %var = OpVariable %ptr_ssbo StorageBuffer
 %ptr_ssbo_v2uint = OpTypePointer StorageBuffer %v2uint
@@ -255,6 +310,7 @@ TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroIntDivConstant) {
 %ptr_ssbo_uint64 = OpTypePointer StorageBuffer %uint64
 %ptr_ssbo_uint = OpTypePointer StorageBuffer %uint
 %ptr_ssbo_int = OpTypePointer StorageBuffer %int
+%ptr_ssbo_float = OpTypePointer StorageBuffer %float
        %main = OpFunction %void None %func
       %label = OpLabel
     )asm";
@@ -346,6 +402,14 @@ TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroIntDivConstant) {
         %2 = OpLoad %v4uint %1
         %3 = OpUDiv %v4uint %2 %u32v4_null
         %4 = OpAccessChain %ptr_ssbo_v4uint %var %int_5
+    )asm");
+
+    // FRem
+    test(R"asm(
+        %1 = OpAccessChain %ptr_ssbo_float %var %int_6
+        %2 = OpLoad %float %1
+        %3 = OpFRem %float %2 %float_0
+        %4 = OpAccessChain %ptr_ssbo_float %var %int_6
     )asm");
 }
 
