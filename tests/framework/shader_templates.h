@@ -357,4 +357,4 @@ static const char kShaderTileImageDepthStencilReadSpv[] = R"(
 
         tensorReadARM(tens, uint[](x), out_data[out_index]);
     }
-    )glsl";
+)glsl";

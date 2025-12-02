@@ -12,6 +12,7 @@
 #include "data_graph_objects.h"
 #include "binding.h"
 #include "generated/pnext_chain_extraction.h"
+#include "shader_templates.h"
 #include <iostream>
 
 namespace vkt {
@@ -233,33 +234,115 @@ std::string DataGraphPipelineHelper::GetSpirvModifiableShader(const ModifiableSh
     return ss.str();
 }
 
-void DataGraphPipelineHelper::InitPipelineResources(const std::vector<vkt::Tensor*>& tensors, VkDescriptorType desc_type,
-                                                    VkDescriptorSetLayoutCreateFlags layout_flags) {
-    descriptor_set_layout_bindings_.clear();
-    resources_.clear();
+// spirv using a descriptor array
+std::string DataGraphPipelineHelper::GetSpirvTensorArrayDataGraph(bool is_runtime) {
+    std::stringstream ss;
+    ss << R"(
+                            OpCapability GraphARM
+                            OpCapability TensorsARM
+)" << (is_runtime ? "OpCapability RuntimeDescriptorArray" : "")
+       << R"(
+                            OpCapability Int8
+                            OpCapability Shader
+                            OpCapability VulkanMemoryModel
+                            OpCapability Matrix
+                            OpExtension "SPV_ARM_graph"
+                            OpExtension "SPV_ARM_tensors"
+                            OpExtension "SPV_KHR_vulkan_memory_model"
+                    %tosa = OpExtInstImport "TOSA.001000.1"
+                            OpMemoryModel Logical Vulkan
+                            OpName %main_arg_0 "main_arg_0"
+                            OpName %main_res_0 "main_res_0"
+                            OpDecorate %main_arg_0 Binding 0
+                            OpDecorate %main_arg_0 DescriptorSet 0
+                            OpDecorate %main_res_0 Binding 1
+                            OpDecorate %main_res_0 DescriptorSet 0
+                      %i8 = OpTypeInt 8 0
+                     %i32 = OpTypeInt 32 0
+                   %i32_0 = OpConstant %i32 0
+                   %i32_1 = OpConstant %i32 1
+                   %i32_2 = OpConstant %i32 2
+                   %i32_4 = OpConstant %i32 4
+               %i32_arr_4 = OpTypeArray %i32 %i32_4
+            %tensor_shape = OpConstantComposite %i32_arr_4 %i32_1 %i32_4 %i32_4 %i32_2
+                  %tensor = OpTypeTensorARM %i8 %i32_4 %tensor_shape
+)" << (is_runtime ? "%tensor_array = OpTypeRuntimeArray %tensor"
+                  : "%tensor_array = OpTypeArray %tensor %i32_2")
+       << R"(
+        %ptr_tensor_array = OpTypePointer UniformConstant %tensor_array
+              %ptr_tensor = OpTypePointer UniformConstant %tensor
+              %main_arg_0 = OpVariable %ptr_tensor_array UniformConstant
+              %main_res_0 = OpVariable %ptr_tensor UniformConstant
+              %graph_type = OpTypeGraphARM 1 %tensor_array %tensor
+                            OpGraphEntryPointARM %graph_0 "main" %main_arg_0 %main_res_0
+                 %graph_0 = OpGraphARM %graph_type
+                    %in_0 = OpGraphInputARM %tensor %i32_0 %i32_0
+                    %in_1 = OpGraphInputARM %tensor %i32_0 %i32_1
+                   %out_0 = OpExtInst %tensor %tosa ADD %in_0 %in_1
+                            OpGraphSetOutputARM %out_0 %i32_0
+                            OpGraphEndARM
+)";
+    return ss.str();
+}
 
-    descriptor_set_layout_bindings_.resize(tensors.size());
-    resources_.resize(tensors.size());
-    descriptor_set_layout_bindings_.resize(tensors.size());
-    resources_.resize(tensors.size());
-    for (size_t i = 0; i < tensors.size(); i++) {
+// shapes for 2-layer maxpool 2x2: output tensor is 1/4 the size of the input tensor
+const std::vector<int64_t> in_tensor_dims = {1, 8, 16, 4};
+const std::vector<int64_t> out_tensor_dims = {in_tensor_dims[0], in_tensor_dims[1] / 4, in_tensor_dims[2] / 4, in_tensor_dims[3]};
 
-        resources_[i] = vku::InitStructHelper();
-        resources_[i].pNext = &tensors[i]->Description();
-        resources_[i].descriptorSet = 0;
-        resources_[i].binding = i;
+void DataGraphPipelineHelper::InitPipelineResources(VkDescriptorType desc_type) {
+    if (params_.graph_variant == AddTensorArraySpirv || params_.graph_variant == AddRuntimeTensorArraySpirv) {
 
-        descriptor_set_layout_bindings_[i].binding = i;
-        descriptor_set_layout_bindings_[i].descriptorCount = 1;
-        descriptor_set_layout_bindings_[i].descriptorType = desc_type;
-        descriptor_set_layout_bindings_[i].stageFlags = VK_SHADER_STAGE_ALL;
-        descriptor_set_layout_bindings_[i].pImmutableSamplers = nullptr;
+        // tensors for GetSpirvTensorArrayDataGraph(): array of 2 input, 1 output
+
+        const std::vector<int64_t> dimensions{1, 4, 4, 2};
+        VkTensorDescriptionARM desc = vku::InitStructHelper();
+        desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
+        desc.format = VK_FORMAT_R32_SINT;
+        desc.dimensionCount = dimensions.size();
+        desc.pDimensions = dimensions.data();
+        desc.pStrides = nullptr;
+        desc.usage = VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM;
+
+        tensors_.resize(3);
+        tensors_[0] = std::make_shared<vkt::Tensor>(*device_, desc);
+        tensors_[1] = std::make_shared<vkt::Tensor>(*device_, desc);
+        tensors_[2] = std::make_shared<vkt::Tensor>(*device_, desc);
+
+        resources_.resize(3);
+        // last 3 numbers are: descriptor, binding, array index
+        // 2 input tensors, as array
+        resources_[0] = {VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_RESOURCE_INFO_ARM, &tensors_[0]->Description(), 0, 0, 0};
+        resources_[1] = {VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_RESOURCE_INFO_ARM, &tensors_[1]->Description(), 0, 0, 1};
+        // 1 output tensor
+        resources_[2] = {VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_RESOURCE_INFO_ARM, &tensors_[2]->Description(), 1, 0, 0};
+
+        // binding 0: 2 x inputs; binding 1: 1 x output
+        descriptor_set_layout_bindings_.resize(2);
+        descriptor_set_layout_bindings_[0] = {0, desc_type, 2, VK_SHADER_STAGE_ALL, nullptr};
+        descriptor_set_layout_bindings_[1] = {1, desc_type, 1, VK_SHADER_STAGE_ALL, nullptr};
+    } else {  // default: BasicSpirv
+
+        // tensors for GetSpirvBasicDataGraph(): 1 input, 1 output
+
+        tensors_.resize(2);
+        tensor_views_.resize(tensors_.size());
+        descriptor_set_layout_bindings_.resize(tensors_.size());
+        resources_.resize(tensors_.size());
+        for (uint32_t i = 0; i < tensors_.size(); i++) {
+            tensors_[i] = std::make_shared<vkt::Tensor>();
+            tensor_views_[i] = std::make_shared<vkt::TensorView>();
+            const std::vector<int64_t>& dims = (i == 0) ? in_tensor_dims : out_tensor_dims;
+            InitTensor(*tensors_[i], *tensor_views_[i], dims, params_.protected_tensors);
+
+            // last 3 numbers are: descriptor, binding, array index
+            resources_[i] = {VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_RESOURCE_INFO_ARM, &tensors_[i]->Description(), 0, i, 0};
+            descriptor_set_layout_bindings_[i] = {i, desc_type, 1, VK_SHADER_STAGE_ALL, nullptr};
+        }
     }
-    descriptor_set_.reset(new OneOffDescriptorSet(device_, descriptor_set_layout_bindings_, layout_flags));
-
     pipeline_ci_.resourceInfoCount = resources_.size();
     pipeline_ci_.pResourceInfos = resources_.data();
 
+    descriptor_set_.reset(new OneOffDescriptorSet(device_, descriptor_set_layout_bindings_));
     CreatePipelineLayout();
 }
 
@@ -272,11 +355,6 @@ void DataGraphPipelineHelper::CreatePipelineLayout(const std::vector<VkPushConst
 
     pipeline_ci_.layout = pipeline_layout_;
 }
-
-// 2-layer maxpool 2x2: output tensor is 1/4 the size of the input tensor
-const std::vector<int64_t> in_tensor_dims = {1, 8, 16, 4};
-const std::vector<int64_t> out_tensor_dims = {in_tensor_dims[0], in_tensor_dims[1] / 4,
-                                              in_tensor_dims[2] / 4, in_tensor_dims[3]};
 
 void DataGraphPipelineHelper::InitTensor(vkt::Tensor& tensor, vkt::TensorView& tensor_view, const std::vector<int64_t>& tensor_dims,
                                          bool is_protected) {
@@ -306,16 +384,17 @@ void DataGraphPipelineHelper::InitTensor(vkt::Tensor& tensor, vkt::TensorView& t
     tensor_view.Init(*device_, tensor_view_ci);
 }
 
-DataGraphPipelineHelper::DataGraphPipelineHelper(VkLayerTest& test, const HelperParameters& params) : layer_test_(test) {
+DataGraphPipelineHelper::DataGraphPipelineHelper(VkLayerTest& test, const HelperParameters& params)
+    : layer_test_(test), params_(params) {
     device_ = layer_test_.DeviceObj();
     pipeline_ci_ = vku::InitStructHelper();
 
-    std::string spirv_string(params.spirv_source ? params.spirv_source : GetSpirvBasicDataGraph());
-
-    InitTensor(in_tensor_, in_tensor_view_, in_tensor_dims, params.protected_tensors);
-    InitTensor(out_tensor_, out_tensor_view_, out_tensor_dims, params.protected_tensors);
-    CreateShaderModule(spirv_string.c_str(), params.entrypoint);
-    InitPipelineResources({&in_tensor_, &out_tensor_});
+    std::string spirv_string(params_.spirv_source                                  ? params_.spirv_source
+                             : params_.graph_variant == AddTensorArraySpirv        ? GetSpirvTensorArrayDataGraph(false)
+                             : params_.graph_variant == AddRuntimeTensorArraySpirv ? GetSpirvTensorArrayDataGraph(true)
+                                                                                   : GetSpirvBasicDataGraph());
+    CreateShaderModule(spirv_string.c_str(), params_.entrypoint);
+    InitPipelineResources(params_.desc_type);
 
     // Check that the initialisation of the pipeline has been successful
     layer_test_.Monitor().Finish();

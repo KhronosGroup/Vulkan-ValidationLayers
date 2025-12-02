@@ -699,6 +699,7 @@ const char *GetSpirvInterfaceVariableVUID(const Location &loc, SpirvInterfaceVar
                 loc.function == Func::vkCreateComputePipelines  ? "VUID-VkComputePipelineCreateInfo-layout-07991" :
                 loc.function == Func::vkCreateRayTracingPipelinesKHR ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07991" :
                 loc.function == Func::vkCreateRayTracingPipelinesNV  ? "VUID-VkRayTracingPipelineCreateInfoNV-layout-07991" :
+                loc.function == Func::vkCreateDataGraphPipelinesARM  ? "VUID-VkDataGraphPipelineCreateInfoARM-layout-09934" :
                 loc.function == Func::vkCreateShadersEXT ? "VUID-VkShaderCreateInfoEXT-codeType-10385" :
                 kVUIDUndefined;
         case SpirvInterfaceVariableError::Inline_10391:
