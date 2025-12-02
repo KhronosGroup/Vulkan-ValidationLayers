@@ -851,6 +851,66 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpCooperativeVectorLoadNV";
         case spv::OpCooperativeVectorStoreNV:
             return "OpCooperativeVectorStoreNV";
+        case spv::OpHitObjectRecordFromQueryEXT:
+            return "OpHitObjectRecordFromQueryEXT";
+        case spv::OpHitObjectRecordMissEXT:
+            return "OpHitObjectRecordMissEXT";
+        case spv::OpHitObjectRecordMissMotionEXT:
+            return "OpHitObjectRecordMissMotionEXT";
+        case spv::OpHitObjectGetIntersectionTriangleVertexPositionsEXT:
+            return "OpHitObjectGetIntersectionTriangleVertexPositionsEXT";
+        case spv::OpHitObjectGetRayFlagsEXT:
+            return "OpHitObjectGetRayFlagsEXT";
+        case spv::OpHitObjectSetShaderBindingTableRecordIndexEXT:
+            return "OpHitObjectSetShaderBindingTableRecordIndexEXT";
+        case spv::OpHitObjectReorderExecuteShaderEXT:
+            return "OpHitObjectReorderExecuteShaderEXT";
+        case spv::OpHitObjectTraceReorderExecuteEXT:
+            return "OpHitObjectTraceReorderExecuteEXT";
+        case spv::OpHitObjectTraceMotionReorderExecuteEXT:
+            return "OpHitObjectTraceMotionReorderExecuteEXT";
+        case spv::OpTypeHitObjectEXT:
+            return "OpTypeHitObjectEXT";
+        case spv::OpReorderThreadWithHintEXT:
+            return "OpReorderThreadWithHintEXT";
+        case spv::OpReorderThreadWithHitObjectEXT:
+            return "OpReorderThreadWithHitObjectEXT";
+        case spv::OpHitObjectTraceRayEXT:
+            return "OpHitObjectTraceRayEXT";
+        case spv::OpHitObjectTraceRayMotionEXT:
+            return "OpHitObjectTraceRayMotionEXT";
+        case spv::OpHitObjectRecordEmptyEXT:
+            return "OpHitObjectRecordEmptyEXT";
+        case spv::OpHitObjectExecuteShaderEXT:
+            return "OpHitObjectExecuteShaderEXT";
+        case spv::OpHitObjectGetCurrentTimeEXT:
+            return "OpHitObjectGetCurrentTimeEXT";
+        case spv::OpHitObjectGetAttributesEXT:
+            return "OpHitObjectGetAttributesEXT";
+        case spv::OpHitObjectGetHitKindEXT:
+            return "OpHitObjectGetHitKindEXT";
+        case spv::OpHitObjectGetPrimitiveIndexEXT:
+            return "OpHitObjectGetPrimitiveIndexEXT";
+        case spv::OpHitObjectGetGeometryIndexEXT:
+            return "OpHitObjectGetGeometryIndexEXT";
+        case spv::OpHitObjectGetInstanceIdEXT:
+            return "OpHitObjectGetInstanceIdEXT";
+        case spv::OpHitObjectGetInstanceCustomIndexEXT:
+            return "OpHitObjectGetInstanceCustomIndexEXT";
+        case spv::OpHitObjectGetObjectRayOriginEXT:
+            return "OpHitObjectGetObjectRayOriginEXT";
+        case spv::OpHitObjectGetObjectRayDirectionEXT:
+            return "OpHitObjectGetObjectRayDirectionEXT";
+        case spv::OpHitObjectGetWorldRayDirectionEXT:
+            return "OpHitObjectGetWorldRayDirectionEXT";
+        case spv::OpHitObjectGetWorldRayOriginEXT:
+            return "OpHitObjectGetWorldRayOriginEXT";
+        case spv::OpHitObjectGetObjectToWorldEXT:
+            return "OpHitObjectGetObjectToWorldEXT";
+        case spv::OpHitObjectGetWorldToObjectEXT:
+            return "OpHitObjectGetWorldToObjectEXT";
+        case spv::OpHitObjectGetRayTMaxEXT:
+            return "OpHitObjectGetRayTMaxEXT";
         case spv::OpReportIntersectionKHR:
             return "OpReportIntersectionKHR";
         case spv::OpIgnoreIntersectionNV:
@@ -873,6 +933,18 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpRayQueryGetIntersectionClusterIdNV";
         case spv::OpHitObjectGetClusterIdNV:
             return "OpHitObjectGetClusterIdNV";
+        case spv::OpHitObjectGetRayTMinEXT:
+            return "OpHitObjectGetRayTMinEXT";
+        case spv::OpHitObjectGetShaderBindingTableRecordIndexEXT:
+            return "OpHitObjectGetShaderBindingTableRecordIndexEXT";
+        case spv::OpHitObjectGetShaderRecordBufferHandleEXT:
+            return "OpHitObjectGetShaderRecordBufferHandleEXT";
+        case spv::OpHitObjectIsEmptyEXT:
+            return "OpHitObjectIsEmptyEXT";
+        case spv::OpHitObjectIsHitEXT:
+            return "OpHitObjectIsHitEXT";
+        case spv::OpHitObjectIsMissEXT:
+            return "OpHitObjectIsMissEXT";
         case spv::OpTypeCooperativeMatrixNV:
             return "OpTypeCooperativeMatrixNV";
         case spv::OpCooperativeMatrixLoadNV:
@@ -1179,6 +1251,8 @@ const char* string_SpvStorageClass(uint32_t storage_class) {
             return "HitObjectAttributeNV";
         case spv::StorageClassTaskPayloadWorkgroupEXT:
             return "TaskPayloadWorkgroupEXT";
+        case spv::StorageClassHitObjectAttributeEXT:
+            return "HitObjectAttributeEXT";
         case spv::StorageClassCodeSectionINTEL:
             return "CodeSectionINTEL";
         case spv::StorageClassDeviceOnlyALTERA:
@@ -1577,6 +1651,8 @@ const char* string_SpvDecoration(uint32_t decoration) {
             return "AliasedPointer";
         case spv::DecorationHitObjectShaderRecordBufferNV:
             return "HitObjectShaderRecordBufferNV";
+        case spv::DecorationHitObjectShaderRecordBufferEXT:
+            return "HitObjectShaderRecordBufferEXT";
         case spv::DecorationBindlessSamplerNV:
             return "BindlessSamplerNV";
         case spv::DecorationBindlessImageNV:
@@ -2474,6 +2550,36 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpFetchMicroTriangleVertexBarycentricNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpCooperativeVectorLoadNV, {{OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
         {spv::OpCooperativeVectorStoreNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
+        {spv::OpHitObjectRecordFromQueryEXT, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpHitObjectRecordMissEXT, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpHitObjectRecordMissMotionEXT, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpHitObjectGetIntersectionTriangleVertexPositionsEXT, {{OperandKind::Id}}},
+        {spv::OpHitObjectGetRayFlagsEXT, {{OperandKind::Id}}},
+        {spv::OpHitObjectSetShaderBindingTableRecordIndexEXT, {{OperandKind::Id, OperandKind::Id}}},
+        {spv::OpHitObjectReorderExecuteShaderEXT, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpHitObjectTraceReorderExecuteEXT, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpHitObjectTraceMotionReorderExecuteEXT, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpTypeHitObjectEXT, {{}}},
+        {spv::OpReorderThreadWithHintEXT, {{OperandKind::Id, OperandKind::Id}}},
+        {spv::OpReorderThreadWithHitObjectEXT, {{OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpHitObjectTraceRayEXT, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpHitObjectTraceRayMotionEXT, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpHitObjectRecordEmptyEXT, {{OperandKind::Id}}},
+        {spv::OpHitObjectExecuteShaderEXT, {{OperandKind::Id, OperandKind::Id}}},
+        {spv::OpHitObjectGetCurrentTimeEXT, {{OperandKind::Id}}},
+        {spv::OpHitObjectGetAttributesEXT, {{OperandKind::Id, OperandKind::Id}}},
+        {spv::OpHitObjectGetHitKindEXT, {{OperandKind::Id}}},
+        {spv::OpHitObjectGetPrimitiveIndexEXT, {{OperandKind::Id}}},
+        {spv::OpHitObjectGetGeometryIndexEXT, {{OperandKind::Id}}},
+        {spv::OpHitObjectGetInstanceIdEXT, {{OperandKind::Id}}},
+        {spv::OpHitObjectGetInstanceCustomIndexEXT, {{OperandKind::Id}}},
+        {spv::OpHitObjectGetObjectRayOriginEXT, {{OperandKind::Id}}},
+        {spv::OpHitObjectGetObjectRayDirectionEXT, {{OperandKind::Id}}},
+        {spv::OpHitObjectGetWorldRayDirectionEXT, {{OperandKind::Id}}},
+        {spv::OpHitObjectGetWorldRayOriginEXT, {{OperandKind::Id}}},
+        {spv::OpHitObjectGetObjectToWorldEXT, {{OperandKind::Id}}},
+        {spv::OpHitObjectGetWorldToObjectEXT, {{OperandKind::Id}}},
+        {spv::OpHitObjectGetRayTMaxEXT, {{OperandKind::Id}}},
         {spv::OpReportIntersectionKHR, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpIgnoreIntersectionNV, {{}}},
         {spv::OpTerminateRayNV, {{}}},
@@ -2485,6 +2591,12 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpExecuteCallableNV, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpRayQueryGetIntersectionClusterIdNV, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpHitObjectGetClusterIdNV, {{OperandKind::Id}}},
+        {spv::OpHitObjectGetRayTMinEXT, {{OperandKind::Id}}},
+        {spv::OpHitObjectGetShaderBindingTableRecordIndexEXT, {{OperandKind::Id}}},
+        {spv::OpHitObjectGetShaderRecordBufferHandleEXT, {{OperandKind::Id}}},
+        {spv::OpHitObjectIsEmptyEXT, {{OperandKind::Id}}},
+        {spv::OpHitObjectIsHitEXT, {{OperandKind::Id}}},
+        {spv::OpHitObjectIsMissEXT, {{OperandKind::Id}}},
         {spv::OpTypeCooperativeMatrixNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpCooperativeMatrixLoadNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
         {spv::OpCooperativeMatrixStoreNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},

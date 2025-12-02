@@ -2813,6 +2813,7 @@ TEST_F(PositiveWsi, PresentTimings) {
     AddRequiredFeature(vkt::Feature::presentId2);
     AddRequiredFeature(vkt::Feature::presentWait2);
     AddRequiredFeature(vkt::Feature::presentTiming);
+    AddRequiredFeature(vkt::Feature::presentAtRelativeTime);
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSurface());
     InitSwapchainInfo();
