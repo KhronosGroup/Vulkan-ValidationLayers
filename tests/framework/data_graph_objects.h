@@ -32,10 +32,18 @@
 namespace vkt {
 namespace dg {
 
+enum GraphVariant {
+    BasicSpirv,                  // double TOSA MAX_POOL2D
+    AddTensorArraySpirv,         // TOSA ADD, using tensor OpTypeArray
+    AddRuntimeTensorArraySpirv,  // TOSA ADD, using tensor OpTypeRuntimeArray
+};
+
 struct HelperParameters {
     bool protected_tensors = false;
+    VkDescriptorType desc_type = VK_DESCRIPTOR_TYPE_TENSOR_ARM;
     const char *spirv_source = nullptr;
     const char *entrypoint = "main";
+    GraphVariant graph_variant = BasicSpirv;
 };
 
 struct ModifiableShaderParameters {
@@ -54,10 +62,8 @@ class DataGraphPipelineHelper {
     vkt::ShaderModule shader_;
     VkDataGraphPipelineShaderModuleCreateInfoARM shader_module_ci_;
     std::vector<VkDataGraphPipelineResourceInfoARM> resources_;
-    vkt::Tensor in_tensor_;
-    vkt::Tensor out_tensor_;
-    vkt::TensorView in_tensor_view_;
-    vkt::TensorView out_tensor_view_;
+    std::vector<std::shared_ptr<vkt::Tensor>> tensors_;
+    std::vector<std::shared_ptr<vkt::TensorView>> tensor_views_;
 
     VkLayerTest &layer_test_;
     vkt::Device *device_;
@@ -70,10 +76,9 @@ class DataGraphPipelineHelper {
     static std::string GetSpirvMultiEntryTwoDataGraph();
     static inline std::string GetSpirvBasicShader() { return GetSpirvModifiableShader(); };
     static std::string GetSpirvModifiableShader(const ModifiableShaderParameters &params = ModifiableShaderParameters());
+    static std::string GetSpirvTensorArrayDataGraph(bool is_runtime = false);
 
-    void InitPipelineResources(const std::vector<vkt::Tensor *> &tensors = {},
-                               VkDescriptorType desc_type = VK_DESCRIPTOR_TYPE_TENSOR_ARM,
-                               VkDescriptorSetLayoutCreateFlags layout_flags = 0);
+    void InitPipelineResources(VkDescriptorType desc_type = VK_DESCRIPTOR_TYPE_TENSOR_ARM);
     void CreatePipelineLayout(const std::vector<VkPushConstantRange> &push_constant_ranges = {});
     VkResult CreateDataGraphPipeline();
     const VkPipeline &Handle() const { return pipeline_; }
@@ -111,7 +116,7 @@ class DataGraphPipelineHelper {
     void InitTensor(vkt::Tensor &tensor, vkt::TensorView &tensor_view, const std::vector<int64_t> &tensor_dims, bool is_protected);
 
     VkPipeline pipeline_ = VK_NULL_HANDLE;
+    HelperParameters params_ = HelperParameters();
 };
-
 }  // namespace dg
 }  // namespace vkt

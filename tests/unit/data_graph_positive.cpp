@@ -9,8 +9,9 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include "../framework/layer_validation_tests.h"
-#include "../framework/data_graph_objects.h"
+#include "layer_validation_tests.h"
+#include "data_graph_objects.h"
+#include "shader_templates.h"
 
 class PositiveDataGraph : public DataGraphTest {};
 
@@ -82,8 +83,8 @@ TEST_F(PositiveDataGraph, ExecuteDataGraph) {
     auto session_bind_infos = InitSessionBindInfo(session, device_mem);
     vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
 
-    pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.in_tensor_view_.handle(), 0);
-    pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.out_tensor_view_.handle(), 0);
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
     pipeline.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
@@ -125,8 +126,8 @@ TEST_F(PositiveDataGraph, DISABLED_ProtectedMemoryDataGraph) {
     auto session_bind_infos = InitSessionBindInfo(session, device_mem);
     vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
 
-    pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.in_tensor_view_.handle(), 0);
-    pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.out_tensor_view_.handle(), 0);
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
     pipeline.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
@@ -208,4 +209,33 @@ TEST_F(PositiveDataGraph, DataGraphMultipleEntrypoints) {
         vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
         pipeline.CreateDataGraphPipeline();
     }
+}
+
+TEST_F(PositiveDataGraph, DataGraphShaderModuleSpirvArray) {
+    TEST_DESCRIPTION("Create a datagraph using a tensor array as input.");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    vkt::dg::HelperParameters params;
+    params.graph_variant = vkt::dg::GraphVariant::AddTensorArraySpirv;
+    vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
+
+    // currently tensor arrays are effectively banned by this VU, we need to suppress it
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkDataGraphPipelineResourceInfoARM-arrayElement-09779");
+    pipeline.CreateDataGraphPipeline();
+}
+
+TEST_F(PositiveDataGraph, DataGraphShaderModuleSpirvRuntimeArray) {
+    TEST_DESCRIPTION("Create a datagraph using a tensor runtime array as input.");
+    InitBasicDataGraph();
+    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
+    RETURN_IF_SKIP(Init());
+
+    vkt::dg::HelperParameters params;
+    params.graph_variant = vkt::dg::GraphVariant::AddRuntimeTensorArraySpirv;
+    vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
+
+    // currently tensor arrays are effectively banned by this VU, we need to suppress it
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkDataGraphPipelineResourceInfoARM-arrayElement-09779");
+    pipeline.CreateDataGraphPipeline();
 }

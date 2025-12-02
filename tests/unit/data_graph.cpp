@@ -9,10 +9,10 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include "../framework/layer_validation_tests.h"
-#include "../framework/pipeline_helper.h"
-#include "../framework/descriptor_helper.h"
-#include "../framework/data_graph_objects.h"
+#include "layer_validation_tests.h"
+#include "pipeline_helper.h"
+#include "descriptor_helper.h"
+#include "data_graph_objects.h"
 #include "generated/pnext_chain_extraction.h"
 #include <vector>
 
@@ -150,8 +150,8 @@ TEST_F(NegativeDataGraph, CreateDataGraphPipelinesUpdateAfterBindFeatureNotEnabl
 
     auto set_info = [&](vkt::dg::DataGraphPipelineHelper &pipeline) {
         pipeline.descriptor_set_.reset(new OneOffDescriptorSet(pipeline.device_, pipeline.descriptor_set_layout_bindings_,
-                                                             VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT, nullptr,
-                                                             VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT));
+                                                               VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT, nullptr,
+                                                               VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT));
         pipeline.CreatePipelineLayout();
     };
     vkt::dg::DataGraphPipelineHelper::OneshotTest(*this, set_info, 0,
@@ -217,26 +217,14 @@ TEST_F(NegativeDataGraph, CreateDataGraphPipelinesTypeMismatch) {
     InitBasicDataGraph();
     RETURN_IF_SKIP(Init());
 
-    const std::vector<int64_t> dimensions{2ul};
-    VkTensorDescriptionARM desc = vku::InitStructHelper();
-    desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
-    desc.format = VK_FORMAT_R8_SINT;
-    desc.dimensionCount = dimensions.size();
-    desc.pDimensions = dimensions.data();
-    desc.pStrides = nullptr;
-    desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM | VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM;
-
-    vkt::Tensor in_tensor(*m_device, desc);
-    vkt::Tensor out_tensor(*m_device, desc);
-
-    auto set_info = [&](vkt::dg::DataGraphPipelineHelper &pipeline) {
-        pipeline.InitPipelineResources({&in_tensor, &out_tensor}, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);  // error: should be TENSOR
-        pipeline.CreatePipelineLayout();
-    };
+    vkt::dg::HelperParameters params;
+    params.desc_type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;  // should be tensor
+    vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
     // 2 tensors, 2 errors
-    std::vector<std::string> errors{"VUID-VkDataGraphPipelineCreateInfoARM-layout-09769",
-                                    "VUID-VkDataGraphPipelineCreateInfoARM-layout-09769"};
-    vkt::dg::DataGraphPipelineHelper::OneshotTest(*this, set_info, 0, errors);
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineCreateInfoARM-layout-09769");
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineCreateInfoARM-layout-09769");
+    pipeline.CreateDataGraphPipeline();
+    m_errorMonitor->VerifyFound();
 }
 
 static void InitDefaultComputePipeline(CreateComputePipelineHelper &pipeline, VkRenderFramework *framework) {
@@ -654,8 +642,8 @@ TEST_F(NegativeDataGraph, DestroySessionInUse) {
     auto session_bind_infos = InitSessionBindInfo(session, device_mem);
     vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
 
-    pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.in_tensor_view_.handle(), 0);
-    pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.out_tensor_view_.handle(), 0);
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
     pipeline.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
@@ -774,8 +762,8 @@ TEST_F(NegativeDataGraph, CmdDispatchPipelineNotBound) {
     auto session_bind_infos = InitSessionBindInfo(session, device_mem);
     vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
 
-    pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.in_tensor_view_.handle(), 0);
-    pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.out_tensor_view_.handle(), 0);
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
     pipeline.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
@@ -808,8 +796,8 @@ TEST_F(NegativeDataGraph, CmdDispatchDescriptorSetNotBound) {
     auto session_bind_infos = InitSessionBindInfo(session, device_mem);
     vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
 
-    pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.in_tensor_view_.handle(), 0);
-    pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.out_tensor_view_.handle(), 0);
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
     pipeline.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
@@ -836,8 +824,8 @@ TEST_F(NegativeDataGraph, CmdDispatchSessionNotBound) {
     session.GetMemoryReqs();
     CheckSessionMemory(session);
 
-    pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.in_tensor_view_.handle(), 0);
-    pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.out_tensor_view_.handle(), 0);
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
     pipeline.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
@@ -883,8 +871,8 @@ TEST_F(NegativeDataGraph, CmdDispatchProtectedNoFaultUnsupportedUnprotectedCmdBu
     auto session_bind_infos = InitSessionBindInfo(session, device_mem);
     vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
 
-    pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.in_tensor_view_.handle(), 0);
-    pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.out_tensor_view_.handle(), 0);
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
     pipeline.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
@@ -930,8 +918,8 @@ TEST_F(NegativeDataGraph, CmdDispatchProtectedNoFaultUnsupportedProtectedCmdBuff
     auto session_bind_infos = InitSessionBindInfo(session, device_mem);
     vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
 
-    pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.in_tensor_view_.handle(), 0);
-    pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.out_tensor_view_.handle(), 0);
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
     pipeline.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
@@ -1003,8 +991,8 @@ TEST_F(NegativeDataGraph, TensorSparsityDimensionTooLarge) {
     vkt::dg::DataGraphPipelineHelper pipeline(*this);
 
     VkDataGraphPipelineConstantTensorSemiStructuredSparsityInfoARM tensor_sparsity = vku::InitStructHelper();
-    tensor_sparsity.dimension = pipeline.in_tensor_.DimensionCount() + 1;
-    tensor_sparsity.pNext = &pipeline.in_tensor_.Description();
+    tensor_sparsity.dimension = pipeline.tensors_[0]->DimensionCount() + 1;
+    tensor_sparsity.pNext = &pipeline.tensors_[0]->Description();
 
     uint32_t constant_data = 1;
     VkDataGraphPipelineConstantARM dg_constant = vku::InitStructHelper();
@@ -1033,10 +1021,10 @@ TEST_F(NegativeDataGraph, TensorSparsityDescriptionDimensionNotMultipleOfSparsit
 
     // Default tensor description dimensions are {1, 8, 16, 4}
     tensor_sparsity.dimension = 1;
-    int64_t dim_1 = pipeline.in_tensor_.Description().pDimensions[tensor_sparsity.dimension];
+    int64_t dim_1 = pipeline.tensors_[0]->Description().pDimensions[tensor_sparsity.dimension];
     ASSERT_TRUE((dim_1 >= 1) && (dim_1 <= static_cast<int64_t>(UINT32_MAX)));
     tensor_sparsity.groupSize = static_cast<uint32_t>(dim_1 - 1); // ensure that dim_1 (the sparsity dimension) is NOT a multiple of groupSize
-    tensor_sparsity.pNext = &pipeline.in_tensor_.Description();
+    tensor_sparsity.pNext = &pipeline.tensors_[0]->Description();
 
     uint32_t constant_data = 1;
     VkDataGraphPipelineConstantARM dg_constant = vku::InitStructHelper();
@@ -1389,4 +1377,47 @@ TEST_F(NegativeDataGraph, DataGraphWrongCreateInfoStructs) {
         pipeline.CreateDataGraphPipeline();
         m_errorMonitor->VerifyFound();
     }
+}
+
+TEST_F(NegativeDataGraph, DataGraphShaderModuleSpirvArrayWrongSize) {
+    TEST_DESCRIPTION("Create a datagraph with Vulkan resource arrays not matching the spirv.");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    vkt::dg::HelperParameters params;
+    params.graph_variant = vkt::dg::GraphVariant::AddTensorArraySpirv;
+    vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
+
+    // override the DataGraphPipelineHelper constructor: set the wrong array length and recreate the layout
+    pipeline.descriptor_set_layout_bindings_[0].descriptorCount = 1;  // ERROR 9934: the spirv code defines an array of 2
+    pipeline.descriptor_set_.reset(new OneOffDescriptorSet(pipeline.device_, pipeline.descriptor_set_layout_bindings_));
+    pipeline.CreatePipelineLayout();
+
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineCreateInfoARM-layout-09934");
+    // currently tensor arrays are effectively banned by this VU, we need to suppress it
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkDataGraphPipelineResourceInfoARM-arrayElement-09779");
+    pipeline.CreateDataGraphPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, DataGraphShaderModuleSpirvRuntimeArraySizeZero) {
+    TEST_DESCRIPTION("Create a datagraph where a Vulkan resource is a runtime array with count 0.");
+    InitBasicDataGraph();
+    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
+    RETURN_IF_SKIP(Init());
+
+    vkt::dg::HelperParameters params;
+    params.graph_variant = vkt::dg::GraphVariant::AddRuntimeTensorArraySpirv;
+    vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
+
+    // override the DataGraphPipelineHelper constructor: set the wrong array length and recreate the layout
+    pipeline.descriptor_set_layout_bindings_[0].descriptorCount = 0;  // ERROR 9934: OpTypeRuntimeArray needs > 0
+    pipeline.descriptor_set_.reset(new OneOffDescriptorSet(pipeline.device_, pipeline.descriptor_set_layout_bindings_));
+    pipeline.CreatePipelineLayout();
+
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineCreateInfoARM-layout-09934");
+    // currently tensor arrays are effectively banned by this VU, we need to suppress it
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkDataGraphPipelineResourceInfoARM-arrayElement-09779");
+    pipeline.CreateDataGraphPipeline();
+    m_errorMonitor->VerifyFound();
 }
