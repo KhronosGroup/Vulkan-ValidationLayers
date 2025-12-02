@@ -253,7 +253,7 @@ bool CoreChecks::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkD
 
             // remaining checks for shader module: create info and spirv
             skip |= ValidateDataGraphPipelineShaderModuleCreateInfo(device, *dg_shader_ci, dg_shader_ci_loc, *pipeline);
-            skip |= ValidateDataGraphPipelineShaderModuleSpirv(device, create_info, create_info_loc, *pipeline);
+            skip |= ValidateDataGraphPipelineShaderModuleSpirv(device, create_info, create_info_loc, *dg_shader_ci, *pipeline);
         } else if (dg_pipeline_identifier_ci) {
             // TODO: add here validation for datagraph defined as cache object
         } else if (qcom_model_ci) {
