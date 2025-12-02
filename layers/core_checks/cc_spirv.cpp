@@ -2807,6 +2807,13 @@ bool CoreChecks::ValidateDataGraphPipelineShaderModuleSpirv(VkDevice device, con
             ValidateShaderInterfaceVariableDSL(module_spirv, *entry_point, stage_state, variable, descriptor_type_set, module_loc);
         if (variable.is_storage_tensor) {
             tensor_bindings.push_back({variable.decorations.set, variable.decorations.binding});
+
+            // the input/output tensors must have rank and shape, i.e. exactly 5 words
+            auto nWords = variable.base_type.Length();
+            if (nWords < 5) {
+                skip |= LogError("VUID-RuntimeSpirv-pNext-09919", module_spirv.handle(), module_loc,
+                                 "'%s' defines a tensor without a shape.", variable.base_type.Describe().c_str());
+            }
         }
     }
 
