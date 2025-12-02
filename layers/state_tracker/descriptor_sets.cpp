@@ -197,15 +197,6 @@ using DescriptorSetLayout = vvl::DescriptorSetLayout;
 using DescriptorSetLayoutDef = vvl::DescriptorSetLayoutDef;
 using DescriptorSetLayoutId = vvl::DescriptorSetLayoutId;
 
-// Canonical dictionary of DescriptorSetLayoutDef (without any handle/device specific information)
-vvl::DescriptorSetLayoutDict descriptor_set_layout_dict;
-
-static DescriptorSetLayoutId GetCanonicalId(const VkDescriptorSetLayoutCreateInfo *p_create_info, vvl::DeviceState &device_state) {
-    return descriptor_set_layout_dict.LookUp(DescriptorSetLayoutDef(device_state, p_create_info));
-}
-
-void ClearDescriptorSetLayoutCanonicalIdDict() { descriptor_set_layout_dict.Clear(); }
-
 std::string DescriptorSetLayoutDef::DescribeDifference(uint32_t index, const DescriptorSetLayoutDef &other) const {
     std::ostringstream ss;
     ss << "Set " << index << " ";
@@ -599,7 +590,7 @@ bool vvl::DescriptorSetLayout::IsCompatible(DescriptorSetLayout const *rh_ds_lay
 vvl::DescriptorSetLayout::DescriptorSetLayout(vvl::DeviceState &device_state, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
                                               const VkDescriptorSetLayout handle)
     : StateObject(handle, kVulkanObjectTypeDescriptorSetLayout),
-      layout_id_(GetCanonicalId(pCreateInfo, device_state)),
+      layout_id_(device_state.GetCanonicalId(pCreateInfo)),
       desc_set_layout_ci(pCreateInfo) {
     const bool is_descriptor_buffer = (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0;
     if (is_descriptor_buffer) {

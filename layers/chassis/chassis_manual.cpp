@@ -418,15 +418,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
         vo->FinishDeviceSetup(modified_create_info.ptr(), record_obj.location);
     }
 
-    // Clear global dictionary that stores canonical ids of descriptor set layouts.
-    //
-    // NOTE: we also have the following global dicts related to pipeline layout that do not cause
-    // troubles yet, but in case of issues or part of effort of removing globals they should be considered:
-    //   pipeline_layout_set_layouts_dict
-    //   pipeline_layout_compat_dict
-    //   push_constant_ranges_dict
-    ClearDescriptorSetLayoutCanonicalIdDict();
-
     return result;
 }
 

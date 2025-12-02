@@ -34,10 +34,6 @@
 class CoreChecks;
 struct DeviceExtensions;
 
-// TODO: there was a problem that global state persisted between test runs on CI machines.
-// Ideally is too rework these dictionaries so they are not global and part of state tracker.
-void ClearDescriptorSetLayoutCanonicalIdDict();
-
 namespace vvl {
 class Sampler;
 class DescriptorSet;

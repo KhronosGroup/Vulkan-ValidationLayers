@@ -23,6 +23,7 @@
 #include <vulkan/vulkan_core.h>
 #include "chassis/validation_object.h"
 #include "utils/hash_vk_types.h"
+#include "state_tracker/descriptor_sets.h"      // DescriptorSetLayoutDict can't be forward declared
 #include "state_tracker/video_session_state.h"  // TODO - Remove from this header
 #include "state_tracker/special_supported.h"
 #include "device_state.h"
@@ -1910,6 +1911,9 @@ class DeviceState : public vvl::base::Device {
         return {};
     }
 
+    // Get device-specific canonical id for the provided set layout definition
+    DescriptorSetLayoutId GetCanonicalId(const VkDescriptorSetLayoutCreateInfo* p_create_info);
+
     // the VK_EXTERNAL_*_HANDLE_TYPE_OPAQUE_* handles are designed to created/exported in Vulkan, that means we can track the
     // values and compare when re-importing later. While FD and Win32 have differnt handles to access the struct, the information
     // needed is non-platform specific Vulkan values.
@@ -2015,6 +2019,9 @@ class DeviceState : public vvl::base::Device {
     // Keep track of identifier -> state
     vvl::unordered_map<VkShaderModuleIdentifierEXT, std::shared_ptr<vvl::ShaderModule>> shader_identifier_map_;
     mutable std::shared_mutex shader_identifier_map_lock_;
+
+    // Canonical ids of the set layouts created from *this* device.
+    vvl::DescriptorSetLayoutDict descriptor_set_layout_canonical_ids_;
 
     // If vkGetMemoryFdKHR is called, keep track of fd handle -> allocation info
     vvl::unordered_map<int, ExternalOpaqueInfo> fd_handle_map_;
