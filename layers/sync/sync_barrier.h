@@ -43,8 +43,11 @@ struct SyncBarrier {
     struct AllAccess {};
     SyncExecScope src_exec_scope;
     SyncAccessFlags src_access_scope;
+    VkAccessFlags2 original_src_access = VK_ACCESS_2_NONE;
+
     SyncExecScope dst_exec_scope;
     SyncAccessFlags dst_access_scope;
+    VkAccessFlags2 original_dst_access = VK_ACCESS_2_NONE;
 
     SyncBarrier() = default;
     SyncBarrier(const SyncExecScope &src_exec, const SyncExecScope &dst_exec);

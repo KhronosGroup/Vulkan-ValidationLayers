@@ -415,12 +415,10 @@ std::string ErrorMessages::ImageBarrierError(const HazardResult& hazard, const C
 
     std::stringstream ss;
     ss << "\npImageMemoryBarriers[" << barrier.barrier_index << "]: {\n";
-    ss << "  source accesses = "
-       << FormatSyncAccesses(barrier.barrier.src_access_scope, context.GetSyncState(), context.GetQueueFlags(), false) << ",\n";
-    ss << "  destination accesses = "
-       << FormatSyncAccesses(barrier.barrier.dst_access_scope, context.GetSyncState(), context.GetQueueFlags(), false) << ",\n";
     ss << "  srcStageMask = " << string_VkPipelineStageFlags2(barrier.barrier.src_exec_scope.mask_param) << ",\n";
+    ss << "  srcAccessMask = " << string_VkAccessFlags2(barrier.barrier.original_src_access) << ",\n";
     ss << "  dstStageMask = " << string_VkPipelineStageFlags2(barrier.barrier.dst_exec_scope.mask_param) << ",\n";
+    ss << "  dstAccessMask = " << string_VkAccessFlags2(barrier.barrier.original_dst_access) << ",\n";
     ss << "}\n";
     additional_info.message_end_text = ss.str();
 
