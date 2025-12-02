@@ -32,7 +32,6 @@
 #include "state_tracker/tensor_state.h"
 #include "state_tracker/device_state.h"
 #include "state_tracker/queue_state.h"
-#include "state_tracker/descriptor_sets.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/render_pass_state.h"
@@ -147,6 +146,10 @@ std::vector<std::shared_ptr<const ImageView>> DeviceState::GetAttachmentViews(co
                                                                               const Framebuffer &fb_state) const {
     auto get_fn = [this](VkImageView handle) { return this->Get<ImageView>(handle); };
     return GetAttachmentViewsImpl<std::shared_ptr<const ImageView>>(rp_begin, fb_state, get_fn);
+}
+
+DescriptorSetLayoutId DeviceState::GetCanonicalId(const VkDescriptorSetLayoutCreateInfo *p_create_info) {
+    return descriptor_set_layout_canonical_ids_.LookUp(DescriptorSetLayoutDef(*this, p_create_info));
 }
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR

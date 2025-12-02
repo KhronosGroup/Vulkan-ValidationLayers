@@ -23,6 +23,17 @@
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/descriptor_sets.h"
 
+// NOTE: The following canonical id dictionaries are global and thread-safe objects:
+//      pipeline_layout_set_layouts_dict
+//      pipeline_layout_compat_dict
+//      push_constant_ranges_dict
+//
+// So far we did not have any issues with them. However, we had issues with DescriptorSetLayoutId
+// canonical ids (can survice between test sessions and then incorrectly accessed by another device).
+// That issue was solved by making DescriptorSetLayoutId dictionary local to DeviceState
+// (DeviceState::descriptor_set_layout_canonical_ids_). If there are any issues with these global
+// maps consider making them per-device or per-instance state.
+
 // Dictionary of canonical form of the pipeline set layout of descriptor set layouts
 static PipelineLayoutSetLayoutsDict pipeline_layout_set_layouts_dict;
 

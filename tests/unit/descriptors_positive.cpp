@@ -2310,3 +2310,86 @@ TEST_F(PositiveDescriptors, TryToConfuseWithReorderedBindings) {
     descriptor_write.pImageInfo = &image_info;
     vk::UpdateDescriptorSets(*m_device, 1, &descriptor_write, 0u, nullptr);
 }
+
+TEST_F(PositiveDescriptors, DummySecondDevice) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11204
+    TEST_DESCRIPTION("Test that canonical ids dictionaries are not cleared accidentally when create new device");
+    RETURN_IF_SKIP(Init());
+
+    vkt::Buffer storage_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+    const VkDescriptorSetLayoutBinding binding_def = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    OneOffDescriptorSet ds_0(m_device, {binding_def});
+    const vkt::PipelineLayout pipeline_layout_0(*m_device, {&ds_0.layout_});
+
+    const char *cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer StorageBuffer { uint x; };
+        void main() {
+            x = 0;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.layout = pipeline_layout_0;
+    pipe.CreateComputePipeline();
+
+    // Create a 2nd device, don't even use it
+    auto features = m_device->Physical().Features();
+    vkt::Device m_second_device(gpu_, m_device_extension_names, &features);
+
+    OneOffDescriptorSet ds_1(m_device, {binding_def});
+    const vkt::PipelineLayout pipeline_layout_1(*m_device, {&ds_1.layout_});
+    ds_1.WriteDescriptorBufferInfo(0, storage_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    ds_1.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_1, 0, 1, &ds_1.set_, 0, nullptr);
+
+    // This caused false positive 08600 saying the Descriptor Set Layouts are different
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveDescriptors, DummySecondInstance) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11204
+    TEST_DESCRIPTION("Test that canonical ids dictionaries are not cleared accidentally when create new instance");
+    RETURN_IF_SKIP(Init());
+
+    vkt::Buffer storage_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+    const VkDescriptorSetLayoutBinding binding_def = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    OneOffDescriptorSet ds_0(m_device, {binding_def});
+    const vkt::PipelineLayout pipeline_layout_0(*m_device, {&ds_0.layout_});
+
+    const char *cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer StorageBuffer { uint x; };
+        void main() {
+            x = 0;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.layout = pipeline_layout_0;
+    pipe.CreateComputePipeline();
+
+    // Create a 2nd instance, don't even use it
+    vkt::Instance instance2(GetInstanceCreateInfo());
+
+    OneOffDescriptorSet ds_1(m_device, {binding_def});
+    const vkt::PipelineLayout pipeline_layout_1(*m_device, {&ds_1.layout_});
+    ds_1.WriteDescriptorBufferInfo(0, storage_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    ds_1.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_1, 0, 1, &ds_1.set_, 0, nullptr);
+
+    // This caused false positive 08600 saying the Descriptor Set Layouts are different
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+}
