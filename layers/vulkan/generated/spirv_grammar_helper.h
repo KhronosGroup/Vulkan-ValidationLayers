@@ -351,10 +351,31 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpFetchMicroTriangleVertexPositionNV:
         case spv::OpFetchMicroTriangleVertexBarycentricNV:
         case spv::OpCooperativeVectorLoadNV:
+        case spv::OpHitObjectGetIntersectionTriangleVertexPositionsEXT:
+        case spv::OpHitObjectGetRayFlagsEXT:
+        case spv::OpHitObjectGetCurrentTimeEXT:
+        case spv::OpHitObjectGetHitKindEXT:
+        case spv::OpHitObjectGetPrimitiveIndexEXT:
+        case spv::OpHitObjectGetGeometryIndexEXT:
+        case spv::OpHitObjectGetInstanceIdEXT:
+        case spv::OpHitObjectGetInstanceCustomIndexEXT:
+        case spv::OpHitObjectGetObjectRayOriginEXT:
+        case spv::OpHitObjectGetObjectRayDirectionEXT:
+        case spv::OpHitObjectGetWorldRayDirectionEXT:
+        case spv::OpHitObjectGetWorldRayOriginEXT:
+        case spv::OpHitObjectGetObjectToWorldEXT:
+        case spv::OpHitObjectGetWorldToObjectEXT:
+        case spv::OpHitObjectGetRayTMaxEXT:
         case spv::OpReportIntersectionKHR:
         case spv::OpRayQueryGetIntersectionTriangleVertexPositionsKHR:
         case spv::OpRayQueryGetIntersectionClusterIdNV:
         case spv::OpHitObjectGetClusterIdNV:
+        case spv::OpHitObjectGetRayTMinEXT:
+        case spv::OpHitObjectGetShaderBindingTableRecordIndexEXT:
+        case spv::OpHitObjectGetShaderRecordBufferHandleEXT:
+        case spv::OpHitObjectIsEmptyEXT:
+        case spv::OpHitObjectIsHitEXT:
+        case spv::OpHitObjectIsMissEXT:
         case spv::OpCooperativeMatrixLoadNV:
         case spv::OpCooperativeMatrixMulAddNV:
         case spv::OpCooperativeMatrixLengthNV:
@@ -799,11 +820,33 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpFetchMicroTriangleVertexPositionNV:
         case spv::OpFetchMicroTriangleVertexBarycentricNV:
         case spv::OpCooperativeVectorLoadNV:
+        case spv::OpHitObjectGetIntersectionTriangleVertexPositionsEXT:
+        case spv::OpHitObjectGetRayFlagsEXT:
+        case spv::OpTypeHitObjectEXT:
+        case spv::OpHitObjectGetCurrentTimeEXT:
+        case spv::OpHitObjectGetHitKindEXT:
+        case spv::OpHitObjectGetPrimitiveIndexEXT:
+        case spv::OpHitObjectGetGeometryIndexEXT:
+        case spv::OpHitObjectGetInstanceIdEXT:
+        case spv::OpHitObjectGetInstanceCustomIndexEXT:
+        case spv::OpHitObjectGetObjectRayOriginEXT:
+        case spv::OpHitObjectGetObjectRayDirectionEXT:
+        case spv::OpHitObjectGetWorldRayDirectionEXT:
+        case spv::OpHitObjectGetWorldRayOriginEXT:
+        case spv::OpHitObjectGetObjectToWorldEXT:
+        case spv::OpHitObjectGetWorldToObjectEXT:
+        case spv::OpHitObjectGetRayTMaxEXT:
         case spv::OpReportIntersectionKHR:
         case spv::OpRayQueryGetIntersectionTriangleVertexPositionsKHR:
         case spv::OpTypeAccelerationStructureKHR:
         case spv::OpRayQueryGetIntersectionClusterIdNV:
         case spv::OpHitObjectGetClusterIdNV:
+        case spv::OpHitObjectGetRayTMinEXT:
+        case spv::OpHitObjectGetShaderBindingTableRecordIndexEXT:
+        case spv::OpHitObjectGetShaderRecordBufferHandleEXT:
+        case spv::OpHitObjectIsEmptyEXT:
+        case spv::OpHitObjectIsHitEXT:
+        case spv::OpHitObjectIsMissEXT:
         case spv::OpTypeCooperativeMatrixNV:
         case spv::OpCooperativeMatrixLoadNV:
         case spv::OpCooperativeMatrixMulAddNV:
@@ -1289,6 +1332,7 @@ enum class SpvType {
     kRayQueryKHR,
     kHitObjectNV,
     kCooperativeVectorNV,
+    kHitObjectEXT,
     kAccelerationStructureKHR,
     kCooperativeMatrixNV,
     kTensorLayoutNV,
@@ -1341,6 +1385,8 @@ static constexpr SpvType GetSpvType(uint32_t opcode) {
             return SpvType::kHitObjectNV;
         case spv::OpTypeCooperativeVectorNV:
             return SpvType::kCooperativeVectorNV;
+        case spv::OpTypeHitObjectEXT:
+            return SpvType::kHitObjectEXT;
         case spv::OpTypeAccelerationStructureKHR:
             return SpvType::kAccelerationStructureKHR;
         case spv::OpTypeCooperativeMatrixNV:
