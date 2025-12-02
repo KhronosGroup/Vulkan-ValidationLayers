@@ -28,65 +28,6 @@ void CooperativeMatrixTest::InitCooperativeMatrixKHR() {
 
 class PositiveShaderCooperativeMatrix : public CooperativeMatrixTest {};
 
-TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixNV) {
-    TEST_DESCRIPTION("Test VK_NV_cooperative_matrix.");
-    AddRequiredExtensions(VK_NV_COOPERATIVE_MATRIX_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
-    // glslang will generate OpCapability VulkanMemoryModel and need entension enabled
-    AddRequiredExtensions(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME);
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceFloat16Int8FeaturesKHR float16_features = vku::InitStructHelper();
-    // The NV and KHR share the same feature name, so set it without AddRequiredFeature
-    VkPhysicalDeviceCooperativeMatrixFeaturesNV cooperative_matrix_features = vku::InitStructHelper(&float16_features);
-    VkPhysicalDeviceVulkanMemoryModelFeaturesKHR memory_model_features = vku::InitStructHelper(&cooperative_matrix_features);
-    GetPhysicalDeviceFeatures2(memory_model_features);
-    RETURN_IF_SKIP(InitState(nullptr, &memory_model_features));
-
-    const char *cs_source = R"glsl(
-        #version 450
-        #extension GL_NV_cooperative_matrix : enable
-        #extension GL_KHR_shader_subgroup_basic : enable
-        #extension GL_KHR_memory_scope_semantics : enable
-        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
-        layout(local_size_x = 32) in;
-        layout(constant_id = 0) const uint C0 = 1;
-        layout(constant_id = 1) const uint C1 = 1;
-        void main() {
-           // Bad type
-           fcoopmatNV<16, gl_ScopeSubgroup, 3, 5> badSize = fcoopmatNV<16, gl_ScopeSubgroup, 3, 5>(float16_t(0.0));
-           // Not a valid multiply when C0 != C1
-           fcoopmatNV<16, gl_ScopeSubgroup, C0, C1> A;
-           fcoopmatNV<16, gl_ScopeSubgroup, C0, C1> B;
-           fcoopmatNV<16, gl_ScopeSubgroup, C0, C1> C;
-           coopMatMulAddNV(A, B, C);
-        }
-    )glsl";
-
-    const uint32_t spec_data[] = {
-        16,
-        8,
-    };
-    VkSpecializationMapEntry entries[] = {
-        {0, sizeof(uint32_t) * 0, sizeof(uint32_t)},
-        {1, sizeof(uint32_t) * 1, sizeof(uint32_t)},
-    };
-
-    VkSpecializationInfo spec_info = {
-        2,
-        entries,
-        sizeof(spec_data),
-        spec_data,
-    };
-
-    CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL, &spec_info);
-    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849");
-    pipe.CreateComputePipeline();
-    m_errorMonitor->VerifyFound();
-}
-
 TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixKHR) {
     TEST_DESCRIPTION("Test VK_KHR_cooperative_matrix.");
     SetTargetApiVersion(VK_API_VERSION_1_3);

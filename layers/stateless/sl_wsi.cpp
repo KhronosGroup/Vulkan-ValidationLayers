@@ -299,15 +299,16 @@ bool Device::manual_PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
         }
         for (uint32_t i = 0; i < present_timings_info->swapchainCount; ++i) {
             const auto &timing_info = present_timings_info->pTimingInfos[i];
+            if (timing_info.targetTime == 0) {
+                continue;
+            }
             const bool relative_time_flag = (timing_info.flags & VK_PRESENT_TIMING_INFO_PRESENT_AT_RELATIVE_TIME_BIT_EXT) != 0;
-            if (timing_info.targetTime != 0) {
-                if (!relative_time_flag && !enabled_features.presentAtAbsoluteTime) {
-                    skip |= LogError(
-                        "VUID-VkPresentTimingInfoEXT-targetTime-12236", device,
-                        present_info_loc.pNext(Struct::VkPresentTimingsInfoEXT, Field::pTimingInfos, i).dot(Field::targetTime),
-                        "is %" PRIu64 ", but flags are %s", timing_info.targetTime,
-                        string_VkPresentTimingInfoFlagsEXT(timing_info.flags).c_str());
-                }
+            if (!relative_time_flag && !enabled_features.presentAtAbsoluteTime) {
+                skip |=
+                    LogError("VUID-VkPresentTimingInfoEXT-targetTime-12236", device,
+                             present_info_loc.pNext(Struct::VkPresentTimingsInfoEXT, Field::pTimingInfos, i).dot(Field::targetTime),
+                             "is %" PRIu64 ", but flags are %s", timing_info.targetTime,
+                             string_VkPresentTimingInfoFlagsEXT(timing_info.flags).c_str());
             } else if (relative_time_flag && !enabled_features.presentAtRelativeTime) {
                 skip |=
                     LogError("VUID-VkPresentTimingInfoEXT-targetTime-12237", device,

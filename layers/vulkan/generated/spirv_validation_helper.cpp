@@ -276,8 +276,7 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites(
         {spv::CapabilityRayTracingClusterAccelerationStructureNV, {0, &DeviceFeatures::clusterAccelerationStructure, nullptr, ""}},
         {spv::CapabilityCooperativeVectorNV, {0, &DeviceFeatures::cooperativeVector, nullptr, ""}},
         {spv::CapabilityCooperativeVectorTrainingNV, {0, &DeviceFeatures::cooperativeVectorTraining, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityShaderInvocationReorderEXT, {0, nullptr, &DeviceExtensions::vk_ext_ray_tracing_invocation_reorder, ""}},
+        {spv::CapabilityShaderInvocationReorderEXT, {0, nullptr, &DeviceExtensions::vk_ext_ray_tracing_invocation_reorder, ""}},
         {spv::CapabilityTileShadingQCOM, {0, &DeviceFeatures::tileShading, nullptr, ""}},
         {spv::CapabilityTensorsARM, {0, &DeviceFeatures::shaderTensorAccess, nullptr, ""}},
         {spv::CapabilityStorageTensorArrayDynamicIndexingARM, {0, &DeviceFeatures::shaderStorageTensorArrayDynamicIndexing, nullptr, ""}},
@@ -753,6 +752,8 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "RayTracingOpacityMicromapEXT";
         case spv::CapabilityShaderInvocationReorderNV:
             return "ShaderInvocationReorderNV";
+        case spv::CapabilityShaderInvocationReorderEXT:
+            return "ShaderInvocationReorderEXT";
         case spv::CapabilityBindlessTextureNV:
             return "BindlessTextureNV";
         case spv::CapabilityRayQueryPositionFetchKHR:
@@ -1220,6 +1221,7 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityRayTracingClusterAccelerationStructureNV, "VkPhysicalDeviceClusterAccelerationStructureFeaturesNV::clusterAccelerationStructure"},
     {spv::CapabilityCooperativeVectorNV, "VkPhysicalDeviceCooperativeVectorFeaturesNV::cooperativeVector"},
     {spv::CapabilityCooperativeVectorTrainingNV, "VkPhysicalDeviceCooperativeVectorFeaturesNV::cooperativeVectorTraining"},
+    {spv::CapabilityShaderInvocationReorderEXT, "VK_EXT_ray_tracing_invocation_reorder"},
     {spv::CapabilityTileShadingQCOM, "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShading"},
     {spv::CapabilityTensorsARM, "VkPhysicalDeviceTensorFeaturesARM::shaderTensorAccess"},
     {spv::CapabilityStorageTensorArrayDynamicIndexingARM, "VkPhysicalDeviceTensorFeaturesARM::shaderStorageTensorArrayDynamicIndexing"},

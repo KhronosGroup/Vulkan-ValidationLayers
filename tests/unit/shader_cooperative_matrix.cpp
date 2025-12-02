@@ -17,6 +17,7 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/shader_object_helper.h"
 #include "cooperative_matrix_helper.h"
+#include "shader_helper.h"
 
 class NegativeShaderCooperativeMatrix : public CooperativeMatrixTest {};
 
@@ -27,26 +28,56 @@ TEST_F(NegativeShaderCooperativeMatrix, SpecInfo) {
     AddRequiredFeature(vkt::Feature::shaderFloat16);
     RETURN_IF_SKIP(InitCooperativeMatrixKHR());
 
-    const char *cs_source = R"glsl(
-        #version 450
-        #pragma use_vulkan_memory_model
-        #extension GL_KHR_cooperative_matrix : enable
-        #extension GL_KHR_shader_subgroup_basic : enable
-        #extension GL_KHR_memory_scope_semantics : enable
-        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
-        layout(local_size_x = 32) in;
-        layout(constant_id = 0) const uint C0 = 1;
-        layout(constant_id = 1) const uint C1 = 1;
-        void main() {
-            // Bad type
-            coopmat<float16_t, gl_ScopeSubgroup, 3, 5, gl_MatrixUseAccumulator> badSize = coopmat<float16_t, gl_ScopeSubgroup, 3, 5, gl_MatrixUseAccumulator>(float16_t(0.0));
-            // Not a valid multiply when C0 != C1
-            coopmat<float16_t, gl_ScopeSubgroup, C0, C1, gl_MatrixUseA> A;
-            coopmat<float16_t, gl_ScopeSubgroup, C0, C1, gl_MatrixUseB> B;
-            coopmat<float16_t, gl_ScopeSubgroup, C0, C1, gl_MatrixUseAccumulator> C;
-            coopMatMulAdd(A, B, C);
-        }
-    )glsl";
+    // https://godbolt.org/z/Ys7faYaav but now validated at GLSL level, so have SPIR-V
+    const char *cs_source = R"asm(
+            OpCapability Shader
+            OpCapability Float16
+            OpCapability VulkanMemoryModel
+            OpCapability CooperativeMatrixKHR
+            OpExtension "SPV_KHR_cooperative_matrix"
+            OpMemoryModel Logical Vulkan
+            OpEntryPoint GLCompute %main "main"
+            OpExecutionMode %main LocalSize 32 1 1
+            OpDecorate %C0 SpecId 0
+            OpDecorate %C1 SpecId 1
+    %void = OpTypeVoid
+        %3 = OpTypeFunction %void
+    %half = OpTypeFloat 16
+    %uint = OpTypeInt 32 0
+    %uint_3 = OpConstant %uint 3
+    %uint_5 = OpConstant %uint 5
+    %uint_2 = OpConstant %uint 2
+        %11 = OpTypeCooperativeMatrixKHR %half %uint_3 %uint_3 %uint_5 %uint_2
+%_ptr_Function_11 = OpTypePointer Function %11
+%half_0x0p_0 = OpConstant %half 0x0p+0
+        %15 = OpConstantComposite %11 %half_0x0p_0
+        %C0 = OpSpecConstant %uint 1
+        %C1 = OpSpecConstant %uint 1
+    %uint_0 = OpConstant %uint 0
+        %19 = OpTypeCooperativeMatrixKHR %half %uint_3 %C0 %C1 %uint_0
+%_ptr_Function_19 = OpTypePointer Function %19
+    %uint_1 = OpConstant %uint 1
+        %24 = OpTypeCooperativeMatrixKHR %half %uint_3 %C0 %C1 %uint_1
+%_ptr_Function_24 = OpTypePointer Function %24
+        %28 = OpTypeCooperativeMatrixKHR %half %uint_3 %C0 %C1 %uint_2
+%_ptr_Function_28 = OpTypePointer Function %28
+    %v3uint = OpTypeVector %uint 3
+%uint_32 = OpConstant %uint 32
+        %35 = OpConstantComposite %v3uint %uint_32 %uint_1 %uint_1
+    %main = OpFunction %void None %3
+        %5 = OpLabel
+%badSize = OpVariable %_ptr_Function_11 Function
+        %A = OpVariable %_ptr_Function_19 Function
+        %B = OpVariable %_ptr_Function_24 Function
+        %C = OpVariable %_ptr_Function_28 Function
+            OpStore %badSize %15
+        %22 = OpLoad %19 %A
+        %27 = OpLoad %24 %B
+        %31 = OpLoad %28 %C
+        %32 = OpCooperativeMatrixMulAddKHR %28 %22 %27 %31
+            OpReturn
+            OpFunctionEnd
+    )asm";
 
     const uint32_t spec_data[] = {
         63,
@@ -65,7 +96,91 @@ TEST_F(NegativeShaderCooperativeMatrix, SpecInfo) {
     };
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL, &spec_info);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM, &spec_info);
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849");
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderCooperativeMatrix, SpecInfoNV) {
+    TEST_DESCRIPTION("Test VK_NV_cooperative_matrix.");
+    AddRequiredExtensions(VK_NV_COOPERATIVE_MATRIX_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    // glslang will generate OpCapability VulkanMemoryModel and need entension enabled
+    AddRequiredExtensions(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(InitFramework());
+
+    VkPhysicalDeviceFloat16Int8FeaturesKHR float16_features = vku::InitStructHelper();
+    // The NV and KHR share the same feature name, so set it without AddRequiredFeature
+    VkPhysicalDeviceCooperativeMatrixFeaturesNV cooperative_matrix_features = vku::InitStructHelper(&float16_features);
+    VkPhysicalDeviceVulkanMemoryModelFeaturesKHR memory_model_features = vku::InitStructHelper(&cooperative_matrix_features);
+    GetPhysicalDeviceFeatures2(memory_model_features);
+    RETURN_IF_SKIP(InitState(nullptr, &memory_model_features));
+
+    // https://godbolt.org/z/Kbx1PsraY but now validated at GLSL level, so have SPIR-V
+    const char *cs_source = R"asm(
+               OpCapability Shader
+               OpCapability Float16
+               OpCapability VulkanMemoryModel
+               OpCapability CooperativeMatrixNV
+               OpExtension "SPV_NV_cooperative_matrix"
+               OpMemoryModel Logical Vulkan
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 32 1 1
+               OpDecorate %C0 SpecId 0
+               OpDecorate %C1 SpecId 1
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %half = OpTypeFloat 16
+       %uint = OpTypeInt 32 0
+     %uint_3 = OpConstant %uint 3
+     %uint_5 = OpConstant %uint 5
+         %10 = OpTypeCooperativeMatrixNV %half %uint_3 %uint_3 %uint_5
+%_ptr_Function_10 = OpTypePointer Function %10
+%half_0x0p_0 = OpConstant %half 0x0p+0
+         %14 = OpConstantComposite %10 %half_0x0p_0
+         %C0 = OpSpecConstant %uint 1
+         %C1 = OpSpecConstant %uint 1
+         %17 = OpTypeCooperativeMatrixNV %half %uint_3 %C0 %C1
+%_ptr_Function_17 = OpTypePointer Function %17
+     %v3uint = OpTypeVector %uint 3
+    %uint_32 = OpConstant %uint 32
+     %uint_1 = OpConstant %uint 1
+         %29 = OpConstantComposite %v3uint %uint_32 %uint_1 %uint_1
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+    %badSize = OpVariable %_ptr_Function_10 Function
+          %A = OpVariable %_ptr_Function_17 Function
+          %B = OpVariable %_ptr_Function_17 Function
+          %C = OpVariable %_ptr_Function_17 Function
+               OpStore %badSize %14
+         %20 = OpLoad %17 %A
+         %22 = OpLoad %17 %B
+         %24 = OpLoad %17 %C
+         %25 = OpCooperativeMatrixMulAddNV %17 %20 %22 %24
+               OpReturn
+               OpFunctionEnd
+    )asm";
+
+    const uint32_t spec_data[] = {
+        16,
+        8,
+    };
+    VkSpecializationMapEntry entries[] = {
+        {0, sizeof(uint32_t) * 0, sizeof(uint32_t)},
+        {1, sizeof(uint32_t) * 1, sizeof(uint32_t)},
+    };
+
+    VkSpecializationInfo spec_info = {
+        2,
+        entries,
+        sizeof(spec_data),
+        spec_data,
+    };
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM, &spec_info);
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
