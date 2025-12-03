@@ -3687,13 +3687,13 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
                 // If descriptorCount is 0 no descriptors are allocated for that binding
                 if (!ds_pool_state->IsAvailableType(type) && ds_layout_state->GetDescriptorCountFromIndex(j) > 0) {
                     const LogObjectList objlist(pAllocateInfo->descriptorPool, pAllocateInfo->pSetLayouts[i]);
-                    skip |=
-                        LogWarning("WARNING-CoreValidation-AllocateDescriptorSets-WrongType", objlist, set_layout_loc,
-                                   "binding %" PRIu32
-                                   " was created with %s but %s was not created with any VkDescriptorPoolSize::type with %s (Some "
-                                   "implementations will not VK_ERROR_OUT_OF_POOL_MEMORY as they should with VK_KHR_maintenance1).",
-                                   j, string_VkDescriptorType(type), FormatHandle(pAllocateInfo->descriptorPool).c_str(),
-                                   string_VkDescriptorType(type));
+                    skip |= LogWarning(
+                        "WARNING-CoreValidation-AllocateDescriptorSets-WrongType", objlist, set_layout_loc,
+                        "binding %" PRIu32
+                        " was created with %s but %s was not created with any VkDescriptorPoolSize::type with %s (Some "
+                        "implementations will not return VK_ERROR_OUT_OF_POOL_MEMORY as they should with VK_KHR_maintenance1).",
+                        j, string_VkDescriptorType(type), FormatHandle(pAllocateInfo->descriptorPool).c_str(),
+                        string_VkDescriptorType(type));
                     break;  // only need to report once
                 }
             }
