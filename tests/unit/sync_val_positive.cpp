@@ -3468,3 +3468,38 @@ TEST_F(PositiveSyncVal, VertexStride) {
 
     m_command_buffer.End();
 }
+
+TEST_F(PositiveSyncVal, BarrierRepeat) {
+    TEST_DESCRIPTION("This test creates a scenario where repeating the same barrier is required for correct synchronization");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer src_buffer(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer dst_buffer(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    VkMemoryBarrier2 barrier_a = vku::InitStructHelper();
+    barrier_a.srcStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    barrier_a.srcAccessMask = VK_ACCESS_2_NONE;
+    barrier_a.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    barrier_a.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
+
+    VkMemoryBarrier2 barrier_b = vku::InitStructHelper();
+    barrier_b.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    barrier_b.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    barrier_b.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    barrier_b.dstAccessMask = VK_ACCESS_2_NONE;
+
+    m_command_buffer.Begin();
+    m_command_buffer.Copy(src_buffer, buffer);
+
+    // Issue barriers A, B, and then A again. The third barrier (A) is needed for correct synchronization
+    // even though it has already been issued once. This tests that the barrier tracking does not ignore
+    // the final barrier under the mistaken assumption that it has no effect because it was already recorded.
+    m_command_buffer.Barrier(barrier_a);
+    m_command_buffer.Barrier(barrier_b);
+    m_command_buffer.Barrier(barrier_a);
+
+    m_command_buffer.Copy(buffer, dst_buffer);
+}
