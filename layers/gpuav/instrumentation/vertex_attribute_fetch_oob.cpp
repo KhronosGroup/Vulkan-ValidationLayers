@@ -168,13 +168,11 @@ void RegisterVertexAttributeFetchOobValidation(Validator &gpuav, CommandBufferSu
                                                                                   const uint32_t *error_record,
                                                                                   std::string &out_error_msg,
                                                                                   std::string &out_vuid_msg) {
-            const uint32_t error_group = error_record[glsl::kHeaderShaderIdErrorOffset] >> glsl::kErrorGroupShift;
-            if (error_group != glsl::kErrorGroupInstIndexedDraw) {
+            if (GetErrorGroup(error_record) != glsl::kErrorGroupInstIndexedDraw) {
                 return false;
             }
 
-            const uint32_t error_sub_code =
-                (error_record[glsl::kHeaderShaderIdErrorOffset] & glsl::kErrorSubCodeMask) >> glsl::kErrorSubCodeShift;
+            const uint32_t error_sub_code = GetSubError(error_record);
             if (error_sub_code != glsl::kErrorSubCode_IndexedDraw_OOBVertexIndex &&
                 error_sub_code != glsl::kErrorSubCode_IndexedDraw_OOBInstanceIndex) {
                 return false;

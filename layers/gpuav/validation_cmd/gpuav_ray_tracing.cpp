@@ -110,12 +110,11 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
         bool skip = false;
         using namespace glsl;
 
-        const uint32_t error_group = error_record[kHeaderShaderIdErrorOffset] >> kErrorGroupShift;
-        if (error_group != kErrorGroupGpuPreTraceRays) {
+        if (GetErrorGroup(error_record) != kErrorGroupGpuPreTraceRays) {
             return skip;
         }
 
-        const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
+        const uint32_t error_sub_code = GetSubError(error_record);
         switch (error_sub_code) {
             case kErrorSubCodePreTraceRaysLimitWidth: {
                 const uint32_t width = error_record[kValCmdErrorPayloadDword_0];
@@ -589,8 +588,7 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
         bool skip = false;
         using namespace glsl;
 
-        const uint32_t error_group = error_record[kHeaderShaderIdErrorOffset] >> kErrorGroupShift;
-        if (error_group != kErrorGroupGpuPreBuildAccelerationStructures) {
+        if (GetErrorGroup(error_record) != kErrorGroupGpuPreBuildAccelerationStructures) {
             return skip;
         }
 
@@ -606,7 +604,7 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
                          << ") is an invalid acceleration structure reference";
         const std::string invalid_blas_loc_str = invalid_blas_loc.str();
 
-        const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
+        const uint32_t error_sub_code = GetSubError(error_record);
         switch (error_sub_code) {
             case kErrorSubCode_PreBuildAccelerationStructures_InvalidAS: {
                 skip |= gpuav.LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-06707", objlist, loc_with_debug_region,

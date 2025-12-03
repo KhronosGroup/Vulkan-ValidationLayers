@@ -33,15 +33,14 @@ void RegisterRayQueryValidation(Validator &gpuav, CommandBufferSubState &cb) {
                                                                                  std::string &out_vuid_msg) {
             using namespace glsl;
             bool error_found = false;
-            const uint32_t error_group = error_record[glsl::kHeaderShaderIdErrorOffset] >> glsl::kErrorGroupShift;
-            if (error_group != kErrorGroupInstRayQuery) {
+            if (GetErrorGroup(error_record) != kErrorGroupInstRayQuery) {
                 return error_found;
             }
             error_found = true;
 
             std::ostringstream strm;
 
-            const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
+            const uint32_t error_sub_code = GetSubError(error_record);
             switch (error_sub_code) {
                 case kErrorSubCodeRayQueryNegativeMin: {
                     // TODO - Figure a way to properly use GLSL floatBitsToUint and print the float values
