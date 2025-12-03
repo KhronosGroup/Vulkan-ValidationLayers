@@ -659,6 +659,7 @@ TEST_F(PositiveCommand, ImageFormatTypeMismatchRedundantExtend) {
 }
 
 TEST_F(PositiveCommand, DeviceLost) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6310");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -690,6 +691,46 @@ TEST_F(PositiveCommand, DeviceLost) {
         vk::QueueWaitIdle(m_default_queue->handle());
         GTEST_SKIP() << "No device lost found";
     }
+}
+
+TEST_F(PositiveCommand, DeviceLost2) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11213");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+    if (!IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test only supported by MockICD";
+    }
+
+    vkt::CommandPool command_pool(*m_device, m_device->graphics_queue_node_index_, 0);
+
+    VkCommandBufferAllocateInfo cb_alloc_info = vku::InitStructHelper();
+    cb_alloc_info.commandPool = command_pool;
+    cb_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    cb_alloc_info.commandBufferCount = 1;
+    VkCommandBuffer command_buffer;
+    vk::AllocateCommandBuffers(device(), &cb_alloc_info, &command_buffer);
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    vk::BeginCommandBuffer(command_buffer, &begin_info);
+    vk::EndCommandBuffer(command_buffer);
+
+    // Special way to force VK_ERROR_DEVICE_LOST with MockICD
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSubmitInfo-pNext-pNext");
+    VkExportFenceCreateInfo fault_injection = vku::InitStructHelper();
+
+    VkSubmitInfo submit_info = vku::InitStructHelper(&fault_injection);
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &command_buffer;
+    VkResult result = vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
+
+    if (result != VK_ERROR_DEVICE_LOST) {
+        vk::QueueWaitIdle(m_default_queue->handle());
+        GTEST_SKIP() << "No device lost found";
+    }
+
+    // Freeing should not throw VUID-vkFreeCommandBuffers-pCommandBuffers-00047
+    vk::FreeCommandBuffers(device(), command_pool, 1, &command_buffer);
 }
 
 TEST_F(PositiveCommand, CommandBufferInheritanceInfoIgnoredPointer) {

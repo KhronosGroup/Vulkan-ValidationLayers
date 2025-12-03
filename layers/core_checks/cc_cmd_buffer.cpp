@@ -141,6 +141,10 @@ bool CoreChecks::ReportInvalidCommandBuffer(const vvl::CommandBuffer &cb_state, 
 bool CoreChecks::PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
                                                    const VkCommandBuffer *pCommandBuffers, const ErrorObject &error_obj) const {
     bool skip = false;
+    if (is_device_lost) {
+        return skip;  // In case of DEVICE_LOST, all execution is considered over
+    }
+
     for (uint32_t i = 0; i < commandBufferCount; i++) {
         auto cb_state = GetRead<vvl::CommandBuffer>(pCommandBuffers[i]);
         // Delete CB information structure, and remove from commandBufferMap
