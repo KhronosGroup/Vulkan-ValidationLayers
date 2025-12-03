@@ -231,11 +231,29 @@ TEST_F(PositiveDataGraph, DataGraphShaderModuleSpirvRuntimeArray) {
     AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
     RETURN_IF_SKIP(Init());
 
-    vkt::dg::HelperParameters params;
-    params.graph_variant = vkt::dg::GraphVariant::AddRuntimeTensorArraySpirv;
-    vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
+    {
+        // default helper constructs a descriptor matching the size of the spirv array:
+        // VkDescriptorSetLayoutBinding::descriptorCount == 2
+        vkt::dg::HelperParameters params;
+        params.graph_variant = vkt::dg::GraphVariant::AddRuntimeTensorArraySpirv;
+        vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
 
-    // currently tensor arrays are effectively banned by this VU, we need to suppress it
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkDataGraphPipelineResourceInfoARM-arrayElement-09779");
-    pipeline.CreateDataGraphPipeline();
+        // currently tensor arrays are effectively banned by this VU, we need to suppress it
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkDataGraphPipelineResourceInfoARM-arrayElement-09779");
+        pipeline.CreateDataGraphPipeline();
+    }
+    {
+        vkt::dg::HelperParameters params;
+        params.graph_variant = vkt::dg::GraphVariant::AddRuntimeTensorArraySpirv;
+        vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
+
+        // override the DataGraphPipelineHelper constructor: set a bigger element count, runtime array will handle this
+        pipeline.descriptor_set_layout_bindings_[0].descriptorCount = 3;
+        pipeline.descriptor_set_.reset(new OneOffDescriptorSet(pipeline.device_, pipeline.descriptor_set_layout_bindings_));
+        pipeline.CreatePipelineLayout();
+
+        // currently tensor arrays are effectively banned by this VU, we need to suppress it
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkDataGraphPipelineResourceInfoARM-arrayElement-09779");
+        pipeline.CreateDataGraphPipeline();
+    }
 }
