@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/vulkan.h>
 #include "generated/vk_object_types.h"
 #include "object_lifetime_validation.h"
@@ -425,7 +426,8 @@ bool Device::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool is_p
                                        "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06236", loc.dot(Field::pTexelBufferView, i));
                 if (!enabled_features.nullDescriptor && desc->pTexelBufferView[i] == VK_NULL_HANDLE) {
                     skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02995", desc->dstSet,
-                                     loc.dot(Field::pTexelBufferView, i), "is VK_NULL_HANDLE.");
+                                     loc.dot(Field::pTexelBufferView, i), "is VK_NULL_HANDLE, and descriptorType is %s",
+                                     string_VkDescriptorType(desc->descriptorType));
                 }
             }
             break;
@@ -440,8 +442,10 @@ bool Device::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool is_p
                                            "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06239",
                                            loc.dot(Field::pImageInfo, i).dot(Field::imageView));
                     if (!enabled_features.nullDescriptor && desc->pImageInfo[i].imageView == VK_NULL_HANDLE) {
-                        skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02997", desc->dstSet,
-                                         loc.dot(Field::pImageInfo, i).dot(Field::imageView), "is VK_NULL_HANDLE.");
+                        skip |=
+                            LogError("VUID-VkWriteDescriptorSet-descriptorType-02997", desc->dstSet,
+                                     loc.dot(Field::pImageInfo, i).dot(Field::imageView),
+                                     "is VK_NULL_HANDLE, and descriptorType is %s", string_VkDescriptorType(desc->descriptorType));
                     }
                 }
             }
@@ -469,8 +473,10 @@ bool Device::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool is_p
                         desc->pBufferInfo[i].buffer, kVulkanObjectTypeBuffer, true, "VUID-VkDescriptorBufferInfo-buffer-parameter",
                         "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06237", loc.dot(Field::pBufferInfo, i).dot(Field::buffer));
                     if (!enabled_features.nullDescriptor && desc->pBufferInfo[i].buffer == VK_NULL_HANDLE) {
-                        skip |= LogError("VUID-VkDescriptorBufferInfo-buffer-02998", desc->dstSet,
-                                         loc.dot(Field::pBufferInfo, i).dot(Field::buffer), "is VK_NULL_HANDLE.");
+                        skip |=
+                            LogError("VUID-VkDescriptorBufferInfo-buffer-02998", desc->dstSet,
+                                     loc.dot(Field::pBufferInfo, i).dot(Field::buffer),
+                                     "is VK_NULL_HANDLE, and descriptorType is %s", string_VkDescriptorType(desc->descriptorType));
                     }
                 }
             }
