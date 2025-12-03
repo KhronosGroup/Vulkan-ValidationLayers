@@ -443,7 +443,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                 string_VkImageViewType(image_view_ci.viewType), string_SpvDim(dim), is_image_array,
                 SuggestImageViewType(dim, is_image_array),
                 (is_gpu_av && resource_variable.IsArray())
-                    ? "\nAdvice: The dimension is tied to descriptor variable, so for descriptor indexing, you might need to "
+                    ? "\nAdvice: The dimension is tied to the descriptor variable, so for descriptor indexing, you might need to "
                       "express two different arrays of different types that share the same descriptor binding."
                     : "",
                 DescribeInstruction().c_str());
