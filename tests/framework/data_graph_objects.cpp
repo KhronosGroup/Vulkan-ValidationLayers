@@ -289,17 +289,19 @@ std::string DataGraphPipelineHelper::GetSpirvTensorArrayDataGraph(bool is_runtim
 const std::vector<int64_t> in_tensor_dims = {1, 8, 16, 4};
 const std::vector<int64_t> out_tensor_dims = {in_tensor_dims[0], in_tensor_dims[1] / 4, in_tensor_dims[2] / 4, in_tensor_dims[3]};
 
+// shape for ADD spirv
+const std::vector<int64_t> add_dimensions{1, 4, 4, 2};
+
 void DataGraphPipelineHelper::InitPipelineResources(VkDescriptorType desc_type) {
     if (params_.graph_variant == AddTensorArraySpirv || params_.graph_variant == AddRuntimeTensorArraySpirv) {
 
         // tensors for GetSpirvTensorArrayDataGraph(): array of 2 input, 1 output
 
-        const std::vector<int64_t> dimensions{1, 4, 4, 2};
         VkTensorDescriptionARM desc = vku::InitStructHelper();
         desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
         desc.format = VK_FORMAT_R32_SINT;
-        desc.dimensionCount = dimensions.size();
-        desc.pDimensions = dimensions.data();
+        desc.dimensionCount = add_dimensions.size();
+        desc.pDimensions = add_dimensions.data();
         desc.pStrides = nullptr;
         desc.usage = VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM;
 

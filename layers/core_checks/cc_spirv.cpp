@@ -2784,11 +2784,11 @@ bool CoreChecks::ValidateDataGraphPipelineShaderModuleSpirv(VkDevice device, con
 
     if (!entry_point) {
         std::stringstream wrong_names;
-        for (const auto &entry_point : module_spirv.static_data_.entry_points) {
+        for (const auto &ep : module_spirv.static_data_.entry_points) {
             if (!wrong_names.str().empty()) {
                 wrong_names << ", ";
             }
-            wrong_names << entry_point->name;
+            wrong_names << ep->name;
         }
         skip |= LogError("VUID-VkDataGraphPipelineShaderModuleCreateInfoARM-pName-09872", device,
                          dg_shader_ci_loc.dot(Field::pName), " is '%s' but names in OpGraphEntryPointARM instructions are: '%s'",
