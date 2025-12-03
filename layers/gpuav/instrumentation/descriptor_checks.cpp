@@ -135,8 +135,7 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
             using namespace glsl;
 
             bool error_found = false;
-            const uint32_t error_group = error_record[glsl::kHeaderShaderIdErrorOffset] >> glsl::kErrorGroupShift;
-            if (error_group != kErrorGroupInstDescriptorIndexingOOB) {
+            if (GetErrorGroup(error_record) != kErrorGroupInstDescriptorIndexingOOB) {
                 return error_found;
             }
             error_found = true;
@@ -162,7 +161,7 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
 
             const uint32_t array_length = error_record[kInstDescriptorIndexingParamOffset_0];
 
-            const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
+            const uint32_t error_sub_code = GetSubError(error_record);
             switch (error_sub_code) {
                 case kErrorSubCodeDescriptorIndexingBounds: {
                     strm << "(set = " << set_num << ", binding = " << binding_num << ") Index of " << descriptor_index
@@ -234,8 +233,7 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
                                                                                   std::string& out_vuid_msg) {
             using namespace glsl;
             bool error_found = false;
-            const uint32_t error_group = error_record[glsl::kHeaderShaderIdErrorOffset] >> glsl::kErrorGroupShift;
-            if (error_group != kErrorGroupInstDescriptorClass) {
+            if (GetErrorGroup(error_record) != kErrorGroupInstDescriptorClass) {
                 return error_found;
             }
             error_found = true;
@@ -261,7 +259,7 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
 
             strm << "(set = " << set_num << ", binding = " << binding_num << ", index " << desc_index << ") ";
 
-            const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
+            const uint32_t error_sub_code = GetSubError(error_record);
             switch (error_sub_code) {
                 case kErrorSubCodeDescriptorClassGeneralBufferBounds:
                 case kErrorSubCodeDescriptorClassGeneralBufferCoopMatBounds: {

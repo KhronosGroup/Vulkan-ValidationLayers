@@ -243,14 +243,11 @@ void FirstInstance(Validator &gpuav, CommandBufferSubState &cb_state, const Loca
         bool skip = false;
         using namespace glsl;
 
-        const uint32_t error_group = error_record[kHeaderShaderIdErrorOffset] >> kErrorGroupShift;
-        if (error_group != kErrorGroupGpuPreDraw) {
-            assert(false);
+        if (GetErrorGroup(error_record) != kErrorGroupGpuPreDraw) {
             return skip;
         }
 
-        assert(((error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift) ==
-               kErrorSubCodePreDrawFirstInstance);
+        assert(GetSubError(error_record) == kErrorSubCodePreDrawFirstInstance);
 
         const uint32_t index = error_record[kValCmdErrorPayloadDword_0];
         const uint32_t invalid_first_instance = error_record[kValCmdErrorPayloadDword_1];
@@ -392,7 +389,7 @@ void CountBuffer(Validator &gpuav, CommandBufferSubState &cb_state, const Locati
         bool skip = false;
         using namespace glsl;
 
-        const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
+        const uint32_t error_sub_code = GetSubError(error_record);
         switch (error_sub_code) {
             case kErrorSubCodePreDraw_DrawBufferSize: {
                 const uint32_t count = error_record[kValCmdErrorPayloadDword_0];
@@ -601,7 +598,7 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
         const char *group_count_name = is_task_shader ? "maxTaskWorkGroupCount" : "maxMeshWorkGroupCount";
         const char *group_count_total_name = is_task_shader ? "maxTaskWorkGroupTotalCount" : "maxMeshWorkGroupTotalCount";
 
-        const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
+        const uint32_t error_sub_code = GetSubError(error_record);
         switch (error_sub_code) {
             case kErrorSubCodePreDrawGroupCountX: {
                 const char *vuid_group_count_exceeds_max =
@@ -931,7 +928,7 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
         bool skip = false;
         using namespace glsl;
 
-        const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
+        const uint32_t error_sub_code = GetSubError(error_record);
         switch (error_sub_code) {
             case kErrorSubCode_OobIndexBuffer: {
                 const uint32_t draw_i = error_record[kValCmdErrorPayloadDword_0];

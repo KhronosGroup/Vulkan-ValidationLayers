@@ -41,15 +41,14 @@ void RegisterSanitizer(Validator &gpuav, CommandBufferSubState &cb) {
                                                                                  std::string &out_vuid_msg) {
             using namespace glsl;
             bool error_found = false;
-            const uint32_t error_group = error_record[glsl::kHeaderShaderIdErrorOffset] >> glsl::kErrorGroupShift;
-            if (error_group != kErrorGroupInstSanitizer) {
+            if (GetErrorGroup(error_record) != kErrorGroupInstSanitizer) {
                 return error_found;
             }
             error_found = true;
 
             std::ostringstream strm;
 
-            const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
+            const uint32_t error_sub_code = GetSubError(error_record);
             switch (error_sub_code) {
                 case kErrorSubCodeSanitizerDivideZero: {
                     const uint32_t opcode = error_record[kInstLogErrorParameterOffset_0];

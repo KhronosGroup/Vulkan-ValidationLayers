@@ -218,12 +218,11 @@ void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubSt
         bool skip = false;
         using namespace glsl;
 
-        const uint32_t error_group = error_record[kHeaderShaderIdErrorOffset] >> kErrorGroupShift;
-        if (error_group != kErrorGroupGpuCopyBufferToImage) {
+        if (GetErrorGroup(error_record) != kErrorGroupGpuCopyBufferToImage) {
             return skip;
         }
 
-        const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
+        const uint32_t error_sub_code = GetSubError(error_record);
         switch (error_sub_code) {
             case kErrorSubCodePreCopyBufferToImageBufferTexel: {
                 const uint32_t texel_offset = error_record[kValCmdErrorPayloadDword_0];

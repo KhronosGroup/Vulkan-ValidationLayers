@@ -160,12 +160,11 @@ void CopyMemoryIndirect(Validator &gpuav, const Location &loc, CommandBufferSubS
         bool skip = false;
         using namespace glsl;
 
-        const uint32_t error_group = error_record[kHeaderShaderIdErrorOffset] >> kErrorGroupShift;
-        if (error_group != kErrorGroupGpuCopyMemoryIndirect) {
+        if (GetErrorGroup(error_record) != kErrorGroupGpuCopyMemoryIndirect) {
             return skip;
         }
 
-        const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
+        const uint32_t error_sub_code = GetSubError(error_record);
         const uint64_t payload_start = GetUint64(&error_record[kValCmdErrorPayloadDword_0]);
         const uint32_t copy_index = error_record[kValCmdErrorPayloadDword_2];
         const VkDeviceSize offset = api_copy_info.address_range.stride * copy_index;

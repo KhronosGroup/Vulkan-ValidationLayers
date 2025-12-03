@@ -22,6 +22,7 @@
 #include "gpuav_error_codes.h"
 
 #ifdef __cplusplus
+#include <cstdint>
 namespace gpuav {
 namespace glsl {
 using uint = unsigned int;
@@ -173,6 +174,15 @@ const int kDebugPrintfOutputBufferDWordsCount = 0;
 const int kDebugPrintfOutputBufferData = 1;
 
 #ifdef __cplusplus
+
+[[maybe_unused]] static inline uint32_t GetErrorGroup(const uint32_t* error_record) {
+    return error_record[glsl::kHeaderShaderIdErrorOffset] >> glsl::kErrorGroupShift;
+}
+
+[[maybe_unused]] static inline uint32_t GetSubError(const uint32_t* error_record) {
+    return (error_record[glsl::kHeaderShaderIdErrorOffset] & glsl::kErrorSubCodeMask) >> glsl::kErrorSubCodeShift;
+}
+
 }  // namespace gpuav
 #endif
 #endif

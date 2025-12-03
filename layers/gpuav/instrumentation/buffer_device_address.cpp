@@ -43,8 +43,7 @@ void RegisterBufferDeviceAddressValidation(Validator& gpuav, CommandBufferSubSta
                                                                                  std::string& out_vuid_msg) {
             using namespace glsl;
             bool error_found = false;
-            const uint32_t error_group = error_record[glsl::kHeaderShaderIdErrorOffset] >> glsl::kErrorGroupShift;
-            if (error_group != kErrorGroupInstBufferDeviceAddress) {
+            if (GetErrorGroup(error_record) != kErrorGroupInstBufferDeviceAddress) {
                 return error_found;
             }
             error_found = true;
@@ -57,7 +56,7 @@ void RegisterBufferDeviceAddressValidation(Validator& gpuav, CommandBufferSubSta
 
             const uint64_t address = *reinterpret_cast<const uint64_t*>(error_record + kInstLogErrorParameterOffset_0);
 
-            const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
+            const uint32_t error_sub_code = GetSubError(error_record);
             switch (error_sub_code) {
                 case kErrorSubCodeBufferDeviceAddressUnallocRef: {
                     const char* access_type = is_write ? "written" : "read";
