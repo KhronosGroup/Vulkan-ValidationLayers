@@ -370,10 +370,10 @@ struct BufferContent : public Setting {
 struct AccelerationStructuresBuild : public Setting {
     bool IsEnabled(const GpuAVSettings &settings) { return settings.validate_acceleration_structures_builds; }
     // Validation shader branches on a push constant value to fetch different descriptors
-    bool HasRequiredFeatures(const DeviceFeatures &features) { return features.shaderInt64 && features.runtimeDescriptorArray; }
+    bool HasRequiredFeatures(const DeviceFeatures &features) { return features.shaderInt64; }
     void Disable(GpuAVSettings &settings) { settings.validate_acceleration_structures_builds = false; }
     std::string DisableMessage() {
-        return "Acceleration structure builds validation option was enabled, but the shaderInt64 or runtimeDescriptorArray features are not "
+        return "Acceleration structure builds validation option was enabled, but the shaderInt64 feature is not "
                "supported. [Disabling "
                "gpuav_acceleration_structures_builds]";
     }
