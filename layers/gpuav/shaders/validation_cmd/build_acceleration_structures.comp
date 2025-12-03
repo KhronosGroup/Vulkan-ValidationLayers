@@ -33,20 +33,21 @@ void main() {
         return;
     }
 
-    uint64_t accel_struct_addr = 0;
+    uint64_t blas_addr = 0;
     if (pc.is_array_of_pointers == 0) {
-        accel_struct_addr = pc.blas_array_start_addr.blas_array[as_instance_i].accelerationStructureReference;
+        blas_addr = pc.blas_array_start_addr.blas_array[as_instance_i].accelerationStructureReference;
     } else {
-        accel_struct_addr = pc.blas_ptr_array_start_addr.blas_ptr_array[as_instance_i].as_instance.accelerationStructureReference;
+        blas_addr = pc.blas_ptr_array_start_addr.blas_ptr_array[as_instance_i].as_instance.accelerationStructureReference;
     }
 
     int error_subcode = kErrorSubCode_PreBuildAccelerationStructures_InvalidAS;
-    for (uint as_metadata_i = 0; as_metadata_i < pc.ptr_to_ptr_to_accel_structs_metadata.ptr.metadata_count; ++as_metadata_i) {
-        AccelerationStructureMetadata accel_struct_metadata = pc.ptr_to_ptr_to_accel_structs_metadata.ptr.metadata[as_metadata_i];
+    const uint as_count = pc.ptr_to_ptr_to_accel_structs_arrays.as_arrays_ptrs.addresses_ptr.count;
+    for (uint as_metadata_i = 0; as_metadata_i < as_count; ++as_metadata_i) {
+        uint64_t valid_as_addr = pc.ptr_to_ptr_to_accel_structs_arrays.as_arrays_ptrs.addresses_ptr.array[as_metadata_i];
 
-        const uint64_t addr = uint64_t(accel_struct_metadata.address_low) | (uint64_t(accel_struct_metadata.address_high) << 32u);
-        if (addr == accel_struct_addr) {
-            if (accel_struct_metadata.buffer_status == 1u) {
+        if (valid_as_addr == blas_addr) {
+            uint as_metadata = pc.ptr_to_ptr_to_accel_structs_arrays.as_arrays_ptrs.metadata_ptr.array[as_metadata_i];
+            if (as_metadata == 1u) {
                 error_subcode = 0;
             } else {
                 error_subcode = kErrorSubCode_PreBuildAccelerationStructures_DestroyedASBuffer;
@@ -59,7 +60,7 @@ void main() {
         pc.blas_array_start_addr.blas_array[as_instance_i].instanceCustomIndex_and_mask &= 0xffffff;// Set mask to 0, so instance cannot get hit
         pc.blas_array_start_addr.blas_array[as_instance_i].accelerationStructureReference = pc.valid_dummy_blas_addr;// Point to a valid dummy blas
 
-        GpuavLogError4(kErrorGroupGpuPreBuildAccelerationStructures, error_subcode, uint(accel_struct_addr), uint(accel_struct_addr >> 32u), as_instance_i, pc.blas_array_i);
+        GpuavLogError4(kErrorGroupGpuPreBuildAccelerationStructures, error_subcode, uint(blas_addr), uint(blas_addr >> 32u), as_instance_i, pc.blas_array_i);
     }
 
 
