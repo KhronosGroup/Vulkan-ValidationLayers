@@ -38,19 +38,13 @@ using uint = uint32_t;
 #extension GL_EXT_scalar_block_layout : require
 #endif
 
-struct AccelerationStructureMetadata {
-    uint address_low;
-    uint address_high;
-    // Only 1 bit used for buffer status (dead or alive).
-    // Could add BLAS build status.
-    uint buffer_status;
-};
-
 #ifdef __cplusplus
 using PtrToBlasArray = uint64_t;
 using PtrToBlasPtrArray = uint64_t;
+using PtrToAccelerationStructureAddressArray = uint64_t;
 using PtrToAccelerationStructureMetadataArray = uint64_t;
-using PtrtoPtrToAccelerationStructureMetadataArray = uint64_t;
+using PtrtoPtrToAccelerationStructureArrays = uint64_t;
+
 #else
 struct VkAccelerationStructureInstance {
     mat3x4 transform;
@@ -61,24 +55,32 @@ struct VkAccelerationStructureInstance {
 
 layout(buffer_reference, scalar) buffer VkAccelerationStructureInstancePtr { VkAccelerationStructureInstance as_instance; };
 
-layout(buffer_reference, scalar) buffer PtrToAccelerationStructureMetadataArray {
-    uint metadata_count;
-    AccelerationStructureMetadata metadata[];
+layout(buffer_reference, scalar) buffer PtrToAccelerationStructureAddressArray {
+    uint count;
+    uint pad_;
+    uint64_t array[];
 };
 
-layout(buffer_reference, scalar) buffer PtrtoPtrToAccelerationStructureMetadataArray {
-    PtrToAccelerationStructureMetadataArray ptr;
+layout(buffer_reference, scalar) buffer PtrToAccelerationStructureMetadataArray { uint array[]; };
+#endif
+
+// "Struct of arrays" memory pattern to improve locality
+struct AccelerationStructureArraysPtr {
+    PtrToAccelerationStructureAddressArray addresses_ptr;
+    PtrToAccelerationStructureMetadataArray metadata_ptr;
 };
+
+#ifndef __cplusplus
+layout(buffer_reference, scalar) buffer PtrtoPtrToAccelerationStructureArrays { AccelerationStructureArraysPtr as_arrays_ptrs; };
 
 layout(buffer_reference, scalar) buffer PtrToBlasArray { VkAccelerationStructureInstance blas_array[]; };
 
 layout(buffer_reference, scalar) buffer PtrToBlasPtrArray { VkAccelerationStructureInstancePtr blas_ptr_array[]; };
-
 #endif
 
 // Case where arrayOfPointers is false
 struct AccelerationStructureReferencePushData {
-    PtrtoPtrToAccelerationStructureMetadataArray ptr_to_ptr_to_accel_structs_metadata;
+    PtrtoPtrToAccelerationStructureArrays ptr_to_ptr_to_accel_structs_arrays;
     uint64_t valid_dummy_blas_addr;
     // BLAS arrays to validate
     PtrToBlasArray blas_array_start_addr;

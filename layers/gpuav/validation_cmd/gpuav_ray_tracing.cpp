@@ -185,12 +185,6 @@ struct BuildAccelerationStructuresValidationShader {
     std::vector<VkWriteDescriptorSet> GetDescriptorWrites() const { return {}; }
 };
 
-struct AccelerationStructureMetadata {
-    uint32_t address_low;
-    uint32_t address_high;
-    uint32_t buffer_status;
-};
-
 struct AccelerationStructuresAddrToStateObjectMap {
     vvl::concurrent_unordered_map<VkDeviceAddress, std::shared_ptr<vvl::AccelerationStructureKHR>> map;
 };
@@ -451,41 +445,54 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
         return;
     }
 
-    vko::BufferRange ptr_to_accel_structs_metadata_buffer =
-        cb_state.gpu_resources_manager.GetDeviceLocalBufferRange(sizeof(VkDeviceAddress));
+    vko::BufferRange ptr_to_accel_structs_arrays_ptr =
+        cb_state.gpu_resources_manager.GetDeviceLocalBufferRange(sizeof(glsl::AccelerationStructureArraysPtr));
 
     DummyBLAS& dummy_blas = gpuav.shared_resources_cache.GetOrCreate<DummyBLAS>(gpuav, cb_state);
 
     BuildAccelerationStructuresValidationShader shader_resources;
-    shader_resources.push_constants.ptr_to_ptr_to_accel_structs_metadata = ptr_to_accel_structs_metadata_buffer.offset_address;
+    shader_resources.push_constants.ptr_to_ptr_to_accel_structs_arrays = ptr_to_accel_structs_arrays_ptr.offset_address;
     shader_resources.push_constants.valid_dummy_blas_addr = dummy_blas.blas_address;
 
     cb_state.on_pre_cb_submission_functions.emplace_back(
-        [ptr_to_accel_structs_metadata_buffer](Validator& gpuav, CommandBufferSubState& cb, VkCommandBuffer per_submission_cb) {
+        [ptr_to_accel_structs_arrays_ptr](Validator& gpuav, CommandBufferSubState& cb, VkCommandBuffer per_submission_cb) {
             VVL_ZoneScopedN("validate_as_builds_pre_submit");
             // #ARNO_TODO Refacto the "copy to buffer" part
             auto& as_addr_to_as_buffer = gpuav.shared_resources_cache.Get<AccelerationStructuresAddrToStateObjectMap>();
             // #ARNO_TODO Definitely can see this become a big perf bottleneck
             auto as_addr_to_as_buffer_snapshot = as_addr_to_as_buffer.map.snapshot();
 
-            vko::BufferRange accel_structs_metadata_buffer = cb.gpu_resources_manager.GetHostCoherentBufferRange(
-                sizeof(uint32_t) + as_addr_to_as_buffer_snapshot.size() * sizeof(AccelerationStructureMetadata));
-            auto accel_structs_metadata_buffer_u32_ptr = (uint32_t*)accel_structs_metadata_buffer.offset_mapped_ptr;
+            // AS addresses buffer
+            vko::BufferRange accel_struct_addresses_buffer = cb.gpu_resources_manager.GetHostCoherentBufferRange(
+                2 * sizeof(uint32_t) + as_addr_to_as_buffer_snapshot.size() * sizeof(uint64_t));
+            auto accel_struct_addresses_buffer_u32_ptr = (uint32_t*)accel_struct_addresses_buffer.offset_mapped_ptr;
 
-            *accel_structs_metadata_buffer_u32_ptr = (uint32_t)as_addr_to_as_buffer_snapshot.size();
+            *accel_struct_addresses_buffer_u32_ptr = (uint32_t)as_addr_to_as_buffer_snapshot.size();
 
-            auto as_metadata_ptr = (AccelerationStructureMetadata*)(accel_structs_metadata_buffer_u32_ptr + 1);
+            auto as_addresses_ptr = (uint64_t*)(accel_struct_addresses_buffer_u32_ptr + 2);
+
+            // AS metadata buffer
+            vko::BufferRange accel_struct_metadatas_buffer =
+                cb.gpu_resources_manager.GetHostCachedBufferRange(as_addr_to_as_buffer_snapshot.size() * sizeof(uint32_t));
+            auto as_metadatas_ptr = (uint32_t*)(accel_struct_metadatas_buffer.offset_mapped_ptr);
+
             uint32_t written_count = 0;
             for (const auto& [device_addr, as] : as_addr_to_as_buffer_snapshot) {
-                as_metadata_ptr[written_count++] = {uint32_t(device_addr), uint32_t(device_addr >> 32u),
-                                                    uint32_t(as->buffer_state && !as->buffer_state->Destroyed())};
+                as_addresses_ptr[written_count] = device_addr;
+                const uint32_t metadata = uint32_t(as->buffer_state && !as->buffer_state->Destroyed());
+                as_metadatas_ptr[written_count] = metadata;
+
+                ++written_count;
             }
 
             // Fill a GPU buffer with a pointer to the AS metadata
             vko::BufferRange submit_time_ptr_to_accel_structs_metadata_buffer =
-                cb.gpu_resources_manager.GetHostCoherentBufferRange(sizeof(VkDeviceAddress));
-            *(VkDeviceAddress*)submit_time_ptr_to_accel_structs_metadata_buffer.offset_mapped_ptr =
-                accel_structs_metadata_buffer.offset_address;
+                cb.gpu_resources_manager.GetHostCoherentBufferRange(sizeof(glsl::AccelerationStructureArraysPtr));
+            auto submit_time_ptr_to_accel_structs_metadata_buffer_ptr =
+                (VkDeviceAddress*)submit_time_ptr_to_accel_structs_metadata_buffer.offset_mapped_ptr;
+
+            submit_time_ptr_to_accel_structs_metadata_buffer_ptr[0] = accel_struct_addresses_buffer.offset_address;
+            submit_time_ptr_to_accel_structs_metadata_buffer_ptr[1] = accel_struct_metadatas_buffer.offset_address;
 
             // Dispatch a copy command, copying the per CB submission AS metadata pointer to the AS metadata pointer created at
             // build acceleration structures time, so that CB submission accesses correct AS metadata snapshot.
@@ -493,9 +500,9 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
                 VkBufferMemoryBarrier barrier_write_after_read = vku::InitStructHelper();
                 barrier_write_after_read.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
                 barrier_write_after_read.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                barrier_write_after_read.buffer = ptr_to_accel_structs_metadata_buffer.buffer;
-                barrier_write_after_read.offset = ptr_to_accel_structs_metadata_buffer.offset;
-                barrier_write_after_read.size = ptr_to_accel_structs_metadata_buffer.size;
+                barrier_write_after_read.buffer = ptr_to_accel_structs_arrays_ptr.buffer;
+                barrier_write_after_read.offset = ptr_to_accel_structs_arrays_ptr.offset;
+                barrier_write_after_read.size = ptr_to_accel_structs_arrays_ptr.size;
 
                 DispatchCmdPipelineBarrier(per_submission_cb, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
                                            VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 1, &barrier_write_after_read, 0,
@@ -503,17 +510,17 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
 
                 VkBufferCopy copy;
                 copy.srcOffset = submit_time_ptr_to_accel_structs_metadata_buffer.offset;
-                copy.dstOffset = ptr_to_accel_structs_metadata_buffer.offset;
-                copy.size = sizeof(VkDeviceAddress);
+                copy.dstOffset = ptr_to_accel_structs_arrays_ptr.offset;
+                copy.size = submit_time_ptr_to_accel_structs_metadata_buffer.size;
                 DispatchCmdCopyBuffer(per_submission_cb, submit_time_ptr_to_accel_structs_metadata_buffer.buffer,
-                                      ptr_to_accel_structs_metadata_buffer.buffer, 1, &copy);
+                                      ptr_to_accel_structs_arrays_ptr.buffer, 1, &copy);
 
                 VkBufferMemoryBarrier barrier_read_before_write = vku::InitStructHelper();
                 barrier_read_before_write.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
                 barrier_read_before_write.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-                barrier_read_before_write.buffer = ptr_to_accel_structs_metadata_buffer.buffer;
-                barrier_read_before_write.offset = ptr_to_accel_structs_metadata_buffer.offset;
-                barrier_read_before_write.size = ptr_to_accel_structs_metadata_buffer.size;
+                barrier_read_before_write.buffer = ptr_to_accel_structs_arrays_ptr.buffer;
+                barrier_read_before_write.offset = ptr_to_accel_structs_arrays_ptr.offset;
+                barrier_read_before_write.size = ptr_to_accel_structs_arrays_ptr.size;
 
                 DispatchCmdPipelineBarrier(per_submission_cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,
                                            0, nullptr, 1, &barrier_read_before_write, 0, nullptr);
