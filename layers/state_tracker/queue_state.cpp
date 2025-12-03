@@ -296,6 +296,9 @@ vvl::QueueSubmission *vvl::Queue::NextSubmission() {
 
 void vvl::Queue::Retire(QueueSubmission &submission) {
     submission.EndUse();
+    if (dev_data_.is_device_lost) {
+        return;  // the underlying objects might be destroyed/garbage
+    }
     for (auto &wait : submission.wait_semaphores) {
         wait.semaphore->RetireWait(this, wait.payload, submission.loc.Get(), true);
         timeline_wait_count_ -= (wait.semaphore->type == VK_SEMAPHORE_TYPE_TIMELINE) ? 1 : 0;

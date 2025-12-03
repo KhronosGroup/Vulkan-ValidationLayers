@@ -21,6 +21,7 @@
 
 #include <fstream>
 #include <vector>
+#include "utils/assert_utils.h"
 
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__)
 #include <unistd.h>
@@ -656,10 +657,15 @@ bool CoreChecks::PreCallValidateCreateCommandPool(VkDevice device, const VkComma
 bool CoreChecks::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
                                                    const VkAllocationCallbacks *pAllocator, const ErrorObject &error_obj) const {
     bool skip = false;
-    // In case of DEVICE_LOST, all execution is considered over
-    if (is_device_lost) return skip;
+    if (is_device_lost) {
+        return skip;  // In case of DEVICE_LOST, all execution is considered over
+    }
+
     auto cp_state = Get<vvl::CommandPool>(commandPool);
-    if (!cp_state) return skip;
+    if (!cp_state) {
+        return skip;  // valid destroy null handles
+    }
+
     // Verify that command buffers in pool are complete (not in-flight)
     for (auto &entry : cp_state->commandBuffers) {
         auto cb_state = entry.second;
@@ -691,13 +697,15 @@ bool CoreChecks::PreCallValidateResetCommandPool(VkDevice device, VkCommandPool 
 
 // For given obj node, if it is use, flag a validation error and return callback result, else return false
 bool CoreChecks::ValidateObjectNotInUse(const vvl::StateObject *obj_node, const Location &loc, const char *error_code) const {
-    if (disabled[object_in_use]) return false;
-    // In case of DEVICE_LOST, all execution is considered over
-    if (is_device_lost) return false;
-    auto obj_struct = obj_node->Handle();
+    if (disabled[object_in_use]) {
+        return false;
+    } else if (is_device_lost) {
+        return false;  // In case of DEVICE_LOST, all execution is considered over
+    }
     bool skip = false;
 
-    const auto *used_handle = obj_node->InUse();
+    const VulkanTypedHandle &obj_struct = obj_node->Handle();
+    const VulkanTypedHandle *used_handle = obj_node->InUse();
     if (used_handle) {
         skip |= LogError(error_code, device, loc, "can't be called on %s that is currently in use by %s.",
                          FormatHandle(obj_struct).c_str(), FormatHandle(*used_handle).c_str());
