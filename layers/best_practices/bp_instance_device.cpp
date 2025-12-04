@@ -27,6 +27,8 @@ bool bp_state::Instance::ValidateSpecialUseExtensions(const Location& loc, vvl::
     bool skip = false;
     const std::string special_uses = GetSpecialUse(extension);
 
+    // We don't report "devtools" or "debugging" because if the user is using the validation layers, they likely want these
+    // extensions and giving a warning/info about it is just noise.
     if (!special_uses.empty()) {
         const char* const format =
             "Attempting to enable extension %s, but this extension is intended to support %s "
@@ -39,12 +41,6 @@ bool bp_state::Instance::ValidateSpecialUseExtensions(const Location& loc, vvl::
         if (special_uses.find("d3demulation") != std::string::npos) {
             skip |= LogWarning(vuid, instance, loc, format, String(extension),
                                "D3D emulation layers, and applications ported from D3D, by adding functionality specific to D3D");
-        }
-        if (special_uses.find("devtools") != std::string::npos) {
-            skip |= LogWarning(vuid, instance, loc, format, String(extension), "developer tools such as capture-replay libraries");
-        }
-        if (special_uses.find("debugging") != std::string::npos) {
-            skip |= LogWarning(vuid, instance, loc, format, String(extension), "use by applications when debugging");
         }
         if (special_uses.find("glemulation") != std::string::npos) {
             skip |= LogWarning(
