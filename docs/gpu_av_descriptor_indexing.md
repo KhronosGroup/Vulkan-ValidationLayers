@@ -256,7 +256,7 @@ if (inst_descriptor_indexing_oob_non_bindless(index)) {
 
 ### Descriptor Class
 
-One we have indexed into the descriptor array, we must make sure the descriptor itself is being accessed correctly. Buffers, Images, Acceleration Structure, etc wll all have different rules how accessing it is valid or not.
+One we have indexed into the descriptor array, we must make sure the descriptor itself is being accessed correctly. Buffers, Images, Acceleration Structure, etc will all have different rules how accessing it is valid or not.
 
 The main thing is **all** of these can prevented from crashing using one of the various robustness features (that we will enable for the user for them). This means we can apply the check without needing the `if/else`.
 
