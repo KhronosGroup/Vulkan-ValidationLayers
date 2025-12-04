@@ -6563,9 +6563,6 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
                 skip |= ValidateRequiredPointer(pNext_loc.dot(Field::pfnUserCallback),
                                                 reinterpret_cast<const void*>(structure->pfnUserCallback),
                                                 "VUID-VkDeviceDeviceMemoryReportCreateInfoEXT-pfnUserCallback-parameter");
-
-                skip |= ValidateRequiredPointer(pNext_loc.dot(Field::pUserData), structure->pUserData,
-                                                "VUID-VkDeviceDeviceMemoryReportCreateInfoEXT-pUserData-parameter");
             }
         } break;
 
