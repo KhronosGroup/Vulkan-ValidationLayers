@@ -1353,6 +1353,7 @@ TEST_F(NegativeDataGraph, DataGraphShaderModuleNoFeature) {
 TEST_F(NegativeDataGraph, DataGraphWrongCreateInfoStructs) {
     TEST_DESCRIPTION("None or too many of the required info structures passed in pNext of vkCreateDataGraphPipelinesARM.");
     InitBasicDataGraph();
+    AddRequiredFeature(vkt::Feature::pipelineCreationCacheControl);
     RETURN_IF_SKIP(Init());
 
     // none of the structs included
@@ -1373,7 +1374,12 @@ TEST_F(NegativeDataGraph, DataGraphWrongCreateInfoStructs) {
         pipeline_id.identifierSize = 1;
         pipeline_id.pIdentifier = &dummy_data;
         vvl::PnextChainAdd(&pipeline.pipeline_ci_, &pipeline_id);
+        pipeline.pipeline_ci_.flags |= VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+        pipeline.pipeline_ci_.pResourceInfos = nullptr;
+        pipeline.pipeline_ci_.resourceInfoCount = 0;
         m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineCreateInfoARM-pNext-09763");
+        // it's either this error with resources defined, or VU if no resources
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkDataGraphPipelineCreateInfoARM-resourceInfoCount-arraylength");
         pipeline.CreateDataGraphPipeline();
         m_errorMonitor->VerifyFound();
     }
@@ -1481,6 +1487,51 @@ TEST_F(NegativeDataGraph, DataGraphTensorNoShape) {
     // 2 tensors, 2 errors
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09919");
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09919");
+    pipeline.CreateDataGraphPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, DataGraphPipelineIdentifierNoFlag) {
+    TEST_DESCRIPTION("Create a datagraph with the ARM cache but the wrong flags.");
+    InitBasicDataGraph();
+    AddRequiredFeature(vkt::Feature::pipelineCreationCacheControl);
+    RETURN_IF_SKIP(Init());
+
+    vkt::dg::DataGraphPipelineHelper pipeline(*this);
+    VkDataGraphPipelineIdentifierCreateInfoARM pipeline_id = vku::InitStructHelper();
+    constexpr uint8_t dummy_data = 1;
+    pipeline_id.identifierSize = 1;
+    pipeline_id.pIdentifier = &dummy_data;
+    // replace the pNext chain, to remove the VkDataGraphPipelineShaderModuleCreateInfoARM added in the helper constructor
+    pipeline.pipeline_ci_.pNext = &pipeline_id;
+    // NOT setting VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT in the flags: ERROR
+    pipeline.pipeline_ci_.pResourceInfos = nullptr;
+    pipeline.pipeline_ci_.resourceInfoCount = 0;
+
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineCreateInfoARM-None-11840");
+    // currently we have a conflict with this implicit rule, it will go in a future update
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkDataGraphPipelineCreateInfoARM-resourceInfoCount-arraylength");
+    pipeline.CreateDataGraphPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, DataGraphPipelineIdentifierHasResources) {
+    TEST_DESCRIPTION("Create a datagraph with the ARM cache but resources info still included.");
+    InitBasicDataGraph();
+    AddRequiredFeature(vkt::Feature::pipelineCreationCacheControl);
+    RETURN_IF_SKIP(Init());
+
+    vkt::dg::DataGraphPipelineHelper pipeline(*this);
+    VkDataGraphPipelineIdentifierCreateInfoARM pipeline_id = vku::InitStructHelper();
+    constexpr uint8_t dummy_data = 1;
+    pipeline_id.identifierSize = 1;
+    pipeline_id.pIdentifier = &dummy_data;
+    // replace the pNext chain, to remove the VkDataGraphPipelineShaderModuleCreateInfoARM added in the helper constructor
+    pipeline.pipeline_ci_.pNext = &pipeline_id;
+    // set the correct flags, but leave pResourceInfos
+    pipeline.pipeline_ci_.flags |= VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineCreateInfoARM-None-11841");
     pipeline.CreateDataGraphPipeline();
     m_errorMonitor->VerifyFound();
 }

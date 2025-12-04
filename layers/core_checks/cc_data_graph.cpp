@@ -220,6 +220,24 @@ bool CoreChecks::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkD
                              PrintPNextChain(Struct::VkDataGraphPipelineCreateInfoARM, create_info.pNext).c_str());
         }
 
+        if (dg_pipeline_identifier_ci || qcom_model_ci) {
+            if (!(create_info.flags & VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT)) {
+                skip |= LogError(
+                    "VUID-VkDataGraphPipelineCreateInfoARM-None-11840", device, create_info_loc.dot(Field::flags),
+                    "(%s) does not include VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT, but the pNext chain include one "
+                    "of VkDataGraphPipelineIdentifierCreateInfoARM or VkDataGraphPipelineBuiltinModelCreateInfoQCOM.\n%s",
+                    string_VkPipelineCreateFlags2(create_info.flags).c_str(),
+                    PrintPNextChain(Struct::VkDataGraphPipelineCreateInfoARM, create_info.pNext).c_str());
+            }
+            if (create_info.pResourceInfos || create_info.resourceInfoCount) {
+                skip |= LogError(
+                    "VUID-VkDataGraphPipelineCreateInfoARM-None-11841", device, create_info_loc,
+                    "pResourceInfos (%p) is not NULL, or resourceInfoCount (%" PRIu32 ") is not 0, but the pNext chain include one of VkDataGraphPipelineIdentifierCreateInfoARM or VkDataGraphPipelineBuiltinModelCreateInfoQCOM.\n%s",
+                    create_info.pResourceInfos, create_info.resourceInfoCount,
+                    PrintPNextChain(Struct::VkDataGraphPipelineCreateInfoARM, create_info.pNext).c_str());
+            }
+        }
+
         if (dg_shader_ci) {
             // checks for datagraph defined via a shader module.
 
