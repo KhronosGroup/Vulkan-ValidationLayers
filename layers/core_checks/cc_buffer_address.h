@@ -99,10 +99,26 @@ class BufferAddressValidation {
 
         vvl::span<vvl::Buffer* const> buffer_list = validator.GetBuffersByAddress(device_address);
         if (buffer_list.empty()) {
-            skip |= validator.LogError(
-                "VUID-VkDeviceAddress-size-11364", objlist, device_address_loc,
-                "(0x%" PRIx64 ") is not a valid buffer address. No call to vkGetBufferDeviceAddress has this buffer in its range.",
-                device_address);
+            NearestBufferResult nearest = validator.GetNearestBuffersByAddress(device_address);
+            std::stringstream ss;
+            ss << "(0x" << std::hex << device_address
+               << ") is not a valid buffer address. No call to vkGetBufferDeviceAddress has this buffer in its range.";
+            if (!nearest.above_buffers.empty()) {
+                ss << "\nAbove at range " << string_range_hex(nearest.above_range) << " has buffers:";
+                for (const auto buffer : nearest.above_buffers) {
+                    // use std::to_string() to print as simple way to print size as decimal, not hex, like everything else
+                    ss << "\n  " << validator.FormatHandle(buffer->Handle()) << ", size " << std::to_string(buffer->create_info.size) << ", range "
+                       << string_range_hex(buffer->DeviceAddressRange());
+                }
+            }
+            if (!nearest.below_buffers.empty()) {
+                ss << "\nBelow at range " << string_range_hex(nearest.below_range) << " has buffers:";
+                for (const auto buffer : nearest.below_buffers) {
+                    ss << "\n  " << validator.FormatHandle(buffer->Handle()) << ", size " << std::to_string(buffer->create_info.size) << ", range "
+                       << string_range_hex(buffer->DeviceAddressRange());
+                }
+            }
+            skip |= validator.LogError("VUID-VkDeviceAddress-size-11364", objlist, device_address_loc, "%s", ss.str().c_str());
         }
 
         // Checks if memory is in a completely and contiguously to a single VkDeviceMemory object
