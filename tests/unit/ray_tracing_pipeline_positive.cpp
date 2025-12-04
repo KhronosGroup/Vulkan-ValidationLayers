@@ -348,7 +348,7 @@ TEST_F(PositiveRayTracingPipeline, DescriptorBuffer) {
     vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
 
     vkt::Buffer descriptor_buffer(*m_device, 4096, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
-    uint8_t *descriptor_data = reinterpret_cast<uint8_t *>(descriptor_buffer.Memory().Map());
+    uint8_t* descriptor_data = reinterpret_cast<uint8_t*>(descriptor_buffer.Memory().Map());
     VkDeviceSize buffer_offset = ds_layout.GetDescriptorBufferBindingOffset(0);
 
     vkt::DescriptorGetInfo buffer_get_info(tlas.GetDstAS()->GetBufferDeviceAddress());
@@ -619,4 +619,56 @@ TEST_F(PositiveRayTracingPipeline, DeferredOpNoGetResult) {
     vk::DestroyPipeline(*m_device, pipeline, nullptr);
     vk::DestroyDeferredOperationKHR(*m_device, deferredOperation, nullptr);
     vk::DestroyPipeline(*m_device, library, nullptr);
+}
+
+TEST_F(PositiveRayTracingPipeline, PartitionedAccelerationStructureDescriptor) {
+    TEST_DESCRIPTION("Test creating and using partitioned acceleration structure descriptors");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_NV_PARTITIONED_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::partitionedAccelerationStructure);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    constexpr VkDeviceSize uniform_buffer_size = 256;
+    vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
+    constexpr VkDeviceSize storage_buffer_size = 1024;
+    vkt::Buffer storage_buffer(*m_device, storage_buffer_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vkt::ImageView image_view = image.CreateView();
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
+    VkDeviceAddress as_address = tlas.GetDstAS()->GetBufferDeviceAddress();
+
+    OneOffDescriptorSet descriptor_set(
+        m_device, {
+                      {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                      {1, VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV, 1, VK_SHADER_STAGE_ALL, nullptr},
+                      {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                      {3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                  });
+
+    descriptor_set.WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, uniform_buffer_size, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    descriptor_set.WriteDescriptorBufferInfo(2, storage_buffer.handle(), 0, storage_buffer_size, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.WriteDescriptorImageInfo(3, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+
+    descriptor_set.UpdateDescriptorSets();
+
+    VkWriteDescriptorSetPartitionedAccelerationStructureNV write_desc_set_partitioned_as = vku::InitStructHelper();
+    write_desc_set_partitioned_as.accelerationStructureCount = 1;
+    write_desc_set_partitioned_as.pAccelerationStructures = &as_address;
+
+    VkWriteDescriptorSet as_descriptor_write = vku::InitStructHelper(&write_desc_set_partitioned_as);
+    as_descriptor_write.dstSet = descriptor_set.set_;
+    as_descriptor_write.dstBinding = 1;
+    as_descriptor_write.dstArrayElement = 0;
+    as_descriptor_write.descriptorCount = 1;
+    as_descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV;
+
+    vk::UpdateDescriptorSets(device(), 1, &as_descriptor_write, 0, nullptr);
 }
