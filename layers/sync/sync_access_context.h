@@ -20,6 +20,7 @@
 #include "sync/sync_common.h"
 #include "sync/sync_access_map.h"
 #include "sync/sync_access_state.h"
+#include <optional>
 
 struct SubpassDependencyGraphNode;
 

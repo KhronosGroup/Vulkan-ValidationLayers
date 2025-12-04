@@ -37,6 +37,7 @@
 #include "utils/math_utils.h"
 #include "state_tracker/data_graph_pipeline_session_state.h"
 #include "state_tracker/cmd_buffer_state.h"
+#include "containers/container_utils.h"
 
 // For given mem object, verify that it is not null or UNBOUND, if it is, report error. Return skip value.
 bool CoreChecks::VerifyBoundMemoryIsValid(const vvl::DeviceMemory *memory_state, const LogObjectList &objlist,

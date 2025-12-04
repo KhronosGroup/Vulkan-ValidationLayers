@@ -38,6 +38,7 @@
 #include "generated/dispatch_functions.h"
 #include "error_message/error_strings.h"
 #include "utils/file_system_utils.h"
+#include "containers/container_utils.h"
 
 bool CoreChecks::ValidateDeviceQueueFamily(uint32_t queue_family, const Location &loc, const char *vuid,
                                            bool optional = false) const {

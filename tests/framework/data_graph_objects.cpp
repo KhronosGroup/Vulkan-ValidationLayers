@@ -12,7 +12,6 @@
 #include "data_graph_objects.h"
 #include "binding.h"
 #include "generated/pnext_chain_extraction.h"
-#include "shader_templates.h"
 #include <iostream>
 
 namespace vkt {

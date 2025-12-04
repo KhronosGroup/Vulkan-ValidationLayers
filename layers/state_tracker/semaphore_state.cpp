@@ -21,6 +21,7 @@
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/wsi_state.h"
 #include "utils/math_utils.h"
+#include "containers/container_utils.h"
 
 static bool CanSignalBinarySemaphoreAfterOperation(vvl::Semaphore::OpType op_type) {
     return op_type == vvl::Semaphore::kNone || op_type == vvl::Semaphore::kWait;

@@ -27,8 +27,6 @@
 #include "containers/limits.h"
 #include "utils/image_utils.h"
 
-#include "profiling/profiling.h"
-
 using vvl::DescriptorClass;
 
 namespace gpuav {

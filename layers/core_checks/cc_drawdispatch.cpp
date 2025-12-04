@@ -41,6 +41,7 @@
 #include "utils/assert_utils.h"
 #include "utils/math_utils.h"
 #include "utils/image_utils.h"
+#include "containers/container_utils.h"
 
 using vvl::DrawDispatchVuid;
 using vvl::GetDrawDispatchVuid;

@@ -24,6 +24,7 @@
 #include "gpuav/shaders/validation_cmd/push_data.h"
 #include "generated/gpuav_offline_spirv.h"
 #include "containers/limits.h"
+#include "containers/container_utils.h"
 
 namespace gpuav {
 namespace valcmd {

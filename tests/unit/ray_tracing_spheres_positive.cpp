@@ -14,10 +14,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/ray_tracing_objects.h"
 #include "../framework/feature_requirements.h"
-#include "../framework/descriptor_helper.h"
-#include "../framework/pipeline_helper.h"
-#include "utils/math_utils.h"
-#include <algorithm>
+
 class PositiveRayTracingSpheres : public RayTracingTest {};
 
 TEST_F(PositiveRayTracingSpheres, SpheresHostBuild) {

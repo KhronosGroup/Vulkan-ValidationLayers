@@ -39,6 +39,7 @@
 #include "state_tracker/wsi_state.h"
 #include "utils/math_utils.h"
 #include "utils/image_utils.h"
+#include "containers/container_utils.h"
 
 bool CoreChecks::IsMixSamplingSupported() const {
     return IsExtEnabled(extensions.vk_amd_mixed_attachment_samples) || IsExtEnabled(extensions.vk_nv_framebuffer_mixed_samples) ||

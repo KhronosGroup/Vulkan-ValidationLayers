@@ -25,6 +25,7 @@
 #include "state_tracker/shader_module.h"
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/cmd_buffer_state.h"
+#include "containers/container_utils.h"
 #include <string>
 #include <deque>
 #include <chrono>

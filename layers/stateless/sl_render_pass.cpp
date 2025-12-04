@@ -20,7 +20,6 @@
 #include "stateless/stateless_validation.h"
 #include "error_message/error_strings.h"
 #include "containers/container_utils.h"
-#include "containers/span.h"
 #include "utils/convert_utils.h"
 #include "utils/math_utils.h"
 #include "utils/image_utils.h"

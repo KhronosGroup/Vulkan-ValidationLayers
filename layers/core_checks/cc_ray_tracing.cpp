@@ -33,6 +33,7 @@
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "error_message/error_strings.h"
+#include "containers/container_utils.h"
 
 #include <algorithm>
 

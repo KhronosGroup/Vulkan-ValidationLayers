@@ -24,6 +24,7 @@
 #include <vulkan/vulkan_core.h>
 #include <vulkan/utility/vk_struct_helper.hpp>
 #include "containers/custom_containers.h"
+#include "containers/container_utils.h"
 #include "generated/vk_extension_helper.h"
 #include "state_tracker/data_graph_pipeline_session_state.h"
 #include "state_tracker/shader_stage_state.h"

@@ -24,8 +24,6 @@
 #include "containers/small_vector.h"
 #include "gpuav/core/gpuav.h"
 #include "gpuav/core/gpuav_constants.h"
-#include "gpuav/error_message/gpuav_vuids.h"
-#include "gpuav/shaders/gpuav_error_codes.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/shaders/gpuav_error_header.h"
@@ -39,7 +37,6 @@
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/pipeline_layout_state.h"
 #include "state_tracker/descriptor_mode.h"
-#include "utils/image_utils.h"
 
 namespace gpuav {
 

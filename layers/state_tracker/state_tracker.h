@@ -39,6 +39,7 @@
 #include <functional>
 #include <memory>
 #include <vector>
+#include <optional>
 
 namespace vvl {
 struct AllocateDescriptorSetsData;

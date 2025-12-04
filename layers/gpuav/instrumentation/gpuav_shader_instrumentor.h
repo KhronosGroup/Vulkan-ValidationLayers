@@ -16,7 +16,6 @@
  */
 #pragma once
 
-#include "error_message/error_location.h"
 #include "state_tracker/descriptor_mode.h"
 #include "state_tracker/shader_instruction.h"
 #include "state_tracker/state_tracker.h"
