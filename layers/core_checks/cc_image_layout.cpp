@@ -598,10 +598,8 @@ bool CoreChecks::ValidateFramebufferAndRenderPassLayouts(const vvl::CommandBuffe
         // If a separate layout is specified, look for that.
         const auto *attachment_desc_stencil_layout =
             vku::FindStructInPNextChain<VkAttachmentDescriptionStencilLayout>(render_pass_info->pAttachments[i].pNext);
-        if (const auto *attachment_description_stencil_layout =
-                vku::FindStructInPNextChain<VkAttachmentDescriptionStencilLayout>(render_pass_info->pAttachments[i].pNext);
-            attachment_description_stencil_layout) {
-            attachment_stencil_initial_layout = attachment_description_stencil_layout->stencilInitialLayout;
+        if (attachment_desc_stencil_layout) {
+            attachment_stencil_initial_layout = attachment_desc_stencil_layout->stencilInitialLayout;
         }
 
         std::shared_ptr<const CommandBufferImageLayoutMap> image_layout_map;
