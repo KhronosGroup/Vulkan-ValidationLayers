@@ -225,8 +225,8 @@ VkPhysicalDeviceProperties2 VkLayerTest::GetPhysicalDeviceProperties2(VkPhysical
 
 class VkBestPracticesLayerTest : public VkLayerTest {
   public:
-    void InitBestPracticesFramework(const char *ValidationChecksToEnable = "");
-    void InitBestPractices(const char *ValidationChecksToEnable = "");
+    void InitBestPracticesFramework(const char* vendor_checks_to_enable = nullptr);
+    void InitBestPractices(const char* vendor_checks_to_enable = nullptr);
 
   protected:
     VkValidationFeatureEnableEXT enables_[1] = {VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT};

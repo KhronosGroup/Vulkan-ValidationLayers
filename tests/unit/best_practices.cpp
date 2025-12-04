@@ -21,20 +21,20 @@
 #include "../framework/thread_helper.h"
 
 void VkBestPracticesLayerTest::InitBestPracticesFramework(const char *vendor_checks_to_enable) {
-    const VkLayerSettingEXT settings[] = {
-        {OBJECT_LAYER_NAME, vendor_checks_to_enable, VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue}};
+    const VkLayerSettingEXT settings = {OBJECT_LAYER_NAME, vendor_checks_to_enable, VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
+    const VkLayerSettingsCreateInfoEXT layer_settings_create_info{VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
+                                                                  &settings};
 
-    const VkLayerSettingsCreateInfoEXT layer_settings_create_info{VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr,
-                                                                  static_cast<uint32_t>(std::size(settings)), settings};
-
-    features_.pNext = &layer_settings_create_info;
+    if (vendor_checks_to_enable) {
+        features_.pNext = &layer_settings_create_info;
+    }
 
     AddRequiredExtensions(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
     InitFramework(&features_);
 }
 
-void VkBestPracticesLayerTest::InitBestPractices(const char *ValidationChecksToEnable) {
-    RETURN_IF_SKIP(InitBestPracticesFramework(ValidationChecksToEnable));
+void VkBestPracticesLayerTest::InitBestPractices(const char* vendor_checks_to_enable) {
+    RETURN_IF_SKIP(InitBestPracticesFramework(vendor_checks_to_enable));
     RETURN_IF_SKIP(InitState());
 }
 
@@ -82,52 +82,30 @@ TEST_F(VkBestPracticesLayerTest, ReturnCodes) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkBestPracticesLayerTest, UseDeprecatedInstanceExtensions) {
-    TEST_DESCRIPTION("Create an instance with a deprecated extension.");
-
-    // We need to explicitly allow promoted extensions to be enabled as this test relies on this behavior
-    AllowPromotedExtensions();
-
+TEST_F(VkBestPracticesLayerTest, SpecialUseExtensionsInstance) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitBestPracticesFramework());
-    if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "Test not supported by MockICD - currently can't create 2 concurrent instances";
+    if (!InstanceExtensionSupported(VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME)) {
+        GTEST_SKIP() << "Did not find required instance extension";
     }
+    m_instance_extension_names.emplace_back(VK_KHR_SURFACE_EXTENSION_NAME);
+    m_instance_extension_names.emplace_back(VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME);
 
-    m_errorMonitor->SetDesiredWarning("BestPractices-specialuse-extension");  // VK_EXT_debug_utils
-    m_errorMonitor->SetDesiredWarning("BestPractices-specialuse-extension");  // VK_EXT_validation_features
+    const VkLayerSettingEXT settings = {OBJECT_LAYER_NAME, "validate_best_practices", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
+                                        &kVkTrue};
+    const VkLayerSettingsCreateInfoEXT layer_settings_create_info{VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
+                                                                  &settings};
 
-    VkInstance dummy = VK_NULL_HANDLE;
-    auto features = features_;
+    // GetDebugCreateInfo() is last pNext chain set in GetInstanceCreateInfo()
+    const_cast<VkDebugUtilsMessengerCreateInfoEXT*>(m_errorMonitor->GetDebugCreateInfo())->pNext = &layer_settings_create_info;
+
+    Monitor().SetDesiredWarning("BestPractices-specialuse-extension");
+    VkInstance dummy_instance;
     auto ici = GetInstanceCreateInfo();
-    features.pNext = ici.pNext;
-    ici.pNext = &features;
-    vk::CreateInstance(&ici, nullptr, &dummy);
-    m_errorMonitor->VerifyFound();
-
-    VkApplicationInfo new_info{};
-    new_info.apiVersion = VK_API_VERSION_1_0;
-    new_info.pApplicationName = ici.pApplicationInfo->pApplicationName;
-    new_info.applicationVersion = ici.pApplicationInfo->applicationVersion;
-    new_info.pEngineName = ici.pApplicationInfo->pEngineName;
-    new_info.engineVersion = ici.pApplicationInfo->engineVersion;
-    ici.pApplicationInfo = &new_info;
-
-    m_errorMonitor->SetUnexpectedError("khronos-Validation-debug-build-warning-message");
-    m_errorMonitor->SetUnexpectedError("khronos-Validation-fine-grained-locking-warning-message");
-    m_errorMonitor->SetDesiredWarning("BestPractices-specialuse-extension");  // VK_EXT_debug_utils
-    m_errorMonitor->SetDesiredWarning("BestPractices-specialuse-extension");  // VK_EXT_validation_features
-    vk::CreateInstance(&ici, nullptr, &dummy);
-    m_errorMonitor->VerifyFound();
-    if (dummy != VK_NULL_HANDLE) {
-        vk::DestroyInstance(dummy, nullptr);
-    }
+    vk::CreateInstance(&ici, nullptr, &dummy_instance);
+    Monitor().VerifyFound();
 }
 
-TEST_F(VkBestPracticesLayerTest, SpecialUseExtensions) {
-    TEST_DESCRIPTION("Create a device with a 'specialuse' extension.");
-
+TEST_F(VkBestPracticesLayerTest, SpecialUseExtensionsDevice) {
     AddRequiredExtensions(VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBestPracticesFramework());
 
