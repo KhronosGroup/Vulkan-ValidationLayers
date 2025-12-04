@@ -30,18 +30,6 @@
 #include <chrono>
 #include <set>
 
-enum class DeprecationReason {
-    Empty = 0,
-    Promoted,
-    Obsoleted,
-    Deprecated,
-};
-
-struct DeprecationData {
-    DeprecationReason reason;
-    vvl::Requirement target;
-};
-
 struct ShaderStageState;
 struct LastBound;
 
@@ -50,7 +38,6 @@ struct EntryPoint;
 struct Module;
 }  // namespace spirv
 
-DeprecationData GetDeprecatedData(vvl::Extension extension);
 std::string GetSpecialUse(vvl::Extension extension);
 
 namespace bp_state {
@@ -93,7 +80,6 @@ class Instance : public vvl::InstanceProxy {
     bool PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
                                      const VkAllocationCallbacks* pAllocator, VkDevice* pDevice,
                                      const ErrorObject& error_obj) const override;
-    bool ValidateDeprecatedExtensions(const Location& loc, vvl::Extension extension, APIVersion version) const;
 
     bool ValidateSpecialUseExtensions(const Location& loc, vvl::Extension extension) const;
 

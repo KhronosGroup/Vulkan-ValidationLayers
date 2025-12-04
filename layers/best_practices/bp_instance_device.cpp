@@ -23,47 +23,6 @@
 #include "state_tracker/queue_state.h"
 #include "state_tracker/device_state.h"
 
-bool bp_state::Instance::ValidateDeprecatedExtensions(const Location& loc, vvl::Extension extension, APIVersion version) const {
-    bool skip = false;
-    const auto dep_info = GetDeprecatedData(extension);
-    if (dep_info.reason != DeprecationReason::Empty) {
-        auto reason_to_string = [](DeprecationReason reason) {
-            switch (reason) {
-                case DeprecationReason::Promoted:
-                    return "promoted to";
-                case DeprecationReason::Obsoleted:
-                    return "obsoleted by";
-                case DeprecationReason::Deprecated:
-                    return "deprecated by";
-                default:
-                    return "";
-            }
-        };
-
-        const char* vuid = "BestPractices-deprecated-extension";
-        if ((dep_info.target.version == vvl::Version::_VK_VERSION_1_1 && (version >= VK_API_VERSION_1_1)) ||
-            (dep_info.target.version == vvl::Version::_VK_VERSION_1_2 && (version >= VK_API_VERSION_1_2)) ||
-            (dep_info.target.version == vvl::Version::_VK_VERSION_1_3 && (version >= VK_API_VERSION_1_3)) ||
-            (dep_info.target.version == vvl::Version::_VK_VERSION_1_4 && (version >= VK_API_VERSION_1_4))) {
-            skip |=
-                LogWarning(vuid, instance, loc, "Attempting to enable deprecated extension %s, but this extension has been %s %s.",
-                           String(extension), reason_to_string(dep_info.reason), String(dep_info.target).c_str());
-        } else if (dep_info.target.version == vvl::Version::Empty) {
-            if (dep_info.target.extension == vvl::Extension::Empty) {
-                skip |= LogWarning(vuid, instance, loc,
-                                   "Attempting to enable deprecated extension %s, but this extension has been deprecated "
-                                   "without replacement.",
-                                   String(extension));
-            } else {
-                skip |= LogWarning(vuid, instance, loc,
-                                   "Attempting to enable deprecated extension %s, but this extension has been %s %s.",
-                                   String(extension), reason_to_string(dep_info.reason), String(dep_info.target).c_str());
-            }
-        }
-    }
-    return skip;
-}
-
 bool bp_state::Instance::ValidateSpecialUseExtensions(const Location& loc, vvl::Extension extension) const {
     bool skip = false;
     const std::string special_uses = GetSpecialUse(extension);
@@ -108,9 +67,6 @@ bool bp_state::Instance::PreCallValidateCreateInstance(const VkInstanceCreateInf
             skip |= LogWarning("BestPractices-vkCreateInstance-extension-mismatch", instance, error_obj.location,
                                "Attempting to enable Device Extension %s at CreateInstance time.", String(extension));
         }
-        uint32_t specified_version =
-            (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
-        skip |= ValidateDeprecatedExtensions(error_obj.location, extension, specified_version);
         skip |= ValidateSpecialUseExtensions(error_obj.location, extension);
     }
 
@@ -154,17 +110,12 @@ bool bp_state::Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDe
 
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         const char* extension_name = pCreateInfo->ppEnabledExtensionNames[i];
-
-        APIVersion extension_api_version = std::min(api_version, APIVersion(device_api_version));
-
         vvl::Extension extension = GetExtension(extension_name);
         if (IsInstanceExtension(extension)) {
             skip |= LogWarning("BestPractices-vkCreateDevice-extension-mismatch", instance, error_obj.location,
                                "Attempting to enable Instance Extension %s at CreateDevice time.", String(extension));
-            extension_api_version = api_version;
         }
 
-        skip |= ValidateDeprecatedExtensions(error_obj.location, extension, extension_api_version);
         skip |= ValidateSpecialUseExtensions(error_obj.location, extension);
     }
 
