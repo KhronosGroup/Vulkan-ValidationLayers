@@ -260,6 +260,7 @@ vvl_sources = [
   "layers/layer_options.cpp",
   "layers/layer_options.h",
   "layers/layer_options_validation.h",
+  "layers/legacy/legacy_manual.cpp",
   "layers/object_tracker/object_lifetime_validation.cpp",
   "layers/object_tracker/object_lifetime_validation.h",
   "layers/state_tracker/bind_point.h",

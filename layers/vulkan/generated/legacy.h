@@ -29,6 +29,20 @@
 
 namespace legacy {
 
+enum class Reason {
+    Empty = 0,
+    Promoted,
+    Obsoleted,
+    Superseded,
+};
+
+struct ExtensionData {
+    Reason reason;
+    vvl::Requirement target;
+};
+
+ExtensionData GetExtensionData(vvl::Extension extension);
+
 // We currently only check if the extension is enabled, if we decide in the future to check for support, instance extensions
 // we can try and use DispatchEnumerateInstanceExtensionProperties, but will likely run into many loader related issues.
 class Instance : public vvl::base::Instance {
@@ -36,6 +50,14 @@ class Instance : public vvl::base::Instance {
 
   public:
     Instance(vvl::dispatch::Instance* dispatch) : BaseClass(dispatch, LayerObjectTypeLegacy) {}
+
+    // Special functions done in legacy_manual.cpp
+    bool PreCallValidateCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+                                       VkInstance* pInstance, const ErrorObject& error_obj) const override;
+    bool PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
+                                     const VkAllocationCallbacks* pAllocator, VkDevice* pDevice,
+                                     const ErrorObject& error_obj) const override;
+    bool ValidateLegacyExtensions(const Location& loc, vvl::Extension extension, APIVersion version) const;
 
     bool PreCallValidateGetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* pFeatures,
                                                   const ErrorObject& error_obj) const override;

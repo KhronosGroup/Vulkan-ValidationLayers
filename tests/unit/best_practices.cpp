@@ -95,14 +95,6 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedInstanceExtensions) {
         GTEST_SKIP() << "Test not supported by MockICD - currently can't create 2 concurrent instances";
     }
 
-    // Create a 1.1 vulkan instance and request an extension promoted to core in 1.1
-    if (IsExtensionsEnabled(VK_EXT_DEBUG_REPORT_EXTENSION_NAME)) {
-        // Extra error if VK_EXT_debug_report is used on Android still
-        m_errorMonitor->SetDesiredWarning("BestPractices-deprecated-extension");
-    }
-
-    m_errorMonitor->SetDesiredWarning("BestPractices-deprecated-extension");  // VK_KHR_get_physical_device_properties2
-    m_errorMonitor->SetDesiredWarning("BestPractices-deprecated-extension");  // VK_EXT_validation_features
     m_errorMonitor->SetDesiredWarning("BestPractices-specialuse-extension");  // VK_EXT_debug_utils
     m_errorMonitor->SetDesiredWarning("BestPractices-specialuse-extension");  // VK_EXT_validation_features
 
@@ -122,14 +114,8 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedInstanceExtensions) {
     new_info.engineVersion = ici.pApplicationInfo->engineVersion;
     ici.pApplicationInfo = &new_info;
 
-    // Create a 1.0 vulkan instance and request an extension promoted to core in 1.1
-    if (IsExtensionsEnabled(VK_EXT_DEBUG_REPORT_EXTENSION_NAME)) {
-        // Extra error if VK_EXT_debug_report is used on Android still
-        m_errorMonitor->SetDesiredWarning("BestPractices-deprecated-extension");
-    }
     m_errorMonitor->SetUnexpectedError("khronos-Validation-debug-build-warning-message");
     m_errorMonitor->SetUnexpectedError("khronos-Validation-fine-grained-locking-warning-message");
-    m_errorMonitor->SetDesiredWarning("BestPractices-deprecated-extension");  // VK_EXT_validation_features
     m_errorMonitor->SetDesiredWarning("BestPractices-specialuse-extension");  // VK_EXT_debug_utils
     m_errorMonitor->SetDesiredWarning("BestPractices-specialuse-extension");  // VK_EXT_validation_features
     vk::CreateInstance(&ici, nullptr, &dummy);
@@ -137,37 +123,6 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedInstanceExtensions) {
     if (dummy != VK_NULL_HANDLE) {
         vk::DestroyInstance(dummy, nullptr);
     }
-}
-
-TEST_F(VkBestPracticesLayerTest, UseDeprecatedDeviceExtensions) {
-    TEST_DESCRIPTION("Create a device with a deprecated extension.");
-
-    // We need to explicitly allow promoted extensions to be enabled as this test relies on this behavior
-    AllowPromotedExtensions();
-
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitBestPracticesFramework());
-
-    VkDevice local_device;
-    VkDeviceCreateInfo dev_info = vku::InitStructHelper();
-    VkDeviceQueueCreateInfo queue_info = vku::InitStructHelper();
-    queue_info.queueFamilyIndex = 0;
-    queue_info.queueCount = 1;
-    float qp = 1;
-    queue_info.pQueuePriorities = &qp;
-    dev_info.queueCreateInfoCount = 1;
-    dev_info.pQueueCreateInfos = &queue_info;
-    dev_info.enabledLayerCount = 0;
-    dev_info.ppEnabledLayerNames = NULL;
-    dev_info.enabledExtensionCount = m_device_extension_names.size();
-    dev_info.ppEnabledExtensionNames = m_device_extension_names.data();
-
-    // One for VK_KHR_buffer_device_address
-    // One for the dependency extension VK_KHR_device_group
-    m_errorMonitor->SetDesiredWarning("BestPractices-deprecated-extension", 2);
-    vk::CreateDevice(this->Gpu(), &dev_info, NULL, &local_device);
-    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(VkBestPracticesLayerTest, SpecialUseExtensions) {
@@ -1313,45 +1268,6 @@ TEST_F(VkBestPracticesLayerTest, DontCareThenLoad) {
     m_errorMonitor->VerifyFound();
 
     m_default_queue->Wait();
-}
-
-TEST_F(VkBestPracticesLayerTest, LoadDeprecatedExtension) {
-    TEST_DESCRIPTION("Test for loading a vk1.3 deprecated extension with a 1.3 instance on a 1.2 or less device");
-
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-
-    RETURN_IF_SKIP(InitBestPracticesFramework());
-
-    const char *extension = VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME;
-
-    if (!DeviceExtensionSupported(extension)) {
-        GTEST_SKIP() << extension << " not supported.";
-    }
-
-    VkDeviceQueueCreateInfo qci = vku::InitStructHelper();
-    qci.queueFamilyIndex = 0;
-    float priority = 1;
-    qci.pQueuePriorities = &priority;
-    qci.queueCount = 1;
-
-    VkDeviceCreateInfo dev_info = vku::InitStructHelper();
-    dev_info.queueCreateInfoCount = 1;
-    dev_info.pQueueCreateInfos = &qci;
-    dev_info.enabledExtensionCount = 1;
-    dev_info.ppEnabledExtensionNames = &extension;
-
-    m_errorMonitor->SetDesiredWarning("BestPractices-deprecated-extension");
-    // api version != device version
-    m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkCreateDevice-API-version-mismatch");
-
-    VkDevice device = VK_NULL_HANDLE;
-    vk::CreateDevice(Gpu(), &dev_info, nullptr, &device);
-
-    if (DeviceValidationVersion() >= VK_API_VERSION_1_3) {
-        m_errorMonitor->VerifyFound();
-    }
-
-    if (device) vk::DestroyDevice(device, nullptr);
 }
 
 TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {

@@ -143,39 +143,6 @@ class BestPracticesOutputGenerator(BaseGenerator):
         out.append('''
             #include "best_practices/best_practices_validation.h"
 
-            DeprecationData GetDeprecatedData(vvl::Extension extension_name) {
-                static const DeprecationData empty_deprecated_data{DeprecationReason::Empty, vvl::Extension::Empty};
-                static const vvl::unordered_map<vvl::Extension, DeprecationData> deprecated_extensions = {
-            ''')
-        for extension in self.vk.extensions.values():
-            target = None
-            reason = None
-            if extension.promotedTo is not None:
-                reason = 'DeprecationReason::Promoted'
-                target = extension.promotedTo
-            elif extension.obsoletedBy is not None:
-                reason = 'DeprecationReason::Obsoleted'
-                target = extension.obsoletedBy
-            elif extension.deprecatedBy is not None:
-                reason = 'DeprecationReason::Deprecated'
-                target = extension.deprecatedBy
-            else:
-                continue
-
-            if len(target) == 0:
-                target = 'vvl::Extension::Empty'
-            elif 'VERSION' in target:
-                target = f'vvl::Version::_{target}'
-            else:
-                target = f'vvl::Extension::_{target}'
-
-            out.append(f'    {{vvl::Extension::_{extension.name}, {{{reason}, {{{target}}}}}}},\n')
-        out.append('''    };
-
-                auto it = deprecated_extensions.find(extension_name);
-                return (it == deprecated_extensions.end()) ? empty_deprecated_data : it->second;
-            }
-
             std::string GetSpecialUse(vvl::Extension extension_name) {
                 const vvl::unordered_map<vvl::Extension, std::string> special_use_extensions = {
             ''')

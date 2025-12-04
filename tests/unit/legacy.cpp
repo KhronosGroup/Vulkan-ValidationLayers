@@ -142,3 +142,96 @@ TEST_F(NegativeLegacy, GetPhysicalDeviceProperties2Version) {
     vk::GetPhysicalDeviceFormatProperties(Gpu(), VK_FORMAT_R8G8B8A8_UNORM, &format_properties);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeLegacy, UseDeprecatedInstanceExtensions) {
+    if (m_instance_api_version < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    app_info_.apiVersion = VK_API_VERSION_1_1;
+
+    m_instance_extension_names.clear();
+    m_instance_extension_names.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    m_instance_extension_names.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+
+    auto ici = GetInstanceCreateInfo();
+    auto debug_info = Monitor().GetDebugCreateInfo();
+    const_cast<VkDebugUtilsMessengerCreateInfoEXT *>(debug_info)->pNext = &kLegacySettingCreateInfo;
+    ici.pNext = debug_info;
+
+    Monitor().SetDesiredWarning("WARNING-legacy-extension");
+    VkInstance test_instance = VK_NULL_HANDLE;
+    vk::CreateInstance(&ici, nullptr, &test_instance);
+    Monitor().VerifyFound();
+
+    if (test_instance != VK_NULL_HANDLE) {
+        vk::DestroyInstance(test_instance, nullptr);
+    }
+}
+
+TEST_F(NegativeLegacy, UseDeprecatedDeviceExtensions) {
+    // We need to explicitly allow promoted extensions to be enabled as this test relies on this behavior
+    AllowPromotedExtensions();
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework(&kLegacySettingCreateInfo));
+    RETURN_IF_SKIP(InitState());
+
+    VkDevice local_device;
+    VkDeviceCreateInfo dev_info = vku::InitStructHelper();
+    VkDeviceQueueCreateInfo queue_info = vku::InitStructHelper();
+    queue_info.queueFamilyIndex = 0;
+    queue_info.queueCount = 1;
+    float qp = 1;
+    queue_info.pQueuePriorities = &qp;
+    dev_info.queueCreateInfoCount = 1;
+    dev_info.pQueueCreateInfos = &queue_info;
+    dev_info.enabledLayerCount = 0;
+    dev_info.ppEnabledLayerNames = NULL;
+    dev_info.enabledExtensionCount = m_device_extension_names.size();
+    dev_info.ppEnabledExtensionNames = m_device_extension_names.data();
+
+    // One for VK_KHR_buffer_device_address
+    // One for the dependency extension VK_KHR_device_group
+    m_errorMonitor->SetDesiredWarning("WARNING-legacy-extension", 2);
+    vk::CreateDevice(this->Gpu(), &dev_info, NULL, &local_device);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeLegacy, LoadDeprecatedExtension) {
+    TEST_DESCRIPTION("Test for loading a vk1.3 deprecated extension with a 1.3 instance on a 1.2 or less device");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(InitFramework(&kLegacySettingCreateInfo));
+    RETURN_IF_SKIP(InitState());
+
+    const char *extension = VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME;
+
+    if (!DeviceExtensionSupported(extension)) {
+        GTEST_SKIP() << extension << " not supported.";
+    }
+
+    VkDeviceQueueCreateInfo qci = vku::InitStructHelper();
+    qci.queueFamilyIndex = 0;
+    float priority = 1;
+    qci.pQueuePriorities = &priority;
+    qci.queueCount = 1;
+
+    VkDeviceCreateInfo dev_info = vku::InitStructHelper();
+    dev_info.queueCreateInfoCount = 1;
+    dev_info.pQueueCreateInfos = &qci;
+    dev_info.enabledExtensionCount = 1;
+    dev_info.ppEnabledExtensionNames = &extension;
+
+    m_errorMonitor->SetDesiredWarning("WARNING-legacy-extension");
+
+    VkDevice device = VK_NULL_HANDLE;
+    vk::CreateDevice(Gpu(), &dev_info, nullptr, &device);
+
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_3) {
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (device) {
+        vk::DestroyDevice(device, nullptr);
+    }
+}
