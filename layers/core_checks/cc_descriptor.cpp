@@ -3117,10 +3117,44 @@ bool CoreChecks::PreCallValidateGetAccelerationStructureOpaqueCaptureDescriptorD
     return skip;
 }
 
-// Could be a VkBufferUsageFlagBits, but simpler for the string_VkBufferUsageFlags function to be used in the lambda
-bool CoreChecks::ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoEXT& address_info, const Location& address_loc,
-                                                  VkBufferUsageFlags buffer_usage, const char* usage_vuid) const {
+bool CoreChecks::ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoEXT& address_info,
+                                                  const Location& address_loc) const {
     bool skip = false;
+
+    // Could be a VkBufferUsageFlagBits, but simpler for the string_VkBufferUsageFlags function to be used in the lambda
+    VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_FLAG_BITS_MAX_ENUM;
+    const char* usage_vuid = nullptr;
+    // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7887
+    const char* limit_vuid = nullptr;
+    Field limit_field = Field::Empty;
+    VkDeviceSize limit_value = 0;
+
+    // Use the field to encode the type from the function call
+    if (address_loc.field == Field::pUniformBuffer) {
+        buffer_usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        usage_vuid = "VUID-VkDescriptorGetInfoEXT-type-12220";
+        limit_vuid = "UNASSIGNED-VkDescriptorGetInfoEXT-limit-pUniformBuffer";
+        limit_field = Field::minUniformBufferOffsetAlignment;
+        limit_value = phys_dev_props.limits.minUniformBufferOffsetAlignment;
+    } else if (address_loc.field == Field::pStorageBuffer) {
+        buffer_usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        usage_vuid = "VUID-VkDescriptorGetInfoEXT-type-12221";
+        limit_vuid = "UNASSIGNED-VkDescriptorGetInfoEXT-limit-pStorageBuffer";
+        limit_field = Field::minStorageBufferOffsetAlignment;
+        limit_value = phys_dev_props.limits.minStorageBufferOffsetAlignment;
+    } else if (address_loc.field == Field::pUniformTexelBuffer) {
+        buffer_usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
+        usage_vuid = "VUID-VkDescriptorGetInfoEXT-type-12222";
+        limit_vuid = "UNASSIGNED-VkDescriptorGetInfoEXT-limit-pUniformTexelBuffer";
+        limit_field = Field::minTexelBufferOffsetAlignment;
+        limit_value = phys_dev_props.limits.minTexelBufferOffsetAlignment;
+    } else if (address_loc.field == Field::pStorageTexelBuffer) {
+        buffer_usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
+        usage_vuid = "VUID-VkDescriptorGetInfoEXT-type-12223";
+        limit_vuid = "UNASSIGNED-VkDescriptorGetInfoEXT-limit-pStorageTexelBuffer";
+        limit_field = Field::minTexelBufferOffsetAlignment;
+        limit_value = phys_dev_props.limits.minTexelBufferOffsetAlignment;
+    }
 
     if (address_info.range == 0) {
         skip |= LogError("VUID-VkDescriptorAddressInfoEXT-range-08940", device, address_loc.dot(Field::range), "is zero.");
@@ -3138,6 +3172,11 @@ bool CoreChecks::ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoE
         if (address_info.range == VK_WHOLE_SIZE) {
             skip |= LogError("VUID-VkDescriptorAddressInfoEXT-nullDescriptor-08939", device, address_loc.dot(Field::range),
                              "is VK_WHOLE_SIZE.");
+        }
+        if (SafeModulo(address_info.address, limit_value) != 0) {
+            skip |=
+                LogError(limit_vuid, device, address_loc.dot(Field::address), "(0x%" PRIx64 ") is not aligned to %s (%" PRIu64 ").",
+                         address_info.address, String(limit_field), limit_value);
         }
     }
 
@@ -3303,8 +3342,6 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
     const VkDescriptorAddressInfoEXT *address_info = nullptr;
     Field data_field = Field::Empty;
     const Location descriptor_info_loc = error_obj.location.dot(Field::pDescriptorInfo);
-    VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_FLAG_BITS_MAX_ENUM;
-    const char* usage_vuid = kVUIDUndefined;
     switch (pDescriptorInfo->type) {
         case VK_DESCRIPTOR_TYPE_SAMPLER:
             data_field = Field::pSampler;
@@ -3398,26 +3435,18 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
         case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
             data_field = Field::pUniformTexelBuffer;
             address_info = pDescriptorInfo->data.pUniformTexelBuffer;
-            buffer_usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
-            usage_vuid = "VUID-VkDescriptorGetInfoEXT-type-12222";
             break;
         case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
             data_field = Field::pStorageTexelBuffer;
             address_info = pDescriptorInfo->data.pStorageTexelBuffer;
-            buffer_usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
-            usage_vuid = "VUID-VkDescriptorGetInfoEXT-type-12223";
             break;
         case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
             data_field = Field::pUniformBuffer;
             address_info = pDescriptorInfo->data.pUniformBuffer;
-            buffer_usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-            usage_vuid = "VUID-VkDescriptorGetInfoEXT-type-12220";
             break;
         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
             data_field = Field::pStorageBuffer;
             address_info = pDescriptorInfo->data.pStorageBuffer;
-            buffer_usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-            usage_vuid = "VUID-VkDescriptorGetInfoEXT-type-12221";
             break;
 
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:  // not full implemented
@@ -3549,7 +3578,7 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
                                           VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER})) {
         // Can be null if using nullDescriptor
         if (address_info) {
-            skip |= ValidateDescriptorAddressInfoEXT(*address_info, data_loc.dot(data_field), buffer_usage, usage_vuid);
+            skip |= ValidateDescriptorAddressInfoEXT(*address_info, data_loc.dot(data_field));
         }
     }
 
