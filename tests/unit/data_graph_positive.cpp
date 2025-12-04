@@ -215,6 +215,12 @@ TEST_F(PositiveDataGraph, DataGraphShaderModuleSpirvArray) {
     InitBasicDataGraph();
     RETURN_IF_SKIP(Init());
 
+    // the mock ICD doesn't create a pipeline, so the test succeeds if we ignore VU 9779, but a real driver will actually try to do
+    // something, and crash
+    if (!IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test only supported by MockICD";
+    }
+
     vkt::dg::HelperParameters params;
     params.graph_variant = vkt::dg::GraphVariant::AddTensorArraySpirv;
     vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
@@ -229,6 +235,12 @@ TEST_F(PositiveDataGraph, DataGraphShaderModuleSpirvRuntimeArray) {
     InitBasicDataGraph();
     AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
     RETURN_IF_SKIP(Init());
+
+    // the mock ICD doesn't create a pipeline, so the test succeeds if we ignore VU 9779, but a real driver will actually try to do
+    // something, and crash
+    if (!IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test only supported by MockICD";
+    }
 
     {
         // default helper constructs a descriptor matching the size of the spirv array:
