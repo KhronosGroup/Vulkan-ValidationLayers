@@ -406,11 +406,15 @@ TEST_F(PositiveDescriptorBuffer, MultipleSet) {
     TEST_DESCRIPTION("Have a single VkBuffer of data spread across 3 different sets.");
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
-    vkt::Buffer buffer_data(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    const uint32_t alignment = static_cast<uint32_t>(m_device->Physical().limits_.minStorageBufferOffsetAlignment);
+    const uint32_t offset_0 = 0;
+    const uint32_t offset_1 = alignment / sizeof(uint32_t);
+    const uint32_t offset_2 = offset_1 * 2;
+    vkt::Buffer buffer_data(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     uint32_t *data = (uint32_t *)buffer_data.Memory().Map();
-    data[0] = 8;
-    data[1] = 12;
-    data[2] = 1;
+    data[offset_0] = 8;
+    data[offset_1] = 12;
+    data[offset_2] = 1;
 
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     vkt::DescriptorSetLayout ds_layout(*m_device, binding, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
@@ -426,12 +430,12 @@ TEST_F(PositiveDescriptorBuffer, MultipleSet) {
     vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data);
 
     // Sets data_buffer[1] to set 1
-    get_info.address_info.address += 4;
+    get_info.address_info.address += alignment;
     mapped_descriptor_data += ds_layout_size;
     vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data);
 
     // Sets data_buffer[2] to set 2
-    get_info.address_info.address += 4;
+    get_info.address_info.address += alignment;
     mapped_descriptor_data += ds_layout_size;
     vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, mapped_descriptor_data);
 
@@ -476,7 +480,7 @@ TEST_F(PositiveDescriptorBuffer, MultipleSet) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 
     if (!IsPlatformMockICD()) {
-        ASSERT_TRUE(data[2] == 20);
+        ASSERT_TRUE(data[offset_2] == 20);
     }
 }
 
@@ -484,11 +488,15 @@ TEST_F(PositiveDescriptorBuffer, MultipleBinding) {
     TEST_DESCRIPTION("Have a single VkBuffer of data spread across 3 different bindings in the same set.");
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
-    vkt::Buffer buffer_data(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    const uint32_t alignment = static_cast<uint32_t>(m_device->Physical().limits_.minStorageBufferOffsetAlignment);
+    const uint32_t offset_0 = 0;
+    const uint32_t offset_1 = alignment / sizeof(uint32_t);
+    const uint32_t offset_2 = offset_1 * 2;
+    vkt::Buffer buffer_data(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     uint32_t *data = (uint32_t *)buffer_data.Memory().Map();
-    data[0] = 8;
-    data[1] = 12;
-    data[2] = 1;
+    data[offset_0] = 8;
+    data[offset_1] = 12;
+    data[offset_2] = 1;
 
     std::vector<VkDescriptorSetLayoutBinding> bindings = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                           {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -507,12 +515,12 @@ TEST_F(PositiveDescriptorBuffer, MultipleBinding) {
                          mapped_descriptor_data + ds_layout.GetDescriptorBufferBindingOffset(0));
 
     // Sets data_buffer[1] to binding 1
-    get_info.address_info.address += 4;
+    get_info.address_info.address += alignment;
     vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize,
                          mapped_descriptor_data + ds_layout.GetDescriptorBufferBindingOffset(1));
 
     // Sets data_buffer[2] to binding 2
-    get_info.address_info.address += 4;
+    get_info.address_info.address += alignment;
     vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize,
                          mapped_descriptor_data + ds_layout.GetDescriptorBufferBindingOffset(2));
 
@@ -558,9 +566,9 @@ TEST_F(PositiveDescriptorBuffer, MultipleBinding) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 
     if (!IsPlatformMockICD()) {
-        ASSERT_TRUE(data[0] == 8);
-        ASSERT_TRUE(data[1] == 12);
-        ASSERT_TRUE(data[2] == 20);
+        ASSERT_TRUE(data[offset_0] == 8);
+        ASSERT_TRUE(data[offset_1] == 12);
+        ASSERT_TRUE(data[offset_2] == 20);
     }
 }
 

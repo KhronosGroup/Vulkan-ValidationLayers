@@ -2678,8 +2678,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
                                                     const VkDescriptorBufferBindingInfoEXT* pBindingInfos,
                                                     const ErrorObject& error_obj) const override;
-    bool ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoEXT& address_info, const Location& address_loc,
-                                          VkBufferUsageFlags buffer_usage, const char* usage_vuid) const;
+    bool ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoEXT& address_info, const Location& address_loc) const;
     bool ValidateGetDescriptorDataSize(const VkDescriptorGetInfoEXT& descriptor_info, const size_t data_size,
                                        const Location& descriptor_info_loc) const;
     bool PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescriptorGetInfoEXT* pDescriptorInfo, size_t dataSize,

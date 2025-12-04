@@ -14,6 +14,7 @@
  */
 
 #include <vulkan/vulkan_core.h>
+#include <cstdint>
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
@@ -1574,9 +1575,9 @@ TEST_F(NegativeDescriptorBuffer, DescriptorGetInfo) {
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    VkSampler invalid_sampler = CastToHandle<VkSampler, uintptr_t>(0xbaadbeef);
-    VkImageView invalid_imageview = CastToHandle<VkImageView, uintptr_t>(0xbaadbeef);
-    VkDeviceAddress invalid_buffer = CastToHandle<VkDeviceAddress, uintptr_t>(0xbaadbeef);
+    VkSampler invalid_sampler = CastToHandle<VkSampler, uintptr_t>(0xbad00000);
+    VkImageView invalid_imageview = CastToHandle<VkImageView, uintptr_t>(0xbad00000);
+    VkDeviceAddress invalid_buffer = CastToHandle<VkDeviceAddress, uintptr_t>(0xbad00000);
 
     uint8_t buffer[128];
     VkDescriptorGetInfoEXT dgi = vku::InitStructHelper();
@@ -2078,4 +2079,48 @@ TEST_F(NegativeDescriptorBuffer, EmbeddedSamplers) {
     vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &buffer_index,
                                          &buffer_offset);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptorBuffer, GetDescriptorAlignment) {
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+
+    uint8_t host_descriptor[1024];
+
+    if (m_device->Physical().limits_.minStorageBufferOffsetAlignment != 1) {
+        vkt::Buffer buffer_data(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+        vkt::DescriptorGetInfo get_info(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_data, 4);
+        get_info.address_info.address += 1;
+
+        m_errorMonitor->SetDesiredError("UNASSIGNED-VkDescriptorGetInfoEXT-limit-pStorageBuffer");
+        vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, host_descriptor);
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (m_device->Physical().limits_.minUniformBufferOffsetAlignment != 1) {
+        vkt::Buffer buffer_data(*m_device, 64, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
+        vkt::DescriptorGetInfo get_info(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, buffer_data, 4);
+        get_info.address_info.address += 1;
+
+        m_errorMonitor->SetDesiredError("UNASSIGNED-VkDescriptorGetInfoEXT-limit-pUniformBuffer");
+        vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.uniformBufferDescriptorSize, host_descriptor);
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (m_device->Physical().limits_.minTexelBufferOffsetAlignment != 1) {
+        vkt::Buffer u_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, vkt::device_address);
+        vkt::DescriptorGetInfo get_info_u(VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, u_buffer, 4, VK_FORMAT_R32_UINT);
+        get_info_u.address_info.address += 1;
+
+        m_errorMonitor->SetDesiredError("UNASSIGNED-VkDescriptorGetInfoEXT-limit-pUniformTexelBuffer");
+        vk::GetDescriptorEXT(device(), get_info_u, descriptor_buffer_properties.uniformTexelBufferDescriptorSize, host_descriptor);
+        m_errorMonitor->VerifyFound();
+
+        vkt::Buffer s_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, vkt::device_address);
+        vkt::DescriptorGetInfo get_info_s(VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, s_buffer, 4, VK_FORMAT_R32_UINT);
+        get_info_s.address_info.address += 1;
+
+        m_errorMonitor->SetDesiredError("UNASSIGNED-VkDescriptorGetInfoEXT-limit-pStorageTexelBuffer");
+        vk::GetDescriptorEXT(device(), get_info_s, descriptor_buffer_properties.storageTexelBufferDescriptorSize, host_descriptor);
+        m_errorMonitor->VerifyFound();
+    }
 }
