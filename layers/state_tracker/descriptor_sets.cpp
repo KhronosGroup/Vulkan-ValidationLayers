@@ -65,9 +65,9 @@ void vvl::DescriptorPool::Allocate(const VkDescriptorSetAllocateInfo *alloc_info
         available_counts_[it->first] -= ds_data.required_descriptors_by_type.at(it->first);
     }
 
-    const auto *variable_count_info = vku::FindStructInPNextChain<VkDescriptorSetVariableDescriptorCountAllocateInfo>(alloc_info->pNext);
-    const bool variable_count_valid =
-        variable_count_info && variable_count_info->descriptorSetCount == alloc_count;
+    const auto *variable_count_info =
+        vku::FindStructInPNextChain<VkDescriptorSetVariableDescriptorCountAllocateInfo>(alloc_info->pNext);
+    const bool variable_count_valid = variable_count_info && variable_count_info->descriptorSetCount == alloc_count;
 
     // Create tracking object for each descriptor set; insert into global map and the pool's set.
     for (uint32_t i = 0; i < alloc_count; i++) {
@@ -180,12 +180,12 @@ vvl::DescriptorClass vvl::DescriptorTypeToClass(VkDescriptorType type) {
             return DescriptorClass::InlineUniform;
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
+        case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
             return DescriptorClass::AccelerationStructure;
         case VK_DESCRIPTOR_TYPE_MUTABLE_EXT:
             return DescriptorClass::Mutable;
         case VK_DESCRIPTOR_TYPE_TENSOR_ARM:
             return DescriptorClass::Tensor;
-        case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
         case VK_DESCRIPTOR_TYPE_MAX_ENUM:
             break;
     }
@@ -259,8 +259,8 @@ std::string DescriptorSetLayoutDef::DescribeDifference(uint32_t index, const Des
                 }
             } else if (GetMutableTypes(i) != other.GetMutableTypes(i)) {
                 // These have been sorted already so can direct compare
-                ss << "Mutable types doesn't match at binding " << i << "\n[" << PrintMutableTypes(i) << "]\ndoesn't match"
-                   << "\n[" << other.PrintMutableTypes(i) << "]";
+                ss << "Mutable types doesn't match at binding " << i << "\n[" << PrintMutableTypes(i) << "]\ndoesn't match" << "\n["
+                   << other.PrintMutableTypes(i) << "]";
                 found = true;
             }
         }
@@ -436,8 +436,7 @@ const vvl::IndexRange &vvl::DescriptorSetLayoutDef::GetGlobalIndexRangeFromIndex
 
 // For the given binding, return the global index range (half open)
 // As start and end are often needed in pairs, get both with a single lookup.
-const vvl::IndexRange &vvl::DescriptorSetLayoutDef::GetGlobalIndexRangeFromBinding(
-    const uint32_t binding) const {
+const vvl::IndexRange &vvl::DescriptorSetLayoutDef::GetGlobalIndexRangeFromBinding(const uint32_t binding) const {
     uint32_t index = GetIndexFromBinding(binding);
     return GetGlobalIndexRangeFromIndex(index);
 }
