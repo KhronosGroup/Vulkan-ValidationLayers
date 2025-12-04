@@ -2826,6 +2826,16 @@ bool CoreChecks::ValidateDataGraphPipelineShaderModuleSpirv(VkDevice device, con
         }
         if (instruction.Opcode() == spv::OpGraphConstantARM) {
             graph_constant_map[instruction.Word(3)] = instruction.Word(1);
+
+            // must be a tensor with shape
+            auto tensor_instr = module_spirv.FindDef(instruction.TypeId());
+            // tensor with shape means exactly 5 words
+            auto nWords = tensor_instr->Length();
+            if (nWords < 5) {
+                skip |= LogError("VUID-RuntimeSpirv-pNext-09920", module_spirv.handle(), module_loc,
+                                 "the type of '%s' is a tensor without a shape: '%s'.", instruction.Describe().c_str(),
+                                 tensor_instr->Describe().c_str());
+            }
         }
     }
 

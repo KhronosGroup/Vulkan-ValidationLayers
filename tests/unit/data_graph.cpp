@@ -1535,3 +1535,22 @@ TEST_F(NegativeDataGraph, DataGraphPipelineIdentifierHasResources) {
     pipeline.CreateDataGraphPipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDataGraph, DataGraphOpGraphConstantARMNoShape) {
+    TEST_DESCRIPTION("Try to create a datagraph with a OpGraphConstantARM defined on a tensor without shape");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    // inject a dummy constant based on a shapeless tensor
+    const std::string &spirv_string = vkt::dg::DataGraphPipelineHelper::GetSpirvBasicDataGraph(R"(
+                    %tensor_r4 = OpTypeTensorARM %uchar %uint_4
+            %constant_no_shape = OpGraphConstantARM %tensor_r4 2)");
+
+    vkt::dg::HelperParameters params;
+    params.spirv_source = spirv_string.c_str();
+    vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09920");
+    pipeline.CreateDataGraphPipeline();
+    m_errorMonitor->VerifyFound();
+}
