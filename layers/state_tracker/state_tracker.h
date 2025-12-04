@@ -117,6 +117,13 @@ class CommandBufferImageLayoutMap;
         static MapType vvl::InstanceState::*Map() { return &vvl::InstanceState::map_member; } \
     };
 
+struct NearestBufferResult {
+    vvl::range<VkDeviceAddress> above_range;
+    vvl::range<VkDeviceAddress> below_range;
+    vvl::span<vvl::Buffer* const> above_buffers;
+    vvl::span<vvl::Buffer* const> below_buffers;
+};
+
 namespace state_object {
 // Traits for State function resolution.  Specializations defined in the macros below.
 template <typename StateType>
@@ -688,6 +695,42 @@ class DeviceState : public vvl::base::Device {
             return vvl::make_span<vvl::Buffer* const>(nullptr, static_cast<size_t>(0));
         }
         return found_it->second;
+    }
+
+    // Used to help report error message
+    NearestBufferResult GetNearestBuffersByAddress(VkDeviceAddress address) const {
+        ReadLockGuard guard(buffer_address_lock_);
+
+        NearestBufferResult result = {vvl::range<VkDeviceAddress>(), vvl::range<VkDeviceAddress>(),
+                                      vvl::make_span<vvl::Buffer* const>(nullptr, static_cast<size_t>(0)),
+                                      vvl::make_span<vvl::Buffer* const>(nullptr, static_cast<size_t>(0))};
+
+        if (buffer_address_map_.empty()) {
+            return result;
+        }
+
+        // lower_bound returns the first range that ends *after* the address.
+        // Since we assume 'find' has already failed (address is in a gap),
+        // this will point to the nearest range *above* the requested address.
+        const auto range_key = vvl::range<VkDeviceAddress>(address, address + 1);
+        auto it = buffer_address_map_.lower_bound(range_key);
+
+        if (it != buffer_address_map_.end()) {
+            result.above_range = it->first;
+            result.above_buffers = it->second;
+        }
+
+        // If at the beginning, there is nothing below.
+        // Otherwise, the element immediately preceding the lower_bound
+        // is the nearest range below the address.
+        if (it != buffer_address_map_.begin()) {
+            auto prev = it;
+            --prev;
+            result.below_range = prev->first;
+            result.below_buffers = prev->second;
+        }
+
+        return result;
     }
 
     // Return a count pair, {written addresses count, total address ranges count}
@@ -2154,6 +2197,10 @@ class DeviceProxy : public vvl::base::Device {
 
     vvl::span<vvl::Buffer* const> GetBuffersByAddress(VkDeviceAddress address) const {
         return const_cast<const vvl::DeviceState*>(device_state)->GetBuffersByAddress(address);
+    }
+
+    NearestBufferResult GetNearestBuffersByAddress(VkDeviceAddress address) const {
+        return const_cast<const vvl::DeviceState*>(device_state)->GetNearestBuffersByAddress(address);
     }
 
     VkFormatFeatureFlags2 GetPotentialFormatFeatures(VkFormat format) const {

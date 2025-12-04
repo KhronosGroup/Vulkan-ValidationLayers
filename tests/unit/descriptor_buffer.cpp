@@ -2043,6 +2043,29 @@ TEST_F(NegativeDescriptorBuffer, PushDescriptor) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDescriptorBuffer, AddressOutOfBounds) {
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+
+    const uint32_t alignment = static_cast<uint32_t>(m_device->Physical().limits_.minStorageBufferOffsetAlignment);
+    vkt::Buffer buffer_data(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    VkDeviceAddress start_address = buffer_data.Address();
+
+    vkt::DescriptorGetInfo get_info(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_data, 4);
+    uint8_t host_descriptor[1024];
+
+    // VUID-VkDeviceAddress-size-11364
+    m_errorMonitor->SetDesiredError("Below at range");
+    get_info.address_info.address = start_address + (alignment * 50);  // OOB
+    vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, host_descriptor);
+    m_errorMonitor->VerifyFound();
+
+    // VUID-VkDeviceAddress-size-11364
+    m_errorMonitor->SetDesiredError("Above at range");
+    get_info.address_info.address = start_address - (alignment * 50);  // OOB
+    vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize, host_descriptor);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDescriptorBuffer, EmbeddedSamplers) {
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
