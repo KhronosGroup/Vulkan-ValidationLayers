@@ -20,6 +20,7 @@
 #include "sync/sync_barrier.h"
 #include "containers/span.h"
 #include <cstring>  // memcpy
+#include <optional>
 
 namespace syncval {
 

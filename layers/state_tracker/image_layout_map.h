@@ -21,6 +21,7 @@
 #pragma once
 
 #include <functional>
+#include <memory>
 
 #include "containers/custom_containers.h"
 #include "containers/subresource_adapter.h"

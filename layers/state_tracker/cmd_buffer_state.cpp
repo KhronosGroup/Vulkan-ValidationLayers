@@ -32,6 +32,15 @@
 #include "state_tracker/queue_state.h"
 #include "utils/assert_utils.h"
 #include "utils/image_utils.h"
+#include "containers/container_utils.h"
+
+// Submit time validation helper. Since CmdBeginRendering is itself an action command,
+// if the first detected action or sync command is CmdBeginRendering, it means there are
+// no other action commands before it.
+bool HasActionOrSyncCommandBeforeBeginRendering(vvl::Func first_action_or_sync_command) {
+    return first_action_or_sync_command != vvl::Func::Empty &&
+           !IsValueIn(first_action_or_sync_command, {vvl::Func::vkCmdBeginRendering, vvl::Func::vkCmdBeginRenderingKHR});
+}
 
 using RangeGenerator = subresource_adapter::RangeGenerator;
 

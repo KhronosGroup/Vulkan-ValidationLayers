@@ -23,10 +23,8 @@
 #include <algorithm>
 #include <cassert>
 #include <map>
-#include <optional>
 #include <utility>
 #include "containers/range.h"
-#include "containers/container_utils.h"
 
 #define RANGE_ASSERT(b) assert(b)
 

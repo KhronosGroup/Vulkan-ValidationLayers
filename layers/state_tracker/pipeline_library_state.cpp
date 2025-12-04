@@ -18,6 +18,7 @@
 #include "state_tracker/pipeline_library_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/shader_module.h"
+#include "containers/container_utils.h"
 
 bool PipelineLibraryState::IsIndependentSets() const {
     if (const auto layout_state = parent.PipelineLayoutState()) {

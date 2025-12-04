@@ -11,7 +11,6 @@
 
 #include "layer_validation_tests.h"
 #include "data_graph_objects.h"
-#include "shader_templates.h"
 
 class PositiveDataGraph : public DataGraphTest {};
 

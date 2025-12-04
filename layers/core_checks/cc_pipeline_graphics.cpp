@@ -23,8 +23,8 @@
 #include <vector>
 
 #include <vulkan/vk_enum_string_helper.h>
-#include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vulkan_core.h>
+#include "containers/container_utils.h"
 #include "containers/custom_containers.h"
 #include "core_checks/cc_state_tracker.h"
 #include "error_message/logging.h"

@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-#include "chassis/chassis_modification_state.h"
 #include "gpuav/core/gpuav.h"
 #include "gpuav/core/gpuav_validation_pipeline.h"
 #include "gpuav/validation_cmd/gpuav_validation_cmd_common.h"

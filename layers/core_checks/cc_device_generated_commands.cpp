@@ -32,6 +32,7 @@
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "containers/limits.h"
+#include "containers/container_utils.h"
 #include "cc_buffer_address.h"
 #include "utils/image_utils.h"
 

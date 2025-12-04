@@ -14,11 +14,11 @@
  */
 
 #include "gpuav/core/gpuav.h"
-#include "gpuav/resources/gpuav_shader_resources.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/resources/gpuav_vulkan_objects.h"
 #include "gpuav/shaders/gpuav_error_codes.h"
 #include "gpuav/shaders/gpuav_error_header.h"
+#include "gpuav/shaders/gpuav_shaders_constants.h"
 
 namespace gpuav {
 

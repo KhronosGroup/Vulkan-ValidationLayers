@@ -19,8 +19,8 @@
 #include <vulkan/utility/vk_format_utils.h>
 #include "error_message/error_location.h"
 #include "stateless/stateless_validation.h"
-#include "generated/enum_flag_bits.h"
 #include "generated/dispatch_functions.h"
+#include "generated/enum_flag_bits.h"
 
 #include <bitset>
 

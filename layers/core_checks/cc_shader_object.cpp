@@ -26,7 +26,6 @@
 #include "state_tracker/cmd_buffer_state.h"
 #include "generated/spirv_grammar_helper.h"
 #include "drawdispatch/drawdispatch_vuids.h"
-#include "containers/limits.h"
 #include "utils/action_command_utils.h"
 #include "utils/shader_utils.h"
 

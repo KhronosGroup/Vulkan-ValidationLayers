@@ -57,13 +57,7 @@ static inline bool IsRecorded(CbState state) { return state == CbState::Recorded
 
 static inline bool IsRecording(CbState state) { return state == CbState::Recording || state == CbState::InvalidIncomplete; }
 
-// Submit time validation helper. Since CmdBeginRendering is itself an action command,
-// if the first detected action or sync command is CmdBeginRendering, it means there are
-// no other action commands before it.
-static inline bool HasActionOrSyncCommandBeforeBeginRendering(vvl::Func first_action_or_sync_command) {
-    return first_action_or_sync_command != vvl::Func::Empty &&
-           !IsValueIn(first_action_or_sync_command, {vvl::Func::vkCmdBeginRendering, vvl::Func::vkCmdBeginRenderingKHR});
-}
+bool HasActionOrSyncCommandBeforeBeginRendering(vvl::Func first_action_or_sync_command);
 
 enum class AttachmentSource {
     Empty = 0,

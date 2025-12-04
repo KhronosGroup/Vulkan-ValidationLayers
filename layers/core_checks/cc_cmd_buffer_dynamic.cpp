@@ -37,6 +37,7 @@
 #include "state_tracker/pipeline_state.h"
 #include "utils/math_utils.h"
 #include "utils/vk_api_utils.h"
+#include "containers/container_utils.h"
 
 bool CoreChecks::ValidateDynamicStateIsSet(const LastBound& last_bound_state, const CBDynamicFlags& state_status_cb,
                                            CBDynamicState dynamic_state, const vvl::DrawDispatchVuid& vuid) const {

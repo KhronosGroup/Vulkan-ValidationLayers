@@ -19,14 +19,6 @@
 
 #include <vulkan/vulkan.h>
 
-#include "containers/limits.h"
-#include "state_tracker/vertex_index_buffer_state.h"
-
-#include <memory>
-#include <string>
-#include <optional>
-#include <limits>
-
 struct Location;
 struct LastBound;
 struct LogObjectList;

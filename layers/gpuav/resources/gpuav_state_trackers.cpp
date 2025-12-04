@@ -20,7 +20,6 @@
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/descriptor_validation/gpuav_descriptor_validation.h"
 #include "gpuav/instrumentation/gpuav_instrumentation.h"
-#include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "gpuav/core/gpuav.h"
 #include "gpuav/core/gpuav_constants.h"
 #include "gpuav/shaders/gpuav_error_header.h"

@@ -14,10 +14,6 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/ray_tracing_objects.h"
-#include "../framework/descriptor_helper.h"
-#include "../framework/shader_helper.h"
-#include "../layers/utils/math_utils.h"
-
 class NegativeRayTracingSpheres : public RayTracingTest {};
 
 TEST_F(NegativeRayTracingSpheres, SpheresMisalignedVertexStride) {
