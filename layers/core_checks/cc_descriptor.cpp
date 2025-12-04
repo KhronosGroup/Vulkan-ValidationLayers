@@ -1375,10 +1375,10 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView &view_state, VkImageLa
             VkImageLayout layout;
             ExtEnabled DeviceExtensions::*extension;
         };
+        // Layouts allowed for all three descriptor types (sampled, combined, input attachment)
         const static std::array<VkImageLayout, 3> shared_layouts = {
             {VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL}};
         const static std::array<ExtensionLayout, 9> shared_extended_layouts{{
-            //  Note double brace req'd for aggregate initialization
             {VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR, &DeviceExtensions::vk_khr_shared_presentable_image},
             {VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL, &DeviceExtensions::vk_khr_maintenance2},
             {VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, &DeviceExtensions::vk_khr_maintenance2},
@@ -1387,21 +1387,34 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView &view_state, VkImageLa
             {VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL, &DeviceExtensions::vk_khr_separate_depth_stencil_layouts},
             {VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT, &DeviceExtensions::vk_ext_attachment_feedback_loop_layout},
         }};
-        const static std::array<ExtensionLayout, 9> input_attachment_extended_layouts{{
+        // Per descriptor type variations
+        const static std::array<ExtensionLayout, 1> sampled_image_layouts{{
+            {VK_IMAGE_LAYOUT_TENSOR_ALIASING_ARM, &DeviceExtensions::vk_arm_tensors},
+        }};
+        const static std::array<ExtensionLayout, 1> combined_image_sampler_layouts{{
+            {VK_IMAGE_LAYOUT_TENSOR_ALIASING_ARM, &DeviceExtensions::vk_arm_tensors},
+        }};
+        const static std::array<ExtensionLayout, 1> input_attachment_layouts{{
             {VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ, &DeviceExtensions::vk_khr_dynamic_rendering_local_read},
         }};
+
         auto is_layout = [image_layout, this](const ExtensionLayout &ext_layout) {
             return IsExtEnabled(extensions.*(ext_layout.extension)) && (ext_layout.layout == image_layout);
         };
 
         bool is_valid = std::find(shared_layouts.begin(), shared_layouts.end(), image_layout) != shared_layouts.end();
         if (!is_valid) {
-            is_valid = std::any_of(shared_extended_layouts.cbegin(), shared_extended_layouts.cend(), is_layout);
+            is_valid = std::any_of(shared_extended_layouts.begin(), shared_extended_layouts.end(), is_layout);
         }
-        if (!is_valid && type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
-            is_valid = std::any_of(input_attachment_extended_layouts.cbegin(), input_attachment_extended_layouts.cend(), is_layout);
+        if (!is_valid) {
+            if (type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) {
+                is_valid = std::any_of(sampled_image_layouts.begin(), sampled_image_layouts.end(), is_layout);
+            } else if (type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+                is_valid = std::any_of(combined_image_sampler_layouts.begin(), combined_image_sampler_layouts.end(), is_layout);
+            } else if (type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
+                is_valid = std::any_of(input_attachment_layouts.begin(), input_attachment_layouts.end(), is_layout);
+            }
         }
-
         if (!is_valid) {
             const char *vuid = kVUIDUndefined;
             switch (type) {
@@ -1428,8 +1441,20 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView &view_state, VkImageLa
                     error_str << ", " << string_VkImageLayout(ext_layout.layout);
                 }
             }
-            if (type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
-                for (auto &ext_layout : input_attachment_extended_layouts) {
+            if (type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) {
+                for (auto &ext_layout : sampled_image_layouts) {
+                    if (IsExtEnabled(extensions.*(ext_layout.extension))) {
+                        error_str << ", " << string_VkImageLayout(ext_layout.layout);
+                    }
+                }
+            } else if (type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+                for (auto &ext_layout : combined_image_sampler_layouts) {
+                    if (IsExtEnabled(extensions.*(ext_layout.extension))) {
+                        error_str << ", " << string_VkImageLayout(ext_layout.layout);
+                    }
+                }
+            } else if (type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
+                for (auto &ext_layout : input_attachment_layouts) {
                     if (IsExtEnabled(extensions.*(ext_layout.extension))) {
                         error_str << ", " << string_VkImageLayout(ext_layout.layout);
                     }
@@ -1441,7 +1466,7 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView &view_state, VkImageLa
 
     if ((type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) || (type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
         const VkComponentMapping components = view_state.create_info.components;
-        if (IsIdentitySwizzle(components) == false) {
+        if (!IsIdentitySwizzle(components)) {
             skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00336", objlist, image_info_loc.dot(Field::imageView),
                              "has a non-identiy swizzle component, here are the actual swizzle values:\n%s",
                              string_VkComponentMapping(components).c_str());
