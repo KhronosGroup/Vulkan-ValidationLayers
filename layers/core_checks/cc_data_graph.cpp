@@ -155,15 +155,24 @@ bool CoreChecks::ValidateTensorSemiStructuredSparsityInfo(VkDevice device, const
 
     const auto* sparsity =
         vku::FindStructInPNextChain<VkDataGraphPipelineConstantTensorSemiStructuredSparsityInfoARM>(constant.pNext);
+
+    if (!sparsity) {
+        return skip;
+    }
+
     const auto* tensor_desc = vku::FindStructInPNextChain<VkTensorDescriptionARM>(constant.pNext);
 
+    if (!tensor_desc) {
+        skip |= LogError("VUID-VkDataGraphPipelineConstantARM-pNext-09775", device,
+                         constant_loc.pNext(Struct::VkDataGraphPipelineConstantTensorSemiStructuredSparsityInfoARM),
+                         "exists but the pNext chain doesn't include a VkTensorDescriptionARM.\n%s",
+                         PrintPNextChain(Struct::VkDataGraphPipelineConstantARM, constant.pNext).c_str());
+        return skip;
+    }
+
+    vvl::unordered_set<uint32_t> sparsity_dimensions;
     while (sparsity) {
-        if (!tensor_desc) {
-            skip |= LogError("VUID-VkDataGraphPipelineConstantARM-pNext-09775", device,
-                             constant_loc.pNext(Struct::VkDataGraphPipelineConstantTensorSemiStructuredSparsityInfoARM),
-                             "exists but the pNext chain doesn't include a VkTensorDescriptionARM.\n%s",
-                             PrintPNextChain(Struct::VkDataGraphPipelineConstantARM, constant.pNext).c_str());
-        } else if (sparsity->dimension >= tensor_desc->dimensionCount) {
+        if (sparsity->dimension >= tensor_desc->dimensionCount) {
             skip |= LogError(
                 "VUID-VkDataGraphPipelineConstantARM-pNext-09776", device,
                 constant_loc.pNext(Struct::VkDataGraphPipelineConstantTensorSemiStructuredSparsityInfoARM, Field::dimension),
@@ -175,6 +184,12 @@ bool CoreChecks::ValidateTensorSemiStructuredSparsityInfo(VkDevice device, const
                                                 Field::pDimensions, sparsity->dimension),
                              "(%" PRIu64 ") must be a multiple of groupSize (%" PRIu32 ")",
                              tensor_desc->pDimensions[sparsity->dimension], sparsity->groupSize);
+        }
+        auto insert_ok = sparsity_dimensions.insert(sparsity->dimension).second;
+        if (!insert_ok) {
+            skip |= LogError("VUID-VkDataGraphPipelineConstantARM-pNext-09870", device,
+                             constant_loc.pNext(Struct::VkDataGraphPipelineConstantTensorSemiStructuredSparsityInfoARM, Field::dimension),
+                             "(%" PRIu32 ") already has a defined sparsity", sparsity->dimension);
         }
         // We can have multiple Sparsity structures in the pNext chain.
         sparsity = vku::FindStructInPNextChain<VkDataGraphPipelineConstantTensorSemiStructuredSparsityInfoARM>(sparsity->pNext);

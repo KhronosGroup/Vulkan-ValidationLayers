@@ -72,7 +72,9 @@ class DataGraphPipelineHelper {
     virtual ~DataGraphPipelineHelper();
     void Destroy();
 
-    static std::string GetSpirvBasicDataGraph(const char *inserted_line = "");
+    static inline std::string GetSpirvBasicDataGraph() { return GetSpirvModifyableDataGraph(); };
+    static std::string GetSpirvModifyableDataGraph(const ModifiableShaderParameters& params = ModifiableShaderParameters());
+    static std::string GetSpirvConstantDataGraph();
     static std::string GetSpirvMultiEntryTwoDataGraph();
     static inline std::string GetSpirvBasicShader() { return GetSpirvModifiableShader(); };
     static std::string GetSpirvModifiableShader(const ModifiableShaderParameters &params = ModifiableShaderParameters());

@@ -93,24 +93,28 @@ std::string DataGraphPipelineHelper::GetSpirvMultiEntryTwoDataGraph() {
               %uchar_1_tensor_0 = OpConstantComposite %uchar_1_tensor %uchar_0
      %uchar_1_8_16_4_tensor_ptr = OpTypePointer UniformConstant %uchar_1_8_16_4_tensor
       %uchar_1_2_4_4_tensor_ptr = OpTypePointer UniformConstant %uchar_1_2_4_4_tensor
+; constant used ONLY in entrypoint 2
+                     %constant0 = OpGraphConstantARM %uchar_1_2_4_4_tensor 0
                     %main_arg_0 = OpVariable %uchar_1_8_16_4_tensor_ptr UniformConstant
                     %main_res_0 = OpVariable %uchar_1_2_4_4_tensor_ptr UniformConstant
                     %graph_type = OpTypeGraphARM 1 %uchar_1_8_16_4_tensor %uchar_1_2_4_4_tensor
-; entrypoint 1: MAX_POOL2D -> MAX_POOL2D
+; graph 1: %main_res_0 = MAX_POOL2D(MAX_POOL2D(%main_arg_0))
                        %graph_1 = OpGraphARM %graph_type
                           %in_0 = OpGraphInputARM %uchar_1_8_16_4_tensor %uint_0
                           %op_0 = OpExtInst %uchar_1_4_8_4_tensor %tosa MAX_POOL2D %uint_2_tensor_2_2 %uint_2_tensor_2_2 %uint_4_tensor_0_0_0_0 %uint_0 %in_0
                           %op_1 = OpExtInst %uchar_1_2_4_4_tensor %tosa MAX_POOL2D %uint_2_tensor_2_2 %uint_2_tensor_2_2 %uint_4_tensor_0_0_0_0 %uint_0 %op_0
                                   OpGraphSetOutputARM %op_1 %uint_0
                                   OpGraphEndARM
-                                  OpGraphEntryPointARM %graph_1 "entrypoint_1" %main_arg_0 %main_res_0
-; entrypoint 2: AVG_POOL2D -> AVG_POOL2D
+; graph 2: %main_res_0 = ADD(AVG_POOL2D(AVG_POOL2D(%main_arg_0)), %constant0)
                        %graph_2 = OpGraphARM %graph_type
                           %in_1 = OpGraphInputARM %uchar_1_8_16_4_tensor %uint_0
                           %op_2 = OpExtInst %uchar_1_4_8_4_tensor %tosa AVG_POOL2D %uint_2_tensor_2_2 %uint_2_tensor_2_2 %uint_4_tensor_0_0_0_0 %uint_1 %in_1 %uchar_1_tensor_0 %uchar_1_tensor_0
                           %op_3 = OpExtInst %uchar_1_2_4_4_tensor %tosa AVG_POOL2D %uint_2_tensor_2_2 %uint_2_tensor_2_2 %uint_4_tensor_0_0_0_0 %uint_1 %op_2 %uchar_1_tensor_0 %uchar_1_tensor_0
-                                  OpGraphSetOutputARM %op_3 %uint_0
+                          %op_4 = OpExtInst %uchar_1_2_4_4_tensor %tosa ADD %op_3 %constant0
+                                  OpGraphSetOutputARM %op_4 %uint_0
                                   OpGraphEndARM
+; bind graphs to entrypoints
+                                  OpGraphEntryPointARM %graph_1 "entrypoint_1" %main_arg_0 %main_res_0
                                   OpGraphEntryPointARM %graph_2 "entrypoint_2" %main_arg_0 %main_res_0
 )";
 }
@@ -118,11 +122,12 @@ std::string DataGraphPipelineHelper::GetSpirvMultiEntryTwoDataGraph() {
 // Spirv source. For testing purposes it includes:
 // - unused OpGraphConstantARM
 // - `inserted_line` to cause different errors
-std::string DataGraphPipelineHelper::GetSpirvBasicDataGraph(const char* inserted_line) {
+std::string DataGraphPipelineHelper::GetSpirvModifyableDataGraph(const ModifiableShaderParameters& params) {
     std::stringstream ss;
     ss << R"(
                                   OpCapability GraphARM
                                   OpCapability TensorsARM
+)" << params.capabilities << R"(
                                   OpCapability Int8
                                   OpCapability Shader
                                   OpCapability VulkanMemoryModel
@@ -158,9 +163,7 @@ std::string DataGraphPipelineHelper::GetSpirvBasicDataGraph(const char* inserted
           %uchar_1_4_8_4_tensor = OpTypeTensorARM %uchar %uint_4 %uint_arr_4_1_4_8_4
                  %uint_2_tensor = OpTypeTensorARM %uint %uint_1 %uint_arr_1_2
                  %uint_4_tensor = OpTypeTensorARM %uint %uint_1 %uint_arr_1_4
-)" << inserted_line << R"(
-                     %constant0 = OpGraphConstantARM %uint_2_tensor 1
-                     %constant1 = OpGraphConstantARM %uint_4_tensor 0
+)" << params.types << R"(
              %uint_2_tensor_2_2 = OpConstantComposite %uint_2_tensor %uint_2 %uint_2
          %uint_4_tensor_0_0_0_0 = OpConstantComposite %uint_4_tensor %uint_0 %uint_0 %uint_0 %uint_0
      %uchar_1_8_16_4_tensor_ptr = OpTypePointer UniformConstant %uchar_1_8_16_4_tensor
@@ -173,6 +176,7 @@ std::string DataGraphPipelineHelper::GetSpirvBasicDataGraph(const char* inserted
                           %in_0 = OpGraphInputARM %uchar_1_8_16_4_tensor %uint_0
                           %op_0 = OpExtInst %uchar_1_4_8_4_tensor %tosa MAX_POOL2D  %uint_2_tensor_2_2 %uint_2_tensor_2_2 %uint_4_tensor_0_0_0_0 %uint_0 %in_0
                           %op_1 = OpExtInst %uchar_1_2_4_4_tensor %tosa MAX_POOL2D  %uint_2_tensor_2_2 %uint_2_tensor_2_2 %uint_4_tensor_0_0_0_0 %uint_0 %op_0
+)" << params.instructions << R"(
                                   OpGraphSetOutputARM %op_1 %uint_0
                                   OpGraphEndARM
 )";
@@ -239,8 +243,7 @@ std::string DataGraphPipelineHelper::GetSpirvTensorArrayDataGraph(bool is_runtim
     ss << R"(
                             OpCapability GraphARM
                             OpCapability TensorsARM
-)" << (is_runtime ? "OpCapability RuntimeDescriptorArray" : "")
-       << R"(
+)" << (is_runtime ? "OpCapability RuntimeDescriptorArray" : "") << R"(
                             OpCapability Int8
                             OpCapability Shader
                             OpCapability VulkanMemoryModel
@@ -265,9 +268,7 @@ std::string DataGraphPipelineHelper::GetSpirvTensorArrayDataGraph(bool is_runtim
                %i32_arr_4 = OpTypeArray %i32 %i32_4
             %tensor_shape = OpConstantComposite %i32_arr_4 %i32_1 %i32_4 %i32_4 %i32_2
                   %tensor = OpTypeTensorARM %i8 %i32_4 %tensor_shape
-)" << (is_runtime ? "%tensor_array = OpTypeRuntimeArray %tensor"
-                  : "%tensor_array = OpTypeArray %tensor %i32_2")
-       << R"(
+)" << (is_runtime ? "%tensor_array = OpTypeRuntimeArray %tensor" : "%tensor_array = OpTypeArray %tensor %i32_2") << R"(
         %ptr_tensor_array = OpTypePointer UniformConstant %tensor_array
               %ptr_tensor = OpTypePointer UniformConstant %tensor
               %main_arg_0 = OpVariable %ptr_tensor_array UniformConstant
@@ -282,6 +283,13 @@ std::string DataGraphPipelineHelper::GetSpirvTensorArrayDataGraph(bool is_runtim
                             OpGraphEndARM
 )";
     return ss.str();
+}
+
+std::string DataGraphPipelineHelper::GetSpirvConstantDataGraph() {
+    vkt::dg::ModifiableShaderParameters spirv_params;
+    spirv_params.types = "%constant_0 = OpGraphConstantARM %uchar_1_2_4_4_tensor 0";
+    spirv_params.instructions = "%dummy = OpExtInst %uchar_1_2_4_4_tensor %tosa ADD %op_1 %constant_0";
+    return vkt::dg::DataGraphPipelineHelper::GetSpirvModifyableDataGraph(spirv_params);
 }
 
 // shapes for 2-layer maxpool 2x2: output tensor is 1/4 the size of the input tensor
@@ -323,7 +331,7 @@ void DataGraphPipelineHelper::InitPipelineResources(VkDescriptorType desc_type) 
         descriptor_set_layout_bindings_[1] = {1, desc_type, 1, VK_SHADER_STAGE_ALL, nullptr};
     } else {  // default: BasicSpirv
 
-        // tensors for GetSpirvBasicDataGraph(): 1 input, 1 output
+        // tensors for GetSpirvModifyableDataGraph(): 1 input, 1 output
 
         tensors_.resize(2);
         tensor_views_.resize(tensors_.size());

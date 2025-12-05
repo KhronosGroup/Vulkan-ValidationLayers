@@ -554,6 +554,8 @@ struct EntryPoint {
     std::shared_ptr<const TaskPayloadVariable> task_payload_variable;
     const std::vector<ResourceInterfaceVariable> resource_interface_variables;
     const std::vector<StageInterfaceVariable> stage_interface_variables;
+    const std::vector<const Instruction *> datagraph_constants;
+
     // Easier to lookup without having to check for the is_builtin bool
     // "Built-in interface variables" - vkspec.html#interfaces-iointerfaces-builtin
     std::vector<const StageInterfaceVariable *> built_in_variables;
@@ -596,6 +598,8 @@ struct EntryPoint {
                                                                           const ParsedInfo &parsed);
     static std::vector<ResourceInterfaceVariable> GetResourceInterfaceVariables(const Module &module_state, EntryPoint &entrypoint,
                                                                                 const ParsedInfo &parsed);
+    static std::vector<const Instruction *> GetDataGraphConstants(const Module& module_state, EntryPoint& entrypoint);
+
     static bool IsBuiltInWritten(spv::BuiltIn built_in, const Module &module_state, const StageInterfaceVariable &variable,
                                  const ParsedInfo &parsed);
 };
