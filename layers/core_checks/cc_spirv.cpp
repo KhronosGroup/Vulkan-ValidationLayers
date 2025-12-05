@@ -2810,59 +2810,114 @@ bool CoreChecks::ValidateDataGraphPipelineShaderModuleSpirv(VkDevice device, con
         }
     }
 
-    std::unordered_set<uint32_t> graph_tensor_ids;
-    std::unordered_map<uint32_t, uint32_t> graph_constant_map;
-    for (auto &instruction : module_spirv.GetInstructions()) {
-        if (instruction.Opcode() == spv::OpTypeTensorARM) {
-            graph_tensor_ids.insert(instruction.Word(1));
-        }
-        if (instruction.Opcode() == spv::OpGraphConstantARM) {
-            graph_constant_map[instruction.Word(3)] = instruction.Word(1);
+    std::vector<bool> pConstant_matched(dg_shader_ci.constantCount, false);
+    for (auto constant_instr : entry_point->datagraph_constants) {
+        auto constant_type_instr = *module_spirv.FindDef(constant_instr->TypeId());
 
-            // must be a tensor with shape
-            auto tensor_instr = module_spirv.FindDef(instruction.TypeId());
-            // tensor with shape means exactly 5 words
-            auto nWords = tensor_instr->Length();
-            if (nWords < 5) {
-                skip |= LogError("VUID-RuntimeSpirv-pNext-09920", module_spirv.handle(), module_loc,
-                                 "the type of '%s' is a tensor without a shape: '%s'.", instruction.Describe().c_str(),
-                                 tensor_instr->Describe().c_str());
+        // the following checks are only for tensors. Any type other than tensor will throw an error executing spirv-val, which results in VU 8737 in the VVL
+        if (!constant_type_instr.IsTensor()) {
+            continue;
+        }
+
+        auto& tensor_type_instr = constant_type_instr;
+        // if the constant type is a tensor, it MUST have a shape, i.e. exactly 5 words long
+        auto nWords = tensor_type_instr.Length();
+        if (nWords < 5) {
+            skip |= LogError("VUID-RuntimeSpirv-pNext-09920", module_spirv.handle(), module_loc,
+                             "the type of '%s' is a tensor without a shape: '%s'.", constant_instr->Describe().c_str(),
+                             tensor_type_instr.Describe().c_str());
+        }
+
+        // MUST match one element of pConstants in the shader module create info
+        const uint32_t graph_constant_id = constant_instr->Word(3);
+        int32_t vk_index = -1;
+        for (uint32_t j = 0; j < dg_shader_ci.constantCount; j++) {
+            auto &vk_constant = dg_shader_ci.pConstants[j];
+            if (vk_constant.id == graph_constant_id) {
+                vk_index = j;
+                break;
+            }
+        }
+        if (vk_index < 0) {
+            skip |= LogError("VUID-RuntimeSpirv-pNext-09921", device, dg_shader_ci_loc.dot(Field::pConstants),
+                             "none of the elements has the same id (%" PRIu32 ") of the spirv definition (%s)", graph_constant_id,
+                             constant_instr->Describe().c_str());
+        } else {
+            pConstant_matched[vk_index] = true;
+            auto &vk_constant = dg_shader_ci.pConstants[vk_index];
+            const Location vk_constant_loc = dg_shader_ci_loc.dot(Field::pConstants, vk_index);
+            if (auto *tensor_desc = vku::FindStructInPNextChain<VkTensorDescriptionARM>(vk_constant.pNext)) {
+                auto spirv_rank = module_spirv.GetConstantValueById(tensor_type_instr.Word(3));
+                if (tensor_desc->dimensionCount != spirv_rank) {
+                    skip |= LogError("VUID-RuntimeSpirv-pNext-09921", device,
+                                     vk_constant_loc.pNext(Struct::VkTensorDescriptionARM).dot(Field::dimensionCount),
+                                     "(%" PRIu32 ") doesn't match the rank (%" PRIu32 ") of the spirv definition (%s)",
+                                     tensor_desc->dimensionCount, spirv_rank, tensor_type_instr.Describe().c_str());
+                }
+
+                auto spirv_element_type_instr = module_spirv.FindDef(tensor_type_instr.Word(2));
+                auto spirv_numeric_type = module_spirv.GetNumericType(spirv_element_type_instr->Word(1));
+                auto spirv_vk_format = spirv::GetTensorFormat(spirv_numeric_type, spirv_element_type_instr->Word(2));
+                if (tensor_desc->format != spirv_vk_format) {
+                    skip |= LogError("VUID-RuntimeSpirv-pNext-09921", device,
+                                     vk_constant_loc.pNext(Struct::VkTensorDescriptionARM).dot(Field::format),
+                                     "(%s) doesn't match the element type (%s) of the spirv definition (%s)",
+                                     string_VkFormat(tensor_desc->format), string_VkFormat(spirv_vk_format),
+                                     spirv_element_type_instr->Describe().c_str());
+                }
+
+                // nothing to check here if the tensor has no shape, and we have already failed VU 9920 anyway.
+                if (tensor_type_instr.Length() > 4) {
+                    auto shape_instr = module_spirv.FindDef(tensor_type_instr.Word(4));
+                    auto max_dim = std::min(tensor_desc->dimensionCount, spirv_rank);
+                    for (uint32_t i = 0; i < max_dim; i++) {
+                        auto spirv_dim_i = module_spirv.GetConstantValueById(shape_instr->Word(3 + i));
+                        if (tensor_desc->pDimensions[i] != spirv_dim_i) {
+                            skip |= LogError("VUID-RuntimeSpirv-pNext-09921", device,
+                                             vk_constant_loc.pNext(Struct::VkTensorDescriptionARM).dot(Field::pDimensions, i),
+                                             "(%" PRIi64 ") doesn't match the value (%" PRIu32
+                                             ") of the corresponding element in the spirv definition (%s)",
+                                             tensor_desc->pDimensions[i], spirv_dim_i, tensor_type_instr.Describe().c_str());
+                        }
+                    }
+                }
+            } else {  // missing VkTensorDescriptionARM
+                skip |= LogError("VUID-RuntimeSpirv-pNext-09921", device, vk_constant_loc,
+                                 "does not include a VkTensorDescriptionARM in its pNext chain");
             }
         }
     }
 
-    for (uint32_t j = 0; j < dg_shader_ci.constantCount; j++) {
-        auto &constant = dg_shader_ci.pConstants[j];
-        const Location constant_loc = dg_shader_ci_loc.dot(Field::pConstants, j);
-        if (graph_constant_map.find(constant.id) == graph_constant_map.end()) {
-            std::stringstream const_ids;
-            for (auto &c : graph_constant_map) {
-                if (!const_ids.str().empty()) {
-                    const_ids << ", ";
-                }
-                const_ids << c.first;
-            }
-            skip |= LogError(
-                "VUID-VkDataGraphPipelineShaderModuleCreateInfoARM-id-09774", device, constant_loc.dot(Field::id),
-                "(%" PRIu32 ") does not match any of the GraphConstantIDs ([%s]) used by OpGraphConstantARM instructions in module",
-                constant.id, const_ids.str().c_str());
+    // now check the pConstants elements
+    for (uint32_t i = 0; i < dg_shader_ci.constantCount; i++) {
+        auto &constant = dg_shader_ci.pConstants[i];
+        const Location constant_loc = dg_shader_ci_loc.dot(Field::pConstants, i);
+        if (!pConstant_matched[i]) {
+            skip |= LogError("VUID-VkDataGraphPipelineShaderModuleCreateInfoARM-id-09774", device, constant_loc.dot(Field::id),
+                             "(%" PRIu32 ") does not match the id of any of the OpGraphConstantARM instructions in module",
+                             constant.id);
         } else {
-            if (std::find(graph_tensor_ids.begin(), graph_tensor_ids.end(), graph_constant_map[constant.id]) !=
-                graph_tensor_ids.end()) {
-                auto *tensor_desc = vku::FindStructInPNextChain<VkTensorDescriptionARM>(constant.pNext);
-                if (!tensor_desc) {
-                    skip |=
-                        LogError("VUID-VkDataGraphPipelineConstantARM-id-09850", device, constant_loc,
-                                 "(%" PRIu32
-                                 ") is a graph constant of tensor type, but there is no VkTensorDescriptionARM in the pNext chain",
-                                 constant.id);
-                } else if ((tensor_desc->usage & VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM) == 0) {
+            if (auto *tensor_desc = vku::FindStructInPNextChain<VkTensorDescriptionARM>(constant.pNext)) {
+                if ((tensor_desc->usage & VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM) == 0) {
                     skip |= LogError(
                         "VUID-VkDataGraphPipelineConstantARM-id-09850", device, constant_loc.dot(Field::id),
                         "(%" PRIu32
                         ") is a graph constant of tensor type but its matching VkTensorDescriptionARM has an invalid usage (%s)",
                         constant.id, string_VkTensorUsageFlagsARM(tensor_desc->usage).c_str());
                 }
+                if (tensor_desc->tiling != VK_TENSOR_TILING_LINEAR_ARM) {
+                    skip |= LogError(
+                        "VUID-VkDataGraphPipelineConstantARM-pNext-09917", device, constant_loc.dot(Field::tiling),
+                        "(%" PRIu32
+                        ") is a graph constant of tensor type but its matching VkTensorDescriptionARM has an invalid tiling (%s)",
+                        constant.id, string_VkTensorTilingARM(tensor_desc->tiling));
+                }
+            } else {
+                // NOTE: there is an overlap in VUs: a missing VkTensorDescriptionARM has already triggered 9921 above
+                skip |= LogError("VUID-VkDataGraphPipelineConstantARM-id-09850", device, constant_loc,
+                                 "(%" PRIu32
+                                 ") is a graph constant of tensor type, but there is no VkTensorDescriptionARM in the pNext chain",
+                                 constant.id);
             }
         }
     }

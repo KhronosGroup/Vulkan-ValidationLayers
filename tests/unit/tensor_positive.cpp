@@ -30,7 +30,7 @@ VkTensorDescriptionARM TensorTest::DefaultDesc() {
     static VkTensorDescriptionARM desc = vku::InitStructHelper();
     desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
     desc.format = VK_FORMAT_R8_SINT;
-    desc.dimensionCount = 1;
+    desc.dimensionCount = dimensions.size();
     desc.pDimensions = dimensions.data();
     desc.pStrides = strides.data();
     desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
@@ -44,7 +44,7 @@ VkTensorDescriptionARM TensorTest::TensorShaderDesc() {
     static VkTensorDescriptionARM desc = vku::InitStructHelper();
     desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
     desc.format = VK_FORMAT_R32_SINT;
-    desc.dimensionCount = 1;
+    desc.dimensionCount = dimensions.size();
     desc.pDimensions = dimensions.data();
     desc.pStrides = nullptr;
     desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;

@@ -953,55 +953,56 @@ TEST_F(NegativeDataGraph, ShaderModuleCreateInfoInvalidConstantID) {
 }
 
 TEST_F(NegativeDataGraph, TensorSparsitySuppliedMissingDescription) {
-    TEST_DESCRIPTION(
-        "Try creating a datagraph pipeline when a TensorSparsity structure is supplied as part of the pConstants->pNext chain but "
-        "is missing a TensorDescription structure");
+    TEST_DESCRIPTION("Try creating a datagraph pipeline with a tensor sparsity structure but missing a tensor description structure");
     InitBasicDataGraph();
     RETURN_IF_SKIP(Init());
 
-    vkt::dg::DataGraphPipelineHelper pipeline(*this);
+    const std::string &spirv_string = vkt::dg::DataGraphPipelineHelper::GetSpirvConstantDataGraph();
+
+    vkt::dg::HelperParameters params;
+    params.spirv_source = spirv_string.c_str();
+    vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
 
     VkDataGraphPipelineConstantTensorSemiStructuredSparsityInfoARM tensor_sparsity = vku::InitStructHelper();
     tensor_sparsity.groupSize = 1;
 
-    uint32_t constant_data = 1;
-    VkDataGraphPipelineConstantARM dg_constant = vku::InitStructHelper();
-    dg_constant.id = 0;
-    dg_constant.pNext = &tensor_sparsity;
-    dg_constant.pConstantData = &constant_data;
-
+    // GetConstant puts the correct description in the pNext, by overwriting it we lose the description and cause the error
+    VkDataGraphPipelineConstantARM constant = GetConstant();
+    constant.pNext = &tensor_sparsity;
     pipeline.shader_module_ci_.constantCount = 1;
-    pipeline.shader_module_ci_.pConstants = &dg_constant;
+    pipeline.shader_module_ci_.pConstants = &constant;
 
     m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineConstantARM-pNext-09775");
-    // 09850 will also be triggered since we need a description for this
+    // 9921 and 9850 will also be triggered since we need a description for this
     // Graph Constant ID and we are intentionally not passing one
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkDataGraphPipelineConstantARM-id-09850");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09921");
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineConstantARM-id-09850");
     pipeline.CreateDataGraphPipeline();
     m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDataGraph, TensorSparsityDimensionTooLarge) {
     TEST_DESCRIPTION(
-        "Try creating a datagraph pipeline when a TensorSparsity structure is supplied as part of the pConstants->pNext chain but "
-        "supplied dimension is larger than the dimensionCount in the TensorDescription supplied");
+        "Try creating a datagraph pipeline with a tensor sparsity structure but the supplied dimension is larger than the dimensionCount in the tensor description supplied");
     InitBasicDataGraph();
     RETURN_IF_SKIP(Init());
 
-    vkt::dg::DataGraphPipelineHelper pipeline(*this);
+    const std::string &spirv_string = vkt::dg::DataGraphPipelineHelper::GetSpirvConstantDataGraph();
+
+    vkt::dg::HelperParameters params;
+    params.spirv_source = spirv_string.c_str();
+    vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
+
+    VkTensorDescriptionARM constant_tensor_desc = DefaultConstantTensorDesc();
 
     VkDataGraphPipelineConstantTensorSemiStructuredSparsityInfoARM tensor_sparsity = vku::InitStructHelper();
-    tensor_sparsity.dimension = pipeline.tensors_[0]->DimensionCount() + 1;
-    tensor_sparsity.pNext = &pipeline.tensors_[0]->Description();
+    tensor_sparsity.groupSize = 1;
+    tensor_sparsity.dimension = constant_tensor_desc.dimensionCount + 1;
+    constant_tensor_desc.pNext = &tensor_sparsity;
 
-    uint32_t constant_data = 1;
-    VkDataGraphPipelineConstantARM dg_constant = vku::InitStructHelper();
-    dg_constant.id = 0;
-    dg_constant.pNext = &tensor_sparsity;
-    dg_constant.pConstantData = &constant_data;
-
+    VkDataGraphPipelineConstantARM constant = GetConstant(constant_tensor_desc);
     pipeline.shader_module_ci_.constantCount = 1;
-    pipeline.shader_module_ci_.pConstants = &dg_constant;
+    pipeline.shader_module_ci_.pConstants = &constant;
 
     m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineConstantARM-pNext-09776");
     pipeline.CreateDataGraphPipeline();
@@ -1010,85 +1011,241 @@ TEST_F(NegativeDataGraph, TensorSparsityDimensionTooLarge) {
 
 TEST_F(NegativeDataGraph, TensorSparsityDescriptionDimensionNotMultipleOfSparsityGroupSize) {
     TEST_DESCRIPTION(
-        "Try creating a datagraph pipeline a TensorSparsity structure is supplied as part of the pConstants->pNext chain but "
-        "dimension[sparsity->dimension] is not a multiple of sparsity->groupSize");
+        "Try creating a datagraph pipeline with a tensor sparsity structure but dimension[sparsity->dimension] is not a multiple of sparsity->groupSize");
     InitBasicDataGraph();
     RETURN_IF_SKIP(Init());
 
-    vkt::dg::DataGraphPipelineHelper pipeline(*this);
+    const std::string &spirv_string = vkt::dg::DataGraphPipelineHelper::GetSpirvConstantDataGraph();
+
+    vkt::dg::HelperParameters params;
+    params.spirv_source = spirv_string.c_str();
+    vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
+
+    VkTensorDescriptionARM constant_tensor_desc = DefaultConstantTensorDesc();
 
     VkDataGraphPipelineConstantTensorSemiStructuredSparsityInfoARM tensor_sparsity = vku::InitStructHelper();
+    tensor_sparsity.dimension = 2;
+    int64_t dim_2 = constant_tensor_desc.pDimensions[tensor_sparsity.dimension];
+    ASSERT_TRUE((dim_2 >= 1) && (dim_2 <= static_cast<int64_t>(UINT32_MAX)));
+    tensor_sparsity.groupSize =
+        static_cast<uint32_t>(dim_2 - 1);  // ensure that dim_2 (the sparsity dimension) is NOT a multiple of groupSize
+    constant_tensor_desc.pNext = &tensor_sparsity;
 
-    // Default tensor description dimensions are {1, 8, 16, 4}
-    tensor_sparsity.dimension = 1;
-    int64_t dim_1 = pipeline.tensors_[0]->Description().pDimensions[tensor_sparsity.dimension];
-    ASSERT_TRUE((dim_1 >= 1) && (dim_1 <= static_cast<int64_t>(UINT32_MAX)));
-    tensor_sparsity.groupSize = static_cast<uint32_t>(dim_1 - 1); // ensure that dim_1 (the sparsity dimension) is NOT a multiple of groupSize
-    tensor_sparsity.pNext = &pipeline.tensors_[0]->Description();
-
-    uint32_t constant_data = 1;
-    VkDataGraphPipelineConstantARM dg_constant = vku::InitStructHelper();
-    dg_constant.id = 0;
-    dg_constant.pNext = &tensor_sparsity;
-    dg_constant.pConstantData = &constant_data;
-
+    VkDataGraphPipelineConstantARM constant = GetConstant(constant_tensor_desc);
     pipeline.shader_module_ci_.constantCount = 1;
-    pipeline.shader_module_ci_.pConstants = &dg_constant;
+    pipeline.shader_module_ci_.pConstants = &constant;
 
     m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineConstantARM-pNext-09777");
     pipeline.CreateDataGraphPipeline();
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDataGraph, GraphConstantIsTensorConstantMissingDescription) {
-    TEST_DESCRIPTION(
-        "Try creating a datagraph pipeline with a constant which corresponds to a tensor constant but there is no "
-        "tensor description supplied in the pNext chain");
+TEST_F(NegativeDataGraph, TensorSparsityDoubleDefinition) {
+    TEST_DESCRIPTION("Try creating a datagraph pipeline with a tensor sparsity defined twice for the same dimension");
     InitBasicDataGraph();
     RETURN_IF_SKIP(Init());
 
-    vkt::dg::DataGraphPipelineHelper pipeline(*this);
+    const std::string &spirv_string = vkt::dg::DataGraphPipelineHelper::GetSpirvConstantDataGraph();
 
-    uint32_t constant_data = 1;
-    VkDataGraphPipelineConstantARM dg_constant = vku::InitStructHelper();
-    dg_constant.id = 0;
-    dg_constant.pConstantData = &constant_data;
+    vkt::dg::HelperParameters params;
+    params.spirv_source = spirv_string.c_str();
+    vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
 
+    VkTensorDescriptionARM constant_tensor_desc = DefaultConstantTensorDesc();
+
+    // add 3 sparsity structures but 2 are for the same dimension -> ERROR
+    VkDataGraphPipelineConstantTensorSemiStructuredSparsityInfoARM tensor_sparsity0 = vku::InitStructHelper();
+    tensor_sparsity0.groupSize = 1;
+    tensor_sparsity0.dimension = 2;
+    constant_tensor_desc.pNext = &tensor_sparsity0;
+    VkDataGraphPipelineConstantTensorSemiStructuredSparsityInfoARM tensor_sparsity1 = vku::InitStructHelper();
+    tensor_sparsity1.groupSize = 2;
+    tensor_sparsity1.dimension = 3;
+    tensor_sparsity0.pNext = &tensor_sparsity1;
+    VkDataGraphPipelineConstantTensorSemiStructuredSparsityInfoARM tensor_sparsity2 = vku::InitStructHelper();
+    tensor_sparsity2.groupSize = 2;
+    tensor_sparsity2.dimension = 2;
+    tensor_sparsity1.pNext = &tensor_sparsity2;
+
+    VkDataGraphPipelineConstantARM constant = GetConstant(constant_tensor_desc);
     pipeline.shader_module_ci_.constantCount = 1;
-    pipeline.shader_module_ci_.pConstants = &dg_constant;
+    pipeline.shader_module_ci_.pConstants = &constant;
 
-    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineConstantARM-id-09850");
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineConstantARM-pNext-09870");
     pipeline.CreateDataGraphPipeline();
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDataGraph, GraphConstantIsTensorConstantDescriptionMissingUsageFlags) {
-    TEST_DESCRIPTION(
-        "Try creating a datagraph pipeline with a constant which corresponds to a tensor constant but the supplied "
-        "description does not contain the correct usage flags");
+TEST_F(NegativeDataGraph, GraphConstantTensorWrongID) {
+    TEST_DESCRIPTION("Try creating a datagraph pipeline with a constant that has an id different from the spirv definition");
     InitBasicDataGraph();
     RETURN_IF_SKIP(Init());
 
-    vkt::dg::DataGraphPipelineHelper pipeline(*this);
+    const std::string &spirv_string = vkt::dg::DataGraphPipelineHelper::GetSpirvConstantDataGraph();
 
-    VkTensorDescriptionARM desc = vku::InitStructHelper();
-    static std::vector<int64_t> dimensions{2ul};
-    static std::vector<int64_t> strides{1l};
-    desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
-    desc.format = VK_FORMAT_R8_SINT;
-    desc.dimensionCount = 1;
-    desc.pDimensions = dimensions.data();
-    desc.pStrides = strides.data();
-    desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
+    vkt::dg::HelperParameters params;
+    params.spirv_source = spirv_string.c_str();
+    vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
 
-    uint32_t constant_data = 1;
-    VkDataGraphPipelineConstantARM dg_constant = vku::InitStructHelper();
-    dg_constant.id = 0;
-    dg_constant.pConstantData = &constant_data;
-    dg_constant.pNext = &desc;
-
+    VkTensorDescriptionARM desc = DefaultConstantTensorDesc();
+    VkDataGraphPipelineConstantARM constant = GetConstant(desc);
+    constant.id = 42;
     pipeline.shader_module_ci_.constantCount = 1;
-    pipeline.shader_module_ci_.pConstants = &dg_constant;
+    pipeline.shader_module_ci_.pConstants = &constant;
+
+    // VU 9921 and 9774 overlap about the ID.
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09921");
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineShaderModuleCreateInfoARM-id-09774");
+    pipeline.CreateDataGraphPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, GraphConstantTensorWrongRank) {
+    TEST_DESCRIPTION("Try creating a datagraph pipeline with a constant based on a tensor with a rank different from the spirv definition");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    const std::string &spirv_string = vkt::dg::DataGraphPipelineHelper::GetSpirvConstantDataGraph();
+
+    vkt::dg::HelperParameters params;
+    params.spirv_source = spirv_string.c_str();
+    vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
+
+    // define a tensor with rank 3, the spirv has rank 4
+    VkTensorDescriptionARM desc = vku::InitStructHelper();
+    const std::vector<int64_t> dimensions{1, 2, 4};
+    desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
+    desc.format = VK_FORMAT_R8_UINT;
+    desc.dimensionCount = dimensions.size();
+    desc.pDimensions = dimensions.data();
+    desc.usage = VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM;
+
+    VkDataGraphPipelineConstantARM constant = GetConstant(desc);
+    pipeline.shader_module_ci_.constantCount = 1;
+    pipeline.shader_module_ci_.pConstants = &constant;
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09921");
+    pipeline.CreateDataGraphPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, GraphConstantTensorWrongDimensions) {
+    TEST_DESCRIPTION("Try creating a datagraph pipeline with a constant based on a tensor with dimensions different from the spirv definition");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    const std::string &spirv_string = vkt::dg::DataGraphPipelineHelper::GetSpirvConstantDataGraph();
+
+    vkt::dg::HelperParameters params;
+    params.spirv_source = spirv_string.c_str();
+    vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
+
+    // dim[3] is different from the spirv (4)
+    VkTensorDescriptionARM desc = vku::InitStructHelper();
+    const std::vector<int64_t> dimensions{1, 2, 4, 1};  // dim[3] is 4 in the spirv
+    desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
+    desc.format = VK_FORMAT_R8_UINT;
+    desc.dimensionCount = dimensions.size();
+    desc.pDimensions = dimensions.data();
+    desc.usage = VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM;
+
+    VkDataGraphPipelineConstantARM constant = GetConstant(desc);
+    pipeline.shader_module_ci_.constantCount = 1;
+    pipeline.shader_module_ci_.pConstants = &constant;
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09921");
+    pipeline.CreateDataGraphPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, GraphConstantTensorWrongFormat) {
+    TEST_DESCRIPTION("Try creating a datagraph pipeline with a constant based on a tensor with format different from the spirv definition");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    const std::string &spirv_string = vkt::dg::DataGraphPipelineHelper::GetSpirvConstantDataGraph();
+
+    vkt::dg::HelperParameters params;
+    params.spirv_source = spirv_string.c_str();
+
+    // try a few different formats, different for sign, bit width, and type
+    for (auto format : {VK_FORMAT_R8_SINT, VK_FORMAT_R32_UINT, VK_FORMAT_R32_SFLOAT}) {
+        vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
+
+        VkTensorDescriptionARM desc = DefaultConstantTensorDesc();
+        desc.format = format;
+        VkDataGraphPipelineConstantARM constant = GetConstant(desc);
+        pipeline.shader_module_ci_.constantCount = 1;
+        pipeline.shader_module_ci_.pConstants = &constant;
+
+        m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09921");
+        pipeline.CreateDataGraphPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(NegativeDataGraph, GraphConstantTensorMissingDescription) {
+    TEST_DESCRIPTION("Try creating a datagraph pipeline with a constant that is missing the tensor description");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    const std::string &spirv_string = vkt::dg::DataGraphPipelineHelper::GetSpirvConstantDataGraph();
+
+    vkt::dg::HelperParameters params;
+    params.spirv_source = spirv_string.c_str();
+    vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
+
+    // GetConstant puts the correct description in the pNext, remove it to cause the error
+    VkDataGraphPipelineConstantARM constant = GetConstant();
+    constant.pNext = nullptr;
+    pipeline.shader_module_ci_.constantCount = 1;
+    pipeline.shader_module_ci_.pConstants = &constant;
+
+    // VU 9921 and 9850 overlap about the existence of a VkTensorDescriptionARM.
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineConstantARM-id-09850");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09921");
+    pipeline.CreateDataGraphPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, GraphConstantTensorWrongTiling) {
+    TEST_DESCRIPTION("Try creating a datagraph pipeline with a constant which corresponds to a tensor with the incorrect tiling");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    const std::string &spirv_string = vkt::dg::DataGraphPipelineHelper::GetSpirvConstantDataGraph();
+
+    vkt::dg::HelperParameters params;
+    params.spirv_source = spirv_string.c_str();
+    vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
+
+    VkTensorDescriptionARM desc = DefaultConstantTensorDesc();
+    desc.tiling = VK_TENSOR_TILING_OPTIMAL_ARM;  // should be VK_TENSOR_TILING_LINEAR_ARM
+    VkDataGraphPipelineConstantARM constant = GetConstant(desc);
+    pipeline.shader_module_ci_.constantCount = 1;
+    pipeline.shader_module_ci_.pConstants = &constant;
+
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineConstantARM-pNext-09917");
+    pipeline.CreateDataGraphPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, GraphConstantTensorMissingUsageFlags) {
+    TEST_DESCRIPTION("Try creating a datagraph pipeline with a constant based on a tensor with the incorrect usage flags");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    const std::string &spirv_string = vkt::dg::DataGraphPipelineHelper::GetSpirvConstantDataGraph();
+
+    vkt::dg::HelperParameters params;
+    params.spirv_source = spirv_string.c_str();
+    vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
+
+    VkTensorDescriptionARM desc = DefaultConstantTensorDesc();
+    desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;  // should be VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM
+    VkDataGraphPipelineConstantARM constant = GetConstant(desc);
+    pipeline.shader_module_ci_.constantCount = 1;
+    pipeline.shader_module_ci_.pConstants = &constant;
 
     m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineConstantARM-id-09850");
     pipeline.CreateDataGraphPipeline();
@@ -1120,15 +1277,8 @@ TEST_F(NegativeDataGraph, ResourceIsTensorInvalidUsage) {
     InitBasicDataGraph();
     RETURN_IF_SKIP(Init());
 
-    VkTensorDescriptionARM desc = vku::InitStructHelper();
-    static std::vector<int64_t> dimensions{2ul};
-    static std::vector<int64_t> strides{1l};
-    desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
-    desc.format = VK_FORMAT_R8_SINT;
-    desc.dimensionCount = 1;
-    desc.pDimensions = dimensions.data();
-    desc.pStrides = strides.data();
-    desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;  // Correct usage should be VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM
+    VkTensorDescriptionARM desc = DefaultDesc();
+    desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM; // should be VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM
 
     vkt::dg::DataGraphPipelineHelper pipeline(*this);
 
@@ -1212,8 +1362,9 @@ TEST_F(NegativeDataGraph, ShaderSpirvUsesOpSpecFeatureNotEnabled) {
     RETURN_IF_SKIP(Init());
 
     // inject a dummy line in the spirv to trigger the error
-    const std::string &spirv_string =
-        vkt::dg::DataGraphPipelineHelper::GetSpirvBasicDataGraph("%dummy_spec_constant = OpSpecConstant %uint 3");
+    vkt::dg::ModifiableShaderParameters spirv_params;
+    spirv_params.types = R"(%dummy_spec_constant = OpSpecConstant %uint 3)";
+    const std::string &spirv_string = vkt::dg::DataGraphPipelineHelper::GetSpirvModifyableDataGraph(spirv_params);
 
     // ShaderModule in VkDataGraphPipelineShaderModuleCreateInfoARM::module
     {
@@ -1537,20 +1688,64 @@ TEST_F(NegativeDataGraph, DataGraphPipelineIdentifierHasResources) {
 }
 
 TEST_F(NegativeDataGraph, DataGraphOpGraphConstantARMNoShape) {
-    TEST_DESCRIPTION("Try to create a datagraph with a OpGraphConstantARM defined on a tensor without shape");
+    TEST_DESCRIPTION("Try to create a datagraph with an OpGraphConstantARM defined on a tensor without shape");
     InitBasicDataGraph();
     RETURN_IF_SKIP(Init());
 
-    // inject a dummy constant based on a shapeless tensor
-    const std::string &spirv_string = vkt::dg::DataGraphPipelineHelper::GetSpirvBasicDataGraph(R"(
-                    %tensor_r4 = OpTypeTensorARM %uchar %uint_4
-            %constant_no_shape = OpGraphConstantARM %tensor_r4 2)");
+    // inject in the spirv a constant based on a shapeless tensor
+    vkt::dg::ModifiableShaderParameters spirv_params;
+    spirv_params.types = R"(%tensor_r4 = OpTypeTensorARM %uchar %uint_4
+            %constant_no_shape = OpGraphConstantARM %tensor_r4 0)";
+    spirv_params.instructions = "%dummy = OpExtInst %uchar_1_2_4_4_tensor %tosa ADD %op_1 %constant_no_shape";
+    const std::string &spirv_string = vkt::dg::DataGraphPipelineHelper::GetSpirvModifyableDataGraph(spirv_params);
 
     vkt::dg::HelperParameters params;
     params.spirv_source = spirv_string.c_str();
     vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
 
+    VkDataGraphPipelineConstantARM constant = GetConstant();
+    pipeline.shader_module_ci_.constantCount = 1;
+    pipeline.shader_module_ci_.pConstants = &constant;
+
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09920");
     pipeline.CreateDataGraphPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, DataGraphNoConstant) {
+    TEST_DESCRIPTION("Try to create a datagraph without a required constant.");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    // get spirv with 2 entrypoints; has a constant in entrypoint 2
+    const std::string two_entrypoint_spirv = vkt::dg::DataGraphPipelineHelper::GetSpirvMultiEntryTwoDataGraph();
+
+    vkt::dg::HelperParameters params;
+    params.spirv_source = two_entrypoint_spirv.c_str();
+    params.entrypoint = "entrypoint_2";
+    // helper constructor does NOT initialize the constant
+    vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09921");
+    pipeline.CreateDataGraphPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, DataGraphOpGraphConstantARMNotTensor) {
+    TEST_DESCRIPTION("Try to create a datagraph with an OpGraphConstantARM that is not a tensor");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    // inject in the spirv constants based on a scalar, not tensors
+    vkt::dg::ModifiableShaderParameters spirv_params;
+    spirv_params.types = R"(%constant_scalar_min = OpGraphConstantARM %uint 0
+                %constant_scalar_max = OpGraphConstantARM %uint 128)";
+    spirv_params.instructions = "%dummy = OpExtInst %uchar_1_2_4_4_tensor %tosa CLAMP %op_1 %constant_scalar_min %constant_scalar_max %uint_2";
+    const std::string &spirv_string = vkt::dg::DataGraphPipelineHelper::GetSpirvModifyableDataGraph(spirv_params);
+
+    vkt::dg::HelperParameters params;
+    params.spirv_source = spirv_string.c_str();
+
+    m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08737");
+    VkShaderObj shader(*m_device, spirv_string.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }

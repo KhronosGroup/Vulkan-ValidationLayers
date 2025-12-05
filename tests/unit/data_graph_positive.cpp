@@ -26,7 +26,8 @@ void DataGraphTest::InitBasicDataGraph() {
     AddRequiredFeature(vkt::Feature::shaderInt8);
 }
 
-const std::string DataGraphTest::IncorrectSpirvMessage{"test incorrect. Possible causes: incorrect spirv, or inconsistency between spirv and tensor/constant declarations\n"} ;
+const std::string DataGraphTest::IncorrectSpirvMessage{"test incorrect. Possible causes: incorrect spirv, or inconsistency between spirv and tensor/constant declarations\n"};
+const VkTensorDescriptionARM DataGraphTest::defaultConstantTensorDesc{DefaultConstantTensorDesc()};
 
 void DataGraphTest::CheckSessionMemory(const vkt::DataGraphPipelineSession& session) {
     const auto &mem_reqs = session.MemReqs();
@@ -61,6 +62,41 @@ std::vector<VkBindDataGraphPipelineSessionMemoryInfoARM> DataGraphTest::InitSess
     return session_bind_infos;
 }
 
+// Trivial rank 1 tensor
+VkTensorDescriptionARM DataGraphTest::DefaultDesc() {
+    VkTensorDescriptionARM desc = vku::InitStructHelper();
+    static const std::vector<int64_t> dimensions{2};
+    desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
+    desc.format = VK_FORMAT_R8_SINT;
+    desc.dimensionCount = dimensions.size();
+    desc.pDimensions = dimensions.data();
+    desc.pStrides = nullptr;
+    desc.usage = VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM;
+    return desc;
+}
+
+// Tensor description for constant in GetSpirvModifyableDataGraph and GetSpirvMultiEntryTwoDataGraph
+VkTensorDescriptionARM DataGraphTest::DefaultConstantTensorDesc() {
+    VkTensorDescriptionARM desc = vku::InitStructHelper();
+    static std::vector<int64_t> dimensions{1, 2, 4, 4};
+    desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
+    desc.format = VK_FORMAT_R8_UINT;
+    desc.dimensionCount = dimensions.size();
+    desc.pDimensions = dimensions.data();
+    desc.usage = VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM;
+    return desc;
+}
+
+// Constant for GetSpirvModifyableDataGraph and GetSpirvMultiEntryTwoDataGraph
+VkDataGraphPipelineConstantARM DataGraphTest::GetConstant(const VkTensorDescriptionARM& desc) {
+    VkDataGraphPipelineConstantARM constant = vku::InitStructHelper();
+    constant.id = 0;
+    // buffer size correct for DefaultConstantTensorDesc
+    static std::array<uint8_t, 32> constant_data;
+    constant.pConstantData = constant_data.data();
+    constant.pNext = &desc;
+    return constant;
+}
 
 TEST_F(PositiveDataGraph, ExecuteDataGraph) {
     TEST_DESCRIPTION("Create and execute a datagraph");
@@ -193,6 +229,8 @@ TEST_F(PositiveDataGraph, DataGraphMultipleEntrypoints) {
 
     // create graph at entrypoint 1
     {
+        // NOTE: even though there is an OpGraphConstantARM in the spirv, we don't need to initialize any
+        // resource, as it is NOT used in this entrypoint
         vkt::dg::HelperParameters params;
         params.spirv_source = two_entrypoint_spirv.c_str();
         params.entrypoint = "entrypoint_1";
@@ -202,10 +240,16 @@ TEST_F(PositiveDataGraph, DataGraphMultipleEntrypoints) {
 
     // create graph at entrypoint 2
     {
+        // NOTE: this entrypoint uses the OpGraphConstantARM in the spirv, so we have to provide a matching object
         vkt::dg::HelperParameters params;
         params.spirv_source = two_entrypoint_spirv.c_str();
         params.entrypoint = "entrypoint_2";
         vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
+
+        VkDataGraphPipelineConstantARM constant = GetConstant();
+        pipeline.shader_module_ci_.constantCount = 1;
+        pipeline.shader_module_ci_.pConstants = &constant;
+
         pipeline.CreateDataGraphPipeline();
     }
 }

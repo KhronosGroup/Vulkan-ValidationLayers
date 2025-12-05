@@ -419,6 +419,9 @@ static void FindPointersAndObjects(const Instruction& insn, vvl::unordered_set<u
         case spv::OpGraphInputARM:
             result.insert(insn.Word(2));  // ptr
             break;
+        case spv::OpGraphConstantARM:
+            result.insert(insn.Word(3));
+            break;
         case spv::OpLoad:
             result.insert(insn.Word(3));  // ptr
             break;
@@ -497,7 +500,7 @@ static void FindPointersAndObjects(const Instruction& insn, vvl::unordered_set<u
             break;
         case spv::OpGraphEntryPointARM: {
             for (uint32_t i = 3; i < insn.Length(); i++) {
-                result.insert(insn.Word(i));  // Operands to ext inst
+                result.insert(insn.Word(i));  // Operands to graph entrypoint
             }
             break;
         }
@@ -595,7 +598,7 @@ vvl::unordered_set<uint32_t> EntryPoint::GetAccessibleIds(const Module& module_s
 
     std::unordered_map<uint32_t, uint32_t> entry_exit_pairs = {
         { spv::OpFunction, spv::OpFunctionEnd },
-        { spv::OpGraphEntryPointARM, spv::OpGraphEndARM },
+        { spv::OpGraphARM, spv::OpGraphEndARM },
     };
     worklist.insert(entrypoint.id);
     while (!worklist.empty()) {
@@ -615,7 +618,7 @@ vvl::unordered_set<uint32_t> EntryPoint::GetAccessibleIds(const Module& module_s
             continue;  // If we already saw this id, we don't want to walk it again.
         }
 
-        if (next_insn->Opcode() == spv::OpFunction || next_insn->Opcode() == spv::OpGraphEntryPointARM) {
+        if (entry_exit_pairs.find(next_insn->Opcode()) != entry_exit_pairs.end()) {
             const auto& exit = entry_exit_pairs[next_insn->Opcode()];
             // Scan whole body of the function
             while (++next_insn, next_insn->Opcode() != exit) {
@@ -695,6 +698,17 @@ std::vector<ResourceInterfaceVariable> EntryPoint::GetResourceInterfaceVariables
         }
     }
     return variables;
+}
+
+std::vector<const Instruction *> EntryPoint::GetDataGraphConstants(const Module& module_state, EntryPoint& entrypoint) {
+    std::vector<const Instruction *> constants;
+    for (const auto& accessible_id : entrypoint.accessible_ids) {
+        const Instruction& insn = *module_state.FindDef(accessible_id);
+        if (insn.Opcode() == spv::OpGraphConstantARM) {
+            constants.push_back(&insn);
+        }
+    }
+    return constants;
 }
 
 StaticImageAccess::StaticImageAccess(const Module& module_state, const Instruction& insn,
@@ -829,7 +843,8 @@ EntryPoint::EntryPoint(const Module& module_state, const Instruction& entrypoint
       emit_vertex_geometry(false),
       accessible_ids(GetAccessibleIds(module_state, *this)),
       resource_interface_variables(GetResourceInterfaceVariables(module_state, *this, parsed)),
-      stage_interface_variables(GetStageInterfaceVariables(module_state, *this, parsed)) {
+      stage_interface_variables(GetStageInterfaceVariables(module_state, *this, parsed)),
+      datagraph_constants(GetDataGraphConstants(module_state, *this)) {
     // Tried to just create this map in GetResourceInterfaceVariables() but ran into errors because the function is static
     for (const auto& variable : resource_interface_variables) {
         resource_interface_variable_map[variable.id] = &variable;
