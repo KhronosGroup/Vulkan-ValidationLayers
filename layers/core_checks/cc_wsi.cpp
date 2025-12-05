@@ -541,7 +541,8 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
         present_modes = physical_device_state->surfaceless_query_state.present_modes;
     }
 
-    if (std::find(present_modes.begin(), present_modes.end(), present_mode) == present_modes.end()) {
+    // Found a case in the wild where |present_mode| was empty, not sure why, but skip to not have confusing error messages.
+    if (!present_modes.empty() && std::find(present_modes.begin(), present_modes.end(), present_mode) == present_modes.end()) {
         std::stringstream ss;
         for (auto mode : present_modes) {
             ss << string_VkPresentModeKHR(mode) << " ";
