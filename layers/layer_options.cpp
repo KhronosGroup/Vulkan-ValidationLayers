@@ -389,7 +389,8 @@ std::string GetNextToken(std::string *token_list, const std::string &delimiter, 
 }
 
 // Given a string representation of a list of enable enum values, call the appropriate setter function
-void SetLocalEnableSetting(std::string list_of_enabled, const std::string &delimiter, ValidationEnabled &enabled) {
+bool SetLocalEnableSetting(std::string list_of_enabled, const std::string& delimiter, ValidationEnabled& enabled) {
+    bool used = false;
     size_t pos = 0;
     std::string token;
     while (list_of_enabled.length() != 0) {
@@ -397,19 +398,23 @@ void SetLocalEnableSetting(std::string list_of_enabled, const std::string &delim
         if (token.find("VK_VALIDATION_FEATURE_ENABLE_") != std::string::npos) {
             auto result = VkValFeatureEnableLookup().find(token);
             if (result != VkValFeatureEnableLookup().end()) {
+                used = true;
                 SetValidationFeatureEnable(enabled, result->second);
             }
         } else if (token.find("VALIDATION_CHECK_ENABLE_") != std::string::npos) {
             auto result = ValidationEnableLookup().find(token);
             if (result != ValidationEnableLookup().end()) {
+                used = true;
                 SetValidationEnable(enabled, result->second);
             }
         }
     }
+    return used;
 }
 
 // Given a string representation of a list of disable enum values, call the appropriate setter function
-void SetLocalDisableSetting(std::string list_of_disabled, const std::string &delimiter, ValidationDisabled &disabled) {
+bool SetLocalDisableSetting(std::string list_of_disabled, const std::string& delimiter, ValidationDisabled& disabled) {
+    bool used = false;
     size_t pos = 0;
     std::string token;
     while (list_of_disabled.length() != 0) {
@@ -418,14 +423,17 @@ void SetLocalDisableSetting(std::string list_of_disabled, const std::string &del
             auto result = VkValFeatureDisableLookup().find(token);
             if (result != VkValFeatureDisableLookup().end()) {
                 SetValidationFeatureDisable(disabled, result->second);
+                used = true;
             }
         } else if (token.find("VALIDATION_CHECK_DISABLE_") != std::string::npos) {
             auto result = ValidationDisableLookup().find(token);
             if (result != ValidationDisableLookup().end()) {
                 SetValidationDisable(disabled, result->second);
+                used = true;
             }
         }
     }
+    return used;
 }
 
 uint32_t TokenToUint(std::string &token) {
@@ -764,6 +772,71 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings *settings_data, VkuL
     }
 }
 
+// Set as deprecated for the first time in the 1.4.335 SDK release
+static std::string GetDeprecatedEnabledDisabledWarning(const std::vector<std::string>& enabled,
+                                                       const std::vector<std::string>& disabled) {
+    std::stringstream ss;
+    ss << "Application is using deprecated";
+    if (!enabled.empty()) {
+        ss << " \"enables\" (VK_LAYER_ENABLES)";
+        if (!disabled.empty()) {
+            ss << " and";
+        }
+    }
+    if (!disabled.empty()) {
+        ss << " \"disables\" (VK_LAYER_DISABLES)";
+    }
+    ss << " layer settings.\nDeprecated settings and new settings cannot be mixed, and deprecated ones take precedence. Consider "
+          "only using the new settings:\n";
+
+    // We tried to have a more clever way to do this, but was hitting strange compiler issues...
+    // This for loop will NEVER grow, these are the only deprecated settings we have because they are baked into the Vulkan Spec
+    for (const std::string& deprecated_string : enabled) {
+        if (deprecated_string == "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT") {
+            ss << "  Deprecated: VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT | New: \"" << VK_LAYER_GPUAV_ENABLE
+               << "\" (VK_LAYER_GPUAV_ENABLE=1)\n";
+        } else if (deprecated_string == "VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT") {
+            ss << "  Deprecated: VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT | New: \"" << VK_LAYER_VALIDATE_BEST_PRACTICES
+               << "\" (VK_LAYER_VALIDATE_BEST_PRACTICES=1)\n";
+        } else if (deprecated_string == "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT") {
+            ss << "  Deprecated: VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT | New: \"" << VK_LAYER_PRINTF_ENABLE
+               << "\" (VK_LAYER_PRINTF_ENABLE=1)\n";
+        } else if (deprecated_string == "VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT") {
+            ss << "  Deprecated: VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT | New: \"" << VK_LAYER_VALIDATE_SYNC
+               << "\" (VK_LAYER_VALIDATE_SYNC=1)\n";
+        }
+    }
+    for (const std::string& deprecated_string : disabled) {
+        if (deprecated_string == "VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT") {
+            ss << "  Deprecated: VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT | New: \"" << VK_LAYER_CHECK_SHADERS
+               << "\" (VK_LAYER_CHECK_SHADERS=0)\n";
+        } else if (deprecated_string == "VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT") {
+            ss << "  Deprecated: VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT | New: \"" << VK_LAYER_THREAD_SAFETY
+               << "\" (VK_LAYER_THREAD_SAFETY=0)\n";
+        } else if (deprecated_string == "VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT") {
+            ss << "  Deprecated: VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT | New: \"" << VK_LAYER_STATELESS_PARAM
+               << "\" (VK_LAYER_STATELESS_PARAM=0)\n";
+        } else if (deprecated_string == "VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT") {
+            ss << "  Deprecated: VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT | New: \"" << VK_LAYER_OBJECT_LIFETIME
+               << "\" (VK_LAYER_OBJECT_LIFETIME=0)\n";
+        } else if (deprecated_string == "VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT") {
+            ss << "  Deprecated: VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT | New: \"" << VK_LAYER_VALIDATE_CORE
+               << "\" (VK_LAYER_VALIDATE_CORE=0)\n";
+        } else if (deprecated_string == "VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT") {
+            ss << "  Deprecated: VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT | New: \"" << VK_LAYER_UNIQUE_HANDLES
+               << "\" (VK_LAYER_UNIQUE_HANDLES=0)\n";
+        } else if (deprecated_string == "VK_VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHE_EXT") {
+            ss << "  Deprecated: VK_VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHE_EXT | New: \""
+               << VK_LAYER_CHECK_SHADERS_CACHING << "\" (VK_LAYER_CHECK_SHADERS_CACHING=0)\n";
+        } else if (deprecated_string == "VK_VALIDATION_FEATURE_DISABLE_ALL_EXT") {
+            ss << "  Deprecated: VK_VALIDATION_FEATURE_DISABLE_ALL_EXT | Currently has no replacement, disabling the layer has the "
+                  "same effects.\n";
+        }
+    }
+
+    return ss.str();
+}
+
 static const char *GetDefaultPrefix() {
 #ifdef __ANDROID__
     return "vvl";
@@ -839,7 +912,7 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         vkuGetLayerSettingValues(layer_setting_set, VK_LAYER_ENABLES, enabled);
     }
     const std::string string_enabled = Merge(enabled);
-    SetLocalEnableSetting(string_enabled, ",", settings_data->enabled);
+    const bool used_enabled = SetLocalEnableSetting(string_enabled, ",", settings_data->enabled);
 
     // Read legacy "disables" flags for backward compatibility
     std::vector<std::string> disabled;
@@ -847,7 +920,12 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         vkuGetLayerSettingValues(layer_setting_set, VK_LAYER_DISABLES, disabled);
     }
     const std::string string_disabled = Merge(disabled);
-    SetLocalDisableSetting(string_disabled, ",", settings_data->disabled);
+    const bool used_disabled = SetLocalDisableSetting(string_disabled, ",", settings_data->disabled);
+
+    // Check if actually used, or will give bogus warning if the user set VK_LAYER_ENABLES to some garbage setting
+    if (used_enabled || used_disabled) {
+        setting_warnings.emplace_back(GetDeprecatedEnabledDisabledWarning(enabled, disabled));
+    }
 
     GlobalSettings &global_settings = *settings_data->global_settings;
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_FINE_GRAINED_LOCKING)) {
