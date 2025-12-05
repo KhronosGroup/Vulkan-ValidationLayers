@@ -24,6 +24,7 @@
 #include "utils/math_utils.h"
 #include "utils/image_utils.h"
 #include "utils/sync_utils.h"
+#include "utils/vk_api_utils.h"
 
 namespace stateless {
 
@@ -579,6 +580,82 @@ bool Device::ValidateRenderPassStripeBeginInfo(VkCommandBuffer commandBuffer, co
     return skip;
 }
 
+bool Device::ValidateMultiviewPerViewRenderAreasRenderPassBeginInfo(
+    VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* rp_begin_info, const VkRenderingInfo* rendering_info,
+    const VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM& multiview_per_view_info, const Location& loc) const {
+    bool skip = false;
+    if (multiview_per_view_info.perViewRenderAreaCount != 0 && !enabled_features.multiviewPerViewRenderAreas) {
+        const char* vuid = rp_begin_info ? "VUID-VkRenderPassBeginInfo-perViewRenderAreaCount-07859"
+                                         : "VUID-VkRenderingInfo-perViewRenderAreaCount-07857";
+        skip |= LogError(vuid, commandBuffer,
+                         loc.pNext(Struct::VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM).dot(Field::perViewRenderAreaCount),
+                         "is %" PRIu32 " but the multiviewPerViewRenderAreas feature was not enabled.",
+                         multiview_per_view_info.perViewRenderAreaCount);
+    }
+
+    if (rendering_info) {
+        const uint32_t msb = (uint32_t)MostSignificantBit(rendering_info->viewMask);
+        if (multiview_per_view_info.perViewRenderAreaCount != msb + 1) {
+            skip |= LogError(
+                "VUID-VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM-pNext-07866", commandBuffer,
+                loc.pNext(Struct::VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM).dot(Field::perViewRenderAreaCount),
+                "(%" PRIu32 ") must be VkRenderingInfo::viewMask (0x%" PRIx32 ") most significant bit index (%" PRIu32 ") + 1",
+                multiview_per_view_info.perViewRenderAreaCount, rendering_info->viewMask, msb);
+        }
+    }
+
+    const VkRect2D full_render_area = rendering_info ? rendering_info->renderArea : rp_begin_info->renderArea;
+
+    for (uint32_t i = 0; i < multiview_per_view_info.perViewRenderAreaCount; i++) {
+        const VkRect2D view_rect = multiview_per_view_info.pPerViewRenderAreas[i];
+        if (view_rect.offset.x < 0) {
+            skip |= LogError("VUID-VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM-offset-07861", commandBuffer,
+                             loc.pNext(Struct::VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM)
+                                 .dot(Field::pPerViewRenderAreas, i)
+                                 .dot(Field::offset)
+                                 .dot(Field::x),
+                             "(%" PRId32 ") is less than zero.", view_rect.offset.x);
+        }
+        if (view_rect.offset.y < 0) {
+            skip |= LogError("VUID-VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM-offset-07862", commandBuffer,
+                             loc.pNext(Struct::VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM)
+                                 .dot(Field::pPerViewRenderAreas, i)
+                                 .dot(Field::offset)
+                                 .dot(Field::y),
+                             "(%" PRId32 ") is less than zero.", view_rect.offset.y);
+        }
+        if ((view_rect.offset.x + view_rect.extent.width) > phys_dev_props.limits.maxFramebufferWidth) {
+            skip |= LogError("VUID-VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM-offset-07863", commandBuffer,
+                             loc.pNext(Struct::VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM)
+                                 .dot(Field::pPerViewRenderAreas, i)
+                                 .dot(Field::offset)
+                                 .dot(Field::x),
+                             "%" PRId32 " + extent.width (%" PRIu32 ") greater than maxFramebufferWidth (%" PRIu32 ").",
+                             view_rect.offset.x, view_rect.extent.width, phys_dev_props.limits.maxFramebufferWidth);
+        }
+        if ((view_rect.offset.y + view_rect.extent.height) > phys_dev_props.limits.maxFramebufferHeight) {
+            skip |= LogError("VUID-VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM-offset-07864", commandBuffer,
+                             loc.pNext(Struct::VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM)
+                                 .dot(Field::pPerViewRenderAreas, i)
+                                 .dot(Field::offset)
+                                 .dot(Field::y),
+                             "%" PRId32 " + extent.height (%" PRIu32 ") greater than maxFramebufferHeight (%" PRIu32 ").",
+                             view_rect.offset.y, view_rect.extent.height, phys_dev_props.limits.maxFramebufferHeight);
+        }
+
+        if (!ContainsRect(full_render_area, view_rect)) {
+            const char* vuid = rp_begin_info ? "VUID-VkRenderPassBeginInfo-perViewRenderAreaCount-07860"
+                                             : "VUID-VkRenderingInfo-perViewRenderAreaCount-07858";
+            skip |=
+                LogError(vuid, commandBuffer,
+                         loc.pNext(Struct::VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM).dot(Field::pPerViewRenderAreas, i),
+                         "(%s) is not contained in %s::renderArea (%s)", string_VkRect2D(view_rect).c_str(),
+                         rendering_info ? "VkRenderingInfo" : "VkRenderPassBeginInfo", string_VkRect2D(full_render_area).c_str());
+        }
+    }
+    return skip;
+}
+
 bool Device::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *const rp_begin,
                                         const ErrorObject &error_obj) const {
     bool skip = false;
@@ -591,6 +668,12 @@ bool Device::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkR
 
     const Location loc = error_obj.location.dot(Field::pRenderPassBegin);
     skip |= ValidateRenderPassStripeBeginInfo(commandBuffer, rp_begin->pNext, rp_begin->renderArea, loc);
+
+    if (const auto multiview_per_view_info =
+            vku::FindStructInPNextChain<VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM>(rp_begin->pNext)) {
+        skip |=
+            ValidateMultiviewPerViewRenderAreasRenderPassBeginInfo(commandBuffer, rp_begin, nullptr, *multiview_per_view_info, loc);
+    }
 
     return skip;
 }
@@ -733,6 +816,12 @@ bool Device::manual_PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuff
                              "and VkRenderingFragmentShadingRateAttachmentInfoKHR::imageView are the same (%s).",
                              FormatHandle(fragment_density_map_attachment_info->imageView).c_str());
         }
+    }
+
+    if (const auto multiview_per_view_info =
+            vku::FindStructInPNextChain<VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM>(pRenderingInfo->pNext)) {
+        skip |= ValidateMultiviewPerViewRenderAreasRenderPassBeginInfo(commandBuffer, nullptr, pRenderingInfo,
+                                                                       *multiview_per_view_info, rendering_info_loc);
     }
 
     skip |= ValidateRenderPassStripeBeginInfo(commandBuffer, pRenderingInfo->pNext, pRenderingInfo->renderArea, rendering_info_loc);

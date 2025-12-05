@@ -508,9 +508,8 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const
     uint32_t clear_op_size = 0;  // Make sure pClearValues is at least as large as last LOAD_OP_CLEAR
 
     // Handle extension struct from EXT_sample_locations
-    const auto *sample_locations_begin_info =
-        vku::FindStructInPNextChain<VkRenderPassSampleLocationsBeginInfoEXT>(pRenderPassBegin->pNext);
-    if (sample_locations_begin_info) {
+    if (const auto* sample_locations_begin_info =
+            vku::FindStructInPNextChain<VkRenderPassSampleLocationsBeginInfoEXT>(pRenderPassBegin->pNext)) {
         for (uint32_t i = 0; i < sample_locations_begin_info->attachmentInitialSampleLocationsCount; ++i) {
             const Location sampler_loc =
                 rp_begin_loc.pNext(Struct::VkRenderPassSampleLocationsBeginInfoEXT, Field::pAttachmentInitialSampleLocations, i);
@@ -616,8 +615,8 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const
                          "maintenance7 were not enabled.");
     }
 
-    const auto counters_begin_info = vku::FindStructInPNextChain<VkRenderPassPerformanceCountersByRegionBeginInfoARM>(pRenderPassBegin->pNext);
-    if (counters_begin_info) {
+    if (const auto counters_begin_info =
+            vku::FindStructInPNextChain<VkRenderPassPerformanceCountersByRegionBeginInfoARM>(pRenderPassBegin->pNext)) {
         const LogObjectList objlist(cb_state.Handle(), rp_state->Handle());
         uint32_t layer_or_view_count = 0;
         if (rp_state->has_multiview_enabled) {
@@ -3847,8 +3846,8 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
                          pRenderingInfo->viewMask, phys_dev_props_core11.maxMultiviewViewCount);
     }
 
-    const auto counters_begin_info = vku::FindStructInPNextChain<VkRenderPassPerformanceCountersByRegionBeginInfoARM>(pRenderingInfo->pNext);
-    if (counters_begin_info) {
+    if (const auto counters_begin_info =
+            vku::FindStructInPNextChain<VkRenderPassPerformanceCountersByRegionBeginInfoARM>(pRenderingInfo->pNext)) {
         const LogObjectList objlist(cb_state->Handle());
         uint32_t layer_or_view_count = 0;
         if (enabled_features.multiview) {
