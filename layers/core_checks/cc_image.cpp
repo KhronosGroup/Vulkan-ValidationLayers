@@ -1076,15 +1076,6 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
     return skip;
 }
 
-// Returns true if sub_rect is entirely contained within rect
-static inline bool ContainsRect(VkRect2D rect, VkRect2D sub_rect) {
-    if ((sub_rect.offset.x < rect.offset.x) || (sub_rect.offset.x + sub_rect.extent.width > rect.offset.x + rect.extent.width) ||
-        (sub_rect.offset.y < rect.offset.y) || (sub_rect.offset.y + sub_rect.extent.height > rect.offset.y + rect.extent.height)) {
-        return false;
-    }
-    return true;
-}
-
 bool CoreChecks::ValidateClearAttachmentExtent(const vvl::CommandBuffer &cb_state, const VkRect2D &render_area,
                                                uint32_t render_pass_layer_count, uint32_t rect_count,
                                                const VkClearRect *clear_rects, const Location &loc) const {

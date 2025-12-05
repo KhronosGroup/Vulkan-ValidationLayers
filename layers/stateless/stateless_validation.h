@@ -1036,6 +1036,9 @@ class Device : public vvl::base::Device {
                                                   const VkClearColorValue *pColor, uint32_t rangeCount,
                                                   const VkImageSubresourceRange *pRanges, const Context &context) const;
 
+    bool ValidateMultiviewPerViewRenderAreasRenderPassBeginInfo(
+        VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* rp_begin_info, const VkRenderingInfo* rendering_info,
+        const VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM& multiview_per_view_info, const Location& loc) const;
     bool ValidateRenderPassStripeBeginInfo(VkCommandBuffer commandBuffer, const void *pNext, const VkRect2D render_area,
                                            const Location &loc) const;
     bool ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *const rp_begin,
