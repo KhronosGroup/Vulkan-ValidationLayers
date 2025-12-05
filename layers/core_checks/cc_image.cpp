@@ -596,29 +596,28 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         }
     }
 
-    const VkPhysicalDeviceLimits *device_limits = &phys_dev_props.limits;
     const VkImageUsageFlags attach_flags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
                                            VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
     if (pCreateInfo->usage & attach_flags) {
-        if (pCreateInfo->extent.width > device_limits->maxFramebufferWidth) {
+        if (pCreateInfo->extent.width > phys_dev_props.limits.maxFramebufferWidth) {
             skip |= LogError("VUID-VkImageCreateInfo-usage-00964", device, create_info_loc.dot(Field::usage),
                              "(%s) includes a frame buffer attachment bit and image width (%" PRIu32
                              ") is greater than maxFramebufferWidth (%" PRIu32 ").",
                              string_VkImageUsageFlags(pCreateInfo->usage).c_str(), pCreateInfo->extent.width,
-                             device_limits->maxFramebufferWidth);
+                             phys_dev_props.limits.maxFramebufferWidth);
         }
-        if (pCreateInfo->extent.height > device_limits->maxFramebufferHeight) {
+        if (pCreateInfo->extent.height > phys_dev_props.limits.maxFramebufferHeight) {
             skip |= LogError("VUID-VkImageCreateInfo-usage-00965", device, create_info_loc.dot(Field::usage),
                              "(%s) includes a frame buffer attachment bit and image height (%" PRIu32
                              ") is greater than maxFramebufferHeight (%" PRIu32 ").",
                              string_VkImageUsageFlags(pCreateInfo->usage).c_str(), pCreateInfo->extent.height,
-                             device_limits->maxFramebufferHeight);
+                             phys_dev_props.limits.maxFramebufferHeight);
         }
     }
 
     if (!enabled_features.fragmentDensityMapOffset && (pCreateInfo->usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT)) {
         uint32_t ceiling_width = static_cast<uint32_t>(ceilf(
-            static_cast<float>(device_limits->maxFramebufferWidth) /
+            static_cast<float>(phys_dev_props.limits.maxFramebufferWidth) /
             std::max(static_cast<float>(phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.width), 1.0f)));
         if (pCreateInfo->extent.width > ceiling_width) {
             skip |= LogError(
@@ -626,12 +625,12 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                 "includes VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT and image width (%" PRIu32 ") is greater than %" PRIu32
                 ".\n"
                 "This is ceiling value of maxFramebufferWidth (%" PRIu32 ") / minFragmentDensityTexelSize.width (%" PRIu32 ").",
-                pCreateInfo->extent.width, ceiling_width, device_limits->maxFramebufferWidth,
+                pCreateInfo->extent.width, ceiling_width, phys_dev_props.limits.maxFramebufferWidth,
                 phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.width);
         }
 
         uint32_t ceiling_height = static_cast<uint32_t>(ceilf(
-            static_cast<float>(device_limits->maxFramebufferHeight) /
+            static_cast<float>(phys_dev_props.limits.maxFramebufferHeight) /
             std::max(static_cast<float>(phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.height), 1.0f)));
         if (pCreateInfo->extent.height > ceiling_height) {
             skip |= LogError(
@@ -639,7 +638,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                 "includes VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT and image height (%" PRIu32 ") is greater than %" PRIu32
                 ".\n"
                 "This is ceiling value of maxFramebufferHeight (%" PRIu32 ") / minFragmentDensityTexelSize.height (%" PRIu32 ").",
-                pCreateInfo->extent.height, ceiling_height, device_limits->maxFramebufferHeight,
+                pCreateInfo->extent.height, ceiling_height, phys_dev_props.limits.maxFramebufferHeight,
                 phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.height);
         }
     }
