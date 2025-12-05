@@ -1432,3 +1432,53 @@ TEST_F(NegativeMultiview, MeshShader) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeMultiview, MultiviewPerViewViewports) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+    AddRequiredExtensions(VK_QCOM_MULTIVIEW_PER_VIEW_VIEWPORTS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::multiview);
+    AddRequiredFeature(vkt::Feature::multiviewPerViewViewports);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    uint32_t view_mask = 0x2u;
+    VkRenderPassMultiviewCreateInfo rp_mv_ci = vku::InitStructHelper();
+    rp_mv_ci.subpassCount = 1;
+    rp_mv_ci.pViewMasks = &view_mask;
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass(&rp_mv_ci);
+
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
+    image_create_info.flags = 0u;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_create_info.extent = {32u, 32u, 1u};
+    image_create_info.mipLevels = 1u;
+    image_create_info.arrayLayers = 2u;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    vkt::Image image(*m_device, image_create_info, vkt::set_layout);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY);
+
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view.handle());
+
+    VkRenderPassBeginInfo render_pass_bi = vku::InitStructHelper();
+    render_pass_bi.renderPass = rp;
+    render_pass_bi.framebuffer = framebuffer;
+    render_pass_bi.renderArea.extent = {32u, 32u};
+    render_pass_bi.clearValueCount = 1u;
+    render_pass_bi.pClearValues = m_renderPassClearValues.data();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.renderPass = rp;
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07730");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07731");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
