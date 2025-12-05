@@ -141,6 +141,15 @@ static inline VkOffset3D CastTo3D(const VkOffset2D &d2) {
     return d3;
 }
 
+// Returns true if sub_rect is entirely contained within rect
+static inline bool ContainsRect(VkRect2D rect, VkRect2D sub_rect) {
+    if ((sub_rect.offset.x < rect.offset.x) || (sub_rect.offset.x + sub_rect.extent.width > rect.offset.x + rect.extent.width) ||
+        (sub_rect.offset.y < rect.offset.y) || (sub_rect.offset.y + sub_rect.extent.height > rect.offset.y + rect.extent.height)) {
+        return false;
+    }
+    return true;
+}
+
 static constexpr VkPipelineStageFlags2 kFramebufferStagePipelineStageFlags =
     (VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
      VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
