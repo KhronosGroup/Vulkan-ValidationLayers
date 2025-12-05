@@ -2147,3 +2147,33 @@ TEST_F(NegativeDescriptorBuffer, GetDescriptorAlignment) {
         m_errorMonitor->VerifyFound();
     }
 }
+
+TEST_F(NegativeDescriptorBuffer, GetDescriptorAlignment2) {
+    AddRequiredExtensions(VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::texelBufferAlignment);
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+    VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT align_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(align_props);
+
+    uint8_t host_descriptor[1024];
+
+    if (align_props.uniformTexelBufferOffsetAlignmentBytes != 1) {
+        vkt::Buffer u_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, vkt::device_address);
+        vkt::DescriptorGetInfo get_info_u(VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, u_buffer, 4, VK_FORMAT_R32_UINT);
+        get_info_u.address_info.address += 1;
+
+        m_errorMonitor->SetDesiredError("UNASSIGNED-VkDescriptorGetInfoEXT-limit-pUniformTexelBuffer");
+        vk::GetDescriptorEXT(device(), get_info_u, descriptor_buffer_properties.uniformTexelBufferDescriptorSize, host_descriptor);
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (align_props.storageTexelBufferOffsetAlignmentBytes != 1) {
+        vkt::Buffer s_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, vkt::device_address);
+        vkt::DescriptorGetInfo get_info_s(VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, s_buffer, 4, VK_FORMAT_R32_UINT);
+        get_info_s.address_info.address += 1;
+
+        m_errorMonitor->SetDesiredError("UNASSIGNED-VkDescriptorGetInfoEXT-limit-pStorageTexelBuffer");
+        vk::GetDescriptorEXT(device(), get_info_s, descriptor_buffer_properties.storageTexelBufferDescriptorSize, host_descriptor);
+        m_errorMonitor->VerifyFound();
+    }
+}

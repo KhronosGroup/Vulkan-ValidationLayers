@@ -3198,7 +3198,12 @@ bool CoreChecks::ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoE
             skip |= LogError("VUID-VkDescriptorAddressInfoEXT-nullDescriptor-08939", device, address_loc.dot(Field::range),
                              "is VK_WHOLE_SIZE.");
         }
-        if (SafeModulo(address_info.address, limit_value) != 0) {
+
+        // with VK_EXT_texel_buffer_alignment we have these ugly extra cases to handle
+        if ((address_loc.field == Field::pUniformTexelBuffer || address_loc.field == Field::pStorageTexelBuffer) &&
+            enabled_features.texelBufferAlignment) {
+            skip |= ValidateDescriptorAddressInfoTexelBufferAlignment(address_info, address_loc);
+        } else if (SafeModulo(address_info.address, limit_value) != 0) {
             skip |=
                 LogError(limit_vuid, device, address_loc.dot(Field::address), "(0x%" PRIx64 ") is not aligned to %s (%" PRIu64 ").",
                          address_info.address, String(limit_field), limit_value);
@@ -3223,6 +3228,75 @@ bool CoreChecks::ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoE
 
     skip |= buffer_address_validator.ValidateDeviceAddress(*this, address_loc.dot(Field::address), LogObjectList(device),
                                                            address_info.address, address_info.range);
+
+    return skip;
+}
+
+bool CoreChecks::ValidateDescriptorAddressInfoTexelBufferAlignment(const VkDescriptorAddressInfoEXT &address_info,
+                                                                   const Location &address_loc) const {
+    bool skip = false;
+    VkDeviceSize texel_block_size = GetTexelBufferFormatSize(address_info.format);
+    bool texel_size_of_three = false;
+    if ((texel_block_size % 3) == 0) {
+        texel_size_of_three = true;
+        texel_block_size /= 3;
+    }
+
+    if (address_loc.field == Field::pStorageTexelBuffer) {
+        VkDeviceSize alignment_requirement = phys_dev_props_core13.storageTexelBufferOffsetAlignmentBytes;
+        if (phys_dev_props_core13.storageTexelBufferOffsetSingleTexelAlignment) {
+            alignment_requirement = std::min(alignment_requirement, texel_block_size);
+        }
+        if (SafeModulo(address_info.address, alignment_requirement) != 0) {
+            std::stringstream ss;
+            ss << "(0x" << std::hex << address_info.address << std::dec << ") must be a multiple of " << alignment_requirement
+               << "\n";
+            if (phys_dev_props_core13.storageTexelBufferOffsetSingleTexelAlignment) {
+                ss << "storageTexelBufferOffsetSingleTexelAlignment is VK_TRUE, so we take "
+                      "min(storageTexelBufferOffsetAlignmentBytes, texelBlockSize("
+                   << string_VkFormat(address_info.format) << ")) which is min("
+                   << phys_dev_props_core13.storageTexelBufferOffsetAlignmentBytes << ", " << texel_block_size << ")";
+                if (texel_size_of_three) {
+                    ss << "\nThe size of a texel " << (texel_block_size * 3)
+                       << " was a multiple of three bytes, so the size of a single component of "
+                       << string_VkFormat(address_info.format) << " was used instead";
+                }
+            } else {
+                ss << "storageTexelBufferOffsetSingleTexelAlignment is VK_FALSE and storageTexelBufferOffsetAlignmentBytes is "
+                   << phys_dev_props_core13.storageTexelBufferOffsetAlignmentBytes;
+            }
+
+            skip |= LogError("UNASSIGNED-VkDescriptorGetInfoEXT-limit-pStorageTexelBuffer-ext", device,
+                             address_loc.dot(Field::address), "%s", ss.str().c_str());
+        }
+    } else if (address_loc.field == Field::pUniformTexelBuffer) {
+        VkDeviceSize alignment_requirement = phys_dev_props_core13.uniformTexelBufferOffsetAlignmentBytes;
+        if (phys_dev_props_core13.uniformTexelBufferOffsetSingleTexelAlignment) {
+            alignment_requirement = std::min(alignment_requirement, texel_block_size);
+        }
+        if (SafeModulo(address_info.address, alignment_requirement) != 0) {
+            std::stringstream ss;
+            ss << "(0x" << std::hex << address_info.address << std::dec << ") must be a multiple of " << alignment_requirement
+               << "\n";
+            if (phys_dev_props_core13.uniformTexelBufferOffsetSingleTexelAlignment) {
+                ss << "uniformTexelBufferOffsetSingleTexelAlignment is VK_TRUE, so we take "
+                      "min(uniformTexelBufferOffsetAlignmentBytes, texelBlockSize("
+                   << string_VkFormat(address_info.format) << ")) which is min("
+                   << phys_dev_props_core13.uniformTexelBufferOffsetAlignmentBytes << ", " << texel_block_size << ")";
+                if (texel_size_of_three) {
+                    ss << "\nThe size of a texel " << (texel_block_size * 3)
+                       << " was a multiple of three bytes, so the size of a single component of "
+                       << string_VkFormat(address_info.format) << " was used instead";
+                }
+            } else {
+                ss << "uniformTexelBufferOffsetSingleTexelAlignment is VK_FALSE and uniformTexelBufferOffsetAlignmentBytes is "
+                   << phys_dev_props_core13.uniformTexelBufferOffsetAlignmentBytes;
+            }
+
+            skip |= LogError("UNASSIGNED-VkDescriptorGetInfoEXT-limit-pUniformTexelBuffer-ext", device,
+                             address_loc.dot(Field::address), "%s", ss.str().c_str());
+        }
+    }
 
     return skip;
 }

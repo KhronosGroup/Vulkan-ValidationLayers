@@ -122,14 +122,6 @@ bool Device::manual_PreCallValidateCreateBufferView(VkDevice device, const VkBuf
                          string_VkFormat(format));
     }
 
-    if ((pCreateInfo->offset % phys_dev_props.limits.minTexelBufferOffsetAlignment) != 0 &&
-        !enabled_features.texelBufferAlignment) {
-        skip |= LogError("VUID-VkBufferViewCreateInfo-offset-02749", pCreateInfo->buffer, create_info_loc.dot(Field::offset),
-                         "(%" PRIuLEAST64
-                         ") must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment (%" PRIuLEAST64 ").",
-                         pCreateInfo->offset, phys_dev_props.limits.minTexelBufferOffsetAlignment);
-    }
-
     if (range != VK_WHOLE_SIZE) {
         // will be 1 because  block-compressed format are not supported for Texel Buffer
         const VkDeviceSize texels_per_block = static_cast<VkDeviceSize>(vkuFormatTexelsPerBlock(format));
