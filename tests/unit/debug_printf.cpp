@@ -5313,14 +5313,15 @@ TEST_F(NegativeDebugPrintf, DescriptorBufferMixClassic) {
         }
     )glsl";
 
-    vkt::Buffer buffer_data(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    const VkDeviceSize offset = 256;  // minStorageBufferOffsetAlignment required to be at most 256
+    vkt::Buffer buffer_data(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     uint32_t *data = (uint32_t *)buffer_data.Memory().Map();
     data[0] = 8;
     data[1] = 12;
     data[2] = 1;
-    data[4] = 3;  // 16 byte ofset
-    data[5] = 7;
-    data[6] = 1;
+    data[(offset / 4) + 0] = 3;
+    data[(offset / 4) + 1] = 7;
+    data[(offset / 4) + 2] = 1;
 
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     vkt::DescriptorSetLayout ds_layout_db(*m_device, binding, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
@@ -5350,7 +5351,7 @@ TEST_F(NegativeDebugPrintf, DescriptorBufferMixClassic) {
                                                  {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                              });
     vkt::PipelineLayout pipeline_layout_classic(*m_device, {&ds_classic.layout_});
-    ds_classic.WriteDescriptorBufferInfo(0, buffer_data, 16, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    ds_classic.WriteDescriptorBufferInfo(0, buffer_data, offset, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     ds_classic.UpdateDescriptorSets();
 
     CreateComputePipelineHelper pipe_classic(*this);
