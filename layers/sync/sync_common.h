@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 #pragma once
-#include "containers/subresource_adapter.h"
+#include "state_tracker/subresource_adapter.h"
 #include "containers/range.h"
 #include "generated/sync_validation_types.h"
 #include "containers/limits.h"

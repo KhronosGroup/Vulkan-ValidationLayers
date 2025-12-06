@@ -21,6 +21,8 @@
 # based on the target API variant (e.g. Vulkan SC)
 set(LAYER_NAME "VkLayer_khronos_validation")
 
+add_subdirectory(external)
+
 add_library(VkLayer_utils STATIC)
 target_sources(VkLayer_utils PRIVATE
     containers/container_utils.h
@@ -38,8 +40,6 @@ target_sources(VkLayer_utils PRIVATE
     error_message/error_strings.h
     error_message/record_object.h
     error_message/log_message_type.h
-    external/xxhash.h
-    external/inplace_function.h
     ${API_TYPE}/generated/error_location_helper.cpp
     ${API_TYPE}/generated/error_location_helper.h
     ${API_TYPE}/generated/feature_requirements_helper.cpp
@@ -98,9 +98,28 @@ target_link_libraries(VkLayer_utils PUBLIC
     Vulkan::SafeStruct
     Vulkan::UtilityHeaders
     ${CMAKE_DL_LIBS}
+    vvl_external
 )
-target_include_directories(VkLayer_utils SYSTEM PRIVATE external)
 target_include_directories(VkLayer_utils PUBLIC . ${API_TYPE})
+
+# These are warnings we want to ignore everywhere
+if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
+    # Not needed for GCC
+    target_compile_options(VkLayer_utils PUBLIC
+        -Wno-sign-conversion
+        -Wno-implicit-int-conversion
+    )
+elseif(MSVC)
+    target_compile_options(VkLayer_utils PUBLIC
+        /wd4324 # padding
+        /wd4458 # hiding class member
+        /wd4457 # hiding function parameter
+        /wd4702 # unreachable code
+        /wd4389 # signed/unsigned mismatch
+    )
+endif()
+# Every generated function will hit this
+target_compile_options(VkLayer_utils PUBLIC "$<IF:$<CXX_COMPILER_ID:MSVC>,/wd4100,-Wno-unused-parameter>")
 
 option(USE_CUSTOM_HASH_MAP "Use a custom hashing library that is faster than std::unordered_map and std::unordered_set (default: ON)" ON)
 
@@ -136,21 +155,6 @@ if (WIN32 AND CMAKE_SIZEOF_VOID_P EQUAL 8)
    endif()
 endif()
 
-if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
-    target_compile_options(VkLayer_utils PRIVATE
-        -Wno-sign-conversion
-        -Wno-implicit-int-conversion
-    )
-elseif(MSVC)
-    target_compile_options(VkLayer_utils PRIVATE
-        /wd4324 # padding
-        /wd4458 # hiding class member
-        /wd4457 # hiding function parameter
-        /wd4702 # unreachable code
-        /wd4389 # signed/unsigned mismatch
-    )
-endif()
-
 option(DEBUG_CAPTURE_KEYBOARD "Every QueueSubmit if F1 is pressed, a DebugCapture function will be called and a custom action can be done (default: OFF)" OFF)
 if (DEBUG_CAPTURE_KEYBOARD)
     target_compile_definitions(VkLayer_utils PUBLIC DEBUG_CAPTURE_KEYBOARD)
@@ -171,7 +175,12 @@ if (DEBUG_CAPTURE_KEYBOARD)
     endif()
 endif()
 
-add_subdirectory(gpuav/spirv)
+add_subdirectory(gpuav)
+add_subdirectory(best_practices)
+add_subdirectory(sync)
+add_subdirectory(thread_tracker)
+add_subdirectory(stateless)
+add_subdirectory(legacy)
 
 if(IOS)
     add_library(vvl SHARED)
@@ -180,36 +189,11 @@ else()
 endif()
 
 target_sources(vvl PRIVATE
-    best_practices/bp_buffer.cpp
-    best_practices/bp_cmd_buffer.cpp
-    best_practices/bp_cmd_buffer_nv.cpp
-    best_practices/bp_constants.h
-    best_practices/bp_copy_blit_resolve.cpp
-    best_practices/bp_descriptor.cpp
-    best_practices/bp_device_memory.cpp
-    best_practices/bp_drawdispatch.cpp
-    best_practices/bp_framebuffer.cpp
-    best_practices/bp_image.cpp
-    best_practices/bp_instance_device.cpp
-    best_practices/bp_pipeline.cpp
-    best_practices/bp_ray_tracing.cpp
-    best_practices/bp_render_pass.cpp
-    best_practices/bp_state_tracker.cpp
-    best_practices/bp_state.h
-    best_practices/bp_state.cpp
-    best_practices/bp_synchronization.cpp
-    best_practices/bp_utils.cpp
-    best_practices/bp_utils.h
-    best_practices/bp_video.cpp
-    best_practices/bp_wsi.cpp
-    best_practices/best_practices_validation.h
     chassis/chassis_modification_state.h
     chassis/chassis_manual.cpp
     chassis/dispatch_object_manual.cpp
     containers/range.h
     containers/range_map.h
-    containers/subresource_adapter.cpp
-    containers/subresource_adapter.h
     core_checks/cc_android.cpp
     core_checks/cc_buffer.cpp
     core_checks/cc_buffer_address.h
@@ -257,19 +241,12 @@ target_sources(vvl PRIVATE
     drawdispatch/drawdispatch_vuids.h
     error_message/spirv_logging.h
     error_message/spirv_logging.cpp
-    external/vma/vma.h
-    external/vma/vma.cpp
-    ${API_TYPE}/generated/best_practices.cpp
-    ${API_TYPE}/generated/best_practices_device_methods.h
-    ${API_TYPE}/generated/best_practices_instance_methods.h
     ${API_TYPE}/generated/chassis.cpp
     ${API_TYPE}/generated/valid_enum_values.cpp
     ${API_TYPE}/generated/valid_enum_values.h
     ${API_TYPE}/generated/valid_flag_values.cpp
     ${API_TYPE}/generated/command_validation.cpp
     ${API_TYPE}/generated/command_validation.h
-    ${API_TYPE}/generated/legacy.cpp
-    ${API_TYPE}/generated/legacy.h
     ${API_TYPE}/generated/device_features.cpp
     ${API_TYPE}/generated/device_features.h
     ${API_TYPE}/generated/dynamic_state_helper.cpp
@@ -287,66 +264,7 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/spirv_grammar_helper.cpp
     ${API_TYPE}/generated/spirv_validation_helper.cpp
     ${API_TYPE}/generated/spirv_validation_helper.h
-    ${API_TYPE}/generated/stateless_device_methods.h
-    ${API_TYPE}/generated/stateless_instance_methods.h
-    ${API_TYPE}/generated/stateless_validation_helper.cpp
     ${API_TYPE}/generated/sync_validation_types.cpp
-    ${API_TYPE}/generated/thread_safety.cpp
-    ${API_TYPE}/generated/thread_safety_device_defs.h
-    ${API_TYPE}/generated/thread_safety_instance_defs.h
-    ${API_TYPE}/generated/gpuav_offline_spirv.h
-    ${API_TYPE}/generated/gpuav_offline_spirv.cpp
-    gpuav/core/gpuav.h
-    gpuav/core/gpuav_constants.h
-    gpuav/core/gpuav_features.cpp
-    gpuav/core/gpuav_record.cpp
-    gpuav/core/gpuav_setup.cpp
-    gpuav/core/gpuav_settings.h
-    gpuav/core/gpuav_settings.cpp
-    gpuav/core/gpuav_validation_pipeline.h
-    gpuav/core/gpuav_validation_pipeline.cpp
-    gpuav/validation_cmd/gpuav_validation_cmd_common.h
-    gpuav/validation_cmd/gpuav_validation_cmd_common.cpp
-    gpuav/validation_cmd/gpuav_draw.h
-    gpuav/validation_cmd/gpuav_draw.cpp
-    gpuav/validation_cmd/gpuav_dispatch.h
-    gpuav/validation_cmd/gpuav_dispatch.cpp
-    gpuav/validation_cmd/gpuav_ray_tracing.h
-    gpuav/validation_cmd/gpuav_ray_tracing.cpp
-    gpuav/validation_cmd/gpuav_copy_buffer_to_image.h
-    gpuav/validation_cmd/gpuav_copy_buffer_to_image.cpp
-    gpuav/validation_cmd/gpuav_copy_memory_indirect.h
-    gpuav/validation_cmd/gpuav_copy_memory_indirect.cpp
-    gpuav/descriptor_validation/gpuav_descriptor_validation.h
-    gpuav/descriptor_validation/gpuav_descriptor_validation.cpp
-    gpuav/descriptor_validation/gpuav_descriptor_set.cpp
-    gpuav/descriptor_validation/gpuav_descriptor_set.h
-    gpuav/debug_printf/debug_printf.cpp
-    gpuav/debug_printf/debug_printf.h
-    gpuav/error_message/gpuav_vuids.cpp
-    gpuav/error_message/gpuav_vuids.h
-    gpuav/instrumentation/gpuav_shader_instrumentor.cpp
-    gpuav/instrumentation/gpuav_shader_instrumentor.h
-    gpuav/instrumentation/gpuav_instrumentation.h
-    gpuav/instrumentation/gpuav_instrumentation.cpp
-    gpuav/instrumentation/buffer_device_address.cpp
-    gpuav/instrumentation/descriptor_checks.h
-    gpuav/instrumentation/descriptor_checks.cpp
-    gpuav/instrumentation/post_process_descriptor_indexing.cpp
-    gpuav/instrumentation/ray_query.cpp
-    gpuav/instrumentation/register_validation.h
-    gpuav/instrumentation/sanitizer.cpp
-    gpuav/instrumentation/vertex_attribute_fetch_oob.cpp
-    gpuav/resources/gpuav_state_trackers.cpp
-    gpuav/resources/gpuav_state_trackers.h
-    gpuav/resources/gpuav_shader_resources.h
-    gpuav/resources/gpuav_vulkan_objects.h
-    gpuav/resources/gpuav_vulkan_objects.cpp
-    gpuav/shaders/gpuav_error_codes.h
-    gpuav/shaders/gpuav_error_header.h
-    gpuav/shaders/gpuav_shaders_constants.h
-    gpuav/shaders/validation_cmd/push_data.h
-    legacy/legacy_manual.cpp
     object_tracker/object_lifetime_validation.cpp
     object_tracker/object_lifetime_validation.h
     state_tracker/bind_point.h
@@ -388,6 +306,8 @@ target_sources(vvl PRIVATE
     state_tracker/special_supported.h
     state_tracker/state_object.cpp
     state_tracker/state_object.h
+    state_tracker/subresource_adapter.cpp
+    state_tracker/subresource_adapter.h
     state_tracker/query_state.cpp
     state_tracker/query_state.h
     state_tracker/tensor_state.cpp
@@ -415,61 +335,6 @@ target_sources(vvl PRIVATE
     state_tracker/video_session_state.h
     state_tracker/wsi_state.cpp
     state_tracker/wsi_state.h
-    stateless/sl_buffer.cpp
-    stateless/sl_cmd_buffer_dynamic.cpp
-    stateless/sl_cmd_buffer.cpp
-    stateless/sl_descriptor.cpp
-    stateless/sl_device_generated_commands.cpp
-    stateless/sl_device_memory.cpp
-    stateless/sl_external_object.cpp
-    stateless/sl_framebuffer.cpp
-    stateless/sl_image.cpp
-    stateless/sl_instance_device.cpp
-    stateless/sl_pipeline.cpp
-    stateless/sl_ray_tracing.cpp
-    stateless/sl_render_pass.cpp
-    stateless/sl_shader_object.cpp
-    stateless/sl_spirv.cpp
-    stateless/sl_spirv.h
-    stateless/sl_synchronization.cpp
-    stateless/sl_tensor.cpp
-    stateless/sl_utils.cpp
-    stateless/sl_vuid_maps.cpp
-    stateless/sl_vuid_maps.h
-    stateless/sl_wsi.cpp
-    stateless/stateless_validation.h
-    sync/sync_access_context.cpp
-    sync/sync_access_context.h
-    sync/sync_access_flags.h
-    sync/sync_access_map.cpp
-    sync/sync_access_map.h
-    sync/sync_access_state.cpp
-    sync/sync_access_state.h
-    sync/sync_barrier.cpp
-    sync/sync_barrier.h
-    sync/sync_commandbuffer.cpp
-    sync/sync_commandbuffer.h
-    sync/sync_common.cpp
-    sync/sync_common.h
-    sync/sync_error_messages.cpp
-    sync/sync_error_messages.h
-    sync/sync_image.cpp
-    sync/sync_image.h
-    sync/sync_op.cpp
-    sync/sync_op.h
-    sync/sync_renderpass.cpp
-    sync/sync_renderpass.h
-    sync/sync_reporting.cpp
-    sync/sync_reporting.h
-    sync/sync_settings.h
-    sync/sync_stats.cpp
-    sync/sync_stats.h
-    sync/sync_submit.cpp
-    sync/sync_submit.h
-    sync/sync_validation.cpp
-    sync/sync_validation.h
-    thread_tracker/thread_safety_validation.cpp
-    thread_tracker/thread_safety_validation.h
     utils/shader_utils.cpp
     utils/shader_utils.h
     layer_options.cpp
@@ -479,17 +344,6 @@ target_sources(vvl PRIVATE
 )
 get_target_property(LAYER_SOURCES vvl SOURCES)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${LAYER_SOURCES})
-
-if(MSVC)
-    set(GPUAV_SHADERS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gpuav/shaders")
-    file(GLOB_RECURSE GPUAV_SHADERS
-        "${GPUAV_SHADERS_DIR}/*.vert"
-        "${GPUAV_SHADERS_DIR}/*.comp"
-        "${GPUAV_SHADERS_DIR}/*.h"
-    )
-    add_custom_target(Shaders SOURCES ${GPUAV_SHADERS})
-    source_group(TREE ${GPUAV_SHADERS_DIR} PREFIX "GPU-AV Shaders" FILES ${GPUAV_SHADERS})
-endif()
 
 option(BUILD_SELF_VVL "Setup a VVL build that will be used for self validation" FALSE)
 if (BUILD_SELF_VVL)
@@ -537,28 +391,18 @@ else()
     target_link_options(vvl PRIVATE LINKER:--version-script=${CMAKE_CURRENT_SOURCE_DIR}/${LAYER_NAME}.map)
 endif()
 
-target_compile_options(vvl PRIVATE "$<IF:$<CXX_COMPILER_ID:MSVC>,/wd4100,-Wno-unused-parameter>")
-
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    target_compile_options(vvl PRIVATE
-        -Wno-sign-conversion
-        -Wno-implicit-int-conversion
-    )
-elseif(MSVC)
-    target_compile_options(vvl PRIVATE
-        /wd4324 # padding
-        /wd4458 # hiding class member
-        /wd4457 # hiding function parameter
-        /wd4702 # unreachable code
-        /wd4389 # signed/unsigned mismatch
-    )
-endif()
-
 # Order matters here. VkLayer_utils should be the last link library to ensure mimalloc overrides are picked up correctly.
 # Otherwise, libraries after VkLayer_utils will not benefit from this performance improvement.
 target_link_libraries(vvl PRIVATE
     SPIRV-Headers::SPIRV-Headers
     SPIRV-Tools-opt
+    vvl_external
+    vvl_best_practices
+    vvl_sync
+    vvl_stateless
+    vvl_thread_tracker
+    vvl_legacy
+    vvl_gpu_av
     gpu_av_spirv
     VkLayer_utils
 )
@@ -583,7 +427,10 @@ if (VVL_ENABLE_TRACY)
     target_link_libraries(vvl PRIVATE TracyClient)
 endif()
 
-target_include_directories(vvl SYSTEM PRIVATE external)
+# TODO - Figure out why IOS builds have duplicated spirv-tools libs
+if (IOS)
+    target_link_options(vvl PRIVATE "LINKER:-no_warn_duplicate_libraries")
+endif()
 
 if (ANDROID)
     # Required for __android_log_print. Marking as PUBLIC since the tests use __android_log_print as well.
