@@ -70,7 +70,7 @@ TEST_F(NegativeShaderLimits, MaxSampleMaskWordsInput) {
                OpReturn
                OpFunctionEnd
     )";
-    VkShaderObj fs(this, source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    VkShaderObj fs(*m_device, source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
     const auto inputPipeline = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -126,7 +126,7 @@ TEST_F(NegativeShaderLimits, MaxSampleMaskWordsOutput) {
                OpReturn
                OpFunctionEnd
     )";
-    VkShaderObj fs(this, source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    VkShaderObj fs(*m_device, source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
     const auto outputPipeline = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -268,7 +268,7 @@ TEST_F(NegativeShaderLimits, MinAndMaxTexelOffset) {
     // OpImageFetch
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpImageSample-06435");
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpImageSample-06436", 2);
-    VkShaderObj const fs(this, spv_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    VkShaderObj const fs(*m_device, spv_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
 
@@ -295,7 +295,7 @@ TEST_F(NegativeShaderLimits, MaxFragmentDualSrcAttachments) {
             c1 = vec4(0.0f);
         }
     )glsl";
-    VkShaderObj fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineColorBlendAttachmentState color_blend[2] = {};
     color_blend[0] = DefaultColorBlendAttachmentState();
@@ -370,8 +370,7 @@ TEST_F(NegativeShaderLimits, OffsetMaxComputeSharedMemorySize) {
     )asm";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2,
-                                             SPV_SOURCE_ASM);
+    pipe.cs_ = VkShaderObj(*m_device, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-Workgroup-06530");
     pipe.CreateComputePipeline();
@@ -420,8 +419,7 @@ TEST_F(NegativeShaderLimits, MaxComputeSharedMemorySizeArrayStride) {
     )asm";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2,
-                                             SPV_SOURCE_ASM);
+    pipe.cs_ = VkShaderObj(*m_device, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-Workgroup-06530");
     pipe.CreateComputePipeline();
@@ -451,7 +449,7 @@ TEST_F(NegativeShaderLimits, MaxFragmentOutputAttachments) {
     )glsl";
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-Location-06272");
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
     m_errorMonitor->VerifyFound();
 }
 
@@ -470,7 +468,7 @@ TEST_F(NegativeShaderLimits, MaxFragmentOutputAttachmentsArray) {
     )glsl";
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-Location-06272");
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
     m_errorMonitor->VerifyFound();
 }
 
@@ -489,7 +487,7 @@ TEST_F(NegativeShaderLimits, MaxFragmentOutputAttachmentsArrayAtEnd) {
     )glsl";
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-Location-06272");
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
     m_errorMonitor->VerifyFound();
 }
 
@@ -528,6 +526,6 @@ TEST_F(NegativeShaderLimits, MaxFragmentCombinedOutputResources) {
     )glsl";
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-Location-06428");
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
     m_errorMonitor->VerifyFound();
 }

@@ -39,8 +39,8 @@ TEST_F(PositiveShaderPushConstants, OverlappingPushConstantRange) {
         }
     )glsl";
 
-    VkShaderObj const vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj const fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj const vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj const fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPushConstantRange push_constant_ranges[2]{{VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 8},
                                                 {VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(float) * 4}};
@@ -139,10 +139,10 @@ TEST_F(PositiveShaderPushConstants, MultipleEntryPointVert) {
 
     // Vertex entry point first
     {
-        VkShaderObj const vs(this, vert_first.c_str(), VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr,
+        VkShaderObj const vs(*m_device, vert_first.c_str(), VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr,
                              "main_v");
-        VkShaderObj const fs(this, vert_first.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr,
-                             "main_f");
+        VkShaderObj const fs(*m_device, vert_first.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM,
+                             nullptr, "main_f");
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
             helper.pipeline_layout_ci_ = pipeline_layout_info;
@@ -152,10 +152,10 @@ TEST_F(PositiveShaderPushConstants, MultipleEntryPointVert) {
 
     // Fragment entry point first
     {
-        VkShaderObj const vs(this, frag_first.c_str(), VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr,
+        VkShaderObj const vs(*m_device, frag_first.c_str(), VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr,
                              "main_v");
-        VkShaderObj const fs(this, frag_first.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr,
-                             "main_f");
+        VkShaderObj const fs(*m_device, frag_first.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM,
+                             nullptr, "main_f");
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
             helper.pipeline_layout_ci_ = pipeline_layout_info;
@@ -248,10 +248,10 @@ TEST_F(PositiveShaderPushConstants, MultipleEntryPointFrag) {
 
     // Vertex entry point first
     {
-        VkShaderObj const vs(this, vert_first.c_str(), VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr,
+        VkShaderObj const vs(*m_device, vert_first.c_str(), VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr,
                              "main_v");
-        VkShaderObj const fs(this, vert_first.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr,
-                             "main_f");
+        VkShaderObj const fs(*m_device, vert_first.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM,
+                             nullptr, "main_f");
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
             helper.pipeline_layout_ci_ = pipeline_layout_info;
@@ -261,10 +261,10 @@ TEST_F(PositiveShaderPushConstants, MultipleEntryPointFrag) {
 
     // Fragment entry point first
     {
-        VkShaderObj const vs(this, frag_first.c_str(), VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr,
+        VkShaderObj const vs(*m_device, frag_first.c_str(), VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr,
                              "main_v");
-        VkShaderObj const fs(this, frag_first.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr,
-                             "main_f");
+        VkShaderObj const fs(*m_device, frag_first.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM,
+                             nullptr, "main_f");
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
             helper.pipeline_layout_ci_ = pipeline_layout_info;
@@ -286,8 +286,8 @@ TEST_F(PositiveShaderPushConstants, CompatibilityGraphicsOnly) {
         }
     )glsl";
 
-    VkShaderObj const vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj const fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj const vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj const fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // range A and B are the same while range C is different
     // All 3 ranges fit the range from the shader
@@ -433,9 +433,9 @@ TEST_F(PositiveShaderPushConstants, StaticallyUnused) {
         }
     )glsl";
 
-    VkShaderObj vsUnused(this, vsSourceUnused, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj vsEmpty(this, vsSourceEmpty, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vsUnused(*m_device, vsSourceUnused, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vsEmpty(*m_device, vsSourceEmpty, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // Just in layout
     CreatePipelineHelper pipeline_unused(*this);
@@ -487,8 +487,8 @@ TEST_F(PositiveShaderPushConstants, OffsetVector) {
         }
     )glsl";
 
-    VkShaderObj const vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj const fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj const vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj const fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // Set up a push constant range
     VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 16, 32};
@@ -536,8 +536,8 @@ TEST_F(PositiveShaderPushConstants, PhysicalStorageBufferBasic) {
         }
     )glsl";
 
-    VkShaderObj const vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj const fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj const vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj const fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // Use exact range
     VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 16, 28};
@@ -586,7 +586,7 @@ TEST_F(PositiveShaderPushConstants, PhysicalStorageBufferVertFrag) {
             gl_Position = vec4(pcs.vb.x, 1.0);
         }
         )glsl";
-    const VkShaderObj vs(this, vertex_source, VK_SHADER_STAGE_VERTEX_BIT);
+    const VkShaderObj vs(*m_device, vertex_source, VK_SHADER_STAGE_VERTEX_BIT);
 
     const char *fragment_source = R"glsl(
         #version 450
@@ -607,7 +607,7 @@ TEST_F(PositiveShaderPushConstants, PhysicalStorageBufferVertFrag) {
             o = vec4(pcs.vb.v, 1.0);
         }
     )glsl";
-    const VkShaderObj fs(this, fragment_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+    const VkShaderObj fs(*m_device, fragment_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     std::array<VkPushConstantRange, 2> push_ranges;
     push_ranges[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
@@ -673,8 +673,8 @@ TEST_F(PositiveShaderPushConstants, MultipleStructs) {
                  OpFunctionEnd
     )";
 
-    VkShaderObj const vs(this, source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
-    VkShaderObj const fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj const vs(*m_device, source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    VkShaderObj const fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 32, 16};
     const vkt::PipelineLayout pipeline_layout(*m_device, {}, {push_constant_range});
@@ -715,7 +715,7 @@ TEST_F(PositiveShaderPushConstants, SpecConstantSizeDefault) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {}, {push_constant_range});
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, {push_constant_range});
     pipe.CreateComputePipeline();
 }
@@ -754,8 +754,8 @@ TEST_F(PositiveShaderPushConstants, SpecConstantSizeSet) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {}, {push_constant_range});
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
-                                             &specialization_info);
+    pipe.cs_ =
+        VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specialization_info);
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, {push_constant_range});
     pipe.CreateComputePipeline();
 }
@@ -825,7 +825,7 @@ TEST_F(PositiveShaderPushConstants, Storage8BitPointers) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_}, {push_constant_range});
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe.cs_ = VkShaderObj(*m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 }

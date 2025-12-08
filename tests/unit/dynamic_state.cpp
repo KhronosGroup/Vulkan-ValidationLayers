@@ -782,7 +782,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateSetViewportScissor) {
         layout(location=0) in vec4 x;
         void main(){}
     )glsl";
-    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
@@ -1090,8 +1090,8 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2PatchControlPointsEnabled) {
     {
         VkPipelineTessellationStateCreateInfo tess_ci = vku::InitStructHelper();
 
-        VkShaderObj tcs(this, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
-        VkShaderObj tes(this, kTessellationEvalMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+        VkShaderObj tcs(*m_device, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+        VkShaderObj tes(*m_device, kTessellationEvalMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 
         CreatePipelineHelper pipe(*this);
         pipe.AddDynamicState(VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT);
@@ -1616,8 +1616,8 @@ TEST_F(NegativeDynamicState, DrawNotSetTessellationDomainOrigin) {
     VkPipelineTessellationStateCreateInfo tess_ci = vku::InitStructHelper(&tess_domain_ci);
     tess_ci.patchControlPoints = 4u;
 
-    VkShaderObj tcs(this, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
-    VkShaderObj tes(this, kTessellationEvalMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+    VkShaderObj tcs(*m_device, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+    VkShaderObj tes(*m_device, kTessellationEvalMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT);
@@ -1960,7 +1960,7 @@ TEST_F(NegativeDynamicState, DrawNotSetRasterizationStream) {
     VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(transform_feedback_props);
 
-    VkShaderObj gs(this, kGeometryMinimalGlsl, VK_SHADER_STAGE_GEOMETRY_BIT);
+    VkShaderObj gs(*m_device, kGeometryMinimalGlsl, VK_SHADER_STAGE_GEOMETRY_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT);
@@ -2170,7 +2170,7 @@ TEST_F(NegativeDynamicState, DrawNotSetLineStippleEnableGeometry) {
            EmitVertex();
         }
     )glsl";
-    VkShaderObj gs(this, geom_src, VK_SHADER_STAGE_GEOMETRY_BIT);
+    VkShaderObj gs(*m_device, geom_src, VK_SHADER_STAGE_GEOMETRY_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT);
@@ -2514,7 +2514,7 @@ TEST_F(NegativeDynamicState, ColorBlendAttchment) {
     }
 
     fsSource << "}";
-    VkShaderObj fs(this, fsSource.str().c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fsSource.str().c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineColorBlendAttachmentState cb_attachments[color_attachments];
     memset(cb_attachments, 0, sizeof(VkPipelineColorBlendAttachmentState) * color_attachments);
@@ -2729,7 +2729,7 @@ TEST_F(NegativeDynamicState, MaxFragmentDualSrcAttachmentsDynamicBlendEnable) {
             c1 = vec4(0.0f);
         }
     )glsl";
-    VkShaderObj fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // This is all ignored, but checking it will be ignored
     VkPipelineColorBlendAttachmentState cb_attachments = DefaultColorBlendAttachmentState();
@@ -4696,7 +4696,7 @@ TEST_F(NegativeDynamicState, AlphaToCoverageOutputNoAlpha) {
            x = vec3(1);
         }
     )glsl";
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineMultisampleStateCreateInfo ms_state_ci = vku::InitStructHelper();
     ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
@@ -4934,7 +4934,7 @@ TEST_F(NegativeDynamicState, VertexInputLocationMissing) {
         }
     )glsl";
 
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
@@ -5722,8 +5722,8 @@ TEST_F(NegativeDynamicState, InterpolateAtSample) {
             uFragColor = vec4(0.1f);
         }
     )glsl";
-    VkShaderObj vs(this, vs_src, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vs(*m_device, vs_src, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -6354,7 +6354,7 @@ TEST_F(NegativeDynamicState, MeshPipelineInvalidtion) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT);  // tied to the frag shader
     pipe.CreateGraphicsPipeline();
 
-    VkShaderObj ms(this, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj ms(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
     CreatePipelineHelper mesh_pipe(*this);
     mesh_pipe.shader_stages_ = {ms.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     mesh_pipe.CreateGraphicsPipeline();

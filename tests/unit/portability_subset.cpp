@@ -478,13 +478,13 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
     RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
-    VkShaderObj tsc_obj(this, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+    VkShaderObj tsc_obj(*m_device, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
 
     VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
                                                  VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
     VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, nullptr, 0, 3};
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.ia_ci_ = iasci;
@@ -501,7 +501,7 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
                 gl_Position = vec4(1);
             }
         )glsl";
-        VkShaderObj tes_obj(this, tes_source, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+        VkShaderObj tes_obj(*m_device, tes_source, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
         pipe.shader_stages_.emplace_back(tes_obj.GetStageCreateInfo());
         m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-tessellationShader-06326");
         pipe.CreateGraphicsPipeline();
@@ -521,7 +521,7 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
 
         // Reset TES shader stage
         pipe.InitShaderInfo();
-        VkShaderObj tes_obj(this, tes_source, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+        VkShaderObj tes_obj(*m_device, tes_source, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
         pipe.shader_stages_ = {vs.GetStageCreateInfo(), tsc_obj.GetStageCreateInfo(), tes_obj.GetStageCreateInfo()};
 
         m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-tessellationShader-06327");
@@ -539,7 +539,7 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
                 gl_Position = vec4(1);
             }
         )glsl";
-        VkShaderObj vs_obj(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+        VkShaderObj vs_obj(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
 
         const char *fs_source = R"glsl(
             #version 450
@@ -549,7 +549,7 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
                 frag_out = interpolateAtCentroid(c);
             }
         )glsl";
-        VkShaderObj fs_obj(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+        VkShaderObj fs_obj(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         CreatePipelineHelper raster_pipe(*this);
         iasci.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;

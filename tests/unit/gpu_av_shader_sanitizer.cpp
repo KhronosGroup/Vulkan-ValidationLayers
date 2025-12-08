@@ -325,7 +325,7 @@ TEST_F(NegativeGpuAVShaderSanitizer, DivideByZeroIntDivConstant) {
         std::string full_source = base + source + end;
         CreateComputePipelineHelper pipe(*this);
         pipe.cp_ci_.layout = pipeline_layout;
-        pipe.cs_ = VkShaderObj(this, full_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM);
+        pipe.cs_ = VkShaderObj(*m_device, full_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM);
         pipe.CreateComputePipeline();
 
         m_command_buffer.Begin();
@@ -466,7 +466,7 @@ TEST_F(NegativeGpuAVShaderSanitizer, ImageGather) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cp_ci_.layout = pipeline_layout;
-    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
     pipe.CreateComputePipeline();
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);

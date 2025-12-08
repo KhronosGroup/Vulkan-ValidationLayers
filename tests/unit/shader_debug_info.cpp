@@ -66,7 +66,7 @@ void main() {
 
     // VUID-RuntimeSpirv-vulkanMemoryModel-06265
     m_errorMonitor->SetDesiredError("Error occurred at in.comp:4");
-    VkShaderObj const cs(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    VkShaderObj cs(*m_device, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
 
@@ -122,7 +122,7 @@ void main() {
 
     // VUID-RuntimeSpirv-vulkanMemoryModel-06265
     m_errorMonitor->SetDesiredError("Error occurred at in.comp:4");
-    VkShaderObj const cs(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    VkShaderObj cs(*m_device, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
 
@@ -178,7 +178,7 @@ void main() {
 
     // VUID-RuntimeSpirv-vulkanMemoryModel-06265
     m_errorMonitor->SetDesiredError("Error occurred at <source>:4");
-    VkShaderObj const cs(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    VkShaderObj cs(*m_device, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
 
@@ -237,7 +237,7 @@ void main() {
 
     // VUID-RuntimeSpirv-vulkanMemoryModel-06265
     m_errorMonitor->SetDesiredError("Error occurred at in.comp:4:5");
-    VkShaderObj const cs(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    VkShaderObj cs(*m_device, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
 
@@ -342,7 +342,7 @@ void main() {
 
     // VUID-RuntimeSpirv-None-06284
     m_errorMonitor->SetDesiredError("atomicLoad(y, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsAquire);");
-    VkShaderObj const cs(this, cs_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM);
+    VkShaderObj cs(*m_device, cs_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
 
@@ -464,7 +464,7 @@ void main() {
 
     // VUID-RuntimeSpirv-None-06278
     m_errorMonitor->SetDesiredError("10:     atomicAdd(y, value);");
-    VkShaderObj const cs(this, cs_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    VkShaderObj cs(*m_device, cs_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
 
@@ -552,7 +552,7 @@ void main(uint3 threadId: SV_DispatchThreadID)
 
     // VUID-RuntimeSpirv-None-06279
     m_errorMonitor->SetDesiredError("10:     atomicVariable.store(value);\n        ^");
-    VkShaderObj const cs(this, cs_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    VkShaderObj cs(*m_device, cs_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
 
@@ -645,7 +645,7 @@ void main(){
     m_errorMonitor->SetDesiredError(
         "6:     imageStore(storageImage,\n7:         ivec2(1, 1),\n8:         uvec3(1, 1, 1)\n9:     );");
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM);
+    pipe.cs_ = VkShaderObj(*m_device, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();

@@ -101,7 +101,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCountDeviceLimit) {
         };
         taskPayloadSharedEXT Task IN;
         void main() {})glsl";
-        VkShaderObj mesh_shader(this, mesh_shader_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
+        VkShaderObj mesh_shader(*m_device, mesh_shader_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
         CreatePipelineHelper mesh_pipe(*this);
         mesh_pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
         mesh_pipe.CreateGraphicsPipeline();
@@ -302,7 +302,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
         };
         taskPayloadSharedEXT Task IN;
         void main() {})glsl";
-        VkShaderObj mesh_shader(this, mesh_shader_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
+        VkShaderObj mesh_shader(*m_device, mesh_shader_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
         CreatePipelineHelper mesh_pipe(*this);
         mesh_pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
         mesh_pipe.CreateGraphicsPipeline();
@@ -395,7 +395,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, Mesh) {
         taskPayloadSharedEXT Task IN;
         void main() {}
     )glsl";
-    VkShaderObj mesh_shader(this, mesh_shader_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
+    VkShaderObj mesh_shader(*m_device, mesh_shader_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
     CreatePipelineHelper mesh_pipe(*this);
     mesh_pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
     mesh_pipe.CreateGraphicsPipeline();
@@ -513,7 +513,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DISABLED_MeshTask) {
         taskPayloadSharedEXT Task IN;
         void main() {}
         )glsl";
-    VkShaderObj mesh_shader(this, mesh_shader_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
+    VkShaderObj mesh_shader(*m_device, mesh_shader_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
 
     const char *task_shader_source = R"glsl(
         #version 450
@@ -522,7 +522,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DISABLED_MeshTask) {
         void main () {
         }
         )glsl";
-    VkShaderObj task_shader(this, task_shader_source, VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_3);
+    VkShaderObj task_shader(*m_device, task_shader_source, VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_3);
     CreatePipelineHelper task_pipe(*this);
     task_pipe.shader_stages_[0] = task_shader.GetStageCreateInfo();
     task_pipe.shader_stages_[1] = mesh_shader.GetStageCreateInfo();

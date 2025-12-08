@@ -786,7 +786,7 @@ TEST_F(NegativeDeviceGeneratedCommands, UpdateIESPipelineFragmentOutput) {
             uFragColor = vec4(0,1,0,1);
         }
     )glsl";
-    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this, &pipe_flags2);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -821,7 +821,7 @@ TEST_F(NegativeDeviceGeneratedCommands, UpdateIESPipelineFragDepth) {
             gl_FragDepth = 1.0f;
         }
     )glsl";
-    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this, &pipe_flags2);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -854,7 +854,7 @@ TEST_F(NegativeDeviceGeneratedCommands, UpdateIESPipelineSampleMask) {
             gl_SampleMask[0] = 1;
         }
     )glsl";
-    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this, &pipe_flags2);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -890,7 +890,7 @@ TEST_F(NegativeDeviceGeneratedCommands, UpdateIESPipelineStencilExportEXT) {
             gl_FragStencilRefARB = 1;
         }
     )glsl";
-    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this, &pipe_flags2);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -923,7 +923,7 @@ TEST_F(NegativeDeviceGeneratedCommands, UpdateIESPipelineShaderStages) {
     init_pipe.CreateGraphicsPipeline();
     vkt::IndirectExecutionSet exe_set(*m_device, init_pipe, 1);
 
-    VkShaderObj gs(this, kGeometryMinimalGlsl, VK_SHADER_STAGE_GEOMETRY_BIT);
+    VkShaderObj gs(*m_device, kGeometryMinimalGlsl, VK_SHADER_STAGE_GEOMETRY_BIT);
 
     CreatePipelineHelper pipe(*this, &pipe_flags2);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
@@ -965,7 +965,7 @@ TEST_F(NegativeDeviceGeneratedCommands, UpdateIESPipelineCompatible) {
             a = b;
         }
     )glsl";
-    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
 
     VkPipelineCreateFlags2CreateInfo pipe_flags2 = vku::InitStructHelper();
     pipe_flags2.flags = VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT;

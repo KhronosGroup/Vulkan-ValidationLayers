@@ -31,7 +31,7 @@ TEST_F(PositiveShaderLimits, MaxSampleMaskWords) {
            uFragColor = vec4(0,1,0,1) * y;
         }
     )glsl";
-    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     const auto validPipeline = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -75,7 +75,7 @@ TEST_F(PositiveShaderLimits, ComputeSharedMemoryWorkgroupMemoryExplicitLayout) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cs_ = VkShaderObj(*m_device, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.CreateComputePipeline();
 }
 
@@ -97,7 +97,7 @@ TEST_F(PositiveShaderLimits, ComputeSharedMemoryAtLimit) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(*m_device, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 }
 
@@ -120,7 +120,7 @@ TEST_F(PositiveShaderLimits, ComputeSharedMemoryBooleanAtLimit) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(*m_device, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 }
 
@@ -152,7 +152,7 @@ TEST_F(PositiveShaderLimits, MeshSharedMemoryAtLimit) {
         void main(){}
     )glsl";
 
-    VkShaderObj mesh(this, mesh_source.str().c_str(), VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj mesh(*m_device, mesh_source.str().c_str(), VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
 
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {helper.fs_->GetStageCreateInfo(), mesh.GetStageCreateInfo()};
@@ -189,8 +189,8 @@ TEST_F(PositiveShaderLimits, TaskSharedMemoryAtLimit) {
         }
     )glsl";
 
-    VkShaderObj task(this, task_source.str().c_str(), VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_2);
-    VkShaderObj mesh(this, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj task(*m_device, task_source.str().c_str(), VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj mesh(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
 
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {task.GetStageCreateInfo(), mesh.GetStageCreateInfo()};
@@ -220,7 +220,7 @@ TEST_F(PositiveShaderLimits, MaxFragmentDualSrcAttachments) {
             c1 = vec4(0.0f);
         }
     )glsl";
-    VkShaderObj fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineColorBlendAttachmentState color_blend[2] = {};
     color_blend[0] = DefaultColorBlendAttachmentState();
@@ -266,7 +266,7 @@ TEST_F(PositiveShaderLimits, MaxFragmentDualSrcAttachmentsDynamicEnabled) {
             c1 = vec4(0.0f);
         }
     )glsl";
-    VkShaderObj fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineColorBlendAttachmentState color_blend[2] = {};
     color_blend[0] = DefaultColorBlendAttachmentState();
@@ -311,7 +311,7 @@ TEST_F(PositiveShaderLimits, MaxFragmentOutputAttachments) {
            c3 = vec4(1.0);
         }
     )glsl";
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -334,7 +334,7 @@ TEST_F(PositiveShaderLimits, MaxFragmentOutputAttachmentsArray) {
            c[0] = vec4(1.0);
         }
     )glsl";
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};

@@ -385,7 +385,7 @@ TEST_F(PositiveGpuAVShaderObject, DispatchShaderObjectAndPipeline) {
     const vkt::Shader compShader(*m_device, comp_create_info);
 
     CreateComputePipelineHelper compute_pipe(*this);
-    compute_pipe.cs_ = VkShaderObj(this, comp_src, VK_SHADER_STAGE_COMPUTE_BIT);
+    compute_pipe.cs_ = VkShaderObj(*m_device, comp_src, VK_SHADER_STAGE_COMPUTE_BIT);
     compute_pipe.CreateComputePipeline();
 
     vkt::Buffer indirect_dispatch_parameters_buffer(*m_device, sizeof(VkDispatchIndirectCommand),

@@ -122,9 +122,9 @@ void RayTracingPipelineHelper::InitShaderInfo() {  // DONE
         }
     )glsl";
 
-    rgs_ = std::make_unique<VkShaderObj>(&layer_test_, rayGenShaderText, VK_SHADER_STAGE_RAYGEN_BIT_NV);
-    chs_ = std::make_unique<VkShaderObj>(&layer_test_, closestHitShaderText, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV);
-    mis_ = std::make_unique<VkShaderObj>(&layer_test_, missShaderText, VK_SHADER_STAGE_MISS_BIT_NV);
+    rgs_ = std::make_unique<VkShaderObj>(*layer_test_.DeviceObj(), rayGenShaderText, VK_SHADER_STAGE_RAYGEN_BIT_NV);
+    chs_ = std::make_unique<VkShaderObj>(*layer_test_.DeviceObj(), closestHitShaderText, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV);
+    mis_ = std::make_unique<VkShaderObj>(*layer_test_.DeviceObj(), missShaderText, VK_SHADER_STAGE_MISS_BIT_NV);
 
     shader_stages_ = {rgs_->GetStageCreateInfo(), chs_->GetStageCreateInfo(), mis_->GetStageCreateInfo()};
 }

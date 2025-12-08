@@ -404,7 +404,7 @@ TEST_F(NegativeSecondaryCommandBuffer, ExecuteWithLayoutMismatchUseGenericLayout
         }
     )glsl";
     CreateComputePipelineHelper cs_pipe(*this);
-    cs_pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    cs_pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     cs_pipe.CreateComputePipeline();
 

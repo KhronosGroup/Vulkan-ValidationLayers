@@ -68,7 +68,7 @@ TEST_F(NegativePipeline, BasicCompute) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, cs, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(*m_device, cs, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
@@ -353,8 +353,8 @@ TEST_F(NegativePipeline, ShaderStageName) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // Attempt to Create Gfx Pipeline w/o a VS
     VkPipelineShaderStageCreateInfo shaderStage = fs.GetStageCreateInfo();  // should be: vs.GetStageCreateInfo();
@@ -392,7 +392,7 @@ TEST_F(NegativePipeline, ShaderStageBit) {
     )glsl";
 
     CreateComputePipelineHelper cs_pipeline(*this);
-    cs_pipeline.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    cs_pipeline.cs_ = VkShaderObj(*m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     cs_pipeline.pipeline_layout_ = vkt::PipelineLayout(*m_device, {});
     cs_pipeline.LateBindPipelineInfo();
     cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_VERTEX_BIT;  // override with wrong value
@@ -589,7 +589,7 @@ TEST_F(NegativePipeline, RenderPassCustomeResolve) {
         }
     )glsl";
 
-    VkShaderObj fs_sample_rate(this, shader_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs_sample_rate(*m_device, shader_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineMultisampleStateCreateInfo ms_state = vku::InitStructHelper();
     ms_state.flags = 0;
@@ -672,8 +672,8 @@ TEST_F(NegativePipeline, CustomResolveSampleShadingImplicit) {
             color = samp;
         }
     )glsl";
-    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
     VkCustomResolveCreateInfoEXT custom_resolve_info = vku::InitStructHelper();
@@ -733,8 +733,8 @@ TEST_F(NegativePipeline, RasterizerDiscardWithFragmentShader) {
     vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     InitRenderTarget(&depth_image_view.handle());
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
     const VkPipelineShaderStageCreateInfo stages[] = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
 
     const VkPipelineVertexInputStateCreateInfo pipeline_vertex_input_state_create_info{
@@ -802,7 +802,7 @@ TEST_F(NegativePipeline, CreateGraphicsPipelineWithBadBasePointer) {
     vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     InitRenderTarget(&depth_image_view.handle());
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
     const VkPipelineVertexInputStateCreateInfo pipeline_vertex_input_state_create_info{
         VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, nullptr, 0, 0, nullptr, 0, nullptr};
@@ -1127,7 +1127,7 @@ TEST_F(NegativePipeline, MissingEntrypoint) {
 
     // Graphics
     {
-        VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr,
+        VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr,
                        "foo");
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -1137,9 +1137,9 @@ TEST_F(NegativePipeline, MissingEntrypoint) {
 
     // Compute
     {
-        const auto set_info = [&](CreateComputePipelineHelper &helper) {
-            helper.cs_ = VkShaderObj(this, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
-                                     nullptr, "foo");
+        const auto set_info = [&](CreateComputePipelineHelper& helper) {
+            helper.cs_ = VkShaderObj(*m_device, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0,
+                                     SPV_SOURCE_GLSL, nullptr, "foo");
         };
         CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pName-00707");
     }
@@ -1149,8 +1149,8 @@ TEST_F(NegativePipeline, MissingEntrypoint) {
         CreateComputePipelineHelper pipe_0(*this);  // valid
         pipe_0.LateBindPipelineInfo();
         CreateComputePipelineHelper pipe_1(*this);  // invalid
-        pipe_1.cs_ =
-            VkShaderObj(this, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr, "foo");
+        pipe_1.cs_ = VkShaderObj(*m_device, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
+                                 nullptr, "foo");
         pipe_1.LateBindPipelineInfo();
 
         VkComputePipelineCreateInfo create_infos[3] = {pipe_0.cp_ci_, pipe_1.cp_ci_, pipe_0.cp_ci_};
@@ -1190,8 +1190,8 @@ TEST_F(NegativePipeline, MissingEntrypoint2) {
 )";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM,
-                                             nullptr, "main");
+    pipe.cs_ =
+        VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr, "main");
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pName-00707");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
@@ -1276,7 +1276,7 @@ TEST_F(NegativePipeline, NullStagepName) {
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo()};
@@ -1290,7 +1290,7 @@ TEST_F(NegativePipeline, NullStagepName) {
 TEST_F(NegativePipeline, NullStagepNameCompute) {
     TEST_DESCRIPTION("Test that an error is produced for a stage with a null pName pointer");
     RETURN_IF_SKIP(Init());
-    VkShaderObj cs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT);
+    VkShaderObj cs(*m_device, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT);
 
     vkt::PipelineLayout layout(*m_device, {});
 
@@ -1946,7 +1946,7 @@ TEST_F(NegativePipeline, NotCompatibleForSet) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(*m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
@@ -1983,7 +1983,7 @@ TEST_F(NegativePipeline, NotCompatibleForSetIndependent) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(*m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.cp_ci_.layout = pipeline_layout_1;
     pipe.CreateComputePipeline();
 
@@ -2012,7 +2012,7 @@ TEST_F(NegativePipeline, DescriptorSetNotBound) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
@@ -2186,7 +2186,7 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
            color += texture(samplerColor, gl_FragCoord.wz);
         }
     )glsl";
-    VkShaderObj fs_combined(this, fs_source_combined, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs_combined(*m_device, fs_source_combined, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // maps to VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE and VK_DESCRIPTOR_TYPE_SAMPLER
     const char *fs_source_seperate = R"glsl(
@@ -2202,7 +2202,7 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
            color = foo(textureColor, samplers);
         }
     )glsl";
-    VkShaderObj fs_seperate(this, fs_source_seperate, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs_seperate(*m_device, fs_source_seperate, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // maps to an unused image sampler that should not trigger validation as it is never sampled
     const char *fs_source_unused = R"glsl(
@@ -2213,7 +2213,7 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
            color = vec4(gl_FragCoord.xyz, 1.0);
         }
     )glsl";
-    VkShaderObj fs_unused(this, fs_source_unused, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs_unused(*m_device, fs_source_unused, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // maps to VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER but makes sure it walks function tree to find sampling
     const char *fs_source_function = R"glsl(
@@ -2226,7 +2226,7 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
            color = bar(gl_FragCoord.x);
         }
     )glsl";
-    VkShaderObj fs_function(this, fs_source_function, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs_function(*m_device, fs_source_function, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipeline_combined(*this);
     CreatePipelineHelper pipeline_seperate(*this);
@@ -2366,7 +2366,7 @@ TEST_F(NegativePipeline, ShaderDrawParametersNotEnabled10) {
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08742");
     m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08740");
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2385,7 +2385,7 @@ TEST_F(NegativePipeline, ShaderDrawParametersNotEnabled11) {
     )glsl";
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08740");
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2506,7 +2506,7 @@ TEST_F(NegativePipeline, CreateComputePipelineWithBadBasePointer) {
         }
     )glsl";
 
-    VkShaderObj cs(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    VkShaderObj cs(*m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
 
     std::vector<VkDescriptorSetLayoutBinding> bindings(0);
     const vkt::DescriptorSetLayout pipeline_dsl(*m_device, bindings);
@@ -2539,7 +2539,7 @@ TEST_F(NegativePipeline, CreateComputePipelineWithDerivatives) {
         }
     )glsl";
 
-    VkShaderObj cs(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    VkShaderObj cs(*m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
 
     std::vector<VkDescriptorSetLayoutBinding> bindings(0);
     const vkt::DescriptorSetLayout pipeline_dsl(*m_device, bindings);
@@ -3106,7 +3106,7 @@ TEST_F(NegativePipeline, RasterizationOrderAttachmentAccessNoSubpassFlags) {
             }
         )glsl";
 
-        VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+        VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         auto set_stages_pipeline_createinfo = [&](CreatePipelineHelper &helper) {
             helper.gp_ci_.pDepthStencilState = &ds_ci;
@@ -3147,8 +3147,8 @@ TEST_F(NegativePipeline, MismatchedRenderPassAndPipelineAttachments) {
                 }
             )glsl";
 
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     const vkt::DescriptorSetLayout descriptor_set_layout(
         *m_device, {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
@@ -3696,7 +3696,7 @@ TEST_F(NegativePipeline, GeometryShaderConservativeRasterization) {
         }
     )glsl";
 
-    VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
+    VkShaderObj gs(*m_device, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
 
     VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservative_rasterization_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(conservative_rasterization_props);

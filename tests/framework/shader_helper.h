@@ -58,11 +58,6 @@ class VkShaderObj : public vkt::ShaderModule {
                 const char* entry_point = "main", const void* shader_module_ci_pNext = nullptr,
                 const void* pipeline_shader_stage_ci_pNext = nullptr);
 
-    // DEPRECATED
-    VkShaderObj(VkRenderFramework *framework, const char *source, VkShaderStageFlagBits stage,
-                const spv_target_env env = SPV_ENV_VULKAN_1_0, SpvSourceType source_type = SPV_SOURCE_GLSL,
-                const VkSpecializationInfo *spec_info = nullptr, const char *entry_point = "main", const void *pNext = nullptr);
-
     VkPipelineShaderStageCreateInfo const &GetStageCreateInfo() const;
 
     bool InitFromGLSL(const void* shader_module_ci_pNext = nullptr);

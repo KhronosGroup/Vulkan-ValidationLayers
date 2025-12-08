@@ -330,8 +330,8 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         }
     )glsl";
 
-        VkShaderObj const vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-        VkShaderObj const fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+        VkShaderObj const vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+        VkShaderObj const fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 36};
         VkPipelineLayoutCreateInfo pipeline_layout_info = vku::InitStructHelper();
@@ -397,8 +397,8 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
 
         vkt::PipelineLayout layout(*m_device, pipeline_layout_info, std::vector<vkt::DescriptorSetLayout const *>{});
 
-        VkShaderObj const vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-        VkShaderObj const fs(this, kFragmentUniformGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+        VkShaderObj const vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+        VkShaderObj const fs(*m_device, kFragmentUniformGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         CreatePipelineHelper pipe(*this);
         pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -467,8 +467,8 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         }
         )glsl";
 
-        VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-        VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+        VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+        VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         CreatePipelineHelper pipe(*this);
         pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -542,8 +542,8 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         }
     )glsl";
 
-        VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-        VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+        VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+        VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         CreatePipelineHelper pipe(*this);
         pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -1087,8 +1087,8 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
         }
         )glsl";
 
-        VkShaderObj tcs(this, tcsSource, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
-        VkShaderObj tes(this, tesSource, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+        VkShaderObj tcs(*m_device, tcsSource, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+        VkShaderObj tes(*m_device, tesSource, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 
         VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
                                                      VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
@@ -1121,8 +1121,8 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
         }
         )glsl";
 
-        VkShaderObj vs(this, kVertexPointSizeGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-        VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
+        VkShaderObj vs(*m_device, kVertexPointSizeGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+        VkShaderObj gs(*m_device, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
 
         CreatePipelineHelper pipe(*this);
         pipe.gp_ci_.renderPass = rp;
@@ -1207,8 +1207,8 @@ TEST_F(NegativeMultiview, ShaderLayerBuiltInRenderPass) {
         }
     )glsl";
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
+    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj gs(*m_device, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
 
     VkAttachmentReference color_att = {};
     color_att.layout = VK_IMAGE_LAYOUT_GENERAL;
@@ -1266,8 +1266,8 @@ TEST_F(NegativeMultiview, ShaderLayerBuiltInDynamicRendering) {
         }
     )glsl";
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
+    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj gs(*m_device, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
 
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
 
@@ -1397,8 +1397,8 @@ TEST_F(NegativeMultiview, MeshShader) {
         }
     )glsl";
 
-    VkShaderObj ms(this, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj ms(*m_device, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
 
     VkAttachmentReference color_attachment = {0, VK_IMAGE_LAYOUT_GENERAL};
 

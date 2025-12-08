@@ -149,7 +149,7 @@ TEST_F(PositivePipelineBinary, GetPipelineKey) {
     AddRequiredFeature(vkt::Feature::pipelineBinaries);
     RETURN_IF_SKIP(Init());
 
-    VkShaderObj cs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT);
+    VkShaderObj cs(*m_device, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT);
 
     std::vector<VkDescriptorSetLayoutBinding> bindings(0);
     const vkt::DescriptorSetLayout pipeline_dsl(*m_device, bindings);

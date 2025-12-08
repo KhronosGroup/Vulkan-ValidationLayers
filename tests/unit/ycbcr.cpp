@@ -1657,7 +1657,7 @@ TEST_F(NegativeYcbcr, TexelFetch) {
             out_color = texelFetch(ycbcr, ivec2(0), 0);
         }
     )glsl";
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -1694,7 +1694,7 @@ TEST_F(NegativeYcbcr, TexelFetchArray) {
             out_color = texelFetch(ycbcr[1], ivec2(0), 0);
         }
     )glsl";
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -1733,7 +1733,7 @@ TEST_F(NegativeYcbcr, TexelFetchIndexed) {
             gl_Position = texelFetch(ycbcr[index], ivec2(0), 0);
         }
     )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[0] = vs.GetStageCreateInfo();
@@ -1773,7 +1773,7 @@ TEST_F(NegativeYcbcr, TexelFetchNonArrayPartiallyBound) {
             gl_Position = texelFetch(ycbcr, ivec2(0), 0);
         }
     )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[0] = vs.GetStageCreateInfo();
@@ -1810,7 +1810,7 @@ TEST_F(NegativeYcbcr, TexelFetchDestroyedSampler) {
             out_color = texelFetch(ycbcr, ivec2(0), 0);
         }
     )glsl";
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -1845,7 +1845,7 @@ TEST_F(NegativeYcbcr, TextureGather) {
             out_color = textureGather(ycbcr, ivec2(0), 0);
         }
     )glsl";
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -1909,7 +1909,7 @@ TEST_F(NegativeYcbcr, ConstOffset) {
                OpReturn
                OpFunctionEnd
     )";
-    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -2085,7 +2085,7 @@ TEST_F(NegativeYcbcr, DescriptorIndexCombinedSampledImage) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.cp_ci_.layout = pipeline_layout;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-12205");
     pipe.CreateComputePipeline();
@@ -2176,7 +2176,7 @@ TEST_F(NegativeYcbcr, DescriptorIndexSlang) {
     )slang";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_SLANG);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_SLANG);
     pipe.cp_ci_.layout = pipeline_layout;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-12205");
     pipe.CreateComputePipeline();

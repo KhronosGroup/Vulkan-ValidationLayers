@@ -24,10 +24,10 @@ TEST_F(PositivePipeline, ComplexTypes) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj tcs(this, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
-    VkShaderObj tes(this, kTessellationEvalMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj tcs(*m_device, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+    VkShaderObj tes(*m_device, kTessellationEvalMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+    VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
                                                  VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
@@ -66,7 +66,7 @@ TEST_F(PositivePipeline, MissingDescriptorUnused) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(*m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 }
 
@@ -89,7 +89,7 @@ TEST_F(PositivePipeline, FragmentShadingRate) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(*m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 }
 
@@ -115,7 +115,7 @@ TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsSampler) {
         {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
         {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
     };
-    pipe.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(*m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 }
 
@@ -141,7 +141,7 @@ TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsImage) {
         {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
         {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
     };
-    pipe.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(*m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 }
 
@@ -167,7 +167,7 @@ TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsBoth) {
         {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
         {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
     };
-    pipe.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(*m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 }
 
@@ -199,7 +199,7 @@ TEST_F(PositivePipeline, CreateComputePipelineWithDerivatives) {
         }
     )glsl";
 
-    VkShaderObj cs(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    VkShaderObj cs(*m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
 
     std::vector<VkDescriptorSetLayoutBinding> bindings(0);
     const vkt::DescriptorSetLayout pipeline_dsl(*m_device, bindings);
@@ -258,8 +258,8 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineWithIgnoredPointers) {
     void *hopefully_undereferencable_pointer =
         sizeof(void *) == 8 ? reinterpret_cast<void *>(fake_address_64) : reinterpret_cast<void *>(fake_address_32);
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkPipelineShaderStageCreateInfo stages[2] = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
 
     const VkPipelineVertexInputStateCreateInfo pipeline_vertex_input_state_create_info{
@@ -495,8 +495,8 @@ TEST_F(PositivePipeline, CoreChecksDisabled) {
 
     RETURN_IF_SKIP(Init(nullptr, nullptr, &features));
     InitRenderTarget();
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
                                                  VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_FALSE};
 
@@ -517,10 +517,10 @@ TEST_F(PositivePipeline, TessellationDomainOrigin) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj tcs(this, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
-    VkShaderObj tes(this, kTessellationEvalMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj tcs(*m_device, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+    VkShaderObj tes(*m_device, kTessellationEvalMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+    VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
                                                  VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
@@ -565,8 +565,8 @@ TEST_F(PositivePipeline, ViewportArray2NV) {
 
     // Create tessellation control and fragment shader here since they will not be
     // modified by the different test cases.
-    VkShaderObj tcs(this, tcs_src, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj tcs(*m_device, tcs_src, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+    VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     const float fp_width = static_cast<float>(m_width);
     const float fp_height = static_cast<float>(m_height);
@@ -605,7 +605,7 @@ TEST_F(PositivePipeline, ViewportArray2NV) {
                 gl_Position = vec4(positions[gl_VertexIndex % 3], 0.0, 1.0);
             })";
 
-        VkShaderObj vs(this, vs_src.str().c_str(), VK_SHADER_STAGE_VERTEX_BIT);
+        VkShaderObj vs(*m_device, vs_src.str().c_str(), VK_SHADER_STAGE_VERTEX_BIT);
         pipe.shader_stages_.push_back(vs.GetStageCreateInfo());
 
         std::unique_ptr<VkShaderObj> tes, geom;
@@ -626,7 +626,7 @@ TEST_F(PositivePipeline, ViewportArray2NV) {
             }
             tes_src << "}";
 
-            tes = std::make_unique<VkShaderObj>(this, tes_src.str().c_str(), VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+            tes = std::make_unique<VkShaderObj>(*m_device, tes_src.str().c_str(), VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
             pipe.shader_stages_.push_back(tes.get()->GetStageCreateInfo());
             pipe.shader_stages_.push_back(tcs.GetStageCreateInfo());
             pipe.tess_ci_ = vku::InitStructHelper();
@@ -648,7 +648,7 @@ TEST_F(PositivePipeline, ViewportArray2NV) {
                     }
                 })";
 
-            geom = std::make_unique<VkShaderObj>(this, geom_src.str().c_str(), VK_SHADER_STAGE_GEOMETRY_BIT);
+            geom = std::make_unique<VkShaderObj>(*m_device, geom_src.str().c_str(), VK_SHADER_STAGE_GEOMETRY_BIT);
             pipe.shader_stages_.push_back(geom.get()->GetStageCreateInfo());
         }
 
@@ -670,7 +670,7 @@ TEST_F(PositivePipeline, AttachmentUnused) {
            x = vec4(1);  // attachment is unused
         }
     )glsl";
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkAttachmentReference const color_attachments[1]{{VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}};
 
@@ -747,8 +747,8 @@ TEST_F(PositivePipeline, SampleMaskOverrideCoverageNV) {
     msaa.sampleShadingEnable = VK_FALSE;
     msaa.pSampleMask = &sampleMask;
 
-    VkShaderObj vs(this, vs_src, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vs(*m_device, vs_src, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.layout = pl;
@@ -822,7 +822,7 @@ TEST_F(PositivePipeline, SamplerDataForCombinedImageSampler) {
                    OpReturn
                    OpFunctionEnd)";
 
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
     CreatePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr};
@@ -910,7 +910,7 @@ TEST_F(PositivePipeline, ShaderTileImageColor) {
     pipeline_rendering_info.stencilAttachmentFormat = depth_format;
 
     VkPipelineDepthStencilStateCreateInfo ds_ci = vku::InitStructHelper();
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     auto fs = VkShaderObj::CreateFromASM(this, kShaderTileImageColorReadSpv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineMultisampleStateCreateInfo ms_ci = vku::InitStructHelper();
@@ -944,7 +944,7 @@ TEST_F(PositivePipeline, ShaderTileImageDepth) {
     pipeline_rendering_info.stencilAttachmentFormat = depth_format;
 
     VkPipelineDepthStencilStateCreateInfo ds_ci = vku::InitStructHelper();
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
     auto fs = VkShaderObj::CreateFromASM(this, kShaderTileImageDepthReadSpv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
@@ -974,7 +974,7 @@ TEST_F(PositivePipeline, ShaderTileImageStencil) {
     pipeline_rendering_info.stencilAttachmentFormat = depth_format;
 
     VkPipelineDepthStencilStateCreateInfo ds_ci = vku::InitStructHelper();
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     auto fs = VkShaderObj::CreateFromASM(this, kShaderTileImageStencilReadSpv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkStencilOpState stencil_state = {};
@@ -1054,8 +1054,8 @@ TEST_F(PositivePipeline, PervertexNVShaderAttributes) {
                 }
             )glsl";
 
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -1137,7 +1137,7 @@ TEST_F(PositivePipeline, MutableStorageImageFormatWriteForFormat) {
                                      });
 
     CreateComputePipelineHelper cs_pipeline(*this);
-    cs_pipeline.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    cs_pipeline.cs_ = VkShaderObj(*m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     cs_pipeline.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds.layout_});
     cs_pipeline.LateBindPipelineInfo();
     cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;  // override with wrong value
@@ -1329,7 +1329,7 @@ TEST_F(PositivePipeline, DualBlendShader) {
         }
     )glsl";
 
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineColorBlendAttachmentState cb_attachments = {};
     cb_attachments.blendEnable = VK_TRUE;
@@ -1388,7 +1388,7 @@ TEST_F(PositivePipeline, ShaderModuleIdentifier) {
 
     InitRenderTarget();
     VkPipelineShaderStageModuleIdentifierCreateInfoEXT sm_id_create_info = vku::InitStructHelper();
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
     VkShaderModuleIdentifierEXT get_identifier = vku::InitStructHelper();
     vk::GetShaderModuleIdentifierEXT(device(), vs, &get_identifier);
@@ -1509,8 +1509,8 @@ TEST_F(PositivePipeline, DeviceGeneratedCommands) {
         GTEST_SKIP() << "deviceGeneratedCommands not supported";
     }
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkPipelineShaderStageCreateInfo stages[2] = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
 
     VkPipelineVertexInputStateCreateInfo vertex_input_state = vku::InitStructHelper();
@@ -1644,8 +1644,8 @@ TEST_F(PositivePipeline, InterpolateAtSample) {
             uFragColor = vec4(0.1f);
         }
     )glsl";
-    VkShaderObj vs(this, vs_src, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vs(*m_device, vs_src, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -2270,7 +2270,7 @@ TEST_F(PositivePipeline, DisableShaderValidation) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
     pipe.CreateComputePipeline();
 
@@ -2413,8 +2413,8 @@ TEST_F(PositivePipeline, DisableShaderValidationMesh) {
         }
     )glsl";
 
-    VkShaderObj ms(this, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj ms(*m_device, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -2457,9 +2457,9 @@ TEST_F(PositivePipeline, DisableShaderValidationGeomTess) {
         }
     )glsl";
 
-    VkShaderObj tcs(this, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
-    VkShaderObj tes(this, tess_src, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
-    VkShaderObj gs(this, geom_src, VK_SHADER_STAGE_GEOMETRY_BIT);
+    VkShaderObj tcs(*m_device, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+    VkShaderObj tes(*m_device, tess_src, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+    VkShaderObj gs(*m_device, geom_src, VK_SHADER_STAGE_GEOMETRY_BIT);
 
     VkPipelineTessellationStateCreateInfo tess_ci = vku::InitStructHelper();
     tess_ci.patchControlPoints = 4u;

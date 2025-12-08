@@ -584,8 +584,8 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipelineSwitchTessGeometryMesh) {
         void main() {}
     )glsl";
 
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj gs(*m_device, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
 
     VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
 

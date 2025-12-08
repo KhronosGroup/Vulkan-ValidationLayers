@@ -34,7 +34,7 @@ TEST_F(NegativeShaderPushConstants, NotDeclared) {
         }
     )glsl";
 
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     // Set up a push constant range
     VkPushConstantRange push_constant_range = {};
@@ -202,7 +202,7 @@ TEST_F(NegativeShaderPushConstants, NotInLayout) {
         }
     )glsl";
 
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
@@ -242,8 +242,8 @@ TEST_F(NegativeShaderPushConstants, Range) {
         }
     )glsl";
 
-    VkShaderObj const vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj const fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj const vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj const fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // Set up a push constant range
     VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, maxPushConstantsSize};
@@ -341,8 +341,8 @@ TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
         }
     )glsl";
 
-    VkShaderObj const vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj const fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj const vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj const fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, 128};
     VkPushConstantRange push_constant_range_small = {VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 4, 4};
@@ -431,7 +431,7 @@ TEST_F(NegativeShaderPushConstants, BufferDeviceAddress) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cp_ci_.layout = pipeline_layout;
-    pipe.cs_ = VkShaderObj(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
 
     m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-layout-10069");
     pipe.CreateComputePipeline();
@@ -518,8 +518,8 @@ TEST_F(NegativeShaderPushConstants, MultipleEntryPoint) {
     pipeline_layout_info.pPushConstantRanges = &push_constant_range;
     vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_info);
 
-    VkShaderObj const vs(this, source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
-    VkShaderObj const fs(this, source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    VkShaderObj const vs(*m_device, source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    VkShaderObj const fs(*m_device, source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -570,8 +570,8 @@ TEST_F(NegativeShaderPushConstants, SpecConstantSize) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {}, {push_constant_range});
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
-                                             &specialization_info);
+    pipe.cs_ =
+        VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specialization_info);
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, {push_constant_range});
     m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-layout-10069");
     pipe.CreateComputePipeline();
@@ -600,7 +600,7 @@ TEST_F(NegativeShaderPushConstants, ArrayOf8Bit) {
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-storagePushConstant8-06330");  // feature
     m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08740");     // capability
-    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
     m_errorMonitor->VerifyFound();
 }
 
@@ -633,7 +633,7 @@ TEST_F(NegativeShaderPushConstants, StructOf8Bit) {
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-storagePushConstant8-06330");  // feature
     m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08740");     // capability
-    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
     m_errorMonitor->VerifyFound();
 }
 
@@ -666,6 +666,6 @@ TEST_F(NegativeShaderPushConstants, ArrayOfStructOf8Bit) {
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-storagePushConstant8-06330");  // feature
     m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08740");     // capability
-    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
     m_errorMonitor->VerifyFound();
 }

@@ -575,7 +575,7 @@ TEST_F(NegativeSubpass, SubpassInputNotBoundDescriptorSet) {
     vkt::Framebuffer fb(*m_device, rp, 1, &view_input.handle(), 64, 64);
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
     {
         // input index is wrong, it doesn't exist in supbass input attachments and the set and binding is undefined
@@ -588,7 +588,7 @@ TEST_F(NegativeSubpass, SubpassInputNotBoundDescriptorSet) {
             }
         )glsl";
 
-        VkShaderObj fs_fail(this, fsSource_fail, VK_SHADER_STAGE_FRAGMENT_BIT);
+        VkShaderObj fs_fail(*m_device, fsSource_fail, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         CreatePipelineHelper g_pipe(*this);
         g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs_fail.GetStageCreateInfo()};
@@ -608,7 +608,7 @@ TEST_F(NegativeSubpass, SubpassInputNotBoundDescriptorSet) {
                vec4 color = subpassLoad(x);
             }
             )glsl";
-        VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+        VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         CreatePipelineHelper g_pipe(*this);
         g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -899,7 +899,7 @@ TEST_F(NegativeSubpass, InputAttachmentMissing) {
         }
     )glsl";
 
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -925,7 +925,7 @@ TEST_F(NegativeSubpass, InputAttachmentMissingArray) {
         }
     )glsl";
 
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -961,7 +961,8 @@ TEST_F(NegativeSubpass, InputAttachmentMissingArray2) {
     uint32_t data = 4;  // over VkDescriptorSetLayoutBinding::descriptorCount
     VkSpecializationMapEntry entry = {0, 0, sizeof(uint32_t)};
     VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &data};
-    const VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specialization_info);
+    const VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
+                         &specialization_info);
 
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.renderPass = rp;
@@ -1001,7 +1002,8 @@ TEST_F(NegativeSubpass, InputAttachmentMissingSpecConstant) {
     uint32_t data = 4;  // over VkDescriptorSetLayoutBinding::descriptorCount
     VkSpecializationMapEntry entry = {0, 0, sizeof(uint32_t)};
     VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &data};
-    const VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specialization_info);
+    const VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
+                         &specialization_info);
 
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.renderPass = rp;
@@ -1039,7 +1041,8 @@ TEST_F(NegativeSubpass, InputAttachmentMissingSpecConstant2) {
     uint32_t data = 4;  // over VkDescriptorSetLayoutBinding::descriptorCount
     VkSpecializationMapEntry entry = {0, 0, sizeof(uint32_t)};
     VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &data};
-    const VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specialization_info);
+    const VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
+                         &specialization_info);
 
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.renderPass = rp;
@@ -1100,7 +1103,7 @@ TEST_F(NegativeSubpass, InputAttachmentSharingVariable) {
             color = subpassLoad(xs[0]); // invalid
         }
     )glsl";
-    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL);
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL);
 
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -1165,7 +1168,7 @@ TEST_F(NegativeSubpass, SubpassInputWithoutFormat) {
     )";
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08740");
-    VkShaderObj fs(this, fs_source.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    VkShaderObj fs(*m_device, fs_source.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
 

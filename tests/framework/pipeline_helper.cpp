@@ -122,8 +122,8 @@ CreatePipelineHelper::~CreatePipelineHelper() { Destroy(); }
 void CreatePipelineHelper::InitShaderInfo() { ResetShaderInfo(kVertexMinimalGlsl, kFragmentMinimalGlsl); }
 
 void CreatePipelineHelper::ResetShaderInfo(const char *vertex_shader_text, const char *fragment_shader_text) {
-    vs_ = std::make_unique<VkShaderObj>(&layer_test_, vertex_shader_text, VK_SHADER_STAGE_VERTEX_BIT);
-    fs_ = std::make_unique<VkShaderObj>(&layer_test_, fragment_shader_text, VK_SHADER_STAGE_FRAGMENT_BIT);
+    vs_ = std::make_unique<VkShaderObj>(*device_, vertex_shader_text, VK_SHADER_STAGE_VERTEX_BIT);
+    fs_ = std::make_unique<VkShaderObj>(*device_, fragment_shader_text, VK_SHADER_STAGE_FRAGMENT_BIT);
     // We shouldn't need a fragment shader but add it to be able to run on more devices
     shader_stages_ = {vs_->GetStageCreateInfo(), fs_->GetStageCreateInfo()};
 }

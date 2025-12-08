@@ -2328,7 +2328,7 @@ TEST_F(NegativeTensor, DispatchShaderSpirvWrongUsage) {
 
     CreateComputePipelineHelper pipe(*m_device);
     const std::string spirv_source = vkt::dg::DataGraphPipelineHelper::GetSpirvBasicShader();
-    pipe.cs_ = VkShaderObj(this, spirv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
+    pipe.cs_ = VkShaderObj(*m_device, spirv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
 
     std::vector<VkDescriptorSetLayoutBinding> bindings = {
         {0, VK_DESCRIPTOR_TYPE_TENSOR_ARM, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
@@ -2374,7 +2374,7 @@ TEST_F(NegativeTensor, DispatchShaderSpirvMismatchedRank) {
 
     CreateComputePipelineHelper pipe(*m_device);
     const std::string spirv_source = vkt::dg::DataGraphPipelineHelper::GetSpirvBasicShader();
-    pipe.cs_ = VkShaderObj(this, spirv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
+    pipe.cs_ = VkShaderObj(*m_device, spirv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
 
     std::vector<VkDescriptorSetLayoutBinding> bindings = {
         {0, VK_DESCRIPTOR_TYPE_TENSOR_ARM, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
@@ -2421,7 +2421,7 @@ TEST_F(NegativeTensor, DispatchShaderSpirvWrongFormat) {
 
         CreateComputePipelineHelper pipe(*m_device);
         const std::string spirv_source = vkt::dg::DataGraphPipelineHelper::GetSpirvBasicShader();
-        pipe.cs_ = VkShaderObj(this, spirv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
+        pipe.cs_ = VkShaderObj(*m_device, spirv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
 
         std::vector<VkDescriptorSetLayoutBinding> bindings = {
             {0, VK_DESCRIPTOR_TYPE_TENSOR_ARM, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
@@ -2499,7 +2499,7 @@ TEST_F(NegativeTensor, WrongStageInShader) {
                OpFunctionEnd)";
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-shaderTensorSupportedStages-09901");
-    VkShaderObj shader(this, spirv_string, VK_SHADER_STAGE_GEOMETRY_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
+    VkShaderObj shader(*m_device, spirv_string, VK_SHADER_STAGE_GEOMETRY_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2517,7 +2517,7 @@ TEST_F(NegativeTensor, GraphARMInShader) {
     // the GraphARM capability is caught also by spirv-val, causing 08737
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderModuleCreateInfo-pCode-08737");
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-GraphARM-09922");
-    VkShaderObj shader(this, spirv_string.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
+    VkShaderObj shader(*m_device, spirv_string.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2531,7 +2531,7 @@ TEST_F(NegativeTensor, NoRankTensorInShader) {
     const std::string spirv_string = vkt::dg::DataGraphPipelineHelper::GetSpirvModifiableShader(params);
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpTypeTensorARM-09907");
-    VkShaderObj shader(this, spirv_string.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
+    VkShaderObj shader(*m_device, spirv_string.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2547,7 +2547,7 @@ TEST_F(NegativeTensor, ShapedTensorInShader) {
     const std::string spirv_string = vkt::dg::DataGraphPipelineHelper::GetSpirvModifiableShader(params);
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpTypeTensorARM-09902");
-    VkShaderObj shader(this, spirv_string.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
+    VkShaderObj shader(*m_device, spirv_string.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2575,7 +2575,7 @@ TEST_F(NegativeTensor, TensorReadTooManyElementsInShader) {
     // given the values in the mock ICD, an array exceeding rule 9903 also exceeds 9904
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maxTensorShaderAccessArrayLength-09903");
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maxTensorShaderAccessSize-09904");
-    VkShaderObj shader(this, spirv_string.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
+    VkShaderObj shader(*m_device, spirv_string.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2609,7 +2609,7 @@ TEST_F(NegativeTensor, TensorWriteTooManyElementsInShader) {
     // given the values in the mock ICD, an array exceeding rule 9903 also exceeds 9904
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maxTensorShaderAccessArrayLength-09903");
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maxTensorShaderAccessSize-09904");
-    VkShaderObj shader(this, spirv_string.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
+    VkShaderObj shader(*m_device, spirv_string.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2634,7 +2634,7 @@ TEST_F(NegativeTensor, TensorReadTooManyBytesInShader) {
     const std::string spirv_string = vkt::dg::DataGraphPipelineHelper::GetSpirvModifiableShader(params);
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maxTensorShaderAccessSize-09904");
-    VkShaderObj shader(this, spirv_string.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
+    VkShaderObj shader(*m_device, spirv_string.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2661,7 +2661,7 @@ TEST_F(NegativeTensor, TensorWriteTooManyBytesInShader) {
     const std::string spirv_string = vkt::dg::DataGraphPipelineHelper::GetSpirvModifiableShader(params);
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maxTensorShaderAccessSize-09904");
-    VkShaderObj shader(this, spirv_string.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
+    VkShaderObj shader(*m_device, spirv_string.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
 TEST_F(NegativeTensor, DescriptorTensorNull) {

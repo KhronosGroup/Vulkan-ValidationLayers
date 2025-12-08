@@ -172,7 +172,7 @@ TEST_F(PositiveTensor, DispatchShaderSpirv) {
 
     CreateComputePipelineHelper pipe(*m_device);
     const std::string spirv_source = vkt::dg::DataGraphPipelineHelper::GetSpirvBasicShader();
-    pipe.cs_ = VkShaderObj(this, spirv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
+    pipe.cs_ = VkShaderObj(*m_device, spirv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_4, SPV_SOURCE_ASM);
 
     std::vector<VkDescriptorSetLayoutBinding> bindings = {
         {0, VK_DESCRIPTOR_TYPE_TENSOR_ARM, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},

@@ -1232,7 +1232,7 @@ TEST_F(PositiveGraphicsLibrary, ShaderModuleIdentifier) {
     InitRenderTarget();
 
     // Create a pre-raster pipeline referencing a VS via identifier, with the VS identifier queried from a shader module
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     ASSERT_TRUE(vs.initialized());
 
     VkShaderModuleIdentifierEXT vs_identifier = vku::InitStructHelper();

@@ -30,12 +30,12 @@ TEST_F(NegativeRayTracingPipelineNV, BasicUsage) {
     RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
-    VkShaderObj rgen_shader(this, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_NV);
-    VkShaderObj ahit_shader(this, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_ANY_HIT_BIT_NV);
-    VkShaderObj chit_shader(this, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV);
-    VkShaderObj miss_shader(this, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_MISS_BIT_NV);
-    VkShaderObj intr_shader(this, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_INTERSECTION_BIT_NV);
-    VkShaderObj call_shader(this, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_CALLABLE_BIT_NV);
+    VkShaderObj rgen_shader(*m_device, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_NV);
+    VkShaderObj ahit_shader(*m_device, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_ANY_HIT_BIT_NV);
+    VkShaderObj chit_shader(*m_device, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV);
+    VkShaderObj miss_shader(*m_device, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_MISS_BIT_NV);
+    VkShaderObj intr_shader(*m_device, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_INTERSECTION_BIT_NV);
+    VkShaderObj call_shader(*m_device, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_CALLABLE_BIT_NV);
 
     VkPipeline pipeline = VK_NULL_HANDLE;
     VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
@@ -184,12 +184,12 @@ TEST_F(NegativeRayTracingPipelineNV, ShaderGroups) {
 
     const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
 
-    VkShaderObj rgen_shader(this, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_NV);
-    VkShaderObj ahit_shader(this, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_ANY_HIT_BIT_NV);
-    VkShaderObj chit_shader(this, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV);
-    VkShaderObj miss_shader(this, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_MISS_BIT_NV);
-    VkShaderObj intr_shader(this, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_INTERSECTION_BIT_NV);
-    VkShaderObj call_shader(this, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_CALLABLE_BIT_NV);
+    VkShaderObj rgen_shader(*m_device, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_NV);
+    VkShaderObj ahit_shader(*m_device, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_ANY_HIT_BIT_NV);
+    VkShaderObj chit_shader(*m_device, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV);
+    VkShaderObj miss_shader(*m_device, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_MISS_BIT_NV);
+    VkShaderObj intr_shader(*m_device, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_INTERSECTION_BIT_NV);
+    VkShaderObj call_shader(*m_device, kRayTracingNVMinimalGlsl, VK_SHADER_STAGE_CALLABLE_BIT_NV);
 
     VkPipeline pipeline = VK_NULL_HANDLE;
 
@@ -694,7 +694,7 @@ TEST_F(NegativeRayTracingPipelineNV, MissingEntrypoint) {
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08740");
     m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08742");
-    VkShaderObj miss_shader(this, missShaderText, VK_SHADER_STAGE_MISS_BIT_KHR, SPV_ENV_VULKAN_1_2, SPV_SOURCE_GLSL, nullptr,
+    VkShaderObj miss_shader(*m_device, missShaderText, VK_SHADER_STAGE_MISS_BIT_KHR, SPV_ENV_VULKAN_1_2, SPV_SOURCE_GLSL, nullptr,
                             "foo");
     m_errorMonitor->VerifyFound();
 }

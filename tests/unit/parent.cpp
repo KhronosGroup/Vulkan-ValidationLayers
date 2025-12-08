@@ -143,7 +143,7 @@ TEST_F(NegativeParent, BindPipeline) {
     pipeline_layout_ci.setLayoutCount = 0;
     vkt::PipelineLayout pipeline_layout(*m_second_device, pipeline_layout_ci);
 
-    VkShaderObj cs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
+    VkShaderObj cs(*m_device, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
     cs.InitFromGLSLTry(m_second_device);
 
     VkComputePipelineCreateInfo pipeline_ci = vku::InitStructHelper();
@@ -167,7 +167,7 @@ TEST_F(NegativeParent, PipelineShaderStageCreateInfo) {
     pipeline_layout_ci.setLayoutCount = 0;
     vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
 
-    VkShaderObj cs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
+    VkShaderObj cs(*m_device, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
     cs.InitFromGLSLTry(m_second_device);
 
     VkComputePipelineCreateInfo pipeline_ci = vku::InitStructHelper();

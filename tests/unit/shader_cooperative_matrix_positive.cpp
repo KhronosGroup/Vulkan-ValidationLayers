@@ -98,7 +98,7 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixKHR) {
     replace(css, "%type_R%", helper.VkComponentTypeToGLSL(subgroup_prop.ResultType));
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, css.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
+    pipe.cs_ = VkShaderObj(*m_device, css.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&dsl});
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
@@ -133,7 +133,7 @@ TEST_F(PositiveShaderCooperativeMatrix, RequiredSubgroupSize) {
              coopMatLoad(matA, inputA.x, 0, 16, gl_CooperativeMatrixLayoutRowMajor);
          }
     )glsl";
-    VkShaderObj cs(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
+    VkShaderObj cs(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
 
     VkPhysicalDeviceSubgroupSizeControlPropertiesEXT subgroup_properties = vku::InitStructHelper();
     VkPhysicalDeviceVulkan11Properties props11 = vku::InitStructHelper(&subgroup_properties);
@@ -188,7 +188,7 @@ TEST_F(PositiveShaderCooperativeMatrix, RequiredVulkanVersionPipeline) {
              coopMatLoad(matA, inputA.x, 0, 16, gl_CooperativeMatrixLayoutRowMajor);
          }
     )glsl";
-    VkShaderObj cs(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    VkShaderObj cs(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cp_ci_.stage = cs.GetStageCreateInfo();
@@ -260,7 +260,7 @@ TEST_F(PositiveShaderCooperativeMatrix, BFloat16) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
     pipe.CreateComputePipeline();
 }
 
@@ -286,7 +286,7 @@ TEST_F(PositiveShaderCooperativeMatrix, Float8) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
     pipe.CreateComputePipeline();
 }
 
@@ -333,7 +333,7 @@ TEST_F(PositiveShaderCooperativeMatrix, Int8) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, css.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
+    pipe.cs_ = VkShaderObj(*m_device, css.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
     pipe.cp_ci_.layout = pl;
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
