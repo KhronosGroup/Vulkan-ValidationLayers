@@ -845,6 +845,7 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo &rendering_info, 
     if (rendering_info.flags & VK_RENDERING_SUSPENDING_BIT) {
         last_suspend_state = SuspendState::Suspended;
     }
+    last_rendering_info = &rendering_info;
 
     has_render_pass_instance = true;
 

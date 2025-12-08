@@ -428,10 +428,14 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     // True if the *first* render pass instance specifies VK_RENDERING_RESUMING_BIT
     bool resumes_render_pass_instance;
 
-    // The suspension state at the end of the command buffer, based on previous render pass instances.
-    // Regular render pass instances (without RESUMING/SUSPENDING) do not change the suspend state.
+    // During recording, this tracks the current suspension state of the command buffer.
+    // When recording ends, this is the suspension state at the end of the command buffer.
+    // Render pass instances without RESUMING/SUSPENDING do not modify the suspension state.
     enum class SuspendState { Empty, Suspended, Resumed };
     SuspendState last_suspend_state;
+
+    // Rendering info from the last vkCmdBeginRendering.
+    std::optional<vku::safe_VkRenderingInfo> last_rendering_info;
 
     // Used by submit time validation to check for invalild commands when render pass instance is suspended.
     vvl::Func first_action_or_sync_command;
