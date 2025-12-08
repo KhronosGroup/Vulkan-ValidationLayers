@@ -5041,6 +5041,133 @@ TEST_F(NegativeDynamicRendering, SuspendThenActionCommandSecondarySubmit2) {
     m_default_queue->Wait();
 }
 
+TEST_F(NegativeDynamicRendering, SuspendResumeMismatch) {
+    TEST_DESCRIPTION("Suspend and resume do not match. Rendering info mismatch.");
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    VkRenderingInfo suspend_rendering_info = vku::InitStructHelper();
+    suspend_rendering_info.flags = VK_RENDERING_SUSPENDING_BIT;
+    suspend_rendering_info.layerCount = 1;
+    suspend_rendering_info.renderArea.extent = {1, 1};
+
+    VkRenderingInfo resume_rendering_info = suspend_rendering_info;
+    resume_rendering_info.flags = VK_RENDERING_RESUMING_BIT;
+    resume_rendering_info.renderArea.extent = {2, 2};
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(suspend_rendering_info);
+    m_command_buffer.EndRendering();
+    m_errorMonitor->SetDesiredError("UNASSIGNED-RenderingInfo-SuspendResume-Mismatch");
+    m_command_buffer.BeginRendering(resume_rendering_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDynamicRendering, SuspendResumeMismatch2) {
+    TEST_DESCRIPTION("Suspend and resume do not match. Attachment info mismatch.");
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkRenderingAttachmentInfo suspend_color_attachment = vku::InitStructHelper();
+    suspend_color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    suspend_color_attachment.imageView = image_view;
+
+    VkRenderingAttachmentInfo resume_color_attachment = vku::InitStructHelper();
+    resume_color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    resume_color_attachment.imageView = VK_NULL_HANDLE;  // does not match suspend attachment
+
+    VkRenderingInfo suspend_rendering_info = vku::InitStructHelper();
+    suspend_rendering_info.flags = VK_RENDERING_SUSPENDING_BIT;
+    suspend_rendering_info.layerCount = 1;
+    suspend_rendering_info.renderArea.extent = {32, 32};
+    suspend_rendering_info.colorAttachmentCount = 1;
+    suspend_rendering_info.pColorAttachments = &suspend_color_attachment;
+
+    VkRenderingInfo resume_rendering_info = suspend_rendering_info;
+    resume_rendering_info.flags = VK_RENDERING_RESUMING_BIT;
+    resume_rendering_info.pColorAttachments = &resume_color_attachment;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(suspend_rendering_info);
+    m_command_buffer.EndRendering();
+    m_errorMonitor->SetDesiredError("UNASSIGNED-RenderingInfo-SuspendResume-Mismatch");
+    m_command_buffer.BeginRendering(resume_rendering_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDynamicRendering, SuspendResumeMismatch3) {
+    TEST_DESCRIPTION("Suspend and resume do not match. Null attachment mismatch.");
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    VkFormat depth_stencil_format = FindSupportedDepthStencilFormat(Gpu());
+
+    vkt::Image depth_image(*m_device, 32, 32, depth_stencil_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::ImageView depth_image_view = depth_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    VkRenderingAttachmentInfo depth_attachment = vku::InitStructHelper();
+    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    depth_attachment.imageView = depth_image_view;
+
+    VkRenderingInfo suspend_rendering_info = vku::InitStructHelper();
+    suspend_rendering_info.flags = VK_RENDERING_SUSPENDING_BIT;
+    suspend_rendering_info.layerCount = 1;
+    suspend_rendering_info.renderArea.extent = {32, 32};
+    suspend_rendering_info.pDepthAttachment = &depth_attachment;
+
+    VkRenderingInfo resume_rendering_info = suspend_rendering_info;
+    resume_rendering_info.flags = VK_RENDERING_RESUMING_BIT;
+    resume_rendering_info.pDepthAttachment = nullptr;  // does not match suspend info
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(suspend_rendering_info);
+    m_command_buffer.EndRendering();
+    m_errorMonitor->SetDesiredError("UNASSIGNED-RenderingInfo-SuspendResume-Mismatch");
+    m_command_buffer.BeginRendering(resume_rendering_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDynamicRendering, SuspendResumeMismatch4) {
+    TEST_DESCRIPTION("Suspend and resume do not match. Clear value mismatch.");
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    VkFormat depth_stencil_format = FindSupportedDepthStencilFormat(Gpu());
+
+    vkt::Image depth_image(*m_device, 32, 32, depth_stencil_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::ImageView depth_image_view = depth_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    VkRenderingAttachmentInfo suspend_depth_attachment = vku::InitStructHelper();
+    suspend_depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    suspend_depth_attachment.imageView = depth_image_view;
+    suspend_depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    suspend_depth_attachment.clearValue.depthStencil.depth = 1.0f;
+    suspend_depth_attachment.clearValue.depthStencil.stencil = 0x42;
+
+    VkRenderingAttachmentInfo resume_depth_attachment = suspend_depth_attachment;
+    resume_depth_attachment.clearValue.depthStencil.depth = 0.5f;  // does not match suspend info
+
+    VkRenderingInfo suspend_rendering_info = vku::InitStructHelper();
+    suspend_rendering_info.flags = VK_RENDERING_SUSPENDING_BIT;
+    suspend_rendering_info.layerCount = 1;
+    suspend_rendering_info.renderArea.extent = {32, 32};
+    suspend_rendering_info.pDepthAttachment = &suspend_depth_attachment;
+
+    VkRenderingInfo resume_rendering_info = suspend_rendering_info;
+    resume_rendering_info.flags = VK_RENDERING_RESUMING_BIT;
+    resume_rendering_info.pDepthAttachment = &resume_depth_attachment;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(suspend_rendering_info);
+    m_command_buffer.EndRendering();
+    m_errorMonitor->SetDesiredError("UNASSIGNED-RenderingInfo-SuspendResume-Mismatch");
+    m_command_buffer.BeginRendering(resume_rendering_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeDynamicRendering, NullDepthStencilExecuteCommands) {
     TEST_DESCRIPTION(
         "Test for NULL depth stencil attachments in dynamic rendering with secondary command buffer with depth stencil format "
