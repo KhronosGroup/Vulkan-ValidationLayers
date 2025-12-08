@@ -42,7 +42,7 @@ TEST_F(NegativeShaderMesh, SharedMemoryOverLimit) {
         void main(){}
     )glsl";
 
-    VkShaderObj mesh(this, mesh_source.str().c_str(), VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj mesh(*m_device, mesh_source.str().c_str(), VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
 
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {helper.fs_->GetStageCreateInfo(), mesh.GetStageCreateInfo()};
@@ -95,7 +95,7 @@ TEST_F(NegativeShaderMesh, SharedMemoryOverLimitWorkgroupMemoryExplicitLayout) {
         }
     )glsl";
 
-    VkShaderObj mesh(this, mesh_source.str().c_str(), VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj mesh(*m_device, mesh_source.str().c_str(), VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
 
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {helper.fs_->GetStageCreateInfo(), mesh.GetStageCreateInfo()};
@@ -135,7 +135,7 @@ TEST_F(NegativeShaderMesh, SharedMemorySpecConstantDefault) {
         void main(){}
     )glsl";
 
-    VkShaderObj mesh(this, mesh_source.str().c_str(), VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj mesh(*m_device, mesh_source.str().c_str(), VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
 
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {helper.fs_->GetStageCreateInfo(), mesh.GetStageCreateInfo()};
@@ -188,7 +188,7 @@ TEST_F(NegativeShaderMesh, SharedMemorySpecConstantSet) {
     specialization_info.dataSize = sizeof(uint32_t);
     specialization_info.pData = &data;
 
-    VkShaderObj mesh(this, mesh_source.str().c_str(), VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_GLSL,
+    VkShaderObj mesh(*m_device, mesh_source.str().c_str(), VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_GLSL,
                      &specialization_info);
 
     const auto set_info = [&](CreatePipelineHelper &helper) {
@@ -223,8 +223,8 @@ TEST_F(NegativeShaderMesh, TaskSharedMemoryOverLimit) {
         void main(){}
     )glsl";
 
-    VkShaderObj task(this, task_source.str().c_str(), VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_2);
-    VkShaderObj mesh(this, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj task(*m_device, task_source.str().c_str(), VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj mesh(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
 
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {task.GetStageCreateInfo(), mesh.GetStageCreateInfo()};
@@ -285,7 +285,7 @@ TEST_F(NegativeShaderMesh, MeshAndTaskShaderDerivatives) {
     )";
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-meshAndTaskShaderDerivatives-10153");
-    VkShaderObj ms(this, ms_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    VkShaderObj ms(*m_device, ms_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
 
@@ -323,7 +323,7 @@ TEST_F(NegativeShaderMesh, MeshShaderPayloadMemoryOverLimit) {
             void main(){}
         )glsl";
 
-    VkShaderObj mesh(this, mesh_source.str().c_str(), VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj mesh(*m_device, mesh_source.str().c_str(), VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
     const auto set_info = [&](CreatePipelineHelper &helper) { helper.shader_stages_ = {mesh.GetStageCreateInfo()}; };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-maxMeshPayloadAndSharedMemorySize-08755");
 }
@@ -371,7 +371,7 @@ TEST_F(NegativeShaderMesh, MeshShaderPayloadSpecConstantSet) {
     spec_info.dataSize = sizeof(uint32_t);
     spec_info.pData = &size;
 
-    VkShaderObj mesh(this, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_GLSL, &spec_info);
+    VkShaderObj mesh(*m_device, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_GLSL, &spec_info);
     const auto set_info = [&](CreatePipelineHelper &helper) { helper.shader_stages_ = {mesh.GetStageCreateInfo()};};
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-maxMeshPayloadAndSharedMemorySize-08755");
 }

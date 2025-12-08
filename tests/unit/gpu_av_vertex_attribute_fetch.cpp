@@ -112,7 +112,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, IndirectDrawBadVertexIndex32) {
             gl_Position = vec4(pos, 1.0);
         }
     )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     VkVertexInputBindingDescription input_binding = {0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
@@ -167,7 +167,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, IndirectDrawBadVertexIndex16) {
             gl_Position = vec4(pos, 1.0);
         }
     )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     VkVertexInputBindingDescription input_binding = {0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
@@ -225,7 +225,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, IndirectDrawBadVertexIndex8) {
             gl_Position = vec4(pos, 1.0);
         }
     )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     VkVertexInputBindingDescription input_binding = {0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
@@ -280,7 +280,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, DrawBadVertexIndex32) {
             gl_Position = vec4(pos, gl_VertexIndex);
         }
     )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     VkVertexInputBindingDescription input_binding = {0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
@@ -387,7 +387,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, DrawInSecondaryCmdBufferBadVertexIndex
             gl_Position = vec4(pos, 1.0);
         }
     )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     VkVertexInputBindingDescription input_binding = {0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
@@ -466,7 +466,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, DrawBadVertexIndex16) {
             gl_Position = vec4(pos, 1.0);
         }
     )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     VkVertexInputBindingDescription input_binding = {0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
@@ -523,7 +523,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, DrawBadVertexIndex16_2) {
             gl_Position = vec4(pos + uv.xyx + normal, 1.0);
         }
     )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     // "Array of structs" style vertices
@@ -588,7 +588,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, DrawBadVertexIndex8) {
             gl_Position = vec4(pos, 1.0);
         }
     )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     VkVertexInputBindingDescription input_binding = {0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
@@ -648,7 +648,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, DrawBadVertexIndex16DebugLabel) {
             gl_Position = vec4(pos + uv.xyx + normal, 1.0);
         }
     )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     // "Array of structs" style vertices
@@ -723,7 +723,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, IndirectDrawBadVertexIndex32DebugLabel
             gl_Position = vec4(pos, 1.0);
         }
     )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     VkVertexInputBindingDescription input_binding = {0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
@@ -799,7 +799,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, InstanceIndex) {
             gl_Position = vec4(pos + uv.xyx + normal + instance_float, 1.0);
         }
     )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     // "Array of structs" style vertices
@@ -883,7 +883,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, InstanceIndexVertexAttributeDivisor) {
             gl_Position = vec4(pos + uv.xyx + normal + instance_float, 1.0);
         }
     )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     // "Array of structs" style vertices
@@ -980,7 +980,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, InstanceIndexVertexAttributeDivisorDyn
             gl_Position = vec4(pos + uv.xyx + normal + instance_float, 1.0);
         }
     )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     // "Array of structs" style vertices
@@ -1094,7 +1094,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, CmdSetVertexInputEXT) {
             gl_Position = vec4(pos + uv.xyx + normal, 1.0);
         }
     )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
@@ -1187,7 +1187,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, CmdBindVertexBuffers2EXT) {
             gl_Position = vec4(pos + uv.xyx + normal, 1.0);
         }
     )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
@@ -1270,7 +1270,7 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, DrawBadVertexIndex32MultiDraw) {
             gl_Position = vec4(pos, gl_VertexIndex);
         }
     )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     VkVertexInputBindingDescription input_binding = {0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};

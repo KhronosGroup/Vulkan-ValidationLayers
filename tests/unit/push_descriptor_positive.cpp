@@ -108,8 +108,8 @@ TEST_F(PositivePushDescriptor, UnboundSet) {
            x = vec4(bar1.x) + vec4(bar2.y);
         }
     )glsl";
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     // Now use the descriptor layouts to create a pipeline layout
@@ -182,7 +182,7 @@ TEST_F(PositivePushDescriptor, SetUpdatingSetNumber) {
             }
         )glsl";
 
-        VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+        VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
         pipe0.shader_stages_[1] = fs.GetStageCreateInfo();
         pipe0.gp_ci_.layout = pipeline_layout;
         pipe0.CreateGraphicsPipeline();
@@ -214,7 +214,7 @@ TEST_F(PositivePushDescriptor, SetUpdatingSetNumber) {
             }
         )glsl";
 
-        VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+        VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
         pipe1.shader_stages_[1] = fs.GetStageCreateInfo();
         pipe1.gp_ci_.layout = pipeline_layout;
         pipe1.CreateGraphicsPipeline();

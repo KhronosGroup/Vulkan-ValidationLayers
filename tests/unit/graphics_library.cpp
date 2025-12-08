@@ -1539,7 +1539,7 @@ TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifier) {
     VkShaderModuleCreateInfo vs_ci = vku::InitStructHelper(&sm_id_create_info);
     vs_ci.codeSize = vs_spv.size() * sizeof(decltype(vs_spv)::value_type);
     vs_ci.pCode = vs_spv.data();
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
     VkPipelineShaderStageCreateInfo stage_ci = vku::InitStructHelper(&vs_ci);
     stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -1600,7 +1600,7 @@ TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifierGPL) {
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkPipelineShaderStageCreateInfo stage_ci = vku::InitStructHelper();
     stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
     stage_ci.module = vs;
@@ -1676,7 +1676,7 @@ TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifierFeatures) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderModuleIdentifierEXT get_identifier = vku::InitStructHelper();
     m_errorMonitor->SetDesiredError("VUID-vkGetShaderModuleIdentifierEXT-shaderModuleIdentifier-06884");
     vk::GetShaderModuleIdentifierEXT(device(), vs.handle(), &get_identifier);

@@ -110,7 +110,7 @@ TEST_F(PositiveGpuAVIndexBuffer, DrawIndexedDynamicStates) {
             gl_Position = vec4(pos, 1.0);
         }
     )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     VkVertexInputBindingDescription input_binding = {0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
@@ -214,7 +214,7 @@ TEST_F(PositiveGpuAVIndexBuffer, NoShaderInputsVertexIndex16) {
             gl_Position = vec4(1.0);
         }
     )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     // "Array of structs" style vertices
@@ -283,7 +283,7 @@ TEST_F(PositiveGpuAVIndexBuffer, VertexShaderUnusedLocations) {
             gl_Position = vec4(pos, 1.0);
         }
     )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     // "Struct of arrays" style vertices
@@ -377,7 +377,7 @@ TEST_F(PositiveGpuAVIndexBuffer, InstanceIndex) {
             gl_Position = vec4(pos + uv.xyx + normal + instance_float, 1.0);
         }
     )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     // "Array of structs" style vertices
@@ -463,7 +463,7 @@ TEST_F(PositiveGpuAVIndexBuffer, CmdSetVertexInputEXT) {
             gl_Position = vec4(pos + uv.xyx + normal, 1.0);
         }
     )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
@@ -555,7 +555,7 @@ TEST_F(PositiveGpuAVIndexBuffer, CmdSetVertexInputEXT_CmdBindVertexBuffers2EXT) 
             gl_Position = vec4(pos + uv.xyx + normal, 1.0);
         }
     )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
@@ -640,7 +640,7 @@ TEST_F(PositiveGpuAVIndexBuffer, IndirectDrawBadVertexIndex32) {
         gl_Position = vec4(pos, 1.0);
         }
         )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     VkVertexInputBindingDescription input_binding = {0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
@@ -701,7 +701,7 @@ TEST_F(PositiveGpuAVIndexBuffer, VertexIndex32MultiDraw) {
         gl_Position = vec4(pos, gl_VertexIndex);
         }
         )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     VkVertexInputBindingDescription input_binding = {0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
@@ -774,7 +774,7 @@ TEST_F(PositiveGpuAVIndexBuffer, InstanceIndexVertexAttributeDivisor) {
             gl_Position = vec4(pos + uv.xyx + normal + instance_float, 1.0);
         }
     )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     // "Array of structs" style vertices
@@ -875,7 +875,7 @@ TEST_F(PositiveGpuAVIndexBuffer, InstanceIndexVertexAttributeDivisorDynamic) {
             gl_Position = vec4(pos + uv.xyx + normal + instance_float, 1.0);
         }
     )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     // "Array of structs" style vertices
@@ -1019,7 +1019,7 @@ TEST_F(PositiveGpuAVIndexBuffer, Ssbo) {
         }
     )glsl";
 
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     OneOffDescriptorIndexingSet descriptor_set_1(
         m_device, {
@@ -1113,7 +1113,7 @@ TEST_F(PositiveGpuAVIndexBuffer, SsboDescriptorBuffer) {
         }
     )glsl";
 
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
 

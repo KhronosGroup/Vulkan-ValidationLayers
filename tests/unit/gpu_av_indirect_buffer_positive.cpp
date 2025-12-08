@@ -158,7 +158,7 @@ TEST_F(PositiveGpuAVIndirectBuffer, Mesh) {
         taskPayloadSharedEXT Task IN;
         void main() {}
     )glsl";
-    VkShaderObj mesh_shader(this, mesh_shader_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
+    VkShaderObj mesh_shader(*m_device, mesh_shader_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
     CreatePipelineHelper mesh_pipe(*this);
     mesh_pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
     mesh_pipe.CreateGraphicsPipeline();
@@ -219,7 +219,7 @@ TEST_F(PositiveGpuAVIndirectBuffer, MeshSingleCommand) {
         taskPayloadSharedEXT Task IN;
         void main() {}
     )glsl";
-    VkShaderObj mesh_shader(this, mesh_shader_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
+    VkShaderObj mesh_shader(*m_device, mesh_shader_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
     CreatePipelineHelper mesh_pipe(*this);
     mesh_pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
     mesh_pipe.CreateGraphicsPipeline();
@@ -352,12 +352,12 @@ TEST_F(PositiveGpuAVIndirectBuffer, RestoreStress) {
     g_descriptor_set.UpdateDescriptorSets();
 
     CreateComputePipelineHelper c_pipe(*this);
-    c_pipe.cs_ = VkShaderObj(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    c_pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
     c_pipe.cp_ci_.layout = c_pipeline_layout;
     c_pipe.CreateComputePipeline();
 
-    VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, shader_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vs(*m_device, shader_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, shader_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkFormat color_formats = VK_FORMAT_B8G8R8A8_UNORM;
     VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();

@@ -29,7 +29,7 @@ TEST_F(NegativeShader64BitIndexing, Length64) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpArrayLength-11807");
     pipe.CreateComputePipeline();
@@ -94,7 +94,7 @@ TEST_F(NegativeShader64BitIndexing, CoopVecMul) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpCooperativeVectorMatrixMulAddNV-11808");
     pipe.CreateComputePipeline();
@@ -126,7 +126,7 @@ TEST_F(NegativeShader64BitIndexing, CoopVecLoad) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpCooperativeVectorLoadNV-11809");
     pipe.CreateComputePipeline();
@@ -151,7 +151,7 @@ TEST_F(NegativeShader64BitIndexing, PipelineMissingEnable) {
     pipe_flags2.flags = VK_PIPELINE_CREATE_2_64_BIT_INDEXING_BIT_EXT;
 
     CreateComputePipelineHelper pipe(*this, &pipe_flags2);
-    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
 
     m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-flags-11798");

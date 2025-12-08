@@ -160,7 +160,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlock) {
         )glsl";
 
     CreateComputePipelineHelper pipe1(*this);
-    pipe1.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe1.cs_ = VkShaderObj(*m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe1.cp_ci_.layout = pipeline_layout;
     pipe1.CreateComputePipeline();
 
@@ -262,7 +262,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
 
     {
         CreateComputePipelineHelper pipe(*this);
-        pipe.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+        pipe.cs_ = VkShaderObj(*m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
         // We should still be able to use the layout and create a temporary uninstrumented shader module
         pipe.cp_ci_.layout = pl_layout;
         pipe.CreateComputePipeline();
@@ -288,7 +288,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
     {
         const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
         CreateComputePipelineHelper pipe(*this);
-        pipe.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+        pipe.cs_ = VkShaderObj(*m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
         pipe.cp_ci_.layout = pipeline_layout;
         pipe.CreateComputePipeline();
 
@@ -357,7 +357,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockUninitialized) {
     vk::UpdateDescriptorSets(device(), 1, &descriptor_writes, 0, nullptr);
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
@@ -416,7 +416,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockUninitializedUpdateAfterBind) {
     descriptor_set.UpdateDescriptorSets();
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
@@ -474,10 +474,10 @@ TEST_F(PositiveGpuAV, SetSSBOBindDescriptor) {
         }
     )glsl";
 
-    VkShaderObj cs(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    VkShaderObj cs(*m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(*m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
                           {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
     pipe.CreateComputePipeline();
@@ -535,7 +535,7 @@ TEST_F(PositiveGpuAV, SetSSBOPushDescriptor) {
         }
     )glsl";
 
-    VkShaderObj cs(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    VkShaderObj cs(*m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
 
     OneOffDescriptorSet descriptor_set_0(m_device,
                                          {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
@@ -660,7 +660,7 @@ TEST_F(PositiveGpuAV, MutableBuffer) {
     mdtci.mutableDescriptorTypeListCount = 3;
     mdtci.pMutableDescriptorTypeLists = lists;
 
-    VkShaderObj cs(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    VkShaderObj cs(*m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
 
     OneOffDescriptorSet descriptor_set_0(m_device,
                                          {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
@@ -779,13 +779,14 @@ TEST_F(PositiveGpuAV, SelectInstrumentedShaders) {
         }
     )glsl";
     // Don't instrument buggy vertex shader
-    VkShaderObj vs(this, vertshader, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vertshader, VK_SHADER_STAGE_VERTEX_BIT);
     // Instrument non-buggy fragment shader
     VkValidationFeatureEnableEXT enabled[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
     VkValidationFeaturesEXT features = vku::InitStructHelper();
     features.enabledValidationFeatureCount = 1;
     features.pEnabledValidationFeatures = enabled;
-    VkShaderObj fs(this, vertshader, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr, "main", &features);
+    VkShaderObj fs(*m_device, vertshader, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr, "main",
+                   &features);
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_.clear();
     pipe.shader_stages_.push_back(vs.GetStageCreateInfo());
@@ -828,7 +829,7 @@ TEST_F(PositiveGpuAV, DrawingWithUnboundUnusedSet) {
            color += texture(samplerColor, gl_FragCoord.wz);
         }
     )glsl";
-    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
@@ -1148,7 +1149,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants) {
               }
             }
         )glsl";
-    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
 
     const char *fs_source = R"glsl(
             #version 450
@@ -1171,7 +1172,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants) {
                 }
             }
         )glsl";
-    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -1248,7 +1249,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
               }
             }
         )glsl";
-    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
 
     const char *fs_source = R"glsl(
             #version 450
@@ -1271,7 +1272,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
                 }
             }
         )glsl";
-    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPushConstantRange graphics_push_constant_ranges = {VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                                                          sizeof(PushConstants)};
@@ -1326,7 +1327,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
               }
             }
         )glsl";
-    VkShaderObj compute(this, compute_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    VkShaderObj compute(*m_device, compute_source, VK_SHADER_STAGE_COMPUTE_BIT);
 
     VkPushConstantRange compute_push_constant_ranges = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(PushConstants)};
     VkPipelineLayoutCreateInfo compute_plci = vku::InitStructHelper();
@@ -1344,7 +1345,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
     }
 
     CreateComputePipelineHelper compute_pipe(*this);
-    compute_pipe.cs_ = VkShaderObj(this, compute_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    compute_pipe.cs_ = VkShaderObj(*m_device, compute_source, VK_SHADER_STAGE_COMPUTE_BIT);
     compute_pipe.cp_ci_.layout = compute_pipeline_layout;
     compute_pipe.CreateComputePipeline();
 
@@ -1479,7 +1480,7 @@ TEST_F(PositiveGpuAV, SharedPipelineLayoutSubset) {
         }
     )glsl";
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.cp_ci_.layout = pipeline_layout_1;
     pipe.CreateComputePipeline();
 
@@ -1557,7 +1558,7 @@ TEST_F(PositiveGpuAV, SharedPipelineLayoutSubsetWithUnboundDescriptorSet) {
         }
     )glsl";
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.cp_ci_.layout = pipeline_layout_1;
     pipe.CreateComputePipeline();
 
@@ -1646,7 +1647,7 @@ TEST_F(PositiveGpuAV, DestroyedPipelineLayout2) {
             x = 0;
         }
     )glsl";
-    VkShaderObj vs(this, vertshader, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vertshader, VK_SHADER_STAGE_VERTEX_BIT);
 
     vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
@@ -1741,17 +1742,17 @@ TEST_F(PositiveGpuAV, DISABLED_DeviceGeneratedCommandsIES) {
     pipe_flags2.flags = VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT;
     CreateComputePipelineHelper init_pipe(*this, &pipe_flags2);
     init_pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
-    init_pipe.cs_ = VkShaderObj(this, shader_source_1, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    init_pipe.cs_ = VkShaderObj(*m_device, shader_source_1, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
     init_pipe.CreateComputePipeline();
 
     CreateComputePipelineHelper pipe_1(*this, &pipe_flags2);
     pipe_1.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
-    pipe_1.cs_ = VkShaderObj(this, shader_source_2, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    pipe_1.cs_ = VkShaderObj(*m_device, shader_source_2, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
     pipe_1.CreateComputePipeline();
 
     CreateComputePipelineHelper pipe_2(*this, &pipe_flags2);
     pipe_2.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
-    pipe_2.cs_ = VkShaderObj(this, shader_source_3, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    pipe_2.cs_ = VkShaderObj(*m_device, shader_source_3, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
     pipe_2.CreateComputePipeline();
 
     vkt::IndirectExecutionSet exe_set(*m_device, init_pipe, 3);
@@ -1855,8 +1856,8 @@ TEST_F(PositiveGpuAV, BasicMeshShader) {
     }
     )glsl";
 
-    VkShaderObj ms(this, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj ms(*m_device, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -1936,8 +1937,8 @@ TEST_F(PositiveGpuAV, DualShaderLibraryInline) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {}, {});
 
@@ -2140,8 +2141,8 @@ TEST_F(PositiveGpuAV, MixDynamicNormalRenderPass) {
         }
     )glsl";
 
-    VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, shader_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vs(*m_device, shader_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, shader_source, VK_SHADER_STAGE_FRAGMENT_BIT);
     CreatePipelineHelper g_pipe(*this);
     g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     g_pipe.gp_ci_.layout = g_pipeline_layout;
@@ -2160,7 +2161,7 @@ TEST_F(PositiveGpuAV, MixDynamicNormalRenderPass) {
 
     CreateComputePipelineHelper c_pipe(*this);
     c_pipe.cp_ci_.layout = c_pipeline_layout;
-    c_pipe.cs_ = VkShaderObj(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    c_pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
     c_pipe.CreateComputePipeline();
 
     vkt::Buffer dispatch_params_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,

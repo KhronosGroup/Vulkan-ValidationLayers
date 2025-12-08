@@ -73,7 +73,7 @@ TEST_F(NegativePipelineTopology, PointSize) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkShaderObj vs(this, NoPointSizeVertShader, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, NoPointSizeVertShader, VK_SHADER_STAGE_VERTEX_BIT);
 
     auto set_info = [&](CreatePipelineHelper &helper) {
         helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
@@ -97,7 +97,7 @@ TEST_F(NegativePipelineTopology, PointSizeNonDynamicAndRestricted) {
         GTEST_SKIP() << "dynamicPrimitiveTopologyUnrestricted is VK_TRUE";
     }
 
-    VkShaderObj vs(this, NoPointSizeVertShader, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, NoPointSizeVertShader, VK_SHADER_STAGE_VERTEX_BIT);
 
     auto set_info = [&](CreatePipelineHelper &helper) {
         helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
@@ -121,7 +121,7 @@ TEST_F(NegativePipelineTopology, PointSizeNonDynamicAndUnrestricted) {
         GTEST_SKIP() << "dynamicPrimitiveTopologyUnrestricted is VK_FALSE";
     }
 
-    VkShaderObj vs(this, NoPointSizeVertShader, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, NoPointSizeVertShader, VK_SHADER_STAGE_VERTEX_BIT);
 
     auto set_info = [&](CreatePipelineHelper &helper) {
         helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
@@ -147,7 +147,7 @@ TEST_F(NegativePipelineTopology, PointSizeDynamicAndRestricted) {
         GTEST_SKIP() << "dynamicPrimitiveTopologyUnrestricted is VK_TRUE";
     }
 
-    VkShaderObj vs(this, NoPointSizeVertShader, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, NoPointSizeVertShader, VK_SHADER_STAGE_VERTEX_BIT);
 
     const VkDynamicState dyn_state = VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY;
     VkPipelineDynamicStateCreateInfo dyn_state_ci = vku::InitStructHelper();
@@ -171,7 +171,7 @@ TEST_F(NegativePipelineTopology, PrimitiveTopology) {
     RETURN_IF_SKIP(Init(&deviceFeatures));
     InitRenderTarget();
 
-    VkShaderObj vs(this, kVertexPointSizeGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, kVertexPointSizeGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
     VkPrimitiveTopology topology;
 
@@ -228,7 +228,7 @@ TEST_F(NegativePipelineTopology, PrimitiveTopologyListRestart) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkShaderObj vs(this, kVertexPointSizeGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, kVertexPointSizeGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
     VkPrimitiveTopology topology;
 
@@ -341,8 +341,8 @@ TEST_F(NegativePipelineTopology, DynamicPrimitiveRestartEnablePatchList) {
 
     InitRenderTarget();
 
-    VkShaderObj tcs(this, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
-    VkShaderObj tes(this, kTessellationEvalMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+    VkShaderObj tcs(*m_device, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+    VkShaderObj tes(*m_device, kTessellationEvalMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 
     VkPipelineTessellationStateCreateInfo tess_ci = vku::InitStructHelper();
     tess_ci.patchControlPoints = 4u;
@@ -379,7 +379,7 @@ TEST_F(NegativePipelineTopology, PointSizeDynamicAndUnrestricted) {
         GTEST_SKIP() << "dynamicPrimitiveTopologyUnrestricted is VK_FALSE";
     }
 
-    VkShaderObj vs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, kMinimalShaderGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.AddDynamicState(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY);
@@ -410,8 +410,8 @@ TEST_F(NegativePipelineTopology, PatchListTopology) {
         GTEST_SKIP() << "dynamicPrimitiveTopologyUnrestricted is VK_FALSE";
     }
 
-    VkShaderObj tcs(this, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
-    VkShaderObj tes(this, kTessellationEvalMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+    VkShaderObj tcs(*m_device, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+    VkShaderObj tes(*m_device, kTessellationEvalMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 
     VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
                                                  VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};

@@ -102,7 +102,7 @@ TEST_F(NegativeDescriptorIndexing, UpdateAfterBind) {
            color = vec4(bar0.x0 + bar1.x1 + bar2.x2);
         }
     )glsl";
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
@@ -472,7 +472,7 @@ TEST_F(NegativeDescriptorIndexing, VariableDescriptorCountBuffer) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.cp_ci_.layout = pipeline_layout;
     m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-layout-07991");
     pipe.CreateComputePipeline();

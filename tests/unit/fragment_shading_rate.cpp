@@ -236,7 +236,7 @@ TEST_F(NegativeFragmentShadingRate, PrimitiveFragmentShadingRateWriteMultiViewpo
             gl_PrimitiveShadingRateEXT = gl_ShadingRateFlag4VerticalPixelsEXT | gl_ShadingRateFlag4HorizontalPixelsEXT;
         }
     )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[0] = vs.GetStageCreateInfo();
@@ -1384,7 +1384,7 @@ TEST_F(NegativeFragmentShadingRate, PrimitiveWriteMultiViewportLimit) {
             }
         )glsl";
 
-        VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+        VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
         VkViewport viewports[2] = {{0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f}};
         VkRect2D scissors[2] = {};
@@ -1426,8 +1426,8 @@ TEST_F(NegativeFragmentShadingRate, PrimitiveWriteMultiViewportLimit) {
             }
         )glsl";
 
-        VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-        VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
+        VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+        VkShaderObj gs(*m_device, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
 
         auto info_override = [&](CreatePipelineHelper &info) {
             info.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
@@ -1451,7 +1451,7 @@ TEST_F(NegativeFragmentShadingRate, PrimitiveWriteMultiViewportLimit) {
             }
         )glsl";
 
-        VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+        VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
         auto info_override = [&](CreatePipelineHelper &info) {
             info.shader_stages_ = {vs.GetStageCreateInfo(), info.fs_->GetStageCreateInfo()};
@@ -1486,8 +1486,8 @@ TEST_F(NegativeFragmentShadingRate, PrimitiveWriteMultiViewportLimit) {
                 }
             )glsl";
 
-            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-            VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
+            VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+            VkShaderObj gs(*m_device, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
 
             auto info_override = [&](CreatePipelineHelper &info) {
                 info.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
@@ -1511,7 +1511,7 @@ TEST_F(NegativeFragmentShadingRate, PrimitiveWriteMultiViewportLimit) {
                 }
             )glsl";
 
-            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+            VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
             auto info_override = [&](CreatePipelineHelper &info) {
                 info.shader_stages_ = {vs.GetStageCreateInfo(), info.fs_->GetStageCreateInfo()};

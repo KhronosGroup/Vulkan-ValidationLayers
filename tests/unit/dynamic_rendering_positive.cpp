@@ -496,7 +496,7 @@ TEST_F(PositiveDynamicRendering, CreateGraphicsPipeline) {
         }
     )glsl";
 
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     const vkt::DescriptorSetLayout dsl(*m_device,
                                        {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
@@ -532,7 +532,7 @@ TEST_F(PositiveDynamicRendering, CreateGraphicsPipelineNoInfo) {
         }
     )glsl";
 
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     const vkt::DescriptorSetLayout dsl(*m_device,
                                        {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
@@ -561,7 +561,7 @@ TEST_F(PositiveDynamicRendering, CommandDrawWithShaderTileImageRead) {
     AddRequiredFeature(vkt::Feature::shaderTileImageStencilReadAccess);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     auto fs = VkShaderObj::CreateFromASM(this, kShaderTileImageDepthStencilReadSpv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineDepthStencilStateCreateInfo ds_state = vku::InitStructHelper();

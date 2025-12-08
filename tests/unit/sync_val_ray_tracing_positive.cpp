@@ -48,7 +48,7 @@ CreateComputePipelineHelper VkSyncValTest::GetRayQueryComputePipeline(VkAccelera
         }
     )glsl";
     CreateComputePipelineHelper pipeline(*this);
-    pipeline.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipeline.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipeline.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
     pipeline.CreateComputePipeline();
     pipeline.descriptor_set_.WriteDescriptorAccelStruct(0, 1, &as);

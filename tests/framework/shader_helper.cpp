@@ -476,11 +476,6 @@ VkShaderObj::VkShaderObj(vkt::Device& device, const char* source, VkShaderStageF
     }
 }
 
-VkShaderObj::VkShaderObj(VkRenderFramework* framework, const char* source, VkShaderStageFlagBits stage, const spv_target_env env,
-                         SpvSourceType source_type, const VkSpecializationInfo* spec_info, const char* entry_point,
-                         const void* pNext)
-    : VkShaderObj(*framework->DeviceObj(), source, stage, env, source_type, spec_info, entry_point, pNext, nullptr) {}
-
 bool VkShaderObj::InitFromGLSL(const void* shader_module_ci_pNext) {
     std::vector<uint32_t> spv;
     GLSLtoSPV(m_device->Physical().limits_, m_stage_info.stage, m_source, spv, m_spv_env);
@@ -562,7 +557,7 @@ bool VkShaderObj::InitFromSlang() {
 VkShaderObj VkShaderObj::CreateFromGLSL(VkRenderFramework *framework, const char *source, VkShaderStageFlagBits stage,
                                         const spv_target_env spv_env, const VkSpecializationInfo *spec_info,
                                         const char *entry_point) {
-    auto shader = VkShaderObj(framework, source, stage, spv_env, SPV_SOURCE_GLSL_TRY, spec_info, entry_point);
+    auto shader = VkShaderObj(*framework->DeviceObj(), source, stage, spv_env, SPV_SOURCE_GLSL_TRY, spec_info, entry_point);
     if (VK_SUCCESS == shader.InitFromGLSLTry()) {
         return shader;
     }
@@ -573,7 +568,7 @@ VkShaderObj VkShaderObj::CreateFromGLSL(VkRenderFramework *framework, const char
 VkShaderObj VkShaderObj::CreateFromASM(VkRenderFramework *framework, const char *source, VkShaderStageFlagBits stage,
                                        const spv_target_env spv_env, const VkSpecializationInfo *spec_info,
                                        const char *entry_point) {
-    auto shader = VkShaderObj(framework, source, stage, spv_env, SPV_SOURCE_ASM_TRY, spec_info, entry_point);
+    auto shader = VkShaderObj(*framework->DeviceObj(), source, stage, spv_env, SPV_SOURCE_ASM_TRY, spec_info, entry_point);
     if (VK_SUCCESS == shader.InitFromASMTry()) {
         return shader;
     }

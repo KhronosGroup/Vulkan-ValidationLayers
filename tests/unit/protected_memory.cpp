@@ -480,7 +480,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
 
     // Create device without protected access features
     vkt::Device test_device(Gpu(), m_device_extension_names);
-    VkShaderObj vs2(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
+    VkShaderObj vs2(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
     vs2.InitFromGLSLTry(&test_device);
 
     const vkt::PipelineLayout test_pipeline_layout(test_device);
@@ -829,7 +829,7 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
            imageStore(si1, ivec2(0), vec4(0));
         }
     )glsl";
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineColorBlendAttachmentState cb_attachments[2] = {};
     memset(cb_attachments, 0, sizeof(VkPipelineColorBlendAttachmentState) * 2);
@@ -1051,8 +1051,8 @@ TEST_F(NegativeProtectedMemory, RayTracingPipeline) {
     RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_PROTECTED_BIT));
 
     const vkt::PipelineLayout empty_pipeline_layout(*m_device, {});
-    VkShaderObj rgen_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
-    VkShaderObj chit_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
+    VkShaderObj rgen_shader(*m_device, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
+    VkShaderObj chit_shader(*m_device, kRayTracingMinimalGlsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {});
 
@@ -1131,7 +1131,7 @@ TEST_F(NegativeProtectedMemory, RayQuery) {
                OpReturn
                OpFunctionEnd
         )";
-    VkShaderObj fs(this, spv_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    VkShaderObj fs(*m_device, spv_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -1191,7 +1191,7 @@ TEST_F(NegativeProtectedMemory, WriteToProtectedStorageBuffer) {
            x = gl_FragCoord;
         }
     )glsl";
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};

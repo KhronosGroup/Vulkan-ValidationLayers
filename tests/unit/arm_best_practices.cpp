@@ -653,7 +653,7 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadAlignmentTest
         )glsl";
 
         CreateComputePipelineHelper pipe(*this);
-        pipe.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+        pipe.cs_ = VkShaderObj(*m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
         pipe.CreateComputePipeline();
     }
 
@@ -665,7 +665,7 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadAlignmentTest
         )glsl";
 
         CreateComputePipelineHelper pipe(*this);
-        pipe.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+        pipe.cs_ = VkShaderObj(*m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
         // this pipeline should cause a warning due to bad work group alignment
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                              "BestPractices-Arm-vkCreateComputePipelines-compute-thread-group-alignment");
@@ -681,7 +681,7 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadAlignmentTest
         )glsl";
 
         CreateComputePipelineHelper pipe(*this);
-        pipe.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+        pipe.cs_ = VkShaderObj(*m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                              "BestPractices-Arm-vkCreateComputePipelines-compute-thread-group-alignment");
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
@@ -707,7 +707,7 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadCountTest) {
         )glsl";
 
         CreateComputePipelineHelper pipe(*this);
-        pipe.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+        pipe.cs_ = VkShaderObj(*m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
         pipe.CreateComputePipeline();
     }
 
@@ -718,7 +718,7 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadCountTest) {
             void main(){}
         )glsl";
         CreateComputePipelineHelper pipe(*this);
-        pipe.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+        pipe.cs_ = VkShaderObj(*m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                              "BestPractices-Arm-vkCreateComputePipelines-compute-thread-group-alignment");
         pipe.CreateComputePipeline();
@@ -735,7 +735,7 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadCountTest) {
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                              "BestPractices-Arm-vkCreateComputePipelines-compute-work-group-size");
         CreateComputePipelineHelper pipe(*this);
-        pipe.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+        pipe.cs_ = VkShaderObj(*m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
         pipe.CreateComputePipeline();
         m_errorMonitor->VerifyFound();
     }
@@ -784,19 +784,19 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadSpatialLocality) {
     {
         CreateComputePipelineHelper pipe(*this);
         pipe.cp_ci_.layout = pipeline_layout;
-        pipe.cs_ = VkShaderObj(this, compute_sampler_2d_8_8_1, VK_SHADER_STAGE_COMPUTE_BIT);
+        pipe.cs_ = VkShaderObj(*m_device, compute_sampler_2d_8_8_1, VK_SHADER_STAGE_COMPUTE_BIT);
         pipe.CreateComputePipeline();
     }
     {
         CreateComputePipelineHelper pipe(*this);
         pipe.cp_ci_.layout = pipeline_layout;
-        pipe.cs_ = VkShaderObj(this, compute_sampler_1d_64_1_1, VK_SHADER_STAGE_COMPUTE_BIT);
+        pipe.cs_ = VkShaderObj(*m_device, compute_sampler_1d_64_1_1, VK_SHADER_STAGE_COMPUTE_BIT);
         pipe.CreateComputePipeline();
     }
     {
         CreateComputePipelineHelper pipe(*this);
         pipe.cp_ci_.layout = pipeline_layout;
-        pipe.cs_ = VkShaderObj(this, compute_sampler_2d_64_1_1, VK_SHADER_STAGE_COMPUTE_BIT);
+        pipe.cs_ = VkShaderObj(*m_device, compute_sampler_2d_64_1_1, VK_SHADER_STAGE_COMPUTE_BIT);
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                              "BestPractices-Arm-vkCreateComputePipelines-compute-spatial-locality");
         pipe.CreateComputePipeline();
@@ -865,7 +865,7 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadSpatialLocalityMultiEntrypoi
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cp_ci_.layout = pipeline_layout;
-    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM);
     pipe.CreateComputePipeline();
 }
 

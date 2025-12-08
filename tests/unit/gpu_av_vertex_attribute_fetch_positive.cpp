@@ -31,7 +31,7 @@ TEST_F(PositiveGpuAVVertexAttributeFetch, IndirectDrawZeroStride) {
             gl_Position = vec4(pos, 1.0);
         }
         )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     VkVertexInputBindingDescription input_binding = {0, 0, VK_VERTEX_INPUT_RATE_VERTEX};

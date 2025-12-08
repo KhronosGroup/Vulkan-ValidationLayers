@@ -48,7 +48,7 @@ TEST_F(PositiveShaderMesh, MeshShaderPayloadMemoryOverLimit) {
             void main(){}
         )glsl";
 
-    VkShaderObj mesh(this, mesh_source.str().c_str(), VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj mesh(*m_device, mesh_source.str().c_str(), VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
     const auto set_info = [&](CreatePipelineHelper &helper) { helper.shader_stages_ = {mesh.GetStageCreateInfo()}; };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
@@ -97,7 +97,7 @@ TEST_F(PositiveShaderMesh, MeshShaderPayloadSpecConstantSet) {
     spec_info.dataSize = sizeof(uint32_t);
     spec_info.pData = &size;
 
-    VkShaderObj mesh(this, mesh_source.str().c_str(), VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_GLSL,
+    VkShaderObj mesh(*m_device, mesh_source.str().c_str(), VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_GLSL,
                      &spec_info);
     const auto set_info = [&](CreatePipelineHelper &helper) { helper.shader_stages_ = {mesh.GetStageCreateInfo()}; };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
