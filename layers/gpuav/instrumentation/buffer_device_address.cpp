@@ -127,35 +127,7 @@ void RegisterBufferDeviceAddressValidation(Validator& gpuav, CommandBufferSubSta
         vko::BufferRange bda_table_ptr = cb.gpu_resources_manager.GetHostCoherentBufferRange(sizeof(VkDeviceAddress));
         *(VkDeviceAddress*)bda_table_ptr.offset_mapped_ptr = bda_table.offset_address;
 
-        // Dispatch a copy command, copying the per CB submission BDA table pointer to the BDA table pointer created at
-        // "on_instrumentation_desc_set_update_functions" time, so that CB submission accesses correct BDA snapshot.
-        {
-            VkBufferMemoryBarrier barrier_write_after_read = vku::InitStructHelper();
-            barrier_write_after_read.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-            barrier_write_after_read.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            barrier_write_after_read.buffer = bda_cb_state->bda_ranges_snapshot_ptr.buffer;
-            barrier_write_after_read.offset = bda_cb_state->bda_ranges_snapshot_ptr.offset;
-            barrier_write_after_read.size = bda_cb_state->bda_ranges_snapshot_ptr.size;
-
-            DispatchCmdPipelineBarrier(per_submission_cb, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                                       0, 0, nullptr, 1, &barrier_write_after_read, 0, nullptr);
-
-            VkBufferCopy copy;
-            copy.srcOffset = bda_table_ptr.offset;
-            copy.dstOffset = bda_cb_state->bda_ranges_snapshot_ptr.offset;
-            copy.size = sizeof(VkDeviceAddress);
-            DispatchCmdCopyBuffer(per_submission_cb, bda_table_ptr.buffer, bda_cb_state->bda_ranges_snapshot_ptr.buffer, 1, &copy);
-
-            VkBufferMemoryBarrier barrier_read_before_write = vku::InitStructHelper();
-            barrier_read_before_write.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            barrier_read_before_write.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-            barrier_read_before_write.buffer = bda_cb_state->bda_ranges_snapshot_ptr.buffer;
-            barrier_read_before_write.offset = bda_cb_state->bda_ranges_snapshot_ptr.offset;
-            barrier_read_before_write.size = bda_cb_state->bda_ranges_snapshot_ptr.size;
-
-            DispatchCmdPipelineBarrier(per_submission_cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
-                                       nullptr, 1, &barrier_read_before_write, 0, nullptr);
-        }
+        vko::CmdSynchronizedCopyBufferRange(per_submission_cb, bda_cb_state->bda_ranges_snapshot_ptr, bda_table_ptr);
     });
 }
 

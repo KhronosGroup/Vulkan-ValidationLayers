@@ -43,7 +43,7 @@ bool MaxCmdErrorsCountReached() {
     return cmd_errors_count >= kMaxErrorsPerCmd;
 }
 
-void GpuavLogError4(uint error_group, uint error_sub_code, uint dword_0, uint dword_1, uint dword_2, uint dword_3) {
+void GpuavLogError5(uint error_group, uint error_sub_code, uint dword_0, uint dword_1, uint dword_2, uint dword_3, uint dword_4) {
     if (MaxCmdErrorsCountReached()) return;
 
     uint vo_idx = atomicAdd(errors_count, kErrorRecordSize);
@@ -58,8 +58,13 @@ void GpuavLogError4(uint error_group, uint error_sub_code, uint dword_0, uint dw
     errors_buffer[vo_idx + kValCmdErrorPayloadDword_1] = dword_1;
     errors_buffer[vo_idx + kValCmdErrorPayloadDword_2] = dword_2;
     errors_buffer[vo_idx + kValCmdErrorPayloadDword_3] = dword_3;
+    errors_buffer[vo_idx + kValCmdErrorPayloadDword_4] = dword_4;
 }
 
 void GpuavLogError2(uint error_group, uint error_sub_code, uint dword_0, uint dword_1) {
-    GpuavLogError4(error_group, error_sub_code, dword_0, dword_1, 0, 0);
+    GpuavLogError5(error_group, error_sub_code, dword_0, dword_1, 0, 0, 0);
+}
+
+void GpuavLogError4(uint error_group, uint error_sub_code, uint dword_0, uint dword_1, uint dword_2, uint dword_3) {
+    GpuavLogError5(error_group, error_sub_code, dword_0, dword_1, dword_2, dword_3, 0);
 }

@@ -238,6 +238,35 @@ void BufferRange::Clear() const {
     memset((uint8_t *)offset_mapped_ptr, 0, static_cast<size_t>(size));
 }
 
+void CmdSynchronizedCopyBufferRange(VkCommandBuffer cb, const vko::BufferRange &dst, const vko::BufferRange &src) {
+    assert(dst.size == src.size);
+    VkBufferMemoryBarrier barrier_write_after_read = vku::InitStructHelper();
+    barrier_write_after_read.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    barrier_write_after_read.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier_write_after_read.buffer = dst.buffer;
+    barrier_write_after_read.offset = dst.offset;
+    barrier_write_after_read.size = dst.size;
+
+    DispatchCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 1,
+                               &barrier_write_after_read, 0, nullptr);
+
+    VkBufferCopy copy;
+    copy.srcOffset = src.offset;
+    copy.dstOffset = dst.offset;
+    copy.size = src.size;
+    DispatchCmdCopyBuffer(cb, src.buffer, dst.buffer, 1, &copy);
+
+    VkBufferMemoryBarrier barrier_read_before_write = vku::InitStructHelper();
+    barrier_read_before_write.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier_read_before_write.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    barrier_read_before_write.buffer = dst.buffer;
+    barrier_read_before_write.offset = dst.offset;
+    barrier_read_before_write.size = dst.size;
+
+    DispatchCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 1,
+                               &barrier_read_before_write, 0, nullptr);
+}
+
 GpuResourcesManager::GpuResourcesManager(Validator &gpuav) : gpuav_(gpuav) {
     const bool force_host_access = gpuav.IsAllDeviceLocalMappable();
 

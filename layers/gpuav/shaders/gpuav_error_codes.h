@@ -159,6 +159,7 @@ const int kErrorSubCodePreCopyMemoryToImageIndirectSrcAddressInvalid = 9;
 //
 const int kErrorSubCode_PreBuildAccelerationStructures_InvalidAS = 1;
 const int kErrorSubCode_PreBuildAccelerationStructures_DestroyedASBuffer = 2;
+const int kErrorSubCode_PreBuildAccelerationStructures_BlasMemoryOverlap = 3;
 
 #ifdef __cplusplus
 }  // namespace glsl

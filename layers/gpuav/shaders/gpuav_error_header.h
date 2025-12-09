@@ -157,6 +157,7 @@ const int kValCmdErrorPayloadDword_0 = kHeaderSize;
 const int kValCmdErrorPayloadDword_1 = kHeaderSize + 1;
 const int kValCmdErrorPayloadDword_2 = kHeaderSize + 2;
 const int kValCmdErrorPayloadDword_3 = kHeaderSize + 3;
+const int kValCmdErrorPayloadDword_4 = kHeaderSize + 4;
 
 // Sizes/Counts
 // -------------------

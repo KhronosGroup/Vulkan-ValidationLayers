@@ -26,13 +26,27 @@ uniform PushConstants {
     AccelerationStructureReferencePushData pc;
 };
 
-layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+bool RangesInclude(Range r1, Range r2) {
+    return (r1.begin <= r2.begin) && (r2.end <= r1.end);
+}
+bool RangesOverlap(Range r1, Range r2) {
+    return RangesInclude(r1, r2) || RangesInclude(r2, r1);
+}
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 void main() {
-    const uint as_instance_i = gl_GlobalInvocationID.x;
+    uint as_instance_i = 0;
+    if (pc.validation_mode == kBuildASValidationMode_invalid_AS) {
+        as_instance_i = gl_GlobalInvocationID.x * (gl_NumWorkGroups.y * gl_WorkGroupSize.y) + gl_GlobalInvocationID.y;
+    } else if (pc.validation_mode == kBuildASValidationMode_memory_overlaps) {
+        as_instance_i = gl_GlobalInvocationID.x;
+    }
     if (as_instance_i >= pc.blas_array_size) {
         return;
     }
+    const uint blas_built_in_cmd_i = gl_GlobalInvocationID.y;
 
+    // Address of BLAS to validate
     uint64_t blas_addr = 0;
     if (pc.is_array_of_pointers == 0) {
         blas_addr = pc.blas_array_start_addr.blas_array[as_instance_i].accelerationStructureReference;
@@ -40,28 +54,58 @@ void main() {
         blas_addr = pc.blas_ptr_array_start_addr.blas_ptr_array[as_instance_i].as_instance.accelerationStructureReference;
     }
 
-    int error_subcode = kErrorSubCode_PreBuildAccelerationStructures_InvalidAS;
-    const uint as_count = pc.ptr_to_ptr_to_accel_structs_arrays.as_arrays_ptrs.addresses_ptr.count;
-    for (uint as_metadata_i = 0; as_metadata_i < as_count; ++as_metadata_i) {
-        uint64_t valid_as_addr = pc.ptr_to_ptr_to_accel_structs_arrays.as_arrays_ptrs.addresses_ptr.array[as_metadata_i];
+    uint error_subcode = 0;
 
-        if (valid_as_addr == blas_addr) {
-            uint as_metadata = pc.ptr_to_ptr_to_accel_structs_arrays.as_arrays_ptrs.metadata_ptr.array[as_metadata_i];
-            if (as_metadata == 1u) {
-                error_subcode = 0;
-            } else {
-                error_subcode = kErrorSubCode_PreBuildAccelerationStructures_DestroyedASBuffer;
+    if (pc.validation_mode == kBuildASValidationMode_invalid_AS) {
+        error_subcode = kErrorSubCode_PreBuildAccelerationStructures_InvalidAS;
+        const uint as_count = pc.ptr_to_ptr_to_accel_structs_arrays.as_arrays_ptrs.addresses_ptr.count;
+        for (uint as_i = 0; as_i < as_count; ++as_i) {
+            uint64_t valid_as_addr = pc.ptr_to_ptr_to_accel_structs_arrays.as_arrays_ptrs.addresses_ptr.array[as_i];
+
+            if (valid_as_addr == blas_addr) {
+                uint as_metadata = pc.ptr_to_ptr_to_accel_structs_arrays.as_arrays_ptrs.metadata_ptr.array[as_i];
+                if (as_metadata == 1u) {
+                    error_subcode = 0;
+                } else {
+                    error_subcode = kErrorSubCode_PreBuildAccelerationStructures_DestroyedASBuffer;
+                }
+                break;
             }
-            break;
+        }
+    } else if (pc.validation_mode == kBuildASValidationMode_memory_overlaps) {
+        if (blas_built_in_cmd_i >= pc.blas_built_in_cmd_array_size) {
+            return;
+        }
+        // Try to find buffer range associated to BLAS to validate
+        Range blas_buffer_range = {0,0};
+        const uint as_count = pc.ptr_to_ptr_to_accel_structs_arrays.as_arrays_ptrs.addresses_ptr.count;
+        for (uint as_i = 0; as_i < as_count; ++as_i) {
+            uint64_t valid_as_addr = pc.ptr_to_ptr_to_accel_structs_arrays.as_arrays_ptrs.addresses_ptr.array[as_i];
+
+            if (valid_as_addr == blas_addr) {
+                blas_buffer_range = pc.ptr_to_ptr_to_accel_structs_arrays.as_arrays_ptrs.buffer_ranges_ptr.array[as_i];
+                break;
+            }
+        }
+        // Does BLAS buffer range, referenced in a TLAS build,
+        // overlaps with another BLAS buffer range referenced in the same build command?
+        if (blas_buffer_range.begin != 0) {
+            Range blas_built_in_cmd_buffer_range = pc.blas_built_in_cmd_array_ptr.buffer_ranges[blas_built_in_cmd_i];
+            if (RangesOverlap(blas_buffer_range, blas_built_in_cmd_buffer_range)) {
+                error_subcode = kErrorSubCode_PreBuildAccelerationStructures_BlasMemoryOverlap;
+            }
         }
     }
 
     if (error_subcode != 0) {
-        pc.blas_array_start_addr.blas_array[as_instance_i].instanceCustomIndex_and_mask &= 0xffffff;// Set mask to 0, so instance cannot get hit
+        pc.blas_array_start_addr.blas_array[as_instance_i].instanceCustomIndex_and_mask &= 0xffffff;// Set mask to 0 (upper 8 bits), so instance cannot get hit
         pc.blas_array_start_addr.blas_array[as_instance_i].accelerationStructureReference = pc.valid_dummy_blas_addr;// Point to a valid dummy blas
 
-        GpuavLogError4(kErrorGroupGpuPreBuildAccelerationStructures, error_subcode, uint(blas_addr), uint(blas_addr >> 32u), as_instance_i, pc.blas_array_i);
+        const uint error_dword_0 = uint(blas_addr);
+        const uint error_dword_1 = uint(blas_addr >> 32u);
+        const uint error_dword_2 = as_instance_i;
+        const uint error_dword_3 = pc.blas_array_i;// #ARNO_TODO swap dwords 2 and 3
+        const uint error_dword_4 = blas_built_in_cmd_i;
+        GpuavLogError5(kErrorGroupGpuPreBuildAccelerationStructures, error_subcode, error_dword_0, error_dword_1, error_dword_2, error_dword_3, error_dword_4);
     }
-
-
 }
