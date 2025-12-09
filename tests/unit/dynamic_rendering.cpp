@@ -5168,6 +5168,189 @@ TEST_F(NegativeDynamicRendering, SuspendResumeMismatch4) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeDynamicRendering, SuspendResumeMismatch5) {
+    TEST_DESCRIPTION("Suspend and resume do not match. Submit time validation.");
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+    image.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+    VkRenderingAttachmentInfo suspend_color_attachment = vku::InitStructHelper();
+    suspend_color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    suspend_color_attachment.imageView = image_view;
+    suspend_color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+
+    VkRenderingAttachmentInfo resume_color_attachment = vku::InitStructHelper();
+    resume_color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    resume_color_attachment.imageView = image_view;
+    resume_color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+
+    VkRenderingInfo suspend_rendering_info = vku::InitStructHelper();
+    suspend_rendering_info.flags = VK_RENDERING_SUSPENDING_BIT;
+    suspend_rendering_info.layerCount = 1;
+    suspend_rendering_info.renderArea.extent = {32, 32};
+    suspend_rendering_info.colorAttachmentCount = 1;
+    suspend_rendering_info.pColorAttachments = &suspend_color_attachment;
+
+    VkRenderingInfo resume_rendering_info = suspend_rendering_info;
+    resume_rendering_info.flags = VK_RENDERING_RESUMING_BIT;
+    resume_rendering_info.pColorAttachments = &resume_color_attachment;
+
+    vkt::CommandBuffer command_buffers[2] = {{*m_device, m_command_pool}, {*m_device, m_command_pool}};
+
+    command_buffers[0].Begin();
+    command_buffers[0].BeginRendering(suspend_rendering_info);
+    command_buffers[0].EndRendering();
+    command_buffers[0].End();
+
+    command_buffers[1].Begin();
+    command_buffers[1].BeginRendering(resume_rendering_info);
+    command_buffers[1].EndRendering();
+    command_buffers[1].End();
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-RenderingInfo-SuspendResume-Mismatch");
+    m_default_queue->Submit({command_buffers[0], command_buffers[1]});
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeDynamicRendering, SuspendResumeMismatch6) {
+    TEST_DESCRIPTION("Suspend and resume do not match. Secondary command buffer validation.");
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkRenderingAttachmentInfo suspend_color_attachment = vku::InitStructHelper();
+    suspend_color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    suspend_color_attachment.imageView = image_view;
+    suspend_color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+
+    VkRenderingAttachmentInfo resume_color_attachment = vku::InitStructHelper();
+    resume_color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    resume_color_attachment.imageView = image_view;
+    resume_color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+
+    VkRenderingInfo suspend_rendering_info = vku::InitStructHelper();
+    suspend_rendering_info.flags = VK_RENDERING_SUSPENDING_BIT;
+    suspend_rendering_info.layerCount = 1;
+    suspend_rendering_info.renderArea.extent = {32, 32};
+    suspend_rendering_info.colorAttachmentCount = 1;
+    suspend_rendering_info.pColorAttachments = &suspend_color_attachment;
+
+    VkRenderingInfo resume_rendering_info = suspend_rendering_info;
+    resume_rendering_info.flags = VK_RENDERING_RESUMING_BIT;
+    resume_rendering_info.pColorAttachments = &resume_color_attachment;
+
+    secondary.Begin();
+    secondary.BeginRendering(resume_rendering_info);
+    secondary.EndRendering();
+    secondary.End();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(suspend_rendering_info);
+    m_command_buffer.EndRendering();
+    m_errorMonitor->SetDesiredError("UNASSIGNED-RenderingInfo-SuspendResume-Mismatch");
+    m_command_buffer.ExecuteCommands(secondary);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDynamicRendering, SuspendResumeMismatch7) {
+    TEST_DESCRIPTION("Suspend and resume do not match. Secondary command buffer and submit time validation.");
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+    image.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+    VkRenderingAttachmentInfo suspend_color_attachment = vku::InitStructHelper();
+    suspend_color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    suspend_color_attachment.imageView = image_view;
+    suspend_color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+
+    VkRenderingAttachmentInfo resume_color_attachment = vku::InitStructHelper();
+    resume_color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    resume_color_attachment.imageView = image_view;
+    resume_color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+
+    VkRenderingInfo suspend_rendering_info = vku::InitStructHelper();
+    suspend_rendering_info.flags = VK_RENDERING_SUSPENDING_BIT;
+    suspend_rendering_info.layerCount = 1;
+    suspend_rendering_info.renderArea.extent = {32, 32};
+    suspend_rendering_info.colorAttachmentCount = 1;
+    suspend_rendering_info.pColorAttachments = &suspend_color_attachment;
+
+    VkRenderingInfo resume_rendering_info = suspend_rendering_info;
+    resume_rendering_info.flags = VK_RENDERING_RESUMING_BIT;
+    resume_rendering_info.pColorAttachments = &resume_color_attachment;
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    secondary.End();
+
+    vkt::CommandBuffer command_buffers[2] = {{*m_device, m_command_pool}, {*m_device, m_command_pool}};
+    command_buffers[0].Begin();
+    command_buffers[0].BeginRendering(suspend_rendering_info);
+    command_buffers[0].EndRendering();
+    command_buffers[0].ExecuteCommands(secondary);
+    command_buffers[0].End();
+
+    command_buffers[1].Begin();
+    command_buffers[1].BeginRendering(resume_rendering_info);
+    command_buffers[1].EndRendering();
+    command_buffers[1].End();
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-RenderingInfo-SuspendResume-Mismatch");
+    m_default_queue->Submit({command_buffers[0], command_buffers[1]});
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeDynamicRendering, SuspendResumeMismatch8) {
+    TEST_DESCRIPTION("Suspend and resume do not match. Validate accross two secondary command buffers.");
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    VkRenderingAttachmentInfo suspend_color_attachment = vku::InitStructHelper();
+    suspend_color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkRenderingAttachmentInfo resume_color_attachment = vku::InitStructHelper();
+    resume_color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderingInfo suspend_rendering_info = vku::InitStructHelper();
+    suspend_rendering_info.flags = VK_RENDERING_SUSPENDING_BIT;
+    suspend_rendering_info.layerCount = 1;
+    suspend_rendering_info.renderArea.extent = {32, 32};
+    suspend_rendering_info.colorAttachmentCount = 1;
+    suspend_rendering_info.pColorAttachments = &suspend_color_attachment;
+
+    VkRenderingInfo resume_rendering_info = suspend_rendering_info;
+    resume_rendering_info.flags = VK_RENDERING_RESUMING_BIT;
+    resume_rendering_info.pColorAttachments = &resume_color_attachment;
+
+    vkt::CommandBuffer secondaries[2] = {{*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY},
+                                         {*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY}};
+    secondaries[0].Begin();
+    secondaries[0].BeginRendering(suspend_rendering_info);
+    secondaries[0].EndRendering();
+    secondaries[0].End();
+
+    secondaries[1].Begin();
+    secondaries[1].BeginRendering(resume_rendering_info);
+    secondaries[1].EndRendering();
+    secondaries[1].End();
+
+    m_command_buffer.Begin();
+    m_command_buffer.ExecuteCommands(secondaries[0]);
+    m_errorMonitor->SetDesiredError("UNASSIGNED-RenderingInfo-SuspendResume-Mismatch");
+    m_command_buffer.ExecuteCommands(secondaries[1]);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeDynamicRendering, NullDepthStencilExecuteCommands) {
     TEST_DESCRIPTION(
         "Test for NULL depth stencil attachments in dynamic rendering with secondary command buffer with depth stencil format "

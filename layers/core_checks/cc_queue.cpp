@@ -187,6 +187,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
         }
 
         bool suspended_render_pass_instance = false;
+        const VkRenderingInfo *last_rendering_info = nullptr;
         for (uint32_t i = 0; i < submit.commandBufferCount; i++) {
             const Location cb_loc = submit_loc.dot(Field::pCommandBuffers, i);
             auto cb_state = GetRead<vvl::CommandBuffer>(submit.pCommandBuffers[i]);
@@ -233,11 +234,24 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
                                      "resumes a render pass instance, but there is no suspended render pass instance.");
                 }
             }
+            if (cb_state->first_rendering_info.has_value() && last_rendering_info) {
+                const LogObjectList objlist(cb_state->Handle(), queue);
+                const VkRenderingInfo &rendering_info = *cb_state->first_rendering_info.value().ptr();
+                // TODO: VUID is being discussed https://gitlab.khronos.org/vulkan/vulkan/-/issues/4554
+                skip |= ValidateSuspendResumeMismatch("UNASSIGNED-RenderingInfo-SuspendResume-Mismatch", objlist, rendering_info,
+                                                      *last_rendering_info, cb_state->first_rendering_info_loc->Get());
+            }
+
             // Update suspension state.
             // NOTE: SuspendState::Empty means that command buffer does not change suspension state,
             // for example, it does not contain render pass instances
             if (cb_state->last_suspend_state != vvl::CommandBuffer::SuspendState::Empty) {
                 suspended_render_pass_instance = (cb_state->last_suspend_state == vvl::CommandBuffer::SuspendState::Suspended);
+            }
+            // Update rendering info.
+            // If command buffer does not begin rendering then keep current state unchanged.
+            if (cb_state->last_rendering_info.has_value()) {
+                last_rendering_info = cb_state->last_rendering_info.value().ptr();
             }
         }
         // Renderpass should not be in suspended state after the final cmdbuf
@@ -358,6 +372,7 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
         }
 
         bool suspended_render_pass_instance = false;
+        const VkRenderingInfo *last_rendering_info = nullptr;
         for (uint32_t i = 0; i < submit.commandBufferInfoCount; i++) {
             const Location info_loc = submit_loc.dot(Struct::VkCommandBufferSubmitInfo, Field::pCommandBufferInfos, i);
             auto cb_state = GetRead<vvl::CommandBuffer>(submit.pCommandBufferInfos[i].commandBuffer);
@@ -407,11 +422,24 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
                                      "resumes a render pass instance, but there is no suspended render pass instance.");
                 }
             }
+            if (cb_state->first_rendering_info.has_value() && last_rendering_info) {
+                const LogObjectList objlist(cb_state->Handle(), queue);
+                const VkRenderingInfo &rendering_info = *cb_state->first_rendering_info.value().ptr();
+                // TODO: VUID is being discussed https://gitlab.khronos.org/vulkan/vulkan/-/issues/4554
+                skip |= ValidateSuspendResumeMismatch("UNASSIGNED-RenderingInfo-SuspendResume-Mismatch", objlist, rendering_info,
+                                                      *last_rendering_info, cb_state->first_rendering_info_loc->Get());
+            }
+
             // Update suspension state.
-            // NOTE: SuspendState::Empty means that command buffer does not change suspension state,
+            // SuspendState::Empty means that command buffer does not change suspension state,
             // for example, it does not contain render pass instances
             if (cb_state->last_suspend_state != vvl::CommandBuffer::SuspendState::Empty) {
                 suspended_render_pass_instance = (cb_state->last_suspend_state == vvl::CommandBuffer::SuspendState::Suspended);
+            }
+            // Update rendering info.
+            // If command buffer does not begin rendering then keep current state unchanged.
+            if (cb_state->last_rendering_info.has_value()) {
+                last_rendering_info = cb_state->last_rendering_info.value().ptr();
             }
 
             skip |= ValidateRenderPassStripeSubmitInfo(queue, *cb_state, submit.pCommandBufferInfos[i].pNext, info_loc);

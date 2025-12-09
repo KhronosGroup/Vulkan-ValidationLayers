@@ -3831,7 +3831,7 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
                          "must not include VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT in a secondary command buffer.");
     }
 
-    skip |= ValidateBeginRenderingSuspendResumeMismatch(*cb_state, *pRenderingInfo, rendering_info_loc);
+    skip |= ValidateBeginRenderingResume(*cb_state, *pRenderingInfo, rendering_info_loc);
     skip |= ValidateBeginRenderingFragmentDensityMap(commandBuffer, *pRenderingInfo, rendering_info_loc);
     skip |= ValidateBeginRenderingFragmentShadingRate(commandBuffer, *pRenderingInfo, rendering_info_loc);
     skip |= ValidateBeginRenderingSampleCount(commandBuffer, *pRenderingInfo, rendering_info_loc);
@@ -3952,10 +3952,20 @@ static bool CheckAttachmentInfoMismatch(const CoreChecks &validator, const char 
     return skip;
 }
 
-static bool CheckSuspendResumeMismatch(const CoreChecks &validator, const char *vuid, const LogObjectList &objlist,
-                                       const VkRenderingInfo &resume_info, const VkRenderingInfo &suspend_info,
-                                       const Location &resume_info_loc) {
+bool CoreChecks::ValidateSuspendResumeMismatch(const char *vuid, const LogObjectList &objlist,
+                                               const VkRenderingInfo &rendering_info, const VkRenderingInfo &last_rendering_info,
+                                               const Location &rendering_info_loc) const {
     bool skip = false;
+
+    const bool is_suspend_resume =
+        (last_rendering_info.flags & VK_RENDERING_SUSPENDING_BIT) != 0 && (rendering_info.flags & VK_RENDERING_RESUMING_BIT) != 0;
+
+    if (!is_suspend_resume) {
+        return skip;
+    }
+    const VkRenderingInfo &resume_info = rendering_info;
+    const VkRenderingInfo &suspend_info = last_rendering_info;
+    const Location &resume_info_loc = rendering_info_loc;
 
     const char *message_str = "(%s) does not match %s used by the suspended rendering instance.";
     const char *message_uint = "(%" PRIu32 ") does not match %" PRIu32 " used by the suspended rendering instance.";
@@ -3969,32 +3979,31 @@ static bool CheckSuspendResumeMismatch(const CoreChecks &validator, const char *
 
     if (resume_compare_flags != suspend_compare_flags) {
         const Location loc = resume_info_loc.dot(vvl::Field::flags);
-        skip |= validator.LogError(vuid, objlist, loc, message_str, string_VkRenderingFlags(resume_compare_flags).c_str(),
-                                   string_VkRenderingFlags(suspend_compare_flags).c_str());
+        skip |= LogError(vuid, objlist, loc, message_str, string_VkRenderingFlags(resume_compare_flags).c_str(),
+                         string_VkRenderingFlags(suspend_compare_flags).c_str());
     } else if (resume_info.renderArea.offset.x != suspend_info.renderArea.offset.x ||
                resume_info.renderArea.offset.y != suspend_info.renderArea.offset.y ||
                resume_info.renderArea.extent.width != suspend_info.renderArea.extent.width ||
                resume_info.renderArea.extent.height != suspend_info.renderArea.extent.height) {
         const Location loc = resume_info_loc.dot(vvl::Field::renderArea);
         const std::string suspend_render_area = "(" + string_VkRect2D(suspend_info.renderArea) + ")";
-        skip |= validator.LogError(vuid, objlist, loc, message_str, string_VkRect2D(resume_info.renderArea).c_str(),
-                                   suspend_render_area.c_str());
+        skip |=
+            LogError(vuid, objlist, loc, message_str, string_VkRect2D(resume_info.renderArea).c_str(), suspend_render_area.c_str());
     } else if (resume_info.layerCount != suspend_info.layerCount) {
         const Location loc = resume_info_loc.dot(vvl::Field::layerCount);
-        skip |= validator.LogError(vuid, objlist, loc, message_uint, resume_info.layerCount, suspend_info.layerCount);
+        skip |= LogError(vuid, objlist, loc, message_uint, resume_info.layerCount, suspend_info.layerCount);
     } else if (resume_info.viewMask != suspend_info.viewMask) {
         const Location loc = resume_info_loc.dot(vvl::Field::viewMask);
-        skip |= validator.LogError(vuid, objlist, loc, message_uint, resume_info.viewMask, suspend_info.viewMask);
+        skip |= LogError(vuid, objlist, loc, message_uint, resume_info.viewMask, suspend_info.viewMask);
     } else if (resume_info.colorAttachmentCount != suspend_info.colorAttachmentCount) {
         const Location loc = resume_info_loc.dot(vvl::Field::colorAttachmentCount);
-        skip |= validator.LogError(vuid, objlist, loc, message_uint, resume_info.colorAttachmentCount,
-                                   suspend_info.colorAttachmentCount);
+        skip |= LogError(vuid, objlist, loc, message_uint, resume_info.colorAttachmentCount, suspend_info.colorAttachmentCount);
     }
 
     if (resume_info.pColorAttachments) {
         for (uint32_t i = 0; i < resume_info.colorAttachmentCount; i++) {
             const Location attachment_loc = resume_info_loc.dot(vvl::Field::pColorAttachments, i);
-            skip |= CheckAttachmentInfoMismatch(validator, vuid, objlist, resume_info.pColorAttachments[i],
+            skip |= CheckAttachmentInfoMismatch(*this, vuid, objlist, resume_info.pColorAttachments[i],
                                                 suspend_info.pColorAttachments[i], attachment_loc);
         }
         // NOTE: we do not check color attachment for null mismatch (as we do for depth/stencil) because it
@@ -4002,42 +4011,33 @@ static bool CheckSuspendResumeMismatch(const CoreChecks &validator, const char *
         // is detected or the stateless validation detects null pointer for not zero colorAttachmentCount).
     }
 
-    skip |= CheckAttachmentNullMismatch(validator, vuid, objlist, resume_info.pDepthAttachment, suspend_info.pDepthAttachment,
+    skip |= CheckAttachmentNullMismatch(*this, vuid, objlist, resume_info.pDepthAttachment, suspend_info.pDepthAttachment,
                                         resume_info_loc.dot(vvl::Field::pDepthAttachment));
     if (resume_info.pDepthAttachment) {
         const Location attachment_loc = resume_info_loc.dot(vvl::Field::pDepthAttachment);
-        skip |= CheckAttachmentInfoMismatch(validator, vuid, objlist, *resume_info.pDepthAttachment, *suspend_info.pDepthAttachment,
+        skip |= CheckAttachmentInfoMismatch(*this, vuid, objlist, *resume_info.pDepthAttachment, *suspend_info.pDepthAttachment,
                                             attachment_loc);
     }
 
-    skip |= CheckAttachmentNullMismatch(validator, vuid, objlist, resume_info.pStencilAttachment, suspend_info.pStencilAttachment,
+    skip |= CheckAttachmentNullMismatch(*this, vuid, objlist, resume_info.pStencilAttachment, suspend_info.pStencilAttachment,
                                         resume_info_loc.dot(vvl::Field::pStencilAttachment));
     if (resume_info.pStencilAttachment) {
         const Location attachment_loc = resume_info_loc.dot(vvl::Field::pStencilAttachment);
-        skip |= CheckAttachmentInfoMismatch(validator, vuid, objlist, *resume_info.pStencilAttachment,
-                                            *suspend_info.pStencilAttachment, attachment_loc);
+        skip |= CheckAttachmentInfoMismatch(*this, vuid, objlist, *resume_info.pStencilAttachment, *suspend_info.pStencilAttachment,
+                                            attachment_loc);
     }
     return skip;
 }
 
-bool CoreChecks::ValidateBeginRenderingSuspendResumeMismatch(const vvl::CommandBuffer &cb_state,
-                                                             const VkRenderingInfo &rendering_info,
-                                                             const Location &rendering_info_loc) const {
+bool CoreChecks::ValidateBeginRenderingResume(const vvl::CommandBuffer &cb_state, const VkRenderingInfo &rendering_info,
+                                              const Location &rendering_info_loc) const {
     bool skip = false;
-
-    // check for suspend-resume within a single command buffer
-    const bool command_buffer_suspend_resume = cb_state.last_rendering_info.has_value() &&
-                                               (cb_state.last_rendering_info->flags & VK_RENDERING_SUSPENDING_BIT) != 0 &&
-                                               (rendering_info.flags & VK_RENDERING_RESUMING_BIT) != 0;
-    if (!command_buffer_suspend_resume) {
+    if (!cb_state.last_rendering_info.has_value()) {
         return skip;
     }
-
-    const VkRenderingInfo &resume_info = rendering_info;
-    const VkRenderingInfo &suspend_info = *cb_state.last_rendering_info.value().ptr();
     // TODO: VUID is being discussed https://gitlab.khronos.org/vulkan/vulkan/-/issues/4554
-    skip |= CheckSuspendResumeMismatch(*this, "UNASSIGNED-RenderingInfo-SuspendResume-Mismatch", cb_state.Handle(), resume_info,
-                                       suspend_info, rendering_info_loc);
+    skip |= ValidateSuspendResumeMismatch("UNASSIGNED-RenderingInfo-SuspendResume-Mismatch", cb_state.Handle(), rendering_info,
+                                          *cb_state.last_rendering_info.value().ptr(), rendering_info_loc);
     return skip;
 }
 
