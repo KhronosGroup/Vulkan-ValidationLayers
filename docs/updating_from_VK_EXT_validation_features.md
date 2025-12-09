@@ -13,7 +13,7 @@ Deprecated settings and new settings cannot be mixed, and deprecated ones take p
   Deprecated: VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT | New: "thread_safety" (VK_LAYER_THREAD_SAFETY=0)
 ```
 
-Long ago the `VK_EXT_validation_features` extension was added, it is **never going away**, but it was not a sustainable option as we add new things, so instead the `VK_EXT_layer_settings` should be used.
+While the `VK_EXT_validation_features` extension is **never going away**, it was added long ago and is not capable of staying up to date with the Validation layers (such as adding the recent [legacy detection setting](./legacy_detection.md)). `VK_EXT_layer_settings` should be used instead.
 
 > Please see [Configuring the Validation Layer](./khronos_validation_layer.md#configuring-the-validation-layer) for full details of setting the layers
 
