@@ -24,4 +24,5 @@ This directory contains more detailed information about how each part of the Val
         - [Synchronization Validation Development](./syncval_development.md)
     - [Thread Safety Validation](./thread_safety.md)
     - [Limitations](./limitations.md)
+    - [Updating from VK_EXT_validation_features](./updating_from_VK_EXT_validation_features.md)
 - [Creating Tests](./creating_tests.md)
