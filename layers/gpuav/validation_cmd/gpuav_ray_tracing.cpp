@@ -411,23 +411,39 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
         uint32_t geom_i = 0;
     };
 
+    struct BlasBuiltInCmd {
+        std::shared_ptr<vvl::AccelerationStructureKHR> blas = {};
+        size_t p_info_i = 0;
+    };
     std::vector<BlasArray> blas_arrays;
+    std::vector<BlasBuiltInCmd> blas_built_in_cmd_array;
     for (const auto [info_i, info] : vvl::enumerate(infos, info_count)) {
-        for (uint32_t geom_i = 0; geom_i < info.geometryCount; ++geom_i) {
-            const VkAccelerationStructureGeometryKHR& geom = rt::GetGeometry(info, geom_i);
-            if (geom.geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
-                BlasArray blas_array;
-                blas_array.size = build_ranges_infos[info_i][geom_i].primitiveCount;
-                blas_array.array_start_addr =
-                    geom.geometry.instances.data.deviceAddress + build_ranges_infos[info_i][geom_i].primitiveOffset;
-                blas_array.is_array_of_pointers = uint32_t(geom.geometry.instances.arrayOfPointers);
-                blas_array.info_i = info_i;
-                blas_array.geom_i = geom_i;
-                blas_arrays.emplace_back(blas_array);
+        if (info.type == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR) {
+            for (uint32_t geom_i = 0; geom_i < info.geometryCount; ++geom_i) {
+                const VkAccelerationStructureGeometryKHR& geom = rt::GetGeometry(info, geom_i);
+                if (geom.geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
+                    BlasArray blas_array;
+                    blas_array.size = build_ranges_infos[info_i][geom_i].primitiveCount;
+                    blas_array.array_start_addr =
+                        geom.geometry.instances.data.deviceAddress + build_ranges_infos[info_i][geom_i].primitiveOffset;
+                    blas_array.is_array_of_pointers = uint32_t(geom.geometry.instances.arrayOfPointers);
+                    blas_array.info_i = info_i;
+                    blas_array.geom_i = geom_i;
+                    blas_arrays.emplace_back(blas_array);
+                }
+            }
+        } else if (info.type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR) {
+            auto blas = gpuav.Get<vvl::AccelerationStructureKHR>(info.dstAccelerationStructure);
+            if (blas) {
+                BlasBuiltInCmd blas_build_in_cmd{};
+                blas_build_in_cmd.blas = std::move(blas);
+                blas_build_in_cmd.p_info_i = info_i;
+                blas_built_in_cmd_array.emplace_back(blas_build_in_cmd);
             }
         }
     }
 
+    // No TLAS built in command, so no validation to perform
     if (blas_arrays.empty()) {
         return;
     }
@@ -443,91 +459,89 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
         return;
     }
 
-    vko::BufferRange ptr_to_accel_structs_arrays_ptr =
+    vko::BufferRange as_arrays_ptr_buffer =
         cb_state.gpu_resources_manager.GetDeviceLocalBufferRange(sizeof(glsl::AccelerationStructureArraysPtr));
 
-    DummyBLAS& dummy_blas = gpuav.shared_resources_cache.GetOrCreate<DummyBLAS>(gpuav, cb_state);
-
-    BuildAccelerationStructuresValidationShader shader_resources;
-    shader_resources.push_constants.ptr_to_ptr_to_accel_structs_arrays = ptr_to_accel_structs_arrays_ptr.offset_address;
-    shader_resources.push_constants.valid_dummy_blas_addr = dummy_blas.blas_address;
-
-    cb_state.on_pre_cb_submission_functions.emplace_back(
-        [ptr_to_accel_structs_arrays_ptr](Validator& gpuav, CommandBufferSubState& cb, VkCommandBuffer per_submission_cb) {
-            VVL_ZoneScopedN("validate_as_builds_pre_submit");
-            // #ARNO_TODO Refacto the "copy to buffer" part
-            auto& as_addr_to_as_buffer = gpuav.shared_resources_cache.Get<AccelerationStructuresAddrToStateObjectMap>();
+    cb_state.on_pre_cb_submission_functions.emplace_back([as_arrays_ptr_buffer](Validator& gpuav, CommandBufferSubState& cb,
+                                                                                VkCommandBuffer per_submission_cb) {
+        VVL_ZoneScopedN("validate_as_builds_pre_submit");
+        std::vector<std::pair<const VkDeviceAddress, std::shared_ptr<vvl::AccelerationStructureKHR>>> as_addr_to_as_buffer_snapshot;
+        auto* as_addr_to_as_buffer = gpuav.shared_resources_cache.TryGet<AccelerationStructuresAddrToStateObjectMap>();
+        if (as_addr_to_as_buffer) {
             // #ARNO_TODO Definitely can see this become a big perf bottleneck
-            auto as_addr_to_as_buffer_snapshot = as_addr_to_as_buffer.map.snapshot();
+            as_addr_to_as_buffer_snapshot = as_addr_to_as_buffer->map.snapshot();
+        }
 
-            // AS addresses buffer
-            vko::BufferRange accel_struct_addresses_buffer = cb.gpu_resources_manager.GetHostCoherentBufferRange(
-                2 * sizeof(uint32_t) + as_addr_to_as_buffer_snapshot.size() * sizeof(uint64_t));
-            auto accel_struct_addresses_buffer_u32_ptr = (uint32_t*)accel_struct_addresses_buffer.offset_mapped_ptr;
+        // valid AS addresses buffer
+        vko::BufferRange as_addresses_buffer = cb.gpu_resources_manager.GetHostCoherentBufferRange(
+            2 * sizeof(uint32_t) + as_addr_to_as_buffer_snapshot.size() * sizeof(uint64_t));
+        auto accel_struct_addresses_buffer_u32_ptr = (uint32_t*)as_addresses_buffer.offset_mapped_ptr;
 
-            *accel_struct_addresses_buffer_u32_ptr = (uint32_t)as_addr_to_as_buffer_snapshot.size();
+        *accel_struct_addresses_buffer_u32_ptr = (uint32_t)as_addr_to_as_buffer_snapshot.size();
 
-            auto as_addresses_ptr = (uint64_t*)(accel_struct_addresses_buffer_u32_ptr + 2);
+        auto as_addresses_ptr = (uint64_t*)(accel_struct_addresses_buffer_u32_ptr + 2);
 
-            // AS metadata buffer
-            vko::BufferRange accel_struct_metadatas_buffer =
-                cb.gpu_resources_manager.GetHostCachedBufferRange(as_addr_to_as_buffer_snapshot.size() * sizeof(uint32_t));
-            auto as_metadatas_ptr = (uint32_t*)(accel_struct_metadatas_buffer.offset_mapped_ptr);
+        // valid AS metadata buffer
+        vko::BufferRange as_metadatas_buffer =
+            cb.gpu_resources_manager.GetHostCachedBufferRange(as_addr_to_as_buffer_snapshot.size() * sizeof(uint32_t));
+        auto as_metadatas_ptr = (uint32_t*)(as_metadatas_buffer.offset_mapped_ptr);
 
-            uint32_t written_count = 0;
-            for (const auto& [device_addr, as] : as_addr_to_as_buffer_snapshot) {
-                as_addresses_ptr[written_count] = device_addr;
-                const uint32_t metadata = uint32_t(as->buffer_state && !as->buffer_state->Destroyed());
-                as_metadatas_ptr[written_count] = metadata;
+        // valid AS buffer address ranges buffer
+        vko::BufferRange as_buffer_addr_ranges_buffer =
+            cb.gpu_resources_manager.GetHostCoherentBufferRange(as_addr_to_as_buffer_snapshot.size() * (2 * sizeof(uint64_t)));
+        auto as_buffer_addr_ranges_ptr = (uint64_t*)(as_buffer_addr_ranges_buffer.offset_mapped_ptr);
 
-                ++written_count;
-            }
+        uint32_t written_count = 0;
+        for (const auto& [device_addr, as] : as_addr_to_as_buffer_snapshot) {
+            as_addresses_ptr[written_count] = device_addr;
+            const uint32_t metadata = uint32_t(as->buffer_state && !as->buffer_state->Destroyed());
+            as_metadatas_ptr[written_count] = metadata;
+            const vvl::range<VkDeviceAddress> as_buffer_addr_range = as->GetDeviceAddressRange();
+            as_buffer_addr_ranges_ptr[2 * written_count] = as_buffer_addr_range.begin;
+            as_buffer_addr_ranges_ptr[2 * written_count + 1] = as_buffer_addr_range.end;
 
-            // Fill a GPU buffer with a pointer to the AS metadata
-            vko::BufferRange submit_time_ptr_to_accel_structs_metadata_buffer =
-                cb.gpu_resources_manager.GetHostCoherentBufferRange(sizeof(glsl::AccelerationStructureArraysPtr));
-            auto submit_time_ptr_to_accel_structs_metadata_buffer_ptr =
-                (VkDeviceAddress*)submit_time_ptr_to_accel_structs_metadata_buffer.offset_mapped_ptr;
+            ++written_count;
+        }
 
-            submit_time_ptr_to_accel_structs_metadata_buffer_ptr[0] = accel_struct_addresses_buffer.offset_address;
-            submit_time_ptr_to_accel_structs_metadata_buffer_ptr[1] = accel_struct_metadatas_buffer.offset_address;
+        // Fill a GPU buffer with a pointer to the AS metadata
+        vko::BufferRange submit_time_ptr_to_accel_structs_metadata_buffer =
+            cb.gpu_resources_manager.GetHostCoherentBufferRange(sizeof(glsl::AccelerationStructureArraysPtr));
+        auto submit_time_ptr_to_accel_structs_metadata_buffer_ptr =
+            (glsl::AccelerationStructureArraysPtr*)submit_time_ptr_to_accel_structs_metadata_buffer.offset_mapped_ptr;
 
-            // Dispatch a copy command, copying the per CB submission AS metadata pointer to the AS metadata pointer created at
-            // build acceleration structures time, so that CB submission accesses correct AS metadata snapshot.
-            {
-                VkBufferMemoryBarrier barrier_write_after_read = vku::InitStructHelper();
-                barrier_write_after_read.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-                barrier_write_after_read.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                barrier_write_after_read.buffer = ptr_to_accel_structs_arrays_ptr.buffer;
-                barrier_write_after_read.offset = ptr_to_accel_structs_arrays_ptr.offset;
-                barrier_write_after_read.size = ptr_to_accel_structs_arrays_ptr.size;
+        submit_time_ptr_to_accel_structs_metadata_buffer_ptr->addresses_ptr = as_addresses_buffer.offset_address;
+        submit_time_ptr_to_accel_structs_metadata_buffer_ptr->metadata_ptr = as_metadatas_buffer.offset_address;
+        submit_time_ptr_to_accel_structs_metadata_buffer_ptr->buffer_ranges_ptr = as_buffer_addr_ranges_buffer.offset_address;
 
-                DispatchCmdPipelineBarrier(per_submission_cb, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                                           VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 1, &barrier_write_after_read, 0,
-                                           nullptr);
-
-                VkBufferCopy copy;
-                copy.srcOffset = submit_time_ptr_to_accel_structs_metadata_buffer.offset;
-                copy.dstOffset = ptr_to_accel_structs_arrays_ptr.offset;
-                copy.size = submit_time_ptr_to_accel_structs_metadata_buffer.size;
-                DispatchCmdCopyBuffer(per_submission_cb, submit_time_ptr_to_accel_structs_metadata_buffer.buffer,
-                                      ptr_to_accel_structs_arrays_ptr.buffer, 1, &copy);
-
-                VkBufferMemoryBarrier barrier_read_before_write = vku::InitStructHelper();
-                barrier_read_before_write.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                barrier_read_before_write.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-                barrier_read_before_write.buffer = ptr_to_accel_structs_arrays_ptr.buffer;
-                barrier_read_before_write.offset = ptr_to_accel_structs_arrays_ptr.offset;
-                barrier_read_before_write.size = ptr_to_accel_structs_arrays_ptr.size;
-
-                DispatchCmdPipelineBarrier(per_submission_cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,
-                                           0, nullptr, 1, &barrier_read_before_write, 0, nullptr);
-            }
-        });
+        vko::CmdSynchronizedCopyBufferRange(per_submission_cb, as_arrays_ptr_buffer,
+                                            submit_time_ptr_to_accel_structs_metadata_buffer);
+    });
 
     // Setup Validation pipeline
     // ---
     {
+        DummyBLAS& dummy_blas = gpuav.shared_resources_cache.GetOrCreate<DummyBLAS>(gpuav, cb_state);
+
+        // Fill a buffer with BLAS built in this cmd
+        vko::BufferRange blas_built_in_cmd_buffer;
+        if (!blas_built_in_cmd_array.empty()) {
+            blas_built_in_cmd_buffer =
+                cb_state.gpu_resources_manager.GetHostCachedBufferRange(blas_built_in_cmd_array.size() * (2 * sizeof(uint64_t)));
+            auto blas_built_in_cmd_buffer_ptr = (uint64_t*)(blas_built_in_cmd_buffer.offset_mapped_ptr);
+            for (const auto [i, blas_built_in_cmd] : vvl::enumerate(blas_built_in_cmd_array)) {
+                const vvl::range<VkDeviceAddress> blas_built_in_cmd_buffer_addr_range =
+                    blas_built_in_cmd.blas->GetDeviceAddressRange();
+                blas_built_in_cmd_buffer_ptr[2 * i] = blas_built_in_cmd_buffer_addr_range.begin;
+                blas_built_in_cmd_buffer_ptr[2 * i + 1] = blas_built_in_cmd_buffer_addr_range.end;
+            }
+        }
+
+        BuildAccelerationStructuresValidationShader shader_resources;
+        shader_resources.push_constants.ptr_to_ptr_to_accel_structs_arrays = as_arrays_ptr_buffer.offset_address;
+        shader_resources.push_constants.valid_dummy_blas_addr = dummy_blas.blas_address;
+        shader_resources.push_constants.blas_built_in_cmd_array_ptr = blas_built_in_cmd_buffer.offset_address;
+        shader_resources.push_constants.blas_built_in_cmd_array_size = (uint32_t)blas_built_in_cmd_array.size();
+
         DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, validation_pipeline.pipeline);
 
         // Validation dispatch, one for each TLAS build
@@ -549,6 +563,7 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
                                            nullptr);
             }
 
+            shader_resources.push_constants.validation_mode = glsl::kBuildASValidationMode_invalid_AS;
             const uint32_t is_array_of_pointers = blas_arrays[blas_array_i].is_array_of_pointers;
             if (is_array_of_pointers == 0) {
                 shader_resources.push_constants.blas_array_start_addr = blas_arrays[blas_array_i].array_start_addr;
@@ -569,9 +584,20 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
                 return;
             }
 
+            constexpr uint32_t wg_size_x = 8;
+            constexpr uint32_t wg_size_y = 8;
+
             const uint32_t as_instances_count = blas_arrays[blas_array_i].size;
-            const uint32_t work_group_count = as_instances_count / 32 + uint32_t(as_instances_count % 32 > 0);
-            DispatchCmdDispatch(cb_state.VkHandle(), work_group_count, 1, 1);
+            const uint32_t wg_count_x = as_instances_count / wg_size_x + uint32_t(as_instances_count % wg_size_x > 0);
+            DispatchCmdDispatch(cb_state.VkHandle(), wg_count_x, 1, 1);
+
+            shader_resources.push_constants.validation_mode = glsl::kBuildASValidationMode_memory_overlaps;
+
+            BindShaderPushConstants(validation_pipeline, gpuav, cb_state, shader_resources);
+
+            const uint32_t wg_count_y =
+                (uint32_t)blas_built_in_cmd_array.size() / wg_size_y + uint32_t(blas_built_in_cmd_array.size() % wg_size_y > 0);
+            DispatchCmdDispatch(cb_state.VkHandle(), wg_count_x, wg_count_y, 1);
 
             if (!blas_array_buffers.empty()) {
                 VkBufferMemoryBarrier barrier_read_after_write = vku::InitStructHelper();
@@ -588,7 +614,8 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
         }
     }
 
-    CommandBufferSubState::ErrorLoggerFunc error_logger = [&gpuav, blas_arrays = std::move(blas_arrays)](
+    CommandBufferSubState::ErrorLoggerFunc error_logger = [&gpuav, blas_arrays = std::move(blas_arrays),
+                                                           blas_built_in_cmd_array = std::move(blas_built_in_cmd_array)](
                                                               const uint32_t* error_record, const Location& loc_with_debug_region,
                                                               const LogObjectList& objlist) {
         bool skip = false;
@@ -598,7 +625,7 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
             return skip;
         }
 
-        const uint64_t accel_struct_addr = glsl::GetUint64(error_record + kValCmdErrorPayloadDword_0);
+        const uint64_t blas_in_tlas_addr = glsl::GetUint64(error_record + kValCmdErrorPayloadDword_0);
         const uint32_t as_instance_i = error_record[kValCmdErrorPayloadDword_2];
         const uint32_t blas_array_i = error_record[kValCmdErrorPayloadDword_3];
 
@@ -606,20 +633,20 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
         std::stringstream invalid_blas_loc;
         invalid_blas_loc << "pInfos[" << blas_array.info_i << "].pGeometries[" << blas_array.geom_i
                          << "].geometry.instances<VkAccelerationStructureInstance" << (blas_array.is_array_of_pointers ? " *" : "")
-                         << ">[" << as_instance_i << "] (0x" << std::hex << accel_struct_addr
-                         << ") is an invalid acceleration structure reference";
+                         << ">[" << as_instance_i << ']' << (blas_array.is_array_of_pointers ? "->" : ".")
+                         << "accelerationStructureReference (0x" << std::hex << blas_in_tlas_addr << ")";
         const std::string invalid_blas_loc_str = invalid_blas_loc.str();
 
         const uint32_t error_sub_code = GetSubError(error_record);
         switch (error_sub_code) {
             case kErrorSubCode_PreBuildAccelerationStructures_InvalidAS: {
                 skip |= gpuav.LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-06707", objlist, loc_with_debug_region,
-                                       "%s.", invalid_blas_loc_str.c_str());
+                                       "%s is an invalid acceleration structure reference.", invalid_blas_loc_str.c_str());
                 break;
             }
             case kErrorSubCode_PreBuildAccelerationStructures_DestroyedASBuffer: {
                 auto& as_addr_to_as_buffer = gpuav.shared_resources_cache.Get<AccelerationStructuresAddrToStateObjectMap>();
-                auto found_as = as_addr_to_as_buffer.map.find(accel_struct_addr);
+                auto found_as = as_addr_to_as_buffer.map.find(blas_in_tlas_addr);
                 std::stringstream ss_as;
                 std::stringstream ss_buffer;
                 if (found_as != as_addr_to_as_buffer.map.end()) {
@@ -630,17 +657,52 @@ void BuildAccelerationStructures(Validator& gpuav, const Location& loc, CommandB
                     }
                 } else {
                     ss_as << "Could not map acceleration structure reference to its corresponding handle, this is most likely a "
-                             "validation bug";
+                             "validation layer bug";
                 }
 
                 const std::string ss_as_str = ss_as.str();
                 const std::string ss_buffer_str = ss_buffer.str();
-                skip |= gpuav.LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-06707", objlist, loc_with_debug_region,
-                                       "%s - underlying buffer %shas been destroyed. %s.", invalid_blas_loc_str.c_str(),
-                                       ss_buffer_str.c_str(), ss_as_str.c_str());
+                skip |= gpuav.LogError(
+                    "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-06707", objlist, loc_with_debug_region,
+                    "%s is an invalid acceleration structure reference - underlying buffer %shas been destroyed. %s.",
+                    invalid_blas_loc_str.c_str(), ss_buffer_str.c_str(), ss_as_str.c_str());
                 break;
             }
-
+            case kErrorSubCode_PreBuildAccelerationStructures_BlasMemoryOverlap: {
+                const uint32_t blas_built_in_cmd_i = error_record[kValCmdErrorPayloadDword_4];
+                const BlasBuiltInCmd& blas_built_in_cmd = blas_built_in_cmd_array[blas_built_in_cmd_i];
+                auto& as_addr_to_as_buffer = gpuav.shared_resources_cache.Get<AccelerationStructuresAddrToStateObjectMap>();
+                auto found_as = as_addr_to_as_buffer.map.find(blas_in_tlas_addr);
+                std::stringstream error_ss;
+                if (found_as != as_addr_to_as_buffer.map.end()) {
+                    const vvl::range<VkDeviceAddress> blas_in_tlas_buffer_addr_range = found_as->second->GetDeviceAddressRange();
+                    const vvl::range<VkDeviceAddress> blas_built_in_cmd_buffer_addr_range =
+                        blas_built_in_cmd.blas->GetDeviceAddressRange();
+                    const vvl::range<VkDeviceAddress> overlap =
+                        blas_in_tlas_buffer_addr_range & blas_built_in_cmd_buffer_addr_range;
+                    assert(overlap.non_empty());
+                    const VkAccelerationStructureKHR blas_built_in_cmd_handle = blas_built_in_cmd.blas->VkHandle();
+                    const VkAccelerationStructureKHR blas_in_tlas_handle = found_as->second->VkHandle();
+                    if (blas_built_in_cmd_handle != blas_in_tlas_handle) {
+                        error_ss << "pInfos[" << blas_built_in_cmd.p_info_i << "].dstAccelerationStructure ("
+                                 << gpuav.FormatHandle(blas_built_in_cmd.blas->VkHandle()) << "), backed by buffer ("
+                                 << gpuav.FormatHandle(blas_built_in_cmd.blas->buffer_state->VkHandle())
+                                 << "), overlaps on buffer address range " << vvl::string_range_hex(overlap) << " with buffer ("
+                                 << gpuav.FormatHandle(found_as->second->buffer_state->VkHandle()) << ") of BLAS ("
+                                 << gpuav.FormatHandle(found_as->second->VkHandle()) << "), referenced in " << invalid_blas_loc_str;
+                    } else {
+                        error_ss << "pInfos[" << blas_built_in_cmd.p_info_i << "].dstAccelerationStructure ("
+                                 << gpuav.FormatHandle(blas_built_in_cmd.blas->VkHandle())
+                                 << ") is also referenced in a TLAS built in the same command, through " << invalid_blas_loc_str;
+                    }
+                } else {
+                    error_ss << "Could not retrieve error information, this is most likely a validation layer bug";
+                }
+                const std::string error_str = error_ss.str();
+                skip |= gpuav.LogError("VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03706", objlist,
+                                       loc_with_debug_region, "%s.", error_str.c_str());
+                break;
+            }
             default:
                 break;
         }

@@ -43,7 +43,9 @@ using PtrToBlasArray = uint64_t;
 using PtrToBlasPtrArray = uint64_t;
 using PtrToAccelerationStructureAddressArray = uint64_t;
 using PtrToAccelerationStructureMetadataArray = uint64_t;
+using PtrToAccelerationStructureBufferRangeArray = uint64_t;
 using PtrtoPtrToAccelerationStructureArrays = uint64_t;
+using PtrToBlasBuiltInCmd = uint64_t;
 
 #else
 struct VkAccelerationStructureInstance {
@@ -62,12 +64,21 @@ layout(buffer_reference, scalar) buffer PtrToAccelerationStructureAddressArray {
 };
 
 layout(buffer_reference, scalar) buffer PtrToAccelerationStructureMetadataArray { uint array[]; };
+
+// Represent a [begin, end) range, where end is one past the last element held in range
+struct Range {
+    uint64_t begin;
+    uint64_t end;
+};
+
+layout(buffer_reference, scalar) buffer PtrToAccelerationStructureBufferRangeArray { Range array[]; };
 #endif
 
 // "Struct of arrays" memory pattern to improve locality
 struct AccelerationStructureArraysPtr {
     PtrToAccelerationStructureAddressArray addresses_ptr;
     PtrToAccelerationStructureMetadataArray metadata_ptr;
+    PtrToAccelerationStructureBufferRangeArray buffer_ranges_ptr;
 };
 
 #ifndef __cplusplus
@@ -76,18 +87,30 @@ layout(buffer_reference, scalar) buffer PtrtoPtrToAccelerationStructureArrays { 
 layout(buffer_reference, scalar) buffer PtrToBlasArray { VkAccelerationStructureInstance blas_array[]; };
 
 layout(buffer_reference, scalar) buffer PtrToBlasPtrArray { VkAccelerationStructureInstancePtr blas_ptr_array[]; };
+
+layout(buffer_reference, scalar) buffer PtrToBlasBuiltInCmd { Range buffer_ranges[]; };
 #endif
+
+const uint kBuildASValidationMode_invalid_AS = 0;
+const uint kBuildASValidationMode_memory_overlaps = 1;
 
 // Case where arrayOfPointers is false
 struct AccelerationStructureReferencePushData {
     PtrtoPtrToAccelerationStructureArrays ptr_to_ptr_to_accel_structs_arrays;
     uint64_t valid_dummy_blas_addr;
+
     // BLAS arrays to validate
+    // Either an array of VkAccelerationStructureInstance,
+    // or pointers to such structs.
     PtrToBlasArray blas_array_start_addr;
     PtrToBlasPtrArray blas_ptr_array_start_addr;
     uint blas_array_size;
     uint is_array_of_pointers;
-    uint blas_array_i;
+    uint blas_array_i;  // Used to find back invalid build cmd pInfos if an error is found
+    uint validation_mode;
+
+    PtrToBlasBuiltInCmd blas_built_in_cmd_array_ptr;
+    uint blas_built_in_cmd_array_size;
 };
 
 #ifdef __cplusplus

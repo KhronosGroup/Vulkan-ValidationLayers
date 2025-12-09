@@ -53,11 +53,7 @@ void BindShaderResourcesHelper(Validator &gpuav, CommandBufferSubState &cb_state
         BindErrorLoggingDescSet(gpuav, cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, cmd_index, error_logger_index);
     }
 
-    // Any push constants byte size below 4 is illegal. Can come from empty push constant struct
-    if (push_constants_byte_size >= 4) {
-        DispatchCmdPushConstants(cb_state.VkHandle(), pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, push_constants_byte_size,
-                                 push_constants);
-    }
+    BindShaderPushConstantsHelper(gpuav, cb_state, pipeline_layout, push_constants_byte_size, push_constants);
 
     if (desc_set != VK_NULL_HANDLE && !descriptor_writes.empty()) {
         // Specific resources
@@ -67,6 +63,16 @@ void BindShaderResourcesHelper(Validator &gpuav, CommandBufferSubState &cb_state
                                       1, &desc_set, 0, nullptr);
     }
 }
+
+void BindShaderPushConstantsHelper(Validator &gpuav, CommandBufferSubState &cb_state, VkPipelineLayout pipeline_layout,
+                                   const uint32_t push_constants_byte_size, const void *push_constants) {
+    // Any push constants byte size below 4 is illegal. Can come from empty push constant struct
+    if (push_constants_byte_size >= 4) {
+        DispatchCmdPushConstants(cb_state.VkHandle(), pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, push_constants_byte_size,
+                                 push_constants);
+    }
+}
+
 }  // namespace internal
 
 ValidationCommandsGpuavState::ValidationCommandsGpuavState(Validator &gpuav, const Location &loc) : gpuav_(gpuav) {

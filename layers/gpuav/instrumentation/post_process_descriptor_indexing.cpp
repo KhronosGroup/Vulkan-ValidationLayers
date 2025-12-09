@@ -120,36 +120,9 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
                 }
             }
 
-            // Dispatch a copy command, copying the per CB submission descriptor set LUT to the LUT created at
-            // "bind descriptor set command" record time, aka the one that shaders will ultimately access.
-            {
-                VkBufferMemoryBarrier barrier_write_after_read = vku::InitStructHelper();
-                barrier_write_after_read.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-                barrier_write_after_read.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                barrier_write_after_read.buffer = desc_binding_cmd.desc_set_binding_to_post_process_buffers_lut.buffer;
-                barrier_write_after_read.offset = desc_binding_cmd.desc_set_binding_to_post_process_buffers_lut.offset;
-                barrier_write_after_read.size = desc_binding_cmd.desc_set_binding_to_post_process_buffers_lut.size;
-
-                DispatchCmdPipelineBarrier(per_pre_submission_cb, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                                           VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1, &barrier_write_after_read, 0, nullptr);
-                VkBufferCopy copy;
-                copy.srcOffset = desc_set_buffer_lut_buffer_range.offset;
-                copy.dstOffset = desc_binding_cmd.desc_set_binding_to_post_process_buffers_lut.offset;
-                copy.size = desc_binding_cmd.bound_descriptor_sets.size() * sizeof(VkDeviceAddress);
-                DispatchCmdCopyBuffer(per_pre_submission_cb, desc_set_buffer_lut_buffer_range.buffer,
-                                      desc_binding_cmd.desc_set_binding_to_post_process_buffers_lut.buffer, 1, &copy);
-
-                VkBufferMemoryBarrier barrier_read_before_write = vku::InitStructHelper();
-                barrier_read_before_write.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                barrier_read_before_write.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-                barrier_read_before_write.buffer = desc_binding_cmd.desc_set_binding_to_post_process_buffers_lut.buffer;
-                barrier_read_before_write.offset = desc_binding_cmd.desc_set_binding_to_post_process_buffers_lut.offset;
-                barrier_read_before_write.size = desc_binding_cmd.desc_set_binding_to_post_process_buffers_lut.size;
-
-                DispatchCmdPipelineBarrier(per_pre_submission_cb, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                           VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 1, &barrier_read_before_write, 0,
-                                           nullptr);
-            }
+            vko::CmdSynchronizedCopyBufferRange(per_pre_submission_cb,
+                                                desc_binding_cmd.desc_set_binding_to_post_process_buffers_lut,
+                                                desc_set_buffer_lut_buffer_range);
         }
     });
 
