@@ -268,6 +268,9 @@ void CommandBuffer::ResetCBState() {
     resumes_render_pass_instance = false;
     last_suspend_state = SuspendState::Empty;
     first_action_or_sync_command = Func::Empty;
+    first_rendering_info = {};
+    first_rendering_info_loc.reset();
+    last_rendering_info = {};
     active_render_pass = nullptr;
     sample_locations_begin_info = {};
     attachment_source = AttachmentSource::Empty;
@@ -845,6 +848,10 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo &rendering_info, 
     if (rendering_info.flags & VK_RENDERING_SUSPENDING_BIT) {
         last_suspend_state = SuspendState::Suspended;
     }
+    if (!first_rendering_info.has_value()) {
+        first_rendering_info = &rendering_info;
+        first_rendering_info_loc = std::make_unique<LocationCapture>(loc.dot(vvl::Field::pRenderingInfo));
+    }
     last_rendering_info = &rendering_info;
 
     has_render_pass_instance = true;
@@ -1365,10 +1372,17 @@ void CommandBuffer::RecordExecuteCommands(vvl::span<const VkCommandBuffer> secon
         if (!has_render_pass_instance) {
             resumes_render_pass_instance = secondary_cb_state->resumes_render_pass_instance;
         }
+        has_render_pass_instance |= secondary_cb_state->has_render_pass_instance;
         if (secondary_cb_state->last_suspend_state != SuspendState::Empty) {
             last_suspend_state = secondary_cb_state->last_suspend_state;
         }
-        has_render_pass_instance |= secondary_cb_state->has_render_pass_instance;
+        if (!first_rendering_info.has_value() && secondary_cb_state->first_rendering_info.has_value()) {
+            first_rendering_info = secondary_cb_state->first_rendering_info;
+            first_rendering_info_loc = std::make_unique<LocationCapture>(secondary_cb_state->first_rendering_info_loc->Get());
+        }
+        if (secondary_cb_state->last_rendering_info.has_value()) {
+            last_rendering_info = secondary_cb_state->last_rendering_info;
+        }
 
         // Handle debug labels
         label_stack_depth_ += secondary_cb_state->label_stack_depth_;

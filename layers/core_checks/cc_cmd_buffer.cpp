@@ -1098,6 +1098,8 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
     vvl::unordered_map<VkCommandBuffer, uint32_t> duplicate_secondary_cb;
     bool suspended_render_pass_instance = (cb_state.last_suspend_state == vvl::CommandBuffer::SuspendState::Suspended);
+    const VkRenderingInfo *last_rendering_info =
+        cb_state.last_rendering_info.has_value() ? cb_state.last_rendering_info.value().ptr() : nullptr;
     for (uint32_t i = 0; i < commandBuffersCount; i++) {
         const VkCommandBuffer secondary_cb = pCommandBuffers[i];
         const auto &secondary_cb_state = *GetRead<vvl::CommandBuffer>(secondary_cb);
@@ -1217,6 +1219,16 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
         }
         if (secondary_cb_state.last_suspend_state != vvl::CommandBuffer::SuspendState::Empty) {
             suspended_render_pass_instance = (secondary_cb_state.last_suspend_state == vvl::CommandBuffer::SuspendState::Suspended);
+        }
+        if (secondary_cb_state.first_rendering_info.has_value() && last_rendering_info) {
+            const LogObjectList objlist(commandBuffer, secondary_cb);
+            const VkRenderingInfo &rendering_info = *secondary_cb_state.first_rendering_info.value().ptr();
+            // TODO: VUID is being discussed https://gitlab.khronos.org/vulkan/vulkan/-/issues/4554
+            skip |= ValidateSuspendResumeMismatch("UNASSIGNED-RenderingInfo-SuspendResume-Mismatch", objlist, rendering_info,
+                                                  *last_rendering_info, secondary_cb_state.first_rendering_info_loc->Get());
+        }
+        if (secondary_cb_state.last_rendering_info.has_value()) {
+            last_rendering_info = secondary_cb_state.last_rendering_info.value().ptr();
         }
 
         skip |= ValidateSecondaryCommandBufferState(cb_state, secondary_cb_state, secondary_cb_loc);

@@ -27,6 +27,7 @@
 #include "state_tracker/bind_point.h"
 #include "state_tracker/query_state.h"
 #include "state_tracker/vertex_index_buffer_state.h"
+#include "error_message/error_location.h"
 #include "utils/sync_utils.h"
 #include "generated/dynamic_state_helper.h"
 
@@ -434,11 +435,13 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     enum class SuspendState { Empty, Suspended, Resumed };
     SuspendState last_suspend_state;
 
-    // Rendering info from the last vkCmdBeginRendering.
-    std::optional<vku::safe_VkRenderingInfo> last_rendering_info;
-
     // Used by submit time validation to check for invalild commands when render pass instance is suspended.
     vvl::Func first_action_or_sync_command;
+
+    // Rendering info from the first/last vkCmdBeginRendering.
+    std::optional<vku::safe_VkRenderingInfo> first_rendering_info;
+    std::unique_ptr<LocationCapture> first_rendering_info_loc;
+    std::optional<vku::safe_VkRenderingInfo> last_rendering_info;
 
     // This is null if we are outside a renderPass/rendering
     //

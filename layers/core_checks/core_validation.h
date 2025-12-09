@@ -1662,8 +1662,10 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateBeginRenderingMultisampledRenderToSingleSampled(VkCommandBuffer commandBuffer,
                                                                  const VkRenderingInfo& rendering_info,
                                                                  const Location& rendering_info_loc) const;
-    bool ValidateBeginRenderingSuspendResumeMismatch(const vvl::CommandBuffer& cb_state, const VkRenderingInfo& rendering_info,
-                                                     const Location& rendering_info_loc) const;
+    bool ValidateSuspendResumeMismatch(const char* vuid, const LogObjectList& objlist, const VkRenderingInfo& rendering_info,
+                                       const VkRenderingInfo& last_rendering_info, const Location& rendering_info_loc) const;
+    bool ValidateBeginRenderingResume(const vvl::CommandBuffer& cb_state, const VkRenderingInfo& rendering_info,
+                                      const Location& rendering_info_loc) const;
     bool ValidateBeginRenderingColorAttachment(const vvl::CommandBuffer& cb_state, const VkRenderingInfo& rendering_info,
                                                const Location& rendering_info_loc) const;
     bool ValidateBeginRenderingDepthAttachment(const vvl::CommandBuffer& cb_state, const VkRenderingInfo& rendering_info,
