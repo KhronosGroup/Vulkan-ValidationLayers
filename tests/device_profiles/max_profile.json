@@ -1775,8 +1775,8 @@
                     "maxMeshOutputPrimitives": 256,
                     "maxMeshOutputLayers": 8,
                     "maxMeshMultiviewViewCount": 8,
-                    "maxPreferredTaskWorkGroupInvocations": 4096,
-                    "maxPreferredMeshWorkGroupInvocations": 4096
+                    "maxPreferredTaskWorkGroupInvocations": 16,
+                    "maxPreferredMeshWorkGroupInvocations": 16
                 },
                 "VkPhysicalDeviceAccelerationStructurePropertiesKHR": {
                     "maxGeometryCount": 16777215,
