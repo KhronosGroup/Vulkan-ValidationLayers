@@ -165,7 +165,7 @@ void Validator::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, c
 // Dedicated warning VUID that likely can be ignored. We want to always warn the user when adjusting settings/limits/features/etc on
 // them
 void Instance::AdjustmentWarning(LogObjectList objlist, const Location &loc, const char *const specific_message) const {
-    LogWarning("WARNING-Setting-Limit-Adjusted", objlist, loc, "Internal Warning: %s", specific_message);
+    LogWarning("WARNING-Setting-Limit-Adjusted", objlist, loc, "Internal Warning:\n%s", specific_message);
 }
 
 void Instance::InternalWarning(LogObjectList objlist, const Location &loc, const char *const specific_message) const {
@@ -202,23 +202,27 @@ void Instance::PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physic
 void Instance::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
                                                           VkPhysicalDeviceProperties2 *device_props2,
                                                           const RecordObject &record_obj) {
+    std::string adjustment_warnings;
+
     // override all possible places maxUpdateAfterBindDescriptorsInAllPools can be set
     auto *desc_indexing_props = vku::FindStructInPNextChain<VkPhysicalDeviceDescriptorIndexingProperties>(device_props2->pNext);
     if (desc_indexing_props &&
         desc_indexing_props->maxUpdateAfterBindDescriptorsInAllPools > glsl::kDebugInputBindlessMaxDescriptors) {
         std::stringstream ss;
-        ss << "Setting VkPhysicalDeviceDescriptorIndexingProperties::maxUpdateAfterBindDescriptorsInAllPools to "
+        ss << "\tSetting VkPhysicalDeviceDescriptorIndexingProperties::maxUpdateAfterBindDescriptorsInAllPools to "
            << glsl::kDebugInputBindlessMaxDescriptors;
-        AdjustmentWarning(physicalDevice, record_obj.location, ss.str().c_str());
+        adjustment_warnings += ss.str();
+        adjustment_warnings += '\n';
         desc_indexing_props->maxUpdateAfterBindDescriptorsInAllPools = glsl::kDebugInputBindlessMaxDescriptors;
     }
 
     auto *vk12_props = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Properties>(device_props2->pNext);
     if (vk12_props && vk12_props->maxUpdateAfterBindDescriptorsInAllPools > glsl::kDebugInputBindlessMaxDescriptors) {
         std::stringstream ss;
-        ss << "Setting VkPhysicalDeviceVulkan12Properties::maxUpdateAfterBindDescriptorsInAllPools to "
+        ss << "\tSetting VkPhysicalDeviceVulkan12Properties::maxUpdateAfterBindDescriptorsInAllPools to "
            << glsl::kDebugInputBindlessMaxDescriptors;
-        AdjustmentWarning(physicalDevice, record_obj.location, ss.str().c_str());
+        adjustment_warnings += ss.str();
+        adjustment_warnings += '\n';
         vk12_props->maxUpdateAfterBindDescriptorsInAllPools = glsl::kDebugInputBindlessMaxDescriptors;
     }
 
@@ -228,9 +232,10 @@ void Instance::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physi
             desc_buffer_props->maxResourceDescriptorBufferBindings -= 1;
 
             std::stringstream ss;
-            ss << "Setting VkPhysicalDeviceDescriptorBufferPropertiesEXT::maxResourceDescriptorBufferBindings to "
+            ss << "\tSetting VkPhysicalDeviceDescriptorBufferPropertiesEXT::maxResourceDescriptorBufferBindings to "
                << desc_buffer_props->maxResourceDescriptorBufferBindings;
-            AdjustmentWarning(physicalDevice, record_obj.location, ss.str().c_str());
+            adjustment_warnings += ss.str();
+            adjustment_warnings += '\n';
         }
 
         // Currently set regardless if we fallback on maxResourceDescriptorBufferBindings only being 1
@@ -245,11 +250,15 @@ void Instance::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physi
             desc_buffer_props->descriptorBufferAddressSpaceSize -= bytes_to_reserve;
 
             std::stringstream ss;
-            ss << "Setting VkPhysicalDeviceDescriptorBufferPropertiesEXT::descriptorBufferAddressSpaceSize to "
+            ss << "\tSetting VkPhysicalDeviceDescriptorBufferPropertiesEXT::descriptorBufferAddressSpaceSize to "
                << desc_buffer_props->resourceDescriptorBufferAddressSpaceSize << "and resourceDescriptorBufferAddressSpaceSize to "
                << desc_buffer_props->descriptorBufferAddressSpaceSize << " (reserving " << bytes_to_reserve << " bytes)";
-            AdjustmentWarning(physicalDevice, record_obj.location, ss.str().c_str());
+            adjustment_warnings += ss.str();
+            adjustment_warnings += '\n';
         }
+    }
+    if (!adjustment_warnings.empty()) {
+        AdjustmentWarning(physicalDevice, record_obj.location, adjustment_warnings.c_str());
     }
 
     ReserveBindingSlot(physicalDevice, device_props2->properties.limits, record_obj.location);
