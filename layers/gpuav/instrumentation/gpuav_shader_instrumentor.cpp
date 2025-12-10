@@ -25,6 +25,7 @@
 #include "chassis/chassis_modification_state.h"
 #include "gpuav/core/gpuav_constants.h"
 #include "utils/shader_utils.h"
+#include "utils/spirv_tools_utils.h"
 
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "gpuav/shaders/gpuav_error_codes.h"

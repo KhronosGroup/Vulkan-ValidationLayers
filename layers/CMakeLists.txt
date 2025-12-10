@@ -472,6 +472,8 @@ target_sources(vvl PRIVATE
     thread_tracker/thread_safety_validation.h
     utils/shader_utils.cpp
     utils/shader_utils.h
+    utils/spirv_tools_utils.cpp
+    utils/spirv_tools_utils.h
     layer_options.cpp
     layer_options.h
     layer_options_validation.h

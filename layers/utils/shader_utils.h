@@ -24,12 +24,6 @@
 #include "containers/custom_containers.h"
 #include "utils/lock_utils.h"
 
-#include <spirv-tools/libspirv.hpp>
-
-struct DeviceFeatures;
-struct DeviceExtensions;
-class APIVersion;
-
 enum class ShaderObjectStage : uint32_t {
     VERTEX = 0u,
     TESSELLATION_CONTROL,
@@ -109,11 +103,5 @@ class ValidationCache {
     vvl::unordered_set<uint32_t> good_shader_hashes_;
     mutable std::shared_mutex lock_;
 };
-
-spv_target_env PickSpirvEnv(const APIVersion &api_version, bool spirv_1_4);
-
-void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const DeviceFeatures &enabled_features,
-                            spv_target_env spirv_environment, spvtools::ValidatorOptions &out_options, uint32_t *out_hash,
-                            std::string &out_command);
 
 void DumpSpirvToFile(const std::string &file_name, const uint32_t *spirv, size_t spirv_dwords_count);

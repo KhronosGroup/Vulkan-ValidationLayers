@@ -43,6 +43,7 @@
 #include "state_tracker/descriptor_mode.h"
 #include "chassis/chassis_modification_state.h"
 #include "spirv-tools/optimizer.hpp"
+#include "utils/spirv_tools_utils.h"
 
 // Used for debugging
 #include "utils/keyboard.h"
