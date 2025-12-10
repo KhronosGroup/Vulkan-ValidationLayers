@@ -409,6 +409,8 @@ vvl_sources = [
   "layers/utils/ray_tracing_utils.h",
   "layers/utils/shader_utils.cpp",
   "layers/utils/shader_utils.h",
+  "layers/utils/spirv_tools_utils.cpp",
+  "layers/utils/spirv_tools_utils.h",
   "layers/utils/sync_utils.cpp",
   "layers/utils/sync_utils.h",
   "layers/utils/text_utils.cpp",
