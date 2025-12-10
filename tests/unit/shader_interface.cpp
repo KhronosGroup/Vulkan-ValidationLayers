@@ -2691,3 +2691,43 @@ TEST_F(NegativeShaderInterface, PhysicalStorageBufferNested) {
     VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
+
+// More interface checks that require deeping spirv matching
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11267
+TEST_F(NegativeShaderInterface, DISABLED_NestedStructInBlock) {
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const char vsSource[] = R"glsl(
+        #version 450
+        struct Foo {
+            vec2 a;
+        };
+        layout(location = 0) out block {
+            Foo foo;
+        } testBlock;
+        void main(void) {
+            testBlock.foo.a = vec2(0);
+        }
+    )glsl";
+
+    const char fsSource[] = R"glsl(
+        #version 450
+        layout(location = 0) out vec4 color;
+        struct Foo {
+            int a[8];
+            vec4 b;
+        };
+        layout(location = 0) in block {
+            Foo foo;
+        } testBlock;
+        void main(void) {
+            color = testBlock.foo.b;
+        }
+    )glsl";
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    auto set_info = [&](CreatePipelineHelper &info) { info.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()}; };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-07754");
+}
