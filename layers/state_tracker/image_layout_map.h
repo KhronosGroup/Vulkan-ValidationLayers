@@ -24,7 +24,7 @@
 #include <memory>
 
 #include "containers/custom_containers.h"
-#include "containers/subresource_adapter.h"
+#include "state_tracker/subresource_adapter.h"
 
 constexpr VkImageLayout kInvalidLayout = VK_IMAGE_LAYOUT_MAX_ENUM;
 

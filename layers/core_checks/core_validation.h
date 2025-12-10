@@ -32,8 +32,8 @@
 #include "state_tracker/query_state.h"
 #include "state_tracker/vertex_index_buffer_state.h"
 #include "state_tracker/event_map.h"
+#include "state_tracker/subresource_adapter.h"
 
-#include "containers/subresource_adapter.h"
 #include "containers/custom_containers.h"
 
 #include "generated/dynamic_state_helper.h"
