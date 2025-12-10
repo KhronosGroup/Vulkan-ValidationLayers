@@ -693,44 +693,7 @@ TEST_F(NegativeMesh, DrawCmds) {
     VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(mesh_shader_properties);
 
-    // #version 450
-    // #extension GL_EXT_mesh_shader : enable
-    // layout (triangles) out;
-    // layout (max_vertices = 3, max_primitives = 1) out;
-    // struct Task {
-    //     uint baseID;
-    // };
-    // taskPayloadSharedEXT Task IN;
-    // void main() {}
-    const char *mesh_src = R"(
-               OpCapability MeshShadingEXT
-               OpExtension "SPV_EXT_mesh_shader"
-          %1 = OpExtInstImport "GLSL.std.450"
-               OpMemoryModel Logical GLSL450
-               OpEntryPoint MeshEXT %main "main" %IN
-               OpExecutionMode %main LocalSize 1 1 1
-               OpExecutionMode %main OutputVertices 3
-               OpExecutionMode %main OutputPrimitivesEXT 1
-               OpExecutionMode %main OutputTrianglesEXT
-               OpSource GLSL 450
-               OpSourceExtension "GL_EXT_mesh_shader"
-               OpName %main "main"
-               OpName %Task "Task"
-               OpMemberName %Task 0 "baseID"
-               OpName %IN "IN"
-       %void = OpTypeVoid
-          %3 = OpTypeFunction %void
-       %uint = OpTypeInt 32 0
-       %Task = OpTypeStruct %uint
-%_ptr_TaskPayloadWorkgroupEXT_Task = OpTypePointer TaskPayloadWorkgroupEXT %Task
-         %IN = OpVariable %_ptr_TaskPayloadWorkgroupEXT_Task TaskPayloadWorkgroupEXT
-       %main = OpFunction %void None %3
-          %5 = OpLabel
-               OpReturn
-               OpFunctionEnd
-    )";
-
-    VkShaderObj mesh_shader(*m_device, mesh_src, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM);
+    VkShaderObj mesh_shader(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
 
     vkt::Buffer buffer(*m_device, 2 * sizeof(VkDrawMeshTasksIndirectCommandEXT), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
     vkt::Buffer count_buffer(*m_device, 64, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
@@ -917,48 +880,7 @@ TEST_F(NegativeMesh, MultiDrawIndirect) {
     VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(mesh_shader_properties);
 
-    // #version 450
-    // #extension GL_EXT_mesh_shader : require
-    // layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
-    // layout(max_vertices = 3, max_primitives = 1) out;
-    // layout(triangles) out;
-    // struct Task {
-    //   uint baseID;
-    // };
-    // taskPayloadSharedEXT Task IN;
-    // void main() {}
-    const char mesh_src[] = R"(
-               OpCapability MeshShadingEXT
-               OpExtension "SPV_EXT_mesh_shader"
-          %1 = OpExtInstImport "GLSL.std.450"
-               OpMemoryModel Logical GLSL450
-               OpEntryPoint MeshEXT %main "main" %IN
-               OpExecutionModeId %main LocalSizeId %uint_1 %uint_1 %uint_1
-               OpExecutionMode %main OutputVertices 3
-               OpExecutionMode %main OutputPrimitivesNV 1
-               OpExecutionMode %main OutputTrianglesNV
-               OpSource GLSL 450
-               OpSourceExtension "GL_EXT_mesh_shader"
-               OpName %main "main"
-               OpName %Task "Task"
-               OpMemberName %Task 0 "baseID"
-               OpName %IN "IN"
-       %void = OpTypeVoid
-          %3 = OpTypeFunction %void
-       %uint = OpTypeInt 32 0
-     %uint_1 = OpConstant %uint 1
-     %v3uint = OpTypeVector %uint 3
-          %9 = OpConstantComposite %v3uint %uint_1 %uint_1 %uint_1
-       %Task = OpTypeStruct %uint
-%_ptr_TaskPayloadWorkgroupEXT_Task = OpTypePointer TaskPayloadWorkgroupEXT %Task
-         %IN = OpVariable %_ptr_TaskPayloadWorkgroupEXT_Task TaskPayloadWorkgroupEXT
-       %main = OpFunction %void None %3
-          %5 = OpLabel
-               OpReturn
-               OpFunctionEnd
-    )";
-
-    VkShaderObj mesh_shader(*m_device, mesh_src, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM);
+    VkShaderObj mesh_shader(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
@@ -1368,6 +1290,31 @@ TEST_F(NegativeMesh, TaskPayloadSharedMissing) {
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {ts.GetStageCreateInfo(), ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-MeshEXT-10883");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeMesh, TaskPayloadSharedMissing2) {
+    RETURN_IF_SKIP(InitBasicMeshAndTask());
+    InitRenderTarget();
+
+    const char *mesh_source = R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : enable
+        layout(max_vertices = 32, max_primitives = 32, triangles) out;
+        taskPayloadSharedEXT uint payload;
+        void main() {
+            uint x = payload;
+            SetMeshOutputsEXT(3,1);
+        }
+    )glsl";
+
+    VkShaderObj ms(*m_device, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-MeshEXT-10883");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();

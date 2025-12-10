@@ -2307,7 +2307,7 @@ TaskPayloadVariable::TaskPayloadVariable(const Module& module_state, const Instr
                                          const ParsedInfo& parsed)
     : VariableBase(module_state, insn, stage, parsed), size(0) {
     if (module_state.static_data_.has_specialization_constants) {
-        size = kInvalidValue;
+        size = kSpecConstant;
     } else {
         const Instruction* type = module_state.GetVariablePointerType(insn);
         size = module_state.GetTypeBytesSize(type);

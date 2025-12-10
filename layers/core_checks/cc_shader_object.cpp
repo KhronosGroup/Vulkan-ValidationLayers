@@ -916,10 +916,10 @@ bool CoreChecks::ValidateDrawShaderObjectMesh(const LastBound& last_bound_state,
                     FormatHandle(mesh_shader_handle).c_str(), FormatHandle(task_shader_handle).c_str());
             }
 
-            if (const vvl::ShaderObject* task_state = last_bound_state.GetShaderObjectState(ShaderObjectStage::TASK)) {
-                if (task_state->spirv && mesh_state->entrypoint) {
-                    skip |= ValidateTaskPayload(*task_state->spirv, *mesh_state->entrypoint, vuid.loc());
-                }
+            if (mesh_state->entrypoint) {
+                const vvl::ShaderObject* task_state = last_bound_state.GetShaderObjectState(ShaderObjectStage::TASK);
+                const spirv::Module* task_module = (task_state && task_state->spirv) ? task_state->spirv.get() : nullptr;
+                skip |= ValidateTaskPayload(task_module, *mesh_state->entrypoint, vuid.loc());
             }
         }
     }
