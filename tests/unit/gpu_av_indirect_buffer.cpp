@@ -14,6 +14,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/buffer_helper.h"
+#include "shader_templates.h"
 
 class NegativeGpuAVIndirectBuffer : public GpuAVTest {};
 
@@ -383,19 +384,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, Mesh) {
     uint32_t *count_ptr = static_cast<uint32_t *>(count_buffer.Memory().Map());
     *count_ptr = 3;
 
-    const char *mesh_shader_source = R"glsl(
-        #version 450
-        #extension GL_EXT_mesh_shader : require
-        layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
-        layout(max_vertices = 3, max_primitives = 1) out;
-        layout(triangles) out;
-        struct Task {
-          uint baseID;
-        };
-        taskPayloadSharedEXT Task IN;
-        void main() {}
-    )glsl";
-    VkShaderObj mesh_shader(*m_device, mesh_shader_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
+    VkShaderObj mesh_shader(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
     CreatePipelineHelper mesh_pipe(*this);
     mesh_pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
     mesh_pipe.CreateGraphicsPipeline();

@@ -1320,19 +1320,20 @@ bool CoreChecks::ValidateGraphicsPipelineMeshTask(const vvl::Pipeline &pipeline,
         }
     }
 
-    if (!mesh_state || !task_state) {
-        return skip;  // checks require optional task shader
+    if (!mesh_state) {
+        return skip;
     }
 
-    if (mesh_state->spirv_state && mesh_state->spirv_state->static_data_.has_builtin_draw_index) {
+    if (task_state && mesh_state->spirv_state && mesh_state->spirv_state->static_data_.has_builtin_draw_index) {
         // There is a dedicated equivalent for shader object
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-09631", device, create_info_loc,
                          "The pipeline is being created with a Task and Mesh shader bound, but the Mesh Shader "
                          "uses DrawIndex (gl_DrawID) which will be an undefined value when reading.");
     }
 
-    if (task_state->spirv_state && mesh_state->entrypoint) {
-        skip |= ValidateTaskPayload(*task_state->spirv_state, *mesh_state->entrypoint, create_info_loc);
+    if (mesh_state->entrypoint) {
+        const spirv::Module *task_module = (task_state && task_state->spirv_state) ? task_state->spirv_state.get() : nullptr;
+        skip |= ValidateTaskPayload(task_module, *mesh_state->entrypoint, create_info_loc);
     }
 
     return skip;
