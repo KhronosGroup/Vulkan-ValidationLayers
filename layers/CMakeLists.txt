@@ -208,8 +208,6 @@ target_sources(vvl PRIVATE
     chassis/dispatch_object_manual.cpp
     containers/range.h
     containers/range_map.h
-    containers/subresource_adapter.cpp
-    containers/subresource_adapter.h
     core_checks/cc_android.cpp
     core_checks/cc_buffer.cpp
     core_checks/cc_buffer_address.h
@@ -410,6 +408,8 @@ target_sources(vvl PRIVATE
     state_tracker/state_tracker.cpp
     state_tracker/state_tracker.h
     state_tracker/submission_reference.h
+    state_tracker/subresource_adapter.cpp
+    state_tracker/subresource_adapter.h
     state_tracker/vertex_index_buffer_state.h
     state_tracker/video_session_state.cpp
     state_tracker/video_session_state.h

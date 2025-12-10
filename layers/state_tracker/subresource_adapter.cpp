@@ -538,8 +538,7 @@ void ImageRangeGenerator::SetInitialPosSomeLayers(uint32_t layer, uint32_t aspec
 }
 
 void ImageRangeGenerator::SetInitialPosAllLayers(uint32_t layer, uint32_t aspect_index) {
-    assert(!encoder_->Is3D() && (offset_.x == 0) && (offset_.y == 0) && (offset_.z == 0) &&
-           (layer == 0));
+    assert(!encoder_->Is3D() && (offset_.x == 0) && (offset_.y == 0) && (offset_.z == 0) && (layer == 0));
     const auto& subres_layout = subres_info_->layout;
     const IndexType base = base_address_ + subres_layout.offset;
     const IndexType span = subres_layout.arrayPitch * subres_range_.layerCount;
@@ -888,7 +887,7 @@ inline ImageRangeEncoder::SubresInfo::SubresInfo(const VkSubresourceLayout& layo
       z_step_pitch(layout.depthPitch * texel_extent.depth),
       layer_span(layout.rowPitch * extent_.height) {}
 
-ImageRangeEncoder::SubresInfo::SubresInfo(const SubresInfo&rhs)
+ImageRangeEncoder::SubresInfo::SubresInfo(const SubresInfo& rhs)
     : layout(rhs.layout),
       extent(rhs.extent),
       y_step_pitch(rhs.y_step_pitch),

@@ -87,7 +87,7 @@ class RangeEncoder {
 
     // Create the encoder suitable to the full range (aspect mask *must* be canonical)
     explicit RangeEncoder(const VkImageSubresourceRange& full_range)
-         : RangeEncoder(full_range, AspectParameters::Get(full_range.aspectMask)) {}
+        : RangeEncoder(full_range, AspectParameters::Get(full_range.aspectMask)) {}
     RangeEncoder(const RangeEncoder& from) = default;
 
     inline bool InRange(const VkImageSubresourceRange& range) const {
