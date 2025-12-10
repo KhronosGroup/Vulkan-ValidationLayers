@@ -143,37 +143,41 @@ bool CoreChecks::ValidateVTGShaderStages(const LastBound &last_bound_state, cons
     return skip;
 }
 
-bool CoreChecks::ValidateMeshShaderStage(const LastBound &last_bound_state, const DrawDispatchVuid &vuid, bool is_NV) const {
+bool CoreChecks::ValidateMeshShaderStage(const LastBound& last_bound_state, const DrawDispatchVuid& vuid) const {
     bool skip = false;
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
     const auto *pipeline_state = last_bound_state.pipeline_state;
 
-    if (pipeline_state && !(pipeline_state->active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT)) {
-        skip |= LogError(vuid.missing_mesh_shader_stages_07080, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
+    if (pipeline_state) {
+        if (!(pipeline_state->active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT)) {
+            skip |=
+                LogError(vuid.missing_mesh_shader_stages_07091, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
                          "The current pipeline bound to VK_PIPELINE_BIND_POINT_GRAPHICS must contain a shader stage using the "
-                         "%s Execution Model. Active shader stages on the bound pipeline are %s.",
-                         is_NV ? "MeshNV" : "MeshEXT", string_VkShaderStageFlags(pipeline_state->active_shaders).c_str());
-    }
-    if (pipeline_state &&
-        (pipeline_state->active_shaders & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
-                                           VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT))) {
-        skip |= LogError(vuid.mesh_shader_stages_06480, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
-                         "The bound graphics pipeline must not have been created with "
-                         "VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, "
-                         "VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT or VK_SHADER_STAGE_GEOMETRY_BIT. Active shader stages on the "
-                         "bound pipeline are %s.",
+                         "MeshEXT Execution Model. Active shader stages on the bound pipeline are %s.",
                          string_VkShaderStageFlags(pipeline_state->active_shaders).c_str());
+        }
+        if (pipeline_state->active_shaders & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
+                                              VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)) {
+            skip |= LogError(
+                vuid.mesh_shader_stages_06480, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
+                "The bound graphics pipeline must not have been created with "
+                "VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, "
+                "VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT or VK_SHADER_STAGE_GEOMETRY_BIT.\nActive shader stages on the "
+                "bound pipeline are %s.",
+                string_VkShaderStageFlags(pipeline_state->active_shaders).c_str());
+        }
     }
     for (const auto &query : cb_state.active_queries) {
-        const auto query_pool_state = Get<vvl::QueryPool>(query.pool);
-        if (!query_pool_state) continue;
-        if (query_pool_state->create_info.queryType == VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT) {
-            skip |= LogError(vuid.xfb_queries_07074, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
-                             "Query with type %s is active.", string_VkQueryType(query_pool_state->create_info.queryType));
-        }
-        if (query_pool_state->create_info.queryType == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
-            skip |= LogError(vuid.pg_queries_07075, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
-                             "Query with type %s is active.", string_VkQueryType(query_pool_state->create_info.queryType));
+        if (const auto query_pool_state = Get<vvl::QueryPool>(query.pool)) {
+            const VkQueryType query_type = query_pool_state->create_info.queryType;
+            if (query_type == VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT) {
+                skip |= LogError(vuid.xfb_queries_07074, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
+                                 "Query with type VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT is active.");
+            }
+            if (query_type == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
+                skip |= LogError(vuid.pg_queries_07075, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
+                                 "Query with type VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT is active.");
+            }
         }
     }
     return skip;
@@ -1064,7 +1068,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
 
     skip |= ValidateActionState(last_bound_state, vuid);
-    skip |= ValidateMeshShaderStage(last_bound_state, vuid, true);
+    skip |= ValidateMeshShaderStage(last_bound_state, vuid);
 
     if (taskCount > phys_dev_ext_props.mesh_shader_props_nv.maxDrawMeshTasksCount) {
         skip |= LogError(
@@ -1086,7 +1090,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer comma
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
 
     skip |= ValidateActionState(last_bound_state, vuid);
-    skip |= ValidateMeshShaderStage(last_bound_state, vuid, true);
+    skip |= ValidateMeshShaderStage(last_bound_state, vuid);
 
     {
         auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
@@ -1143,7 +1147,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer 
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
 
     skip |= ValidateActionState(last_bound_state, vuid);
-    skip |= ValidateMeshShaderStage(last_bound_state, vuid, true);
+    skip |= ValidateMeshShaderStage(last_bound_state, vuid);
 
     if (offset & 3) {
         skip |=
@@ -1189,56 +1193,65 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffe
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
 
     skip |= ValidateActionState(last_bound_state, vuid);
-    skip |= ValidateMeshShaderStage(last_bound_state, vuid, false);
+    skip |= ValidateMeshShaderStage(last_bound_state, vuid);
 
-    if (groupCountX > phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[0]) {
+    // Without the optional task shader, the draw goes right to the mesh shader.
+    // When the task shader is used, the mesh shader info is done in GPU-AV
+    const bool has_task = last_bound_state.IsStageBound(VK_SHADER_STAGE_TASK_BIT_EXT);
+    const Field work_group_count_field = has_task ? Field::maxTaskWorkGroupCount : Field::maxMeshWorkGroupCount;
+
+    const uint32_t max_x = has_task ? phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[0]
+                                    : phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[0];
+    if (groupCountX > max_x) {
+        const char* limit_vuid = has_task ? "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07322" : "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07326";
         skip |= LogError(
-            "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07322", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
-            error_obj.location.dot(Field::groupCountX),
-            "(0x%" PRIxLEAST32
-            "), must be less than or equal to VkPhysicalDeviceMeshShaderPropertiesEXT::maxTaskWorkGroupCount[0] (0x%" PRIxLEAST32
-            ").",
-            groupCountX, phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[0]);
-    }
-    if (groupCountY > phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[1]) {
-        skip |= LogError(
-            "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07323", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
-            error_obj.location.dot(Field::groupCountY),
-            "(0x%" PRIxLEAST32
-            "), must be less than or equal to VkPhysicalDeviceMeshShaderPropertiesEXT::maxTaskWorkGroupCount[1] (0x%" PRIxLEAST32
-            ").",
-            groupCountY, phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[1]);
-    }
-    if (groupCountZ > phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[2]) {
-        skip |= LogError(
-            "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07324", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
-            error_obj.location.dot(Field::groupCountZ),
-            "(0x%" PRIxLEAST32
-            "), must be less than or equal to VkPhysicalDeviceMeshShaderPropertiesEXT::maxTaskWorkGroupCount[2] (0x%" PRIxLEAST32
-            ").",
-            groupCountZ, phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[2]);
+            limit_vuid, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::groupCountX),
+            "(%" PRIu32 "), must be less than or equal to VkPhysicalDeviceMeshShaderPropertiesEXT::%s[0] (%" PRIu32 ").",
+            groupCountX, String(work_group_count_field), max_x);
     }
 
-    uint32_t maxTaskWorkGroupTotalCount = phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupTotalCount;
+    const uint32_t max_y = has_task ? phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[1]
+                                    : phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[1];
+    if (groupCountY > max_y) {
+        const char* limit_vuid = has_task ? "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07323" : "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07327";
+        skip |= LogError(
+            limit_vuid, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::groupCountY),
+            "(%" PRIu32 "), must be less than or equal to VkPhysicalDeviceMeshShaderPropertiesEXT::%s[1] (%" PRIu32 ").",
+            groupCountY, String(work_group_count_field), max_y);
+    }
+
+    const uint32_t max_z = has_task ? phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[2]
+                                    : phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[2];
+    if (groupCountZ > max_z) {
+        const char* limit_vuid = has_task ? "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07324" : "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07328";
+        skip |= LogError(
+            limit_vuid, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::groupCountZ),
+            "(%" PRIu32 "), must be less than or equal to VkPhysicalDeviceMeshShaderPropertiesEXT::%s[2] (%" PRIu32 ").",
+            groupCountZ, String(work_group_count_field), max_z);
+    }
+
+    const uint32_t max_total_count = has_task ? phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupTotalCount
+                                              : phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupTotalCount;
     uint64_t invocations = static_cast<uint64_t>(groupCountX) * static_cast<uint64_t>(groupCountY);
     // Prevent overflow.
     bool fail = false;
-    if (invocations > vvl::kU32Max || invocations > maxTaskWorkGroupTotalCount) {
+    if (invocations > vvl::kU32Max || invocations > max_total_count) {
         fail = true;
     }
     if (!fail) {
         invocations *= static_cast<uint64_t>(groupCountZ);
-        if (invocations > vvl::kU32Max || invocations > maxTaskWorkGroupTotalCount) {
+        if (invocations > vvl::kU32Max || invocations > max_total_count) {
             fail = true;
         }
     }
     if (fail) {
-        skip |= LogError(
-            "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07325", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location,
-            "The product of groupCountX (0x%" PRIxLEAST32 "), groupCountY (0x%" PRIxLEAST32 ") and groupCountZ (0x%" PRIxLEAST32
-            ") must be less than or equal to "
-            "VkPhysicalDeviceMeshShaderPropertiesEXT::maxTaskWorkGroupTotalCount (0x%" PRIxLEAST32 ").",
-            groupCountX, groupCountY, groupCountZ, maxTaskWorkGroupTotalCount);
+        const char* limit_vuid = has_task ? "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07325" : "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07329";
+        skip |= LogError(limit_vuid, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location,
+                         "The product of groupCountX (%" PRIu32 "), groupCountY (%" PRIu32 "), and groupCountZ (%" PRIu32
+                         ") must be less than or equal to "
+                         "VkPhysicalDeviceMeshShaderPropertiesEXT::%s (%" PRIu32 ").",
+                         groupCountX, groupCountY, groupCountZ,
+                         has_task ? "maxTaskWorkGroupTotalCount" : "maxMeshWorkGroupTotalCount", max_total_count);
     }
 
     return skip;
@@ -1253,7 +1266,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer comm
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
 
     skip |= ValidateActionState(last_bound_state, vuid);
-    skip |= ValidateMeshShaderStage(last_bound_state, vuid, false);
+    skip |= ValidateMeshShaderStage(last_bound_state, vuid);
 
     {
         auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
@@ -1306,7 +1319,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
 
     skip |= ValidateActionState(last_bound_state, vuid);
-    skip |= ValidateMeshShaderStage(last_bound_state, vuid, false);
+    skip |= ValidateMeshShaderStage(last_bound_state, vuid);
 
     auto count_buffer_state = Get<vvl::Buffer>(countBuffer);
     ASSERT_AND_RETURN_SKIP(count_buffer_state);

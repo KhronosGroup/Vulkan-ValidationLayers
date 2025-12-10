@@ -1869,7 +1869,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                              const VkBuffer* pBuffers, const VkDeviceSize* pOffsets,
                                              const ErrorObject& error_obj) const override;
     bool ValidateVTGShaderStages(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
-    bool ValidateMeshShaderStage(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid, bool is_NV) const;
+    bool ValidateMeshShaderStage(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const;
     bool PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
                                 uint32_t firstInstance, const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount, const VkMultiDrawInfoEXT* pVertexInfo,

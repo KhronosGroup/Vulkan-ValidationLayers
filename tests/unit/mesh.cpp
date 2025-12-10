@@ -14,6 +14,7 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "shader_templates.h"
 
 class NegativeMesh : public MeshTest {};
 
@@ -685,7 +686,6 @@ TEST_F(NegativeMesh, ExtensionDisabledNV) {
 }
 
 TEST_F(NegativeMesh, DrawCmds) {
-    TEST_DESCRIPTION("Test VK_EXT_mesh_shader draw commands.");
     AddRequiredFeature(vkt::Feature::maintenance4);
     RETURN_IF_SKIP(InitBasicMeshAndTask());
     InitRenderTarget();
@@ -746,27 +746,27 @@ TEST_F(NegativeMesh, DrawCmds) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
-    uint32_t max_group_count_X = mesh_shader_properties.maxTaskWorkGroupCount[0];
-    uint32_t max_group_count_Y = mesh_shader_properties.maxTaskWorkGroupCount[1];
-    uint32_t max_group_count_Z = mesh_shader_properties.maxTaskWorkGroupCount[2];
+    uint32_t max_group_count_x = mesh_shader_properties.maxTaskWorkGroupCount[0];
+    uint32_t max_group_count_y = mesh_shader_properties.maxTaskWorkGroupCount[1];
+    uint32_t max_group_count_z = mesh_shader_properties.maxTaskWorkGroupCount[2];
 
-    if (max_group_count_X < vvl::kU32Max) {
-        m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07322");
-        max_group_count_X = vvl::kU32Max;
+    if (max_group_count_x < vvl::kU32Max) {
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07326");
+        max_group_count_x = vvl::kU32Max;
     }
 
-    if (max_group_count_Y < vvl::kU32Max) {
-        m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07323");
-        max_group_count_Y = vvl::kU32Max;
+    if (max_group_count_y < vvl::kU32Max) {
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07327");
+        max_group_count_y = vvl::kU32Max;
     }
 
-    if (max_group_count_Z < vvl::kU32Max) {
-        m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07324");
-        max_group_count_Z = vvl::kU32Max;
+    if (max_group_count_z < vvl::kU32Max) {
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07328");
+        max_group_count_z = vvl::kU32Max;
     }
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07325");
-    vk::CmdDrawMeshTasksEXT(m_command_buffer, max_group_count_X, max_group_count_Y, max_group_count_Z);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07329");
+    vk::CmdDrawMeshTasksEXT(m_command_buffer, max_group_count_x, max_group_count_y, max_group_count_z);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-02718");
@@ -810,6 +810,50 @@ TEST_F(NegativeMesh, DrawCmds) {
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
+}
+
+TEST_F(NegativeMesh, TaskShaderLimits) {
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    RETURN_IF_SKIP(InitBasicMeshAndTask());
+    InitRenderTarget();
+
+    VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(mesh_shader_properties);
+
+    VkShaderObj ts(*m_device, kTaskMinimalGlsl, VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_3);
+    VkShaderObj ms(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
+    VkShaderObj fs(*m_device, kMinimalShaderGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_3);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {ts.GetStageCreateInfo(), ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+
+    uint32_t max_group_count_x = mesh_shader_properties.maxTaskWorkGroupCount[0];
+    uint32_t max_group_count_y = mesh_shader_properties.maxTaskWorkGroupCount[1];
+    uint32_t max_group_count_z = mesh_shader_properties.maxTaskWorkGroupCount[2];
+
+    if (max_group_count_x < vvl::kU32Max) {
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07322");
+        max_group_count_x = vvl::kU32Max;
+    }
+
+    if (max_group_count_y < vvl::kU32Max) {
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07323");
+        max_group_count_y = vvl::kU32Max;
+    }
+
+    if (max_group_count_z < vvl::kU32Max) {
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07324");
+        max_group_count_z = vvl::kU32Max;
+    }
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07325");
+    vk::CmdDrawMeshTasksEXT(m_command_buffer, max_group_count_x, max_group_count_y, max_group_count_z);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeMesh, MultiDrawIndirect) {
