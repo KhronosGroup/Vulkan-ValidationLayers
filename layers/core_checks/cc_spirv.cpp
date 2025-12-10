@@ -2529,63 +2529,42 @@ bool CoreChecks::ValidateTaskMeshWorkGroupSizes(const spirv::Module &module_stat
 
     if (local_size.x == 0) {
         return skip;
+    } else if (entrypoint.execution_model != spv::ExecutionModelTaskEXT &&
+               entrypoint.execution_model != spv::ExecutionModelMeshEXT) {
+        return skip;  // NV version not supported currently
     }
 
+    bool is_task = entrypoint.execution_model == spv::ExecutionModelTaskEXT;
     spirv::LocalSize max_local_size;
-    uint32_t max_workgroup_size = 0;
-    const char *x_vuid;
-    const char *y_vuid;
-    const char *z_vuid;
-    const char *workgroup_size_vuid;
-
-    switch (entrypoint.execution_model) {
-        case spv::ExecutionModelTaskEXT: {
-            x_vuid = "VUID-RuntimeSpirv-TaskEXT-07291";
-            y_vuid = "VUID-RuntimeSpirv-TaskEXT-07292";
-            z_vuid = "VUID-RuntimeSpirv-TaskEXT-07293";
-            workgroup_size_vuid = "VUID-RuntimeSpirv-TaskEXT-07294";
-            max_local_size.x = phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupSize[0];
-            max_local_size.y = phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupSize[1];
-            max_local_size.z = phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupSize[2];
-            max_workgroup_size = phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupInvocations;
-            break;
-        }
-
-        case spv::ExecutionModelMeshEXT: {
-            x_vuid = "VUID-RuntimeSpirv-MeshEXT-07295";
-            y_vuid = "VUID-RuntimeSpirv-MeshEXT-07296";
-            z_vuid = "VUID-RuntimeSpirv-MeshEXT-07297";
-            workgroup_size_vuid = "VUID-RuntimeSpirv-MeshEXT-07298";
-            max_local_size.x = phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupSize[0];
-            max_local_size.y = phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupSize[1];
-            max_local_size.z = phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupSize[2];
-            max_workgroup_size = phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupInvocations;
-            break;
-        }
-
-        // skip for spv::ExecutionModelTaskNV and spv::ExecutionModelMeshNV case
-        default: {
-            // must match one of the above case
-            return skip;
-        }
+    if (is_task) {
+        max_local_size.x = phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupSize[0];
+        max_local_size.y = phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupSize[1];
+        max_local_size.z = phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupSize[2];
+    } else {
+        max_local_size.x = phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupSize[0];
+        max_local_size.y = phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupSize[1];
+        max_local_size.z = phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupSize[2];
     }
 
     if (local_size.x > max_local_size.x) {
-        skip |= LogError(x_vuid, module_state.handle(), loc,
+        const char* vuid = is_task ? "VUID-RuntimeSpirv-TaskEXT-07291" : "VUID-RuntimeSpirv-MeshEXT-07295";
+        skip |= LogError(vuid, module_state.handle(), loc,
                          "SPIR-V (%s) local workgroup size X dimension (%" PRIu32
                          ") must be less than or equal to the max workgroup size (%" PRIu32 ").",
                          string_SpvExecutionModel(entrypoint.execution_model), local_size.x, max_local_size.x);
     }
 
     if (local_size.y > max_local_size.y) {
-        skip |= LogError(y_vuid, module_state.handle(), loc,
+        const char* vuid = is_task ? "VUID-RuntimeSpirv-TaskEXT-07292" : "VUID-RuntimeSpirv-MeshEXT-07296";
+        skip |= LogError(vuid, module_state.handle(), loc,
                          "SPIR-V (%s) local workgroup size Y dimension (%" PRIu32
                          ") must be less than or equal to the max workgroup size (%" PRIu32 ").",
                          string_SpvExecutionModel(entrypoint.execution_model), local_size.y, max_local_size.y);
     }
 
     if (local_size.z > max_local_size.z) {
-        skip |= LogError(z_vuid, module_state.handle(), loc,
+        const char* vuid = is_task ? "VUID-RuntimeSpirv-TaskEXT-07293" : "VUID-RuntimeSpirv-MeshEXT-07297";
+        skip |= LogError(vuid, module_state.handle(), loc,
                          "SPIR-V (%s) local workgroup size Z dimension (%" PRIu32
                          ") must be less than or equal to the max workgroup size (%" PRIu32 ").",
                          string_SpvExecutionModel(entrypoint.execution_model), local_size.z, max_local_size.z);
@@ -2594,6 +2573,8 @@ bool CoreChecks::ValidateTaskMeshWorkGroupSizes(const spirv::Module &module_stat
     uint64_t invocations = static_cast<uint64_t>(local_size.x) * static_cast<uint64_t>(local_size.y);
     // Prevent overflow.
     bool fail = false;
+    const uint32_t max_workgroup_size = is_task ? phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupInvocations
+                                                : phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupInvocations;
     if (invocations > vvl::kU32Max || invocations > max_workgroup_size) {
         fail = true;
     }
@@ -2604,7 +2585,8 @@ bool CoreChecks::ValidateTaskMeshWorkGroupSizes(const spirv::Module &module_stat
         }
     }
     if (fail) {
-        skip |= LogError(workgroup_size_vuid, module_state.handle(), loc,
+        const char* vuid = is_task ? "VUID-RuntimeSpirv-TaskEXT-07294" : "VUID-RuntimeSpirv-MeshEXT-07298";
+        skip |= LogError(vuid, module_state.handle(), loc,
                          "SPIR-V (%s) total invocation size of %" PRIu64
                          " (%s) must be less than or equal to max workgroup invocations (%" PRIu32 ").",
                          string_SpvExecutionModel(entrypoint.execution_model), invocations, local_size.ToString().c_str(),

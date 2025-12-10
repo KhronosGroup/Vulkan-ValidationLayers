@@ -2692,7 +2692,7 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         primitives_generated_06708               = "VUID-vkCmdDrawMeshTasksNV-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams_06709       = "VUID-vkCmdDrawMeshTasksNV-primitivesGeneratedQueryWithNonZeroStreams-06709";
         mesh_shader_stages_06480                 = "VUID-vkCmdDrawMeshTasksNV-stage-06480";
-        missing_mesh_shader_stages_07080         = "VUID-vkCmdDrawMeshTasksNV-MeshNV-07080";
+        missing_mesh_shader_stages_07091         = "VUID-vkCmdDrawMeshTasksNV-MeshNV-07080";
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdDrawMeshTasksNV-None-08114";
         descriptor_buffer_bit_not_set_08115      = "VUID-vkCmdDrawMeshTasksNV-None-08115";
         descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDrawMeshTasksNV-None-08117";
@@ -2949,7 +2949,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         primitives_generated_06708               = "VUID-vkCmdDrawMeshTasksIndirectNV-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams_06709       = "VUID-vkCmdDrawMeshTasksIndirectNV-primitivesGeneratedQueryWithNonZeroStreams-06709";
         mesh_shader_stages_06480                 = "VUID-vkCmdDrawMeshTasksIndirectNV-stage-06480";
-        missing_mesh_shader_stages_07080         = "VUID-vkCmdDrawMeshTasksIndirectNV-MeshNV-07081";
+        missing_mesh_shader_stages_07091         = "VUID-vkCmdDrawMeshTasksIndirectNV-MeshNV-07081";
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08114";
         descriptor_buffer_bit_not_set_08115      = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08115";
         descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08117";
@@ -3209,7 +3209,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         primitives_generated_06708               = "VUID-vkCmdDrawMeshTasksIndirectCountNV-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams_06709       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-primitivesGeneratedQueryWithNonZeroStreams-06709";
         mesh_shader_stages_06480                 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-stage-06480";
-        missing_mesh_shader_stages_07080         = "VUID-vkCmdDrawMeshTasksIndirectCountNV-MeshNV-07082";
+        missing_mesh_shader_stages_07091         = "VUID-vkCmdDrawMeshTasksIndirectCountNV-MeshNV-07082";
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08114";
         descriptor_buffer_bit_not_set_08115      = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08115";
         descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08117";
@@ -3463,7 +3463,7 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         primitives_generated_06708               = "VUID-vkCmdDrawMeshTasksEXT-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams_06709       = "VUID-vkCmdDrawMeshTasksEXT-primitivesGeneratedQueryWithNonZeroStreams-06709";
         mesh_shader_stages_06480                 = "VUID-vkCmdDrawMeshTasksEXT-stage-06480";
-        missing_mesh_shader_stages_07080         = "VUID-vkCmdDrawMeshTasksEXT-MeshEXT-07087";
+        missing_mesh_shader_stages_07091         = "VUID-vkCmdDrawMeshTasksEXT-MeshEXT-07087";
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdDrawMeshTasksEXT-None-08114";
         descriptor_buffer_bit_not_set_08115      = "VUID-vkCmdDrawMeshTasksEXT-None-08115";
         descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDrawMeshTasksEXT-None-08117";
@@ -3720,7 +3720,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         primitives_generated_06708               = "VUID-vkCmdDrawMeshTasksIndirectEXT-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams_06709       = "VUID-vkCmdDrawMeshTasksIndirectEXT-primitivesGeneratedQueryWithNonZeroStreams-06709";
         mesh_shader_stages_06480                 = "VUID-vkCmdDrawMeshTasksIndirectEXT-stage-06480";
-        missing_mesh_shader_stages_07080         = "VUID-vkCmdDrawMeshTasksIndirectEXT-MeshEXT-07091";
+        missing_mesh_shader_stages_07091         = "VUID-vkCmdDrawMeshTasksIndirectEXT-MeshEXT-07091";
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08114";
         descriptor_buffer_bit_not_set_08115      = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08115";
         descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08117";
@@ -3980,7 +3980,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         primitives_generated_06708               = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams_06709       = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-primitivesGeneratedQueryWithNonZeroStreams-06709";
         mesh_shader_stages_06480                 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-stage-06480";
-        missing_mesh_shader_stages_07080         = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-MeshEXT-07100";
+        missing_mesh_shader_stages_07091         = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-MeshEXT-07100";
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08114";
         descriptor_buffer_bit_not_set_08115      = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08115";
         descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08117";
