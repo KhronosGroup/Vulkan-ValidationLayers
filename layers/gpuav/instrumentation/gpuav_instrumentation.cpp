@@ -188,14 +188,14 @@ void UpdateInstrumentationDescBuffer(Validator &gpuav, CommandBufferSubState &cb
                                      const Location &loc, CommonInstrumentationErrorInfo &out_error_info) {
     void *descriptor_start = gpuav.global_resource_descriptor_buffer_.GetMappedPtr();
 
-    for (size_t func_i = 0; func_i < cb_state.on_instrumentation_desc_buffer_update_functions.size(); ++func_i) {
+    for (const auto &func : vvl::make_span(cb_state.on_instrumentation_desc_buffer_update_functions)) {
         VkDescriptorGetInfoEXT get_info = vku::InitStructHelper();
         get_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 
         VkDescriptorAddressInfoEXT address_info = vku::InitStructHelper();
         uint32_t binding = 0;
 
-        cb_state.on_instrumentation_desc_buffer_update_functions[func_i](cb_state, last_bound.bind_point, address_info, binding);
+        func(cb_state, last_bound.bind_point, address_info, binding);
         get_info.data.pStorageBuffer = &address_info;
 
         const VkDeviceSize binding_offset = gpuav.resource_descriptor_buffer_offsets_[binding];
@@ -274,7 +274,7 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBufferSubState &cb_st
     }
 
     std::vector<VkDescriptorBufferInfo> buffer_infos(cb_state.on_instrumentation_desc_set_update_functions.size());
-    for (size_t func_i = 0; func_i < cb_state.on_instrumentation_desc_set_update_functions.size(); ++func_i) {
+    for (const auto [func_i, func] : vvl::enumerate(cb_state.on_instrumentation_desc_set_update_functions)) {
         VkWriteDescriptorSet wds = vku::InitStructHelper();
         wds.dstSet = instrumentation_desc_set;
         wds.dstBinding = vvl::kNoIndex32;
@@ -282,8 +282,7 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBufferSubState &cb_st
         wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         wds.pBufferInfo = &buffer_infos[func_i];
 
-        cb_state.on_instrumentation_desc_set_update_functions[func_i](cb_state, bind_point, loc, buffer_infos[func_i],
-                                                                      wds.dstBinding);
+        func(cb_state, bind_point, loc, buffer_infos[func_i], wds.dstBinding);
 
         if (buffer_infos[func_i].buffer != VK_NULL_HANDLE) {
             assert(wds.dstBinding != vvl::kNoIndex32);
@@ -469,11 +468,8 @@ void PreCallSetupShaderInstrumentationResourcesClassic(Validator &gpuav, Command
     }
 
     std::vector<CommandBufferSubState::InstrumentationErrorLogger> error_loggers = {};
-    for (size_t i = 0; i < cb_state.on_instrumentation_error_logger_register_functions.size(); ++i) {
-        const CommandBufferSubState::OnInstrumentationErrorLoggerRegister &error_logger_register =
-            cb_state.on_instrumentation_error_logger_register_functions[i];
-
-        error_loggers.emplace_back(error_logger_register(gpuav, cb_state, last_bound));
+    for (const auto &func : vvl::make_span(cb_state.on_instrumentation_error_logger_register_functions)) {
+        error_loggers.emplace_back(func(gpuav, cb_state, last_bound));
     }
 
     CommandBufferSubState::ErrorLoggerFunc error_logger = [&gpuav, &cb_state, error_info, error_loggers = std::move(error_loggers)](

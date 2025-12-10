@@ -113,6 +113,16 @@ span<T> make_span(T *begin, T *end) {
     return make_span<T>(begin, end);
 }
 
+template <typename Container>
+auto make_span(Container &container) {
+    return span<typename Container::value_type>(container.data(), container.size());
+}
+
+template <typename Container>
+auto make_span(const Container &container) {
+    return span<std::add_const_t<typename Container::value_type>>(container.data(), container.size());
+}
+
 template <typename T, typename IndexType>
 auto enumerate(T *begin, IndexType count) {
     return enumeration<T, IndexedIterator<T, IndexType>>(begin, count);
