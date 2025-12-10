@@ -11,6 +11,7 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "shader_helper.h"
 
 class PositiveShaderMesh : public VkLayerTest {};
 
@@ -101,4 +102,47 @@ TEST_F(PositiveShaderMesh, MeshShaderPayloadSpecConstantSet) {
                      &spec_info);
     const auto set_info = [&](CreatePipelineHelper &helper) { helper.shader_stages_ = {mesh.GetStageCreateInfo()}; };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}
+
+TEST_F(PositiveShaderMesh, TaskSharedMemory) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::taskShader);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitRenderTarget());
+
+    VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(mesh_shader_properties);
+
+    const uint32_t max_shared_memory_size = mesh_shader_properties.maxTaskSharedMemorySize;
+    const uint32_t max_shared_ints = max_shared_memory_size / 4;
+
+    VkShaderObj mesh(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+
+    std::stringstream task_source;
+    task_source << R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : require
+        layout (constant_id = 0) const int v = )glsl";
+    task_source << (max_shared_ints + 16);
+    task_source << R"glsl(;
+        shared int a[v];
+        void main(){}
+    )glsl";
+
+    uint32_t data = max_shared_ints;
+    VkSpecializationMapEntry map_entry = {0, 0, sizeof(uint32_t)};
+    VkSpecializationInfo specialization_info = {};
+    specialization_info.mapEntryCount = 1;
+    specialization_info.pMapEntries = &map_entry;
+    specialization_info.dataSize = sizeof(uint32_t);
+    specialization_info.pData = &data;
+
+    VkShaderObj task(*m_device, task_source.str().c_str(), VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_GLSL,
+                     &specialization_info);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {task.GetStageCreateInfo(), mesh.GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
 }
