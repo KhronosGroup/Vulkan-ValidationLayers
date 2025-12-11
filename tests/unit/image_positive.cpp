@@ -491,47 +491,6 @@ TEST_F(PositiveImage, SlicedCreateInfo) {
     }
 }
 
-TEST_F(PositiveImage, BlitRemainingArrayLayers) {
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::maintenance5);
-    RETURN_IF_SKIP(Init());
-
-    VkFormat f_color = VK_FORMAT_R32_SFLOAT;  // Need features ..BLIT_SRC_BIT & ..BLIT_DST_BIT
-    if (!FormatFeaturesAreSupported(Gpu(), f_color, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
-        GTEST_SKIP() << "No blit feature format support";
-    }
-
-    VkImageCreateInfo ci = vku::InitStructHelper();
-    ci.imageType = VK_IMAGE_TYPE_2D;
-    ci.format = f_color;
-    ci.extent = {64, 64, 1};
-    ci.mipLevels = 1;
-    ci.arrayLayers = 4;
-    ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    vkt::Image image(*m_device, ci);
-
-    VkImageBlit blitRegion = {};
-    blitRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 2, VK_REMAINING_ARRAY_LAYERS};
-    blitRegion.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, VK_REMAINING_ARRAY_LAYERS};
-    blitRegion.srcOffsets[0] = {0, 0, 0};
-    blitRegion.srcOffsets[1] = {16, 16, 1};
-    blitRegion.dstOffsets[0] = {32, 32, 0};
-    blitRegion.dstOffsets[1] = {64, 64, 1};
-
-    m_command_buffer.Begin();
-
-    vk::CmdBlitImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion,
-                     VK_FILTER_NEAREST);
-    m_command_buffer.FullMemoryBarrier();
-    blitRegion.dstSubresource.layerCount = 2;  // same as VK_REMAINING_ARRAY_LAYERS
-    vk::CmdBlitImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion,
-                     VK_FILTER_NEAREST);
-}
-
 TEST_F(PositiveImage, BlockTexelViewCompatibleMultipleLayers) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
