@@ -2131,3 +2131,58 @@ TEST_F(VkBestPracticesLayerTest, MutableDescriptors) {
     vkt::DescriptorPool pool(*m_device, ds_pool_ci);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkBestPracticesLayerTest, MaxPreferredWorkGroupInvocations) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddRequiredFeature(vkt::Feature::taskShader);
+    RETURN_IF_SKIP(InitBestPractices());
+    InitRenderTarget();
+
+    VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(mesh_shader_properties);
+
+    if (mesh_shader_properties.maxPreferredTaskWorkGroupInvocations >= 32 ||
+        mesh_shader_properties.maxPreferredMeshWorkGroupInvocations >= 32) {
+        GTEST_SKIP() << "Preferred values are too high";
+    }
+
+    const char* task_source = R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : enable
+        layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+        void main() {
+            EmitMeshTasksEXT(1u, 1u, 1u);
+        }
+    )glsl";
+
+    const char* mesh_source = R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : enable
+        layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+        layout(max_vertices = 3, max_primitives=1) out;
+        layout(triangles) out;
+        void main() {
+            SetMeshOutputsEXT(3,1);
+        }
+    )glsl";
+
+    {
+        VkShaderObj ts_over(*m_device, task_source, VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_2);
+        VkShaderObj ms(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+        CreatePipelineHelper pipe(*this);
+        pipe.shader_stages_ = {ts_over.GetStageCreateInfo(), ms.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+        m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-Mesh-MaxPreferredWorkGroupInvocations");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+    {
+        VkShaderObj ms_over(*m_device, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+        CreatePipelineHelper pipe(*this);
+        pipe.shader_stages_ = {ms_over.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+        m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-Mesh-MaxPreferredWorkGroupInvocations");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+}
