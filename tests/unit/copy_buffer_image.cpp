@@ -2708,7 +2708,9 @@ TEST_F(NegativeCopyBufferImage, BufferToCompressedImage) {
 }
 
 TEST_F(NegativeCopyBufferImage, SameImage) {
-    TEST_DESCRIPTION("use wrong layout copying to the same image.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
 
     auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, kSrcDstUsage);
@@ -2722,6 +2724,13 @@ TEST_F(NegativeCopyBufferImage, SameImage) {
     copy_region.dstOffset = {2, 2, 0};
     copy_region.extent = {1, 1, 1};
 
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcImage-09460");
+    vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, src_image,
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
+    m_errorMonitor->VerifyFound();
+
+    copy_region.srcSubresource.layerCount = VK_REMAINING_ARRAY_LAYERS;
+    copy_region.dstSubresource.layerCount = VK_REMAINING_ARRAY_LAYERS;
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcImage-09460");
     vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, src_image,
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
@@ -3592,6 +3601,7 @@ TEST_F(NegativeCopyBufferImage, BlitDepthRemainingArrayLayers) {
     region.dstOffsets[0] = {0, 0, 0};
     region.dstOffsets[1] = {32, 32, 2};
 
+    m_errorMonitor->SetDesiredError("VUID-VkImageBlit-layerCount-08801");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-maintenance8-10208");
     vk::CmdBlitImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_image_3d,
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &region, VK_FILTER_NEAREST);

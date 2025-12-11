@@ -1530,28 +1530,25 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
             const uint32_t src_layer_count = region.src_subresource.layerCount;
             const uint32_t dst_layer_count = region.dst_subresource.layerCount;
             if (src_layer_count == VK_REMAINING_ARRAY_LAYERS || dst_layer_count == VK_REMAINING_ARRAY_LAYERS) {
-                if (src_layer_count != VK_REMAINING_ARRAY_LAYERS) {
-                    if (src_layer_count != (dst_image_state->create_info.arrayLayers - dst_subresource.baseArrayLayer)) {
-                        vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-08794" : "VUID-vkCmdCopyImage-srcImage-08794";
-                        skip |= LogError(vuid, dst_objlist, src_subresource_loc.dot(Field::layerCount),
-                                         "(%" PRIu32 ") does not match dstImage arrayLayers (%" PRIu32
-                                         ") minus baseArrayLayer (%" PRIu32 ").%s",
-                                         src_layer_count, dst_image_state->create_info.arrayLayers, dst_subresource.baseArrayLayer,
-                                         src_is_3d ? " (srcImage is 3D so it won't be possible to match array layers, but you can "
-                                                     "set srcSubresource.layerCount also to VK_REMAINING_ARRAY_LAYERS)"
-                                                   : "");
+                const uint32_t normalized_src_layer_count = src_image_state->NormalizeLayerCount(src_subresource);
+                const uint32_t normalized_dst_layer_count = dst_image_state->NormalizeLayerCount(dst_subresource);
+                // maintenance5 allows use to use extent.depth as the way to set layer count
+                const bool exception = src_image_type != dst_image_type && src_layer_count == VK_REMAINING_ARRAY_LAYERS &&
+                                       dst_layer_count == VK_REMAINING_ARRAY_LAYERS;
+                if (!exception && normalized_src_layer_count != normalized_dst_layer_count) {
+                    std::stringstream ss;
+                    ss << "(" << string_LayerCount(src_image_state->create_info, src_subresource) << ") does not match "
+                       << dst_subresource_loc.dot(Field::layerCount).Fields() << " ("
+                       << string_LayerCount(dst_image_state->create_info, dst_subresource) << ").";
+                    if (src_layer_count != VK_REMAINING_ARRAY_LAYERS && src_is_3d) {
+                        ss << "\n(srcImage is 3D so it won't be possible to match array layers, but you can set "
+                              "srcSubresource.layerCount also to VK_REMAINING_ARRAY_LAYERS)";
+                    } else if (dst_layer_count != VK_REMAINING_ARRAY_LAYERS && dst_is_3d) {
+                        ss << "\n(dstImage is 3D so it won't be possible to match array layers, but you can set "
+                              "dstSubresource.layerCount also to VK_REMAINING_ARRAY_LAYERS)";
                     }
-                } else if (dst_layer_count != VK_REMAINING_ARRAY_LAYERS) {
-                    if (dst_layer_count != (src_image_state->create_info.arrayLayers - src_subresource.baseArrayLayer)) {
-                        vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-08794" : "VUID-vkCmdCopyImage-srcImage-08794";
-                        skip |= LogError(vuid, src_objlist, dst_subresource_loc.dot(Field::layerCount),
-                                         "(%" PRIu32 ") does not match srcImage arrayLayers (%" PRIu32
-                                         ") minus baseArrayLayer (%" PRIu32 ")%s.",
-                                         dst_layer_count, src_image_state->create_info.arrayLayers, src_subresource.baseArrayLayer,
-                                         dst_is_3d ? " (dstImage is 3D so it won't be possible to match array layers, but you can "
-                                                     "set srcSubresource.layerCount also to VK_REMAINING_ARRAY_LAYERS)"
-                                                   : "");
-                    }
+                    vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-08794" : "VUID-vkCmdCopyImage-srcImage-08794";
+                    skip |= LogError(vuid, all_objlist, src_subresource_loc.dot(Field::layerCount), "%s", ss.str().c_str());
                 }
             } else if (src_image_type == dst_image_type && src_layer_count != dst_layer_count) {
                 vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-08793" : "VUID-vkCmdCopyImage-srcImage-08793";
@@ -3144,22 +3141,12 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
         skip |= ValidateImageSubresourceLayers(commandBuffer, *dst_image_state, dst_subresource, dst_subresource_loc);
 
         if (src_subresource.layerCount == VK_REMAINING_ARRAY_LAYERS || dst_subresource.layerCount == VK_REMAINING_ARRAY_LAYERS) {
-            if (src_subresource.layerCount != VK_REMAINING_ARRAY_LAYERS) {
-                if (src_subresource.layerCount != (dst_image_state->create_info.arrayLayers - dst_subresource.baseArrayLayer)) {
-                    vuid = is_2 ? "VUID-VkImageBlit2-layerCount-08801" : "VUID-VkImageBlit-layerCount-08801";
-                    skip |= LogError(
-                        vuid, dst_objlist, src_subresource_loc.dot(Field::layerCount),
-                        "(%" PRIu32 ") does not match dstImage arrayLayers (%" PRIu32 ") minus baseArrayLayer (%" PRIu32 ").",
-                        src_subresource.layerCount, dst_image_state->create_info.arrayLayers, dst_subresource.baseArrayLayer);
-                }
-            } else if (dst_subresource.layerCount != VK_REMAINING_ARRAY_LAYERS) {
-                if (dst_subresource.layerCount != (src_image_state->create_info.arrayLayers - src_subresource.baseArrayLayer)) {
-                    vuid = is_2 ? "VUID-VkImageBlit2-layerCount-08801" : "VUID-VkImageBlit-layerCount-08801";
-                    skip |= LogError(
-                        vuid, src_objlist, dst_subresource_loc.dot(Field::layerCount),
-                        "(%" PRIu32 ") does not match srcImage arrayLayers (%" PRIu32 ") minus baseArrayLayer (%" PRIu32 ").",
-                        dst_subresource.layerCount, src_image_state->create_info.arrayLayers, src_subresource.baseArrayLayer);
-                }
+            if (normalized_src_layer_count != normalized_dst_layer_count) {
+                vuid = is_2 ? "VUID-VkImageBlit2-layerCount-08801" : "VUID-VkImageBlit-layerCount-08801";
+                skip |= LogError(vuid, all_objlist, src_subresource_loc.dot(Field::layerCount), "(%s) does not match %s (%s).",
+                                 string_LayerCount(src_image_state->create_info, src_subresource).c_str(),
+                                 dst_subresource_loc.dot(Field::layerCount).Fields().c_str(),
+                                 string_LayerCount(dst_image_state->create_info, dst_subresource).c_str());
             }
         } else if (src_subresource.layerCount != dst_subresource.layerCount) {
             vuid = is_2 ? "VUID-VkImageBlit2-layerCount-08800" : "VUID-VkImageBlit-layerCount-08800";
@@ -3560,24 +3547,19 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
         skip |= ValidateSubresourceImageLayout(cb_state, *dst_image_state, dst_subresource, region.dstOffset.z, region.extent.depth,
                                                dstImageLayout, dst_image_loc, vuid);
 
+        // Will resolve VK_REMAINING_ARRAY_LAYERS to actual value (some VUs just want the value)
+        const uint32_t normalized_src_layer_count = src_image_state->NormalizeLayerCount(src_subresource);
+        const uint32_t normalized_dst_layer_count = dst_image_state->NormalizeLayerCount(dst_subresource);
+
         if (src_subresource.layerCount == VK_REMAINING_ARRAY_LAYERS || dst_subresource.layerCount == VK_REMAINING_ARRAY_LAYERS) {
-            if (src_subresource.layerCount != VK_REMAINING_ARRAY_LAYERS) {
-                if (src_subresource.layerCount != (dst_image_state->create_info.arrayLayers - dst_subresource.baseArrayLayer)) {
-                    vuid = is_2 ? "VUID-VkImageResolve2-layerCount-08804" : "VUID-VkImageResolve-layerCount-08804";
-                    skip |= LogError(
-                        vuid, dst_objlist, src_subresource_loc.dot(Field::layerCount),
-                        "(%" PRIu32 ") does not match dstImage arrayLayers (%" PRIu32 ") minus baseArrayLayer (%" PRIu32 ").",
-                        src_subresource.layerCount, dst_image_state->create_info.arrayLayers, dst_subresource.baseArrayLayer);
-                }
-            } else if (dst_subresource.layerCount != VK_REMAINING_ARRAY_LAYERS) {
-                if (dst_subresource.layerCount != (src_image_state->create_info.arrayLayers - src_subresource.baseArrayLayer)) {
-                    vuid = is_2 ? "VUID-VkImageResolve2-layerCount-08804" : "VUID-VkImageResolve-layerCount-08804";
-                    skip |= LogError(
-                        vuid, src_objlist, dst_subresource_loc.dot(Field::layerCount),
-                        "(%" PRIu32 ") does not match srcImage arrayLayers (%" PRIu32 ") minus baseArrayLayer (%" PRIu32 ").",
-                        dst_subresource.layerCount, src_image_state->create_info.arrayLayers, src_subresource.baseArrayLayer);
-                }
+            if (normalized_src_layer_count != normalized_dst_layer_count) {
+                vuid = is_2 ? "VUID-VkImageResolve2-layerCount-08804" : "VUID-VkImageResolve-layerCount-08804";
+                skip |= LogError(vuid, all_objlist, src_subresource_loc.dot(Field::layerCount), "(%s) does not match %s (%s).",
+                                 string_LayerCount(src_image_state->create_info, src_subresource).c_str(),
+                                 dst_subresource_loc.dot(Field::layerCount).Fields().c_str(),
+                                 string_LayerCount(dst_image_state->create_info, dst_subresource).c_str());
             }
+
         } else if (src_subresource.layerCount != dst_subresource.layerCount) {
             vuid = is_2 ? "VUID-VkImageResolve2-layerCount-08803" : "VUID-VkImageResolve-layerCount-08803";
             skip |= LogError(vuid, all_objlist, src_subresource_loc.dot(Field::layerCount),
@@ -3603,10 +3585,6 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
         }
 
         if (dst_image_type == VK_IMAGE_TYPE_3D) {
-            // Will resolve VK_REMAINING_ARRAY_LAYERS to actual value (some VUs just want the value)
-            const uint32_t normalized_src_layer_count = src_image_state->NormalizeLayerCount(src_subresource);
-            const uint32_t normalized_dst_layer_count = dst_image_state->NormalizeLayerCount(dst_subresource);
-
             if (normalized_src_layer_count != 1) {
                 vuid = is_2 ? "VUID-VkResolveImageInfo2-srcImage-04446" : "VUID-vkCmdResolveImage-srcImage-04446";
                 skip |= LogError(vuid, src_objlist, src_subresource_loc.dot(Field::layerCount),
