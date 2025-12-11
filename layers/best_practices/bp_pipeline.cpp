@@ -19,6 +19,7 @@
 
 #include "best_practices/best_practices_validation.h"
 #include "best_practices/bp_state.h"
+#include "generated/spirv_grammar_helper.h"
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "chassis/chassis_modification_state.h"
@@ -157,6 +158,15 @@ bool BestPractices::ValidateCreateGraphicsPipeline(const VkGraphicsPipelineCreat
             skip |= LogPerformanceWarning("BestPractices-AMD-CreatePipelines-MinimizeNumDynamicStates", device, create_info_loc,
                                           "%s Dynamic States usage incurs a performance cost. Ensure that they are truly needed",
                                           VendorSpecificTag(kBPVendorAMD));
+        }
+    }
+
+    for (uint32_t i = 0; i < pipeline.stage_states.size(); i++) {
+        auto& stage_state = pipeline.stage_states[i];
+        const VkShaderStageFlagBits stage = stage_state.GetStage();
+        // Only validate the shader state once when added, not again when linked
+        if ((stage & pipeline.linking_shaders) == 0) {
+            skip |= ValidateShaderStage(stage_state, &pipeline, create_info_loc.dot(Field::pStages, i));
         }
     }
 
@@ -514,6 +524,28 @@ bool BestPractices::ValidateShaderStage(const ShaderStageState& stage_state, con
                                    "VK_KHR_maintenance4 or Vulkan 1.3+, the new SPIR-V LocalSizeId execution mode should be used "
                                    "instead. This can be done by recompiling your shader and targeting Vulkan 1.3+.");
             }
+        }
+    }
+
+    if (entrypoint.stage == VK_SHADER_STAGE_TASK_BIT_EXT || entrypoint.stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
+        spirv::LocalSize local_size = module_state.FindLocalSize(entrypoint);
+        if (local_size.x == 0) {
+            return skip;
+        }
+        bool is_task =
+            entrypoint.execution_model == spv::ExecutionModelTaskEXT || entrypoint.execution_model == spv::ExecutionModelTaskNV;
+
+        // Assume core checks caught any overflow
+        uint64_t invocations =
+            static_cast<uint64_t>(local_size.x) * static_cast<uint64_t>(local_size.y) * static_cast<uint64_t>(local_size.z);
+        const uint32_t preferred_size = is_task ? phys_dev_ext_props.mesh_shader_props_ext.maxPreferredTaskWorkGroupInvocations
+                                                : phys_dev_ext_props.mesh_shader_props_ext.maxPreferredMeshWorkGroupInvocations;
+        if (invocations > preferred_size) {
+            skip |= LogPerformanceWarning(
+                "BestPractices-Mesh-MaxPreferredWorkGroupInvocations", module_state.handle(), loc,
+                "SPIR-V (%s) total invocation size of %" PRIu64 " (%s) is more than %s (%" PRIu32 ").",
+                string_SpvExecutionModel(entrypoint.execution_model), invocations, local_size.ToString().c_str(),
+                is_task ? "maxPreferredTaskWorkGroupInvocations" : "maxPreferredMeshWorkGroupInvocations", preferred_size);
         }
     }
 

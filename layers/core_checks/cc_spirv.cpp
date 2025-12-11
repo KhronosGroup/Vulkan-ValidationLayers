@@ -2563,16 +2563,6 @@ bool CoreChecks::ValidateTaskMeshWorkGroupSizes(const spirv::Module &module_stat
                          " (%s) must be less than or equal to max workgroup invocations (%" PRIu32 ").",
                          string_SpvExecutionModel(entrypoint.execution_model), invocations, local_size.ToString().c_str(),
                          max_workgroup_size);
-    } else {
-        const uint32_t preferred_size = is_task ? phys_dev_ext_props.mesh_shader_props_ext.maxPreferredTaskWorkGroupInvocations
-                                                : phys_dev_ext_props.mesh_shader_props_ext.maxPreferredMeshWorkGroupInvocations;
-        if (invocations > preferred_size) {
-            skip |= LogWarning("WARNING-Mesh-MaxPreferredWorkGroupInvocations", module_state.handle(), loc,
-                               "SPIR-V (%s) total invocation size of %" PRIu64 " (%s) is more than %s (%" PRIu32 ").",
-                               string_SpvExecutionModel(entrypoint.execution_model), invocations, local_size.ToString().c_str(),
-                               is_task ? "maxPreferredTaskWorkGroupInvocations" : "maxPreferredMeshWorkGroupInvocations",
-                               preferred_size);
-        }
     }
     return skip;
 }
