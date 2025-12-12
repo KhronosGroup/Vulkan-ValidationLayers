@@ -471,7 +471,8 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(VkImageLay
     if (skip) {
         const LogObjectList objlist(image_state->Handle(), renderpass, framebuffer, image_view_state.Handle());
         return LogError(vuid, objlist, rp_loc,
-                        "(%s) was created with %s = %s, but %s pAttachments[%" PRIu32 "] (%s) child image %s.",
+                        "(%s) was created with %s = %s, but %s pAttachments[%" PRIu32
+                        "] (%s) references an image not created with the required VkImageUsageFlags.\n%s.",
                         FormatHandle(renderpass).c_str(), attachment_reference_loc.Fields().c_str(), string_VkImageLayout(layout),
                         FormatHandle(framebuffer).c_str(), attachment_index, FormatHandle(image_view_state.Handle()).c_str(),
                         image_view_state.DescribeImageUsage(*this).c_str());
@@ -496,7 +497,7 @@ bool CoreChecks::ValidateRenderPassStencilLayoutAgainstFramebufferImageUsage(VkI
                                    : "VUID-vkCmdBeginRenderPass-stencilInitialLayout-02843";
         const LogObjectList objlist(renderpass, framebuffer, image_view_state.Handle(), image_state->Handle());
         skip |= LogError(vuid, objlist, layout_loc,
-                         "is %s but %s attachment (%s) underlying child image"
+                         "is %s but %s attachment (%s) references an image which"
                          " was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT.\n%s",
                          string_VkImageLayout(layout), FormatHandle(framebuffer).c_str(),
                          FormatHandle(image_view_state.Handle()).c_str(), image_view_state.DescribeImageUsage(*this).c_str());

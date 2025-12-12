@@ -1303,7 +1303,7 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView &view_state, VkImageLa
             if (!(view_state.inherited_usage & VK_IMAGE_USAGE_SAMPLED_BIT)) {
                 skip |= LogError(
                     "VUID-VkWriteDescriptorSet-descriptorType-00337", objlist, image_info_loc.dot(Field::imageView),
-                    "underlying child image was not created with VK_IMAGE_USAGE_SAMPLED_BIT, but descriptorType is %s.\n%s",
+                    "references an image which was not created with VK_IMAGE_USAGE_SAMPLED_BIT, but descriptorType is %s.\n%s",
                     string_VkDescriptorType(type), view_state.DescribeImageUsage(*this).c_str());
             }
             break;
@@ -1311,7 +1311,7 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView &view_state, VkImageLa
         case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE: {
             if (!(view_state.inherited_usage & VK_IMAGE_USAGE_STORAGE_BIT)) {
                 skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00339", objlist, image_info_loc.dot(Field::imageView),
-                                 "underlying child image was not created with VK_IMAGE_USAGE_STORAGE_BIT, but descriptorType is "
+                                 "references an image which was not created with VK_IMAGE_USAGE_STORAGE_BIT, but descriptorType is "
                                  "VK_DESCRIPTOR_TYPE_STORAGE_IMAGE.\n%s",
                                  view_state.DescribeImageUsage(*this).c_str());
 
@@ -1327,7 +1327,7 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView &view_state, VkImageLa
         case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT: {
             if (!(view_state.inherited_usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) {
                 skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00338", objlist, image_info_loc.dot(Field::imageView),
-                                 "underlying child image was not created with VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, but "
+                                 "references an image which was not created with VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, but "
                                  "descriptorType is VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT.\n%s",
                                  view_state.DescribeImageUsage(*this).c_str());
             }
@@ -1336,7 +1336,7 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView &view_state, VkImageLa
         case VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM: {
             if (!(view_state.inherited_usage & VK_IMAGE_USAGE_SAMPLE_WEIGHT_BIT_QCOM)) {
                 skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-06942", objlist, image_info_loc.dot(Field::imageView),
-                                 "underlying child image was not created with VK_IMAGE_USAGE_SAMPLE_WEIGHT_BIT_QCOM, but "
+                                 "references an image which was not created with VK_IMAGE_USAGE_SAMPLE_WEIGHT_BIT_QCOM, but "
                                  "descriptorType is VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM.\n%s",
                                  view_state.DescribeImageUsage(*this).c_str());
             }
@@ -1345,7 +1345,7 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView &view_state, VkImageLa
         case VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM: {
             if (!(view_state.inherited_usage & VK_IMAGE_USAGE_SAMPLE_BLOCK_MATCH_BIT_QCOM)) {
                 skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-06943", objlist, image_info_loc.dot(Field::imageView),
-                                 "underlying child image was not created with VK_IMAGE_USAGE_SAMPLE_BLOCK_MATCH_BIT_QCOM, but "
+                                 "references an image which was not created with VK_IMAGE_USAGE_SAMPLE_BLOCK_MATCH_BIT_QCOM, but "
                                  "descriptorType is VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM.\n%s",
                                  view_state.DescribeImageUsage(*this).c_str());
             }
@@ -3445,11 +3445,10 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
             if (pDescriptorInfo->data.pCombinedImageSampler->imageView != VK_NULL_HANDLE) {
                 if (const auto image_view_state = Get<vvl::ImageView>(pDescriptorInfo->data.pCombinedImageSampler->imageView)) {
                     if (!(image_view_state->inherited_usage & VK_IMAGE_USAGE_SAMPLED_BIT)) {
-                        skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-12216", image_view_state->Handle(),
-                                         descriptor_info_loc.dot(Field::type),
+                        const LogObjectList objlist(image_view_state->Handle(), image_view_state->create_info.image);
+                        skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-12216", objlist, descriptor_info_loc.dot(Field::type),
                                          "is VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, but pCombinedImageSampler->imageView "
-                                         "internal image (%s) was not created with VK_IMAGE_USAGE_SAMPLED_BIT\n%s",
-                                         FormatHandle(image_view_state->create_info.image).c_str(),
+                                         "references an image which was not created with VK_IMAGE_USAGE_SAMPLED_BIT\n%s",
                                          image_view_state->DescribeImageUsage(*this).c_str());
                     }
                 } else {
@@ -3464,12 +3463,12 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
             data_field = Field::pInputAttachmentImage;
             if (const auto image_view_state = Get<vvl::ImageView>(pDescriptorInfo->data.pInputAttachmentImage->imageView)) {
                 if (!(image_view_state->inherited_usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) {
-                    skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-12219", image_view_state->Handle(),
-                                     descriptor_info_loc.dot(Field::type),
-                                     "is VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, but pInputAttachmentImage->imageView internal image "
-                                     "(%s) was not created with VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT\n%s",
-                                     FormatHandle(image_view_state->create_info.image).c_str(),
-                                     image_view_state->DescribeImageUsage(*this).c_str());
+                    const LogObjectList objlist(image_view_state->Handle(), image_view_state->create_info.image);
+                    skip |=
+                        LogError("VUID-VkDescriptorGetInfoEXT-type-12219", objlist, descriptor_info_loc.dot(Field::type),
+                                 "is VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, but pInputAttachmentImage->imageView references an image "
+                                 "which was not created with VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT\n%s",
+                                 image_view_state->DescribeImageUsage(*this).c_str());
                 }
             } else {
                 skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-08021", device, descriptor_info_loc.dot(Field::type),
@@ -3482,11 +3481,10 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
             if (pDescriptorInfo->data.pSampledImage && pDescriptorInfo->data.pSampledImage->imageView != VK_NULL_HANDLE) {
                 if (const auto image_view_state = Get<vvl::ImageView>(pDescriptorInfo->data.pSampledImage->imageView)) {
                     if (!(image_view_state->inherited_usage & VK_IMAGE_USAGE_SAMPLED_BIT)) {
-                        skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-12217", image_view_state->Handle(),
-                                         descriptor_info_loc.dot(Field::type),
-                                         "is VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, but pSampledImage->imageView internal image (%s) "
-                                         "was not created with VK_IMAGE_USAGE_SAMPLED_BIT\n%s",
-                                         FormatHandle(image_view_state->create_info.image).c_str(),
+                        const LogObjectList objlist(image_view_state->Handle(), image_view_state->create_info.image);
+                        skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-12217", objlist, descriptor_info_loc.dot(Field::type),
+                                         "is VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, but pSampledImage->imageView references an image "
+                                         "which was not created with VK_IMAGE_USAGE_SAMPLED_BIT\n%s",
                                          image_view_state->DescribeImageUsage(*this).c_str());
                     }
                 } else {
@@ -3501,11 +3499,11 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
             if (pDescriptorInfo->data.pStorageImage && pDescriptorInfo->data.pStorageImage->imageView != VK_NULL_HANDLE) {
                 if (const auto image_view_state = Get<vvl::ImageView>(pDescriptorInfo->data.pStorageImage->imageView)) {
                     if (!(image_view_state->inherited_usage & VK_IMAGE_USAGE_STORAGE_BIT)) {
+                        const LogObjectList objlist(image_view_state->Handle(), image_view_state->create_info.image);
                         skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-12218", image_view_state->Handle(),
                                          descriptor_info_loc.dot(Field::type),
-                                         "is VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, but pStorageImage->imageView internal image (%s) "
-                                         "was not created with VK_IMAGE_USAGE_STORAGE_BIT\n%s",
-                                         FormatHandle(image_view_state->create_info.image).c_str(),
+                                         "is VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, but pStorageImage->imageView references an image "
+                                         "which was not created with VK_IMAGE_USAGE_STORAGE_BIT\n%s",
                                          image_view_state->DescribeImageUsage(*this).c_str());
                     }
                 } else {
