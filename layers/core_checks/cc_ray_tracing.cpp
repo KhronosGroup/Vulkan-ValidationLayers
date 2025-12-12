@@ -107,7 +107,7 @@ bool CoreChecks::PreCallValidateBindAccelerationStructureMemoryNV(VkDevice devic
         }
 
         // Validate memory requirements alignment
-        if (SafeModulo(info.memoryOffset, as_state->memory_requirements.alignment) != 0) {
+        if (!IsIntegerMultipleOf(info.memoryOffset, as_state->memory_requirements.alignment)) {
             skip |= LogError("VUID-VkBindAccelerationStructureMemoryInfoNV-memoryOffset-03623", info.accelerationStructure,
                              bind_info_loc.dot(Field::memoryOffset),
                              "(%" PRIu64 ") must be a multiple of the alignment (%" PRIu64
@@ -593,7 +593,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                     min_component_bits_size = std::min(format_info.components[component_i].size, min_component_bits_size);
                 }
                 const uint32_t min_component_byte_size = min_component_bits_size / 8;
-                if (SafeModulo(triangles.vertexData.deviceAddress, min_component_byte_size) != 0) {
+                if (!IsPointerAligned(triangles.vertexData.deviceAddress, min_component_byte_size)) {
                     skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03711",
                                                "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03711"),
                                      cmd_buffer, p_geom_geom_triangles_loc.dot(Field::vertexData).dot(Field::deviceAddress),
@@ -603,10 +603,10 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                      triangles.vertexData.deviceAddress, min_component_byte_size,
                                      string_VkFormat(triangles.vertexFormat));
                 }
-                if (SafeModulo(triangles.vertexStride, min_component_byte_size) != 0) {
+                if (!IsIntegerMultipleOf(triangles.vertexStride, min_component_byte_size)) {
                     skip |= LogError("VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexStride-03735", cmd_buffer,
                                      p_geom_geom_triangles_loc.dot(Field::vertexStride),
-                                     "is %" PRIu64 " and is not aligned to the minimum component byte size (%" PRIu32
+                                     "is %" PRIu64 " and is not a multiple to the minimum component byte size (%" PRIu32
                                      ") of its corresponding vertex "
                                      "format (%s).",
                                      triangles.vertexStride, min_component_byte_size, string_VkFormat(triangles.vertexFormat));
@@ -728,7 +728,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
             } else {
                 if (vkuFormatIsPacked(sphere_struct->vertexFormat)) {
                     const uint32_t format_block_size = vkuFormatTexelBlockSize(sphere_struct->vertexFormat);
-                    if (SafeModulo(sphere_struct->vertexStride, format_block_size) != 0) {
+                    if (!IsIntegerMultipleOf(sphere_struct->vertexStride, format_block_size)) {
                         skip |=
                             LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexStride-10431", cmd_buffer,
                                      p_geom_geom_spheres_loc.dot(Field::vertexStride),
@@ -746,7 +746,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                         min_component_bits_size = std::min(format_info.components[component_i].size, min_component_bits_size);
                     }
                     const uint32_t min_component_byte_size = min_component_bits_size / 8;
-                    if (SafeModulo(sphere_struct->vertexData.deviceAddress, min_component_byte_size) != 0) {
+                    if (!IsPointerAligned(sphere_struct->vertexData.deviceAddress, min_component_byte_size)) {
                         skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03711",
                                                    "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03711"),
                                          cmd_buffer, p_geom_geom_spheres_loc.dot(Field::vertexData).dot(Field::deviceAddress),
@@ -756,7 +756,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                          sphere_struct->vertexData.deviceAddress, min_component_byte_size,
                                          string_VkFormat(sphere_struct->vertexFormat));
                     }
-                    if (SafeModulo(sphere_struct->vertexStride, min_component_byte_size) != 0) {
+                    if (!IsIntegerMultipleOf(sphere_struct->vertexStride, min_component_byte_size)) {
                         skip |= LogError("VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexStride-10431", cmd_buffer,
                                          p_geom_geom_spheres_loc.dot(Field::vertexStride),
                                          "is %" PRIu64 " and is not aligned to the minimum component byte size (%" PRIu32
@@ -846,7 +846,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
             else {
                 if (vkuFormatIsPacked(sphere_linear_struct->vertexFormat)) {
                     const uint32_t format_block_size = vkuFormatTexelBlockSize(sphere_linear_struct->vertexFormat);
-                    if (SafeModulo(sphere_linear_struct->vertexStride, format_block_size) != 0) {
+                    if (!IsIntegerMultipleOf(sphere_linear_struct->vertexStride, format_block_size)) {
                         skip |= LogError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-vertexFormat-10423",
                                          cmd_buffer, p_geom_geom_linear_spheres_loc.dot(Field::vertexStride),
                                          "is %" PRIu64 " and is not aligned to the texel block size (%" PRIu32
@@ -863,7 +863,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                         min_component_bits_size = std::min(format_info.components[component_i].size, min_component_bits_size);
                     }
                     const uint32_t min_component_byte_size = min_component_bits_size / 8;
-                    if (SafeModulo(sphere_linear_struct->vertexData.deviceAddress, min_component_byte_size) != 0) {
+                    if (!IsPointerAligned(sphere_linear_struct->vertexData.deviceAddress, min_component_byte_size)) {
                         skip |=
                             LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03711",
                                                "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03711"),
@@ -874,7 +874,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                      sphere_linear_struct->vertexData.deviceAddress, min_component_byte_size,
                                      string_VkFormat(sphere_linear_struct->vertexFormat));
                     }
-                    if (SafeModulo(sphere_linear_struct->vertexStride, min_component_byte_size) != 0) {
+                    if (!IsIntegerMultipleOf(sphere_linear_struct->vertexStride, min_component_byte_size)) {
                         skip |= LogError("VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-vertexStride-10421",
                                          cmd_buffer, p_geom_geom_linear_spheres_loc.dot(Field::vertexStride),
                                          "is %" PRIu64 " and is not aligned to the minimum component byte size (%" PRIu32
@@ -2333,19 +2333,19 @@ bool CoreChecks::PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(
                                                                 build_size_info.buildScratchSize,
                                                                 build_size_info.accelerationStructureSize);
 
-    if (SafeModulo(pBuildInfo->srcAccelerationStructureData, 256) != 0) {
+    if (!IsPointerAligned(pBuildInfo->srcAccelerationStructureData, 256)) {
         skip |= LogError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10544", commandBuffer,
                          error_obj.location.dot(Field::pBuildInfo).dot(Field::srcAccelerationStructureData),
                          "(0x%" PRIx64 ") must be aligned to 256 bytes", pBuildInfo->srcAccelerationStructureData);
     }
 
-    if (SafeModulo(pBuildInfo->dstAccelerationStructureData, 256) != 0) {
+    if (!IsPointerAligned(pBuildInfo->dstAccelerationStructureData, 256)) {
         skip |= LogError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10545", commandBuffer,
                          error_obj.location.dot(Field::pBuildInfo).dot(Field::dstAccelerationStructureData),
                          "(0x%" PRIx64 ") must be aligned to 256 bytes", pBuildInfo->dstAccelerationStructureData);
     }
 
-    if (SafeModulo(pBuildInfo->scratchData, 256) != 0) {
+    if (!IsPointerAligned(pBuildInfo->scratchData, 256)) {
         skip |= LogError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10542", commandBuffer,
                          error_obj.location.dot(Field::pBuildInfo).dot(Field::scratchData),
                          "(0x%" PRIx64 ") must be aligned to 256 bytes", pBuildInfo->scratchData);
@@ -2576,7 +2576,7 @@ bool CoreChecks::ValidateBuildPartitionedAccelerationStructureInfoNV(
                                                                build_acceleration_structure_size);
     }
 
-    if (SafeModulo(build_info.srcInfosCount, 4) != 0) {
+    if (!IsPointerAligned(build_info.srcInfosCount, 4)) {
         skip |= LogError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-srcInfosCount-10563", device,
                          build_info_loc.dot(Field::srcInfosCount), "(0x%" PRIx64 ") must be aligned to 256 bytes",
                          build_info.srcInfosCount);
@@ -2633,7 +2633,7 @@ bool CoreChecks::PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV(
                                                                pCommandInfos->scratchData);
     }
 
-    if (SafeModulo(pCommandInfos->scratchData, phys_dev_ext_props.cluster_acceleration_props.clusterScratchByteAlignment) != 0) {
+    if (!IsPointerAligned(pCommandInfos->scratchData, phys_dev_ext_props.cluster_acceleration_props.clusterScratchByteAlignment)) {
         skip |= LogError(
             "VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-scratchData-10447", commandBuffer,
             command_infos_loc.dot(Field::scratchData),
@@ -2853,7 +2853,7 @@ bool CoreChecks::ValidateClusterAccelerationStructureCommandsInfoNV(
                 "(0x%" PRIx64
                 ") must be a valid address if input::opMode is VK_CLUSTER_ACCELERATION_STRUCTURE_OP_MODE_IMPLICIT_DESTINATIONS_NV",
                 command_infos.dstImplicitData);
-        } else if (SafeModulo(command_infos.dstImplicitData, alignment_type) != 0) {
+        } else if (!IsPointerAligned(command_infos.dstImplicitData, alignment_type)) {
             skip |= LogError(vuid, objlist, command_infos_loc.dot(Field::dstImplicitData),
                              "(0x%" PRIx64 ") must be aligned to (%" PRIu32
                              ") depending on the input::opMode (%s) and input::opType (%s)",
@@ -2949,7 +2949,7 @@ bool CoreChecks::ValidateClusterAccelerationStructureCommandsInfoNV(
                          string_VkClusterAccelerationStructureOpTypeNV(command_infos.input.opType), stride_min);
     }
 
-    if (SafeModulo(command_infos.scratchData, phys_dev_ext_props.cluster_acceleration_props.clusterScratchByteAlignment) != 0) {
+    if (!IsPointerAligned(command_infos.scratchData, phys_dev_ext_props.cluster_acceleration_props.clusterScratchByteAlignment)) {
         skip |= LogError(
             "VUID-VkClusterAccelerationStructureCommandsInfoNV-scratchData-10480", objlist,
             command_infos_loc.dot(Field::scratchData),
@@ -2958,7 +2958,7 @@ bool CoreChecks::ValidateClusterAccelerationStructureCommandsInfoNV(
             command_infos.scratchData, phys_dev_ext_props.cluster_acceleration_props.clusterScratchByteAlignment);
     }
 
-    if (SafeModulo(command_infos.srcInfosCount, 4)) {
+    if (!IsPointerAligned(command_infos.srcInfosCount, 4)) {
         skip |= LogError("VUID-VkClusterAccelerationStructureCommandsInfoNV-srcInfosCount-10481", objlist,
                          command_infos_loc.dot(Field::srcInfosCount), "(0x%" PRIx64 ") must be 4-byte aligned",
                          command_infos.srcInfosCount);

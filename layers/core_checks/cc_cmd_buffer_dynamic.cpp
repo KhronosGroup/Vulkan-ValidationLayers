@@ -609,8 +609,8 @@ bool CoreChecks::ValidateDrawDynamicStatePipelineValue(const LastBound& last_bou
             DispatchGetPhysicalDeviceMultisamplePropertiesEXT(physical_device, cb_state.dynamic_state_value.rasterization_samples,
                                                               &multisample_prop);
 
-            if (SafeModulo(multisample_prop.maxSampleLocationGridSize.width,
-                           sample_locations->sampleLocationsInfo.sampleLocationGridSize.width) != 0) {
+            if (!IsIntegerMultipleOf(multisample_prop.maxSampleLocationGridSize.width,
+                                     sample_locations->sampleLocationsInfo.sampleLocationGridSize.width)) {
                 skip |= LogError(vuid.sample_locations_enable_07936, objlist, vuid.loc(),
                                  "VkMultisamplePropertiesEXT::maxSampleLocationGridSize.width (%" PRIu32
                                  ") with rasterization samples %s is not evenly divided by "
@@ -619,8 +619,8 @@ bool CoreChecks::ValidateDrawDynamicStatePipelineValue(const LastBound& last_bou
                                  string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples),
                                  sample_locations->sampleLocationsInfo.sampleLocationGridSize.width);
             }
-            if (SafeModulo(multisample_prop.maxSampleLocationGridSize.height,
-                           sample_locations->sampleLocationsInfo.sampleLocationGridSize.height) != 0) {
+            if (!IsIntegerMultipleOf(multisample_prop.maxSampleLocationGridSize.height,
+                                     sample_locations->sampleLocationsInfo.sampleLocationGridSize.height)) {
                 skip |= LogError(vuid.sample_locations_enable_07937, objlist, vuid.loc(),
                                  "VkMultisamplePropertiesEXT::maxSampleLocationGridSize.height (%" PRIu32
                                  ") with rasterization samples %s is not evenly divided by "
@@ -1028,7 +1028,7 @@ bool CoreChecks::ValidateDrawDynamicStateFragment(const LastBound& last_bound_st
                 VkMultisamplePropertiesEXT multisample_prop = vku::InitStructHelper();
                 DispatchGetPhysicalDeviceMultisamplePropertiesEXT(physical_device, rasterization_samples, &multisample_prop);
                 const auto& gridSize = cb_state.dynamic_state_value.sample_locations_info.sampleLocationGridSize;
-                if (SafeModulo(multisample_prop.maxSampleLocationGridSize.width, gridSize.width) != 0) {
+                if (!IsIntegerMultipleOf(multisample_prop.maxSampleLocationGridSize.width, gridSize.width)) {
                     const LogObjectList objlist(cb_state.Handle(), frag_spirv_state->handle());
                     skip |= LogError(vuid.sample_locations_enable_07485, objlist, vuid.loc(),
                                      "VkMultisamplePropertiesEXT::maxSampleLocationGridSize.width (%" PRIu32
@@ -1038,7 +1038,7 @@ bool CoreChecks::ValidateDrawDynamicStateFragment(const LastBound& last_bound_st
                                      multisample_prop.maxSampleLocationGridSize.width,
                                      string_VkSampleCountFlagBits(rasterization_samples), gridSize.width);
                 }
-                if (SafeModulo(multisample_prop.maxSampleLocationGridSize.height, gridSize.height) != 0) {
+                if (!IsIntegerMultipleOf(multisample_prop.maxSampleLocationGridSize.height, gridSize.height)) {
                     const LogObjectList objlist(cb_state.Handle(), frag_spirv_state->handle());
                     skip |= LogError(vuid.sample_locations_enable_07486, objlist, vuid.loc(),
                                      "VkMultisamplePropertiesEXT::maxSampleLocationGridSize.height (%" PRIu32

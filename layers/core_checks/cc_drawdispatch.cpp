@@ -752,18 +752,17 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer comm
                          phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataStride);
     }
 
-    if (SafeModulo(counterBufferOffset, 4) != 0) {
+    if (!IsIntegerMultipleOf(counterBufferOffset, 4)) {
         skip |= LogError(
             "VUID-vkCmdDrawIndirectByteCountEXT-counterBufferOffset-04568", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
             error_obj.location.dot(Field::counterBufferOffset), "(%" PRIu64 ") must be a multiple of 4.", counterBufferOffset);
     }
-    // VUs being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6310
-    if (SafeModulo(counterOffset, 4) != 0) {
+    if (!IsIntegerMultipleOf(counterOffset, 4)) {
         skip |= LogError("VUID-vkCmdDrawIndirectByteCountEXT-counterOffset-09474",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::counterOffset),
                          "(%" PRIu32 ") must be a multiple of 4.", counterOffset);
     }
-    if (SafeModulo(vertexStride, 4) != 0) {
+    if (!IsIntegerMultipleOf(vertexStride, 4)) {
         skip |= LogError("VUID-vkCmdDrawIndirectByteCountEXT-vertexStride-09475",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::vertexStride),
                          "(%" PRIu32 ") must be a multiple of 4.", vertexStride);
@@ -787,14 +786,14 @@ bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
 
     skip |= ValidateActionState(last_bound_state, vuid);
 
-    if (SafeModulo(callableShaderBindingOffset, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupBaseAlignment) != 0) {
+    if (!IsIntegerMultipleOf(callableShaderBindingOffset, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupBaseAlignment)) {
         skip |= LogError("VUID-vkCmdTraceRaysNV-callableShaderBindingOffset-02462",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR),
                          error_obj.location.dot(Field::callableShaderBindingOffset),
                          "must be a multiple of "
                          "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupBaseAlignment.");
     }
-    if (SafeModulo(callableShaderBindingStride, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupHandleSize) != 0) {
+    if (!IsIntegerMultipleOf(callableShaderBindingStride, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupHandleSize)) {
         skip |= LogError("VUID-vkCmdTraceRaysNV-callableShaderBindingStride-02465",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR),
                          error_obj.location.dot(Field::callableShaderBindingStride),
@@ -810,14 +809,14 @@ bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
     }
 
     // hitShader
-    if (SafeModulo(hitShaderBindingOffset, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupBaseAlignment) != 0) {
+    if (!IsIntegerMultipleOf(hitShaderBindingOffset, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupBaseAlignment)) {
         skip |= LogError("VUID-vkCmdTraceRaysNV-hitShaderBindingOffset-02460",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR),
                          error_obj.location.dot(Field::hitShaderBindingOffset),
                          "must be a multiple of "
                          "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupBaseAlignment.");
     }
-    if (SafeModulo(hitShaderBindingStride, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupHandleSize) != 0) {
+    if (!IsIntegerMultipleOf(hitShaderBindingStride, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupHandleSize)) {
         skip |= LogError("VUID-vkCmdTraceRaysNV-hitShaderBindingStride-02464",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR),
                          error_obj.location.dot(Field::hitShaderBindingStride),
@@ -833,14 +832,14 @@ bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
     }
 
     // missShader
-    if (SafeModulo(missShaderBindingOffset, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupBaseAlignment) != 0) {
+    if (!IsIntegerMultipleOf(missShaderBindingOffset, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupBaseAlignment)) {
         skip |= LogError("VUID-vkCmdTraceRaysNV-missShaderBindingOffset-02458",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR),
                          error_obj.location.dot(Field::missShaderBindingOffset),
                          "must be a multiple of "
                          "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupBaseAlignment.");
     }
-    if (SafeModulo(missShaderBindingStride, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupHandleSize) != 0) {
+    if (!IsIntegerMultipleOf(missShaderBindingStride, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupHandleSize)) {
         skip |= LogError("VUID-vkCmdTraceRaysNV-missShaderBindingStride-02463",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR),
                          error_obj.location.dot(Field::missShaderBindingStride),
@@ -856,7 +855,7 @@ bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
     }
 
     // raygenShader
-    if (SafeModulo(raygenShaderBindingOffset, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupBaseAlignment) != 0) {
+    if (!IsIntegerMultipleOf(raygenShaderBindingOffset, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupBaseAlignment)) {
         skip |= LogError("VUID-vkCmdTraceRaysNV-raygenShaderBindingOffset-02456",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR),
                          error_obj.location.dot(Field::raygenShaderBindingOffset),
@@ -2373,11 +2372,11 @@ bool CoreChecks::ValidateDrawVertexBinding(const LastBound &last_bound, const vv
                     vtx_attrib_req_alignment = SafeDivision(vtx_attrib_req_alignment, vkuFormatComponentCount(attr_desc.format));
                 }
 
-                if (SafeModulo(attrib_address, vtx_attrib_req_alignment) != 0) {
+                if (!IsPointerAligned(attrib_address, vtx_attrib_req_alignment)) {
                     LogObjectList objlist(last_bound.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS));
                     objlist.add(vertex_buffer_state->Handle());
                     skip |= LogError(vuid.vertex_binding_attribute_02721, objlist, vuid.loc(),
-                                     "Format %s has an alignment of %" PRIu64 " but the alignment of attribAddress (%" PRIu64
+                                     "Format %s has an alignment of %" PRIu64 " but the alignment of attribAddress (0x%" PRIx64
                                      ") is not aligned in pVertexAttributeDescriptions[%" PRIu32 "] (binding=%" PRIu32
                                      " location=%" PRIu32 ") where attribAddress = vertex buffer offset (%" PRIu64
                                      ") + binding stride (%" PRIu64 ") + attribute offset (%" PRIu32 ").",

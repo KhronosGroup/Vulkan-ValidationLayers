@@ -323,7 +323,7 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer &cb_stat
 
                             // Validate alignment with limit
                             if ((binding->descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) &&
-                                (SafeModulo(offset, limits.minUniformBufferOffsetAlignment) != 0)) {
+                                !IsIntegerMultipleOf(offset, limits.minUniformBufferOffsetAlignment)) {
                                 const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfo-pDynamicOffsets-01971"
                                                         : "VUID-vkCmdBindDescriptorSets-pDynamicOffsets-01971";
                                 skip |= LogError(vuid, cb_state.Handle(), loc.dot(Field::pDynamicOffsets, cur_dyn_offset),
@@ -333,7 +333,7 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer &cb_stat
                                                  offset, limits.minUniformBufferOffsetAlignment);
                             }
                             if ((binding->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) &&
-                                (SafeModulo(offset, limits.minStorageBufferOffsetAlignment) != 0)) {
+                                !IsIntegerMultipleOf(offset, limits.minStorageBufferOffsetAlignment)) {
                                 const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfo-pDynamicOffsets-01972"
                                                         : "VUID-vkCmdBindDescriptorSets-pDynamicOffsets-01972";
                                 skip |= LogError(vuid, cb_state.Handle(), loc.dot(Field::pDynamicOffsets, cur_dyn_offset),
@@ -1938,7 +1938,7 @@ bool CoreChecks::ValidateWriteUpdateBufferInfo(const VkWriteDescriptorSet &updat
         }
 
         if (IsValueIn(descriptor_type, {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC})) {
-            if (SafeModulo(buffer_info.offset, uniform_alignment) != 0) {
+            if (!IsIntegerMultipleOf(buffer_info.offset, uniform_alignment)) {
                 skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00327", device,
                                  write_loc.dot(Field::pBufferInfo, i).dot(Field::offset),
                                  "(%" PRIu64 ") must be a multiple of device limit minUniformBufferOffsetAlignment (%" PRIu64
@@ -1946,7 +1946,7 @@ bool CoreChecks::ValidateWriteUpdateBufferInfo(const VkWriteDescriptorSet &updat
                                  buffer_info.offset, uniform_alignment, string_VkDescriptorType(descriptor_type));
             }
         } else if (IsValueIn(descriptor_type, {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC})) {
-            if (SafeModulo(buffer_info.offset, storage_alignment) != 0) {
+            if (!IsIntegerMultipleOf(buffer_info.offset, storage_alignment)) {
                 skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00328", device,
                                  write_loc.dot(Field::pBufferInfo, i).dot(Field::offset),
                                  "(%" PRIu64 ") must be a multiple of device limit minStorageBufferOffsetAlignment (%" PRIu64
@@ -2806,9 +2806,10 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                              PrintPNextChain(Struct::VkDescriptorBufferBindingInfoEXT, pBindingInfos[i].pNext).c_str());
         }
 
-        if (SafeModulo(pBindingInfos[i].address, phys_dev_ext_props.descriptor_buffer_props.descriptorBufferOffsetAlignment) != 0) {
+        if (!IsPointerAligned(pBindingInfos[i].address,
+                              phys_dev_ext_props.descriptor_buffer_props.descriptorBufferOffsetAlignment)) {
             skip |= LogError("VUID-VkDescriptorBufferBindingInfoEXT-address-08057", commandBuffer, binding_loc.dot(Field::address),
-                             "(%" PRIuLEAST64
+                             "(0x%" PRIx64
                              ") is not aligned "
                              "to descriptorBufferOffsetAlignment (%" PRIuLEAST64 ")",
                              pBindingInfos[i].address, phys_dev_ext_props.descriptor_buffer_props.descriptorBufferOffsetAlignment);
@@ -3189,7 +3190,7 @@ bool CoreChecks::ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoE
         if ((address_loc.field == Field::pUniformTexelBuffer || address_loc.field == Field::pStorageTexelBuffer) &&
             enabled_features.texelBufferAlignment) {
             skip |= ValidateDescriptorAddressInfoTexelBufferAlignment(address_info, address_loc);
-        } else if (SafeModulo(address_info.address, limit_value) != 0) {
+        } else if (!IsPointerAligned(address_info.address, limit_value)) {
             skip |=
                 LogError(limit_vuid, device, address_loc.dot(Field::address), "(0x%" PRIx64 ") is not aligned to %s (%" PRIu64 ").",
                          address_info.address, String(limit_field), limit_value);
@@ -3233,10 +3234,9 @@ bool CoreChecks::ValidateDescriptorAddressInfoTexelBufferAlignment(const VkDescr
         if (phys_dev_props_core13.storageTexelBufferOffsetSingleTexelAlignment) {
             alignment_requirement = std::min(alignment_requirement, texel_block_size);
         }
-        if (SafeModulo(address_info.address, alignment_requirement) != 0) {
+        if (!IsPointerAligned(address_info.address, alignment_requirement)) {
             std::stringstream ss;
-            ss << "(0x" << std::hex << address_info.address << std::dec << ") must be a multiple of " << alignment_requirement
-               << "\n";
+            ss << "(0x" << std::hex << address_info.address << std::dec << ") must be aligned to " << alignment_requirement << "\n";
             if (phys_dev_props_core13.storageTexelBufferOffsetSingleTexelAlignment) {
                 ss << "storageTexelBufferOffsetSingleTexelAlignment is VK_TRUE, so we take "
                       "min(storageTexelBufferOffsetAlignmentBytes, texelBlockSize("
@@ -3260,9 +3260,9 @@ bool CoreChecks::ValidateDescriptorAddressInfoTexelBufferAlignment(const VkDescr
         if (phys_dev_props_core13.uniformTexelBufferOffsetSingleTexelAlignment) {
             alignment_requirement = std::min(alignment_requirement, texel_block_size);
         }
-        if (SafeModulo(address_info.address, alignment_requirement) != 0) {
+        if (!IsPointerAligned(address_info.address, alignment_requirement)) {
             std::stringstream ss;
-            ss << "(0x" << std::hex << address_info.address << std::dec << ") must be a multiple of " << alignment_requirement
+            ss << "(0x" << std::hex << address_info.address << std::dec << ") must be a aligned to " << alignment_requirement
                << "\n";
             if (phys_dev_props_core13.uniformTexelBufferOffsetSingleTexelAlignment) {
                 ss << "uniformTexelBufferOffsetSingleTexelAlignment is VK_TRUE, so we take "

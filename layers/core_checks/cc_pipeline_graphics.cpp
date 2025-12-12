@@ -2392,7 +2392,7 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
             const VkExtent2D max_grid_size = multisample_prop.maxSampleLocationGridSize;
 
             // Note order or "divide" in "sampleLocationsInfo must evenly divide VkMultisamplePropertiesEXT"
-            if (SafeModulo(max_grid_size.width, grid_size.width) != 0) {
+            if (!IsIntegerMultipleOf(max_grid_size.width, grid_size.width)) {
                 skip |=
                     LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07610", device,
                              sample_info_loc.dot(Field::sampleLocationGridSize).dot(Field::width),
@@ -2400,7 +2400,7 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
                              ") is not evenly divided by VkMultisamplePropertiesEXT::sampleLocationGridSize.width (%" PRIu32 ").",
                              grid_size.width, max_grid_size.width);
             }
-            if (SafeModulo(max_grid_size.height, grid_size.height) != 0) {
+            if (!IsIntegerMultipleOf(max_grid_size.height, grid_size.height)) {
                 skip |=
                     LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07611", device,
                              sample_info_loc.dot(Field::sampleLocationGridSize).dot(Field::height),

@@ -774,7 +774,7 @@ bool CoreChecks::ValidateFragmentDensityMapOffsetEnd(const vvl::CommandBuffer &c
         const VkOffset2D &layer_offset = fdm_offset_end_info.pFragmentDensityOffsets[i];
         if (layer_offset.x != 0 || layer_offset.y != 0) {
             const uint32_t width = phys_dev_ext_props.fragment_density_map_offset_props.fragmentDensityOffsetGranularity.width;
-            if (SafeModulo(layer_offset.x, width) != 0) {
+            if (!IsIntegerMultipleOf(layer_offset.x, width)) {
                 const LogObjectList objlist(cb_state.Handle(), rp_state.Handle());
                 skip |=
                     LogError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-x-06512", objlist,
@@ -784,7 +784,7 @@ bool CoreChecks::ValidateFragmentDensityMapOffsetEnd(const vvl::CommandBuffer &c
             }
 
             const uint32_t height = phys_dev_ext_props.fragment_density_map_offset_props.fragmentDensityOffsetGranularity.height;
-            if (SafeModulo(layer_offset.y, height) != 0) {
+            if (!IsIntegerMultipleOf(layer_offset.y, height)) {
                 const LogObjectList objlist(cb_state.Handle(), rp_state.Handle());
                 skip |=
                     LogError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-y-06513", objlist,

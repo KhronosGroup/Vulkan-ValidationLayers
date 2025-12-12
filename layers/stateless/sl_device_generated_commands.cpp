@@ -315,7 +315,7 @@ bool Device::ValidateIndirectCommandsLayoutToken(const Context& context, const V
                              "(%" PRIu32 ") is greater than maxIndirectCommandsTokenOffset (%" PRIu32 ")", token.offset,
                              props.maxIndirectCommandsTokenOffset);
         }
-        if (SafeModulo(token.offset, 4) != 0) {
+        if (!IsIntegerMultipleOf(token.offset, 4)) {
             skip |= LogError("VUID-VkIndirectCommandsLayoutTokenEXT-offset-11125", device, token_loc.dot(Field::offset),
                              "(%" PRIu32 ") is not aligned to 4.", token.offset);
         }
@@ -489,9 +489,9 @@ bool Device::ValidateGeneratedCommandsInfo(VkCommandBuffer command_buffer,
                                            const Location& info_loc) const {
     bool skip = false;
 
-    if (generated_commands_info.sequenceCountAddress != 0 && SafeModulo(generated_commands_info.sequenceCountAddress, 4) != 0) {
+    if (generated_commands_info.sequenceCountAddress != 0 && !IsPointerAligned(generated_commands_info.sequenceCountAddress, 4)) {
         skip |= LogError("VUID-VkGeneratedCommandsInfoEXT-sequenceCountAddress-11073", command_buffer,
-                         info_loc.dot(Field::sequenceCountAddress), "(%" PRIuLEAST64 ") is not aligned to 4.",
+                         info_loc.dot(Field::sequenceCountAddress), "(0x%" PRIx64 ") is not aligned to 4.",
                          generated_commands_info.sequenceCountAddress);
     }
     if (generated_commands_info.maxSequenceCount == 0) {
@@ -499,10 +499,10 @@ bool Device::ValidateGeneratedCommandsInfo(VkCommandBuffer command_buffer,
                          info_loc.dot(Field::maxSequenceCount), "is zero.");
     }
 
-    if (SafeModulo(generated_commands_info.indirectAddress, 4) != 0) {
+    if (!IsPointerAligned(generated_commands_info.indirectAddress, 4)) {
         skip |=
             LogError("VUID-VkGeneratedCommandsInfoEXT-indirectAddress-11074", command_buffer, info_loc.dot(Field::indirectAddress),
-                     "(%" PRIuLEAST64 ") is not aligned to 4.", generated_commands_info.indirectAddress);
+                     "(0x%" PRIx64 ") is not aligned to 4.", generated_commands_info.indirectAddress);
     }
 
     if (generated_commands_info.indirectAddressSize == 0) {

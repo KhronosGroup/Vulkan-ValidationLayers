@@ -268,7 +268,7 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
             if (phys_dev_props_core13.storageTexelBufferOffsetSingleTexelAlignment) {
                 alignment_requirement = std::min(alignment_requirement, texel_block_size);
             }
-            if (SafeModulo(pCreateInfo->offset, alignment_requirement) != 0) {
+            if (!IsIntegerMultipleOf(pCreateInfo->offset, alignment_requirement)) {
                 std::stringstream ss;
                 ss << "was created with VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT, so the offset (" << pCreateInfo->offset
                    << ") must be a multiple of " << alignment_requirement << "\n";
@@ -296,7 +296,7 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
             if (phys_dev_props_core13.uniformTexelBufferOffsetSingleTexelAlignment) {
                 alignment_requirement = std::min(alignment_requirement, texel_block_size);
             }
-            if (SafeModulo(pCreateInfo->offset, alignment_requirement) != 0) {
+            if (!IsIntegerMultipleOf(pCreateInfo->offset, alignment_requirement)) {
                 std::stringstream ss;
                 ss << "was created with VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT, so the offset (" << pCreateInfo->offset
                    << ") must be a multiple of " << alignment_requirement << "\n";

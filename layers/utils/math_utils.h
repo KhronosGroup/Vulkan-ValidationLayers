@@ -138,13 +138,13 @@ static inline bool IsIntegerMultipleOf(const VkOffset2D& value, const VkOffset2D
     return IsIntegerMultipleOf(value.x, granularity.x) && IsIntegerMultipleOf(value.y, granularity.y);
 }
 
-// Perform a zero-tolerant modulo operation
-static inline VkDeviceSize SafeModulo(VkDeviceSize dividend, VkDeviceSize divisor) {
-    VkDeviceSize result = 0;
-    if (divisor != 0) {
-        result = dividend % divisor;
-    }
-    return result;
+static inline bool IsPointerAligned(const void* address, VkDeviceSize alignment) {
+    auto ptr = reinterpret_cast<std::uintptr_t>(address);
+    return alignment != 0 && (ptr % alignment == 0);
+}
+
+static inline bool IsPointerAligned(VkDeviceAddress address, VkDeviceSize alignment) {
+    return alignment != 0 && (address % alignment == 0);
 }
 
 static inline VkDeviceSize SafeDivision(VkDeviceSize dividend, VkDeviceSize divisor) {

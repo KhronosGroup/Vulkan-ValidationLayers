@@ -302,12 +302,12 @@ bool Device::ValidateCmdPushConstants(VkCommandBuffer commandBuffer, uint32_t of
                          max_push_constants_size);
     }
 
-    if (SafeModulo(size, 4) != 0) {
+    if (!IsIntegerMultipleOf(size, 4)) {
         const char *vuid = is_2 ? "VUID-VkPushConstantsInfo-size-00369" : "VUID-vkCmdPushConstants-size-00369";
         skip |= LogError(vuid, commandBuffer, loc.dot(Field::size), "(%" PRIu32 ") must be a multiple of 4.", size);
     }
 
-    if (SafeModulo(offset, 4) != 0) {
+    if (!IsIntegerMultipleOf(offset, 4)) {
         const char *vuid = is_2 ? "VUID-VkPushConstantsInfo-offset-00368" : "VUID-vkCmdPushConstants-offset-00368";
         skip |= LogError(vuid, commandBuffer, loc.dot(Field::offset), "(%" PRIu32 ") must be a multiple of 4.", offset);
     }

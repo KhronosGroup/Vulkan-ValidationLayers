@@ -2386,13 +2386,13 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo &create
     skip |= ValidateImageViewSampleWeightQCOM(create_info, image_state, create_info_loc);
 
     // If Chroma subsampled format ( _420_ or _422_ )
-    if (vkuFormatIsXChromaSubsampled(view_format) && (SafeModulo(image_state.create_info.extent.width, 2) != 0)) {
+    if (vkuFormatIsXChromaSubsampled(view_format) && !IsIntegerMultipleOf(image_state.create_info.extent.width, 2)) {
         skip |= LogError("VUID-VkImageViewCreateInfo-format-04714", device, create_info_loc.dot(Field::format),
                          "(%s) is X Chroma Subsampled (has _422 or _420 suffix) so the image width (%" PRIu32
                          ") must be a multiple of 2.",
                          string_VkFormat(view_format), image_state.create_info.extent.width);
     }
-    if (vkuFormatIsYChromaSubsampled(view_format) && (SafeModulo(image_state.create_info.extent.height, 2) != 0)) {
+    if (vkuFormatIsYChromaSubsampled(view_format) && !IsIntegerMultipleOf(image_state.create_info.extent.height, 2)) {
         skip |= LogError("VUID-VkImageViewCreateInfo-format-04715", device, create_info_loc.dot(Field::format),
                          "(%s) is Y Chroma Subsampled (has _420 suffix) so the image height (%" PRIu32 ") must be a multiple of 2.",
                          string_VkFormat(view_format), image_state.create_info.extent.height);
