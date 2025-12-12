@@ -403,15 +403,13 @@ void QueueBatchContext::ResolvePresentSemaphoreWait(const SignalInfo& signal_inf
 
     // For each presented image
     for (const auto& presented : presented_images) {
-        // Need a copy that can be used as the pseudo-iterator...
-        subresource_adapter::ImageRangeGenerator range_gen(presented.range_gen);
         if (signal_scope.queue == wait_scope.queue) {
             // If signal queue == wait queue, signal is treated as a memory barrier with an access scope equal to the
             // valid accesses for the sync scope.
-            access_context_.ResolveFromContext(sem_same_queue_op, from_context, range_gen);
+            access_context_.ResolveFromContext(sem_same_queue_op, from_context, presented.range_gen);
             access_context_.ResolveFromContext(noop_barrier_op, from_context);
         } else {
-            access_context_.ResolveFromContext(sem_not_same_queue_op, from_context, range_gen);
+            access_context_.ResolveFromContext(sem_not_same_queue_op, from_context, presented.range_gen);
             access_context_.ResolveFromContext(noop_sem_op, from_context);
         }
     }

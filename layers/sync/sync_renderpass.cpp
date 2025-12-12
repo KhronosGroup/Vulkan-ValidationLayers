@@ -494,17 +494,6 @@ void RenderPassAccessContext::UpdateAttachmentStoreAccess(const vvl::RenderPass 
     }
 }
 
-struct ApplySubpassTransitionBarriersAction {
-    explicit ApplySubpassTransitionBarriersAction(const std::vector<SyncBarrier> &barriers, ResourceUsageTag layout_transition_tag)
-        : barriers(barriers), layout_transition_tag(layout_transition_tag) {}
-    void operator()(AccessState *access) const {
-        assert(access);
-        ApplyBarriers(*access, barriers, true, layout_transition_tag);
-    }
-    const std::vector<SyncBarrier> &barriers;
-    const ResourceUsageTag layout_transition_tag;
-};
-
 void RenderPassAccessContext::RecordLayoutTransitions(const vvl::RenderPass &rp_state, uint32_t subpass,
                                                       const AttachmentViewGenVector &attachment_views, const ResourceUsageTag tag,
                                                       AccessContext &access_context) {
@@ -523,10 +512,7 @@ void RenderPassAccessContext::RecordLayoutTransitions(const vvl::RenderPass &rp_
         ApplySubpassTransitionBarriersAction barrier_action(trackback->barriers, tag);
         const std::optional<ImageRangeGen> &attachment_gen = view_gen.GetRangeGen(AttachmentViewGen::Gen::kViewSubresource);
         assert(attachment_gen);
-
-        access_context.ResolveFromContext(barrier_action, *prev_context, *attachment_gen, true /* infill */,
-                                          true /* recur to infill */);
-        assert(attachment_gen);
+        access_context.ResolveFromSubpassContext(barrier_action, *prev_context, *attachment_gen);
     }
 }
 
