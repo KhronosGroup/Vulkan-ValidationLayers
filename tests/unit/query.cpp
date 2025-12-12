@@ -16,6 +16,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include <algorithm>
+#include <cstdint>
 
 class NegativeQuery : public QueryTest {};
 
@@ -1633,18 +1634,22 @@ TEST_F(NegativeQuery, PipelineStatisticsQuery) {
     }
 }
 
-TEST_F(NegativeQuery, TestGetQueryPoolResultsDataAndStride) {
+TEST_F(NegativeQuery, GetQueryPoolResultsDataAndStride) {
     TEST_DESCRIPTION("Test pData and stride multiple in GetQueryPoolResults");
 
     AddRequiredExtensions(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 2);
 
-    m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-flags-02828");
     const size_t out_data_size = 16;
     uint8_t data[out_data_size];
-    vk::GetQueryPoolResults(device(), query_pool, 0, 1, out_data_size, &data, 3, 0);
+    m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-queryCount-12251");
+    vk::GetQueryPoolResults(device(), query_pool, 0, 2, out_data_size, &data, 3, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-flags-02828");
+    vk::GetQueryPoolResults(device(), query_pool, 0, 1, out_data_size, &data[1], 4, 0);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2376,20 +2381,20 @@ TEST_F(NegativeQuery, Stride) {
 
     m_default_queue->SubmitAndWait(m_command_buffer);
 
-    char data_space;
+    uint8_t data_space[16];
     m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-flags-02828");
-    vk::GetQueryPoolResults(*m_device, query_pool, 0, 1, sizeof(data_space), &data_space, 1, VK_QUERY_RESULT_WAIT_BIT);
+    vk::GetQueryPoolResults(*m_device, query_pool, 0, 1, 4, &data_space[1], 1, VK_QUERY_RESULT_WAIT_BIT);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-flags-00815");
-    vk::GetQueryPoolResults(*m_device, query_pool, 0, 1, sizeof(data_space), &data_space, 1,
-                            (VK_QUERY_RESULT_WAIT_BIT | VK_QUERY_RESULT_64_BIT));
+    vk::GetQueryPoolResults(*m_device, query_pool, 0, 1, 8, &data_space[1], 1, (VK_QUERY_RESULT_WAIT_BIT | VK_QUERY_RESULT_64_BIT));
     m_errorMonitor->VerifyFound();
 
     char data_space4[4] = "";
     vk::GetQueryPoolResults(*m_device, query_pool, 0, 1, sizeof(data_space4), &data_space4, 4, VK_QUERY_RESULT_WAIT_BIT);
 
-    char data_space8[8] = "";
+    // alignas() for 32-bit machines
+    alignas(8) char data_space8[8] = "";
     vk::GetQueryPoolResults(*m_device, query_pool, 0, 1, sizeof(data_space8), &data_space8, 8,
                             (VK_QUERY_RESULT_WAIT_BIT | VK_QUERY_RESULT_64_BIT));
 
