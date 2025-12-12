@@ -1144,7 +1144,6 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
         const vvl::ImageView *depth_view_state = nullptr;
         const vvl::ImageView *stencil_view_state = nullptr;
 
-        uint32_t view_mask = 0;
         bool external_format_resolve = false;
 
         const bool is_dynamic_rendering = rp_state->UsesDynamicRendering();
@@ -1170,7 +1169,6 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
             stencil_view_state = cb_state.GetActiveAttachmentImageViewState(
                 cb_state.GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::Stencil));
 
-            view_mask = rp_state->GetDynamicRenderingViewMask();
             external_format_resolve = cb_state.HasExternalFormatResolveAttachment();
         } else {
             const auto *renderpass_create_info = rp_state->create_info.ptr();
@@ -1224,8 +1222,6 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                         }
                     }
                 }
-
-                view_mask = subpass_desc->viewMask;
             }
         }
 
@@ -1310,7 +1306,8 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
         }
 
         // With a non-zero view mask, multiview functionality is considered to be enabled
-        if (view_mask > 0) {
+        const uint32_t view_mask = cb_state.GetViewMask();
+        if (view_mask != 0) {
             for (uint32_t i = 0; i < rectCount; ++i) {
                 if (pRects[i].baseArrayLayer != 0 || pRects[i].layerCount != 1) {
                     const LogObjectList objlist(commandBuffer, rp_state->Handle());

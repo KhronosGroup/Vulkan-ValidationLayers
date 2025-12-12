@@ -196,6 +196,8 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         viewport_w_scaling_08636                 = "VUID-vkCmdDraw-None-08636";
         shading_rate_palette_08637               = "VUID-vkCmdDraw-None-08637";
         shader_object_multiview_10772            = "VUID-vkCmdDraw-None-10772";
+        viewport_multiview_12262                 = "VUID-vkCmdDraw-multiviewPerViewViewports-12262";
+        scissor_multiview_12263                  = "VUID-vkCmdDraw-multiviewPerViewViewports-12263";
         custom_resolve_11521                     = "VUID-vkCmdDraw-flags-11521";
         custom_resolve_11522                     = "VUID-vkCmdDraw-None-11522";
         custom_resolve_11523                     = "VUID-vkCmdDraw-None-11523";
@@ -473,6 +475,8 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         viewport_w_scaling_08636                 = "VUID-vkCmdDrawMultiEXT-None-08636";
         shading_rate_palette_08637               = "VUID-vkCmdDrawMultiEXT-None-08637";
         shader_object_multiview_10772            = "VUID-vkCmdDrawMultiEXT-None-10772";
+        viewport_multiview_12262                 = "VUID-vkCmdDrawMultiEXT-multiviewPerViewViewports-12262";
+        scissor_multiview_12263                  = "VUID-vkCmdDrawMultiEXT-multiviewPerViewViewports-12263";
         custom_resolve_11521                     = "VUID-vkCmdDrawMultiEXT-flags-11521";
         custom_resolve_11522                     = "VUID-vkCmdDrawMultiEXT-None-11522";
         custom_resolve_11523                     = "VUID-vkCmdDrawMultiEXT-None-11523";
@@ -751,6 +755,8 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         viewport_w_scaling_08636                 = "VUID-vkCmdDrawIndexed-None-08636";
         shading_rate_palette_08637               = "VUID-vkCmdDrawIndexed-None-08637";
         shader_object_multiview_10772            = "VUID-vkCmdDrawIndexed-None-10772";
+        viewport_multiview_12262                 = "VUID-vkCmdDrawIndexed-multiviewPerViewViewports-12262";
+        scissor_multiview_12263                  = "VUID-vkCmdDrawIndexed-multiviewPerViewViewports-12263";
         custom_resolve_11521                     = "VUID-vkCmdDrawIndexed-flags-11521";
         custom_resolve_11522                     = "VUID-vkCmdDrawIndexed-None-11522";
         custom_resolve_11523                     = "VUID-vkCmdDrawIndexed-None-11523";
@@ -1029,6 +1035,8 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         viewport_w_scaling_08636                 = "VUID-vkCmdDrawMultiIndexedEXT-None-08636";
         shading_rate_palette_08637               = "VUID-vkCmdDrawMultiIndexedEXT-None-08637";
         shader_object_multiview_10772            = "VUID-vkCmdDrawMultiIndexedEXT-None-10772";
+        viewport_multiview_12262                 = "VUID-vkCmdDrawMultiIndexedEXT-multiviewPerViewViewports-12262";
+        scissor_multiview_12263                  = "VUID-vkCmdDrawMultiIndexedEXT-multiviewPerViewViewports-12263";
         custom_resolve_11521                     = "VUID-vkCmdDrawMultiIndexedEXT-flags-11521";
         custom_resolve_11522                     = "VUID-vkCmdDrawMultiIndexedEXT-None-11522";
         custom_resolve_11523                     = "VUID-vkCmdDrawMultiIndexedEXT-None-11523";
@@ -1307,6 +1315,8 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         viewport_w_scaling_08636                 = "VUID-vkCmdDrawIndirect-None-08636";
         shading_rate_palette_08637               = "VUID-vkCmdDrawIndirect-None-08637";
         shader_object_multiview_10772            = "VUID-vkCmdDrawIndirect-None-10772";
+        viewport_multiview_12262                 = "VUID-vkCmdDrawIndirect-multiviewPerViewViewports-12262";
+        scissor_multiview_12263                  = "VUID-vkCmdDrawIndirect-multiviewPerViewViewports-12263";
         custom_resolve_11521                     = "VUID-vkCmdDrawIndirect-flags-11521";
         custom_resolve_11522                     = "VUID-vkCmdDrawIndirect-None-11522";
         custom_resolve_11523                     = "VUID-vkCmdDrawIndirect-None-11523";
@@ -1584,6 +1594,8 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         viewport_w_scaling_08636                 = "VUID-vkCmdDrawIndexedIndirect-None-08636";
         shading_rate_palette_08637               = "VUID-vkCmdDrawIndexedIndirect-None-08637";
         shader_object_multiview_10772            = "VUID-vkCmdDrawIndexedIndirect-None-10772";
+        viewport_multiview_12262                 = "VUID-vkCmdDrawIndexedIndirect-multiviewPerViewViewports-12262";
+        scissor_multiview_12263                  = "VUID-vkCmdDrawIndexedIndirect-multiviewPerViewViewports-12263";
         custom_resolve_11521                     = "VUID-vkCmdDrawIndexedIndirect-flags-11521";
         custom_resolve_11522                     = "VUID-vkCmdDrawIndexedIndirect-None-11522";
         custom_resolve_11523                     = "VUID-vkCmdDrawIndexedIndirect-None-11523";
@@ -1968,6 +1980,8 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         viewport_w_scaling_08636                 = "VUID-vkCmdDrawIndirectCount-None-08636";
         shading_rate_palette_08637               = "VUID-vkCmdDrawIndirectCount-None-08637";
         shader_object_multiview_10772            = "VUID-vkCmdDrawIndirectCount-None-10772";
+        viewport_multiview_12262                 = "VUID-vkCmdDrawIndirectCount-multiviewPerViewViewports-12262";
+        scissor_multiview_12263                  = "VUID-vkCmdDrawIndirectCount-multiviewPerViewViewports-12263";
         custom_resolve_11521                     = "VUID-vkCmdDrawIndirectCount-flags-11521";
         custom_resolve_11522                     = "VUID-vkCmdDrawIndirectCount-None-11522";
         custom_resolve_11523                     = "VUID-vkCmdDrawIndirectCount-None-11523";
@@ -2248,6 +2262,8 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         viewport_w_scaling_08636                 = "VUID-vkCmdDrawIndexedIndirectCount-None-08636";
         shading_rate_palette_08637               = "VUID-vkCmdDrawIndexedIndirectCount-None-08637";
         shader_object_multiview_10772            = "VUID-vkCmdDrawIndexedIndirectCount-None-10772";
+        viewport_multiview_12262                 = "VUID-vkCmdDrawIndexedIndirectCount-multiviewPerViewViewports-12262";
+        scissor_multiview_12263                  = "VUID-vkCmdDrawIndexedIndirectCount-multiviewPerViewViewports-12263";
         custom_resolve_11521                     = "VUID-vkCmdDrawIndexedIndirectCount-flags-11521";
         custom_resolve_11522                     = "VUID-vkCmdDrawIndexedIndirectCount-None-11522";
         custom_resolve_11523                     = "VUID-vkCmdDrawIndexedIndirectCount-None-11523";
@@ -2706,6 +2722,8 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         viewport_w_scaling_08636                 = "VUID-vkCmdDrawMeshTasksNV-None-08636";
         shading_rate_palette_08637               = "VUID-vkCmdDrawMeshTasksNV-None-08637";
         shader_object_multiview_10772            = "VUID-vkCmdDrawMeshTasksNV-None-10772";
+        viewport_multiview_12262                 = "VUID-vkCmdDrawMeshTasksNV-multiviewPerViewViewports-12262";
+        scissor_multiview_12263                  = "VUID-vkCmdDrawMeshTasksNV-multiviewPerViewViewports-12263";
         custom_resolve_11521                     = "VUID-vkCmdDrawMeshTasksNV-flags-11521";
         custom_resolve_11522                     = "VUID-vkCmdDrawMeshTasksNV-None-11522";
         custom_resolve_11523                     = "VUID-vkCmdDrawMeshTasksNV-None-11523";
@@ -2963,6 +2981,8 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         viewport_w_scaling_08636                 = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08636";
         shading_rate_palette_08637               = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08637";
         shader_object_multiview_10772            = "VUID-vkCmdDrawMeshTasksIndirectNV-None-10772";
+        viewport_multiview_12262                 = "VUID-vkCmdDrawMeshTasksIndirectNV-multiviewPerViewViewports-12262";
+        scissor_multiview_12263                  = "VUID-vkCmdDrawMeshTasksIndirectNV-multiviewPerViewViewports-12263";
         custom_resolve_11521                     = "VUID-vkCmdDrawMeshTasksIndirectNV-flags-11521";
         custom_resolve_11522                     = "VUID-vkCmdDrawMeshTasksIndirectNV-None-11522";
         custom_resolve_11523                     = "VUID-vkCmdDrawMeshTasksIndirectNV-None-11523";
@@ -3223,6 +3243,8 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         viewport_w_scaling_08636                 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08636";
         shading_rate_palette_08637               = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08637";
         shader_object_multiview_10772            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-10772";
+        viewport_multiview_12262                 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-multiviewPerViewViewports-12262";
+        scissor_multiview_12263                  = "VUID-vkCmdDrawMeshTasksIndirectCountNV-multiviewPerViewViewports-12263";
         custom_resolve_11521                     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-flags-11521";
         custom_resolve_11522                     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-11522";
         custom_resolve_11523                     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-11523";
@@ -3477,6 +3499,8 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         viewport_w_scaling_08636                 = "VUID-vkCmdDrawMeshTasksEXT-None-08636";
         shading_rate_palette_08637               = "VUID-vkCmdDrawMeshTasksEXT-None-08637";
         shader_object_multiview_10772            = "VUID-vkCmdDrawMeshTasksEXT-None-10772";
+        viewport_multiview_12262                 = "VUID-vkCmdDrawMeshTasksEXT-multiviewPerViewViewports-12262";
+        scissor_multiview_12263                  = "VUID-vkCmdDrawMeshTasksEXT-multiviewPerViewViewports-12263";
         custom_resolve_11521                     = "VUID-vkCmdDrawMeshTasksEXT-flags-11521";
         custom_resolve_11522                     = "VUID-vkCmdDrawMeshTasksEXT-None-11522";
         custom_resolve_11523                     = "VUID-vkCmdDrawMeshTasksEXT-None-11523";
@@ -3734,6 +3758,8 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         viewport_w_scaling_08636                 = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08636";
         shading_rate_palette_08637               = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08637";
         shader_object_multiview_10772            = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-10772";
+        viewport_multiview_12262                 = "VUID-vkCmdDrawMeshTasksIndirectEXT-multiviewPerViewViewports-12262";
+        scissor_multiview_12263                  = "VUID-vkCmdDrawMeshTasksIndirectEXT-multiviewPerViewViewports-12263";
         custom_resolve_11521                     = "VUID-vkCmdDrawMeshTasksIndirectEXT-flags-11521";
         custom_resolve_11522                     = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-11522";
         custom_resolve_11523                     = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-11523";
@@ -3994,6 +4020,8 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         viewport_w_scaling_08636                 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08636";
         shading_rate_palette_08637               = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08637";
         shader_object_multiview_10772            = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-10772";
+        viewport_multiview_12262                 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-multiviewPerViewViewports-12262";
+        scissor_multiview_12263                  = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-multiviewPerViewViewports-12263";
         custom_resolve_11521                     = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-flags-11521";
         custom_resolve_11522                     = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-11522";
         custom_resolve_11523                     = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-11523";
@@ -4266,6 +4294,8 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         viewport_w_scaling_08636                 = "VUID-vkCmdDrawIndirectByteCountEXT-None-08636";
         shading_rate_palette_08637               = "VUID-vkCmdDrawIndirectByteCountEXT-None-08637";
         shader_object_multiview_10772            = "VUID-vkCmdDrawIndirectByteCountEXT-None-10772";
+        viewport_multiview_12262                 = "VUID-vkCmdDrawIndirectByteCountEXT-multiviewPerViewViewports-12262";
+        scissor_multiview_12263                  = "VUID-vkCmdDrawIndirectByteCountEXT-multiviewPerViewViewports-12263";
         custom_resolve_11521                     = "VUID-vkCmdDrawIndirectByteCountEXT-flags-11521";
         custom_resolve_11522                     = "VUID-vkCmdDrawIndirectByteCountEXT-None-11522";
         custom_resolve_11523                     = "VUID-vkCmdDrawIndirectByteCountEXT-None-11523";
@@ -4571,6 +4601,8 @@ struct DispatchVuidsCmdExecuteGeneratedCommandsEXT : DrawDispatchVuid {
         viewport_w_scaling_08636                 = "VUID-vkCmdExecuteGeneratedCommandsEXT-None-08636";
         shading_rate_palette_08637               = "VUID-vkCmdExecuteGeneratedCommandsEXT-None-08637";
         shader_object_multiview_10772            = "VUID-vkCmdExecuteGeneratedCommandsEXT-None-10772";
+        viewport_multiview_12262                 = "VUID-vkCmdExecuteGeneratedCommandsEXT-multiviewPerViewViewports-12262";
+        scissor_multiview_12263                  = "VUID-vkCmdExecuteGeneratedCommandsEXT-multiviewPerViewViewports-12263";
         external_format_resolve_09362            = "VUID-vkCmdExecuteGeneratedCommandsEXT-colorAttachmentCount-09362";
         external_format_resolve_09363            = "VUID-vkCmdExecuteGeneratedCommandsEXT-None-09363";
         external_format_resolve_09364            = "VUID-vkCmdExecuteGeneratedCommandsEXT-None-09364";

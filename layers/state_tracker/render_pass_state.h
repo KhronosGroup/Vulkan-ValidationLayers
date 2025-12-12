@@ -79,7 +79,6 @@ class RenderPass : public StateObject {
 
     const bool use_dynamic_rendering;
     const bool use_dynamic_rendering_inherited;
-    const bool has_multiview_enabled;
     const bool rasterization_enabled;
 
     const vku::safe_VkRenderingInfo dynamic_rendering_begin_rendering_info;
@@ -88,6 +87,8 @@ class RenderPass : public StateObject {
     const vku::safe_VkCommandBufferInheritanceRenderingInfo inheritance_rendering_info;
     // because colorAttachmentCount is needed to calculate everything, save it.
     const uint32_t dynamic_rendering_color_attachment_count;
+
+    const bool has_multiview_enabled;
 
     using SubpassVec = std::vector<uint32_t>;
     using SelfDepVec = std::vector<SubpassVec>;
@@ -130,7 +131,6 @@ class RenderPass : public StateObject {
     // VkCommandBufferInheritanceRenderingInfo
     uint32_t GetDynamicRenderingViewMask() const;
     VkRenderingFlags GetRenderingFlags() const;
-    uint32_t GetViewMaskBits(uint32_t subpass) const;
     const VkMultisampledRenderToSingleSampledInfoEXT *GetMSRTSSInfo(uint32_t subpass) const;
 };
 
