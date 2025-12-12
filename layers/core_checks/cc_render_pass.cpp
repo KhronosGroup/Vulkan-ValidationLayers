@@ -2967,6 +2967,8 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
     ASSERT_AND_RETURN_SKIP(image_view_state);
     skip |= ValidateRenderingAttachmentInfoResolveMode(commandBuffer, rendering_info, attachment_info, *image_view_state,
                                                        attachment_loc);
+    skip |= ValidateRenderingAttachmentInfoMultisampledResolveMode(commandBuffer, rendering_info, attachment_info,
+                                                                   *image_view_state, attachment_loc);
     skip |= ValidateRenderingAttachmentInfoFeedbackLoop(commandBuffer, attachment_info, *image_view_state, attachment_loc);
     skip |= ValidateRenderingAttachmentFlagsInfo(commandBuffer, attachment_info, *image_view_state, attachment_loc);
 
@@ -3071,31 +3073,48 @@ bool CoreChecks::ValidateRenderingAttachmentInfoResolveMode(VkCommandBuffer comm
                          string_VkResolveModeFlagBits(attachment_info.resolveMode));
     }
 
+    return skip;
+}
+
+bool CoreChecks::ValidateRenderingAttachmentInfoMultisampledResolveMode(VkCommandBuffer commandBuffer,
+                                                                        const VkRenderingInfo& rendering_info,
+                                                                        const VkRenderingAttachmentInfo& attachment_info,
+                                                                        const vvl::ImageView& image_view_state,
+                                                                        const Location& attachment_loc) const {
+    bool skip = false;
     const auto msrtss_info = vku::FindStructInPNextChain<VkMultisampledRenderToSingleSampledInfoEXT>(rendering_info.pNext);
-    if (image_view_state.samples == VK_SAMPLE_COUNT_1_BIT) {
-        if (!msrtss_info || !msrtss_info->multisampledRenderToSingleSampledEnable) {
+    const bool is_multisampled_resolve = msrtss_info && msrtss_info->multisampledRenderToSingleSampledEnable;
+
+    if (is_multisampled_resolve) {
+        if (image_view_state.samples == VK_SAMPLE_COUNT_1_BIT) {
+            if (attachment_info.resolveMode == VK_RESOLVE_MODE_NONE) {
+                const LogObjectList objlist(commandBuffer, attachment_info.imageView);
+                skip |= LogError("VUID-VkRenderingAttachmentInfo-None-12256", commandBuffer, attachment_loc.dot(Field::resolveMode),
+                                 "is VK_RESOLVE_MODE_NONE but imageView is VK_SAMPLE_COUNT_1_BIT and "
+                                 "VkMultisampledRenderToSingleSampledInfoEXT::multisampledRenderToSingleSampledEnable is VK_TRUE");
+            }
+            if (attachment_info.resolveImageView != VK_NULL_HANDLE) {
+                const LogObjectList objlist(commandBuffer, attachment_info.resolveImageView);
+                skip |= LogError(
+                    "VUID-VkRenderingAttachmentInfo-imageView-06863", objlist, attachment_loc.dot(Field::resolveMode),
+                    "is %s and VkMultisampledRenderToSingleSampledInfoEXT::multisampledRenderToSingleSampledEnable is VK_TRUE, and "
+                    "%s.imageView has a sample count of VK_SAMPLE_COUNT_1_BIT, and resolveImageView (%s) is not VK_NULL_HANDLE.",
+                    string_VkResolveModeFlagBits(attachment_info.resolveMode),
+                    attachment_loc.dot(Field::resolveMode).Fields().c_str(),
+                    FormatHandle(attachment_info.resolveImageView).c_str());
+            }
+        }
+    } else if (attachment_info.resolveMode != VK_RESOLVE_MODE_NONE) {
+        if (attachment_info.resolveImageView == VK_NULL_HANDLE) {
             const LogObjectList objlist(commandBuffer, attachment_info.imageView);
+            skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-06862", objlist, attachment_loc.dot(Field::resolveMode),
+                             "(%s) is not VK_RESOLVE_MODE_NONE, resolveImageView must not be VK_NULL_HANDLE",
+                             string_VkResolveModeFlagBits(attachment_info.resolveMode));
+        } else if (image_view_state.samples == VK_SAMPLE_COUNT_1_BIT) {
+            const LogObjectList objlist(commandBuffer, attachment_info.imageView, attachment_info.resolveImageView);
             skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-06861", objlist, attachment_loc.dot(Field::imageView),
                              "must not have a VK_SAMPLE_COUNT_1_BIT when resolveMode is %s",
                              string_VkResolveModeFlagBits(attachment_info.resolveMode));
-        }
-        if (msrtss_info && msrtss_info->multisampledRenderToSingleSampledEnable &&
-            (attachment_info.resolveImageView != VK_NULL_HANDLE)) {
-            const LogObjectList objlist(commandBuffer, attachment_info.resolveImageView);
-            skip |= LogError(
-                "VUID-VkRenderingAttachmentInfo-imageView-06863", objlist, attachment_loc.dot(Field::resolveMode),
-                "is %s and VkMultisampledRenderToSingleSampledInfoEXT::multisampledRenderToSingleSampledEnable is VK_TRUE, and "
-                "%s.imageView has a sample count of VK_SAMPLE_COUNT_1_BIT, and resolveImageView (%s) is not VK_NULL_HANDLE.",
-                string_VkResolveModeFlagBits(attachment_info.resolveMode), attachment_loc.dot(Field::resolveMode).Fields().c_str(),
-                FormatHandle(attachment_info.resolveImageView).c_str());
-        }
-    }
-    if (attachment_info.resolveImageView == VK_NULL_HANDLE) {
-        if (!msrtss_info || !msrtss_info->multisampledRenderToSingleSampledEnable) {
-            skip |=
-                LogError("VUID-VkRenderingAttachmentInfo-imageView-06862", commandBuffer, attachment_loc.dot(Field::resolveMode),
-                         "(%s) is not VK_RESOLVE_MODE_NONE, resolveImageView must not be VK_NULL_HANDLE",
-                         string_VkResolveModeFlagBits(attachment_info.resolveMode));
         }
     }
 

@@ -3059,6 +3059,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled3) {
     auto one_count_image_view_ci = one_count_image.BasicViewCreatInfo();
     vkt::ImageView one_count_image_view(*m_device, one_count_image_view_ci);
     color_attachment.imageView = one_count_image_view;
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-None-12256");
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-imageView-06859");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
