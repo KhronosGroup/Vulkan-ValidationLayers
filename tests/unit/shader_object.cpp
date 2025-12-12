@@ -16,6 +16,7 @@
 #include "../framework/render_pass_helper.h"
 #include "../framework/shader_helper.h"
 #include "generated/vk_function_pointers.h"
+#include "shader_templates.h"
 
 class NegativeShaderObject : public ShaderObjectTest {};
 
@@ -401,6 +402,29 @@ TEST_F(NegativeShaderObject, InvalidStage) {
     createInfo.stage = VK_SHADER_STAGE_CLUSTER_CULLING_BIT_HUAWEI;
     vk::CreateShadersEXT(*m_device, 1u, &createInfo, nullptr, &shader);
 
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderObject, ExceedsSetLimit) {
+    RETURN_IF_SKIP(InitBasicShaderObject());
+
+    vkt::DescriptorSetLayout ds_layout(*m_device, {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr});
+    const uint32_t excess_layouts = 1 + m_device->Physical().limits_.maxBoundDescriptorSets;
+    std::vector<VkDescriptorSetLayout> dsl_array(excess_layouts, ds_layout);
+
+    const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, kMinimalShaderGlsl);
+    VkShaderCreateInfoEXT create_info = vku::InitStructHelper();
+    create_info.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    create_info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+    create_info.codeSize = spv.size() * sizeof(spv[0]);
+    create_info.pCode = spv.data();
+    create_info.pName = "main";
+    create_info.setLayoutCount = excess_layouts;
+    create_info.pSetLayouts = dsl_array.data();
+
+    VkShaderEXT shader;
+    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-setLayoutCount-12257");
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 

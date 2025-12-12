@@ -49,11 +49,10 @@ bool Device::manual_PreCallValidateCreatePipelineLayout(VkDevice device, const V
     bool skip = false;
     const auto &error_obj = context.error_obj;
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-    // Validate layout count against device physical limit
     if (pCreateInfo->setLayoutCount > device_limits.maxBoundDescriptorSets) {
         skip |= LogError("VUID-VkPipelineLayoutCreateInfo-setLayoutCount-00286", device, create_info_loc.dot(Field::setLayoutCount),
-                         "(%" PRIu32 ") exceeds physical device maxBoundDescriptorSets limit (%" PRIu32 ").",
-                         pCreateInfo->setLayoutCount, device_limits.maxBoundDescriptorSets);
+                         "(%" PRIu32 ") exceeds the maxBoundDescriptorSets limit (%" PRIu32 ").", pCreateInfo->setLayoutCount,
+                         device_limits.maxBoundDescriptorSets);
     }
 
     if (!IsExtEnabled(extensions.vk_ext_graphics_pipeline_library)) {
