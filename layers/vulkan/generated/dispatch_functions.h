@@ -4587,6 +4587,12 @@ static inline void DispatchCmdBeginCustomResolveEXT(VkCommandBuffer commandBuffe
     dispatch->CmdBeginCustomResolveEXT(commandBuffer, pBeginCustomResolveInfo);
 }
 
+static inline void DispatchCmdSetComputeOccupancyPriorityNV(VkCommandBuffer commandBuffer,
+                                                            const VkComputeOccupancyPriorityParametersNV* pParameters) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdSetComputeOccupancyPriorityNV(commandBuffer, pParameters);
+}
+
 static inline VkResult DispatchCreateAccelerationStructureKHR(VkDevice device,
                                                               const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                               const VkAllocationCallbacks* pAllocator,

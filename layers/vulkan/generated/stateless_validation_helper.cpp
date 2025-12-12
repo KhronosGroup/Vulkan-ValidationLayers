@@ -3332,6 +3332,17 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_OCCUPANCY_PRIORITY_FEATURES_NV: {  // Covers
+                                                                                          // VUID-VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV);
+                VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV* structure =
+                    (VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::computeOccupancyPriority), structure->computeOccupancyPriority);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceAccelerationStructureFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR: {  // Covers
                                                                                        // VUID-VkPhysicalDeviceAccelerationStructureFeaturesKHR-sType-sType
@@ -8036,6 +8047,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COHERENT_MEMORY_FEATURES_AMD,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COLOR_WRITE_ENABLE_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMMAND_BUFFER_INHERITANCE_FEATURES_NV,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_OCCUPANCY_PRIORITY_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONDITIONAL_RENDERING_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_2_FEATURES_NV,
@@ -24076,9 +24088,12 @@ bool Device::PreCallValidateCmdDecompressMemoryIndirectCountNV(VkCommandBuffer c
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_nv_memory_decompression))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_memory_decompression});
-    skip |= context.ValidateNotZero(indirectCommandsAddress == 0, kVUIDUndefined, loc.dot(Field::indirectCommandsAddress));
-    skip |=
-        context.ValidateNotZero(indirectCommandsCountAddress == 0, kVUIDUndefined, loc.dot(Field::indirectCommandsCountAddress));
+    skip |= context.ValidateNotZero(indirectCommandsAddress == 0,
+                                    "VUID-vkCmdDecompressMemoryIndirectCountNV-indirectCommandsAddress-parameter",
+                                    loc.dot(Field::indirectCommandsAddress));
+    skip |= context.ValidateNotZero(indirectCommandsCountAddress == 0,
+                                    "VUID-vkCmdDecompressMemoryIndirectCountNV-indirectCommandsCountAddress-parameter",
+                                    loc.dot(Field::indirectCommandsCountAddress));
     return skip;
 }
 
@@ -26619,17 +26634,9 @@ bool Device::PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV(
                                            pCommandInfos->input.opMode,
                                            "VUID-VkClusterAccelerationStructureInputInfoNV-opMode-parameter");
 
-        skip |= context.ValidateNotZero(pCommandInfos->dstImplicitData == 0,
-                                        "VUID-VkClusterAccelerationStructureCommandsInfoNV-dstImplicitData-parameter",
-                                        pCommandInfos_loc.dot(Field::dstImplicitData));
-
         skip |= context.ValidateNotZero(pCommandInfos->scratchData == 0,
                                         "VUID-VkClusterAccelerationStructureCommandsInfoNV-scratchData-parameter",
                                         pCommandInfos_loc.dot(Field::scratchData));
-
-        skip |= context.ValidateNotZero(pCommandInfos->srcInfosCount == 0,
-                                        "VUID-VkClusterAccelerationStructureCommandsInfoNV-srcInfosCount-parameter",
-                                        pCommandInfos_loc.dot(Field::srcInfosCount));
 
         skip |= context.ValidateFlags(
             pCommandInfos_loc.dot(Field::addressResolutionFlags),
@@ -26713,10 +26720,6 @@ bool Device::PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(
         skip |= context.ValidateFlags(pBuildInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkBuildAccelerationStructureFlagBitsKHR,
                                       AllVkBuildAccelerationStructureFlagBitsKHR, pBuildInfo->input.flags, kOptionalFlags,
                                       "VUID-VkPartitionedAccelerationStructureInstancesInputNV-flags-parameter", nullptr, false);
-
-        skip |= context.ValidateNotZero(pBuildInfo->srcAccelerationStructureData == 0,
-                                        "VUID-VkBuildPartitionedAccelerationStructureInfoNV-srcAccelerationStructureData-parameter",
-                                        pBuildInfo_loc.dot(Field::srcAccelerationStructureData));
 
         skip |= context.ValidateNotZero(pBuildInfo->dstAccelerationStructureData == 0,
                                         "VUID-VkBuildPartitionedAccelerationStructureInfoNV-dstAccelerationStructureData-parameter",
@@ -27239,6 +27242,25 @@ bool Device::PreCallValidateCmdBeginCustomResolveEXT(VkCommandBuffer commandBuff
     skip |= context.ValidateStructType(
         loc.dot(Field::pBeginCustomResolveInfo), pBeginCustomResolveInfo, VK_STRUCTURE_TYPE_BEGIN_CUSTOM_RESOLVE_INFO_EXT, false,
         "VUID-vkCmdBeginCustomResolveEXT-pBeginCustomResolveInfo-parameter", "VUID-VkBeginCustomResolveInfoEXT-sType-sType");
+    return skip;
+}
+
+bool Device::PreCallValidateCmdSetComputeOccupancyPriorityNV(VkCommandBuffer commandBuffer,
+                                                             const VkComputeOccupancyPriorityParametersNV* pParameters,
+                                                             const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_nv_compute_occupancy_priority))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_compute_occupancy_priority});
+    skip |= context.ValidateStructType(
+        loc.dot(Field::pParameters), pParameters, VK_STRUCTURE_TYPE_COMPUTE_OCCUPANCY_PRIORITY_PARAMETERS_NV, true,
+        "VUID-vkCmdSetComputeOccupancyPriorityNV-pParameters-parameter", "VUID-VkComputeOccupancyPriorityParametersNV-sType-sType");
+    if (pParameters != nullptr) {
+        [[maybe_unused]] const Location pParameters_loc = loc.dot(Field::pParameters);
+        skip |= context.ValidateStructPnext(pParameters_loc, pParameters->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkComputeOccupancyPriorityParametersNV-pNext-pNext", kVUIDUndefined, true);
+    }
     return skip;
 }
 

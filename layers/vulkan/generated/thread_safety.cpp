@@ -8761,6 +8761,18 @@ void Device::PostCallRecordCmdBeginCustomResolveEXT(VkCommandBuffer commandBuffe
     // Host access to commandBuffer must be externally synchronized
 }
 
+void Device::PreCallRecordCmdSetComputeOccupancyPriorityNV(VkCommandBuffer commandBuffer,
+                                                           const VkComputeOccupancyPriorityParametersNV* pParameters,
+                                                           const RecordObject& record_obj) {
+    StartReadObject(commandBuffer, record_obj.location);
+}
+
+void Device::PostCallRecordCmdSetComputeOccupancyPriorityNV(VkCommandBuffer commandBuffer,
+                                                            const VkComputeOccupancyPriorityParametersNV* pParameters,
+                                                            const RecordObject& record_obj) {
+    FinishReadObject(commandBuffer, record_obj.location);
+}
+
 void Device::PreCallRecordCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                          const VkAllocationCallbacks* pAllocator,
                                                          VkAccelerationStructureKHR* pAccelerationStructure,

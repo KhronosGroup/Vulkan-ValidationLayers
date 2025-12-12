@@ -34111,6 +34111,52 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginCustomResolveEXT(VkCommandBuffer commandBuffe
     }
 }
 
+VKAPI_ATTR void VKAPI_CALL CmdSetComputeOccupancyPriorityNV(VkCommandBuffer commandBuffer,
+                                                            const VkComputeOccupancyPriorityParametersNV* pParameters) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdSetComputeOccupancyPriorityNV,
+                          VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkCmdSetComputeOccupancyPriorityNV");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdSetComputeOccupancyPriorityNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdSetComputeOccupancyPriorityNV(commandBuffer, pParameters, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCmdSetComputeOccupancyPriorityNV);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkCmdSetComputeOccupancyPriorityNV");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCmdSetComputeOccupancyPriorityNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdSetComputeOccupancyPriorityNV(commandBuffer, pParameters, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkCmdSetComputeOccupancyPriorityNV");
+        device_dispatch->CmdSetComputeOccupancyPriorityNV(commandBuffer, pParameters);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkCmdSetComputeOccupancyPriorityNV");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdSetComputeOccupancyPriorityNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdSetComputeOccupancyPriorityNV(commandBuffer, pParameters, record_obj);
+        }
+    }
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(VkDevice device,
                                                               const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                               const VkAllocationCallbacks* pAllocator,
@@ -36145,6 +36191,7 @@ const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap() {
          {kFuncTypePdev, (void*)EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM}},
         {"vkCmdEndRendering2EXT", {kFuncTypeDev, (void*)CmdEndRendering2EXT}},
         {"vkCmdBeginCustomResolveEXT", {kFuncTypeDev, (void*)CmdBeginCustomResolveEXT}},
+        {"vkCmdSetComputeOccupancyPriorityNV", {kFuncTypeDev, (void*)CmdSetComputeOccupancyPriorityNV}},
         {"vkCreateAccelerationStructureKHR", {kFuncTypeDev, (void*)CreateAccelerationStructureKHR}},
         {"vkDestroyAccelerationStructureKHR", {kFuncTypeDev, (void*)DestroyAccelerationStructureKHR}},
         {"vkCmdBuildAccelerationStructuresKHR", {kFuncTypeDev, (void*)CmdBuildAccelerationStructuresKHR}},

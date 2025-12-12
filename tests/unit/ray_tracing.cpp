@@ -4392,7 +4392,8 @@ TEST_F(NegativeRayTracing, BuildPartitionedAccelerationStrutureInfoBadMemory) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeRayTracing, CmdBuildPartitionedAccelerationStructures) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11279
+TEST_F(NegativeRayTracing, DISABLED_CmdBuildPartitionedAccelerationStructures) {
     TEST_DESCRIPTION("Validate vkCmdBuildPartitionedAccelerationStructuresNV need partitionedAccelerationStructure feature");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -4744,7 +4745,8 @@ TEST_F(NegativeRayTracing, GetClusterAccelerationStructureBuildSizes) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeRayTracing, ClusterAccelerationStructureCommandsInfo) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11279
+TEST_F(NegativeRayTracing, DISABLED_ClusterAccelerationStructureCommandsInfo) {
     TEST_DESCRIPTION("Validate ClusterAccelerationStructureCommandsInfo all valid usages");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_NV_CLUSTER_ACCELERATION_STRUCTURE_EXTENSION_NAME);

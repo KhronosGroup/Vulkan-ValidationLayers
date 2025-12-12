@@ -9042,6 +9042,11 @@ void Device::CmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer, const VkBeg
     device_dispatch_table.CmdBeginCustomResolveEXT(commandBuffer, pBeginCustomResolveInfo);
 }
 
+void Device::CmdSetComputeOccupancyPriorityNV(VkCommandBuffer commandBuffer,
+                                              const VkComputeOccupancyPriorityParametersNV* pParameters) {
+    device_dispatch_table.CmdSetComputeOccupancyPriorityNV(commandBuffer, pParameters);
+}
+
 VkResult Device::CreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator,
                                                 VkAccelerationStructureKHR* pAccelerationStructure) {

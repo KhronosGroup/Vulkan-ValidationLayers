@@ -229,6 +229,7 @@ const char* String(Func func) {
     {"vkCmdSetColorBlendEquationEXT", 30},
     {"vkCmdSetColorWriteEnableEXT", 28},
     {"vkCmdSetColorWriteMaskEXT", 26},
+    {"vkCmdSetComputeOccupancyPriorityNV", 35},
     {"vkCmdSetConservativeRasterizationModeEXT", 41},
     {"vkCmdSetCoverageModulationModeNV", 33},
     {"vkCmdSetCoverageModulationTableEnableNV", 40},
@@ -946,6 +947,7 @@ const char* String(Struct structure) {
     {"VkCommandBufferSubmitInfo", 26},
     {"VkCommandPoolCreateInfo", 24},
     {"VkComponentMapping", 19},
+    {"VkComputeOccupancyPriorityParametersNV", 39},
     {"VkComputePipelineCreateInfo", 28},
     {"VkComputePipelineIndirectBufferInfoNV", 38},
     {"VkConditionalRenderingBeginInfoEXT", 35},
@@ -1377,6 +1379,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceCoherentMemoryFeaturesAMD", 42},
     {"VkPhysicalDeviceColorWriteEnableFeaturesEXT", 44},
     {"VkPhysicalDeviceCommandBufferInheritanceFeaturesNV", 51},
+    {"VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV", 51},
     {"VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR", 52},
     {"VkPhysicalDeviceComputeShaderDerivativesPropertiesKHR", 54},
     {"VkPhysicalDeviceConditionalRenderingFeaturesEXT", 48},
@@ -2365,6 +2368,7 @@ const char* String(Field field) {
     {"computeDerivativeGroupLinear", 29},
     {"computeDerivativeGroupQuads", 28},
     {"computeFullSubgroups", 21},
+    {"computeOccupancyPriority", 25},
     {"computeUnitsPerShaderArray", 27},
     {"computeWorkGroupSize", 21},
     {"conditionalRendering", 21},
@@ -3647,6 +3651,8 @@ const char* String(Field field) {
     {"objectType", 11},
     {"occlusionQueryEnable", 21},
     {"occlusionQueryPrecise", 22},
+    {"occupancyPriority", 18},
+    {"occupancyThrottling", 20},
     {"offset", 7},
     {"oldLayout", 10},
     {"oldSwapchain", 13},
@@ -4007,6 +4013,7 @@ const char* String(Field field) {
     {"pOperation", 11},
     {"pOpticalFlowImageFormatInfo", 28},
     {"pOverrideInfo", 14},
+    {"pParameters", 12},
     {"pParametersAddInfo", 19},
     {"pParams", 8},
     {"pPastPresentationTimingInfo", 28},
@@ -5981,6 +5988,7 @@ const char* String(Extension extension) {
     {"VK_NV_clip_space_w_scaling", 27},
     {"VK_NV_cluster_acceleration_structure", 37},
     {"VK_NV_command_buffer_inheritance", 33},
+    {"VK_NV_compute_occupancy_priority", 33},
     {"VK_NV_compute_shader_derivatives", 33},
     {"VK_NV_cooperative_matrix", 25},
     {"VK_NV_cooperative_matrix2", 26},
@@ -6413,6 +6421,7 @@ bool IsFieldPointer(Field field) {
     case Field::pOperation:
     case Field::pOpticalFlowImageFormatInfo:
     case Field::pOverrideInfo:
+    case Field::pParameters:
     case Field::pParametersAddInfo:
     case Field::pParams:
     case Field::pPastPresentationTimingInfo:
@@ -8920,6 +8929,10 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDevicePipelineCacheIncrementalModeFeaturesSEC;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_UNIFORM_BUFFER_UNSIZED_ARRAY_FEATURES_EXT:
        return Struct::VkPhysicalDeviceShaderUniformBufferUnsizedArrayFeaturesEXT;
+    case VK_STRUCTURE_TYPE_COMPUTE_OCCUPANCY_PRIORITY_PARAMETERS_NV:
+       return Struct::VkComputeOccupancyPriorityParametersNV;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_OCCUPANCY_PRIORITY_FEATURES_NV:
+       return Struct::VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV;
     case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR:
        return Struct::VkAccelerationStructureGeometryTrianglesDataKHR;
     case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR:
