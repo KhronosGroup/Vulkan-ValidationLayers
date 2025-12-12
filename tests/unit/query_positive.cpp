@@ -139,7 +139,8 @@ TEST_F(PositiveQuery, BasicQuery) {
     m_command_buffer.End();
 
     m_default_queue->SubmitAndWait(m_command_buffer);
-    uint64_t samples_passed[4];
+    // alignas() for 32-bit machines
+    alignas(8) uint64_t samples_passed[4];
     vk::GetQueryPoolResults(*m_device, query_pool, 0, 2, sizeof(samples_passed), samples_passed, sizeof(uint64_t),
                             VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
 
@@ -162,8 +163,9 @@ TEST_F(PositiveQuery, DestroyQueryPoolBasedOnQueryPoolResults) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    std::array<uint64_t, 4> samples_passed = {};
-    constexpr uint64_t sizeof_samples_passed = samples_passed.size() * sizeof(uint64_t);
+    // alignas() for 32-bit machines
+    alignas(8) uint64_t samples_passed[4];
+    constexpr uint64_t sizeof_samples_passed = 4 * sizeof(uint64_t);
     constexpr VkDeviceSize sample_stride = sizeof(uint64_t);
 
     vkt::Buffer buffer(*m_device, sizeof_samples_passed, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
@@ -195,7 +197,7 @@ TEST_F(PositiveQuery, DestroyQueryPoolBasedOnQueryPoolResults) {
 
     m_default_queue->Submit(m_command_buffer);
 
-    VkResult res = vk::GetQueryPoolResults(*m_device, query_pool, 0, query_count, sizeof_samples_passed, samples_passed.data(),
+    VkResult res = vk::GetQueryPoolResults(*m_device, query_pool, 0, query_count, sizeof_samples_passed, samples_passed,
                                            sample_stride, query_flags);
 
     if (res == VK_SUCCESS) {
