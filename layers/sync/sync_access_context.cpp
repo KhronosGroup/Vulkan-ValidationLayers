@@ -176,36 +176,139 @@ void AccessContext::AddReferencedTags(ResourceUsageTagSet &used) const {
 void AccessContext::ResolveFromContext(const AccessContext &from) {
     assert(!finalized_);
     auto noop_action = [](AccessState *access) {};
-    from.ResolveAccessRange(kFullRange, noop_action, &access_state_map_, false);
+    from.ResolveAccessRangeRecursePrev(kFullRange, noop_action, &access_state_map_, false);
+}
+
+void AccessContext::ResolvePreviousAccesses() {
+    assert(!finalized_);
+    if (!prev_.empty()) {
+        for (const auto &prev_dep : prev_) {
+            const ApplyTrackbackStackAction barrier_action(prev_dep.barriers, nullptr);
+            prev_dep.source_subpass->ResolveAccessRangeRecursePrev(kFullRange, barrier_action, &access_state_map_, true);
+        }
+    }
+}
+
+void AccessContext::ResolveFromSubpassContext(const ApplySubpassTransitionBarriersAction &subpass_transition_action,
+                                              const AccessContext &from_context,
+                                              subresource_adapter::ImageRangeGenerator attachment_range_gen) {
+    assert(!finalized_);
+    for (; attachment_range_gen->non_empty(); ++attachment_range_gen) {
+        from_context.ResolveAccessRangeRecursePrev(*attachment_range_gen, subpass_transition_action, &access_state_map_, true);
+    }
+}
+
+void AccessContext::ResolvePreviousAccess(const AccessRange &range, AccessMap *descent_map) const {
+    assert(range.non_empty());
+    if (prev_.empty()) {
+        // Fill the empty poritions of descent_map with the default state
+        UpdateRangeValue(*descent_map, range, AccessState::DefaultAccessState());
+    } else {
+        for (const auto &prev_dep : prev_) {
+            const ApplyTrackbackStackAction barrier_action(prev_dep.barriers, nullptr);
+            prev_dep.source_subpass->ResolveAccessRangeRecursePrev(range, barrier_action, descent_map, true);
+        }
+    }
 }
 
 void AccessContext::ResolvePreviousAccess(const AccessRange &range, AccessMap *descent_map, bool infill,
-                                          const AccessStateFunction *previous_barrier) const {
+                                          const AccessStateFunction &previous_barrier_action) const {
+    assert(range.non_empty());
     if (prev_.empty()) {
-        if (range.non_empty() && infill) {
-            // Fill the empty poritions of descent_map with the default_state with the barrier function applied (iff present)
+        if (infill) {
+            // Fill the empty poritions of descent_map with the default state with the barrier function applied
             AccessState access_state = AccessState::DefaultAccessState();
-            if (previous_barrier) {
-                (*previous_barrier)(&access_state);
-            }
+            previous_barrier_action(&access_state);
             UpdateRangeValue(*descent_map, range, access_state);
         }
     } else {
-        // Look for something to fill the gap further along.
         for (const auto &prev_dep : prev_) {
-            const ApplyTrackbackStackAction barrier_action(prev_dep.barriers, previous_barrier);
-            prev_dep.source_subpass->ResolveAccessRange(range, barrier_action, descent_map, infill);
+            const ApplyTrackbackStackAction barrier_action(prev_dep.barriers, &previous_barrier_action);
+            prev_dep.source_subpass->ResolveAccessRangeRecursePrev(range, barrier_action, descent_map, infill);
         }
     }
 }
 
-// Non-lazy import of all accesses, WaitEvents needs this.
-void AccessContext::ResolvePreviousAccesses() {
-    assert(!finalized_);
-    if (!prev_.size()) {
-        return;  // If no previous contexts, nothing to do
+void AccessContext::ResolveAccessRange(const AccessRange &range, const AccessStateFunction &barrier_action,
+                                       AccessMap *resolve_map) const {
+    if (!range.non_empty()) {
+        return;
     }
-    ResolvePreviousAccess(kFullRange, &access_state_map_, true);
+    ParallelIterator current(*resolve_map, access_state_map_, range.begin);
+    while (current.range.non_empty() && range.includes(current.range.begin)) {
+        const auto current_range = current.range & range;
+        if (current.pos_B.inside_lower_bound_range) {
+            const auto &src_pos = current.pos_B.lower_bound;
+            AccessState access(src_pos->second);  // intentional copy
+            barrier_action(&access);
+            if (current.pos_A.inside_lower_bound_range) {
+                const auto trimmed = Split(current.pos_A.lower_bound, *resolve_map, current_range);
+                trimmed->second.Resolve(access);
+                current.OnCurrentRangeModified(trimmed);
+            } else {
+                auto inserted = resolve_map->Insert(current.pos_A.lower_bound, current_range, access);
+                current.OnCurrentRangeModified(inserted);
+            }
+        }
+        if (current.range.non_empty()) {
+            current.NextRange();
+        }
+    }
+}
+
+void AccessContext::ResolveAccessRangeRecursePrev(const AccessRange &range, const AccessStateFunction &barrier_action,
+                                                  AccessMap *resolve_map, bool infill) const {
+    if (!range.non_empty()) {
+        return;
+    }
+    ParallelIterator current(*resolve_map, access_state_map_, range.begin);
+    while (current.range.non_empty() && range.includes(current.range.begin)) {
+        const auto current_range = current.range & range;
+        if (current.pos_B.inside_lower_bound_range) {
+            const auto &src_pos = current.pos_B.lower_bound;
+            AccessState access(src_pos->second);  // intentional copy
+            barrier_action(&access);
+            if (current.pos_A.inside_lower_bound_range) {
+                const auto trimmed = Split(current.pos_A.lower_bound, *resolve_map, current_range);
+                trimmed->second.Resolve(access);
+                current.OnCurrentRangeModified(trimmed);
+            } else {
+                auto inserted = resolve_map->Insert(current.pos_A.lower_bound, current_range, access);
+                current.OnCurrentRangeModified(inserted);
+            }
+        } else {  // Descend to fill this gap
+            AccessRange recurrence_range = current_range;
+            // The current context is empty for the current range, so recur to fill the gap.
+            // Since we will be recurring back up the DAG, expand the gap descent to cover the full range for which B
+            // is not valid, to minimize that recurrence
+            if (current.pos_B.lower_bound == access_state_map_.end()) {
+                // Do the remainder here....
+                recurrence_range.end = range.end;
+            } else {
+                // Recur only over the range until B becomes valid (within the limits of range).
+                recurrence_range.end = std::min(range.end, current.pos_B.lower_bound->first.begin);
+            }
+            ResolvePreviousAccess(range, resolve_map, infill, barrier_action);
+
+            // recurrence_range is already processed and it can be larger than the current_range.
+            // The NextRange might move to the range that is still inside recurrence_range, but we
+            // need the range that goes after recurrence_range. Seek to the end of recurrence_range,
+            // so NextRange will get the expected range.
+            // TODO: it might be simpler to seek directly to recurrence_range.end without calling NextRange().
+            assert(recurrence_range.non_empty());
+            const auto seek_to = recurrence_range.end - 1;
+            current.SeekAfterModification(seek_to);
+        }
+        if (current.range.non_empty()) {
+            current.NextRange();
+        }
+    }
+
+    // Infill if range goes passed both the current and resolve map prior contents
+    if (current.range.end < range.end) {
+        AccessRange trailing_fill_range = {current.range.end, range.end};
+        ResolvePreviousAccess(trailing_fill_range, resolve_map, infill, barrier_action);
+    }
 }
 
 void AccessContext::UpdateAccessState(const vvl::Buffer &buffer, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
@@ -290,7 +393,7 @@ void AccessContext::ResolveChildContexts(vvl::span<AccessContext> subpass_contex
     assert(!finalized_);
     for (AccessContext &context : subpass_contexts) {
         ApplyTrackbackStackAction barrier_action(context.GetDstExternalTrackBack().barriers);
-        context.ResolveAccessRange(kFullRange, barrier_action, &access_state_map_, false, false);
+        context.ResolveAccessRange(kFullRange, barrier_action, &access_state_map_);
     }
 }
 
@@ -559,10 +662,13 @@ AccessMap::iterator AccessContext::UpdateMemoryAccessStateFunctor::Infill(Access
     // InfillUpdateRange calls infill operation with not empty ranges
     assert(range.non_empty());
 
-    // this is only called on gaps, and never returns a gap.
-    context.ResolvePreviousAccess(range, accesses, true);
+    // The range corresponds to a gap and resolve will replace it with a valid range
+    context.ResolvePreviousAccess(range, accesses);
+
+    // This returns a valid range
     return accesses->LowerBound(range.begin);
 }
+
 void AccessContext::UpdateMemoryAccessStateFunctor::operator()(const AccessMap::iterator &pos) const {
     auto &access_state = pos->second;
     access_state.Update(usage_info, ordering_rule, tag_ex, flags);
