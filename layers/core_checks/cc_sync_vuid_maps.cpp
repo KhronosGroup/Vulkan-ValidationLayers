@@ -1093,98 +1093,116 @@ const std::string &GetBarrierQueueVUID(const Location &loc, QueueError error) {
     return result;
 }
 
-const vvl::unordered_map<VkImageLayout, std::array<Entry, 2>> &GetImageLayoutErrorsMap() {
-    using ValueType = std::array<Entry, 2>;
-    static const vvl::unordered_map<VkImageLayout, std::array<Entry, 2>> kImageLayoutErrors{
+const vvl::unordered_map<VkImageLayout, std::array<Entry, 3>> &GetImageLayoutErrorsMap() {
+    using ValueType = std::array<Entry, 3>;
+    static const vvl::unordered_map<VkImageLayout, std::array<Entry, 3>> kImageLayoutErrors{
         {VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
          ValueType{{
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-oldLayout-01208"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-oldLayout-01208"},
+             {Key(Struct::VkHostImageLayoutTransitionInfo), "VUID-VkHostImageLayoutTransitionInfo-oldLayout-01208"},
          }}},
         {VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
          ValueType{{
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-oldLayout-01209"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-oldLayout-01209"},
+             {Key(Struct::VkHostImageLayoutTransitionInfo), "VUID-VkHostImageLayoutTransitionInfo-oldLayout-01209"},
          }}},
         {VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
          ValueType{{
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-oldLayout-01210"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-oldLayout-01210"},
+             {Key(Struct::VkHostImageLayoutTransitionInfo), "VUID-VkHostImageLayoutTransitionInfo-oldLayout-01210"},
          }}},
         {VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
          ValueType{{
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-oldLayout-01211"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-oldLayout-01211"},
+             {Key(Struct::VkHostImageLayoutTransitionInfo), "VUID-VkHostImageLayoutTransitionInfo-oldLayout-01211"},
          }}},
         {VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
          ValueType{{
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-oldLayout-01212"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-oldLayout-01212"},
+             {Key(Struct::VkHostImageLayoutTransitionInfo), "VUID-VkHostImageLayoutTransitionInfo-oldLayout-01212"},
          }}},
         {VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
          ValueType{{
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-oldLayout-01213"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-oldLayout-01213"},
+             {Key(Struct::VkHostImageLayoutTransitionInfo), "VUID-VkHostImageLayoutTransitionInfo-oldLayout-01213"},
          }}},
         {VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR,  // alias VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV
          ValueType{{
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-oldLayout-02088"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-oldLayout-02088"},
+             {Key(Struct::VkHostImageLayoutTransitionInfo), "VUID-VkHostImageLayoutTransitionInfo-oldLayout-02088"},
          }}},
         {VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL,
          ValueType{{
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-oldLayout-01658"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-oldLayout-01658"},
+             {Key(Struct::VkHostImageLayoutTransitionInfo), "VUID-VkHostImageLayoutTransitionInfo-oldLayout-01658"},
          }}},
         {VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL,
          ValueType{{
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-oldLayout-01659"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-oldLayout-01659"},
+             {Key(Struct::VkHostImageLayoutTransitionInfo), "VUID-VkHostImageLayoutTransitionInfo-oldLayout-01659"},
          }}},
         {VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT,
          ValueType{{
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07006"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07006"},
+             {Key(Struct::VkHostImageLayoutTransitionInfo), "VUID-VkHostImageLayoutTransitionInfo-srcQueueFamilyIndex-07006"},
          }}},
         {VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ,
          ValueType{{
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-09550"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-09550"},
+             {Key(Struct::VkHostImageLayoutTransitionInfo), "VUID-VkHostImageLayoutTransitionInfo-srcQueueFamilyIndex-09550"},
          }}},
         {VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR,
          ValueType{{
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07120"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07120"},
+             {Key(Struct::VkHostImageLayoutTransitionInfo), "VUID-VkHostImageLayoutTransitionInfo-srcQueueFamilyIndex-07120"},
          }}},
         {VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR,
          ValueType{{
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07121"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07121"},
+             {Key(Struct::VkHostImageLayoutTransitionInfo), "VUID-VkHostImageLayoutTransitionInfo-srcQueueFamilyIndex-07121"},
          }}},
         {VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR,
          ValueType{{
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07122"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07122"},
+             {Key(Struct::VkHostImageLayoutTransitionInfo), "VUID-VkHostImageLayoutTransitionInfo-srcQueueFamilyIndex-07122"},
          }}},
         {VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR,
          ValueType{{
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07123"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07123"},
+             {Key(Struct::VkHostImageLayoutTransitionInfo), "VUID-VkHostImageLayoutTransitionInfo-srcQueueFamilyIndex-07123"},
          }}},
         {VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR,
          ValueType{{
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07124"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07124"},
+             {Key(Struct::VkHostImageLayoutTransitionInfo), "VUID-VkHostImageLayoutTransitionInfo-srcQueueFamilyIndex-07124"},
          }}},
         {VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR,
          ValueType{{
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07125"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07125"},
+             {Key(Struct::VkHostImageLayoutTransitionInfo), "VUID-VkHostImageLayoutTransitionInfo-srcQueueFamilyIndex-07125"},
          }}},
         {VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR,
          ValueType{{
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-10287"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-10287"},
+             {Key(Struct::VkHostImageLayoutTransitionInfo), "VUID-VkHostImageLayoutTransitionInfo-srcQueueFamilyIndex-10287"},
          }}},
     };
     return kImageLayoutErrors;

@@ -1907,7 +1907,7 @@ TEST_F(NegativeHostImageCopy, TransitionImageLayoutNoMemory) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeHostImageCopy, TransitionImageLayoutUsage) {
+TEST_F(NegativeHostImageCopy, TransitionImageLayoutMissingUsage) {
     RETURN_IF_SKIP(InitHostImageCopyTest());
 
     VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
@@ -1922,6 +1922,22 @@ TEST_F(NegativeHostImageCopy, TransitionImageLayoutUsage) {
     image_no_transfer.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     transition_info.image = image_no_transfer;
     m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-image-09055");
+    vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeHostImageCopy, TransitionImageLayoutUsageMismatch) {
+    RETURN_IF_SKIP(InitHostImageCopyTest());
+    image_ci.usage = VK_IMAGE_USAGE_HOST_TRANSFER_BIT;
+    vkt::Image image(*m_device, image_ci);
+
+    VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    VkHostImageLayoutTransitionInfo transition_info = vku::InitStructHelper();
+    transition_info.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    transition_info.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    transition_info.subresourceRange = range;
+    transition_info.image = image;
+    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-oldLayout-01208");
     vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
     m_errorMonitor->VerifyFound();
 }

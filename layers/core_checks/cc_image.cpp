@@ -2626,7 +2626,7 @@ bool CoreChecks::PreCallValidateTransitionImageLayout(VkDevice device, uint32_t 
     bool skip = false;
 
     for (uint32_t i = 0; i < transitionCount; ++i) {
-        const Location transition_loc = error_obj.location.dot(Field::pTransitions, i);
+        const Location transition_loc = error_obj.location.dot(Struct::VkHostImageLayoutTransitionInfo, Field::pTransitions, i);
         const auto &transition = pTransitions[i];
         const auto image_state = Get<vvl::Image>(transition.image);
         if (!image_state) continue;
@@ -2642,6 +2642,10 @@ bool CoreChecks::PreCallValidateTransitionImageLayout(VkDevice device, uint32_t 
                              "VK_IMAGE_USAGE_HOST_TRANSFER_BIT.",
                              string_VkImageUsageFlags(image_state->create_info.usage).c_str());
         }
+        skip |= ValidateImageLayoutAgainstImageUsage(transition_loc.dot(Field::oldLayout), transition.image, transition.oldLayout,
+                                                     image_state->create_info.usage);
+        skip |= ValidateImageLayoutAgainstImageUsage(transition_loc.dot(Field::newLayout), transition.image, transition.newLayout,
+                                                     image_state->create_info.usage);
 
         auto image_layer_count_var = Field::arrayLayers;
         uint32_t image_layer_count = image_state->create_info.arrayLayers;
