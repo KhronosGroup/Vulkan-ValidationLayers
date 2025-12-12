@@ -200,6 +200,12 @@ bool Device::manual_PreCallValidateCreateShadersEXT(VkDevice device, uint32_t cr
         }
 
         skip |= ValidatePushConstantRange(create_info.pushConstantRangeCount, create_info.pPushConstantRanges, create_info_loc);
+
+        if (create_info.setLayoutCount > device_limits.maxBoundDescriptorSets) {
+            skip |= LogError("VUID-VkShaderCreateInfoEXT-setLayoutCount-12257", device, create_info_loc.dot(Field::setLayoutCount),
+                             "(%" PRIu32 ") exceeds the maxBoundDescriptorSets limit (%" PRIu32 ").", create_info.setLayoutCount,
+                             device_limits.maxBoundDescriptorSets);
+        }
     }
 
     return skip;
