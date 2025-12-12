@@ -106,16 +106,17 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const v
             }
         }
 
-        if (enabled_features.multiviewPerViewViewports && rp_state->has_multiview_enabled) {
-            skip |= ValidateMultiviewPerViewViewports(pipeline, *rp_state, create_info_loc);
-        }
-
         // Check for portability errors
         // Issue raised in https://gitlab.khronos.org/vulkan/vulkan/-/issues/3436
         // The combination of GPL/DynamicRendering and Portability has spec issues that need to be clarified
         if (IsExtEnabled(extensions.vk_khr_portability_subset) && !pipeline.IsGraphicsLibrary()) {
             skip |= ValidateGraphicsPipelinePortability(pipeline, create_info_loc);
         }
+    }
+
+    // Special case that doesn't fit into dynamic vs non-dynamic rendering because how it loops ALL subpass viewMasks
+    if (enabled_features.multiviewPerViewViewports && rp_state && rp_state->has_multiview_enabled) {
+        skip |= ValidateMultiviewPerViewViewports(pipeline, *rp_state, create_info_loc);
     }
 
     if (pipeline.OwnsLibState(pipeline.pre_raster_state) || pipeline.OwnsLibState(pipeline.fragment_shader_state)) {
@@ -4281,11 +4282,35 @@ bool CoreChecks::ValidateMultiviewPerViewViewports(const vvl::Pipeline& pipeline
         return skip;
     }
 
-    if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT) && !pipeline.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT)) {
+    if (rp_state.UsesDynamicRendering()) {
+        const uint32_t view_mask = rp_state.dynamic_pipeline_rendering_create_info.viewMask;
+        if (view_mask == 0) {
+            return skip;
+        }
+        const uint32_t msb = (uint32_t)MostSignificantBit(view_mask);
+        if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) && msb >= viewport_state->viewportCount) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-multiviewPerViewViewports-12249", rp_state.Handle(),
+                             create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::viewMask),
+                             "(0x%" PRIx32 ") most significant bit index (%" PRIu32
+                             ") is not less than pViewportState->viewportCount (%" PRIu32 ")",
+                             view_mask, msb, viewport_state->viewportCount);
+        }
+        if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT) && msb >= viewport_state->scissorCount) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-multiviewPerViewViewports-12250", rp_state.Handle(),
+                             create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::viewMask),
+                             "(0x%" PRIx32 ") most significant bit index (%" PRIu32
+                             ") is not less than pViewportState->scissorCount (%" PRIu32 ")",
+                             view_mask, msb, viewport_state->scissorCount);
+        }
+    } else {
         for (uint32_t i = 0; i < rp_state.create_info.subpassCount; i++) {
             const uint32_t view_mask = rp_state.create_info.pSubpasses[i].viewMask;
+            if (view_mask == 0) {
+                continue;
+            }
             const uint32_t msb = (uint32_t)MostSignificantBit(view_mask);
-            if (msb >= viewport_state->viewportCount) {
+
+            if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) && msb >= viewport_state->viewportCount) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07730", rp_state.Handle(),
                                  create_info_loc.dot(Field::renderPass),
                                  "was created with VkRenderPassMultiviewCreateInfo::pViewMask[%" PRIu32 "] of 0x%" PRIx32
@@ -4293,14 +4318,7 @@ bool CoreChecks::ValidateMultiviewPerViewViewports(const vvl::Pipeline& pipeline
                                  ") is not less than pViewportState->viewportCount (%" PRIu32 ")",
                                  i, view_mask, msb, viewport_state->viewportCount);
             }
-        }
-    }
-
-    if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_SCISSOR) && !pipeline.IsDynamic(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT)) {
-        for (uint32_t i = 0; i < rp_state.create_info.subpassCount; i++) {
-            const uint32_t view_mask = rp_state.create_info.pSubpasses[i].viewMask;
-            const uint32_t msb = (uint32_t)MostSignificantBit(view_mask);
-            if (msb >= viewport_state->scissorCount) {
+            if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT) && msb >= viewport_state->scissorCount) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07731", rp_state.Handle(),
                                  create_info_loc.dot(Field::renderPass),
                                  "was created with VkRenderPassMultiviewCreateInfo::pViewMask[%" PRIu32 "] of 0x%" PRIx32

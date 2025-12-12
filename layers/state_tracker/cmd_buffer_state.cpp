@@ -2178,6 +2178,16 @@ uint32_t CommandBuffer::GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type 
     return 0;
 }
 
+uint32_t CommandBuffer::GetViewMask() const {
+    if (!active_render_pass) {
+        return 0;
+    } else if (active_render_pass->UsesDynamicRendering()) {
+        return active_render_pass->GetDynamicRenderingViewMask();
+    } else {
+        return active_render_pass->create_info.pSubpasses[GetActiveSubpass()].viewMask;
+    }
+}
+
 bool CommandBuffer::HasExternalFormatResolveAttachment() const {
     if (active_render_pass && active_render_pass->use_dynamic_rendering &&
         active_render_pass->dynamic_rendering_begin_rendering_info.colorAttachmentCount > 0) {

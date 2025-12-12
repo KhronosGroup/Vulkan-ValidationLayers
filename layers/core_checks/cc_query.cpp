@@ -1167,15 +1167,16 @@ bool CoreChecks::ValidateCmdWriteTimestamp(const vvl::CommandBuffer &cb_state, V
                          "query (%" PRIu32 ") is not lower than the number of queries (%" PRIu32 ") in Query pool %s.", slot,
                          query_pool_state->create_info.queryCount, FormatHandle(queryPool).c_str());
     }
-    if (cb_state.active_render_pass && slot + cb_state.active_render_pass->GetViewMaskBits(cb_state.GetActiveSubpass()) >
-                                           query_pool_state->create_info.queryCount) {
+    const uint32_t view_mask = cb_state.GetViewMask();
+    const uint32_t view_mask_bits = GetBitSetCount(view_mask);
+    if (cb_state.active_render_pass && (slot + view_mask_bits) > query_pool_state->create_info.queryCount) {
         const char *vuid = is_2 ? "VUID-vkCmdWriteTimestamp2-query-03865" : "VUID-vkCmdWriteTimestamp-query-00831";
         const LogObjectList objlist(cb_state.Handle(), queryPool);
-        skip |= LogError(vuid, objlist, loc,
-                         "query (%" PRIu32 ") + number of bits in current subpass (%" PRIu32
-                         ") is not lower than the number of queries (%" PRIu32 ") in Query pool %s.",
-                         slot, cb_state.active_render_pass->GetViewMaskBits(cb_state.GetActiveSubpass()),
-                         query_pool_state->create_info.queryCount, FormatHandle(queryPool).c_str());
+        skip |=
+            LogError(vuid, objlist, loc,
+                     "query (%" PRIu32 ") + number of bits (%" PRIu32 ") in current viewMask (0x%" PRIx32
+                     ") is not lower than the number of queries (%" PRIu32 ") in Query pool %s.",
+                     slot, view_mask_bits, view_mask, query_pool_state->create_info.queryCount, FormatHandle(queryPool).c_str());
     }
 
     return skip;

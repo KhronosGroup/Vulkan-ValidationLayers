@@ -587,19 +587,10 @@ bool CoreChecks::PreCallValidateCmdExecuteGeneratedCommandsEXT(VkCommandBuffer c
             "was created with VK_INDIRECT_COMMANDS_LAYOUT_USAGE_EXPLICIT_PREPROCESS_BIT_EXT but isPreprocessed is VK_FALSE.");
     }
 
-    if (const vvl::RenderPass* rp_state = cb_state.active_render_pass.get()) {
-        uint32_t view_mask = 0;
-        if (rp_state->UsesDynamicRendering()) {
-            view_mask = rp_state->GetDynamicRenderingViewMask();
-        } else {
-            const auto* render_pass_info = rp_state->create_info.ptr();
-            const auto subpass_desc = render_pass_info->pSubpasses[cb_state.GetActiveSubpass()];
-            view_mask = subpass_desc.viewMask;
-        }
-        if (view_mask != 0) {
-            skip |= LogError("VUID-vkCmdExecuteGeneratedCommandsEXT-None-11062", commandBuffer, error_obj.location,
-                             "The active render pass contains a non-zero viewMask (0x%" PRIx32 ").", view_mask);
-        }
+    uint32_t view_mask = cb_state.GetViewMask();
+    if (view_mask != 0) {
+        skip |= LogError("VUID-vkCmdExecuteGeneratedCommandsEXT-None-11062", commandBuffer, error_obj.location,
+                         "The active render pass contains a non-zero viewMask (0x%" PRIx32 ").", view_mask);
     }
 
     if (auto indirect_execution_set = Get<vvl::IndirectExecutionSet>(pGeneratedCommandsInfo->indirectExecutionSet)) {

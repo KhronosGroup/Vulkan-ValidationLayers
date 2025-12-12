@@ -21,6 +21,7 @@
 #include "state_tracker/query_state.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/render_pass_state.h"
+#include "utils/math_utils.h"
 
 namespace vvl {
 
@@ -106,8 +107,7 @@ QueryCount::QueryCount(vvl::CommandBuffer &cb_state) {
     inside_render_pass = cb_state.active_render_pass != nullptr;
     // If render pass instance has multiview enabled, query uses N consecutive query indices
     if (inside_render_pass) {
-        subpass = cb_state.GetActiveSubpass();
-        const uint32_t bits = cb_state.active_render_pass->GetViewMaskBits(subpass);
+        const uint32_t bits = GetBitSetCount(cb_state.GetViewMask());
         count = std::max(count, bits);
     }
 }

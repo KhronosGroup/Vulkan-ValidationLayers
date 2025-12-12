@@ -750,6 +750,8 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     // used for non-color types
     uint32_t GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type type) const;
 
+    uint32_t GetViewMask() const;
+
     bool HasExternalFormatResolveAttachment() const;
 
     inline void BindLastBoundPipeline(vvl::BindPoint bind_point, vvl::Pipeline *pipe_state) {

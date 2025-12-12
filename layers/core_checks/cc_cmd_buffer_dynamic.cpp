@@ -20,6 +20,7 @@
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vulkan_core.h>
+#include <cstdint>
 #include "core_checks/cc_state_tracker.h"
 #include "core_validation.h"
 #include "drawdispatch/drawdispatch_vuids.h"
@@ -1283,6 +1284,27 @@ bool CoreChecks::ValidateDrawDynamicStateValue(const LastBound& last_bound_state
             skip |= LogError(vuid_string, objlist, vuid.loc(),
                              "vkCmdSetAlphaToCoverageEnableEXT set alphaToCoverageEnable to true but the bound "
                              "fragment shader doesn't declare a variable that covers Location 0, Component 3 (alpha channel).");
+        }
+    }
+
+    if (enabled_features.multiviewPerViewViewports) {
+        const uint32_t view_mask = cb_state.GetViewMask();
+        if (view_mask != 0) {
+            const uint32_t msb = (uint32_t)MostSignificantBit(view_mask);
+            if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) &&
+                msb >= cb_state.dynamic_state_value.viewport_count) {
+                skip |= LogError(vuid.viewport_multiview_12262, cb_state.Handle(), vuid.loc(),
+                                 "The current viewMask (0x%" PRIx32 ") most significant bit index (%" PRIu32
+                                 ") is not less than viewportCount (%" PRIu32 ") set with vkCmdSetViewportWithCount",
+                                 view_mask, msb, cb_state.dynamic_state_value.viewport_count);
+            }
+            if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT) &&
+                msb >= cb_state.dynamic_state_value.scissor_count) {
+                skip |= LogError(vuid.scissor_multiview_12263, cb_state.Handle(), vuid.loc(),
+                                 "The current viewMask (0x%" PRIx32 ") most significant bit index (%" PRIu32
+                                 ") is not less than scissorCount (%" PRIu32 ") set with vkCmdSetScissorWithCount",
+                                 view_mask, msb, cb_state.dynamic_state_value.scissor_count);
+            }
         }
     }
 
