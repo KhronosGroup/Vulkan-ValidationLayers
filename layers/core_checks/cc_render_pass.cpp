@@ -810,7 +810,7 @@ bool CoreChecks::ValidateFragmentDensityMapOffsetEnd(const vvl::CommandBuffer &c
             skip |= LogError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pDepthStencilAttachment-06505", objlist,
                              end_info_loc.dot(Field::fragmentDensityOffsetCount),
                              "is %" PRIu32
-                             " but %s underlying %s was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT",
+                             " but %s references %s which was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT",
                              fdm_offset_end_info.fragmentDensityOffsetCount, attachment_info.Describe(cb_state, i).c_str(),
                              FormatHandle(*attachment->image_state).c_str());
         }
@@ -820,7 +820,7 @@ bool CoreChecks::ValidateFragmentDensityMapOffsetEnd(const vvl::CommandBuffer &c
             skip |= LogError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pInputAttachments-06506", objlist,
                              end_info_loc.dot(Field::fragmentDensityOffsetCount),
                              "is %" PRIu32
-                             " but %s underlying %s was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT",
+                             " but %s references %s which was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT",
                              fdm_offset_end_info.fragmentDensityOffsetCount, attachment_info.Describe(cb_state, i).c_str(),
                              FormatHandle(*attachment->image_state).c_str());
         }
@@ -830,7 +830,7 @@ bool CoreChecks::ValidateFragmentDensityMapOffsetEnd(const vvl::CommandBuffer &c
             skip |= LogError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pColorAttachments-06507", objlist,
                              end_info_loc.dot(Field::fragmentDensityOffsetCount),
                              "is %" PRIu32
-                             " but %s underlying %s was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT",
+                             " but %s references %s which was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT",
                              fdm_offset_end_info.fragmentDensityOffsetCount, attachment_info.Describe(cb_state, i).c_str(),
                              FormatHandle(*attachment->image_state).c_str());
         }
@@ -840,7 +840,7 @@ bool CoreChecks::ValidateFragmentDensityMapOffsetEnd(const vvl::CommandBuffer &c
             skip |= LogError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pResolveAttachments-06508", objlist,
                              end_info_loc.dot(Field::fragmentDensityOffsetCount),
                              "is %" PRIu32
-                             " but %s underlying %s was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT",
+                             " but %s references %s which was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT",
                              fdm_offset_end_info.fragmentDensityOffsetCount, attachment_info.Describe(cb_state, i).c_str(),
                              FormatHandle(*attachment->image_state).c_str());
         }
@@ -850,7 +850,7 @@ bool CoreChecks::ValidateFragmentDensityMapOffsetEnd(const vvl::CommandBuffer &c
             skip |= LogError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-fragmentDensityMapAttachment-06504", objlist,
                              end_info_loc.dot(Field::fragmentDensityOffsetCount),
                              "is %" PRIu32
-                             " but %s underlying %s was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT",
+                             " but %s references %s which was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT",
                              fdm_offset_end_info.fragmentDensityOffsetCount, attachment_info.Describe(cb_state, i).c_str(),
                              FormatHandle(*attachment->image_state).c_str());
         }
@@ -898,12 +898,13 @@ bool CoreChecks::ValidateFragmentDensityMapOffsetEnd(const vvl::CommandBuffer &c
                 const auto attachment = subpass.pPreserveAttachments[k];
                 if ((attachment != VK_ATTACHMENT_UNUSED) && (attachment == i) && !has_offset_flag) {
                     const LogObjectList objlist(cb_state.Handle(), rp_state.Handle(), view_state->Handle());
-                    skip |= LogError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pPreserveAttachments-06509", objlist,
-                                     end_info_loc.dot(Field::fragmentDensityOffsetCount),
-                                     "is %" PRIu32 " but preserveAttachmentCount[%" PRIu32 "] (pAttachments[%" PRIu32
-                                     "] %s) underlying %s was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT",
-                                     fdm_offset_end_info.fragmentDensityOffsetCount, k, i, FormatHandle(*view_state).c_str(),
-                                     FormatHandle(*view_state->image_state).c_str());
+                    skip |= LogError(
+                        "VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pPreserveAttachments-06509", objlist,
+                        end_info_loc.dot(Field::fragmentDensityOffsetCount),
+                        "is %" PRIu32 " but preserveAttachmentCount[%" PRIu32 "] (pAttachments[%" PRIu32
+                        "] %s) references %s which was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT",
+                        fdm_offset_end_info.fragmentDensityOffsetCount, k, i, FormatHandle(*view_state).c_str(),
+                        FormatHandle(*view_state->image_state).c_str());
                 }
             }
         }
@@ -3167,7 +3168,7 @@ bool CoreChecks::ValidateRenderingAttachmentFlagsInfo(VkCommandBuffer commandBuf
             const LogObjectList objlist(commandBuffer, attachment_info.imageView);
             skip |= LogError("VUID-VkRenderingAttachmentInfo-pNext-11754", objlist,
                              attachment_loc.pNext(Struct::VkRenderingAttachmentFlagsInfoKHR, Field::flags),
-                             "is %s but the child image is missing VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT\n%s.",
+                             "is %s but references an image which was not created with VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT\n%s.",
                              string_VkRenderingAttachmentFlagsKHR(attachment_flags->flags).c_str(),
                              image_view_state.DescribeImageUsage(*this).c_str());
         }
@@ -3254,14 +3255,14 @@ bool CoreChecks::ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer comman
             const LogObjectList objlist(commandBuffer, fragment_density_map_attachment_info->imageView,
                                         fragment_density_map_view_state->image_state->Handle());
             skip |= LogError("VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-imageView-06158", objlist, view_loc,
-                             "internal image usage did not include VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT.\n%s",
+                             "references an image which was not created with VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT.\n%s",
                              fragment_density_map_view_state->DescribeImageUsage(*this).c_str());
         }
-        if ((fragment_density_map_view_state->image_state->create_info.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) > 0) {
+        if ((fragment_density_map_view_state->image_state->create_info.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) != 0) {
             const LogObjectList objlist(commandBuffer, fragment_density_map_attachment_info->imageView,
                                         fragment_density_map_view_state->image_state->Handle());
             skip |= LogError("VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-imageView-06159", objlist, view_loc,
-                             "internal image was created with flags %s.",
+                             "references an image which was not created with VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT (flags are %s).",
                              string_VkImageCreateFlags(fragment_density_map_view_state->image_state->create_info.flags).c_str());
         }
         int32_t layer_count = static_cast<int32_t>(fragment_density_map_view_state->normalized_subresource_range.layerCount);
@@ -3376,10 +3377,11 @@ bool CoreChecks::ValidateBeginRenderingFragmentShadingRate(VkCommandBuffer comma
     }
 
     if ((view_state->inherited_usage & VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR) == 0) {
-        skip |= LogError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06148", objlist,
-                         rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::imageView),
-                         "was not created with VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR.\n%s",
-                         view_state->DescribeImageUsage(*this).c_str());
+        skip |=
+            LogError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06148", objlist,
+                     rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::imageView),
+                     "references an image which was not created with VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR.\n%s",
+                     view_state->DescribeImageUsage(*this).c_str());
     }
 
     const VkComponentMapping components = view_state->create_info.components;
@@ -4063,7 +4065,7 @@ bool CoreChecks::ValidateBeginRenderingColorAttachment(const vvl::CommandBuffer 
 
             if (!(image_view_state->inherited_usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)) {
                 skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06087", objlist, color_image_view,
-                                 "must have been created with VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT.\n%s",
+                                 "references an image which was not created with VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT.\n%s",
                                  image_view_state->DescribeImageUsage(*this).c_str());
             }
 
@@ -4191,12 +4193,12 @@ bool CoreChecks::ValidateBeginRenderingColorAttachment(const vvl::CommandBuffer 
                 if ((resolve_view_state->inherited_usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) == 0) {
                     const LogObjectList objlist(commandBuffer, resolve_view_state->Handle(),
                                                 resolve_view_state->image_state->Handle());
-                    skip |= LogError(
-                        "VUID-VkRenderingInfo-colorAttachmentCount-09476", objlist,
-                        color_attachment_loc.dot(Field::resolveImageView),
-                        "underlying child image was not created with VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT (resolveMode is %s).\n%s",
-                        string_VkResolveModeFlagBits(color_attachment.resolveMode),
-                        resolve_view_state->DescribeImageUsage(*this).c_str());
+                    skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-09476", objlist,
+                                     color_attachment_loc.dot(Field::resolveImageView),
+                                     "references an image which was not created with VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT "
+                                     "(resolveMode is %s).\n%s",
+                                     string_VkResolveModeFlagBits(color_attachment.resolveMode),
+                                     resolve_view_state->DescribeImageUsage(*this).c_str());
                 }
             }
         }
@@ -4225,7 +4227,7 @@ bool CoreChecks::ValidateBeginRenderingDepthAttachment(const vvl::CommandBuffer 
 
         if (!(depth_view_state->inherited_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
             skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-06088", objlist, depth_attachment_loc.dot(Field::imageView),
-                             "internal image must have been created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT.\n%s",
+                             "references an image which was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT.\n%s",
                              depth_view_state->DescribeImageUsage(*this).c_str());
         }
 
@@ -4271,7 +4273,7 @@ bool CoreChecks::ValidateBeginRenderingDepthAttachment(const vvl::CommandBuffer 
                                             depth_resolve_view_state->image_state->Handle());
                 skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-09477", objlist,
                                  depth_attachment_loc.dot(Field::resolveImageView),
-                                 "underlying child image was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT "
+                                 "references an image which was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT "
                                  "(resolveMode is %s).\n%s",
                                  string_VkResolveModeFlagBits(depth_attachment.resolveMode),
                                  depth_resolve_view_state->DescribeImageUsage(*this).c_str());
@@ -4313,7 +4315,7 @@ bool CoreChecks::ValidateBeginRenderingStencilAttachment(const vvl::CommandBuffe
 
         if (!(stencil_view_state->inherited_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
             skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-06089", objlist, stencil_attachment_loc.dot(Field::imageView),
-                             "internal image must have been created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT.\n%s",
+                             "references an image which was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT.\n%s",
                              stencil_view_state->DescribeImageUsage(*this).c_str());
         }
 
@@ -4360,7 +4362,7 @@ bool CoreChecks::ValidateBeginRenderingStencilAttachment(const vvl::CommandBuffe
                                             stencil_resolve_view_state->image_state->Handle());
                 skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-09478", objlist,
                                  stencil_attachment_loc.dot(Field::resolveImageView),
-                                 "underlying child image was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT "
+                                 "references an image which was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT "
                                  "(resolveMode is %s).\n%s",
                                  string_VkResolveModeFlagBits(stencil_attachment.resolveMode),
                                  stencil_resolve_view_state->DescribeImageUsage(*this).c_str());
@@ -4696,7 +4698,8 @@ bool CoreChecks::MatchUsage(uint32_t count, const VkAttachmentReference2 *attach
             const VkImageView *image_view = &fbci.pAttachments[fb_attachment];
             if (auto view_state = Get<vvl::ImageView>(*image_view)) {
                 if ((view_state->inherited_usage & usage_flag) == 0) {
-                    skip |= LogError(vuid, device, create_info_loc.dot(Field::pAttachments, fb_attachment),
+                    const LogObjectList objlist(*image_view, view_state->create_info.image);
+                    skip |= LogError(vuid, objlist, create_info_loc.dot(Field::pAttachments, fb_attachment),
                                      "expected usage (%s) conflicts with the image %s.", string_VkImageUsageFlagBits(usage_flag),
                                      view_state->DescribeImageUsage(*this).c_str());
                 }
@@ -4707,9 +4710,11 @@ bool CoreChecks::MatchUsage(uint32_t count, const VkAttachmentReference2 *attach
             if (fbaci != nullptr && fbaci->pAttachmentImageInfos != nullptr && fbaci->attachmentImageInfoCount > fb_attachment) {
                 uint32_t image_usage = fbaci->pAttachmentImageInfos[fb_attachment].usage;
                 if ((image_usage & usage_flag) == 0) {
-                    skip |= LogError(vuid, device, create_info_loc.dot(Field::pAttachments, fb_attachment),
-                                     "expected usage (%s) conflicts with the image's flags (%s).",
-                                     string_VkImageUsageFlagBits(usage_flag), string_VkImageUsageFlags(image_usage).c_str());
+                    skip |= LogError(
+                        vuid, device, create_info_loc.dot(Field::pAttachments, fb_attachment),
+                        "expected usage (%s) conflicts with the VkFramebufferAttachmentsCreateInfo::pAttachmentImageInfos[%" PRIu32
+                        "].usage flags (%s).",
+                        string_VkImageUsageFlagBits(usage_flag), fb_attachment, string_VkImageUsageFlags(image_usage).c_str());
                 }
             }
         }
@@ -4737,7 +4742,8 @@ bool CoreChecks::MsRenderedToSingleSampledValidateFBAttachments(uint32_t count, 
             ASSERT_AND_CONTINUE(view_state);
             auto image_state = view_state->image_state;
             if (!(image_state->create_info.flags & VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT)) {
-                skip |= LogError("VUID-VkFramebufferCreateInfo-samples-06881", device, create_info_loc,
+                const LogObjectList objlist(*image_view, image_state->Handle());
+                skip |= LogError("VUID-VkFramebufferCreateInfo-samples-06881", objlist, create_info_loc,
                                  "Renderpass subpass %" PRIu32
                                  " enables "
                                  "multisampled-render-to-single-sampled and attachment %" PRIu32
@@ -4752,8 +4758,9 @@ bool CoreChecks::MsRenderedToSingleSampledValidateFBAttachments(uint32_t count, 
                                                                create_info_loc);
             }
             if (!(image_state->image_format_properties.sampleCounts & sample_count)) {
+                const LogObjectList objlist(*image_view, image_state->Handle());
                 skip |= LogError(
-                    "VUID-VkFramebufferCreateInfo-samples-07009", device, create_info_loc,
+                    "VUID-VkFramebufferCreateInfo-samples-07009", objlist, create_info_loc,
                     "Renderpass subpass %" PRIu32 " enables multisampled-render-to-single-sampled and attachment %" PRIu32
                     ", is specified from with VK_SAMPLE_COUNT_1_BIT samples, but %s was created with\n%s"
                     "which does not support a rasterizationSamples count of %s",
