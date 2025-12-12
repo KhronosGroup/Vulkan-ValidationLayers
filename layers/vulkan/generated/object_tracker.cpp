@@ -7291,7 +7291,7 @@ bool Device::PreCallValidateCmdCopyMemoryToImageIndirectNV(VkCommandBuffer comma
 // Checked by chassis: commandBuffer: "VUID-vkCmdDecompressMemoryNV-commandBuffer-parameter"
 
 // vkCmdDecompressMemoryIndirectCountNV:
-// Checked by chassis: commandBuffer: kVUIDUndefined
+// Checked by chassis: commandBuffer: "VUID-vkCmdDecompressMemoryIndirectCountNV-commandBuffer-parameter"
 
 bool Device::PreCallValidateGetPipelineIndirectMemoryRequirementsNV(VkDevice device, const VkComputePipelineCreateInfo* pCreateInfo,
                                                                     VkMemoryRequirements2* pMemoryRequirements,
@@ -8572,6 +8572,9 @@ bool Device::PreCallValidateGetMemoryMetalHandleEXT(VkDevice device, const VkMem
 
 // vkCmdBeginCustomResolveEXT:
 // Checked by chassis: commandBuffer: "VUID-vkCmdBeginCustomResolveEXT-commandBuffer-parameter"
+
+// vkCmdSetComputeOccupancyPriorityNV:
+// Checked by chassis: commandBuffer: "VUID-vkCmdSetComputeOccupancyPriorityNV-commandBuffer-parameter"
 
 bool Device::PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator,

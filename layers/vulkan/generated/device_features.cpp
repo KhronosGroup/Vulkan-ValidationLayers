@@ -1909,6 +1909,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->shaderUniformBufferUnsizedArray |= enabled->shaderUniformBufferUnsizedArray == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_OCCUPANCY_PRIORITY_FEATURES_NV: {
+                const VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV *>(pNext);
+                features->computeOccupancyPriority |= enabled->computeOccupancyPriority == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR: {
                 const VkPhysicalDeviceAccelerationStructureFeaturesKHR *enabled =
                     reinterpret_cast<const VkPhysicalDeviceAccelerationStructureFeaturesKHR *>(pNext);

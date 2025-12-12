@@ -544,6 +544,7 @@ static const std::unordered_map<std::string, uint32_t> device_extension_map = {
     {VK_QCOM_DATA_GRAPH_MODEL_EXTENSION_NAME, VK_QCOM_DATA_GRAPH_MODEL_SPEC_VERSION},
     {VK_SEC_PIPELINE_CACHE_INCREMENTAL_MODE_EXTENSION_NAME, VK_SEC_PIPELINE_CACHE_INCREMENTAL_MODE_SPEC_VERSION},
     {VK_EXT_SHADER_UNIFORM_BUFFER_UNSIZED_ARRAY_EXTENSION_NAME, VK_EXT_SHADER_UNIFORM_BUFFER_UNSIZED_ARRAY_SPEC_VERSION},
+    {VK_NV_COMPUTE_OCCUPANCY_PRIORITY_EXTENSION_NAME, VK_NV_COMPUTE_OCCUPANCY_PRIORITY_SPEC_VERSION},
     {VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME, VK_KHR_ACCELERATION_STRUCTURE_SPEC_VERSION},
     {VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME, VK_KHR_RAY_TRACING_PIPELINE_SPEC_VERSION},
     {VK_KHR_RAY_QUERY_EXTENSION_NAME, VK_KHR_RAY_QUERY_SPEC_VERSION},
@@ -2203,6 +2204,8 @@ static VKAPI_ATTR void VKAPI_CALL CmdEndRendering2EXT(VkCommandBuffer commandBuf
                                                       const VkRenderingEndInfoKHR* pRenderingEndInfo);
 static VKAPI_ATTR void VKAPI_CALL CmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer,
                                                            const VkBeginCustomResolveInfoEXT* pBeginCustomResolveInfo);
+static VKAPI_ATTR void VKAPI_CALL CmdSetComputeOccupancyPriorityNV(VkCommandBuffer commandBuffer,
+                                                                   const VkComputeOccupancyPriorityParametersNV* pParameters);
 static VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(VkDevice device,
                                                                      const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                                      const VkAllocationCallbacks* pAllocator,
@@ -3093,6 +3096,7 @@ static const std::unordered_map<std::string, void*> name_to_func_ptr_map = {
      (void*)EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM},
     {"vkCmdEndRendering2EXT", (void*)CmdEndRendering2EXT},
     {"vkCmdBeginCustomResolveEXT", (void*)CmdBeginCustomResolveEXT},
+    {"vkCmdSetComputeOccupancyPriorityNV", (void*)CmdSetComputeOccupancyPriorityNV},
     {"vkCreateAccelerationStructureKHR", (void*)CreateAccelerationStructureKHR},
     {"vkDestroyAccelerationStructureKHR", (void*)DestroyAccelerationStructureKHR},
     {"vkCmdBuildAccelerationStructuresKHR", (void*)CmdBuildAccelerationStructuresKHR},
@@ -6037,6 +6041,9 @@ static VKAPI_ATTR void VKAPI_CALL CmdEndRendering2EXT(VkCommandBuffer commandBuf
 
 static VKAPI_ATTR void VKAPI_CALL CmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer,
                                                            const VkBeginCustomResolveInfoEXT* pBeginCustomResolveInfo) {}
+
+static VKAPI_ATTR void VKAPI_CALL CmdSetComputeOccupancyPriorityNV(VkCommandBuffer commandBuffer,
+                                                                   const VkComputeOccupancyPriorityParametersNV* pParameters) {}
 
 static VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(VkDevice device,
                                                                      const VkAccelerationStructureCreateInfoKHR* pCreateInfo,

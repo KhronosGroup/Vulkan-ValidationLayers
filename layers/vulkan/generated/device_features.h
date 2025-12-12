@@ -100,6 +100,8 @@ struct DeviceFeatures {
     bool colorWriteEnable;
     // VkPhysicalDeviceCommandBufferInheritanceFeaturesNV
     bool commandBufferInheritance;
+    // VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV
+    bool computeOccupancyPriority;
     // VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR
     bool computeDerivativeGroupLinear;
     // VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR

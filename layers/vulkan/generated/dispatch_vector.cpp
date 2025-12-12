@@ -2019,6 +2019,9 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdBeginCustomResolveEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdBeginCustomResolveEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdBeginCustomResolveEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetComputeOccupancyPriorityNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetComputeOccupancyPriorityNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetComputeOccupancyPriorityNV);
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateAccelerationStructureKHR);

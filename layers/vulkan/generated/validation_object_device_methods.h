@@ -6102,6 +6102,17 @@ virtual void PreCallRecordCmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer
 virtual void PostCallRecordCmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer,
                                                     const VkBeginCustomResolveInfoEXT* pBeginCustomResolveInfo,
                                                     const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdSetComputeOccupancyPriorityNV(VkCommandBuffer commandBuffer,
+                                                             const VkComputeOccupancyPriorityParametersNV* pParameters,
+                                                             const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdSetComputeOccupancyPriorityNV(VkCommandBuffer commandBuffer,
+                                                           const VkComputeOccupancyPriorityParametersNV* pParameters,
+                                                           const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdSetComputeOccupancyPriorityNV(VkCommandBuffer commandBuffer,
+                                                            const VkComputeOccupancyPriorityParametersNV* pParameters,
+                                                            const RecordObject& record_obj) {}
 virtual bool PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator,
                                                            VkAccelerationStructureKHR* pAccelerationStructure,

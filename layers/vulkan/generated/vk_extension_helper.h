@@ -547,6 +547,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_qcom_data_graph_model{kNotSupported};
     ExtEnabled vk_sec_pipeline_cache_incremental_mode{kNotSupported};
     ExtEnabled vk_ext_shader_uniform_buffer_unsized_array{kNotSupported};
+    ExtEnabled vk_nv_compute_occupancy_priority{kNotSupported};
     ExtEnabled vk_khr_acceleration_structure{kNotSupported};
     ExtEnabled vk_khr_ray_tracing_pipeline{kNotSupported};
     ExtEnabled vk_khr_ray_query{kNotSupported};
@@ -1021,6 +1022,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_QCOM_data_graph_model:
         case vvl::Extension::_VK_SEC_pipeline_cache_incremental_mode:
         case vvl::Extension::_VK_EXT_shader_uniform_buffer_unsized_array:
+        case vvl::Extension::_VK_NV_compute_occupancy_priority:
         case vvl::Extension::_VK_KHR_acceleration_structure:
         case vvl::Extension::_VK_KHR_ray_tracing_pipeline:
         case vvl::Extension::_VK_KHR_ray_query:

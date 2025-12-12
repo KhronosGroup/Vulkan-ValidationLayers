@@ -469,6 +469,17 @@ void Instance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDevice
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_OCCUPANCY_PRIORITY_FEATURES_NV: {
+                VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV *enabling =
+                    reinterpret_cast<const VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV *>(current);
+                if (enabling->computeOccupancyPriority && !supported.computeOccupancyPriority) {
+                    ss << "VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV::computeOccupancyPriority is not supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_KHR: {
                 VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;

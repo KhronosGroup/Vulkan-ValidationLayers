@@ -1619,6 +1619,9 @@ bool PreCallValidateCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkR
 bool PreCallValidateCmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer,
                                              const VkBeginCustomResolveInfoEXT* pBeginCustomResolveInfo,
                                              const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdSetComputeOccupancyPriorityNV(VkCommandBuffer commandBuffer,
+                                                     const VkComputeOccupancyPriorityParametersNV* pParameters,
+                                                     const ErrorObject& error_obj) const override;
 bool PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator,
                                                    VkAccelerationStructureKHR* pAccelerationStructure,

@@ -678,10 +678,6 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         checkExpr = []
         callerName = structTypeName if structTypeName else funcName
 
-        # Workaround until https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7886 is merged
-        if callerName == 'VkDeviceDeviceMemoryReportCreateInfoEXT' and member.name == 'pUserData':
-            return checkExpr
-
         if lengthMember:
             length_deref = '->' in member.length
             countRequiredVuid = self.GetVuid(callerName, f"{member.length}-arraylength")
