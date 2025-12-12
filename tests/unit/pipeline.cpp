@@ -3422,6 +3422,8 @@ TEST_F(NegativePipeline, MismatchedRasterizationSamples) {
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageView = image_view;
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+    color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     VkMultisampledRenderToSingleSampledInfoEXT rtss = vku::InitStructHelper();
     rtss.multisampledRenderToSingleSampledEnable = VK_TRUE;

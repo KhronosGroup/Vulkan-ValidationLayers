@@ -1683,6 +1683,11 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateRenderingAttachmentInfoResolveMode(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
                                                     const VkRenderingAttachmentInfo& attachment_info,
                                                     const vvl::ImageView& image_view_state, const Location& attachment_loc) const;
+    bool ValidateRenderingAttachmentInfoMultisampledResolveMode(VkCommandBuffer commandBuffer,
+                                                                const VkRenderingInfo& rendering_info,
+                                                                const VkRenderingAttachmentInfo& attachment_info,
+                                                                const vvl::ImageView& image_view_state,
+                                                                const Location& attachment_loc) const;
     bool ValidateRenderingAttachmentInfoFeedbackLoop(VkCommandBuffer commandBuffer,
                                                      const VkRenderingAttachmentInfo& attachment_info,
                                                      const vvl::ImageView& image_view_state, const Location& attachment_loc) const;
