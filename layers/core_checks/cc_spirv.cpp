@@ -524,7 +524,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
                 CoopMatType m(insn.ResultId(), module_state, IsSignedIntType(insn.Word(2)));
 
                 if ((entrypoint.stage & VK_SHADER_STAGE_COMPUTE_BIT) != 0) {
-                    if (SafeModulo(local_size.x, effective_subgroup_size) != 0) {
+                    if (!IsIntegerMultipleOf(local_size.x, effective_subgroup_size)) {
                         const auto vuid_string = m.scope == VK_SCOPE_SUBGROUP_KHR
                                                      ? "VUID-VkPipelineShaderStageCreateInfo-module-08987"
                                                      : "VUID-VkPipelineShaderStageCreateInfo-module-10169";
@@ -590,26 +590,26 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
                             continue;
                         }
 
-                        if (property.AType == m.component_type && SafeModulo(m.rows, property.MGranularity) == 0 &&
-                            SafeModulo(m.cols, property.KGranularity) == 0 && property.scope == m.scope &&
+                        if (property.AType == m.component_type && IsIntegerMultipleOf(m.rows, property.MGranularity) &&
+                            IsIntegerMultipleOf(m.cols, property.KGranularity) && property.scope == m.scope &&
                             m.use == spv::CooperativeMatrixUseMatrixAKHR) {
                             valid = true;
                             break;
                         }
-                        if (property.BType == m.component_type && SafeModulo(m.rows, property.KGranularity) == 0 &&
-                            SafeModulo(m.cols, property.NGranularity) == 0 && property.scope == m.scope &&
+                        if (property.BType == m.component_type && IsIntegerMultipleOf(m.rows, property.KGranularity) &&
+                            IsIntegerMultipleOf(m.cols, property.NGranularity) && property.scope == m.scope &&
                             m.use == spv::CooperativeMatrixUseMatrixBKHR) {
                             valid = true;
                             break;
                         }
-                        if (property.CType == m.component_type && SafeModulo(m.rows, property.MGranularity) == 0 &&
-                            SafeModulo(m.cols, property.NGranularity) == 0 && property.scope == m.scope &&
+                        if (property.CType == m.component_type && IsIntegerMultipleOf(m.rows, property.MGranularity) &&
+                            IsIntegerMultipleOf(m.cols, property.NGranularity) && property.scope == m.scope &&
                             m.use == spv::CooperativeMatrixUseMatrixAccumulatorKHR) {
                             valid = true;
                             break;
                         }
-                        if (property.ResultType == m.component_type && SafeModulo(m.rows, property.MGranularity) == 0 &&
-                            SafeModulo(m.cols, property.NGranularity) == 0 && property.scope == m.scope &&
+                        if (property.ResultType == m.component_type && IsIntegerMultipleOf(m.rows, property.MGranularity) &&
+                            IsIntegerMultipleOf(m.cols, property.NGranularity) && property.scope == m.scope &&
                             m.use == spv::CooperativeMatrixUseMatrixAccumulatorKHR) {
                             valid = true;
                             break;
@@ -694,17 +694,18 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
                             const auto &property = device_state->cooperative_matrix_flexible_dimensions_properties[i];
 
                             bool valid = true;
-                            valid &= property.AType == a.component_type && SafeModulo(a.rows, property.MGranularity) == 0 &&
-                                     SafeModulo(a.cols, property.KGranularity) == 0 && property.scope == a.scope &&
+                            valid &= property.AType == a.component_type && IsIntegerMultipleOf(a.rows, property.MGranularity) &&
+                                     IsIntegerMultipleOf(a.cols, property.KGranularity) && property.scope == a.scope &&
                                      a.use == spv::CooperativeMatrixUseMatrixAKHR;
-                            valid &= property.BType == b.component_type && SafeModulo(b.rows, property.KGranularity) == 0 &&
-                                     SafeModulo(b.cols, property.NGranularity) == 0 && property.scope == b.scope &&
+                            valid &= property.BType == b.component_type && IsIntegerMultipleOf(b.rows, property.KGranularity) &&
+                                     IsIntegerMultipleOf(b.cols, property.NGranularity) && property.scope == b.scope &&
                                      b.use == spv::CooperativeMatrixUseMatrixBKHR;
-                            valid &= property.CType == c.component_type && SafeModulo(c.rows, property.MGranularity) == 0 &&
-                                     SafeModulo(c.cols, property.NGranularity) == 0 && property.scope == c.scope &&
+                            valid &= property.CType == c.component_type && IsIntegerMultipleOf(c.rows, property.MGranularity) &&
+                                     IsIntegerMultipleOf(c.cols, property.NGranularity) && property.scope == c.scope &&
                                      c.use == spv::CooperativeMatrixUseMatrixAccumulatorKHR;
-                            valid &= property.ResultType == r.component_type && SafeModulo(r.rows, property.MGranularity) == 0 &&
-                                     SafeModulo(r.cols, property.NGranularity) == 0 && property.scope == r.scope &&
+                            valid &= property.ResultType == r.component_type &&
+                                     IsIntegerMultipleOf(r.rows, property.MGranularity) &&
+                                     IsIntegerMultipleOf(r.cols, property.NGranularity) && property.scope == r.scope &&
                                      r.use == spv::CooperativeMatrixUseMatrixAccumulatorKHR;
 
                             valid &= !IsSignedIntEnum(property.AType) ||
@@ -2304,7 +2305,7 @@ bool CoreChecks::ValidateShaderModuleCreateInfo(const VkShaderModuleCreateInfo &
     }
 
     const uint32_t first_dword = create_info.pCode[0];
-    if (SafeModulo(create_info.codeSize, 4) != 0) {
+    if (!IsIntegerMultipleOf(create_info.codeSize, 4)) {
         skip |=
             LogError("VUID-VkShaderModuleCreateInfo-codeSize-08735", device, create_info_loc.dot(Field::codeSize),
                      "(%zu) must be a multiple of 4. You might have forget to multiply by sizeof(uint32_t).", create_info.codeSize);
@@ -2388,7 +2389,7 @@ bool CoreChecks::ValidateRequiredSubgroupSize(const spirv::Module &module_state,
     }
     if (stage_state.pipeline_create_info &&
         (stage_state.pipeline_create_info->flags & VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT) > 0) {
-        if (SafeModulo(local_size.x, required_subgroup_size) != 0) {
+        if (!IsIntegerMultipleOf(local_size.x, required_subgroup_size)) {
             skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-pNext-02757", module_state.handle(), loc,
                              "SPIR-V Local workgroup size x (%" PRIu32
                              ") is not a multiple of "
@@ -2446,7 +2447,7 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const spirv::Module &module_state
         const auto subgroup_flags = VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT |
                                     VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT;
         if ((stage_state.pipeline_create_info->flags & subgroup_flags) == subgroup_flags) {
-            if (SafeModulo(local_size.x, phys_dev_props_core13.maxSubgroupSize) != 0) {
+            if (!IsIntegerMultipleOf(local_size.x, phys_dev_props_core13.maxSubgroupSize)) {
                 skip |= LogError(
                     "VUID-VkPipelineShaderStageCreateInfo-flags-02758", module_state.handle(), loc.dot(Field::flags),
                     "(%s), but local workgroup size X dimension (%" PRIu32
@@ -2458,7 +2459,7 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const spirv::Module &module_state
                    (stage_state.pipeline_create_info->flags & VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT) ==
                        0) {
             if (!vku::FindStructInPNextChain<VkPipelineShaderStageRequiredSubgroupSizeCreateInfo>(stage_state.GetPNext())) {
-                if (SafeModulo(local_size.x, phys_dev_props_core11.subgroupSize) != 0) {
+                if (!IsIntegerMultipleOf(local_size.x, phys_dev_props_core11.subgroupSize)) {
                     skip |=
                         LogError("VUID-VkPipelineShaderStageCreateInfo-flags-02759", module_state.handle(), loc.dot(Field::flags),
                                  "(%s), but local workgroup size X dimension (%" PRIu32
@@ -2474,7 +2475,7 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const spirv::Module &module_state
         const auto *required_subgroup_size =
             vku::FindStructInPNextChain<VkShaderRequiredSubgroupSizeCreateInfoEXT>(stage_state.GetPNext());
         if (varying && full) {
-            if (SafeModulo(local_size.x, phys_dev_props_core13.maxSubgroupSize) != 0) {
+            if (!IsIntegerMultipleOf(local_size.x, phys_dev_props_core13.maxSubgroupSize)) {
                 skip |= LogError(
                     "VUID-VkShaderCreateInfoEXT-flags-08416", module_state.handle(), loc.dot(Field::flags),
                     "(%s) but local workgroup size X dimension (%" PRIu32
@@ -2483,7 +2484,7 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const spirv::Module &module_state
                     phys_dev_props_core13.maxSubgroupSize);
             }
         } else if (full && !varying) {
-            if (!required_subgroup_size && SafeModulo(local_size.x, phys_dev_props_core11.subgroupSize) != 0) {
+            if (!required_subgroup_size && !IsIntegerMultipleOf(local_size.x, phys_dev_props_core11.subgroupSize)) {
                 skip |= LogError("VUID-VkShaderCreateInfoEXT-flags-08417", module_state.handle(), loc.dot(Field::flags),
                                  "(%s), but local workgroup size X dimension (%" PRIu32
                                  ") is not a multiple of VkPhysicalDeviceVulkan11Properties::subgroupSize (%" PRIu32 ").",

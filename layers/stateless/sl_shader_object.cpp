@@ -99,16 +99,15 @@ bool Device::manual_PreCallValidateCreateShadersEXT(VkDevice device, uint32_t cr
 
     for (uint32_t i = 0; i < createInfoCount; ++i) {
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
-        const VkShaderCreateInfoEXT &create_info = pCreateInfos[i];
-        auto pCode = reinterpret_cast<std::uintptr_t>(create_info.pCode);
+        const VkShaderCreateInfoEXT& create_info = pCreateInfos[i];
 
         skip |= ValidateCreateShadersFlags(create_info.flags, create_info.stage, create_info_loc.dot(Field::flags));
 
         if (create_info.codeType == VK_SHADER_CODE_TYPE_SPIRV_EXT) {
-            if (SafeModulo(pCode, 4 * sizeof(unsigned char)) != 0) {
+            if (!IsPointerAligned(create_info.pCode, 4 * sizeof(unsigned char))) {
                 skip |= LogError("VUID-VkShaderCreateInfoEXT-pCode-08493", device, create_info_loc.dot(Field::codeType),
                                  "is VK_SHADER_CODE_TYPE_SPIRV_EXT, but pCode (%p) is not aligned to 4 bytes.", create_info.pCode);
-            } else if (SafeModulo(create_info.codeSize, 4) != 0) {
+            } else if (!IsIntegerMultipleOf(create_info.codeSize, 4)) {
                 skip |= LogError("VUID-VkShaderCreateInfoEXT-codeSize-08735", device, create_info_loc.dot(Field::codeSize),
                                  "(%" PRIu64 ") is not a multiple of 4. You might have forget to multiply by sizeof(uint32_t).",
                                  static_cast<uint64_t>(create_info.codeSize));
@@ -124,7 +123,7 @@ bool Device::manual_PreCallValidateCreateShadersEXT(VkDevice device, uint32_t cr
             }
 
         } else if (create_info.codeType == VK_SHADER_CODE_TYPE_BINARY_EXT) {
-            if (SafeModulo(pCode, 16 * sizeof(unsigned char)) != 0) {
+            if (!IsPointerAligned(create_info.pCode, 16 * sizeof(unsigned char))) {
                 skip |=
                     LogError("VUID-VkShaderCreateInfoEXT-pCode-08492", device, create_info_loc.dot(Field::codeType),
                              "is VK_SHADER_CODE_TYPE_BINARY_EXT, but pCode (%p) is not aligned to 16 bytes.", create_info.pCode);
@@ -212,8 +211,7 @@ bool Device::manual_PreCallValidateGetShaderBinaryDataEXT(VkDevice device, VkSha
     const auto &error_obj = context.error_obj;
 
     if (pData) {
-        auto ptr = reinterpret_cast<std::uintptr_t>(pData);
-        if (ptr % 16 != 0) {
+        if (!IsPointerAligned(pData, 16)) {
             skip |= LogError("VUID-vkGetShaderBinaryDataEXT-None-08499", shader, error_obj.location.dot(Field::pData),
                              "(%p) is not aligned to 16 bytes.", pData);
         }

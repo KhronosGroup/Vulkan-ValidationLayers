@@ -151,7 +151,7 @@ bool Device::manual_PreCallValidateGetMemoryHostPointerPropertiesEXT(VkDevice de
     }
 
     const VkDeviceSize host_pointer = reinterpret_cast<VkDeviceSize>(pHostPointer);
-    if (SafeModulo(host_pointer, phys_dev_ext_props.external_memory_host_props.minImportedHostPointerAlignment) != 0) {
+    if (!IsIntegerMultipleOf(host_pointer, phys_dev_ext_props.external_memory_host_props.minImportedHostPointerAlignment)) {
         skip |= LogError("VUID-vkGetMemoryHostPointerPropertiesEXT-pHostPointer-01753", device,
                          error_obj.location.dot(Field::pHostPointer),
                          "(0x%" PRIxLEAST64
@@ -465,18 +465,18 @@ bool Device::ValidateAllocateMemoryExternal(VkDevice device, const VkMemoryAlloc
                              string_VkExternalMemoryHandleTypeFlagBits(ext.import_info_host_pointer->handleType));
         }
 
-        const VkDeviceSize host_pointer = reinterpret_cast<VkDeviceSize>(ext.import_info_host_pointer->pHostPointer);
-        if (SafeModulo(host_pointer, phys_dev_ext_props.external_memory_host_props.minImportedHostPointerAlignment) != 0) {
+        if (!IsPointerAligned(ext.import_info_host_pointer->pHostPointer,
+                              phys_dev_ext_props.external_memory_host_props.minImportedHostPointerAlignment)) {
             skip |= LogError("VUID-VkImportMemoryHostPointerInfoEXT-pHostPointer-01749", device,
                              allocate_info_loc.pNext(Struct::VkImportMemoryHostPointerInfoEXT, Field::pHostPointer),
-                             "(0x%" PRIxLEAST64
-                             ") is not aligned "
+                             "(%p) is not aligned "
                              "to minImportedHostPointerAlignment (%" PRIuLEAST64 ")",
-                             host_pointer, phys_dev_ext_props.external_memory_host_props.minImportedHostPointerAlignment);
+                             ext.import_info_host_pointer->pHostPointer,
+                             phys_dev_ext_props.external_memory_host_props.minImportedHostPointerAlignment);
         }
 
-        if (SafeModulo(allocate_info.allocationSize,
-                       phys_dev_ext_props.external_memory_host_props.minImportedHostPointerAlignment) != 0) {
+        if (!IsIntegerMultipleOf(allocate_info.allocationSize,
+                                 phys_dev_ext_props.external_memory_host_props.minImportedHostPointerAlignment)) {
             skip |= LogError("VUID-VkMemoryAllocateInfo-allocationSize-01745", device, allocate_info_loc.dot(Field::allocationSize),
                              "(%" PRIuLEAST64 ") is not a multiple of minImportedHostPointerAlignment (%" PRIuLEAST64 ")",
                              allocate_info.allocationSize,

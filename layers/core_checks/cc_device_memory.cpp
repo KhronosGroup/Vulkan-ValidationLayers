@@ -859,7 +859,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
     const bool bind_buffer_mem_2 = loc.function != Func::vkBindBufferMemory;
 
     // Validate memory requirements alignment
-    if (SafeModulo(memoryOffset, buffer_state->requirements.alignment) != 0) {
+    if (!IsIntegerMultipleOf(memoryOffset, buffer_state->requirements.alignment)) {
         const char *vuid = bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-None-10739" : "VUID-vkBindBufferMemory-None-10739";
         const LogObjectList objlist(buffer, memory);
         skip |= LogError(vuid, objlist, loc.dot(Field::memoryOffset),
@@ -1365,11 +1365,10 @@ bool CoreChecks::PreCallValidateMapMemory2(VkDevice device, const VkMemoryMapInf
             skip |= LogError("VUID-VkMemoryMapInfo-flags-09570", pMemoryMapInfo->memory, addr_loc,
                              "is NULL, but VK_MEMORY_MAP_PLACED_BIT_EXT was set in flags (%s)",
                              string_VkMemoryMapFlags(pMemoryMapInfo->flags).c_str());
-        } else if (reinterpret_cast<std::uintptr_t>(placed_info->pPlacedAddress) %
-                       phys_dev_ext_props.map_memory_placed_props.minPlacedMemoryMapAlignment !=
-                   0) {
+        } else if (!IsPointerAligned(placed_info->pPlacedAddress,
+                                     phys_dev_ext_props.map_memory_placed_props.minPlacedMemoryMapAlignment)) {
             skip |= LogError("VUID-VkMemoryMapPlacedInfoEXT-pPlacedAddress-09577", pMemoryMapInfo->memory, addr_loc,
-                             "(%p) is not an integer multiple of "
+                             "(%p) is not an algined to "
                              "minPlacedMemoryMapAlignment (0x%" PRIx64 ")",
                              placed_info->pPlacedAddress, phys_dev_ext_props.map_memory_placed_props.minPlacedMemoryMapAlignment);
         }
@@ -1478,7 +1477,7 @@ bool CoreChecks::ValidateMappedMemoryRangeDeviceLimits(uint32_t mem_range_count,
         const VkDeviceSize offset = mem_ranges[i].offset;
         const VkDeviceSize size = mem_ranges[i].size;
 
-        if (SafeModulo(offset, atom_size) != 0) {
+        if (!IsIntegerMultipleOf(offset, atom_size)) {
             skip |= LogError("VUID-VkMappedMemoryRange-offset-00687", mem_ranges->memory, memory_range_loc.dot(Field::offset),
                              "(%" PRIu64 ") is not a multiple of VkPhysicalDeviceLimits::nonCoherentAtomSize (%" PRIu64 ").",
                              offset, atom_size);
@@ -1491,7 +1490,7 @@ bool CoreChecks::ValidateMappedMemoryRangeDeviceLimits(uint32_t mem_range_count,
             const auto mapping_offset = mem_info->mapped_range.offset;
             const auto mapping_size = mem_info->mapped_range.size;
             const auto mapping_end = ((mapping_size == VK_WHOLE_SIZE) ? allocation_size : mapping_offset + mapping_size);
-            if (SafeModulo(mapping_end, atom_size) != 0 && mapping_end != allocation_size) {
+            if (!IsIntegerMultipleOf(mapping_end, atom_size) && mapping_end != allocation_size) {
                 skip |= LogError("VUID-VkMappedMemoryRange-size-01389", mem_ranges->memory, memory_range_loc.dot(Field::size),
                                  "is VK_WHOLE_SIZE and the mapping end (%" PRIu64 " = %" PRIu64 " + %" PRIu64
                                  ") not a multiple of VkPhysicalDeviceLimits::nonCoherentAtomSize (%" PRIu64
@@ -1500,7 +1499,7 @@ bool CoreChecks::ValidateMappedMemoryRangeDeviceLimits(uint32_t mem_range_count,
             }
         } else {
             const auto range_end = size + offset;
-            if (range_end != allocation_size && SafeModulo(size, atom_size) != 0) {
+            if (range_end != allocation_size && !IsIntegerMultipleOf(size, atom_size)) {
                 skip |= LogError("VUID-VkMappedMemoryRange-size-01390", mem_ranges->memory, memory_range_loc.dot(Field::size),
                                  "(%" PRIu64 ") is not a multiple of VkPhysicalDeviceLimits::nonCoherentAtomSize (%" PRIu64
                                  ") and offset + size (%" PRIu64 " + %" PRIu64 " = %" PRIu64
@@ -1563,7 +1562,7 @@ bool CoreChecks::ValidateBindTensorMemoryARM(uint32_t bindInfoCount, const VkBin
         skip |=
             ValidateMemoryTypes(*mem_info, mem_reqs.memoryTypeBits, bind_info_loc, "VUID-VkBindTensorMemoryInfoARM-memory-09714");
 
-        if (SafeModulo(bind_info.memoryOffset, mem_reqs.alignment) != 0) {
+        if (!IsIntegerMultipleOf(bind_info.memoryOffset, mem_reqs.alignment)) {
             const LogObjectList objlist(bind_info.tensor, bind_info.memory);
             skip |= LogError("VUID-VkBindTensorMemoryInfoARM-memoryOffset-09715", objlist, bind_info_loc.dot(Field::memoryOffset),
                              "(%" PRIu64 ") is not a multiple of the the tensor alignment requirement (%" PRIu64 ")",
@@ -1713,7 +1712,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                     const VkMemoryRequirements &mem_req = image_state->requirements[0];
 
                     // Validate memory requirements alignment
-                    if (SafeModulo(bind_info.memoryOffset, mem_req.alignment) != 0) {
+                    if (!IsIntegerMultipleOf(bind_info.memoryOffset, mem_req.alignment)) {
                         const char *vuid =
                             bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-pNext-01616" : "VUID-vkBindImageMemory-None-10735";
                         const LogObjectList objlist(bind_info.image, bind_info.memory);
@@ -1772,7 +1771,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                     const VkMemoryRequirements &disjoint_mem_req = image_state->requirements[plane];
 
                     // Validate memory requirements alignment
-                    if (SafeModulo(bind_info.memoryOffset, disjoint_mem_req.alignment) != 0) {
+                    if (!IsIntegerMultipleOf(bind_info.memoryOffset, disjoint_mem_req.alignment)) {
                         const LogObjectList objlist(bind_info.image, bind_info.memory);
                         skip |= LogError(
                             "VUID-VkBindImageMemoryInfo-pNext-01620", objlist, loc.dot(Field::memoryOffset),
@@ -2324,7 +2323,7 @@ bool CoreChecks::ValidateBufferSparseMemoryBindAlignments(const VkSparseMemoryBi
                                                           const Location &bind_loc, const Location &buffer_bind_info_loc) const {
     bool skip = false;
 
-    if (SafeModulo(bind.resourceOffset, buffer.requirements.alignment) != 0) {
+    if (!IsIntegerMultipleOf(bind.resourceOffset, buffer.requirements.alignment)) {
         const LogObjectList objlist(bind.memory, buffer.Handle());
         skip |=
             LogError("VUID-VkSparseMemoryBind-resourceOffset-09491", objlist, buffer_bind_info_loc.dot(Field::buffer),
@@ -2333,7 +2332,7 @@ bool CoreChecks::ValidateBufferSparseMemoryBindAlignments(const VkSparseMemoryBi
                      FormatHandle(buffer).c_str(), bind_loc.Fields().c_str(), bind.resourceOffset, buffer.requirements.alignment);
     }
 
-    if (SafeModulo(bind.memoryOffset, buffer.requirements.alignment) != 0) {
+    if (!IsIntegerMultipleOf(bind.memoryOffset, buffer.requirements.alignment)) {
         const LogObjectList objlist(bind.memory, buffer.Handle());
         skip |= LogError("VUID-VkSparseMemoryBind-resourceOffset-09491", objlist, buffer_bind_info_loc.dot(Field::buffer),
                          "(%s) is being bound, but %s.memoryOffset (%" PRIu64
@@ -2341,7 +2340,7 @@ bool CoreChecks::ValidateBufferSparseMemoryBindAlignments(const VkSparseMemoryBi
                          FormatHandle(buffer).c_str(), bind_loc.Fields().c_str(), bind.memoryOffset, buffer.requirements.alignment);
     }
 
-    if (SafeModulo(bind.size, buffer.requirements.alignment) != 0) {
+    if (!IsIntegerMultipleOf(bind.size, buffer.requirements.alignment)) {
         const LogObjectList objlist(bind.memory, buffer.Handle());
         skip |=
             LogError("VUID-VkSparseMemoryBind-resourceOffset-09491", objlist, buffer_bind_info_loc.dot(Field::buffer),
@@ -2356,7 +2355,7 @@ bool CoreChecks::ValidateImageSparseMemoryBindAlignments(const VkSparseMemoryBin
                                                          const Location &bind_loc, const Location &image_bind_info_loc) const {
     bool skip = false;
 
-    if (SafeModulo(bind.resourceOffset, image.requirements[0].alignment) != 0) {
+    if (!IsIntegerMultipleOf(bind.resourceOffset, image.requirements[0].alignment)) {
         const LogObjectList objlist(bind.memory, image.Handle());
         skip |=
             LogError("VUID-VkSparseMemoryBind-resourceOffset-09492", objlist, image_bind_info_loc.dot(Field::image),
@@ -2365,7 +2364,7 @@ bool CoreChecks::ValidateImageSparseMemoryBindAlignments(const VkSparseMemoryBin
                      FormatHandle(image).c_str(), bind_loc.Fields().c_str(), bind.resourceOffset, image.requirements[0].alignment);
     }
 
-    if (SafeModulo(bind.memoryOffset, image.requirements[0].alignment) != 0) {
+    if (!IsIntegerMultipleOf(bind.memoryOffset, image.requirements[0].alignment)) {
         const LogObjectList objlist(bind.memory, image.Handle());
         skip |= LogError(
             "VUID-VkSparseMemoryBind-resourceOffset-09492", objlist, image_bind_info_loc.dot(Field::image),
@@ -2389,7 +2388,7 @@ bool CoreChecks::ValidateSparseMemoryBind(const VkSparseMemoryBind &bind, const 
                              memory_state->allocate_info.memoryTypeIndex, requirements.memoryTypeBits);
         }
 
-        if (SafeModulo(bind.memoryOffset, requirements.alignment) != 0) {
+        if (!IsIntegerMultipleOf(bind.memoryOffset, requirements.alignment)) {
             const LogObjectList objlist(bind.memory, resource_handle);
             skip |= LogError("VUID-VkSparseMemoryBind-memory-01096", objlist, loc.dot(Field::memoryOffset),
                              "(%" PRIu64 ") is not a multiple of required memory alignment (%" PRIu64 ")", bind.memoryOffset,
@@ -2506,7 +2505,7 @@ bool CoreChecks::ValidateSparseImageMemoryBind(vvl::Image const *image_state, Vk
         // to calculate the size of an optimal tiled arbitrary image region (as of now).
         const VkMemoryRequirements &requirement = image_state->requirements[0];
 
-        if (SafeModulo(bind.memoryOffset, requirement.alignment) != 0) {
+        if (!IsIntegerMultipleOf(bind.memoryOffset, requirement.alignment)) {
             skip |= LogError("VUID-VkSparseImageMemoryBind-memory-01105", bind.memory, memory_loc.dot(Field::memoryOffset),
                              "(%" PRIu64 ") is not a multiple of the required alignment (%" PRIu64 ").", bind.memoryOffset,
                              requirement.alignment);
@@ -2554,7 +2553,7 @@ bool CoreChecks::ValidateSparseImageMemoryBind(vvl::Image const *image_state, Vk
     }
     if (requirements) {
         VkExtent3D const &granularity = requirements->formatProperties.imageGranularity;
-        if (SafeModulo(bind.offset.x, granularity.width) != 0) {
+        if (!IsIntegerMultipleOf(bind.offset.x, granularity.width)) {
             skip |= LogError("VUID-VkSparseImageMemoryBind-offset-01107", image_state->Handle(),
                              bind_loc.dot(Field::offset).dot(Field::x),
                              "(%" PRId32
@@ -2563,7 +2562,7 @@ bool CoreChecks::ValidateSparseImageMemoryBind(vvl::Image const *image_state, Vk
                              bind.offset.x, granularity.width);
         }
 
-        if (SafeModulo(bind.offset.y, granularity.height) != 0) {
+        if (!IsIntegerMultipleOf(bind.offset.y, granularity.height)) {
             skip |= LogError("VUID-VkSparseImageMemoryBind-offset-01109", image_state->Handle(),
                              bind_loc.dot(Field::offset).dot(Field::y),
                              "(%" PRId32
@@ -2572,7 +2571,7 @@ bool CoreChecks::ValidateSparseImageMemoryBind(vvl::Image const *image_state, Vk
                              bind.offset.y, granularity.height);
         }
 
-        if (SafeModulo(bind.offset.z, granularity.depth) != 0) {
+        if (!IsIntegerMultipleOf(bind.offset.z, granularity.depth)) {
             skip |= LogError("VUID-VkSparseImageMemoryBind-offset-01111", image_state->Handle(),
                              bind_loc.dot(Field::offset).dot(Field::z),
                              "(%" PRId32
@@ -2582,7 +2581,7 @@ bool CoreChecks::ValidateSparseImageMemoryBind(vvl::Image const *image_state, Vk
         }
 
         VkExtent3D const subresource_extent = image_state->GetEffectiveSubresourceExtent(bind.subresource);
-        if ((SafeModulo(bind.extent.width, granularity.width) != 0) &&
+        if (!IsIntegerMultipleOf(bind.extent.width, granularity.width) &&
             ((bind.extent.width + bind.offset.x) != subresource_extent.width)) {
             skip |= LogError("VUID-VkSparseImageMemoryBind-extent-01108", image_state->Handle(),
                              bind_loc.dot(Field::extent).dot(Field::width),
@@ -2594,7 +2593,7 @@ bool CoreChecks::ValidateSparseImageMemoryBind(vvl::Image const *image_state, Vk
                              bind.extent.width, granularity.width, bind.extent.width + bind.offset.x, subresource_extent.width);
         }
 
-        if ((SafeModulo(bind.extent.height, granularity.height) != 0) &&
+        if (!IsIntegerMultipleOf(bind.extent.height, granularity.height) &&
             ((bind.extent.height + bind.offset.y) != subresource_extent.height)) {
             skip |= LogError("VUID-VkSparseImageMemoryBind-extent-01110", image_state->Handle(),
                              bind_loc.dot(Field::extent).dot(Field::height),
@@ -2606,7 +2605,7 @@ bool CoreChecks::ValidateSparseImageMemoryBind(vvl::Image const *image_state, Vk
                              bind.extent.height, granularity.height, bind.extent.height + bind.offset.y, subresource_extent.height);
         }
 
-        if ((SafeModulo(bind.extent.depth, granularity.depth) != 0) &&
+        if (!IsIntegerMultipleOf(bind.extent.depth, granularity.depth) &&
             ((bind.extent.depth + bind.offset.z) != subresource_extent.depth)) {
             skip |= LogError("VUID-VkSparseImageMemoryBind-extent-01112", image_state->Handle(),
                              bind_loc.dot(Field::extent).dot(Field::depth),
@@ -2826,7 +2825,7 @@ bool CoreChecks::ValidateBindDataGraphPipelineSessionMemoryARM(const VkBindDataG
         const auto &mem_reqs = mem_reqs_map.at(bind_info.bindPoint)[bind_info.objectIndex];
         skip |= ValidateMemoryTypes(*mem_info, mem_reqs.memoryTypeBits, bind_info_loc.dot(Field::session),
                                     "VUID-VkBindDataGraphPipelineSessionMemoryInfoARM-memory-09788");
-        if (SafeModulo(bind_info.memoryOffset, mem_reqs.alignment) != 0) {
+        if (!IsIntegerMultipleOf(bind_info.memoryOffset, mem_reqs.alignment)) {
             skip |= LogError("VUID-VkBindDataGraphPipelineSessionMemoryInfoARM-memoryOffset-09789", objlist,
                              bind_info_loc.dot(Field::memoryOffset),
                              "(%" PRIu64 ") must be an integer multiple of the alignment member (%" PRIu64

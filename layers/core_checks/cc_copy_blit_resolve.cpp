@@ -171,8 +171,8 @@ static inline bool IsExtentAllOne(const VkExtent3D &extent) {
 // Test elements of a VkExtent3D structure against alignment constraints contained in another VkExtent3D structure
 static inline bool IsExtentAligned(const VkExtent3D &extent, const VkExtent3D &granularity) {
     bool valid = true;
-    if ((SafeModulo(extent.depth, granularity.depth) != 0) || (SafeModulo(extent.width, granularity.width) != 0) ||
-        (SafeModulo(extent.height, granularity.height) != 0)) {
+    if (!IsIntegerMultipleOf(extent.depth, granularity.depth) || !IsIntegerMultipleOf(extent.width, granularity.width) ||
+        !IsIntegerMultipleOf(extent.height, granularity.height)) {
         valid = false;
     }
     return valid;
@@ -255,15 +255,15 @@ bool CoreChecks::ValidateTransferGranularityExtent(const LogObjectList &objlist,
         bool z_ok = true;
         switch (image_state.create_info.imageType) {
             case VK_IMAGE_TYPE_3D:
-                z_ok = (SafeModulo(effective_region_extent.depth, granularity.depth) == 0) ||
+                z_ok = IsIntegerMultipleOf(effective_region_extent.depth, granularity.depth) ||
                        (subresource_extent.depth == offset_extent_sum.depth);
                 [[fallthrough]];
             case VK_IMAGE_TYPE_2D:
-                y_ok = (SafeModulo(effective_region_extent.height, granularity.height) == 0) ||
+                y_ok = IsIntegerMultipleOf(effective_region_extent.height, granularity.height) ||
                        (subresource_extent.height == offset_extent_sum.height);
                 [[fallthrough]];
             case VK_IMAGE_TYPE_1D:
-                x_ok = (SafeModulo(effective_region_extent.width, granularity.width) == 0) ||
+                x_ok = IsIntegerMultipleOf(effective_region_extent.width, granularity.width) ||
                        (subresource_extent.width == offset_extent_sum.width);
                 break;
             default:
@@ -557,7 +557,7 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const RegionType &region, const v
     // if uncompressed, extent is {1,1,1} and non of this will matter
     const VkExtent3D block_extent = vkuFormatTexelBlockExtent(image_format);
     if (!IsExtentAllOne(block_extent)) {
-        if ((SafeModulo(region.imageExtent.width, block_extent.width) != 0) &&
+        if (!IsIntegerMultipleOf(region.imageExtent.width, block_extent.width) &&
             (region.imageExtent.width + region.imageOffset.x != effective_image_extent.width)) {
             skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::TexelBlockExtentWidth_00207), objlist,
                              region_loc.dot(Field::imageExtent).dot(Field::width),
@@ -567,7 +567,7 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const RegionType &region, const v
                              ") must equal the image subresource width (%" PRIu32 ").\n%s",
                              region.imageExtent.width, string_VkFormat(image_format), block_extent.width, region.imageOffset.x,
                              effective_image_extent.width, image_state.DescribeSubresourceLayers(region.imageSubresource).c_str());
-        } else if ((SafeModulo(region.imageExtent.height, block_extent.height) != 0) &&
+        } else if (!IsIntegerMultipleOf(region.imageExtent.height, block_extent.height) &&
                    (region.imageExtent.height + region.imageOffset.y != effective_image_extent.height)) {
             skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::TexelBlockExtentHeight_00208), objlist,
                              region_loc.dot(Field::imageExtent).dot(Field::height),
@@ -577,7 +577,7 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const RegionType &region, const v
                              ") must equal the image subresource height (%" PRIu32 ").\n%s",
                              region.imageExtent.height, string_VkFormat(image_format), block_extent.height, region.imageOffset.y,
                              effective_image_extent.height, image_state.DescribeSubresourceLayers(region.imageSubresource).c_str());
-        } else if ((SafeModulo(region.imageExtent.depth, block_extent.depth) != 0) &&
+        } else if (!IsIntegerMultipleOf(region.imageExtent.depth, block_extent.depth) &&
                    (region.imageExtent.depth + region.imageOffset.z != effective_image_extent.depth)) {
             skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::TexelBlockExtentDepth_00209), objlist,
                              region_loc.dot(Field::imageExtent).dot(Field::depth),
@@ -589,19 +589,19 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const RegionType &region, const v
                              effective_image_extent.depth, image_state.DescribeSubresourceLayers(region.imageSubresource).c_str());
         }
 
-        if (SafeModulo(region.imageOffset.x, block_extent.width) != 0) {
+        if (!IsIntegerMultipleOf(region.imageOffset.x, block_extent.width)) {
             skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::TexelBlockExtentWidth_07274), objlist,
                              region_loc.dot(Field::imageOffset).dot(Field::x),
                              "(%" PRId32
                              ") must be a multiple of the image format (%s) texel block extent "
                              "width (%" PRIu32 ").",
                              region.imageOffset.x, string_VkFormat(image_format), block_extent.width);
-        } else if (SafeModulo(region.imageOffset.y, block_extent.height) != 0) {
+        } else if (!IsIntegerMultipleOf(region.imageOffset.y, block_extent.height)) {
             skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::TexelBlockExtentHeight_07275), objlist,
                              region_loc.dot(Field::imageOffset).dot(Field::y),
                              "(%" PRId32 ") must be a multiple of the image format (%s) texel block height (%" PRIu32 ").",
                              region.imageOffset.y, string_VkFormat(image_format), block_extent.height);
-        } else if (SafeModulo(region.imageOffset.z, block_extent.depth) != 0) {
+        } else if (!IsIntegerMultipleOf(region.imageOffset.z, block_extent.depth)) {
             skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::TexelBlockExtentDepth_07276), objlist,
                              region_loc.dot(Field::imageOffset).dot(Field::z),
                              "(%" PRId32 ") must be a multiple of the image format (%s) texel block depth (%" PRIu32 ").",
@@ -609,7 +609,7 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const RegionType &region, const v
         }
 
         const uint32_t row_length = GetRowLength(region);
-        if (SafeModulo(row_length, block_extent.width) != 0) {
+        if (!IsIntegerMultipleOf(row_length, block_extent.width)) {
             Field field = is_memory ? Field::memoryRowLength : Field::bufferRowLength;
             skip |=
                 LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::bufferRowLength_09106), objlist, region_loc.dot(field),
@@ -618,7 +618,7 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const RegionType &region, const v
         }
 
         const uint32_t image_height = GetImageHeight(region);
-        if (SafeModulo(image_height, block_extent.height) != 0) {
+        if (!IsIntegerMultipleOf(image_height, block_extent.height)) {
             Field field = is_memory ? Field::memoryImageHeight : Field::bufferImageHeight;
             skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::bufferImageHeight_09107), objlist,
                              region_loc.dot(field),
@@ -724,7 +724,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const vvl::CommandBuffer &cb_state,
     // - everything else
     const VkFormat image_format = image_state.create_info.format;
     if (vkuFormatIsDepthOrStencil(image_format)) {
-        if (SafeModulo(region.bufferOffset, 4) != 0) {
+        if (!IsIntegerMultipleOf(region.bufferOffset, 4)) {
             skip |= LogError(GetCopyBufferImageDeviceVUID(region_loc, vvl::CopyError::BufferOffset_07978), objlist,
                              region_loc.dot(Field::bufferOffset),
                              "(%" PRIu64 ") must be a multiple 4 if using a depth/stencil format (%s).", region.bufferOffset,
@@ -737,7 +737,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const vvl::CommandBuffer &cb_state,
             const VkFormat compatible_format =
                 vkuFindMultiplaneCompatibleFormat(image_format, static_cast<VkImageAspectFlagBits>(region_aspect_mask));
             const uint32_t texel_block_size = vkuFormatTexelBlockSize(compatible_format);
-            if (SafeModulo(region.bufferOffset, texel_block_size) != 0) {
+            if (!IsIntegerMultipleOf(region.bufferOffset, texel_block_size)) {
                 skip |= LogError(GetCopyBufferImageDeviceVUID(region_loc, vvl::CopyError::MultiPlaneCompatible_07976), objlist,
                                  region_loc.dot(Field::bufferOffset),
                                  "(%" PRIu64 ") is not a multiple of texel block size (%" PRIu32
@@ -749,7 +749,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const vvl::CommandBuffer &cb_state,
         }
     } else {
         const uint32_t texel_block_size = vkuFormatTexelBlockSize(image_format);
-        if (SafeModulo(region.bufferOffset, texel_block_size) != 0) {
+        if (!IsIntegerMultipleOf(region.bufferOffset, texel_block_size)) {
             skip |= LogError(GetCopyBufferImageDeviceVUID(region_loc, vvl::CopyError::TexelBlockSize_07975), objlist,
                              region_loc.dot(Field::bufferOffset),
                              "(%" PRIu64 ") must be a multiple texel block size (%" PRIu32 ") for %s.", region.bufferOffset,
@@ -757,7 +757,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const vvl::CommandBuffer &cb_state,
         }
     }
 
-    if (SafeModulo(region.bufferOffset, 4) != 0) {
+    if (!IsIntegerMultipleOf(region.bufferOffset, 4)) {
         const VkQueueFlags required_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
         if (!HasRequiredQueueFlags(cb_state, *physical_device_state, required_flags)) {
             const char *vuid = GetCopyBufferImageDeviceVUID(region_loc, vvl::CopyError::BufferOffset_07737).c_str();
@@ -1261,7 +1261,7 @@ bool CoreChecks::ValidateCopyImageRegionCommon(HandleT handle, const ImageCopyRe
         // if uncompressed, extent is {1,1,1} and non of this will matter
         const VkExtent3D block_extent = vkuFormatTexelBlockExtent(src_format);
         if (!IsExtentAllOne(block_extent)) {
-            if ((SafeModulo(region.extent.width, block_extent.width) != 0) &&
+            if (!IsIntegerMultipleOf(region.extent.width, block_extent.width) &&
                 (region.extent.width + region.src_offset.x != region.src_subresource_extent.width)) {
                 skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::SrcOffset_01728), src_objlist,
                                  region_loc.dot(Field::extent).dot(Field::width),
@@ -1271,7 +1271,7 @@ bool CoreChecks::ValidateCopyImageRegionCommon(HandleT handle, const ImageCopyRe
                                  ") must equal the image subresource width (%" PRIu32 ").\n%s",
                                  region.extent.width, string_VkFormat(src_format), block_extent.width, region.src_offset.x,
                                  region.src_subresource_extent.width, region.DescribeSrcAndDstImage().c_str());
-            } else if ((SafeModulo(region.extent.height, block_extent.height) != 0) &&
+            } else if (!IsIntegerMultipleOf(region.extent.height, block_extent.height) &&
                        (region.extent.height + region.src_offset.y != region.src_subresource_extent.height)) {
                 skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::SrcOffset_01729), src_objlist,
                                  region_loc.dot(Field::extent).dot(Field::height),
@@ -1281,7 +1281,7 @@ bool CoreChecks::ValidateCopyImageRegionCommon(HandleT handle, const ImageCopyRe
                                  ") must equal the image subresource height (%" PRIu32 ").\n%s",
                                  region.extent.height, string_VkFormat(src_format), block_extent.height, region.src_offset.y,
                                  region.src_subresource_extent.height, region.DescribeSrcAndDstImage().c_str());
-            } else if ((SafeModulo(region.extent.depth, block_extent.depth) != 0) &&
+            } else if (!IsIntegerMultipleOf(region.extent.depth, block_extent.depth) &&
                        (region.extent.depth + region.src_offset.z != region.src_subresource_extent.depth)) {
                 skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::SrcOffset_01730), src_objlist,
                                  region_loc.dot(Field::extent).dot(Field::depth),
@@ -1293,7 +1293,7 @@ bool CoreChecks::ValidateCopyImageRegionCommon(HandleT handle, const ImageCopyRe
                                  region.src_subresource_extent.depth, region.DescribeSrcAndDstImage().c_str());
             }
 
-            if (SafeModulo(region.src_offset.x, block_extent.width) != 0) {
+            if (!IsIntegerMultipleOf(region.src_offset.x, block_extent.width)) {
                 skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::SrcOffset_07278), src_objlist,
                                  region_loc.dot(Field::srcOffset).dot(Field::x),
                                  "(%" PRId32
@@ -1301,7 +1301,7 @@ bool CoreChecks::ValidateCopyImageRegionCommon(HandleT handle, const ImageCopyRe
                                  "width (%" PRIu32 ").\n%s",
                                  region.src_offset.x, string_VkFormat(src_format), block_extent.width,
                                  region.DescribeSrcAndDstImage().c_str());
-            } else if (SafeModulo(region.src_offset.y, block_extent.height) != 0) {
+            } else if (!IsIntegerMultipleOf(region.src_offset.y, block_extent.height)) {
                 skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::SrcOffset_07279), src_objlist,
                                  region_loc.dot(Field::srcOffset).dot(Field::y),
                                  "(%" PRId32
@@ -1309,7 +1309,7 @@ bool CoreChecks::ValidateCopyImageRegionCommon(HandleT handle, const ImageCopyRe
                                  "height (%" PRIu32 ").\n%s",
                                  region.src_offset.y, string_VkFormat(src_format), block_extent.height,
                                  region.DescribeSrcAndDstImage().c_str());
-            } else if (SafeModulo(region.src_offset.z, block_extent.depth) != 0) {
+            } else if (!IsIntegerMultipleOf(region.src_offset.z, block_extent.depth)) {
                 skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::SrcOffset_07280), src_objlist,
                                  region_loc.dot(Field::srcOffset).dot(Field::z),
                                  "(%" PRId32
@@ -1337,19 +1337,19 @@ bool CoreChecks::ValidateCopyImageRegionCommon(HandleT handle, const ImageCopyRe
         // if uncompressed, extent is {1,1,1} and non of this will matter
         const VkExtent3D block_extent = vkuFormatTexelBlockExtent(dst_format);
         if (!IsExtentAllOne(block_extent)) {
-            if (SafeModulo(region.dst_offset.x, block_extent.width) != 0) {
+            if (!IsIntegerMultipleOf(region.dst_offset.x, block_extent.width)) {
                 skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::DstOffset_07281), dst_objlist,
                                  region_loc.dot(Field::dstOffset).dot(Field::x),
                                  "(%" PRId32 ") must be a multiple of the image format (%s) texel block width (%" PRIu32 ").\n%s",
                                  region.dst_offset.x, string_VkFormat(dst_format), block_extent.width,
                                  region.DescribeSrcAndDstImage().c_str());
-            } else if (SafeModulo(region.dst_offset.y, block_extent.height) != 0) {
+            } else if (!IsIntegerMultipleOf(region.dst_offset.y, block_extent.height)) {
                 skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::DstOffset_07282), dst_objlist,
                                  region_loc.dot(Field::dstOffset).dot(Field::y),
                                  "(%" PRId32 ") must be a multiple of the image format (%s) texel block height (%" PRIu32 ").\n%s",
                                  region.dst_offset.y, string_VkFormat(dst_format), block_extent.height,
                                  region.DescribeSrcAndDstImage().c_str());
-            } else if (SafeModulo(region.dst_offset.z, block_extent.depth) != 0) {
+            } else if (!IsIntegerMultipleOf(region.dst_offset.z, block_extent.depth)) {
                 skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::DstOffset_07283), dst_objlist,
                                  region_loc.dot(Field::dstOffset).dot(Field::z),
                                  "(%" PRId32 ") must be a multiple of the image format (%s) texel block depth (%" PRIu32 ").\n%s",

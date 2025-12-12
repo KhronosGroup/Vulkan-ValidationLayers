@@ -4311,7 +4311,7 @@ bool CoreChecks::PreCallValidateBindVideoSessionMemoryKHR(VkDevice device, VkVid
                     }
                 }
 
-                if (SafeModulo(bind_info.memoryOffset, mem_binding_info->requirements.alignment) != 0) {
+                if (!IsIntegerMultipleOf(bind_info.memoryOffset, mem_binding_info->requirements.alignment)) {
                     skip |= LogError("VUID-vkBindVideoSessionMemoryKHR-pBindSessionMemoryInfos-07199", videoSession,
                                      error_obj.location.dot(Field::pBindSessionMemoryInfos, i).dot(Field::memoryOffset),
                                      "(%" PRIuLEAST64 ") but must be an integer multiple of the alignment value %" PRIuLEAST64

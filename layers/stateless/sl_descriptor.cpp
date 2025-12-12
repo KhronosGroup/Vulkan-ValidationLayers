@@ -872,7 +872,7 @@ bool Device::manual_PreCallValidateCreateDescriptorPool(VkDevice device, const V
                                  "is zero.");
             }
             if (pCreateInfo->pPoolSizes[i].type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
-                if (SafeModulo(pCreateInfo->pPoolSizes[i].descriptorCount, 4) != 0) {
+                if (!IsIntegerMultipleOf(pCreateInfo->pPoolSizes[i].descriptorCount, 4)) {
                     skip |= LogError("VUID-VkDescriptorPoolSize-type-02218", device, pool_loc.dot(Field::descriptorCount),
                                      "is %" PRIu32 " (not a multiple of 4), but type is VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK.",
                                      pCreateInfo->pPoolSizes[i].descriptorCount);
@@ -1246,7 +1246,7 @@ bool Device::ValidateCmdSetDescriptorBufferOffsets(VkCommandBuffer commandBuffer
         }
 
         const VkDeviceAddress offset = pOffsets[i];
-        if (SafeModulo(offset, phys_dev_ext_props.descriptor_buffer_props.descriptorBufferOffsetAlignment) != 0) {
+        if (!IsIntegerMultipleOf(offset, phys_dev_ext_props.descriptor_buffer_props.descriptorBufferOffsetAlignment)) {
             const char *vuid = is_2 ? "VUID-VkSetDescriptorBufferOffsetsInfoEXT-pOffsets-08061"
                                     : "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pOffsets-08061";
             const LogObjectList objlist(commandBuffer, layout);

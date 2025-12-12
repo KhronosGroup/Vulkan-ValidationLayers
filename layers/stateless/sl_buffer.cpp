@@ -132,7 +132,7 @@ bool Device::manual_PreCallValidateCreateBufferView(VkDevice device, const VkBuf
                              "(%" PRIuLEAST64 ") does not equal VK_WHOLE_SIZE, range must be greater than 0.", range);
         }
 
-        if (SafeModulo(range, texel_block_size) != 0) {
+        if (!IsIntegerMultipleOf(range, texel_block_size)) {
             skip |= LogError("VUID-VkBufferViewCreateInfo-range-00929", pCreateInfo->buffer, create_info_loc.dot(Field::range),
                              "(%" PRIuLEAST64
                              ") does not equal VK_WHOLE_SIZE, so it must be a multiple of the texel block size (%" PRIuLEAST64

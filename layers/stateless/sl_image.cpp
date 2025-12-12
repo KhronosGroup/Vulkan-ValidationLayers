@@ -344,13 +344,13 @@ bool Device::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCre
     }
 
     // If Chroma subsampled format ( _420_ or _422_ )
-    if (vkuFormatIsXChromaSubsampled(image_format) && (SafeModulo(pCreateInfo->extent.width, 2) != 0)) {
+    if (vkuFormatIsXChromaSubsampled(image_format) && !IsIntegerMultipleOf(pCreateInfo->extent.width, 2)) {
         skip |=
             LogError("VUID-VkImageCreateInfo-format-04712", device, create_info_loc.dot(Field::format),
                      "(%s) is X Chroma Subsampled (has _422 or _420 suffix) so the width (%" PRIu32 ") must be a multiple of 2.",
                      string_VkFormat(image_format), pCreateInfo->extent.width);
     }
-    if (vkuFormatIsYChromaSubsampled(image_format) && (SafeModulo(pCreateInfo->extent.height, 2) != 0)) {
+    if (vkuFormatIsYChromaSubsampled(image_format) && !IsIntegerMultipleOf(pCreateInfo->extent.height, 2)) {
         skip |= LogError("VUID-VkImageCreateInfo-format-04713", device, create_info_loc.dot(Field::format),
                          "(%s) is Y Chroma Subsampled (has _420 suffix) so the height (%" PRIu32 ") must be a multiple of 2.",
                          string_VkFormat(image_format), pCreateInfo->extent.height);
