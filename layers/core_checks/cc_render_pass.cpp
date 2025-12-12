@@ -3163,12 +3163,13 @@ bool CoreChecks::ValidateRenderingAttachmentFlagsInfo(VkCommandBuffer commandBuf
         }
     }
     if (attachment_flags->flags & VK_RENDERING_ATTACHMENT_INPUT_ATTACHMENT_FEEDBACK_BIT_KHR) {
-        if (!(image_view_state.image_state->create_info.usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) {
+        if (!(image_view_state.inherited_usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) {
             const LogObjectList objlist(commandBuffer, attachment_info.imageView);
             skip |= LogError("VUID-VkRenderingAttachmentInfo-pNext-11754", objlist,
                              attachment_loc.pNext(Struct::VkRenderingAttachmentFlagsInfoKHR, Field::flags),
-                             "is %s but image has usage %s.", string_VkRenderingAttachmentFlagsKHR(attachment_flags->flags).c_str(),
-                             string_VkImageUsageFlags(image_view_state.image_state->create_info.usage).c_str());
+                             "is %s but the child image is missing VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT\n%s.",
+                             string_VkRenderingAttachmentFlagsKHR(attachment_flags->flags).c_str(),
+                             image_view_state.DescribeImageUsage(*this).c_str());
         }
         if (!enabled_features.dynamicRenderingLocalRead) {
             skip |= LogError("VUID-VkRenderingAttachmentFlagsInfoKHR-flags-11755", commandBuffer,
@@ -4187,14 +4188,15 @@ bool CoreChecks::ValidateBeginRenderingColorAttachment(const vvl::CommandBuffer 
                                      string_VkComponentMapping(components).c_str());
                 }
 
-                const VkImageUsageFlags image_usage = resolve_view_state->image_state->create_info.usage;
-                if ((image_usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) == 0) {
+                if ((resolve_view_state->inherited_usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) == 0) {
                     const LogObjectList objlist(commandBuffer, resolve_view_state->Handle(),
                                                 resolve_view_state->image_state->Handle());
                     skip |= LogError(
                         "VUID-VkRenderingInfo-colorAttachmentCount-09476", objlist,
-                        color_attachment_loc.dot(Field::resolveImageView), "image was created with %s (resolveMode is %s).",
-                        string_VkImageUsageFlags(image_usage).c_str(), string_VkResolveModeFlagBits(color_attachment.resolveMode));
+                        color_attachment_loc.dot(Field::resolveImageView),
+                        "underlying child image was not created with VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT (resolveMode is %s).\n%s",
+                        string_VkResolveModeFlagBits(color_attachment.resolveMode),
+                        resolve_view_state->DescribeImageUsage(*this).c_str());
                 }
             }
         }
@@ -4264,14 +4266,15 @@ bool CoreChecks::ValidateBeginRenderingDepthAttachment(const vvl::CommandBuffer 
                                  "has a non-identiy swizzle component, here are the actual swizzle values:\n%s",
                                  string_VkComponentMapping(components).c_str());
             }
-            const VkImageUsageFlags image_usage = depth_resolve_view_state->image_state->create_info.usage;
-            if ((image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
+            if ((depth_resolve_view_state->inherited_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
                 const LogObjectList objlist(commandBuffer, depth_resolve_view_state->Handle(),
                                             depth_resolve_view_state->image_state->Handle());
                 skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-09477", objlist,
                                  depth_attachment_loc.dot(Field::resolveImageView),
-                                 "image was created with %s (resolveMode is %s).", string_VkImageUsageFlags(image_usage).c_str(),
-                                 string_VkResolveModeFlagBits(depth_attachment.resolveMode));
+                                 "underlying child image was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT "
+                                 "(resolveMode is %s).\n%s",
+                                 string_VkResolveModeFlagBits(depth_attachment.resolveMode),
+                                 depth_resolve_view_state->DescribeImageUsage(*this).c_str());
             }
 
             if (rendering_info.viewMask == 0 &&
@@ -4352,14 +4355,15 @@ bool CoreChecks::ValidateBeginRenderingStencilAttachment(const vvl::CommandBuffe
                                  "has a non-identiy swizzle component, here are the actual swizzle values:\n%s",
                                  string_VkComponentMapping(components).c_str());
             }
-            const VkImageUsageFlags image_usage = stencil_resolve_view_state->image_state->create_info.usage;
-            if ((image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
+            if ((stencil_resolve_view_state->inherited_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
                 const LogObjectList objlist(commandBuffer, stencil_resolve_view_state->Handle(),
                                             stencil_resolve_view_state->image_state->Handle());
                 skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-09478", objlist,
                                  stencil_attachment_loc.dot(Field::resolveImageView),
-                                 "image was created with %s (resolveMode is %s).", string_VkImageUsageFlags(image_usage).c_str(),
-                                 string_VkResolveModeFlagBits(stencil_attachment.resolveMode));
+                                 "underlying child image was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT "
+                                 "(resolveMode is %s).\n%s",
+                                 string_VkResolveModeFlagBits(stencil_attachment.resolveMode),
+                                 stencil_resolve_view_state->DescribeImageUsage(*this).c_str());
             }
 
             if (rendering_info.viewMask == 0 &&
@@ -4595,8 +4599,9 @@ bool CoreChecks::ValidateMultisampledRenderToSingleSampleView(VkCommandBuffer co
     }
     if (!image_state->image_format_properties.sampleCounts) {
         if (GetPhysicalDeviceImageFormatProperties(*image_state, "VUID-VkMultisampledRenderToSingleSampledInfoEXT-pNext-06880",
-                                                   attachment_loc))
+                                                   attachment_loc)) {
             return true;
+        }
     }
     if (!(image_state->image_format_properties.sampleCounts & msrtss_info.rasterizationSamples)) {
         const LogObjectList objlist(commandBuffer, image_view_state.Handle());
@@ -4690,16 +4695,10 @@ bool CoreChecks::MatchUsage(uint32_t count, const VkAttachmentReference2 *attach
         if ((fbci.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) == 0) {
             const VkImageView *image_view = &fbci.pAttachments[fb_attachment];
             if (auto view_state = Get<vvl::ImageView>(*image_view)) {
-                const auto &ici = view_state->image_state->create_info;
-                auto creation_usage = ici.usage;
-                const auto stencil_usage_info = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(ici.pNext);
-                if (stencil_usage_info) {
-                    creation_usage |= stencil_usage_info->stencilUsage;
-                }
-                if ((creation_usage & usage_flag) == 0) {
+                if ((view_state->inherited_usage & usage_flag) == 0) {
                     skip |= LogError(vuid, device, create_info_loc.dot(Field::pAttachments, fb_attachment),
-                                     "expected usage (%s) conflicts with the image's flags (%s).",
-                                     string_VkImageUsageFlagBits(usage_flag), string_VkImageUsageFlags(creation_usage).c_str());
+                                     "expected usage (%s) conflicts with the image %s.", string_VkImageUsageFlagBits(usage_flag),
+                                     view_state->DescribeImageUsage(*this).c_str());
                 }
             }
         } else {

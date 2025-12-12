@@ -498,25 +498,41 @@ bool Image::CompareCreateInfo(const Image &other) const {
 
 }  // namespace vvl
 
-static VkSamplerYcbcrConversion GetSamplerConversion(const VkImageViewCreateInfo *ci) {
-    auto *conversion_info = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(ci->pNext);
+static VkSamplerYcbcrConversion GetSamplerConversion(const VkImageViewCreateInfo& ci) {
+    auto* conversion_info = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(ci.pNext);
     return conversion_info ? conversion_info->conversion : VK_NULL_HANDLE;
 }
 
-static VkImageUsageFlags GetInheritedUsage(const VkImageViewCreateInfo *ci, const vvl::Image &image_state) {
-    auto usage_create_info = vku::FindStructInPNextChain<VkImageViewUsageCreateInfo>(ci->pNext);
-    return (usage_create_info) ? usage_create_info->usage : image_state.create_info.usage;
+// We print how we get this info in ImageView::DescribeImageUsage()
+static VkImageUsageFlags GetInheritedUsage(const VkImageViewCreateInfo& ci, const vvl::Image& image_state) {
+    if (auto usage_create_info = vku::FindStructInPNextChain<VkImageViewUsageCreateInfo>(ci.pNext)) {
+        return usage_create_info->usage;
+    }
+
+    VkImageUsageFlags usage = image_state.create_info.usage;
+
+    // We can't apply the stencil usage until we get the aspectMask to know how to appply it
+    if (const auto stencil_usage_info = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image_state.create_info.pNext)) {
+        const bool stencil_aspect = (ci.subresourceRange.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0;
+        const bool depth_aspect = (ci.subresourceRange.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0;
+        if (stencil_aspect && !depth_aspect) {
+            usage = stencil_usage_info->stencilUsage;
+        } else if (stencil_aspect && depth_aspect) {
+            usage &= stencil_usage_info->stencilUsage;
+        }
+    }
+    return usage;
 }
 
-static float GetImageViewMinLod(const VkImageViewCreateInfo *ci) {
-    auto image_view_min_lod = vku::FindStructInPNextChain<VkImageViewMinLodCreateInfoEXT>(ci->pNext);
+static float GetImageViewMinLod(const VkImageViewCreateInfo& ci) {
+    auto image_view_min_lod = vku::FindStructInPNextChain<VkImageViewMinLodCreateInfoEXT>(ci.pNext);
     return (image_view_min_lod) ? image_view_min_lod->minLod : 0.0f;
 }
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
-static bool GetMetalExport(const VkImageViewCreateInfo *info) {
+static bool GetMetalExport(const VkImageViewCreateInfo& ci) {
     bool retval = false;
-    auto export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(info->pNext);
+    auto export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(ci.pNext);
     while (export_metal_object_info) {
         if (export_metal_object_info->exportObjectType == VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT) {
             retval = true;
@@ -530,25 +546,25 @@ static bool GetMetalExport(const VkImageViewCreateInfo *info) {
 
 namespace vvl {
 
-ImageView::ImageView(const DeviceState &device_state, const std::shared_ptr<vvl::Image> &image_state, VkImageView handle,
-                     const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2 ff,
-                     const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props)
+ImageView::ImageView(const DeviceState& device_state, const std::shared_ptr<vvl::Image>& image_state, VkImageView handle,
+                     const VkImageViewCreateInfo* ci, VkFormatFeatureFlags2 ff,
+                     const VkFilterCubicImageViewImageFormatPropertiesEXT& cubic_props)
     : StateObject(handle, kVulkanObjectTypeImageView),
       safe_create_info(ci),
       create_info(*safe_create_info.ptr()),
       image_state(image_state),
 #ifdef VK_USE_PLATFORM_METAL_EXT
-      metal_imageview_export(GetMetalExport(ci)),
+      metal_imageview_export(GetMetalExport(create_info)),
 #endif
       is_depth_sliced(IsDepthSliceView(image_state->create_info, create_info.viewType)),
       normalized_subresource_range(ImageView::NormalizeImageViewSubresourceRange(*image_state, create_info)),
       range_generator(image_state->subresource_encoder, GetRangeGeneratorRange(device_state.extensions)),
       samples(image_state->create_info.samples),
-      sampler_conversion(GetSamplerConversion(ci)),
+      sampler_conversion(GetSamplerConversion(create_info)),
       filter_cubic_props(cubic_props),
-      min_lod(GetImageViewMinLod(ci)),
+      min_lod(GetImageViewMinLod(create_info)),
       format_features(ff),
-      inherited_usage(GetInheritedUsage(ci, *image_state)) {
+      inherited_usage(GetInheritedUsage(create_info, *image_state)) {
 }
 
 void ImageView::NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {
@@ -658,10 +674,26 @@ std::string ImageView::DescribeImageUsage(const Logger& logger) const {
     std::stringstream ss;
     ss << logger.FormatHandle(create_info.image) << " was created with "
        << string_VkImageUsageFlags(image_state->create_info.usage);
-    // Even if using VkImageViewUsageCreateInfo, only worth showing if they are different
-    if (inherited_usage != image_state->create_info.usage) {
-        ss << ", but VkImageViewUsageCreateInfo overwrote it with " << string_VkImageUsageFlags(inherited_usage);
+
+    if (auto usage_create_info = vku::FindStructInPNextChain<VkImageViewUsageCreateInfo>(create_info.pNext)) {
+        // Even if using VkImageViewUsageCreateInfo, only worth showing if they are different
+        if (inherited_usage != image_state->create_info.usage) {
+            ss << ", but VkImageViewUsageCreateInfo overwrote it with " << string_VkImageUsageFlags(usage_create_info->usage) << "";
+        }
+    } else if (const auto stencil_usage_info =
+                   vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image_state->create_info.pNext)) {
+        const bool stencil_aspect = (create_info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0;
+        const bool depth_aspect = (create_info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0;
+        if (stencil_aspect && !depth_aspect) {
+            ss << ", but VkImageStencilUsageCreateInfo overwrote it with "
+               << string_VkImageUsageFlags(stencil_usage_info->stencilUsage)
+               << " because the image view has VK_IMAGE_ASPECT_STENCIL_BIT only";
+        } else if (stencil_aspect && depth_aspect) {
+            ss << ", but VkImageStencilUsageCreateInfo added " << string_VkImageUsageFlags(stencil_usage_info->stencilUsage)
+               << " because the image view has both VK_IMAGE_ASPECT_STENCIL_BIT and VK_IMAGE_ASPECT_DEPTH_BIT";
+        }
     }
+
     return ss.str();
 }
 

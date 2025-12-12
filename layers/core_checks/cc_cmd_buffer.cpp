@@ -2261,13 +2261,12 @@ bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer comman
                          string_VkFormat(ivci.format));
     }
 
-    const auto *image_state = view_state->image_state.get();
-    auto usage = image_state->create_info.usage;
-    if (!(usage & VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV)) {
+    if (!(view_state->inherited_usage & VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV)) {
         const LogObjectList objlist(commandBuffer, imageView);
         skip |= LogError("VUID-vkCmdBindShadingRateImageNV-imageView-02061", objlist, error_obj.location,
                          "If imageView is not VK_NULL_HANDLE, the image must have been "
-                         "created with VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV set.");
+                         "created with VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV set.\n%s",
+                         view_state->DescribeImageUsage(*this).c_str());
     }
 
     // XXX TODO: While the VUID says "each subresource", only the base mip level is
@@ -2276,6 +2275,7 @@ bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer comman
     const VkImageSubresourceRange &range = view_state->normalized_subresource_range;
     VkImageSubresourceLayers subresource = {range.aspectMask, range.baseMipLevel, range.baseArrayLayer, range.layerCount};
 
+    const auto* image_state = view_state->image_state.get();
     if (image_state) {
         if (imageLayout != VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV && imageLayout != VK_IMAGE_LAYOUT_GENERAL) {
             const LogObjectList objlist(cb_state->Handle(), image_state->Handle());

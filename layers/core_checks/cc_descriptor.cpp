@@ -1205,37 +1205,18 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView &view_state, VkImageLa
     // Validate that imageLayout is compatible with aspect_mask and image format
     //  and validate that image usage bits are correct for given usage
     VkImageAspectFlags aspect_mask = view_state.normalized_subresource_range.aspectMask;
-    VkImage image = view_state.create_info.image;
-    VkImageUsageFlags usage = 0;
-    auto *image_node = view_state.image_state.get();
-    ASSERT_AND_RETURN_SKIP(image_node);
-
-    const auto image_view_usage_info = vku::FindStructInPNextChain<VkImageViewUsageCreateInfo>(view_state.create_info.pNext);
-    const auto stencil_usage_info = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image_node->create_info.pNext);
-    if (image_view_usage_info) {
-        usage = image_view_usage_info->usage;
-    } else {
-        usage = image_node->create_info.usage;
-    }
-    if (stencil_usage_info) {
-        const bool stencil_aspect = (aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) > 0;
-        const bool depth_aspect = (aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) > 0;
-        if (stencil_aspect && !depth_aspect) {
-            usage = stencil_usage_info->stencilUsage;
-        } else if (stencil_aspect && depth_aspect) {
-            usage &= stencil_usage_info->stencilUsage;
-        }
-    }
+    auto* image_state = view_state.image_state.get();
+    ASSERT_AND_RETURN_SKIP(image_state);
 
     // Validate that memory is bound to image
     // VU being worked on https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/5598
-    skip |= ValidateMemoryIsBoundToImage(LogObjectList(image), *image_node, image_info_loc.dot(Field::image),
+    const LogObjectList objlist(view_state.Handle(), image_state->Handle());
+    skip |= ValidateMemoryIsBoundToImage(objlist, *image_state, image_info_loc.dot(Field::image),
                                          "UNASSIGNED-VkDescriptorImageInfo-BoundResourceFreedMemoryAccess");
 
-    const LogObjectList objlist(view_state.Handle(), image_node->Handle());
     // KHR_maintenance1 allows rendering into 2D or 2DArray views which slice a 3D image,
     // but not binding them to descriptor sets.
-    if (view_state.is_depth_sliced && image_node->create_info.imageType == VK_IMAGE_TYPE_3D) {
+    if (view_state.is_depth_sliced && image_state->create_info.imageType == VK_IMAGE_TYPE_3D) {
         // VK_EXT_image_2d_view_of_3d allows use of VIEW_TYPE_2D in descriptor
         if (view_state.create_info.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
             skip |= LogError("VUID-VkDescriptorImageInfo-imageView-06712", objlist, image_info_loc.dot(Field::imageView),
@@ -1263,10 +1244,10 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView &view_state, VkImageLa
                                  string_VkDescriptorType(type));
             }
 
-            if (!(image_node->create_info.flags & VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT)) {
+            if (!(image_state->create_info.flags & VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT)) {
                 skip |= LogError("VUID-VkDescriptorImageInfo-imageView-07796", objlist, image_info_loc.dot(Field::imageView),
                                  "is VK_IMAGE_VIEW_TYPE_2D, the image is VK_IMAGE_VIEW_TYPE_3D, but the image was created with %s.",
-                                 string_VkImageCreateFlags(image_node->create_info.flags).c_str());
+                                 string_VkImageCreateFlags(image_state->create_info.flags).c_str());
             }
         }
     }
@@ -1293,19 +1274,19 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView &view_state, VkImageLa
         }
     }
 
-    if (vkuFormatIsDepthOrStencil(image_node->create_info.format)) {
+    if (vkuFormatIsDepthOrStencil(image_state->create_info.format)) {
         if (aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) {
             if (aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) {
                 skip |= LogError(
                     "VUID-VkDescriptorImageInfo-imageView-01976", objlist, image_info_loc.dot(Field::imageView),
                     "was created with an image format %s, but the image aspectMask (%s) has both STENCIL and DEPTH aspects set ",
-                    string_VkFormat(image_node->create_info.format), string_VkImageAspectFlags(aspect_mask).c_str());
+                    string_VkFormat(image_state->create_info.format), string_VkImageAspectFlags(aspect_mask).c_str());
             }
         } else if ((aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) == 0) {
             skip |=
                 LogError("VUID-VkDescriptorImageInfo-imageView-01976", objlist, image_info_loc.dot(Field::imageView),
                          "was created with an image format %s, but the image aspectMask (%s) is missing a STENCIL or DEPTH aspects",
-                         string_VkFormat(image_node->create_info.format), string_VkImageAspectFlags(aspect_mask).c_str());
+                         string_VkFormat(image_state->create_info.format), string_VkImageAspectFlags(aspect_mask).c_str());
         }
     }
 
@@ -1319,18 +1300,20 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView &view_state, VkImageLa
             }
             [[fallthrough]];
         case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: {
-            if (!(usage & VK_IMAGE_USAGE_SAMPLED_BIT)) {
-                skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00337", objlist, image_info_loc.dot(Field::imageView),
-                                 "was created with %s, but descriptorType is %s.", string_VkImageUsageFlags(usage).c_str(),
-                                 string_VkDescriptorType(type));
+            if (!(view_state.inherited_usage & VK_IMAGE_USAGE_SAMPLED_BIT)) {
+                skip |= LogError(
+                    "VUID-VkWriteDescriptorSet-descriptorType-00337", objlist, image_info_loc.dot(Field::imageView),
+                    "underlying child image was not created with VK_IMAGE_USAGE_SAMPLED_BIT, but descriptorType is %s.\n%s",
+                    string_VkDescriptorType(type), view_state.DescribeImageUsage(*this).c_str());
             }
             break;
         }
         case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE: {
-            if (!(usage & VK_IMAGE_USAGE_STORAGE_BIT)) {
+            if (!(view_state.inherited_usage & VK_IMAGE_USAGE_STORAGE_BIT)) {
                 skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00339", objlist, image_info_loc.dot(Field::imageView),
-                                 "was created with %s, but descriptorType is VK_DESCRIPTOR_TYPE_STORAGE_IMAGE.",
-                                 string_VkImageUsageFlags(usage).c_str());
+                                 "underlying child image was not created with VK_IMAGE_USAGE_STORAGE_BIT, but descriptorType is "
+                                 "VK_DESCRIPTOR_TYPE_STORAGE_IMAGE.\n%s",
+                                 view_state.DescribeImageUsage(*this).c_str());
 
             } else if ((VK_IMAGE_LAYOUT_GENERAL != image_layout) && (!IsExtEnabled(extensions.vk_khr_shared_presentable_image) ||
                                                                      (VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR != image_layout))) {
@@ -1342,26 +1325,29 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView &view_state, VkImageLa
             break;
         }
         case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT: {
-            if (!(usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) {
+            if (!(view_state.inherited_usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) {
                 skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00338", objlist, image_info_loc.dot(Field::imageView),
-                                 "was created with %s, but descriptorType is VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT.",
-                                 string_VkImageUsageFlags(usage).c_str());
+                                 "underlying child image was not created with VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, but "
+                                 "descriptorType is VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT.\n%s",
+                                 view_state.DescribeImageUsage(*this).c_str());
             }
             break;
         }
         case VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM: {
-            if (!(usage & VK_IMAGE_USAGE_SAMPLE_WEIGHT_BIT_QCOM)) {
+            if (!(view_state.inherited_usage & VK_IMAGE_USAGE_SAMPLE_WEIGHT_BIT_QCOM)) {
                 skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-06942", objlist, image_info_loc.dot(Field::imageView),
-                                 "was created with %s, but descriptorType is VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM.",
-                                 string_VkImageUsageFlags(usage).c_str());
+                                 "underlying child image was not created with VK_IMAGE_USAGE_SAMPLE_WEIGHT_BIT_QCOM, but "
+                                 "descriptorType is VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM.\n%s",
+                                 view_state.DescribeImageUsage(*this).c_str());
             }
             break;
         }
         case VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM: {
-            if (!(usage & VK_IMAGE_USAGE_SAMPLE_BLOCK_MATCH_BIT_QCOM)) {
+            if (!(view_state.inherited_usage & VK_IMAGE_USAGE_SAMPLE_BLOCK_MATCH_BIT_QCOM)) {
                 skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-06943", objlist, image_info_loc.dot(Field::imageView),
-                                 "was created with %s, but descriptorType is VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM.",
-                                 string_VkImageUsageFlags(usage).c_str());
+                                 "underlying child image was not created with VK_IMAGE_USAGE_SAMPLE_BLOCK_MATCH_BIT_QCOM, but "
+                                 "descriptorType is VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM.\n%s",
+                                 view_state.DescribeImageUsage(*this).c_str());
             }
             break;
         }
@@ -1433,7 +1419,7 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView &view_state, VkImageLa
             std::stringstream error_str;
             error_str << "Descriptor update with descriptorType " << string_VkDescriptorType(type)
                       << " is being updated with invalid imageLayout " << string_VkImageLayout(image_layout) << " for image "
-                      << FormatHandle(image) << " in imageView " << FormatHandle(view_state.Handle())
+                      << FormatHandle(image_state->Handle()) << " in imageView " << FormatHandle(view_state.Handle())
                       << ". Allowed layouts are: VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, "
                       << "VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL";
             for (auto &ext_layout : shared_extended_layouts) {
