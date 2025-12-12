@@ -1633,18 +1633,22 @@ TEST_F(NegativeQuery, PipelineStatisticsQuery) {
     }
 }
 
-TEST_F(NegativeQuery, TestGetQueryPoolResultsDataAndStride) {
+TEST_F(NegativeQuery, GetQueryPoolResultsDataAndStride) {
     TEST_DESCRIPTION("Test pData and stride multiple in GetQueryPoolResults");
 
     AddRequiredExtensions(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 2);
 
-    m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-flags-02828");
     const size_t out_data_size = 16;
     uint8_t data[out_data_size];
-    vk::GetQueryPoolResults(device(), query_pool, 0, 1, out_data_size, &data, 3, 0);
+    m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-queryCount-12251");
+    vk::GetQueryPoolResults(device(), query_pool, 0, 2, out_data_size, &data, 3, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-flags-02828");
+    vk::GetQueryPoolResults(device(), query_pool, 0, 1, out_data_size, &data[1], 4, 0);
     m_errorMonitor->VerifyFound();
 }
 
