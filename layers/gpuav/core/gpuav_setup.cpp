@@ -347,6 +347,15 @@ struct RayQuery : public Setting {
                "gpuav_validate_ray_query]";
     }
 };
+struct MeshShading : public Setting {
+    bool IsEnabled(const GpuAVSettings &settings) { return settings.shader_instrumentation.mesh_shading; }
+    bool HasRequiredFeatures(const DeviceFeatures &features) { return features.meshShader; }
+    void Disable(GpuAVSettings &settings) { settings.shader_instrumentation.mesh_shading = false; }
+    std::string DisableMessage() {
+        return "Mesh Shading validation option was enabled, but the meshShader feature are not supported. [Disabling "
+               "gpuav_mesh_shading]";
+    }
+};
 struct BufferCopies : public Setting {
     bool IsEnabled(const GpuAVSettings &settings) { return settings.validate_buffer_copies; }
     // copy_buffer_to_image.comp relies on uint8_t buffers to perform validation
@@ -385,11 +394,12 @@ struct AccelerationStructuresBuild : public Setting {
 void Validator::InitSettings(const Location &loc) {
     setting::BufferDeviceAddress buffer_device_address;
     setting::RayQuery ray_query;
+    setting::MeshShading mesh_shading;
     setting::BufferCopies buffer_copies;
     setting::BufferContent buffer_content;
     setting::AccelerationStructuresBuild as_builds;
-    std::array<setting::Setting *, 5> all_settings = {&buffer_device_address, &ray_query, &buffer_copies, &buffer_content,
-                                                      &as_builds};
+    std::array<setting::Setting *, 6> all_settings = {&buffer_device_address, &ray_query,      &mesh_shading,
+                                                      &buffer_copies,         &buffer_content, &as_builds};
 
     for (auto &setting_object : all_settings) {
         if (setting_object->IsEnabled(gpuav_settings) && !setting_object->HasRequiredFeatures(modified_features)) {

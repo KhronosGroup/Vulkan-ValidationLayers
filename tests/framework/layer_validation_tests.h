@@ -255,6 +255,11 @@ class GpuAVDescriptorIndexingTest : public GpuAVTest {
     void InitGpuVUDescriptorIndexing(bool safe_mode = true);
 };
 
+class GpuAVMesh : public GpuAVTest {
+  public:
+    void InitBasicMeshAndTask(bool safe_mode = true);
+};
+
 class GpuAVDescriptorClassGeneralBuffer : public GpuAVTest {
   public:
     void ComputeStorageBufferTest(const char *shader, int source_type, VkDeviceSize buffer_size,

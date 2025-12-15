@@ -1818,61 +1818,6 @@ TEST_F(PositiveGpuAV, DISABLED_DeviceGeneratedCommandsIES) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(PositiveGpuAV, BasicMeshShader) {
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::meshShader);
-    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitGpuAvFramework());
-    RETURN_IF_SKIP(InitState());
-    InitRenderTarget();
-
-    const char *mesh_source = R"glsl(
-    #version 450
-    #extension GL_EXT_mesh_shader : require
-
-    layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
-    layout(triangles, max_vertices = 3, max_primitives = 1) out;
-
-    const vec4[3] positions = {
-        vec4( 0.0, -1.0, 0.0, 1.0),
-        vec4(-1.0,  1.0, 0.0, 1.0),
-        vec4( 1.0,  1.0, 0.0, 1.0)
-    };
-
-    const vec4[3] colors = {
-        vec4(0.0, 1.0, 0.0, 1.0),
-        vec4(0.0, 0.0, 1.0, 1.0),
-        vec4(1.0, 0.0, 0.0, 1.0)
-    };
-
-    void main() {
-        vec4 offset = vec4(0.0, 0.0, gl_GlobalInvocationID.x, 0.0);
-        SetMeshOutputsEXT(3, 1);
-        gl_MeshVerticesEXT[0].gl_Position = (positions[0] + offset);
-        gl_MeshVerticesEXT[1].gl_Position = (positions[1] + offset);
-        gl_MeshVerticesEXT[2].gl_Position = (positions[2] + offset);
-        gl_PrimitiveTriangleIndicesEXT[gl_LocalInvocationIndex] =  uvec3(0, 1, 2);
-    }
-    )glsl";
-
-    VkShaderObj ms(*m_device, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
-    VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
-
-    CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.CreateGraphicsPipeline();
-
-    m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    vk::CmdDrawMeshTasksEXT(m_command_buffer, 1, 1, 1);
-    m_command_buffer.EndRenderPass();
-    m_command_buffer.End();
-
-    m_default_queue->SubmitAndWait(m_command_buffer);
-}
-
 TEST_F(PositiveGpuAV, DualShaderLibrary) {
     TEST_DESCRIPTION("Create library with both vert and frag shader in it");
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);

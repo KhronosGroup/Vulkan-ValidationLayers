@@ -932,6 +932,12 @@ InjectConditionalData Pass::InjectFunctionPre(Function& function, const BasicBlo
         invalid_block.CreateInstruction(spv::OpRayQueryInitializeKHR,
                                         {target_inst.Operand(0), target_inst.Operand(1), uint32_0_id, uint32_0_id, vec3_0_id,
                                          float32_0_id, vec3_0_id, float32_0_id});
+    } else if (target_inst.Opcode() == spv::OpSetMeshOutputsEXT) {
+        // TODO - Setup a callback system so MeshShading pass can set this as we should use the max values from the ExecutionMode
+        // instead, but don't want to be storing eveything in the Pass class as a global
+        const uint32_t three_id = type_manager_.CreateConstantUInt32(3).Id();
+        const uint32_t one_id = type_manager_.GetConstantOneUint32().Id();
+        invalid_block.CreateInstruction(spv::OpSetMeshOutputsEXT, {three_id, one_id});
     }
 
     invalid_block.CreateInstruction(spv::OpBranch, {merge_block_label});

@@ -35,6 +35,8 @@ target_sources(gpu_av_spirv PRIVATE
     post_process_descriptor_indexing_pass.cpp
     vertex_attribute_fetch_oob_pass.h
     vertex_attribute_fetch_oob_pass.cpp
+    mesh_shading_pass.h
+    mesh_shading_pass.cpp
     log_error_pass.h
     log_error_pass.cpp
 

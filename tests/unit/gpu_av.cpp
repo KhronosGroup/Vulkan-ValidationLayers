@@ -502,20 +502,11 @@ TEST_F(NegativeGpuAV, ForceUniformAndStorageBuffer8BitAccess) {
         "Adding a VkPhysicalDevice8BitStorageFeatures to pNext with storageBuffer8BitAccess set to VK_TRUE");
 
     // noise
-    m_errorMonitor->SetAllowedFailureMsg("Adding a VkPhysicalDevice8BitStorageFeatures to pNext with shaderInt64 set to VK_TRUE");
-    m_errorMonitor->SetAllowedFailureMsg(
-        "Adding a VkPhysicalDeviceVulkanMemoryModelFeatures to pNext with vulkanMemoryModel and vulkanMemoryModelDeviceScope set "
-        "to VK_TRU");
-    m_errorMonitor->SetAllowedFailureMsg(
-        "Adding a VkPhysicalDeviceTimelineSemaphoreFeatures to pNext with timelineSemaphore set to VK_TRUE");
-    m_errorMonitor->SetAllowedFailureMsg(
-        "Adding a VkPhysicalDeviceBufferDeviceAddressFeatures to pNext with bufferDeviceAddress set to VK_TRUE");
-    m_errorMonitor->SetAllowedFailureMsg(
-        "Adding a VkPhysicalDeviceScalarBlockLayoutFeatures to pNext with scalarBlockLayout set to VK_TRUE");
     m_errorMonitor->SetAllowedFailureMsg(
         "Buffer device address validation option was enabled, but required buffer device address extension and/or features are not "
         "enabled");
     m_errorMonitor->SetAllowedFailureMsg("Ray Query validation option was enabled");
+    m_errorMonitor->SetAllowedFailureMsg("Mesh Shading validation option was enabled");
     m_errorMonitor->SetAllowedFailureMsg(
         "vkGetDeviceProcAddr(): pName is trying to grab vkGetPhysicalDeviceCalibrateableTimeDomainsKHR which is an instance level "
         "function");
