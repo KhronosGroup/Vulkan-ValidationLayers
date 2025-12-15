@@ -115,6 +115,11 @@ khronos_validation.gpuav_indirect_draws_buffers = true
 # Validate buffers containing ray tracing parameters used in indirect ray tracing commands
 khronos_validation.gpuav_indirect_trace_rays_buffers = true
 
+# Mesh Shading SPIR-V instructions
+# =====================
+# Enable shader instrumentation on VK_EXT_mesh_shader
+khronos_validation.gpuav_mesh_shading = true
+
 # Post process descriptor indexing
 # =====================
 # Track which descriptor indexes were used in shader to run normal validation afterwards

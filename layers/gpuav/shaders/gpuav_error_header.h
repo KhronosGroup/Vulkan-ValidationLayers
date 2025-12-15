@@ -147,6 +147,15 @@ const uint kInstBuffAddrAccessPayloadShiftIsWrite = 31;
 const uint kInstBuffAddrAccessPayloadShiftIsStruct = 30;
 const uint kInstBuffAddrAccessPayloadMaskAccessInfo = 0x3FFFFFFF;
 
+// kErrorGroupInstMeshShading
+// ---
+// This dword is split up as
+// | 31 ........ 16 | 15 .............. 0 |
+// | OutputVertices | OutputPrimitivesEXT |
+// This is because the limits for both of these on all known devices is 1024
+const int kMeshShadingOutputVerticesShift = 16;
+const int kMeshShadingOutputPrimitivesMask = 0xFFFF;
+
 // Ray query
 // ---
 const int kInstRayQueryParamOffset_0 = kHeaderSize;

@@ -40,6 +40,7 @@ const int kErrorGroupInstIndexedDraw = 9;
 const int kErrorGroupGpuCopyMemoryIndirect = 10;
 const int kErrorGroupInstSanitizer = 11;
 const int kErrorGroupGpuPreBuildAccelerationStructures = 12;
+const int kErrorGroupInstMeshShading = 13;
 
 // We just take ExecutionModel and normalize it so we only use 5 bits to store it
 const int kExecutionModelVertex = 0;
@@ -96,6 +97,10 @@ const int kErrorSubCodeRayQueryOriginNaN = 9;
 const int kErrorSubCodeRayQueryDirectionNaN = 10;
 const int kErrorSubCodeRayQueryOriginFinite = 11;
 const int kErrorSubCodeRayQueryDirectionFinite = 12;
+
+// MeshShading
+//
+const int kErrorSubCode_MeshShading_SetMeshOutputs = 1;
 
 // Indexed Draw
 //

@@ -81,7 +81,7 @@ uint32_t SanitizerPass::CreateFunctionCall(BasicBlock& block, InstructionIt* ins
     const uint32_t inst_position_id = type_manager_.CreateConstantUInt32(inst_position).Id();
 
     if (meta.sub_code == glsl::kErrorSubCodeSanitizerDivideZero) {
-        const uint32_t is_valid_id = DivideByZeroCheck(block, inst_it, meta);
+        const uint32_t is_invalid_id = DivideByZeroCheck(block, inst_it, meta);
 
         const uint32_t bool_type = type_manager_.GetTypeBool().Id();
         const uint32_t opcode_id = type_manager_.CreateConstantUInt32(meta.target_instruction->Opcode()).Id();
@@ -89,7 +89,7 @@ uint32_t SanitizerPass::CreateFunctionCall(BasicBlock& block, InstructionIt* ins
 
         block.CreateInstruction(
             spv::OpFunctionCall,
-            {bool_type, function_result, function_def, is_valid_id, inst_position_id, opcode_id, vector_size_id}, inst_it);
+            {bool_type, function_result, function_def, is_invalid_id, inst_position_id, opcode_id, vector_size_id}, inst_it);
     } else if (meta.sub_code == glsl::kErrorSubCodeSanitizerImageGather) {
         const uint32_t void_type = type_manager_.GetTypeVoid().Id();
         // If the OpConstant was a signed int, this will "cast" it by making a new OpConstant with the same value

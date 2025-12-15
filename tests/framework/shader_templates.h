@@ -38,6 +38,19 @@ static const char kVertexDrawPassthroughGlsl[] = R"glsl(
     }
 )glsl";
 
+static const char kMeshPassthroughGlsl[] = R"glsl(
+    #version 450
+    #extension GL_EXT_mesh_shader : require
+    layout(triangles, max_vertices = 3, max_primitives = 1) out;
+    void main() {
+        SetMeshOutputsEXT(3, 1);
+        gl_MeshVerticesEXT[0].gl_Position = vec4(0.0, -1.0, 0.0, 1.0);
+        gl_MeshVerticesEXT[1].gl_Position = vec4(-1.0, 1.0, 0.0, 1.0);
+        gl_MeshVerticesEXT[2].gl_Position = vec4(1.0, 1.0, 0.0, 1.0);
+        gl_PrimitiveTriangleIndicesEXT[gl_LocalInvocationIndex] =  uvec3(0, 1, 2);
+    }
+)glsl";
+
 static const char kVertexPointSizeGlsl[] = R"glsl(
     #version 460
     out gl_PerVertex {

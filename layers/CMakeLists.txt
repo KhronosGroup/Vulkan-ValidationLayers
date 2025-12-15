@@ -330,6 +330,7 @@ target_sources(vvl PRIVATE
     gpuav/instrumentation/buffer_device_address.cpp
     gpuav/instrumentation/descriptor_checks.h
     gpuav/instrumentation/descriptor_checks.cpp
+    gpuav/instrumentation/mesh_shading.cpp
     gpuav/instrumentation/post_process_descriptor_indexing.cpp
     gpuav/instrumentation/ray_query.cpp
     gpuav/instrumentation/register_validation.h
