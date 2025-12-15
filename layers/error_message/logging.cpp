@@ -298,14 +298,16 @@ std::string DebugReport::CreateMessageText(const Location &loc, std::string_view
             const char *spec_url_base = "https://docs.vulkan.org/spec/latest/";
 #endif
 
+            const auto last_char = main_message.back();
             // Add period at end if forgotten
             // This provides better seperation between error message and spec text
-            if (main_message.back() != '.' && main_message.back() != '\n') {
+            // (Don't add if end with a number, otherwise it looks like a floating point number)
+            if (last_char != '.' && last_char != '\n' && (last_char < '0' || last_char > '9')) {
                 oss << '.';
             }
 
             // Start Vulkan spec text with a new line to make it easier visually
-            if (main_message.back() != '\n') {
+            if (last_char != '\n') {
                 oss << '\n';
             }
 
