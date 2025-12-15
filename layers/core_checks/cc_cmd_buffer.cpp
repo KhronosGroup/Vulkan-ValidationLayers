@@ -616,6 +616,27 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const vvl::CommandBuffer &c
                                                      const vvl::CommandBuffer &secondary_cb_state,
                                                      const Location &secondary_cb_loc) const {
     bool skip = false;
+
+    if (cb_state.active_render_pass) {
+        auto active_tile_mem = Get<vvl::DeviceMemory>(cb_state.active_tile_memory_binding);
+        if (auto *tile_mem_bind_info =
+                vku::FindStructInPNextChain<VkTileMemoryBindInfoQCOM>(secondary_cb_state.inheritance_info.pNext)) {
+            auto active_tile_mem_size = active_tile_mem->allocate_info.allocationSize;
+            auto tile_mem_bind = Get<vvl::DeviceMemory>(tile_mem_bind_info->memory);
+            auto tile_mem_bind_size = tile_mem_bind->allocate_info.allocationSize;
+            if (active_tile_mem_size != tile_mem_bind_size) {
+                const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle());
+                skip |= LogError(
+                    "VUID-vkCmdExecuteCommands-memory-10724", objlist, secondary_cb_loc,
+                    "active tile memory size in the primary command buffer %" PRIu64
+                    ""
+                    " the memory size of VkTileMemoryBindInfoQCOM in the pNext of secondary command buffer inheritance info"
+                    " %" PRIu64 " are not equal",
+                    active_tile_mem_size, tile_mem_bind_size);
+            }
+        }
+    }
+
     const auto primary_pool = cb_state.command_pool;
     const auto secondary_pool = secondary_cb_state.command_pool;
     if (primary_pool && secondary_pool && (primary_pool->queueFamilyIndex != secondary_pool->queueFamilyIndex)) {
@@ -2095,6 +2116,17 @@ bool CoreChecks::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer comma
         }
     }
 
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdBindTileMemoryQCOM(VkCommandBuffer commandBuffer,
+                                                      const VkTileMemoryBindInfoQCOM *pTileMemoryBindInfo,
+                                                      const ErrorObject &error_obj) const {
+    bool skip = false;
+    const auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    if (pTileMemoryBindInfo != NULL) {
+        skip |= ValidateTileMemoryBindInfo(*pTileMemoryBindInfo, error_obj.location);
+    }
     return skip;
 }
 

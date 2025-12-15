@@ -557,6 +557,13 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
         }
     } descriptor_buffer;
 
+    // VK_QCOM_tile_memory_heap
+    bool tile_memory_heap_active{false};
+    VkDeviceMemory active_tile_memory_binding;
+
+    std::vector<VkDescriptorBufferBindingInfoEXT> descriptor_buffer_binding_info;
+    bool descriptor_buffer_ever_bound{false};
+
     mutable std::shared_mutex lock;
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock); }

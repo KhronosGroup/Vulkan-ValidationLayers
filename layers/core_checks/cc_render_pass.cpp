@@ -2277,6 +2277,18 @@ bool CoreChecks::ValidateRenderPassDAG(const VkRenderPassCreateInfo2 &create_inf
     return skip;
 }
 
+bool CoreChecks::ValidateTileMemoryBindInfo(const VkTileMemoryBindInfoQCOM &pCreateInfo, const Location &loc) const {
+    bool skip = false;
+
+    auto dev_mem = Get<vvl::DeviceMemory>(pCreateInfo.memory);
+    if (!ValidateTileMemoryHeapDeviceMemory(*dev_mem, loc)) {
+        skip |= LogError("VUID-VkTileMemoryBindInfoQCOM-memory-10726", device, loc,
+                         "memory must have been allocated from a VkMemoryHeap with the "
+                         "VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM property");
+    }
+    return skip;
+}
+
 bool CoreChecks::ValidateCreateRenderPass(const VkRenderPassCreateInfo2 &create_info, const Location &loc) const {
     bool skip = false;
     const bool use_rp2 = loc.function != Func::vkCreateRenderPass;
@@ -2961,6 +2973,23 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
     // of this structure are ignored"
     if (attachment_info.imageView == VK_NULL_HANDLE) {
         return false;
+    }
+
+    if (attachment_info.resolveImageView != VK_NULL_HANDLE) {
+        const auto imageView = Get<vvl::ImageView>(attachment_info.resolveImageView);
+        auto image = imageView->image_state;
+        auto bound_memory_states = image->GetBoundMemoryStates();
+
+        if (!bound_memory_states.empty()) {
+            for (const auto &devMem : bound_memory_states) {
+                if (devMem != NULL && ValidateTileMemoryHeapDeviceMemory(*devMem, attachment_loc)) {
+                    skip |= LogError("VUID-VkRenderingAttachmentInfo-resolveImageView-10728", commandBuffer, attachment_loc,
+                                     " the resolveImageView is bound to a VkDeviceMemory object"
+                                     " allocated from a VkMemoryHeap with the VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM"
+                                     " property");
+                }
+            }
+        }
     }
 
     const auto image_view_state = Get<vvl::ImageView>(attachment_info.imageView);
@@ -3851,6 +3880,13 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
         !enabled_features.nestedCommandBuffer) {
         skip |= LogError("VUID-vkCmdBeginRendering-commandBuffer-06068", commandBuffer, rendering_info_loc.dot(Field::flags),
                          "must not include VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT in a secondary command buffer.");
+    }
+
+    const auto *tile_memory_size_info_qcom = vku::FindStructInPNextChain<VkTileMemorySizeInfoQCOM>(pRenderingInfo->pNext);
+
+    if (tile_memory_size_info_qcom) {
+        const Location tile_memory_heap_location = error_obj.location.pNext(Struct::VkTileMemorySizeInfoQCOM);
+        skip |= ValidateTileMemorySizeInfo(*tile_memory_size_info_qcom, tile_memory_heap_location);
     }
 
     skip |= ValidateBeginRenderingResume(*cb_state, *pRenderingInfo, rendering_info_loc);
@@ -4832,6 +4868,40 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                 if (view_format == VK_FORMAT_UNDEFINED && rp_state->create_info.pAttachments[i].format != VK_FORMAT_UNDEFINED) {
                     skip |= LogError("VUID-VkFramebufferAttachmentImageInfo-viewFormatCount-09536", device,
                                      attachment_image_info_loc.dot(Field::pViewFormats, j), "is VK_FORMAT_UNDEFINED.");
+                }
+            }
+        }
+    }
+
+    vvl::unordered_set<int> resolveAttachmentIndexes;
+    for (uint32_t i = 0; i < rpci->subpassCount; ++i) {
+        const VkSubpassDescription2 &subpass = rpci->pSubpasses[i];
+        if (subpass.pResolveAttachments != NULL) {
+            for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
+                if (subpass.pResolveAttachments[j].attachment != VK_ATTACHMENT_UNUSED) {
+                    resolveAttachmentIndexes.insert(subpass.pResolveAttachments[j].attachment);
+                }
+            }
+        }
+    }
+
+    const VkImageView *image_views = pCreateInfo->pAttachments;
+    for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
+        const Location attachment_loc = create_info_loc.dot(Field::pAttachments, i);
+        auto view_state = Get<vvl::ImageView>(image_views[i]);
+        ASSERT_AND_CONTINUE(view_state);
+
+        if (resolveAttachmentIndexes.find(i) != resolveAttachmentIndexes.end()) {
+            auto image = view_state->image_state;
+            auto bound_memory_states = image->GetBoundMemoryStates();
+
+            for (const auto &devMem : bound_memory_states) {
+                if (devMem != NULL && ValidateTileMemoryHeapDeviceMemory(*devMem, attachment_loc)) {
+                    skip |= LogError("VUID-VkSubpassDescription-attachment-10755", device, attachment_loc,
+                                     "imageView of Resolve Attachment with index %" PRIu32
+                                     " are allocated from a VkMemoryHeap"
+                                     " with the VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM property",
+                                     i);
                 }
             }
         }

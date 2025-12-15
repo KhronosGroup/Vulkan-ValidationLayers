@@ -88,6 +88,45 @@ bool CoreChecks::ValidateCreateBufferDescriptorBuffer(const VkBufferCreateInfo &
                                                       const Location &create_info_loc) const {
     bool skip = false;
 
+    if (usage & VK_BUFFER_USAGE_TILE_MEMORY_BIT_QCOM) {
+        if (!enabled_features.tileMemoryHeap) {
+            skip |= LogError("VUID-VkBufferCreateInfo-tileMemoryHeap-10762", device, create_info_loc.dot(Field::usage),
+                             "has VK_BUFFER_USAGE_TILE_MEMORY_BIT_QCOM set but the "
+                             "tileMemoryHeap device feature is not enabled.");
+        }
+    }
+
+    const VkBufferCreateFlags flags = create_info.flags;
+    if (usage & VK_BUFFER_USAGE_TILE_MEMORY_BIT_QCOM) {
+        if (((flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) || (flags & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) ||
+             (flags & VK_BUFFER_CREATE_SPARSE_ALIASED_BIT) || (flags & VK_BUFFER_CREATE_PROTECTED_BIT) ||
+             (flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) ||
+             (flags & VK_BUFFER_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR)) ||
+            (flags & VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
+            skip |= LogError("VUID-VkBufferCreateInfo-usage-10763", device, create_info_loc.dot(Field::usage),
+                             "has VK_BUFFER_USAGE_TILE_MEMORY_BIT_QCOM but the create flags"
+                             " are (%s).",
+                             string_VkBufferCreateFlags(flags).c_str());
+        }
+    }
+
+    if (usage & VK_BUFFER_USAGE_TILE_MEMORY_BIT_QCOM) {
+        VkBufferUsageFlags2 usage_flags = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT |
+                                          VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT |
+                                          VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
+        if (phys_dev_ext_props.tile_memory_heap_props.tileBufferTransfers) {
+            usage_flags |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        }
+
+        if ((usage & ~(usage_flags)) != VK_BUFFER_USAGE_TILE_MEMORY_BIT_QCOM) {
+            skip |= LogError("VUID-VkBufferCreateInfo-usage-10764", device, create_info_loc.dot(Field::usage),
+                             "has VK_BUFFER_USAGE_TILE_MEMORY_BIT_QCOM set but includes an invalid combination of usage flag(s):"
+                             " (%s).",
+                             string_VkBufferUsageFlags2(usage).c_str());
+        }
+    }
+
     if (usage & VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) {
         if (create_info.size + device_state->descriptor_buffer_address_space.sampler >
             phys_dev_ext_props.descriptor_buffer_props.samplerDescriptorBufferAddressSpaceSize) {

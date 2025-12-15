@@ -72,6 +72,34 @@ bool CoreChecks::ValidateCmdDrawInstance(const LastBound &last_bound_state, uint
     bool skip = false;
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
     const auto *pipeline_state = last_bound_state.pipeline_state;
+    auto attachments = cb_state.active_attachments;
+
+    for (uint32_t attachmentIndex = 0; attachmentIndex < attachments.size(); attachmentIndex++) {
+        if (!attachments[attachmentIndex].IsResolve()) {
+            auto image_view = attachments[attachmentIndex].image_view;
+            if (image_view) {
+                auto image = image_view->image_state;
+                auto bound_memory_states = image->GetBoundMemoryStates();
+
+                if (!bound_memory_states.empty()) {
+                    for (const auto &devMem : bound_memory_states) {
+                        auto active_tile_memory_binding = reinterpret_cast<uint64_t *>(cb_state.active_tile_memory_binding);
+                        if (devMem != NULL && ValidateTileMemoryHeapDeviceMemory(*devMem, vuid.loc()) &&
+                            active_tile_memory_binding != NULL &&
+                            (reinterpret_cast<uint64_t *>(devMem->Handle().handle) != active_tile_memory_binding)) {
+                            skip |=
+                                LogError(vuid.tile_memory_heap_10746, device, vuid.loc(),
+                                         "the ImageViews of the attachment at attachment Index %" PRIu32
+                                         " allocated from a VkMemoryHeap with "
+                                         "VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM property is not the active bound tile memory object "
+                                         "in the CommandBuffer",
+                                         attachmentIndex);
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     // Verify maxMultiviewInstanceIndex
     if (cb_state.active_render_pass && cb_state.active_render_pass->has_multiview_enabled &&

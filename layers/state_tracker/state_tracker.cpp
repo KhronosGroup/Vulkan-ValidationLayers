@@ -3489,6 +3489,16 @@ void DeviceState::PostCallRecordCmdEndConditionalRenderingEXT(VkCommandBuffer co
     cb_state->RecordEndConditionalRendering(record_obj.location);
 }
 
+void DeviceState::PostCallRecordCmdBindTileMemoryQCOM(VkCommandBuffer commandBuffer,
+                                                      const VkTileMemoryBindInfoQCOM *pTileMemoryBindInfo,
+                                                      const RecordObject &record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->tile_memory_heap_active = true;
+    if (pTileMemoryBindInfo) {
+        cb_state->active_tile_memory_binding = pTileMemoryBindInfo->memory;
+    }
+}
+
 void DeviceState::PostCallRecordCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfoKHR *pRenderingInfo,
                                                      const RecordObject &record_obj) {
     PostCallRecordCmdBeginRendering(commandBuffer, pRenderingInfo, record_obj);

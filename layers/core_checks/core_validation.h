@@ -476,6 +476,10 @@ class CoreChecks : public vvl::DeviceProxy {
     bool AddAttachmentUse(std::vector<uint8_t>& attachment_uses, std::vector<VkImageLayout>& attachment_layouts,
                           uint32_t attachment, uint8_t new_use, VkImageLayout new_layout, const Location& loc) const;
     bool ValidateAttachmentIndex(uint32_t attachment, uint32_t attachment_count, const Location& loc) const;
+    bool ValidateTileMemoryBindInfo(const VkTileMemoryBindInfoQCOM& pCreateInfo, const Location& loc) const;
+    bool ValidateTileMemorySizeInfo(const VkTileMemorySizeInfoQCOM pCreateInfo, const Location& loc) const;
+    bool ValidateTileMemoryHeapDeviceMemory(const vvl::DeviceMemory& mem_info, const Location& loc) const;
+    bool ValidateTileMemoryHeapMemoryTypeIndex(int memory_type_index, const Location& loc) const;
     bool ValidateCreateRenderPass(const VkRenderPassCreateInfo2& create_info, const Location& create_info_loc) const;
 
     bool ValidateRenderPassPipelineStage(VkRenderPass render_pass, const Location& barrier_loc,
@@ -2343,6 +2347,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                                    uint32_t counterBufferCount, const VkBuffer* pCounterBuffers,
                                                    const VkDeviceSize* pCounterBufferOffsets,
                                                    const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdBindTileMemoryQCOM(VkCommandBuffer commandBuffer, const VkTileMemoryBindInfoQCOM* pTileMemoryBindInfo,
+                                              const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetRayTracingPipelineStackSizeKHR(VkCommandBuffer commandBuffer, uint32_t pipelineStackSize,
                                                              const ErrorObject& error_obj) const override;
     bool PreCallValidateGetRayTracingShaderGroupStackSizeKHR(VkDevice device, VkPipeline pipeline, uint32_t group,

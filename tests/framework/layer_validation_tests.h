@@ -343,6 +343,55 @@ class GraphicsLibraryTest : public VkLayerTest {
     void InitBasicGraphicsLibrary();
 };
 
+class TileMemoryHeapTest : public VkLayerTest {
+  public:
+    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    uint32_t width = 32;
+    uint32_t height = 32;
+    VkImageCreateInfo image_ci;
+    VkPhysicalDeviceMemoryProperties memory_info;
+
+    bool AllocateTileImage(vkt::Image &image, VkDeviceMemory &image_mem) {
+        VkTileMemoryRequirementsQCOM tileMemReqs;
+        VkMemoryRequirements2 image_mem_reqs2;
+        image_mem_reqs2 = vku::InitStructHelper();
+        VkImageMemoryRequirementsInfo2 imageMemReqsInfo = vku::InitStructHelper();
+        imageMemReqsInfo.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2;
+        imageMemReqsInfo.image = image;
+
+        tileMemReqs = vku::InitStructHelper();
+        image_mem_reqs2.pNext = &tileMemReqs;
+
+        // VkTileMemoryRequirementsQCOM
+        vk::GetImageMemoryRequirements2(device(), &imageMemReqsInfo, &image_mem_reqs2);
+        VkMemoryAllocateInfo image_mem_alloc = vku::InitStructHelper();
+        image_mem_alloc.allocationSize = tileMemReqs.size;
+
+        int mem_type_index = -1;
+        uint32_t type_mask = image_mem_reqs2.memoryRequirements.memoryTypeBits;
+        vk::GetPhysicalDeviceMemoryProperties(Gpu(), &memory_info);
+        for (uint32_t i = 0; i < memory_info.memoryTypeCount; i++) {
+            int heapIndex = memory_info.memoryTypes[i].heapIndex;
+            if (((type_mask & 1) == 1) && (memory_info.memoryHeaps[heapIndex].flags & VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM)) {
+                mem_type_index = i;
+                break;
+            }
+            type_mask >>= 1;
+        }
+
+        if (mem_type_index == -1) {
+            return false;
+        }
+
+        image_mem_alloc.memoryTypeIndex = mem_type_index;
+
+        vk::AllocateMemory(device(), &image_mem_alloc, nullptr, &image_mem);
+        vk::BindImageMemory(device(), image, image_mem, 0);
+
+        return true;
+    }
+};
+
 class HostImageCopyTest : public VkLayerTest {
   public:
     void InitHostImageCopyTest();

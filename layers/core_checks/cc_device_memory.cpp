@@ -369,6 +369,15 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                      Count<vvl::DeviceMemory>(), phys_dev_props.limits.maxMemoryAllocationCount);
     }
 
+    if (!enabled_features.tileMemoryHeap) {
+        if (ValidateTileMemoryHeapMemoryTypeIndex(pAllocateInfo->memoryTypeIndex, error_obj.location)) {
+            skip |= LogError("VUID-VkTileMemoryBindInfoQCOM-memoryTypeIndex-10976", device, error_obj.location,
+                             "The tileMemoryHeap feature is not enabled, pAllocateInfo->memoryTypeIndex"
+                             " identifies a memory type that corresponds to a VkMemoryHeap with the"
+                             " VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM property.");
+        }
+    }
+
     const Location allocate_info_loc = error_obj.location.dot(Field::pAllocateInfo);
     if (IsExtEnabled(extensions.vk_khr_maintenance3) &&
         pAllocateInfo->allocationSize > phys_dev_props_core11.maxMemoryAllocationSize) {
@@ -824,6 +833,44 @@ bool CoreChecks::ValidateMemoryTypes(const vvl::DeviceMemory &mem_info, const ui
     return skip;
 }
 
+bool CoreChecks::ValidateTileMemorySizeInfo(const VkTileMemorySizeInfoQCOM pCreateInfo, const Location &loc) const {
+    bool skip = false;
+
+    uint32_t memoryHeapCount = phys_dev_mem_props.memoryHeapCount;
+    uint64_t largestHeapSize = 0;
+    for (uint32_t i = 0; i < memoryHeapCount; i++) {
+        if (phys_dev_mem_props.memoryHeaps[i].flags & VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM) {
+            largestHeapSize = std::max(largestHeapSize, phys_dev_mem_props.memoryHeaps[i].size);
+        }
+    }
+    if (enabled_features.tileMemoryHeap && pCreateInfo.size > largestHeapSize) {
+        skip |= LogError("VUID-VkTileMemorySizeInfoQCOM-size-10729", device, loc,
+                         "size must be less than or equal to the largest size memory heap with the "
+                         "VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM property");
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateTileMemoryHeapMemoryTypeIndex(int memory_type_index, const Location &loc) const {
+    uint32_t memoryHeapIndex = phys_dev_mem_props.memoryTypes[memory_type_index].heapIndex;
+    if (phys_dev_mem_props.memoryHeaps[memoryHeapIndex].flags & VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM) {
+        return true;
+    }
+    return false;
+}
+
+bool CoreChecks::ValidateTileMemoryHeapDeviceMemory(const vvl::DeviceMemory &mem_info, const Location &loc) const {
+    bool result = false;
+    uint32_t memoryTypeIndex = mem_info.allocate_info.memoryTypeIndex;
+    uint32_t memoryHeapIndex = phys_dev_mem_props.memoryTypes[memoryTypeIndex].heapIndex;
+    if (phys_dev_mem_props.memoryHeaps[memoryHeapIndex].flags & VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM) {
+        result = true;
+    }
+
+    return result;
+}
+
 bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize memoryOffset, const void *pNext,
                                           const Location &loc) const {
     bool skip = false;
@@ -857,15 +904,37 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
     ASSERT_AND_RETURN_SKIP(buffer_state);
 
     const bool bind_buffer_mem_2 = loc.function != Func::vkBindBufferMemory;
+    auto dev_mem = Get<vvl::DeviceMemory>(memory);
 
     // Validate memory requirements alignment
-    if (!IsIntegerMultipleOf(memoryOffset, buffer_state->requirements.alignment)) {
-        const char *vuid = bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-None-10739" : "VUID-vkBindBufferMemory-None-10739";
-        const LogObjectList objlist(buffer, memory);
-        skip |= LogError(vuid, objlist, loc.dot(Field::memoryOffset),
-                         "is %" PRIu64 " but must be an integer multiple of the VkMemoryRequirements::alignment value %" PRIu64
-                         ", returned from a call to vkGetBufferMemoryRequirements with buffer.",
-                         memoryOffset, buffer_state->requirements.alignment);
+    if (!ValidateTileMemoryHeapDeviceMemory(*dev_mem, loc)) {
+        if (!IsIntegerMultipleOf(memoryOffset, buffer_state->requirements.alignment)) {
+            const char *vuid = bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-None-10739" : "VUID-vkBindBufferMemory-None-10739";
+            const LogObjectList objlist(buffer, memory);
+            skip |= LogError(vuid, objlist, loc.dot(Field::memoryOffset),
+                             "is %" PRIu64 " but must be an integer multiple of the VkMemoryRequirements::alignment value %" PRIu64
+                             ", returned from a call to vkGetBufferMemoryRequirements with buffer.",
+                             memoryOffset, buffer_state->requirements.alignment);
+        }
+    } else {
+        VkBufferMemoryRequirementsInfo2 buffer_memory_requirements_info_2 = vku::InitStructHelper();
+        buffer_memory_requirements_info_2.buffer = buffer;
+        VkTileMemoryRequirementsQCOM tile_mem_requirements = vku::InitStructHelper();
+        VkMemoryRequirements2 memory_requirements = vku::InitStructHelper(&tile_mem_requirements);
+        DispatchGetBufferMemoryRequirements2Helper(api_version, device, &buffer_memory_requirements_info_2, &memory_requirements);
+
+        if (tile_mem_requirements.size != 0) {
+            if (!IsIntegerMultipleOf(memoryOffset, tile_mem_requirements.alignment)) {
+                const char *vuid =
+                    bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-10740" : "VUID-vkBindBufferMemory-memory-10740";
+                const LogObjectList objlist(buffer, memory);
+                skip |= LogError(vuid, objlist, loc.dot(Field::memoryOffset),
+                                 "is %" PRIu64
+                                 " but must be an integer multiple of the VkTileMemoryRequirementsQCOM::alignment value %" PRIu64
+                                 ", returned from a call to vkGetBufferMemoryRequirements2 with buffer.",
+                                 memoryOffset, tile_mem_requirements.alignment);
+            }
+        }
     }
 
     if (auto mem_info = Get<vvl::DeviceMemory>(memory)) {
@@ -931,20 +1000,46 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
         // Validate bound memory range information
         skip |= ValidateInsertMemoryRange(VulkanTypedHandle(buffer, kVulkanObjectTypeBuffer), *mem_info, memoryOffset, loc);
 
-        const char *mem_type_vuid =
-            bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-01035" : "VUID-vkBindBufferMemory-memory-01035";
-        skip |= ValidateMemoryTypes(*mem_info, buffer_state->requirements.memoryTypeBits, loc.dot(Field::buffer), mem_type_vuid);
-
+        auto dev_memory = Get<vvl::DeviceMemory>(memory);
         // Validate memory requirements size
-        if (buffer_state->requirements.size > (mem_info->allocate_info.allocationSize - memoryOffset)) {
-            const char *vuid = bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-None-10741" : "VUID-vkBindBufferMemory-None-10741";
-            const LogObjectList objlist(buffer, memory);
-            skip |= LogError(vuid, objlist, loc,
-                             "allocationSize (%" PRIu64 ") minus memoryOffset (%" PRIu64 ") is %" PRIu64
-                             " but must be at least as large as VkMemoryRequirements::size value %" PRIu64
-                             ", returned from a call to vkGetBufferMemoryRequirements with buffer.",
-                             mem_info->allocate_info.allocationSize, memoryOffset,
-                             mem_info->allocate_info.allocationSize - memoryOffset, buffer_state->requirements.size);
+        if (!ValidateTileMemoryHeapDeviceMemory(*dev_mem, loc)) {
+            const char *mem_type_vuid =
+                bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-01035" : "VUID-vkBindBufferMemory-memory-01035";
+            skip |=
+                ValidateMemoryTypes(*mem_info, buffer_state->requirements.memoryTypeBits, loc.dot(Field::buffer), mem_type_vuid);
+
+            if (buffer_state->requirements.size > (mem_info->allocate_info.allocationSize - memoryOffset)) {
+                const char *vuid =
+                    bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-None-10741" : "VUID-vkBindBufferMemory-None-10741";
+                const LogObjectList objlist(buffer, memory);
+                skip |= LogError(vuid, objlist, loc,
+                                 "allocationSize (%" PRIu64 ") minus memoryOffset (%" PRIu64 ") is %" PRIu64
+                                 " but must be at least as large as VkMemoryRequirements::size value %" PRIu64
+                                 ", returned from a call to vkGetBufferMemoryRequirements with buffer.",
+                                 mem_info->allocate_info.allocationSize, memoryOffset,
+                                 mem_info->allocate_info.allocationSize - memoryOffset, buffer_state->requirements.size);
+            }
+        } else {
+            VkBufferMemoryRequirementsInfo2 buffer_memory_requirements_info_2 = vku::InitStructHelper();
+            buffer_memory_requirements_info_2.buffer = buffer;
+            VkTileMemoryRequirementsQCOM tile_mem_requirements = vku::InitStructHelper();
+            VkMemoryRequirements2 memory_requirements = vku::InitStructHelper(&tile_mem_requirements);
+            DispatchGetBufferMemoryRequirements2Helper(api_version, device, &buffer_memory_requirements_info_2,
+                                                       &memory_requirements);
+
+            if (tile_mem_requirements.size != 0) {
+                if (tile_mem_requirements.size > (mem_info->allocate_info.allocationSize - memoryOffset)) {
+                    const char *vuid =
+                        bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-10742" : " VUID-vkBindBufferMemory-memory-10742";
+                    const LogObjectList objlist(buffer, memory);
+                    skip |= LogError(vuid, objlist, loc,
+                                     "allocationSize (%" PRIu64 ") minus memoryOffset (%" PRIu64 ") is %" PRIu64
+                                     " but must be at least as large as VkTileMemoryRequirementsQCOM::size value %" PRIu64
+                                     ", returned from a call to vkGetBufferMemoryRequirements2 with buffer.",
+                                     mem_info->allocate_info.allocationSize, memoryOffset,
+                                     mem_info->allocate_info.allocationSize - memoryOffset, tile_mem_requirements.size);
+                }
+            }
         }
 
         // Validate dedicated allocation
@@ -1711,39 +1806,89 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 if (image_state->IsExternalBuffer() == false) {
                     const VkMemoryRequirements &mem_req = image_state->requirements[0];
 
+                    auto dev_mem = Get<vvl::DeviceMemory>(bind_info.memory);
                     // Validate memory requirements alignment
-                    if (!IsIntegerMultipleOf(bind_info.memoryOffset, mem_req.alignment)) {
-                        const char *vuid =
-                            bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-pNext-01616" : "VUID-vkBindImageMemory-None-10735";
-                        const LogObjectList objlist(bind_info.image, bind_info.memory);
-                        skip |= LogError(vuid, objlist, loc.dot(Field::memoryOffset),
+                    if (!ValidateTileMemoryHeapDeviceMemory(*dev_mem, loc)) {
+                        if (!IsIntegerMultipleOf(bind_info.memoryOffset, mem_req.alignment)) {
+                            const char *vuid =
+                                bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-pNext-01616" : "VUID-vkBindImageMemory-None-10735";
+                            const LogObjectList objlist(bind_info.image, bind_info.memory);
+                            skip |=
+                                LogError(vuid, objlist, loc.dot(Field::memoryOffset),
                                          "is %" PRIu64
                                          " but must be an integer multiple of the VkMemoryRequirements::alignment value %" PRIu64
                                          ", returned from a call to vkGetImageMemoryRequirements with image.",
                                          bind_info.memoryOffset, mem_req.alignment);
+                        }
+                    } else {
+                        VkImageMemoryRequirementsInfo2 image_memory_requirements_info_2 = vku::InitStructHelper();
+                        image_memory_requirements_info_2.image = bind_info.image;
+                        VkTileMemoryRequirementsQCOM tile_mem_requirements = vku::InitStructHelper();
+                        VkMemoryRequirements2 memory_requirements = vku::InitStructHelper(&tile_mem_requirements);
+                        DispatchGetImageMemoryRequirements2Helper(api_version, device, &image_memory_requirements_info_2,
+                                                                  &memory_requirements);
+                        if (tile_mem_requirements.size != 0) {
+                            if (!IsIntegerMultipleOf(bind_info.memoryOffset, tile_mem_requirements.alignment)) {
+                                const char *vuid = bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-pNext-01616"
+                                                                    : "VUID-vkBindImageMemory-memory-10736";
+                                const LogObjectList objlist(bind_info.image, bind_info.memory);
+                                skip |= LogError(
+                                    vuid, objlist, loc.dot(Field::memoryOffset),
+                                    "is %" PRIu64
+                                    " but must be an integer multiple of the VkTileMemoryRequirementsQCOM::alignment value %" PRIu64
+                                    ", returned from a call to vkGetImageMemoryRequirements2 with image.",
+                                    bind_info.memoryOffset, tile_mem_requirements.alignment);
+                            }
+                        }
                     }
 
                     if (mem_info) {
                         const VkMemoryAllocateInfo &allocate_info = mem_info->allocate_info;
                         // Validate memory requirements size
-                        if (!IgnoreAllocationSize(allocate_info) &&
-                            mem_req.size > allocate_info.allocationSize - bind_info.memoryOffset) {
-                            const char *vuid =
-                                bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-pNext-01617" : "VUID-vkBindImageMemory-None-10737";
-                            const LogObjectList objlist(bind_info.image, bind_info.memory);
-                            skip |= LogError(vuid, objlist, loc,
-                                             "allocationSize (%" PRIu64 ") minus memoryOffset (%" PRIu64 ") is %" PRIu64
-                                             " but must be at least as large as VkMemoryRequirements::size value %" PRIu64
-                                             ", returned from a call to vkGetImageMemoryRequirements with image.",
-                                             allocate_info.allocationSize, bind_info.memoryOffset,
-                                             allocate_info.allocationSize - bind_info.memoryOffset, mem_req.size);
-                        }
+                        if (!ValidateTileMemoryHeapDeviceMemory(*dev_mem, loc)) {
+                            // Validate memory type used
+                            {
+                                const char *vuid = bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-pNext-01615"
+                                                                    : "VUID-vkBindImageMemory-memory-01047";
+                                skip |= ValidateMemoryTypes(*mem_info, mem_req.memoryTypeBits, loc.dot(Field::image), vuid);
+                            }
 
-                        // Validate memory type used
-                        {
-                            const char *vuid =
-                                bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-pNext-01615" : "VUID-vkBindImageMemory-memory-01047";
-                            skip |= ValidateMemoryTypes(*mem_info, mem_req.memoryTypeBits, loc.dot(Field::image), vuid);
+                            if ((!IgnoreAllocationSize(allocate_info) &&
+                                 mem_req.size > allocate_info.allocationSize - bind_info.memoryOffset)) {
+                                const char *vuid = bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-pNext-01617"
+                                                                    : "VUID-vkBindImageMemory-None-10737";
+                                const LogObjectList objlist(bind_info.image, bind_info.memory);
+                                skip |= LogError(vuid, objlist, loc,
+                                                 "allocationSize (%" PRIu64 ") minus memoryOffset (%" PRIu64 ") is %" PRIu64
+                                                 " memoryTypeindex (%" PRIu32
+                                                 ") but must be at least as large as VkMemoryRequirements::size value %" PRIu64
+                                                 ", returned from a call to vkGetImageMemoryRequirements with image. mem_info",
+                                                 allocate_info.allocationSize, bind_info.memoryOffset,
+                                                 allocate_info.allocationSize - bind_info.memoryOffset,
+                                                 dev_mem->allocate_info.memoryTypeIndex, mem_req.size);
+                            }
+                        } else {
+                            VkImageMemoryRequirementsInfo2 image_memory_requirements_info_2 = vku::InitStructHelper();
+                            image_memory_requirements_info_2.image = bind_info.image;
+                            VkTileMemoryRequirementsQCOM tile_mem_requirements = vku::InitStructHelper();
+                            VkMemoryRequirements2 memory_requirements = vku::InitStructHelper(&tile_mem_requirements);
+                            DispatchGetImageMemoryRequirements2Helper(api_version, device, &image_memory_requirements_info_2,
+                                                                      &memory_requirements);
+                            if (tile_mem_requirements.size != 0) {
+                                if (!IgnoreAllocationSize(allocate_info) &&
+                                    tile_mem_requirements.size > allocate_info.allocationSize - bind_info.memoryOffset) {
+                                    const char *vuid = bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-pNext-01617"
+                                                                        : "VUID-vkBindImageMemory-memory-10738";
+                                    const LogObjectList objlist(bind_info.image, bind_info.memory);
+                                    skip |= LogError(
+                                        vuid, objlist, loc,
+                                        "allocationSize (%" PRIu64 ") minus memoryOffset (%" PRIu64 ") is %" PRIu64
+                                        " but must be at least as large as VkTileMemoryRequirementsQCOM::size value %" PRIu64
+                                        ", returned from a call to vkGetImageMemoryRequirements2 with image.",
+                                        allocate_info.allocationSize, bind_info.memoryOffset,
+                                        allocate_info.allocationSize - bind_info.memoryOffset, tile_mem_requirements.size);
+                                }
+                            }
                         }
                     }
                 }
