@@ -1573,38 +1573,40 @@ bool CoreChecks::ValidateShaderInterfaceVariableDSL(const spirv::Module &module_
                          string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
                          string_DescriptorTypeSet(descriptor_type_set).c_str(), print_dsl_info().c_str());
     } else if (~binding->stageFlags & variable.stage) {
-        skip |=
-            LogError(GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::ShaderStage_07988), objlist, loc,
-                     "SPIR-V (%s) uses descriptor %s (type %s) but the VkDescriptorSetLayoutBinding::stageFlags was %s. (from %s)",
-                     string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
-                     string_DescriptorTypeSet(descriptor_type_set).c_str(), string_VkShaderStageFlags(binding->stageFlags).c_str(),
-                     print_dsl_info().c_str());
+        skip |= LogError(GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::ShaderStage_07988), objlist, loc,
+                         "SPIR-V (%s) uses descriptor %s (type %s) but the VkDescriptorSetLayoutBinding::stageFlags was "
+                         "%s.\n(VkDescriptorSetLayout from %s)",
+                         string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
+                         string_DescriptorTypeSet(descriptor_type_set).c_str(),
+                         string_VkShaderStageFlags(binding->stageFlags).c_str(), print_dsl_info().c_str());
     } else if ((binding->descriptorType != VK_DESCRIPTOR_TYPE_MUTABLE_EXT) &&
                (descriptor_type_set.find(binding->descriptorType) == descriptor_type_set.end())) {
         skip |= LogError(GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::Mutable_07990), objlist, loc,
-                         "SPIR-V (%s) uses descriptor %s of type %s but expected %s. (from %s)",
+                         "SPIR-V (%s) uses descriptor %s of type %s but expected %s.\n(VkDescriptorSetLayout from %s)",
                          string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
                          string_VkDescriptorType(binding->descriptorType), string_DescriptorTypeSet(descriptor_type_set).c_str(),
                          print_dsl_info().c_str());
     } else if (binding->descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK && variable.IsArray()) {
         skip |=
             LogError(GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::Inline_10391), objlist, loc,
-                     "SPIR-V (%s) uses descriptor %s as VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, but it is an array of descriptor. "
-                     "(from %s)",
+                     "SPIR-V (%s) uses descriptor %s as VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, but it is an array of descriptor."
+                     "\n(VkDescriptorSetLayout from %s)",
                      string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(), print_dsl_info().c_str());
 
     } else if (variable.IsRuntimeArray() && binding->descriptorCount == 0) {
         skip |=
             LogError(GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::DescriptorCount_07991), objlist, loc,
                      "SPIR-V (%s) uses a runtime descriptor array %s with a VkDescriptorSetLayoutBinding::descriptorCount of 0 "
-                     "but requires at least 1 descriptor. (from %s)",
+                     "but requires at least 1 descriptor.\n(VkDescriptorSetLayout from %s)",
                      string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(), print_dsl_info().c_str());
     } else if (!variable.IsRuntimeArray() && binding->descriptorCount < variable.array_length) {
         skip |= LogError(GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::DescriptorCount_07991), objlist, loc,
-                         "SPIR-V (%s) uses descriptor %s with a VkDescriptorSetLayoutBinding::descriptorCount of %" PRIu32
-                         ", but requires at least %" PRIu32 " in the SPIR-V. (from %s)",
-                         string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
-                         binding->descriptorCount, variable.array_length, print_dsl_info().c_str());
+                         "SPIR-V (%s) uses descriptor %s which has an array size of %" PRIu32
+                         " in the SPIR-V but VkDescriptorSetLayoutBinding::descriptorCount of %" PRIu32
+                         " which doesn't initialize all the elements (can be done with the runtimeDescriptorArray "
+                         "feature).\n(VkDescriptorSetLayout from %s)",
+                         string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(), variable.array_length,
+                         binding->descriptorCount, print_dsl_info().c_str());
     }
 
     return skip;
