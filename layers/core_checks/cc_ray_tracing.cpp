@@ -922,42 +922,48 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
             }
         }
     }
+    const VkDeviceSize scratch_size = info_loc.function == Func::vkCmdBuildAccelerationStructuresKHR
+                                          ? rt::ComputeScratchSize(rt::BuildType::Device, device, info, geometry_build_ranges)
+                                          : 1;
+    if (scratch_size > 0) {
+        if (info.scratchData.deviceAddress == 0) {
+            skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03802",
+                                       "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03802"),
+                             device, info_loc.dot(Field::scratchData).dot(Field::deviceAddress), "is zero");
+        } else {
+            // Hardcoded value of 1 for indirect calls because scratch size cannot be computed on the CPU in this case
+            // (need to access build ranges). Easier to hardcode than to add the logic to not perform scratch buffer size
+            // validation for indirect calls.
 
-    if (info.scratchData.deviceAddress == 0) {
-        skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03802",
-                                   "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03802"),
-                         device, info_loc.dot(Field::scratchData).dot(Field::deviceAddress), "is zero");
-    } else {
-        // Hardcoded value of 1 for indirect calls because scratch size cannot be computed on the CPU in this case
-        // (need to access build ranges). Easier to hardcode than to add the logic to not perform scratch buffer size
-        // validation for indirect calls.
-        const VkDeviceSize scratch_size = info_loc.function == Func::vkCmdBuildAccelerationStructuresKHR
-                                              ? rt::ComputeScratchSize(rt::BuildType::Device, device, info, geometry_build_ranges)
-                                              : 1;
-        const vvl::range<VkDeviceSize> scratch_address_range(info.scratchData.deviceAddress,
-                                                             info.scratchData.deviceAddress + scratch_size);
-        const char *scratch_address_range_vuid = info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR
-                                                     ? pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03671",
-                                                                 "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03671")
-                                                     : pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03672",
-                                                                 "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03672");
+            const vvl::range<VkDeviceSize> scratch_address_range(info.scratchData.deviceAddress,
+                                                                 info.scratchData.deviceAddress + scratch_size);
+            const char *scratch_address_range_vuid =
+                info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR
+                    ? pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03671",
+                                "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03671")
+                    : pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03672",
+                                "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03672");
 
-        BufferAddressValidation<2> buffer_address_validator = {
-            {{{pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03674",
-                         "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03674"),
-               [](const vvl::Buffer &buffer_state) { return (buffer_state.usage & VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT) == 0; },
-               []() { return "The following buffers are missing VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT"; }, kUsageErrorMsgBuffer},
+            BufferAddressValidation<2> buffer_address_validator = {
+                {{{pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03674",
+                             "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03674"),
+                   [](const vvl::Buffer &buffer_state) { return (buffer_state.usage & VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT) == 0; },
+                   []() { return "The following buffers are missing VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT"; }, kUsageErrorMsgBuffer},
 
-              {scratch_address_range_vuid,
-               [scratch_address_range](const vvl::Buffer &buffer_state) {
-                   const vvl::range<VkDeviceSize> buffer_address_range = buffer_state.DeviceAddressRange();
-                   return !buffer_address_range.includes(scratch_address_range);
-               },
-               [scratch_size]() { return "The scratch size (" + std::to_string(scratch_size) + ") does not fit in any buffer"; },
-               kEmptyErrorMsgBuffer}}}};
+                  {scratch_address_range_vuid,
+                   [scratch_address_range](const vvl::Buffer &buffer_state) {
+                       const vvl::range<VkDeviceSize> buffer_address_range = buffer_state.DeviceAddressRange();
+                       return !buffer_address_range.includes(scratch_address_range);
+                   },
+                   [scratch_size]() {
+                       return "The scratch size (" + std::to_string(scratch_size) + ") does not fit in any buffer";
+                   },
+                   kEmptyErrorMsgBuffer}}}};
 
-        skip |= buffer_address_validator.ValidateDeviceAddress(*this, info_loc.dot(Field::scratchData).dot(Field::deviceAddress),
+            skip |=
+                buffer_address_validator.ValidateDeviceAddress(*this, info_loc.dot(Field::scratchData).dot(Field::deviceAddress),
                                                                cb_objlist, info.scratchData.deviceAddress, scratch_size);
+        }
     }
 
     return skip;

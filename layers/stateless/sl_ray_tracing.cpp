@@ -1556,14 +1556,15 @@ bool Device::manual_PreCallValidateBuildAccelerationStructuresKHR(
         skip |= context.ValidateArray(info_loc.dot(Field::geometryCount), error_obj.location.dot(Field::ppBuildRangeInfos, info_i),
                                       info.geometryCount, &ppBuildRangeInfos[info_i], false, true, kVUIDUndefined,
                                       "VUID-vkBuildAccelerationStructuresKHR-ppBuildRangeInfos-03676");
-
         if (info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR) {
-            if (!info.scratchData.hostAddress) {
+            const VkDeviceSize scratch_size = rt::ComputeScratchSize(rt::BuildType::Host, device, info, ppBuildRangeInfos[info_i]);
+            if (scratch_size > 0 && !info.scratchData.hostAddress) {
                 skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03725", device,
                                  info_loc.dot(Field::scratchData).dot(Field::hostAddress), "is NULL.");
             }
         } else if (info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR) {
-            if (!info.scratchData.hostAddress) {
+            const VkDeviceSize scratch_size = rt::ComputeScratchSize(rt::BuildType::Host, device, info, ppBuildRangeInfos[info_i]);
+            if (scratch_size > 0 && !info.scratchData.hostAddress) {
                 skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03726", device,
                                  info_loc.dot(Field::scratchData).dot(Field::hostAddress), "is NULL.");
             }
