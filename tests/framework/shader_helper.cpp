@@ -325,8 +325,10 @@ void CheckSlangSupport() {
 #endif
 }
 
-bool SlangToSPV(const char *slang_shader, const char *entry_point_name, std::vector<uint8_t> &out_bytes) {
+bool SlangToSPV(const spv_target_env target_env, const char* slang_shader, const char* entry_point_name,
+                std::vector<uint8_t>& out_bytes) {
 #ifndef VVL_USE_SLANG
+    (void)target_env;
     (void)slang_shader;
     (void)entry_point_name;
     (void)out_bytes;
@@ -350,7 +352,14 @@ bool SlangToSPV(const char *slang_shader, const char *entry_point_name, std::vec
     // Next we create a compilation session to generate SPIRV code from Slang source.
     slang::TargetDesc targetDesc = {};
     targetDesc.format = SLANG_SPIRV;
-    targetDesc.profile = slang_session->findProfile("glsl_460");  // todo what spirv profile ?
+    // Default currently is spirv_1_3 (vulkan 1.1) as that is what Slang does by default
+    std::string profile = "spirv_1_3";
+    if (target_env == SPV_ENV_VULKAN_1_2) {
+        profile = "spirv_1_5";
+    } else if (target_env == SPV_ENV_VULKAN_1_3 || target_env == SPV_ENV_VULKAN_1_4) {
+        profile = "spirv_1_6";
+    }
+    targetDesc.profile = slang_session->findProfile(profile.c_str());
     targetDesc.flags = 0;
     slang::SessionDesc sessionDesc = {};
     sessionDesc.targets = &targetDesc;
@@ -540,7 +549,7 @@ bool VkShaderObj::InitFromSlang() {
     return false;
 #else
     std::vector<uint8_t> bytes;
-    if (!SlangToSPV(m_source, m_stage_info.pName, bytes)) {
+    if (!SlangToSPV(m_spv_env, m_source, m_stage_info.pName, bytes)) {
         return false;
     }
     VkShaderModuleCreateInfo module_ci = vku::InitStructHelper();

@@ -17,6 +17,7 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/shader_object_helper.h"
 #include "../framework/render_pass_helper.h"
+#include "shader_helper.h"
 
 class NegativeShaderInterface : public VkLayerTest {};
 
@@ -2730,4 +2731,229 @@ TEST_F(NegativeShaderInterface, DISABLED_NestedStructInBlock) {
 
     auto set_info = [&](CreatePipelineHelper &info) { info.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()}; };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-07754");
+}
+
+TEST_F(NegativeShaderInterface, MeshFragmentPerPrimitive) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const char* ms_source = R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : require
+        layout(max_vertices = 12) out;
+        layout(max_primitives = 4) out;
+        layout(triangles) out;
+
+        layout(location = 0) out uint out_0[12];
+        layout(location = 1) perprimitiveEXT out uint out_1[4];
+        layout(location = 2) out float out_2[12];
+        layout(location = 3) perprimitiveEXT out float out_3[4];
+
+        void main() {
+            SetMeshOutputsEXT(12,4);
+            out_0[0] = 0;
+            out_1[0] = 0;
+            out_2[0] = 0.0;
+            out_3[0] = 0.0;
+            gl_PrimitiveTriangleIndicesEXT[1] = uvec3(0,1,2);
+        }
+    )glsl";
+
+    const char* fs_source = R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : require
+
+        layout(location = 0) in flat uint in_0;
+        layout(location = 1) flat in uint in_1; // missing perprimitiveEXT
+        layout(location = 2) in float in_2;
+        layout(location = 3) perprimitiveEXT in float in_3;
+        layout(location = 0) out vec4 c;
+        void main(){
+            c = vec4(1);
+            if (in_0 == 0 && in_1 == 0 && in_2 == 1.0 && in_3 == 1.0) {
+                c = vec4(0);
+            }
+        }
+    )glsl";
+
+    VkShaderObj ms(*m_device, ms_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    m_errorMonitor->SetDesiredWarning("VUID-RuntimeSpirv-OpVariable-08746");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderInterface, MeshFragmentPerPrimitive2) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const char* ms_source = R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : require
+        layout(max_vertices = 12) out;
+        layout(max_primitives = 4) out;
+        layout(triangles) out;
+
+        layout(location = 0) out float out_0[12];
+        layout(location = 1) out float out_1[12]; // missing perprimitiveEXT
+
+        void main() {
+            SetMeshOutputsEXT(12,4);
+            out_0[0] = 0.0;
+            out_1[0] = 0.0;
+            gl_PrimitiveTriangleIndicesEXT[1] = uvec3(0,1,2);
+        }
+    )glsl";
+
+    const char* fs_source = R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : require
+
+        layout(location = 0) in float in_0;
+        layout(location = 1) in perprimitiveEXT float in_1;
+        layout(location = 0) out vec4 c;
+        void main(){
+            c = vec4(1);
+            if (in_0 == 1.0 && in_1 == 1.0) {
+                c = vec4(0);
+            }
+        }
+    )glsl";
+
+    VkShaderObj ms(*m_device, ms_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    m_errorMonitor->SetDesiredWarning("VUID-RuntimeSpirv-OpVariable-08746");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderInterface, MeshFragmentPerPrimitiveSlang) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    // https://godbolt.org/z/ov4G4K19a
+    // Known issue in slang https://github.com/shader-slang/slang/issues/7019
+    const char* spirv_source = R"(
+               OpCapability MeshShadingEXT
+               OpCapability Shader
+               OpExtension "SPV_KHR_non_semantic_info"
+               OpExtension "SPV_EXT_mesh_shader"
+          %2 = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint MeshEXT %main "main" %38 %gl_Position %verts_normal %prims_color %75
+               OpEntryPoint Fragment %main_0 "main" %entryPointParam_main %gl_FragCoord %input_normal %prim_color
+               OpExecutionMode %main OutputPrimitivesEXT 3
+               OpExecutionMode %main OutputVertices 9
+               OpExecutionMode %main LocalSize 1 1 1
+               OpExecutionMode %main OutputTrianglesEXT
+               OpExecutionMode %main_0 OriginUpperLeft
+               OpSource Slang 1
+               OpDecorate %38 BuiltIn PrimitiveTriangleIndicesEXT
+               OpDecorate %gl_Position BuiltIn Position
+               OpDecorate %verts_normal Location 0
+               OpDecorate %prims_color Location 1
+               OpDecorate %prims_color PerPrimitiveEXT
+               OpDecorate %75 BuiltIn CullPrimitiveEXT
+               OpDecorate %75 PerPrimitiveEXT
+               OpDecorate %gl_FragCoord BuiltIn FragCoord
+               OpDecorate %input_normal Location 0
+               OpDecorate %prim_color Location 1
+               OpDecorate %prim_color Flat
+               OpDecorate %entryPointParam_main Location 0
+       %void = OpTypeVoid
+       %uint = OpTypeInt 32 0
+     %uint_5 = OpConstant %uint 5
+         %12 = OpTypeFunction %void
+     %uint_0 = OpConstant %uint 0
+     %uint_6 = OpConstant %uint 6
+     %uint_2 = OpConstant %uint 2
+     %v3uint = OpTypeVector %uint 3
+        %int = OpTypeInt 32 1
+      %int_3 = OpConstant %int 3
+%_arr_v3uint_int_3 = OpTypeArray %v3uint %int_3
+%_ptr_Output__arr_v3uint_int_3 = OpTypePointer Output %_arr_v3uint_int_3
+%_ptr_Output_v3uint = OpTypePointer Output %v3uint
+         %41 = OpConstantComposite %v3uint %uint_0 %uint_0 %uint_0
+    %uint_18 = OpConstant %uint 18
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+      %int_9 = OpConstant %int 9
+%_arr_v4float_int_9 = OpTypeArray %v4float %int_9
+%_ptr_Output__arr_v4float_int_9 = OpTypePointer Output %_arr_v4float_int_9
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+    %uint_19 = OpConstant %uint 19
+    %uint_20 = OpConstant %uint 20
+%_arr_v4float_int_3 = OpTypeArray %v4float %int_3
+%_ptr_Output__arr_v4float_int_3 = OpTypePointer Output %_arr_v4float_int_3
+    %uint_21 = OpConstant %uint 21
+       %bool = OpTypeBool
+%_arr_bool_int_3 = OpTypeArray %bool %int_3
+%_ptr_Output__arr_bool_int_3 = OpTypePointer Output %_arr_bool_int_3
+%_ptr_Output_bool = OpTypePointer Output %bool
+       %true = OpConstantTrue %bool
+    %uint_25 = OpConstant %uint 25
+     %uint_8 = OpConstant %uint 8
+%_ptr_Input_v4float = OpTypePointer Input %v4float
+    %uint_27 = OpConstant %uint 27
+         %38 = OpVariable %_ptr_Output__arr_v3uint_int_3 Output
+%gl_Position = OpVariable %_ptr_Output__arr_v4float_int_9 Output
+%verts_normal = OpVariable %_ptr_Output__arr_v4float_int_9 Output
+%prims_color = OpVariable %_ptr_Output__arr_v4float_int_3 Output
+         %75 = OpVariable %_ptr_Output__arr_bool_int_3 Output
+%gl_FragCoord = OpVariable %_ptr_Input_v4float Input
+%input_normal = OpVariable %_ptr_Input_v4float Input
+ %prim_color = OpVariable %_ptr_Input_v4float Input
+%entryPointParam_main = OpVariable %_ptr_Output_v4float Output
+    %float_0 = OpConstant %float 0
+        %123 = OpConstantComposite %v4float %float_0 %float_0 %float_0 %float_0
+       %main = OpFunction %void None %12
+         %13 = OpLabel
+               OpSetMeshOutputsEXT %uint_6 %uint_2
+         %40 = OpAccessChain %_ptr_Output_v3uint %38 %uint_0
+               OpStore %40 %41
+         %52 = OpAccessChain %_ptr_Output_v4float %gl_Position %uint_0
+               OpStore %52 %123
+         %61 = OpAccessChain %_ptr_Output_v4float %verts_normal %uint_0
+               OpStore %61 %123
+         %68 = OpAccessChain %_ptr_Output_v4float %prims_color %uint_0
+               OpStore %68 %123
+         %77 = OpAccessChain %_ptr_Output_bool %75 %uint_0
+               OpStore %77 %true
+               OpReturn
+               OpFunctionEnd
+     %main_0 = OpFunction %void None %12
+         %82 = OpLabel
+         %90 = OpLoad %v4float %gl_FragCoord
+         %93 = OpLoad %v4float %input_normal
+         %95 = OpLoad %v4float %prim_color
+        %100 = OpFAdd %v4float %95 %90
+        %101 = OpFAdd %v4float %100 %93
+               OpStore %entryPointParam_main %101
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    VkShaderObj ms(*m_device, spirv_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    VkShaderObj fs(*m_device, spirv_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    m_errorMonitor->SetDesiredWarning("VUID-RuntimeSpirv-OpVariable-08746");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
 }

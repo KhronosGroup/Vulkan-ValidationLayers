@@ -1947,7 +1947,8 @@ bool StageInterfaceVariable::IsArrayInterface(const StageInterfaceVariable& vari
         case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
             return !variable.is_patch && (variable.storage_class == spv::StorageClassInput);
         case VK_SHADER_STAGE_FRAGMENT_BIT:
-            return variable.is_per_vertex && (variable.storage_class == spv::StorageClassInput);
+            // VK_KHR_fragment_shader_barycentric
+            return variable.decorations.Has(DecorationSet::per_vertex_bit) && (variable.storage_class == spv::StorageClassInput);
         case VK_SHADER_STAGE_MESH_BIT_EXT:
             return !variable.is_per_task_nv && (variable.storage_class == spv::StorageClassOutput);
         default:
@@ -2153,7 +2154,7 @@ StageInterfaceVariable::StageInterfaceVariable(const Module& module_state, const
                                                const ParsedInfo& parsed)
     : VariableBase(module_state, insn, stage, parsed),
       is_patch(decorations.Has(DecorationSet::patch_bit)),
-      is_per_vertex(decorations.Has(DecorationSet::per_vertex_bit)),
+      is_per_primitive_ext(decorations.Has(DecorationSet::per_primitive_ext)),
       is_per_task_nv(IsPerTaskNV(*this)),
       is_array_interface(IsArrayInterface(*this)),
       base_type(FindBaseType(*this, module_state)),

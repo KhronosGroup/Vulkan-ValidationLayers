@@ -42,7 +42,8 @@ bool GLSLtoSPV(const VkPhysicalDeviceLimits &device_limits, const VkShaderStageF
 bool ASMtoSPV(const spv_target_env target_env, const uint32_t options, const char *p_asm, std::vector<uint32_t> &out_spv);
 // We don't support installation of Slang on some platforms
 void CheckSlangSupport();
-bool SlangToSPV(const char *slang_shader, const char *entry_point_name, std::vector<uint8_t> &out_bytes);
+bool SlangToSPV(const spv_target_env target_env, const char* slang_shader, const char* entry_point_name,
+                std::vector<uint8_t>& out_bytes);
 
 // VkShaderObj is really just the Shader Module, but we named before VK_EXT_shader_object
 // TODO - move all of VkShaderObj to vkt::ShaderModule

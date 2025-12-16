@@ -382,9 +382,9 @@ struct VariableBase {
 // These include both BuiltIns and User Defined, while there are difference in member variables, the variables are needed for the
 // common logic so its easier using the same object in the end
 struct StageInterfaceVariable : public VariableBase {
-    // Only will be true in BuiltIns
-    const bool is_patch;
-    const bool is_per_vertex;   // VK_KHR_fragment_shader_barycentric
+    // Quick look up of decoration found only in BuiltIns
+    const bool is_patch;              // Tessellation
+    const bool is_per_primitive_ext;  // VK_EXT_mesh_shader
     const bool is_per_task_nv;  // VK_NV_mesh_shader
 
     const bool is_array_interface;
