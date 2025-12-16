@@ -1059,13 +1059,13 @@ enum class Feature {
 };
 
 struct FeatureAndName {
-    VkBool32 *feature;
-    const char *name;
+    VkBool32* feature;
+    const char* name;
 };
 
 // Find or add the correct VkPhysicalDeviceFeature struct in `pnext_chain` based on `feature`,
 // a vkt::Feature enum value, and set feature to VK_TRUE
-FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **inout_pnext_chain);
+FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** inout_pnext_chain);
 
 }  // namespace vkt
 

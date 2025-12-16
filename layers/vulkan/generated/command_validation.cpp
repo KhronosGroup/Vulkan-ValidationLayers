@@ -23,11 +23,9 @@
 
 #include "command_validation.h"
 #include "containers/custom_containers.h"
-
-extern const char *kVUIDUndefined;
-
-using Func = vvl::Func;
 // clang-format off
+extern const char *kVUIDUndefined;
+using Func = vvl::Func;
 static const auto &GetCommandValidationTable() {
 static const vvl::unordered_map<Func, CommandValidationInfo> kCommandValidationTable {
 {Func::vkCmdCopyBuffer, {
@@ -2580,12 +2578,12 @@ static const vvl::unordered_map<Func, CommandValidationInfo> kCommandValidationT
 };
 return kCommandValidationTable;
 }
-// clang-format on
 
-const CommandValidationInfo &GetCommandValidationInfo(vvl::Func command) {
+const CommandValidationInfo& GetCommandValidationInfo(vvl::Func command) {
     auto info_it = GetCommandValidationTable().find(command);
     assert(info_it != GetCommandValidationTable().end());
     return info_it->second;
 }
+// clang-format on
 
 // NOLINTEND

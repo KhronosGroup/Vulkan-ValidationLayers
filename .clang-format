@@ -5,4 +5,5 @@ IndentWidth: 4
 AccessModifierOffset: -2
 ColumnLimit: 132
 SortIncludes: false
+PointerAlignment: Left
 ...

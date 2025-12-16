@@ -98,12 +98,10 @@ class CommandValidationOutputGenerator(BaseGenerator):
         out.append('''
             #include "command_validation.h"
             #include "containers/custom_containers.h"
-
-            extern const char *kVUIDUndefined;
-
-            using Func = vvl::Func;
             ''')
         out.append('// clang-format off\n')
+        out.append('extern const char *kVUIDUndefined;\n')
+        out.append('using Func = vvl::Func;\n')
         out.append('static const auto &GetCommandValidationTable() {\n')
         out.append('static const vvl::unordered_map<Func, CommandValidationInfo> kCommandValidationTable {\n')
         for command in [x for x in self.vk.commands.values() if x.name.startswith('vkCmd')]:
@@ -167,13 +165,13 @@ class CommandValidationOutputGenerator(BaseGenerator):
         out.append('};\n')
         out.append('return kCommandValidationTable;\n')
         out.append('}\n')
-        out.append('// clang-format on\n')
 
         out.append('''
-            const CommandValidationInfo& GetCommandValidationInfo(vvl::Func command) {
-                auto info_it = GetCommandValidationTable().find(command);
-                assert(info_it != GetCommandValidationTable().end());
-                return info_it->second;
-            }
+const CommandValidationInfo& GetCommandValidationInfo(vvl::Func command) {
+    auto info_it = GetCommandValidationTable().find(command);
+    assert(info_it != GetCommandValidationTable().end());
+    return info_it->second;
+}
             ''')
+        out.append('// clang-format on\n')
         self.write("".join(out))
