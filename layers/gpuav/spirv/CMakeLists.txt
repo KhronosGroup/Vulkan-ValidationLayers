@@ -85,3 +85,23 @@ elseif(MSVC)
         /wd4389 # signed/unsigned mismatch
     )
 endif()
+
+# Auto generate Shaders' SPIR-V code upon GLSL changes
+set(GPUAV_SHADERS_DIR "${VVL_SOURCE_DIR}/layers/gpuav/shaders")
+file(GLOB_RECURSE GPUAV_SHADERS CONFIGURE_DEPENDS
+    "${GPUAV_SHADERS_DIR}/*.vert"
+    "${GPUAV_SHADERS_DIR}/*.comp"
+    "${GPUAV_SHADERS_DIR}/*.h"
+)
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+add_custom_command(
+    OUTPUT "${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv.h" "${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv.cpp"
+    COMMAND Python3::Interpreter "scripts/generate_spirv.py"
+    DEPENDS ${GPUAV_SHADERS}
+    WORKING_DIRECTORY ${VVL_SOURCE_DIR}
+    VERBATIM
+)
+add_custom_target(vvl_gpu_av_shaders_spirv
+    DEPENDS "${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv.h" "${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv.cpp"
+)
+add_dependencies(gpu_av_spirv vvl_gpu_av_shaders_spirv)

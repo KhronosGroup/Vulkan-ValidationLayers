@@ -255,7 +255,17 @@ def main():
         sys.exit("No shader files found to compile.")
 
     external_dir = None
-    for path_suffix in ['external/Debug/64', 'external/Release/64', 'external']:
+    # Sometimes external folder are put in the build directory
+    external_possible_paths = [
+        'external/Debug/64',
+        'external/Release/64',
+        'external',
+        'build-ci/external/Debug/64',
+        'build-ci/external/Release/64',
+        'build/external/Debug/64',
+        'build/external/Release/64'
+    ]
+    for path_suffix in external_possible_paths:
         try:
             potential_dir = common_ci.RepoRelative(path_suffix)
             if os.path.isdir(potential_dir):
@@ -265,22 +275,24 @@ def main():
              continue
 
     if not external_dir:
-         print("Warning: Could not automatically determine external tools directory.", file=sys.stderr)
+        print("Warning: Could not automatically determine external tools directory.", file=sys.stderr)
+        return
 
     # default glslangValidator path
     glslang = common_ci.RepoRelative(os.path.join(external_dir, 'glslang/build/install/bin/glslang'))
     if args.glslang:
         glslang = args.glslang
     if not shutil.which(glslang):
-        sys.exit("Cannot find glslangValidator " + glslang)
-
+        print("Cannot find glslangValidator " + glslang)
+        return
 
     # default spirv-opt path
     spirv_opt =  common_ci.RepoRelative(os.path.join(external_dir, 'SPIRV-Tools/build/install/bin/spirv-opt'))
     if args.spirv_opt:
         spirv_opt = args.spirv_opt
     if not shutil.which(spirv_opt):
-        sys.exit("Cannot find spirv-opt " + spirv_opt)
+        print("Cannot find spirv-opt " + spirv_opt)
+        return
 
     # compile shaders
     compiled_shader_data = []
