@@ -650,3 +650,120 @@ void main(){
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeShaderDebugInfo, DebugGloablVariableName) {
+    TEST_DESCRIPTION("Get the name of the OpVariable from OpString, not OpName");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    // https://godbolt.org/z/zP9EsM9za
+    const char* fs_source = R"(
+               OpCapability Shader
+               OpExtension "SPV_KHR_non_semantic_info"
+          %1 = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %tex %out_color
+               OpExecutionMode %main OriginUpperLeft
+
+               ; Debug Information
+          %2 = OpString "/app/example.glsl"
+          %8 = OpString "uint"
+         %16 = OpString "main"
+         %19 = OpString "#version 450
+layout (set = 0, binding = 0) uniform sampler2D tex[3];
+layout (location = 0) out vec4 out_color;
+void main() {
+    out_color = textureLodOffset(tex[1], vec2(0), 0, ivec2(0));
+}"
+         %25 = OpString "float"
+         %29 = OpString "texture2D"
+         %30 = OpString "@texture2D"
+         %34 = OpString "sampler2D"
+         %35 = OpString "@sampler2D"
+         %42 = OpString "tex"
+         %50 = OpString "out_color"
+         %55 = OpString "int"
+
+               ; Annotations
+               OpDecorate %tex Binding 0
+               OpDecorate %tex DescriptorSet 0
+               OpDecorate %out_color Location 0
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %5 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+    %uint_32 = OpConstant %uint 32
+     %uint_6 = OpConstant %uint 6
+     %uint_0 = OpConstant %uint 0
+          %9 = OpExtInst %void %1 DebugTypeBasic %8 %uint_32 %uint_6 %uint_0
+     %uint_3 = OpConstant %uint 3
+          %6 = OpExtInst %void %1 DebugTypeFunction %uint_3 %void
+         %18 = OpExtInst %void %1 DebugSource %2 %19
+     %uint_4 = OpConstant %uint 4
+     %uint_1 = OpConstant %uint 1
+     %uint_2 = OpConstant %uint 2
+         %21 = OpExtInst %void %1 DebugCompilationUnit %uint_1 %uint_4 %18 %uint_2
+         %17 = OpExtInst %void %1 DebugFunction %16 %6 %18 %uint_4 %uint_0 %21 %16 %uint_3 %uint_4
+      %float = OpTypeFloat 32
+         %26 = OpExtInst %void %1 DebugTypeBasic %25 %uint_32 %uint_3 %uint_0
+         %27 = OpTypeImage %float 2D 0 0 0 1 Unknown
+         %31 = OpExtInst %void %1 DebugInfoNone
+         %28 = OpExtInst %void %1 DebugTypeComposite %29 %uint_1 %18 %uint_2 %uint_0 %21 %30 %31 %uint_3
+         %32 = OpTypeSampledImage %27
+         %33 = OpExtInst %void %1 DebugTypeComposite %34 %uint_1 %18 %uint_2 %uint_0 %21 %35 %31 %uint_3
+%_arr_32_uint_3 = OpTypeArray %32 %uint_3
+         %37 = OpExtInst %void %1 DebugTypeArray %33 %uint_3
+%_ptr_UniformConstant__arr_32_uint_3 = OpTypePointer UniformConstant %_arr_32_uint_3
+         %39 = OpExtInst %void %1 DebugTypePointer %37 %uint_0 %uint_0
+        %tex = OpVariable %_ptr_UniformConstant__arr_32_uint_3 UniformConstant  ; Binding 0, DescriptorSet 0
+     %uint_8 = OpConstant %uint 8
+         %41 = OpExtInst %void %1 DebugGlobalVariable %42 %37 %18 %uint_2 %uint_0 %21 %42 %tex %uint_8
+    %v4float = OpTypeVector %float 4
+         %45 = OpExtInst %void %1 DebugTypeVector %26 %uint_4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+         %47 = OpExtInst %void %1 DebugTypePointer %45 %uint_3 %uint_0
+  %out_color = OpVariable %_ptr_Output_v4float Output   ; Location 0
+         %49 = OpExtInst %void %1 DebugGlobalVariable %50 %45 %18 %uint_3 %uint_0 %21 %50 %out_color %uint_8
+        %int = OpTypeInt 32 1
+         %56 = OpExtInst %void %1 DebugTypeBasic %55 %uint_32 %uint_4 %uint_0
+      %int_1 = OpConstant %int 1
+%_ptr_UniformConstant_32 = OpTypePointer UniformConstant %32
+         %59 = OpExtInst %void %1 DebugTypePointer %33 %uint_0 %uint_0
+     %uint_5 = OpConstant %uint 5
+    %v2float = OpTypeVector %float 2
+         %65 = OpExtInst %void %1 DebugTypeVector %26 %uint_2
+    %float_0 = OpConstant %float 0
+         %67 = OpConstantComposite %v2float %float_0 %float_0
+      %v2int = OpTypeVector %int 2
+         %69 = OpExtInst %void %1 DebugTypeVector %56 %uint_2
+      %int_0 = OpConstant %int 0
+         %71 = OpConstantComposite %v2int %int_0 %int_0
+
+               ; Function main
+       %main = OpFunction %void None %5
+         %15 = OpLabel
+         %52 = OpExtInst %void %1 DebugScope %17
+         %53 = OpExtInst %void %1 DebugLine %18 %uint_4 %uint_4 %uint_0 %uint_0
+         %51 = OpExtInst %void %1 DebugFunctionDefinition %17 %main
+         %61 = OpExtInst %void %1 DebugLine %18 %uint_5 %uint_5 %uint_0 %uint_0
+         %60 = OpAccessChain %_ptr_UniformConstant_32 %tex %int_1
+         %63 = OpLoad %32 %60
+         %72 = OpImageSampleExplicitLod %v4float %63 %67 Lod|ConstOffset %float_0 %71
+               OpStore %out_color %72
+         %73 = OpExtInst %void %1 DebugLine %18 %uint_6 %uint_6 %uint_0 %uint_0
+               OpReturn
+               OpFunctionEnd
+    )";
+    const VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    // "VUID-VkGraphicsPipelineCreateInfo-layout-07991"
+    m_errorMonitor->SetDesiredError("[Set 0, Binding 0, variable \"tex\"]");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
