@@ -338,9 +338,9 @@ struct VariableBase {
     const VkShaderStageFlagBits stage;
     VariableBase(const Module &module_state, const Instruction &insn, VkShaderStageFlagBits stage, const ParsedInfo &parsed);
 
-    // When no SPIR-V debug info is used, this will be empty strings
-    // We need to store a std::string since the original SPIR-V string will be gone when we need to print this in an error message
-    const std::string debug_name;  // OpName
+    const Instruction* debug_global_variable;  // DebugGlobalVariable from NonSemantic.Shader.DebugInfo.100
+    // We need to store a std::string since the original SPIR-V string can be gone when we need to print this in an error message
+    const std::string debug_name;  // OpName or OpString (empty if no debug info found)
     std::string DescribeDescriptor() const;
 
     // These are helpers to show how the variable will be STATICALLY accessed.
@@ -369,7 +369,9 @@ struct VariableBase {
     bool IsUntyped() const { return data_type_id != 0; }
 
   private:
-    static const char *FindDebugName(const VariableBase &variable, const ParsedInfo &parsed);
+    static const Instruction* FindDebugGlobalVariable(const VariableBase& variable, const Module& module_state,
+                                                      const ParsedInfo& parsed);
+    static const char* FindDebugName(const VariableBase& variable, const Module& module_state, const ParsedInfo& parsed);
 };
 
 // These are Input/Output OpVariable that go in-between stages
@@ -691,7 +693,12 @@ struct Module {
         // Will check if there is source debug information
         // Won't save any other info and will retrieve the debug info if requested in a VU error message
         bool using_legacy_debug_info{false};
-        uint32_t shader_debug_info_set_id = 0;  // non-zero means shader has NonSemantic.Shader.DebugInfo.100
+
+        // ID from OpExtInstImport required to know if a OpExtInst is from it
+        struct ExtendedInstructionSets {
+            uint32_t glsl_std450 = 0;        // GLSL.std.450
+            uint32_t shader_debug_info = 0;  // NonSemantic.Shader.DebugInfo.100
+        } extended;
 
         // EntryPoint has pointer references inside it that need to be preserved
         std::vector<std::shared_ptr<EntryPoint>> entry_points;

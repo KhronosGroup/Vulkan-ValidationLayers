@@ -15,6 +15,7 @@
  */
 
 #include "state_tracker/shader_module.h"
+#include "state_tracker/shader_instruction.h"
 
 #include <sstream>
 #include <string>
@@ -530,6 +531,8 @@ struct ParsedInfo {
     VariableAccessMap variable_access_map;
     AccessChainVariableMap access_chain_map;
     DebugNameMap debug_name_map;
+
+    std::vector<const Instruction*> debug_global_variables;
 };
 
 // Built-in can be both on the OpVariable or a inside a OpTypeStruct for Block built-in.
@@ -1171,8 +1174,16 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
             }
 
             case spv::OpExtInst: {
-                if (insn.Word(4) == GLSLstd450InterpolateAtSample) {
-                    uses_interpolate_at_sample = true;
+                const uint32_t set = insn.Word(3);
+                const uint32_t ext_instruction = insn.Word(4);
+                if (set == extended.glsl_std450) {
+                    if (ext_instruction == GLSLstd450InterpolateAtSample) {
+                        uses_interpolate_at_sample = true;
+                    }
+                } else if (set == extended.shader_debug_info) {
+                    if (ext_instruction == NonSemanticShaderDebugInfo100DebugGlobalVariable) {
+                        parsed.debug_global_variables.emplace_back(&insn);
+                    }
                 }
                 break;
             }
@@ -1188,8 +1199,11 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
                 break;
             }
             case spv::OpExtInstImport: {
+                if (strcmp(insn.GetAsString(2), "GLSL.std.450") == 0) {
+                    extended.glsl_std450 = insn.ResultId();
+                }
                 if (strcmp(insn.GetAsString(2), "NonSemantic.Shader.DebugInfo.100") == 0) {
-                    shader_debug_info_set_id = insn.ResultId();
+                    extended.shader_debug_info = insn.ResultId();
                 }
                 break;
             }
@@ -1478,6 +1492,7 @@ std::string Module::DescribeType(uint32_t type) const {
     return ss.str();
 }
 
+// TODO - Remove, only used in 1 shader interface check
 std::string Module::DescribeVariable(uint32_t id) const {
     std::ostringstream ss;
     auto name = GetName(id);
@@ -1493,14 +1508,14 @@ std::string Module::DescribeVariable(uint32_t id) const {
 }
 
 std::string Module::DescribeInstruction(const Instruction& error_insn) const {
-    if (static_data_.shader_debug_info_set_id == 0 && !static_data_.using_legacy_debug_info) {
+    if (static_data_.extended.shader_debug_info == 0 && !static_data_.using_legacy_debug_info) {
         return error_insn.Describe();
     }
 
     const Instruction* last_line_inst = nullptr;
     for (const auto& insn : static_data_.instructions) {
         const uint32_t opcode = insn.Opcode();
-        if (opcode == spv::OpExtInst && insn.Word(3) == static_data_.shader_debug_info_set_id &&
+        if (opcode == spv::OpExtInst && insn.Word(3) == static_data_.extended.shader_debug_info &&
             insn.Word(4) == NonSemanticShaderDebugInfo100DebugLine) {
             last_line_inst = &insn;
         } else if (opcode == spv::OpLine) {
@@ -1840,7 +1855,20 @@ VkFormat GetTensorFormat(NumericType numeric_type, uint32_t bit_width) {
     return VK_FORMAT_UNDEFINED;
 }
 
-const char* VariableBase::FindDebugName(const VariableBase& variable, const ParsedInfo& parsed) {
+const Instruction* VariableBase::FindDebugGlobalVariable(const VariableBase& variable, const Module& module_state,
+                                                         const ParsedInfo& parsed) {
+    for (const auto& insn : parsed.debug_global_variables) {
+        // this will either be the Variable Id, DebugInfoNone or DebugExpression if the variable was optimized out.
+        // If the variable is optimized out, we wouldn't know about it, so safe to just do a quick ID compare
+        const uint32_t variable_id = insn->Word(12);
+        if (variable_id == variable.id) {
+            return insn;
+        }
+    }
+    return nullptr;
+}
+
+const char* VariableBase::FindDebugName(const VariableBase& variable, const Module& module_state, const ParsedInfo& parsed) {
     const char* name = "";
     // We prefer to always get the variable name if it has it
     auto name_it = parsed.debug_name_map.find(variable.id);
@@ -1856,6 +1884,14 @@ const char* VariableBase::FindDebugName(const VariableBase& variable, const Pars
             name = name_it->second->GetAsString(2);
         }
     }
+
+    // If the OpName is gone, but has Shader.DebugInfo, get it from there
+    if (!name[0] && variable.debug_global_variable) {
+        const Instruction* string_insn = module_state.FindDef(variable.debug_global_variable->Word(5));
+        assert(string_insn->Opcode() == spv::OpString);
+        name = string_insn->GetAsString(2);
+    }
+
     return name;
 }
 
@@ -1869,7 +1905,8 @@ VariableBase::VariableBase(const Module& module_state, const Instruction& insn, 
       type_struct_info(module_state.GetTypeStructInfo(&insn)),
       access_mask(AccessBit::empty),
       stage(stage),
-      debug_name(FindDebugName(*this, parsed)) {
+      debug_global_variable(FindDebugGlobalVariable(*this, module_state, parsed)),
+      debug_name(FindDebugName(*this, module_state, parsed)) {
     assert(insn.Opcode() == spv::OpVariable || insn.Opcode() == spv::OpUntypedVariableKHR);
 
     // Finding the access of an image is more complex we will set that using the StaticImageAccessMap later
