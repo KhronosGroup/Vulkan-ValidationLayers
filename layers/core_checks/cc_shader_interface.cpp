@@ -368,6 +368,19 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
                         break;  // Only need to report for the first component found
                     }
                 }
+
+                if (producer_stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
+                    if (input_var->is_per_primitive_ext != output_var->is_per_primitive_ext) {
+                        const LogObjectList objlist(producer.handle(), consumer.handle());
+                        skip |= LogError("VUID-RuntimeSpirv-OpVariable-08746", objlist, create_info_loc,
+                                         "(SPIR-V Interface) at Location %" PRIu32 " Component %" PRIu32
+                                         " in the Mesh stage %s decorated with PerPrimitiveEXT while the Fragment stage %s",
+                                         location, component, output_var->is_per_primitive_ext ? "is" : "is not",
+                                         input_var->is_per_primitive_ext ? "is" : "is not");
+                        break;  // Only need to report for the first component found
+                    }
+                }
+
             } else if ((input_var == nullptr) && (output_var != nullptr)) {
                 // Missing input slot
                 // It is not an error if a stage does not consume all outputs from the previous stage

@@ -15,6 +15,7 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/render_pass_helper.h"
+#include "shader_helper.h"
 
 class PositiveShaderInterface : public VkLayerTest {};
 
@@ -1612,4 +1613,105 @@ TEST_F(PositiveShaderInterface, PackingInsideArray) {
     )glsl";
 
     VkShaderObj vs2(*m_device, vs_source2, VK_SHADER_STAGE_VERTEX_BIT);
+}
+
+TEST_F(PositiveShaderInterface, MeshFragment) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const char* ms_source = R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : require
+        layout(max_vertices = 12) out;
+        layout(max_primitives = 4) out;
+        layout(triangles) out;
+
+        layout(location = 0) out uint out_0[12];
+        layout(location = 1) perprimitiveEXT out uint out_1[4];
+        layout(location = 2) out float out_2[12];
+        layout(location = 3) perprimitiveEXT out float out_3[4];
+
+        void main() {
+            SetMeshOutputsEXT(12,4);
+            out_0[0] = 0;
+            out_1[0] = 0;
+            out_2[0] = 0.0;
+            out_3[0] = 0.0;
+            gl_PrimitiveTriangleIndicesEXT[1] = uvec3(0,1,2);
+        }
+    )glsl";
+
+    const char* fs_source = R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : require
+
+        layout(location = 0) in flat uint in_0;
+        layout(location = 1) perprimitiveEXT flat in uint in_1;
+        layout(location = 2) in float in_2;
+        layout(location = 3) perprimitiveEXT in float in_3;
+        layout(location = 0) out vec4 c;
+        void main(){
+            c = vec4(1);
+            if (in_0 == 0 && in_1 == 0 && in_2 == 1.0 && in_3 == 1.0) {
+                c = vec4(0);
+            }
+        }
+    )glsl";
+
+    VkShaderObj ms(*m_device, ms_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositiveShaderInterface, MeshFragmentSlang) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(CheckSlangSupport());
+    InitRenderTarget();
+
+    const char* slang_shader = R"slang(
+        struct MeshInOut {
+            float4 position : SV_Position;
+            float4 normal;
+        };
+
+        struct PerPrimitive {
+            float4 color    : COLOR;
+            bool   cull     : SV_CullPrimitive;
+        };
+
+        [outputtopology("triangle")]
+        [numthreads(1, 1, 1)]
+        void mmain(out indices uint3 triangles[3],
+                    out vertices MeshInOut verts[9],
+                    out primitives PerPrimitive prims[3]) {
+            SetMeshOutputCounts(6, 2);
+            triangles[0] = uint3(0,0,0);
+            verts[0].position = float4(0);
+            verts[0].normal = float4(0);
+            prims[0].color = float4(0);
+            prims[0].cull = true;
+        }
+
+        [shader("fragment")]
+        float4 fmain(MeshInOut input) : SV_Target
+        {
+            return input.position + input.normal;
+        }
+    )slang";
+
+    VkShaderObj ms(*m_device, slang_shader, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_SLANG, nullptr, "mmain");
+    VkShaderObj fs(*m_device, slang_shader, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_SLANG, nullptr, "fmain");
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
 }
