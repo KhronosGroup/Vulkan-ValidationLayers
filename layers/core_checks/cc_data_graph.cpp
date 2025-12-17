@@ -23,6 +23,7 @@
 #include "state_tracker/data_graph_pipeline_session_state.h"
 #include "state_tracker/pipeline_layout_state.h"
 #include "state_tracker/pipeline_state.h"
+#include "utils/math_utils.h"
 
 bool CoreChecks::ValidateDataGraphPipelineShaderModuleCreateInfo(VkDevice device,
                                                                  const VkDataGraphPipelineShaderModuleCreateInfoARM& dg_shader_ci,
@@ -178,7 +179,7 @@ bool CoreChecks::ValidateTensorSemiStructuredSparsityInfo(VkDevice device, const
                 constant_loc.pNext(Struct::VkDataGraphPipelineConstantTensorSemiStructuredSparsityInfoARM, Field::dimension),
                 "(%" PRIu32 ") must be less than the tensor rank (dimensionCount = %" PRIu32 ")", sparsity->dimension,
                 tensor_desc->dimensionCount);
-        } else if (tensor_desc->pDimensions[sparsity->dimension] % sparsity->groupSize != 0) {
+        } else if (!IsIntegerMultipleOf(tensor_desc->pDimensions[sparsity->dimension], sparsity->groupSize)) {
             skip |= LogError("VUID-VkDataGraphPipelineConstantARM-pNext-09777", device,
                              constant_loc.pNext(Struct::VkDataGraphPipelineConstantTensorSemiStructuredSparsityInfoARM,
                                                 Field::pDimensions, sparsity->dimension),

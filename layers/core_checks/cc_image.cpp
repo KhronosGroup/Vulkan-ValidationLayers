@@ -2163,7 +2163,7 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo &create
                              create_info_loc.dot(Field::subresourceRange).dot(Field::layerCount),
                              "is VK_REMAINING_ARRAY_LAYERS (%d) but must be 6.", remaining_layers);
         }
-        if (view_type == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY && ((remaining_layers) % 6) != 0) {
+        if (view_type == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY && !IsIntegerMultipleOf(remaining_layers, 6)) {
             skip |= LogError("VUID-VkImageViewCreateInfo-viewType-02963", create_info.image,
                              create_info_loc.dot(Field::subresourceRange).dot(Field::layerCount),
                              "is VK_REMAINING_ARRAY_LAYERS (%d) but must be a multiple of 6.", remaining_layers);

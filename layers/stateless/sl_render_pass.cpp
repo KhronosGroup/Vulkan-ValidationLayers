@@ -536,13 +536,13 @@ bool Device::ValidateRenderPassStripeBeginInfo(VkCommandBuffer commandBuffer, co
             }
         }
 
-        if (width_granularity > 0 && (stripe_area.offset.x % width_granularity) != 0) {
+        if (width_granularity > 0 && !IsIntegerMultipleOf(stripe_area.offset.x, width_granularity)) {
             skip |= LogError("VUID-VkRenderPassStripeInfoARM-stripeArea-09452", commandBuffer,
                              stripe_info_loc.dot(Field::stripeArea).dot(Field::offset).dot(Field::x),
                              "(%" PRIu32 ") is not a multiple of %" PRIu32 ".", stripe_area.offset.x, width_granularity);
         }
 
-        if (width_granularity > 0 && (stripe_area.extent.width % width_granularity) != 0 &&
+        if (width_granularity > 0 && !IsIntegerMultipleOf(stripe_area.extent.width, width_granularity) &&
             ((stripe_area.extent.width + stripe_area.offset.x) != render_area.extent.width)) {
             skip |= LogError("VUID-VkRenderPassStripeInfoARM-stripeArea-09453", commandBuffer,
                              stripe_info_loc.dot(Field::stripeArea).dot(Field::extent).dot(Field::width),
@@ -551,13 +551,13 @@ bool Device::ValidateRenderPassStripeBeginInfo(VkCommandBuffer commandBuffer, co
                              stripe_area.extent.width, width_granularity, render_area.extent.width);
         }
 
-        if (height_granularity > 0 && (stripe_area.offset.y % height_granularity) != 0) {
+        if (height_granularity > 0 && !IsIntegerMultipleOf(stripe_area.offset.y, height_granularity)) {
             skip |= LogError("VUID-VkRenderPassStripeInfoARM-stripeArea-09454", commandBuffer,
                              stripe_info_loc.dot(Field::stripeArea).dot(Field::offset).dot(Field::y),
                              "(%" PRIu32 ") is not a multiple of %" PRIu32 ".", stripe_area.offset.y, height_granularity);
         }
 
-        if (height_granularity > 0 && (stripe_area.extent.height % height_granularity) != 0 &&
+        if (height_granularity > 0 && !IsIntegerMultipleOf(stripe_area.extent.height, height_granularity) &&
             (stripe_area.extent.height + stripe_area.offset.y) != render_area.extent.height) {
             skip |= LogError("VUID-VkRenderPassStripeInfoARM-stripeArea-09455", commandBuffer,
                              stripe_info_loc.dot(Field::stripeArea).dot(Field::extent).dot(Field::height),

@@ -16,6 +16,7 @@
 
 #include <vulkan/utility/vk_format_utils.h>
 #include "stateless/stateless_validation.h"
+#include "utils/math_utils.h"
 #include <cstdint>
 
 namespace stateless {
@@ -57,7 +58,7 @@ bool Device::ValidateTensorDescriptionARM(const VkTensorDescriptionARM &descript
                              strides[0], description.pDimensions[0], phys_dev_ext_props.tensor_properties.maxTensorSize);
         }
         for (uint32_t i = 0; i < description.dimensionCount; i++) {
-            if ((strides[i] % texel_block_size) != 0) {
+            if (!IsIntegerMultipleOf(strides[i], texel_block_size)) {
                 skip |=
                     LogError("VUID-VkTensorDescriptionARM-pStrides-09737", device, description_loc.dot(Field::pStrides, i),
                              "(%" PRIi64 ") must be a multiple of the element size (%" PRIu32 ")", strides[i], texel_block_size);

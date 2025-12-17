@@ -319,7 +319,7 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
                                  ss.str().c_str());
             }
         }
-    } else if ((pCreateInfo->offset % phys_dev_props.limits.minTexelBufferOffsetAlignment) != 0) {
+    } else if (!IsIntegerMultipleOf(pCreateInfo->offset, phys_dev_props.limits.minTexelBufferOffsetAlignment)) {
         skip |= LogError("VUID-VkBufferViewCreateInfo-offset-02749", pCreateInfo->buffer, create_info_loc.dot(Field::offset),
                          "(%" PRIuLEAST64
                          ") must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment (%" PRIuLEAST64 ").",

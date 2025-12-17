@@ -215,19 +215,19 @@ bool Device::manual_PreCallValidateCmdDecompressMemoryIndirectCountEXT(
                          decompressionMethod);
     }
 
-    if (indirectCommandsAddress % 4 != 0) {
+    if (!IsPointerAligned(indirectCommandsAddress, 4)) {
         skip |= LogError("VUID-vkCmdDecompressMemoryIndirectCountEXT-indirectCommandsAddress-07695", commandBuffer,
-                         error_obj.location.dot(Field::indirectCommandsAddress), "(0x%" PRIx64 ") must be a multiple of 4.",
+                         error_obj.location.dot(Field::indirectCommandsAddress), "(0x%" PRIx64 ") is not aligned to 4 bytes.",
                          indirectCommandsAddress);
     }
 
-    if (indirectCommandsCountAddress % 4 != 0) {
+    if (!IsPointerAligned(indirectCommandsCountAddress, 4)) {
         skip |= LogError("VUID-vkCmdDecompressMemoryIndirectCountEXT-indirectCommandsCountAddress-07698", commandBuffer,
-                         error_obj.location.dot(Field::indirectCommandsCountAddress), "(0x%" PRIx64 ") must be a multiple of 4.",
+                         error_obj.location.dot(Field::indirectCommandsCountAddress), "(0x%" PRIx64 ") is not aligned to 4 bytes.",
                          indirectCommandsCountAddress);
     }
 
-    if (stride % 4 != 0 || stride < sizeof(VkDecompressMemoryRegionEXT)) {
+    if (!IsIntegerMultipleOf(stride, 4) || stride < sizeof(VkDecompressMemoryRegionEXT)) {
         skip |= LogError(
             "VUID-vkCmdDecompressMemoryIndirectCountEXT-stride-11767", commandBuffer, error_obj.location.dot(Field::stride),
             "(%" PRIu32
