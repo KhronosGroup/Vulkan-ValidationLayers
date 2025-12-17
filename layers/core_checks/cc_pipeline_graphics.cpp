@@ -219,7 +219,7 @@ bool CoreChecks::ValidateGraphicsPipelinePortability(const vvl::Pipeline &pipeli
         for (const auto &state : pipeline.vertex_input_state->bindings) {
             const auto &desc = state.second.desc;
             const uint32_t min_alignment = phys_dev_ext_props.portability_props.minVertexInputBindingStrideAlignment;
-            if (min_alignment != 0 && (desc.stride % min_alignment != 0)) {
+            if (min_alignment != 0 && !IsIntegerMultipleOf(desc.stride, min_alignment)) {
                 skip |= LogError(
                     "VUID-VkVertexInputBindingDescription-stride-04456", device, create_info_loc,
                     "(portability error): Vertex input stride (%" PRIu32

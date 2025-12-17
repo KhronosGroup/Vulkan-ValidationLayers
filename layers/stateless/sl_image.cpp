@@ -896,7 +896,8 @@ bool Device::ValidateImageViewCreateInfo(const VkImageViewCreateInfo &create_inf
                              create_info_loc.dot(Field::subresourceRange).dot(Field::layerCount),
                              "(%" PRIu32 ") must be 6 or VK_REMAINING_ARRAY_LAYERS.", create_info.subresourceRange.layerCount);
         }
-        if (create_info.viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY && (create_info.subresourceRange.layerCount % 6) != 0) {
+        if (create_info.viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY &&
+            !IsIntegerMultipleOf(create_info.subresourceRange.layerCount, 6)) {
             skip |= LogError("VUID-VkImageViewCreateInfo-viewType-02961", create_info.image,
                              create_info_loc.dot(Field::subresourceRange).dot(Field::layerCount),
                              "(%" PRIu32 ") must be a multiple of 6 or VK_REMAINING_ARRAY_LAYERS.",

@@ -695,9 +695,9 @@ bool CoreChecks::ValidateDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayo
                                  "is VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK but "
                                  "pCreateInfo->flags includes VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT.");
             } else {
-                if ((binding_info.descriptorCount % 4) != 0) {
+                if (!IsIntegerMultipleOf(binding_info.descriptorCount, 4)) {
                     skip |= LogError("VUID-VkDescriptorSetLayoutBinding-descriptorType-02209", device,
-                                     binding_loc.dot(Field::descriptorCount), "(%" PRIu32 ") (must be a multiple of 4).",
+                                     binding_loc.dot(Field::descriptorCount), "(%" PRIu32 ") must be a multiple of 4.",
                                      binding_info.descriptorCount);
                 }
                 if ((binding_info.descriptorCount > phys_dev_props_core13.maxInlineUniformBlockSize) &&
@@ -1100,14 +1100,14 @@ bool CoreChecks::ValidateCopyUpdateDescriptorTypes(const VkCopyDescriptorSet &up
                          FormatHandle(src_set.Handle()).c_str(), string_VkDescriptorType(src_type));
     }
 
-    if (src_type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK && ((update.srcArrayElement % 4) != 0)) {
+    if (src_type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK && !IsIntegerMultipleOf(update.srcArrayElement, 4)) {
         const LogObjectList objlist(update.srcSet, src_layout.Handle());
         skip |= LogError("VUID-VkCopyDescriptorSet-srcBinding-02223", objlist, copy_loc.dot(Field::srcArrayElement),
                          "is %" PRIu32 " (not a multiple of 4), but srcBinding (%" PRIu32
                          ") type is VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK.",
                          update.srcArrayElement, update.srcBinding);
     }
-    if (dst_type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK && ((update.dstArrayElement % 4) != 0)) {
+    if (dst_type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK && !IsIntegerMultipleOf(update.dstArrayElement, 4)) {
         const LogObjectList objlist(update.dstSet, dst_layout.Handle());
         skip |= LogError("VUID-VkCopyDescriptorSet-dstBinding-02224", objlist, copy_loc.dot(Field::dstArrayElement),
                          "is %" PRIu32 " (not a multiple of 4), but dstBinding (%" PRIu32
@@ -1115,7 +1115,7 @@ bool CoreChecks::ValidateCopyUpdateDescriptorTypes(const VkCopyDescriptorSet &up
                          update.dstArrayElement, update.dstBinding);
     }
     if (src_type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK || dst_type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
-        if ((update.descriptorCount % 4) != 0) {
+        if (!IsIntegerMultipleOf(update.descriptorCount, 4)) {
             const LogObjectList objlist(update.srcSet, update.dstSet, src_layout.Handle(), dst_layout.Handle());
             skip |= LogError("VUID-VkCopyDescriptorSet-srcBinding-02225", objlist, copy_loc.dot(Field::descriptorCount),
                              "is %" PRIu32 " (not a multiple of 4), but srcBinding (%" PRIu32
@@ -1961,13 +1961,13 @@ bool CoreChecks::ValidateWriteUpdateBufferInfo(const VkWriteDescriptorSet &updat
 
 bool CoreChecks::ValidateWriteUpdateInlineUniformBlock(const VkWriteDescriptorSet &update, const Location &write_loc) const {
     bool skip = false;
-    if ((update.dstArrayElement % 4) != 0) {
+    if (!IsIntegerMultipleOf(update.dstArrayElement, 4)) {
         skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02219", device, write_loc.dot(Field::dstBinding),
                          "(%" PRIu32 ") is of type VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, but dstArrayElement (%" PRIu32
                          ") is not a multiple of 4.",
                          update.dstBinding, update.dstArrayElement);
     }
-    if ((update.descriptorCount % 4) != 0) {
+    if (!IsIntegerMultipleOf(update.descriptorCount, 4)) {
         skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02220", device, write_loc.dot(Field::dstBinding),
                          "(%" PRIu32 ") is of type VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, but descriptorCount (%" PRIu32
                          ") is not a multiple of 4.",
@@ -1986,10 +1986,10 @@ bool CoreChecks::ValidateWriteUpdateInlineUniformBlock(const VkWriteDescriptorSe
                          "(%" PRIu32 ") is different then descriptorCount (%" PRIu32 "), but dstBinding (%" PRIu32
                          ") is of type VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK.",
                          write_inline_info->dataSize, update.descriptorCount, update.dstBinding);
-    } else if ((write_inline_info->dataSize % 4) != 0) {
+    } else if (!IsIntegerMultipleOf(write_inline_info->dataSize, 4)) {
         skip |= LogError("VUID-VkWriteDescriptorSetInlineUniformBlock-dataSize-02222", device,
-                         write_loc.pNext(Struct::VkWriteDescriptorSetInlineUniformBlock, Field::dataSize), "is %" PRIu32 ".",
-                         write_inline_info->dataSize);
+                         write_loc.pNext(Struct::VkWriteDescriptorSetInlineUniformBlock, Field::dataSize),
+                         "(%" PRIu32 ") is not a multiple of 4.", write_inline_info->dataSize);
     }
     return skip;
 }

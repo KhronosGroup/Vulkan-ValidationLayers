@@ -822,7 +822,7 @@ bool Device::ValidateVkConvertCooperativeVectorMatrixInfoNV(const LogObjectList 
     }
     if (info.srcLayout == VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_ROW_MAJOR_NV ||
         info.srcLayout == VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_COLUMN_MAJOR_NV) {
-        if ((info.srcStride % src_element_size) != 0) {
+        if (!IsIntegerMultipleOf(info.srcStride, src_element_size)) {
             skip |= LogError("VUID-VkConvertCooperativeVectorMatrixInfoNV-srcLayout-10077", objlist, info_loc.dot(Field::srcStride),
                              "(%zu) must be a multiple of source element size (%zu)", info.srcStride, src_element_size);
         }
@@ -844,7 +844,7 @@ bool Device::ValidateVkConvertCooperativeVectorMatrixInfoNV(const LogObjectList 
     }
     if (info.dstLayout == VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_ROW_MAJOR_NV ||
         info.dstLayout == VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_COLUMN_MAJOR_NV) {
-        if ((info.dstStride % dst_element_size) != 0) {
+        if (!IsIntegerMultipleOf(info.dstStride, dst_element_size)) {
             skip |= LogError("VUID-VkConvertCooperativeVectorMatrixInfoNV-dstLayout-10078", objlist, info_loc.dot(Field::dstStride),
                              "(%zu) must be a multiple of destination element size (%zu)", info.dstStride, dst_element_size);
         }

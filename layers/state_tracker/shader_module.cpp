@@ -33,6 +33,7 @@
 #include <spirv/unified1/NonSemanticShaderDebugInfo100.h>
 #include <vulkan/vulkan_core.h>
 #include "error_message/spirv_logging.h"
+#include "utils/math_utils.h"
 
 namespace spirv {
 
@@ -2727,7 +2728,7 @@ namespace vvl {
 // Need to allow a way to not waste time copying over to spirv::Module::words_ when we don't want to store the SPIR-V
 std::shared_ptr<spirv::Module> CreateSpirvModuleState(size_t codeSize, const uint32_t* pCode, const GlobalSettings& global_settings,
                                                       spirv::StatelessData* stateless_data) {
-    const bool is_valid_spirv = (pCode && pCode[0] == spv::MagicNumber && ((codeSize % 4) == 0));
+    const bool is_valid_spirv = (pCode && pCode[0] == spv::MagicNumber && IsIntegerMultipleOf(codeSize, 4));
     if (!global_settings.spirv_store) {
         return std::make_shared<spirv::Module>(is_valid_spirv);
     }

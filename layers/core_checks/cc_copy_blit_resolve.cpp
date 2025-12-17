@@ -3970,15 +3970,14 @@ bool CoreChecks::ValidateCopyMemoryIndirectInfo(VkCommandBuffer command_buffer,
     const Location copy_range_loc = info_loc.dot(Field::copyAddressRange);
     skip |= ValidateStridedDeviceAddressRange(command_buffer, memory_indirect_info.copyAddressRange, copy_range_loc);
 
-    const VkDeviceAddress address = memory_indirect_info.copyAddressRange.address;
-    if (address % 4 != 0) {
+    if (!IsPointerAligned(memory_indirect_info.copyAddressRange.address, 4)) {
         skip |=
             LogError("VUID-VkCopyMemoryIndirectInfoKHR-copyAddressRange-10942", command_buffer, copy_range_loc.dot(Field::address),
-                     "is 0x%" PRIx64 " but it must be 4 byte aligned", memory_indirect_info.copyAddressRange.address);
+                     "(0x%" PRIx64 ") must be aligned to 4 bytes", memory_indirect_info.copyAddressRange.address);
     }
 
     const VkDeviceSize stride = memory_indirect_info.copyAddressRange.stride;
-    if (stride % 4 != 0 || stride < sizeof(VkCopyMemoryIndirectCommandKHR)) {
+    if (!IsIntegerMultipleOf(stride, 4) || stride < sizeof(VkCopyMemoryIndirectCommandKHR)) {
         skip |= LogError(
             "VUID-VkCopyMemoryIndirectInfoKHR-copyAddressRange-10943", command_buffer, copy_range_loc.dot(Field::stride),
             "is %" PRIu64
@@ -4037,12 +4036,12 @@ bool CoreChecks::ValidateCopyMemoryToImageIndirectInfo(const vvl::CommandBuffer 
     const Location copy_range_loc = info_loc.dot(Field::copyAddressRange);
     skip |= ValidateStridedDeviceAddressRange(cb_state.VkHandle(), copy_range, copy_range_loc);
 
-    if (copy_range.address % 4 != 0) {
+    if (!IsPointerAligned(copy_range.address, 4)) {
         skip |= LogError("VUID-VkCopyMemoryToImageIndirectInfoKHR-copyAddressRange-10952", cb_state.Handle(),
-                         copy_range_loc.dot(Field::address), "is 0x%" PRIx64 " but it must be 4 byte aligned", copy_range.address);
+                         copy_range_loc.dot(Field::address), "(0x%" PRIx64 ") must be aligned to 4 bytes", copy_range.address);
     }
 
-    if (copy_range.stride % 4 != 0 || copy_range.stride < sizeof(VkCopyMemoryToImageIndirectCommandKHR)) {
+    if (!IsIntegerMultipleOf(copy_range.stride, 4) || copy_range.stride < sizeof(VkCopyMemoryToImageIndirectCommandKHR)) {
         skip |= LogError("VUID-VkCopyMemoryToImageIndirectInfoKHR-copyAddressRange-10953", cb_state.Handle(),
                          copy_range_loc.dot(Field::stride),
                          "is %" PRIu64

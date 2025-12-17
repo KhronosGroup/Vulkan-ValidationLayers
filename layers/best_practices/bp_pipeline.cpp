@@ -23,6 +23,7 @@
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "chassis/chassis_modification_state.h"
+#include "utils/math_utils.h"
 
 static inline bool FormatHasFullThroughputBlendingArm(VkFormat format) {
     switch (format) {
@@ -334,9 +335,7 @@ bool BestPractices::ValidateComputeShaderAmd(const spirv::Module& module_state, 
 
     const uint64_t thread_count = local_size.x * local_size.y * local_size.z;
 
-    const bool multiple_64 = ((thread_count % 64) == 0);
-
-    if (!multiple_64) {
+    if (!IsIntegerMultipleOf(thread_count, 64)) {
         skip |= LogPerformanceWarning("BestPractices-AMD-LocalWorkgroup-Multiple64", device, loc,
                                       "%s compute shader with work group dimensions (%s), workgroup size (%" PRIu64
                                       "), is not a multiple of 64. Make the workgroup size a multiple of 64 to obtain best "

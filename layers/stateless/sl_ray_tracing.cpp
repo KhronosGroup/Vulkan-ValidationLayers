@@ -1057,7 +1057,7 @@ bool Device::ValidateAccelerationStructureBuildGeometryInfoKHR(const Context &co
 
             skip |= ValidateAccelerationStructureGeometryAabbsDataKHR(context, aabbs, aabbs_loc);
 
-            if (aabbs.stride % 8) {
+            if (!IsIntegerMultipleOf(aabbs.stride, 8)) {
                 skip |= LogError("VUID-VkAccelerationStructureGeometryAabbsDataKHR-stride-03545", handle,
                                  aabbs_loc.dot(Field::stride), "(%" PRIu64 ") is not a multiple of 8.", aabbs.stride);
             }
