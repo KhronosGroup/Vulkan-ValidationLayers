@@ -181,12 +181,16 @@ bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, 
 bool BufferDeviceAddressPass::Instrument() {
     // Can safely loop function list as there is no injecting of new Functions until linking time
     for (const auto& function : module_.functions_) {
-        if (function->instrumentation_added_) continue;
+        if (function->instrumentation_added_) {
+            continue;
+        }
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
             BasicBlock& current_block = **block_it;
 
             cf_.Update(current_block);
-            if (debug_disable_loops_ && cf_.in_loop) continue;
+            if (debug_disable_loops_ && cf_.in_loop) {
+                continue;
+            }
 
             if (current_block.IsLoopHeader()) {
                 continue;  // Currently can't properly handle injecting CFG logic into a loop header block
@@ -201,9 +205,13 @@ bool BufferDeviceAddressPass::Instrument() {
                 block_skip_list_.clear();
                 for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                     InstructionMeta meta;
-                    if (!RequiresInstrumentation(*function, *(inst_it->get()), meta)) continue;
+                    if (!RequiresInstrumentation(*function, *(inst_it->get()), meta)) {
+                        continue;
+                    }
 
-                    if (!meta.pointer_inst->IsAccessChain()) continue;
+                    if (!meta.pointer_inst->IsAccessChain()) {
+                        continue;
+                    }
                     // OpAccesschain -> OpLoad/OpBitcast -> OpTypePointer (PSB) -> OpTypeStruct
                     std::vector<const Instruction*> access_chain_insts;
 
@@ -214,7 +222,9 @@ bool BufferDeviceAddressPass::Instrument() {
                         const uint32_t access_chain_base_id = next_inst->Operand(0);
                         next_inst = function->FindInstruction(access_chain_base_id);
                     }
-                    if (access_chain_insts.empty() || !next_inst) continue;
+                    if (access_chain_insts.empty() || !next_inst) {
+                        continue;
+                    }
 
                     const Type* load_type_pointer = type_manager_.FindTypeById(next_inst->TypeId());
                     if (load_type_pointer && load_type_pointer->spv_type_ == SpvType::kPointer &&
@@ -223,7 +233,9 @@ bool BufferDeviceAddressPass::Instrument() {
                         if (struct_type && struct_type->spv_type_ == SpvType::kStruct) {
                             const uint32_t struct_offset =
                                 FindOffsetInStruct(struct_type->Id(), nullptr, false, access_chain_insts);
-                            if (struct_offset == 0) continue;
+                            if (struct_offset == 0) {
+                                continue;
+                            }
                             uint32_t inst_position = meta.target_instruction->GetPositionOffset();
                             block_skip_list_.insert(inst_position);
 
@@ -243,9 +255,13 @@ bool BufferDeviceAddressPass::Instrument() {
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                 InstructionMeta meta;
                 // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
-                if (!RequiresInstrumentation(*function, *(inst_it->get()), meta)) continue;
+                if (!RequiresInstrumentation(*function, *(inst_it->get()), meta)) {
+                    continue;
+                }
 
-                if (IsMaxInstrumentationsCount()) continue;
+                if (IsMaxInstrumentationsCount()) {
+                    continue;
+                }
                 instrumentations_count_++;
 
                 if (!module_.settings_.safe_mode) {
