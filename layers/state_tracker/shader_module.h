@@ -650,6 +650,9 @@ struct Module {
         vvl::unordered_map<uint32_t, DecorationSet> decorations;
         DecorationSet empty_decoration;  // all zero values, allows use to return a reference and not a copy each time
 
+        // Some cases we can give better hints knowing the source shader language
+        spv::SourceLanguage source_language{spv::SourceLanguageUnknown};
+
         // Execution Modes are tied to a Function <id>, multiple EntryPoints can point to the same Funciton <id>
         // Keep a mapping so each EntryPoint can grab a reference to it
         vvl::unordered_map<uint32_t, ExecutionModeSet> execution_modes;

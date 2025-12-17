@@ -1210,10 +1210,18 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
             }
 
             case spv::OpLine:
-            case spv::OpSource: {
                 using_legacy_debug_info = true;
                 break;
-            }
+
+            case spv::OpSource:
+                // We might just have "OpSource GLSL 450", but we want to know if it is making use of the File/Source operands
+                if (insn.Length() > 3) {
+                    using_legacy_debug_info = true;
+                }
+                // It would be very cursed to have OpSource from multiple shader languages at once
+                source_language = (spv::SourceLanguage)insn.Word(1);
+                break;
+
             case spv::OpExtInstImport: {
                 if (strcmp(insn.GetAsString(2), "GLSL.std.450") == 0) {
                     extended.glsl_std450 = insn.ResultId();
