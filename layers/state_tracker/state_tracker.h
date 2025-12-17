@@ -883,6 +883,8 @@ class DeviceState : public vvl::base::Device {
     void PostCallRecordCreateTensorARM(VkDevice device, const VkTensorCreateInfoARM* pCreateInfo,
                                        const VkAllocationCallbacks* pAllocator, VkTensorARM* pTensor,
                                        const RecordObject& record_obj) override;
+    void PreCallRecordDestroyTensorARM(VkDevice device, VkTensorARM tensor, const VkAllocationCallbacks* pAllocator,
+                                       const RecordObject& record_obj) override;
     void PostCallRecordBindTensorMemoryARM(VkDevice device, uint32_t bindInfoCount, const VkBindTensorMemoryInfoARM* pBindInfos,
                                            const RecordObject& record_obj) override;
     virtual std::shared_ptr<vvl::TensorView> CreateTensorViewState(const std::shared_ptr<vvl::Tensor>& tensor,
@@ -890,6 +892,8 @@ class DeviceState : public vvl::base::Device {
                                                                    const VkTensorViewCreateInfoARM* pCreateInfo);
     void PostCallRecordCreateTensorViewARM(VkDevice device, const VkTensorViewCreateInfoARM* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkTensorViewARM* pView,
+                                           const RecordObject& record_obj) override;
+    void PreCallRecordDestroyTensorViewARM(VkDevice device, VkTensorViewARM tensorView, const VkAllocationCallbacks* pAllocator,
                                            const RecordObject& record_obj) override;
     virtual std::shared_ptr<vvl::Buffer> CreateBufferState(VkBuffer handle, const VkBufferCreateInfo* create_info);
     void PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,

@@ -64,7 +64,8 @@ static inline bool IsCommandDispatch(Func command) {
         command == Func::vkCmdDispatchGraphAMDX ||
         command == Func::vkCmdDispatchGraphIndirectAMDX ||
         command == Func::vkCmdDispatchGraphIndirectCountAMDX ||
-        command == Func::vkCmdDispatchTileQCOM;
+        command == Func::vkCmdDispatchTileQCOM ||
+        command == Func::vkCmdDispatchDataGraphARM;
 }
 
 static inline bool IsCommandTraceRays(Func command) {

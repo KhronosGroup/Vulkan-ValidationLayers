@@ -159,7 +159,7 @@ TEST_F(NegativeDataGraph, CreateDataGraphPipelinesUpdateAfterBindFeatureNotEnabl
 }
 
 TEST_F(NegativeDataGraph, CreateDataGraphPipelinesMutableDescriptor) {
-    TEST_DESCRIPTION("Try to create a DataGraphPipeline when a descriptor has type VK_DESCRIPTOR_TYPE_MUTABLE");
+    TEST_DESCRIPTION("Try to create a DataGraphPipeline with a MUTABLE descriptor (not allowed in datagraph)");
     InitBasicDataGraph();
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::mutableDescriptorType);
@@ -776,7 +776,7 @@ TEST_F(NegativeDataGraph, CmdDispatchPipelineNotBound) {
 }
 
 TEST_F(NegativeDataGraph, CmdDispatchDescriptorSetNotBound) {
-    TEST_DESCRIPTION("Try to dispatch a datagraph command when the required descriptor set is not bound");
+    TEST_DESCRIPTION("Try to dispatch a datagraph when the required descriptor set is not bound");
     InitBasicDataGraph();
     RETURN_IF_SKIP(Init());
 
@@ -840,9 +840,8 @@ TEST_F(NegativeDataGraph, CmdDispatchSessionNotBound) {
 
 TEST_F(NegativeDataGraph, CmdDispatchProtectedNoFaultUnsupportedUnprotectedCmdBufferProtectedTensor) {
     TEST_DESCRIPTION(
-        "Try dispatching a datagraph command with protected resources - bound pipeline tensors have "
-        "VK_TENSOR_CREATE_PROTECTED_BIT_ARM set - to an unprotected command buffer when protectedNoFault is "
-        "not supported");
+        "Try dispatching a datagraph with protected resources - bound pipeline tensors have VK_TENSOR_CREATE_PROTECTED_BIT_ARM set "
+        "- to an unprotected command buffer when protectedNoFault is not supported");
     InitBasicDataGraph();
     AddRequiredFeature(vkt::Feature::protectedMemory);
     RETURN_IF_SKIP(Init());
@@ -888,9 +887,8 @@ TEST_F(NegativeDataGraph, CmdDispatchProtectedNoFaultUnsupportedUnprotectedCmdBu
 
 TEST_F(NegativeDataGraph, CmdDispatchProtectedNoFaultUnsupportedProtectedCmdBufferUnprotectedTensor) {
     TEST_DESCRIPTION(
-        "Try dispatching a datagraph command with unprotected resoures to a protected command buffer - command buffer created "
-        "with VK_COMMAND_POOL_CREATE_PROTECTED_BIT set -  when protectedNoFault is not "
-        "supported");
+        "Try dispatching a datagraph with unprotected resources to a protected command buffer - command buffer created with "
+        "VK_COMMAND_POOL_CREATE_PROTECTED_BIT set -  when protectedNoFault is not supported");
     InitBasicDataGraph();
     AddRequiredFeature(vkt::Feature::protectedMemory);
     RETURN_IF_SKIP(InitFramework());
@@ -931,6 +929,84 @@ TEST_F(NegativeDataGraph, CmdDispatchProtectedNoFaultUnsupportedProtectedCmdBuff
     vk::CmdDispatchDataGraphARM(m_command_buffer, session, nullptr);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
+}
+
+TEST_F(NegativeDataGraph, CmdDispatchInvalidDescriptorNoUpdate) {
+    TEST_DESCRIPTION("Try dispatching a datagraph but the descriptor has not been updated");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    vkt::dg::DataGraphPipelineHelper pipeline(*this);
+    pipeline.CreateDataGraphPipeline();
+
+    VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
+    session_ci.dataGraphPipeline = pipeline.Handle();
+    vkt::DataGraphPipelineSession session(*m_device, session_ci);
+    session.GetMemoryReqs();
+    CheckSessionMemory(session);
+
+    auto &bind_point_reqs = session.BindPointReqs();
+    std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
+    session.AllocSessionMem(device_mem);
+    auto session_bind_infos = InitSessionBindInfo(session, device_mem);
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+
+    // update only 1 of 2 descriptors
+    pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
+    pipeline.descriptor_set_->UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.pipeline_layout_.handle(), 0, 1,
+                              &pipeline.descriptor_set_.get()->set_, 0, nullptr);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-None-09935");
+    vk::CmdDispatchDataGraphARM(m_command_buffer, session.handle(), nullptr);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDataGraph, CmdDispatchInvalidDescriptorDeletedObject) {
+    TEST_DESCRIPTION("Try dispatching a datagraph but the tensor or the view are destroyed before dispatch");
+    InitBasicDataGraph();
+    RETURN_IF_SKIP(Init());
+
+    // 2 runs: 1st time delete the tensor, 2nd the view, both make the descriptor invalid
+    for (uint32_t i = 0; i < 2; i++) {
+        vkt::dg::DataGraphPipelineHelper pipeline(*this);
+        pipeline.CreateDataGraphPipeline();
+
+        VkDataGraphPipelineSessionCreateInfoARM session_ci = vku::InitStructHelper();
+        session_ci.dataGraphPipeline = pipeline.Handle();
+        vkt::DataGraphPipelineSession session(*m_device, session_ci);
+        session.GetMemoryReqs();
+        CheckSessionMemory(session);
+
+        auto &bind_point_reqs = session.BindPointReqs();
+        std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
+        session.AllocSessionMem(device_mem);
+        auto session_bind_infos = InitSessionBindInfo(session, device_mem);
+        vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+
+        pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
+        pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
+        pipeline.descriptor_set_->UpdateDescriptorSets();
+
+        // deleting either of these 2 invalidates the descriptor
+        if (i == 0) {
+            pipeline.tensors_[0]->Destroy();
+        } else {
+            pipeline.tensor_views_[0]->Destroy();
+        }
+
+        m_command_buffer.Begin();
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.Handle());
+        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.pipeline_layout_.handle(), 0, 1,
+                                  &pipeline.descriptor_set_.get()->set_, 0, nullptr);
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-None-09935");
+        vk::CmdDispatchDataGraphARM(m_command_buffer, session.handle(), nullptr);
+        m_errorMonitor->VerifyFound();
+        m_command_buffer.End();
+    }
 }
 
 TEST_F(NegativeDataGraph, ShaderModuleCreateInfoInvalidConstantID) {

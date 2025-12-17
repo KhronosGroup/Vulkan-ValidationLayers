@@ -1241,8 +1241,28 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
 bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVariable &resource_variable, uint32_t index,
                                              VkDescriptorType descriptor_type, const vvl::TensorDescriptor &descriptor) const {
     bool skip = false;
+
     const vvl::TensorView *tensor_view_state = descriptor.GetTensorViewState();
-    const auto tensor_state = tensor_view_state->tensor_state;
+    ASSERT_AND_RETURN_SKIP(tensor_view_state);
+    if (tensor_view_state->Destroyed()) {
+        const LogObjectList objlist(this->objlist, descriptor_set.Handle());
+        skip |= LogError(vuids->descriptor_buffer_bit_set_08114, objlist, loc.Get(),
+                         "the %s is using tensor view %s that is invalid or has been destroyed.%s",
+                         DescribeDescriptor(resource_variable, index, VK_DESCRIPTOR_TYPE_TENSOR_ARM).c_str(),
+                         FormatHandle(tensor_view_state->Handle()).c_str(), DescribeInstruction().c_str());
+        return skip;
+    }
+    const vvl::Tensor *tensor_state = descriptor.GetTensorState();
+    ASSERT_AND_RETURN_SKIP(tensor_state);
+    if (tensor_state->Destroyed()) {
+        const LogObjectList objlist(this->objlist, descriptor_set.Handle());
+        skip |= LogError(vuids->descriptor_buffer_bit_set_08114, objlist, loc.Get(),
+                         "the %s is using tensor %s that is invalid or has been destroyed.%s",
+                         DescribeDescriptor(resource_variable, index, VK_DESCRIPTOR_TYPE_TENSOR_ARM).c_str(),
+                         FormatHandle(tensor_state->Handle()).c_str(), DescribeInstruction().c_str());
+        return skip;
+    }
+
     if (tensor_state->unprotected) {
         skip |= dev_proxy.ValidateUnprotectedTensor(cb_state, *tensor_state, loc.Get(), vuids->protected_command_buffer_02712);
     } else {
