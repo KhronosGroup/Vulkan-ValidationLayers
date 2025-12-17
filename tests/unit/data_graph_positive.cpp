@@ -31,7 +31,7 @@ const VkTensorDescriptionARM DataGraphTest::defaultConstantTensorDesc{DefaultCon
 
 void DataGraphTest::CheckSessionMemory(const vkt::DataGraphPipelineSession& session) {
     const auto &mem_reqs = session.MemReqs();
-    if (mem_reqs.size() == 0) {
+    if (mem_reqs.empty()) {
         GTEST_FAIL() << "No bind points, " << IncorrectSpirvMessage;
     }
     for (uint32_t i = 0; i < mem_reqs.size(); i++) {

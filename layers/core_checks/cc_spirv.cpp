@@ -2743,7 +2743,7 @@ bool CoreChecks::ValidateTaskPayload(const spirv::Module *task_module, const spi
 
 bool CoreChecks::ValidateDataGraphPipelineShaderModuleSpirv(VkDevice device, const VkDataGraphPipelineCreateInfoARM& create_info, const Location& create_info_loc, const VkDataGraphPipelineShaderModuleCreateInfoARM& dg_shader_ci, const vvl::Pipeline& pipeline) const {
     bool skip = false;
-    if (pipeline.stage_states.size() == 0) {
+    if (pipeline.stage_states.empty()) {
         // no ShaderModule defined
         return skip;
     }
@@ -2792,7 +2792,7 @@ bool CoreChecks::ValidateDataGraphPipelineShaderModuleSpirv(VkDevice device, con
     }
 
     std::vector<std::pair<uint32_t, uint32_t>> tensor_bindings;
-    for (const auto &variable : entry_point->resource_interface_variables) {
+    for (const spirv::ResourceInterfaceVariable& variable : entry_point->resource_interface_variables) {
         vvl::unordered_set<uint32_t> descriptor_type_set;
         TypeToDescriptorTypeSet(module_spirv, variable.type_id, variable.data_type_id, descriptor_type_set);
         skip |= ValidateShaderInterfaceVariable(module_spirv, variable, descriptor_type_set, module_loc);
@@ -2802,8 +2802,7 @@ bool CoreChecks::ValidateDataGraphPipelineShaderModuleSpirv(VkDevice device, con
             tensor_bindings.push_back({variable.decorations.set, variable.decorations.binding});
 
             // the input/output tensors must have rank and shape, i.e. exactly 5 words
-            auto nWords = variable.base_type.Length();
-            if (nWords < 5) {
+            if (variable.base_type.Length() < 5) {
                 skip |= LogError("VUID-RuntimeSpirv-pNext-09919", module_spirv.handle(), module_loc,
                                  "'%s' defines a tensor without a shape.", variable.base_type.Describe().c_str());
             }
@@ -2812,17 +2811,15 @@ bool CoreChecks::ValidateDataGraphPipelineShaderModuleSpirv(VkDevice device, con
 
     std::vector<bool> pConstant_matched(dg_shader_ci.constantCount, false);
     for (auto constant_instr : entry_point->datagraph_constants) {
-        auto constant_type_instr = *module_spirv.FindDef(constant_instr->TypeId());
+        const spirv::Instruction& tensor_type_instr = *module_spirv.FindDef(constant_instr->TypeId());
 
         // the following checks are only for tensors. Any type other than tensor will throw an error executing spirv-val, which results in VU 8737 in the VVL
-        if (!constant_type_instr.IsTensor()) {
+        if (!tensor_type_instr.IsTensor()) {
             continue;
         }
 
-        auto& tensor_type_instr = constant_type_instr;
         // if the constant type is a tensor, it MUST have a shape, i.e. exactly 5 words long
-        auto nWords = tensor_type_instr.Length();
-        if (nWords < 5) {
+        if (tensor_type_instr.Length() < 5) {
             skip |= LogError("VUID-RuntimeSpirv-pNext-09920", module_spirv.handle(), module_loc,
                              "the type of '%s' is a tensor without a shape: '%s'.", constant_instr->Describe().c_str(),
                              tensor_type_instr.Describe().c_str());
@@ -2830,24 +2827,24 @@ bool CoreChecks::ValidateDataGraphPipelineShaderModuleSpirv(VkDevice device, con
 
         // MUST match one element of pConstants in the shader module create info
         const uint32_t graph_constant_id = constant_instr->Word(3);
-        int32_t vk_index = -1;
+        uint32_t vk_index = spirv::kInvalidValue;
         for (uint32_t j = 0; j < dg_shader_ci.constantCount; j++) {
-            auto &vk_constant = dg_shader_ci.pConstants[j];
+            const VkDataGraphPipelineConstantARM& vk_constant = dg_shader_ci.pConstants[j];
             if (vk_constant.id == graph_constant_id) {
                 vk_index = j;
                 break;
             }
         }
-        if (vk_index < 0) {
+        if (vk_index == spirv::kInvalidValue) {
             skip |= LogError("VUID-RuntimeSpirv-pNext-09921", device, dg_shader_ci_loc.dot(Field::pConstants),
                              "none of the elements has the same id (%" PRIu32 ") of the spirv definition (%s)", graph_constant_id,
                              constant_instr->Describe().c_str());
         } else {
             pConstant_matched[vk_index] = true;
-            auto &vk_constant = dg_shader_ci.pConstants[vk_index];
+            const VkDataGraphPipelineConstantARM& vk_constant = dg_shader_ci.pConstants[vk_index];
             const Location vk_constant_loc = dg_shader_ci_loc.dot(Field::pConstants, vk_index);
             if (auto *tensor_desc = vku::FindStructInPNextChain<VkTensorDescriptionARM>(vk_constant.pNext)) {
-                auto spirv_rank = module_spirv.GetConstantValueById(tensor_type_instr.Word(3));
+                const uint32_t spirv_rank = module_spirv.GetConstantValueById(tensor_type_instr.Word(3));
                 if (tensor_desc->dimensionCount != spirv_rank) {
                     skip |= LogError("VUID-RuntimeSpirv-pNext-09921", device,
                                      vk_constant_loc.pNext(Struct::VkTensorDescriptionARM).dot(Field::dimensionCount),
@@ -2855,9 +2852,9 @@ bool CoreChecks::ValidateDataGraphPipelineShaderModuleSpirv(VkDevice device, con
                                      tensor_desc->dimensionCount, spirv_rank, tensor_type_instr.Describe().c_str());
                 }
 
-                auto spirv_element_type_instr = module_spirv.FindDef(tensor_type_instr.Word(2));
-                auto spirv_numeric_type = module_spirv.GetNumericType(spirv_element_type_instr->Word(1));
-                auto spirv_vk_format = spirv::GetTensorFormat(spirv_numeric_type, spirv_element_type_instr->Word(2));
+                const spirv::Instruction* spirv_element_type_instr = module_spirv.FindDef(tensor_type_instr.Word(2));
+                const spirv::NumericType spirv_numeric_type = module_spirv.GetNumericType(spirv_element_type_instr->Word(1));
+                const VkFormat spirv_vk_format = spirv::GetTensorFormat(spirv_numeric_type, spirv_element_type_instr->Word(2));
                 if (tensor_desc->format != spirv_vk_format) {
                     skip |= LogError("VUID-RuntimeSpirv-pNext-09921", device,
                                      vk_constant_loc.pNext(Struct::VkTensorDescriptionARM).dot(Field::format),
@@ -2868,10 +2865,10 @@ bool CoreChecks::ValidateDataGraphPipelineShaderModuleSpirv(VkDevice device, con
 
                 // nothing to check here if the tensor has no shape, and we have already failed VU 9920 anyway.
                 if (tensor_type_instr.Length() > 4) {
-                    auto shape_instr = module_spirv.FindDef(tensor_type_instr.Word(4));
-                    auto max_dim = std::min(tensor_desc->dimensionCount, spirv_rank);
+                    const spirv::Instruction* shape_instr = module_spirv.FindDef(tensor_type_instr.Word(4));
+                    const uint32_t max_dim = std::min(tensor_desc->dimensionCount, spirv_rank);
                     for (uint32_t i = 0; i < max_dim; i++) {
-                        auto spirv_dim_i = module_spirv.GetConstantValueById(shape_instr->Word(3 + i));
+                        const uint32_t spirv_dim_i = module_spirv.GetConstantValueById(shape_instr->Word(3 + i));
                         if (tensor_desc->pDimensions[i] != spirv_dim_i) {
                             skip |= LogError("VUID-RuntimeSpirv-pNext-09921", device,
                                              vk_constant_loc.pNext(Struct::VkTensorDescriptionARM).dot(Field::pDimensions, i),
@@ -2890,7 +2887,7 @@ bool CoreChecks::ValidateDataGraphPipelineShaderModuleSpirv(VkDevice device, con
 
     // now check the pConstants elements
     for (uint32_t i = 0; i < dg_shader_ci.constantCount; i++) {
-        auto &constant = dg_shader_ci.pConstants[i];
+        const VkDataGraphPipelineConstantARM& constant = dg_shader_ci.pConstants[i];
         const Location constant_loc = dg_shader_ci_loc.dot(Field::pConstants, i);
         if (!pConstant_matched[i]) {
             skip |= LogError("VUID-VkDataGraphPipelineShaderModuleCreateInfoARM-id-09774", device, constant_loc.dot(Field::id),
@@ -2923,8 +2920,8 @@ bool CoreChecks::ValidateDataGraphPipelineShaderModuleSpirv(VkDevice device, con
     }
 
     for (uint32_t j = 0; j < create_info.resourceInfoCount; j++) {
-        auto resource = create_info.pResourceInfos[j];
-        auto resource_loc = create_info_loc.dot(Field::pResourceInfos, j);
+        const VkDataGraphPipelineResourceInfoARM& resource = create_info.pResourceInfos[j];
+        const Location resource_loc = create_info_loc.dot(Field::pResourceInfos, j);
         std::pair<uint32_t, uint32_t> resource_binding = {resource.descriptorSet, resource.binding};
         auto tensor_binding = std::find(tensor_bindings.begin(), tensor_bindings.end(), resource_binding);
         if (tensor_binding != tensor_bindings.end()) {

@@ -598,7 +598,8 @@ struct EntryPoint {
                                                                           const ParsedInfo &parsed);
     static std::vector<ResourceInterfaceVariable> GetResourceInterfaceVariables(const Module &module_state, EntryPoint &entrypoint,
                                                                                 const ParsedInfo &parsed);
-    static std::vector<const Instruction *> GetDataGraphConstants(const Module& module_state, EntryPoint& entrypoint);
+    static std::vector<const Instruction*> GetDataGraphConstants(const Module& module_state, EntryPoint& entrypoint,
+                                                                 const ParsedInfo& parsed);
 
     static bool IsBuiltInWritten(spv::BuiltIn built_in, const Module &module_state, const StageInterfaceVariable &variable,
                                  const ParsedInfo &parsed);
