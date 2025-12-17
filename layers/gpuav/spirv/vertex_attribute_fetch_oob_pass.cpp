@@ -39,13 +39,19 @@ uint32_t VertexAttributeFetchOobPass::GetLinkFunctionId() { return GetLinkFuncti
 bool VertexAttributeFetchOobPass::Instrument() {
     for (const auto& entry_point_inst : module_.entry_points_) {
         const uint32_t execution_model = entry_point_inst->Word(1);
-        if (execution_model != spv::ExecutionModelVertex) continue;
+        if (execution_model != spv::ExecutionModelVertex) {
+            continue;
+        }
 
         const uint32_t vertex_shader_entry_point_id = entry_point_inst->Word(2);
         for (const auto& function : module_.functions_) {
-            if (function->instrumentation_added_) continue;
+            if (function->instrumentation_added_) {
+                continue;
+            }
             const uint32_t function_id = function->GetDef().ResultId();
-            if (vertex_shader_entry_point_id != function_id) continue;
+            if (vertex_shader_entry_point_id != function_id) {
+                continue;
+            }
 
             BasicBlock& first_block = function->GetFirstBlock();
             InstructionIt first_injectable_instruction = first_block.GetFirstInjectableInstrution();

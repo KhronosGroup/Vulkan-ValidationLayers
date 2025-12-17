@@ -93,9 +93,13 @@ bool LogErrorPass::IsShaderExiting(const Instruction& inst) const {
 
 bool LogErrorPass::Instrument() {
     for (const auto& function : module_.functions_) {
-        if (function->instrumentation_added_) continue;
+        if (function->instrumentation_added_) {
+            continue;
+        }
         // Only need to clear when we know we are starting a new entry into the shader
-        if (!function->is_entry_point_) continue;
+        if (!function->is_entry_point_) {
+            continue;
+        }
 
         // This makes (a reasonably safe) assumption one entrypoint is not calling into another entrypoint after it has caused an
         // error. If we really care, we could build CFA to detect that, but likely not worth the effort currently.

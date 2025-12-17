@@ -49,7 +49,7 @@ void RegisterMeshShadingValidation(Validator &gpuav, CommandBufferSubState &cb) 
                             const uint32_t output_primitive = encoded_output & kMeshShadingOutputPrimitivesMask;
 
                             // We normally don't do "logic" to determine the VU, but in this case, its valuable to print both value,
-                            // so we already have all the information and easier to select the VUID here then via the shader
+                            // so we already have all the information and easier to select the VUID here than via the shader
                             // interface
                             out_vuid_msg = (vertex_count > output_vertices) ? "VUID-RuntimeSpirv-MeshEXT-07332"
                                                                             : "VUID-RuntimeSpirv-MeshEXT-07333";

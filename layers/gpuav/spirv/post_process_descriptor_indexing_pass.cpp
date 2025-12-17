@@ -172,7 +172,9 @@ bool PostProcessDescriptorIndexingPass::Instrument() {
     }
 
     for (const auto& function : module_.functions_) {
-        if (function->instrumentation_added_) continue;
+        if (function->instrumentation_added_) {
+            continue;
+        }
 
         FunctionDuplicateTracker function_duplicate_tracker;
 
@@ -180,7 +182,9 @@ bool PostProcessDescriptorIndexingPass::Instrument() {
             BasicBlock& current_block = **block_it;
 
             cf_.Update(current_block);
-            if (debug_disable_loops_ && cf_.in_loop) continue;
+            if (debug_disable_loops_ && cf_.in_loop) {
+                continue;
+            }
 
             auto& block_instructions = current_block.instructions_;
 
@@ -205,7 +209,9 @@ bool PostProcessDescriptorIndexingPass::Instrument() {
                     continue;  // duplicate detected
                 }
 
-                if (IsMaxInstrumentationsCount()) continue;
+                if (IsMaxInstrumentationsCount()) {
+                    continue;
+                }
                 instrumentations_count_++;
 
                 CreateFunctionCall(current_block, &inst_it, meta);

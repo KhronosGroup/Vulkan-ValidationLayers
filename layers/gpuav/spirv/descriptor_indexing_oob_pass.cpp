@@ -388,7 +388,9 @@ bool DescriptorIndexingOOBPass::Instrument() {
 
     // Can safely loop function list as there is no injecting of new Functions until linking time
     for (const auto& function : module_.functions_) {
-        if (function->instrumentation_added_) continue;
+        if (function->instrumentation_added_) {
+            continue;
+        }
 
         FunctionDuplicateTracker function_duplicate_tracker;
 
@@ -396,7 +398,9 @@ bool DescriptorIndexingOOBPass::Instrument() {
             BasicBlock& current_block = **block_it;
 
             cf_.Update(current_block);
-            if (debug_disable_loops_ && cf_.in_loop) continue;
+            if (debug_disable_loops_ && cf_.in_loop) {
+                continue;
+            }
 
             if (current_block.IsLoopHeader()) {
                 continue;  // Currently can't properly handle injecting CFG logic into a loop header block
@@ -453,7 +457,9 @@ bool DescriptorIndexingOOBPass::Instrument() {
                     }
                 }
 
-                if (IsMaxInstrumentationsCount()) continue;
+                if (IsMaxInstrumentationsCount()) {
+                    continue;
+                }
                 instrumentations_count_++;
 
                 if (!module_.settings_.safe_mode) {
