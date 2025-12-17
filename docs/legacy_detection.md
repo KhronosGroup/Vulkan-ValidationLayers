@@ -29,7 +29,7 @@ When the `Legacy Detection` setting is enabled, it will report **warnings** when
 
 The `Legacy Detection` is just a [normal layer setting](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/docs/settings.md) that can be turned on.
 
-The main 3 ways to turn on Sync
+The main 3 ways to turn on `Legacy Detection`
 
 1. We **highly** suggest people to use [VkConfig](https://www.lunarg.com/introducing-the-new-vulkan-configurator-vkconfig/). There is a preset as well to only turn on `Legacy Detection`.
 
