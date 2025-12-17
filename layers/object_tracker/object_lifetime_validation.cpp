@@ -451,6 +451,9 @@ bool Device::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool is_p
             }
             break;
         }
+
+        case VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM:
+        case VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM:
         case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT: {
             // Input attachments can never be null
             if (desc->pImageInfo) {
@@ -483,6 +486,7 @@ bool Device::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool is_p
             break;
         }
 
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: {
             if (const auto *acc_info = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureKHR>(desc->pNext)) {
                 for (uint32_t i = 0; i < desc->descriptorCount; ++i) {
@@ -522,15 +526,13 @@ bool Device::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool is_p
             break;
         }
 
+        // VU being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7933
+        case VK_DESCRIPTOR_TYPE_TENSOR_ARM:
         // VkWriteDescriptorSetPartitionedAccelerationStructureNV contains no VkObjects to validate
         case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
-
-        // TODO - These need to be checked as well
+        // Inline has no objects, so nothing to validate
         case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
-        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
-        case VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM:
-        case VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM:
-        case VK_DESCRIPTOR_TYPE_TENSOR_ARM:
+        // Not possible to have MUTABLE because this is where the real type is set
         case VK_DESCRIPTOR_TYPE_MUTABLE_EXT:
         case VK_DESCRIPTOR_TYPE_MAX_ENUM:
             break;

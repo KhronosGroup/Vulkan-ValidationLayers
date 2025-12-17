@@ -63,7 +63,11 @@ std::string DescriptorValidator::DescribeDescriptor(const spirv::ResourceInterfa
             ss << "combined image sampler ";
             break;
         case VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM:
+            ss << "sampled weight image ";
+            break;
         case VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM:
+            ss << "block match image ";
+            break;
         case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
             ss << "sampled image ";
             break;
