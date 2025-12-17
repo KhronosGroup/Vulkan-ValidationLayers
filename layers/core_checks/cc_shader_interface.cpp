@@ -17,6 +17,7 @@
  * limitations under the License.
  */
 
+#include <spirv/unified1/spirv.hpp>
 #include <cassert>
 #include <sstream>
 #include <string>
@@ -372,11 +373,19 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
                 if (producer_stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
                     if (input_var->is_per_primitive_ext != output_var->is_per_primitive_ext) {
                         const LogObjectList objlist(producer.handle(), consumer.handle());
-                        skip |= LogError("VUID-RuntimeSpirv-OpVariable-08746", objlist, create_info_loc,
-                                         "(SPIR-V Interface) at Location %" PRIu32 " Component %" PRIu32
-                                         " in the Mesh stage %s decorated with PerPrimitiveEXT while the Fragment stage %s",
-                                         location, component, output_var->is_per_primitive_ext ? "is" : "is not",
-                                         input_var->is_per_primitive_ext ? "is" : "is not");
+                        std::stringstream ss;
+                        ss << "(SPIR-V Interface) at Location " << location << " Component " << component
+                           << " in the Mesh stage is " << (output_var->is_per_primitive_ext ? "" : "not")
+                           << " decorated with PerPrimitiveEXT while the Fragment stage is "
+                           << (input_var->is_per_primitive_ext ? "" : "not") << ".";
+                        if (consumer.static_data_.source_language == spv::SourceLanguageHLSL) {
+                            ss << "\nThis currently is a known limitation in HLSL, but has a workaroud, see "
+                                  "https://github.com/microsoft/DirectXShaderCompiler/issues/6862";
+                        } else if (consumer.static_data_.source_language == spv::SourceLanguageSlang) {
+                            ss << "\nThis currently is a known limitation in Slang, see "
+                                  "https://github.com/shader-slang/slang/issues/7019";
+                        }
+                        skip |= LogError("VUID-RuntimeSpirv-OpVariable-08746", objlist, create_info_loc, "%s", ss.str().c_str());
                         break;  // Only need to report for the first component found
                     }
                 }
