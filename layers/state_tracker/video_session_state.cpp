@@ -1250,7 +1250,7 @@ std::string string_VideoProfileDesc(const vvl::VideoProfileDesc &profile) {
 std::string string_SupportedVideoProfiles(const SupportedVideoProfiles &profiles) {
     std::stringstream ss;
 
-    if (profiles.size() != 0) {
+    if (!profiles.empty()) {
         for (const auto &profile : profiles) {
             ss << "\t" << string_VideoProfileDesc(*profile) << "\n";
         }

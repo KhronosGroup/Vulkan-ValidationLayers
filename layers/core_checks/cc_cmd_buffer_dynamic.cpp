@@ -784,7 +784,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipelineViewportScissor(const LastBound
     }
 
     // If inheriting viewports, verify that not using more than inherited.
-    if (cb_sub_state.viewport.inherited_depths.size() != 0 && dyn_viewport) {
+    if (!cb_sub_state.viewport.inherited_depths.empty() && dyn_viewport) {
         const uint32_t viewport_count = viewport_state->viewportCount;
         const uint32_t max_inherited = uint32_t(cb_sub_state.viewport.inherited_depths.size());
         if (viewport_count > max_inherited) {
@@ -1478,7 +1478,7 @@ bool CoreChecks::ValidateTraceRaysDynamicStateSetStatus(const LastBound& last_bo
 bool CoreChecks::ForbidInheritedViewportScissor(const vvl::CommandBuffer& cb_state, const char* vuid, const Location& loc) const {
     bool skip = false;
     auto& cb_sub_state = core::SubState(cb_state);
-    if (cb_sub_state.viewport.inherited_depths.size() != 0) {
+    if (!cb_sub_state.viewport.inherited_depths.empty()) {
         skip |= LogError(vuid, cb_state.Handle(), loc,
                          "commandBuffer must not have VkCommandBufferInheritanceViewportScissorInfoNV::viewportScissor2D enabled.");
     }

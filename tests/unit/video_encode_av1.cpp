@@ -1279,7 +1279,7 @@ TEST_F(NegativeVideoEncodeAV1, EncodeCapsMinMaxTileSize) {
     RETURN_IF_SKIP(Init());
 
     auto configs = GetConfigsEncodeAV1();
-    if (configs.size() == 0) {
+    if (configs.empty()) {
         GTEST_SKIP() << "Test requires AV1 encode support";
     }
 

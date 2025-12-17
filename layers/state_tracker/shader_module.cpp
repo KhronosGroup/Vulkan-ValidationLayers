@@ -536,6 +536,8 @@ struct ParsedInfo {
     DebugNameMap debug_name_map;
 
     std::vector<const Instruction*> debug_global_variables;
+
+    bool has_graph_constant_arm = false;  // detects if any are found OpGraphConstantARM
 };
 
 // Built-in can be both on the OpVariable or a inside a OpTypeStruct for Block built-in.
@@ -703,12 +705,16 @@ std::vector<ResourceInterfaceVariable> EntryPoint::GetResourceInterfaceVariables
     return variables;
 }
 
-std::vector<const Instruction *> EntryPoint::GetDataGraphConstants(const Module& module_state, EntryPoint& entrypoint) {
+std::vector<const Instruction*> EntryPoint::GetDataGraphConstants(const Module& module_state, EntryPoint& entrypoint,
+                                                                  const ParsedInfo& parsed) {
     std::vector<const Instruction *> constants;
-    for (const auto& accessible_id : entrypoint.accessible_ids) {
-        const Instruction& insn = *module_state.FindDef(accessible_id);
-        if (insn.Opcode() == spv::OpGraphConstantARM) {
-            constants.push_back(&insn);
+    // Check to skip to not spend time if not using VK_ARM_data_graph
+    if (parsed.has_graph_constant_arm) {
+        for (const auto& accessible_id : entrypoint.accessible_ids) {
+            const Instruction& insn = *module_state.FindDef(accessible_id);
+            if (insn.Opcode() == spv::OpGraphConstantARM) {
+                constants.push_back(&insn);
+            }
         }
     }
     return constants;
@@ -847,7 +853,7 @@ EntryPoint::EntryPoint(const Module& module_state, const Instruction& entrypoint
       accessible_ids(GetAccessibleIds(module_state, *this)),
       resource_interface_variables(GetResourceInterfaceVariables(module_state, *this, parsed)),
       stage_interface_variables(GetStageInterfaceVariables(module_state, *this, parsed)),
-      datagraph_constants(GetDataGraphConstants(module_state, *this)) {
+      datagraph_constants(GetDataGraphConstants(module_state, *this, parsed)) {
     // Tried to just create this map in GetResourceInterfaceVariables() but ran into errors because the function is static
     for (const auto& variable : resource_interface_variables) {
         resource_interface_variable_map[variable.id] = &variable;
@@ -1123,6 +1129,10 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
                 load_pointer_ids.emplace_back(insn.Word(3));  // object id or AccessChain id
                 break;
             }
+
+            case spv::OpGraphConstantARM:
+                parsed.has_graph_constant_arm = true;
+                break;
 
             case spv::OpAccessChain:
             case spv::OpInBoundsAccessChain:
