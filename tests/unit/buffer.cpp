@@ -620,7 +620,7 @@ TEST_F(NegativeBuffer, BufferUsageFlagsUsage) {
     buffer_ci.usage = 0;
     CreateBufferTest(buffer_ci, "VUID-VkBufferCreateInfo-None-09500");
 
-    buffer_ci.usage = 0xBAD0000;
+    buffer_ci.usage = 0x3AD0000;
     CreateBufferTest(buffer_ci, "VUID-VkBufferCreateInfo-None-09499");
 }
 

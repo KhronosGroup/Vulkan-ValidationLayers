@@ -274,6 +274,6 @@ TEST_F(PositiveBuffer, BufferUsageFlags2Usage) {
     buffer_ci.usage = 0;
     vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
 
-    buffer_ci.usage = 0xBAD0000;
+    buffer_ci.usage = 0x3AD0000;
     vkt::Buffer buffer2(*m_device, buffer_ci, vkt::no_mem);
 }
