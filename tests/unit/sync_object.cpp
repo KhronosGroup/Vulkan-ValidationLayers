@@ -2296,8 +2296,8 @@ TEST_F(NegativeSyncObject, Sync2LayoutFeature) {
 
     RETURN_IF_SKIP(Init());
 
-    VkImageCreateInfo info =
-        vkt::Image::ImageCreateInfo2D(1, 1, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    VkImageCreateInfo info = vkt::Image::ImageCreateInfo2D(1, 1, 1, 1, VK_FORMAT_B8G8R8A8_UNORM,
+                                                           VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::Image image(*m_device, info, vkt::set_layout);
 
     m_command_buffer.Begin();

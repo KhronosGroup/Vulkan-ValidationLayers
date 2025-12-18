@@ -4923,7 +4923,8 @@ TEST_F(NegativeSyncVal, QSOBarrierHazard) {
 
     vkt::Semaphore semaphore(*m_device);
 
-    VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    VkImageUsageFlags usage =
+        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, format, usage);
 

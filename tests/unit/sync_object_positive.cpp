@@ -2054,7 +2054,7 @@ TEST_F(PositiveSyncObject, ImageOwnershipTransferNormalizeSubresourceRange) {
     vkt::CommandBuffer release_cb(*m_device, release_pool);
     vkt::CommandBuffer acquire_cb(*m_device, m_command_pool);
 
-    const VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    const VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     VkImageCreateInfo image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, usage);
     image_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     vkt::Image image(*m_device, image_ci);
