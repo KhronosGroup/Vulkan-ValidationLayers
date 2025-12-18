@@ -526,8 +526,19 @@ bool Device::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool is_p
             break;
         }
 
-        // VU being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7933
-        case VK_DESCRIPTOR_TYPE_TENSOR_ARM:
+        case VK_DESCRIPTOR_TYPE_TENSOR_ARM: {
+            if (const auto *tensor_info = vku::FindStructInPNextChain<VkWriteDescriptorSetTensorARM>(desc->pNext)) {
+                for (uint32_t i = 0; i < desc->descriptorCount; ++i) {
+                    // VU being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7933
+                    skip |= ValidateObject(tensor_info->pTensorViews[i], kVulkanObjectTypeTensorViewARM, true,
+                                           "VUID-VkWriteDescriptorSetTensorARM-pTensorViews-parameter",
+                                           "UNASSIGNED-vkUpdateDescriptorSets-pDescriptorWrites-pTensorViews",
+                                           loc.pNext(Struct::VkWriteDescriptorSetTensorARM, Field::pTensorViews, i));
+                }
+            }
+            break;
+        }
+
         // VkWriteDescriptorSetPartitionedAccelerationStructureNV contains no VkObjects to validate
         case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
         // Inline has no objects, so nothing to validate

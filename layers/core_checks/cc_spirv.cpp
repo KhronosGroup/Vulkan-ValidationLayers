@@ -2911,7 +2911,7 @@ bool CoreChecks::ValidateDataGraphPipelineShaderModuleSpirv(VkDevice device, con
                 }
             } else {
                 // NOTE: there is an overlap in VUs: a missing VkTensorDescriptionARM has already triggered 9921 above
-                skip |= LogError("VUID-VkDataGraphPipelineConstantARM-id-09850", device, constant_loc,
+                skip |= LogError("VUID-VkDataGraphPipelineConstantARM-id-09850", device, constant_loc.dot(Field::id),
                                  "(%" PRIu32
                                  ") is a graph constant of tensor type, but there is no VkTensorDescriptionARM in the pNext chain",
                                  constant.id);
