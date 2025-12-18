@@ -992,6 +992,42 @@ TEST_F(NegativeWsi, SwapchainUsageNonShared) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeWsi, SwapchainImageUsageFromProperties) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/4586");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    VkSurfaceCapabilitiesKHR capabilities;
+    vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(Gpu(), m_surface.Handle(), &capabilities);
+
+    if ((capabilities.supportedUsageFlags & VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT) == 0) {
+        GTEST_SKIP_("Need to support VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT");
+    }
+
+    SurfaceInformation info = GetSwapchainInfo(m_surface.Handle());
+
+    VkSwapchainCreateInfoKHR swapchain_create_info = vku::InitStructHelper();
+    swapchain_create_info.surface = m_surface.Handle();
+    swapchain_create_info.minImageCount = info.surface_capabilities.minImageCount;
+    swapchain_create_info.imageFormat = info.surface_formats[0].format;
+    swapchain_create_info.imageColorSpace = info.surface_formats[0].colorSpace;
+    swapchain_create_info.imageExtent = info.surface_capabilities.minImageExtent;
+    swapchain_create_info.imageArrayLayers = 1;
+    swapchain_create_info.imageUsage = capabilities.supportedUsageFlags;
+    swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_create_info.compositeAlpha = info.surface_composite_alpha;
+    swapchain_create_info.presentMode = info.surface_non_shared_present_mode;
+    swapchain_create_info.clipped = VK_FALSE;
+    swapchain_create_info.oldSwapchain = VK_NULL_HANDLE;
+
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainCreateInfoKHR-imageUsage-parameter");
+    m_swapchain.Init(*m_device, swapchain_create_info);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeWsi, SwapchainUsageShared) {
     TEST_DESCRIPTION("Use invalid imageUsage for shared swapchain creation");
 

@@ -408,9 +408,16 @@ bool Context::ValidateFlags(const Location &loc, vvl::FlagBitmask flag_bitmask, 
     if (!skip && value != 0) {
         vvl::Extensions required = IsValidFlagValue(flag_bitmask, value, instance_function);
         if (!required.empty()) {
+            // From https://gitlab.khronos.org/vulkan/vulkan/-/issues/4586
+            // Swapchain is only place we have |imageUsage| and it is easy to blindly map it to the supported queried flags
+            // This is a quick fix, without adding yet another ValidateFlags overload, to give better info around WSI
+            const bool image_usage_hint = loc.field == Field::imageUsage;
             skip |=
-                log.LogError(vuid, error_obj.handle, loc, "has %s values (%s) that requires the extensions %s.",
-                             String(flag_bitmask), DescribeFlagBitmaskValue(flag_bitmask, value).c_str(), String(required).c_str());
+                log.LogError(vuid, error_obj.handle, loc, "has %s values (%s) that requires the extensions %s.%s",
+                             String(flag_bitmask), DescribeFlagBitmaskValue(flag_bitmask, value).c_str(), String(required).c_str(),
+                             image_usage_hint ? "\nHint: Make sure to filter the supportedUsageFlags from "
+                                                "vkGetPhysicalDeviceSurfaceCapabilitiesKHR to only use what is desired."
+                                              : "");
         }
     }
     return skip;
