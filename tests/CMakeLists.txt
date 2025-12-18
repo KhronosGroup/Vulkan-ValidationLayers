@@ -232,6 +232,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/tensor_positive.cpp
     unit/threading.cpp
     unit/threading_positive.cpp
+    unit/tile_memory_heap.cpp
+    unit/tile_memory_heap_positive.cpp
     unit/tooling.cpp
     unit/tooling_positive.cpp
     unit/transform_feedback.cpp

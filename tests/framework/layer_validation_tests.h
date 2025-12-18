@@ -348,6 +348,10 @@ class GraphicsLibraryTest : public VkLayerTest {
     void InitBasicGraphicsLibrary();
 };
 
+class TileMemoryHeapTest : public VkLayerTest {
+  public:
+};
+
 class HostImageCopyTest : public VkLayerTest {
   public:
     void InitHostImageCopyTest();

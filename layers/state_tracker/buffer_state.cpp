@@ -32,6 +32,25 @@ static VkMemoryRequirements GetMemoryRequirements(vvl::DeviceState &dev_data, Vk
     return result;
 }
 
+static VkMemoryRequirements GetTileMemoryRequirements(vvl::DeviceState &dev_data, VkBuffer buffer,
+                                                      const VkBufferCreateInfo *pCreateInfo) {
+    VkMemoryRequirements result{};
+    if (pCreateInfo->usage & VK_BUFFER_USAGE_TILE_MEMORY_BIT_QCOM) {
+        VkBufferMemoryRequirementsInfo2 buffer_info = vku::InitStructHelper();
+        VkMemoryRequirements2 buffer_reqs = vku::InitStructHelper();
+        VkTileMemoryRequirementsQCOM tile_mem_reqs = vku::InitStructHelper();
+        buffer_info.buffer = buffer;
+        buffer_reqs.pNext = &tile_mem_reqs;
+
+        DispatchGetBufferMemoryRequirements2(dev_data.device, &buffer_info, &buffer_reqs);
+
+        result.memoryTypeBits = buffer_reqs.memoryRequirements.memoryTypeBits;
+        result.size = tile_mem_reqs.size;
+        result.alignment = tile_mem_reqs.alignment;
+    }
+    return result;
+}
+
 static VkBufferUsageFlags2 GetBufferUsageFlags(const VkBufferCreateInfo &create_info) {
     const auto *usage_flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(create_info.pNext);
     return usage_flags2 ? usage_flags2->usage : create_info.usage;
@@ -68,6 +87,7 @@ Buffer::Buffer(DeviceState &dev_data, VkBuffer handle, const VkBufferCreateInfo 
       create_info(*safe_create_info.ptr()),
       requirements(GetMemoryRequirements(dev_data, handle)),
       usage(GetBufferUsageFlags(create_info)),
+      tileMemoryRequirements(GetTileMemoryRequirements(dev_data, handle, pCreateInfo)),
       supported_video_profiles(dev_data.video_profile_cache_.Get(
           dev_data.physical_device, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
     if (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) {

@@ -164,7 +164,7 @@ std::vector<VkExtensionProperties> PhysicalDevice::Extensions(const char *pLayer
 }
 
 bool PhysicalDevice::SetMemoryType(const uint32_t type_bits, VkMemoryAllocateInfo *info, const VkFlags properties,
-                                   const VkFlags forbid) const {
+                                   const VkFlags forbid, const VkMemoryHeapFlags heapFlags) const {
     uint32_t type_mask = type_bits;
     // Search memtypes to find first index with those properties
     for (uint32_t i = 0; i < memory_properties_.memoryTypeCount; i++) {
@@ -173,8 +173,13 @@ bool PhysicalDevice::SetMemoryType(const uint32_t type_bits, VkMemoryAllocateInf
             if ((memory_properties_.memoryTypes[i].propertyFlags & properties) == properties &&
                 (memory_properties_.memoryTypes[i].propertyFlags & forbid) == 0 &&
                 (memory_properties_.memoryHeaps[memory_properties_.memoryTypes[i].heapIndex].size >= info->allocationSize)) {
-                info->memoryTypeIndex = i;
-                return true;
+                // Memory properties available, does it match user heap flags?
+                if ((heapFlags == 0) ||
+                    ((heapFlags & memory_properties_.memoryHeaps[memory_properties_.memoryTypes[i].heapIndex].flags) ==
+                     heapFlags)) {
+                    info->memoryTypeIndex = i;
+                    return true;
+                }
             }
         }
         type_mask >>= 1;

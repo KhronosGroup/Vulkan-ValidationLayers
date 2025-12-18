@@ -110,6 +110,7 @@ struct DeviceExtensionProperties {
     VkPhysicalDeviceMaintenance10PropertiesKHR maintenance10_props;
     VkPhysicalDeviceTensorPropertiesARM tensor_properties;
     VkPhysicalDeviceCopyMemoryIndirectPropertiesKHR copy_memory_indirect_props;
+    VkPhysicalDeviceTileMemoryHeapPropertiesQCOM tile_memory_heap_props;
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
     VkPhysicalDeviceExternalFormatResolvePropertiesANDROID android_format_resolve_props;
 #endif
