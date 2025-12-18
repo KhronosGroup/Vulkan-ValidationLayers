@@ -183,7 +183,7 @@ class PhysicalDevice : public internal::Handle<VkPhysicalDevice> {
     VkPhysicalDeviceFeatures Features() const;
 
     bool SetMemoryType(const uint32_t type_bits, VkMemoryAllocateInfo *info, const VkMemoryPropertyFlags properties,
-                       const VkMemoryPropertyFlags forbid = 0) const;
+                       const VkMemoryPropertyFlags forbid = 0, const VkMemoryHeapFlags heapFlags = 0) const;
 
     // vkEnumerateDeviceExtensionProperties()
     std::vector<VkExtensionProperties> Extensions(const char *pLayerName = nullptr) const;

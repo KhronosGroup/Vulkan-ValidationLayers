@@ -475,6 +475,8 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_android_external_format_resolve,
                                              &phys_dev_ext_props.android_format_resolve_props);
 #endif
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_qcom_tile_memory_heap,
+                                             &phys_dev_ext_props.tile_memory_heap_props);
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_memory_decompression,
                                              &phys_dev_ext_props.memory_decompression_props);
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_arm_performance_counters_by_region,
