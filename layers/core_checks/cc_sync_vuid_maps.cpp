@@ -1295,6 +1295,7 @@ const vvl::unordered_map<ImageError, std::vector<Entry>> &GetImageErrorsMap() {
          {
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-oldLayout-10768"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-oldLayout-10768"},
+             {Key(Struct::VkHostImageLayoutTransitionInfo), "VUID-VkHostImageLayoutTransitionInfo-oldLayout-10768"},
          }},
         {ImageError::kNotColorAspectSinglePlane,
          {

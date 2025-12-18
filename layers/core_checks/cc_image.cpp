@@ -2642,6 +2642,17 @@ bool CoreChecks::PreCallValidateTransitionImageLayout(VkDevice device, uint32_t 
                              "VK_IMAGE_USAGE_HOST_TRANSFER_BIT.",
                              string_VkImageUsageFlags(image_state->create_info.usage).c_str());
         }
+        if (transition.oldLayout == VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT) {
+            const LogObjectList objlist(device, image_state->Handle());
+            if (!enabled_features.zeroInitializeDeviceMemory) {
+                skip |=
+                    LogError("VUID-VkHostImageLayoutTransitionInfo-oldLayout-10767", objlist, transition_loc.dot(Field::oldLayout),
+                             "is %s, but the zeroInitializeDeviceMemory feature was not enabled.",
+                             string_VkImageLayout(transition.oldLayout));
+            }
+            skip |= ValidateImageBarrierZeroInitializedSubresourceRange(transition.subresourceRange, *image_state, objlist,
+                                                                        transition_loc);
+        }
         skip |= ValidateImageLayoutAgainstImageUsage(transition_loc.dot(Field::oldLayout), transition.image, transition.oldLayout,
                                                      image_state->create_info.usage);
         skip |= ValidateImageLayoutAgainstImageUsage(transition_loc.dot(Field::newLayout), transition.image, transition.newLayout,

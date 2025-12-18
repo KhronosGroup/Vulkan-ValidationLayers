@@ -1154,8 +1154,9 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateImageBarrierAgainstImage(const vvl::CommandBuffer& cb_state, const ImageBarrier& barrier,
                                           const Location& barrier_loc, const vvl::Image& image_state,
                                           ImageLayoutRegistry& local_layout_registry) const;
-    bool ValidateImageBarrierZeroInitializedSubresourceRange(const vvl::CommandBuffer& cb_state, const ImageBarrier& barrier,
-                                                             const vvl::Image& image_state, const Location& barrier_loc) const;
+    bool ValidateImageBarrierZeroInitializedSubresourceRange(const VkImageSubresourceRange& subresource_range,
+                                                             const vvl::Image& image_state, const LogObjectList& objlist,
+                                                             const Location& barrier_or_transition_loc) const;
 
     void RecordQueuedQFOTransfers(vvl::CommandBuffer& cb_state);
     void RecordTransitionImageLayout(vvl::CommandBuffer& cb_state, const ImageBarrier& image_barrier,
