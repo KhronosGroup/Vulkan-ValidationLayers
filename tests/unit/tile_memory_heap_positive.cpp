@@ -70,10 +70,14 @@ TEST_F(PositiveTileMemoryHeap, BasicBuffer) {
     pipe.descriptor_set_.WriteDescriptorBufferInfo(0, buffer, 0, 4096, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_.UpdateDescriptorSets();
 
+    VkTileMemoryBindInfoQCOM tile_mem_bind_info = vku::InitStructHelper();
+    tile_mem_bind_info.memory = buffer_memory;
+
     m_command_buffer.Begin();
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
                               &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindTileMemoryQCOM(m_command_buffer, &tile_mem_bind_info);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 }
