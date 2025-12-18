@@ -804,7 +804,7 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR(
         }
 
         auto found = dispatch_device_->deferred_operation_post_check.pop(deferredOperation);
-        std::vector<std::function<void(const std::vector<VkPipeline> &)>> deferred_op_post_checks;
+        std::vector<std::function<void(std::pair<uint32_t, VkPipeline *>)>> deferred_op_post_checks;
         if (found->first) {
             deferred_op_post_checks = std::move(found->second);
         } else {
@@ -820,10 +820,9 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR(
         }
 
         deferred_op_post_checks.emplace_back(
-            [this, held_chassis_state = chassis_state](const std::vector<VkPipeline> &vk_pipelines) mutable {
-                for (size_t i = 0; i < vk_pipelines.size(); ++i) {
-                    std::shared_ptr<vvl::Pipeline> pipeline_state =
-                        ((GpuShaderInstrumentor *)this)->Get<vvl::Pipeline>(vk_pipelines[i]);
+            [this, held_chassis_state = chassis_state](std::pair<uint32_t, VkPipeline *> pipelines) mutable {
+                for (const auto [pipe_i, pipe] : vvl::enumerate(pipelines.second, pipelines.first)) {
+                    std::shared_ptr<vvl::Pipeline> pipeline_state = ((GpuShaderInstrumentor *)this)->Get<vvl::Pipeline>(pipe);
                     ASSERT_AND_CONTINUE(pipeline_state);
                     if (pipeline_state->ray_tracing_library_ci) {
                         for (VkPipeline lib : vvl::make_span(pipeline_state->ray_tracing_library_ci->pLibraries,
@@ -834,7 +833,7 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR(
                                 lib_state->instrumentation_data.was_instrumented;
                         }
                     }
-                    auto &shader_instrumentation_metadata = held_chassis_state->shader_instrumentations_metadata[i];
+                    auto &shader_instrumentation_metadata = held_chassis_state->shader_instrumentations_metadata[pipe_i];
                     // Ray tracing pipelines can be made of libraries, but contrary to GPL instrumentation is not postponed
                     // to final link time, and done at ray tracing library creation time.
                     // => No need to iterate over shader stages coming from libraries,
