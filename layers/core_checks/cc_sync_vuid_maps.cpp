@@ -1108,17 +1108,53 @@ const vvl::unordered_map<VkImageLayout, std::array<Entry, 3>> &GetImageLayoutErr
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-oldLayout-01209"},
              {Key(Struct::VkHostImageLayoutTransitionInfo), "VUID-VkHostImageLayoutTransitionInfo-oldLayout-01209"},
          }}},
+        {VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+         ValueType{{
+             {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-04066"},
+             {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-04066"},
+             {Key(Struct::VkHostImageLayoutTransitionInfo), "VUID-VkHostImageLayoutTransitionInfo-srcQueueFamilyIndex-04066"},
+         }}},
+        {VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL,
+         ValueType{{
+             {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-04068"},
+             {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-04068"},
+             {Key(Struct::VkHostImageLayoutTransitionInfo), "VUID-VkHostImageLayoutTransitionInfo-srcQueueFamilyIndex-04068"},
+         }}},
+        {VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+         ValueType{{
+             {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-03938"},
+             {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-03938"},
+             {Key(Struct::VkHostImageLayoutTransitionInfo), "VUID-VkHostImageLayoutTransitionInfo-srcQueueFamilyIndex-03938"},
+         }}},
         {VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
          ValueType{{
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-oldLayout-01210"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-oldLayout-01210"},
              {Key(Struct::VkHostImageLayoutTransitionInfo), "VUID-VkHostImageLayoutTransitionInfo-oldLayout-01210"},
          }}},
+        {VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
+         ValueType{{
+             {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-04065"},
+             {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-04065"},
+             {Key(Struct::VkHostImageLayoutTransitionInfo), "VUID-VkHostImageLayoutTransitionInfo-srcQueueFamilyIndex-04065"},
+         }}},
+        {VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL,
+         ValueType{{
+             {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-04067"},
+             {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-04067"},
+             {Key(Struct::VkHostImageLayoutTransitionInfo), "VUID-VkHostImageLayoutTransitionInfo-srcQueueFamilyIndex-04067"},
+         }}},
         {VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
          ValueType{{
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-oldLayout-01211"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-oldLayout-01211"},
              {Key(Struct::VkHostImageLayoutTransitionInfo), "VUID-VkHostImageLayoutTransitionInfo-oldLayout-01211"},
+         }}},
+        {VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
+         ValueType{{
+             {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-03939"},
+             {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-03939"},
+             {Key(Struct::VkHostImageLayoutTransitionInfo), "VUID-VkHostImageLayoutTransitionInfo-srcQueueFamilyIndex-03939"},
          }}},
         {VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
          ValueType{{
