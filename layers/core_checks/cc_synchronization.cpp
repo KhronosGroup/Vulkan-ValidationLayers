@@ -1906,34 +1906,29 @@ bool CoreChecks::ValidateImageBarrierAgainstImage(const vvl::CommandBuffer &cb_s
     return skip;
 }
 
-bool CoreChecks::ValidateImageBarrierZeroInitializedSubresourceRange(const vvl::CommandBuffer &cb_state,
-                                                                     const ImageBarrier &barrier, const vvl::Image &image_state,
-                                                                     const Location &barrier_loc) const {
+bool CoreChecks::ValidateImageBarrierZeroInitializedSubresourceRange(const VkImageSubresourceRange &subresource_range,
+                                                                     const vvl::Image &image_state, const LogObjectList &objlist,
+                                                                     const Location &barrier_or_transition_loc) const {
     bool skip = false;
-    const auto &vuid = GetImageBarrierVUID(barrier_loc, vvl::ImageError::kZeroInitializeSubresource);
-    const Location subresource_range_loc = barrier_loc.dot(Field::subresourceRange);
-    const VkImageSubresourceRange subresource_range = barrier.subresourceRange;
+    const auto &vuid = GetImageBarrierVUID(barrier_or_transition_loc, vvl::ImageError::kZeroInitializeSubresource);
+    const Location subresource_range_loc = barrier_or_transition_loc.dot(Field::subresourceRange);
 
     if (subresource_range.baseArrayLayer != 0) {
-        const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
         skip |= LogError(vuid, objlist, subresource_range_loc.dot(Field::baseArrayLayer),
                          "(%" PRIu32 ") is not zero, but you need to zero initialize the entire image resource at once.",
                          subresource_range.baseArrayLayer);
     } else if (subresource_range.baseMipLevel != 0) {
-        const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
         skip |= LogError(vuid, objlist, subresource_range_loc.dot(Field::baseMipLevel),
                          "(%" PRIu32 ") is not zero, but you need to zero initialize the entire image resource at once.",
                          subresource_range.baseMipLevel);
     } else if (subresource_range.layerCount != VK_REMAINING_ARRAY_LAYERS &&
                subresource_range.layerCount != image_state.create_info.arrayLayers) {
-        const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
         skip |= LogError(vuid, objlist, subresource_range_loc.dot(Field::layerCount),
                          "(%" PRIu32 ") is not the same as VkImageCreateInfo::arrayLayers (%" PRIu32
                          "), but you need to zero initialize the entire image resource at once.",
                          subresource_range.layerCount, image_state.create_info.arrayLayers);
     } else if (subresource_range.levelCount != VK_REMAINING_MIP_LEVELS &&
                subresource_range.levelCount != image_state.create_info.mipLevels) {
-        const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
         skip |= LogError(vuid, objlist, subresource_range_loc.dot(Field::levelCount),
                          "(%" PRIu32 ") is not the same as VkImageCreateInfo::mipLevels (%" PRIu32
                          "), but you need to zero initialize the entire image resource at once.",
@@ -2400,7 +2395,9 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objlist, const vvl::C
         skip |= ValidateImageBarrierAgainstImage(cb_state, barrier, barrier_loc, *image_state, local_layout_registry);
 
         if (old_layout == VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT) {
-            skip |= ValidateImageBarrierZeroInitializedSubresourceRange(cb_state, barrier, *image_state, barrier_loc);
+            const LogObjectList objlist(cb_state.Handle(), image_state->Handle());
+            skip |=
+                ValidateImageBarrierZeroInitializedSubresourceRange(barrier.subresourceRange, *image_state, objlist, barrier_loc);
         }
     }
     return skip;
