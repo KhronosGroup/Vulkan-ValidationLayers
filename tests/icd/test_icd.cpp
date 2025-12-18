@@ -454,7 +454,7 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties(VkPhysi
 
 static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMemoryProperties(VkPhysicalDevice physicalDevice,
                                                                     VkPhysicalDeviceMemoryProperties* pMemoryProperties) {
-    pMemoryProperties->memoryTypeCount = 6;
+    pMemoryProperties->memoryTypeCount = 7;
     // Host visible Coherent
     pMemoryProperties->memoryTypes[0].propertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     pMemoryProperties->memoryTypes[0].heapIndex = 0;
@@ -474,11 +474,17 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMemoryProperties(VkPhysicalDe
     // Device local only
     pMemoryProperties->memoryTypes[5].propertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     pMemoryProperties->memoryTypes[5].heapIndex = 1;
-    pMemoryProperties->memoryHeapCount = 2;
+    // Device local for Tile Memory
+    pMemoryProperties->memoryTypes[5].propertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    pMemoryProperties->memoryTypes[5].heapIndex = 2;
+
+    pMemoryProperties->memoryHeapCount = 3;
     pMemoryProperties->memoryHeaps[0].flags = VK_MEMORY_HEAP_MULTI_INSTANCE_BIT;
     pMemoryProperties->memoryHeaps[0].size = 8000000000;
     pMemoryProperties->memoryHeaps[1].flags = VK_MEMORY_HEAP_DEVICE_LOCAL_BIT;
     pMemoryProperties->memoryHeaps[1].size = 8000000000;
+    pMemoryProperties->memoryHeaps[2].flags = VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM;
+    pMemoryProperties->memoryHeaps[2].size = 1000000000;
 }
 
 static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance, const char* pName) {
@@ -890,6 +896,11 @@ static VKAPI_ATTR void VKAPI_CALL GetDataGraphPipelineSessionMemoryRequirementsA
 static VKAPI_ATTR void VKAPI_CALL GetBufferMemoryRequirements2(VkDevice device, const VkBufferMemoryRequirementsInfo2* pInfo,
                                                                VkMemoryRequirements2* pMemoryRequirements) {
     GetBufferMemoryRequirements(device, pInfo->buffer, &pMemoryRequirements->memoryRequirements);
+
+    if (auto tile_mem_reqs = vku::FindStructInPNextChain<VkTileMemoryRequirementsQCOM>(pMemoryRequirements->pNext)) {
+        tile_mem_reqs->size = 4096;
+        tile_mem_reqs->alignment = 32;
+    }
 }
 
 static VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements2(VkDevice device,
