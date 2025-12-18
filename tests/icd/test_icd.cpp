@@ -475,8 +475,8 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMemoryProperties(VkPhysicalDe
     pMemoryProperties->memoryTypes[5].propertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     pMemoryProperties->memoryTypes[5].heapIndex = 1;
     // Device local for Tile Memory
-    pMemoryProperties->memoryTypes[5].propertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    pMemoryProperties->memoryTypes[5].heapIndex = 2;
+    pMemoryProperties->memoryTypes[6].propertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    pMemoryProperties->memoryTypes[6].heapIndex = 2;
 
     pMemoryProperties->memoryHeapCount = 3;
     pMemoryProperties->memoryHeaps[0].flags = VK_MEMORY_HEAP_MULTI_INSTANCE_BIT;
