@@ -2148,18 +2148,18 @@ void DeviceState::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, Vk
         if (dispatch_device_->wrap_handles) {
             deferredOperation = dispatch_device_->Unwrap(deferredOperation);
         }
-        std::vector<std::function<void(const std::vector<VkPipeline> &)>> cleanup_fn;
+        std::vector<std::function<void(std::pair<uint32_t, VkPipeline *>)>> cleanup_fn;
         auto find_res = dispatch_device_->deferred_operation_post_check.pop(deferredOperation);
         if (find_res->first) {
             cleanup_fn = std::move(find_res->second);
         }
         // Mutable lambda because we want to move the shared pointer contained in the copied vector
-        cleanup_fn.emplace_back([this, chassis_state, pipeline_states](const std::vector<VkPipeline> &pipelines) mutable {
+        cleanup_fn.emplace_back([this, chassis_state, pipeline_states](std::pair<uint32_t, VkPipeline *> pipelines) mutable {
             // Just need to capture chassis state to maintain pipeline creations parameters alive, see
             // https://vkdoc.net/chapters/deferred-host-operations#deferred-host-operations-requesting
             (void)chassis_state;
             for (size_t i = 0; i < pipeline_states.size(); ++i) {
-                pipeline_states[i]->SetHandle(pipelines[i]);
+                pipeline_states[i]->SetHandle(pipelines.second[i]);
                 this->Add(std::move(pipeline_states[i]));
             }
         });

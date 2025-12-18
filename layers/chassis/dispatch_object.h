@@ -346,9 +346,9 @@ class Device : public HandleWrapper {
     vvl::unordered_map<VkDescriptorPool, vvl::unordered_set<VkDescriptorSet>> pool_descriptor_sets_map;
 
     vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void()>>, 0> deferred_operation_post_completion;
-    vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void(const std::vector<VkPipeline>&)>>, 0>
+    vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void(std::pair<uint32_t, VkPipeline*>)>>, 0>
         deferred_operation_post_check;
-    vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<VkPipeline>, 0> deferred_operation_pipelines;
+    vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::pair<uint32_t, VkPipeline*>, 0> deferred_operation_pipelines;
 
     // State we track in order to populate HandleData for things such as ignored pointers
     vvl::unordered_map<VkCommandBuffer, VkCommandPool> secondary_cb_map{};

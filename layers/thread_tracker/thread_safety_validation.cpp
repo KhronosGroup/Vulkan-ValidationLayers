@@ -17,6 +17,8 @@
  */
 #include "thread_tracker/thread_safety_validation.h"
 
+#include "containers/span.h"
+
 namespace threadsafety {
 
 ReadLockGuard Device::ReadLock() const { return ReadLockGuard(validation_object_mutex, std::defer_lock); }
@@ -706,9 +708,11 @@ void Device::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDefer
         this->FinishReadObject(pipelineCache, record_obj.location);
     };
 
-    auto register_objects = [this](const std::vector<VkPipeline>& pipelines) {
-        for (auto pipe : pipelines) {
-            if (!pipe) continue;
+    auto register_objects = [this](std::pair<uint32_t, VkPipeline*> pipelines) {
+        for (VkPipeline pipe : vvl::make_span(pipelines.second, pipelines.first)) {
+            if (!pipe) {
+                continue;
+            }
             CreateObject(pipe);
         }
     };
@@ -731,7 +735,7 @@ void Device::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDefer
         dispatch_device_->deferred_operation_post_completion.insert(deferredOperation, std::move(post_completion_fns));
 
         // We will only register the object once we know it was created successfully
-        std::vector<std::function<void(const std::vector<VkPipeline>&)>> post_check_fns;
+        std::vector<std::function<void(std::pair<uint32_t, VkPipeline*>)>> post_check_fns;
         auto check_find = dispatch_device_->deferred_operation_post_check.pop(deferredOperation);
         if (check_find->first) {
             post_check_fns = std::move(check_find->second);

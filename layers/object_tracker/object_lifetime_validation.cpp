@@ -1544,11 +1544,11 @@ void Device::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDefer
     if (VK_ERROR_VALIDATION_FAILED_EXT == record_obj.result) return;
     if (pPipelines) {
         if (deferredOperation != VK_NULL_HANDLE && record_obj.result == VK_OPERATION_DEFERRED_KHR) {
-            auto register_fn = [this, pAllocator, record_obj, chassis_state](const std::vector<VkPipeline> &pipelines) {
+            auto register_fn = [this, pAllocator, record_obj, chassis_state](std::pair<uint32_t, VkPipeline *> pipelines) {
                 // Just need to capture chassis state to maintain pipeline creations parameters alive, see
                 // https://vkdoc.net/chapters/deferred-host-operations#deferred-host-operations-requesting
                 (void)chassis_state;
-                for (VkPipeline pipe : pipelines) {
+                for (VkPipeline pipe : vvl::make_span(pipelines.second, pipelines.first)) {
                     this->tracker.CreateObject(pipe, kVulkanObjectTypePipeline, pAllocator, record_obj.location, this->device);
                 }
             };
@@ -1556,7 +1556,7 @@ void Device::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDefer
             if (dispatch_device_->wrap_handles) {
                 deferredOperation = dispatch_device_->Unwrap(deferredOperation);
             }
-            std::vector<std::function<void(const std::vector<VkPipeline> &)>> cleanup_fn;
+            std::vector<std::function<void(std::pair<uint32_t, VkPipeline *>)>> cleanup_fn;
             auto find_res = dispatch_device_->deferred_operation_post_check.pop(deferredOperation);
             if (find_res->first) {
                 cleanup_fn = std::move(find_res->second);
