@@ -256,14 +256,14 @@ bool Device::ValidateCreateBufferTileMemory(const VkBufferCreateInfo &create_inf
 
         if (invalid_flags) {
             skip |= LogError("VUID-VkBufferCreateInfo-usage-10763", device, create_info_loc.dot(Field::usage),
-                             "contains VK_BUFFER_USAGE_TILE_MEMORY_BIT_QCOM but flags contains %s\nAll usage flags: (%s)",
-                             string_VkBufferCreateFlags(flags).c_str(), string_VkBufferCreateFlags(invalid_flags).c_str());
+                             "contains VK_BUFFER_USAGE_TILE_MEMORY_BIT_QCOM but flags contains %s\nAll create flags: (%s)",
+                             string_VkBufferCreateFlags(invalid_flags).c_str(), string_VkBufferCreateFlags(flags).c_str());
         }
 
         if (invalid_usage) {
             skip |= LogError("VUID-VkBufferCreateInfo-usage-10764", device, create_info_loc.dot(Field::usage),
                              "contains VK_BUFFER_USAGE_TILE_MEMORY_BIT_QCOM but usage contains %s\nAll usage flags: (%s)",
-                             string_VkBufferUsageFlags2(usage).c_str(), string_VkBufferUsageFlags2(invalid_usage).c_str());
+                             string_VkBufferUsageFlags2(invalid_usage).c_str(), string_VkBufferUsageFlags2(usage).c_str());
         }
     }
 
