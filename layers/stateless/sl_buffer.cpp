@@ -233,20 +233,20 @@ bool Device::ValidateCreateBufferTileMemory(const VkBufferCreateInfo &create_inf
     bool skip = false;
 
     if (usage & VK_BUFFER_USAGE_TILE_MEMORY_BIT_QCOM) {
-        const VkBufferCreateFlags invalidFlagMask =
+        const VkBufferCreateFlags invalid_flag_mask =
             VK_BUFFER_CREATE_SPARSE_BINDING_BIT | VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT | VK_BUFFER_CREATE_SPARSE_ALIASED_BIT |
             VK_BUFFER_CREATE_PROTECTED_BIT | VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT |
             VK_BUFFER_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR | VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT;
-        VkBufferUsageFlags2 validUsageMask = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT |
-                                             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
-                                             VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TILE_MEMORY_BIT_QCOM;
+        VkBufferUsageFlags2 valid_usage_mask = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT |
+                                               VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                                               VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TILE_MEMORY_BIT_QCOM;
 
         if (phys_dev_ext_props.tile_memory_heap_props.tileBufferTransfers) {
-            validUsageMask |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+            valid_usage_mask |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
         }
 
-        const VkBufferCreateFlags invalidFlags = (flags & invalidFlagMask);
-        const VkBufferUsageFlags2 invalidUsage = (usage & ~validUsageMask);
+        const VkBufferCreateFlags invalid_flags = (flags & invalid_flag_mask);
+        const VkBufferUsageFlags2 invalid_usage = (usage & ~valid_usage_mask);
 
         if (!enabled_features.tileMemoryHeap) {
             skip |= LogError("VUID-VkBufferCreateInfo-tileMemoryHeap-10762", device, create_info_loc.dot(Field::usage),
@@ -254,18 +254,16 @@ bool Device::ValidateCreateBufferTileMemory(const VkBufferCreateInfo &create_inf
                              "tileMemoryHeap device feature is not enabled.");
         }
 
-        if (invalidFlags) {
+        if (invalid_flags) {
             skip |= LogError("VUID-VkBufferCreateInfo-usage-10763", device, create_info_loc.dot(Field::usage),
-                             "contains VK_BUFFER_USAGE_TILE_MEMORY_BIT_QCOM but has at least one invalid"
-                             " flag. Flags (%s), Invalid Flags: (%s)",
-                             string_VkBufferCreateFlags(flags).c_str(), string_VkBufferCreateFlags(invalidFlags).c_str());
+                             "contains VK_BUFFER_USAGE_TILE_MEMORY_BIT_QCOM but flags contains %s\nAll usage flags: (%s)",
+                             string_VkBufferCreateFlags(flags).c_str(), string_VkBufferCreateFlags(invalid_flags).c_str());
         }
 
-        if (invalidUsage) {
+        if (invalid_usage) {
             skip |= LogError("VUID-VkBufferCreateInfo-usage-10764", device, create_info_loc.dot(Field::usage),
-                             "contains VK_BUFFER_USAGE_TILE_MEMORY_BIT_QCOM but has at least one invalid usage."
-                             " Usage: (%s), Invalid Usage: (%s)",
-                             string_VkBufferUsageFlags2(usage).c_str(), string_VkBufferUsageFlags2(invalidUsage).c_str());
+                             "contains VK_BUFFER_USAGE_TILE_MEMORY_BIT_QCOM but usage contains %s\nAll usage flags: (%s)",
+                             string_VkBufferUsageFlags2(usage).c_str(), string_VkBufferUsageFlags2(invalid_usage).c_str());
         }
     }
 

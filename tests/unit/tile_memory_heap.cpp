@@ -71,10 +71,9 @@ TEST_F(NegativeTileMemoryHeap, BindBufferMemorySize) {
 
     // Query Tile Memory Buffer Requirements
     VkBufferMemoryRequirementsInfo2 buffer_info = vku::InitStructHelper();
-    VkMemoryRequirements2 buffer_reqs = vku::InitStructHelper();
     VkTileMemoryRequirementsQCOM tile_mem_reqs = vku::InitStructHelper();
+    VkMemoryRequirements2 buffer_reqs = vku::InitStructHelper(&tile_mem_reqs);
     buffer_info.buffer = buffer;
-    buffer_reqs.pNext = &tile_mem_reqs;
     vk::GetBufferMemoryRequirements2(device(), &buffer_info, &buffer_reqs);
 
     if (tile_mem_reqs.size == 0) {
@@ -125,10 +124,9 @@ TEST_F(NegativeTileMemoryHeap, BindBufferMemoryAlignment) {
 
     // Query Tile Memory Buffer Requirements
     VkBufferMemoryRequirementsInfo2 buffer_info = vku::InitStructHelper();
-    VkMemoryRequirements2 buffer_reqs = vku::InitStructHelper();
     VkTileMemoryRequirementsQCOM tile_mem_reqs = vku::InitStructHelper();
+    VkMemoryRequirements2 buffer_reqs = vku::InitStructHelper(&tile_mem_reqs);
     buffer_info.buffer = buffer;
-    buffer_reqs.pNext = &tile_mem_reqs;
     vk::GetBufferMemoryRequirements2(device(), &buffer_info, &buffer_reqs);
 
     if (tile_mem_reqs.size == 0) {
