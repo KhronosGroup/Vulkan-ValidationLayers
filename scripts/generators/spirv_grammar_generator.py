@@ -286,7 +286,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
             const char* string_SpvExecutionModel(uint32_t execution_model);
             const char* string_SpvExecutionMode(uint32_t execution_mode);
             const char* string_SpvDecoration(uint32_t decoration);
-            const char* string_SpvBuiltIn(uint32_t built_in);
+            const char* string_SpvBuiltIn(spv::BuiltIn built_in);
             const char* string_SpvDim(uint32_t dim);
             std::string string_SpvCooperativeMatrixOperands(uint32_t mask);
             ''')
@@ -596,7 +596,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 }}
             }}
 
-            const char* string_SpvBuiltIn(uint32_t built_in) {{
+            const char* string_SpvBuiltIn(spv::BuiltIn built_in) {{
                 switch(built_in) {{
             {"".join([f"""        case spv::BuiltIn{x}:
                         return "{x}";

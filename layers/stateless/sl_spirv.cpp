@@ -23,6 +23,7 @@
 #include "chassis/dispatch_object.h"
 #include "state_tracker/shader_module.h"
 #include <inttypes.h>
+#include <vulkan/vulkan_core.h>
 #include <set>
 
 namespace stateless {
@@ -102,6 +103,7 @@ bool SpirvValidator::Validate(const spirv::Module &module_state, const spirv::St
     for (const auto &entry_point : module_state.static_data_.entry_points) {
         skip |= ValidateShaderStageGroupNonUniform(module_state, stateless_data, entry_point->stage, loc);
         skip |= ValidateShaderStageInputOutputLimits(module_state, *entry_point, stateless_data, loc);
+        skip |= ValidateShaderStageInterfaceVariables(module_state, *entry_point, stateless_data, loc);
         skip |= ValidateShaderFloatControl(module_state, *entry_point, stateless_data, loc);
         skip |= ValidateExecutionModes(module_state, *entry_point, stateless_data, loc);
         skip |= ValidateConservativeRasterization(module_state, *entry_point, stateless_data, loc);
@@ -1038,8 +1040,8 @@ bool SpirvValidator::ValidateShaderStageInputOutputLimits(const spirv::Module &m
                                      ? *entrypoint.max_output_slot
                                      : spirv::InterfaceSlot(0, 0, 0, 0);
 
-    const uint32_t total_input_components = max_input_slot.slot + entrypoint.builtin_input_components;
-    const uint32_t total_output_components = max_output_slot.slot + entrypoint.builtin_output_components;
+    const uint32_t total_input_components = max_input_slot.slot + entrypoint.built_in_input_components;
+    const uint32_t total_output_components = max_output_slot.slot + entrypoint.built_in_output_components;
 
     switch (stage) {
         case VK_SHADER_STAGE_VERTEX_BIT:
@@ -1048,7 +1050,7 @@ bool SpirvValidator::ValidateShaderStageInputOutputLimits(const spirv::Module &m
                                  "SPIR-V (Vertex stage) output interface variable (%s) along with %" PRIu32
                                  " built-in components,  "
                                  "exceeds component limit maxVertexOutputComponents (%" PRIu32 ").",
-                                 max_output_slot.Describe().c_str(), entrypoint.builtin_output_components,
+                                 max_output_slot.Describe().c_str(), entrypoint.built_in_output_components,
                                  limits.maxVertexOutputComponents);
             }
             break;
@@ -1115,7 +1117,7 @@ bool SpirvValidator::ValidateShaderStageInputOutputLimits(const spirv::Module &m
                                  "SPIR-V (Geometry stage) input interface variable (%s) along with %" PRIu32
                                  " built-in components,  "
                                  "exceeds component limit maxGeometryInputComponents (%" PRIu32 ").",
-                                 max_input_slot.Describe().c_str(), entrypoint.builtin_input_components,
+                                 max_input_slot.Describe().c_str(), entrypoint.built_in_input_components,
                                  limits.maxGeometryInputComponents);
             }
             if (total_output_components >= limits.maxGeometryOutputComponents) {
@@ -1123,7 +1125,7 @@ bool SpirvValidator::ValidateShaderStageInputOutputLimits(const spirv::Module &m
                                  "SPIR-V (Geometry stage) output interface variable (%s) along with %" PRIu32
                                  " built-in components,  "
                                  "exceeds component limit maxGeometryOutputComponents (%" PRIu32 ").",
-                                 max_output_slot.Describe().c_str(), entrypoint.builtin_output_components,
+                                 max_output_slot.Describe().c_str(), entrypoint.built_in_output_components,
                                  limits.maxGeometryOutputComponents);
             }
             break;
@@ -1134,7 +1136,7 @@ bool SpirvValidator::ValidateShaderStageInputOutputLimits(const spirv::Module &m
                                  "SPIR-V (Fragment stage) input interface variable (%s) along with %" PRIu32
                                  " built-in components,  "
                                  "exceeds component limit maxFragmentInputComponents (%" PRIu32 ").",
-                                 max_input_slot.Describe().c_str(), entrypoint.builtin_input_components,
+                                 max_input_slot.Describe().c_str(), entrypoint.built_in_input_components,
                                  limits.maxFragmentInputComponents);
             }
 
@@ -1234,6 +1236,20 @@ bool SpirvValidator::ValidateShaderStageInputOutputLimits(const spirv::Module &m
                              limits.maxFragmentCombinedOutputResources);
         }
     }
+    return skip;
+}
+
+bool SpirvValidator::ValidateShaderStageInterfaceVariables(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
+                                                           const spirv::StatelessData &stateless_data, const Location &loc) const {
+    bool skip = false;
+
+    if (entrypoint.stage == VK_SHADER_STAGE_MESH_BIT_EXT && !enabled_features.primitiveFragmentShadingRateMeshShader &&
+        entrypoint.HasBuiltIn(spv::BuiltInPrimitiveShadingRateKHR)) {
+        skip |= LogError("VUID-PrimitiveShadingRateKHR-PrimitiveShadingRateKHR-12275", module_state.handle(), loc,
+                         "SPIR-V (Mesh stage) declared PrimitiveShadingRateKHR, but the primitiveFragmentShadingRateMeshShader "
+                         "feature was not enabled.");
+    }
+
     return skip;
 }
 
@@ -1481,7 +1497,7 @@ bool SpirvValidator::ValidateConservativeRasterization(const spirv::Module &modu
         return skip;
     }
 
-    if (stateless_data.has_builtin_fully_covered &&
+    if (stateless_data.has_built_in_fully_covered &&
         entrypoint.execution_mode.Has(spirv::ExecutionModeSet::post_depth_coverage_bit)) {
         skip |= LogError("VUID-FullyCoveredEXT-conservativeRasterizationPostDepthCoverage-04235", module_state.handle(), loc,
                          "SPIR-V (Fragment stage) has a\nOpExecutionMode EarlyFragmentTests\nOpDecorate BuiltIn "

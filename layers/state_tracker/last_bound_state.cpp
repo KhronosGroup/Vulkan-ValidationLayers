@@ -720,8 +720,8 @@ bool LastBound::IsSampleShadingEnabled() const {
         if (variable.storage_class != spv::StorageClassInput) {
             continue;
         }
-        if (variable.decorations.Has(spirv::DecorationSet::sample_bit) || variable.decorations.builtin == spv::BuiltInSampleId ||
-            variable.decorations.builtin == spv::BuiltInSamplePosition) {
+        if (variable.decorations.Has(spirv::DecorationSet::sample_bit) || variable.decorations.built_in == spv::BuiltInSampleId ||
+            variable.decorations.built_in == spv::BuiltInSamplePosition) {
             return true;
         }
     }
@@ -762,12 +762,12 @@ std::string LastBound::DescribeSampleShading() const {
                 ss << "implicitly in the fragment shader because there is a Sample decorated input variable.";
                 is_implicit = true;
                 break;
-            } else if (variable.decorations.builtin == spv::BuiltInSampleId) {
+            } else if (variable.decorations.built_in == spv::BuiltInSampleId) {
                 ss << "implicitly in the fragment shader because there is a SampleId BuiltIn decorated input variable. "
                       "(gl_SampleID)";
                 is_implicit = true;
                 break;
-            } else if (variable.decorations.builtin == spv::BuiltInSamplePosition) {
+            } else if (variable.decorations.built_in == spv::BuiltInSamplePosition) {
                 ss << "implicitly in the fragment shader because there is a SamplePosition BuiltIn decorated input variable. "
                       "(gl_SamplePosition)";
                 is_implicit = true;

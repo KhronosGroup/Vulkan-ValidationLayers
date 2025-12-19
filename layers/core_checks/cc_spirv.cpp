@@ -1347,23 +1347,23 @@ bool CoreChecks::ValidatePointSizeShaderState(const spirv::Module &module_state,
     const bool maintenance5 = enabled_features.maintenance5;
 
     if (stage == VK_SHADER_STAGE_GEOMETRY_BIT && output_points) {
-        if (enabled_features.shaderTessellationAndGeometryPointSize && !entrypoint.written_builtin_point_size &&
+        if (enabled_features.shaderTessellationAndGeometryPointSize && !entrypoint.written_built_in_point_size &&
             entrypoint.emit_vertex_geometry && !maintenance5) {
             skip |= LogError(
                 "VUID-VkGraphicsPipelineCreateInfo-shaderTessellationAndGeometryPointSize-08776", module_state.handle(), loc,
                 "SPIR-V (Geometry stage) PointSize is not written, but shaderTessellationAndGeometryPointSize was enabled.");
-        } else if (!enabled_features.shaderTessellationAndGeometryPointSize && entrypoint.written_builtin_point_size) {
+        } else if (!enabled_features.shaderTessellationAndGeometryPointSize && entrypoint.written_built_in_point_size) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-Geometry-07726", module_state.handle(), loc,
                              "SPIR-V (Geometry stage) PointSize is written to, but shaderTessellationAndGeometryPointSize was not "
                              "enabled (gl_PointSize must NOT be written and a default of 1.0 is assumed).");
         }
     } else if (stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT &&
                ((pipeline.create_info_shaders & VK_SHADER_STAGE_GEOMETRY_BIT) == 0) && point_mode) {
-        if (enabled_features.shaderTessellationAndGeometryPointSize && !entrypoint.written_builtin_point_size && !maintenance5) {
+        if (enabled_features.shaderTessellationAndGeometryPointSize && !entrypoint.written_built_in_point_size && !maintenance5) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-TessellationEvaluation-07723", module_state.handle(), loc,
                              "SPIR-V (Tessellation Evaluation stage) PointSize is not written, but "
                              "shaderTessellationAndGeometryPointSize was enabled.");
-        } else if (!enabled_features.shaderTessellationAndGeometryPointSize && entrypoint.written_builtin_point_size) {
+        } else if (!enabled_features.shaderTessellationAndGeometryPointSize && entrypoint.written_built_in_point_size) {
             skip |=
                 LogError("VUID-VkGraphicsPipelineCreateInfo-TessellationEvaluation-07724", module_state.handle(), loc,
                          "SPIR-V (Tessellation Evaluation stage) PointSize is written to, shaderTessellationAndGeometryPointSize "
@@ -1372,7 +1372,7 @@ bool CoreChecks::ValidatePointSizeShaderState(const spirv::Module &module_state,
     } else if (stage == VK_SHADER_STAGE_VERTEX_BIT &&
                ((pipeline.create_info_shaders & (VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)) ==
                 0)) {
-        if (!entrypoint.written_builtin_point_size && IsPointTopology(pipeline.topology_at_rasterizer) && !maintenance5) {
+        if (!entrypoint.written_built_in_point_size && IsPointTopology(pipeline.topology_at_rasterizer) && !maintenance5) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-topology-08773", module_state.handle(), loc,
                              "SPIR-V (Vertex) PointSize is not written to, but Pipeline topology is set to "
                              "VK_PRIMITIVE_TOPOLOGY_POINT_LIST.");
@@ -1391,7 +1391,7 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const spirv::Module &module_st
     if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports &&
         (pipeline.pipeline_type == VK_PIPELINE_BIND_POINT_GRAPHICS) && viewport_state) {
         if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) && viewport_state->viewportCount > 1 &&
-            entrypoint.written_builtin_primitive_shading_rate_khr) {
+            entrypoint.written_built_in_primitive_shading_rate_khr) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-primitiveFragmentShadingRateWithMultipleViewports-04503",
                              module_state.handle(), loc,
                              "SPIR-V (%s) statically writes to PrimitiveShadingRateKHR built-in, but "
@@ -1400,7 +1400,7 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const spirv::Module &module_st
                              string_VkShaderStageFlagBits(stage));
         }
 
-        if (entrypoint.written_builtin_primitive_shading_rate_khr && entrypoint.written_builtin_viewport_index) {
+        if (entrypoint.written_built_in_primitive_shading_rate_khr && entrypoint.written_built_in_viewport_index) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-primitiveFragmentShadingRateWithMultipleViewports-04504",
                              module_state.handle(), loc,
                              "SPIR-V (%s) statically writes to both PrimitiveShadingRateKHR and "
@@ -1409,7 +1409,7 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const spirv::Module &module_st
                              string_VkShaderStageFlagBits(stage));
         }
 
-        if (entrypoint.written_builtin_primitive_shading_rate_khr && entrypoint.written_builtin_viewport_mask_nv) {
+        if (entrypoint.written_built_in_primitive_shading_rate_khr && entrypoint.written_built_in_viewport_mask_nv) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-primitiveFragmentShadingRateWithMultipleViewports-04505",
                              module_state.handle(), loc,
                              "SPIR-V (%s) statically writes to both PrimitiveShadingRateKHR and "
@@ -2064,7 +2064,7 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
 
     skip |= ValidateImageWrite(module_state, loc);
     skip |= ValidateShaderExecutionModes(module_state, entrypoint, stage, pipeline, loc);
-    skip |= ValidateBuiltinLimits(module_state, entrypoint, pipeline, loc);
+    skip |= ValidateBuiltInLimits(module_state, entrypoint, pipeline, loc);
     skip |= ValidatePushConstantUsage(module_state, entrypoint, pipeline, stage_state, loc);
     if (enabled_features.cooperativeMatrix) {
         skip |= ValidateCooperativeMatrix(module_state, entrypoint, stage_state, local_size, loc);

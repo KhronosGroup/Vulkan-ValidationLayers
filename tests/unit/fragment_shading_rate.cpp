@@ -3662,16 +3662,26 @@ TEST_F(NegativeFragmentShadingRate, MaxFragmentDensityMapLayersDraw) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeFragmentShadingRate, InvalidPNext) {
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+TEST_F(NegativeFragmentShadingRate, PrimitiveFragmentShadingRateMeshShader) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
+    AddRequiredFeature(vkt::Feature::pipelineFragmentShadingRate);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::meshShader);
     RETURN_IF_SKIP(Init());
 
-    uint32_t count = 1u;
-    VkPhysicalDeviceFragmentShadingRateKHR fsr = vku::InitStructHelper();
-    fsr.pNext = (void *)0x200000002;  // invalid
-    m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceFragmentShadingRateKHR-pNext-pNext");
-    vk::GetPhysicalDeviceFragmentShadingRatesKHR(gpu_, &count, &fsr);
+    const char *mesh_source = R"glsl(
+        #version 450
+        #extension GL_EXT_mesh_shader : require
+        #extension GL_EXT_fragment_shading_rate : enable
+        layout(triangles, max_vertices = 3, max_primitives = 1) out;
+        void main() {
+            SetMeshOutputsEXT(3, 1);
+            gl_MeshPrimitivesEXT[0].gl_PrimitiveShadingRateEXT = 0;
+        }
+    )glsl";
+
+    m_errorMonitor->SetDesiredError("VUID-PrimitiveShadingRateKHR-PrimitiveShadingRateKHR-12275");
+    VkShaderObj ms(*m_device, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
     m_errorMonitor->VerifyFound();
 }

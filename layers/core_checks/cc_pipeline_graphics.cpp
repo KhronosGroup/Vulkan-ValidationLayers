@@ -1325,7 +1325,7 @@ bool CoreChecks::ValidateGraphicsPipelineMeshTask(const vvl::Pipeline &pipeline,
         return skip;
     }
 
-    if (task_state && mesh_state->spirv_state && mesh_state->spirv_state->static_data_.has_builtin_draw_index) {
+    if (task_state && mesh_state->spirv_state && mesh_state->spirv_state->static_data_.has_built_in_draw_index) {
         // There is a dedicated equivalent for shader object
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-09631", device, create_info_loc,
                          "The pipeline is being created with a Task and Mesh shader bound, but the Mesh Shader "
@@ -4258,7 +4258,7 @@ bool CoreChecks::ValidateMultiViewShaders(const vvl::Pipeline &pipeline, const L
         // Stage may not have SPIR-V data (e.g. due to the use of shader module identifier or in Vulkan SC)
         if (!stage.spirv_state) continue;
 
-        if (stage.spirv_state->static_data_.has_builtin_layer) {
+        if (stage.spirv_state->static_data_.has_built_in_layer) {
             // Special case for GLSL and Mesh Shading discussed in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4194
             const char *vuid = dynamic_rendering ? "VUID-VkGraphicsPipelineCreateInfo-renderPass-06059"
                                                  : "VUID-VkGraphicsPipelineCreateInfo-renderPass-06050";
@@ -4359,7 +4359,7 @@ bool CoreChecks::ValidateDrawPipelineFramebuffer(const vvl::CommandBuffer &cb_st
 
     for (auto &stage_state : pipeline.stage_states) {
         const VkShaderStageFlagBits stage = stage_state.GetStage();
-        if (stage_state.entrypoint && stage_state.entrypoint->written_builtin_layer &&
+        if (stage_state.entrypoint && stage_state.entrypoint->written_built_in_layer &&
             cb_state.active_framebuffer->create_info.layers == 1) {
             if (cb_state.active_render_pass && cb_state.active_render_pass->has_multiview_enabled) {
                 // If using MultiView, you should already have hit an error that Framebuffer Layer must be 1, but due to things like

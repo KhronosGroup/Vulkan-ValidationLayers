@@ -517,7 +517,7 @@ bool BestPractices::ValidateShaderStage(const ShaderStageState& stage_state, con
         }
 
         if (IsExtEnabled(extensions.vk_khr_maintenance4)) {
-            if (module_state.static_data_.has_builtin_workgroup_size) {
+            if (module_state.static_data_.has_built_in_workgroup_size) {
                 skip |= LogWarning("BestPractices-SpirvDeprecated_WorkgroupSize", device, loc,
                                    "is using the SPIR-V Workgroup built-in which SPIR-V 1.6 deprecated. When using "
                                    "VK_KHR_maintenance4 or Vulkan 1.3+, the new SPIR-V LocalSizeId execution mode should be used "

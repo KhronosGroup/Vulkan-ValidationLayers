@@ -1835,7 +1835,7 @@ bool CoreChecks::ValidateDrawFragmentShadingRate(const LastBound &last_bound_sta
                 continue;
             }
             if (pipeline->IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) && cb_state.dynamic_state_value.viewport_count != 1) {
-                if (stage_state.entrypoint && stage_state.entrypoint->written_builtin_primitive_shading_rate_khr) {
+                if (stage_state.entrypoint && stage_state.entrypoint->written_built_in_primitive_shading_rate_khr) {
                     skip |=
                         LogError(vuid.viewport_count_primitive_shading_rate_04552, stage_state.module_state->Handle(), vuid.loc(),
                                  "%s shader of currently bound pipeline statically writes to PrimitiveShadingRateKHR built-in, "
@@ -1850,7 +1850,7 @@ bool CoreChecks::ValidateDrawFragmentShadingRate(const LastBound &last_bound_sta
         for (uint32_t stage = 0; stage < kShaderObjectStageCount; ++stage) {
             const auto shader_object = last_bound_state.GetShaderObjectState(static_cast<ShaderObjectStage>(stage));
             if (shader_object && shader_object->entrypoint &&
-                shader_object->entrypoint->written_builtin_primitive_shading_rate_khr) {
+                shader_object->entrypoint->written_built_in_primitive_shading_rate_khr) {
                 if (cb_state.dynamic_state_value.viewport_count != 1) {
                     skip |= LogError(vuid.set_viewport_with_count_08642, cb_state.Handle(), vuid.loc(),
                                      "%s shader of currently bound pipeline statically writes to PrimitiveShadingRateKHR built-in, "

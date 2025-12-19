@@ -186,7 +186,7 @@ bool CoreChecks::ValidateInterfaceFragmentOutput(const vvl::Pipeline &pipeline, 
     return skip;
 }
 
-bool CoreChecks::ValidateBuiltinLimits(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
+bool CoreChecks::ValidateBuiltInLimits(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
                                        const vvl::Pipeline *pipeline, const Location &loc) const {
     bool skip = false;
 
@@ -198,7 +198,7 @@ bool CoreChecks::ValidateBuiltinLimits(const spirv::Module &module_state, const 
     for (const auto *variable : entrypoint.built_in_variables) {
         // Currently don't need to search in structs
         // Handles both the input and output sampleMask
-        if (variable->decorations.builtin == spv::BuiltInSampleMask &&
+        if (variable->decorations.built_in == spv::BuiltInSampleMask &&
             variable->array_size > phys_dev_props.limits.maxSampleMaskWords) {
             const char *vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-maxSampleMaskWords-00711"
                                         : "VUID-VkShaderCreateInfoEXT-pCode-08451";
@@ -428,34 +428,34 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
         return skip;
     }
 
-    std::vector<uint32_t> input_builtins_block;
-    std::vector<uint32_t> output_builtins_block;
+    std::vector<spv::BuiltIn> input_built_in_block;
+    std::vector<spv::BuiltIn> output_built_in_block;
     for (const auto *variable : producer_entrypoint.built_in_variables) {
-        if (variable->storage_class == spv::StorageClassOutput && !variable->builtin_block.empty()) {
-            output_builtins_block = variable->builtin_block;
+        if (variable->storage_class == spv::StorageClassOutput && !variable->built_in_block.empty()) {
+            output_built_in_block = variable->built_in_block;
             break;
         }
     }
     for (const auto *variable : consumer_entrypoint.built_in_variables) {
-        if (variable->storage_class == spv::StorageClassInput && !variable->builtin_block.empty()) {
-            input_builtins_block = variable->builtin_block;
+        if (variable->storage_class == spv::StorageClassInput && !variable->built_in_block.empty()) {
+            input_built_in_block = variable->built_in_block;
             break;
         }
     }
 
     bool mismatch = false;
-    if (input_builtins_block.empty() || output_builtins_block.empty()) {
+    if (input_built_in_block.empty() || output_built_in_block.empty()) {
         // TODO - Nothing about this in spec, need to add language to confirm this is correct
         return skip;
-    } else if (input_builtins_block.size() != output_builtins_block.size()) {
+    } else if (input_built_in_block.size() != output_built_in_block.size()) {
         mismatch = true;
     } else {
-        for (size_t i = 0; i < input_builtins_block.size(); i++) {
-            const uint32_t input_builtin = input_builtins_block[i];
-            const uint32_t output_builtin = output_builtins_block[i];
-            if (input_builtin == spirv::kInvalidValue || output_builtin == spirv::kInvalidValue) {
+        for (size_t i = 0; i < input_built_in_block.size(); i++) {
+            const spv::BuiltIn input_built_in = input_built_in_block[i];
+            const spv::BuiltIn output_built_in = output_built_in_block[i];
+            if (input_built_in == spirv::kInvalidBuiltIn || output_built_in == spirv::kInvalidBuiltIn) {
                 continue;  // some stages (TessControl -> TessEval) can have legal block vs non-block mismatch
-            } else if (input_builtin != output_builtin) {
+            } else if (input_built_in != output_built_in) {
                 mismatch = true;
             }
         }
@@ -464,13 +464,13 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
     if (mismatch) {
         std::stringstream msg;
         msg << string_VkShaderStageFlagBits(producer_stage) << " Output Block {\n";
-        for (size_t i = 0; i < output_builtins_block.size(); i++) {
-            msg << '\t' << i << ": " << string_SpvBuiltIn(output_builtins_block[i]) << '\n';
+        for (size_t i = 0; i < output_built_in_block.size(); i++) {
+            msg << '\t' << i << ": " << string_SpvBuiltIn(output_built_in_block[i]) << '\n';
         }
         msg << "}\n";
         msg << string_VkShaderStageFlagBits(consumer_stage) << " Input Block {\n";
-        for (size_t i = 0; i < input_builtins_block.size(); i++) {
-            msg << '\t' << i << ": " << string_SpvBuiltIn(input_builtins_block[i]) << '\n';
+        for (size_t i = 0; i < input_built_in_block.size(); i++) {
+            msg << '\t' << i << ": " << string_SpvBuiltIn(input_built_in_block[i]) << '\n';
         }
         msg << "}\n";
         const LogObjectList objlist(producer.handle(), consumer.handle());

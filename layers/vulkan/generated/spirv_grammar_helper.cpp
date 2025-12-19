@@ -1817,7 +1817,7 @@ const char* string_SpvDecoration(uint32_t decoration) {
     }
 }
 
-const char* string_SpvBuiltIn(uint32_t built_in) {
+const char* string_SpvBuiltIn(spv::BuiltIn built_in) {
     switch (built_in) {
         case spv::BuiltInPosition:
             return "Position";

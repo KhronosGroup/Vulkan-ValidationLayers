@@ -61,8 +61,8 @@ void DecorationBase::Add(uint32_t decoration, uint32_t value) {
             flags |= nonwritable_bit;
             break;
         case spv::DecorationBuiltIn:
-            assert(builtin == kInvalidValue);  // being over written - not valid
-            builtin = value;
+            assert(built_in == kInvalidBuiltIn);  // being over written - not valid
+            built_in = (spv::BuiltIn)value;
             break;
         case spv::DecorationNonReadable:
             flags |= nonreadable_bit;
@@ -112,11 +112,11 @@ void DecorationSet::Add(uint32_t decoration, uint32_t value) {
 }
 
 bool DecorationSet::HasAnyBuiltIn() const {
-    if (kInvalidValue != builtin) {
+    if (built_in != kInvalidBuiltIn) {
         return true;
     } else if (!member_decorations.empty()) {
         for (const auto& member : member_decorations) {
-            if (kInvalidValue != member.second.builtin) {
+            if (member.second.built_in != kInvalidBuiltIn) {
                 return true;
             }
         }
@@ -547,14 +547,16 @@ bool EntryPoint::IsBuiltInWritten(spv::BuiltIn built_in, const Module& module_st
     if (!variable.IsWrittenTo()) {
         return false;
     }
-    if (built_in == variable.decorations.builtin) {
+    if (built_in == variable.decorations.built_in) {
         return true;  // The built-in is on the Variable
     } else if (!variable.type_struct_info || variable.type_struct_info->decorations.member_decorations.empty()) {
         return false;
     }
 
     for (const auto& member : variable.type_struct_info->decorations.member_decorations) {
-        if (built_in != member.second.builtin) continue;
+        if (built_in != member.second.built_in) {
+            continue;
+        }
 
         // We have confirmed the Block variable was written to, now need to confirm an access to.
         // Because Built-in can't both be the input and output at the same time, we can confirm all accesses are either all
@@ -565,7 +567,9 @@ bool EntryPoint::IsBuiltInWritten(spv::BuiltIn built_in, const Module& module_st
         }
         const uint32_t member_index = member.first;
         for (const auto access_chain_insn : it->second) {
-            if (access_chain_insn->Length() < 5) continue;
+            if (access_chain_insn->Length() < 5) {
+                continue;
+            }
 
             // We know for sure any built-in inside a block are only 1-element deep so can just check the "Indexes 0" operand
             // Also no built-in we are dealing with are inside array-of-structs
@@ -585,8 +589,13 @@ bool EntryPoint::IsBuiltInWritten(spv::BuiltIn built_in, const Module& module_st
 
 bool EntryPoint::HasBuiltIn(spv::BuiltIn built_in) const {
     for (const auto* variable : built_in_variables) {
-        if (variable->decorations.builtin == built_in) {
+        if (variable->decorations.built_in == built_in) {
             return true;
+        }
+        for (const spv::BuiltIn member_built_in : variable->built_in_block) {
+            if (member_built_in == built_in) {
+                return true;
+            }
         }
     }
     return false;
@@ -868,29 +877,29 @@ EntryPoint::EntryPoint(const Module& module_state, const Instruction& entrypoint
         }
         has_passthrough |= variable.decorations.Has(DecorationSet::passthrough_bit);
 
-        if (variable.is_builtin) {
+        if (variable.is_built_in) {
             built_in_variables.push_back(&variable);
 
             if (variable.storage_class == spv::StorageClassInput) {
-                builtin_input_components += variable.total_builtin_components;
+                built_in_input_components += variable.total_built_in_components;
             } else if (variable.storage_class == spv::StorageClassOutput) {
-                builtin_output_components += variable.total_builtin_components;
+                built_in_output_components += variable.total_built_in_components;
             }
 
             if (IsBuiltInWritten(spv::BuiltInPrimitiveShadingRateKHR, module_state, variable, parsed)) {
-                written_builtin_primitive_shading_rate_khr = true;
+                written_built_in_primitive_shading_rate_khr = true;
             }
             if (IsBuiltInWritten(spv::BuiltInViewportIndex, module_state, variable, parsed)) {
-                written_builtin_viewport_index = true;
+                written_built_in_viewport_index = true;
             }
             if (IsBuiltInWritten(spv::BuiltInPointSize, module_state, variable, parsed)) {
-                written_builtin_point_size = true;
+                written_built_in_point_size = true;
             }
             if (IsBuiltInWritten(spv::BuiltInLayer, module_state, variable, parsed)) {
-                written_builtin_layer = true;
+                written_built_in_layer = true;
             }
             if (IsBuiltInWritten(spv::BuiltInViewportMaskNV, module_state, variable, parsed)) {
-                written_builtin_viewport_mask_nv = true;
+                written_built_in_viewport_mask_nv = true;
             }
         } else {
             user_defined_interface_variables.push_back(&variable);
@@ -964,7 +973,7 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
     std::vector<const Instruction*> image_instructions;
     std::vector<const Instruction*> func_call_instructions;
     // both OpDecorate and OpMemberDecorate builtin instructions
-    std::vector<const Instruction*> builtin_decoration_instructions;
+    std::vector<const Instruction*> built_in_decoration_instructions;
 
     std::vector<uint32_t> store_pointer_ids;
     std::vector<uint32_t> load_pointer_ids;
@@ -1001,7 +1010,7 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
                 decorations[target_id].Add(insn.Word(2), insn.Length() > 3u ? insn.Word(3) : 0u);
                 decoration_inst.push_back(&insn);
                 if (insn.Word(2) == spv::DecorationBuiltIn) {
-                    builtin_decoration_instructions.push_back(&insn);
+                    built_in_decoration_instructions.push_back(&insn);
                 } else if (insn.Word(2) == spv::DecorationSpecId) {
                     id_to_spec_id[target_id] = insn.Word(3);
                 }
@@ -1012,7 +1021,7 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
                 decorations[target_id].member_decorations[member_index].Add(insn.Word(3), insn.Length() > 4u ? insn.Word(4) : 0u);
                 member_decoration_inst.push_back(&insn);
                 if (insn.Word(3) == spv::DecorationBuiltIn) {
-                    builtin_decoration_instructions.push_back(&insn);
+                    built_in_decoration_instructions.push_back(&insn);
                 }
             } break;
 
@@ -1344,19 +1353,19 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
     mark_variable_access(atomic_store_pointer_ids, AccessBit::atomic_write);
     mark_variable_access(atomic_load_pointer_ids, AccessBit::atomic_read);
 
-    for (const Instruction* decoration_inst : builtin_decoration_instructions) {
-        const uint32_t built_in = decoration_inst->GetBuiltIn();
+    for (const Instruction* decoration_inst : built_in_decoration_instructions) {
+        const spv::BuiltIn built_in = decoration_inst->GetBuiltIn();
         if (built_in == spv::BuiltInLayer) {
-            has_builtin_layer = true;
+            has_built_in_layer = true;
         } else if (built_in == spv::BuiltInFullyCoveredEXT) {
             if (stateless_data) {
-                stateless_data->has_builtin_fully_covered = true;
+                stateless_data->has_built_in_fully_covered = true;
             }
         } else if (built_in == spv::BuiltInWorkgroupSize) {
-            has_builtin_workgroup_size = true;
-            builtin_workgroup_size_id = decoration_inst->Word(1);
+            has_built_in_workgroup_size = true;
+            built_in_workgroup_size_id = decoration_inst->Word(1);
         } else if (built_in == spv::BuiltInDrawIndex) {
-            has_builtin_draw_index = true;
+            has_built_in_draw_index = true;
         }
     }
 
@@ -1591,8 +1600,8 @@ LocalSize Module::FindLocalSize(const EntryPoint& entrypoint) const {
     LocalSize local_size;
     // "If an object is decorated with the WorkgroupSize decoration, this takes precedence over any LocalSize or LocalSizeId
     // execution mode."
-    if (static_data_.has_builtin_workgroup_size) {
-        const Instruction* composite_def = FindDef(static_data_.builtin_workgroup_size_id);
+    if (static_data_.has_built_in_workgroup_size) {
+        const Instruction* composite_def = FindDef(static_data_.built_in_workgroup_size_id);
         if (composite_def->Opcode() == spv::OpConstantComposite) {
             // VUID-WorkgroupSize-WorkgroupSize-04427 makes sure this is a OpTypeVector of int32
             local_size.x = GetConstantValueById(composite_def->Word(3));
@@ -2011,7 +2020,7 @@ const Instruction& StageInterfaceVariable::FindBaseType(StageInterfaceVariable& 
     return *base_type;
 }
 
-bool StageInterfaceVariable::IsBuiltin(const StageInterfaceVariable& variable, const Module& module_state) {
+bool StageInterfaceVariable::IsBuiltIn(const StageInterfaceVariable& variable, const Module& module_state) {
     const auto decoration_set = module_state.GetDecorationSet(variable.id);
     // If OpTypeStruct, will grab it's own decoration set
     return decoration_set.HasAnyBuiltIn() || (variable.type_struct_info && variable.type_struct_info->decorations.HasAnyBuiltIn());
@@ -2056,7 +2065,7 @@ static uint32_t GetStructInterfaceSlots(const Module& module_state, std::shared_
 
 std::vector<InterfaceSlot> StageInterfaceVariable::GetInterfaceSlots(StageInterfaceVariable& variable, const Module& module_state) {
     std::vector<InterfaceSlot> slots;
-    if (variable.is_builtin || variable.is_per_task_nv) {
+    if (variable.is_built_in || variable.is_per_task_nv) {
         // SPV_NV_mesh_shader has a PerTaskNV which is not a builtin or interface
         return slots;
     }
@@ -2151,26 +2160,27 @@ std::vector<InterfaceSlot> StageInterfaceVariable::GetInterfaceSlots(StageInterf
     return slots;
 }
 
-std::vector<uint32_t> StageInterfaceVariable::GetBuiltinBlock(const StageInterfaceVariable& variable, const Module& module_state) {
+std::vector<spv::BuiltIn> StageInterfaceVariable::GetBuiltInBlock(const StageInterfaceVariable& variable,
+                                                                  const Module& module_state) {
     // Built-in Location slot will always be [zero, size]
-    std::vector<uint32_t> slots;
+    std::vector<spv::BuiltIn> built_ins;
     // Only check block built-ins - many builtin are non-block and not used between shaders
-    if (!variable.is_builtin || !variable.type_struct_info) {
-        return slots;
+    if (!variable.is_built_in || !variable.type_struct_info) {
+        return built_ins;
     }
 
     const auto& decoration_set = variable.type_struct_info->decorations;
     if (decoration_set.Has(DecorationSet::block_bit)) {
         for (uint32_t i = 0; i < variable.type_struct_info->length; i++) {
-            slots.push_back(decoration_set.member_decorations.at(i).builtin);
+            built_ins.emplace_back(decoration_set.member_decorations.at(i).built_in);
         }
     }
-    return slots;
+    return built_ins;
 }
 
-uint32_t StageInterfaceVariable::GetBuiltinComponents(const StageInterfaceVariable& variable, const Module& module_state) {
+uint32_t StageInterfaceVariable::GetBuiltInComponents(const StageInterfaceVariable& variable, const Module& module_state) {
     uint32_t count = 0;
-    if (!variable.is_builtin) {
+    if (!variable.is_built_in) {
         return count;
     }
     if (variable.type_struct_info) {
@@ -2192,11 +2202,11 @@ StageInterfaceVariable::StageInterfaceVariable(const Module& module_state, const
       is_per_task_nv(IsPerTaskNV(*this)),
       is_array_interface(IsArrayInterface(*this)),
       base_type(FindBaseType(*this, module_state)),
-      is_builtin(IsBuiltin(*this, module_state)),
+      is_built_in(IsBuiltIn(*this, module_state)),
       nested_struct(false),
       interface_slots(GetInterfaceSlots(*this, module_state)),
-      builtin_block(GetBuiltinBlock(*this, module_state)),
-      total_builtin_components(GetBuiltinComponents(*this, module_state)) {}
+      built_in_block(GetBuiltInBlock(*this, module_state)),
+      total_built_in_components(GetBuiltInComponents(*this, module_state)) {}
 
 const Instruction& ResourceInterfaceVariable::FindBaseType(ResourceInterfaceVariable& variable, const Module& module_state) {
     // Takes a OpVariable and looks at the the descriptor type it uses. This will find things such as if the variable is writable,
