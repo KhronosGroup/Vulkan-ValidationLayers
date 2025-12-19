@@ -1464,7 +1464,7 @@ TEST_F(NegativeImageLayout, DynamicRenderingFragmentShadingRateSubmitTime) {
     m_command_buffer.BeginRendering(rendering_info);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
-    m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdBeginRendering-fsr-attachment-layout");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginRendering-imageView-12277");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -1567,7 +1567,7 @@ TEST_F(NegativeImageLayout, DynamicRenderingFragmentDensityMapSubmitTime) {
     m_command_buffer.BeginRendering(rendering_info);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
-    m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdBeginRendering-fdm-attachment-layout");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginRendering-imageView-12276");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
