@@ -26,6 +26,7 @@
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vulkan_core.h>
 #include "containers/container_utils.h"
+#include "containers/custom_containers.h"
 #include "core_checks/cc_state_tracker.h"
 #include "core_validation.h"
 #include "error_message/error_location.h"
@@ -5668,66 +5669,85 @@ bool CoreChecks::ValidateRenderingInputAttachmentIndices(const VkRenderingInputA
                                                          const LogObjectList objlist, const Location &loc_info) const {
     bool skip = false;
 
-    if (!enabled_features.dynamicRenderingLocalRead) {
-        if (index_info.pDepthInputAttachmentIndex) {
-            if (*index_info.pDepthInputAttachmentIndex != VK_ATTACHMENT_UNUSED) {
-                skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfo-dynamicRenderingLocalRead-09520", objlist,
-                                 loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfo, Field::pDepthInputAttachmentIndex, 0),
-                                 "is %" PRIu32 " but must be VK_ATTACHMENT_UNUSED", *index_info.pDepthInputAttachmentIndex);
-            }
-        }
-        if (index_info.pStencilInputAttachmentIndex) {
-            if (*index_info.pStencilInputAttachmentIndex != VK_ATTACHMENT_UNUSED) {
-                skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfo-dynamicRenderingLocalRead-09521", objlist,
-                                 loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfo, Field::pStencilInputAttachmentIndex, 0),
-                                 "is %" PRIu32 " but must be VK_ATTACHMENT_UNUSED", *index_info.pStencilInputAttachmentIndex);
-            }
-        }
-    }
-
+    vvl::unordered_map<uint32_t, uint32_t> unique;
     if (index_info.pColorAttachmentInputIndices) {
-        std::map<uint32_t, uint32_t> unique;
-
         for (uint32_t i = 0; i < index_info.colorAttachmentCount; ++i) {
-            const uint32_t index = index_info.pColorAttachmentInputIndices[i];
-
-            if (index == VK_ATTACHMENT_UNUSED) {
+            const uint32_t color_index = index_info.pColorAttachmentInputIndices[i];
+            if (color_index == VK_ATTACHMENT_UNUSED) {
                 continue;
             } else if (!enabled_features.dynamicRenderingLocalRead) {
                 skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfo-dynamicRenderingLocalRead-09519", objlist,
                                  loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfo, Field::pColorAttachmentInputIndices, i),
-                                 "is %" PRIu32 " but must be VK_ATTACHMENT_UNUSED", index);
+                                 "is %" PRIu32 " but must be VK_ATTACHMENT_UNUSED", color_index);
             }
 
-            if (unique.find(index) != unique.end()) {
+            if (unique.find(color_index) != unique.end()) {
                 skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfo-pColorAttachmentInputIndices-09522", objlist,
                                  loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfo, Field::pColorAttachmentInputIndices, i),
                                  "(%" PRIu32 ") has same value as in pColorAttachmentInputIndices[%" PRIu32 "] (%" PRIu32 ").",
-                                 index, unique[index], index_info.pColorAttachmentInputIndices[unique[index]]);
-            } else
-                unique[index] = i;
+                                 color_index, unique[color_index], index_info.pColorAttachmentInputIndices[unique[color_index]]);
+            } else {
+                unique[color_index] = i;
+            }
+
+            if (color_index >= phys_dev_props.limits.maxPerStageDescriptorInputAttachments) {
+                skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfo-pDepthInputAttachmentIndex-12274", objlist,
+                                 loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfo, Field::pColorAttachmentInputIndices, i),
+                                 "(%" PRIu32 ") is not less than maxPerStageDescriptorInputAttachments (%" PRIu32 ").", color_index,
+                                 phys_dev_props.limits.maxPerStageDescriptorInputAttachments);
+            }
         }
-        if (index_info.pDepthInputAttachmentIndex && *index_info.pDepthInputAttachmentIndex != VK_ATTACHMENT_UNUSED &&
-            unique.find(*index_info.pDepthInputAttachmentIndex) != unique.end()) {
-            const Location loc = loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfo, Field::pDepthInputAttachmentIndex, 0);
-            skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfo-pColorAttachmentInputIndices-09523", objlist, loc,
-                             "(%" PRIu32 ") has same value as in pColorAttachmentInputIndices[%" PRIu32 "] (%" PRIu32 ").",
-                             *index_info.pDepthInputAttachmentIndex, unique[*index_info.pDepthInputAttachmentIndex],
-                             index_info.pColorAttachmentInputIndices[unique[*index_info.pDepthInputAttachmentIndex]]);
+    }
+
+    if (index_info.pDepthInputAttachmentIndex && *index_info.pDepthInputAttachmentIndex != VK_ATTACHMENT_UNUSED) {
+        const uint32_t depth_index = *index_info.pDepthInputAttachmentIndex;
+        if (!enabled_features.dynamicRenderingLocalRead) {
+            skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfo-dynamicRenderingLocalRead-09520", objlist,
+                             loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfo, Field::pDepthInputAttachmentIndex),
+                             "is %" PRIu32 " but must be VK_ATTACHMENT_UNUSED", depth_index);
         }
-        if (index_info.pStencilInputAttachmentIndex && *index_info.pStencilInputAttachmentIndex != VK_ATTACHMENT_UNUSED &&
-            unique.find(*index_info.pStencilInputAttachmentIndex) != unique.end()) {
-            const Location loc = loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfo, Field::pStencilInputAttachmentIndex, 0);
-            skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfo-pColorAttachmentInputIndices-09524", objlist, loc,
+
+        if (unique.find(depth_index) != unique.end()) {
+            skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfo-pColorAttachmentInputIndices-09523", objlist,
+                             loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfo, Field::pDepthInputAttachmentIndex),
                              "(%" PRIu32 ") has same value as in pColorAttachmentInputIndices[%" PRIu32 "] (%" PRIu32 ").",
-                             *index_info.pStencilInputAttachmentIndex, unique[*index_info.pStencilInputAttachmentIndex],
-                             index_info.pColorAttachmentInputIndices[unique[*index_info.pStencilInputAttachmentIndex]]);
+                             depth_index, unique[depth_index], index_info.pColorAttachmentInputIndices[unique[depth_index]]);
+        }
+
+        if (depth_index >= phys_dev_props.limits.maxPerStageDescriptorInputAttachments) {
+            skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfo-pDepthInputAttachmentIndex-12274", objlist,
+                             loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfo, Field::pDepthInputAttachmentIndex),
+                             "(%" PRIu32 ") is not less than maxPerStageDescriptorInputAttachments (%" PRIu32 ").", depth_index,
+                             phys_dev_props.limits.maxPerStageDescriptorInputAttachments);
+        }
+    }
+
+    if (index_info.pStencilInputAttachmentIndex && *index_info.pStencilInputAttachmentIndex != VK_ATTACHMENT_UNUSED) {
+        const uint32_t stencil_index = *index_info.pStencilInputAttachmentIndex;
+        if (!enabled_features.dynamicRenderingLocalRead) {
+            skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfo-dynamicRenderingLocalRead-09521", objlist,
+                             loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfo, Field::pStencilInputAttachmentIndex),
+                             "is %" PRIu32 " but must be VK_ATTACHMENT_UNUSED", stencil_index);
+        }
+
+        if (unique.find(stencil_index) != unique.end()) {
+            skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfo-pColorAttachmentInputIndices-09524", objlist,
+                             loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfo, Field::pStencilInputAttachmentIndex),
+                             "(%" PRIu32 ") has same value as in pColorAttachmentInputIndices[%" PRIu32 "] (%" PRIu32 ").",
+                             stencil_index, unique[stencil_index], index_info.pColorAttachmentInputIndices[unique[stencil_index]]);
+        }
+
+        if (stencil_index >= phys_dev_props.limits.maxPerStageDescriptorInputAttachments) {
+            skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfo-pDepthInputAttachmentIndex-12274", objlist,
+                             loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfo, Field::pStencilInputAttachmentIndex),
+                             "(%" PRIu32 ") is not less than maxPerStageDescriptorInputAttachments (%" PRIu32 ").", stencil_index,
+                             phys_dev_props.limits.maxPerStageDescriptorInputAttachments);
         }
     }
 
     if (index_info.colorAttachmentCount > phys_dev_props.limits.maxColorAttachments) {
-        const Location loc = loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfo, Field::colorAttachmentCount);
-        skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfo-colorAttachmentCount-09525", objlist, loc,
+        skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfo-colorAttachmentCount-09525", objlist,
+                         loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfo, Field::colorAttachmentCount),
                          "(%" PRIu32 ") is greater than maxColorAttachments (%" PRIu32 ").", index_info.colorAttachmentCount,
                          phys_dev_props.limits.maxColorAttachments);
     }

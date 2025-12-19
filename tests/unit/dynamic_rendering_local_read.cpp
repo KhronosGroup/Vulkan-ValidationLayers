@@ -956,6 +956,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, InputAttachmentIndexColorAttachmentCou
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09531");
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInputAttachmentIndexInfo-colorAttachmentCount-09525");
+    // On Arm Windows, you will hit input limit as well
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkRenderingInputAttachmentIndexInfo-pDepthInputAttachmentIndex-12274");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -1127,6 +1129,44 @@ TEST_F(NegativeDynamicRenderingLocalRead, InputAttachmentIndexUnique) {
         vk::CmdSetRenderingInputAttachmentIndicesKHR(m_command_buffer, &input_info[i]);
         m_errorMonitor->VerifyFound();
     }
+}
+
+TEST_F(NegativeDynamicRenderingLocalRead, MaxPerStageDescriptorInputAttachments) {
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
+    const uint32_t max_attachments = m_device->Physical().limits_.maxPerStageDescriptorInputAttachments;
+    if (max_attachments == vvl::kU32Max) {
+        GTEST_SKIP() << "maxPerStageDescriptorInputAttachments is uint32_t max";
+    }
+
+    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingAttachmentInfo color_attachments[2] = {vku::InitStructHelper(), vku::InitStructHelper()};
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32, 32}};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 2;
+    rendering_info.pColorAttachments = &color_attachments[0];
+    m_command_buffer.BeginRendering(rendering_info);
+
+    uint32_t indices[2] = {0, max_attachments};
+    VkRenderingInputAttachmentIndexInfo input_info = vku::InitStructHelper();
+    input_info.pColorAttachmentInputIndices = indices;
+    input_info.colorAttachmentCount = 2;
+
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingInputAttachmentIndexInfo-pDepthInputAttachmentIndex-12274");
+    vk::CmdSetRenderingInputAttachmentIndicesKHR(m_command_buffer, &input_info);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDynamicRenderingLocalRead, CmdSetAttachmentLocationsColorAttachmentCount) {
