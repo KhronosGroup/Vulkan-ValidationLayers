@@ -473,14 +473,12 @@ class Device : public vvl::base::Device {
 
     bool OutputExtensionError(const Location &loc, const vvl::Extensions &exentsions) const;
 
-    bool ValidateSubpassGraphicsFlags(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo, uint32_t subpass,
-                                      VkPipelineStageFlags2 stages, const char *vuid, const Location &loc) const;
+    bool ValidateSubpassGraphicsFlags(const VkRenderPassCreateInfo2 &create_info, uint32_t subpass, VkPipelineStageFlags2 stages,
+                                      const char *vuid, const Location &loc) const;
 
-    bool ValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
-                                  const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                  const ErrorObject &error_obj) const;
+    bool ValidateCreateRenderPass(const VkRenderPassCreateInfo2 &create_info, const ErrorObject &error_obj) const;
 
-    void RecordRenderPass(VkRenderPass renderPass, const VkRenderPassCreateInfo2 *pCreateInfo);
+    void RecordRenderPass(VkRenderPass renderPass, const VkRenderPassCreateInfo2 &create_info);
 
     void FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) override;
 
