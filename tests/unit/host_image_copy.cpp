@@ -1968,6 +1968,48 @@ TEST_F(NegativeHostImageCopy, TransitionImageLayoutUsageMismatch2) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeHostImageCopy, TransitionImageLayoutSync2Feature) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(InitHostImageCopyTest());
+
+    if (!CopyLayoutSupported(copy_src_layouts, copy_dst_layouts, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL)) {
+        GTEST_SKIP() << "VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL layout not supported";
+    }
+
+    vkt::Image image(*m_device, image_ci);
+
+    VkHostImageLayoutTransitionInfo transition_info = vku::InitStructHelper();
+    transition_info.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    transition_info.newLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+    transition_info.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    transition_info.image = image;
+    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-synchronization2-07794");
+    vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeHostImageCopy, TransitionImageLayoutLocalReadFeature) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitHostImageCopyTest());
+
+    if (!CopyLayoutSupported(copy_src_layouts, copy_dst_layouts, VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ)) {
+        GTEST_SKIP() << "VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ layout not supported";
+    }
+
+    image_ci.usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_HOST_TRANSFER_BIT;
+    vkt::Image image(*m_device, image_ci);
+
+    VkHostImageLayoutTransitionInfo transition_info = vku::InitStructHelper();
+    transition_info.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    transition_info.newLayout = VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ;
+    transition_info.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    transition_info.image = image;
+    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-dynamicRenderingLocalRead-09552");
+    vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeHostImageCopy, TransitionImageLayoutZeroInitialized) {
     AddRequiredExtensions(VK_EXT_ZERO_INITIALIZE_DEVICE_MEMORY_EXTENSION_NAME);
     RETURN_IF_SKIP(InitHostImageCopyTest());

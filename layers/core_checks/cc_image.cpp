@@ -2642,6 +2642,39 @@ bool CoreChecks::PreCallValidateTransitionImageLayout(VkDevice device, uint32_t 
                              "VK_IMAGE_USAGE_HOST_TRANSFER_BIT.",
                              string_VkImageUsageFlags(image_state->create_info.usage).c_str());
         }
+
+        if (!enabled_features.synchronization2) {
+            if (IsValueIn(transition.oldLayout, {VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL})) {
+                const LogObjectList objlist(device, image_state->Handle());
+                skip |= LogError("VUID-VkHostImageLayoutTransitionInfo-synchronization2-07793", objlist,
+                                 transition_loc.dot(Field::oldLayout), "is %s but the synchronization2 feature was not enabled.",
+                                 string_VkImageLayout(transition.oldLayout));
+            }
+            if (IsValueIn(transition.newLayout, {VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL})) {
+                const LogObjectList objlist(device, image_state->Handle());
+                skip |= LogError("VUID-VkHostImageLayoutTransitionInfo-synchronization2-07794", objlist,
+                                 transition_loc.dot(Field::newLayout), "is %s but the synchronization2 feature was not enabled.",
+                                 string_VkImageLayout(transition.newLayout));
+            }
+        }
+
+        if (!enabled_features.dynamicRenderingLocalRead) {
+            if (transition.oldLayout == VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ) {
+                const LogObjectList objlist(device, image_state->Handle());
+                skip |= LogError("VUID-VkHostImageLayoutTransitionInfo-dynamicRenderingLocalRead-09551", objlist,
+                                 transition_loc.dot(Field::oldLayout),
+                                 "is %s but the dynamicRenderingLocalRead feature was not enabled",
+                                 string_VkImageLayout(transition.oldLayout));
+            }
+            if (transition.newLayout == VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ) {
+                const LogObjectList objlist(device, image_state->Handle());
+                skip |= LogError("VUID-VkHostImageLayoutTransitionInfo-dynamicRenderingLocalRead-09552", objlist,
+                                 transition_loc.dot(Field::newLayout),
+                                 "is %s but the dynamicRenderingLocalRead feature was not enabled",
+                                 string_VkImageLayout(transition.newLayout));
+            }
+        }
+
         if (transition.oldLayout == VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT) {
             const LogObjectList objlist(device, image_state->Handle());
             if (!enabled_features.zeroInitializeDeviceMemory) {
@@ -2653,6 +2686,16 @@ bool CoreChecks::PreCallValidateTransitionImageLayout(VkDevice device, uint32_t 
             skip |= ValidateImageBarrierZeroInitializedSubresourceRange(transition.subresourceRange, *image_state, objlist,
                                                                         transition_loc);
         }
+        if (transition.newLayout == VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT) {
+            if (!enabled_features.attachmentFeedbackLoopLayout) {
+                const LogObjectList objlist(device, image_state->Handle());
+                skip |= LogError("VUID-VkHostImageLayoutTransitionInfo-attachmentFeedbackLoopLayout-07313", objlist,
+                                 transition_loc.dot(Field::newLayout),
+                                 "is %s, but the attachmentFeedbackLoopLayout feature was not enabled.",
+                                 string_VkImageLayout(transition.newLayout));
+            }
+        }
+
         skip |= ValidateImageLayoutAgainstImageUsage(transition_loc.dot(Field::oldLayout), transition.image, transition.oldLayout,
                                                      image_state->create_info.usage);
         skip |= ValidateImageLayoutAgainstImageUsage(transition_loc.dot(Field::newLayout), transition.image, transition.newLayout,
