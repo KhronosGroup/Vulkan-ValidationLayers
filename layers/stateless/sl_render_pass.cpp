@@ -68,7 +68,7 @@ bool Device::ValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateI
                                       const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                       const ErrorObject &error_obj) const {
     bool skip = false;
-    uint32_t max_color_attachments = device_limits.maxColorAttachments;
+    uint32_t max_color_attachments = phys_dev_props.limits.maxColorAttachments;
     const bool use_rp2 = error_obj.location.function != Func::vkCreateRenderPass;
     const char *vuid = nullptr;
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
@@ -738,13 +738,13 @@ bool Device::manual_PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuff
                          "viewMask and layerCount are both zero");
     }
 
-    if (pRenderingInfo->colorAttachmentCount > device_limits.maxColorAttachments) {
+    if (pRenderingInfo->colorAttachmentCount > phys_dev_props.limits.maxColorAttachments) {
         skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06106", commandBuffer,
                          rendering_info_loc.dot(Field::colorAttachmentCount),
                          "(%" PRIu32
                          ") must be less than or equal to "
                          "maxColorAttachments (%" PRIu32 ").",
-                         pRenderingInfo->colorAttachmentCount, device_limits.maxColorAttachments);
+                         pRenderingInfo->colorAttachmentCount, phys_dev_props.limits.maxColorAttachments);
     }
 
     if ((pRenderingInfo->flags & VK_RENDERING_CONTENTS_INLINE_BIT_KHR) != 0 && !enabled_features.nestedCommandBuffer &&
@@ -759,10 +759,10 @@ bool Device::manual_PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuff
             LogError("VUID-VkRenderingInfo-flags-11514", commandBuffer, rendering_info_loc.dot(Field::flags),
                      "is %s, but customResolve feature were not enabled.", string_VkRenderingFlags(pRenderingInfo->flags).c_str());
     }
-    if (pRenderingInfo->layerCount > device_limits.maxFramebufferLayers) {
+    if (pRenderingInfo->layerCount > phys_dev_props.limits.maxFramebufferLayers) {
         skip |= LogError("VUID-VkRenderingInfo-layerCount-07817", commandBuffer, rendering_info_loc.dot(Field::layerCount),
                          "(%" PRIu32 ") is greater than maxFramebufferLayers (%" PRIu32 ").", pRenderingInfo->layerCount,
-                         device_limits.maxFramebufferLayers);
+                         phys_dev_props.limits.maxFramebufferLayers);
     }
 
     if (!enabled_features.multiview && (pRenderingInfo->viewMask != 0)) {

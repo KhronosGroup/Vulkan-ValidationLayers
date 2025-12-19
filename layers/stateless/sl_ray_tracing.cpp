@@ -1912,34 +1912,35 @@ bool Device::manual_PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer
                          width, depth, height, phys_dev_ext_props.ray_tracing_props_khr.maxRayDispatchInvocationCount);
     }
 
-    const uint64_t max_width = static_cast<uint64_t>(device_limits.maxComputeWorkGroupCount[0]) *
-                               static_cast<uint64_t>(device_limits.maxComputeWorkGroupSize[0]);
+    const uint64_t max_width = static_cast<uint64_t>(phys_dev_props.limits.maxComputeWorkGroupCount[0]) *
+                               static_cast<uint64_t>(phys_dev_props.limits.maxComputeWorkGroupSize[0]);
     if (width > max_width) {
-        skip |= LogError("VUID-vkCmdTraceRaysKHR-width-03638", commandBuffer, error_obj.location.dot(Field::width),
-                         "(%" PRIu32
-                         ") must be less than or equal to maxComputeWorkGroupCount[0] x maxComputeWorkGroupSize[0] (%" PRIu32
-                         " x %" PRIu32 " = %" PRIu64 ").",
-                         width, device_limits.maxComputeWorkGroupCount[0], device_limits.maxComputeWorkGroupSize[0], max_width);
+        skip |= LogError(
+            "VUID-vkCmdTraceRaysKHR-width-03638", commandBuffer, error_obj.location.dot(Field::width),
+            "(%" PRIu32 ") must be less than or equal to maxComputeWorkGroupCount[0] x maxComputeWorkGroupSize[0] (%" PRIu32
+            " x %" PRIu32 " = %" PRIu64 ").",
+            width, phys_dev_props.limits.maxComputeWorkGroupCount[0], phys_dev_props.limits.maxComputeWorkGroupSize[0], max_width);
     }
 
-    const uint64_t max_height = static_cast<uint64_t>(device_limits.maxComputeWorkGroupCount[1]) *
-                                static_cast<uint64_t>(device_limits.maxComputeWorkGroupSize[1]);
+    const uint64_t max_height = static_cast<uint64_t>(phys_dev_props.limits.maxComputeWorkGroupCount[1]) *
+                                static_cast<uint64_t>(phys_dev_props.limits.maxComputeWorkGroupSize[1]);
     if (height > max_height) {
         skip |= LogError("VUID-vkCmdTraceRaysKHR-height-03639", commandBuffer, error_obj.location.dot(Field::height),
                          "(%" PRIu32
                          ") must be less than or equal to maxComputeWorkGroupCount[1] x maxComputeWorkGroupSize[1] (%" PRIu32
                          " x %" PRIu32 " = %" PRIu64 ").",
-                         height, device_limits.maxComputeWorkGroupCount[1], device_limits.maxComputeWorkGroupSize[1], max_height);
+                         height, phys_dev_props.limits.maxComputeWorkGroupCount[1],
+                         phys_dev_props.limits.maxComputeWorkGroupSize[1], max_height);
     }
 
-    const uint64_t max_depth = static_cast<uint64_t>(device_limits.maxComputeWorkGroupCount[2]) *
-                               static_cast<uint64_t>(device_limits.maxComputeWorkGroupSize[2]);
+    const uint64_t max_depth = static_cast<uint64_t>(phys_dev_props.limits.maxComputeWorkGroupCount[2]) *
+                               static_cast<uint64_t>(phys_dev_props.limits.maxComputeWorkGroupSize[2]);
     if (depth > max_depth) {
-        skip |= LogError("VUID-vkCmdTraceRaysKHR-depth-03640", commandBuffer, error_obj.location.dot(Field::depth),
-                         "(%" PRIu32
-                         ") must be less than or equal to maxComputeWorkGroupCount[2] x maxComputeWorkGroupSize[2] (%" PRIu32
-                         " x %" PRIu32 " = %" PRIu64 ").",
-                         depth, device_limits.maxComputeWorkGroupCount[2], device_limits.maxComputeWorkGroupSize[2], max_depth);
+        skip |= LogError(
+            "VUID-vkCmdTraceRaysKHR-depth-03640", commandBuffer, error_obj.location.dot(Field::depth),
+            "(%" PRIu32 ") must be less than or equal to maxComputeWorkGroupCount[2] x maxComputeWorkGroupSize[2] (%" PRIu32
+            " x %" PRIu32 " = %" PRIu64 ").",
+            depth, phys_dev_props.limits.maxComputeWorkGroupCount[2], phys_dev_props.limits.maxComputeWorkGroupSize[2], max_depth);
     }
     return skip;
 }

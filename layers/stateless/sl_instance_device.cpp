@@ -336,8 +336,6 @@ void Instance::PreCallRecordDestroyInstance(VkInstance instance, const VkAllocat
 }
 
 void Device::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
-    memcpy(&device_limits, &phys_dev_props.limits, sizeof(VkPhysicalDeviceLimits));
-
     std::vector<VkExtensionProperties> ext_props{};
     uint32_t ext_count = 0;
     DispatchEnumerateDeviceExtensionProperties(physical_device, nullptr, &ext_count, nullptr);

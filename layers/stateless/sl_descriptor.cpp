@@ -63,7 +63,7 @@ bool Device::ValidateCoarseSampleOrderCustomNV(const VkCoarseSampleOrderCustomNV
     }
 
     if (order.sampleCount == 0 || (order.sampleCount & (order.sampleCount - 1)) ||
-        !(order.sampleCount & device_limits.framebufferNoAttachmentsSampleCounts)) {
+        !(order.sampleCount & phys_dev_props.limits.framebufferNoAttachmentsSampleCounts)) {
         skip |= LogError("VUID-VkCoarseSampleOrderCustomNV-sampleCount-02074", device, order_loc.dot(Field::sampleCount),
                          "(%" PRIu32
                          ") must correspond to a sample count enumerated in VkSampleCountFlags whose corresponding bit "
@@ -345,10 +345,10 @@ bool Device::ValidateSamplerCreateInfo(const VkSamplerCreateInfo &create_info, c
     bool skip = false;
 
     if (create_info.anisotropyEnable == VK_TRUE) {
-        if (!IsBetweenInclusive(create_info.maxAnisotropy, 1.0F, device_limits.maxSamplerAnisotropy)) {
+        if (!IsBetweenInclusive(create_info.maxAnisotropy, 1.0F, phys_dev_props.limits.maxSamplerAnisotropy)) {
             skip |= LogError("VUID-VkSamplerCreateInfo-anisotropyEnable-01071", device, create_info_loc.dot(Field::maxAnisotropy),
                              "is %f but must be in the range of [1.0, %f] (maxSamplerAnistropy).", create_info.maxAnisotropy,
-                             device_limits.maxSamplerAnisotropy);
+                             phys_dev_props.limits.maxSamplerAnisotropy);
         }
 
         // Anistropy cannot be enabled in sampler unless enabled as a feature
@@ -445,9 +445,10 @@ bool Device::ValidateSamplerCreateInfo(const VkSamplerCreateInfo &create_info, c
     }
 
     // Check mipLodBias to device limit
-    if (create_info.mipLodBias > device_limits.maxSamplerLodBias) {
+    if (create_info.mipLodBias > phys_dev_props.limits.maxSamplerLodBias) {
         skip |= LogError("VUID-VkSamplerCreateInfo-mipLodBias-01069", device, create_info_loc.dot(Field::mipLodBias),
-                         "(%f) is greater than maxSamplerLodBias (%f)", create_info.mipLodBias, device_limits.maxSamplerLodBias);
+                         "(%f) is greater than maxSamplerLodBias (%f)", create_info.mipLodBias,
+                         phys_dev_props.limits.maxSamplerLodBias);
     }
 
     if (vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(create_info.pNext)) {

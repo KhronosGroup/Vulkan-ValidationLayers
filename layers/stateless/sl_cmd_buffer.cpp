@@ -72,16 +72,16 @@ bool Device::manual_PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandB
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
-    if (firstBinding > device_limits.maxVertexInputBindings) {
+    if (firstBinding > phys_dev_props.limits.maxVertexInputBindings) {
         skip |= LogError("VUID-vkCmdBindVertexBuffers-firstBinding-00624", commandBuffer, error_obj.location,
                          "firstBinding (%" PRIu32 ") must be less than maxVertexInputBindings (%" PRIu32 ").", firstBinding,
-                         device_limits.maxVertexInputBindings);
-    } else if ((firstBinding + bindingCount) > device_limits.maxVertexInputBindings) {
+                         phys_dev_props.limits.maxVertexInputBindings);
+    } else if ((firstBinding + bindingCount) > phys_dev_props.limits.maxVertexInputBindings) {
         skip |= LogError("VUID-vkCmdBindVertexBuffers-firstBinding-00625", commandBuffer, error_obj.location,
                          "sum of firstBinding (%" PRIu32 ") and bindingCount (%" PRIu32
                          ") must be less than "
                          "maxVertexInputBindings (%" PRIu32 ").",
-                         firstBinding, bindingCount, device_limits.maxVertexInputBindings);
+                         firstBinding, bindingCount, phys_dev_props.limits.maxVertexInputBindings);
     }
 
     for (uint32_t i = 0; i < bindingCount; ++i) {
@@ -242,18 +242,18 @@ bool Device::manual_PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer command
         }
     }
 
-    if (firstBinding >= device_limits.maxVertexInputBindings) {
+    if (firstBinding >= phys_dev_props.limits.maxVertexInputBindings) {
         skip |=
             LogError("VUID-vkCmdBindVertexBuffers2-firstBinding-03355", commandBuffer, error_obj.location.dot(Field::firstBinding),
                      "(%" PRIu32 ") must be less than maxVertexInputBindings (%" PRIu32 ").", firstBinding,
-                     device_limits.maxVertexInputBindings);
-    } else if ((firstBinding + bindingCount) > device_limits.maxVertexInputBindings) {
+                     phys_dev_props.limits.maxVertexInputBindings);
+    } else if ((firstBinding + bindingCount) > phys_dev_props.limits.maxVertexInputBindings) {
         skip |=
             LogError("VUID-vkCmdBindVertexBuffers2-firstBinding-03356", commandBuffer, error_obj.location.dot(Field::firstBinding),
                      "(%" PRIu32 ") + bindingCount (%" PRIu32
                      ") must be less than "
                      "maxVertexInputBindings (%" PRIu32 ").",
-                     firstBinding, bindingCount, device_limits.maxVertexInputBindings);
+                     firstBinding, bindingCount, phys_dev_props.limits.maxVertexInputBindings);
     }
 
     for (uint32_t i = 0; i < bindingCount; ++i) {
@@ -272,11 +272,11 @@ bool Device::manual_PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer command
             }
         }
         if (pStrides) {
-            if (pStrides[i] > device_limits.maxVertexInputBindingStride) {
+            if (pStrides[i] > phys_dev_props.limits.maxVertexInputBindingStride) {
                 skip |= LogError("VUID-vkCmdBindVertexBuffers2-pStrides-03362", commandBuffer,
                                  error_obj.location.dot(Field::pStrides, i),
                                  "(%" PRIu64 ") must be less than maxVertexInputBindingStride (%" PRIu32 ").", pStrides[i],
-                                 device_limits.maxVertexInputBindingStride);
+                                 phys_dev_props.limits.maxVertexInputBindingStride);
             }
         }
     }
@@ -287,7 +287,7 @@ bool Device::manual_PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer command
 bool Device::ValidateCmdPushConstants(VkCommandBuffer commandBuffer, uint32_t offset, uint32_t size, const Location &loc) const {
     bool skip = false;
     const bool is_2 = loc.function != Func::vkCmdPushConstants;
-    const uint32_t max_push_constants_size = device_limits.maxPushConstantsSize;
+    const uint32_t max_push_constants_size = phys_dev_props.limits.maxPushConstantsSize;
     // Check that offset + size don't exceed the max.
     // Prevent arithetic overflow here by avoiding addition and testing in this order.
     if (offset >= max_push_constants_size) {
@@ -583,7 +583,7 @@ bool Device::ValidateViewport(const VkViewport &viewport, VkCommandBuffer object
 
     // width
     bool width_healthy = true;
-    const auto max_w = device_limits.maxViewportDimensions[0];
+    const auto max_w = phys_dev_props.limits.maxViewportDimensions[0];
 
     if (!(viewport.width > 0.0f)) {
         width_healthy = false;
@@ -599,7 +599,7 @@ bool Device::ValidateViewport(const VkViewport &viewport, VkCommandBuffer object
     bool height_healthy = true;
     const bool negative_height_enabled =
         IsExtEnabled(extensions.vk_khr_maintenance1) || IsExtEnabled(extensions.vk_amd_negative_viewport_height);
-    const auto max_h = device_limits.maxViewportDimensions[1];
+    const auto max_h = phys_dev_props.limits.maxViewportDimensions[1];
 
     if (!negative_height_enabled && !(viewport.height > 0.0f)) {
         height_healthy = false;
@@ -615,49 +615,49 @@ bool Device::ValidateViewport(const VkViewport &viewport, VkCommandBuffer object
 
     // x
     bool x_healthy = true;
-    if (!(viewport.x >= device_limits.viewportBoundsRange[0])) {
+    if (!(viewport.x >= phys_dev_props.limits.viewportBoundsRange[0])) {
         x_healthy = false;
         skip |= LogError("VUID-VkViewport-x-01774", object, loc.dot(Field::x),
                          "(%f) is less than VkPhysicalDeviceLimits::viewportBoundsRange[0] (%f).", viewport.x,
-                         device_limits.viewportBoundsRange[0]);
+                         phys_dev_props.limits.viewportBoundsRange[0]);
     }
 
     // x + width
     if (x_healthy && width_healthy) {
         const float right_bound = viewport.x + viewport.width;
-        if (right_bound > device_limits.viewportBoundsRange[1]) {
+        if (right_bound > phys_dev_props.limits.viewportBoundsRange[1]) {
             skip |= LogError("VUID-VkViewport-x-01232", object, loc,
                              "x (%f) + width (%f) is %f which is greater than VkPhysicalDeviceLimits::viewportBoundsRange[1] (%f).",
-                             viewport.x, viewport.width, right_bound, device_limits.viewportBoundsRange[1]);
+                             viewport.x, viewport.width, right_bound, phys_dev_props.limits.viewportBoundsRange[1]);
         }
     }
 
     // y
     bool y_healthy = true;
-    if (!(viewport.y >= device_limits.viewportBoundsRange[0])) {
+    if (!(viewport.y >= phys_dev_props.limits.viewportBoundsRange[0])) {
         y_healthy = false;
         skip |= LogError("VUID-VkViewport-y-01775", object, loc.dot(Field::y),
                          "(%f) is less than VkPhysicalDeviceLimits::viewportBoundsRange[0] (%f).", viewport.y,
-                         device_limits.viewportBoundsRange[0]);
-    } else if (negative_height_enabled && viewport.y > device_limits.viewportBoundsRange[1]) {
+                         phys_dev_props.limits.viewportBoundsRange[0]);
+    } else if (negative_height_enabled && viewport.y > phys_dev_props.limits.viewportBoundsRange[1]) {
         y_healthy = false;
         skip |= LogError("VUID-VkViewport-y-01776", object, loc.dot(Field::y),
                          "(%f) exceeds VkPhysicalDeviceLimits::viewportBoundsRange[1] (%f).", viewport.y,
-                         device_limits.viewportBoundsRange[1]);
+                         phys_dev_props.limits.viewportBoundsRange[1]);
     }
 
     // y + height
     if (y_healthy && height_healthy) {
         const float boundary = viewport.y + viewport.height;
 
-        if (boundary > device_limits.viewportBoundsRange[1]) {
+        if (boundary > phys_dev_props.limits.viewportBoundsRange[1]) {
             skip |= LogError("VUID-VkViewport-y-01233", object, loc.dot(Field::y),
                              "(%f) + height (%f) is %f which exceeds VkPhysicalDeviceLimits::viewportBoundsRange[1] (%f).",
-                             viewport.y, viewport.height, boundary, device_limits.viewportBoundsRange[1]);
-        } else if (negative_height_enabled && boundary < device_limits.viewportBoundsRange[0]) {
+                             viewport.y, viewport.height, boundary, phys_dev_props.limits.viewportBoundsRange[1]);
+        } else if (negative_height_enabled && boundary < phys_dev_props.limits.viewportBoundsRange[0]) {
             skip |= LogError("VUID-VkViewport-y-01777", object, loc.dot(Field::y),
                              "(%f) + height (%f) is %f which is less than VkPhysicalDeviceLimits::viewportBoundsRange[0] (%f).",
-                             viewport.y, viewport.height, boundary, device_limits.viewportBoundsRange[0]);
+                             viewport.y, viewport.height, boundary, phys_dev_props.limits.viewportBoundsRange[0]);
         }
     }
 
