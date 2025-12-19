@@ -93,6 +93,9 @@
                 "VkPhysicalDeviceShaderUniformBufferUnsizedArrayFeaturesEXT": {
                     "shaderUniformBufferUnsizedArray": true
                 },
+                "VkPhysicalDeviceShaderLongVectorPropertiesEXT": {
+                    "maxVectorComponents": 4096
+                },
                 "VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV": {
                     "deviceGeneratedCompute": true,
                     "deviceGeneratedComputePipelines": true,
@@ -334,6 +337,9 @@
                 "VkPhysicalDeviceShaderObjectFeaturesEXT": {
                     "shaderObject": true
                 },
+                "VkPhysicalDeviceShaderLongVectorFeaturesEXT": {
+                    "longVector": true
+                },
                 "VkPhysicalDeviceTransformFeedbackFeaturesEXT": {
                     "transformFeedback": true,
                     "geometryStreams": true
@@ -350,6 +356,9 @@
                 "VkPhysicalDeviceComputeShaderDerivativesFeaturesNV": {
                     "computeDerivativeGroupQuads": true,
                     "computeDerivativeGroupLinear": true
+                },
+                "VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV": {
+                    "computeOccupancyPriority": true
                 },
                 "VkPhysicalDeviceShaderImageFootprintFeaturesNV": {
                     "imageFootprint": true
@@ -453,6 +462,9 @@
                 },
                 "VkPhysicalDeviceTextureCompressionASTCHDRFeatures": {
                     "textureCompressionASTC_HDR": true
+                },
+                "VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT": {
+                    "textureCompressionASTC_3D": true
                 },
                 "VkPhysicalDeviceCooperativeMatrixFeaturesNV": {
                     "cooperativeMatrix": true,
@@ -2423,6 +2435,8 @@
                 "VK_EXT_shader_subgroup_vote": 1,
                 "VK_EXT_shader_viewport_index_layer": 1,
                 "VK_EXT_shader_uniform_buffer_unsized_array": 1,
+                "VK_EXT_shader_tile_image": 1,
+                "VK_EXT_shader_long_vector": 1,
                 "VK_EXT_subgroup_size_control": 1,
                 "VK_EXT_subpass_merge_feedback": 1,
                 "VK_EXT_surface_maintenance1": 1,
@@ -2430,6 +2444,7 @@
                 "VK_EXT_swapchain_maintenance1": 1,
                 "VK_EXT_texel_buffer_alignment": 1,
                 "VK_EXT_texture_compression_astc_hdr": 1,
+                "VK_EXT_texture_compression_astc_3d": 1,
                 "VK_EXT_tooling_info": 1,
                 "VK_EXT_transform_feedback": 1,
                 "VK_EXT_validation_cache": 1,
@@ -2609,6 +2624,7 @@
                 "VK_NV_clip_space_w_scaling": 1,
                 "VK_NV_cluster_acceleration_structure": 1,
                 "VK_NV_command_buffer_inheritance": 1,
+                "VK_NV_compute_occupancy_priority": 1,
                 "VK_NV_compute_shader_derivatives": 1,
                 "VK_NV_cooperative_matrix": 1,
                 "VK_NV_cooperative_matrix2": 1,
@@ -2691,7 +2707,6 @@
                 "VK_VALVE_fragment_density_map_layered": 1,
                 "VK_VALVE_video_encode_rgb_conversion": 1,
                 "VK_EXT_image_sliced_view_of_3d": 1,
-                "VK_EXT_shader_tile_image": 1,
                 "VK_EXT_dynamic_rendering_unused_attachments": 1
             },
             "formats": {
