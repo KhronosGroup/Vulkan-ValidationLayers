@@ -4807,7 +4807,7 @@ TEST_F(NegativeCopyBufferImage, MemoryToImageIndirectSubresource) {
     {
         VkImageSubresourceLayers res_layer = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 2};
         indirect_info.pImageSubresources = &res_layer;
-        m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageIndirectInfoKHR-layerCount-08764");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageIndirectInfoKHR-dstImage-12288");
         vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer, &indirect_info);
         m_errorMonitor->VerifyFound();
     }
