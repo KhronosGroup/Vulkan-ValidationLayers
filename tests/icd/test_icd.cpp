@@ -857,6 +857,11 @@ static VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceVersion(uint32_t* pApiVer
 static VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements2(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
                                                               VkMemoryRequirements2* pMemoryRequirements) {
     GetImageMemoryRequirements(device, pInfo->image, &pMemoryRequirements->memoryRequirements);
+
+    if (auto tile_mem_reqs = vku::FindStructInPNextChain<VkTileMemoryRequirementsQCOM>(pMemoryRequirements->pNext)) {
+        tile_mem_reqs->size = 4096;
+        tile_mem_reqs->alignment = 32;
+    }
 }
 
 static VKAPI_ATTR void VKAPI_CALL GetTensorMemoryRequirementsARM(VkDevice device, const VkTensorMemoryRequirementsInfoARM* pInfo,
