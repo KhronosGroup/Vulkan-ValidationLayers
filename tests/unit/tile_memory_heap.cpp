@@ -172,3 +172,92 @@ TEST_F(NegativeTileMemoryHeap, CreateImageTest) {
     CreateImageTest(vkt::Image::ImageCreateInfo2D(256, 256, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TILE_MEMORY_BIT_QCOM),
                     "VUID-VkImageCreateInfo-tileMemoryHeap-10766");
 }
+
+TEST_F(NegativeTileMemoryHeap, BindImageMemorySize) {
+    TEST_DESCRIPTION("Bind Tile Memory to an Image with too small of size");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredExtensions(VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tileMemoryHeap);
+
+    RETURN_IF_SKIP(Init());
+
+    // Create a Tile Memory Image
+    auto image_create_info = vkt::Image::ImageCreateInfo2D(
+        32u, 32u, 1u, 1u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TILE_MEMORY_BIT_QCOM);
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
+
+    // Query Tile Memory Image Requirements
+    VkImageMemoryRequirementsInfo2 image_info = vku::InitStructHelper();
+    VkTileMemoryRequirementsQCOM tile_mem_reqs = vku::InitStructHelper();
+    VkMemoryRequirements2 image_reqs = vku::InitStructHelper(&tile_mem_reqs);
+    image_info.image = image;
+    vk::GetImageMemoryRequirements2(device(), &image_info, &image_reqs);
+
+    if (tile_mem_reqs.size == 0) {
+        GTEST_SKIP() << "Image not eligible to be bound with Tile Memory.";
+    }
+
+    // Find a memory configuration for the Tile Memory Image, otherwise exit
+    VkMemoryAllocateInfo bad_alloc_info = vku::InitStructHelper();
+    bad_alloc_info.memoryTypeIndex = 0;
+    // Purposely subtract 1 from size
+    bad_alloc_info.allocationSize = tile_mem_reqs.size - 1;
+    bool pass = m_device->Physical().SetMemoryType(image_reqs.memoryRequirements.memoryTypeBits, &bad_alloc_info,
+                                                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM);
+
+    if (!pass) {
+        GTEST_SKIP() << "Could not find an eligible Tile Memory Type.";
+    }
+
+    vkt::DeviceMemory image_memory(*m_device, bad_alloc_info);
+
+    m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-memory-10738");
+    vk::BindImageMemory(device(), image, image_memory, 0);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeTileMemoryHeap, BindImageMemoryAlignment) {
+    TEST_DESCRIPTION("Bind Tile Memory to an Image with an offset that is not a multiple of alignment");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredExtensions(VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tileMemoryHeap);
+
+    RETURN_IF_SKIP(Init());
+
+    // Create a Tile Memory Image
+    auto image_create_info = vkt::Image::ImageCreateInfo2D(
+        32u, 32u, 1u, 1u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TILE_MEMORY_BIT_QCOM);
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
+
+    // Query Tile Memory Image Requirements
+    VkImageMemoryRequirementsInfo2 image_info = vku::InitStructHelper();
+    VkTileMemoryRequirementsQCOM tile_mem_reqs = vku::InitStructHelper();
+    VkMemoryRequirements2 image_reqs = vku::InitStructHelper(&tile_mem_reqs);
+    image_info.image = image;
+    vk::GetImageMemoryRequirements2(device(), &image_info, &image_reqs);
+
+    if (tile_mem_reqs.size == 0) {
+        GTEST_SKIP() << "Image not eligible to be bound with Tile Memory.";
+    }
+
+    // Find a memory configuration for the Tile Memory Image, otherwise exit
+    const uint32_t badOffset = 1;
+    VkMemoryAllocateInfo bad_alloc_info = vku::InitStructHelper();
+    bad_alloc_info.memoryTypeIndex = 0;
+    // Purposely add 1 to size for offset
+    bad_alloc_info.allocationSize = tile_mem_reqs.size + badOffset;
+    bool pass = m_device->Physical().SetMemoryType(image_reqs.memoryRequirements.memoryTypeBits, &bad_alloc_info,
+                                                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM);
+
+    if (!pass) {
+        GTEST_SKIP() << "Could not find an eligible Tile Memory Type.";
+    }
+
+    vkt::DeviceMemory image_memory(*m_device, bad_alloc_info);
+
+    m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-memory-10736");
+    vk::BindImageMemory(device(), image, image_memory, badOffset);
+    m_errorMonitor->VerifyFound();
+}
