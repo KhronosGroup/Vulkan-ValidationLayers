@@ -193,6 +193,11 @@ bool Device::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCre
                          "includes VK_IMAGE_USAGE_HOST_TRANSFER_BIT, but hostImageCopy feature was not enabled.");
     }
 
+    if (!enabled_features.tileMemoryHeap && (pCreateInfo->usage & VK_IMAGE_USAGE_TILE_MEMORY_BIT_QCOM) != 0) {
+        skip |= LogError("VUID-VkImageCreateInfo-tileMemoryHeap-10766", device, create_info_loc.dot(Field::usage),
+                         "includes VK_IMAGE_USAGE_TILE_MEMORY_BIT_QCOM, but tileMemoryHeap feature was not enabled.");
+    }
+
     static const uint64_t drm_format_mod_linear = 0;
     bool image_create_maybe_linear = false;
     if (pCreateInfo->tiling == VK_IMAGE_TILING_LINEAR) {

@@ -161,3 +161,14 @@ TEST_F(NegativeTileMemoryHeap, BindBufferMemoryAlignment) {
     vk::BindBufferMemory2(device(), 1, &bind_buffer_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeTileMemoryHeap, CreateImageTest) {
+    TEST_DESCRIPTION("Use VK_IMAGE_USAGE_TILE_MEMORY_BIT_QCOM in CreateImage without enabling the tileMemoryHeap feature");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME);
+
+    RETURN_IF_SKIP(Init());
+
+    CreateImageTest(vkt::Image::ImageCreateInfo2D(256, 256, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TILE_MEMORY_BIT_QCOM),
+                    "VUID-VkImageCreateInfo-tileMemoryHeap-10766");
+}
