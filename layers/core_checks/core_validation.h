@@ -934,7 +934,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                        const Location& loc) const;
     bool ValidatePushConstantUsage(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                    const vvl::Pipeline* pipeline, const ShaderStageState& stage_state, const Location& loc) const;
-    bool ValidateBuiltinLimits(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+    bool ValidateBuiltInLimits(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                const vvl::Pipeline* pipeline, const Location& loc) const;
     bool ValidatePrimitiveTopology(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                    const vvl::Pipeline& pipeline, const Location& loc) const;

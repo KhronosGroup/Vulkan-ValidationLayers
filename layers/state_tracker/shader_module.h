@@ -43,6 +43,7 @@ struct ParsedInfo;
 
 // We can assume the upper 3 uint max values are not going to be used for anything meaningful in SPIR-V
 static constexpr uint32_t kInvalidValue = vvl::kNoIndex32;
+static constexpr spv::BuiltIn kInvalidBuiltIn = spv::BuiltInMax;
 
 // Need to find a way to know if actually array length of zero, or a runtime array.
 static constexpr uint32_t kRuntimeArray = vvl::kNoIndex32 - 1;
@@ -88,7 +89,7 @@ struct DecorationBase {
     uint32_t offset = 0;
 
     // A given object can only have a single BuiltIn OpDecoration
-    uint32_t builtin = kInvalidValue;
+    spv::BuiltIn built_in = kInvalidBuiltIn;
 
     void Add(uint32_t decoration, uint32_t value);
     bool Has(FlagBit flag_bit) const { return (flags & flag_bit) != 0; }
@@ -390,12 +391,12 @@ struct StageInterfaceVariable : public VariableBase {
     const bool is_array_interface;
     uint32_t array_size = 1;  // flatten size of all dimensions; 1 if no array
     const Instruction &base_type;
-    const bool is_builtin;
+    const bool is_built_in;
     bool nested_struct;
 
     const std::vector<InterfaceSlot> interface_slots;  // Only for User Defined variables
-    const std::vector<uint32_t> builtin_block;
-    uint32_t total_builtin_components = 0;
+    const std::vector<spv::BuiltIn> built_in_block;
+    uint32_t total_built_in_components = 0;
 
     StageInterfaceVariable(const Module &module_state, const Instruction &insn, VkShaderStageFlagBits stage,
                            const ParsedInfo &parsed);
@@ -404,10 +405,10 @@ struct StageInterfaceVariable : public VariableBase {
     static bool IsPerTaskNV(const StageInterfaceVariable &variable);
     static bool IsArrayInterface(const StageInterfaceVariable &variable);
     static const Instruction &FindBaseType(StageInterfaceVariable &variable, const Module &module_state);
-    static bool IsBuiltin(const StageInterfaceVariable &variable, const Module &module_state);
+    static bool IsBuiltIn(const StageInterfaceVariable &variable, const Module &module_state);
     static std::vector<InterfaceSlot> GetInterfaceSlots(StageInterfaceVariable &variable, const Module &module_state);
-    static std::vector<uint32_t> GetBuiltinBlock(const StageInterfaceVariable &variable, const Module &module_state);
-    static uint32_t GetBuiltinComponents(const StageInterfaceVariable &variable, const Module &module_state);
+    static std::vector<spv::BuiltIn> GetBuiltInBlock(const StageInterfaceVariable &variable, const Module &module_state);
+    static uint32_t GetBuiltInComponents(const StageInterfaceVariable &variable, const Module &module_state);
 };
 
 // vkspec.html#interfaces-resources describes 'Shader Resource Interface'
@@ -573,15 +574,15 @@ struct EntryPoint {
     const StageInterfaceVariable *max_output_slot_variable = nullptr;
     const InterfaceSlot *max_input_slot = nullptr;
     const InterfaceSlot *max_output_slot = nullptr;
-    uint32_t builtin_input_components = 0;
-    uint32_t builtin_output_components = 0;
+    uint32_t built_in_input_components = 0;
+    uint32_t built_in_output_components = 0;
 
     // Mark if a BuiltIn is written to
-    bool written_builtin_point_size{false};
-    bool written_builtin_layer{false};
-    bool written_builtin_primitive_shading_rate_khr{false};
-    bool written_builtin_viewport_index{false};
-    bool written_builtin_viewport_mask_nv{false};
+    bool written_built_in_point_size{false};
+    bool written_built_in_layer{false};
+    bool written_built_in_primitive_shading_rate_khr{false};
+    bool written_built_in_viewport_index{false};
+    bool written_built_in_viewport_mask_nv{false};
 
     bool has_passthrough{false};
     bool has_alpha_to_coverage_variable{false};  // only for Fragment shaders
@@ -624,7 +625,7 @@ struct StatelessData {
     // simpler to just track all OpExecutionModeId and parse things needed later
     std::vector<const Instruction *> execution_mode_id_inst;
 
-    bool has_builtin_fully_covered{false};
+    bool has_built_in_fully_covered{false};
     bool has_invocation_repack_instruction{false};
     bool has_group_decoration{false};
     bool has_ext_inst_with_forward_refs{false};  // OpExtInstWithForwardRefsKHR
@@ -674,10 +675,10 @@ struct Module {
         bool has_shader_tile_image_color_read{false};
         // BuiltIn we just care about existing or not, don't have to be written to
         // TODO - Make bitmask
-        bool has_builtin_layer{false};
-        bool has_builtin_draw_index{false};
-        bool has_builtin_workgroup_size{false};
-        uint32_t builtin_workgroup_size_id = 0;
+        bool has_built_in_layer{false};
+        bool has_built_in_draw_index{false};
+        bool has_built_in_workgroup_size{false};
+        uint32_t built_in_workgroup_size_id = 0;
 
         std::vector<const Instruction *> cooperative_matrix_inst;
         std::vector<const Instruction *> cooperative_vector_inst;

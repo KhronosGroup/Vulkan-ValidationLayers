@@ -16,6 +16,7 @@
 #include <sstream>
 #include "state_tracker/shader_instruction.h"
 #include "generated/spirv_grammar_helper.h"
+#include "state_tracker/shader_module.h"
 
 namespace spirv {
 
@@ -177,7 +178,7 @@ spv::BuiltIn Instruction::GetBuiltIn() const {
         return static_cast<spv::BuiltIn>(Word(4));
     } else {
         assert(false);  // non valid Opcode
-        return spv::BuiltInMax;
+        return spirv::kInvalidBuiltIn;
     }
 }
 

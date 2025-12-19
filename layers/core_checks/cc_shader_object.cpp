@@ -242,7 +242,7 @@ bool CoreChecks::ValidateCreateShadersMesh(const VkShaderCreateInfoEXT& create_i
                                            const Location& create_info_loc) const {
     bool skip = false;
     if (create_info.flags & VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT) return skip;
-    if (spirv.static_data_.has_builtin_draw_index) {
+    if (spirv.static_data_.has_built_in_draw_index) {
         skip |= LogError(
             "VUID-vkCreateShadersEXT-pCreateInfos-09632", device, create_info_loc,
             "the mesh Shader Object being created uses DrawIndex (gl_DrawID) which will be an undefined value when reading.");

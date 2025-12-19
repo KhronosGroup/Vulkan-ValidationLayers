@@ -56,7 +56,7 @@ class Pass {
     bool Run();
 
     // Finds (and creates if needed) decoration and returns the OpVariable it points to
-    const Variable& GetBuiltinVariable(uint32_t built_in);
+    const Variable& GetBuiltInVariable(uint32_t built_in);
 
     // Returns the ID for OpCompositeConstruct it creates
     uint32_t GetStageInfo(Function& function, const BasicBlock& target_block_it, InstructionIt& out_inst_it);

@@ -403,7 +403,7 @@ const Type& TypeManager::GetTypePointerBuiltInInput(spv::BuiltIn built_in) {
             return GetTypePointer(spv::StorageClassInput, vec4);
         }
         default: {
-            assert(false && "unhandled builtin");
+            assert(false && "unhandled BuiltIn");
             return *(id_to_type_.begin()->second);
         }
     }

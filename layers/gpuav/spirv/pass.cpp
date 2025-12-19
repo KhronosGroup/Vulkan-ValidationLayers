@@ -44,7 +44,7 @@ bool Pass::Run() {
     return modified;
 }
 
-const Variable& Pass::GetBuiltinVariable(uint32_t built_in) {
+const Variable& Pass::GetBuiltInVariable(uint32_t built_in) {
     uint32_t variable_id = 0;
     for (const auto& annotation : module_.annotations_) {
         if (annotation->Opcode() == spv::OpDecorate && annotation->Word(2) == spv::DecorationBuiltIn &&
@@ -131,7 +131,7 @@ uint32_t Pass::GetStageInfo(Function& function, const BasicBlock& target_block_i
 
         // Gets BuiltIn variable and creates a valid OpLoad of it
         auto create_load = [this, &block, &inst_it](spv::BuiltIn built_in) {
-            const Variable& variable = GetBuiltinVariable(built_in);
+            const Variable& variable = GetBuiltInVariable(built_in);
             const Type* pointer_type = variable.PointerType(type_manager_);
             const uint32_t load_id = module_.TakeNextId();
             block.CreateInstruction(spv::OpLoad, {pointer_type->Id(), load_id, variable.Id()}, &inst_it);
@@ -177,7 +177,7 @@ uint32_t Pass::GetStageInfo(Function& function, const BasicBlock& target_block_i
             case spv::ExecutionModelTaskEXT:
             case spv::ExecutionModelMeshEXT: {
                 // This can be both a uvec3 or ivec3 so need to cast if ivec3
-                const Variable& variable = GetBuiltinVariable(spv::BuiltInGlobalInvocationId);
+                const Variable& variable = GetBuiltInVariable(spv::BuiltInGlobalInvocationId);
                 const Type* pointer_type = variable.PointerType(type_manager_);
                 const uint32_t load_id = module_.TakeNextId();
                 block.CreateInstruction(spv::OpLoad, {pointer_type->Id(), load_id, variable.Id()}, &inst_it);
