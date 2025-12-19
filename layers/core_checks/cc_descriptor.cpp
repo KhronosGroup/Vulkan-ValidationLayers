@@ -3135,8 +3135,7 @@ bool CoreChecks::ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoE
 
     // Could be a VkBufferUsageFlagBits, but simpler for the string_VkBufferUsageFlags function to be used in the lambda
     VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_FLAG_BITS_MAX_ENUM;
-    const char* usage_vuid = nullptr;
-    // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7887
+    const char *usage_vuid = nullptr;
     const char* limit_vuid = nullptr;
     Field limit_field = Field::Empty;
     VkDeviceSize limit_value = 0;
@@ -3145,25 +3144,25 @@ bool CoreChecks::ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoE
     if (address_loc.field == Field::pUniformBuffer) {
         buffer_usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         usage_vuid = "VUID-VkDescriptorGetInfoEXT-type-12220";
-        limit_vuid = "UNASSIGNED-VkDescriptorGetInfoEXT-limit-pUniformBuffer";
+        limit_vuid = "VUID-VkDescriptorGetInfoEXT-type-12265";
         limit_field = Field::minUniformBufferOffsetAlignment;
         limit_value = phys_dev_props.limits.minUniformBufferOffsetAlignment;
     } else if (address_loc.field == Field::pStorageBuffer) {
         buffer_usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         usage_vuid = "VUID-VkDescriptorGetInfoEXT-type-12221";
-        limit_vuid = "UNASSIGNED-VkDescriptorGetInfoEXT-limit-pStorageBuffer";
+        limit_vuid = "VUID-VkDescriptorGetInfoEXT-type-12266";
         limit_field = Field::minStorageBufferOffsetAlignment;
         limit_value = phys_dev_props.limits.minStorageBufferOffsetAlignment;
     } else if (address_loc.field == Field::pUniformTexelBuffer) {
         buffer_usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
         usage_vuid = "VUID-VkDescriptorGetInfoEXT-type-12222";
-        limit_vuid = "UNASSIGNED-VkDescriptorGetInfoEXT-limit-pUniformTexelBuffer";
+        limit_vuid = "VUID-VkDescriptorGetInfoEXT-type-12267";
         limit_field = Field::minTexelBufferOffsetAlignment;
         limit_value = phys_dev_props.limits.minTexelBufferOffsetAlignment;
     } else if (address_loc.field == Field::pStorageTexelBuffer) {
         buffer_usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
         usage_vuid = "VUID-VkDescriptorGetInfoEXT-type-12223";
-        limit_vuid = "UNASSIGNED-VkDescriptorGetInfoEXT-limit-pStorageTexelBuffer";
+        limit_vuid = "VUID-VkDescriptorGetInfoEXT-type-12268";
         limit_field = Field::minTexelBufferOffsetAlignment;
         limit_value = phys_dev_props.limits.minTexelBufferOffsetAlignment;
     }
@@ -3252,8 +3251,8 @@ bool CoreChecks::ValidateDescriptorAddressInfoTexelBufferAlignment(const VkDescr
                    << phys_dev_props_core13.storageTexelBufferOffsetAlignmentBytes;
             }
 
-            skip |= LogError("UNASSIGNED-VkDescriptorGetInfoEXT-limit-pStorageTexelBuffer-ext", device,
-                             address_loc.dot(Field::address), "%s", ss.str().c_str());
+            skip |=
+                LogError("VUID-VkDescriptorGetInfoEXT-type-12270", device, address_loc.dot(Field::address), "%s", ss.str().c_str());
         }
     } else if (address_loc.field == Field::pUniformTexelBuffer) {
         VkDeviceSize alignment_requirement = phys_dev_props_core13.uniformTexelBufferOffsetAlignmentBytes;
@@ -3279,8 +3278,8 @@ bool CoreChecks::ValidateDescriptorAddressInfoTexelBufferAlignment(const VkDescr
                    << phys_dev_props_core13.uniformTexelBufferOffsetAlignmentBytes;
             }
 
-            skip |= LogError("UNASSIGNED-VkDescriptorGetInfoEXT-limit-pUniformTexelBuffer-ext", device,
-                             address_loc.dot(Field::address), "%s", ss.str().c_str());
+            skip |=
+                LogError("VUID-VkDescriptorGetInfoEXT-type-12269", device, address_loc.dot(Field::address), "%s", ss.str().c_str());
         }
     }
 
