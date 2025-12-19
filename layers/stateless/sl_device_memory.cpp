@@ -159,13 +159,13 @@ bool Device::manual_PreCallValidateCmdDecompressMemoryEXT(VkCommandBuffer comman
                                  region_loc.dot(Field::decompressedSize), "must not be zero.");
             }
 
-            if (mem_region.srcAddress & 0x3) {
+            if (!IsPointerAligned(mem_region.srcAddress, 4)) {
                 skip |=
                     LogError("VUID-VkDecompressMemoryRegionEXT-srcAddress-07685", commandBuffer, region_loc.dot(Field::srcAddress),
                              "(0x%" PRIx64 ") is not 4-byte aligned.", mem_region.srcAddress);
             }
 
-            if (mem_region.dstAddress & 0x3) {
+            if (!IsPointerAligned(mem_region.dstAddress, 4)) {
                 skip |=
                     LogError("VUID-VkDecompressMemoryRegionEXT-dstAddress-07687", commandBuffer, region_loc.dot(Field::dstAddress),
                              "(0x%" PRIx64 ") is not 4-byte aligned.", mem_region.dstAddress);

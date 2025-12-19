@@ -946,12 +946,12 @@ bool Device::manual_PreCallValidateCmdConvertCooperativeVectorMatrixNV(VkCommand
 
         const Location info_loc = error_obj.location.dot(Field::pInfos, i);
 
-        if ((info.srcData.deviceAddress & 0x3F) != 0) {
+        if (!IsPointerAligned(info.srcData.deviceAddress, 64)) {
             skip |= LogError("VUID-vkCmdConvertCooperativeVectorMatrixNV-pInfo-10084", commandBuffer,
                              info_loc.dot(Field::srcData).dot(Field::deviceAddress), "(0x%" PRIx64 ") must be 64 byte aligned",
                              info.srcData.deviceAddress);
         }
-        if ((info.dstData.deviceAddress & 0x3F) != 0) {
+        if (!IsPointerAligned(info.dstData.deviceAddress, 64)) {
             skip |= LogError("VUID-vkCmdConvertCooperativeVectorMatrixNV-pInfo-10085", commandBuffer,
                              info_loc.dot(Field::dstData).dot(Field::deviceAddress), "(0x%" PRIx64 ") must be 64 byte aligned",
                              info.dstData.deviceAddress);
