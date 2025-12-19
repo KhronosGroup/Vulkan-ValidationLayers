@@ -388,7 +388,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
                 << gpuav.gpuav_settings.debug_printf_buffer_size << ") being too small for the messages consuming "
                 << output_buffer_dwords_counts
                 << " bytes.\nThis can be adjusted setting env var VK_LAYER_PRINTF_BUFFER_SIZE=" << output_buffer_dwords_counts
-                << " or in vkconfig)";
+                << " or in vkconfig";
         if (gpuav.gpuav_settings.debug_printf_to_stdout) {
             std::cout << message.str() << "\n";
         } else {
