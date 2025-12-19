@@ -1887,22 +1887,6 @@ void bp_state::Instance::PostCallRecordCreateSurfaceOHOS(VkInstance instance, co
                                                          const RecordObject& record_obj) {
     bp_state::LogResult(*this, instance, record_obj);
 }
-
-void BestPractices::PostCallRecordGetSwapchainGrallocUsageOHOS(VkDevice device, VkFormat format, VkImageUsageFlags imageUsage,
-                                                               uint64_t* grallocUsage, const RecordObject& record_obj) {
-    bp_state::LogResult(*this, device, record_obj);
-}
-
-void BestPractices::PostCallRecordAcquireImageOHOS(VkDevice device, VkImage image, int32_t nativeFenceFd, VkSemaphore semaphore,
-                                                   VkFence fence, const RecordObject& record_obj) {
-    bp_state::LogResult(*this, device, record_obj);
-}
-
-void BestPractices::PostCallRecordQueueSignalReleaseImageOHOS(VkQueue queue, uint32_t waitSemaphoreCount,
-                                                              const VkSemaphore* pWaitSemaphores, VkImage image,
-                                                              int32_t* pNativeFenceFd, const RecordObject& record_obj) {
-    bp_state::LogResult(*this, queue, record_obj);
-}
 #endif  // VK_USE_PLATFORM_OHOS
 
 void bp_state::Instance::PostCallRecordGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(

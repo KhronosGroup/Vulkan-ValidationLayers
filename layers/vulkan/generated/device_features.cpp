@@ -1100,6 +1100,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->customBorderColorWithoutFormat |= enabled->customBorderColorWithoutFormat == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXTURE_COMPRESSION_ASTC_3D_FEATURES_EXT: {
+                const VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT *>(pNext);
+                features->textureCompressionASTC_3D |= enabled->textureCompressionASTC_3D == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_BARRIER_FEATURES_NV: {
                 const VkPhysicalDevicePresentBarrierFeaturesNV *enabled =
                     reinterpret_cast<const VkPhysicalDevicePresentBarrierFeaturesNV *>(pNext);
@@ -1895,6 +1901,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 const VkPhysicalDeviceDataGraphModelFeaturesQCOM *enabled =
                     reinterpret_cast<const VkPhysicalDeviceDataGraphModelFeaturesQCOM *>(pNext);
                 features->dataGraphModel |= enabled->dataGraphModel == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_LONG_VECTOR_FEATURES_EXT: {
+                const VkPhysicalDeviceShaderLongVectorFeaturesEXT *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceShaderLongVectorFeaturesEXT *>(pNext);
+                features->longVector |= enabled->longVector == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CACHE_INCREMENTAL_MODE_FEATURES_SEC: {

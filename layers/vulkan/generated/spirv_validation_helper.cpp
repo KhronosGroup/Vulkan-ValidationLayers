@@ -289,6 +289,8 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites(
         {spv::CapabilityFMAKHR, {0, &DeviceFeatures::shaderFmaFloat32, nullptr, ""}},
         {spv::CapabilityFMAKHR, {0, &DeviceFeatures::shaderFmaFloat64, nullptr, ""}},
         {spv::CapabilityShader64BitIndexingEXT, {0, &DeviceFeatures::shader64BitIndexing, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityLongVectorEXT, {0, &DeviceFeatures::longVector, nullptr, ""}},
     };
     // clang-format on
     return spirv_capabilities;
@@ -419,6 +421,7 @@ const std::unordered_multimap<std::string_view, RequiredSpirvInfo>& GetSpirvExte
         {"SPV_ARM_graph", {0, nullptr, &DeviceExtensions::vk_arm_data_graph, ""}},
         {"SPV_KHR_untyped_pointers", {0, nullptr, &DeviceExtensions::vk_khr_shader_untyped_pointers, ""}},
         {"SPV_EXT_shader_64bit_indexing", {0, nullptr, &DeviceExtensions::vk_ext_shader_64bit_indexing, ""}},
+        {"SPV_EXT_long_vector", {0, nullptr, &DeviceExtensions::vk_ext_shader_long_vector, ""}},
     };
     // clang-format on
     return spirv_extensions;
@@ -1342,6 +1345,7 @@ static inline std::string SpvExtensionRequirements(std::string_view extension) {
     {"SPV_ARM_graph", {{vvl::Extension::_VK_ARM_data_graph}}},
     {"SPV_KHR_untyped_pointers", {{vvl::Extension::_VK_KHR_shader_untyped_pointers}}},
     {"SPV_EXT_shader_64bit_indexing", {{vvl::Extension::_VK_EXT_shader_64bit_indexing}}},
+    {"SPV_EXT_long_vector", {{vvl::Extension::_VK_EXT_shader_long_vector}}},
     };
 
     // VUs before catch unknown extensions

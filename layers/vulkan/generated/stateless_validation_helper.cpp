@@ -1856,6 +1856,17 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXTURE_COMPRESSION_ASTC_3D_FEATURES_EXT: {  // Covers
+                                                                                            // VUID-VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT);
+                VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT* structure =
+                    (VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::textureCompressionASTC_3D), structure->textureCompressionASTC_3D);
+            }
+        } break;
+
         // Validation code for VkPhysicalDevicePresentBarrierFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_BARRIER_FEATURES_NV: {  // Covers
                                                                                // VUID-VkPhysicalDevicePresentBarrierFeaturesNV-sType-sType
@@ -3304,6 +3315,16 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceDataGraphModelFeaturesQCOM);
                 VkPhysicalDeviceDataGraphModelFeaturesQCOM* structure = (VkPhysicalDeviceDataGraphModelFeaturesQCOM*)header;
                 skip |= ValidateBool32(pNext_loc.dot(Field::dataGraphModel), structure->dataGraphModel);
+            }
+        } break;
+
+        // Validation code for VkPhysicalDeviceShaderLongVectorFeaturesEXT structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_LONG_VECTOR_FEATURES_EXT: {  // Covers
+                                                                                   // VUID-VkPhysicalDeviceShaderLongVectorFeaturesEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceShaderLongVectorFeaturesEXT);
+                VkPhysicalDeviceShaderLongVectorFeaturesEXT* structure = (VkPhysicalDeviceShaderLongVectorFeaturesEXT*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::longVector), structure->longVector);
             }
         } break;
 
@@ -7763,30 +7784,6 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
                                            "VUID-VkPipelineViewportDepthClampControlCreateInfoEXT-depthClampMode-parameter");
             }
         } break;
-#ifdef VK_USE_PLATFORM_OHOS
-
-        // Validation code for VkNativeBufferOHOS structure members
-        case VK_STRUCTURE_TYPE_NATIVE_BUFFER_OHOS: {  // Covers VUID-VkNativeBufferOHOS-sType-sType
-            if (is_const_param) {
-                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkNativeBufferOHOS);
-                VkNativeBufferOHOS* structure = (VkNativeBufferOHOS*)header;
-                skip |= ValidateRequiredPointer(pNext_loc.dot(Field::handle), structure->handle,
-                                                "VUID-VkNativeBufferOHOS-handle-parameter");
-            }
-        } break;
-
-        // Validation code for VkSwapchainImageCreateInfoOHOS structure members
-        case VK_STRUCTURE_TYPE_SWAPCHAIN_IMAGE_CREATE_INFO_OHOS: {  // Covers VUID-VkSwapchainImageCreateInfoOHOS-sType-sType
-            if (is_const_param) {
-                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkSwapchainImageCreateInfoOHOS);
-                VkSwapchainImageCreateInfoOHOS* structure = (VkSwapchainImageCreateInfoOHOS*)header;
-                skip |= ValidateFlags(pNext_loc.dot(Field::usage), vvl::FlagBitmask::VkSwapchainImageUsageFlagBitsOHOS,
-                                      AllVkSwapchainImageUsageFlagBitsOHOS, structure->usage, kRequiredFlags,
-                                      "VUID-VkSwapchainImageCreateInfoOHOS-usage-parameter",
-                                      "VUID-VkSwapchainImageCreateInfoOHOS-usage-requiredbitmask", false);
-            }
-        } break;
-#endif  // VK_USE_PLATFORM_OHOS
 
         // Validation code for VkHdrVividDynamicMetadataHUAWEI structure members
         case VK_STRUCTURE_TYPE_HDR_VIVID_DYNAMIC_METADATA_HUAWEI: {  // Covers VUID-VkHdrVividDynamicMetadataHUAWEI-sType-sType
@@ -8220,6 +8217,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_FOOTPRINT_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_FUNCTIONS_2_FEATURES_INTEL,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_LONG_VECTOR_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MAXIMAL_RECONVERGENCE_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MODULE_IDENTIFIER_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT,
@@ -8242,6 +8240,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TENSOR_FEATURES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXEL_BUFFER_ALIGNMENT_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXTURE_COMPRESSION_ASTC_3D_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXTURE_COMPRESSION_ASTC_HDR_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TILE_MEMORY_HEAP_FEATURES_QCOM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TILE_PROPERTIES_FEATURES_QCOM,
@@ -9071,10 +9070,8 @@ bool Device::PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo
             VK_STRUCTURE_TYPE_IMAGE_SWAPCHAIN_CREATE_INFO_KHR,
             VK_STRUCTURE_TYPE_IMPORT_METAL_IO_SURFACE_INFO_EXT,
             VK_STRUCTURE_TYPE_IMPORT_METAL_TEXTURE_INFO_EXT,
-            VK_STRUCTURE_TYPE_NATIVE_BUFFER_OHOS,
             VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DESCRIPTOR_DATA_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_OPTICAL_FLOW_IMAGE_FORMAT_INFO_NV,
-            VK_STRUCTURE_TYPE_SWAPCHAIN_IMAGE_CREATE_INFO_OHOS,
             VK_STRUCTURE_TYPE_VIDEO_PROFILE_LIST_INFO_KHR};
 
         skip |= context.ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, allowed_structs_VkImageCreateInfo.size(),
@@ -11253,8 +11250,7 @@ bool Device::PreCallValidateBindImageMemory2(VkDevice device, uint32_t bindInfoC
             [[maybe_unused]] const Location pBindInfos_loc = loc.dot(Field::pBindInfos, bindInfoIndex);
             constexpr std::array allowed_structs_VkBindImageMemoryInfo = {
                 VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_DEVICE_GROUP_INFO, VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_SWAPCHAIN_INFO_KHR,
-                VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO, VK_STRUCTURE_TYPE_BIND_MEMORY_STATUS,
-                VK_STRUCTURE_TYPE_NATIVE_BUFFER_OHOS};
+                VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO, VK_STRUCTURE_TYPE_BIND_MEMORY_STATUS};
 
             skip |= context.ValidateStructPnext(
                 pBindInfos_loc, pBindInfos[bindInfoIndex].pNext, allowed_structs_VkBindImageMemoryInfo.size(),
@@ -11522,7 +11518,6 @@ bool Instance::PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice phys
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_ROBUSTNESS_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_POINT_CLIPPING_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_PROPERTIES_KHR,
-            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENTATION_PROPERTIES_OHOS,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROVOKING_VERTEX_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PUSH_DESCRIPTOR_PROPERTIES,
@@ -11541,6 +11536,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice phys
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_PROPERTIES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ENQUEUE_PROPERTIES_AMDX,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_PROPERTIES,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_LONG_VECTOR_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MODULE_IDENTIFIER_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SM_BUILTINS_PROPERTIES_NV,
@@ -13372,10 +13368,8 @@ bool Device::PreCallValidateGetDeviceImageMemoryRequirements(VkDevice device, co
                 VK_STRUCTURE_TYPE_IMAGE_SWAPCHAIN_CREATE_INFO_KHR,
                 VK_STRUCTURE_TYPE_IMPORT_METAL_IO_SURFACE_INFO_EXT,
                 VK_STRUCTURE_TYPE_IMPORT_METAL_TEXTURE_INFO_EXT,
-                VK_STRUCTURE_TYPE_NATIVE_BUFFER_OHOS,
                 VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DESCRIPTOR_DATA_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_OPTICAL_FLOW_IMAGE_FORMAT_INFO_NV,
-                VK_STRUCTURE_TYPE_SWAPCHAIN_IMAGE_CREATE_INFO_OHOS,
                 VK_STRUCTURE_TYPE_VIDEO_PROFILE_LIST_INFO_KHR};
 
             skip |=
@@ -13473,10 +13467,8 @@ bool Device::PreCallValidateGetDeviceImageSparseMemoryRequirements(VkDevice devi
                 VK_STRUCTURE_TYPE_IMAGE_SWAPCHAIN_CREATE_INFO_KHR,
                 VK_STRUCTURE_TYPE_IMPORT_METAL_IO_SURFACE_INFO_EXT,
                 VK_STRUCTURE_TYPE_IMPORT_METAL_TEXTURE_INFO_EXT,
-                VK_STRUCTURE_TYPE_NATIVE_BUFFER_OHOS,
                 VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DESCRIPTOR_DATA_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_OPTICAL_FLOW_IMAGE_FORMAT_INFO_NV,
-                VK_STRUCTURE_TYPE_SWAPCHAIN_IMAGE_CREATE_INFO_OHOS,
                 VK_STRUCTURE_TYPE_VIDEO_PROFILE_LIST_INFO_KHR};
 
             skip |=
@@ -14413,10 +14405,8 @@ bool Device::PreCallValidateGetDeviceImageSubresourceLayout(VkDevice device, con
                 VK_STRUCTURE_TYPE_IMAGE_SWAPCHAIN_CREATE_INFO_KHR,
                 VK_STRUCTURE_TYPE_IMPORT_METAL_IO_SURFACE_INFO_EXT,
                 VK_STRUCTURE_TYPE_IMPORT_METAL_TEXTURE_INFO_EXT,
-                VK_STRUCTURE_TYPE_NATIVE_BUFFER_OHOS,
                 VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DESCRIPTOR_DATA_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_OPTICAL_FLOW_IMAGE_FORMAT_INFO_NV,
-                VK_STRUCTURE_TYPE_SWAPCHAIN_IMAGE_CREATE_INFO_OHOS,
                 VK_STRUCTURE_TYPE_VIDEO_PROFILE_LIST_INFO_KHR};
 
             skip |=
@@ -23146,10 +23136,8 @@ bool Device::PreCallValidateSetBufferCollectionImageConstraintsFUCHSIA(VkDevice 
                     VK_STRUCTURE_TYPE_IMAGE_SWAPCHAIN_CREATE_INFO_KHR,
                     VK_STRUCTURE_TYPE_IMPORT_METAL_IO_SURFACE_INFO_EXT,
                     VK_STRUCTURE_TYPE_IMPORT_METAL_TEXTURE_INFO_EXT,
-                    VK_STRUCTURE_TYPE_NATIVE_BUFFER_OHOS,
                     VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DESCRIPTOR_DATA_CREATE_INFO_EXT,
                     VK_STRUCTURE_TYPE_OPTICAL_FLOW_IMAGE_FORMAT_INFO_NV,
-                    VK_STRUCTURE_TYPE_SWAPCHAIN_IMAGE_CREATE_INFO_OHOS,
                     VK_STRUCTURE_TYPE_VIDEO_PROFILE_LIST_INFO_KHR};
 
                 skip |= context.ValidateStructPnext(
@@ -27053,51 +27041,6 @@ bool Instance::PreCallValidateCreateSurfaceOHOS(VkInstance instance, const VkSur
         skip |= context.ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pSurface), pSurface, "VUID-vkCreateSurfaceOHOS-pSurface-parameter");
-    return skip;
-}
-
-bool Device::PreCallValidateGetSwapchainGrallocUsageOHOS(VkDevice device, VkFormat format, VkImageUsageFlags imageUsage,
-                                                         uint64_t* grallocUsage, const ErrorObject& error_obj) const {
-    bool skip = false;
-    Context context(*this, error_obj, extensions);
-    [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(extensions.vk_ohos_native_buffer))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_OHOS_native_buffer});
-    skip |= context.ValidateRangedEnum(loc.dot(Field::format), vvl::Enum::VkFormat, format,
-                                       "VUID-vkGetSwapchainGrallocUsageOHOS-format-parameter");
-    skip |= context.ValidateFlags(loc.dot(Field::imageUsage), vvl::FlagBitmask::VkImageUsageFlagBits, AllVkImageUsageFlagBits,
-                                  imageUsage, kRequiredFlags, "VUID-vkGetSwapchainGrallocUsageOHOS-imageUsage-parameter",
-                                  "VUID-vkGetSwapchainGrallocUsageOHOS-imageUsage-requiredbitmask", false);
-    skip |= context.ValidateRequiredPointer(loc.dot(Field::grallocUsage), grallocUsage,
-                                            "VUID-vkGetSwapchainGrallocUsageOHOS-grallocUsage-parameter");
-    return skip;
-}
-
-bool Device::PreCallValidateAcquireImageOHOS(VkDevice device, VkImage image, int32_t nativeFenceFd, VkSemaphore semaphore,
-                                             VkFence fence, const ErrorObject& error_obj) const {
-    bool skip = false;
-    Context context(*this, error_obj, extensions);
-    [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(extensions.vk_ohos_native_buffer))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_OHOS_native_buffer});
-    skip |= context.ValidateRequiredHandle(loc.dot(Field::image), image);
-    return skip;
-}
-
-bool Device::PreCallValidateQueueSignalReleaseImageOHOS(VkQueue queue, uint32_t waitSemaphoreCount,
-                                                        const VkSemaphore* pWaitSemaphores, VkImage image, int32_t* pNativeFenceFd,
-                                                        const ErrorObject& error_obj) const {
-    bool skip = false;
-    Context context(*this, error_obj, extensions);
-    [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(extensions.vk_ohos_native_buffer))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_OHOS_native_buffer});
-    skip |= context.ValidateHandleArray(loc.dot(Field::waitSemaphoreCount), loc.dot(Field::pWaitSemaphores), waitSemaphoreCount,
-                                        pWaitSemaphores, true, true,
-                                        "VUID-vkQueueSignalReleaseImageOHOS-waitSemaphoreCount-arraylength");
-    skip |= context.ValidateRequiredHandle(loc.dot(Field::image), image);
-    skip |= context.ValidateRequiredPointer(loc.dot(Field::pNativeFenceFd), pNativeFenceFd,
-                                            "VUID-vkQueueSignalReleaseImageOHOS-pNativeFenceFd-parameter");
     return skip;
 }
 #endif  // VK_USE_PLATFORM_OHOS

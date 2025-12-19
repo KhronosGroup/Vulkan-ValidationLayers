@@ -34,7 +34,6 @@ const char* String(Func func) {
     {"INVALID_EMPTY", 15}, // Func::Empty
     {"vkAcquireDrmDisplayEXT", 23},
     {"vkAcquireFullScreenExclusiveModeEXT", 36},
-    {"vkAcquireImageOHOS", 19},
     {"vkAcquireNextImage2KHR", 23},
     {"vkAcquireNextImageKHR", 22},
     {"vkAcquirePerformanceConfigurationINTEL", 39},
@@ -719,7 +718,6 @@ const char* String(Func func) {
     {"vkGetShaderModuleCreateInfoIdentifierEXT", 41},
     {"vkGetShaderModuleIdentifierEXT", 31},
     {"vkGetSwapchainCounterEXT", 25},
-    {"vkGetSwapchainGrallocUsageOHOS", 31},
     {"vkGetSwapchainImagesKHR", 24},
     {"vkGetSwapchainStatusKHR", 24},
     {"vkGetSwapchainTimeDomainPropertiesEXT", 38},
@@ -750,7 +748,6 @@ const char* String(Func func) {
     {"vkQueueNotifyOutOfBandNV", 25},
     {"vkQueuePresentKHR", 18},
     {"vkQueueSetPerformanceConfigurationINTEL", 40},
-    {"vkQueueSignalReleaseImageOHOS", 30},
     {"vkQueueSubmit", 14},
     {"vkQueueSubmit2", 15},
     {"vkQueueSubmit2KHR", 18},
@@ -1320,7 +1317,6 @@ const char* String(Struct structure) {
     {"VkMutableDescriptorTypeCreateInfoEXT", 37},
     {"VkMutableDescriptorTypeListEXT", 31},
     {"VkNativeBufferFormatPropertiesOHOS", 35},
-    {"VkNativeBufferOHOS", 19},
     {"VkNativeBufferPropertiesOHOS", 29},
     {"VkNativeBufferUsageOHOS", 24},
     {"VkOffset2D", 11},
@@ -1594,7 +1590,6 @@ const char* String(Struct structure) {
     {"VkPhysicalDevicePresentTimingFeaturesEXT", 41},
     {"VkPhysicalDevicePresentWait2FeaturesKHR", 40},
     {"VkPhysicalDevicePresentWaitFeaturesKHR", 39},
-    {"VkPhysicalDevicePresentationPropertiesOHOS", 43},
     {"VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT", 56},
     {"VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT", 52},
     {"VkPhysicalDevicePrivateDataFeatures", 36},
@@ -1662,6 +1657,8 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceShaderIntegerDotProductFeatures", 48},
     {"VkPhysicalDeviceShaderIntegerDotProductProperties", 50},
     {"VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL", 53},
+    {"VkPhysicalDeviceShaderLongVectorFeaturesEXT", 44},
+    {"VkPhysicalDeviceShaderLongVectorPropertiesEXT", 46},
     {"VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR", 54},
     {"VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT", 50},
     {"VkPhysicalDeviceShaderModuleIdentifierPropertiesEXT", 52},
@@ -1697,6 +1694,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceTensorPropertiesARM", 36},
     {"VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT", 48},
     {"VkPhysicalDeviceTexelBufferAlignmentProperties", 47},
+    {"VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT", 52},
     {"VkPhysicalDeviceTextureCompressionASTCHDRFeatures", 50},
     {"VkPhysicalDeviceTileMemoryHeapFeaturesQCOM", 43},
     {"VkPhysicalDeviceTileMemoryHeapPropertiesQCOM", 45},
@@ -1971,7 +1969,6 @@ const char* String(Struct structure) {
     {"VkSwapchainCounterCreateInfoEXT", 32},
     {"VkSwapchainCreateInfoKHR", 25},
     {"VkSwapchainDisplayNativeHdrCreateInfoAMD", 41},
-    {"VkSwapchainImageCreateInfoOHOS", 31},
     {"VkSwapchainLatencyCreateInfoNV", 31},
     {"VkSwapchainPresentBarrierCreateInfoNV", 38},
     {"VkSwapchainPresentFenceInfoKHR", 31},
@@ -2891,7 +2888,6 @@ const char* String(Field field) {
     {"gopRemainingPredictive", 23},
     {"gpuRenderEndTimeUs", 19},
     {"gpuRenderStartTimeUs", 21},
-    {"grallocUsage", 13},
     {"graphicsPipelineLibrary", 24},
     {"graphicsPipelineLibraryFastLinking", 35},
     {"graphicsPipelineLibraryIndependentInterpolationDecoration", 58},
@@ -3139,6 +3135,7 @@ const char* String(Field field) {
     {"location", 9},
     {"logicOp", 8},
     {"logicOpEnable", 14},
+    {"longVector", 11},
     {"lowLatencyBoost", 16},
     {"lowLatencyMode", 15},
     {"lumaBitDepth", 13},
@@ -3460,6 +3457,7 @@ const char* String(Field field) {
     {"maxUniformBufferRange", 22},
     {"maxUpdateAfterBindDescriptorsInAllPools", 40},
     {"maxVariableDescriptorCount", 27},
+    {"maxVectorComponents", 20},
     {"maxVertex", 10},
     {"maxVertexAttribDivisor", 23},
     {"maxVertexInputAttributeOffset", 30},
@@ -3612,7 +3610,6 @@ const char* String(Field field) {
     {"naluSliceEntryCount", 20},
     {"naluSliceSegmentEntryCount", 27},
     {"name", 5},
-    {"nativeFenceFd", 14},
     {"nativeUnalignedPerformance", 27},
     {"negativeOneToOne", 17},
     {"nestedCommandBuffer", 20},
@@ -4001,7 +3998,6 @@ const char* String(Field field) {
     {"pNaluSliceSegmentEntries", 25},
     {"pName", 6},
     {"pNameInfo", 10},
-    {"pNativeFenceFd", 15},
     {"pNext", 6},
     {"pNodeIndex", 11},
     {"pNodeInfo", 10},
@@ -4852,7 +4848,6 @@ const char* String(Field field) {
     {"shadingRatePaletteSize", 23},
     {"shadingRateTexelSize", 21},
     {"shadingRateType", 16},
-    {"sharedImage", 12},
     {"sharedMemBytes", 15},
     {"sharedPresentSupportedUsageFlags", 33},
     {"sharingMode", 12},
@@ -5083,6 +5078,7 @@ const char* String(Field field) {
     {"textureBlockMatch", 18},
     {"textureBlockMatch2", 19},
     {"textureBoxFilter", 17},
+    {"textureCompressionASTC_3D", 26},
     {"textureCompressionASTC_HDR", 27},
     {"textureCompressionASTC_LDR", 27},
     {"textureCompressionBC", 21},
@@ -5591,7 +5587,6 @@ const char* String(FlagBitmask value) {
     {"VkSurfaceCounterFlagBitsEXT", 28},
     {"VkSurfaceTransformFlagBitsKHR", 30},
     {"VkSwapchainCreateFlagBitsKHR", 29},
-    {"VkSwapchainImageUsageFlagBitsOHOS", 34},
     {"VkTensorCreateFlagBitsARM", 26},
     {"VkTensorUsageFlagBitsARM", 25},
     {"VkTensorViewCreateFlagBitsARM", 30},
@@ -5788,6 +5783,7 @@ const char* String(Extension extension) {
     {"VK_EXT_shader_demote_to_helper_invocation", 42},
     {"VK_EXT_shader_float8", 21},
     {"VK_EXT_shader_image_atomic_int64", 33},
+    {"VK_EXT_shader_long_vector", 26},
     {"VK_EXT_shader_module_identifier", 32},
     {"VK_EXT_shader_object", 21},
     {"VK_EXT_shader_replicated_composites", 36},
@@ -5803,6 +5799,7 @@ const char* String(Extension extension) {
     {"VK_EXT_swapchain_colorspace", 28},
     {"VK_EXT_swapchain_maintenance1", 30},
     {"VK_EXT_texel_buffer_alignment", 30},
+    {"VK_EXT_texture_compression_astc_3d", 35},
     {"VK_EXT_texture_compression_astc_hdr", 36},
     {"VK_EXT_tooling_info", 20},
     {"VK_EXT_transform_feedback", 26},
@@ -6048,7 +6045,6 @@ const char* String(Extension extension) {
     {"VK_NV_viewport_swizzle", 23},
     {"VK_NV_win32_keyed_mutex", 24},
     {"VK_OHOS_external_memory", 24},
-    {"VK_OHOS_native_buffer", 22},
     {"VK_OHOS_surface", 16},
     {"VK_QCOM_data_graph_model", 25},
     {"VK_QCOM_filter_cubic_clamp", 27},
@@ -6085,7 +6081,6 @@ bool IsFieldPointer(Field field) {
     case Field::dfb:
     case Field::displayName:
     case Field::dpy:
-    case Field::grallocUsage:
     case Field::handle:
     case Field::hostAddress:
     case Field::opaqueCaptureDescriptorData:
@@ -6409,7 +6404,6 @@ bool IsFieldPointer(Field field) {
     case Field::pNaluSliceSegmentEntries:
     case Field::pName:
     case Field::pNameInfo:
-    case Field::pNativeFenceFd:
     case Field::pNext:
     case Field::pNodeIndex:
     case Field::pNodeInfo:
@@ -8141,6 +8135,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceCustomBorderColorPropertiesEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_FEATURES_EXT:
        return Struct::VkPhysicalDeviceCustomBorderColorFeaturesEXT;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXTURE_COMPRESSION_ASTC_3D_FEATURES_EXT:
+       return Struct::VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_BARRIER_FEATURES_NV:
        return Struct::VkPhysicalDevicePresentBarrierFeaturesNV;
     case VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_PRESENT_BARRIER_NV:
@@ -8863,12 +8859,6 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPipelineViewportDepthClampControlCreateInfoEXT;
     case VK_STRUCTURE_TYPE_SURFACE_CREATE_INFO_OHOS:
        return Struct::VkSurfaceCreateInfoOHOS;
-    case VK_STRUCTURE_TYPE_NATIVE_BUFFER_OHOS:
-       return Struct::VkNativeBufferOHOS;
-    case VK_STRUCTURE_TYPE_SWAPCHAIN_IMAGE_CREATE_INFO_OHOS:
-       return Struct::VkSwapchainImageCreateInfoOHOS;
-    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENTATION_PROPERTIES_OHOS:
-       return Struct::VkPhysicalDevicePresentationPropertiesOHOS;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HDR_VIVID_FEATURES_HUAWEI:
        return Struct::VkPhysicalDeviceHdrVividFeaturesHUAWEI;
     case VK_STRUCTURE_TYPE_HDR_VIVID_DYNAMIC_METADATA_HUAWEI:
@@ -8925,6 +8915,10 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkDataGraphPipelineBuiltinModelCreateInfoQCOM;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_MODEL_FEATURES_QCOM:
        return Struct::VkPhysicalDeviceDataGraphModelFeaturesQCOM;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_LONG_VECTOR_FEATURES_EXT:
+       return Struct::VkPhysicalDeviceShaderLongVectorFeaturesEXT;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_LONG_VECTOR_PROPERTIES_EXT:
+       return Struct::VkPhysicalDeviceShaderLongVectorPropertiesEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CACHE_INCREMENTAL_MODE_FEATURES_SEC:
        return Struct::VkPhysicalDevicePipelineCacheIncrementalModeFeaturesSEC;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_UNIFORM_BUFFER_UNSIZED_ARRAY_FEATURES_EXT:

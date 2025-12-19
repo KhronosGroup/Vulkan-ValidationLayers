@@ -890,6 +890,8 @@ struct DeviceFeatures {
     bool shaderIntegerDotProduct;
     // VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL
     bool shaderIntegerFunctions2;
+    // VkPhysicalDeviceShaderLongVectorFeaturesEXT
+    bool longVector;
     // VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR
     bool shaderMaximalReconvergence;
     // VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT
@@ -954,6 +956,8 @@ struct DeviceFeatures {
     bool tensors;
     // VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT
     bool texelBufferAlignment;
+    // VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT
+    bool textureCompressionASTC_3D;
     // VkPhysicalDeviceTextureCompressionASTCHDRFeatures, VkPhysicalDeviceVulkan13Features
     bool textureCompressionASTC_HDR;
     // VkPhysicalDeviceTileMemoryHeapFeaturesQCOM

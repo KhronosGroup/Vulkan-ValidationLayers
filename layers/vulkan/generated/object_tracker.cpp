@@ -8497,44 +8497,6 @@ void Instance::PostCallRecordCreateSurfaceOHOS(VkInstance instance, const VkSurf
     if (record_obj.result < VK_SUCCESS) return;
     tracker.CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator, record_obj.location, instance);
 }
-
-// vkGetSwapchainGrallocUsageOHOS:
-// Checked by chassis: device: "VUID-vkGetSwapchainGrallocUsageOHOS-device-parameter"
-
-bool Device::PreCallValidateAcquireImageOHOS(VkDevice device, VkImage image, int32_t nativeFenceFd, VkSemaphore semaphore,
-                                             VkFence fence, const ErrorObject& error_obj) const {
-    bool skip = false;
-    // Checked by chassis: device: "VUID-vkAcquireImageOHOS-device-parameter"
-    skip |= ValidateObject(image, kVulkanObjectTypeImage, false, "VUID-vkAcquireImageOHOS-image-parameter",
-                           "VUID-vkAcquireImageOHOS-image-parent", error_obj.location.dot(Field::image));
-    skip |= ValidateObject(semaphore, kVulkanObjectTypeSemaphore, true, "VUID-vkAcquireImageOHOS-semaphore-parameter",
-                           "VUID-vkAcquireImageOHOS-semaphore-parent", error_obj.location.dot(Field::semaphore));
-    skip |= ValidateObject(fence, kVulkanObjectTypeFence, true, "VUID-vkAcquireImageOHOS-fence-parameter",
-                           "VUID-vkAcquireImageOHOS-fence-parent", error_obj.location.dot(Field::fence));
-
-    return skip;
-}
-
-bool Device::PreCallValidateQueueSignalReleaseImageOHOS(VkQueue queue, uint32_t waitSemaphoreCount,
-                                                        const VkSemaphore* pWaitSemaphores, VkImage image, int32_t* pNativeFenceFd,
-                                                        const ErrorObject& error_obj) const {
-    bool skip = false;
-    // Checked by chassis: queue: "VUID-vkQueueSignalReleaseImageOHOS-queue-parameter"
-    // Checked by chassis: queue: "VUID-vkQueueSignalReleaseImageOHOS-commonparent"
-
-    if ((waitSemaphoreCount > 0) && (pWaitSemaphores)) {
-        for (uint32_t index0 = 0; index0 < waitSemaphoreCount; ++index0) {
-            skip |= ValidateObject(pWaitSemaphores[index0], kVulkanObjectTypeSemaphore, false,
-                                   "VUID-vkQueueSignalReleaseImageOHOS-pWaitSemaphores-parameter",
-                                   "VUID-vkQueueSignalReleaseImageOHOS-commonparent",
-                                   error_obj.location.dot(Field::pWaitSemaphores, index0));
-        }
-    }
-    skip |= ValidateObject(image, kVulkanObjectTypeImage, false, "VUID-vkQueueSignalReleaseImageOHOS-image-parameter",
-                           "VUID-vkQueueSignalReleaseImageOHOS-commonparent", error_obj.location.dot(Field::image));
-
-    return skip;
-}
 #endif  // VK_USE_PLATFORM_OHOS
 
 // vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV:

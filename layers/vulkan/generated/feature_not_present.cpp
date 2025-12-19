@@ -2995,6 +2995,17 @@ void Instance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDevice
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_LONG_VECTOR_FEATURES_EXT: {
+                VkPhysicalDeviceShaderLongVectorFeaturesEXT supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceShaderLongVectorFeaturesEXT *enabling =
+                    reinterpret_cast<const VkPhysicalDeviceShaderLongVectorFeaturesEXT *>(current);
+                if (enabling->longVector && !supported.longVector) {
+                    ss << "VkPhysicalDeviceShaderLongVectorFeaturesEXT::longVector is not supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MAXIMAL_RECONVERGENCE_FEATURES_KHR: {
                 VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
@@ -3268,6 +3279,17 @@ void Instance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDevice
                     reinterpret_cast<const VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT *>(current);
                 if (enabling->texelBufferAlignment && !supported.texelBufferAlignment) {
                     ss << "VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT::texelBufferAlignment is not supported\n";
+                }
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXTURE_COMPRESSION_ASTC_3D_FEATURES_EXT: {
+                VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT *enabling =
+                    reinterpret_cast<const VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT *>(current);
+                if (enabling->textureCompressionASTC_3D && !supported.textureCompressionASTC_3D) {
+                    ss << "VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT::textureCompressionASTC_3D is not supported\n";
                 }
                 break;
             }

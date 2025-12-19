@@ -1715,10 +1715,6 @@ std::string stateless::Context::DescribeFlagBitmaskValue(vvl::FlagBitmask flag_b
             return string_VkIndirectCommandsInputModeFlagsEXT(value);
         case vvl::FlagBitmask::VkIndirectCommandsLayoutUsageFlagBitsEXT:
             return string_VkIndirectCommandsLayoutUsageFlagsEXT(value);
-#ifdef VK_USE_PLATFORM_OHOS
-        case vvl::FlagBitmask::VkSwapchainImageUsageFlagBitsOHOS:
-            return string_VkSwapchainImageUsageFlagsOHOS(value);
-#endif  // VK_USE_PLATFORM_OHOS
         case vvl::FlagBitmask::VkAccelerationStructureCreateFlagBitsKHR:
             return string_VkAccelerationStructureCreateFlagsKHR(value);
 

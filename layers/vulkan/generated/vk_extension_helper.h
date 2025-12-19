@@ -405,6 +405,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_device_memory_report{kNotSupported};
     ExtEnabled vk_ext_robustness2{kNotSupported};
     ExtEnabled vk_ext_custom_border_color{kNotSupported};
+    ExtEnabled vk_ext_texture_compression_astc_3d{kNotSupported};
     ExtEnabled vk_google_user_type{kNotSupported};
     ExtEnabled vk_nv_present_barrier{kNotSupported};
     ExtEnabled vk_ext_private_data{kNotSupported};
@@ -530,7 +531,6 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_mesa_image_alignment_control{kNotSupported};
     ExtEnabled vk_ext_ray_tracing_invocation_reorder{kNotSupported};
     ExtEnabled vk_ext_depth_clamp_control{kNotSupported};
-    ExtEnabled vk_ohos_native_buffer{kNotSupported};
     ExtEnabled vk_huawei_hdr_vivid{kNotSupported};
     ExtEnabled vk_nv_cooperative_matrix2{kNotSupported};
     ExtEnabled vk_arm_pipeline_opacity_micromap{kNotSupported};
@@ -545,6 +545,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_shader_64bit_indexing{kNotSupported};
     ExtEnabled vk_ext_custom_resolve{kNotSupported};
     ExtEnabled vk_qcom_data_graph_model{kNotSupported};
+    ExtEnabled vk_ext_shader_long_vector{kNotSupported};
     ExtEnabled vk_sec_pipeline_cache_incremental_mode{kNotSupported};
     ExtEnabled vk_ext_shader_uniform_buffer_unsized_array{kNotSupported};
     ExtEnabled vk_nv_compute_occupancy_priority{kNotSupported};
@@ -880,6 +881,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_EXT_device_memory_report:
         case vvl::Extension::_VK_EXT_robustness2:
         case vvl::Extension::_VK_EXT_custom_border_color:
+        case vvl::Extension::_VK_EXT_texture_compression_astc_3d:
         case vvl::Extension::_VK_GOOGLE_user_type:
         case vvl::Extension::_VK_NV_present_barrier:
         case vvl::Extension::_VK_EXT_private_data:
@@ -1005,7 +1007,6 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_MESA_image_alignment_control:
         case vvl::Extension::_VK_EXT_ray_tracing_invocation_reorder:
         case vvl::Extension::_VK_EXT_depth_clamp_control:
-        case vvl::Extension::_VK_OHOS_native_buffer:
         case vvl::Extension::_VK_HUAWEI_hdr_vivid:
         case vvl::Extension::_VK_NV_cooperative_matrix2:
         case vvl::Extension::_VK_ARM_pipeline_opacity_micromap:
@@ -1020,6 +1021,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_EXT_shader_64bit_indexing:
         case vvl::Extension::_VK_EXT_custom_resolve:
         case vvl::Extension::_VK_QCOM_data_graph_model:
+        case vvl::Extension::_VK_EXT_shader_long_vector:
         case vvl::Extension::_VK_SEC_pipeline_cache_incremental_mode:
         case vvl::Extension::_VK_EXT_shader_uniform_buffer_unsized_array:
         case vvl::Extension::_VK_NV_compute_occupancy_priority:

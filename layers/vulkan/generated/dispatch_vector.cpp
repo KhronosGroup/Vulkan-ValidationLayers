@@ -1994,17 +1994,6 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateUpdateIndirectExecutionSetShaderEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordUpdateIndirectExecutionSetShaderEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordUpdateIndirectExecutionSetShaderEXT);
-#ifdef VK_USE_PLATFORM_OHOS
-    BUILD_DISPATCH_VECTOR(PreCallValidateGetSwapchainGrallocUsageOHOS);
-    BUILD_DISPATCH_VECTOR(PreCallRecordGetSwapchainGrallocUsageOHOS);
-    BUILD_DISPATCH_VECTOR(PostCallRecordGetSwapchainGrallocUsageOHOS);
-    BUILD_DISPATCH_VECTOR(PreCallValidateAcquireImageOHOS);
-    BUILD_DISPATCH_VECTOR(PreCallRecordAcquireImageOHOS);
-    BUILD_DISPATCH_VECTOR(PostCallRecordAcquireImageOHOS);
-    BUILD_DISPATCH_VECTOR(PreCallValidateQueueSignalReleaseImageOHOS);
-    BUILD_DISPATCH_VECTOR(PreCallRecordQueueSignalReleaseImageOHOS);
-    BUILD_DISPATCH_VECTOR(PostCallRecordQueueSignalReleaseImageOHOS);
-#endif  // VK_USE_PLATFORM_OHOS
 #ifdef VK_USE_PLATFORM_METAL_EXT
     BUILD_DISPATCH_VECTOR(PreCallValidateGetMemoryMetalHandleEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetMemoryMetalHandleEXT);

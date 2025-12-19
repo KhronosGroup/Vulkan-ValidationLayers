@@ -880,6 +880,8 @@ enum class Feature {
     shaderIntegerDotProduct,
     // VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL
     shaderIntegerFunctions2,
+    // VkPhysicalDeviceShaderLongVectorFeaturesEXT
+    longVector,
     // VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR
     shaderMaximalReconvergence,
     // VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT
@@ -944,6 +946,8 @@ enum class Feature {
     tensors,
     // VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT
     texelBufferAlignment,
+    // VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT
+    textureCompressionASTC_3D,
     // VkPhysicalDeviceTextureCompressionASTCHDRFeatures, VkPhysicalDeviceVulkan13Features
     textureCompressionASTC_HDR,
     // VkPhysicalDeviceTileMemoryHeapFeaturesQCOM

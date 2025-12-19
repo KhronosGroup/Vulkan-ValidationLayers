@@ -1597,15 +1597,6 @@ bool PreCallValidateUpdateIndirectExecutionSetShaderEXT(VkDevice device, VkIndir
                                                         uint32_t executionSetWriteCount,
                                                         const VkWriteIndirectExecutionSetShaderEXT* pExecutionSetWrites,
                                                         const ErrorObject& error_obj) const override;
-#ifdef VK_USE_PLATFORM_OHOS
-bool PreCallValidateGetSwapchainGrallocUsageOHOS(VkDevice device, VkFormat format, VkImageUsageFlags imageUsage,
-                                                 uint64_t* grallocUsage, const ErrorObject& error_obj) const override;
-bool PreCallValidateAcquireImageOHOS(VkDevice device, VkImage image, int32_t nativeFenceFd, VkSemaphore semaphore, VkFence fence,
-                                     const ErrorObject& error_obj) const override;
-bool PreCallValidateQueueSignalReleaseImageOHOS(VkQueue queue, uint32_t waitSemaphoreCount, const VkSemaphore* pWaitSemaphores,
-                                                VkImage image, int32_t* pNativeFenceFd,
-                                                const ErrorObject& error_obj) const override;
-#endif  // VK_USE_PLATFORM_OHOS
 #ifdef VK_USE_PLATFORM_METAL_EXT
 bool PreCallValidateGetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,
                                             void** pHandle, const ErrorObject& error_obj) const override;
