@@ -163,10 +163,11 @@ void Validator::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, c
     debug_printf::RegisterDebugPrintf(*this, gpuav_cb_state);
 }
 
-// Dedicated warning VUID that likely can be ignored. We want to always warn the user when adjusting settings/limits/features/etc on
-// them
+// Dedicated warning VUID that likely can be ignored.
+// We want to always warn the user when adjusting settings/limits/features/etc on them
 void Instance::AdjustmentWarning(LogObjectList objlist, const Location &loc, const char *const specific_message) const {
-    LogWarning("WARNING-Setting-Limit-Adjusted", objlist, loc, "Internal Warning:\n%s", specific_message);
+    LogWarning("WARNING-Setting-Limit-Adjusted", objlist, loc, "Warning that validation is adjusting settings:\n%s",
+               specific_message);
 }
 
 void Instance::InternalWarning(LogObjectList objlist, const Location &loc, const char *const specific_message) const {

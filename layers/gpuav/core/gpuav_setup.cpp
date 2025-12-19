@@ -333,8 +333,8 @@ struct BufferDeviceAddress : public Setting {
     bool HasRequiredFeatures(const DeviceFeatures &features) { return features.shaderInt64; }
     void Disable(GpuAVSettings &settings) { settings.shader_instrumentation.buffer_device_address = false; }
     std::string DisableMessage() {
-        return "Buffer Device Address validation option was enabled, but the shaderInt64 feature is not supported. [Disabling "
-               "gpuav_buffer_address_oob]";
+        return "\tBuffer Device Address validation option was enabled, but the shaderInt64 feature is not supported. [Disabling "
+               "gpuav_buffer_address_oob]\n";
     }
 };
 
@@ -343,8 +343,8 @@ struct RayQuery : public Setting {
     bool HasRequiredFeatures(const DeviceFeatures &features) { return features.rayQuery; }
     void Disable(GpuAVSettings &settings) { settings.shader_instrumentation.ray_query = false; }
     std::string DisableMessage() {
-        return "Ray Query validation option was enabled, but the rayQuery feature is not supported. [Disabling "
-               "gpuav_validate_ray_query]";
+        return "\tRay Query validation option was enabled, but the rayQuery feature is not supported. [Disabling "
+               "gpuav_validate_ray_query]\n";
     }
 };
 struct MeshShading : public Setting {
@@ -352,8 +352,8 @@ struct MeshShading : public Setting {
     bool HasRequiredFeatures(const DeviceFeatures &features) { return features.meshShader; }
     void Disable(GpuAVSettings &settings) { settings.shader_instrumentation.mesh_shading = false; }
     std::string DisableMessage() {
-        return "Mesh Shading validation option was enabled, but the meshShader feature is not supported. [Disabling "
-               "gpuav_mesh_shading]";
+        return "\tMesh Shading validation option was enabled, but the meshShader feature is not supported. [Disabling "
+               "gpuav_mesh_shading]\n";
     }
 };
 struct BufferCopies : public Setting {
@@ -362,8 +362,8 @@ struct BufferCopies : public Setting {
     bool HasRequiredFeatures(const DeviceFeatures &features) { return features.storageBuffer8BitAccess; }
     void Disable(GpuAVSettings &settings) { settings.validate_buffer_copies = false; }
     std::string DisableMessage() {
-        return "Buffer copies option was enabled, but the storageBuffer8BitAccess feature is not supported. [Disabling "
-               "gpuav_buffer_copies]";
+        return "\tBuffer copies option was enabled, but the storageBuffer8BitAccess feature is not supported. [Disabling "
+               "gpuav_buffer_copies]\n";
     }
 };
 struct BufferContent : public Setting {
@@ -371,8 +371,8 @@ struct BufferContent : public Setting {
     bool HasRequiredFeatures(const DeviceFeatures &features) { return features.shaderInt64; }
     void Disable(GpuAVSettings &settings) { settings.SetBufferValidationEnabled(false); }
     std::string DisableMessage() {
-        return "Buffer content validation option was enabled, but the shaderInt64 feature is not supported. [Disabling "
-               "gpuav_buffers_validation]";
+        return "\tBuffer content validation option was enabled, but the shaderInt64 feature is not supported. [Disabling "
+               "gpuav_buffers_validation]\n";
     }
 };
 
@@ -382,9 +382,9 @@ struct AccelerationStructuresBuild : public Setting {
     bool HasRequiredFeatures(const DeviceFeatures &features) { return features.shaderInt64; }
     void Disable(GpuAVSettings &settings) { settings.validate_acceleration_structures_builds = false; }
     std::string DisableMessage() {
-        return "Acceleration structure builds validation option was enabled, but the shaderInt64 feature is not "
+        return "\t structure builds validation option was enabled, but the shaderInt64 feature is not "
                "supported. [Disabling "
-               "gpuav_acceleration_structures_builds]";
+               "gpuav_acceleration_structures_builds]\n";
     }
 };
 }  // namespace setting
@@ -401,11 +401,15 @@ void Validator::InitSettings(const Location &loc) {
     std::array<setting::Setting *, 6> all_settings = {&buffer_device_address, &ray_query,      &mesh_shading,
                                                       &buffer_copies,         &buffer_content, &as_builds};
 
+    std::string adjustment_warnings;
     for (auto &setting_object : all_settings) {
         if (setting_object->IsEnabled(gpuav_settings) && !setting_object->HasRequiredFeatures(modified_features)) {
             setting_object->Disable(gpuav_settings);
-            AdjustmentWarning(device, loc, setting_object->DisableMessage().c_str());
+            adjustment_warnings += setting_object->DisableMessage();
         }
+    }
+    if (!adjustment_warnings.empty()) {
+        AdjustmentWarning(device, loc, adjustment_warnings.c_str());
     }
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_buffer) && !gpuav_settings.descriptor_buffer_override) {
