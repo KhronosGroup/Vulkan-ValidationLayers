@@ -17,6 +17,7 @@
  */
 
 #include <vulkan/utility/vk_format_utils.h>
+#include <vulkan/vulkan_core.h>
 #include "stateless/stateless_validation.h"
 #include "error_message/error_strings.h"
 #include "containers/container_utils.h"
@@ -28,33 +29,31 @@
 
 namespace stateless {
 
-bool Device::ValidateSubpassGraphicsFlags(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo, uint32_t subpass,
+bool Device::ValidateSubpassGraphicsFlags(const VkRenderPassCreateInfo2 &create_info, uint32_t subpass,
                                           VkPipelineStageFlags2 stages, const char *vuid, const Location &loc) const {
     bool skip = false;
+    if (subpass == VK_SUBPASS_EXTERNAL || subpass >= create_info.subpassCount) {
+        return skip;
+    }
+
     // make sure we consider all of the expanded and un-expanded graphics bits to be valid
-    const auto kExcludeStages = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_COPY_BIT |
-                                VK_PIPELINE_STAGE_2_RESOLVE_BIT | VK_PIPELINE_STAGE_2_BLIT_BIT | VK_PIPELINE_STAGE_2_CLEAR_BIT;
-    const auto kMetaGraphicsStages = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT |
-                                     VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT |
-                                     // ALL_COMMANDS means only graphics in graphics only context,
-                                     // TOP_OF_PIPE/BOTTOM_OF_PIPE are also always valid
-                                     // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4257
-                                     VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT | VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT |
-                                     VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT;
-    const auto kGraphicsStages =
+    const VkPipelineStageFlags2 kExcludeStages = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_COPY_BIT |
+                                                 VK_PIPELINE_STAGE_2_RESOLVE_BIT | VK_PIPELINE_STAGE_2_BLIT_BIT |
+                                                 VK_PIPELINE_STAGE_2_CLEAR_BIT;
+    const VkPipelineStageFlags2 kMetaGraphicsStages = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT |
+                                                      VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT |
+                                                      // ALL_COMMANDS means only graphics in graphics only context,
+                                                      // TOP_OF_PIPE/BOTTOM_OF_PIPE are also always valid
+                                                      // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4257
+                                                      VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT | VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT |
+                                                      VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT;
+    const VkPipelineStageFlags2 kGraphicsStages =
         (sync_utils::ExpandPipelineStages(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_QUEUE_GRAPHICS_BIT) | kMetaGraphicsStages) &
         ~kExcludeStages;
 
-    const auto IsPipeline = [pCreateInfo](uint32_t subpass, const VkPipelineBindPoint stage) {
-        if (subpass == VK_SUBPASS_EXTERNAL || subpass >= pCreateInfo->subpassCount) {
-            return false;
-        } else {
-            return pCreateInfo->pSubpasses[subpass].pipelineBindPoint == stage;
-        }
-    };
-
+    const bool is_pipeline = create_info.pSubpasses[subpass].pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
     const bool is_all_graphics_stages = (stages & ~kGraphicsStages) == 0;
-    if (IsPipeline(subpass, VK_PIPELINE_BIND_POINT_GRAPHICS) && !is_all_graphics_stages) {
+    if (is_pipeline && !is_all_graphics_stages) {
         skip |= LogError(vuid, device, loc,
                          "dependency contains a stage mask (%s) that are not part "
                          "of the Graphics pipeline",
@@ -64,9 +63,7 @@ bool Device::ValidateSubpassGraphicsFlags(VkDevice device, const VkRenderPassCre
     return skip;
 }
 
-bool Device::ValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
-                                      const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                      const ErrorObject &error_obj) const {
+bool Device::ValidateCreateRenderPass(const VkRenderPassCreateInfo2 &create_info, const ErrorObject &error_obj) const {
     bool skip = false;
     uint32_t max_color_attachments = phys_dev_props.limits.maxColorAttachments;
     const bool use_rp2 = error_obj.location.function != Func::vkCreateRenderPass;
@@ -78,16 +75,16 @@ bool Device::ValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateI
     android_external_format_resolve_feature = enabled_features.externalFormatResolve;
 #endif
 
-    for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
+    for (uint32_t i = 0; i < create_info.attachmentCount; ++i) {
         const Location &attachment_loc = create_info_loc.dot(Field::pAttachments, i);
 
         // if not null, also confirms rp2 is being used
         const void *pNext =
-            (use_rp2) ? reinterpret_cast<VkAttachmentDescription2 const *>(&pCreateInfo->pAttachments[i])->pNext : nullptr;
+            (use_rp2) ? reinterpret_cast<VkAttachmentDescription2 const *>(&create_info.pAttachments[i])->pNext : nullptr;
         const auto *attachment_description_stencil_layout =
             (use_rp2) ? vku::FindStructInPNextChain<VkAttachmentDescriptionStencilLayout>(pNext) : nullptr;
 
-        const VkAttachmentDescription2 &attachment = pCreateInfo->pAttachments[i];
+        const VkAttachmentDescription2 &attachment = create_info.pAttachments[i];
         if (attachment.format == VK_FORMAT_UNDEFINED) {
             if (use_rp2 && android_external_format_resolve_feature) {
                 if (GetExternalFormat(pNext) == 0) {
@@ -302,7 +299,7 @@ bool Device::ValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateI
             }
         }
         if (vkuFormatIsColor(attachment.format) || vkuFormatHasDepth(attachment.format)) {
-            if (pCreateInfo->pAttachments[i].loadOp == VK_ATTACHMENT_LOAD_OP_LOAD &&
+            if (create_info.pAttachments[i].loadOp == VK_ATTACHMENT_LOAD_OP_LOAD &&
                 attachment.initialLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-06699" : "VUID-VkAttachmentDescription-format-06699";
                 skip |= LogError(
@@ -311,7 +308,7 @@ bool Device::ValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateI
                     string_VkFormat(attachment.format));
             }
         }
-        if (vkuFormatHasStencil(attachment.format) && pCreateInfo->pAttachments[i].stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
+        if (vkuFormatHasStencil(attachment.format) && create_info.pAttachments[i].stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
             if (attachment.initialLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-pNext-06704" : "VUID-VkAttachmentDescription-format-06700";
                 skip |= LogError(vuid, device, attachment_loc,
@@ -370,53 +367,56 @@ bool Device::ValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateI
         }
     }
 
-    for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
-        if (pCreateInfo->pSubpasses[i].colorAttachmentCount > max_color_attachments) {
+    for (uint32_t i = 0; i < create_info.subpassCount; ++i) {
+        const VkSubpassDescription2 &subpass_desc = create_info.pSubpasses[i];
+        if (subpass_desc.colorAttachmentCount > max_color_attachments) {
             vuid = use_rp2 ? "VUID-VkSubpassDescription2-colorAttachmentCount-03063"
                            : "VUID-VkSubpassDescription-colorAttachmentCount-00845";
-            skip |= LogError(vuid, device, create_info_loc.dot(Field::pSubpasses, i),
-                             "cannot be used to create a render pass. maxColorAttachments is %d.", max_color_attachments);
+            skip |= LogError(vuid, device, create_info_loc.dot(Field::pSubpasses, i).dot(Field::colorAttachmentCount),
+                             "(%" PRIu32 ") is greater than maxColorAttachments (%" PRIu32 ").", subpass_desc.colorAttachmentCount,
+                             max_color_attachments);
         }
     }
 
-    for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
-        const auto &dependency = pCreateInfo->pDependencies[i];
+    for (uint32_t i = 0; i < create_info.dependencyCount; ++i) {
+        const VkSubpassDependency2 &dependency = create_info.pDependencies[i];
+        const Location dependency_loc = create_info_loc.dot(Field::pDependencies, i);
 
         // Need to check first so layer doesn't segfault from out of bound array access
         // src subpass bound check
-        if ((dependency.srcSubpass != VK_SUBPASS_EXTERNAL) && (dependency.srcSubpass >= pCreateInfo->subpassCount)) {
+        if ((dependency.srcSubpass != VK_SUBPASS_EXTERNAL) && (dependency.srcSubpass >= create_info.subpassCount)) {
             vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-srcSubpass-02526" : "VUID-VkRenderPassCreateInfo-pDependencies-06866";
-            skip |= LogError(vuid, device, create_info_loc.dot(Field::pDependencies, i).dot(Field::srcSubpass),
+            skip |= LogError(vuid, device, dependency_loc.dot(Field::srcSubpass),
                              "index (%" PRIu32 ") has to be less than subpassCount (%" PRIu32 ")", dependency.srcSubpass,
-                             pCreateInfo->subpassCount);
+                             create_info.subpassCount);
         }
 
         // dst subpass bound check
-        if ((dependency.dstSubpass != VK_SUBPASS_EXTERNAL) && (dependency.dstSubpass >= pCreateInfo->subpassCount)) {
+        if ((dependency.dstSubpass != VK_SUBPASS_EXTERNAL) && (dependency.dstSubpass >= create_info.subpassCount)) {
             vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-dstSubpass-02527" : "VUID-VkRenderPassCreateInfo-pDependencies-06867";
-            skip |= LogError(vuid, device, create_info_loc.dot(Field::pDependencies, i).dot(Field::dstSubpass),
+            skip |= LogError(vuid, device, dependency_loc.dot(Field::dstSubpass),
                              "index (%" PRIu32 ") has to be less than subpassCount (%" PRIu32 ")", dependency.dstSubpass,
-                             pCreateInfo->subpassCount);
+                             create_info.subpassCount);
         }
 
-        VkPipelineStageFlags2 srcStageMask = dependency.srcStageMask;
-        VkPipelineStageFlags2 dstStageMask = dependency.dstStageMask;
-        if (const auto barrier = vku::FindStructInPNextChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[i].pNext); barrier) {
-            srcStageMask = barrier->srcStageMask;
-            dstStageMask = barrier->dstStageMask;
+        VkPipelineStageFlags2 effective_src_stage_mask = dependency.srcStageMask;
+        VkPipelineStageFlags2 effective_dst_stage_mask = dependency.dstStageMask;
+        if (const auto barrier = vku::FindStructInPNextChain<VkMemoryBarrier2>(create_info.pDependencies[i].pNext)) {
+            effective_src_stage_mask = barrier->srcStageMask;
+            effective_dst_stage_mask = barrier->dstStageMask;
         }
 
         // Spec currently only supports Graphics pipeline in render pass -- so only that pipeline is currently checked
         vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-pDependencies-03054" : "VUID-VkRenderPassCreateInfo-pDependencies-00837";
-        skip |= ValidateSubpassGraphicsFlags(device, pCreateInfo, dependency.srcSubpass, srcStageMask, vuid,
-                                             create_info_loc.dot(Field::pDependencies, i).dot(Field::srcSubpass));
+        skip |= ValidateSubpassGraphicsFlags(create_info, dependency.srcSubpass, effective_src_stage_mask, vuid,
+                                             dependency_loc.dot(Field::srcSubpass));
 
         vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-pDependencies-03055" : "VUID-VkRenderPassCreateInfo-pDependencies-00838";
-        skip |= ValidateSubpassGraphicsFlags(device, pCreateInfo, dependency.dstSubpass, dstStageMask, vuid,
-                                             create_info_loc.dot(Field::pDependencies, i).dot(Field::dstSubpass));
+        skip |= ValidateSubpassGraphicsFlags(create_info, dependency.dstSubpass, effective_dst_stage_mask, vuid,
+                                             dependency_loc.dot(Field::dstSubpass));
     }
 
-    if ((pCreateInfo->flags & VK_RENDER_PASS_CREATE_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE) != 0 &&
+    if ((create_info.flags & VK_RENDER_PASS_CREATE_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE) != 0 &&
         !enabled_features.fragmentDensityMapLayered) {
         vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-fragmentDensityMapLayered-10829"
                        : "VUID-VkRenderPassCreateInfo-fragmentDensityMapLayered-10828";
@@ -432,37 +432,34 @@ bool Device::manual_PreCallValidateCreateRenderPass(VkDevice device, const VkRen
                                                     const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                                     const Context &context) const {
     vku::safe_VkRenderPassCreateInfo2 create_info_2 = ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo);
-    return ValidateCreateRenderPass(device, create_info_2.ptr(), pAllocator, pRenderPass, context.error_obj);
+    return ValidateCreateRenderPass(*create_info_2.ptr(), context.error_obj);
 }
 
 bool Device::manual_PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                      const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                                      const Context &context) const {
     vku::safe_VkRenderPassCreateInfo2 create_info_2(pCreateInfo);
-    return ValidateCreateRenderPass(device, create_info_2.ptr(), pAllocator, pRenderPass, context.error_obj);
+    return ValidateCreateRenderPass(*create_info_2.ptr(), context.error_obj);
 }
 
-void Device::RecordRenderPass(VkRenderPass renderPass, const VkRenderPassCreateInfo2 *pCreateInfo) {
+void Device::RecordRenderPass(VkRenderPass renderPass, const VkRenderPassCreateInfo2 &create_info) {
     std::unique_lock<std::mutex> lock(renderpass_map_mutex);
     auto &renderpass_state = renderpasses_states[renderPass];
     lock.unlock();
 
-    for (uint32_t subpass = 0; subpass < pCreateInfo->subpassCount; ++subpass) {
-        bool uses_color = false;
+    for (uint32_t subpass = 0; subpass < create_info.subpassCount; ++subpass) {
+        const VkSubpassDescription2 &subpass_desc = create_info.pSubpasses[subpass];
 
-        for (uint32_t i = 0; i < pCreateInfo->pSubpasses[subpass].colorAttachmentCount && !uses_color; ++i) {
-            if (pCreateInfo->pSubpasses[subpass].pColorAttachments[i].attachment != VK_ATTACHMENT_UNUSED) uses_color = true;
-        }
-
-        bool uses_depthstencil = false;
-        if (pCreateInfo->pSubpasses[subpass].pDepthStencilAttachment) {
-            if (pCreateInfo->pSubpasses[subpass].pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
-                uses_depthstencil = true;
+        for (uint32_t i = 0; i < subpass_desc.colorAttachmentCount; ++i) {
+            if (subpass_desc.pColorAttachments[i].attachment != VK_ATTACHMENT_UNUSED) {
+                renderpass_state.subpasses_using_color_attachment.insert(subpass);
+                break;
             }
         }
 
-        if (uses_color) renderpass_state.subpasses_using_color_attachment.insert(subpass);
-        if (uses_depthstencil) renderpass_state.subpasses_using_depthstencil_attachment.insert(subpass);
+        if (subpass_desc.pDepthStencilAttachment && subpass_desc.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
+            renderpass_state.subpasses_using_depthstencil_attachment.insert(subpass);
+        }
     }
 }
 void Device::PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
@@ -472,7 +469,7 @@ void Device::PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassC
         return;
     }
     vku::safe_VkRenderPassCreateInfo2 create_info_2 = ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo);
-    RecordRenderPass(*pRenderPass, create_info_2.ptr());
+    RecordRenderPass(*pRenderPass, *create_info_2.ptr());
 }
 
 void Device::PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
@@ -483,7 +480,7 @@ void Device::PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderP
         return;
     }
     vku::safe_VkRenderPassCreateInfo2 create_info_2(pCreateInfo);
-    RecordRenderPass(*pRenderPass, create_info_2.ptr());
+    RecordRenderPass(*pRenderPass, *create_info_2.ptr());
 }
 
 void Device::PostCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator,
