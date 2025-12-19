@@ -839,11 +839,6 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkDestroyIndirectExecutionSetEXT DestroyIndirectExecutionSetEXT;
     PFN_vkUpdateIndirectExecutionSetPipelineEXT UpdateIndirectExecutionSetPipelineEXT;
     PFN_vkUpdateIndirectExecutionSetShaderEXT UpdateIndirectExecutionSetShaderEXT;
-#ifdef VK_USE_PLATFORM_OHOS
-    PFN_vkGetSwapchainGrallocUsageOHOS GetSwapchainGrallocUsageOHOS;
-    PFN_vkAcquireImageOHOS AcquireImageOHOS;
-    PFN_vkQueueSignalReleaseImageOHOS QueueSignalReleaseImageOHOS;
-#endif  // VK_USE_PLATFORM_OHOS
 #ifdef VK_USE_PLATFORM_METAL_EXT
     PFN_vkGetMemoryMetalHandleEXT GetMemoryMetalHandleEXT;
     PFN_vkGetMemoryMetalHandlePropertiesEXT GetMemoryMetalHandlePropertiesEXT;

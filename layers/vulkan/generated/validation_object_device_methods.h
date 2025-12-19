@@ -6030,35 +6030,6 @@ virtual void PostCallRecordUpdateIndirectExecutionSetShaderEXT(VkDevice device, 
                                                                uint32_t executionSetWriteCount,
                                                                const VkWriteIndirectExecutionSetShaderEXT* pExecutionSetWrites,
                                                                const RecordObject& record_obj) {}
-#ifdef VK_USE_PLATFORM_OHOS
-virtual bool PreCallValidateGetSwapchainGrallocUsageOHOS(VkDevice device, VkFormat format, VkImageUsageFlags imageUsage,
-                                                         uint64_t* grallocUsage, const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordGetSwapchainGrallocUsageOHOS(VkDevice device, VkFormat format, VkImageUsageFlags imageUsage,
-                                                       uint64_t* grallocUsage, const RecordObject& record_obj) {}
-virtual void PostCallRecordGetSwapchainGrallocUsageOHOS(VkDevice device, VkFormat format, VkImageUsageFlags imageUsage,
-                                                        uint64_t* grallocUsage, const RecordObject& record_obj) {}
-virtual bool PreCallValidateAcquireImageOHOS(VkDevice device, VkImage image, int32_t nativeFenceFd, VkSemaphore semaphore,
-                                             VkFence fence, const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordAcquireImageOHOS(VkDevice device, VkImage image, int32_t nativeFenceFd, VkSemaphore semaphore,
-                                           VkFence fence, const RecordObject& record_obj) {}
-virtual void PostCallRecordAcquireImageOHOS(VkDevice device, VkImage image, int32_t nativeFenceFd, VkSemaphore semaphore,
-                                            VkFence fence, const RecordObject& record_obj) {}
-virtual bool PreCallValidateQueueSignalReleaseImageOHOS(VkQueue queue, uint32_t waitSemaphoreCount,
-                                                        const VkSemaphore* pWaitSemaphores, VkImage image, int32_t* pNativeFenceFd,
-                                                        const ErrorObject& error_obj) const {
-    return false;
-}
-virtual void PreCallRecordQueueSignalReleaseImageOHOS(VkQueue queue, uint32_t waitSemaphoreCount,
-                                                      const VkSemaphore* pWaitSemaphores, VkImage image, int32_t* pNativeFenceFd,
-                                                      const RecordObject& record_obj) {}
-virtual void PostCallRecordQueueSignalReleaseImageOHOS(VkQueue queue, uint32_t waitSemaphoreCount,
-                                                       const VkSemaphore* pWaitSemaphores, VkImage image, int32_t* pNativeFenceFd,
-                                                       const RecordObject& record_obj) {}
-#endif  // VK_USE_PLATFORM_OHOS
 #ifdef VK_USE_PLATFORM_METAL_EXT
 virtual bool PreCallValidateGetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,
                                                     void** pHandle, const ErrorObject& error_obj) const {

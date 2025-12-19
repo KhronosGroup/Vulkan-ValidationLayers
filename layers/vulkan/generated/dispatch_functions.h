@@ -4526,25 +4526,6 @@ static inline VkResult DispatchCreateSurfaceOHOS(VkInstance instance, const VkSu
     auto dispatch = vvl::dispatch::GetData(instance);
     return dispatch->CreateSurfaceOHOS(instance, pCreateInfo, pAllocator, pSurface);
 }
-
-static inline VkResult DispatchGetSwapchainGrallocUsageOHOS(VkDevice device, VkFormat format, VkImageUsageFlags imageUsage,
-                                                            uint64_t* grallocUsage) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    return dispatch->GetSwapchainGrallocUsageOHOS(device, format, imageUsage, grallocUsage);
-}
-
-static inline VkResult DispatchAcquireImageOHOS(VkDevice device, VkImage image, int32_t nativeFenceFd, VkSemaphore semaphore,
-                                                VkFence fence) {
-    auto dispatch = vvl::dispatch::GetData(device);
-    return dispatch->AcquireImageOHOS(device, image, nativeFenceFd, semaphore, fence);
-}
-
-static inline VkResult DispatchQueueSignalReleaseImageOHOS(VkQueue queue, uint32_t waitSemaphoreCount,
-                                                           const VkSemaphore* pWaitSemaphores, VkImage image,
-                                                           int32_t* pNativeFenceFd) {
-    auto dispatch = vvl::dispatch::GetData(queue);
-    return dispatch->QueueSignalReleaseImageOHOS(queue, waitSemaphoreCount, pWaitSemaphores, image, pNativeFenceFd);
-}
 #endif  // VK_USE_PLATFORM_OHOS
 
 static inline VkResult DispatchGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(

@@ -1009,12 +1009,6 @@ void UpdateIndirectExecutionSetPipelineEXT(VkDevice device, VkIndirectExecutionS
 void UpdateIndirectExecutionSetShaderEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
                                          uint32_t executionSetWriteCount,
                                          const VkWriteIndirectExecutionSetShaderEXT* pExecutionSetWrites);
-#ifdef VK_USE_PLATFORM_OHOS
-VkResult GetSwapchainGrallocUsageOHOS(VkDevice device, VkFormat format, VkImageUsageFlags imageUsage, uint64_t* grallocUsage);
-VkResult AcquireImageOHOS(VkDevice device, VkImage image, int32_t nativeFenceFd, VkSemaphore semaphore, VkFence fence);
-VkResult QueueSignalReleaseImageOHOS(VkQueue queue, uint32_t waitSemaphoreCount, const VkSemaphore* pWaitSemaphores, VkImage image,
-                                     int32_t* pNativeFenceFd);
-#endif  // VK_USE_PLATFORM_OHOS
 #ifdef VK_USE_PLATFORM_METAL_EXT
 VkResult GetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo, void** pHandle);
 VkResult GetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, const void* pHandle,

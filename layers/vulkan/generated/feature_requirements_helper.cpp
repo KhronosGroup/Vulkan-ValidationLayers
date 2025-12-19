@@ -6769,6 +6769,21 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
                     "VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL::shaderIntegerFunctions2"};
         }
 
+        case Feature::longVector: {
+            auto vk_struct = const_cast<VkPhysicalDeviceShaderLongVectorFeaturesEXT *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceShaderLongVectorFeaturesEXT>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceShaderLongVectorFeaturesEXT;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->longVector, "VkPhysicalDeviceShaderLongVectorFeaturesEXT::longVector"};
+        }
+
         case Feature::shaderMaximalReconvergence: {
             auto vk_struct = const_cast<VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR>(*inout_pnext_chain));
@@ -7355,6 +7370,22 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
                 }
             }
             return {&vk_struct->texelBufferAlignment, "VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT::texelBufferAlignment"};
+        }
+
+        case Feature::textureCompressionASTC_3D: {
+            auto vk_struct = const_cast<VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->textureCompressionASTC_3D,
+                    "VkPhysicalDeviceTextureCompressionASTC3DFeaturesEXT::textureCompressionASTC_3D"};
         }
 
         case Feature::textureCompressionASTC_HDR:

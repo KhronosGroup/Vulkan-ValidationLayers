@@ -378,6 +378,7 @@ static const std::unordered_map<std::string, uint32_t> device_extension_map = {
     {VK_EXT_DEVICE_MEMORY_REPORT_EXTENSION_NAME, VK_EXT_DEVICE_MEMORY_REPORT_SPEC_VERSION},
     {VK_EXT_ROBUSTNESS_2_EXTENSION_NAME, VK_EXT_ROBUSTNESS_2_SPEC_VERSION},
     {VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME, VK_EXT_CUSTOM_BORDER_COLOR_SPEC_VERSION},
+    {VK_EXT_TEXTURE_COMPRESSION_ASTC_3D_EXTENSION_NAME, VK_EXT_TEXTURE_COMPRESSION_ASTC_3D_SPEC_VERSION},
     {VK_GOOGLE_USER_TYPE_EXTENSION_NAME, VK_GOOGLE_USER_TYPE_SPEC_VERSION},
     {VK_NV_PRESENT_BARRIER_EXTENSION_NAME, VK_NV_PRESENT_BARRIER_SPEC_VERSION},
     {VK_EXT_PRIVATE_DATA_EXTENSION_NAME, VK_EXT_PRIVATE_DATA_SPEC_VERSION},
@@ -521,9 +522,6 @@ static const std::unordered_map<std::string, uint32_t> device_extension_map = {
     {VK_MESA_IMAGE_ALIGNMENT_CONTROL_EXTENSION_NAME, VK_MESA_IMAGE_ALIGNMENT_CONTROL_SPEC_VERSION},
     {VK_EXT_RAY_TRACING_INVOCATION_REORDER_EXTENSION_NAME, VK_EXT_RAY_TRACING_INVOCATION_REORDER_SPEC_VERSION},
     {VK_EXT_DEPTH_CLAMP_CONTROL_EXTENSION_NAME, VK_EXT_DEPTH_CLAMP_CONTROL_SPEC_VERSION},
-#ifdef VK_USE_PLATFORM_OHOS
-    {VK_OHOS_NATIVE_BUFFER_EXTENSION_NAME, VK_OHOS_NATIVE_BUFFER_SPEC_VERSION},
-#endif  // VK_USE_PLATFORM_OHOS
     {VK_HUAWEI_HDR_VIVID_EXTENSION_NAME, VK_HUAWEI_HDR_VIVID_SPEC_VERSION},
     {VK_NV_COOPERATIVE_MATRIX_2_EXTENSION_NAME, VK_NV_COOPERATIVE_MATRIX_2_SPEC_VERSION},
     {VK_ARM_PIPELINE_OPACITY_MICROMAP_EXTENSION_NAME, VK_ARM_PIPELINE_OPACITY_MICROMAP_SPEC_VERSION},
@@ -542,6 +540,7 @@ static const std::unordered_map<std::string, uint32_t> device_extension_map = {
     {VK_EXT_SHADER_64BIT_INDEXING_EXTENSION_NAME, VK_EXT_SHADER_64BIT_INDEXING_SPEC_VERSION},
     {VK_EXT_CUSTOM_RESOLVE_EXTENSION_NAME, VK_EXT_CUSTOM_RESOLVE_SPEC_VERSION},
     {VK_QCOM_DATA_GRAPH_MODEL_EXTENSION_NAME, VK_QCOM_DATA_GRAPH_MODEL_SPEC_VERSION},
+    {VK_EXT_SHADER_LONG_VECTOR_EXTENSION_NAME, VK_EXT_SHADER_LONG_VECTOR_SPEC_VERSION},
     {VK_SEC_PIPELINE_CACHE_INCREMENTAL_MODE_EXTENSION_NAME, VK_SEC_PIPELINE_CACHE_INCREMENTAL_MODE_SPEC_VERSION},
     {VK_EXT_SHADER_UNIFORM_BUFFER_UNSIZED_ARRAY_EXTENSION_NAME, VK_EXT_SHADER_UNIFORM_BUFFER_UNSIZED_ARRAY_SPEC_VERSION},
     {VK_NV_COMPUTE_OCCUPANCY_PRIORITY_EXTENSION_NAME, VK_NV_COMPUTE_OCCUPANCY_PRIORITY_SPEC_VERSION},
@@ -2179,13 +2178,6 @@ static VKAPI_ATTR void VKAPI_CALL UpdateIndirectExecutionSetShaderEXT(
 #ifdef VK_USE_PLATFORM_OHOS
 static VKAPI_ATTR VkResult VKAPI_CALL CreateSurfaceOHOS(VkInstance instance, const VkSurfaceCreateInfoOHOS* pCreateInfo,
                                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
-static VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainGrallocUsageOHOS(VkDevice device, VkFormat format, VkImageUsageFlags imageUsage,
-                                                                   uint64_t* grallocUsage);
-static VKAPI_ATTR VkResult VKAPI_CALL AcquireImageOHOS(VkDevice device, VkImage image, int32_t nativeFenceFd, VkSemaphore semaphore,
-                                                       VkFence fence);
-static VKAPI_ATTR VkResult VKAPI_CALL QueueSignalReleaseImageOHOS(VkQueue queue, uint32_t waitSemaphoreCount,
-                                                                  const VkSemaphore* pWaitSemaphores, VkImage image,
-                                                                  int32_t* pNativeFenceFd);
 #endif  // VK_USE_PLATFORM_OHOS
 static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
     VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties);
@@ -3082,9 +3074,6 @@ static const std::unordered_map<std::string, void*> name_to_func_ptr_map = {
     {"vkUpdateIndirectExecutionSetShaderEXT", (void*)UpdateIndirectExecutionSetShaderEXT},
 #ifdef VK_USE_PLATFORM_OHOS
     {"vkCreateSurfaceOHOS", (void*)CreateSurfaceOHOS},
-    {"vkGetSwapchainGrallocUsageOHOS", (void*)GetSwapchainGrallocUsageOHOS},
-    {"vkAcquireImageOHOS", (void*)AcquireImageOHOS},
-    {"vkQueueSignalReleaseImageOHOS", (void*)QueueSignalReleaseImageOHOS},
 #endif  // VK_USE_PLATFORM_OHOS
     {"vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV",
      (void*)GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV},
@@ -5989,22 +5978,6 @@ static VKAPI_ATTR VkResult VKAPI_CALL CreateSurfaceOHOS(VkInstance instance, con
                                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     unique_lock_t lock(global_lock);
     *pSurface = (VkSurfaceKHR)global_unique_handle++;
-    return VK_SUCCESS;
-}
-
-static VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainGrallocUsageOHOS(VkDevice device, VkFormat format, VkImageUsageFlags imageUsage,
-                                                                   uint64_t* grallocUsage) {
-    return VK_SUCCESS;
-}
-
-static VKAPI_ATTR VkResult VKAPI_CALL AcquireImageOHOS(VkDevice device, VkImage image, int32_t nativeFenceFd, VkSemaphore semaphore,
-                                                       VkFence fence) {
-    return VK_SUCCESS;
-}
-
-static VKAPI_ATTR VkResult VKAPI_CALL QueueSignalReleaseImageOHOS(VkQueue queue, uint32_t waitSemaphoreCount,
-                                                                  const VkSemaphore* pWaitSemaphores, VkImage image,
-                                                                  int32_t* pNativeFenceFd) {
     return VK_SUCCESS;
 }
 

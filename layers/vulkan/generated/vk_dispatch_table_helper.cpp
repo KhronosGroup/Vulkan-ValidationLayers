@@ -1459,13 +1459,6 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubCreateSurfaceOHOS(VkInstance, const Vk
                                                             const VkAllocationCallbacks*, VkSurfaceKHR*) {
     return VK_SUCCESS;
 }
-static VKAPI_ATTR VkResult VKAPI_CALL StubGetSwapchainGrallocUsageOHOS(VkDevice, VkFormat, VkImageUsageFlags, uint64_t*) {
-    return VK_SUCCESS;
-}
-static VKAPI_ATTR VkResult VKAPI_CALL StubAcquireImageOHOS(VkDevice, VkImage, int32_t, VkSemaphore, VkFence) { return VK_SUCCESS; }
-static VKAPI_ATTR VkResult VKAPI_CALL StubQueueSignalReleaseImageOHOS(VkQueue, uint32_t, const VkSemaphore*, VkImage, int32_t*) {
-    return VK_SUCCESS;
-}
 #endif  // VK_USE_PLATFORM_OHOS
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
     VkPhysicalDevice, uint32_t*, VkCooperativeMatrixFlexibleDimensionsPropertiesNV*) {
@@ -2107,9 +2100,6 @@ const auto& GetApiExtensionMap() {
         {"vkDestroyIndirectExecutionSetEXT", {vvl::Extension::_VK_EXT_device_generated_commands}},
         {"vkUpdateIndirectExecutionSetPipelineEXT", {vvl::Extension::_VK_EXT_device_generated_commands}},
         {"vkUpdateIndirectExecutionSetShaderEXT", {vvl::Extension::_VK_EXT_device_generated_commands}},
-        {"vkGetSwapchainGrallocUsageOHOS", {vvl::Extension::_VK_OHOS_native_buffer}},
-        {"vkAcquireImageOHOS", {vvl::Extension::_VK_OHOS_native_buffer}},
-        {"vkQueueSignalReleaseImageOHOS", {vvl::Extension::_VK_OHOS_native_buffer}},
         {"vkGetMemoryMetalHandleEXT", {vvl::Extension::_VK_EXT_external_memory_metal}},
         {"vkGetMemoryMetalHandlePropertiesEXT", {vvl::Extension::_VK_EXT_external_memory_metal}},
         {"vkCmdEndRendering2EXT", {vvl::Extension::_VK_EXT_fragment_density_map_offset}},
@@ -4591,20 +4581,6 @@ void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* tab
         table->UpdateIndirectExecutionSetShaderEXT =
             (PFN_vkUpdateIndirectExecutionSetShaderEXT)StubUpdateIndirectExecutionSetShaderEXT;
     }
-#ifdef VK_USE_PLATFORM_OHOS
-    table->GetSwapchainGrallocUsageOHOS = (PFN_vkGetSwapchainGrallocUsageOHOS)gpa(device, "vkGetSwapchainGrallocUsageOHOS");
-    if (table->GetSwapchainGrallocUsageOHOS == nullptr) {
-        table->GetSwapchainGrallocUsageOHOS = (PFN_vkGetSwapchainGrallocUsageOHOS)StubGetSwapchainGrallocUsageOHOS;
-    }
-    table->AcquireImageOHOS = (PFN_vkAcquireImageOHOS)gpa(device, "vkAcquireImageOHOS");
-    if (table->AcquireImageOHOS == nullptr) {
-        table->AcquireImageOHOS = (PFN_vkAcquireImageOHOS)StubAcquireImageOHOS;
-    }
-    table->QueueSignalReleaseImageOHOS = (PFN_vkQueueSignalReleaseImageOHOS)gpa(device, "vkQueueSignalReleaseImageOHOS");
-    if (table->QueueSignalReleaseImageOHOS == nullptr) {
-        table->QueueSignalReleaseImageOHOS = (PFN_vkQueueSignalReleaseImageOHOS)StubQueueSignalReleaseImageOHOS;
-    }
-#endif  // VK_USE_PLATFORM_OHOS
 #ifdef VK_USE_PLATFORM_METAL_EXT
     table->GetMemoryMetalHandleEXT = (PFN_vkGetMemoryMetalHandleEXT)gpa(device, "vkGetMemoryMetalHandleEXT");
     if (table->GetMemoryMetalHandleEXT == nullptr) {

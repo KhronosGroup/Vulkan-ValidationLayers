@@ -445,6 +445,37 @@ ValidValue stateless::Context::IsValidEnumValue(VkFormat value) const {
         case VK_FORMAT_PVRTC2_2BPP_SRGB_BLOCK_IMG:
         case VK_FORMAT_PVRTC2_4BPP_SRGB_BLOCK_IMG:
             return IsExtEnabled(extensions.vk_img_format_pvrtc) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_FORMAT_ASTC_3x3x3_UNORM_BLOCK_EXT:
+        case VK_FORMAT_ASTC_3x3x3_SRGB_BLOCK_EXT:
+        case VK_FORMAT_ASTC_3x3x3_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_4x3x3_UNORM_BLOCK_EXT:
+        case VK_FORMAT_ASTC_4x3x3_SRGB_BLOCK_EXT:
+        case VK_FORMAT_ASTC_4x3x3_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_4x4x3_UNORM_BLOCK_EXT:
+        case VK_FORMAT_ASTC_4x4x3_SRGB_BLOCK_EXT:
+        case VK_FORMAT_ASTC_4x4x3_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_4x4x4_UNORM_BLOCK_EXT:
+        case VK_FORMAT_ASTC_4x4x4_SRGB_BLOCK_EXT:
+        case VK_FORMAT_ASTC_4x4x4_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_5x4x4_UNORM_BLOCK_EXT:
+        case VK_FORMAT_ASTC_5x4x4_SRGB_BLOCK_EXT:
+        case VK_FORMAT_ASTC_5x4x4_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_5x5x4_UNORM_BLOCK_EXT:
+        case VK_FORMAT_ASTC_5x5x4_SRGB_BLOCK_EXT:
+        case VK_FORMAT_ASTC_5x5x4_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_5x5x5_UNORM_BLOCK_EXT:
+        case VK_FORMAT_ASTC_5x5x5_SRGB_BLOCK_EXT:
+        case VK_FORMAT_ASTC_5x5x5_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_6x5x5_UNORM_BLOCK_EXT:
+        case VK_FORMAT_ASTC_6x5x5_SRGB_BLOCK_EXT:
+        case VK_FORMAT_ASTC_6x5x5_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_6x6x5_UNORM_BLOCK_EXT:
+        case VK_FORMAT_ASTC_6x6x5_SRGB_BLOCK_EXT:
+        case VK_FORMAT_ASTC_6x6x5_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_6x6x6_UNORM_BLOCK_EXT:
+        case VK_FORMAT_ASTC_6x6x6_SRGB_BLOCK_EXT:
+        case VK_FORMAT_ASTC_6x6x6_SFLOAT_BLOCK_EXT:
+            return IsExtEnabled(extensions.vk_ext_texture_compression_astc_3d) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_FORMAT_R8_BOOL_ARM:
             return IsExtEnabled(extensions.vk_arm_tensors) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_FORMAT_R16G16_SFIXED5_NV:
@@ -2552,6 +2583,37 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkFormat value) const {
         case VK_FORMAT_PVRTC2_2BPP_SRGB_BLOCK_IMG:
         case VK_FORMAT_PVRTC2_4BPP_SRGB_BLOCK_IMG:
             return {vvl::Extension::_VK_IMG_format_pvrtc};
+        case VK_FORMAT_ASTC_3x3x3_UNORM_BLOCK_EXT:
+        case VK_FORMAT_ASTC_3x3x3_SRGB_BLOCK_EXT:
+        case VK_FORMAT_ASTC_3x3x3_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_4x3x3_UNORM_BLOCK_EXT:
+        case VK_FORMAT_ASTC_4x3x3_SRGB_BLOCK_EXT:
+        case VK_FORMAT_ASTC_4x3x3_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_4x4x3_UNORM_BLOCK_EXT:
+        case VK_FORMAT_ASTC_4x4x3_SRGB_BLOCK_EXT:
+        case VK_FORMAT_ASTC_4x4x3_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_4x4x4_UNORM_BLOCK_EXT:
+        case VK_FORMAT_ASTC_4x4x4_SRGB_BLOCK_EXT:
+        case VK_FORMAT_ASTC_4x4x4_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_5x4x4_UNORM_BLOCK_EXT:
+        case VK_FORMAT_ASTC_5x4x4_SRGB_BLOCK_EXT:
+        case VK_FORMAT_ASTC_5x4x4_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_5x5x4_UNORM_BLOCK_EXT:
+        case VK_FORMAT_ASTC_5x5x4_SRGB_BLOCK_EXT:
+        case VK_FORMAT_ASTC_5x5x4_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_5x5x5_UNORM_BLOCK_EXT:
+        case VK_FORMAT_ASTC_5x5x5_SRGB_BLOCK_EXT:
+        case VK_FORMAT_ASTC_5x5x5_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_6x5x5_UNORM_BLOCK_EXT:
+        case VK_FORMAT_ASTC_6x5x5_SRGB_BLOCK_EXT:
+        case VK_FORMAT_ASTC_6x5x5_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_6x6x5_UNORM_BLOCK_EXT:
+        case VK_FORMAT_ASTC_6x6x5_SRGB_BLOCK_EXT:
+        case VK_FORMAT_ASTC_6x6x5_SFLOAT_BLOCK_EXT:
+        case VK_FORMAT_ASTC_6x6x6_UNORM_BLOCK_EXT:
+        case VK_FORMAT_ASTC_6x6x6_SRGB_BLOCK_EXT:
+        case VK_FORMAT_ASTC_6x6x6_SFLOAT_BLOCK_EXT:
+            return {vvl::Extension::_VK_EXT_texture_compression_astc_3d};
         case VK_FORMAT_R8_BOOL_ARM:
             return {vvl::Extension::_VK_ARM_tensors};
         case VK_FORMAT_R16G16_SFIXED5_NV:

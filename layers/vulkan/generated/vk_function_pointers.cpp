@@ -872,9 +872,6 @@ PFN_vkUpdateIndirectExecutionSetPipelineEXT UpdateIndirectExecutionSetPipelineEX
 PFN_vkUpdateIndirectExecutionSetShaderEXT UpdateIndirectExecutionSetShaderEXT;
 #ifdef VK_USE_PLATFORM_OHOS
 PFN_vkCreateSurfaceOHOS CreateSurfaceOHOS;
-PFN_vkGetSwapchainGrallocUsageOHOS GetSwapchainGrallocUsageOHOS;
-PFN_vkAcquireImageOHOS AcquireImageOHOS;
-PFN_vkQueueSignalReleaseImageOHOS QueueSignalReleaseImageOHOS;
 #endif  // VK_USE_PLATFORM_OHOS
 PFN_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV;
 #ifdef VK_USE_PLATFORM_METAL_EXT
@@ -2722,15 +2719,6 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 CmdSetDepthClampRangeEXT = reinterpret_cast<PFN_vkCmdSetDepthClampRangeEXT>(GetDeviceProcAddr(device, "vkCmdSetDepthClampRangeEXT"));
             }
         },
-#ifdef VK_USE_PLATFORM_OHOS
-        {
-            "VK_OHOS_native_buffer", [](VkInstance , VkDevice device) {
-                GetSwapchainGrallocUsageOHOS = reinterpret_cast<PFN_vkGetSwapchainGrallocUsageOHOS>(GetDeviceProcAddr(device, "vkGetSwapchainGrallocUsageOHOS"));
-                AcquireImageOHOS = reinterpret_cast<PFN_vkAcquireImageOHOS>(GetDeviceProcAddr(device, "vkAcquireImageOHOS"));
-                QueueSignalReleaseImageOHOS = reinterpret_cast<PFN_vkQueueSignalReleaseImageOHOS>(GetDeviceProcAddr(device, "vkQueueSignalReleaseImageOHOS"));
-            }
-        },
-#endif  // VK_USE_PLATFORM_OHOS
         {
             "VK_NV_cooperative_matrix2", [](VkInstance instance, VkDevice ) {
                 GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV = reinterpret_cast<PFN_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV"));
@@ -3371,9 +3359,6 @@ void ResetAllExtensions() {
     UpdateIndirectExecutionSetShaderEXT = nullptr;
 #ifdef VK_USE_PLATFORM_OHOS
     CreateSurfaceOHOS = nullptr;
-    GetSwapchainGrallocUsageOHOS = nullptr;
-    AcquireImageOHOS = nullptr;
-    QueueSignalReleaseImageOHOS = nullptr;
 #endif  // VK_USE_PLATFORM_OHOS
     GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV = nullptr;
 #ifdef VK_USE_PLATFORM_METAL_EXT

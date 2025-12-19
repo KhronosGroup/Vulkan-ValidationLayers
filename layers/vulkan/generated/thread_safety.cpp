@@ -8658,58 +8658,6 @@ void Instance::PostCallRecordCreateSurfaceOHOS(VkInstance instance, const VkSurf
     }
 }
 
-void Device::PreCallRecordGetSwapchainGrallocUsageOHOS(VkDevice device, VkFormat format, VkImageUsageFlags imageUsage,
-                                                       uint64_t* grallocUsage, const RecordObject& record_obj) {
-    StartReadObjectParentInstance(device, record_obj.location);
-}
-
-void Device::PostCallRecordGetSwapchainGrallocUsageOHOS(VkDevice device, VkFormat format, VkImageUsageFlags imageUsage,
-                                                        uint64_t* grallocUsage, const RecordObject& record_obj) {
-    FinishReadObjectParentInstance(device, record_obj.location);
-}
-
-void Device::PreCallRecordAcquireImageOHOS(VkDevice device, VkImage image, int32_t nativeFenceFd, VkSemaphore semaphore,
-                                           VkFence fence, const RecordObject& record_obj) {
-    StartReadObjectParentInstance(device, record_obj.location);
-    StartReadObject(image, record_obj.location);
-    StartReadObject(semaphore, record_obj.location);
-    StartReadObject(fence, record_obj.location);
-}
-
-void Device::PostCallRecordAcquireImageOHOS(VkDevice device, VkImage image, int32_t nativeFenceFd, VkSemaphore semaphore,
-                                            VkFence fence, const RecordObject& record_obj) {
-    FinishReadObjectParentInstance(device, record_obj.location);
-    FinishReadObject(image, record_obj.location);
-    FinishReadObject(semaphore, record_obj.location);
-    FinishReadObject(fence, record_obj.location);
-}
-
-void Device::PreCallRecordQueueSignalReleaseImageOHOS(VkQueue queue, uint32_t waitSemaphoreCount,
-                                                      const VkSemaphore* pWaitSemaphores, VkImage image, int32_t* pNativeFenceFd,
-                                                      const RecordObject& record_obj) {
-    StartReadObject(queue, record_obj.location);
-
-    if (pWaitSemaphores) {
-        for (uint32_t index = 0; index < waitSemaphoreCount; index++) {
-            StartReadObject(pWaitSemaphores[index], record_obj.location);
-        }
-    }
-    StartReadObject(image, record_obj.location);
-}
-
-void Device::PostCallRecordQueueSignalReleaseImageOHOS(VkQueue queue, uint32_t waitSemaphoreCount,
-                                                       const VkSemaphore* pWaitSemaphores, VkImage image, int32_t* pNativeFenceFd,
-                                                       const RecordObject& record_obj) {
-    FinishReadObject(queue, record_obj.location);
-
-    if (pWaitSemaphores) {
-        for (uint32_t index = 0; index < waitSemaphoreCount; index++) {
-            FinishReadObject(pWaitSemaphores[index], record_obj.location);
-        }
-    }
-    FinishReadObject(image, record_obj.location);
-}
-
 #endif  // VK_USE_PLATFORM_OHOS
 #ifdef VK_USE_PLATFORM_METAL_EXT
 void Device::PreCallRecordGetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,

@@ -8942,47 +8942,6 @@ VkResult Instance::CreateSurfaceOHOS(VkInstance instance, const VkSurfaceCreateI
     }
     return result;
 }
-
-VkResult Device::GetSwapchainGrallocUsageOHOS(VkDevice device, VkFormat format, VkImageUsageFlags imageUsage,
-                                              uint64_t* grallocUsage) {
-    VkResult result = device_dispatch_table.GetSwapchainGrallocUsageOHOS(device, format, imageUsage, grallocUsage);
-
-    return result;
-}
-
-VkResult Device::AcquireImageOHOS(VkDevice device, VkImage image, int32_t nativeFenceFd, VkSemaphore semaphore, VkFence fence) {
-    if (!wrap_handles) return device_dispatch_table.AcquireImageOHOS(device, image, nativeFenceFd, semaphore, fence);
-    {
-        image = Unwrap(image);
-        semaphore = Unwrap(semaphore);
-        fence = Unwrap(fence);
-    }
-    VkResult result = device_dispatch_table.AcquireImageOHOS(device, image, nativeFenceFd, semaphore, fence);
-
-    return result;
-}
-
-VkResult Device::QueueSignalReleaseImageOHOS(VkQueue queue, uint32_t waitSemaphoreCount, const VkSemaphore* pWaitSemaphores,
-                                             VkImage image, int32_t* pNativeFenceFd) {
-    if (!wrap_handles)
-        return device_dispatch_table.QueueSignalReleaseImageOHOS(queue, waitSemaphoreCount, pWaitSemaphores, image, pNativeFenceFd);
-    small_vector<VkSemaphore, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pWaitSemaphores;
-    VkSemaphore* local_pWaitSemaphores = nullptr;
-    {
-        if (pWaitSemaphores) {
-            var_local_pWaitSemaphores.resize(waitSemaphoreCount);
-            local_pWaitSemaphores = var_local_pWaitSemaphores.data();
-            for (uint32_t index0 = 0; index0 < waitSemaphoreCount; ++index0) {
-                local_pWaitSemaphores[index0] = Unwrap(pWaitSemaphores[index0]);
-            }
-        }
-        image = Unwrap(image);
-    }
-    VkResult result = device_dispatch_table.QueueSignalReleaseImageOHOS(
-        queue, waitSemaphoreCount, (const VkSemaphore*)local_pWaitSemaphores, image, pNativeFenceFd);
-
-    return result;
-}
 #endif  // VK_USE_PLATFORM_OHOS
 
 VkResult Instance::GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(

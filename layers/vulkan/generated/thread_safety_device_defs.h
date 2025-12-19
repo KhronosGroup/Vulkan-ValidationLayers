@@ -4434,26 +4434,6 @@ void PostCallRecordUpdateIndirectExecutionSetShaderEXT(VkDevice device, VkIndire
                                                        const VkWriteIndirectExecutionSetShaderEXT* pExecutionSetWrites,
                                                        const RecordObject& record_obj) override;
 
-#ifdef VK_USE_PLATFORM_OHOS
-void PreCallRecordGetSwapchainGrallocUsageOHOS(VkDevice device, VkFormat format, VkImageUsageFlags imageUsage,
-                                               uint64_t* grallocUsage, const RecordObject& record_obj) override;
-
-void PostCallRecordGetSwapchainGrallocUsageOHOS(VkDevice device, VkFormat format, VkImageUsageFlags imageUsage,
-                                                uint64_t* grallocUsage, const RecordObject& record_obj) override;
-
-void PreCallRecordAcquireImageOHOS(VkDevice device, VkImage image, int32_t nativeFenceFd, VkSemaphore semaphore, VkFence fence,
-                                   const RecordObject& record_obj) override;
-
-void PostCallRecordAcquireImageOHOS(VkDevice device, VkImage image, int32_t nativeFenceFd, VkSemaphore semaphore, VkFence fence,
-                                    const RecordObject& record_obj) override;
-
-void PreCallRecordQueueSignalReleaseImageOHOS(VkQueue queue, uint32_t waitSemaphoreCount, const VkSemaphore* pWaitSemaphores,
-                                              VkImage image, int32_t* pNativeFenceFd, const RecordObject& record_obj) override;
-
-void PostCallRecordQueueSignalReleaseImageOHOS(VkQueue queue, uint32_t waitSemaphoreCount, const VkSemaphore* pWaitSemaphores,
-                                               VkImage image, int32_t* pNativeFenceFd, const RecordObject& record_obj) override;
-
-#endif  // VK_USE_PLATFORM_OHOS
 #ifdef VK_USE_PLATFORM_METAL_EXT
 void PreCallRecordGetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo, void** pHandle,
                                           const RecordObject& record_obj) override;
