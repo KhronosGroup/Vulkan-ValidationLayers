@@ -49,10 +49,10 @@ bool Device::manual_PreCallValidateCreatePipelineLayout(VkDevice device, const V
     bool skip = false;
     const auto &error_obj = context.error_obj;
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-    if (pCreateInfo->setLayoutCount > device_limits.maxBoundDescriptorSets) {
+    if (pCreateInfo->setLayoutCount > phys_dev_props.limits.maxBoundDescriptorSets) {
         skip |= LogError("VUID-VkPipelineLayoutCreateInfo-setLayoutCount-00286", device, create_info_loc.dot(Field::setLayoutCount),
                          "(%" PRIu32 ") exceeds the maxBoundDescriptorSets limit (%" PRIu32 ").", pCreateInfo->setLayoutCount,
-                         device_limits.maxBoundDescriptorSets);
+                         phys_dev_props.limits.maxBoundDescriptorSets);
     }
 
     if (!IsExtEnabled(extensions.vk_ext_graphics_pipeline_library)) {
@@ -83,7 +83,7 @@ bool Device::ValidatePushConstantRange(uint32_t push_constant_range_count, const
         const Location pc_loc = loc.dot(Field::pPushConstantRanges, i);
         const uint32_t offset = push_constant_ranges[i].offset;
         const uint32_t size = push_constant_ranges[i].size;
-        const uint32_t max_push_constants_size = device_limits.maxPushConstantsSize;
+        const uint32_t max_push_constants_size = phys_dev_props.limits.maxPushConstantsSize;
         // Check that offset + size don't exceed the max.
         // Prevent arithetic overflow here by avoiding addition and testing in this order.
         if (offset >= max_push_constants_size) {
@@ -245,11 +245,11 @@ bool Device::ValidatePipelineRenderingCreateInfo(const Context &context, const V
             loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::pColorAttachmentFormats), vvl::Enum::VkFormat,
             rendering_struct.colorAttachmentCount, rendering_struct.pColorAttachmentFormats, true, true,
             "VUID-VkGraphicsPipelineCreateInfo-renderPass-06579", "VUID-VkGraphicsPipelineCreateInfo-renderPass-06579");
-        if (rendering_struct.colorAttachmentCount > device_limits.maxColorAttachments) {
+        if (rendering_struct.colorAttachmentCount > phys_dev_props.limits.maxColorAttachments) {
             skip |= LogError("VUID-VkPipelineRenderingCreateInfo-colorAttachmentCount-09533", device,
                              loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::colorAttachmentCount),
                              "(%" PRIu32 ") is larger than maxColorAttachments (%" PRIu32 ").",
-                             rendering_struct.colorAttachmentCount, device_limits.maxColorAttachments);
+                             rendering_struct.colorAttachmentCount, phys_dev_props.limits.maxColorAttachments);
         }
     }
 
@@ -601,11 +601,12 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                     vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT);
                 if (!has_dynamic_patch_control_points &&
                     (create_info.pTessellationState->patchControlPoints == 0 ||
-                     create_info.pTessellationState->patchControlPoints > device_limits.maxTessellationPatchSize)) {
+                     create_info.pTessellationState->patchControlPoints > phys_dev_props.limits.maxTessellationPatchSize)) {
                     skip |= LogError("VUID-VkPipelineTessellationStateCreateInfo-patchControlPoints-01214", device,
                                      create_info_loc.dot(Field::pTessellationState).dot(Field::patchControlPoints),
                                      "is %" PRIu32 ", but should be between 0 and maxTessellationPatchSize (%" PRIu32 ").",
-                                     create_info.pTessellationState->patchControlPoints, device_limits.maxTessellationPatchSize);
+                                     create_info.pTessellationState->patchControlPoints,
+                                     phys_dev_props.limits.maxTessellationPatchSize);
                 }
             }
         }
@@ -622,18 +623,19 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
             const Location vertex_loc = create_info_loc.dot(Field::pVertexInputState);
             skip |= ValidatePipelineVertexInputStateCreateInfo(context, *vertex_input_state, vertex_loc);
 
-            if (vertex_input_state->vertexBindingDescriptionCount > device_limits.maxVertexInputBindings) {
+            if (vertex_input_state->vertexBindingDescriptionCount > phys_dev_props.limits.maxVertexInputBindings) {
                 skip |= LogError("VUID-VkPipelineVertexInputStateCreateInfo-vertexBindingDescriptionCount-00613", device,
                                  vertex_loc.dot(Field::vertexBindingDescriptionCount),
                                  "(%" PRIu32 ") is larger than maxVertexInputBindings (%" PRIu32 ").",
-                                 vertex_input_state->vertexBindingDescriptionCount, device_limits.maxVertexInputBindings);
+                                 vertex_input_state->vertexBindingDescriptionCount, phys_dev_props.limits.maxVertexInputBindings);
             }
 
-            if (vertex_input_state->vertexAttributeDescriptionCount > device_limits.maxVertexInputAttributes) {
-                skip |= LogError("VUID-VkPipelineVertexInputStateCreateInfo-vertexAttributeDescriptionCount-00614", device,
-                                 vertex_loc.dot(Field::vertexAttributeDescriptionCount),
-                                 "(%" PRIu32 ") is larger than maxVertexInputAttributes (%" PRIu32 ").",
-                                 vertex_input_state->vertexAttributeDescriptionCount, device_limits.maxVertexInputAttributes);
+            if (vertex_input_state->vertexAttributeDescriptionCount > phys_dev_props.limits.maxVertexInputAttributes) {
+                skip |=
+                    LogError("VUID-VkPipelineVertexInputStateCreateInfo-vertexAttributeDescriptionCount-00614", device,
+                             vertex_loc.dot(Field::vertexAttributeDescriptionCount),
+                             "(%" PRIu32 ") is larger than maxVertexInputAttributes (%" PRIu32 ").",
+                             vertex_input_state->vertexAttributeDescriptionCount, phys_dev_props.limits.maxVertexInputAttributes);
             }
 
             const bool has_dynamic_binding_stride = vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
@@ -650,19 +652,19 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                 }
                 vertex_bindings.insert(vertex_bind_desc.binding);
 
-                if (vertex_bind_desc.binding >= device_limits.maxVertexInputBindings) {
+                if (vertex_bind_desc.binding >= phys_dev_props.limits.maxVertexInputBindings) {
                     skip |= LogError("VUID-VkVertexInputBindingDescription-binding-00618", device, binding_loc.dot(Field::binding),
                                      "(%" PRIu32
                                      ") is larger than or equal to VkPhysicalDeviceLimits::maxVertexInputBindings (%" PRIu32 ").",
-                                     vertex_bind_desc.binding, device_limits.maxVertexInputBindings);
+                                     vertex_bind_desc.binding, phys_dev_props.limits.maxVertexInputBindings);
                 }
 
-                if (!has_dynamic_binding_stride && vertex_bind_desc.stride > device_limits.maxVertexInputBindingStride) {
+                if (!has_dynamic_binding_stride && vertex_bind_desc.stride > phys_dev_props.limits.maxVertexInputBindingStride) {
                     skip |= LogError("VUID-VkVertexInputBindingDescription-stride-00619", device, binding_loc.dot(Field::stride),
                                      "(%" PRIu32
                                      ") is larger "
                                      "than maxVertexInputBindingStride (%" PRIu32 ").",
-                                     vertex_bind_desc.stride, device_limits.maxVertexInputBindingStride);
+                                     vertex_bind_desc.stride, phys_dev_props.limits.maxVertexInputBindingStride);
                 }
             }
 
@@ -686,25 +688,25 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                                      "(%" PRIu32 ") does not exist in pVertexBindingDescription.", vertex_attrib_desc.binding);
                 }
 
-                if (vertex_attrib_desc.location >= device_limits.maxVertexInputAttributes) {
+                if (vertex_attrib_desc.location >= phys_dev_props.limits.maxVertexInputAttributes) {
                     skip |= LogError("VUID-VkVertexInputAttributeDescription-location-00620", device,
                                      attribute_loc.dot(Field::location),
                                      "(%" PRIu32 ") is larger than or equal to maxVertexInputAttributes (%" PRIu32 ").",
-                                     vertex_attrib_desc.location, device_limits.maxVertexInputAttributes);
+                                     vertex_attrib_desc.location, phys_dev_props.limits.maxVertexInputAttributes);
                 }
 
-                if (vertex_attrib_desc.binding >= device_limits.maxVertexInputBindings) {
+                if (vertex_attrib_desc.binding >= phys_dev_props.limits.maxVertexInputBindings) {
                     skip |=
                         LogError("VUID-VkVertexInputAttributeDescription-binding-00621", device, attribute_loc.dot(Field::binding),
                                  "(%" PRIu32 ") is larger than or equal to maxVertexInputBindings (%" PRIu32 ").",
-                                 vertex_attrib_desc.binding, device_limits.maxVertexInputBindings);
+                                 vertex_attrib_desc.binding, phys_dev_props.limits.maxVertexInputBindings);
                 }
 
-                if (vertex_attrib_desc.offset > device_limits.maxVertexInputAttributeOffset) {
+                if (vertex_attrib_desc.offset > phys_dev_props.limits.maxVertexInputAttributeOffset) {
                     skip |=
                         LogError("VUID-VkVertexInputAttributeDescription-offset-00622", device, attribute_loc.dot(Field::offset),
                                  "(%" PRIu32 ") is larger than maxVertexInputAttributeOffset (%" PRIu32 ").",
-                                 vertex_attrib_desc.offset, device_limits.maxVertexInputAttributeOffset);
+                                 vertex_attrib_desc.offset, phys_dev_props.limits.maxVertexInputAttributeOffset);
                 }
 
                 if (vkuFormatIsDepthOrStencil(vertex_attrib_desc.format)) {
@@ -775,11 +777,11 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                 }
 
                 // Viewport count
-                if (viewport_state.viewportCount > device_limits.maxViewports) {
+                if (viewport_state.viewportCount > phys_dev_props.limits.maxViewports) {
                     skip |=
                         LogError("VUID-VkPipelineViewportStateCreateInfo-viewportCount-01218", device,
                                  viewport_loc.dot(Field::viewportCount), "(%" PRIu32 ") is larger than maxViewports (%" PRIu32 ").",
-                                 viewport_state.viewportCount, device_limits.maxViewports);
+                                 viewport_state.viewportCount, phys_dev_props.limits.maxViewports);
                 }
                 if (has_dynamic_viewport_with_count) {
                     if (viewport_state.viewportCount != 0) {
@@ -803,11 +805,11 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                 }
 
                 // Scissor count
-                if (viewport_state.scissorCount > device_limits.maxViewports) {
+                if (viewport_state.scissorCount > phys_dev_props.limits.maxViewports) {
                     skip |=
                         LogError("VUID-VkPipelineViewportStateCreateInfo-scissorCount-01219", device,
                                  viewport_loc.dot(Field::scissorCount), "(%" PRIu32 ") is larger than maxViewports (%" PRIu32 ").",
-                                 viewport_state.scissorCount, device_limits.maxViewports);
+                                 viewport_state.scissorCount, phys_dev_props.limits.maxViewports);
                 }
                 if (has_dynamic_scissor_with_count) {
                     if (viewport_state.scissorCount != 0) {
@@ -865,20 +867,21 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                     }
                 }
 
-                if (exclusive_scissor_struct && exclusive_scissor_struct->exclusiveScissorCount > device_limits.maxViewports) {
+                if (exclusive_scissor_struct &&
+                    exclusive_scissor_struct->exclusiveScissorCount > phys_dev_props.limits.maxViewports) {
                     skip |= LogError("VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-exclusiveScissorCount-02028", device,
                                      viewport_loc.pNext(Struct::VkPipelineViewportExclusiveScissorStateCreateInfoNV,
                                                         Field::exclusiveScissorCount),
                                      "(%" PRIu32 ") is larger than maxViewports (%" PRIu32 ").",
-                                     exclusive_scissor_struct->exclusiveScissorCount, device_limits.maxViewports);
+                                     exclusive_scissor_struct->exclusiveScissorCount, phys_dev_props.limits.maxViewports);
                 }
 
-                if (shading_rate_image_struct && shading_rate_image_struct->viewportCount > device_limits.maxViewports) {
+                if (shading_rate_image_struct && shading_rate_image_struct->viewportCount > phys_dev_props.limits.maxViewports) {
                     skip |= LogError(
                         "VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-viewportCount-02055", device,
                         viewport_loc.pNext(Struct::VkPipelineViewportShadingRateImageStateCreateInfoNV, Field::viewportCount),
                         "(%" PRIu32 ") is larger than maxViewports (%" PRIu32 ").", shading_rate_image_struct->viewportCount,
-                        device_limits.maxViewports);
+                        phys_dev_props.limits.maxViewports);
                 }
 
                 if (viewport_state.scissorCount != viewport_state.viewportCount) {
@@ -1234,7 +1237,7 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                                              "VK_TRUE, but the stippledSmoothLines feature was not enabled.");
                         }
                         if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_DEFAULT &&
-                            (!enabled_features.stippledRectangularLines || !device_limits.strictLines)) {
+                            (!enabled_features.stippledRectangularLines || !phys_dev_props.limits.strictLines)) {
                             skip |= LogError("VUID-VkPipelineRasterizationLineStateCreateInfo-stippledLineEnable-02774", device,
                                              rasterization_loc.pNext(Struct::VkPhysicalDeviceLineRasterizationFeatures,
                                                                      Field::lineRasterizationMode),

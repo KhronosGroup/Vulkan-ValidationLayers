@@ -33,13 +33,13 @@ bool Device::manual_PreCallValidateCmdSetViewportWithCount(VkCommandBuffer comma
                              "(%" PRIu32 ") is not 1, but the multiViewport feature is not enabled.", viewportCount);
         }
     } else {  // multiViewport enabled
-        if (viewportCount < 1 || viewportCount > device_limits.maxViewports) {
+        if (viewportCount < 1 || viewportCount > phys_dev_props.limits.maxViewports) {
             skip |= LogError("VUID-vkCmdSetViewportWithCount-viewportCount-03394", commandBuffer,
                              error_obj.location.dot(Field::viewportCount),
                              "(%" PRIu32
                              ") must "
                              "not be greater than VkPhysicalDeviceLimits::maxViewports (%" PRIu32 ").",
-                             viewportCount, device_limits.maxViewports);
+                             viewportCount, phys_dev_props.limits.maxViewports);
         }
     }
 
@@ -67,10 +67,11 @@ bool Device::manual_PreCallValidateCmdSetScissorWithCount(VkCommandBuffer comman
         if (scissorCount == 0) {
             skip |= LogError("VUID-vkCmdSetScissorWithCount-scissorCount-03397", commandBuffer,
                              error_obj.location.dot(Field::scissorCount), "(%" PRIu32 ") must be greater than zero.", scissorCount);
-        } else if (scissorCount > device_limits.maxViewports) {
-            skip |= LogError(
-                "VUID-vkCmdSetScissorWithCount-scissorCount-03397", commandBuffer, error_obj.location.dot(Field::scissorCount),
-                "(%" PRIu32 ") must not be greater than maxViewports (%" PRIu32 ").", scissorCount, device_limits.maxViewports);
+        } else if (scissorCount > phys_dev_props.limits.maxViewports) {
+            skip |= LogError("VUID-vkCmdSetScissorWithCount-scissorCount-03397", commandBuffer,
+                             error_obj.location.dot(Field::scissorCount),
+                             "(%" PRIu32 ") must not be greater than maxViewports (%" PRIu32 ").", scissorCount,
+                             phys_dev_props.limits.maxViewports);
         }
     }
 
@@ -116,18 +117,18 @@ bool Device::manual_PreCallValidateCmdSetVertexInputEXT(VkCommandBuffer commandB
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
-    if (vertexBindingDescriptionCount > device_limits.maxVertexInputBindings) {
+    if (vertexBindingDescriptionCount > phys_dev_props.limits.maxVertexInputBindings) {
         skip |= LogError("VUID-vkCmdSetVertexInputEXT-vertexBindingDescriptionCount-04791", commandBuffer,
                          error_obj.location.dot(Field::vertexBindingDescriptionCount),
                          "(%" PRIu32 ") is greater than the maxVertexInputBindings limit (%" PRIu32 ").",
-                         vertexBindingDescriptionCount, device_limits.maxVertexInputBindings);
+                         vertexBindingDescriptionCount, phys_dev_props.limits.maxVertexInputBindings);
     }
 
-    if (vertexAttributeDescriptionCount > device_limits.maxVertexInputAttributes) {
+    if (vertexAttributeDescriptionCount > phys_dev_props.limits.maxVertexInputAttributes) {
         skip |= LogError("VUID-vkCmdSetVertexInputEXT-vertexAttributeDescriptionCount-04792", commandBuffer,
                          error_obj.location.dot(Field::vertexAttributeDescriptionCount),
                          "(%" PRIu32 ") is greater than the maxVertexInputAttributes limit (%" PRIu32 ").",
-                         vertexAttributeDescriptionCount, device_limits.maxVertexInputAttributes);
+                         vertexAttributeDescriptionCount, phys_dev_props.limits.maxVertexInputAttributes);
     }
 
     for (uint32_t attribute = 0; attribute < vertexAttributeDescriptionCount; ++attribute) {
@@ -176,16 +177,16 @@ bool Device::manual_PreCallValidateCmdSetVertexInputEXT(VkCommandBuffer commandB
 
     for (uint32_t binding = 0; binding < vertexBindingDescriptionCount; ++binding) {
         const Location binding_loc = error_obj.location.dot(Field::pVertexBindingDescriptions, binding);
-        if (pVertexBindingDescriptions[binding].binding > device_limits.maxVertexInputBindings) {
+        if (pVertexBindingDescriptions[binding].binding > phys_dev_props.limits.maxVertexInputBindings) {
             skip |= LogError("VUID-VkVertexInputBindingDescription2EXT-binding-04796", commandBuffer,
                              binding_loc.dot(Field::binding), "(%" PRIu32 ") is greater than maxVertexInputBindings (%" PRIu32 ").",
-                             pVertexBindingDescriptions[binding].binding, device_limits.maxVertexInputBindings);
+                             pVertexBindingDescriptions[binding].binding, phys_dev_props.limits.maxVertexInputBindings);
         }
 
-        if (pVertexBindingDescriptions[binding].stride > device_limits.maxVertexInputBindingStride) {
+        if (pVertexBindingDescriptions[binding].stride > phys_dev_props.limits.maxVertexInputBindingStride) {
             skip |= LogError("VUID-VkVertexInputBindingDescription2EXT-stride-04797", commandBuffer, binding_loc.dot(Field::stride),
                              "(%" PRIu32 ") is greater than maxVertexInputBindingStride (%" PRIu32 ").",
-                             pVertexBindingDescriptions[binding].stride, device_limits.maxVertexInputBindingStride);
+                             pVertexBindingDescriptions[binding].stride, phys_dev_props.limits.maxVertexInputBindingStride);
         }
 
         if (pVertexBindingDescriptions[binding].divisor == 0 && (!enabled_features.vertexAttributeInstanceRateZeroDivisor)) {
@@ -223,25 +224,25 @@ bool Device::manual_PreCallValidateCmdSetVertexInputEXT(VkCommandBuffer commandB
 
     for (uint32_t attribute = 0; attribute < vertexAttributeDescriptionCount; ++attribute) {
         const Location attribute_loc = error_obj.location.dot(Field::pVertexAttributeDescriptions, attribute);
-        if (pVertexAttributeDescriptions[attribute].location > device_limits.maxVertexInputAttributes) {
+        if (pVertexAttributeDescriptions[attribute].location > phys_dev_props.limits.maxVertexInputAttributes) {
             skip |= LogError("VUID-VkVertexInputAttributeDescription2EXT-location-06228", commandBuffer,
                              attribute_loc.dot(Field::location),
                              "(%" PRIu32 ") is greater than maxVertexInputAttributes (%" PRIu32 ").",
-                             pVertexAttributeDescriptions[attribute].location, device_limits.maxVertexInputAttributes);
+                             pVertexAttributeDescriptions[attribute].location, phys_dev_props.limits.maxVertexInputAttributes);
         }
 
-        if (pVertexAttributeDescriptions[attribute].binding > device_limits.maxVertexInputBindings) {
+        if (pVertexAttributeDescriptions[attribute].binding > phys_dev_props.limits.maxVertexInputBindings) {
             skip |=
                 LogError("VUID-VkVertexInputAttributeDescription2EXT-binding-06229", commandBuffer,
                          attribute_loc.dot(Field::binding), "(%" PRIu32 ") is greater than maxVertexInputBindings (%" PRIu32 ").",
-                         pVertexAttributeDescriptions[attribute].binding, device_limits.maxVertexInputBindings);
+                         pVertexAttributeDescriptions[attribute].binding, phys_dev_props.limits.maxVertexInputBindings);
         }
 
-        if (pVertexAttributeDescriptions[attribute].offset > device_limits.maxVertexInputAttributeOffset) {
+        if (pVertexAttributeDescriptions[attribute].offset > phys_dev_props.limits.maxVertexInputAttributeOffset) {
             skip |=
                 LogError("VUID-VkVertexInputAttributeDescription2EXT-offset-06230", commandBuffer, attribute_loc.dot(Field::offset),
                          "(%" PRIu32 ") is greater than maxVertexInputAttributeOffset (%" PRIu32 ").",
-                         pVertexAttributeDescriptions[attribute].offset, device_limits.maxVertexInputAttributeOffset);
+                         pVertexAttributeDescriptions[attribute].offset, phys_dev_props.limits.maxVertexInputAttributeOffset);
         }
 
         VkFormatProperties properties;
@@ -345,11 +346,11 @@ bool Device::manual_PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffer comm
         }
     } else {  // multiViewport enabled
         const uint64_t sum = static_cast<uint64_t>(firstExclusiveScissor) + static_cast<uint64_t>(exclusiveScissorCount);
-        if (sum > device_limits.maxViewports) {
+        if (sum > phys_dev_props.limits.maxViewports) {
             skip |= LogError("VUID-vkCmdSetExclusiveScissorNV-firstExclusiveScissor-02034", commandBuffer, error_obj.location,
                              "firstExclusiveScissor (%" PRIu32 ") + exclusiveScissorCount (%" PRIu32 ") is %" PRIu64
                              " which is greater than VkPhysicalDeviceLimits::maxViewports (%" PRIu32 ").",
-                             firstExclusiveScissor, exclusiveScissorCount, sum, device_limits.maxViewports);
+                             firstExclusiveScissor, exclusiveScissorCount, sum, phys_dev_props.limits.maxViewports);
         }
     }
 
@@ -393,11 +394,11 @@ bool Device::manual_PreCallValidateCmdSetViewportWScalingNV(VkCommandBuffer comm
     bool skip = false;
     const auto &error_obj = context.error_obj;
     const uint64_t sum = static_cast<uint64_t>(firstViewport) + static_cast<uint64_t>(viewportCount);
-    if ((sum < 1) || (sum > device_limits.maxViewports)) {
+    if ((sum < 1) || (sum > phys_dev_props.limits.maxViewports)) {
         skip |= LogError("VUID-vkCmdSetViewportWScalingNV-firstViewport-01324", commandBuffer, error_obj.location,
                          "firstViewport (%" PRIu32 ") + viewportCount (%" PRIu32 ") is %" PRIu64
                          ", which must be between 1 and VkPhysicalDeviceLimits::maxViewports (%" PRIu32 "), inclusive.",
-                         firstViewport, viewportCount, sum, device_limits.maxViewports);
+                         firstViewport, viewportCount, sum, phys_dev_props.limits.maxViewports);
     }
 
     return skip;
@@ -424,11 +425,11 @@ bool Device::manual_PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCommandB
     }
 
     const uint64_t sum = static_cast<uint64_t>(firstViewport) + static_cast<uint64_t>(viewportCount);
-    if (sum > device_limits.maxViewports) {
+    if (sum > phys_dev_props.limits.maxViewports) {
         skip |= LogError("VUID-vkCmdSetViewportShadingRatePaletteNV-firstViewport-02067", commandBuffer, error_obj.location,
                          "firstViewport (%" PRIu32 ") + viewportCount (%" PRIu32 ") is %" PRIu64
                          ") which is greater than VkPhysicalDeviceLimits::maxViewports (%" PRIu32 ").",
-                         firstViewport, viewportCount, sum, device_limits.maxViewports);
+                         firstViewport, viewportCount, sum, phys_dev_props.limits.maxViewports);
     }
 
     return skip;
@@ -474,11 +475,11 @@ bool Device::manual_PreCallValidateCmdSetViewport(VkCommandBuffer commandBuffer,
         }
     } else {  // multiViewport enabled
         const uint64_t sum = static_cast<uint64_t>(firstViewport) + static_cast<uint64_t>(viewportCount);
-        if (sum > device_limits.maxViewports) {
+        if (sum > phys_dev_props.limits.maxViewports) {
             skip |= LogError("VUID-vkCmdSetViewport-firstViewport-01223", commandBuffer, error_obj.location,
                              "firstViewport (%" PRIu32 ") + viewportCount (%" PRIu32 ") is %" PRIu64
                              " which is greater than maxViewports (%" PRIu32 ").",
-                             firstViewport, viewportCount, sum, device_limits.maxViewports);
+                             firstViewport, viewportCount, sum, phys_dev_props.limits.maxViewports);
         }
     }
 
@@ -524,11 +525,11 @@ bool Device::manual_PreCallValidateCmdSetScissor(VkCommandBuffer commandBuffer, 
         }
     } else {  // multiViewport enabled
         const uint64_t sum = static_cast<uint64_t>(firstScissor) + static_cast<uint64_t>(scissorCount);
-        if (sum > device_limits.maxViewports) {
+        if (sum > phys_dev_props.limits.maxViewports) {
             skip |= LogError("VUID-vkCmdSetScissor-firstScissor-00592", commandBuffer, error_obj.location,
                              "firstScissor (%" PRIu32 ") + scissorCount (%" PRIu32 ") is %" PRIu64
                              " which is greater than maxViewports (%" PRIu32 ").",
-                             firstScissor, scissorCount, sum, device_limits.maxViewports);
+                             firstScissor, scissorCount, sum, phys_dev_props.limits.maxViewports);
         }
     }
 

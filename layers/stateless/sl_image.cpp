@@ -529,22 +529,22 @@ bool Device::ValidateCreateImageStencilUsage(const VkImageCreateInfo &create_inf
 
     if (vkuFormatIsDepthOrStencil(create_info.format)) {
         if ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) != 0) {
-            if (create_info.extent.width > device_limits.maxFramebufferWidth) {
+            if (create_info.extent.width > phys_dev_props.limits.maxFramebufferWidth) {
                 skip |= LogError("VUID-VkImageCreateInfo-Format-02536", device,
                                  create_info_loc.pNext(Struct::VkImageStencilUsageCreateInfo, Field::stencilUsage),
                                  "includes VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT and image width (%" PRIu32
                                  ") exceeds device "
                                  "maxFramebufferWidth (%" PRIu32 ")",
-                                 create_info.extent.width, device_limits.maxFramebufferWidth);
+                                 create_info.extent.width, phys_dev_props.limits.maxFramebufferWidth);
             }
 
-            if (create_info.extent.height > device_limits.maxFramebufferHeight) {
+            if (create_info.extent.height > phys_dev_props.limits.maxFramebufferHeight) {
                 skip |= LogError("VUID-VkImageCreateInfo-format-02537", device,
                                  create_info_loc.pNext(Struct::VkImageStencilUsageCreateInfo, Field::stencilUsage),
                                  "includes VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT and image height (%" PRIu32
                                  ") exceeds device "
                                  "maxFramebufferHeight (%" PRIu32 ")",
-                                 create_info.extent.height, device_limits.maxFramebufferHeight);
+                                 create_info.extent.height, phys_dev_props.limits.maxFramebufferHeight);
             }
         }
 

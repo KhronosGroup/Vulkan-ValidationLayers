@@ -445,7 +445,6 @@ class Device : public vvl::base::Device {
     ~Device() {}
 
     Instance *instance;
-    VkPhysicalDeviceLimits device_limits = {};
 
     // This was a special case where it was decided to use the extension version for validation
     // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/5671
