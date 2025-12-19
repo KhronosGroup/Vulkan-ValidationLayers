@@ -4134,14 +4134,16 @@ bool CoreChecks::ValidateCopyMemoryToImageIndirectInfo(const vvl::CommandBuffer 
                 mip_level, dst_image->create_info.mipLevels);
         }
 
-        if (subresource_layers.layerCount != VK_REMAINING_ARRAY_LAYERS &&
+        if (dst_image->create_info.imageType == VK_IMAGE_TYPE_3D) {
+            // TODO - Add https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11332
+        } else if (subresource_layers.layerCount != VK_REMAINING_ARRAY_LAYERS &&
             subresource_layers.baseArrayLayer + subresource_layers.layerCount > dst_image->create_info.arrayLayers) {
-            skip |= LogError("VUID-VkCopyMemoryToImageIndirectInfoKHR-layerCount-08764", dst_objlist,
-                             subresource_loc.dot(Field::layerCount),
-                             "(%" PRIu32 ") + baseArrayLayer (%" PRIu32
-                             ") must be less than or equal to "
-                             "the VkImageCreateInfo::arrayLayers (%" PRIu32 ") when dstImage was created.",
-                             subresource_layers.layerCount, subresource_layers.baseArrayLayer, dst_image->create_info.arrayLayers);
+                skip |= LogError("VUID-VkCopyMemoryToImageIndirectInfoKHR-dstImage-12288", dst_objlist,
+                    subresource_loc.dot(Field::layerCount),
+                    "(%" PRIu32 ") + baseArrayLayer (%" PRIu32
+                    ") must be less than or equal to "
+                    "the VkImageCreateInfo::arrayLayers (%" PRIu32 ") when dstImage was created.",
+                    subresource_layers.layerCount, subresource_layers.baseArrayLayer, dst_image->create_info.arrayLayers);
         }
     }
 
