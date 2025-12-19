@@ -14,6 +14,9 @@
  */
 
 #include <gtest/gtest.h>
+#include <vulkan/vulkan_core.h>
+#include <cstdint>
+#include <vector>
 #include "utils/cast_utils.h"
 #include "utils/convert_utils.h"
 #include "../framework/layer_validation_tests.h"
@@ -5069,6 +5072,40 @@ TEST_F(NegativeRenderPass, RenderPassAttachmentFlagsMaintenance10Disabled) {
 
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, &attachment, 1, &subpass, 0, nullptr};
     m_errorMonitor->SetDesiredError("VUID-VkAttachmentDescription-flags-11775");
+    vkt::RenderPass rp(*m_device, rpci);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeRenderPass, MaxPerStageDescriptorInputAttachments) {
+    RETURN_IF_SKIP(Init());
+
+    const uint32_t max_attachments = m_device->Physical().limits_.maxPerStageDescriptorInputAttachments;
+    if (max_attachments == vvl::kU32Max) {
+        GTEST_SKIP() << "maxPerStageDescriptorInputAttachments is uint32_t max";
+    }
+
+    std::vector<VkAttachmentReference> references;
+    for (uint32_t i = 0; i <= max_attachments; i++) {
+        references.emplace_back(VkAttachmentReference{0, VK_IMAGE_LAYOUT_GENERAL});
+    }
+    VkSubpassDescription subpasses = {
+        0,      VK_PIPELINE_BIND_POINT_GRAPHICS, (uint32_t)references.size(), references.data(), 0, nullptr, nullptr, nullptr, 0,
+        nullptr};
+
+    VkAttachmentDescription attach_desc = {};
+    attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = &attach_desc;
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpasses;
+
+    m_errorMonitor->SetDesiredError("VUID-VkSubpassDescription-inputAttachmentCount-12293");
     vkt::RenderPass rp(*m_device, rpci);
     m_errorMonitor->VerifyFound();
 }

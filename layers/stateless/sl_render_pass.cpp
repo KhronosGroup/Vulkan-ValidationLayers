@@ -65,7 +65,6 @@ bool Device::ValidateSubpassGraphicsFlags(const VkRenderPassCreateInfo2 &create_
 
 bool Device::ValidateCreateRenderPass(const VkRenderPassCreateInfo2 &create_info, const ErrorObject &error_obj) const {
     bool skip = false;
-    uint32_t max_color_attachments = phys_dev_props.limits.maxColorAttachments;
     const bool use_rp2 = error_obj.location.function != Func::vkCreateRenderPass;
     const char *vuid = nullptr;
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
@@ -369,12 +368,20 @@ bool Device::ValidateCreateRenderPass(const VkRenderPassCreateInfo2 &create_info
 
     for (uint32_t i = 0; i < create_info.subpassCount; ++i) {
         const VkSubpassDescription2 &subpass_desc = create_info.pSubpasses[i];
-        if (subpass_desc.colorAttachmentCount > max_color_attachments) {
+        if (subpass_desc.colorAttachmentCount > phys_dev_props.limits.maxColorAttachments) {
             vuid = use_rp2 ? "VUID-VkSubpassDescription2-colorAttachmentCount-03063"
                            : "VUID-VkSubpassDescription-colorAttachmentCount-00845";
             skip |= LogError(vuid, device, create_info_loc.dot(Field::pSubpasses, i).dot(Field::colorAttachmentCount),
                              "(%" PRIu32 ") is greater than maxColorAttachments (%" PRIu32 ").", subpass_desc.colorAttachmentCount,
-                             max_color_attachments);
+                             phys_dev_props.limits.maxColorAttachments);
+        }
+
+        if (subpass_desc.inputAttachmentCount > phys_dev_props.limits.maxPerStageDescriptorInputAttachments) {
+            vuid = use_rp2 ? "VUID-VkSubpassDescription2-inputAttachmentCount-12293"
+                           : "VUID-VkSubpassDescription-inputAttachmentCount-12293";
+            skip |= LogError(vuid, device, create_info_loc.dot(Field::pSubpasses, i).dot(Field::inputAttachmentCount),
+                             "(%" PRIu32 ") is greater than maxPerStageDescriptorInputAttachments (%" PRIu32 ").",
+                             subpass_desc.inputAttachmentCount, phys_dev_props.limits.maxPerStageDescriptorInputAttachments);
         }
     }
 
