@@ -1647,11 +1647,12 @@ void GpuShaderInstrumentor::InternalError(LogObjectList objlist, const Location 
     dispatch_device_->ReleaseValidationObject(LayerObjectTypeGpuAssisted);
 }
 
-// Dedicated warning VUID that likely can be ignored. We want to always warn the user when adjusting settings/limits/features/etc on
-// them
+// Dedicated warning VUID that likely can be ignored.
+// We want to always warn the user when adjusting settings/limits/features/etc on them
 void GpuShaderInstrumentor::AdjustmentWarning(LogObjectList objlist, const Location &loc,
                                               const char *const specific_message) const {
-    LogWarning("WARNING-Setting-Limit-Adjusted", objlist, loc, "Internal Warning: %s", specific_message);
+    LogWarning("WARNING-Setting-Limit-Adjusted", objlist, loc, "Warning that validation is adjusting settings:\n%s",
+               specific_message);
 }
 
 void GpuShaderInstrumentor::InternalWarning(LogObjectList objlist, const Location &loc, const char *const specific_message) const {

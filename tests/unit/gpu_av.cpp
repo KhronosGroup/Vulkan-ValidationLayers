@@ -501,12 +501,8 @@ TEST_F(NegativeGpuAV, ForceUniformAndStorageBuffer8BitAccess) {
     m_errorMonitor->SetDesiredWarning(
         "Adding a VkPhysicalDevice8BitStorageFeatures to pNext with storageBuffer8BitAccess set to VK_TRUE");
 
-    // noise
-    m_errorMonitor->SetAllowedFailureMsg(
-        "Buffer device address validation option was enabled, but required buffer device address extension and/or features are not "
-        "enabled");
-    m_errorMonitor->SetAllowedFailureMsg("Ray Query validation option was enabled");
-    m_errorMonitor->SetAllowedFailureMsg("Mesh Shading validation option was enabled");
+    // noise from disabling settings when features are not supported
+    m_errorMonitor->SetAllowedFailureMsg("Disabling");
     m_errorMonitor->SetAllowedFailureMsg(
         "vkGetDeviceProcAddr(): pName is trying to grab vkGetPhysicalDeviceCalibrateableTimeDomainsKHR which is an instance level "
         "function");
