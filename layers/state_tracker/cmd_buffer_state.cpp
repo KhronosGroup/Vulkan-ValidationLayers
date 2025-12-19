@@ -934,9 +934,8 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo &rendering_info, 
         fdm_attachment.type = AttachmentInfo::Type::FragmentDensityMap;
         fdm_attachment.layout = fragment_density_map_info->imageLayout;
         if (fdm_attachment.image_view) {
-            // VU being worked on https://gitlab.khronos.org/vulkan/vulkan/-/issues/4577
             TrackImageViewFirstLayout(*fdm_attachment.image_view, fdm_attachment.layout,
-                                      "UNASSIGNED-vkCmdBeginRendering-fdm-attachment-layout");
+                                      "VUID-vkCmdBeginRendering-imageView-12276");
         }
     }
 
@@ -947,9 +946,8 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo &rendering_info, 
         fsr_attachment.type = AttachmentInfo::Type::FragmentShadingRate;
         fsr_attachment.layout = fsr_attachment_info->imageLayout;
         if (fsr_attachment.image_view) {
-            // VU being worked on https://gitlab.khronos.org/vulkan/vulkan/-/issues/4577
             TrackImageViewFirstLayout(*fsr_attachment.image_view, fsr_attachment.layout,
-                                      "UNASSIGNED-vkCmdBeginRendering-fsr-attachment-layout");
+                                      "VUID-vkCmdBeginRendering-imageView-12277");
         }
     }
 
