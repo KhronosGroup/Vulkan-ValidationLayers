@@ -377,7 +377,7 @@ bool BestPractices::PreCallValidateCreatePipelineLayout(VkDevice device, const V
 
         if (pipeline_size > kPipelineLayoutSizeWarningLimitAMD) {
             skip |= LogPerformanceWarning("BestPractices-AMD-CreatePipelinesLayout-KeepLayoutSmall", device, error_obj.location,
-                                          "%s pipeline layout size is too large. Prefer smaller pipeline layouts."
+                                          "%s pipeline layout size is too large. Prefer smaller pipeline layouts. "
                                           "Descriptor sets cost 1 DWORD each. "
                                           "Dynamic buffers cost 2 DWORDs each when robust buffer access is OFF. "
                                           "Dynamic buffers cost 4 DWORDs each when robust buffer access is ON. "
