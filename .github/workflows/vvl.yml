@@ -240,7 +240,7 @@ jobs:
           arch: ${{ matrix.arch }}
       - name: Cache known_good.json installations
         id: cache-deps
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ${{ github.workspace }}/external/glslang/build/install
@@ -276,7 +276,7 @@ jobs:
           arch: amd64
       - name: Cache known_good.json installations
         id: cache-deps
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ${{ github.workspace }}/external/glslang/build/install
