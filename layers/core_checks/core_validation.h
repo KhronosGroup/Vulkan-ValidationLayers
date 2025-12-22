@@ -442,6 +442,14 @@ class CoreChecks : public vvl::DeviceProxy {
                     VkImageUsageFlagBits usage_flag, const char* vuid, const Location& create_info_loc) const;
     bool ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos,
                                  const ErrorObject& error_obj) const;
+    bool ValidateBindImageMemoryResource(const VkBindImageMemoryInfo& bind_info, const vvl::Image& image_state,
+                                         const vvl::DeviceMemory& memory_state, const Location& loc) const;
+    bool ValidateBindImagePlaneMemoryInfo(const VkBindImageMemoryInfo& bind_info, const VkBindImagePlaneMemoryInfo& plane_info,
+                                          const vvl::Image& image_state, const Location& loc) const;
+    bool ValidateBindImageMemorySwapchainInfo(const VkBindImageMemoryInfo& bind_info, const vvl::Image& image_state,
+                                              const vvl::DeviceMemory* memory_state, const Location& loc) const;
+    bool ValidateBindImageMemoryDeviceGroupInfo(const VkBindImageMemoryInfo& bind_info, const vvl::Image* image_state,
+                                                const Location& loc) const;
     static bool VerifyQueryIsReset(const vvl::CommandBuffer& cb_state, const QueryObject& query_obj, const Location& loc,
                                    uint32_t perf_query_pass, QueryMap* local_query_to_state_map);
     static bool ValidatePerformanceQuery(const vvl::CommandBuffer& cb_state, const QueryObject& query_obj, const Location& loc,
