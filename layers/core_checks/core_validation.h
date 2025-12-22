@@ -2831,7 +2831,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                                             const VkConvertCooperativeVectorMatrixInfoNV* pInfos,
                                                             const ErrorObject& error_obj) const override;
 
-    bool IsDeviceTileMemory(const vvl::DeviceMemory& mem_info) const;
+    bool HasTileMemoryType(uint32_t memory_type_index) const;
 
     void Created(vvl::CommandBuffer& cb) override;
     void Created(vvl::Queue& queue) override;

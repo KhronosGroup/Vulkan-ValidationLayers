@@ -55,6 +55,27 @@ TEST_F(NegativeTileMemoryHeap, CreateBufferTestIndexUsageFlags) {
     CreateBufferTest(buffer_ci, "VUID-VkBufferCreateInfo-usage-10764");
 }
 
+TEST_F(NegativeTileMemoryHeap, AllocateMemory) {
+    TEST_DESCRIPTION("Allocate Tile Memory without the Tile Memory feature enabled.");
+
+    AddRequiredExtensions(VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME);
+
+    RETURN_IF_SKIP(Init());
+
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.allocationSize = 256;
+
+    bool pass = m_device->Physical().SetMemoryType(0xFFFFFFFF, &alloc_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0,
+                                                   VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM);
+    if (!pass) {
+        GTEST_SKIP() << "Could not find an eligible Tile Memory Type.";
+    }
+
+    m_errorMonitor->SetDesiredError("VUID-VkTileMemoryBindInfoQCOM-memoryTypeIndex-10976");
+    vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeTileMemoryHeap, BindBufferMemorySize) {
     TEST_DESCRIPTION("Bind Tile Memory to a Buffer with too small of size");
     SetTargetApiVersion(VK_API_VERSION_1_1);
