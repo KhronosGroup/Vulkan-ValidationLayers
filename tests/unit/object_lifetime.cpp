@@ -26,31 +26,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferDestroyed) {
     TEST_DESCRIPTION("Attempt to draw with a command buffer that is invalid due to a buffer dependency being destroyed.");
     RETURN_IF_SKIP(Init());
 
-    VkBuffer buffer;
-    VkDeviceMemory mem;
-    VkMemoryRequirements mem_reqs;
-
-    VkBufferCreateInfo buf_info = vku::InitStructHelper();
-    buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    buf_info.size = 256;
-    VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
-    ASSERT_EQ(VK_SUCCESS, err);
-
-    vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
-
-    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
-    alloc_info.allocationSize = mem_reqs.size;
-    bool pass = false;
-    pass = m_device->Physical().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-    if (!pass) {
-        vk::DestroyBuffer(device(), buffer, NULL);
-        GTEST_SKIP() << "Failed to set memory type";
-    }
-    err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
-    ASSERT_EQ(VK_SUCCESS, err);
-
-    err = vk::BindBufferMemory(device(), buffer, mem, 0);
-    ASSERT_EQ(VK_SUCCESS, err);
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     m_command_buffer.Begin();
     vk::CmdFillBuffer(m_command_buffer, buffer, 0, VK_WHOLE_SIZE, 0);
@@ -58,35 +34,17 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferDestroyed) {
 
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
     // Destroy buffer dependency prior to submit to cause ERROR
-    vk::DestroyBuffer(device(), buffer, NULL);
+    buffer.Destroy();
 
     m_default_queue->Submit(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
-    vk::FreeMemory(*m_device, mem, NULL);
 }
 
 TEST_F(NegativeObjectLifetime, CmdBarrierBufferDestroyed) {
     RETURN_IF_SKIP(Init());
 
-    VkBufferCreateInfo buf_info = vku::InitStructHelper();
-    buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    buf_info.size = 256;
-    vkt::Buffer buffer(*m_device, buf_info, vkt::no_mem);
-
-    VkMemoryRequirements mem_reqs;
-    vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
-
-    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
-    alloc_info.allocationSize = mem_reqs.size;
-
-    bool pass = m_device->Physical().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, 0);
-    ASSERT_TRUE(pass);
-
-    vkt::DeviceMemory buffer_mem(*m_device, alloc_info);
-    ASSERT_TRUE(buffer_mem.initialized());
-
-    ASSERT_EQ(VK_SUCCESS, vk::BindBufferMemory(device(), buffer, buffer_mem, 0));
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     m_command_buffer.Begin();
     VkBufferMemoryBarrier buf_barrier = vku::InitStructHelper();
@@ -100,33 +58,21 @@ TEST_F(NegativeObjectLifetime, CmdBarrierBufferDestroyed) {
 
     m_default_queue->Submit(m_command_buffer);
 
+    VkDeviceMemory leaked_handled = buffer.Memory().handle();
     m_errorMonitor->SetDesiredError("VUID-vkFreeMemory-memory-00677");
-    vk::FreeMemory(*m_device, buffer_mem, nullptr);
+    buffer.Memory().Destroy();
     m_errorMonitor->VerifyFound();
 
     m_default_queue->Wait();
+
+    // free because we didn't actually free it in due to the error above
+    vk::FreeMemory(*m_device, leaked_handled, nullptr);
 }
 
 TEST_F(NegativeObjectLifetime, CmdBarrierImageDestroyed) {
     RETURN_IF_SKIP(Init());
 
-    VkMemoryRequirements mem_reqs;
-
-    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    vkt::Image image(*m_device, image_ci, vkt::no_mem);
-
-    vk::GetImageMemoryRequirements(device(), image, &mem_reqs);
-
-    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
-    alloc_info.allocationSize = mem_reqs.size;
-    bool pass = false;
-    pass = m_device->Physical().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, 0);
-    ASSERT_TRUE(pass);
-
-    vkt::DeviceMemory image_mem(*m_device, alloc_info);
-
-    auto err = vk::BindImageMemory(device(), image, image_mem, 0);
-    ASSERT_EQ(VK_SUCCESS, err);
+    vkt::Image image(*m_device, 128, 128, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     m_command_buffer.Begin();
     VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
@@ -141,11 +87,15 @@ TEST_F(NegativeObjectLifetime, CmdBarrierImageDestroyed) {
 
     m_default_queue->Submit(m_command_buffer);
 
+    VkDeviceMemory leaked_handled = image.Memory().handle();
     m_errorMonitor->SetDesiredError("VUID-vkFreeMemory-memory-00677");
-    vk::FreeMemory(*m_device, image_mem, nullptr);
+    image.Memory().Destroy();
     m_errorMonitor->VerifyFound();
 
     m_default_queue->Wait();
+
+    // free because we didn't actually free it in due to the error above
+    vk::FreeMemory(*m_device, leaked_handled, nullptr);
 }
 
 TEST_F(NegativeObjectLifetime, Sync2CmdBarrierBufferDestroyed) {
@@ -154,33 +104,8 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierBufferDestroyed) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
-    VkBuffer buffer;
-    VkDeviceMemory mem;
-    VkMemoryRequirements mem_reqs;
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
-    VkBufferCreateInfo buf_info = vku::InitStructHelper();
-    buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    buf_info.size = 256;
-    VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
-    ASSERT_EQ(VK_SUCCESS, err);
-
-    vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
-
-    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
-    alloc_info.allocationSize = mem_reqs.size;
-    bool pass = false;
-    pass = m_device->Physical().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-    if (!pass) {
-        vk::DestroyBuffer(device(), buffer, NULL);
-        GTEST_SKIP() << "Failed to set memory type";
-    }
-    err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
-    ASSERT_EQ(VK_SUCCESS, err);
-
-    err = vk::BindBufferMemory(device(), buffer, mem, 0);
-    ASSERT_EQ(VK_SUCCESS, err);
-
-    m_errorMonitor->SetDesiredError("VUID-vkEndCommandBuffer-commandBuffer-00059");
     m_command_buffer.Begin();
     VkBufferMemoryBarrier2 buf_barrier = vku::InitStructHelper();
     buf_barrier.buffer = buffer;
@@ -191,15 +116,16 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierBufferDestroyed) {
 
     m_command_buffer.BarrierKHR(buf_barrier);
 
-    vk::FreeMemory(*m_device, mem, NULL);
+    buffer.Memory().Destroy();
 
+    m_errorMonitor->SetDesiredError("VUID-vkEndCommandBuffer-commandBuffer-00059");
     vk::EndCommandBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
     m_default_queue->SubmitAndWait(m_command_buffer);
 
-    vk::DestroyBuffer(*m_device, buffer, NULL);
+    buffer.Destroy();
     m_errorMonitor->VerifyFound();
 }
 
@@ -209,30 +135,8 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierImageDestroyed) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
-    VkImage image;
-    VkDeviceMemory image_mem;
-    VkMemoryRequirements mem_reqs;
+    vkt::Image image(*m_device, 128, 128, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
-    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-
-    auto err = vk::CreateImage(device(), &image_ci, nullptr, &image);
-    ASSERT_EQ(VK_SUCCESS, err);
-
-    vk::GetImageMemoryRequirements(device(), image, &mem_reqs);
-
-    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
-    alloc_info.allocationSize = mem_reqs.size;
-    bool pass = false;
-    pass = m_device->Physical().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, 0);
-    ASSERT_TRUE(pass);
-
-    err = vk::AllocateMemory(device(), &alloc_info, NULL, &image_mem);
-    ASSERT_EQ(VK_SUCCESS, err);
-
-    err = vk::BindImageMemory(device(), image, image_mem, 0);
-    ASSERT_EQ(VK_SUCCESS, err);
-
-    m_errorMonitor->SetDesiredError("VUID-vkEndCommandBuffer-commandBuffer-00059");
     m_command_buffer.Begin();
     VkImageMemoryBarrier2 img_barrier = vku::InitStructHelper();
     img_barrier.image = image;
@@ -242,15 +146,15 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierImageDestroyed) {
 
     m_command_buffer.BarrierKHR(img_barrier);
 
-    vk::FreeMemory(*m_device, image_mem, NULL);
+    image.Memory().Destroy();
 
+    m_errorMonitor->SetDesiredError("VUID-vkEndCommandBuffer-commandBuffer-00059");
     vk::EndCommandBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
     m_default_queue->SubmitAndWait(m_command_buffer);
-
-    vk::DestroyImage(*m_device, image, NULL);
+    image.Destroy();
     m_errorMonitor->VerifyFound();
 }
 
@@ -483,35 +387,18 @@ TEST_F(NegativeObjectLifetime, DISABLED_DescriptorSetMutableBufferArrayDestroyed
 
 TEST_F(NegativeObjectLifetime, CmdBufferImageDestroyed) {
     TEST_DESCRIPTION("Attempt to draw with a command buffer that is invalid due to an image dependency being destroyed.");
-    RETURN_IF_SKIP(Init()) {
-        const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
-        VkImageCreateInfo image_create_info = vku::InitStructHelper();
-        image_create_info.imageType = VK_IMAGE_TYPE_2D;
-        image_create_info.format = tex_format;
-        image_create_info.extent = {32, 32, 1};
-        image_create_info.mipLevels = 1;
-        image_create_info.arrayLayers = 1;
-        image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-        image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-        image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-        image_create_info.flags = 0;
-        vkt::Image image(*m_device, image_create_info, vkt::set_layout);
+    RETURN_IF_SKIP(Init())
 
-        m_command_buffer.Begin();
-        VkClearColorValue ccv;
-        ccv.float32[0] = 1.0f;
-        ccv.float32[1] = 1.0f;
-        ccv.float32[2] = 1.0f;
-        ccv.float32[3] = 1.0f;
-        VkImageSubresourceRange isr = {};
-        isr.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        isr.baseArrayLayer = 0;
-        isr.baseMipLevel = 0;
-        isr.layerCount = 1;
-        isr.levelCount = 1;
-        vk::CmdClearColorImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, &ccv, 1, &isr);
-        m_command_buffer.End();
-    }
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_B8G8R8A8_UNORM,
+                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+
+    m_command_buffer.Begin();
+    VkClearColorValue ccv = {};
+    VkImageSubresourceRange isr = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    vk::CmdClearColorImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, &ccv, 1, &isr);
+    m_command_buffer.End();
+
+    image.Destroy();
     // Destroy image dependency prior to submit to cause ERROR
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
     m_default_queue->Submit(m_command_buffer);
@@ -522,113 +409,40 @@ TEST_F(NegativeObjectLifetime, CmdBufferFramebufferImageDestroyed) {
     TEST_DESCRIPTION(
         "Attempt to draw with a command buffer that is invalid due to a framebuffer image dependency being destroyed.");
     RETURN_IF_SKIP(Init());
-    VkFormatProperties format_properties;
-    VkResult err = VK_SUCCESS;
-    vk::GetPhysicalDeviceFormatProperties(Gpu(), VK_FORMAT_B8G8R8A8_UNORM, &format_properties);
-    if (!(format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
-        GTEST_SKIP() << "Image format doesn't support required features";
-    }
-    VkFramebuffer fb;
-    VkImageView view;
-
     InitRenderTarget();
-    {
-        VkImageCreateInfo image_ci = vku::InitStructHelper();
-        image_ci.imageType = VK_IMAGE_TYPE_2D;
-        image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
-        image_ci.extent = {32, 32, 1};
-        image_ci.mipLevels = 1;
-        image_ci.arrayLayers = 1;
-        image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
-        image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-        image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-        image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        image_ci.flags = 0;
-        vkt::Image image(*m_device, image_ci, vkt::set_layout);
 
-        VkImageViewCreateInfo ivci = {
-            VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-            nullptr,
-            0,
-            image,
-            VK_IMAGE_VIEW_TYPE_2D,
-            VK_FORMAT_B8G8R8A8_UNORM,
-            {VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A},
-            {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
-        };
-        err = vk::CreateImageView(device(), &ivci, nullptr, &view);
-        ASSERT_EQ(VK_SUCCESS, err);
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+    vkt::Framebuffer fb(*m_device, m_renderPass, 1, &image_view.handle());
 
-        VkFramebufferCreateInfo fci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, m_renderPass, 1, &view, 32, 32, 1};
-        err = vk::CreateFramebuffer(device(), &fci, nullptr, &fb);
-        ASSERT_EQ(VK_SUCCESS, err);
+    // Just use default renderpass with our framebuffer
+    m_renderPassBeginInfo.framebuffer = fb;
+    m_renderPassBeginInfo.renderArea.extent = {32, 32};
+    // Create Null cmd buffer for submit
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
 
-        // Just use default renderpass with our framebuffer
-        m_renderPassBeginInfo.framebuffer = fb;
-        m_renderPassBeginInfo.renderArea.extent = {32, 32};
-        // Create Null cmd buffer for submit
-        m_command_buffer.Begin();
-        m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-        m_command_buffer.EndRenderPass();
-        m_command_buffer.End();
-    }
     // Destroy image attached to framebuffer to invalidate cmd buffer
     // Now attempt to submit cmd buffer and verify error
+    image.Destroy();
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
-
-    vk::DestroyFramebuffer(device(), fb, nullptr);
-    vk::DestroyImageView(device(), view, nullptr);
 }
 
 TEST_F(NegativeObjectLifetime, FramebufferAttachmentMemoryFreed) {
     TEST_DESCRIPTION("Attempt to create framebuffer with attachment which memory was freed.");
     RETURN_IF_SKIP(Init());
-    VkFormatProperties format_properties;
-    vk::GetPhysicalDeviceFormatProperties(Gpu(), VK_FORMAT_B8G8R8A8_UNORM, &format_properties);
-    if (!(format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
-        GTEST_SKIP() << "Image format doesn't support required features";
-    }
-    VkFramebuffer fb;
-
     InitRenderTarget();
-    VkImageCreateInfo image_ci = vku::InitStructHelper();
-    image_ci.imageType = VK_IMAGE_TYPE_2D;
-    image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
-    image_ci.extent = {32, 32, 1};
-    image_ci.mipLevels = 1;
-    image_ci.arrayLayers = 1;
-    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    image_ci.flags = 0;
-    vkt::Image image(*m_device, image_ci, vkt::no_mem);
 
-    vkt::DeviceMemory image_memory(*m_device, vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image.MemoryRequirements(), 0));
-    image.BindMemory(image_memory, 0);
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+    image.Memory().Destroy();
 
-    VkImageViewCreateInfo ivci = {
-        VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-        nullptr,
-        0,
-        image,
-        VK_IMAGE_VIEW_TYPE_2D,
-        VK_FORMAT_B8G8R8A8_UNORM,
-        {VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A},
-        {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
-    };
-    vkt::ImageView view(*m_device, ivci);
-
-    VkFramebufferCreateInfo fci = {
-        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, m_renderPass, 1, &view.handle(), 32, 32, 1};
-
-    // Introduce error:
-    // Free the attachment image memory, then create framebuffer.
-    image_memory.Destroy();
     m_errorMonitor->SetDesiredError("UNASSIGNED-VkFramebufferCreateInfo-BoundResourceFreedMemoryAccess");
-    vk::CreateFramebuffer(device(), &fci, nullptr, &fb);
+    vkt::Framebuffer fb(*m_device, m_renderPass, 1, &image_view.handle());
     m_errorMonitor->VerifyFound();
 }
 
@@ -1408,4 +1222,14 @@ TEST_F(NegativeObjectLifetime, DestroySemaphoreInUseErrorMessage) {
     vk::DestroySemaphore(*m_device, semaphore, nullptr);
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
+}
+
+TEST_F(NegativeObjectLifetime, DestroyedImageInImageView) {
+    RETURN_IF_SKIP(Init());
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    VkImageViewCreateInfo view_ci = image.BasicViewCreatInfo(VK_IMAGE_ASPECT_COLOR_BIT);
+    image.Memory().Destroy();
+    m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-image-01020");
+    vkt::ImageView view(*m_device, view_ci);
+    m_errorMonitor->VerifyFound();
 }
