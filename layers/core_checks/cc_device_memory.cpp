@@ -384,6 +384,16 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                  pAllocateInfo->allocationSize, phys_dev_props_core11.maxMemoryAllocationSize);
     }
 
+    if (!enabled_features.tileMemoryHeap && HasTileMemoryType(pAllocateInfo->memoryTypeIndex)) {
+        skip |=
+            LogError("VUID-VkTileMemoryBindInfoQCOM-memoryTypeIndex-10976", device, allocate_info_loc.dot(Field::memoryTypeIndex),
+                     "(%" PRIu32
+                     ") identifies a memory type that corresponds to a VkMemoryHeap with the"
+                     " VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM property, but the tileMemory feature "
+                     "is not enabled.",
+                     pAllocateInfo->memoryTypeIndex);
+    }
+
     if (IsExtEnabled(extensions.vk_android_external_memory_android_hardware_buffer)) {
         skip |= ValidateAllocateMemoryANDROID(*pAllocateInfo, allocate_info_loc);
     } else {
@@ -824,8 +834,7 @@ bool CoreChecks::ValidateMemoryTypes(const vvl::DeviceMemory &mem_info, const ui
     return skip;
 }
 
-bool CoreChecks::IsDeviceTileMemory(const vvl::DeviceMemory &mem_info) const {
-    const uint32_t memory_type_index = mem_info.allocate_info.memoryTypeIndex;
+bool CoreChecks::HasTileMemoryType(uint32_t memory_type_index) const {
     const uint32_t memory_heap_index = phys_dev_mem_props.memoryTypes[memory_type_index].heapIndex;
     return (phys_dev_mem_props.memoryHeaps[memory_heap_index].flags & VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM);
 }
@@ -868,7 +877,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
         const char *mem_type_vuid =
             bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-01035" : "VUID-vkBindBufferMemory-memory-01035";
 
-        if (!IsDeviceTileMemory(*mem_info)) {
+        if (!HasTileMemoryType(mem_info->allocate_info.memoryTypeIndex)) {
             skip |=
                 ValidateMemoryTypes(*mem_info, buffer_state->requirements.memoryTypeBits, loc.dot(Field::buffer), mem_type_vuid);
 
@@ -1767,7 +1776,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 const char* vuid_mem_type =
                     bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-pNext-01615" : "VUID-vkBindImageMemory-memory-01047";
                 // Validate memory requirements alignment
-                if (!IsDeviceTileMemory(*mem_info)) {
+                if (!HasTileMemoryType(mem_info->allocate_info.memoryTypeIndex)) {
                     // Validate memory type used
                     skip |= ValidateMemoryTypes(*mem_info, mem_req.memoryTypeBits, loc.dot(Field::image), vuid_mem_type);
 
