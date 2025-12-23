@@ -49,9 +49,8 @@ bool CoreChecks::VerifyBoundMemoryIsValid(const vvl::DeviceMemory *memory_state,
             LogError(vuid, objlist, loc, "(%s) is used with no memory bound. Memory should be bound by calling vkBind%sMemory().",
                      FormatHandle(typed_handle).c_str(), type_name + 2);
     } else if (memory_state->Destroyed()) {
-        skip |= LogError(vuid, objlist, loc,
-                         "(%s) is used, but bound memory was freed. Memory must not be freed prior to this operation.",
-                         FormatHandle(typed_handle).c_str());
+        skip |= LogError(vuid, objlist, loc, "(%s) is used, but the bound memory (%s) was freed.",
+                         FormatHandle(typed_handle).c_str(), FormatHandle(memory_state->Handle()).c_str());
     }
     return skip;
 }
