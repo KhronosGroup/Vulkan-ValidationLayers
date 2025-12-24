@@ -71,7 +71,7 @@ bool CoreChecks::VerifyDescriptorSetLayoutIsCompatibile(const vvl::DescriptorSet
     // Check descriptor counts
     const auto bound_total_count = to_bind_ds_layout_def->GetTotalDescriptorCount();
     if (reference_ds_layout_def->GetTotalDescriptorCount() != to_bind_ds_layout_def->GetTotalDescriptorCount()) {
-        std::stringstream error_str;
+        std::ostringstream error_str;
         error_str << FormatHandle(reference_dsl_handle) << " from pipeline layout has "
                   << reference_ds_layout_def->GetTotalDescriptorCount() << " total descriptors, but "
                   << FormatHandle(to_bind_dsl_handle) << ", trying to bind, has " << bound_total_count << " total descriptors";
@@ -84,7 +84,7 @@ bool CoreChecks::VerifyDescriptorSetLayoutIsCompatibile(const vvl::DescriptorSet
     for (const auto [binding_index, layout_binding] : vvl::enumerate(reference_ds_layout_def->GetBindings())) {
         const auto bound_binding = to_bind_ds_layout_def->GetBindingInfoFromIndex((uint32_t)binding_index);
         if (layout_binding.descriptorCount != bound_binding->descriptorCount) {
-            std::stringstream error_str;
+            std::ostringstream error_str;
             error_str << "Binding " << layout_binding.binding << " for " << FormatHandle(reference_dsl_handle)
                       << " from pipeline layout has a descriptorCount of " << layout_binding.descriptorCount << " but binding "
                       << layout_binding.binding << " for " << FormatHandle(to_bind_dsl_handle)
@@ -96,7 +96,7 @@ bool CoreChecks::VerifyDescriptorSetLayoutIsCompatibile(const vvl::DescriptorSet
             error_msg = error_str.str();
             return false;
         } else if (layout_binding.descriptorType != bound_binding->descriptorType) {
-            std::stringstream error_str;
+            std::ostringstream error_str;
             error_str << "Binding " << layout_binding.binding << " for " << FormatHandle(reference_dsl_handle)
                       << " from pipeline layout is type " << string_VkDescriptorType(layout_binding.descriptorType)
                       << " but binding " << layout_binding.binding << " for " << FormatHandle(to_bind_dsl_handle)
@@ -104,7 +104,7 @@ bool CoreChecks::VerifyDescriptorSetLayoutIsCompatibile(const vvl::DescriptorSet
             error_msg = error_str.str();
             return false;
         } else if (layout_binding.stageFlags != bound_binding->stageFlags) {
-            std::stringstream error_str;
+            std::ostringstream error_str;
             error_str << "Binding " << layout_binding.binding << " for " << FormatHandle(reference_dsl_handle)
                       << " from pipeline layout has stageFlags " << string_VkShaderStageFlags(layout_binding.stageFlags)
                       << " but binding " << layout_binding.binding << " for " << FormatHandle(to_bind_dsl_handle)
@@ -121,7 +121,7 @@ bool CoreChecks::VerifyDescriptorSetLayoutIsCompatibile(const vvl::DescriptorSet
     }
 
     if (reference_ds_layout_def->GetCreateFlags() != to_bind_ds_layout_def->GetCreateFlags()) {
-        std::stringstream error_str;
+        std::ostringstream error_str;
         error_str << FormatHandle(reference_dsl_handle) << " from pipeline layout was created with ("
                   << string_VkDescriptorSetLayoutCreateFlags(reference_ds_layout_def->GetCreateFlags()) << "), but "
                   << FormatHandle(to_bind_dsl_handle) << ", trying to bind, has ("
@@ -134,7 +134,7 @@ bool CoreChecks::VerifyDescriptorSetLayoutIsCompatibile(const vvl::DescriptorSet
     const auto &ds_layout_flags = reference_ds_layout_def->GetBindingFlags();
     const auto &bound_layout_flags = to_bind_ds_layout_def->GetBindingFlags();
     if (bound_layout_flags != ds_layout_flags) {
-        std::stringstream error_str;
+        std::ostringstream error_str;
         assert(ds_layout_flags.size() == bound_layout_flags.size());
         size_t i;
         for (i = 0; i < ds_layout_flags.size(); i++) {
@@ -1416,7 +1416,7 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView &view_state, VkImageLa
                 default:
                     break;
             }
-            std::stringstream error_str;
+            std::ostringstream error_str;
             error_str << "Descriptor update with descriptorType " << string_VkDescriptorType(type)
                       << " is being updated with invalid imageLayout " << string_VkImageLayout(image_layout) << " for image "
                       << FormatHandle(image_state->Handle()) << " in imageView " << FormatHandle(view_state.Handle())
@@ -1790,7 +1790,7 @@ bool CoreChecks::ValidateWriteUpdate(const vvl::DescriptorSet &dst_set, const Vk
             // stageFlags
             if (current_binding->count > 0) {
                 if (current_binding->type != descriptor_type) {
-                    std::stringstream extra;
+                    std::ostringstream extra;
                     // If using inline, easy to go outside of its range and not realize you are in the next descriptor
                     if (descriptor_type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
                         extra << "\nFor inline uniforms blocks, you might have your VkWriteDescriptorSet::dstArrayElement ("
@@ -2826,7 +2826,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
 
     auto list_buffers = [this](std::vector<VkBuffer> &buffer_list) {
         vvl::unordered_set<VkBuffer> unique_buffers;
-        std::stringstream msg;
+        std::ostringstream msg;
         for (const VkBuffer &buffer : buffer_list) {
             msg << FormatHandle(buffer) << '\n';
             unique_buffers.insert(buffer);
@@ -3234,7 +3234,7 @@ bool CoreChecks::ValidateDescriptorAddressInfoTexelBufferAlignment(const VkDescr
             alignment_requirement = std::min(alignment_requirement, texel_block_size);
         }
         if (!IsPointerAligned(address_info.address, alignment_requirement)) {
-            std::stringstream ss;
+            std::ostringstream ss;
             ss << "(0x" << std::hex << address_info.address << std::dec << ") must be aligned to " << alignment_requirement << "\n";
             if (phys_dev_props_core13.storageTexelBufferOffsetSingleTexelAlignment) {
                 ss << "storageTexelBufferOffsetSingleTexelAlignment is VK_TRUE, so we take "
@@ -3260,7 +3260,7 @@ bool CoreChecks::ValidateDescriptorAddressInfoTexelBufferAlignment(const VkDescr
             alignment_requirement = std::min(alignment_requirement, texel_block_size);
         }
         if (!IsPointerAligned(address_info.address, alignment_requirement)) {
-            std::stringstream ss;
+            std::ostringstream ss;
             ss << "(0x" << std::hex << address_info.address << std::dec << ") must be a aligned to " << alignment_requirement
                << "\n";
             if (phys_dev_props_core13.uniformTexelBufferOffsetSingleTexelAlignment) {

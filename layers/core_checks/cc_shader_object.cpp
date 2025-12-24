@@ -862,7 +862,7 @@ bool CoreChecks::ValidateDrawShaderObjectMesh(const LastBound& last_bound_state,
 
     if (has_task_shader || has_mesh_shader) {
         auto print_mesh_task = [this, has_task_shader, has_mesh_shader, mesh_shader_handle, task_shader_handle]() {
-            std::stringstream msg;
+            std::ostringstream msg;
             if (has_task_shader && has_mesh_shader) {
                 msg << "Task shader (" << FormatHandle(task_shader_handle).c_str() << ") and mesh shader ("
                     << FormatHandle(mesh_shader_handle).c_str() << ") are";
@@ -932,7 +932,7 @@ bool CoreChecks::ValidateDrawShaderObjectMesh(const LastBound& last_bound_state,
         const bool has_tese_shader = tese_shader_handle != VK_NULL_HANDLE;
         const bool has_geom_shader = geom_shader_handle != VK_NULL_HANDLE;
         if (has_vertex_shader || has_tesc_shader || has_tese_shader || has_geom_shader) {
-            std::stringstream msg;
+            std::ostringstream msg;
             if (has_vertex_shader) msg << "Vertex shader: " << FormatHandle(vertex_shader_handle) << '\n';
             if (has_tese_shader) msg << "Tessellation Eval shader: " << FormatHandle(tese_shader_handle) << '\n';
             if (has_tesc_shader) msg << "Tessellation Control shader: " << FormatHandle(tesc_shader_handle) << '\n';

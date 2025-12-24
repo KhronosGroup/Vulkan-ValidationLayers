@@ -27,7 +27,7 @@ namespace vvl {
 namespace dispatch {
 
 void Instance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const VkDeviceCreateInfo &create_info) {
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << "returned VK_ERROR_FEATURE_NOT_PRESENT because the following features were not supported on this physical device:\n";
 
     // First do 1.0 VkPhysicalDeviceFeatures

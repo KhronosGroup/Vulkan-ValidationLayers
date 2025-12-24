@@ -44,13 +44,13 @@ void Location::AppendFields(std::ostream& out) const {
 }
 
 std::string Location::Fields() const {
-    std::stringstream out;
+    std::ostringstream out;
     AppendFields(out);
     return out.str();
 }
 
 std::string Location::Message() const {
-    std::stringstream out;
+    std::ostringstream out;
     if (debug_region && !debug_region->empty()) {
         out << "[ Debug region: " << *debug_region << " ] ";
     }
@@ -65,7 +65,7 @@ std::string Location::Message() const {
 }
 
 std::string PrintPNextChain(vvl::Struct in_struct, const void* in_pNext) {
-    std::stringstream out;
+    std::ostringstream out;
 
     if (in_pNext) {
         // We might not have a good way to pass in the original struct

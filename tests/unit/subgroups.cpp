@@ -326,7 +326,7 @@ TEST_F(NegativeSubgroup, PipelineSubgroupSizeControl) {
     }
 
     if (subgroup_properties.maxSubgroupSize > 1) {
-        std::stringstream csSource;
+        std::ostringstream csSource;
         csSource << R"glsl(
         #version 450
         layout(local_size_x = )glsl";
@@ -345,7 +345,7 @@ TEST_F(NegativeSubgroup, PipelineSubgroupSizeControl) {
     }
 
     if (props11.subgroupSize > 1) {
-        std::stringstream csSource;
+        std::ostringstream csSource;
         csSource << R"glsl(
         #version 450
         layout(local_size_x = )glsl";
@@ -408,7 +408,7 @@ TEST_F(NegativeSubgroup, SubgroupSizeControlFeaturesNotEnabled) {
     VkPhysicalDeviceVulkan11Properties props11 = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(props11);
 
-    std::stringstream csSource;
+    std::ostringstream csSource;
     // Make sure compute pipeline has a compute shader stage set
     csSource << R"(
         #version 450
@@ -616,7 +616,7 @@ TEST_F(NegativeSubgroup, ComputeLocalWorkgroupSize) {
         std::ceil(std::sqrt(subgroup_size_control.requiredSubgroupSize * subgroup_properties.maxComputeWorkgroupSubgroups)));
 
     if (size <= 1024) {
-        std::stringstream csSource;
+        std::ostringstream csSource;
         csSource << R"glsl(
         #version 450
         layout(local_size_x=
@@ -644,7 +644,7 @@ TEST_F(NegativeSubgroup, ComputeLocalWorkgroupSize) {
     }
 
     if (subgroup_properties.maxSubgroupSize > 1 && subgroup_properties.minSubgroupSize > 1) {
-        std::stringstream csSource;
+        std::ostringstream csSource;
         csSource << R"glsl(
             #version 450
             layout(local_size_x=
@@ -704,7 +704,7 @@ TEST_F(NegativeSubgroup, MeshLocalWorkgroupSize) {
     uint32_t y = mesh_properties.maxTaskWorkGroupInvocations / x;
     uint32_t z = mesh_properties.maxTaskWorkGroupInvocations / x / y;
 
-    std::stringstream taskSrc;
+    std::ostringstream taskSrc;
     taskSrc << R"(
                 OpCapability MeshShadingEXT
                 OpExtension "SPV_EXT_mesh_shader"

@@ -2326,7 +2326,7 @@ bool DeviceState::PreCallValidateAllocateDescriptorSets(VkDevice device, const V
 // we calculated this
 std::string DeviceState::PrintDescriptorAllocation(const VkDescriptorSetAllocateInfo &allocate_info,
                                                    const vvl::DescriptorPool &pool_state, VkDescriptorType type) const {
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << "Where " << string_VkDescriptorType(type) << " is found in the pool:\n";
     for (const auto [pool_size_i, pool_size] :
          vvl::enumerate(pool_state.create_info.pPoolSizes, pool_state.create_info.poolSizeCount)) {

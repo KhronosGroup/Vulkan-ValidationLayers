@@ -1029,7 +1029,7 @@ TEST_P(PositiveGpuAVParameterized, SettingsCombinations) {
 static std::string GetGpuAvSettingsCombinationTestName(const testing::TestParamInfo<PositiveGpuAVParameterized::ParamType> &info) {
     std::vector<const char *> setting_names = std::get<0>(info.param);
     const uint32_t setting_values = std::get<1>(info.param);
-    std::stringstream test_name;
+    std::ostringstream test_name;
     for (auto [setting_name_i, setting_name] : vvl::enumerate(setting_names)) {
         const char *enabled_str = (setting_values & (1u << setting_name_i)) ? "_1" : "_0";
         if (setting_name_i != 0) {

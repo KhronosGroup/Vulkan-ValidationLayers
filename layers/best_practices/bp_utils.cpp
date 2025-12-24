@@ -50,7 +50,7 @@ const char* VendorSpecificTag(BPVendorFlags vendors) {
     auto res = tag_map.find(vendors);
     if (res == tag_map.end()) {
         // Build the vendor tag string
-        std::stringstream vendor_tag;
+        std::ostringstream vendor_tag;
 
         vendor_tag << "[";
         bool first_vendor = true;

@@ -1245,7 +1245,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                                  "VK_IMAGE_ASPECT_COLOR_BIT but there are no color attachments in the renderpass.");
             } else if (clear_desc->colorAttachment >= color_attachment_count) {
                 auto describe_color_count = [is_dynamic_rendering, &cb_state]() {
-                    std::stringstream ss;
+                    std::ostringstream ss;
                     if (is_dynamic_rendering) {
                         ss << "VkRenderingInfo::colorAttachmentCount";
                     } else {

@@ -1637,12 +1637,12 @@ TEST_F(NegativeGpuAVRayTracing, InvalidBlasReference3) {
         // Destroy buffer, but BLAS will be referenced in a TLAS build command
         cube_blas.GetDstAS()->GetBuffer().Destroy();
 
-        std::stringstream expected_error_1;
+        std::ostringstream expected_error_1;
         expected_error_1 << "Infos\\[0\\].pGeometries\\[0\\].geometry.instances<VkAccelerationStructureInstance>\\[0\\]."
                             "accelerationStructureReference \\(0x"
                          << std::hex << cube_blas_addr << "\\).*underlying buffer.*VkAccelerationStructureKHR.*"
                          << CastFromHandle<uint64_t>(cube_blas.GetDstAS()->handle());
-        std::stringstream expected_error_2;
+        std::ostringstream expected_error_2;
         expected_error_2 << "Infos\\[0\\].pGeometries\\[0\\].geometry.instances<VkAccelerationStructureInstance>\\[1\\]."
                             "accelerationStructureReference \\(0x"
                          << std::hex << cube_blas_addr << "\\).*underlying buffer.*VkAccelerationStructureKHR.*"

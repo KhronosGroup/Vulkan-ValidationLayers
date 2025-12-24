@@ -2879,7 +2879,7 @@ bool CoreChecks::ValidateBindDataGraphPipelineSessionMemoryARM(const VkBindDataG
         return bpr.bindPoint == bind_info.bindPoint;
     });
     if (bpr_match == bp_requirements.end()) {
-        std::stringstream required_bindpoints;
+        std::ostringstream required_bindpoints;
         for (auto &bpr : bp_requirements) {
             if (!required_bindpoints.str().empty()) {
                 required_bindpoints << ", ";

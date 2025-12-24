@@ -27,7 +27,7 @@ TEST_F(PositiveShaderCompute, WorkGroupSizePrecedenceOverLocalSize) {
     uint32_t y_size_limit = m_device->Physical().limits_.maxComputeWorkGroupSize[1];
     uint32_t z_size_limit = m_device->Physical().limits_.maxComputeWorkGroupSize[2];
 
-    std::stringstream spv_source;
+    std::ostringstream spv_source;
     spv_source << R"(
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
@@ -66,7 +66,7 @@ TEST_F(PositiveShaderCompute, WorkGroupSizeSpecConstantUnder) {
 
     uint32_t x_size_limit = m_device->Physical().limits_.maxComputeWorkGroupSize[0];
 
-    std::stringstream spv_source;
+    std::ostringstream spv_source;
     spv_source << R"(
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
@@ -117,7 +117,7 @@ TEST_F(PositiveShaderCompute, WorkGroupSizeLocalSizeId) {
     AddRequiredFeature(vkt::Feature::maintenance4);
     RETURN_IF_SKIP(Init());
 
-    std::stringstream spv_source;
+    std::ostringstream spv_source;
     spv_source << R"(
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
@@ -153,7 +153,7 @@ TEST_F(PositiveShaderCompute, WorkGroupSizeLocalSizeIdSpecConstant) {
 
     // layout(local_size_x_id = 18, local_size_z_id = 19) in;
     // layout(local_size_x = 32) in;
-    std::stringstream spv_source;
+    std::ostringstream spv_source;
     spv_source << R"(
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
@@ -206,7 +206,7 @@ TEST_F(PositiveShaderCompute, WorkGroupSizePrecedenceOverLocalSizeId) {
 
     uint32_t x_size_limit = m_device->Physical().limits_.maxComputeWorkGroupSize[0];
 
-    std::stringstream spv_source;
+    std::ostringstream spv_source;
     spv_source << R"(
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"

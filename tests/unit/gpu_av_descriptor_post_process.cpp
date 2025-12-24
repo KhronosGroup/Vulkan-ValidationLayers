@@ -2173,7 +2173,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, LotsOfBindings) {
     InitRenderTarget();
 
     const uint32_t binding_count = 64;
-    std::stringstream fs_source;
+    std::ostringstream fs_source;
     fs_source << R"glsl(
         #version 450
         #extension GL_EXT_nonuniform_qualifier : enable

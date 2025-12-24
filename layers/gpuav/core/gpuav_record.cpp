@@ -180,7 +180,7 @@ void Instance::ReserveBindingSlot(VkPhysicalDevice physicalDevice, VkPhysicalDev
     if (limits.maxBoundDescriptorSets == 0) return;
 
     if (limits.maxBoundDescriptorSets > kMaxAdjustedBoundDescriptorSet) {
-        std::stringstream ss;
+        std::ostringstream ss;
         ss << "A descriptor binding slot is required to store GPU-side information, but the device maxBoundDescriptorSets is "
            << limits.maxBoundDescriptorSets << " which is too large, so we will be trying to use slot "
            << kMaxAdjustedBoundDescriptorSet;
@@ -210,7 +210,7 @@ void Instance::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physi
     auto *desc_indexing_props = vku::FindStructInPNextChain<VkPhysicalDeviceDescriptorIndexingProperties>(device_props2->pNext);
     if (desc_indexing_props &&
         desc_indexing_props->maxUpdateAfterBindDescriptorsInAllPools > glsl::kDebugInputBindlessMaxDescriptors) {
-        std::stringstream ss;
+        std::ostringstream ss;
         ss << "\tSetting VkPhysicalDeviceDescriptorIndexingProperties::maxUpdateAfterBindDescriptorsInAllPools to "
            << glsl::kDebugInputBindlessMaxDescriptors;
         adjustment_warnings += ss.str();
@@ -220,7 +220,7 @@ void Instance::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physi
 
     auto *vk12_props = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Properties>(device_props2->pNext);
     if (vk12_props && vk12_props->maxUpdateAfterBindDescriptorsInAllPools > glsl::kDebugInputBindlessMaxDescriptors) {
-        std::stringstream ss;
+        std::ostringstream ss;
         ss << "\tSetting VkPhysicalDeviceVulkan12Properties::maxUpdateAfterBindDescriptorsInAllPools to "
            << glsl::kDebugInputBindlessMaxDescriptors;
         adjustment_warnings += ss.str();
@@ -233,7 +233,7 @@ void Instance::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physi
         if (desc_buffer_props->maxResourceDescriptorBufferBindings > 1) {
             desc_buffer_props->maxResourceDescriptorBufferBindings -= 1;
 
-            std::stringstream ss;
+            std::ostringstream ss;
             ss << "\tSetting VkPhysicalDeviceDescriptorBufferPropertiesEXT::maxResourceDescriptorBufferBindings to "
                << desc_buffer_props->maxResourceDescriptorBufferBindings;
             adjustment_warnings += ss.str();
@@ -251,7 +251,7 @@ void Instance::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physi
             desc_buffer_props->resourceDescriptorBufferAddressSpaceSize -= bytes_to_reserve;
             desc_buffer_props->descriptorBufferAddressSpaceSize -= bytes_to_reserve;
 
-            std::stringstream ss;
+            std::ostringstream ss;
             ss << "\tSetting VkPhysicalDeviceDescriptorBufferPropertiesEXT::descriptorBufferAddressSpaceSize to "
                << desc_buffer_props->resourceDescriptorBufferAddressSpaceSize << "and resourceDescriptorBufferAddressSpaceSize to "
                << desc_buffer_props->descriptorBufferAddressSpaceSize << " (reserving " << bytes_to_reserve << " bytes)";

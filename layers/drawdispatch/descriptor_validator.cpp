@@ -54,7 +54,7 @@ static const char *GetActionType(Func command) {
 
 std::string DescriptorValidator::DescribeDescriptor(const spirv::ResourceInterfaceVariable &resource_variable, uint32_t index,
                                                     VkDescriptorType type) const {
-    std::stringstream ss;
+    std::ostringstream ss;
     switch (type) {
         case VK_DESCRIPTOR_TYPE_SAMPLER:
             ss << "sampler ";
@@ -476,7 +476,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             // This warning was added after being discussed in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4128
             auto set = descriptor_set.Handle();
             const LogObjectList objlist(this->objlist, set, image_view);
-            std::stringstream msg;
+            std::ostringstream msg;
             msg << "the " << DescribeDescriptor(resource_variable, index, descriptor_type)
                 << " is accessed by a OpTypeImage that has a Format operand "
                 << string_SpirvImageFormat(resource_variable.info.vk_format) << " (equivalent to "
@@ -541,7 +541,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     if (!dev_proxy.disabled[image_layout_validation]) {
         if (const auto image_layout_map = cb_state.GetImageLayoutMap(image_state->VkHandle())) {
             auto describe_descriptor_callback = [this, &resource_variable, index, descriptor_type]() {
-                std::stringstream ss;
+                std::ostringstream ss;
                 ss << DescribeDescriptor(resource_variable, index, descriptor_type);
                 if (descriptor_set.IsPushDescriptor()) {
                     ss << " updated by vkCmdPushDescriptorSet";
@@ -1035,7 +1035,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         // This warning was added after being discussed in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4128
         auto set = descriptor_set.Handle();
         const LogObjectList objlist(this->objlist, set, buffer_view);
-        std::stringstream msg;
+        std::ostringstream msg;
         msg << "the " << DescribeDescriptor(resource_variable, index, descriptor_type)
             << " is accessed by a OpTypeImage that has a Format operand "
             << string_SpirvImageFormat(resource_variable.info.vk_format) << " (equivalent to "

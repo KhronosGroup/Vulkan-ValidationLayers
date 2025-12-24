@@ -69,7 +69,7 @@ bool SamplerYcbcrConversion::operator!=(const SamplerYcbcrConversion &rhs) const
 }
 
 std::string SamplerYcbcrConversion::Describe() const {
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << " format (" << string_VkFormat(create_info.format) << ")\n";
     ss << " ycbcrModel (" << string_VkSamplerYcbcrModelConversion(create_info.ycbcrModel) << ")\n";
     ss << " ycbcrRange (" << string_VkSamplerYcbcrRange(create_info.ycbcrRange) << ")\n";

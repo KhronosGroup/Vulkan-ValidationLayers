@@ -439,7 +439,7 @@ bool CoreChecks::HasRequiredQueueFlags(const vvl::CommandBuffer &cb_state, const
 std::string CoreChecks::DescribeRequiredQueueFlag(const vvl::CommandBuffer &cb_state,
                                                   const vvl::PhysicalDevice &physical_device_state,
                                                   VkQueueFlags required_flags) const {
-    std::stringstream ss;
+    std::ostringstream ss;
     auto pool = cb_state.command_pool;
     const uint32_t queue_family_index = pool->queueFamilyIndex;
     const VkQueueFlags queue_flags = physical_device_state.queue_family_properties[queue_family_index].queueFlags;

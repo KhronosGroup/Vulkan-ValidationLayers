@@ -373,7 +373,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
                 if (producer_stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
                     if (input_var->is_per_primitive_ext != output_var->is_per_primitive_ext) {
                         const LogObjectList objlist(producer.handle(), consumer.handle());
-                        std::stringstream ss;
+                        std::ostringstream ss;
                         ss << "(SPIR-V Interface) at Location " << location << " Component " << component
                            << " in the Mesh stage is " << (output_var->is_per_primitive_ext ? "" : "not")
                            << " decorated with PerPrimitiveEXT while the Fragment stage is "
@@ -462,7 +462,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
     }
 
     if (mismatch) {
-        std::stringstream msg;
+        std::ostringstream msg;
         msg << string_VkShaderStageFlagBits(producer_stage) << " Output Block {\n";
         for (size_t i = 0; i < output_built_in_block.size(); i++) {
             msg << '\t' << i << ": " << string_SpvBuiltIn(output_built_in_block[i]) << '\n';
@@ -578,7 +578,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module &module_
 }
 
 static std::string DescribeMappedLocation(uint32_t shader, uint32_t rendering_info) {
-    std::stringstream msg;
+    std::ostringstream msg;
     if (shader == rendering_info) {
         msg << shader;
     } else {
@@ -655,7 +655,7 @@ bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bou
                 const bool null_image_view = attachment_info.rendering_attachment_info &&
                                              attachment_info.rendering_attachment_info->imageView == VK_NULL_HANDLE;
                 const LogObjectList objlist = last_bound_state.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
-                std::stringstream reason;
+                std::ostringstream reason;
                 if (null_image_view || location >= cb_state.rendering_attachments.color_locations.size()) {
                     reason << "there is no VkRenderingInfo::pColorAttachments[" << mapped_loc << "]";
                     if (null_image_view) {

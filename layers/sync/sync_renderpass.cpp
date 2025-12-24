@@ -47,7 +47,7 @@ class ValidateResolveAction {
             const SyncValidator &validator = cb_context_.GetSyncState();
 
             // TODO: this error message is not triggered by the tests
-            std::stringstream ss;
+            std::ostringstream ss;
             ss << validator.FormatHandle(view_gen.GetViewState()->Handle());
             ss << " (" << aspect_name << " " << resolve_action_name;
             ss << ", attachment " << src_at;
@@ -178,7 +178,7 @@ bool RenderPassAccessContext::ValidateLayoutTransitions(const CommandBufferAcces
             const Location loc(command);
 
             const vvl::ImageView *attachment_view = attachment_views[transition.attachment].GetViewState();
-            std::stringstream ss;
+            std::ostringstream ss;
             ss << "in subpass " << subpass << " of " << sync_state.FormatHandle(rp_state.Handle());
             ss << " on attachment " << transition.attachment << " (";
             ss << sync_state.FormatHandle(attachment_view->Handle());
@@ -257,7 +257,7 @@ bool RenderPassAccessContext::ValidateLoadOperation(const CommandBufferAccessCon
                 const SyncValidator &sync_state = cb_context.GetSyncState();
                 const Location loc(command);
 
-                std::stringstream ss;
+                std::ostringstream ss;
                 ss << "the " << aspect << " aspect of attachment " << i;
                 ss << " (" << sync_state.FormatHandle(view_gen.GetViewState()->Handle()) << ")";
                 ss << " in subpass " << subpass;
@@ -335,7 +335,7 @@ bool RenderPassAccessContext::ValidateStoreOperation(const CommandBufferAccessCo
                 const VkAttachmentStoreOp store_op = checked_stencil ? ci.stencilStoreOp : ci.storeOp;
                 const Location loc(command);
 
-                std::stringstream ss;
+                std::ostringstream ss;
                 ss << sync_state.FormatHandle(view_gen.GetViewState()->Handle());
                 ss << " (subpass " << current_subpass_ << " of " << sync_state.FormatHandle(rp_state_->Handle());
                 ss << ", attachment " << i;
@@ -539,7 +539,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferA
         LogObjectList objlist(cb_context.GetCBState().Handle(), attachment_view.Handle(), attachment_image.Handle());
         const Location loc(command);
 
-        std::stringstream ss;
+        std::ostringstream ss;
         ss << attachment_description;
         ss << " (" << sync_state.FormatHandle(attachment_view.Handle());
         ss << ", " << sync_state.FormatHandle(attachment_image.Handle()) << ")";
@@ -563,7 +563,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferA
                 current_context.DetectHazard(view_gen, AttachmentViewGen::Gen::kRenderArea,
                                              SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, SyncOrdering::kColorAttachment);
             if (hazard.IsHazard()) {
-                std::stringstream ss;
+                std::ostringstream ss;
                 ss << "color attachment " << location << " in subpass " << cmd_buffer.GetActiveSubpass();
                 const std::string attachment_description = ss.str();
                 skip |= report_atachment_hazard(hazard, *view_gen.GetViewState(), attachment_description);
@@ -594,7 +594,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferA
                                                                SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
                                                                SyncOrdering::kDepthStencilAttachment);
             if (hazard.IsHazard()) {
-                std::stringstream ss;
+                std::ostringstream ss;
                 ss << "depth aspect of depth-stencil attachment  in subpass " << cmd_buffer.GetActiveSubpass();
                 const std::string attachment_description = ss.str();
                 skip |= report_atachment_hazard(hazard, view_state, attachment_description);
@@ -605,7 +605,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferA
                                                                SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
                                                                SyncOrdering::kDepthStencilAttachment);
             if (hazard.IsHazard()) {
-                std::stringstream ss;
+                std::ostringstream ss;
                 ss << "stencil aspect of depth-stencil attachment  in subpass " << cmd_buffer.GetActiveSubpass();
                 const std::string attachment_description = ss.str();
                 skip |= report_atachment_hazard(hazard, view_state, attachment_description);
@@ -762,7 +762,7 @@ bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const Comman
             const SyncValidator &sync_state = cb_context.GetSyncState();
             const Location loc(command);
 
-            std::stringstream ss;
+            std::ostringstream ss;
             ss << "on attachment " << transition.attachment << " (";
             ss << sync_state.FormatHandle(view_gen.GetViewState()->Handle());
             ss << ", " << sync_state.FormatHandle(view_gen.GetViewState()->image_state->Handle());

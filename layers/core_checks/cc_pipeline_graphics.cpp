@@ -3352,7 +3352,7 @@ bool CoreChecks::ValidateGraphicsPipelineBindPoint(const vvl::CommandBuffer &cb_
         if ((discard_rectangle_state && discard_rectangle_state->discardRectangleCount != 0) ||
             (pipeline.IsDynamic(CB_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT))) {
             if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT)) {
-                std::stringstream msg;
+                std::ostringstream msg;
                 if (discard_rectangle_state) {
                     msg << "VkPipelineDiscardRectangleStateCreateInfoEXT::discardRectangleCount = "
                         << discard_rectangle_state->discardRectangleCount;

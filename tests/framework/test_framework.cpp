@@ -119,7 +119,7 @@ static void CheckAndSetEnvironmentVariables() {
 
     bool found_json = false;
     bool vk_layer_env_vars_present = false;
-    std::stringstream error_log;  // Build up error log in case the validation json cannot be found
+    std::ostringstream error_log;  // Build up error log in case the validation json cannot be found
     for (const char *env_var : {"VK_LAYER_PATH", "VK_ADD_LAYER_PATH"}) {
         const std::vector<std::string> vk_layer_paths = GetVkEnvironmentVariable(env_var);
         if (!vk_layer_paths.empty()) {

@@ -597,7 +597,7 @@ std::vector<std::string> get_args(android_app &app, const char *intent_extra_dat
     vm.DetachCurrentThread();
 
     // split args_str
-    std::stringstream ss(args_str);
+    std::istringstream ss(args_str);
     std::string arg;
     while (std::getline(ss, arg, ' ')) {
         if (!arg.empty()) args.emplace_back(arg);

@@ -361,7 +361,7 @@ VkExtent3D Image::GetEffectiveSubresourceExtent(const VkImageSubresourceRange &r
 }
 
 std::string Image::DescribeSubresourceLayers(const VkImageSubresourceLayers &subresource) const {
-    std::stringstream ss;
+    std::ostringstream ss;
     VkExtent3D subresource_extent = GetEffectiveSubresourceExtent(subresource);
     const VkFormat format = create_info.format;
     ss << "The " << string_VkImageType(create_info.imageType) << " VkImage was created with format " << string_VkFormat(format)
@@ -671,7 +671,7 @@ bool ImageView::OverlapSubresource(const ImageView &compare_view) const {
 }
 
 std::string ImageView::DescribeImageUsage(const Logger& logger) const {
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << logger.FormatHandle(create_info.image) << " was created with "
        << string_VkImageUsageFlags(image_state->create_info.usage);
 

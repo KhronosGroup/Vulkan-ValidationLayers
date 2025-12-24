@@ -48,7 +48,7 @@ std::string ErrorMessages::Error(const HazardResult& hazard, const CommandExecut
 std::string ErrorMessages::BufferError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
                                        const std::string& resource_description, const AccessRange range,
                                        AdditionalMessageInfo additional_info) const {
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << "\nBuffer access region: {\n";
     ss << "  offset = " << range.begin << "\n";
     ss << "  size = " << range.end - range.begin << "\n";
@@ -64,7 +64,7 @@ std::string ErrorMessages::BufferCopyError(const HazardResult& hazard, const Com
     AdditionalMessageInfo additional_info;
     additional_info.properties.Add(kPropertyRegionIndex, region_index);
 
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << "\nBuffer copy region " << region_index << ": {\n";
     ss << "  offset = " << range.begin << ",\n";
     ss << "  size = " << range.end - range.begin << "\n";
@@ -80,13 +80,13 @@ std::string ErrorMessages::AccelerationStructureError(const HazardResult& hazard
                                                       const Location& as_location) const {
     AdditionalMessageInfo additional_info;
 
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << "The buffer backs ";
     ss << as_location.Fields();
     ss << " (" << validator_.FormatHandle(as) << "). ";
     additional_info.pre_synchronization_text = ss.str();
 
-    std::stringstream ss2;
+    std::ostringstream ss2;
     ss2 << "\nBuffer access region: {\n";
     ss2 << "  offset = " << range.begin << "\n";
     ss2 << "  size = " << range.end - range.begin << "\n";
@@ -113,7 +113,7 @@ std::string ErrorMessages::ImageCopyResolveBlitError(const HazardResult& hazard,
         action = "copy";
         message_type = "ImageCopyError";
     }
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << "\nImage " << action << " region " << region_index << ": {\n";
     ss << "  offset = {" << string_VkOffset3D(offset) << "},\n";
     ss << "  extent = {" << string_VkExtent3D(extent) << "},\n";
@@ -131,7 +131,7 @@ std::string ErrorMessages::ImageClearError(const HazardResult& hazard, const Com
                                                       vvl::Func command, const std::string& resource_description,
                                                       uint32_t subresource_range_index,
                                                       const VkImageSubresourceRange& subresource_range) const {
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << "\nImage clear subresource range " << subresource_range_index << ": {\n";
     ss << "  " << string_VkImageSubresourceRange(subresource_range) << "\n";
     ss << "}\n";
@@ -147,7 +147,7 @@ static void PrepareCommonDescriptorMessage(Logger& logger, const vvl::Pipeline& 
                                            const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type,
                                            uint32_t descriptor_binding, uint32_t descriptor_array_element,
                                            VkShaderStageFlagBits shader_stage, const char* resource_type,
-                                           AdditionalMessageInfo& additional_info, std::stringstream& ss) {
+                                           AdditionalMessageInfo& additional_info, std::ostringstream& ss) {
     const char* descriptor_type_str = string_VkDescriptorType(descriptor_type);
 
     additional_info.properties.Add(kPropertyDescriptorType, descriptor_type_str);
@@ -171,7 +171,7 @@ std::string ErrorMessages::BufferDescriptorError(const HazardResult& hazard, con
                                                  uint32_t descriptor_binding, uint32_t descriptor_array_element,
                                                  VkShaderStageFlagBits shader_stage) const {
     AdditionalMessageInfo additional_info;
-    std::stringstream ss;
+    std::ostringstream ss;
     PrepareCommonDescriptorMessage(validator_, pipeline, set_number, descriptor_set, descriptor_type, descriptor_binding,
                                    descriptor_array_element, shader_stage, "buffer", additional_info, ss);
     ss << ".";
@@ -187,7 +187,7 @@ std::string ErrorMessages::ImageDescriptorError(const HazardResult& hazard, cons
                                                 uint32_t descriptor_binding, uint32_t descriptor_array_element,
                                                 VkShaderStageFlagBits shader_stage, VkImageLayout image_layout) const {
     AdditionalMessageInfo additional_info;
-    std::stringstream ss;
+    std::ostringstream ss;
     PrepareCommonDescriptorMessage(validator_, pipeline, set_number, descriptor_set, descriptor_type, descriptor_binding,
                                    descriptor_array_element, shader_stage, "image", additional_info, ss);
     ss << ", image layout " << string_VkImageLayout(image_layout) << ".";
@@ -205,7 +205,7 @@ std::string ErrorMessages::AccelerationStructureDescriptorError(
     AdditionalMessageInfo additional_info;
     additional_info.access_action = "traces rays against";
 
-    std::stringstream ss;
+    std::ostringstream ss;
     PrepareCommonDescriptorMessage(validator_, pipeline, set_number, descriptor_set, descriptor_type, descriptor_binding,
                                    descriptor_array_element, shader_stage, "acceleration structure", additional_info, ss);
     ss << ".";
@@ -218,7 +218,7 @@ std::string ErrorMessages::ClearAttachmentError(const HazardResult& hazard, cons
                                                 vvl::Func command, const std::string& resource_description,
                                                 VkImageAspectFlagBits aspect, uint32_t clear_rect_index,
                                                 const VkClearRect& clear_rect) const {
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << "\nClear region: {\n";
     ss << "  region_index = " << clear_rect_index << ",\n";
     ss << "  rect = {" << string_VkRect2D(clear_rect.rect) << "},\n";
@@ -254,7 +254,7 @@ static const char* GetLoadOpActionName(VkAttachmentLoadOp load_op) {
 
 static void CheckForLoadOpDontCareInsight(VkAttachmentLoadOp load_op, bool is_color, std::string& message_end_text) {
     if (load_op == VK_ATTACHMENT_LOAD_OP_DONT_CARE) {
-        std::stringstream ss;
+        std::ostringstream ss;
         ss << "\nVulkan insight: according to the specification VK_ATTACHMENT_LOAD_OP_DONT_CARE is a write access (";
         if (is_color) {
             ss << "VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT for color attachment";
@@ -413,7 +413,7 @@ std::string ErrorMessages::ImageBarrierError(const HazardResult& hazard, const C
     AdditionalMessageInfo additional_info;
     additional_info.access_action = "performs image layout transition on the";
 
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << "\npImageMemoryBarriers[" << barrier.barrier_index << "]: {\n";
     ss << "  srcStageMask = " << string_VkPipelineStageFlags2(barrier.barrier.src_exec_scope.mask_param) << ",\n";
     ss << "  srcAccessMask = " << string_VkAccessFlags2(barrier.barrier.original_src_access) << ",\n";
@@ -433,7 +433,7 @@ std::string ErrorMessages::FirstUseError(const HazardResult& hazard, const Comma
     AdditionalMessageInfo additional_info;
     additional_info.properties.Add(kPropertyCommandBufferIndex, command_buffer_index);
 
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << vvl::String(recorded_usage_info.command);
     if (!recorded_usage_info.debug_region_name.empty()) {
         ss << "[" << recorded_usage_info.debug_region_name << "]";
@@ -448,7 +448,7 @@ std::string ErrorMessages::FirstUseError(const HazardResult& hazard, const Comma
     }
     additional_info.access_initiator = ss.str();
 
-    std::stringstream ss2;
+    std::ostringstream ss2;
     if (prior_usage_info.queue) {
         if (prior_usage_info.cb) {
             ss2 << "(from " << validator_.FormatHandle(prior_usage_info.cb->Handle());

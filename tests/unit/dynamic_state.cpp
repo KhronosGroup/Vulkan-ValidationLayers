@@ -2503,7 +2503,7 @@ TEST_F(NegativeDynamicState, ColorBlendAttchment) {
     constexpr uint32_t color_attachments = 2;
     InitRenderTarget(color_attachments);
 
-    std::stringstream fsSource;
+    std::ostringstream fsSource;
     fsSource << "#version 450\n";
     for (uint32_t i = 0; i < color_attachments; ++i) {
         fsSource << "layout(location = " << i << ") out vec4 c" << i << ";\n";

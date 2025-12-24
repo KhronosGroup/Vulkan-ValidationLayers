@@ -56,7 +56,7 @@ TEST_F(PositiveShaderLimits, ComputeSharedMemoryWorkgroupMemoryExplicitLayout) {
     const uint32_t max_shared_memory_size = m_device->Physical().limits_.maxComputeSharedMemorySize;
     const uint32_t max_shared_vec4 = max_shared_memory_size / 16;
 
-    std::stringstream csSource;
+    std::ostringstream csSource;
     csSource << R"glsl(
         #version 450
         #extension GL_EXT_shared_memory_block : enable
@@ -87,7 +87,7 @@ TEST_F(PositiveShaderLimits, ComputeSharedMemoryAtLimit) {
     const uint32_t max_shared_memory_size = m_device->Physical().limits_.maxComputeSharedMemorySize;
     const uint32_t max_shared_ints = max_shared_memory_size / 4;
 
-    std::stringstream csSource;
+    std::ostringstream csSource;
     csSource << R"glsl(
         #version 450
         shared int a[)glsl";
@@ -110,7 +110,7 @@ TEST_F(PositiveShaderLimits, ComputeSharedMemoryBooleanAtLimit) {
     // "Boolean values considered as 32-bit integer values for the purpose of this calculation."
     const uint32_t max_shared_bools = max_shared_memory_size / 4;
 
-    std::stringstream csSource;
+    std::ostringstream csSource;
     csSource << R"glsl(
         #version 450
         shared bool a[)glsl";
@@ -140,7 +140,7 @@ TEST_F(PositiveShaderLimits, MeshSharedMemoryAtLimit) {
     const uint32_t max_shared_memory_size = mesh_shader_properties.maxMeshSharedMemorySize;
     const uint32_t max_shared_ints = max_shared_memory_size / 4;
 
-    std::stringstream mesh_source;
+    std::ostringstream mesh_source;
     mesh_source << R"glsl(
         #version 460
         #extension GL_EXT_mesh_shader : require
@@ -177,7 +177,7 @@ TEST_F(PositiveShaderLimits, TaskSharedMemoryAtLimit) {
     const uint32_t max_shared_memory_size = mesh_shader_properties.maxMeshSharedMemorySize;
     const uint32_t max_shared_ints = max_shared_memory_size / 4;
 
-    std::stringstream task_source;
+    std::ostringstream task_source;
     task_source << R"glsl(
         #version 460
         #extension GL_EXT_mesh_shader : require

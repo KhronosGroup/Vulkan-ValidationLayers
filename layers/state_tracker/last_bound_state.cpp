@@ -255,7 +255,7 @@ bool LastBound::IsColorBlendEnabled(uint32_t i) const {
 }
 
 std::string LastBound::DescribeColorBlendEnabled(uint32_t i) const {
-    std::stringstream ss;
+    std::ostringstream ss;
     if (IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT)) {
             ss << "vkCmdSetColorBlendEnableEXT::pColorBlendEnables[" << i << "] is ";
@@ -324,7 +324,7 @@ bool LastBound::IsDualBlending(uint32_t i) const {
 }
 
 std::string LastBound::DescribeBlendFactorEquation(uint32_t i) const {
-    std::stringstream ss;
+    std::ostringstream ss;
     if (IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT)) {
             const VkColorBlendEquationEXT &eq = cb_state.dynamic_state_value.color_blend_equations[i];
@@ -749,7 +749,7 @@ float LastBound::GetMinSampleShading() const {
 }
 
 std::string LastBound::DescribeSampleShading() const {
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << "Sample Shading was enbled ";
 
     bool is_implicit = false;

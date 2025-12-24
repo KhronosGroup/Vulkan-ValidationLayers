@@ -649,7 +649,7 @@ TEST_F(NegativeTransformFeedback, RuntimeSpirv) {
     }
 
     {
-        std::stringstream vsSource;
+        std::ostringstream vsSource;
         vsSource << R"asm(
                OpCapability Shader
                OpCapability TransformFeedback
@@ -689,7 +689,7 @@ TEST_F(NegativeTransformFeedback, RuntimeSpirv) {
     }
 
     {
-        std::stringstream gsSource;
+        std::ostringstream gsSource;
         gsSource << R"asm(
                OpCapability Geometry
                OpCapability TransformFeedback
@@ -796,7 +796,7 @@ TEST_F(NegativeTransformFeedback, RuntimeSpirv) {
     }
 
     {
-        std::stringstream gsSource;
+        std::ostringstream gsSource;
         gsSource << R"asm(
                OpCapability Geometry
                OpCapability TransformFeedback
@@ -851,7 +851,7 @@ TEST_F(NegativeTransformFeedback, RuntimeSpirv) {
     }
 
     {
-        std::stringstream gsSource;
+        std::ostringstream gsSource;
         gsSource << R"asm(
                OpCapability Geometry
                OpCapability TransformFeedback
@@ -906,7 +906,7 @@ TEST_F(NegativeTransformFeedback, RuntimeSpirv) {
         uint32_t count = transform_feedback_props.maxTransformFeedbackStreamDataSize / offset + 1;
         // Limit to 25, because we are dynamically adding variables using letters as names
         if (count < 25) {
-            std::stringstream gsSource;
+            std::ostringstream gsSource;
             gsSource << R"asm(
                OpCapability Geometry
                OpCapability TransformFeedback

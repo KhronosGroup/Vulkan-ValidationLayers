@@ -292,7 +292,7 @@ Func FindAlias(Func func) {
 
         out.append('''
             std::string String(const Extensions& extensions) {
-                std::stringstream out;
+                std::ostringstream out;
                 for (size_t i = 0; i < extensions.size(); i++) {
                     out << String(extensions[i]);
                     if (i + 1 != extensions.size()) {
@@ -312,7 +312,7 @@ Func FindAlias(Func func) {
             }
 
             std::string String(const Requirements& requirements) {
-                std::stringstream out;
+                std::ostringstream out;
                 for (size_t i = 0; i < requirements.size(); i++) {
                     out << String(requirements[i]);
                     if (i + 1 != requirements.size()) {

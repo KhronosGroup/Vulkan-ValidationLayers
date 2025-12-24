@@ -364,7 +364,7 @@ std::string DynamicStatesCommandsToString(CBDynamicFlags const& dynamic_states) 
 }
 
 std::string DescribeDynamicStateCommand(CBDynamicState dynamic_state) {
-    std::stringstream ss;
+    std::ostringstream ss;
     vvl::Func func = vvl::Func::Empty;
     switch (dynamic_state) {
         case CB_DYNAMIC_STATE_VIEWPORT:
@@ -610,7 +610,7 @@ static std::string_view stencil_test_enable_static{
     "VkPipelineDepthStencilStateCreateInfo::stencilTestEnable was VK_TRUE in the last bound graphics pipeline.\n"};
 
 std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const vvl::Pipeline* pipeline) {
-    std::stringstream ss;
+    std::ostringstream ss;
     switch (dynamic_state) {
         case CB_DYNAMIC_STATE_DEPTH_BIAS:
             if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {

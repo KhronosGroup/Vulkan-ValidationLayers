@@ -126,7 +126,7 @@ bool AreFormatsSizeCompatible(VkFormat a, VkFormat b, VkImageAspectFlags aspect_
 }
 
 std::string DescribeFormatsSizeCompatible(VkFormat a, VkFormat b) {
-    std::stringstream ss;
+    std::ostringstream ss;
     const bool is_a_a8 = a == VK_FORMAT_A8_UNORM;
     const bool is_b_a8 = b == VK_FORMAT_A8_UNORM;
     if ((is_a_a8 && !is_b_a8) || (!is_a_a8 && is_b_a8)) {
